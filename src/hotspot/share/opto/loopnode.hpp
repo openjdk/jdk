@@ -778,6 +778,11 @@ public:
 
   void remove_main_post_loops(CountedLoopNode *cl, PhaseIdealLoop *phase);
 
+#ifdef ASSERT
+  // Tell whether the body contains nodes marked as reductions.
+  bool has_reduction_nodes() const;
+#endif // ASSERT
+
 #ifndef PRODUCT
   void dump_head() const;       // Dump loop head only
   void dump() const;            // Dump this loop recursively
@@ -1755,7 +1760,7 @@ private:
 // By default the reserved copy (clone) of the loop is created as dead code - it is
 // dominated in the outer loop by this node chain:
 //   intcon(1)->If->IfFalse->reserved_copy.
-// The original loop is dominated by the the same node chain but IfTrue projection:
+// The original loop is dominated by the same node chain but IfTrue projection:
 //   intcon(0)->If->IfTrue->original_loop.
 //
 // In this implementation of CountedLoopReserveKit the ctor includes create_reserve()

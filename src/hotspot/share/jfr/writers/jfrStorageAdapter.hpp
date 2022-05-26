@@ -79,10 +79,10 @@ class Adapter {
   }
 
   bool flush(size_t used, size_t requested) {
-    assert(_thread != NULL, "invariant");
+    assert(_thread != nullptr, "invariant");
     Flush f(_storage, used, requested, _thread);
     _storage = f.result();
-    return _storage != NULL && !_storage->excluded();
+    return _storage != nullptr;
   }
 
   void release() {

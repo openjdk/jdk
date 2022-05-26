@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,7 @@
  *      -jdb=${test.jdk}/bin/jdb
  *      -java.options="${test.vm.opts} ${test.java.opts}"
  *      -workdir=.
+ *      -jdb.option="-trackvthreads"
  *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
  */
 
@@ -101,10 +102,10 @@ public class trace001 extends JdbTest {
         jdb.setBreakpointInMethod(LAST_BREAK);
         reply = jdb.receiveReplyFor(JdbCommand.cont);
 
-        threads = jdb.getThreadIds(DEBUGGEE_THREAD);
+        threads = jdb.getThreadIdsByName(MYTHREAD);
 
         if (threads.length != 2) {
-            log.complain("jdb should report 2 instance of " + DEBUGGEE_THREAD);
+            log.complain("jdb should report 2 instance named " + MYTHREAD + "-<n>");
             log.complain("Found: " + threads.length);
             success = false;
         }

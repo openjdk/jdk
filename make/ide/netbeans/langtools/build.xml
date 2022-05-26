@@ -40,7 +40,7 @@
         That would reduce the list of Ant targets that get displayed for this
         file, but it also complicates the interface between the project build
         file and the main build file. For example, some imported targets
-        would have to be reclared, properties would have to be restructured,
+        would have to be redeclared, properties would have to be restructured,
         and it would be harder to run results (e.g. in properties) from nested
         targets.
      -->

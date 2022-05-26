@@ -301,7 +301,7 @@ public final class SunPKCS11 extends AuthProvider {
         File libraryFile = new File(library);
         // if the filename is a simple filename without path
         // (e.g. "libpkcs11.so"), it may refer to a library somewhere on the
-        // OS library search path. Omit the test for file existance as that
+        // OS library search path. Omit the test for file existence as that
         // only looks in the current directory.
         if (libraryFile.getName().equals(library) == false) {
             if (new File(library).isFile() == false) {

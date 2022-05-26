@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,6 +138,9 @@ public:
   uintptr_t relocate_object(uintptr_t addr);
   uintptr_t remap_object(uintptr_t addr);
   void relocate();
+
+  // Continuations
+  bool is_allocating(uintptr_t addr) const;
 
   // Iteration
   void object_iterate(ObjectClosure* cl, bool visit_weaks);

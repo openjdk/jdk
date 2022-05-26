@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,10 +75,17 @@ public class strace002 {
     static final String[] EXPECTED_METHODS = {
             "java.lang.System.arraycopy",
             "java.lang.Object.wait",
+            "java.lang.Object.wait0",
             "java.lang.Thread.exit",
             "java.lang.Thread.yield",
-            "java.lang.ThreadGroup.remove",
-            "java.lang.ThreadGroup.threadTerminated",
+            "java.lang.Thread.yield0",
+            "java.lang.Thread.clearReferences",
+            "java.lang.Thread.currentCarrierThread",
+            "java.lang.Thread.currentThread",
+            "java.lang.Thread.threadContainer",
+            "jdk.internal.misc.Blocker.begin",
+            "jdk.internal.misc.Blocker.currentCarrierThread",
+            "jdk.internal.misc.Blocker.end",
             "nsk.stress.strace.strace002Thread.run",
             "nsk.stress.strace.strace002Thread.recursiveMethod"
     };
@@ -228,7 +235,7 @@ public class strace002 {
     boolean checkElement(StackTraceElement element) {
         String name = element.getClassName() + "." + element.getMethodName();
         for (int i = 0; i < EXPECTED_METHODS.length; i++) {
-            if (EXPECTED_METHODS[i].compareTo(name) == 0)
+            if (name.startsWith(EXPECTED_METHODS[i]))
                 return true;
         }
         return false;

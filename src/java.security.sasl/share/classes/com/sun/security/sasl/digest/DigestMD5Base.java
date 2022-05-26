@@ -63,7 +63,7 @@ import com.sun.security.sasl.util.AbstractSaslImpl;
 /**
  * Utility class for DIGEST-MD5 mechanism. Provides utility methods
  * and contains two inner classes which implement the SecurityCtx
- * interface. The inner classes provide the funtionality to allow
+ * interface. The inner classes provide the functionality to allow
  * for quality-of-protection (QOP) with integrity checking and
  * privacy.
  *
@@ -172,7 +172,7 @@ abstract class DigestMD5Base extends AbstractSaslImpl {
     protected DigestMD5Base(Map<String, ?> props, String className,
         int firstStep, String digestUri, CallbackHandler cbh)
         throws SaslException {
-        super(props, className); // sets QOP, STENGTH and BUFFER_SIZE
+        super(props, className); // sets QOP, STRENGTH and BUFFER_SIZE
 
         step = firstStep;
         this.digestUri = digestUri;
@@ -1251,7 +1251,7 @@ abstract class DigestMD5Base extends AbstractSaslImpl {
                     "specification used.", e);
             } catch (InvalidAlgorithmParameterException e) {
                 throw new SaslException("DIGEST-MD5: Invalid cipher " +
-                    "algorithem parameter used to create cipher instance", e);
+                    "algorithm parameter used to create cipher instance", e);
             } catch (NoSuchPaddingException e) {
                 throw new SaslException("DIGEST-MD5: Unsupported " +
                     "padding used for chosen cipher", e);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,7 +124,7 @@ public abstract class Transformer {
      * @param name The name of the parameter, which may begin with a
      * namespace URI in curly braces ({}).
      * @param value The value object.  This can be any valid Java object. It is
-     * up to the processor to provide the proper object coersion or to simply
+     * up to the processor to provide the proper object conversion or to simply
      * pass the object on for use in an extension.
      *
      * @throws NullPointerException If value is null.

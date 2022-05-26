@@ -633,7 +633,6 @@ void NativeGeneralJump::replace_mt_safe(address instr_addr, address code_buffer)
      assert(*((address)((intptr_t)instr_addr + i)) == a_byte, "mt safe patching failed");
    }
 #endif
-
 }
 
 
@@ -648,4 +647,42 @@ address NativeGeneralJump::jump_destination() const {
     return addr_at(0) + length + int_at(offset);
   else
     return addr_at(0) + length + sbyte_at(offset);
+}
+
+void NativePostCallNop::make_deopt() {
+  /* makes the first 3 bytes into UD
+   * With the 8 bytes possibly (likely) split over cachelines the protocol on x86 looks like:
+   *
+   * Original state: NOP (4 bytes) offset (4 bytes)
+   * Writing the offset only touches the 4 last bytes (offset bytes)
+   * Making a deopt only touches the first 4 bytes and turns the NOP into a UD
+   * and to make disasembly look "reasonable" it turns the last byte into a
+   * TEST eax, offset so that the offset bytes of the NOP now becomes the imm32.
+   */
+
+  unsigned char patch[4];
+  NativeDeoptInstruction::insert((address) patch, false);
+  patch[3] = 0xA9; // TEST eax, imm32 - this is just to keep disassembly looking correct and fills no real use.
+  address instr_addr = addr_at(0);
+  *(int32_t *)instr_addr = *(int32_t *)patch;
+  ICache::invalidate_range(instr_addr, instruction_size);
+}
+
+void NativePostCallNop::patch(jint diff) {
+  assert(diff != 0, "must be");
+  int32_t *code_pos = (int32_t *) addr_at(displacement_offset);
+  *((int32_t *)(code_pos)) = (int32_t) diff;
+}
+
+void NativeDeoptInstruction::verify() {
+}
+
+// Inserts an undefined instruction at a given pc
+void NativeDeoptInstruction::insert(address code_pos, bool invalidate) {
+  *code_pos = instruction_prefix;
+  *(code_pos+1) = instruction_code;
+  *(code_pos+2) = 0x00;
+  if (invalidate) {
+    ICache::invalidate_range(code_pos, instruction_size);
+  }
 }

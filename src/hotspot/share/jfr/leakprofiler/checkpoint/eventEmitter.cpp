@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Datadog, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -44,13 +44,12 @@ EventEmitter::EventEmitter(const JfrTicks& start_time, const JfrTicks& end_time)
   _start_time(start_time),
   _end_time(end_time),
   _thread(Thread::current()),
-  _jfr_thread_local(_thread->jfr_thread_local()),
-  _thread_id(_thread->jfr_thread_local()->thread_id()) {}
+  _jfr_thread_local(_thread->jfr_thread_local()) {}
 
 EventEmitter::~EventEmitter() {
   // restore / reset thread local stack trace and thread id
-  _jfr_thread_local->set_thread_id(_thread_id);
   _jfr_thread_local->clear_cached_stack_trace();
+  JfrThreadLocal::stop_impersonating(_thread);
 }
 
 void EventEmitter::emit(ObjectSampler* sampler, int64_t cutoff_ticks, bool emit_all, bool skip_bfs) {
@@ -166,6 +165,6 @@ void EventEmitter::write_event(const ObjectSample* sample, EdgeStore* edge_store
   // supplying information from where the actual sampling occurred.
   _jfr_thread_local->set_cached_stack_trace_id(sample->stack_trace_id());
   assert(sample->has_thread(), "invariant");
-  _jfr_thread_local->set_thread_id(sample->thread_id());
+  JfrThreadLocal::impersonate(_thread, sample->thread_id());
   e.commit();
 }
