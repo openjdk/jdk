@@ -2319,7 +2319,7 @@ public final class Locale implements Cloneable, Serializable {
 
     /**
      * Format a list using given pattern strings.
-     * If either of the patterns is null, then a the list is
+     * If either of the patterns is null, then the list is
      * formatted by concatenation with the delimiter ','.
      * @param stringList the list of strings to be formatted.
      * and formatting them into a list.
