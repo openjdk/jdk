@@ -813,7 +813,7 @@ final class ProxyGenerator extends ClassWriter {
             if (type.isPrimitive()) {
                 PrimitiveTypeInfo prim = PrimitiveTypeInfo.get(type);
 
-                mv.visitVarInsn(ILOAD + prim.opcodeOffset, slot);
+                mv.visitVarInsn(prim.loadOpcode, slot);
                 mv.visitMethodInsn(INVOKESTATIC, prim.wrapperClassName, "valueOf",
                         prim.wrapperValueOfDesc, false);
             } else {
@@ -835,7 +835,7 @@ final class ProxyGenerator extends ClassWriter {
                         prim.wrapperClassName,
                         prim.unwrapMethodName, prim.unwrapMethodDesc, false);
 
-                mv.visitInsn(IRETURN + prim.opcodeOffset);
+                mv.visitInsn(prim.returnOpcode);
             } else {
                 mv.visitTypeInsn(CHECKCAST, dotToSlash(type.getName()));
                 mv.visitInsn(ARETURN);
@@ -929,17 +929,17 @@ final class ProxyGenerator extends ClassWriter {
      * primitive type can be obtained using the static "get" method.
      */
     private enum PrimitiveTypeInfo {
-        BYTE(byte.class, 0),
-        CHAR(char.class, 0),
-        DOUBLE(double.class, 3),
-        FLOAT(float.class, 2),
-        INT(int.class, 0),
-        LONG(long.class, 1),
-        SHORT(short.class, 0),
-        BOOLEAN(boolean.class, 0);
+        BYTE(byte.class, ILOAD),
+        CHAR(char.class, ILOAD),
+        DOUBLE(double.class, DLOAD),
+        FLOAT(float.class, FLOAD),
+        INT(int.class, ILOAD),
+        LONG(long.class, LLOAD),
+        SHORT(short.class, ILOAD),
+        BOOLEAN(boolean.class, ILOAD);
 
         /**
-         * name of corresponding wrapper class
+         * internal name of corresponding wrapper class
          */
         private final String wrapperClassName;
         /**
@@ -955,26 +955,32 @@ final class ProxyGenerator extends ClassWriter {
          */
         private final String unwrapMethodDesc;
         /**
-         * Opcode offset from iload, ireturn, etc.
-         * Order is i, l, f, d, a.
+         * Load opcode used by this primitive
          */
-        private final int opcodeOffset;
+        private final int loadOpcode;
+        /**
+         * Return opcode used by this primitive
+         */
+        private final int returnOpcode;
 
-        PrimitiveTypeInfo(Class<?> primitiveClass, int opcodeOffset) {
+        PrimitiveTypeInfo(Class<?> primitiveClass, int loadOpcode) {
             assert primitiveClass.isPrimitive();
 
             Wrapper wrapper = Wrapper.forPrimitiveType(primitiveClass);
             // single-char BaseType descriptor (see JVMS section 4.3.2)
             String baseTypeString = wrapper.basicTypeString();
-            wrapperClassName = dotToSlash(wrapper.wrapperType().getName());
+            var wrapperType = wrapper.wrapperType();
+            wrapperClassName = dotToSlash(wrapperType.getName());
             wrapperValueOfDesc =
-                    "(" + baseTypeString + ")L" + wrapperClassName + ";";
+                    "(" + baseTypeString + ")" + wrapperType.descriptorString();
             unwrapMethodName = primitiveClass.getName() + "Value";
             unwrapMethodDesc = "()" + baseTypeString;
-            this.opcodeOffset = opcodeOffset;
+            this.loadOpcode = loadOpcode;
+            this.returnOpcode = loadOpcode - ILOAD + IRETURN;
         }
 
         public static PrimitiveTypeInfo get(Class<?> cl) {
+            // Uses if chain for speed: 8284880
             if (cl == int.class)     return INT;
             if (cl == long.class)    return LONG;
             if (cl == boolean.class) return BOOLEAN;
@@ -983,7 +989,7 @@ final class ProxyGenerator extends ClassWriter {
             if (cl == char.class)    return CHAR;
             if (cl == float.class)   return FLOAT;
             if (cl == double.class)  return DOUBLE;
-            throw new AssertionError();
+            throw new AssertionError(cl);
         }
     }
 }
