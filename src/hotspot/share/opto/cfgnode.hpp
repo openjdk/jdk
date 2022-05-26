@@ -224,7 +224,6 @@ public:
   virtual const RegMask &out_RegMask() const;
   virtual const RegMask &in_RegMask(uint) const;
 #ifndef PRODUCT
-  virtual void related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const;
   virtual void dump_spec(outputStream *st) const;
 #endif
 #ifdef ASSERT
@@ -250,10 +249,6 @@ public:
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);
   virtual const RegMask &out_RegMask() const;
-
-#ifndef PRODUCT
-  virtual void related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const;
-#endif
 };
 
 //------------------------------CProjNode--------------------------------------
@@ -406,7 +401,6 @@ public:
 
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
-  virtual void related(GrowableArray <Node *> *in_rel, GrowableArray <Node *> *out_rel, bool compact) const;
 #endif
 };
 
@@ -432,11 +426,6 @@ public:
 protected:
   // Type of If input when this branch is always taken
   virtual bool always_taken(const TypeTuple* t) const = 0;
-
-#ifndef PRODUCT
-public:
-  virtual void related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const;
-#endif
 };
 
 class IfTrueNode : public IfProjNode {
@@ -504,9 +493,6 @@ public:
   virtual int   Opcode() const;
   virtual const RegMask& out_RegMask() const;
   virtual const Node* is_block_proj() const { return this; }
-#ifndef PRODUCT
-  virtual void related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const;
-#endif
 };
 
 class JumpProjNode : public JProjNode {
@@ -532,7 +518,6 @@ class JumpProjNode : public JProjNode {
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
   virtual void dump_compact_spec(outputStream *st) const;
-  virtual void related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const;
 #endif
 };
 

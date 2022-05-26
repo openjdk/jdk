@@ -1213,12 +1213,6 @@ public:
   virtual void dump_spec(outputStream *st) const {};      // Print per-node info
   // Print compact per-node info
   virtual void dump_compact_spec(outputStream *st) const { dump_spec(st); }
-  void dump_related() const;             // Print related nodes (depends on node at hand).
-  // Print related nodes up to given depths for input and output nodes.
-  void dump_related(uint d_in, uint d_out) const;
-  void dump_related_compact() const;     // Print related nodes in compact representation.
-  // Collect related nodes.
-  virtual void related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const;
   // Collect nodes starting from this node, explicitly including/excluding control and data links.
   void collect_nodes(GrowableArray<Node*> *ns, int d, bool ctrl, bool data) const;
 

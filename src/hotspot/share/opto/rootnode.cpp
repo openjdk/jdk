@@ -91,18 +91,3 @@ const Type* HaltNode::Value(PhaseGVN* phase) const {
 const RegMask &HaltNode::out_RegMask() const {
   return RegMask::Empty;
 }
-
-#ifndef PRODUCT
-//-----------------------------related-----------------------------------------
-// Include all control inputs in the related set, and also the input data
-// boundary. In compact mode, include all inputs till level 2. Also include
-// all outputs at level 1.
-void HaltNode::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const {
-  if (compact) {
-    this->collect_nodes(in_rel, 2, false, false);
-  } else {
-    this->collect_nodes_in_all_ctrl(in_rel, true);
-  }
-  this->collect_nodes(out_rel, -1, false, false);
-}
-#endif

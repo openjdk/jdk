@@ -462,18 +462,3 @@ Node* MoveD2LNode::Identity(PhaseGVN* phase) {
   }
   return this;
 }
-
-#ifndef PRODUCT
-//----------------------------BinaryNode---------------------------------------
-// The set of related nodes for a BinaryNode is all data inputs and all outputs
-// till level 2 (i.e., one beyond the associated CMoveNode). In compact mode,
-// it's the inputs till level 1 and the outputs till level 2.
-void BinaryNode::related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const {
-  if (compact) {
-    this->collect_nodes(in_rel, 1, false, true);
-  } else {
-    this->collect_nodes_in_all_data(in_rel, false);
-  }
-  this->collect_nodes(out_rel, -2, false, false);
-}
-#endif
