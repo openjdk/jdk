@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -221,6 +221,12 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved)
         reportError("GetEnv failed", res);
         return JNI_ERR;
     }
+
+#ifdef _AIX
+    // Following code is for AIX xlclang compiler
+    memset(&caps, '\0', sizeof(caps));
+    memset(&callbacks, '\0', sizeof(callbacks));
+#endif
 
     caps.can_generate_field_modification_events = 1;
     caps.can_generate_field_access_events = 1;
