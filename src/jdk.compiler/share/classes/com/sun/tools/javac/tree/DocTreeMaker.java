@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -620,7 +620,7 @@ public class DocTreeMaker implements DocTreeFactory {
      * the break is returned, if not then a -1, indicating that
      * more doctree elements are required to be examined.
      *
-     * BreakIterator.next points to the the start of the following sentence,
+     * BreakIterator.next points to the start of the following sentence,
      * and does not provide an easy way to disambiguate between "sentence break",
      * "possible sentence break" and "not a sentence break" at the end of the input.
      * For example, BreakIterator.next returns the index for the end

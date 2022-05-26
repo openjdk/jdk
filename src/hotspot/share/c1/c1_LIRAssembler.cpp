@@ -108,6 +108,7 @@ LIR_Assembler::LIR_Assembler(Compilation* c):
  , _current_block(NULL)
  , _pending_non_safepoint(NULL)
  , _pending_non_safepoint_offset(0)
+ , _immediate_oops_patched(0)
 {
   _slow_case_stubs = new CodeStubList();
 }
@@ -129,6 +130,7 @@ void LIR_Assembler::check_codespace() {
 
 
 void LIR_Assembler::append_code_stub(CodeStub* stub) {
+  _immediate_oops_patched += stub->nr_immediate_oops_patched();
   _slow_case_stubs->append(stub);
 }
 

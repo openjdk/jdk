@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,7 +148,7 @@ class RuleBasedBreakIteratorBuilder {
 
     /**
      * Looping states actually have to be backfilled later in the process
-     * than everything else.  This is where a the list of states to backfill
+     * than everything else.  This is where the list of states to backfill
      * is accumulated.  This is also used to handle .*?
      */
     protected Vector<Integer> statesToBackfill = null;
@@ -1273,7 +1273,7 @@ class RuleBasedBreakIteratorBuilder {
         for (int i = 0; i < decisionPointList.size(); i++) {
             int rowNum = decisionPointList.elementAt(i).intValue();
             state = tempStateTable.elementAt(rowNum);
-            state[numCategories] |= END_STATE_FLAG;
+            state[numCategories] |= (short) END_STATE_FLAG;
             if (sawEarlyBreak) {
                 state[numCategories] |= LOOKAHEAD_STATE_FLAG;
             }
@@ -1300,7 +1300,7 @@ class RuleBasedBreakIteratorBuilder {
             newValues[(int)(pendingChars.charAt(i)) - 0x100] = newValue;
 
         // go through the list of rows to update, and update them by calling
-        // mergeStates() to merge them the the dummy state we created
+        // mergeStates() to merge them the dummy state we created
         for (int i = 0; i < rows.size(); i++) {
             mergeStates(rows.elementAt(i).intValue(), newValues, rows);
         }
@@ -1580,7 +1580,7 @@ class RuleBasedBreakIteratorBuilder {
                 }
 
                 // clear out the backfill part of the flag word
-                state[numCategories] &= ALL_FLAGS;
+                state[numCategories] &= (short) ALL_FLAGS;
 
                 // then fill all zero cells in the current state with values
                 // from the corresponding cells of the fromState
@@ -1881,7 +1881,7 @@ class RuleBasedBreakIteratorBuilder {
         // we have to merge the resulting state table with the auto-generated one
         // above.  First copy the populated cells from row 1 over the populated
         // cells in the auto-generated table.  Then copy values from row 1 of the
-        // auto-generated table into all of the the unpopulated cells of the
+        // auto-generated table into all of the unpopulated cells of the
         // rule-based table.
         if (backTableOffset > 1) {
 

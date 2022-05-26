@@ -313,11 +313,6 @@ int MachCallRuntimeNode::ret_addr_offset() {
   return 5 + pre_call_resets_size() + (_leaf_no_fp ? 0 : sizeof_FFree_Float_Stack_All);
 }
 
-int MachCallNativeNode::ret_addr_offset() {
-  ShouldNotCallThis();
-  return -1;
-}
-
 //
 // Compute padding required for nodes which need alignment
 //
@@ -1744,11 +1739,13 @@ encode %{
 
   enc_class Java_To_Runtime (method meth) %{    // CALL Java_To_Runtime, Java_To_Runtime_Leaf
     // This is the instruction starting address for relocation info.
+    MacroAssembler _masm(&cbuf);
     cbuf.set_insts_mark();
     $$$emit8$primary;
     // CALL directly to the runtime
     emit_d32_reloc(cbuf, ($meth$$method - (int)(cbuf.insts_end()) - 4),
                 runtime_call_Relocation::spec(), RELOC_IMM32 );
+    __ post_call_nop();
 
     if (UseSSE >= 2) {
       MacroAssembler _masm(&cbuf);
@@ -1800,6 +1797,7 @@ encode %{
   enc_class Java_Static_Call (method meth) %{    // JAVA STATIC CALL
     // CALL to fixup routine.  Fixup routine uses ScopeDesc info to determine
     // who we intended to call.
+    MacroAssembler _masm(&cbuf);
     cbuf.set_insts_mark();
     $$$emit8$primary;
 
@@ -1807,12 +1805,14 @@ encode %{
       emit_d32_reloc(cbuf, ($meth$$method - (int)(cbuf.insts_end()) - 4),
                      runtime_call_Relocation::spec(),
                      RELOC_IMM32);
+      __ post_call_nop();
     } else {
       int method_index = resolved_method_index(cbuf);
       RelocationHolder rspec = _optimized_virtual ? opt_virtual_call_Relocation::spec(method_index)
                                                   : static_call_Relocation::spec(method_index);
       emit_d32_reloc(cbuf, ($meth$$method - (int)(cbuf.insts_end()) - 4),
                      rspec, RELOC_DISP32);
+      __ post_call_nop();
       // Emit stubs for static call.
       address stub = CompiledStaticCall::emit_to_interp_stub(cbuf);
       if (stub == NULL) {
@@ -1825,6 +1825,7 @@ encode %{
   enc_class Java_Dynamic_Call (method meth) %{    // JAVA DYNAMIC CALL
     MacroAssembler _masm(&cbuf);
     __ ic_call((address)$meth$$method, resolved_method_index(cbuf));
+    __ post_call_nop();
   %}
 
   enc_class Java_Compiled_Call (method meth) %{    // JAVA COMPILED CALL
@@ -1832,11 +1833,12 @@ encode %{
     assert( -128 <= disp && disp <= 127, "compiled_code_offset isn't small");
 
     // CALL *[EAX+in_bytes(Method::from_compiled_code_entry_point_offset())]
+    MacroAssembler _masm(&cbuf);
     cbuf.set_insts_mark();
     $$$emit8$primary;
     emit_rm(cbuf, 0x01, $secondary, EAX_enc );  // R/M byte
     emit_d8(cbuf, disp);             // Displacement
-
+    __ post_call_nop();
   %}
 
 //   Following encoding is no longer used, but may be restored if calling
@@ -2778,9 +2780,11 @@ encode %{
     // PUSH src2.lo
     emit_opcode(cbuf,               0x50+$src2$$reg  );
     // CALL directly to the runtime
+    MacroAssembler _masm(&cbuf);
     cbuf.set_insts_mark();
     emit_opcode(cbuf,0xE8);       // Call into runtime
     emit_d32_reloc(cbuf, (CAST_FROM_FN_PTR(address, SharedRuntime::ldiv) - cbuf.insts_end()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
+    __ post_call_nop();
     // Restore stack
     emit_opcode(cbuf, 0x83); // add  SP, #framesize
     emit_rm(cbuf, 0x3, 0x00, ESP_enc);
@@ -2797,9 +2801,11 @@ encode %{
     // PUSH src2.lo
     emit_opcode(cbuf,               0x50+$src2$$reg  );
     // CALL directly to the runtime
+    MacroAssembler _masm(&cbuf);
     cbuf.set_insts_mark();
     emit_opcode(cbuf,0xE8);       // Call into runtime
     emit_d32_reloc(cbuf, (CAST_FROM_FN_PTR(address, SharedRuntime::lrem ) - cbuf.insts_end()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
+    __ post_call_nop();
     // Restore stack
     emit_opcode(cbuf, 0x83); // add  SP, #framesize
     emit_rm(cbuf, 0x3, 0x00, ESP_enc);
@@ -2867,10 +2873,12 @@ encode %{
   %}
 
   enc_class enc_rethrow() %{
+    MacroAssembler _masm(&cbuf);
     cbuf.set_insts_mark();
     emit_opcode(cbuf, 0xE9);        // jmp    entry
     emit_d32_reloc(cbuf, (int)OptoRuntime::rethrow_stub() - ((int)cbuf.insts_end())-4,
                    runtime_call_Relocation::spec(), RELOC_IMM32 );
+    __ post_call_nop();
   %}
 
 
@@ -2916,9 +2924,11 @@ encode %{
     emit_opcode(cbuf,0xD9 );      // FLD     ST(i)
     emit_d8    (cbuf,0xC0-1+$src$$reg );
     // CALL directly to the runtime
+    MacroAssembler _masm(&cbuf);
     cbuf.set_insts_mark();
     emit_opcode(cbuf,0xE8);       // Call into runtime
     emit_d32_reloc(cbuf, (StubRoutines::x86::d2i_wrapper() - cbuf.insts_end()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
+    __ post_call_nop();
     // Carry on here...
   %}
 
@@ -2958,9 +2968,11 @@ encode %{
     emit_opcode(cbuf,0xD9 );      // FLD     ST(i)
     emit_d8    (cbuf,0xC0-1+$src$$reg );
     // CALL directly to the runtime
+    MacroAssembler _masm(&cbuf);
     cbuf.set_insts_mark();
     emit_opcode(cbuf,0xE8);       // Call into runtime
     emit_d32_reloc(cbuf, (StubRoutines::x86::d2l_wrapper() - cbuf.insts_end()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
+    __ post_call_nop();
     // Carry on here...
   %}
 
@@ -3094,10 +3106,10 @@ encode %{
 //         Region 6-7 is determined per call site.
 // Note 2: If the calling convention leaves holes in the incoming argument
 //         area, those holes are owned by SELF.  Holes in the outgoing area
-//         are owned by the CALLEE.  Holes should not be nessecary in the
+//         are owned by the CALLEE.  Holes should not be necessary in the
 //         incoming area, as the Java calling convention is completely under
 //         the control of the AD file.  Doubles can be sorted and packed to
-//         avoid holes.  Holes in the outgoing arguments may be nessecary for
+//         avoid holes.  Holes in the outgoing arguments may be necessary for
 //         varargs C calling conventions.
 // Note 3: Region 0-3 is even aligned, with pad2 as needed.  Region 3-5 is
 //         even aligned with pad0 as needed.
@@ -4373,7 +4385,7 @@ operand stackSlotL(sRegL reg) %{
 // the flags (produced by the Cmp) specifies the coding of the comparison op
 // by matching a specific subtype of Bool operand below, such as cmpOpU.
 
-// Comparision Code
+// Comparison Code
 operand cmpOp() %{
   match(Bool);
 
@@ -10817,6 +10829,7 @@ instruct convD2I_reg_reg( eAXRegI dst, eDXRegI tmp, regD src, eFlagsReg cr ) %{
     __ fld_d(Address(rsp, 0));
     __ addptr(rsp, 8);
     __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::d2i_wrapper())));
+    __ post_call_nop();
     __ bind(fast);
   %}
   ins_pipe( pipe_slow );
@@ -10892,6 +10905,7 @@ instruct convD2L_reg_reg( eADXRegL dst, regD src, eFlagsReg cr ) %{
     __ fld_d(Address(rsp, 0));
     __ addptr(rsp, 8);
     __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::d2l_wrapper())));
+    __ post_call_nop();
     __ bind(fast);
   %}
   ins_pipe( pipe_slow );
@@ -10947,6 +10961,7 @@ instruct convF2I_reg(eAXRegI dst, eDXRegI tmp, regF src, eFlagsReg cr ) %{
     __ fld_s(Address(rsp, 0));
     __ addptr(rsp, 4);
     __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::d2i_wrapper())));
+    __ post_call_nop();
     __ bind(fast);
   %}
   ins_pipe( pipe_slow );
@@ -11023,6 +11038,7 @@ instruct convF2L_reg_reg( eADXRegL dst, regF src, eFlagsReg cr ) %{
     __ fld_s(Address(rsp, 0));
     __ addptr(rsp, 4);
     __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::x86::d2l_wrapper())));
+    __ post_call_nop();
     __ bind(fast);
   %}
   ins_pipe( pipe_slow );
@@ -12539,7 +12555,7 @@ instruct loopLimit_eReg(eAXRegI limit, nadxRegI init, immI stride, eDXRegI limit
       __ lneg($limit_hi$$Register, $limit$$Register);
       __ movl($tmp$$Register, -strd);
     }
-    // signed devision: (EAX:EDX) / pos_stride
+    // signed division: (EAX:EDX) / pos_stride
     __ idivl($tmp$$Register);
     if (strd < 0) {
       // restore sign
@@ -13893,7 +13909,7 @@ instruct tlsLoadP(eRegP dst, eFlagsReg cr) %{
 //
 // // Change (inc mov) to lea
 // peephole %{
-//   // increment preceeded by register-register move
+//   // increment preceded by register-register move
 //   peepmatch ( incI_eReg movI );
 //   // require that the destination register of the increment
 //   // match the destination register of the move

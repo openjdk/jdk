@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ protected:
 private:
   // Allocate from the current thread's TLAB, with broken-out slow path.
   HeapWord* allocate_inside_tlab(Allocation& allocation) const;
+  HeapWord* allocate_inside_tlab_fast() const;
   HeapWord* allocate_inside_tlab_slow(Allocation& allocation) const;
   HeapWord* allocate_outside_tlab(Allocation& allocation) const;
 
@@ -72,6 +73,7 @@ protected:
 
 public:
   oop allocate() const;
+  oop try_allocate_in_existing_tlab();
   virtual oop initialize(HeapWord* mem) const = 0;
 };
 
@@ -101,6 +103,16 @@ class ClassAllocator: public MemAllocator {
 public:
   ClassAllocator(Klass* klass, size_t word_size, Thread* thread = Thread::current())
     : MemAllocator(klass, word_size, thread) {}
+  virtual oop initialize(HeapWord* mem) const;
+};
+
+class StackChunkAllocator : public MemAllocator {
+  const size_t _stack_size;
+
+public:
+  StackChunkAllocator(Klass* klass, size_t word_size, size_t stack_size, Thread* thread = Thread::current())
+    : MemAllocator(klass, word_size, thread),
+      _stack_size(stack_size) {}
   virtual oop initialize(HeapWord* mem) const;
 };
 

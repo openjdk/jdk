@@ -303,7 +303,7 @@ class MemoryCache<K,V> extends Cache<K,V> {
             }
             CacheEntry<K,V> currentEntry = cacheMap.remove(key);
             // check if the entry in the map corresponds to the expired
-            // entry. If not, readd the entry
+            // entry. If not, re-add the entry
             if ((currentEntry != null) && (entry != currentEntry)) {
                 cacheMap.put(key, currentEntry);
             }

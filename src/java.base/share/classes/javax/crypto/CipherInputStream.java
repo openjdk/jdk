@@ -297,7 +297,7 @@ public class CipherInputStream extends FilterInputStream {
         if (n < 0) {
             return 0;
         }
-        ostart += n;
+        ostart += (int) n;
         return n;
     }
 
@@ -335,7 +335,7 @@ public class CipherInputStream extends FilterInputStream {
         input.close();
 
         // Throw away the unprocessed data and throw no crypto exceptions.
-        // AEAD ciphers are fully readed before closing.  Any authentication
+        // AEAD ciphers are fully read before closing.  Any authentication
         // exceptions would occur while reading.
         if (!done) {
             ensureCapacity(0);

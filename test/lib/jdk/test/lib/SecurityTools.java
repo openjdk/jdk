@@ -23,6 +23,7 @@
 
 package jdk.test.lib;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -225,6 +226,18 @@ public class SecurityTools {
     }
 
     /**
+     * Runs kinit.
+     *
+     * @param args arguments to kinit in a single string. The string is
+     *             converted to be List with makeList.
+     * @return an {@link OutputAnalyzer} object
+     * @throws Exception if there is an error
+     */
+    public static OutputAnalyzer kinit(String args) throws Exception {
+        return execute(getProcessBuilder("kinit", makeList(args)));
+    }
+
+    /**
      * Runs jar.
      *
      * @param args arguments to jar in a single string. The string is
@@ -276,6 +289,64 @@ public class SecurityTools {
             result.add(sb.toString());
         }
         return result;
+    }
+
+    // Create a temporary keychain in macOS and use it. The original
+    // keychains will be restored when the object is closed.
+    public static class TemporaryKeychain implements Closeable {
+        // name of new keychain
+        private final String newChain;
+        // names of the original keychains
+        private final List<String> oldChains;
+
+        public TemporaryKeychain(String name) {
+            Path p = Path.of(name + ".keychain-db");
+            newChain = p.toAbsolutePath().toString();
+            try {
+                oldChains = ProcessTools.executeProcess("security", "list-keychains")
+                        .shouldHaveExitValue(0)
+                        .getStdout()
+                        .lines()
+                        .map(String::trim)
+                        .map(x -> x.startsWith("\"") ? x.substring(1, x.length() - 1) : x)
+                        .collect(Collectors.toList());
+                if (!Files.exists(p)) {
+                    ProcessTools.executeProcess("security", "create-keychain", "-p", "changeit", newChain)
+                            .shouldHaveExitValue(0);
+                }
+                ProcessTools.executeProcess("security", "unlock-keychain", "-p", "changeit", newChain)
+                        .shouldHaveExitValue(0);
+                ProcessTools.executeProcess("security", "list-keychains", "-s", newChain)
+                        .shouldHaveExitValue(0);
+            } catch (Throwable t) {
+                if (t instanceof RuntimeException re) {
+                    throw re;
+                } else {
+                    throw new RuntimeException(t);
+                }
+            }
+        }
+
+        public String chain() {
+            return newChain;
+        }
+
+        @Override
+        public void close() throws IOException {
+            List<String> cmds = new ArrayList<>();
+            cmds.addAll(List.of("security", "list-keychains", "-s"));
+            cmds.addAll(oldChains);
+            try {
+                ProcessTools.executeProcess(cmds.toArray(new String[0]))
+                        .shouldHaveExitValue(0);
+            } catch (Throwable t) {
+                if (t instanceof RuntimeException re) {
+                    throw re;
+                } else {
+                    throw new RuntimeException(t);
+                }
+            }
+        }
     }
 }
 

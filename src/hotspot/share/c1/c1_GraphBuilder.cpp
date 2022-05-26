@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,10 @@
 #include "runtime/vm_version.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include "utilities/macros.hpp"
+#if INCLUDE_JFR
+#include "jfr/jfr.hpp"
+#endif
 
 class BlockListBuilder {
  private:
@@ -224,8 +228,10 @@ void BlockListBuilder::handle_exceptions(BlockBegin* current, int cur_bci) {
 }
 
 void BlockListBuilder::handle_jsr(BlockBegin* current, int sr_bci, int next_bci) {
-  // start a new block after jsr-bytecode and link this block into cfg
-  make_block_at(next_bci, current);
+  if (next_bci < method()->code_size()) {
+    // start a new block after jsr-bytecode and link this block into cfg
+    make_block_at(next_bci, current);
+  }
 
   // start a new block at the subroutine entry at mark it with special flag
   BlockBegin* sr_block = make_block_at(sr_bci, current);
@@ -244,6 +250,8 @@ void BlockListBuilder::set_leaders() {
   // during bytecode iteration. This would require the creation of a new block at the
   // branch target and a modification of the successor lists.
   const BitMap& bci_block_start = method()->bci_block_start();
+
+  int end_bci = method()->code_size();
 
   ciBytecodeStream s(method());
   while (s.next() != ciBytecodeStream::EOBC()) {
@@ -315,7 +323,9 @@ void BlockListBuilder::set_leaders() {
       case Bytecodes::_if_acmpne: // fall through
       case Bytecodes::_ifnull:    // fall through
       case Bytecodes::_ifnonnull:
-        make_block_at(s.next_bci(), current);
+        if (s.next_bci() < end_bci) {
+          make_block_at(s.next_bci(), current);
+        }
         make_block_at(s.get_dest(), current);
         current = NULL;
         break;
@@ -946,7 +956,7 @@ void GraphBuilder::load_constant() {
       case T_ARRAY  : // fall-through
       case T_OBJECT : {
         ciObject* obj = con.as_object();
-        if (!obj->is_loaded() || (PatchALot && (obj->is_null_object() || obj->klass() != ciEnv::current()->String_klass()))) {
+        if (!obj->is_loaded() || (PatchALot && !stream()->is_string_constant())) {
           // A Class, MethodType, MethodHandle, Dynamic, or String.
           patch_state = copy_state_before();
           t = new ObjectConstant(obj);
@@ -967,7 +977,9 @@ void GraphBuilder::load_constant() {
     }
     Value x;
     if (patch_state != NULL) {
-      bool kills_memory = stream()->is_dynamic_constant(); // arbitrary memory effects from running BSM during linkage
+      // Arbitrary memory effects from running BSM or class loading (using custom loader) during linkage.
+      bool kills_memory = stream()->is_dynamic_constant() ||
+                          (!stream()->is_string_constant() && !method()->holder()->has_trusted_loader());
       x = new Constant(t, patch_state, kills_memory);
     } else {
       x = new Constant(t);
@@ -1903,7 +1915,6 @@ Values* GraphBuilder::collect_args_for_profiling(Values* args, ciMethod* target,
   return obj_args;
 }
 
-
 void GraphBuilder::invoke(Bytecodes::Code code) {
   bool will_link;
   ciSignature* declared_signature = NULL;
@@ -1912,6 +1923,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
   const Bytecodes::Code bc_raw = stream()->cur_bc_raw();
   assert(declared_signature != NULL, "cannot be null");
   assert(will_link == target->is_loaded(), "");
+  JFR_ONLY(Jfr::on_resolution(this, holder, target); CHECK_BAILOUT();)
 
   ciInstanceKlass* klass = target->holder();
   assert(!target->is_loaded() || klass->is_loaded(), "loaded target must imply loaded klass");
@@ -2296,6 +2308,7 @@ void GraphBuilder::instance_of(int klass_index) {
 void GraphBuilder::monitorenter(Value x, int bci) {
   // save state before locking in case of deoptimization after a NullPointerException
   ValueStack* state_before = copy_state_for_exception_with_bci(bci);
+  compilation()->set_has_monitors(true);
   append_with_bci(new MonitorEnter(x, state()->lock(x), state_before), bci);
   kill_all();
 }
@@ -2651,7 +2664,7 @@ Value PhiSimplifier::simplify(Value v) {
       }
     }
 
-    // sucessfully simplified phi function
+    // successfully simplified phi function
     assert(subst != NULL, "illegal phi function");
     _has_substitutions = true;
     phi->clear(Phi::visited);
@@ -3126,7 +3139,7 @@ BlockBegin* GraphBuilder::setup_start_block(int osr_bci, BlockBegin* std_entry, 
   // necessary if std_entry is also a backward branch target because
   // then phi functions may be necessary in the header block.  It's
   // also necessary when profiling so that there's a single block that
-  // can increment the the counters.
+  // can increment the counters.
   // In addition, with range check elimination, we may need a valid block
   // that dominates all the rest to insert range predicates.
   BlockBegin* new_header_block;
@@ -3313,7 +3326,7 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
       // Compiles where the root method is an intrinsic need a special
       // compilation environment because the bytecodes for the method
       // shouldn't be parsed during the compilation, only the special
-      // Intrinsic node should be emitted.  If this isn't done the the
+      // Intrinsic node should be emitted.  If this isn't done the
       // code for the inlined version will be different than the root
       // compiled version which could lead to monotonicity problems on
       // intel.
@@ -3831,7 +3844,7 @@ void GraphBuilder::fill_sync_handler(Value lock, BlockBegin* sync_handler, bool 
     }
   }
 
-  // perform the throw as if at the the call site
+  // perform the throw as if at the call site
   apush(exception);
   throw_op(bci);
 
@@ -4218,7 +4231,8 @@ bool GraphBuilder::try_method_handle_inline(ciMethod* callee, bool ignore_return
     break;
 
   case vmIntrinsics::_linkToNative:
-    break; // TODO: NYI
+    print_inlining(callee, "native call", /*success*/ false);
+    break;
 
   default:
     fatal("unexpected intrinsic %d: %s", vmIntrinsics::as_int(iid), vmIntrinsics::name_at(iid));

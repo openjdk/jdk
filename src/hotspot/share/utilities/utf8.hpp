@@ -63,12 +63,12 @@ class UTF8 : AllStatic {
 #endif
 
   // decodes the current utf8 character, stores the result in value,
-  // and returns the end of the current utf8 chararacter.
+  // and returns the end of the current utf8 character.
   template<typename T> static char* next(const char* str, T* value);
 
   // decodes the current utf8 character, gets the supplementary character instead of
   // the surrogate pair when seeing a supplementary character in string,
-  // stores the result in value, and returns the end of the current utf8 chararacter.
+  // stores the result in value, and returns the end of the current utf8 character.
   static char* next_character(const char* str, jint* value);
 
   // Utility methods

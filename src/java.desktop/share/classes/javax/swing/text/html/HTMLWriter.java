@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,15 +24,24 @@
  */
 package javax.swing.text.html;
 
-import javax.swing.text.*;
-import java.io.Writer;
-import java.util.Stack;
-import java.util.Enumeration;
-import java.util.Vector;
 import java.io.IOException;
-import java.util.StringTokenizer;
-import java.util.NoSuchElementException;
-import java.net.URL;
+import java.io.Writer;
+import java.util.Enumeration;
+import java.util.Stack;
+import java.util.Vector;
+
+import javax.swing.text.AbstractWriter;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
+import javax.swing.text.Element;
+import javax.swing.text.ElementIterator;
+import javax.swing.text.MutableAttributeSet;
+import javax.swing.text.Segment;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.Style;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyleContext;
 
 /**
  * This is a writer for HTMLDocuments.
@@ -840,7 +849,7 @@ public class HTMLWriter extends AbstractWriter {
     }
 
     /**
-     * Determines whether a the indentation needs to be
+     * Determines whether the indentation needs to be
      * incremented.  Basically, if next is a child of current, and
      * next is NOT a synthesized element, the indent level will be
      * incremented.  If there is a parent-child relationship and "next"

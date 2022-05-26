@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,14 +53,6 @@ bool JfrBuffer::initialize(size_t header_size, size_t size) {
 
 void JfrBuffer::reinitialize(bool exclusion /* false */) {
   acquire_critical_section_top();
-  if (exclusion != excluded()) {
-    // update
-    if (exclusion) {
-      set_excluded();
-    } else {
-      clear_excluded();
-    }
-  }
   set_pos(start());
   release_critical_section_top(start());
   clear_retired();
@@ -240,24 +232,6 @@ void JfrBuffer::clear_lease() {
     clear(&_flags, LEASE);
   }
   assert(!lease(), "invariant");
-}
-
-bool JfrBuffer::excluded() const {
-  return test(&_flags, EXCLUDED);
-}
-
-void JfrBuffer::set_excluded() {
-  assert(acquired_by_self(), "invariant");
-  set(&_flags, EXCLUDED);
-  assert(excluded(), "invariant");
-}
-
-void JfrBuffer::clear_excluded() {
-  if (excluded()) {
-    assert(identity() != NULL, "invariant");
-    clear(&_flags, EXCLUDED);
-  }
-  assert(!excluded(), "invariant");
 }
 
 bool JfrBuffer::retired() const {

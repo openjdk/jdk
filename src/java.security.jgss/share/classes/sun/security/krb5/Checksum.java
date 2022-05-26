@@ -187,7 +187,7 @@ public class Checksum {
      * specification available at
      * <a href="http://www.ietf.org/rfc/rfc4120.txt">
      * http://www.ietf.org/rfc/rfc4120.txt</a>.
-     * @return byte array of enocded Checksum.
+     * @return byte array of encoded Checksum.
      * @exception Asn1Exception if an error occurs while decoding an
      * ASN1 encoded data.
      * @exception IOException if an I/O error occurs while reading

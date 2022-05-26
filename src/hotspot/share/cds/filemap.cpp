@@ -251,8 +251,10 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
       _heap_begin = CompressedOops::begin();
       _heap_end = CompressedOops::end();
     } else {
-      _heap_begin = (address)G1CollectedHeap::heap()->reserved().start();
-      _heap_end = (address)G1CollectedHeap::heap()->reserved().end();
+      address start = (address)G1CollectedHeap::heap()->reserved().start();
+      address end = (address)G1CollectedHeap::heap()->reserved().end();
+      _heap_begin = HeapShared::to_requested_address(start);
+      _heap_end = HeapShared::to_requested_address(end);
     }
   }
   _compressed_oops = UseCompressedOops;
@@ -1759,7 +1761,7 @@ MapArchiveResult FileMapInfo::map_regions(int regions[], int num_regions, char* 
     FileMapRegion* si = space_at(idx);
     DEBUG_ONLY(if (last_region != NULL) {
         // Ensure that the OS won't be able to allocate new memory spaces between any mapped
-        // regions, or else it would mess up the simple comparision in MetaspaceObj::is_shared().
+        // regions, or else it would mess up the simple comparison in MetaspaceObj::is_shared().
         assert(si->mapped_base() == last_region->mapped_end(), "must have no gaps");
       }
       last_region = si;)
@@ -1904,12 +1906,12 @@ bool FileMapInfo::relocate_pointers_in_core_regions(intx addr_delta) {
 
     BitMapView ptrmap((BitMap::bm_word_t*)bitmap_base, ptrmap_size_in_bits);
 
-    // Patch all pointers in the the mapped region that are marked by ptrmap.
+    // Patch all pointers in the mapped region that are marked by ptrmap.
     address patch_base = (address)mapped_base();
     address patch_end  = (address)mapped_end();
 
     // the current value of the pointers to be patched must be within this
-    // range (i.e., must be between the requesed base address, and the of the current archive).
+    // range (i.e., must be between the requested base address and the address of the current archive).
     // Note: top archive may point to objects in the base archive, but not the other way around.
     address valid_old_base = (address)header()->requested_base_address();
     address valid_old_end  = valid_old_base + mapping_end_offset();

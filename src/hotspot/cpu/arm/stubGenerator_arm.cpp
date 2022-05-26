@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,7 +138,7 @@ static arraycopy_platform_config arraycopy_configurations[] = {
     // - prefetch after gives 40% gain on backward copies on tegra2-4,
     //   resulting in better number than the operating system
     //   copy. However, this can lead to a 300% loss on nv-tegra and has
-    //   more impact on the cache (fetches futher than what is
+    //   more impact on the cache (fetches further than what is
     //   copied). Use this configuration with care, in case it improves
     //   reference benchmarks.
     {-256, true,  true  }, // forward aligned
@@ -1773,7 +1773,7 @@ class StubGenerator: public StubCodeGenerator {
     }
   }
 
-  // Aligns 'to' by reading one word from 'from' and writting its part to 'to'.
+  // Aligns 'to' by reading one word from 'from' and writing its part to 'to'.
   //
   // Arguments:
   //     to:                beginning (if forward) or upper bound (if !forward) of the region to be written
@@ -1788,7 +1788,7 @@ class StubGenerator: public StubCodeGenerator {
   //     'count' must not be less then the returned value
   //     'to' must be aligned by bytes_per_count but must not be aligned by wordSize
   //     shifts 'to' by the number of written bytes (so that it becomes the bound of memory to be written)
-  //     decreases 'count' by the the number of elements written
+  //     decreases 'count' by the number of elements written
   //     Rval's MSBs or LSBs remain to be written further by generate_{forward,backward}_shifted_copy_loop
   int align_dst(Register to, Register count, Register Rval, Register tmp,
                                         int to_remainder, int bytes_per_count, bool forward) {
@@ -3039,9 +3039,9 @@ class StubGenerator: public StubCodeGenerator {
 }; // end class declaration
 
 #define UCM_TABLE_MAX_ENTRIES 32
-void StubGenerator_generate(CodeBuffer* code, bool all) {
+void StubGenerator_generate(CodeBuffer* code, int phase) {
   if (UnsafeCopyMemory::_table == NULL) {
     UnsafeCopyMemory::create_table(UCM_TABLE_MAX_ENTRIES);
   }
-  StubGenerator g(code, all);
+  StubGenerator g(code, phase);
 }
