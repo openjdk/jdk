@@ -103,6 +103,12 @@ public abstract non-sealed class MemorySessionImpl implements Scoped, MemorySess
 
     void addInternal(ResourceList.ResourceCleanup resource) {
         checkValidStateSlow();
+        // Note: from here on we no longer check the session state. Two cases are possible: either the resource cleanup
+        // is added to the list when the session is still open, in which case everything works ok; or the resource
+        // cleanup is added while the session is being closed. In this latter case, what matters is whether we have already
+        // called `ResourceList::cleanup` to run all the cleanup actions. If not, we can still add this resource
+        // to the list (and, in case of an add vs. close race, it might happen that the cleanup action will be
+        // called immediately after).
         resourceList.add(resource);
     }
 
