@@ -145,7 +145,7 @@ public class LinkedHashSet<E>
      *
      * @apiNote
      * To create a {@code LinkedHashSet} with an initial capacity that accommodates
-     * an expected number of items, use {@link #newLinkedHashSet(int) newLinkedHashSet}.
+     * an expected number of elements, use {@link #newLinkedHashSet(int) newLinkedHashSet}.
      *
      * @param   initialCapacity   the initial capacity of the LinkedHashSet
      * @throws  IllegalArgumentException if the initial capacity is less
