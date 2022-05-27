@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ class StreamWriterHost : public MemoryWriterHost<Adapter, AP> {
   int64_t current_offset() const;
   void seek(int64_t offset);
   void flush();
+  void write_buffered(const void* src, intptr_t len);
   void write_unbuffered(const void* src, intptr_t len);
   bool is_valid() const;
   void close_fd();

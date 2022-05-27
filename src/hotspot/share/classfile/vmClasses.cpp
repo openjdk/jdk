@@ -35,6 +35,7 @@
 #include "memory/universe.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceRefKlass.hpp"
+#include "oops/instanceStackChunkKlass.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/globals.hpp"
 
@@ -215,6 +216,8 @@ void vmClasses::resolve_all(TRAPS) {
     }
   }
 #endif
+
+  InstanceStackChunkKlass::init_offset_of_stack();
 }
 
 #if INCLUDE_CDS

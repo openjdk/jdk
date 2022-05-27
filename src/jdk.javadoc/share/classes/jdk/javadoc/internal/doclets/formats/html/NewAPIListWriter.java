@@ -138,7 +138,7 @@ public class NewAPIListWriter extends SummaryListWriter<NewAPIBuilder> {
             CommentHelper ch = utils.getCommentHelper(element);
             return Text.of(ch.getBody(sinceTree.get(0)).toString());
         }
-        return HtmlTree.EMPTY;
+        return Text.EMPTY;
     }
 
     @Override

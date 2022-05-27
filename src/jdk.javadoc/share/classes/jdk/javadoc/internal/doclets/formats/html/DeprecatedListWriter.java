@@ -114,7 +114,7 @@ public class DeprecatedListWriter extends SummaryListWriter<DeprecatedAPIListBui
         if (!tags.isEmpty()) {
             addInlineDeprecatedComment(e, tags.get(0), desc);
         } else {
-            desc.add(HtmlTree.EMPTY);
+            desc.add(Text.EMPTY);
         }
     }
 
@@ -144,7 +144,7 @@ public class DeprecatedListWriter extends SummaryListWriter<DeprecatedAPIListBui
         }
         String deprecatedSince = utils.getDeprecatedSince(element);
         return deprecatedSince == null || deprecatedSince.isEmpty()
-                ? HtmlTree.EMPTY : Text.of(deprecatedSince);
+                ? Text.EMPTY : Text.of(deprecatedSince);
     }
 
     @Override

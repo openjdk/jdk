@@ -37,12 +37,10 @@ import jdk.jfr.internal.Type;
 @StackTrace(false)
 public final class ActiveSettingEvent extends AbstractJDKEvent {
 
-    public static final ThreadLocal<ActiveSettingEvent> EVENT = new ThreadLocal<ActiveSettingEvent>() {
-        @Override
-        protected ActiveSettingEvent initialValue() {
-            return new ActiveSettingEvent();
-        }
-    };
+    public static final ActiveSettingEvent EVENT = new ActiveSettingEvent();
+
+    // The order of these fields must be the same as the parameters in
+    // commit(... , long, String, String)
 
     @Label("Event Id")
     public long id;
@@ -52,4 +50,8 @@ public final class ActiveSettingEvent extends AbstractJDKEvent {
 
     @Label("Setting Value")
     public String value;
+
+    public static void commit(long startTime, long duration, long id, String name, String value) {
+        // Generated
+    }
 }

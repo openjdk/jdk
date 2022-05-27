@@ -40,6 +40,7 @@
 #include "oops/compressedOops.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/continuation.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.hpp"
@@ -503,16 +504,12 @@ void MacroAssembler::call_VM_leaf_base(address entry_point, int num_args) {
   jcc(Assembler::zero, L);
 
   subq(rsp, 8);
-  {
-    call(RuntimeAddress(entry_point));
-  }
+  call(RuntimeAddress(entry_point));
   addq(rsp, 8);
   jmp(E);
 
   bind(L);
-  {
-    call(RuntimeAddress(entry_point));
-  }
+  call(RuntimeAddress(entry_point));
 
   bind(E);
 
@@ -912,7 +909,7 @@ static int reg2offset_out(VMReg r) {
 }
 
 // A long move
-void MacroAssembler::long_move(VMRegPair src, VMRegPair dst) {
+void MacroAssembler::long_move(VMRegPair src, VMRegPair dst, Register tmp, int in_stk_bias, int out_stk_bias) {
 
   // The calling conventions assures us that each VMregpair is either
   // all really one physical register or adjacent stack slots.
@@ -923,21 +920,22 @@ void MacroAssembler::long_move(VMRegPair src, VMRegPair dst) {
         mov(dst.first()->as_Register(), src.first()->as_Register());
       }
     } else {
-      assert(dst.is_single_reg(), "not a stack pair");
-      movq(Address(rsp, reg2offset_out(dst.first())), src.first()->as_Register());
+      assert(dst.is_single_reg(), "not a stack pair: (%s, %s), (%s, %s)",
+             src.first()->name(), src.second()->name(), dst.first()->name(), dst.second()->name());
+      movq(Address(rsp, reg2offset_out(dst.first()) + out_stk_bias), src.first()->as_Register());
     }
   } else if (dst.is_single_phys_reg()) {
     assert(src.is_single_reg(),  "not a stack pair");
-    movq(dst.first()->as_Register(), Address(rbp, reg2offset_out(src.first())));
+    movq(dst.first()->as_Register(), Address(rbp, reg2offset_in(src.first()) + in_stk_bias));
   } else {
     assert(src.is_single_reg() && dst.is_single_reg(), "not stack pairs");
-    movq(rax, Address(rbp, reg2offset_in(src.first())));
-    movq(Address(rsp, reg2offset_out(dst.first())), rax);
+    movq(tmp, Address(rbp, reg2offset_in(src.first()) + in_stk_bias));
+    movq(Address(rsp, reg2offset_out(dst.first()) + out_stk_bias), tmp);
   }
 }
 
 // A double move
-void MacroAssembler::double_move(VMRegPair src, VMRegPair dst) {
+void MacroAssembler::double_move(VMRegPair src, VMRegPair dst, Register tmp, int in_stk_bias, int out_stk_bias) {
 
   // The calling conventions assures us that each VMregpair is either
   // all really one physical register or adjacent stack slots.
@@ -950,21 +948,21 @@ void MacroAssembler::double_move(VMRegPair src, VMRegPair dst) {
       }
     } else {
       assert(dst.is_single_reg(), "not a stack pair");
-      movdbl(Address(rsp, reg2offset_out(dst.first())), src.first()->as_XMMRegister());
+      movdbl(Address(rsp, reg2offset_out(dst.first()) + out_stk_bias), src.first()->as_XMMRegister());
     }
   } else if (dst.is_single_phys_reg()) {
     assert(src.is_single_reg(),  "not a stack pair");
-    movdbl(dst.first()->as_XMMRegister(), Address(rbp, reg2offset_out(src.first())));
+    movdbl(dst.first()->as_XMMRegister(), Address(rbp, reg2offset_in(src.first()) + in_stk_bias));
   } else {
     assert(src.is_single_reg() && dst.is_single_reg(), "not stack pairs");
-    movq(rax, Address(rbp, reg2offset_in(src.first())));
-    movq(Address(rsp, reg2offset_out(dst.first())), rax);
+    movq(tmp, Address(rbp, reg2offset_in(src.first()) + in_stk_bias));
+    movq(Address(rsp, reg2offset_out(dst.first()) + out_stk_bias), tmp);
   }
 }
 
 
 // A float arg may have to do float reg int reg conversion
-void MacroAssembler::float_move(VMRegPair src, VMRegPair dst) {
+void MacroAssembler::float_move(VMRegPair src, VMRegPair dst, Register tmp, int in_stk_bias, int out_stk_bias) {
   assert(!src.second()->is_valid() && !dst.second()->is_valid(), "bad float_move");
 
   // The calling conventions assures us that each VMregpair is either
@@ -972,17 +970,17 @@ void MacroAssembler::float_move(VMRegPair src, VMRegPair dst) {
 
   if (src.first()->is_stack()) {
     if (dst.first()->is_stack()) {
-      movl(rax, Address(rbp, reg2offset_in(src.first())));
-      movptr(Address(rsp, reg2offset_out(dst.first())), rax);
+      movl(tmp, Address(rbp, reg2offset_in(src.first()) + in_stk_bias));
+      movptr(Address(rsp, reg2offset_out(dst.first()) + out_stk_bias), tmp);
     } else {
       // stack to reg
       assert(dst.first()->is_XMMRegister(), "only expect xmm registers as parameters");
-      movflt(dst.first()->as_XMMRegister(), Address(rbp, reg2offset_in(src.first())));
+      movflt(dst.first()->as_XMMRegister(), Address(rbp, reg2offset_in(src.first()) + in_stk_bias));
     }
   } else if (dst.first()->is_stack()) {
     // reg to stack
     assert(src.first()->is_XMMRegister(), "only expect xmm registers as parameters");
-    movflt(Address(rsp, reg2offset_out(dst.first())), src.first()->as_XMMRegister());
+    movflt(Address(rsp, reg2offset_out(dst.first()) + out_stk_bias), src.first()->as_XMMRegister());
   } else {
     // reg to reg
     // In theory these overlap but the ordering is such that this is likely a nop
@@ -996,21 +994,21 @@ void MacroAssembler::float_move(VMRegPair src, VMRegPair dst) {
 // 64 bits items (x86_32/64 abi) even though java would only store
 // 32bits for a parameter. On 32bit it will simply be 32 bits
 // So this routine will do 32->32 on 32bit and 32->64 on 64bit
-void MacroAssembler::move32_64(VMRegPair src, VMRegPair dst) {
+void MacroAssembler::move32_64(VMRegPair src, VMRegPair dst, Register tmp, int in_stk_bias, int out_stk_bias) {
   if (src.first()->is_stack()) {
     if (dst.first()->is_stack()) {
       // stack to stack
-      movslq(rax, Address(rbp, reg2offset_in(src.first())));
-      movq(Address(rsp, reg2offset_out(dst.first())), rax);
+      movslq(tmp, Address(rbp, reg2offset_in(src.first()) + in_stk_bias));
+      movq(Address(rsp, reg2offset_out(dst.first()) + out_stk_bias), tmp);
     } else {
       // stack to reg
-      movslq(dst.first()->as_Register(), Address(rbp, reg2offset_in(src.first())));
+      movslq(dst.first()->as_Register(), Address(rbp, reg2offset_in(src.first()) + in_stk_bias));
     }
   } else if (dst.first()->is_stack()) {
     // reg to stack
     // Do we really have to sign extend???
     // __ movslq(src.first()->as_Register(), src.first()->as_Register());
-    movq(Address(rsp, reg2offset_out(dst.first())), src.first()->as_Register());
+    movq(Address(rsp, reg2offset_out(dst.first()) + out_stk_bias), src.first()->as_Register());
   } else {
     // Do we really have to sign extend???
     // __ movslq(dst.first()->as_Register(), src.first()->as_Register());
@@ -1070,7 +1068,7 @@ void MacroAssembler::object_move(OopMap* map,
     cmovptr(Assembler::equal, rHandle, Address(rbp, reg2offset_in(src.first())));
   } else {
 
-    // Oop is in an a register we must store it to the space we reserve
+    // Oop is in a register we must store it to the space we reserve
     // on the stack for oop_handles and pass a handle if oop is non-NULL
 
     const Register rOop = src.first()->as_Register();
@@ -1176,6 +1174,26 @@ void MacroAssembler::align(int modulus, int target) {
   if (target % modulus != 0) {
     nop(modulus - (target % modulus));
   }
+}
+
+void MacroAssembler::push_f(XMMRegister r) {
+  subptr(rsp, wordSize);
+  movflt(Address(rsp, 0), r);
+}
+
+void MacroAssembler::pop_f(XMMRegister r) {
+  movflt(r, Address(rsp, 0));
+  addptr(rsp, wordSize);
+}
+
+void MacroAssembler::push_d(XMMRegister r) {
+  subptr(rsp, 2 * wordSize);
+  movdbl(Address(rsp, 0), r);
+}
+
+void MacroAssembler::pop_d(XMMRegister r) {
+  movdbl(r, Address(rsp, 0));
+  addptr(rsp, 2 * Interpreter::stackElementSize);
 }
 
 void MacroAssembler::andpd(XMMRegister dst, AddressLiteral src, Register scratch_reg) {
@@ -1635,6 +1653,20 @@ void MacroAssembler::call_VM_leaf(address entry_point, Register arg_0, Register 
   call_VM_leaf(entry_point, 3);
 }
 
+void MacroAssembler::call_VM_leaf(address entry_point, Register arg_0, Register arg_1, Register arg_2, Register arg_3) {
+  LP64_ONLY(assert(arg_0 != c_rarg3, "smashed arg"));
+  LP64_ONLY(assert(arg_1 != c_rarg3, "smashed arg"));
+  LP64_ONLY(assert(arg_2 != c_rarg3, "smashed arg"));
+  pass_arg3(this, arg_3);
+  LP64_ONLY(assert(arg_0 != c_rarg2, "smashed arg"));
+  LP64_ONLY(assert(arg_1 != c_rarg2, "smashed arg"));
+  pass_arg2(this, arg_2);
+  LP64_ONLY(assert(arg_0 != c_rarg1, "smashed arg"));
+  pass_arg1(this, arg_1);
+  pass_arg0(this, arg_0);
+  call_VM_leaf(entry_point, 3);
+}
+
 void MacroAssembler::super_call_VM_leaf(address entry_point, Register arg_0) {
   pass_arg0(this, arg_0);
   MacroAssembler::call_VM_leaf_base(entry_point, 1);
@@ -1915,7 +1947,7 @@ void MacroAssembler::decrementl(Address dst, int value) {
 }
 
 void MacroAssembler::division_with_shift (Register reg, int shift_value) {
-  assert (shift_value > 0, "illegal shift value");
+  assert(shift_value > 0, "illegal shift value");
   Label _is_positive;
   testl (reg, reg);
   jcc (Assembler::positive, _is_positive);
@@ -1954,16 +1986,29 @@ void MacroAssembler::enter() {
   mov(rbp, rsp);
 }
 
+void MacroAssembler::post_call_nop() {
+  if (!Continuations::enabled()) {
+    return;
+  }
+  InstructionMark im(this);
+  relocate(post_call_nop_Relocation::spec());
+  emit_int8((int8_t)0x0f);
+  emit_int8((int8_t)0x1f);
+  emit_int8((int8_t)0x84);
+  emit_int8((int8_t)0x00);
+  emit_int32(0x00);
+}
+
 // A 5 byte nop that is safe for patching (see patch_verified_entry)
 void MacroAssembler::fat_nop() {
   if (UseAddressNop) {
     addr_nop_5();
   } else {
-    emit_int8(0x26); // es:
-    emit_int8(0x2e); // cs:
-    emit_int8(0x64); // fs:
-    emit_int8(0x65); // gs:
-    emit_int8((unsigned char)0x90);
+    emit_int8((int8_t)0x26); // es:
+    emit_int8((int8_t)0x2e); // cs:
+    emit_int8((int8_t)0x64); // fs:
+    emit_int8((int8_t)0x65); // gs:
+    emit_int8((int8_t)0x90);
   }
 }
 
@@ -2786,6 +2831,53 @@ void MacroAssembler::push_IU_state() {
   LP64_ONLY(subq(rsp, 8));
   pusha();
 }
+
+void MacroAssembler::push_cont_fastpath(Register java_thread) {
+  if (!Continuations::enabled()) return;
+  Label done;
+  cmpptr(rsp, Address(java_thread, JavaThread::cont_fastpath_offset()));
+  jccb(Assembler::belowEqual, done);
+  movptr(Address(java_thread, JavaThread::cont_fastpath_offset()), rsp);
+  bind(done);
+}
+
+void MacroAssembler::pop_cont_fastpath(Register java_thread) {
+  if (!Continuations::enabled()) return;
+  Label done;
+  cmpptr(rsp, Address(java_thread, JavaThread::cont_fastpath_offset()));
+  jccb(Assembler::below, done);
+  movptr(Address(java_thread, JavaThread::cont_fastpath_offset()), 0);
+  bind(done);
+}
+
+void MacroAssembler::inc_held_monitor_count(Register java_thread) {
+  if (!Continuations::enabled()) return;
+  incrementl(Address(java_thread, JavaThread::held_monitor_count_offset()));
+}
+
+void MacroAssembler::dec_held_monitor_count(Register java_thread) {
+  if (!Continuations::enabled()) return;
+  decrementl(Address(java_thread, JavaThread::held_monitor_count_offset()));
+}
+
+void MacroAssembler::reset_held_monitor_count(Register java_thread) {
+  movl(Address(java_thread, JavaThread::held_monitor_count_offset()), (int32_t)0);
+}
+
+#ifdef ASSERT
+void MacroAssembler::stop_if_in_cont(Register cont, const char* name) {
+#ifdef _LP64
+  Label no_cont;
+  movptr(cont, Address(r15_thread, JavaThread::cont_entry_offset()));
+  testl(cont, cont);
+  jcc(Assembler::zero, no_cont);
+  stop(name);
+  bind(no_cont);
+#else
+  Unimplemented();
+#endif
+}
+#endif
 
 void MacroAssembler::reset_last_Java_frame(Register java_thread, bool clear_fp) { // determine java_thread register
   if (!java_thread->is_valid()) {

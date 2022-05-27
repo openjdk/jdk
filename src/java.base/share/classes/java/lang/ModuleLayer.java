@@ -742,7 +742,7 @@ public final class ModuleLayer {
     }
 
     /**
-     * Creates a LayerInstantiationException with the a message formatted from
+     * Creates a LayerInstantiationException with the message formatted from
      * the given format string and arguments.
      */
     private static LayerInstantiationException fail(String fmt, Object ... args) {
