@@ -32,7 +32,7 @@ package java.lang;
  * thread has been interrupted, and if so, to immediately throw
  * this exception.  The following code can be used to achieve
  * this effect:
- * {@snippet:
+ * {@snippet lang=java :
  * if (Thread.interrupted())  // Clears interrupted status!
  *     throw new InterruptedException();
  * }
