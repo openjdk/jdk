@@ -61,6 +61,7 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/continuationEntry.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
@@ -1323,6 +1324,7 @@ void Method::set_code(const methodHandle& mh, CompiledMethod *code) {
   if (mh->is_continuation_enter_intrinsic()) {
     // this is the entry used when we're in interpreter-only mode; see InterpreterMacroAssembler::jump_from_interpreted
     mh->_i2i_entry = mh->get_i2c_entry();
+    ContinuationEntry::set_enter_nmethod(code);
     mh->_from_interpreted_entry = mh->get_i2c_entry();
   }
 }

@@ -33,13 +33,11 @@
 #include "runtime/thread.inline.hpp"
 
 int ContinuationEntry::return_pc_offset = 0;
-nmethod* ContinuationEntry::continuation_enter = nullptr;
 address ContinuationEntry::return_pc = nullptr;
 
-void ContinuationEntry::set_enter_nmethod(nmethod* nm) {
+void ContinuationEntry::set_enter_nmethod(CompiledMethod* cm) {
   assert(return_pc_offset != 0, "");
-  continuation_enter = nm;
-  return_pc = nm->code_begin() + return_pc_offset;
+  return_pc = cm->code_begin() + return_pc_offset;
 }
 
 ContinuationEntry* ContinuationEntry::from_frame(const frame& f) {
