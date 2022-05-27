@@ -5263,11 +5263,7 @@ assertEquals("yz", (String) d0.invokeExact(123, "x", "y", "z"));
      *                  or if the new method handle's type would have too many parameters
      */
     public static MethodHandle dropArguments(MethodHandle target, int pos, List<Class<?>> valueTypes) {
-        return dropArguments(target, pos, valueTypes.toArray(new Class<?>[0]), true);
-    }
-
-    private static List<Class<?>> copyTypes(Object[] array) {
-        return Arrays.asList(Arrays.copyOf(array, array.length, Class[].class));
+        return dropArguments(target, pos, valueTypes.toArray(new Class<?>[0]).clone(), true);
     }
 
     static MethodHandle dropArguments(MethodHandle target, int pos, Class<?>[] valueTypes, boolean trusted) {
@@ -5359,9 +5355,8 @@ assertEquals("xz", (String) d12.invokeExact("x", 12, true, "z"));
     }
 
     // private version which allows caller some freedom with error handling
-    private static MethodHandle dropArgumentsToMatch(MethodHandle target, int skip, List<Class<?>> newTypes, int pos,
+    private static MethodHandle dropArgumentsToMatch(MethodHandle target, int skip, Class<?>[] newTypes, int pos,
                                       boolean nullOnFailure) {
-        newTypes = copyTypes(newTypes.toArray());
         Class<?>[] oldTypes = target.type().ptypes();
         int match = oldTypes.length;
         if (skip != 0) {
@@ -5371,12 +5366,11 @@ assertEquals("xz", (String) d12.invokeExact("x", 12, true, "z"));
             oldTypes = Arrays.copyOfRange(oldTypes, skip, match);
             match -= skip;
         }
-        Class<?>[] newTypesArray = newTypes.toArray(new Class<?>[0]);
-        Class<?>[] addTypes = newTypesArray;
+        Class<?>[] addTypes = newTypes;
         int add = addTypes.length;
         if (pos != 0) {
             if (pos < 0 || pos > add) {
-                throw newIllegalArgumentException("illegal pos", pos, newTypes);
+                throw newIllegalArgumentException("illegal pos", pos, Arrays.toString(newTypes));
             }
             addTypes = Arrays.copyOfRange(addTypes, pos, add);
             add -= pos;
@@ -5387,7 +5381,8 @@ assertEquals("xz", (String) d12.invokeExact("x", 12, true, "z"));
             if (nullOnFailure) {
                 return null;
             }
-            throw newIllegalArgumentException("argument lists do not match", oldTypes, newTypes);
+            throw newIllegalArgumentException("argument lists do not match",
+                Arrays.toString(oldTypes), Arrays.toString(newTypes));
         }
         addTypes = Arrays.copyOfRange(addTypes, match, add);
         add -= match;
@@ -5400,7 +5395,7 @@ assertEquals("xz", (String) d12.invokeExact("x", 12, true, "z"));
         }
         // adapter: (S*[skip],        M*[match], A*[add] )
         if (pos > 0) {
-            adapter = dropArguments(adapter, skip, Arrays.copyOfRange(newTypesArray, 0, pos), true);
+            adapter = dropArguments(adapter, skip, Arrays.copyOfRange(newTypes, 0, pos), true);
         }
         // adapter: (S*[skip], P*[pos], M*[match], A*[add] )
         return adapter;
@@ -5464,7 +5459,7 @@ assertEquals("xy", h3.invoke("x", "y", 1, "a", "b", "c"));
     public static MethodHandle dropArgumentsToMatch(MethodHandle target, int skip, List<Class<?>> newTypes, int pos) {
         Objects.requireNonNull(target);
         Objects.requireNonNull(newTypes);
-        return dropArgumentsToMatch(target, skip, newTypes, pos, false);
+        return dropArgumentsToMatch(target, skip, newTypes.toArray(new Class<?>[0]).clone(), pos, false);
     }
 
     /**
@@ -6252,8 +6247,8 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
             throw misMatchedTypes("target and fallback types", ttype, ftype);
         if (gtype.returnType() != boolean.class)
             throw newIllegalArgumentException("guard type is not a predicate "+gtype);
-        List<Class<?>> targs = ttype.parameterList();
-        test = dropArgumentsToMatch(test, 0, targs, 0, true);
+
+        test = dropArgumentsToMatch(test, 0, ttype.ptypes(), 0, true);
         if (test == null) {
             throw misMatchedTypes("target and test types", ttype, gtype);
         }
@@ -6326,7 +6321,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
             throw newIllegalArgumentException("handler does not accept exception type "+exType);
         if (htype.returnType() != ttype.returnType())
             throw misMatchedTypes("target and handler return types", ttype, htype);
-        handler = dropArgumentsToMatch(handler, 1, ttype.parameterList(), 0, true);
+        handler = dropArgumentsToMatch(handler, 1, ttype.ptypes(), 0, true);
         if (handler == null) {
             throw misMatchedTypes("target and handler types", ttype, htype);
         }
