@@ -757,21 +757,32 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
 
       const TypeOopPtr *field_addr_type = res_type->add_offset(offset)->isa_oopptr();
       Node *memory = ram->memory_for(offset, res);
-      //if (Verbose) tty->print_cr("Searching for value for field @ %ld starting in memory %d", offset, memory->_idx);
-      Node *field_val = value_from_mem(memory, NULL, basic_elem_type, field_type, field_addr_type, alloc);
 
-      // If we can't actually find the value for this field we won't be able to remove the
+      // If we can't actually find the memory to be used for this base we won't be able to remove the
       // RAM node and in that situation the only way out is to recompile the method with
       // ReduceAllocations disabled.
+      //
+      // Same is true if we don't find a value that was computed for the field or if we aren't
+      // able to register the value for the field in the RAM
+      if (memory == NULL) {
+        assert(false, "Didn't find a matching base for this field!!!");
+        C->record_failure(C2Compiler::retry_no_reduce_allocation_merges());
+        return false;
+      }
+
+      Node *field_val = value_from_mem(memory, NULL, basic_elem_type, field_type, field_addr_type, alloc);
+
       if (field_val == NULL) {
         assert(false, "Didn't find value for field!!!");
         C->record_failure(C2Compiler::retry_no_reduce_allocation_merges());
         return false;
       }
 
-      ram->register_value_for_field(offset, res, field_val);
-
-      //if (Verbose) tty->print_cr("\tNode %d registering value (%d) in RAM %d about field at offset %ld.", res->_idx, field_val->_idx, ram->_idx, offset);
+      if (!ram->register_value_for_field(offset, res, field_val)) {
+        assert(false, "Didn't find a matching base for this field!!!");
+        C->record_failure(C2Compiler::retry_no_reduce_allocation_merges());
+        return false;
+      }
     }
 
     _igvn.hash_insert(ram);
@@ -1237,8 +1248,6 @@ void dump_ir(Compile* _compile, const char* title) {
 
 
 bool PhaseMacroExpand::eliminate_reduced_allocation_merge(ReducedAllocationMergeNode *ram) {
-  tty->print_cr("Going to remove %d RAM", ram->_idx);
-
   for (DUIterator_Fast imax, i = ram->fast_outs(imax); i < imax; i++) {
     Node* use = ram->fast_out(i);
 
@@ -1273,13 +1282,12 @@ bool PhaseMacroExpand::eliminate_reduced_allocation_merge(ReducedAllocationMerge
         }
         else {
           assert(false, "Unexpected use of AddP.");
+          return false;
         }
       }
     }
     else if (use->Opcode() == Op_SafePoint || use->is_CallStaticJava()) {
       Node* sfpt = use;
-      Node* mem = sfpt->in(TypeFunc::Memory);
-      Node* ctl = sfpt->in(TypeFunc::Control);
       assert(sfpt->jvms() != NULL, "missed JVMS");
 
       // Fields of scalar objs are referenced only at the end
@@ -1297,14 +1305,12 @@ bool PhaseMacroExpand::eliminate_reduced_allocation_merge(ReducedAllocationMerge
 
       // Scan object's fields adding an input to the safepoint for each field.
       for (int j = 0; j < nfields; j++) {
-        intptr_t offset;
-        ciField* field = NULL;
-        field = iklass->nonstatic_field_at(j);
-        offset = field->offset();
+        ciField* field = iklass->nonstatic_field_at(j);
+        intptr_t offset = field->offset();
         ciType* elem_type = field->type();
         BasicType basic_elem_type = field->layout_type();
-
         const Type *field_type;
+
         // The next code is taken from Parse::do_get_xxx().
         if (is_reference_type(basic_elem_type)) {
           if (!elem_type->is_loaded()) {
@@ -1327,24 +1333,15 @@ bool PhaseMacroExpand::eliminate_reduced_allocation_merge(ReducedAllocationMerge
           field_type = Type::get_const_basic_type(basic_elem_type);
         }
 
-        const TypeOopPtr *field_addr_type = res_type->add_offset(offset)->isa_oopptr();
-
         Node* field_val = ram->value_phi_for_field(offset, &_igvn);
-        _igvn._worklist.push(field_val);
 
         if (field_val == NULL) {
-  #ifndef PRODUCT
-          if (PrintEliminateAllocations) {
-            tty->print("=== At SafePoint node %d can't find value of Field: ", sfpt->_idx);
-            field->print();
-            int field_idx = C->get_alias_index(field_addr_type);
-            tty->print(" (alias_idx=%d)", field_idx);
-            tty->print(", which prevents elimination of: ");
-            ram->dump();
-          }
-  #endif
+          assert(false, "At RAM node %d can't find value of Field: ", sfpt->_idx);
           return false;
         }
+
+        _igvn._worklist.push(field_val);
+
         if (UseCompressedOops && field_type->isa_narrowoop()) {
           // Enable "DecodeN(EncodeP(Allocate)) --> Allocate" transformation
           // to be able scalar replace the allocation.
@@ -1356,6 +1353,7 @@ bool PhaseMacroExpand::eliminate_reduced_allocation_merge(ReducedAllocationMerge
         }
         sfpt->add_req(field_val);
       }
+
       JVMState *jvms = sfpt->jvms();
       jvms->set_endoff(sfpt->req());
       // Now make a pass over the debug information replacing any references
@@ -1369,9 +1367,10 @@ bool PhaseMacroExpand::eliminate_reduced_allocation_merge(ReducedAllocationMerge
     }
     else {
       assert(false, "Unknown use of RAM. %d:%s", use->_idx, use->Name());
+      return false;
     }
 
-    NOT_PRODUCT(dump_ir(C, "After eliminating one use.");)
+    NOT_PRODUCT(dump_ir(C, "After eliminating one RAM use.");)
   }
 
   return true;
@@ -2693,8 +2692,11 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
     Node* n = C->macro_node(i - 1);
     if (n->is_ReducedAllocationMerge()) {
       bool success = eliminate_reduced_allocation_merge(n->as_ReducedAllocationMerge());
-      assert(success, "Needs to be eliminated.");
-      if (C->failing()) return ;
+      if (!success) {
+        assert(false, "Failed to eliminate reduced allocation merge!!!");
+        C->record_failure(C2Compiler::retry_no_reduce_allocation_merges());
+        return;
+      }
     }
   }
 }

@@ -1049,7 +1049,7 @@ public:
 
   Node* memory_for(jlong field, Node* base) const ;
 
-  void register_value_for_field(jlong field, Node* base, Node* value) ;
+  bool register_value_for_field(jlong field, Node* base, Node* value) ;
 
   Node* value_phi_for_field(jlong field, PhaseIterGVN* igvn) ;
 

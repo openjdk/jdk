@@ -430,7 +430,7 @@ void ConnectionGraph::reduce_allocation_merges() {
   _igvn->set_delay_transform(prev_delay_transform);
 }
 
-Node* ConnectionGraph::come_from_allocate(Node* n) {
+Node* ConnectionGraph::come_from_allocate(Node* n) const {
   while (true) {
     switch (n->Opcode()) {
       case Op_CastPP:
@@ -468,7 +468,7 @@ Node* ConnectionGraph::come_from_allocate(Node* n) {
   return NULL;
 }
 
-bool ConnectionGraph::is_read_only(Node* ctrl, Node* base) {
+bool ConnectionGraph::is_read_only(Node* ctrl, Node* base) const {
   Unique_Node_List worklist;
   worklist.push(base);
 
@@ -503,7 +503,7 @@ bool ConnectionGraph::is_read_only(Node* ctrl, Node* base) {
   return true;
 }
 
-bool ConnectionGraph::should_reduce_this_phi(Node* n) {
+bool ConnectionGraph::should_reduce_this_phi(Node* n) const {
   if (!n->is_Phi())                     return false;
   if (!is_ideal_node_in_graph(n->_idx)) return false;
 
@@ -579,17 +579,24 @@ bool ConnectionGraph::should_reduce_this_phi(Node* n) {
   return true;
 }
 
-void ConnectionGraph::reduce_this_phi(PhiNode* n) {
-  // Copy input edges of 'n' to 'reduced'
-  Node* reduced = ReducedAllocationMergeNode::make(_compile, _igvn, n);
+bool ConnectionGraph::reduce_this_phi(PhiNode* n) {
+  Node* ram = ReducedAllocationMergeNode::make(_compile, _igvn, n);
+
+  if (ram == NULL) {
+    return false;
+  }
+
+  _igvn->hash_insert(ram);
 
   // Patch users of 'n' to instead use 'reduced'
-  _igvn->replace_node(n, reduced);
+  _igvn->replace_node(n, ram);
 
   // The original phi now should have no users
   _igvn->remove_dead_node(n);
 
-  _igvn->_worklist.push(reduced);
+  _igvn->_worklist.push(ram);
+
+  return true;
 }
 
 // Returns true if there is an object in the scope of sfn that does not escape globally.

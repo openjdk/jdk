@@ -1619,7 +1619,9 @@ Node *AllocateArrayNode::make_ideal_length(const TypeOopPtr* oop_type, PhaseTran
 }
 
 //=============================================================================
-ReducedAllocationMergeNode::ReducedAllocationMergeNode(Compile* C, PhaseIterGVN* igvn, const PhiNode* phi) : TypeNode(phi->type(), phi->req()) {
+ReducedAllocationMergeNode::ReducedAllocationMergeNode(Compile* C, PhaseIterGVN* igvn, const PhiNode* phi)
+    : TypeNode(phi->type(), phi->req()) {
+
   init_class_id(Class_ReducedAllocationMerge);
   init_flags(Flag_is_macro);
 
@@ -1779,6 +1781,7 @@ Node* ReducedAllocationMergeNode::value_phi_for_field(jlong field, PhaseIterGVN*
     const Type* input_type = igvn->type(values->at(i));
     t = t->meet_speculative(input_type);
   }
+
   igvn->set_type(phi, t);
   phi->raise_bottom_type(t);
 
@@ -1790,10 +1793,10 @@ ReducedAllocationMergeNode* ReducedAllocationMergeNode::make(Compile* C, PhaseIt
 
   for (DUIterator_Fast imax, i = phi->fast_outs(imax); i < imax; i++) {
     Node* n = phi->fast_out(i);
-    ram->register_use(n);
+    if (!ram->register_use(n)) {
+      return NULL;
+    }
   }
-
-  igvn->hash_insert(ram);
 
   return ram;
 }
