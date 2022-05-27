@@ -21,13 +21,13 @@
  * questions.
  */
 /* @test
-   @bug 4380543
-   @key headful
-   @requires (os.family == "windows")
-   @library /java/awt/regtesthelpers
-   @build PassFailJFrame
-   @summary setMargin() does not work for AbstractButton
-   @run main/manual bug4380543
+ * @bug 4380543
+ * @key headful
+ * @requires (os.family == "windows")
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
+ * @summary setMargin() does not work for AbstractButton
+ * @run main/manual bug4380543
 */
 
 import java.awt.BorderLayout;
