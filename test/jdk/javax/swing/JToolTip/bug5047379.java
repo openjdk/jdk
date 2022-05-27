@@ -67,10 +67,9 @@ public class bug5047379 {
                 try {
                     runTest();
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    throw new RuntimeException(e);
                 }
             }
-
         });
         testRobot.delay(1000);
         testRobot.waitForIdle();
