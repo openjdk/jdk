@@ -31,7 +31,7 @@ import javax.naming.directory.*;
 import com.sun.jndi.toolkit.ctx.Continuation;
 import java.util.Vector;
 import javax.naming.ldap.Control;
-
+import java.lang.ref.Reference;
 
 final class LdapNamingEnumeration
         extends AbstractLdapNamingEnumeration<NameClassPair> {
@@ -46,29 +46,32 @@ final class LdapNamingEnumeration
     @Override
     protected NameClassPair createItem(String dn, Attributes attrs,
             Vector<Control> respCtls) throws NamingException {
+        try {
+            Attribute attr;
+            String className = null;
 
-        Attribute attr;
-        String className = null;
+            // use the Java classname if present
+            if ((attr = attrs.get(Obj.JAVA_ATTRIBUTES[Obj.CLASSNAME])) != null) {
+                className = (String) attr.get();
+            } else {
+                className = defaultClassName;
+            }
+            CompositeName cn = new CompositeName();
+            cn.add(getAtom(dn));
 
-        // use the Java classname if present
-        if ((attr = attrs.get(Obj.JAVA_ATTRIBUTES[Obj.CLASSNAME])) != null) {
-            className = (String)attr.get();
-        } else {
-            className = defaultClassName;
-        }
-        CompositeName cn = new CompositeName();
-        cn.add(getAtom(dn));
-
-        NameClassPair ncp;
-        if (respCtls != null) {
-            ncp = new NameClassPairWithControls(
+            NameClassPair ncp;
+            if (respCtls != null) {
+                ncp = new NameClassPairWithControls(
                         cn.toString(), className,
                         homeCtx().convertControls(respCtls));
-        } else {
-            ncp = new NameClassPair(cn.toString(), className);
+            } else {
+                ncp = new NameClassPair(cn.toString(), className);
+            }
+            ncp.setNameInNamespace(dn);
+            return ncp;
+        } finally {
+            Reference.reachabilityFence(this);
         }
-        ncp.setNameInNamespace(dn);
-        return ncp;
     }
 
     @Override
