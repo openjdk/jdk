@@ -356,14 +356,12 @@ ul.see-list-long li:not(:last-child):after {
     text-align:left;
     background-repeat:no-repeat;
     color:#253441;
-    font-weight:bold;
     clear:none;
     overflow:hidden;
     padding:0;
     padding-top:10px;
     padding-left:1px;
     margin:0;
-    white-space:pre;
 }
 .caption a:link, .caption a:visited {
     color:#1f389c;
@@ -373,6 +371,7 @@ ul.see-list-long li:not(:last-child):after {
     color:#FFFFFF;
 }
 .caption span {
+    font-weight:bold;
     white-space:nowrap;
     padding:5px 12px 7px 12px;
     display:inline-block;
@@ -385,14 +384,20 @@ div.table-tabs {
     padding:10px 0 0 1px;
     margin:10px 0 0 0;
 }
+div.table-tabs > span {
+    background-color: #EEE;
+    color: #000;
+    border: none;
+    padding: 5px 12px 8px 12px;
+}
 div.table-tabs > button {
    border: none;
    cursor: pointer;
    padding: 5px 12px 7px 12px;
    font-weight: bold;
-   margin-right: 3px;
+   margin-right: 8px;
 }
-div.table-tabs > button.active-table-tab {
+div.table-tabs > .active-table-tab {
    background: #F8981D;
    color: #253441;
 }
@@ -403,6 +408,18 @@ div.table-tabs > button.table-tab {
 .two-column-search-results {
     display: grid;
     grid-template-columns: minmax(400px, max-content) minmax(400px, auto);
+}
+div.checkboxes {
+    line-height: 18px;
+}
+div.checkboxes > span {
+    margin-left: 10px;
+}
+div.checkboxes > label {
+    margin-left: 8px;
+}
+div.checkboxes > label > input {
+    margin: 0 2px;
 }
 .two-column-summary {
     display: grid;
@@ -435,6 +452,10 @@ div.table-tabs > button.table-tab {
         grid-column-end: span 2;
     }
 }
+.three-column-release-summary {
+    display: grid;
+    grid-template-columns: minmax(40%, max-content) minmax(10%, max-content) minmax(40%, auto);
+}
 @media screen and (max-width: 600px) {
     .two-column-summary {
         display: grid;
@@ -454,6 +475,35 @@ div.table-tabs > button.table-tab {
 .table-header {
     background:#dee3e9;
     font-weight: bold;
+}
+/* Sortable table columns */
+.table-header[onclick] {
+    cursor: pointer;
+}
+.table-header[onclick]::after {
+    content:"";
+    display:inline-block;
+    background-image:url('data:image/svg+xml; utf8, \
+    <svg xmlns="http://www.w3.org/2000/svg" width="125" height="170"> \
+    <path d="M10.101 57.059L63.019 4.142l52.917 52.917M10.101 86.392l52.917 52.917 52.917-52.917" style="opacity:.35;"/></svg>');
+    background-size:100% 100%;
+    width:9px;
+    height:14px;
+    margin-left:4px;
+    margin-bottom:-3px;
+}
+.table-header[onclick].sort-asc::after {
+    background-image:url('data:image/svg+xml; utf8, \
+    <svg xmlns="http://www.w3.org/2000/svg" width="125" height="170"> \
+    <path d="M10.101 57.059L63.019 4.142l52.917 52.917" style="opacity:.75;"/> \
+    <path d="M10.101 86.392l52.917 52.917 52.917-52.917" style="opacity:.35;"/></svg>');
+
+}
+.table-header[onclick].sort-desc::after {
+    background-image:url('data:image/svg+xml; utf8, \
+    <svg xmlns="http://www.w3.org/2000/svg" width="125" height="170"> \
+    <path d="M10.101 57.059L63.019 4.142l52.917 52.917" style="opacity:.35;"/> \
+    <path d="M10.101 86.392l52.917 52.917 52.917-52.917" style="opacity:.75;"/></svg>');
 }
 .col-first, .col-first {
     font-size:13px;
@@ -716,10 +766,6 @@ button.page-search-header {
 }
 span#page-search-link {
     text-decoration: underline;
-}
-.active-table-tab {
-    background: #F8981D;
-    color: #253441;
 }
 .module-graph span {
     display:none;
