@@ -128,7 +128,7 @@ public class LinkedHashSet<E>
      *
      * @apiNote
      * To create a {@code LinkedHashSet} with an initial capacity that accommodates
-     * an expected number of items, use {@link #newLinkedHashSet(int) newLinkedHashSet}.
+     * an expected number of elements, use {@link #newLinkedHashSet(int) newLinkedHashSet}.
      *
      * @param      initialCapacity the initial capacity of the linked hash set
      * @param      loadFactor      the load factor of the linked hash set
@@ -145,7 +145,7 @@ public class LinkedHashSet<E>
      *
      * @apiNote
      * To create a {@code LinkedHashSet} with an initial capacity that accommodates
-     * an expected number of items, use {@link #newLinkedHashSet(int) newLinkedHashSet}.
+     * an expected number of elements, use {@link #newLinkedHashSet(int) newLinkedHashSet}.
      *
      * @param   initialCapacity   the initial capacity of the LinkedHashSet
      * @throws  IllegalArgumentException if the initial capacity is less
@@ -203,13 +203,13 @@ public class LinkedHashSet<E>
     }
 
     /**
-     * Creates a new, empty, insertion-ordered LinkedHashSet suitable for the expected number of elements.
+     * Creates a new, empty LinkedHashSet suitable for the expected number of elements.
      * The returned set uses the default load factor of 0.75, and its initial capacity is
      * generally large enough so that the expected number of elements can be added
      * without resizing the set.
      *
      * @param numElements    the expected number of elements
-     * @param <E>         the type of keys maintained by this set
+     * @param <E>         the type of elements maintained by this set
      * @return the newly created set
      * @throws IllegalArgumentException if numElements is negative
      * @since 19

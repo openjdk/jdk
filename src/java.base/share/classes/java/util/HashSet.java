@@ -127,7 +127,7 @@ public class HashSet<E>
      *
      * @apiNote
      * To create a {@code HashSet} with an initial capacity that accommodates
-     * an expected number of items, use {@link #newHashSet(int) newHashSet}.
+     * an expected number of elements, use {@link #newHashSet(int) newHashSet}.
      *
      * @param      initialCapacity   the initial capacity of the hash map
      * @param      loadFactor        the load factor of the hash map
@@ -144,7 +144,7 @@ public class HashSet<E>
      *
      * @apiNote
      * To create a {@code HashSet} with an initial capacity that accommodates
-     * an expected number of items, use {@link #newHashSet(int) newHashSet}.
+     * an expected number of elements, use {@link #newHashSet(int) newHashSet}.
      *
      * @param      initialCapacity   the initial capacity of the hash table
      * @throws     IllegalArgumentException if the initial capacity is less
@@ -388,7 +388,7 @@ public class HashSet<E>
      * without resizing the set.
      *
      * @param numElements    the expected number of elements
-     * @param <E>         the type of keys maintained by this set
+     * @param <E>         the type of elements maintained by this set
      * @return the newly created set
      * @throws IllegalArgumentException if numElements is negative
      * @since 19
