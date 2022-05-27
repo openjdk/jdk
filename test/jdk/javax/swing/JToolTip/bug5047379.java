@@ -51,16 +51,20 @@ import java.awt.Point;
 import java.awt.Robot;
 
 public class bug5047379 {
+    static volatile boolean isTooltipAdded;
+    static JFrame frame;
+    static JButton a;
+    static JButton b;
+    static JButton c;
+    static JButton d;
     static Robot testRobot;
-    static toolTipTest testObj;
 
     public static void main(String[] args) throws Exception {
-        testObj = new toolTipTest();
         testRobot = new Robot();
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
                 try {
-                    testObj.runTest();
+                    runTest();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -69,23 +73,15 @@ public class bug5047379 {
         });
         testRobot.delay(1000);
         testRobot.waitForIdle();
-        Point movePoint = testObj.getButtonPoint(testObj.b);
+        Point movePoint = getButtonPoint(b);
         testRobot.mouseMove(movePoint.x, movePoint.y);
         testRobot.delay(1000);
         testRobot.waitForIdle();
-        testObj.handleToolTip();
+        handleToolTip();
     }
-};
 
-class toolTipTest {
-    volatile boolean isTooltipAdded;
-    JFrame frame;
-    JButton a;
-    JButton b;
-    JButton c;
-    JButton d;
 
-    void handleToolTip() throws Exception {
+    static void handleToolTip() throws Exception {
         UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");;
         SwingUtilities.updateComponentTreeUI(frame);
 
@@ -112,7 +108,7 @@ class toolTipTest {
         });
     }
 
-    void checkAcclString(MetalToolTipUI toolTipObj, JToolTip tooltip) {
+    static void checkAcclString(MetalToolTipUI toolTipObj, JToolTip tooltip) {
         toolTipObj.installUI(tooltip);
 
         if (!"Ctrl-B".equals(toolTipObj.getAcceleratorString())) {
@@ -120,7 +116,7 @@ class toolTipTest {
         }
     }
 
-    Point getButtonPoint(JButton button) throws Exception {
+    static Point getButtonPoint(JButton button) throws Exception {
         final Point[] result = new Point[1];
 
         SwingUtilities.invokeAndWait(new Runnable() {
@@ -135,7 +131,7 @@ class toolTipTest {
         return result[0];
     }
 
-    void runTest() throws Exception {
+    static void runTest() throws Exception {
         frame = new JFrame();
         JTextArea area = new JTextArea();
         JPanel p = new JPanel();
@@ -189,4 +185,4 @@ class toolTipTest {
         });
         frame.setVisible(true);
     }
-}
+};
