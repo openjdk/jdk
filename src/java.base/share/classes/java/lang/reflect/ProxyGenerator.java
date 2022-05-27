@@ -929,14 +929,14 @@ final class ProxyGenerator extends ClassWriter {
      * primitive type can be obtained using the static "get" method.
      */
     private enum PrimitiveTypeInfo {
-        BYTE(byte.class, ILOAD),
-        CHAR(char.class, ILOAD),
-        DOUBLE(double.class, DLOAD),
-        FLOAT(float.class, FLOAD),
-        INT(int.class, ILOAD),
-        LONG(long.class, LLOAD),
-        SHORT(short.class, ILOAD),
-        BOOLEAN(boolean.class, ILOAD);
+        BYTE(byte.class, ILOAD, IRETURN),
+        CHAR(char.class, ILOAD, IRETURN),
+        DOUBLE(double.class, DLOAD, DRETURN),
+        FLOAT(float.class, FLOAD, FRETURN),
+        INT(int.class, ILOAD, IRETURN),
+        LONG(long.class, LLOAD, LRETURN),
+        SHORT(short.class, ILOAD, IRETURN),
+        BOOLEAN(boolean.class, ILOAD, IRETURN);
 
         /**
          * internal name of corresponding wrapper class
@@ -963,8 +963,9 @@ final class ProxyGenerator extends ClassWriter {
          */
         private final int returnOpcode;
 
-        PrimitiveTypeInfo(Class<?> primitiveClass, int loadOpcode) {
+        PrimitiveTypeInfo(Class<?> primitiveClass, int loadOpcode, int returnOpcode) {
             assert primitiveClass.isPrimitive();
+            assert returnOpcode - IRETURN == loadOpcode - ILOAD;
 
             Wrapper wrapper = Wrapper.forPrimitiveType(primitiveClass);
             // single-char BaseType descriptor (see JVMS section 4.3.2)
@@ -976,7 +977,7 @@ final class ProxyGenerator extends ClassWriter {
             unwrapMethodName = primitiveClass.getName() + "Value";
             unwrapMethodDesc = "()" + baseTypeString;
             this.loadOpcode = loadOpcode;
-            this.returnOpcode = loadOpcode - ILOAD + IRETURN;
+            this.returnOpcode = returnOpcode;
         }
 
         public static PrimitiveTypeInfo get(Class<?> cl) {
