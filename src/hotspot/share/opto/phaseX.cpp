@@ -905,7 +905,7 @@ bool PhaseGVN::is_dominator_helper(Node *d, Node *n, bool linear_only) {
   if (n->is_top() || (n->is_Proj() && n->in(0)->is_top())) {
     return false;
   }
-  assert(d->is_CFG() && n->is_CFG(), "must have CFG nodes");
+  assert(d->is_CFG() && n->is_CFG(), "must be CFG nodes");
   int i = 0;
   while (d != n) {
     n = IfNode::up_one_dom(n, linear_only);

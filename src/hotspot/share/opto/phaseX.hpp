@@ -547,6 +547,7 @@ public:
     _table.check_no_speculative_types();
   }
 
+  // Checks if Node 'd' dominates node 'n'
   bool is_dominator(Node *d, Node *n) { return is_dominator_helper(d, n, false); }
   bool no_dependent_zero_check(Node* n) const;
 

@@ -722,17 +722,11 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
 
     // Scan object's fields adding an input to the RAM for each field.
     for (int j = 0; j < nfields; j++) {
-      intptr_t offset;
-      ciField* field = NULL;
       const Type *field_type;
-      if (iklass != NULL) {
-        field = iklass->nonstatic_field_at(j);
-        offset = field->offset();
-        elem_type = field->type();
-        basic_elem_type = field->layout_type();
-      } else {
-        offset = array_base + j * (intptr_t)element_size;
-      }
+      ciField* field = iklass->nonstatic_field_at(j);
+      intptr_t offset = field->offset();
+      ciType* elem_type = field->type();
+      basic_elem_type = field->layout_type();
 
       if (!ram->needs_field(offset)) {
         continue;
@@ -769,7 +763,7 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
       // ReduceAllocations disabled.
       if (field_val == NULL) {
         assert(false, "Didn't find value for field!!!");
-        //C->record_failure(C2Compiler::retry_no_escape_analysis());
+        C->record_failure(C2Compiler::retry_no_reduce_allocation_merges());
         return false;
       }
 
@@ -1202,7 +1196,7 @@ void dump_ir(Compile* _compile, const char* title) {
 
 
 
-//    return ;
+    return ;
 
 
 

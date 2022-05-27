@@ -468,6 +468,41 @@ Node* ConnectionGraph::come_from_allocate(Node* n) {
   return NULL;
 }
 
+bool ConnectionGraph::is_read_only(Node* ctrl, Node* base) {
+  Unique_Node_List worklist;
+  worklist.push(base);
+
+  for (uint next = 0; next < worklist.size(); ++next) {
+    Node* n = worklist.at(next);
+
+    for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+      Node* m = n->fast_out(i);
+
+      switch (m->Opcode()) {
+        case Op_CastPP:
+        case Op_CheckCastPP:
+          worklist.push(m);
+          break;
+      }
+
+      if (m->is_AddP()) {
+        for (DUIterator_Fast imax, i = m->fast_outs(imax); i < imax; i++) {
+          Node* child = m->fast_out(i);
+
+          if (child->is_Store()) {
+            assert(child->in(0) != NULL || m->in(0) != NULL, "No control for store or AddP.");
+            if (_igvn->is_dominator(ctrl, child->in(0) != NULL ? child->in(0) : m->in(0))) {
+              return false;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return true;
+}
+
 bool ConnectionGraph::should_reduce_this_phi(Node* n) {
   if (!n->is_Phi())                     return false;
   if (!is_ideal_node_in_graph(n->_idx)) return false;
@@ -487,6 +522,10 @@ bool ConnectionGraph::should_reduce_this_phi(Node* n) {
       NOT_PRODUCT(if (Verbose) tty->print_cr("Will NOT try to reduce Phi %d. The %dth input does not come from an Allocate.", n->_idx, in_idx);)
       return false;
     }
+    else if (!is_read_only(n->in(0), input)) {
+      NOT_PRODUCT(if (Verbose) tty->print_cr("Will NOT try to reduce Phi %d. The %dth input has a store after the merge.", n->_idx, in_idx);)
+      return false;
+    }
     else {
       if (prev_klass != NULL && prev_klass != klass) {
         NOT_PRODUCT(if (Verbose) tty->print_cr("Will NOT try to reduce Phi %d. The input Allocate klass nodes don't match.", n->_idx);)
@@ -502,7 +541,8 @@ bool ConnectionGraph::should_reduce_this_phi(Node* n) {
   // current Phi by Phi's of individual fields.
   // Conditions checked:
   //    - The only consumers of the Phi are:
-  //        - AddP
+  //        - AddP (with constant offset)
+  //        -   - Load
   //        - Safepoint
   //        - uncommon_trap
   for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
@@ -518,10 +558,20 @@ bool ConnectionGraph::should_reduce_this_phi(Node* n) {
       return false;
     }
 
-    if (use->is_AddP() && use->in(AddPNode::Offset)->find_long_con(-1) == -1) {
-      NOT_PRODUCT(if (Verbose) tty->print_cr("Will NOT try to reduce Phi %d. Did not find constant input for %d : AddP.", n->_idx, use->_idx);)
-      dump_ir("AddP constant not found.");
-      return false;
+    if (use->is_AddP()) {
+      if (use->in(AddPNode::Offset)->find_long_con(-1) == -1) {
+        NOT_PRODUCT(if (Verbose) tty->print_cr("Will NOT try to reduce Phi %d. Did not find constant input for %d : AddP.", n->_idx, use->_idx);)
+        return false;
+      }
+
+      for (DUIterator_Fast jmax, j = use->fast_outs(jmax); j < jmax; j++) {
+        Node* use_use = use->fast_out(j);
+
+        if (!use_use->is_Load()) {
+          NOT_PRODUCT(if (Verbose) tty->print_cr("Will NOT try to reduce Phi %d. AddP use is not a Load. %d %s", n->_idx, use_use->_idx, use_use->Name());)
+          return false;
+        }
+      }
     }
   }
 

@@ -1057,7 +1057,7 @@ public:
       }
     }
 
-    _klass = ram_t->isa_oopptr()->klass();
+    _klass = ram_t->isa_oopptr()->exact_klass();
 
     // Now let's try to find a memory Phi coming from same region
     Node* reg = phi->region();

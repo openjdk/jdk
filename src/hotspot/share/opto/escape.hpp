@@ -580,6 +580,7 @@ private:
 
   // Compute the escape information
   bool compute_escape(bool only_analysis);
+  bool is_read_only(Node* ctrl, Node* base);
   Node* come_from_allocate(Node* n);
   bool should_reduce_this_phi(Node* n);
   void reduce_this_phi(PhiNode* n);
