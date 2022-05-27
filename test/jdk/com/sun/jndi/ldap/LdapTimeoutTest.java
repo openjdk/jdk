@@ -41,6 +41,7 @@ import javax.naming.directory.SearchControls;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.net.NoRouteToHostException;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
@@ -124,8 +125,14 @@ public class LdapTimeoutTest {
             try {
                 f.get();
             } catch (ExecutionException e) {
-                failedCount++;
-                e.getCause().printStackTrace(System.out);
+                Throwable cause = e.getCause();
+                if (!(cause instanceof NoRouteToHostException) && cause.getCause() != null) {
+                    cause = cause.getCause();
+                }
+                if (!(cause instanceof NoRouteToHostException)) {
+                    failedCount++;
+                    cause.printStackTrace(System.out);
+                }
             }
         }
         if (failedCount > 0)
