@@ -224,7 +224,7 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
             return Collections.emptySet();
         }
         StringTokenizer tokens = new StringTokenizer(supportedLocaleString);
-        Set<String> tagset = HashSet.newHashSet(tokens.countTokens());
+        Set<String> tagset = new HashSet<>((tokens.countTokens() * 4 + 2) / 3);
         while (tokens.hasMoreTokens()) {
             tagset.add(tokens.nextToken());
         }
