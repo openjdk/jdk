@@ -64,11 +64,7 @@ public class bug5047379 {
         testRobot = new Robot();
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
-                try {
-                    runTest();
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
+                runTest();
             }
         });
         testRobot.delay(1000);
@@ -94,7 +90,7 @@ public class bug5047379 {
                     MetalToolTipUI toolTipObj = (MetalToolTipUI) MetalToolTipUI.createUI(tooltip);
 
                     if (tooltip == null) {
-                        throw new RuntimeException("Metal Tooltip not been found for : ");
+                        throw new RuntimeException("Metal Tooltip not been found");
                     }
                     checkAcclString(toolTipObj, tooltip);
 
@@ -111,7 +107,7 @@ public class bug5047379 {
         toolTipObj.installUI(tooltip);
 
         if (!"Ctrl-B".equals(toolTipObj.getAcceleratorString())) {
-            throw new RuntimeException("MetalTooltip acceleration is not properly set");
+            throw new RuntimeException("MetalTooltip acceleration is not properly set : "+toolTipObj.getAcceleratorString());
         }
     }
 
@@ -130,7 +126,7 @@ public class bug5047379 {
         return result[0];
     }
 
-    static void runTest() throws Exception {
+    static void runTest() {
         frame = new JFrame();
         JTextArea area = new JTextArea();
         JPanel p = new JPanel();
