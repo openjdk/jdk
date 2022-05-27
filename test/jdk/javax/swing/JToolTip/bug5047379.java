@@ -60,6 +60,7 @@ public class bug5047379 {
     static Robot testRobot;
 
     public static void main(String[] args) throws Exception {
+        UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
         testRobot = new Robot();
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
@@ -82,7 +83,6 @@ public class bug5047379 {
 
 
     static void handleToolTip() throws Exception {
-        UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");;
         SwingUtilities.updateComponentTreeUI(frame);
 
         SwingUtilities.invokeAndWait(new Runnable() {
@@ -100,7 +100,7 @@ public class bug5047379 {
                     checkAcclString(toolTipObj, tooltip);
 
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    throw new RuntimeException(e);
                 } finally {
                     frame.dispose();
                 }
