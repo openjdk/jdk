@@ -205,7 +205,7 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
         // Check the order of the point.
         //
         // Compute nQ (using elliptic curve arithmetic), and verify that
-        // nQ is the the identity element.
+        // nQ is the identity element.
         ImmutableIntegerModuloP xElem = ops.getField().getElement(x);
         ImmutableIntegerModuloP yElem = ops.getField().getElement(y);
         AffinePoint affP = new AffinePoint(xElem, yElem);

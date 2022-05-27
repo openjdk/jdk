@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -228,8 +228,8 @@ public class PKCS11Exception extends Exception {
     }
 
     /**
-     * Returns true if the error code matches the the specified enum value.
-     * @return true if the error code matches the the specified enum value.
+     * Returns true if the error code matches the specified enum value.
+     * @return true if the error code matches the specified enum value.
      * @preconditions
      * @postconditions
      */

@@ -1310,14 +1310,16 @@ public class TreeInfo {
         return switch (pat.getTag()) {
             case BINDINGPATTERN -> pat.type;
             case PARENTHESIZEDPATTERN -> primaryPatternType(((JCParenthesizedPattern) pat).pattern);
+            case RECORDPATTERN -> ((JCRecordPattern) pat).type;
             default -> throw new AssertionError();
         };
     }
 
-    public static JCBindingPattern primaryPatternTree(JCTree pat) {
+    public static JCTree primaryPatternTypeTree(JCTree pat) {
         return switch (pat.getTag()) {
-            case BINDINGPATTERN -> (JCBindingPattern) pat;
-            case PARENTHESIZEDPATTERN -> primaryPatternTree(((JCParenthesizedPattern) pat).pattern);
+            case BINDINGPATTERN -> ((JCBindingPattern) pat).var.vartype;
+            case PARENTHESIZEDPATTERN -> primaryPatternTypeTree(((JCParenthesizedPattern) pat).pattern);
+            case RECORDPATTERN -> ((JCRecordPattern) pat).deconstructor;
             default -> throw new AssertionError();
         };
     }
@@ -1337,9 +1339,13 @@ public class TreeInfo {
         if (guard == null) {
             return true;
         }
+        return isBooleanWithValue(guard, 1);
+    }
+
+    public static boolean isBooleanWithValue(JCExpression guard, int value) {
         var constValue = guard.type.constValue();
         return constValue != null &&
-               guard.type.hasTag(BOOLEAN) &&
-               ((int) constValue) == 1;
+                guard.type.hasTag(BOOLEAN) &&
+                ((int) constValue) == value;
     }
 }
