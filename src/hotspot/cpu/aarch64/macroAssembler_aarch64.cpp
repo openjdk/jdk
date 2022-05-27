@@ -4218,7 +4218,7 @@ void MacroAssembler::movoop(Register dst, jobject obj, bool immediate) {
   // ordered with respected to oop accesses.
   // Using immediate literals would necessitate ISBs.
   BarrierSet* bs = BarrierSet::barrier_set();
-  if ((bs->barrier_set_nmethod() != NULL && bs->barrier_set_assembler()->nmethod_code_patching()) || !immediate) {
+  if ((bs->barrier_set_nmethod() != NULL && !bs->barrier_set_assembler()->nmethod_code_patching()) || !immediate) {
     address dummy = address(uintptr_t(pc()) & -wordSize); // A nearby aligned address
     ldr_constant(dst, Address(dummy, rspec));
   } else
@@ -4867,7 +4867,7 @@ address MacroAssembler::zero_words(Register ptr, Register cnt)
 // r10, r11, rscratch1, and rscratch2 are clobbered.
 address MacroAssembler::zero_words(Register base, uint64_t cnt)
 {
-  guarantee(zero_words_block_size < BlockZeroingLowLimit,
+  assert(wordSize <= BlockZeroingLowLimit,
             "increase BlockZeroingLowLimit");
   address result = nullptr;
   if (cnt <= (uint64_t)BlockZeroingLowLimit / BytesPerWord) {

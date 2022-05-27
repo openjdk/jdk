@@ -131,11 +131,18 @@ intx CompilerConfig::scaled_compile_threshold(intx threshold, double scale) {
   } else {
     double v = threshold * scale;
     assert(v >= 0, "must be");
-    if (v > max_intx) {
+    if (g_isnan(v) || !g_isfinite(v)) {
       return max_intx;
-    } else {
-      return (intx)(v);
     }
+    int exp;
+    (void) frexp(v, &exp);
+    int max_exp = sizeof(intx) * BitsPerByte - 1;
+    if (exp > max_exp) {
+      return max_intx;
+    }
+    intx r = (intx)(v);
+    assert(r >= 0, "must be");
+    return r;
   }
 }
 
