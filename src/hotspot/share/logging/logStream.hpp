@@ -28,8 +28,6 @@
 #include "logging/log.hpp"
 #include "logging/logHandle.hpp"
 #include "logging/logMessage.hpp"
-#include "runtime/os.hpp"
-#include "utilities/align.hpp"
 #include "utilities/ostream.hpp"
 
 class LogStreamImplBase : public outputStream {
@@ -68,7 +66,7 @@ protected:
   LineBuffer _current_line;
 };
 
-template<typename BackingLog>
+template <typename BackingLog>
 class LogStreamImpl : public LogStreamImplBase {
 private:
   BackingLog _backing_log;
@@ -98,8 +96,7 @@ public:
   //
   // LogTarget(Debug, gc) log;
   // LogStream(log) stream;
-  template<LogLevelType level, LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3,
-           LogTagType T4, LogTagType GuardTag>
+  template <LogLevelType level, LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag>
   LogStream(const LogTargetImpl<level, T0, T1, T2, T3, T4, GuardTag>& type_carrier)
     : LogStreamImpl(LogTargetHandle(level, LogTagSetMapping<T0, T1, T2, T3, T4>::tagset())) {}
 
@@ -108,8 +105,7 @@ public:
   // LogStream stream(log.debug());
   //  or
   // LogStream stream((LogTargetImpl<level, T0, T1, T2, T3, T4, GuardTag>*)NULL);
-  template<LogLevelType level, LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3,
-           LogTagType T4, LogTagType GuardTag>
+  template <LogLevelType level, LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag>
   LogStream(const LogTargetImpl<level, T0, T1, T2, T3, T4, GuardTag>* type_carrier)
     : LogStreamImpl(LogTargetHandle(level, LogTagSetMapping<T0, T1, T2, T3, T4>::tagset())) {}
 
@@ -126,13 +122,14 @@ public:
   // LogStream(level, tageset);
   LogStream(LogLevelType level, LogTagSet& tagset)
     : LogStreamImpl(LogTargetHandle(level, tagset)) {}
+
+  // Destructor writes any unfinished output left in the line buffer.
 };
 
 // Support creation of a LogStream without having to provide a LogTarget pointer.
 #define LogStreamHandle(level, ...) LogStreamTemplate<LogLevel::level, LOG_TAGS(__VA_ARGS__)>
 
-template<LogLevelType level, LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3,
-         LogTagType T4, LogTagType GuardTag>
+template <LogLevelType level, LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag>
 class LogStreamTemplate : public LogStream {
 public:
   LogStreamTemplate()
@@ -162,14 +159,9 @@ public:
 };
 
 class NonInterleavingLogStream : public LogStreamImpl<LogMessageHandle> {
-  static void* operator new   (size_t) = delete;
-  static void* operator new[] (size_t) = delete;
-
 public:
   NonInterleavingLogStream(LogLevelType level, LogMessageImpl& lm)
     : LogStreamImpl(LogMessageHandle(level, lm)) {}
-
-  virtual ~NonInterleavingLogStream() {};
 };
 
 #endif // SHARE_LOGGING_LOGSTREAM_HPP

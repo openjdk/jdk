@@ -29,6 +29,7 @@
 #include "logging/logMessage.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
+#include "unittest.hpp"
 
 class LogStreamTest : public LogTestFixture {
  protected:
@@ -131,8 +132,6 @@ TEST_VM_F(LogStreamTest, NonInterleavingStream) {
   }
   EXPECT_TRUE(file_contains_substrings_in_order(TestLogFileName, message_order));
 }
-
-
 
 // Test, in release build, that the internal line buffer of a LogStream
 // object caps out at 1M.

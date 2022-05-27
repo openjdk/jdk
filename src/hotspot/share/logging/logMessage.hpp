@@ -63,10 +63,12 @@ class LogMessageImpl : public LogMessageBuffer {
 private:
   LogTagSet& _tagset;
   bool _has_content;
+
 protected:
   LogMessageImpl(LogTagSet& tagset)
     : _tagset(tagset),
       _has_content(false) {};
+
 public:
   ~LogMessageImpl() {
     if (_has_content) {
@@ -96,6 +98,7 @@ public:
   bool is_level(LogLevelType level) const {
     return _tagset.is_level(level);
   }
+
 #define LOG_LEVEL(level, name) \
   bool is_##name() const { \
     return _tagset.is_level(LogLevel::level); \
@@ -104,15 +107,13 @@ public:
 #undef LOG_LEVEL
 };
 
-template <LogTagType T0, LogTagType T1 = LogTag::__NO_TAG,
-          LogTagType T2 = LogTag::__NO_TAG, LogTagType T3 = LogTag::__NO_TAG,
-          LogTagType T4 = LogTag::__NO_TAG,
-          LogTagType GuardTag = LogTag::__NO_TAG>
+template <LogTagType T0, LogTagType T1 = LogTag::__NO_TAG, LogTagType T2 = LogTag::__NO_TAG, LogTagType T3 = LogTag::__NO_TAG,
+          LogTagType T4 = LogTag::__NO_TAG, LogTagType GuardTag = LogTag::__NO_TAG>
 class LogMessageTemplate : public LogMessageImpl {
 public:
-  LogMessageTemplate (LogMessageTemplate&&) = default;
+  LogMessageTemplate(LogMessageTemplate&&) = default;
   LogMessageTemplate()
-      : LogMessageImpl(LogTagSetMapping<T0, T1, T2, T3, T4>::tagset()) {}
+    : LogMessageImpl(LogTagSetMapping<T0, T1, T2, T3, T4>::tagset()) {}
 };
 
 #endif // SHARE_LOGGING_LOGMESSAGE_HPP

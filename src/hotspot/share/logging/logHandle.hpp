@@ -73,10 +73,12 @@ public:
 class LogTargetHandle {
 private:
   const LogLevelType _level;
-  LogTagSet&   _tagset;
+  LogTagSet&         _tagset;
+
 public:
   LogTargetHandle(LogLevelType level, LogTagSet& tagset)
-    : _level(level), _tagset(tagset) {}
+    : _level(level),
+      _tagset(tagset) {}
 
   template <LogLevelType level, LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag>
   LogTargetHandle(const LogTargetImpl<level, T0, T1, T2, T3, T4, GuardTag>& type_carrier)
@@ -100,7 +102,6 @@ public:
   bool is_enabled() const {
     return _tagset.is_level(_level);
   }
-
 };
 
 #endif // SHARE_LOGGING_LOGHANDLE_HPP

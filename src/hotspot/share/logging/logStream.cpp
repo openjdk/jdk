@@ -24,26 +24,8 @@
 
 #include "precompiled.hpp"
 #include "logging/logStream.hpp"
-
-template<typename BackingLog>
-LogStreamImpl<BackingLog>::~LogStreamImpl() {
-  if (!_current_line.is_empty()) {
-    _backing_log.print("%s", _current_line.buffer());
-    _current_line.reset();
-  }
-}
-
-template<typename BackingLog>
-void LogStreamImpl<BackingLog>::write(const char* s, size_t len) {
-  if (len > 0 && s[len - 1] == '\n') {
-    _current_line.append(s, len - 1); // omit the newline.
-    _backing_log.print("%s", _current_line.buffer());
-    _current_line.reset();
-  } else {
-    _current_line.append(s, len);
-  }
-  update_position(s, len);
-}
+#include "runtime/os.hpp"
+#include "utilities/align.hpp"
 
 LogStreamImplBase::LineBuffer::LineBuffer()
   : _buf(_smallbuf), _cap(sizeof(_smallbuf)), _pos(0) {
@@ -104,7 +86,7 @@ void LogStreamImplBase::LineBuffer::append(const char* s, size_t len) {
   assert(_buf[_pos] == '\0', "sanity");
   assert(_pos < _cap, "sanity");
   const size_t minimum_capacity_needed = _pos + len + 1;
-  bool has_capacity = try_ensure_cap(minimum_capacity_needed);
+  const bool has_capacity = try_ensure_cap(minimum_capacity_needed);
   // try_ensure_cap may not have enlarged the capacity to the full requested
   // extent or may have not worked at all. In that case, just gracefully work
   // with what we have already; just truncate if necessary.
@@ -122,6 +104,26 @@ void LogStreamImplBase::LineBuffer::append(const char* s, size_t len) {
 void LogStreamImplBase::LineBuffer::reset() {
   _pos = 0;
   _buf[_pos] = '\0';
+}
+
+template <typename BackingLog>
+LogStreamImpl<BackingLog>::~LogStreamImpl() {
+  if (!_current_line.is_empty()) {
+    _backing_log.print("%s", _current_line.buffer());
+    _current_line.reset();
+  }
+}
+
+template <typename BackingLog>
+void LogStreamImpl<BackingLog>::write(const char* s, size_t len) {
+  if (len > 0 && s[len - 1] == '\n') {
+    _current_line.append(s, len - 1); // omit the newline.
+    _backing_log.print("%s", _current_line.buffer());
+    _current_line.reset();
+  } else {
+    _current_line.append(s, len);
+  }
+  update_position(s, len);
 }
 
 template class LogStreamImpl<LogTargetHandle>;
