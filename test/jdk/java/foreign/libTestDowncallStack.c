@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,14 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-#include "libTestDowncall.h"
-#ifdef __clang__
-#pragma clang optimize off
-#elif defined __GNUC__
-#pragma GCC optimize ("O0")
-#elif defined _MSC_BUILD
-#pragma optimize("", off )
-#endif
+#include "shared.h"
 
 EXPORT void sf0_V__(long long pf0, long long pf1, long long pf2, long long pf3, long long pf4, long long pf5, long long pf6, long long pf7, double pf8, double pf9, double pf10, double pf11, double pf12, double pf13, double pf14, double pf15) { }
 EXPORT void sf0_V_I_(long long pf0, long long pf1, long long pf2, long long pf3, long long pf4, long long pf5, long long pf6, long long pf7, double pf8, double pf9, double pf10, double pf11, double pf12, double pf13, double pf14, double pf15,int p0) { }

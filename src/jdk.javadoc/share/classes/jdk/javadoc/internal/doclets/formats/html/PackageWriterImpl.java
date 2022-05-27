@@ -272,9 +272,6 @@ public class PackageWriterImpl extends HtmlDocletWriter
         }
         if (!table.isEmpty()) {
             target.add(HtmlTree.LI(table));
-            if (table.needsScript()) {
-                getMainBodyScript().append(table.getScript());
-            }
         }
     }
 
@@ -294,7 +291,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
 
             for (PackageElement pkg : packages) {
                 Content packageLink = getPackageLink(pkg, Text.of(pkg.getQualifiedName()));
-                var moduleLink = HtmlTree.EMPTY;
+                Content moduleLink = Text.EMPTY;
                 if (showModules) {
                     ModuleElement module = (ModuleElement) pkg.getEnclosingElement();
                     if (module != null && !module.isUnnamed()) {

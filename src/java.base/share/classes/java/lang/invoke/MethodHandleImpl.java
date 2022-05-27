@@ -27,7 +27,7 @@ package java.lang.invoke;
 
 import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.invoke.NativeEntryPoint;
+import jdk.internal.foreign.abi.NativeEntryPoint;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
@@ -1580,18 +1580,13 @@ abstract class MethodHandleImpl {
             }
 
             @Override
-            public void ensureCustomized(MethodHandle mh) {
-                mh.customize();
-            }
-
-            @Override
             public VarHandle memorySegmentViewHandle(Class<?> carrier, long alignmentMask, ByteOrder order) {
                 return VarHandles.memorySegmentViewHandle(carrier, alignmentMask, order);
             }
 
             @Override
-            public MethodHandle nativeMethodHandle(NativeEntryPoint nep, MethodHandle fallback) {
-                return NativeMethodHandle.make(nep, fallback);
+            public MethodHandle nativeMethodHandle(NativeEntryPoint nep) {
+                return NativeMethodHandle.make(nep);
             }
 
             @Override

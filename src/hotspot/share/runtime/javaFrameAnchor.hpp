@@ -34,12 +34,11 @@
 //
 class JavaThread;
 class MacroAssembler;
-class ProgrammableUpcallHandler;
+class UpcallLinker;
 class ZeroFrame;
 
 class JavaFrameAnchor {
 // Too many friends...
-friend class CallNativeDirectNode;
 friend class OptoRuntime;
 friend class Runtime1;
 friend class StubAssembler;
@@ -54,7 +53,7 @@ friend class VMStructs;
 friend class JVMCIVMStructs;
 friend class BytecodeInterpreter;
 friend class JavaCallWrapper;
-friend class ProgrammableUpcallHandler;
+friend class UpcallLinker;
 
  private:
   //

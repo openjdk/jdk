@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -55,6 +55,9 @@ public:
                                   Register recv, Register method_temp,
                                   Register temp2,
                                   bool for_compiler_entry);
+
+  static void jump_to_native_invoker(MacroAssembler* _masm,
+                                     Register nep_reg, Register temp);
 
   static Register saved_last_sp_register() {
     // Should be in sharedRuntime, not here.
