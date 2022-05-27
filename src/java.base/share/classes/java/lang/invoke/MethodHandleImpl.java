@@ -973,7 +973,7 @@ abstract class MethodHandleImpl {
         int arity = type.parameterCount();
         if (arity > 1) {
             MethodHandle mh = throwException(type.dropParameterTypes(1, arity));
-            mh = MethodHandles.dropArguments(mh, 1, Arrays.copyOfRange(type.parameterArray(), 1, arity));
+            mh = MethodHandles.dropArguments(mh, 1, Arrays.copyOfRange(type.ptypes(), 1, arity), true);
             return mh;
         }
         return makePairwiseConvert(getFunction(NF_throwException).resolvedHandle(), type, false, true);
