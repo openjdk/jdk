@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -35,7 +35,7 @@ import com.sun.org.apache.xpath.internal.patterns.NodeTest;
 import java.util.List;
 
 /**
- * @LastModified: May 2020
+ * @LastModified: May 2022
  */
 public abstract class PredicatedNodeTest extends NodeTest implements SubContextList
 {

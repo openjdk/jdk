@@ -41,7 +41,7 @@ import javax.xml.transform.TransformerException;
  * the expression executes, it calls ExtensionsTable#extFunction, and then
  * converts the result to the appropriate XObject.
  * @xsl.usage advanced
- * @LastModified: Feb 2022
+ * @LastModified: May 2022
  */
 public class FuncExtFunction extends Function
 {

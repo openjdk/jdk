@@ -37,7 +37,7 @@ import com.sun.org.apache.xalan.internal.res.XSLMessages;
  * {@link javax.xml.xpath.XPathVariableResolver}.
  *
  * @author Ramesh Mandava
- * @LastModified: Feb 2022
+ * @LastModified: May 2022
  */
 public class JAXPVariableStack extends VariableStack {
 
