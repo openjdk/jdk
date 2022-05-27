@@ -26,7 +26,7 @@
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
  * @run main StringConstructor
- * @bug 4103117 4331084 4488017 4490929 6255285 6268365 8074460 8078672
+ * @bug 4103117 4331084 4488017 4490929 6255285 6268365 8074460 8078672 8233760
  * @summary Tests the BigDecimal string constructor (use -Dseed=X to set PRNG seed).
  * @key randomness
  */
@@ -70,6 +70,16 @@ public class StringConstructor {
         leadingExponentZeroTest();
         nonAsciiZeroTest();
 
+        /* These BigDecimals produce a string with an exponent > Integer.MAX_VALUE */
+        roundtripWithAbnormalExponent(BigDecimal.valueOf(10, Integer.MIN_VALUE));
+        roundtripWithAbnormalExponent(BigDecimal.valueOf(Long.MIN_VALUE, Integer.MIN_VALUE));
+        roundtripWithAbnormalExponent(new BigDecimal(new BigInteger("1" + "0".repeat(100)), Integer.MIN_VALUE));
+
+        /* These Strings have an exponent > Integer.MAX_VALUE */
+        roundtripWithAbnormalExponent("1.0E+2147483649");
+        roundtripWithAbnormalExponent("-9.223372036854775808E+2147483666");
+        roundtripWithAbnormalExponent("1.0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000E+2147483748");
+
         // Roundtrip tests
         Random random = RandomFactory.getRandom();
         for (int i=0; i<100; i++) {
@@ -94,6 +104,17 @@ public class StringConstructor {
         }
     }
 
+    private static void roundtripWithAbnormalExponent(BigDecimal bd) {
+        if (!bd.equals(new BigDecimal(bd.toString()))) {
+            throw new RuntimeException("Abnormal exponent roundtrip failure");
+        }
+    }
+
+    private static void roundtripWithAbnormalExponent(String s) {
+        if (!s.equals(new BigDecimal(s).toString())) {
+            throw new RuntimeException("Abnormal exponent roundtrip failure");
+        }
+    }
 
     /*
      * Verify precision is set properly if the significand has
