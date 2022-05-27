@@ -1593,7 +1593,7 @@ public class Lower extends TreeTranslator {
      * }
      *
      * @param tree  The try statement to inspect.
-     * @return A a desugared try-with-resources tree, or the original
+     * @return a desugared try-with-resources tree, or the original
      * try block if there are no resources to manage.
      */
     JCTree makeTwrTry(JCTry tree) {

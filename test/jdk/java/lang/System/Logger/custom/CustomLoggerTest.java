@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -370,7 +370,7 @@ public class CustomLoggerTest {
             throw new RuntimeException("sys logger in appplication map");
         }
         if (provider.system.contains(sysLogger1)) {
-            // sysLogger should be a a LazyLoggerWrapper
+            // sysLogger should be a LazyLoggerWrapper
             throw new RuntimeException("sys logger is in system map (should be wrapped)");
         }
 

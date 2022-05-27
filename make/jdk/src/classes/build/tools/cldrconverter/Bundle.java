@@ -732,7 +732,7 @@ class Bundle {
                 // this is a workaround in which 'B' character
                 // appearing in CLDR date-time pattern is replaced
                 // with 'a' character and hence resolved with am/pm strings.
-                // This workaround is based on the the fallback mechanism
+                // This workaround is based on the fallback mechanism
                 // specified in LDML spec for 'B' character, when a locale
                 // does not have data for day period ('B')
                 appendN('a', count, sb);
