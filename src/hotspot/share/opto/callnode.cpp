@@ -1104,10 +1104,7 @@ bool CallStaticJavaNode::is_uncommon_trap() const {
 //----------------------------uncommon_trap_request----------------------------
 // If this is an uncommon trap, return the request code, else zero.
 int CallStaticJavaNode::uncommon_trap_request() const {
-  if (is_uncommon_trap()) {
-    return extract_uncommon_trap_request(this);
-  }
-  return 0;
+  return is_uncommon_trap() ? extract_uncommon_trap_request(this) : 0;
 }
 int CallStaticJavaNode::extract_uncommon_trap_request(const Node* call) {
 #ifndef PRODUCT
@@ -1620,6 +1617,187 @@ Node *AllocateArrayNode::make_ideal_length(const TypeOopPtr* oop_type, PhaseTran
 
   return length;
 }
+
+//=============================================================================
+ReducedAllocationMergeNode::ReducedAllocationMergeNode(Compile* C, PhaseIterGVN* igvn, const PhiNode* phi) : TypeNode(phi->type(), phi->req()) {
+  init_class_id(Class_ReducedAllocationMerge);
+  init_flags(Flag_is_macro);
+
+  _num_orig_inputs        = phi->req();
+  _needs_all_fields       = false;
+  _in_copy                = new Node_Array(Thread::current()->resource_area(), phi->req());
+  _memories_indexes_start = -1;
+  _fields_and_values      = new (C->comp_arena()) Dict(cmpkey, hashkey);
+
+  const Type* ram_t = Type::TOP;
+
+  for (uint i=0; i<phi->req(); i++) {
+    init_req(i, phi->in(i));
+    _in_copy->map(i, this->_in[i]);
+
+    if (i > 0) {
+      const Type* in_t = igvn->type(phi->in(i));
+      ram_t = ram_t->meet_speculative(in_t);
+    }
+  }
+
+  _klass = ram_t->isa_oopptr()->exact_klass();
+
+  // Now let's try to find a memory Phi coming from same region
+  Node* reg = phi->region();
+  for (DUIterator_Fast imax, i = reg->fast_outs(imax); i < imax; i++) {
+    Node* n = reg->fast_out(i);
+    if (n->is_Phi() && n->bottom_type() == Type::MEMORY) {
+      _memories_indexes_start = req();
+
+      for (uint j=1; j<n->req(); j++) {
+        add_req(n->in(j));
+      }
+
+      break;
+    }
+  }
+
+  this->raise_bottom_type(ram_t);
+  igvn->set_type(this, ram_t);
+
+  C->add_macro_node(this);
+}
+
+bool ReducedAllocationMergeNode::register_use(Node* n) {
+  if (n->is_AddP()) {
+    jlong field = n->in(AddPNode::Offset)->find_long_con(-1);
+
+    assert(field != -1, "Didn't find constant for AddP.");
+
+    if ((*_fields_and_values)[(void*)field] == NULL) {
+      _fields_and_values->Insert((void*)field, (void*)new Node_Array(Compile::current()->node_arena(), _num_orig_inputs));
+    }
+
+    // If we didn't find memory edges to use so far then try to
+    // figure out which Memory edge subsequent Loads of this field use
+    if (_memories_indexes_start == -1) {
+      for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+        Node* addp_use = n->fast_out(i);
+
+        if (addp_use->is_Load()) {
+          Node* load_mem = addp_use->in(LoadNode::Memory);
+
+          // Safe the index where we are storing the memory edge
+          _memories_indexes_start = req();
+
+          if (load_mem->is_Phi()) {
+            for (uint j=1; j<_num_orig_inputs; j++) {
+              add_req(load_mem->in(j));
+            }
+          }
+          else {
+            for (uint j=1; j<_num_orig_inputs; j++) {
+              add_req(load_mem);
+            }
+          }
+
+          break;
+        }
+        else {
+          assert(false, "User of AddP in RAM is not a Load.");
+        }
+      }
+    }
+
+    return true;
+  }
+  else if (n->Opcode() == Op_SafePoint || (n->is_CallStaticJava() && n->as_CallStaticJava()->is_uncommon_trap())) {
+    _needs_all_fields = true;
+    return true;
+  }
+  else {
+    assert(false, "Trying to register unsupported use in RAM -> %d : %s", n->_idx, n->Name());
+    return false;
+  }
+}
+
+Node* ReducedAllocationMergeNode::memory_for(jlong field, Node* base) const {
+  assert(_memories_indexes_start != -1, "Didn't find memory edges yet?");
+
+  for (uint i=1; i<_num_orig_inputs; i++) {
+    if (base == _in_copy->at(i)) {
+      return in(_memories_indexes_start + i - 1);
+    }
+  }
+
+  assert(false, "Did not find a matching base when searching for memory.");
+  return NULL;
+}
+
+bool ReducedAllocationMergeNode::register_value_for_field(jlong field, Node* base, Node* value) {
+  // It's possible that the entry for this field is null because we didn't
+  // see a load to it, just a Safepoint using it all fields.
+  if ((*_fields_and_values)[(void*)field] == NULL) {
+    _fields_and_values->Insert((void*)field, (void*)new Node_Array(Compile::current()->node_arena(), _num_orig_inputs));
+  }
+
+  Node_Array* values = (Node_Array*) ((*_fields_and_values)[(void*)field]);
+
+  if (_num_orig_inputs == 3) {
+    if (base == _in_copy->at(1)) {
+      values->map(1, value);
+    }
+    else if (base == _in_copy->at(2)) {
+      values->map(2, value);
+    }
+    else {
+      return false;
+    }
+  }
+  else {
+    uint i = 1;
+    for (; i<_num_orig_inputs; i++) {
+      if (base == _in_copy->at(i)) {
+        values->map(i, value);
+        break;
+      }
+    }
+    if (i == _num_orig_inputs) {
+      return false;
+    }
+  }
+
+  this->add_req(value);
+
+  return true;
+}
+
+Node* ReducedAllocationMergeNode::value_phi_for_field(jlong field, PhaseIterGVN* igvn) {
+  PhiNode* phi       = new PhiNode(this->in(0), Type::BOTTOM);
+  Node_Array* values = (Node_Array*) ((*_fields_and_values)[(void*)field]);
+  const Type *t      = Type::TOP;
+
+  for (uint i=1; i<_num_orig_inputs; i++) {
+    assert(values->at(i) != NULL, "shouldn't be null at this point");
+    phi->set_req(i, values->at(i));
+    const Type* input_type = igvn->type(values->at(i));
+    t = t->meet_speculative(input_type);
+  }
+  igvn->set_type(phi, t);
+  phi->raise_bottom_type(t);
+
+  return phi;
+}
+
+ReducedAllocationMergeNode* ReducedAllocationMergeNode::make(Compile* C, PhaseIterGVN* igvn, PhiNode* phi) {
+  ReducedAllocationMergeNode* ram = new ReducedAllocationMergeNode(C, igvn, phi);
+
+  for (DUIterator_Fast imax, i = phi->fast_outs(imax); i < imax; i++) {
+    Node* n = phi->fast_out(i);
+    ram->register_use(n);
+  }
+
+  igvn->hash_insert(ram);
+
+  return ram;
+}
+
 
 //=============================================================================
 uint LockNode::size_of() const { return sizeof(*this); }

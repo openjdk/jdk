@@ -580,9 +580,9 @@ private:
 
   // Compute the escape information
   bool compute_escape(bool only_analysis);
-  bool is_read_only(Node* ctrl, Node* base);
-  Node* come_from_allocate(Node* n);
-  bool should_reduce_this_phi(Node* n);
+  bool is_read_only(Node* ctrl, Node* base) const;
+  Node* come_from_allocate(Node* n) const;
+  bool should_reduce_this_phi(Node* n) const;
   void reduce_this_phi(PhiNode* n);
 
   void set_not_scalar_replaceable(PointsToNode* ptn NOT_PRODUCT(COMMA const char* reason)) const {

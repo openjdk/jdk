@@ -111,7 +111,6 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
   bool do_locks_coarsening = EliminateLocks;
 
   while (!env->failing()) {
-    // Attempt to compile while subsuming loads into machine instructions.
     Options options(subsume_loads, do_escape_analysis, do_iterative_escape_analysis,
                     do_reduce_allocation_merges, eliminate_boxing, do_locks_coarsening,
                     install_code);

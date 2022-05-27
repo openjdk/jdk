@@ -86,7 +86,7 @@ public:
       return nonnull_req();
     return NULL;  // not a copy!
   }
-  bool has_phi() const;        // returns true if there is an Phi or RAM use of this region
+  bool has_phi() const;        // returns true if there is a Phi or RAM use of this region
   PhiNode* has_unique_phi() const; // returns the unique phi user, or NULL
   // Is this region node unreachable from root?
   bool is_unreachable_region(const PhaseGVN* phase);
