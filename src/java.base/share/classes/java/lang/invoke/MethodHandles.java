@@ -5263,7 +5263,7 @@ assertEquals("yz", (String) d0.invokeExact(123, "x", "y", "z"));
      *                  or if the new method handle's type would have too many parameters
      */
     public static MethodHandle dropArguments(MethodHandle target, int pos, List<Class<?>> valueTypes) {
-        return dropArguments(target, pos, valueTypes.toArray(new Class<?>[0]).clone(), true);
+        return dropArguments(target, pos, valueTypes.toArray(new Class<?>[0]), false);
     }
 
     static MethodHandle dropArguments(MethodHandle target, int pos, Class<?>[] valueTypes, boolean trusted) {
@@ -7749,7 +7749,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * @since 9
      */
     public static MethodHandle tryFinally(MethodHandle target, MethodHandle cleanup) {
-        List<Class<?>> targetParamTypes = target.type().parameterList();
+        Class<?>[] targetParamTypes = target.type().ptypes();
         Class<?> rtype = target.type().returnType();
 
         tryFinallyChecks(target, cleanup);
@@ -7757,7 +7757,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         // Match parameter lists: if the cleanup has a shorter parameter list than the target, add ignored arguments.
         // The cleanup parameter list (minus the leading Throwable and result parameters) must be a sublist of the
         // target parameter list.
-        cleanup = dropArgumentsToMatch(cleanup, (rtype == void.class ? 1 : 2), targetParamTypes, 0);
+        cleanup = dropArgumentsToMatch(cleanup, (rtype == void.class ? 1 : 2), targetParamTypes, 0, false);
 
         // Ensure that the intrinsic type checks the instance thrown by the
         // target against the first parameter of cleanup

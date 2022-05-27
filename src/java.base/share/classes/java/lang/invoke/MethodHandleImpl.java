@@ -1941,7 +1941,7 @@ abstract class MethodHandleImpl {
      *
      * @return a handle on the constructed {@code try-finally} block.
      */
-    static MethodHandle makeTryFinally(MethodHandle target, MethodHandle cleanup, Class<?> rtype, List<Class<?>> argTypes) {
+    static MethodHandle makeTryFinally(MethodHandle target, MethodHandle cleanup, Class<?> rtype, Class<?>[] argTypes) {
         MethodType type = MethodType.methodType(rtype, argTypes);
         LambdaForm form = makeTryFinallyForm(type.basicType());
 
