@@ -214,20 +214,15 @@ JNIEXPORT jint JNICALL
 Agent_OnLoad(JavaVM *jvm, char *options, void *reserved)
 {
     jvmtiError err;
-    jvmtiCapabilities caps = {0};
-    jvmtiEventCallbacks callbacks = {0};
+    jvmtiCapabilities caps;
+    jvmtiEventCallbacks callbacks;
     jint res = (*jvm)->GetEnv(jvm, (void **) &jvmti, JVMTI_VERSION_1_1);
     if (res != JNI_OK || jvmti == NULL) {
         reportError("GetEnv failed", res);
         return JNI_ERR;
     }
 
-#ifdef _AIX
-    // Following code is for AIX xlclang compiler
-    memset(&caps, '\0', sizeof(caps));
-    memset(&callbacks, '\0', sizeof(callbacks));
-#endif
-
+    memset(&caps, 0, sizeof(caps));
     caps.can_generate_field_modification_events = 1;
     caps.can_generate_field_access_events = 1;
     caps.can_tag_objects = 1;
@@ -237,6 +232,7 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved)
         return JNI_ERR;
     }
 
+    memset(&callbacks, 0, sizeof(callbacks));
     callbacks.FieldModification = &onFieldModification;
     callbacks.FieldAccess = &onFieldAccess;
 
