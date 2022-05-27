@@ -402,6 +402,13 @@ public enum HtmlStyle {
 
     /**
      * The class of a {@code div} element whose content should be rendered as a table
+     * with three columns where the middle column requires less space as it only contains
+     * a release name.
+     */
+    threeColumnReleaseSummary,
+
+    /**
+     * The class of a {@code div} element whose content should be rendered as a table
      * with four columns.
      */
     fourColumnSummary,
@@ -429,6 +436,12 @@ public enum HtmlStyle {
      * inactive tab above the table.
      */
     caption,
+
+    /**
+     * The class for a {@code div} element containing a row of checkboxes to select
+     * items to view in summary tables.
+     */
+    checkboxes,
 
     /**
      * The class of an element that is part of a table header.
@@ -654,11 +667,6 @@ public enum HtmlStyle {
     //<editor-fold desc="search index and results">
     //
     // The following constants are used for items in the static and interactive search indexes.
-
-    /**
-     * The class for a {@code button} in the search page to copy the search URL to the clipboard.
-     */
-    copyUrl,
 
     /**
      * The class for a {@code details} element in the search page to show additional information.
@@ -914,6 +922,11 @@ public enum HtmlStyle {
      * The class of a {@code ul} element listing classes in the uses page.
      */
     classUses,
+
+    /**
+     * The class for a {@code button} element to copy some page content to the clipboard.
+     */
+    copy,
 
     /**
      * The class of an {@code a} element for a link with an external target.
