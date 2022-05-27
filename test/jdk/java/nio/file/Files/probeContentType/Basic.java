@@ -194,7 +194,7 @@ public class Basic {
         Path pathWithFragement = Path.of("SomePathWith#aFragement.png");
         String contentType = Files.probeContentType(pathWithFragement);
         if (contentType == null || !contentType.equals("image/png")) {
-            System.out.printf("For %s expected \"png\" but got %s%n",
+            System.err.printf("For %s expected \"png\" but got %s%n",
                 pathWithFragement, contentType);
             failures++;
         }

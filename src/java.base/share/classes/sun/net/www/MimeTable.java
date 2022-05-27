@@ -40,13 +40,14 @@ import java.util.Properties;
 import java.util.StringTokenizer;
 
 public class MimeTable implements FileNameMap {
+    /** Hash mark introducing a URI fragment */
+    private static final int HASH_MARK = '#';
+
     /** Keyed by content type, returns MimeEntries */
-    private Hashtable<String, MimeEntry> entries
-        = new Hashtable<>();
+    private Hashtable<String, MimeEntry> entries = new Hashtable<>();
 
     /** Keyed by file extension (with the .), returns MimeEntries */
-    private Hashtable<String, MimeEntry> extensionMap
-        = new Hashtable<>();
+    private Hashtable<String, MimeEntry> extensionMap = new Hashtable<>();
 
     // Will be reset if in the platform-specific data file
     @SuppressWarnings("removal")
@@ -89,9 +90,6 @@ public class MimeTable implements FileNameMap {
         return DefaultInstanceHolder.defaultInstance;
     }
 
-    /**
-     *
-     */
     public static FileNameMap loadTable() {
         MimeTable mt = getDefaultTable();
         return mt;
@@ -156,47 +154,56 @@ public class MimeTable implements FileNameMap {
     }
 
     /**
-     * Locate a MimeEntry by the file extension that has been associated
-     * with it. Parses general file names, and URLs.
+     * Returns the file extension or the empty string if none found.
      */
-    public MimeEntry findByFileName(String fname) {
-        // attempt to find the entry with the fragment component removed
-        MimeEntry entry = findByFileName(fname, true);
-
-        // if entry not found, try again with the fragment intact
-        if (entry == null)
-            entry = findByFileName(fname, false);
-
-        return entry;
-    }
-
-    /**
-     * Locate a MimeEntry by its associated file extension.
-     *
-     * @param fname the file name
-     *
-     * @param removeFragment whether to remove the fragment, if any,
-     *        comprising the last hash ('#') and any subsequent characters
-     *
-     * @return the MIME entry associated with the file name
-     */
-    public MimeEntry findByFileName(String fname, boolean removeFragment) {
-        if (removeFragment) {
-            int hashIndex = fname.lastIndexOf('#');
-            if (hashIndex > 0)
-                fname = fname.substring(0, hashIndex - 1);
-        }
-
+    private static String getFileExtension(String fname) {
         int i = fname.lastIndexOf('.');
         // REMIND: OS specific delimiters appear here
         i = Math.max(i, fname.lastIndexOf('/'));
         i = Math.max(i, fname.lastIndexOf('?'));
 
         String ext = "";
-        if (i != -1 && fname.charAt(i) == '.')
+        if (i != -1 && fname.charAt(i) == '.') {
             ext = fname.substring(i).toLowerCase();
+        }
 
-        return findByExt(ext);
+        return ext;
+    }
+
+    /**
+     * Locate a MimeEntry by its associated file extension.
+     * Parses general file names, and URLs.
+     *
+     * @param fname the file name
+     *
+     * @return the MIME entry associated with the file name or {@code null}
+     */
+    public MimeEntry findByFileName(String fname) {
+        MimeEntry entry = null;
+
+        // If an optional fragment introduced by a hash mark is
+        // present, then strip it and use the prefix
+        int hashIndex = fname.lastIndexOf(HASH_MARK);
+        if (hashIndex > 0) {
+            String ext = getFileExtension(fname.substring(0, hashIndex - 1));
+            if (!ext.isEmpty()) {
+                entry = findByExt(ext);
+                if (entry != null) {
+                    return entry;
+                }
+            }
+        }
+
+        assert entry == null;
+
+        // If either no optional fragment was present, or the entry was not
+        // found with the fragment stripped, then try again with the full name
+        String ext = getFileExtension(fname);
+        if (!ext.isEmpty()) {
+            entry = findByExt(ext);
+        }
+
+        return entry;
     }
 
     /**
