@@ -1018,9 +1018,9 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
       Node* receiver = kit.argument(0);
       if (receiver->Opcode() == Op_ConP) {
         input_not_const = false;
-        ciObject* recv_obj = receiver->bottom_type()->is_oopptr()->const_oop();
-        if (recv_obj->is_method_handle()) {
-          ciMethod *target = recv_obj->as_method_handle()->get_vmtarget();
+        const TypeOopPtr* recv_toop = receiver->bottom_type()->isa_oopptr();
+        if (recv_toop != NULL) {
+          ciMethod* target = recv_toop->const_oop()->as_method_handle()->get_vmtarget();
           const int vtable_index = Method::invalid_vtable_index;
 
           if (!ciMethod::is_consistent_info(callee, target)) {
@@ -1036,7 +1036,8 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
                                                 PROB_ALWAYS);
           return cg;
         } else {
-          assert(recv_obj->is_null_object(), "not a null");
+          assert(receiver->bottom_type() == TypePtr::NULL_PTR, "not a null: %s",
+                 Type::str(receiver->bottom_type()));
           print_inlining_failure(C, callee, jvms->depth() - 1, jvms->bci(),
                                  "receiver is always null");
         }

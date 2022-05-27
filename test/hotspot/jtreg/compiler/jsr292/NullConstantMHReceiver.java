@@ -24,20 +24,21 @@
 /**
  * @test
  * @bug 8287223
+ * @library /test/lib / patches
  *
- * @run main/othervm -Xbatch -XX:CompileCommand=compileonly,*::test -XX:-TieredCompilation                         compiler.jsr292.NullConstantMHReceiver
- * @run main/othervm -Xbatch -XX:CompileCommand=compileonly,*::test -XX:+TieredCompilation -XX:TieredStopAtLevel=1 compiler.jsr292.NullConstantMHReceiver
+ * @build java.base/java.lang.invoke.MethodHandleHelper
+ * @run main/bootclasspath/othervm -Xbatch -XX:CompileCommand=compileonly,*::test -XX:-TieredCompilation                         compiler.jsr292.NullConstantMHReceiver
+ * @run main/bootclasspath/othervm -Xbatch -XX:CompileCommand=compileonly,*::test -XX:+TieredCompilation -XX:TieredStopAtLevel=1 compiler.jsr292.NullConstantMHReceiver
  */
 
 package compiler.jsr292;
 
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
+import java.lang.invoke.MethodHandleHelper;
 
 public class NullConstantMHReceiver {
     static void test() throws Throwable {
-        ((MethodHandle)null).invokeExact();
+        MethodHandleHelper.invokeBasicL(null);
     }
 
     public static void main(String[] args) throws Throwable {
