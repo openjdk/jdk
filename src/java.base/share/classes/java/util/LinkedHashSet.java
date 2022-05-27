@@ -128,7 +128,7 @@ public class LinkedHashSet<E>
      *
      * @apiNote
      * To create a {@code LinkedHashSet} with an initial capacity that accommodates
-     * an expected number of items, use {@link #newLinkedHashSet(int) newLinkedHashSet}.
+     * an expected number of elements, use {@link #newLinkedHashSet(int) newLinkedHashSet}.
      *
      * @param      initialCapacity the initial capacity of the linked hash set
      * @param      loadFactor      the load factor of the linked hash set
