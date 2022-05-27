@@ -327,20 +327,6 @@ public class ServerCompilerScheduler implements Scheduler {
             schedulePinned();
             buildDominators();
             scheduleLatest();
-
-            InputBlock noBlock = null;
-            for (InputNode n : graph.getNodes()) {
-                if (graph.getBlock(n) == null) {
-                    if (noBlock == null) {
-                        noBlock = graph.addArtificialBlock();
-                        blocks.add(noBlock);
-                    }
-
-                    graph.setBlock(n, noBlock);
-                }
-                assert graph.getBlock(n) != null;
-            }
-
             scheduleLocal();
             check();
             reportWarnings();
@@ -631,6 +617,12 @@ public class ServerCompilerScheduler implements Scheduler {
                 if (controlSuccs.get(ctrlIn).size() == 1) {
                     block = controlSuccs.get(ctrlIn).get(0).block;
                 }
+            }
+            if (block == null) {
+                // This can happen for blockless CFG nodes that are not
+                // control-reachable from the root even after connecting orphans
+                // and widows (e.g. in disconnected control cycles).
+                continue;
             }
             n.block = block;
             block.addNode(n.inputNode.getId());
