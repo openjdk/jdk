@@ -75,16 +75,24 @@ tools/sjavac/ClasspathDependencies.java                                         
 # Loom is not implemented on x86_32 yet
 
 jdk/jshell/ToolEnablePreviewTest.java                                           8286642 generic-i586
+tools/javac/annotations/typeAnnotations/classfile/Patterns.java                 8286642 generic-i586
 tools/javac/launcher/SourceLauncherTest.java                                    8286642 generic-i586
 tools/javac/patterns/CaseDefault.java                                           8286642 generic-i586
 tools/javac/patterns/DisambiguatePatterns.java                                  8286642 generic-i586
 tools/javac/patterns/EnumTypeChanges.java                                       8286642 generic-i586
+tools/javac/patterns/GenericRecordDeconstructionPattern.java                    8286642 generic-i586
 tools/javac/patterns/Guards.java                                                8286642 generic-i586
 tools/javac/patterns/InstanceofTotalPattern.java                                8286642 generic-i586
 tools/javac/patterns/LambdaCannotCapturePatternVariables.java                   8286642 generic-i586
+tools/javac/patterns/NestedDeconstructionPattern.java                           8286642 generic-i586
+tools/javac/patterns/NestedPrimitiveDeconstructionPattern.java                  8286642 generic-i586
+tools/javac/patterns/NullsInDeconstructionPatterns.java                         8286642 generic-i586
 tools/javac/patterns/NullSwitch.java                                            8286642 generic-i586
 tools/javac/patterns/Parenthesized.java                                         8286642 generic-i586
+tools/javac/patterns/PrettyTest.java                                            8286642 generic-i586
 tools/javac/patterns/SealedTypeChanges.java                                     8286642 generic-i586
 tools/javac/patterns/SimpleAndGuardPattern.java                                 8286642 generic-i586
+tools/javac/patterns/SimpleDeconstructionPattern.java                           8286642 generic-i586
 tools/javac/patterns/Switches.java                                              8286642 generic-i586
+tools/javac/patterns/TypedDeconstructionPatternExc.java                         8286642 generic-i586
 tools/javac/switchnull/SwitchNull.java                                          8286642 generic-i586
