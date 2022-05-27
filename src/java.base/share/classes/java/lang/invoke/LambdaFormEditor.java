@@ -216,17 +216,17 @@ class LambdaFormEditor {
             }
             return new TransformKey(fullBytes);
         }
-        static TransformKey of(byte kind, int b1, int b2, int[] b3456) {
-            long packedBytes = packedBytes(kind, b1, b2, b3456);
+        static TransformKey of(byte kind, int b1, int b2, int... b345) {
+            long packedBytes = packedBytes(kind, b1, b2, b345);
             if (packedBytes != 0) {
                 return new TransformKey(packedBytes);
             }
-            byte[] fullBytes = new byte[b3456.length + 3];
+            byte[] fullBytes = new byte[b345.length + 3];
             fullBytes[0] = kind;
             fullBytes[1] = bval(b1);
             fullBytes[2] = bval(b2);
-            for (int i = 0; i < b3456.length; i++) {
-                fullBytes[i + 3] = TransformKey.bval(b3456[i]);
+            for (int i = 0; i < b345.length; i++) {
+                fullBytes[i + 3] = TransformKey.bval(b345[i]);
             }
             return new TransformKey(fullBytes);
         }
@@ -249,7 +249,7 @@ class LambdaFormEditor {
             }
             if (!inRange(bitset))
                 return 0;
-            pb = pb | b2 << (2 * PACKED_BYTE_SIZE) | b1 << PACKED_BYTE_SIZE | b0;
+            pb = pb | packedBytes(b0, b1, b2);
             return pb;
         }
         private static long packedBytes(byte b0, int b1, int[] b234) {
@@ -264,7 +264,7 @@ class LambdaFormEditor {
             }
             if (!inRange(bitset))
                 return 0;
-            pb = pb | b1 << PACKED_BYTE_SIZE | b0;
+            pb = pb | packedBytes(b0, b1);
             return pb;
         }
         private static long packedBytes(byte b0, int[] b123) {
@@ -299,18 +299,18 @@ class LambdaFormEditor {
         }
         private static long packedBytes(int b0, int b1) {
             assert(inRange(b0 | b1));
-            return (  (b0 << 0*PACKED_BYTE_SIZE)
+            return (  (b0)
                     | (b1 << 1*PACKED_BYTE_SIZE));
         }
         private static long packedBytes(int b0, int b1, int b2) {
             assert(inRange(b0 | b1 | b2));
-            return (  (b0 << 0*PACKED_BYTE_SIZE)
+            return (  (b0)
                     | (b1 << 1*PACKED_BYTE_SIZE)
                     | (b2 << 2*PACKED_BYTE_SIZE));
         }
         private static long packedBytes(int b0, int b1, int b2, int b3) {
             assert(inRange(b0 | b1 | b2 | b3));
-            return (  (b0 << 0*PACKED_BYTE_SIZE)
+            return (  (b0)
                     | (b1 << 1*PACKED_BYTE_SIZE)
                     | (b2 << 2*PACKED_BYTE_SIZE)
                     | (b3 << 3*PACKED_BYTE_SIZE));
