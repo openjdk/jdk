@@ -97,16 +97,13 @@ public abstract non-sealed class MemorySessionImpl implements Scoped, MemorySess
             addInternal(resource);
         } catch (Throwable ex) {
             resource.cleanup();
+            throw ex;
         }
     }
 
     void addInternal(ResourceList.ResourceCleanup resource) {
-        try {
-            checkValidStateSlow();
-            resourceList.add(resource);
-        } catch (ScopedMemoryAccess.ScopedAccessError err) {
-            throw new IllegalStateException("Already closed");
-        }
+        checkValidStateSlow();
+        resourceList.add(resource);
     }
 
     protected MemorySessionImpl(Thread owner, ResourceList resourceList, Cleaner cleaner) {
