@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ import java.nio.ByteBuffer;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.text.MessageFormat;
+import java.util.Arrays;
 import java.util.Locale;
 
 /**
@@ -403,11 +404,14 @@ final class SessionTicketExtension {
             chc.statelessResumption = true;
 
             // If resumption is not in progress, return an empty value
-            if (!chc.isResumption || chc.resumingSession == null) {
+            if (!chc.isResumption || chc.resumingSession == null
+                    || chc.resumingSession.getPskIdentity() == null
+                    || !Arrays.asList(ProtocolVersion.PROTOCOLS_10_12)
+                        .contains(chc.resumingSession.getProtocolVersion())) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine("Stateless resumption supported");
                 }
-                return new SessionTicketSpec().getEncoded();
+                return new byte[0];
             }
 
             if (chc.localSupportedSignAlgs == null) {
