@@ -203,13 +203,13 @@ public class LinkedHashSet<E>
     }
 
     /**
-     * Creates a new, empty, insertion-ordered LinkedHashSet suitable for the expected number of elements.
+     * Creates a new, empty LinkedHashSet suitable for the expected number of elements.
      * The returned set uses the default load factor of 0.75, and its initial capacity is
      * generally large enough so that the expected number of elements can be added
      * without resizing the set.
      *
      * @param numElements    the expected number of elements
-     * @param <E> the type of elements maintained by this set
+     * @param <E>         the type of elements maintained by this set
      * @return the newly created set
      * @throws IllegalArgumentException if numElements is negative
      * @since 19
