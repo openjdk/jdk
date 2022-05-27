@@ -24,6 +24,7 @@ import com.sun.org.apache.xml.internal.dtm.DTM;
 import com.sun.org.apache.xml.internal.dtm.DTMIterator;
 import com.sun.org.apache.xml.internal.utils.PrefixResolver;
 import com.sun.org.apache.xml.internal.utils.QName;
+import com.sun.org.apache.xml.internal.utils.WrappedRuntimeException;
 import com.sun.org.apache.xpath.internal.Expression;
 import com.sun.org.apache.xpath.internal.ExpressionOwner;
 import com.sun.org.apache.xpath.internal.XPathContext;
@@ -491,9 +492,8 @@ public abstract class PredicatedNodeTest extends NodeTest implements SubContextL
     }
     catch (javax.xml.transform.TransformerException se)
     {
-
-      // TODO: Fix this.
-      throw new RuntimeException(se.getMessage());
+      // the Xalan/XPath impl use WrappedRuntimeException to carry errors over
+      throw new WrappedRuntimeException(se);
     }
     finally
     {
