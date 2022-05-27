@@ -723,12 +723,12 @@ void DeoptimizationBlob::print_value_on(outputStream* st) const {
   st->print_cr("Deoptimization (frame not available)");
 }
 
-// Implementation of OptimizedEntryBlob
+// Implementation of UpcallStub
 
-OptimizedEntryBlob::OptimizedEntryBlob(const char* name, CodeBuffer* cb, int size,
-                                       intptr_t exception_handler_offset,
-                                       jobject receiver, ByteSize frame_data_offset) :
-  RuntimeBlob(name, cb, sizeof(OptimizedEntryBlob), size, CodeOffsets::frame_never_safe, 0 /* no frame size */,
+UpcallStub::UpcallStub(const char* name, CodeBuffer* cb, int size,
+                       intptr_t exception_handler_offset,
+                       jobject receiver, ByteSize frame_data_offset) :
+  RuntimeBlob(name, cb, sizeof(UpcallStub), size, CodeOffsets::frame_never_safe, 0 /* no frame size */,
               /* oop maps = */ nullptr, /* caller must gc arguments = */ false),
   _exception_handler_offset(exception_handler_offset),
   _receiver(receiver),
@@ -736,58 +736,58 @@ OptimizedEntryBlob::OptimizedEntryBlob(const char* name, CodeBuffer* cb, int siz
   CodeCache::commit(this);
 }
 
-void* OptimizedEntryBlob::operator new(size_t s, unsigned size) throw() {
+void* UpcallStub::operator new(size_t s, unsigned size) throw() {
   return CodeCache::allocate(size, CodeBlobType::NonNMethod);
 }
 
-OptimizedEntryBlob* OptimizedEntryBlob::create(const char* name, CodeBuffer* cb,
-                                               intptr_t exception_handler_offset,
-                                               jobject receiver, ByteSize frame_data_offset) {
+UpcallStub* UpcallStub::create(const char* name, CodeBuffer* cb,
+                               intptr_t exception_handler_offset,
+                               jobject receiver, ByteSize frame_data_offset) {
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
 
-  OptimizedEntryBlob* blob = nullptr;
-  unsigned int size = CodeBlob::allocation_size(cb, sizeof(OptimizedEntryBlob));
+  UpcallStub* blob = nullptr;
+  unsigned int size = CodeBlob::allocation_size(cb, sizeof(UpcallStub));
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    blob = new (size) OptimizedEntryBlob(name, cb, size,
+    blob = new (size) UpcallStub(name, cb, size,
                                          exception_handler_offset, receiver, frame_data_offset);
   }
   // Track memory usage statistic after releasing CodeCache_lock
   MemoryService::track_code_cache_memory_usage();
 
-  trace_new_stub(blob, "OptimizedEntryBlob");
+  trace_new_stub(blob, "UpcallStub");
 
   return blob;
 }
 
-void OptimizedEntryBlob::oops_do(OopClosure* f, const frame& frame) {
+void UpcallStub::oops_do(OopClosure* f, const frame& frame) {
   frame_data_for_frame(frame)->old_handles->oops_do(f);
 }
 
-JavaFrameAnchor* OptimizedEntryBlob::jfa_for_frame(const frame& frame) const {
+JavaFrameAnchor* UpcallStub::jfa_for_frame(const frame& frame) const {
   return &frame_data_for_frame(frame)->jfa;
 }
 
-void OptimizedEntryBlob::free(OptimizedEntryBlob* blob) {
+void UpcallStub::free(UpcallStub* blob) {
   assert(blob != nullptr, "caller must check for NULL");
   JNIHandles::destroy_global(blob->receiver());
   RuntimeBlob::free(blob);
 }
 
-void OptimizedEntryBlob::preserve_callee_argument_oops(frame fr, const RegisterMap* reg_map, OopClosure* f) {
+void UpcallStub::preserve_callee_argument_oops(frame fr, const RegisterMap* reg_map, OopClosure* f) {
   ShouldNotReachHere(); // caller should never have to gc arguments
 }
 
 // Misc.
-void OptimizedEntryBlob::verify() {
+void UpcallStub::verify() {
   // unimplemented
 }
 
-void OptimizedEntryBlob::print_on(outputStream* st) const {
+void UpcallStub::print_on(outputStream* st) const {
   RuntimeBlob::print_on(st);
   print_value_on(st);
 }
 
-void OptimizedEntryBlob::print_value_on(outputStream* st) const {
-  st->print_cr("OptimizedEntryBlob (" INTPTR_FORMAT  ") used for %s", p2i(this), name());
+void UpcallStub::print_value_on(outputStream* st) const {
+  st->print_cr("UpcallStub (" INTPTR_FORMAT  ") used for %s", p2i(this), name());
 }

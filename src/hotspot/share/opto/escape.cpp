@@ -3532,7 +3532,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
 
   //  Phase 3:  Process MergeMem nodes from mergemem_worklist.
   //            Walk each memory slice moving the first node encountered of each
-  //            instance type to the the input corresponding to its alias index.
+  //            instance type to the input corresponding to its alias index.
   uint length = mergemem_worklist.length();
   for( uint next = 0; next < length; ++next ) {
     MergeMemNode* nmm = mergemem_worklist.at(next);

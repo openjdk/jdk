@@ -1468,6 +1468,11 @@ const bool Matcher::match_rule_supported(int opcode) {
         return false;
       }
       break;
+    case Op_PopulateIndex:
+      if (!is_LP64 || (UseAVX < 2)) {
+        return false;
+      }
+      break;
     case Op_RoundVF:
       if (UseAVX < 2) { // enabled for AVX2 only
         return false;
@@ -1811,6 +1816,10 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
         return false; // Implementation limitation
       }
       break;
+    case Op_PopulateIndex:
+      if (size_in_bits > 256 && !VM_Version::supports_avx512bw()) {
+        return false;
+      }
     case Op_VectorCastB2X:
     case Op_VectorCastS2X:
     case Op_VectorCastI2X:
@@ -6918,28 +6927,7 @@ instruct vcastBtoX(vec dst, vec src) %{
 
     BasicType to_elem_bt = Matcher::vector_element_basic_type(this);
     int vlen_enc = vector_length_encoding(this);
-    switch (to_elem_bt) {
-      case T_SHORT:
-        __ vpmovsxbw($dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
-        break;
-      case T_INT:
-        __ vpmovsxbd($dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
-        break;
-      case T_FLOAT:
-        __ vpmovsxbd($dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
-        __ vcvtdq2ps($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-        break;
-      case T_LONG:
-        __ vpmovsxbq($dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
-        break;
-      case T_DOUBLE: {
-        int mid_vlen_enc = (vlen_enc == Assembler::AVX_512bit) ? Assembler::AVX_256bit : Assembler::AVX_128bit;
-        __ vpmovsxbd($dst$$XMMRegister, $src$$XMMRegister, mid_vlen_enc);
-        __ vcvtdq2pd($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-        break;
-      }
-      default: assert(false, "%s", type2name(to_elem_bt));
-    }
+    __ vconvert_b2x(to_elem_bt, $dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -8272,6 +8260,45 @@ instruct loadIotaIndices(vec dst, immI_0 src, rRegP scratch) %{
   ins_pipe( pipe_slow );
 %}
 
+#ifdef _LP64
+instruct VectorPopulateIndex(vec dst, rRegI src1, immI_1 src2, vec vtmp, rRegP scratch) %{
+  match(Set dst (PopulateIndex src1 src2));
+  effect(TEMP dst, TEMP vtmp, TEMP scratch);
+  format %{ "vector_populate_index $dst $src1 $src2\t! using $vtmp and $scratch as TEMP" %}
+  ins_encode %{
+     assert($src2$$constant == 1, "required");
+     int vlen = Matcher::vector_length(this);
+     int vlen_enc = vector_length_encoding(this);
+     BasicType elem_bt = Matcher::vector_element_basic_type(this);
+     __ vpbroadcast(elem_bt, $vtmp$$XMMRegister, $src1$$Register, vlen_enc);
+     __ load_iota_indices($dst$$XMMRegister, $scratch$$Register, vlen);
+     if (elem_bt != T_BYTE) {
+       __ vconvert_b2x(elem_bt, $dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
+     }
+     __ vpadd(elem_bt, $dst$$XMMRegister, $dst$$XMMRegister, $vtmp$$XMMRegister, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct VectorPopulateLIndex(vec dst, rRegL src1, immI_1 src2, vec vtmp, rRegP scratch) %{
+  match(Set dst (PopulateIndex src1 src2));
+  effect(TEMP dst, TEMP vtmp, TEMP scratch);
+  format %{ "vector_populate_index $dst $src1 $src2\t! using $vtmp and $scratch as TEMP" %}
+  ins_encode %{
+     assert($src2$$constant == 1, "required");
+     int vlen = Matcher::vector_length(this);
+     int vlen_enc = vector_length_encoding(this);
+     BasicType elem_bt = Matcher::vector_element_basic_type(this);
+     __ vpbroadcast(elem_bt, $vtmp$$XMMRegister, $src1$$Register, vlen_enc);
+     __ load_iota_indices($dst$$XMMRegister, $scratch$$Register, vlen);
+     if (elem_bt != T_BYTE) {
+       __ vconvert_b2x(elem_bt, $dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
+     }
+     __ vpadd(elem_bt, $dst$$XMMRegister, $dst$$XMMRegister, $vtmp$$XMMRegister, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+#endif
 //-------------------------------- Rearrange ----------------------------------
 
 // LoadShuffle/Rearrange for Byte

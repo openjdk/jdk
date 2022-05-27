@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,8 +79,8 @@ import java.util.Arrays;
  */
 public class ChannelBinding {
 
-    private InetAddress initiator;
-    private InetAddress acceptor;
+    private final InetAddress initiator;
+    private final InetAddress acceptor;
     private  byte[] appData;
 
     /**
@@ -172,10 +172,8 @@ public class ChannelBinding {
         if (this == obj)
             return true;
 
-        if (! (obj instanceof ChannelBinding))
+        if (! (obj instanceof ChannelBinding cb))
             return false;
-
-        ChannelBinding cb = (ChannelBinding) obj;
 
         if ((initiator != null && cb.initiator == null) ||
             (initiator == null && cb.initiator != null))

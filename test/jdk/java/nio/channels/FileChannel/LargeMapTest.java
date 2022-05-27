@@ -37,7 +37,7 @@ import static java.nio.file.StandardOpenOption.*;
  * @bug 8286637
  * @summary Ensure that memory mapping beyond 32-bit range does not cause an
  *          EXCEPTION_ACCESS_VIOLATION.
- * @run main/othervm LargeMapTest
+ * @run main/othervm/timeout=240 LargeMapTest
  */
 public class LargeMapTest {
     private static final String FILE = "test.dat";
@@ -61,7 +61,7 @@ public class LargeMapTest {
         ByteBuffer bb = ByteBuffer.allocateDirect(BUFSIZ);
 
         try (FileChannel fc = FileChannel.open(p, READ, WRITE);) {
-            MemorySegment mbb = MemorySegment.ofByteBuffer(bb);
+            MemorySegment mbb = MemorySegment.ofBuffer(bb);
             MemorySegment mappedMemorySegment =
                 fc.map(FileChannel.MapMode.READ_WRITE, 0, p.toFile().length(),
                        MemorySession.openImplicit());
