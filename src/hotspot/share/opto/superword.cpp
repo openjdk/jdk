@@ -204,11 +204,9 @@ bool SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
 //------------------------------max vector size------------------------------
 int SuperWord::max_vector_size(BasicType bt) {
   int max_vector = Matcher::max_vector_size(bt);
-  if (SuperWordMaxVectorLimit != -1) {
-    int max_vector_limit = SuperWordMaxVectorLimit / type2aelembytes(bt);
-    if (max_vector > max_vector_limit) {
-      max_vector = max_vector_limit;
-    }
+  int sw_max_vector_limit = SuperWordMaxVectorSize / type2aelembytes(bt);
+  if (max_vector > sw_max_vector_limit) {
+    max_vector = sw_max_vector_limit;
   }
   return max_vector; 
 }
