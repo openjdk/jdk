@@ -1184,7 +1184,7 @@ static int patch_addr_in_movptr(address branch, address target) {
   int32_t lower = ((intptr_t)target << 35) >> 35;
   int64_t upper = ((intptr_t)target - lower) >> 29;
   Assembler::patch(branch + 0,  31, 12, upper & 0xfffff);                       // Lui.             target[47:28] + target[27] ==> branch[31:12]
-  Assembler::patch(branch + 4,  31, 20, (lower >> 17) & 0xfff);                 // Addiw.           target[27:16] ==> branch[31:20]
+  Assembler::patch(branch + 4,  31, 20, (lower >> 17) & 0xfff);                 // Addi.            target[27:16] ==> branch[31:20]
   Assembler::patch(branch + 12, 31, 20, (lower >> 6) & 0x7ff);                  // Addi.            target[15: 5] ==> branch[31:20]
   Assembler::patch(branch + 20, 31, 20, lower & 0x3f);                          // Addi/Jalr/Load.  target[ 4: 0] ==> branch[31:20]
   return MOVPTR_INSTRUCTIONS_NUM * NativeInstruction::instruction_size;
