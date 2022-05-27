@@ -3791,7 +3791,7 @@ bool PhaseIdealLoop::do_intrinsify_fill() {
 }
 
 
-// Examine an inner loop looking for a a single store of an invariant
+// Examine an inner loop looking for a single store of an invariant
 // value in a unit stride loop,
 bool PhaseIdealLoop::match_fill_loop(IdealLoopTree* lpt, Node*& store, Node*& store_value,
                                      Node*& shift, Node*& con) {

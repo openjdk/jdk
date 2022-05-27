@@ -31,6 +31,7 @@ import sun.security.jgss.spi.*;
 import sun.security.krb5.*;
 import javax.security.auth.kerberos.KerberosTicket;
 import javax.security.auth.kerberos.KerberosPrincipal;
+import java.io.Serial;
 import java.net.InetAddress;
 import java.io.IOException;
 import java.util.Date;
@@ -50,12 +51,13 @@ public class Krb5InitCredential
     extends KerberosTicket
     implements Krb5CredElement {
 
+    @Serial
     private static final long serialVersionUID = 7723415700837898232L;
 
     @SuppressWarnings("serial") // Not statically typed as Serializable
-    private Krb5NameElement name;
+    private final Krb5NameElement name;
     @SuppressWarnings("serial") // Not statically typed as Serializable
-    private Credentials krb5Credentials;
+    private final Credentials krb5Credentials;
     public KerberosTicket proxyTicket;
 
     private Krb5InitCredential(Krb5NameElement name,
@@ -198,8 +200,8 @@ public class Krb5InitCredential
         EncryptionKey sessionKey = delegatedCred.getSessionKey();
 
         /*
-         * all of the following data is optional in a KRB-CRED
-         * messages. This check for each field.
+         * All the following data is optional in a KRB-CRED
+         * message. This check for each field.
          */
 
         PrincipalName cPrinc = delegatedCred.getClient();
