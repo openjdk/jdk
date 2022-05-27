@@ -209,7 +209,7 @@ public class LinkedHashSet<E>
      * without resizing the set.
      *
      * @param numElements    the expected number of elements
-     * @param <E>         the type of keys maintained by this set
+     * @param <E> the type of elements maintained by this set
      * @return the newly created set
      * @throws IllegalArgumentException if numElements is negative
      * @since 19
