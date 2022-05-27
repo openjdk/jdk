@@ -178,7 +178,7 @@ public abstract class AbstractEventStream implements EventStream {
         if (timeout.isNegative()) {
             throw new IllegalArgumentException("timeout value is negative");
         }
-        
+
         long nanos;
         try {
             nanos = timeout.toNanos();
