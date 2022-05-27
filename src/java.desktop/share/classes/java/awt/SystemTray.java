@@ -131,15 +131,7 @@ public class SystemTray {
     private static final TrayIcon[] EMPTY_TRAY_ARRAY = new TrayIcon[0];
 
     static {
-        AWTAccessor.setSystemTrayAccessor(
-            new AWTAccessor.SystemTrayAccessor() {
-                public void firePropertyChange(SystemTray tray,
-                                               String propertyName,
-                                               Object oldValue,
-                                               Object newValue) {
-                    tray.firePropertyChange(propertyName, oldValue, newValue);
-                }
-            });
+        AWTAccessor.setSystemTrayAccessor(SystemTray::firePropertyChange);
     }
 
     /**
