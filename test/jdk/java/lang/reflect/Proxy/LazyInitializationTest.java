@@ -29,7 +29,7 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @bug 8285401
- * @summary Avoid eager initialization of parameter types in proxy initialization
+ * @summary Avoid initialization of parameter types in proxy construction
  * @run testng LazyInitializationTest
  */
 public final class LazyInitializationTest {
@@ -50,7 +50,7 @@ public final class LazyInitializationTest {
         Intf value = (Intf) Proxy.newProxyInstance(LazyInitializationTest.class.getClassLoader(),
                 new Class<?>[]{ Intf.class },
                 (proxy, method, args) -> null);
-        Assert.assertFalse(initialized, "parameter type initialized eagerly");
+        Assert.assertFalse(initialized, "parameter type initialized unnecessarily");
 
         value.m(new Parameter());
         Assert.assertTrue(initialized, "parameter type initialized after instantiation");
