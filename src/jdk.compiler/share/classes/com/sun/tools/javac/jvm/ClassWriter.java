@@ -379,7 +379,7 @@ public class ClassWriter extends ClassFile {
     /**
      * Write method parameter names attribute.
      */
-    int writeMethodParametersAttr(MethodSymbol m) {
+    int writeMethodParametersAttr(MethodSymbol m, boolean writeParamNames) {
         MethodType ty = m.externalType(types).asMethodType();
         final int allparams = ty.argtypes.size();
         if (m.params != null && allparams != 0) {
@@ -390,7 +390,10 @@ public class ClassWriter extends ClassFile {
                 final int flags =
                     ((int) s.flags() & (FINAL | SYNTHETIC | MANDATED)) |
                     ((int) m.flags() & SYNTHETIC);
-                databuf.appendChar(poolWriter.putName(s.name));
+                if (writeParamNames)
+                    databuf.appendChar(poolWriter.putName(s.name));
+                else
+                    databuf.appendChar(0);
                 databuf.appendChar(flags);
             }
             // Now write the real parameters
@@ -398,7 +401,10 @@ public class ClassWriter extends ClassFile {
                 final int flags =
                     ((int) s.flags() & (FINAL | SYNTHETIC | MANDATED)) |
                     ((int) m.flags() & SYNTHETIC);
-                databuf.appendChar(poolWriter.putName(s.name));
+                if (writeParamNames)
+                    databuf.appendChar(poolWriter.putName(s.name));
+                else
+                    databuf.appendChar(0);
                 databuf.appendChar(flags);
             }
             // Now write the captured locals
@@ -406,7 +412,10 @@ public class ClassWriter extends ClassFile {
                 final int flags =
                     ((int) s.flags() & (FINAL | SYNTHETIC | MANDATED)) |
                     ((int) m.flags() & SYNTHETIC);
-                databuf.appendChar(poolWriter.putName(s.name));
+                if (writeParamNames)
+                    databuf.appendChar(poolWriter.putName(s.name));
+                else
+                    databuf.appendChar(0);
                 databuf.appendChar(flags);
             }
             endAttr(attrIndex);
@@ -1007,7 +1016,7 @@ public class ClassWriter extends ClassFile {
         }
         if (target.hasMethodParameters() && requiresMethodParametersAttr(m)) {
             if (!m.isLambdaMethod()) // Per JDK-8138729, do not emit parameters table for lambda bodies.
-                acount += writeMethodParametersAttr(m);
+                acount += writeMethodParametersAttr(m, options.isSet(PARAMETERS) || (m.isConstructor() && (m.flags_field & RECORD) != 0));
         }
         acount += writeMemberAttrs(m, false);
         if (!m.isLambdaMethod())
