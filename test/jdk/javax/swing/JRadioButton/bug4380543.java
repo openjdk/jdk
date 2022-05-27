@@ -22,6 +22,7 @@
  */
 /* @test
    @bug 4380543
+   @key headful
    @requires (os.family == "windows")
    @library /java/awt/regtesthelpers
    @build PassFailJFrame
