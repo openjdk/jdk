@@ -299,7 +299,9 @@ class LIR_Opr {
 
   enum {
     vreg_base = ConcreteRegisterImpl::number_of_registers,
-    vreg_max = (1 << data_bits) - 1 // max unsigned data value
+    data_max = (1 << data_bits) - 1,      // max unsigned value for data bit field
+    vreg_limit =  10000,                  // choose a reasonable limit,
+    vreg_max = MIN2(vreg_limit, data_max) // and make sure if fits in the bit field
   };
 
   static inline LIR_Opr illegalOpr();
