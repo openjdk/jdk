@@ -61,7 +61,7 @@ public class TestBitShuffleOpers {
 
     @Run(test = {"test1"}, mode = RunMode.STANDALONE)
     public void kernel_test1() {
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 5000; i++) {
             test1(ri, ai, bi);
         }
     }
@@ -76,7 +76,7 @@ public class TestBitShuffleOpers {
 
     @Run(test = {"test2"}, mode = RunMode.STANDALONE)
     public void kernel_test2() {
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 5000; i++) {
             test2(ri, ai, bi);
         }
     }
@@ -91,7 +91,7 @@ public class TestBitShuffleOpers {
 
     @Run(test = {"test3"}, mode = RunMode.STANDALONE)
     public void kernel_test3() {
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 5000; i++) {
             test3(ri, ai, bi);
         }
     }
@@ -106,7 +106,7 @@ public class TestBitShuffleOpers {
 
     @Run(test = {"test4"}, mode = RunMode.STANDALONE)
     public void kernel_test4() {
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 5000; i++) {
             test4(rl, al, bl);
         }
     }
@@ -121,7 +121,7 @@ public class TestBitShuffleOpers {
 
     @Run(test = {"test5"}, mode = RunMode.STANDALONE)
     public void kernel_test5() {
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 5000; i++) {
             test5(rl, al, bl);
         }
     }
@@ -136,7 +136,7 @@ public class TestBitShuffleOpers {
 
     @Run(test = {"test6"}, mode = RunMode.STANDALONE)
     public void kernel_test6() {
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 5000; i++) {
             test6(rl, al, bl);
         }
     }
@@ -151,7 +151,7 @@ public class TestBitShuffleOpers {
 
     @Run(test = {"test7"}, mode = RunMode.STANDALONE)
     public void kernel_test7() {
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 5000; i++) {
             test7(ri, ai, bi);
         }
     }
@@ -166,7 +166,7 @@ public class TestBitShuffleOpers {
 
     @Run(test = {"test8"}, mode = RunMode.STANDALONE)
     public void kernel_test8() {
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 5000; i++) {
             test8(ri, ai, bi);
         }
     }
@@ -181,7 +181,7 @@ public class TestBitShuffleOpers {
 
     @Run(test = {"test9"}, mode = RunMode.STANDALONE)
     public void kernel_test9() {
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 5000; i++) {
             test9(ri, ai, bi);
         }
     }
@@ -196,7 +196,7 @@ public class TestBitShuffleOpers {
 
     @Run(test = {"test10"}, mode = RunMode.STANDALONE)
     public void kernel_test10() {
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 5000; i++) {
             test10(rl, al, bl);
         }
     }
@@ -211,7 +211,7 @@ public class TestBitShuffleOpers {
 
     @Run(test = {"test11"}, mode = RunMode.STANDALONE)
     public void kernel_test11() {
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 5000; i++) {
             test11(rl, al, bl);
         }
     }
@@ -226,7 +226,7 @@ public class TestBitShuffleOpers {
 
     @Run(test = {"test12"}, mode = RunMode.STANDALONE)
     public void kernel_test12() {
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 5000; i++) {
             test12(rl, al, bl);
         }
     }
@@ -243,7 +243,7 @@ public class TestBitShuffleOpers {
 
     @Run(test = {"test13"}, mode = RunMode.STANDALONE)
     public void kernel_test13() {
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 5000; i++) {
             test13(ri, ai, bi);
         }
         verifyCompressInts(ri, ai, bi);
@@ -259,7 +259,7 @@ public class TestBitShuffleOpers {
 
     @Run(test = {"test14"}, mode = RunMode.STANDALONE)
     public void kernel_test14() {
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 5000; i++) {
             test14(rl, al, bl);
         }
         verifyCompressLongs(rl, al, bl);
@@ -275,7 +275,7 @@ public class TestBitShuffleOpers {
 
     @Run(test = {"test15"}, mode = RunMode.STANDALONE)
     public void kernel_test15() {
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 5000; i++) {
             test15(ri, ai, bi);
         }
         verifyExpandInts(ri, ai, bi);
@@ -291,7 +291,7 @@ public class TestBitShuffleOpers {
 
     @Run(test = {"test16"}, mode = RunMode.STANDALONE)
     public void kernel_test16() {
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 5000; i++) {
             test16(rl, al, bl);
         }
         verifyExpandLongs(rl, al, bl);
@@ -301,11 +301,33 @@ public class TestBitShuffleOpers {
     public void test17() {
         int resI = 0;
         long resL = 0L;
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 5000; i++) {
            resI = Integer.expand(-1, -1);
            verifyExpandInt(resI, -1, -1);
            resI = Integer.compress(-1, -1);
            verifyCompressInt(resI, -1, -1);
+
+           resI = Integer.expand(ai[i&(SIZE-1)], -1);
+           verifyExpandInt(resI, ai[i&(SIZE-1)], -1);
+           resI = Integer.expand(ai[i&(SIZE-1)], -2);
+           verifyExpandInt(resI, ai[i&(SIZE-1)], -2);
+           resI = Integer.expand(ai[i&(SIZE-1)],  5);
+           verifyExpandInt(resI, ai[i&(SIZE-1)],  5);
+           resI = Integer.compress(ai[i&(SIZE-1)], -1);
+           verifyCompressInt(resI, ai[i&(SIZE-1)], -1);
+           resI = Integer.compress(ai[i&(SIZE-1)], -2);
+           verifyCompressInt(resI, ai[i&(SIZE-1)], -2);
+           resI = Integer.compress(ai[i&(SIZE-1)],  5);
+           verifyCompressInt(resI, ai[i&(SIZE-1)],  5);
+
+           resI = Integer.expand(ai[i&(SIZE-1)], bi[i&(SIZE-1)] & ~(0x10000000));
+           verifyExpandInt(resI, ai[i&(SIZE-1)], bi[i&(SIZE-1)] & ~(0x10000000));
+           resI = Integer.expand(ai[i&(SIZE-1)], bi[i&(SIZE-1)] | (0x10000000));
+           verifyExpandInt(resI, ai[i&(SIZE-1)], bi[i&(SIZE-1)] | (0x10000000));
+           resI = Integer.compress(ai[i&(SIZE-1)], bi[i&(SIZE-1)] & ~(0x10000000));
+           verifyCompressInt(resI, ai[i&(SIZE-1)], bi[i&(SIZE-1)] & ~(0x10000000));
+           resI = Integer.compress(ai[i&(SIZE-1)], bi[i&(SIZE-1)] | (0x10000000));
+           verifyCompressInt(resI, ai[i&(SIZE-1)], bi[i&(SIZE-1)] | (0x10000000));
 
            resI = Integer.compress(0x12123434, 0xFF00FF00);
            verifyCompressInt(resI, 0x12123434, 0xFF00FF00);
@@ -321,6 +343,28 @@ public class TestBitShuffleOpers {
            verifyCompressLong(resL, 0x1212343412123434L, 0xFF00FF00FF00FF00L);
            resL = Long.expand(0x1212343412123434L, 0xFF00FF00FF00FF00L);
            verifyExpandLong(resL, 0x1212343412123434L, 0xFF00FF00FF00FF00L);
+
+           resL = Long.expand(al[i&(SIZE-1)], -1);
+           verifyExpandLong(resL, al[i&(SIZE-1)], -1);
+           resL = Long.expand(al[i&(SIZE-1)], -2);
+           verifyExpandLong(resL, al[i&(SIZE-1)], -2);
+           resL = Long.expand(al[i&(SIZE-1)],  5);
+           verifyExpandLong(resL, al[i&(SIZE-1)],  5);
+           resL = Long.compress(al[i&(SIZE-1)], -1);
+           verifyCompressLong(resL, al[i&(SIZE-1)], -1);
+           resL = Long.compress(al[i&(SIZE-1)], -2);
+           verifyCompressLong(resL, al[i&(SIZE-1)], -2);
+           resL = Long.compress(al[i&(SIZE-1)],  5);
+           verifyCompressLong(resL, al[i&(SIZE-1)],  5);
+
+           resL = Long.expand(al[i&(SIZE-1)], bl[i&(SIZE-1)] & ~(0x10000000));
+           verifyExpandLong(resL, al[i&(SIZE-1)], bl[i&(SIZE-1)] & ~(0x10000000));
+           resL = Long.expand(al[i&(SIZE-1)], bl[i&(SIZE-1)] | (0x10000000));
+           verifyExpandLong(resL, al[i&(SIZE-1)], bl[i&(SIZE-1)] | (0x10000000));
+           resL = Long.compress(al[i&(SIZE-1)], bl[i&(SIZE-1)] & ~(0x10000000));
+           verifyCompressLong(resL, al[i&(SIZE-1)], bl[i&(SIZE-1)] & ~(0x10000000));
+           resL = Long.compress(al[i&(SIZE-1)], bl[i&(SIZE-1)] | (0x10000000));
+           verifyCompressLong(resL, al[i&(SIZE-1)], bl[i&(SIZE-1)] | (0x10000000));
         }
     }
 

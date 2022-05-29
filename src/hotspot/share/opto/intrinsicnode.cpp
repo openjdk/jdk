@@ -28,6 +28,9 @@
 #include "opto/mulnode.hpp"
 #include "opto/memnode.hpp"
 #include "opto/phaseX.hpp"
+#include "utilities/population_count.hpp"
+#include "utilities/count_leading_zeros.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 //=============================================================================
 // Do not match memory edge.
@@ -217,6 +220,65 @@ Node* ExpandBitsNode::Identity(PhaseGVN* phase) {
   return compress_expand_identity(phase, this);
 }
 
+static const Type* bitshuffle_value(const TypeInteger* src_type, const TypeInteger* mask_type, int opc, BasicType bt) {
+
+  jlong hi = bt == T_INT ? max_jint : max_jlong;
+  jlong lo = bt == T_INT ? min_jint : min_jlong;
+
+  if(mask_type->is_con() && mask_type->get_con_as_long(bt) != -1L) {
+    jlong maskcon = mask_type->get_con_as_long(bt);
+    int bitcount = population_count(static_cast<julong>(bt == T_INT ? maskcon & 0xFFFFFFFFL : maskcon));
+    if (opc == Op_CompressBits) {
+      // Bit compression selects the source bits corresponding to true mask bits
+      // and lays them out contiguously at desitination bit poistions starting from
+      // LSB, remaining higher order bits are set to zero.
+      // Thus, it will always generates a +ve value i.e. sign bit set to 0 if
+      // any bit of constant mask value is zero.
+      lo = 0L;
+      hi = (1L << bitcount) - 1;
+    } else {
+      assert(opc == Op_ExpandBits, "");
+      // Expansion sequentially reads source bits starting from LSB
+      // and places them over destination at bit positions corresponding
+      // set mask bit. Thus bit expansion for non-negative mask value
+      // will always generate a +ve value.
+      hi = maskcon >= 0L ? maskcon : maskcon ^ lo;
+      lo = maskcon >= 0L ? 0L : lo;
+    }
+  }
+
+  if (!mask_type->is_con()) {
+    int mask_max_bw;
+    int max_bw = bt == T_INT ? 32 : 64;
+    // Case 1) Mask value range includes -1.
+    if ((mask_type->lo_as_long() < 0L && mask_type->hi_as_long() >= -1L)) {
+      mask_max_bw = max_bw;
+    // Case 2) Mask value range is less than -1.
+    } else if (mask_type->hi_as_long() < -1L) {
+      mask_max_bw = max_bw - 1;
+    } else {
+    // Case 3) Mask value range only includes +ve values.
+      assert(mask_type->lo_as_long() >= 0, "");
+      mask_max_bw = max_bw - count_leading_zeros(mask_type->hi_as_long());
+    }
+    if ( opc == Op_CompressBits) {
+      lo = mask_max_bw == max_bw ? lo : 0L;
+      // Compress operation is inherently an unsigned operation and
+      // result value range is primarily dependent on true count
+      // of participating mask value.
+      hi = mask_max_bw < max_bw ? (1L << mask_max_bw) - 1 : src_type->hi_as_long();
+    } else {
+      assert(opc == Op_ExpandBits, "");
+      jlong max_mask = mask_type->hi_as_long();
+      lo = mask_type->lo_as_long() >= 0L ? 0L : lo;
+      hi = mask_type->lo_as_long() >= 0L ? max_mask : hi;
+    }
+  }
+
+  return bt == T_INT ? static_cast<const Type*>(TypeInt::make(lo, hi, Type::WidenMax)) :
+                       static_cast<const Type*>(TypeLong::make(lo, hi, Type::WidenMax));
+}
+
 const Type* CompressBitsNode::Value(PhaseGVN* phase) const {
   const Type* t1 = phase->type(in(1));
   const Type* t2 = phase->type(in(2));
@@ -225,25 +287,27 @@ const Type* CompressBitsNode::Value(PhaseGVN* phase) const {
   }
 
   BasicType bt = bottom_type()->basic_type();
-  const TypeInteger* t1i = t1->is_integer(bt);
-  const TypeInteger* t2i = t2->is_integer(bt);
+  const TypeInteger* src_type = t1->is_integer(bt);
+  const TypeInteger* mask_type = t2->is_integer(bt);
   int w = bt == T_INT ? 32 : 64;
 
-  if (t1i->is_con() && t2i->is_con()) {
-     jlong res = 0;
-     jlong src = t1i->get_con_as_long(bt);
-     jlong mask = t2i->get_con_as_long(bt);
-     for (int i = 0, j = 0; i < w; i++) {
-       if(mask & 0x1) {
-         res |= (src & 0x1) << j++;
-       }
-       src >>= 1;
-       mask >>= 1;
-     }
-     return bt == T_INT ? static_cast<const Type*>(TypeInt::make(res)) :
-                          static_cast<const Type*>(TypeLong::make(res));
+  // Constant fold if both src and mask are constants.
+  if (src_type->is_con() && mask_type->is_con()) {
+    jlong res = 0;
+    jlong src = src_type->get_con_as_long(bt);
+    jlong mask = mask_type->get_con_as_long(bt);
+    for (int i = 0, j = 0; i < w; i++) {
+      if(mask & 0x1) {
+        res |= (src & 0x1) << j++;
+      }
+      src >>= 1;
+      mask >>= 1;
+    }
+    return bt == T_INT ? static_cast<const Type*>(TypeInt::make(res)) :
+                         static_cast<const Type*>(TypeLong::make(res));
   }
-  return bottom_type();
+
+  return bitshuffle_value(src_type, mask_type, Op_CompressBits, bt);
 }
 
 const Type* ExpandBitsNode::Value(PhaseGVN* phase) const {
@@ -254,14 +318,15 @@ const Type* ExpandBitsNode::Value(PhaseGVN* phase) const {
   }
 
   BasicType bt = bottom_type()->basic_type();
-  const TypeInteger* t1i = t1->is_integer(bt);
-  const TypeInteger* t2i = t2->is_integer(bt);
+  const TypeInteger* src_type = t1->is_integer(bt);
+  const TypeInteger* mask_type = t2->is_integer(bt);
   int w = bt == T_INT ? 32 : 64;
 
-  if (t1i->is_con() && t2i->is_con()) {
+  // Constant fold if both src and mask are constants.
+  if (src_type->is_con() && mask_type->is_con()) {
      jlong res = 0;
-     jlong src = t1i->get_con_as_long(bt);
-     jlong mask = t2i->get_con_as_long(bt);
+     jlong src = src_type->get_con_as_long(bt);
+     jlong mask = mask_type->get_con_as_long(bt);
      for (int i = 0; i < w; i++) {
        if(mask & 0x1) {
          res |= (src & 0x1) << i;
@@ -272,5 +337,6 @@ const Type* ExpandBitsNode::Value(PhaseGVN* phase) const {
      return bt == T_INT ? static_cast<const Type*>(TypeInt::make(res)) :
                           static_cast<const Type*>(TypeLong::make(res));
   }
-  return bottom_type();
+
+  return bitshuffle_value(src_type, mask_type, Op_ExpandBits, bt);
 }
