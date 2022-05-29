@@ -293,8 +293,8 @@ public class StructuredTaskScope<T> implements AutoCloseable {
      * Creates an unnamed structured task scope that creates virtual threads. The task
      * scope is owned by the current thread.
      *
-     * <p> This method is equivalent to invoking the 2-arg constructor with a name of
-     * {@code null} and a thread factory that creates virtual threads.
+     * <p> This constructor is equivalent to invoking the 2-arg constructor with a name
+     * of {@code null} and a thread factory that creates virtual threads.
      *
      * @throws UnsupportedOperationException if preview features are not enabled
      */
@@ -621,7 +621,8 @@ public class StructuredTaskScope<T> implements AutoCloseable {
      * unfinished tasks to finish. If interrupted then this method will continue to
      * wait for the threads to finish before completing with the interrupt status set.
      *
-     * <p> This method may only be invoked by the task scope owner.
+     * <p> This method may only be invoked by the task scope owner. If the task cscope
+     * is already closed then the owner invoking this method has no effect.
      *
      * <p> A {@code StructuredTaskScope} is intended to be used in a <em>structured
      * manner</em>. If this method is called to close a task scope before nested task
@@ -665,8 +666,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
             sb.append(name);
             sb.append('/');
         }
-        String id = getClass().getName() + "@" + System.identityHashCode(this);
-        sb.append(id);
+        sb.append(Objects.toIdentityString(this));
         int s = state;
         if (s == CLOSED)
             sb.append("/closed");
@@ -835,8 +835,8 @@ public class StructuredTaskScope<T> implements AutoCloseable {
         /**
          * Constructs a new unnamed {@code ShutdownOnSuccess} that creates virtual threads.
          *
-         * <p> This method is equivalent to invoking the 2-arg constructor with a name of
-         * {@code null} and a thread factory that creates virtual threads.
+         * <p> This constructor is equivalent to invoking the 2-arg constructor with a
+         * name of {@code null} and a thread factory that creates virtual threads.
          */
         public ShutdownOnSuccess() {
             super(null, FactoryHolder.VIRTUAL_THREAD_FACTORY);
@@ -903,10 +903,10 @@ public class StructuredTaskScope<T> implements AutoCloseable {
          * notified to the {@code handleComplete} method then {@code CancellationException}
          * is thrown.
          *
-         * <p> This method is intended to be invoked by the task scope owner after it has
-         * invoked {@link #join() join} (or {@link #joinUntil(Instant) joinUntil}).
-         * The behavior of this method is unspecified when invoking this method before
-         * joining.
+         * @apiNote This method is intended to be invoked by the task scope owner after it
+         * has invoked {@link #join() join} (or {@link #joinUntil(Instant) joinUntil}).
+         * A future release may add enforcement to prevent the method being called by
+         * other threads or before joining.
          *
          * @throws ExecutionException if no subtasks completed with a result but a subtask
          * completed with an exception
@@ -937,10 +937,10 @@ public class StructuredTaskScope<T> implements AutoCloseable {
          * If only cancelled subtasks were notified to the {@code handleComplete} method
          * then the exception supplying function is invoked with a {@code CancellationException}.
          *
-         * <p> This method is intended to be invoked by the task scope owner after it has
-         * invoked {@link #join() join} (or {@link #joinUntil(Instant) joinUntil}).
-         * The behavior of this method is unspecified when invoking this method before
-         * joining.
+         * @apiNote This method is intended to be invoked by the task scope owner after it
+         * has invoked {@link #join() join} (or {@link #joinUntil(Instant) joinUntil}).
+         * A future release may add enforcement to prevent the method being called by
+         * other threads or before joining.
          *
          * @param esf the exception supplying function
          * @param <X> type of the exception to be thrown
@@ -1011,8 +1011,8 @@ public class StructuredTaskScope<T> implements AutoCloseable {
         /**
          * Constructs a new unnamed {@code ShutdownOnFailure} that creates virtual threads.
          *
-         * <p> This method is equivalent to invoking the 2-arg constructor with a name of
-         * {@code null} and a thread factory that creates virtual threads.
+         * <p> This constructor is equivalent to invoking the 2-arg constructor with a
+         * name of {@code null} and a thread factory that creates virtual threads.
          */
         public ShutdownOnFailure() {
             super(null, FactoryHolder.VIRTUAL_THREAD_FACTORY);
@@ -1081,10 +1081,10 @@ public class StructuredTaskScope<T> implements AutoCloseable {
          * is returned. If no subtasks completed abnormally then an empty {@code Optional}
          * is returned.
          *
-         * <p> This method is intended to be invoked by the task scope owner after it has
-         * invoked {@link #join() join} (or {@link #joinUntil(Instant) joinUntil}).
-         * The behavior of this method is unspecified when invoking this method before
-         * joining.
+         * @apiNote This method is intended to be invoked by the task scope owner after it
+         * has invoked {@link #join() join} (or {@link #joinUntil(Instant) joinUntil}).
+         * A future release may add enforcement to prevent the method being called by
+         * other threads or before joining.
          *
          * @return the exception for a subtask that completed abnormally or an empty
          * optional if no subtasks completed abnormally
@@ -1109,10 +1109,10 @@ public class StructuredTaskScope<T> implements AutoCloseable {
          * {@code handleComplete} method then {@code CancellationException} is thrown.
          * This method does nothing if no subtasks completed abnormally.
          *
-         * <p> This method is intended to be invoked by the task scope owner after it has
-         * invoked {@link #join() join} (or {@link #joinUntil(Instant) joinUntil}).
-         * The behavior of this method is unspecified when invoking this method before
-         * joining.
+         * @apiNote This method is intended to be invoked by the task scope owner after it
+         * has invoked {@link #join() join} (or {@link #joinUntil(Instant) joinUntil}).
+         * A future release may add enforcement to prevent the method being called by
+         * other threads or before joining.
          *
          * @throws ExecutionException if a subtask completed with an exception
          * @throws CancellationException if no subtasks completed with an exception but
@@ -1138,10 +1138,10 @@ public class StructuredTaskScope<T> implements AutoCloseable {
          * CancellationException}. The exception returned by the function is thrown.
          * This method does nothing if no subtasks completed abnormally.
          *
-         * <p> This method is intended to be invoked by the task scope owner after it has
-         * invoked {@link #join() join} (or {@link #joinUntil(Instant) joinUntil}).
-         * The behavior of this method is unspecified when invoking this method before
-         * joining.
+         * @apiNote This method is intended to be invoked by the task scope owner after it
+         * has invoked {@link #join() join} (or {@link #joinUntil(Instant) joinUntil}).
+         * A future release may add enforcement to prevent the method being called by
+         * other threads or before joining.
          *
          * @param esf the exception supplying function
          * @param <X> type of the exception to be thrown
