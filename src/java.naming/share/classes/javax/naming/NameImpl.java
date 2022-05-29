@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -337,11 +337,11 @@ class NameImpl {
         return (false);
     }
 */
-    private final String stringifyComp(String comp) {
+    private String stringifyComp(String comp) {
         int len = comp.length();
         boolean escapeSeparator = false, escapeSeparator2 = false;
         String beginQuote = null, endQuote = null;
-        StringBuffer strbuf = new StringBuffer(len);
+        StringBuilder strbuf = new StringBuilder(len);
 
         // determine whether there are any separators; if so escape
         // or quote them
@@ -449,7 +449,7 @@ class NameImpl {
     }
 
     public String toString() {
-        StringBuffer answer = new StringBuffer();
+        StringBuilder answer = new StringBuilder();
         String comp;
         boolean compsAllEmpty = true;
         int size = components.size();
