@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -20,22 +22,23 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.internal.vm;
 
 /**
- * @test
- * @summary Functional test for continuations walked with StackWalker's LiveStackFrames
- * @requires vm.continuations
- * @build java.base/java.lang.LiveFrames
- * @modules java.base/jdk.internal.vm
- *
- * @run main/othervm --enable-preview -XX:+UnlockDiagnosticVMOptions -Xint LiveFramesDriver
- * @run main/othervm --enable-preview -XX:+UnlockDiagnosticVMOptions -XX:-TieredCompilation -Xcomp -XX:CompileOnly=jdk/internal/vm/Continuation,java/lang/LiveFrames LiveFramesDriver
- * @run main/othervm --enable-preview -XX:+UnlockDiagnosticVMOptions -XX:+TieredCompilation -XX:TieredStopAtLevel=3 -Xcomp -XX:CompileOnly=jdk/internal/vm/Continuation,java/lang/LiveFrames LiveFramesDriver
+ * Defines a static method to test if the VM has continuations support.
  */
+public class ContinuationSupport {
+    private static final boolean SUPPORTED = isSupported0();
 
-
-public class LiveFramesDriver {
-    public static void main(String[] args) {
-        java.lang.LiveFrames.main(args);
+    private ContinuationSupport() {
     }
+
+    /**
+     * Return true if the VM has continuation support.
+     */
+    public static boolean isSupported() {
+        return SUPPORTED;
+    }
+
+    private static native boolean isSupported0();
 }

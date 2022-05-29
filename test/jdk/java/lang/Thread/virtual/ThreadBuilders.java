@@ -21,7 +21,8 @@
  * questions.
  */
 
-import java.lang.reflect.Field;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.Executor;
 
 /**
@@ -34,19 +35,39 @@ class ThreadBuilders {
      * Returns a builder to create virtual threads that use the given scheduler.
      *
      * Tests using this method need to open java.base/java.lang.
+     *
+     * @throws UnsupportedOperationException if there is no support for custom schedulers
      */
     static Thread.Builder.OfVirtual virtualThreadBuilder(Executor scheduler) {
         Thread.Builder.OfVirtual builder = Thread.ofVirtual();
         try {
             Class<?> clazz = Class.forName("java.lang.ThreadBuilders$VirtualThreadBuilder");
-            Field field = clazz.getDeclaredField("scheduler");
-            field.setAccessible(true);
-            field.set(builder, scheduler);
-        } catch (RuntimeException | Error e) {
-            throw e;
+            Constructor<?> ctor = clazz.getDeclaredConstructor(Executor.class);
+            ctor.setAccessible(true);
+            return (Thread.Builder.OfVirtual) ctor.newInstance(scheduler);
+        } catch (InvocationTargetException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof RuntimeException re) {
+                throw re;
+            }
+            throw new RuntimeException(e);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        return builder;
     }
+
+    /**
+     * Returns a builder to create virtual threads that use the given scheduler
+     * or {@code null} if there is no support for custom schedulers.
+     *
+     * Tests using this method need to open java.base/java.lang.
+     */
+    static Thread.Builder.OfVirtual virtualThreadBuilderOrNull(Executor scheduler) {
+        try {
+            return virtualThreadBuilder(scheduler);
+        } catch (UnsupportedOperationException e) {
+            return null;
+        }
+    }
+
 }

@@ -25,6 +25,10 @@
 
 package java.lang.management;
 
+import java.lang.reflect.Method;
+import java.security.AccessController;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import javax.management.openmbean.ArrayType;
 import javax.management.openmbean.CompositeData;
 import sun.management.ManagementFactoryHelper;
@@ -93,6 +97,7 @@ import static java.lang.Thread.State.*;
  */
 
 public class ThreadInfo {
+    private boolean      virtual;   // accessed reflectively by ThreadImpl
     private String       threadName;
     private long         threadId;
     private long         blockedTime;
@@ -224,6 +229,7 @@ public class ThreadInfo {
                             StackTraceElement[] stackTrace,
                             MonitorInfo[] lockedMonitors,
                             LockInfo[] lockedSynchronizers) {
+        this.virtual = isVirtual(t);
         this.threadId = t.threadId();
         this.threadName = t.getName();
         this.threadState = ManagementFactoryHelper.toThreadState(state);
@@ -937,4 +943,30 @@ public class ThreadInfo {
 
     private static final StackTraceElement[] NO_STACK_TRACE =
         new StackTraceElement[0];
+
+    /**
+     * Returns true if the given Thread is a virutal thread.
+     *
+     * @implNote This method uses reflection because Thread::isVirtual is a preview API
+     * and the java.management cannot be compiled with --enable-preview.
+     */
+    private static boolean isVirtual(Thread thread) {
+        try {
+            return (boolean) IS_VIRTUAL.invoke(thread);
+        } catch (Exception e) {
+            throw new InternalError(e);
+        }
+    }
+
+    private static final Method IS_VIRTUAL;
+    static {
+        PrivilegedExceptionAction<Method> pa = () -> Thread.class.getMethod("isVirtual");
+        try {
+            @SuppressWarnings("removal")
+            Method m = AccessController.doPrivileged(pa);
+            IS_VIRTUAL = m;
+        } catch (PrivilegedActionException e) {
+            throw new InternalError(e);
+        }
+    }
 }

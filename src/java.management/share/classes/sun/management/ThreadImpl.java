@@ -28,7 +28,7 @@ package sun.management;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
-import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.stream.Stream;
 import java.security.AccessController;
@@ -134,31 +134,24 @@ public class ThreadImpl implements ThreadMXBean {
     @Override
     public long[] getAllThreadIds() {
         Util.checkMonitorAccess();
-
         Thread[] threads = getThreads();
-        int length = threads.length;
-        long[] ids = new long[length];
-        for (int i = 0; i < length; i++) {
-            Thread t = threads[i];
-            ids[i] = t.threadId();
-        }
-        return ids;
+        return platformThreadIds(threads);
     }
 
     @Override
     public ThreadInfo getThreadInfo(long id) {
-        long[] ids = new long[1];
-        ids[0] = id;
-        final ThreadInfo[] infos = getThreadInfo(ids, 0);
-        return infos[0];
+        return getThreadInfo(id, 0);
     }
 
     @Override
     public ThreadInfo getThreadInfo(long id, int maxDepth) {
-        long[] ids = new long[1];
-        ids[0] = id;
-        final ThreadInfo[] infos = getThreadInfo(ids, maxDepth);
-        return infos[0];
+        long[] ids = new long[] { id };
+        ThreadInfo ti = getThreadInfo(ids, maxDepth)[0];
+        if (ti == null || isVirtual(ti)) {
+            return null;
+        } else {
+            return ti;
+        }
     }
 
     @Override
@@ -202,6 +195,7 @@ public class ThreadImpl implements ThreadMXBean {
         } else {
             getThreadInfo1(ids, maxDepth, infos);
         }
+        nullVirtualThreads(infos);
         return infos;
     }
 
@@ -443,9 +437,7 @@ public class ThreadImpl implements ThreadMXBean {
      */
     private long[] threadsToIds(Thread[] threads) {
         if (threads != null) {
-            long[] tids = Stream.of(threads)
-                    .mapToLong(Thread::threadId)
-                    .toArray();
+            long[] tids = platformThreadIds(threads);
             if (tids.length > 0) {
                 return tids;
             }
@@ -509,8 +501,10 @@ public class ThreadImpl implements ThreadMXBean {
     public ThreadInfo[] getThreadInfo(long[] ids,
                                       boolean lockedMonitors,
                                       boolean lockedSynchronizers) {
-        return dumpThreads0(ids, lockedMonitors, lockedSynchronizers,
-                            Integer.MAX_VALUE);
+        ThreadInfo[] infos = dumpThreads0(ids, lockedMonitors, lockedSynchronizers,
+                                          Integer.MAX_VALUE);
+        nullVirtualThreads(infos);
+        return infos;
     }
 
     public ThreadInfo[] getThreadInfo(long[] ids,
@@ -527,14 +521,17 @@ public class ThreadImpl implements ThreadMXBean {
         if (ids.length == 0) return new ThreadInfo[0];
 
         verifyDumpThreads(lockedMonitors, lockedSynchronizers);
-        return dumpThreads0(ids, lockedMonitors, lockedSynchronizers, maxDepth);
+        ThreadInfo[] infos = dumpThreads0(ids, lockedMonitors, lockedSynchronizers, maxDepth);
+        nullVirtualThreads(infos);
+        return infos;
     }
 
     @Override
     public ThreadInfo[] dumpAllThreads(boolean lockedMonitors,
                                        boolean lockedSynchronizers) {
-        return dumpAllThreads(lockedMonitors, lockedSynchronizers,
-                              Integer.MAX_VALUE);
+        ThreadInfo[] infos = dumpAllThreads(lockedMonitors, lockedSynchronizers,
+                                            Integer.MAX_VALUE);
+        return platformThreads(infos);
     }
 
     public ThreadInfo[] dumpAllThreads(boolean lockedMonitors,
@@ -545,7 +542,8 @@ public class ThreadImpl implements ThreadMXBean {
                     "Invalid maxDepth parameter: " + maxDepth);
         }
         verifyDumpThreads(lockedMonitors, lockedSynchronizers);
-        return dumpThreads0(null, lockedMonitors, lockedSynchronizers, maxDepth);
+        ThreadInfo[] infos = dumpThreads0(null, lockedMonitors, lockedSynchronizers, maxDepth);
+        return platformThreads(infos);
     }
 
     // VM support where maxDepth == -1 to request entire stack dump
@@ -579,6 +577,38 @@ public class ThreadImpl implements ThreadMXBean {
     }
 
     /**
+     * Returns the thread identifiers of the platform threads in the given array.
+     */
+    private static long[] platformThreadIds(Thread[] threads) {
+        return Stream.of(threads)
+                .filter(t -> !isVirtual(t))
+                .mapToLong(Thread::threadId)
+                .toArray();
+    }
+
+    /**
+     * Returns the ThreadInfo objects from the given array that coresspond to platform
+     * threads.
+     */
+    private ThreadInfo[] platformThreads(ThreadInfo[] infos) {
+        return Stream.of(infos)
+                .filter(ti -> !isVirtual(ti))
+                .toArray(ThreadInfo[]::new);
+    }
+
+    /**
+     * Set the elements of the given array to null if they correspond to a virtual thread.
+     */
+    private static void nullVirtualThreads(ThreadInfo[] infos) {
+        for (int i = 0; i < infos.length; i++) {
+            ThreadInfo ti = infos[i];
+            if (ti != null && isVirtual(ti)) {
+                infos[i] = null;
+            }
+        }
+    }
+
+    /**
      * Returns true if the given Thread is a virutal thread.
      *
      * @implNote This method uses reflection because Thread::isVirtual is a preview API
@@ -586,22 +616,47 @@ public class ThreadImpl implements ThreadMXBean {
      */
     private static boolean isVirtual(Thread thread) {
         try {
-            return (boolean) IS_VIRTUAL.invoke(thread);
-        } catch (IllegalAccessException | InvocationTargetException e) {
+            return (boolean) THREAD_IS_VIRTUAL.invoke(thread);
+        } catch (Exception e) {
             throw new InternalError(e);
         }
     }
 
-    static final Method IS_VIRTUAL;
-    static {
+    /**
+     * Returns true if the given ThreadInfo is for a virutal thread.
+     */
+    private static boolean isVirtual(ThreadInfo threadInfo) {
         try {
-            PrivilegedExceptionAction<Method> pa = () -> Thread.class.getMethod("isVirtual");
-            @SuppressWarnings("removal")
-            Method m = AccessController.doPrivileged(pa);
-            IS_VIRTUAL = m;
+            return (boolean) THREADINFO_VIRTUAL.get(threadInfo);
+        } catch (Exception e) {
+            throw new InternalError(e);
+        }
+    }
+
+    @SuppressWarnings("removal")
+    private static Method threadIsVirtual() {
+        PrivilegedExceptionAction<Method> pa = () -> Thread.class.getMethod("isVirtual");
+        try {
+            return AccessController.doPrivileged(pa);
         } catch (PrivilegedActionException e) {
             throw new InternalError(e);
         }
-
     }
+
+    @SuppressWarnings("removal")
+    private static Field threadInfoVirtual() {
+        PrivilegedExceptionAction<Field> pa = () -> {
+            Field f = ThreadInfo.class.getDeclaredField("virtual");
+            f.setAccessible(true);
+            return f;
+        };
+        try {
+            return AccessController.doPrivileged(pa);
+        } catch (PrivilegedActionException e) {
+            throw new InternalError(e);
+        }
+    }
+
+    private static final Method THREAD_IS_VIRTUAL = threadIsVirtual();
+    private static final Field THREADINFO_VIRTUAL = threadInfoVirtual();
 }
