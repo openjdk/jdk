@@ -38,7 +38,7 @@ import jdk.management.jfr.RemoteRecordingStream;
  * @summary Tests that a RemoteRecordingStream can be closed
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
- * @run main/othervm jdk.jfr.jmx.streaming.TestClose
+ * @run main/othervm -Xlog:jfr=debug jdk.jfr.jmx.streaming.TestClose
  */
 public class TestClose {
 

@@ -31,6 +31,8 @@ import java.util.ListIterator;
 
 import javax.lang.model.element.Element;
 
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
@@ -78,12 +80,25 @@ public class DeprecatedListWriter extends SummaryListWriter<DeprecatedAPIListBui
 
     @Override
     protected void addExtraSection(DeprecatedAPIListBuilder list, Content content) {
-        if (list.releases.size() > 1) {
-            content.add(HtmlTree.SPAN(contents.getContent("doclet.Deprecated_Tabs_Intro"))
-                    .addStyle(HtmlStyle.helpNote));
+        List<String> releases = configuration.deprecatedAPIListBuilder.releases;
+        if (!releases.isEmpty()) {
+            Content tabs = HtmlTree.DIV(HtmlStyle.checkboxes, contents.getContent(
+                    "doclet.Deprecated_API_Checkbox_Label"));
+            for (int i = 0; i < releases.size(); i++) {
+                int releaseIndex = i + 1;
+                String release = releases.get(i);
+                HtmlId htmlId = HtmlId.of("release-" + releaseIndex);
+                tabs.add(HtmlTree.LABEL(htmlId.name(),
+                                HtmlTree.INPUT("checkbox", htmlId)
+                                        .put(HtmlAttr.CHECKED, "")
+                                        .put(HtmlAttr.ONCLICK,
+                                                "toggleGlobal(this, '" + releaseIndex + "', 3)"))
+                        .add(HtmlTree.SPAN(Text.of(release))));
+            }
+            content.add(tabs);
         }
         addSummaryAPI(list.getForRemoval(), HtmlIds.FOR_REMOVAL,
-                    TERMINALLY_DEPRECATED_KEY, "doclet.Element", content);
+                TERMINALLY_DEPRECATED_KEY, "doclet.Element", content);
     }
 
     @Override
@@ -107,18 +122,51 @@ public class DeprecatedListWriter extends SummaryListWriter<DeprecatedAPIListBui
     protected void addTableTabs(Table table, String headingKey) {
         List<String> releases = configuration.deprecatedAPIListBuilder.releases;
         if (!releases.isEmpty()) {
-            table.setDefaultTab(getTableCaption(headingKey)).setAlwaysShowDefaultTab(true);
-            ListIterator<String> it = releases.listIterator(releases.size());
-            while (it.hasPrevious()) {
-                String release = it.previous();
+            table.setDefaultTab(getTableCaption(headingKey))
+                    .setAlwaysShowDefaultTab(true)
+                    .setRenderTabs(false)
+                    .setGridStyle(HtmlStyle.threeColumnReleaseSummary);
+            for (String release : releases) {
                 Content tab = TERMINALLY_DEPRECATED_KEY.equals(headingKey)
                         ? contents.getContent("doclet.Terminally_Deprecated_In_Release", release)
                         : contents.getContent("doclet.Deprecated_In_Release", release);
                 table.addTab(tab,
                         element -> release.equals(utils.getDeprecatedSince(element)));
             }
-            getMainBodyScript().append(table.getScript());
         }
+    }
+
+    @Override
+    protected Content getExtraContent(Element element) {
+        List<String> releases = configuration.deprecatedAPIListBuilder.releases;
+        if (releases.isEmpty()) {
+            return null;
+        }
+        String deprecatedSince = utils.getDeprecatedSince(element);
+        return deprecatedSince == null || deprecatedSince.isEmpty()
+                ? Text.EMPTY : Text.of(deprecatedSince);
+    }
+
+    @Override
+    protected TableHeader getTableHeader(String headerKey) {
+        List<String> releases = configuration.deprecatedAPIListBuilder.releases;
+        if (releases.isEmpty()) {
+            return super.getTableHeader(headerKey);
+        }
+        return new TableHeader(
+                contents.getContent(headerKey),
+                contents.getContent("doclet.Deprecated_Elements_Release_Column_Header"),
+                contents.descriptionLabel)
+                .sortable(true, true, false); // Allow sorting by element name and release
+    }
+
+    @Override
+    protected HtmlStyle[] getColumnStyles() {
+        List<String> releases = configuration.deprecatedAPIListBuilder.releases;
+        if (releases.isEmpty()) {
+            return super.getColumnStyles();
+        }
+        return new HtmlStyle[]{ HtmlStyle.colSummaryItemName, HtmlStyle.colSecond, HtmlStyle.colLast };
     }
 
     @Override

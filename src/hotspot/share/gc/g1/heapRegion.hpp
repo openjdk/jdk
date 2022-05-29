@@ -117,7 +117,7 @@ public:
   // given address.
   bool is_in_reserved(const void* p) const { return _bottom <= p && p < _end; }
 
-  size_t capacity()     const { return byte_size(bottom(), end()); }
+  size_t capacity() const { return byte_size(bottom(), end()); }
   size_t used() const { return byte_size(bottom(), top()); }
   size_t free() const { return byte_size(top(), end()); }
 
@@ -129,8 +129,6 @@ private:
   void reset_after_full_gc_common();
 
   void clear(bool mangle_space);
-
-  HeapWord* block_start_const(const void* p) const;
 
   void mangle_unused_area() PRODUCT_RETURN;
 

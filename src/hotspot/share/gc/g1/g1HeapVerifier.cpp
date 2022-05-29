@@ -97,7 +97,7 @@ class G1VerifyCodeRootOopClosure: public OopClosure {
     }
 
     // Don't check the code roots during marking verification in a full GC
-    if (_vo == VerifyOption_G1UseFullMarking) {
+    if (_vo == VerifyOption::G1UseFullMarking) {
       return;
     }
 
@@ -219,7 +219,7 @@ public:
       // word), it may not be marked, or may have been marked
       // but has since became dead, or may have been allocated
       // since the last marking.
-      if (_vo == VerifyOption_G1UseFullMarking) {
+      if (_vo == VerifyOption::G1UseFullMarking) {
         guarantee(!_g1h->is_obj_dead(o), "Full GC marking and concurrent mark mismatch");
       }
 
@@ -485,15 +485,11 @@ void G1HeapVerifier::verify(VerifyOption vo) {
 
   log_debug(gc, verify)("HeapRegions");
 
-  uint num_workers = GCParallelVerificationEnabled ? _g1h->workers()->active_workers() : 1u;
   G1VerifyTask task(_g1h, vo);
-  _g1h->workers()->run_task(&task, num_workers);
-  if (task.failures()) {
-    failures = true;
-  }
-
-  if (failures) {
-    log_error(gc, verify)("Heap after failed verification (kind %d):", vo);
+  _g1h->workers()->run_task(&task);
+  if (failures || task.failures()) {
+    log_error(gc, verify)("Heap after failed verification (kind %u):",
+                          static_cast<std::underlying_type_t<VerifyOption>>(vo));
     // It helps to have the per-region information in the output to
     // help us track down what went wrong. This is why we call
     // print_extended_on() instead of print_on().
@@ -501,8 +497,9 @@ void G1HeapVerifier::verify(VerifyOption vo) {
     ResourceMark rm;
     LogStream ls(log.error());
     _g1h->print_extended_on(&ls);
+
+    fatal("there should not have been any failures");
   }
-  guarantee(!failures, "there should not have been any failures");
 }
 
 // Heap region set verification
@@ -587,11 +584,11 @@ void G1HeapVerifier::verify(G1VerifyType type, VerifyOption vo, const char* msg)
 }
 
 void G1HeapVerifier::verify_before_gc(G1VerifyType type) {
-  verify(type, VerifyOption_G1UsePrevMarking, "Before GC");
+  verify(type, VerifyOption::G1UsePrevMarking, "Before GC");
 }
 
 void G1HeapVerifier::verify_after_gc(G1VerifyType type) {
-  verify(type, VerifyOption_G1UsePrevMarking, "After GC");
+  verify(type, VerifyOption::G1UsePrevMarking, "After GC");
 }
 
 

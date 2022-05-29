@@ -204,7 +204,7 @@ public:
 
   // Returns true if the reference is to an object in the reserved space
   // for the young generation.
-  // Assumes the the young gen address range is less than that of the old gen.
+  // Assumes the young gen address range is less than that of the old gen.
   bool is_in_young(oop p) const;
 
   virtual bool requires_barriers(stackChunkOop obj) const;
