@@ -1814,20 +1814,10 @@ void PrintBFS::run() {
 // set up configuration for BFS and print
 bool PrintBFS::configure() {
   if(_max_distance < 0) {
-    tty->print("print_bfs: max_distance must be non-negative!\n");
+    tty->print("dump_bfs: max_distance must be non-negative!\n");
     return false;
   }
   parse_options();
-
-  if (_target == nullptr) {
-    tty->print("No target: perform BFS.\n");
-  } else {
-    tty->print("Find shortest path:");
-    print_node_idx(_start);
-    tty->print(" ->");
-    print_node_idx(_target);
-    tty->print("\n");
-  }
   return true;
 }
 
@@ -2107,7 +2097,7 @@ void PrintBFS::print_node(Node* n) {
   n->dump("\n", false, tty, &_dcc);           // node dump
 }
 
-//------------------------------print_bfs--------------------------------------
+//------------------------------dump_bfs--------------------------------------
 // Call this from debugger:
 // BFS traversal of graph, starting at node this/start
 // this/start: staring point of BFS
@@ -2138,17 +2128,17 @@ void PrintBFS::print_node(Node* n) {
 // on the boundary additionally follow nodes allowed in boundary types.
 //
 // examples:
-//   if->print_bfs(10, 0, "+cxo")
+//   if->dump_bfs(10, 0, "+cxo")
 //     starting at if node, traverse inputs recursively
 //     only along control (mixed and other can also be control)
-//   phi->print_bfs(5, 0, "-dxo")
+//   phi->dump_bfs(5, 0, "-dxo")
 //     starting at phi node, traverse outputs recursively
 //     only along data (mixed and other can also have data flow)
-//   x->print_bfs(10, y, 0)
+//   x->dump_bfs(10, y, 0)
 //     find shortest path from x to y, along any edge or node
 //     will not find a path if it is longer than 10
 //     useful to find how x and y are related
-//   find_node(385)->print_bfs(3, 0, "cdmox+#OB")
+//   find_node(385)->dump_bfs(3, 0, "cdmox+#OB")
 //     find inputs of node 385, up to 3 nodes up (+)
 //     traverse all nodes (cdmox), use colors (#)
 //     display old nodes and blocks, if they exist
@@ -2160,8 +2150,8 @@ void PrintBFS::print_node(Node* n) {
 //   old:      old IR node - before matching
 //   category: characters cmdxo from options string
 //   dump
-void Node::print_bfs(const int max_distance, Node* target, char const* options) {
-  PrintBFS bfs(this, max_distance, target, options);
+void Node::dump_bfs(const int max_distance, Node* target, char const* options) const {
+  PrintBFS bfs((Node*)this, max_distance, target, options);
   bfs.run();
 }
 
@@ -2419,82 +2409,23 @@ void Node::dump_out(outputStream *st, DumpConfig* dc) const {
   st->print("]] ");
 }
 
-//----------------------------collect_nodes_i----------------------------------
-// Collects nodes from an Ideal graph, starting from a given start node and
-// moving in a given direction until a certain depth (distance from the start
-// node) is reached. Duplicates are ignored.
-// Arguments:
-//   queue:         the nodes are collected into this array.
-//   start:         the node at which to start collecting.
-//   direction:     if this is a positive number, collect input nodes; if it is
-//                  a negative number, collect output nodes.
-//   depth:         collect nodes up to this distance from the start node.
-//   include_start: whether to include the start node in the result collection.
-//   only_ctrl:     whether to regard control edges only during traversal.
-//   only_data:     whether to regard data edges only during traversal.
-static void collect_nodes_i(GrowableArray<Node*>* queue, const Node* start, int direction, uint depth, bool include_start, bool only_ctrl, bool only_data) {
-  bool indent = depth <= PrintIdealIndentThreshold;
-  Node* s = (Node*) start; // remove const
-  queue->append(s);
-  int begin = 0;
-  int end = 0;
-
-  s->set_indent(0);
-  for(uint i = 0; i < depth; i++) {
-    end = queue->length();
-    for(int j = begin; j < end; j++) {
-      Node* tp  = queue->at(j);
-      uint limit = direction > 0 ? tp->len() : tp->outcnt();
-      for(uint k = 0; k < limit; k++) {
-        Node* n = direction > 0 ? tp->in(k) : tp->raw_out(k);
-
-        if (not_a_node(n))  continue;
-        // do not recurse through top or the root (would reach unrelated stuff)
-        if (n->is_Root() || n->is_top()) continue;
-        if (only_ctrl && !n->is_CFG()) continue;
-        if (only_data && n->is_CFG()) continue;
-        bool in_queue = queue->contains(n);
-        if (!in_queue) {
-          queue->append(n);
-          n->set_indent(indent ? (i + 1) : 0);
-        }
-      }
-    }
-    begin = end;
-  }
-  if (!include_start) {
-    queue->remove(s);
-  }
-}
-
-//------------------------------dump_nodes-------------------------------------
-static void dump_nodes(const Node* start, int d, bool only_ctrl) {
-  if (not_a_node(start)) return;
-
-  GrowableArray <Node *> queue(Compile::current()->live_nodes());
-  collect_nodes_i(&queue, start, d, (uint) ABS(d), true, only_ctrl, false);
-
-  int end = queue.length();
-  if (d > 0) {
-    for(int j = end-1; j >= 0; j--) {
-      queue.at(j)->dump();
-    }
-  } else {
-    for(int j = 0; j < end; j++) {
-      queue.at(j)->dump();
-    }
-  }
-}
-
 //------------------------------dump-------------------------------------------
 void Node::dump(int d) const {
-  dump_nodes(this, d, false);
+  if(d > 0) {
+    dump_bfs(abs(d), nullptr, "cdmxo+");
+  } else {
+    dump_bfs(abs(d), nullptr, "cdmxo-");
+  }
 }
 
 //------------------------------dump_ctrl--------------------------------------
 // Dump a Node's control history to depth
 void Node::dump_ctrl(int d) const {
-  dump_nodes(this, d, true);
+  if(d > 0) {
+    dump_bfs(abs(d), nullptr, "cxo+"); // no data, no memory
+  } else {
+    dump_bfs(abs(d), nullptr, "cxo-"); // no data, no memory
+  }
 }
 
 //-----------------------------dump_compact------------------------------------
@@ -2515,25 +2446,6 @@ void Node::dump_comp(const char* suffix, outputStream *st) const {
     st->print("%s", suffix);
   }
   C->_in_dump_cnt--;
-}
-
-//---------------------------collect_nodes-------------------------------------
-// An entry point to the low-level node collection facility, to start from a
-// given node in the graph. The start node is by default not included in the
-// result.
-// Arguments:
-//   ns:   collect the nodes into this data structure.
-//   d:    the depth (distance from start node) to which nodes should be
-//         collected. A value >0 indicates input nodes, a value <0, output
-//         nodes.
-//   ctrl: include only control nodes.
-//   data: include only data nodes.
-void Node::collect_nodes(GrowableArray<Node*> *ns, int d, bool ctrl, bool data) const {
-  if (ctrl && data) {
-    // ignore nonsensical combination
-    return;
-  }
-  collect_nodes_i(ns, this, d, (uint) ABS(d), false, ctrl, data);
 }
 
 // VERIFICATION CODE
