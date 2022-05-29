@@ -31,7 +31,7 @@ import java.util.ListResourceBundle;
   * Also you need to  update the count of messages(MAX_CODE)or
  * the count of warnings(MAX_WARNING) [ Information purpose only]
  * @xsl.usage advanced
- * @LastModified: Apr 2022
+ * @LastModified: May 2022
  */
 public class XPATHErrorResources extends ListResourceBundle
 {
@@ -140,6 +140,7 @@ public class XPATHErrorResources extends ListResourceBundle
          "ER_EXPECTED_SINGLE_QUOTE";
   public static final String ER_EMPTY_EXPRESSION = "ER_EMPTY_EXPRESSION";
   public static final String ER_EXPECTED_BUT_FOUND = "ER_EXPECTED_BUT_FOUND";
+  public static final String ER_UNION_MUST_BE_NODESET = "ER_UNION_MUST_BE_NODESET";
   public static final String ER_INCORRECT_PROGRAMMER_ASSERTION =
          "ER_INCORRECT_PROGRAMMER_ASSERTION";
   public static final String ER_BOOLEAN_ARG_NO_LONGER_OPTIONAL =
@@ -203,9 +204,6 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
          "ER_FUNCTION_TOKEN_NOT_FOUND";
   public static final String ER_CANNOT_DEAL_XPATH_TYPE =
          "ER_CANNOT_DEAL_XPATH_TYPE";
-  public static final String ER_NODESET_NOT_MUTABLE = "ER_NODESET_NOT_MUTABLE";
-  public static final String ER_NODESETDTM_NOT_MUTABLE =
-         "ER_NODESETDTM_NOT_MUTABLE";
    /**  Variable not resolvable:   */
   public static final String ER_VAR_NOT_RESOLVABLE = "ER_VAR_NOT_RESOLVABLE";
    /** Null error handler  */
@@ -309,6 +307,8 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
   //BEGIN: Keys needed for exception messages of  JAXP 1.3 XPath API implementation
   public static final String ER_EXTENSION_FUNCTION_CANNOT_BE_INVOKED = "ER_EXTENSION_FUNCTION_CANNOT_BE_INVOKED";
   public static final String ER_RESOLVE_VARIABLE_RETURNS_NULL = "ER_RESOLVE_VARIABLE_RETURNS_NULL";
+  public static final String ER_NO_XPATH_VARIABLE_RESOLVER = "ER_NO_XPATH_VARIABLE_RESOLVER";
+  public static final String ER_NO_XPATH_FUNCTION_PROVIDER = "ER_NO_XPATH_FUNCTION_PROVIDER";
   public static final String ER_UNSUPPORTED_RETURN_TYPE = "ER_UNSUPPORTED_RETURN_TYPE";
   public static final String ER_SOURCE_RETURN_TYPE_CANNOT_BE_NULL = "ER_SOURCE_RETURN_TYPE_CANNOT_BE_NULL";
   public static final String ER_ARG_CANNOT_BE_NULL = "ER_ARG_CANNOT_BE_NULL";
@@ -460,6 +460,9 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
   { ER_EXPECTED_BUT_FOUND,
      "Expected {0}, but found: {1}"},
 
+  { ER_UNION_MUST_BE_NODESET,
+     "Operands for a union must be node-sets."},
+
   { ER_INCORRECT_PROGRAMMER_ASSERTION,
       "Programmer assertion is incorrect! - {0}"},
 
@@ -573,12 +576,6 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
 
   { ER_CANNOT_DEAL_XPATH_TYPE,
        "Can not deal with XPath type: {0}"},
-
-  { ER_NODESET_NOT_MUTABLE,
-       "This NodeSet is not mutable"},
-
-  { ER_NODESETDTM_NOT_MUTABLE,
-       "This NodeSetDTM is not mutable"},
 
   { ER_VAR_NOT_RESOLVABLE,
         "Variable not resolvable: {0}"},
@@ -779,6 +776,12 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
 
   { ER_RESOLVE_VARIABLE_RETURNS_NULL,
        "resolveVariable for variable {0} returning null"},
+
+  { ER_NO_XPATH_VARIABLE_RESOLVER,
+       "Attempting to resolve variable {0}, but a variable resolver is not set."},
+
+  { ER_NO_XPATH_FUNCTION_PROVIDER,
+       "Attempting to call an extension function {0}, but an extension provider is not set."},
 
   /** Field ER_UNSUPPORTED_RETURN_TYPE                       */
 
