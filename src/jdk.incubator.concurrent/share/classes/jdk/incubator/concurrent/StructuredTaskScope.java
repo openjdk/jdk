@@ -621,7 +621,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
      * unfinished tasks to finish. If interrupted then this method will continue to
      * wait for the threads to finish before completing with the interrupt status set.
      *
-     * <p> This method may only be invoked by the task scope owner. If the task cscope
+     * <p> This method may only be invoked by the task scope owner. If the task scope
      * is already closed then the owner invoking this method has no effect.
      *
      * <p> A {@code StructuredTaskScope} is intended to be used in a <em>structured
