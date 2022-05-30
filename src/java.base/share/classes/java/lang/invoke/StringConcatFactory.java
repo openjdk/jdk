@@ -34,9 +34,6 @@ import java.lang.invoke.MethodHandles.Lookup;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.function.Function;
 
 import static java.lang.invoke.MethodType.methodType;
 
@@ -662,11 +659,30 @@ public final class StringConcatFactory {
     // Simple prependers, single argument. May be used directly or as a
     // building block for complex prepender combinators.
     private static MethodHandle prepender(String prefix, Class<?> cl) {
+        MethodHandle prepend;
+        int idx = classIndex(cl);
         if (prefix == null) {
-            return NULL_PREPENDERS.computeIfAbsent(cl, NULL_PREPEND);
+            prepend = NULL_PREPENDERS[idx];
+            if (prepend == null) {
+                NULL_PREPENDERS[idx] = prepend = MethodHandles.insertArguments(
+                                prepender(cl), 3, (String)null);
+            }
+        } else {
+            prepend = MethodHandles.insertArguments(
+                    prepender(cl), 3, prefix);
         }
-        return MethodHandles.insertArguments(
-                PREPENDERS.computeIfAbsent(cl, PREPEND), 3, prefix);
+        return prepend;
+    }
+
+    private static MethodHandle prepender(Class<?> cl) {
+        int idx = classIndex(cl);
+        MethodHandle prepend = PREPENDERS[idx];
+        if (prepend == null) {
+            PREPENDERS[idx] = prepend = JLA.stringConcatHelper("prepend",
+                    methodType(long.class, long.class, byte[].class,
+                            Wrapper.asPrimitiveType(cl), String.class)).rebind();
+        }
+        return prepend;
     }
 
     private static final int INT_IDX = 0,
@@ -710,7 +726,6 @@ public final class StringConcatFactory {
                 PREPEND_FILTER_SECOND_ARGS);
     }
 
-
     private static MethodHandle prepender(int pos, List<String> constants, Class<?>[] ptypes, int count) {
         // build the simple cases directly
         if (count == 1) {
@@ -745,7 +760,13 @@ public final class StringConcatFactory {
     }
 
     private static MethodHandle mixer(Class<?> cl) {
-        return MIXERS.computeIfAbsent(cl, MIX);
+        int index = classIndex(cl);
+        MethodHandle mix = MIXERS[index];
+        if (mix == null) {
+            MIXERS[index] = mix = JLA.stringConcatHelper("mix",
+                    methodType(long.class, long.class, Wrapper.asPrimitiveType(cl))).rebind();
+        }
+        return mix;
     }
 
     private static MethodHandle mixer(Class<?> cl, Class<?> cl2) {
@@ -768,34 +789,6 @@ public final class StringConcatFactory {
         return MethodHandles.filterArgumentsWithCombiner(mix, 0,
                 mixer(cl3, cl4), 0, 3, 4);
     }
-
-    // These are deliberately not lambdas to optimize startup time:
-    private static final Function<Class<?>, MethodHandle> PREPEND = new Function<>() {
-        @Override
-        public MethodHandle apply(Class<?> c) {
-            MethodHandle prepend = JLA.stringConcatHelper("prepend",
-                    methodType(long.class, long.class, byte[].class,
-                            Wrapper.asPrimitiveType(c), String.class));
-            return prepend.rebind();
-        }
-    };
-
-    private static final Function<Class<?>, MethodHandle> NULL_PREPEND = new Function<>() {
-        @Override
-        public MethodHandle apply(Class<?> c) {
-            return MethodHandles.insertArguments(
-                    PREPENDERS.computeIfAbsent(c, PREPEND), 3, (String)null);
-        }
-    };
-
-    private static final Function<Class<?>, MethodHandle> MIX = new Function<>() {
-        @Override
-        public MethodHandle apply(Class<?> c) {
-            MethodHandle mix = JLA.stringConcatHelper("mix",
-                    methodType(long.class, long.class, Wrapper.asPrimitiveType(c)));
-            return mix.rebind();
-        }
-    };
 
     private @Stable static MethodHandle SIMPLE_CONCAT;
     private static MethodHandle simpleConcat() {
@@ -943,17 +936,10 @@ public final class StringConcatFactory {
         }
     }
 
-    private static final ConcurrentMap<Class<?>, MethodHandle> PREPENDERS;
-    private static final ConcurrentMap<Class<?>, MethodHandle> NULL_PREPENDERS;
-    private static final ConcurrentMap<Class<?>, MethodHandle> MIXERS;
-    private static final long INITIAL_CODER;
-
-    static {
-        INITIAL_CODER = JLA.stringConcatInitialCoder();
-        PREPENDERS = new ConcurrentHashMap<>();
-        NULL_PREPENDERS = new ConcurrentHashMap<>();
-        MIXERS = new ConcurrentHashMap<>();
-    }
+    private static final @Stable MethodHandle[] NULL_PREPENDERS = new MethodHandle[TYPE_COUNT];
+    private static final @Stable MethodHandle[] PREPENDERS      = new MethodHandle[TYPE_COUNT];
+    private static final @Stable MethodHandle[] MIXERS          = new MethodHandle[TYPE_COUNT];
+    private static final long INITIAL_CODER = JLA.stringConcatInitialCoder();
 
     private static MethodHandle lookupStatic(Lookup lookup, Class<?> refc, String name,
                                      Class<?> rtype, Class<?>... ptypes) {
