@@ -606,18 +606,17 @@ getGMTOffsetID()
         return strdup("GMT");
     }
 
-    offset = (gmt.tm_hour - localtm.tm_hour)*3600 + (gmt.tm_min - localtm.tm_min)*60;
+    offset = (localtm.tm_hour - gmt.tm_hour)*3600 + (localtm.tm_min - gmt.tm_min)*60;
 
     if (offset == 0) {
         return strdup("GMT");
     }
 
-    /* Note that the time offset direction is opposite. */
     if (offset > 0) {
-        sign = '-';
+        sign = '+';
     } else {
         offset = -offset;
-        sign = '+';
+        sign = '-';
     }
     sprintf(buf, (const char *)"GMT%c%02d:%02d",
             sign, (int)(offset/3600), (int)((offset%3600)/60));
