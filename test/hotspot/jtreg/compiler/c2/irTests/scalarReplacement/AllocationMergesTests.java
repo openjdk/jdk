@@ -33,13 +33,11 @@ import compiler.lib.ir_framework.*;
  */
 public class AllocationMergesTests {
 
-
     public static void main(String[] args) {
         TestFramework.runWithFlags("-XX:+ReduceAllocationMerges", "-XX:CompileCommand=exclude,*::dummy*");
     }
 
     // ------------------ No Scalar Replacement Should Happen in The Tests Below ------------------- //
-
 
     @Test
     @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH })
@@ -261,6 +259,7 @@ public class AllocationMergesTests {
     @Test
     @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH })
     @IR(counts = { IRNode.ALLOC, "3" })
+    // "p" won't be reduced because it's touched by Call to dummy
     int testMergedAccessAfterCallNoWrite(boolean cond, int x, int y) {
         Point p2 = new Point(x, x);
         Point p = new Point(y, y);
@@ -275,6 +274,28 @@ public class AllocationMergesTests {
 
         for (int i=3; i<324; i++)
             res += p.x + i * x;
+
+        return res;
+    }
+
+    @Test
+    @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH })
+    @IR(counts = { IRNode.ALLOC, "2" })
+    // "p" is not being reduced because the merge phi is being touched by the second Allocate
+    int testTrappingAfterMerge(boolean cond, int x, int y) {
+        Point p = new Point(x, y);
+        int res = 0;
+
+        if (cond)
+            p = new Point(y, y);
+
+        for (int i=832; i<932; i++) {
+            res += p.x;
+        }
+
+        if (x > y) {
+            res += new Point(p.x, p.y).x;
+        }
 
         return res;
     }
@@ -327,35 +348,36 @@ public class AllocationMergesTests {
     @Test
     @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH })
     @IR(counts = { IRNode.ALLOC, "1" })
+    // "p2" is scalar replaced because it's not used in "dummy" except as debug info
     int testSimpleMixedEscape(int x, int y) {
         Point p1 = new Point(x, y);
-        Point p2 = new Point(x, y);
+        Point p2 = new Point(x+1, y+1);
 
         int val = dummy(p1);
 
         return val + p1.x + p2.y;
     }
 
- // I thought no scalar replacement would happen in this case
- //
- ////////   @Test
- ////////   @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH })
- ////////   @IR(counts = { IRNode.ALLOC, "1" })
- ////////   int testMultiwayMerge(int x, int y) {
- ////////       Point p = new Point(0, 0);
+    @Test
+    @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH })
+    @IR(failOn = { IRNode.ALLOC })
+    // Object p is scalar replaced because the "p = dummy(...)" calls
+    // are actually converted to traps and therefore there is no merge phi
+    int testMultiwayMerge(int x, int y) {
+        Point p = new Point(0, 0);
 
- ////////       if (x == y) {
- ////////           p = dummy(x, x);
- ////////       }
- ////////       else if (dummy(x) == 1) {
- ////////           p = dummy(x, y);
- ////////       }
- ////////       else if (dummy(y) == 1) {
- ////////           p = dummy(y, x);
- ////////       }
+        if (x == y) {
+            p = dummy(x, x);
+        }
+        else if (dummy(x) == 1) {
+            p = dummy(x, y);
+        }
+        else if (dummy(y) == 1) {
+            p = dummy(y, x);
+        }
 
- ////////       return p.x;
- ////////   }
+        return p.x;
+    }
 
     @Test
     @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH })
@@ -653,28 +675,7 @@ public class AllocationMergesTests {
         return p.x + x;
     }
 
-// Is not simplifiying
-//
-//    @Test
-//    @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH })
-//    @IR(failOn = { IRNode.ALLOC })
-//    int testTrappingAfterMerge(boolean cond, int x, int y) {
-//        Point p = new Point(x, y);
-//        int res = 0;
-//
-//        if (cond)
-//            p = new Point(y, y);
-//
-//        for (int i=832; i<932; i++) {
-//            res += p.x;
-//        }
-//
-//        if (x > y) {
-//            res += new Point(p.x, p.y).x;
-//        }
-//
-//        return res;
-//    }
+    // ------------------ Utility for Testing ------------------- //
 
     @DontCompile
     static int dummy(Point p) {
