@@ -85,39 +85,6 @@ inline HeapWord* HeapRegion::block_start(const void* addr, HeapWord* const pb) {
   return _bot_part.block_start(addr, pb);
 }
 
-inline HeapWord* HeapRegion::prev_live_spanning_into_in_unparsable(const G1CMBitMap* const bitmap, HeapWord* const addr) const {
-  assert(is_aligned(addr, BOTConstants::card_size_in_words()), "Start not aligned: " PTR_FORMAT, p2i(addr));
-
-  HeapWord* result = bitmap->get_prev_marked_addr(bottom(), addr);
-  if (result == nullptr) {
-    return nullptr;
-  }
-
-  assert(bitmap->is_marked(result), "obj at " PTR_FORMAT " should be marked", p2i(result));
-
-  // Check if that object spans into the start address.
-  oop result_obj = cast_to_oop(result);
-  if (result + result_obj->size() < addr) {
-    result = nullptr;
-  }
-  return result;
-}
-
-inline HeapWord* HeapRegion::block_start_using_bitmap(HeapWord* const start, HeapWord* const pb) const {
-  assert(is_aligned(start, BOTConstants::card_size_in_words()), "Start not aligned: " PTR_FORMAT, p2i(start));
-  assert(start < pb, "must be");
-
-  G1CMBitMap* bitmap = G1CollectedHeap::heap()->concurrent_mark()->mark_bitmap();
-  HeapWord* result = prev_live_spanning_into_in_unparsable(bitmap, start);
-
-  if (result == nullptr) {
-    // No live object spanning into this memory region. Find
-    // the first live after start in the unparsable area.
-    result = next_live_in_unparsable(bitmap, start, pb);
-  }
-  return result;
-}
-
 inline bool HeapRegion::obj_in_scrubbing_area(oop obj, HeapWord* const pb) const {
   return !obj_in_parsable_area(cast_from_oop<HeapWord*>(obj), pb);
 }
@@ -401,26 +368,8 @@ inline HeapWord* HeapRegion::oops_on_memregion_iterate_in_unparsable(MemRegion m
   HeapWord* const end = MIN2(mr.end(), pb);
 
   // Find the obj that extends onto mr.start().
-  HeapWord* cur;
-  if (is_gc_active) {
-    // If we are at a safepoint the BOT is stable (i.e. not potentially being modified
-    // concurrently) and valid, so we can simply use block_start() to find the object
-    // start. The object at cur (and others in that area) might be dead though.
-    cur = block_start(start, pb);
-
-    assert(cur <= start, "cur: " PTR_FORMAT ", start: " PTR_FORMAT, p2i(cur), p2i(start));
-  } else {
-    // We are during concurrent refinement, at this point the BOT is not stable from
-    // [bottom, pb) and we need to get the object spanning into mr by searching
-    // the bitmap.
-    cur = block_start_using_bitmap(start, pb);
-    // We may not find any live object spanning into or covering this region until pb. In
-    // that case, we are done.
-    if (cur == pb) {
-      return cur;
-    }
-    assert(cur < pb, "cur: " PTR_FORMAT ", end/pb: " PTR_FORMAT, p2i(cur), p2i(end));
-  }
+  // The BOT is stable enough to be read concurrently.
+  HeapWord* cur = block_start(start, pb);
 
   while (true) {
     oop obj = cast_to_oop(cur);

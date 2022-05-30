@@ -30,30 +30,8 @@
 #include "gc/g1/heapRegion.hpp"
 #include "memory/virtualspace.hpp"
 
-G1CMBackScanSkipTable::G1CMBackScanSkipTable(size_t log_mapping_granularity) :
-  _mapping_granularity((size_t)1 << log_mapping_granularity) {
-  assert(_mapping_granularity <= HeapRegion::GrainBytes, "must be");
-}
-
-void G1CMBackScanSkipTable::initialize(MemRegion mr) {
-  G1BiasedMappedArray<bool>::initialize(mr, mapping_granularity());
-}
-
-void G1CMBackScanSkipTable::clear_range(MemRegion mr) {
-  assert(is_aligned(mr.start(), mapping_granularity()), "must be");
-  assert(is_aligned(mr.end(), mapping_granularity()), "must be");
-
-  bool* start = address_mapped_to(mr.start());
-  bool* const end = address_mapped_to(mr.end());
-
-  while (start < end) {
-    *start++ = default_value();
-  }
-}
-
 G1CMBitMap::G1CMBitMap() :
   _bitmap(),
-  _back_scan_skip_table(G1LogBackScanSkipGranularity),
   _listener() {
 
   _listener.set_bitmap(this);
@@ -61,7 +39,6 @@ G1CMBitMap::G1CMBitMap() :
 
 void G1CMBitMap::initialize(MemRegion heap, G1RegionToSpaceMapper* storage) {
   _bitmap.initialize(heap, storage->reserved());
-  _back_scan_skip_table.initialize(heap);
   storage->set_mapping_changed_listener(&_listener);
 }
 

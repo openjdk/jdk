@@ -81,7 +81,7 @@ public:
     if (_during_concurrent_start) {
       // If the evacuation failure occurs during concurrent start we should do
       // any additional necessary per-object actions.
-      _cm->new_obj_marked(_worker_id, obj, obj_size);
+      _cm->update_liveness(_worker_id, obj, obj_size);
     }
 
     _marked_words += obj_size;

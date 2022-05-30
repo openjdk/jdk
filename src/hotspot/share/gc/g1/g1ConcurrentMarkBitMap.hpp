@@ -25,7 +25,6 @@
 #ifndef SHARE_GC_G1_G1CONCURRENTMARKBITMAP_HPP
 #define SHARE_GC_G1_G1CONCURRENTMARKBITMAP_HPP
 
-#include "gc/g1/g1BiasedArray.hpp"
 #include "gc/g1/g1RegionToSpaceMapper.hpp"
 #include "gc/shared/markBitMap.hpp"
 #include "memory/memRegion.hpp"
@@ -59,38 +58,10 @@ public:
   virtual void on_commit(uint start_idx, size_t num_regions, bool zero_filled);
 };
 
-// This table is used to quickly scan back large areas within regions: whenever
-// concurrent marking marks an object on the mark bitmap, this class also remembers
-// its approximate location in units of subdivisions of a heap region.
-//
-// When scanning the bitmap backwards for object starts, this table is consulted
-// to skip large unmarked areas.
-class G1CMBackScanSkipTable : private G1BiasedMappedArray<bool> {
-  const size_t _mapping_granularity;
-
-protected:
-  virtual bool default_value() const { return false; }
-
-public:
-  G1CMBackScanSkipTable(size_t log_mapping_granularity);
-
-  void initialize(MemRegion mr);
-
-  size_t mapping_granularity() const { return _mapping_granularity; }
-
-  void mark(HeapWord* const addr);
-  void clear_range(MemRegion mr);
-
-  // Scans backward from address start-1 to bottom, returning the start of the corresponding
-  // area if marked. Otherwise, if no mark has been found, returns nullptr.
-  HeapWord* find_marked_area(HeapWord* const bottom, HeapWord* const start) const;
-};
-
 // A generic mark bitmap for concurrent marking.  This is essentially a wrapper
 // around the BitMap class that is based on HeapWords, with one bit per (1 << _shifter) HeapWords.
 class G1CMBitMap {
   MarkBitMap _bitmap;
-  G1CMBackScanSkipTable _back_scan_skip_table;
   G1CMBitMapMappingChangedListener _listener;
 
 public:
@@ -111,21 +82,11 @@ public:
   inline HeapWord* get_next_marked_addr(const HeapWord* addr,
                                         HeapWord* limit) const;
 
-  // Return the address corresponding to the previous marked bit at or before
-  // "addr", and after or at "limit". If there is no such bit, returns nullptr.
-  // Uses the back scan skip table to speed up the process in case of large areas
-  // without marked objects. The back scan skip table is expected to be properly
-  // initialized.
-  inline HeapWord* get_prev_marked_addr(HeapWord* limit,
-                                        const HeapWord* addr) const;
-
   // Write marks.
   inline void clear(HeapWord* addr);
   inline void clear(oop obj);
   inline bool par_mark(HeapWord* addr);
   inline bool par_mark(oop obj);
-
-  inline void update_back_skip_table(oop obj);
 
   // Clear bitmap.
   void clear_range(MemRegion mr);

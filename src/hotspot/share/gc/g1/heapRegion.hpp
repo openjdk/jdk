@@ -144,13 +144,6 @@ private:
   // This version synchronizes with other calls to par_allocate_impl().
   inline HeapWord* par_allocate_impl(size_t min_word_size, size_t desired_word_size, size_t* actual_word_size);
 
-  // Find a live object spanning over the given address or starting at it. Returns
-  // nullptr if there is no such object.
-  inline HeapWord* prev_live_spanning_into_in_unparsable(const G1CMBitMap* bitmap, HeapWord* start) const;
-
-  // Finds a block spanning into start that is less than parsable_bottom and returns
-  // its address. Nullptr if there is no such block.
-  inline HeapWord* block_start_using_bitmap(HeapWord* start, HeapWord* pb) const;
 public:
   HeapWord* block_start(const void* addr, HeapWord* const pb);
 

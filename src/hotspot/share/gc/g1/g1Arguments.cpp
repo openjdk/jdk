@@ -66,11 +66,6 @@ void G1Arguments::initialize_alignments() {
   if (FLAG_IS_DEFAULT(G1EagerReclaimRemSetThreshold)) {
     FLAG_SET_ERGO(G1EagerReclaimRemSetThreshold, G1RemSetArrayOfCardsEntries);
   }
-
-  size_t back_skip_granularity_bytes = (size_t)1 << G1LogBackScanSkipGranularity;
-  if (back_skip_granularity_bytes > G1HeapRegionSize) {
-    FLAG_SET_ERGO(G1LogBackScanSkipGranularity, HeapRegion::LogOfHRGrainBytes);
-  }
 }
 
 size_t G1Arguments::conservative_max_heap_alignment() {

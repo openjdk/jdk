@@ -454,7 +454,7 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
 public:
   // To be called when an object is marked the first time, e.g. after a successful
   // mark_in_bitmap call. Updates various statistics data.
-  void new_obj_marked(uint worker_id, oop const obj, size_t size);
+  void update_liveness(uint worker_id, oop const obj, size_t size);
   // Live words in the given region as determined by concurrent marking, i.e. the amount of
   // live words between bottom and TAMS.
   size_t live_words(uint region) const { return _region_mark_stats[region]._live_words; }

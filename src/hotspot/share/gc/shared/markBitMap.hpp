@@ -91,11 +91,6 @@ public:
   inline HeapWord* get_next_marked_addr(const HeapWord* addr,
                                         HeapWord* limit) const;
 
-  // Return the address corresponding to the previous marked bit at or before
-  // "addr", and after or at "limit". If there is no such bit, returns nullptr.
-  inline HeapWord* get_prev_marked_addr(HeapWord* limit,
-                                        const HeapWord* addr) const;
-
   void print_on_error(outputStream* st, const char* prefix) const;
 
   // Write marks.

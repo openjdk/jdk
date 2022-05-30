@@ -63,16 +63,6 @@ inline HeapWord* MarkBitMap::get_next_marked_addr(const HeapWord* const addr,
   return offset_to_addr(nextOffset);
 }
 
-inline HeapWord* MarkBitMap::get_prev_marked_addr(HeapWord* const limit,
-                                                  const HeapWord* const addr) const {
-  assert(limit != NULL, "limit must not be NULL");
-  // Round addr up to a possible object boundary to be safe.
-  size_t const addr_offset = addr_to_offset(align_up(addr, HeapWordSize << _shifter));
-  size_t const limit_offset = addr_to_offset(limit);
-  size_t const nextOffset = _bm.get_prev_one_offset(limit_offset, addr_offset);
-  return nextOffset != BitMap::NotFound ? offset_to_addr(nextOffset) : nullptr;
-}
-
 inline void MarkBitMap::mark(HeapWord* addr) {
   check_mark(addr);
   _bm.set_bit(addr_to_offset(addr));
