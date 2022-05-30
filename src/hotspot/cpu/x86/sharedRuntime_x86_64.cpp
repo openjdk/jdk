@@ -1374,11 +1374,13 @@ static void gen_continuation_enter(MacroAssembler* masm,
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), 2);
   __ movptr(rbx, rax);
 
-  // rbx now holds the exception handler.
-  // Prepare for its invocation; see OptoRuntime::generate_exception_blob.
-  __ pop(rax); // exception oop
-  __ pop(rdx); // exception pc
+  // Continue at exception handler:
+  //   rax: exception oop
+  //   rbx: exception handler
+  //   rdx: exception pc
+  __ pop(rax);
   __ verify_oop(rax);
+  __ pop(rdx);
   __ jmp(rbx);
 }
 
