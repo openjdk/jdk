@@ -48,8 +48,7 @@ public class TableRendererTest{
             = """
             INSTRUCTIONS:
              1. This is a Windows specific test. If you are not on Windows, press Pass.
-             2. Check if the Table with header and rows are painted without any 
-                Null Pointer Exception.
+             2. Check if the Table with header and rows are painted without NPE.
              3. If the table appears without any NPE, press Pass,\s""";
     static PassFailJFrame passFailJFrame;
 
