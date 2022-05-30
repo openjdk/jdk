@@ -1432,7 +1432,7 @@ void G1ConcurrentMark::cleanup() {
     G1UpdateRegionsAfterRebuild cl(_g1h);
     _g1h->heap_region_iterate(&cl);
   } else {
-    log_debug(gc, phases)("No Remembered Set Tracking Update After Rebuild");
+    log_debug(gc, phases)("No Remembered Sets to update after rebuild");
   }
 
   verify_during_pause(G1HeapVerifier::G1VerifyCleanup, VerifyOption::G1UseConcMarking, "Cleanup after");
