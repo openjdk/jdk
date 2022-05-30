@@ -1708,6 +1708,9 @@ private:
   bool configure();
   void collect();
   void prune();
+  void prune_all();
+  void prune_all_paths();
+  void prune_shortest_path();
   void sort();
   void print();
 
@@ -1730,6 +1733,7 @@ private:
   Filter filter_visit;
   Filter filter_boundary;
   bool _sort_idx = false;
+  bool _all_paths = false;
   bool _use_color = false;
   bool _print_blocks = false;
   bool _print_old = false;
@@ -1767,13 +1771,16 @@ private:
       : _node(node), _distance(distance) {};
     Node* node() { return _node; };
     int distance() { return _distance; };
+    int d2() {return _d2; }
+    void set_d2(int d) { _d2 = d; }
     Node_List edge_fwd; // pointing away from _start
     Node_List edge_bwd; // pointing toward _start
     bool is_marked() { return _mark; } // marked to keep during pruning
     void set_mark() { _mark = true; }
   private:
     Node* _node;
-    int _distance;
+    int _distance; // distance from _start
+    int _d2 = 0; // distance from _target if _all_paths
     bool _mark = false;
   };
   static int cmp(const Node* n1, const Node* n2) { return n1 != n2; }
@@ -1848,31 +1855,73 @@ void PrintBFS::collect() {
   }
 }
 
+
+
 // go through work list, mark those that we want to print
 void PrintBFS::prune() {
   if ( _target == nullptr ) {
-    // take all nodes from BFS
-    for (uint i = 0; i < _worklist.size(); i++) {
-      Node* n = _worklist.at(i);
-      Info* info = find_info(n);
-      info->set_mark();
-    }
+    prune_all();
   } else {
-    // backtrack shortest path
     if (find_info(_target) == nullptr) {
       tty->print("Could not find target in BFS.\n");
       return;
     }
-    Node* current = _target;
-    while (true) {
-      Info* info = find_info(current);
-      info->set_mark();
-      if (current == _start) {
-        break;
-      }
-      // first edge -> leads us one step closer to _start
-      current = info->edge_bwd.at(0);
+    if(_all_paths) {
+      prune_all_paths();
+    } else {
+      prune_shortest_path();
     }
+  }
+}
+
+// take all nodes from BFS
+void PrintBFS::prune_all() {
+  for (uint i = 0; i < _worklist.size(); i++) {
+    Node* n = _worklist.at(i);
+    Info* info = find_info(n);
+    info->set_mark();
+  }
+}
+
+// traverse backward from target, along edges found in BFS
+void PrintBFS::prune_all_paths() {
+  uint pos = 0;
+  Node_List backtrace;
+  // start from target
+  backtrace.push(_target);
+  find_info(_target)->set_mark();
+  // traverse backward
+  while(pos < backtrace.size()) {
+    Node* n = backtrace.at(pos++);
+    Info* info = find_info(n);
+    for(uint i=0; i<info->edge_bwd.size(); i++) {
+      // all backward edges
+      Node* back = info->edge_bwd.at(i);
+      Info* back_info = find_info(back);
+      if(!back_info->is_marked()) {
+        // not yet found this on way back.
+        back_info->set_d2(info->d2()+1);
+        if(back_info->d2() + back_info->distance() <= _max_distance) {
+          // total distance is small enough
+          back_info->set_mark();
+          backtrace.push(back);
+        }
+      }
+    }
+  }
+}
+
+
+void PrintBFS::prune_shortest_path() {
+  Node* current = _target;
+  while (true) {
+    Info* info = find_info(current);
+    info->set_mark();
+    if (current == _start) {
+      break;
+    }
+    // first edge -> leads us one step closer to _start
+    current = info->edge_bwd.at(0);
   }
 }
 
@@ -1942,6 +1991,7 @@ void PrintBFS::parse_options() {
   parse_options_helper(filter_boundary.mixed,   "X");
   parse_options_helper(filter_boundary.other,   "O");
   parse_options_helper(_sort_idx,               "S");
+  parse_options_helper(_all_paths,              "A");
   parse_options_helper(_use_color,              "#");
   parse_options_helper(_print_blocks,           "B");
   parse_options_helper(_print_old,              "@");
@@ -2083,7 +2133,10 @@ void PrintBFS::maybe_traverse(Node* src, Node* dst) {
 }
 
 void PrintBFS::print_header() {
-  tty->print("dis");                          // distance
+  tty->print("   d");                         // distance
+  if (_all_paths) {
+    tty->print(" apd");                       // all paths distance
+  }
   if (_print_blocks) {
     tty->print(" [head  idom  d]");           // block
   }
@@ -2095,7 +2148,12 @@ void PrintBFS::print_header() {
 }
 
 void PrintBFS::print_node(Node* n) {
-  tty->print("%3d", find_info(n)->distance());// distance
+  tty->print("%4d", find_info(n)->distance());// distance
+  if (_all_paths) {
+    Info* info = find_info(n);
+    int apd = info->distance() + info->d2();
+    tty->print("%4d", apd);                   // all paths distance
+  }
   if (_print_blocks) {
     print_node_block(n);                      // block
   }
@@ -2130,6 +2188,7 @@ void PrintBFS::print_node(Node* n) {
 //     X: boundary mixed nodes
 //     O: boundary other nodes
 //     S: sort displayed nodes by node idx
+//     A: all paths (not just shortest path to target)
 //     #: display node category in color (maybe not supported in all terminals)
 //     @: print old nodes - before matching (if available)
 //     B: print scheduling blocks (if available)
@@ -2148,7 +2207,7 @@ void PrintBFS::print_node(Node* n) {
 //     find shortest path from x to y, along any edge or node
 //     will not find a path if it is longer than 10
 //     useful to find how x and y are related
-//   find_node(385)->dump_bfs(3, 0, "cdmox+#OB")
+//   find_node(385)->dump_bfs(3, 0, "cdmox+#@B")
 //     find inputs of node 385, up to 3 nodes up (+)
 //     traverse all nodes (cdmox), use colors (#)
 //     display old nodes and blocks, if they exist
@@ -2156,9 +2215,9 @@ void PrintBFS::print_node(Node* n) {
 //
 // output columns:
 //   distance: distance to this/start in BFS traversal
+//   apd:      all paths distance (d_start + d_target)
 //   block:    block in which the node has been scheduled [head(), _idom->head(), _dom_depth]
 //   old:      old IR node - before matching
-//   category: characters cmdxo from options string
 //   dump
 void Node::dump_bfs(const int max_distance, Node* target, char const* options) {
   PrintBFS bfs(this, max_distance, target, options);
