@@ -167,7 +167,8 @@ inline void BitMap::par_clear_range(idx_t beg, idx_t end, RangeSizeHint hint) {
 
 template<BitMap::bm_word_t flip, bool aligned_right>
 inline BitMap::idx_t BitMap::get_next_bit_impl(idx_t l_index, idx_t r_index) const {
-  STATIC_ASSERT(flip == find_ones_flip || flip == find_zeros_flip);
+  static_assert(flip == find_ones_flip || flip == find_zeros_flip,
+                "flip must be either find_ones_flip or find_zero_flip");
   verify_range(l_index, r_index);
   assert(!aligned_right || is_aligned(r_index, BitsPerWord), "r_index not aligned");
 
@@ -230,7 +231,8 @@ inline BitMap::idx_t BitMap::get_next_bit_impl(idx_t l_index, idx_t r_index) con
 
 template<BitMap::bm_word_t flip, bool aligned_left>
 inline BitMap::idx_t BitMap::get_prev_bit_impl(idx_t l_index, idx_t r_index) const {
-  STATIC_ASSERT(flip == find_ones_flip || flip == find_zeros_flip);
+  static_assert(flip == find_ones_flip || flip == find_zeros_flip,
+                "flip must be either find_ones_flip or find_zero_flip");
   verify_range(l_index, r_index);
   assert(!aligned_left || is_aligned(l_index, BitsPerWord), "l_index not aligned");
 
@@ -243,15 +245,15 @@ inline BitMap::idx_t BitMap::get_prev_bit_impl(idx_t l_index, idx_t r_index) con
   // The benefit from aligned_left being true is very small. It saves
   // an operation when returning results.
 
-  // The return value of l_index when no bit is found is BitMap::NotFound.
+  // The return value when no bit is found is BitMap::NotFound.
 
   if (l_index < r_index) {
     // Get the word containing r_index - 1 (r_index is exclusive), and shift out high bits.
     r_index--;
     idx_t index = to_words_align_down(r_index);
-    bm_word_t cword = (map(index) ^ flip) << (BitsPerWord - 1 - bit_in_word(r_index));
+    bm_word_t cword = (map(index) ^ flip) << ((BitsPerWord - 1) - bit_in_word(r_index));
 
-    STATIC_ASSERT(sizeof(intptr_t) == sizeof(bm_word_t));
+    static_assert(sizeof(intptr_t) == sizeof(bm_word_t), "can not use sign comparison otherwise");
     if (intptr_t(cword) < 0) {
       // The first bit is similarly often interesting. When it matters
       // (density or features of the calling algorithm make it likely
@@ -267,15 +269,15 @@ inline BitMap::idx_t BitMap::get_prev_bit_impl(idx_t l_index, idx_t r_index) con
       if (aligned_left || (result >= l_index)) {
         return result;
       }
-      // Result is beyond range bound.
+      // Result is beyond range bound. Fall through.
     } else {
       // Flipped and shifted first word is zero.  Word search through
       // aligned down l_index for a non-zero flipped word.
-      idx_t limit = to_words_align_down(l_index); // Minuscule savings when aligned.
+      idx_t limit = to_words_align_down(l_index);
       while (index-- > limit) {
         cword = map(index) ^ flip;
         if (cword != 0) {
-          idx_t result = bit_index(index + 1) - count_leading_zeros(cword) - 1;
+          idx_t result = bit_index(index) + (BitsPerWord - 1) - count_leading_zeros(cword);
           if (aligned_left || (result >= l_index)) {
             return result;
           }
@@ -284,7 +286,7 @@ inline BitMap::idx_t BitMap::get_prev_bit_impl(idx_t l_index, idx_t r_index) con
           break;
         }
       }
-      // No bits in range.
+      // No bits in range. Fall through.
     }
   }
   return NotFound;
