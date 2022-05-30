@@ -480,8 +480,8 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
             WWindowPeer peer = AWTAccessor.getComponentAccessor().getPeer(w);
             configDisplayMode(screen, peer, dm.getWidth(), dm.getHeight(),
                 dm.getBitDepth(), dm.getRefreshRate());
-            // Note: window will get resized to actual full-screen dimensions
-            // in the upcoming display change event, when the DPI scales
+            // Note: the full-screen window will get resized to the dimensions of the new
+            // display mode in the upcoming display change event, when the DPI scales
             // would already be correctly set etc.
         } else {
             throw new IllegalStateException("Must be in fullscreen mode " +
