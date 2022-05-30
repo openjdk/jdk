@@ -89,6 +89,8 @@ public class VirtualThreads {
      */
     @Test
     public void testGetThreadInfo2() throws Exception {
+        if (!supportsCustomScheduler())
+            throw new SkipException("No support for custom schedulers");
         try (ExecutorService pool = Executors.newFixedThreadPool(1)) {
             var carrierRef = new AtomicReference<Thread>();
             Executor scheduler = (task) -> {
@@ -99,10 +101,7 @@ public class VirtualThreads {
             };
 
             // start virtual thread so carrier Thread can be captured
-            Thread.Builder builder = virtualThreadBuilderOrNull(scheduler);
-            if (builder == null)
-                throw new SkipException("No support for custom schedulers");
-            builder.start(() -> { }).join();
+            virtualThreadBuilder(scheduler).start(() -> { }).join();
             Thread carrier = carrierRef.get();
             assertTrue(carrier != null && !carrier.isVirtual());
 
@@ -221,7 +220,7 @@ public class VirtualThreads {
      * Returns a builder to create virtual threads that use the given scheduler.
      * @throws UnsupportedOperationException if there is no support for custom schedulers
      */
-    static Thread.Builder.OfVirtual virtualThreadBuilder(Executor scheduler) {
+    private static Thread.Builder.OfVirtual virtualThreadBuilder(Executor scheduler) {
         Thread.Builder.OfVirtual builder = Thread.ofVirtual();
         try {
             Class<?> clazz = Class.forName("java.lang.ThreadBuilders$VirtualThreadBuilder");
@@ -240,14 +239,16 @@ public class VirtualThreads {
     }
 
     /**
-     * Returns a builder to create virtual threads that use the given scheduler
-     * or {@code null} if there is no support for custom schedulers.
+     * Return true if custom schedulers are supported.
      */
-    static Thread.Builder.OfVirtual virtualThreadBuilderOrNull(Executor scheduler) {
-        try {
-            return virtualThreadBuilder(scheduler);
-        } catch (UnsupportedOperationException e) {
-            return null;
+    private static boolean supportsCustomScheduler() {
+        try (var pool = Executors.newCachedThreadPool()) {
+            try {
+                virtualThreadBuilder(pool);
+                return true;
+            } catch (UnsupportedOperationException e) {
+                return false;
+            }
         }
     }
 }

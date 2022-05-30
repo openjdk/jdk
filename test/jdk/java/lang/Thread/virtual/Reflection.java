@@ -142,11 +142,11 @@ public class Reflection {
      */
     @Test
     public void testInvokeStatic6() throws Exception {
+        if (!ThreadBuilders.supportsCustomScheduler())
+            throw new SkipException("No support for custom schedulers");
         Method parkMethod = Parker.class.getDeclaredMethod("park");
         try (ExecutorService scheduler = Executors.newFixedThreadPool(1)) {
-            Thread.Builder builder = ThreadBuilders.virtualThreadBuilderOrNull(scheduler);
-            if (builder == null)
-                throw new SkipException("No support for custom schedulers");
+            Thread.Builder builder = ThreadBuilders.virtualThreadBuilder(scheduler);
             ThreadFactory factory = builder.factory();
             Thread vthread = factory.newThread(() -> {
                 try {
@@ -318,11 +318,11 @@ public class Reflection {
      */
     @Test
     public void testNewInstance6() throws Exception {
+        if (!ThreadBuilders.supportsCustomScheduler())
+            throw new SkipException("No support for custom schedulers");
         Constructor<?> ctor = Parker.class.getDeclaredConstructor();
         try (ExecutorService scheduler = Executors.newFixedThreadPool(1)) {
-            Thread.Builder builder = ThreadBuilders.virtualThreadBuilderOrNull(scheduler);
-            if (builder == null)
-                throw new SkipException("No support for custom schedulers");
+            Thread.Builder builder = ThreadBuilders.virtualThreadBuilder(scheduler);
             ThreadFactory factory = builder.factory();
             Thread vthread = factory.newThread(() -> {
                 try {

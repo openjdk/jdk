@@ -1095,11 +1095,11 @@ public class ThreadAPI {
      */
     @Test
     public void testYield1() throws Exception {
+        if (!ThreadBuilders.supportsCustomScheduler())
+            throw new SkipException("No support for custom schedulers");
         var list = new CopyOnWriteArrayList<String>();
         try (ExecutorService scheduler = Executors.newFixedThreadPool(1)) {
-            Thread.Builder builder = ThreadBuilders.virtualThreadBuilderOrNull(scheduler);
-            if (builder == null)
-                throw new SkipException("No support for custom schedulers");
+            Thread.Builder builder = ThreadBuilders.virtualThreadBuilder(scheduler);
             ThreadFactory factory = builder.factory();
             var thread = factory.newThread(() -> {
                 list.add("A");
@@ -1124,11 +1124,11 @@ public class ThreadAPI {
      */
     @Test
     public void testYield2() throws Exception {
+        if (!ThreadBuilders.supportsCustomScheduler())
+            throw new SkipException("No support for custom schedulers");
         var list = new CopyOnWriteArrayList<String>();
         try (ExecutorService scheduler = Executors.newFixedThreadPool(1)) {
-            Thread.Builder builder = ThreadBuilders.virtualThreadBuilderOrNull(scheduler);
-            if (builder == null)
-                throw new SkipException("No support for custom schedulers");
+            Thread.Builder builder = ThreadBuilders.virtualThreadBuilder(scheduler);
             ThreadFactory factory = builder.factory();
             var thread = factory.newThread(() -> {
                 list.add("A");
@@ -1701,11 +1701,11 @@ public class ThreadAPI {
      */
     @Test
     public void testGetState3() throws Exception {
+        if (!ThreadBuilders.supportsCustomScheduler())
+            throw new SkipException("No support for custom schedulers");
         AtomicBoolean completed = new AtomicBoolean();
         try (ExecutorService scheduler = Executors.newFixedThreadPool(1)) {
-            Thread.Builder builder = ThreadBuilders.virtualThreadBuilderOrNull(scheduler);
-            if (builder == null)
-                throw new SkipException("No support for custom schedulers");
+            Thread.Builder builder = ThreadBuilders.virtualThreadBuilder(scheduler);
             Thread t1 = builder.start(() -> {
                 Thread t2 = builder.unstarted(LockSupport::park);
                 assertTrue(t2.getState() == Thread.State.NEW);
@@ -1869,6 +1869,8 @@ public class ThreadAPI {
      */
     @Test
     public void testGetStackTrace2() throws Exception {
+        if (!ThreadBuilders.supportsCustomScheduler())
+            throw new SkipException("Requires continuations support");
         List<Thread> threads = new ArrayList<>();
         AtomicBoolean done = new AtomicBoolean();
         try {
@@ -1888,9 +1890,6 @@ public class ThreadAPI {
                     if (!latch.await(3, TimeUnit.SECONDS)) {
                         // thread did not run
                         target = vthread;
-                    }
-                    if (threads.size() >= 100) {
-                        throw new SkipException("Unable to pin all threads");
                     }
                 }
             }
@@ -1933,6 +1932,8 @@ public class ThreadAPI {
      */
     @Test
     public void testGetStackTrace4() throws Exception {
+        if (!ThreadBuilders.supportsCustomScheduler())
+            throw new SkipException("No support for custom schedulers");
         try (ForkJoinPool pool = new ForkJoinPool(1)) {
             AtomicReference<Thread> ref = new AtomicReference<>();
             Executor scheduler = task -> {
@@ -1942,9 +1943,7 @@ public class ThreadAPI {
                 });
             };
 
-            Thread.Builder builder = ThreadBuilders.virtualThreadBuilderOrNull(scheduler);
-            if (builder == null)
-                throw new SkipException("No support for custom schedulers");
+            Thread.Builder builder = ThreadBuilders.virtualThreadBuilder(scheduler);
             Thread vthread = builder.start(() -> {
                 synchronized (lock) {
                     try {
@@ -2031,6 +2030,8 @@ public class ThreadAPI {
      */
     @Test
     public void testGetAllStackTraces2() throws Exception {
+        if (!ThreadBuilders.supportsCustomScheduler())
+            throw new SkipException("No support for custom schedulers");
         try (ForkJoinPool pool = new ForkJoinPool(1)) {
             AtomicReference<Thread> ref = new AtomicReference<>();
             Executor scheduler = task -> {
@@ -2040,9 +2041,7 @@ public class ThreadAPI {
                 });
             };
 
-            Thread.Builder builder = ThreadBuilders.virtualThreadBuilderOrNull(scheduler);
-            if (builder == null)
-                throw new SkipException("No support for custom schedulers");
+            Thread.Builder builder = ThreadBuilders.virtualThreadBuilder(scheduler);
             Thread vthread = builder.start(() -> {
                 synchronized (lock) {
                     try {

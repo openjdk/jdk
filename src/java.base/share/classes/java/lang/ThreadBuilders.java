@@ -218,7 +218,7 @@ class ThreadBuilders {
         VirtualThreadBuilder(Executor scheduler) {
             if (!ContinuationSupport.isSupported())
                 throw new UnsupportedOperationException();
-            this.scheduler = scheduler;
+            this.scheduler = Objects.requireNonNull(scheduler);
         }
 
         @Override
