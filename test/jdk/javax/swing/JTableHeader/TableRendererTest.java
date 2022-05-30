@@ -23,9 +23,10 @@
 /* @test
    @bug 6429812
    @key headful
+   @requires (os.family == "windows")
    @library /java/awt/regtesthelpers
    @build PassFailJFrame
-   @summary
+   @summary Check if No NPE occurs when JTable.updateUI is called
    @run main/manual TableRendererTest
 */
 
