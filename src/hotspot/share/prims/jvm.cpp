@@ -3492,7 +3492,7 @@ JVM_LEAF(jboolean, JVM_IsPreviewEnabled(void))
 JVM_END
 
 JVM_LEAF(jboolean, JVM_IsContinuationsSupported(void))
-  return VMContinuations;
+  return VMContinuations ? JNI_TRUE : JNI_FALSE;
 JVM_END
 
 // String support ///////////////////////////////////////////////////////////////////////////
