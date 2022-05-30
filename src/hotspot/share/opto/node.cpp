@@ -1814,20 +1814,10 @@ void PrintBFS::run() {
 // set up configuration for BFS and print
 bool PrintBFS::configure() {
   if(_max_distance < 0) {
-    tty->print("print_bfs: max_distance must be non-negative!\n");
+    tty->print("dump_bfs: max_distance must be non-negative!\n");
     return false;
   }
   parse_options();
-
-  if (_target == nullptr) {
-    tty->print("No target: perform BFS.\n");
-  } else {
-    tty->print("Find shortest path:");
-    print_node_idx(_start);
-    tty->print(" ->");
-    print_node_idx(_target);
-    tty->print("\n");
-  }
   return true;
 }
 
@@ -2107,7 +2097,7 @@ void PrintBFS::print_node(Node* n) {
   n->dump("\n", false, tty, &_dcc);           // node dump
 }
 
-//------------------------------print_bfs--------------------------------------
+//------------------------------dump_bfs--------------------------------------
 // Call this from debugger:
 // BFS traversal of graph, starting at node this/start
 // this/start: staring point of BFS
@@ -2138,17 +2128,17 @@ void PrintBFS::print_node(Node* n) {
 // on the boundary additionally follow nodes allowed in boundary types.
 //
 // examples:
-//   if->print_bfs(10, 0, "+cxo")
+//   if->dump_bfs(10, 0, "+cxo")
 //     starting at if node, traverse inputs recursively
 //     only along control (mixed and other can also be control)
-//   phi->print_bfs(5, 0, "-dxo")
+//   phi->dump_bfs(5, 0, "-dxo")
 //     starting at phi node, traverse outputs recursively
 //     only along data (mixed and other can also have data flow)
-//   x->print_bfs(10, y, 0)
+//   x->dump_bfs(10, y, 0)
 //     find shortest path from x to y, along any edge or node
 //     will not find a path if it is longer than 10
 //     useful to find how x and y are related
-//   find_node(385)->print_bfs(3, 0, "cdmox+#OB")
+//   find_node(385)->dump_bfs(3, 0, "cdmox+#OB")
 //     find inputs of node 385, up to 3 nodes up (+)
 //     traverse all nodes (cdmox), use colors (#)
 //     display old nodes and blocks, if they exist
@@ -2160,7 +2150,7 @@ void PrintBFS::print_node(Node* n) {
 //   old:      old IR node - before matching
 //   category: characters cmdxo from options string
 //   dump
-void Node::print_bfs(const int max_distance, Node* target, char const* options) {
+void Node::dump_bfs(const int max_distance, Node* target, char const* options) {
   PrintBFS bfs(this, max_distance, target, options);
   bfs.run();
 }
