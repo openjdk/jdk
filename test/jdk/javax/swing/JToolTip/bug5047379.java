@@ -107,7 +107,7 @@ public class bug5047379 {
         toolTipObj.installUI(tooltip);
 
         if (toolTipObj.getAcceleratorString() == null) {
-            throw new RuntimeException("MetalTooltip acceleration is not properly set : "+toolTipObj.getAcceleratorString());
+            throw new RuntimeException("Acceleration String for ToolTip of Metal L&F is null");
         }
     }
 
