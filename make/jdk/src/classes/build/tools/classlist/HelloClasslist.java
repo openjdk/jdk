@@ -89,12 +89,7 @@ public class HelloClasslist {
         String CSCSC  = "string" + s + "string" + s + "string";
         String SCSCS  = s + "string" + s + "string" + s;
         String SSCSS  = s + s + "string" + s + s;
-        String S5     = s + s + s + s + s;
-        String S6     = s + s + s + s + s + s;
-        String S7     = s + s + s + s + s + s + s;
-        String S8     = s + s + s + s + s + s + s + s;
-        String S9     = s + s + s + s + s + s + s + s + s;
-        String S10    = s + s + s + s + s + s + s + s + s + s;
+        String SSSSS  = s + s + s + s + s;
 
         String CI     = "string" + i;
         String IC     = i + "string";
