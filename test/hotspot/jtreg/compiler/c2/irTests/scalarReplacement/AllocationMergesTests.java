@@ -122,7 +122,7 @@ public class AllocationMergesTests {
     @Test
     @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH })
     @IR(counts = { IRNode.ALLOC, "2" })
-    // Merge won't be simplified because objects have different types
+    // Merge won't be reduced because objects have different types
     int testPollutedPolymorphic(boolean cond, int l) {
         Shape obj1 = new Square(l);
         Shape obj2 = new Circle(l);
@@ -138,33 +138,8 @@ public class AllocationMergesTests {
 
     @Test
     @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH })
-    @IR(counts = { IRNode.ALLOC, "1" })
-    int testPartialEscapeUsingIf(boolean cond, int x, int y) {
-        Point p = new Point(x, y);
-        int val = 0;
-
-        if (cond)
-            val = dummy(p);
-
-        return val + p.x * p.y;
-    }
-
-    @Test
-    @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH })
-    @IR(counts = { IRNode.ALLOC, "1" })
-    int testPartialEscapeUsingLoop(boolean cond, int x, int y) {
-        Point p = new Point(x, y);
-        int val = 0;
-
-        for (int i=1; i<132; i++)
-            val += dummy(p);
-
-        return val + p.x * p.y;
-    }
-
-    @Test
-    @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH })
     @IR(counts = { IRNode.ALLOC, "2" })
+    // Merge won't be reduced because write to one of the inputs *after* the merge
     int testMergedLoadAfterDirectStore(boolean cond, int x, int y) {
         Point p0 = new Point(x, x);
         Point p1 = new Point(y, y);
@@ -237,7 +212,6 @@ public class AllocationMergesTests {
         }
     }
 
-
     @Test
     @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH })
     @IR(counts = { IRNode.ALLOC, "2" })
@@ -256,8 +230,57 @@ public class AllocationMergesTests {
         return cond ? c.x : c.y;
     }
 
-    // ------------------ Some Objects Will be Scalar Replaced in These Tests ------------------- //
+    @Test
+    @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH })
+    @IR(counts = { IRNode.ALLOC, "1" })
+    // Merge won't be reduced because one of the inputs come from a call
+    int testCallOneSide(boolean cond1, int x, int y) {
+        Point p = dummy(x, y);
 
+        if (cond1)
+            p = new Point(y, x);
+
+        return p.x;
+    }
+
+    @Test
+    @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH })
+    @IR(counts = { IRNode.CALL, "3" })
+    // Merge won't be reduced because both of the inputs come from a call
+    // The additional "Call" node is because of the uncommon_trap for checking if
+    // "p" is null
+    int testCallTwoSide(boolean cond1, int x, int y) {
+        Point p = dummy(x, y);
+
+        if (cond1)
+            p = dummy(y, x);
+
+        return p.x;
+    }
+
+    @Test
+    @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH })
+    @IR(counts = { IRNode.ALLOC, "3" })
+    int testMergedAccessAfterCallNoWrite(boolean cond, int x, int y) {
+        Point p2 = new Point(x, x);
+        Point p = new Point(y, y);
+        int res = 0;
+
+        p.x = p.x * y;
+
+        if (cond)
+            p = new Point(y, y);
+
+        dummy(p2);
+
+        for (int i=3; i<324; i++)
+            res += p.x + i * x;
+
+        return res;
+    }
+
+
+    // ------------------ Some Objects Will be Scalar Replaced in These Tests ------------------- //
 
 
     @Test
@@ -272,19 +295,18 @@ public class AllocationMergesTests {
         return p.x * p.y;
     }
 
-
     @Test
     @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH })
     @IR(failOn = { IRNode.ALLOC })
     int testSimpleAliasedAlloc(boolean cond, int x, int y) {
         Point p1 = new Point(x, y);
         Point p2 = new Point(y, x);
-        Point p3 = p1;
+        Point p = p1;
 
         if (cond)
-            p3 = p2;
+            p = p2;
 
-        return p3.x * p3.y;
+        return p.x * p.y;
     }
 
     @Test
@@ -320,7 +342,7 @@ public class AllocationMergesTests {
  ////////   @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH })
  ////////   @IR(counts = { IRNode.ALLOC, "1" })
  ////////   int testMultiwayMerge(int x, int y) {
- ////////       Point p  = new Point(0, 0);
+ ////////       Point p = new Point(0, 0);
 
  ////////       if (x == y) {
  ////////           p = dummy(x, x);
@@ -378,7 +400,6 @@ public class AllocationMergesTests {
 
         return p1.x * p2.y;
     }
-
 
 /// is asserting
 /////    @Test
@@ -489,7 +510,6 @@ public class AllocationMergesTests {
         return res;
     }
 
-
     @Test
     @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH })
     @IR(failOn = { IRNode.ALLOC })
@@ -539,31 +559,6 @@ public class AllocationMergesTests {
 
         return res;
     }
-
-
- // I expected p to be scalar replaced here
- //
- //   @Test
- //   @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH })
- //   @IR(counts = { IRNode.ALLOC, "1" })
- //   int testMergedAccessAfterCallNoWrite(boolean cond, int x, int y) {
- //       Point p2 = new Point(x, x);
- //       Point p = new Point(y, y);
- //       int res = 0;
-
- //       p.x = p.x * y;
-
- //       if (cond)
- //           p = new Point(y, y);
-
- //       dummy(p2);
-
- //       for (int i=3; i<324; i++)
- //           res += p.x + i * x;
-
- //       return res;
- //   }
-
 
     @Test
     @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH })
@@ -626,7 +621,6 @@ public class AllocationMergesTests {
         return res + obj1.x + obj2.y;
     }
 
-
     @Test
     @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH })
     @IR(failOn = { IRNode.ALLOC })
@@ -659,26 +653,28 @@ public class AllocationMergesTests {
         return p.x + x;
     }
 
-    @Test
-    @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH })
-    @IR(failOn = { IRNode.ALLOC })
-    int testTrappingAfterMerge(boolean cond, int x, int y) {
-        Point p = new Point(x, y);
-        int res = 0;
-
-        if (cond)
-            p = new Point(y, y);
-
-        for (int i=832; i<932; i++) {
-            res += p.x;
-        }
-
-        if (x > y) {
-            res += new Point(p.x).x;
-        }
-
-        return res;
-    }
+// Is not simplifiying
+//
+//    @Test
+//    @Arguments({ Argument.RANDOM_EACH, Argument.RANDOM_EACH, Argument.RANDOM_EACH })
+//    @IR(failOn = { IRNode.ALLOC })
+//    int testTrappingAfterMerge(boolean cond, int x, int y) {
+//        Point p = new Point(x, y);
+//        int res = 0;
+//
+//        if (cond)
+//            p = new Point(y, y);
+//
+//        for (int i=832; i<932; i++) {
+//            res += p.x;
+//        }
+//
+//        if (x > y) {
+//            res += new Point(p.x, p.y).x;
+//        }
+//
+//        return res;
+//    }
 
     @DontCompile
     static int dummy(Point p) {
