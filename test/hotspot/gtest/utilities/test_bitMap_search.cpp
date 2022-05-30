@@ -95,13 +95,13 @@ static idx_t compute_search_bwd_expected(idx_t search_left,
                                          idx_t search_right,
                                          idx_t left_bit,
                                          idx_t right_bit) {
-  if (search_right >= right_bit) {
+  if (search_right > right_bit) {
     if (search_left <= right_bit) {
       return right_bit;
     } else {
       return BitMap::NotFound;
     }
-  } else if (search_right >= left_bit) {
+  } else if (search_right > left_bit) {
     if (search_left <= left_bit) {
       return left_bit;
     } else {
@@ -111,6 +111,8 @@ static idx_t compute_search_bwd_expected(idx_t search_left,
     return BitMap::NotFound;
   }
 }
+
+#define PRINT_TESTCASE << " search_left " << search_left << " search_right " << search_right << " left " << left << " right " << right << " result " << result
 
 static void test_search_bwd_testcase(BitMap& test_ones,
                                      idx_t search_left,
@@ -122,11 +124,11 @@ static void test_search_bwd_testcase(BitMap& test_ones,
   idx_t exp_result = compute_search_bwd_expected(search_left, search_right, left, right);
 
   result = test_ones.get_prev_one_offset(search_left, search_right);
-  EXPECT_EQ(result, exp_result) << " search_left " << search_left << " search_right " << search_right << " left " << left << " right " << right << " result " << result;
+  EXPECT_EQ(result, exp_result) PRINT_TESTCASE;
 
   if (aligned_left) {
     result = test_ones.get_prev_one_offset_aligned_left(search_left, search_right);
-    EXPECT_EQ(result, exp_result) << " search_left " << search_left << " search_right " << search_right << " left " << left << " right " << right << " result " << result;
+    EXPECT_EQ(result, exp_result) PRINT_TESTCASE;
   }
 }
 

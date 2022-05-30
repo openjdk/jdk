@@ -233,7 +233,6 @@ inline BitMap::idx_t BitMap::get_prev_bit_impl(idx_t l_index, idx_t r_index) con
   STATIC_ASSERT(flip == find_ones_flip || flip == find_zeros_flip);
   verify_range(l_index, r_index);
   assert(!aligned_left || is_aligned(l_index, BitsPerWord), "l_index not aligned");
-  assert(sizeof(intptr_t) == sizeof(bm_word_t), "must be for the high bit check");
 
   // The first word often contains an interesting bit, either due to
   // density or because of features of the calling algorithm.  So it's
@@ -246,10 +245,13 @@ inline BitMap::idx_t BitMap::get_prev_bit_impl(idx_t l_index, idx_t r_index) con
 
   // The return value of l_index when no bit is found is BitMap::NotFound.
 
-  if (l_index <= r_index) {
-    // Get the word containing r_index, and shift out high bits.
+  if (l_index < r_index) {
+    // Get the word containing r_index - 1 (r_index is exclusive), and shift out high bits.
+    r_index--;
     idx_t index = to_words_align_down(r_index);
     bm_word_t cword = (map(index) ^ flip) << (BitsPerWord - 1 - bit_in_word(r_index));
+
+    STATIC_ASSERT(sizeof(intptr_t) == sizeof(bm_word_t));
     if (intptr_t(cword) < 0) {
       // The first bit is similarly often interesting. When it matters
       // (density or features of the calling algorithm make it likely

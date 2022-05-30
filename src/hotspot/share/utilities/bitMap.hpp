@@ -323,7 +323,7 @@ class BitMap {
   idx_t get_next_one_offset_aligned_right(idx_t l_index, idx_t r_index) const;
 
   static constexpr idx_t NotFound = ~(idx_t)0;
-  // Find the index of the first bit set scanning from r_index (inclusive) to
+  // Find the index of the first bit set scanning from r_index (exclusive) to
   // l_index (inclusive) backwards.
   // Returns that index or NotFound if there is no such bit in the range.
   idx_t get_prev_one_offset(idx_t l_index, idx_t r_index) const;
