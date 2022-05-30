@@ -526,18 +526,7 @@ public final class StringConcatFactory {
         // Mix in prependers. This happens when (byte[], long) = (storage, indexCoder) is already
         // known from the combinators below. We are assembling the string backwards, so the index coded
         // into indexCoder is the *ending* index.
-
-        // We need one prepender per argument, but also need to fold in constants. We do so by greedily
-        // creating prependers that fold in surrounding constants into the argument prepender. This reduces
-        // the number of unique MH combinator tree shapes we'll create in an application.
-        // Additionally we do this in chunks into a separate MH tree to
-        int pos;
-        for (pos = 0; pos < ptypes.length - 3; pos += 4) {
-            mh = filterInPrependers(mh, constants, pos, ptypes, 4);
-        }
-        if (pos < ptypes.length) {
-            mh = filterInPrependers(mh, constants, pos, ptypes, ptypes.length - pos);
-        }
+        mh = filterInPrependers(mh, constants, ptypes);
 
         // Fold in byte[] instantiation at argument 0
         MethodHandle newArrayCombinator;
@@ -575,6 +564,7 @@ public final class StringConcatFactory {
         // combined in as:
         //   (<args>)String = (<args>)
 
+        int pos;
         for (pos = 0; pos < ptypes.length - 4; pos += 4) {
             // Compute new "index" in-place pairwise using old value plus the appropriate arguments.
             MethodHandle mix = mixer(ptypes[pos], ptypes[pos + 1], ptypes[pos + 2], ptypes[pos + 3]);
@@ -601,10 +591,40 @@ public final class StringConcatFactory {
         return mh;
     }
 
-    private static MethodHandle filterInPrependers(MethodHandle mh, List<String> constants, int pos, Class<?>[] ptypes, int count) {
-        // builds a the MH of type (long, byte[], <arg1>, <arg2>, ...)
-        MethodHandle prepend = prepender(pos, constants, ptypes, count);
-        return filterPrepender(mh, prepend, pos, count);
+    // We need one prepender per argument, but also need to fold in constants. We do so by greedily
+    // creating prependers that fold in surrounding constants into the argument prepender. This reduces
+    // the number of unique MH combinator tree shapes we'll create in an application.
+    // Additionally we do this in chunks to reduce the number of combinators bound to the root tree,
+    // which simplifies the shape and makes construction of similar trees use less unique LF classes
+    private static MethodHandle filterInPrependers(MethodHandle mh, List<String> constants, Class<?>[] ptypes) {
+        int pos;
+        int[] argPositions = null;
+        MethodHandle prepend;
+        for (pos = 0; pos < ptypes.length - 3; pos += 4) {
+            prepend = prepender(pos, constants, ptypes, 4);
+            argPositions = filterPrependArgPositions(argPositions, pos, 4);
+            mh = MethodHandles.filterArgumentsWithCombiner(mh, 1, prepend, argPositions);
+        }
+        if (pos < ptypes.length) {
+            int count = ptypes.length - pos;
+            prepend = prepender(pos, constants, ptypes, count);
+            argPositions = filterPrependArgPositions(argPositions, pos, count);
+            mh = MethodHandles.filterArgumentsWithCombiner(mh, 1, prepend, argPositions);
+        }
+        return mh;
+    }
+
+    static int[] filterPrependArgPositions(int[] argPositions, int pos, int count) {
+        if (argPositions == null || argPositions.length != count + 2) {
+            argPositions = new int[count + 2];
+            argPositions[0] = 1; // indexCoder
+            argPositions[1] = 0; // storage
+        }
+        int limit = count + 2;
+        for (int i = 2; i < limit; i++) {
+            argPositions[i] = i + pos;
+        }
+        return argPositions;
     }
 
     private static MethodHandle foldInLastMixers(MethodHandle mh, long initialLengthCoder, int pos, Class<?>[] ptypes, int count) {
@@ -639,28 +659,22 @@ public final class StringConcatFactory {
         throw new IllegalArgumentException("Unexpected count: " + count);
     }
 
-    private static MethodHandle filterPrepender(MethodHandle mh, MethodHandle prepend, int pos, int count) {
-        int[] argPositions = new int[count + 2];
-        argPositions[0] = 1; // indexCoder
-        argPositions[1] = 0; // storage
-        for (int i = 0; i < count; i++) {
-            argPositions[i + 2] = 2 + pos++;
-        }
-        return MethodHandles.filterArgumentsWithCombiner(mh, 1, prepend, argPositions);
-    }
-
     private static MethodHandle prepender(String prefix, Class<?> cl) {
         if (prefix == null) {
             return NULL_PREPENDERS.computeIfAbsent(cl, NULL_PREPEND);
         }
         return MethodHandles.insertArguments(
-                        PREPENDERS.computeIfAbsent(cl, PREPEND), 3, prefix);
+                PREPENDERS.computeIfAbsent(cl, PREPEND), 3, prefix);
     }
 
+    private static final int[] PREPEND_FILTER_TWO_ARGS = new int[] { 0, 1, 3 };
     private static MethodHandle prepender(String prefix, Class<?> cl, String prefix2, Class<?> cl2) {
         MethodHandle prepend = MethodHandles.dropArguments(prepender(prefix, cl), 3, cl2);
-        return MethodHandles.filterArgumentsWithCombiner(prepend, 0, prepender(prefix2, cl2), 0, 1, 3);
+        return MethodHandles.filterArgumentsWithCombiner(prepend, 0, prepender(prefix2, cl2), PREPEND_FILTER_TWO_ARGS);
     }
+
+    private static final MethodHandle PREPEND_BASE = MethodHandles.dropArguments(
+            MethodHandles.identity(long.class), 1, byte[].class);
 
     private static MethodHandle prepender(int pos, List<String> constants, Class<?>[] ptypes, int count) {
         // delegate the single argument case
@@ -668,14 +682,13 @@ public final class StringConcatFactory {
             return prepender(constants.get(pos), ptypes[pos]);
         }
         // build a tree from an unbound prepender, allowing us to bind the constants in a batch as a final step
-        MethodHandle prepend = MethodHandles.identity(long.class);
+        MethodHandle prepend = PREPEND_BASE;
         prepend = switch (count) {
-            case 2 -> MethodHandles.dropArguments(prepend, 1, byte[].class, ptypes[pos],
-                                                  ptypes[pos + 1]);
-            case 3 -> MethodHandles.dropArguments(prepend, 1, byte[].class, ptypes[pos],
-                                                  ptypes[pos + 1], ptypes[pos + 2]);
-            case 4 -> MethodHandles.dropArguments(prepend, 1, byte[].class, ptypes[pos],
-                                                  ptypes[pos + 1], ptypes[pos + 2], ptypes[pos + 3]);
+            case 2 -> MethodHandles.dropArguments(prepend, 2, ptypes[pos], ptypes[pos + 1]);
+            case 3 -> MethodHandles.dropArguments(prepend, 2, ptypes[pos], ptypes[pos + 1],
+                                                  ptypes[pos + 2]);
+            case 4 -> MethodHandles.dropArguments(prepend, 2, ptypes[pos], ptypes[pos + 1],
+                                                  ptypes[pos + 2], ptypes[pos + 3]);
             default -> throw new IllegalStateException("Unexpected prepender count: " + count);
         };
 

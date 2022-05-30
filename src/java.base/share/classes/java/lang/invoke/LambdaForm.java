@@ -199,13 +199,9 @@ class LambdaForm {
                 default -> throw newInternalError("Unknown type char: '" + type + "'");
             };
         }
-        static BasicType basicType(Wrapper type) {
-            char c = type.basicTypeChar();
-            return basicType(c);
-        }
         static BasicType basicType(Class<?> type) {
             if (!type.isPrimitive())  return L_TYPE;
-            return basicType(Wrapper.forPrimitiveType(type));
+            return basicType(Wrapper.forPrimitiveType(type).basicTypeChar());
         }
         static int[] basicTypeOrds(BasicType[] types) {
             if (types == null) {
