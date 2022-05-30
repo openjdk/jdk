@@ -561,22 +561,7 @@ public final class StringConcatFactory {
         // combined in as:
         //   (<args>)String = (<args>)
 
-        int pos;
-        for (pos = 0; pos < ptypes.length - 4; pos += 4) {
-            // Compute new "index" in-place pairwise using old value plus the appropriate arguments.
-            MethodHandle mix = mixer(ptypes[pos], ptypes[pos + 1], ptypes[pos + 2], ptypes[pos + 3]);
-            mh = MethodHandles.filterArgumentsWithCombiner(mh, 0,
-                mix, 0, 1 + pos, 2 + pos, 3 + pos, 4 + pos);
-        }
-
-        if (pos < ptypes.length) {
-            // Mix in the last 1 to 4 parameters, insert the initialLengthCoder into the final mixer and
-            // fold the result into the main combinator
-            mh = foldInLastMixers(mh, initialLengthCoder, pos, ptypes, ptypes.length - pos);
-        } else if (ptypes.length == 0) {
-            // No mixer (constants only concat), insert initialLengthCoder directly
-            mh = MethodHandles.insertArguments(mh, 0, initialLengthCoder);
-        }
+        mh = filterAndFoldInMixers(mh, initialLengthCoder, ptypes);
 
         // The method handle shape here is (<args>).
 
@@ -623,6 +608,43 @@ public final class StringConcatFactory {
         }
         return argPositions;
     }
+
+
+    // We need one mixer per argument.
+    private static MethodHandle filterAndFoldInMixers(MethodHandle mh, long initialLengthCoder, Class<?>[] ptypes) {
+        int pos;
+        int[] argPositions = null;
+        for (pos = 0; pos < ptypes.length - 4; pos += 4) {
+            // Compute new "index" in-place pairwise using old value plus the appropriate arguments.
+            MethodHandle mix = mixer(ptypes[pos], ptypes[pos + 1], ptypes[pos + 2], ptypes[pos + 3]);
+            argPositions = filterMixerArgPositions(argPositions, pos, 4);
+            mh = MethodHandles.filterArgumentsWithCombiner(mh, 0,
+                    mix, argPositions);
+        }
+
+        if (pos < ptypes.length) {
+            // Mix in the last 1 to 4 parameters, insert the initialLengthCoder into the final mixer and
+            // fold the result into the main combinator
+            mh = foldInLastMixers(mh, initialLengthCoder, pos, ptypes, ptypes.length - pos);
+        } else if (ptypes.length == 0) {
+            // No mixer (constants only concat), insert initialLengthCoder directly
+            mh = MethodHandles.insertArguments(mh, 0, initialLengthCoder);
+        }
+        return mh;
+    }
+
+    static int[] filterMixerArgPositions(int[] argPositions, int pos, int count) {
+        if (argPositions == null || argPositions.length != count + 2) {
+            argPositions = new int[count + 1];
+            argPositions[0] = 0; // indexCoder
+        }
+        int limit = count + 1;
+        for (int i = 1; i < limit; i++) {
+            argPositions[i] = i + pos;
+        }
+        return argPositions;
+    }
+
 
     private static MethodHandle foldInLastMixers(MethodHandle mh, long initialLengthCoder, int pos, Class<?>[] ptypes, int count) {
         if (count == 4) {
@@ -691,7 +713,6 @@ public final class StringConcatFactory {
             BOOLEAN_IDX = 3,
             STRING_IDX = 4,
             TYPE_COUNT = 5;
-    private static final @Stable MethodHandle[][] DOUBLE_PREPENDERS = new MethodHandle[TYPE_COUNT][TYPE_COUNT];
     private static int classIndex(Class<?> cl) {
         if (cl == String.class)  return STRING_IDX;
         if (cl == int.class)     return INT_IDX;
@@ -701,7 +722,7 @@ public final class StringConcatFactory {
         throw new IllegalArgumentException("Unexpected class: " + cl);
     }
 
-    // Constant argument lists used by the prepender MH tree builders
+    // Constant argument lists used by the prepender MH builders
     private static final int[] PREPEND_FILTER_FIRST_ARGS  = new int[] { 0, 1, 2 };
     private static final int[] PREPEND_FILTER_SECOND_ARGS = new int[] { 0, 1, 3 };
     private static final int[] PREPEND_FILTER_THIRD_ARGS  = new int[] { 0, 1, 4 };
@@ -712,6 +733,7 @@ public final class StringConcatFactory {
     private static final MethodHandle PREPEND_BASE = MethodHandles.dropArguments(
             MethodHandles.identity(long.class), 1, byte[].class);
 
+    private static final @Stable MethodHandle[][] DOUBLE_PREPENDERS = new MethodHandle[TYPE_COUNT][TYPE_COUNT];
     private static MethodHandle prepender(String prefix, Class<?> cl, String prefix2, Class<?> cl2) {
         int idx1 = classIndex(cl);
         int idx2 = classIndex(cl2);
@@ -759,6 +781,10 @@ public final class StringConcatFactory {
         }
     }
 
+    // Constant argument lists used by the mixer MH builders
+    private static final int[] MIX_FILTER_SECOND_ARGS = new int[] { 0, 2 };
+    private static final int[] MIX_FILTER_THIRD_ARGS  = new int[] { 0, 3 };
+    private static final int[] MIX_FILTER_SECOND_PAIR_ARGS = new int[] { 0, 3, 4 };
     private static MethodHandle mixer(Class<?> cl) {
         int index = classIndex(cl);
         MethodHandle mix = MIXERS[index];
@@ -769,25 +795,32 @@ public final class StringConcatFactory {
         return mix;
     }
 
+    private static final @Stable MethodHandle[][] DOUBLE_MIXERS = new MethodHandle[TYPE_COUNT][TYPE_COUNT];
     private static MethodHandle mixer(Class<?> cl, Class<?> cl2) {
-        MethodHandle mix = mixer(cl);
-        mix = MethodHandles.dropArguments(mix, 2, cl2);
-        return MethodHandles.filterArgumentsWithCombiner(mix, 0,
-                mixer(cl2), 0, 2);
+        int idx1 = classIndex(cl);
+        int idx2 = classIndex(cl2);
+        MethodHandle mix = DOUBLE_MIXERS[idx1][idx2];
+        if (mix == null) {
+            mix = mixer(cl);
+            mix = MethodHandles.dropArguments(mix, 2, cl2);
+            DOUBLE_MIXERS[idx1][idx2] = mix = MethodHandles.filterArgumentsWithCombiner(mix, 0,
+                    mixer(cl2), MIX_FILTER_SECOND_ARGS);
+        }
+        return mix;
     }
 
     private static MethodHandle mixer(Class<?> cl, Class<?> cl2, Class<?> cl3) {
         MethodHandle mix = mixer(cl, cl2);
         mix = MethodHandles.dropArguments(mix, 3, cl3);
         return MethodHandles.filterArgumentsWithCombiner(mix, 0,
-                mixer(cl3), 0, 3);
+                mixer(cl3), MIX_FILTER_THIRD_ARGS);
     }
 
     private static MethodHandle mixer(Class<?> cl, Class<?> cl2, Class<?> cl3, Class<?> cl4) {
         MethodHandle mix = mixer(cl, cl2);
         mix = MethodHandles.dropArguments(mix, 3, cl3, cl4);
         return MethodHandles.filterArgumentsWithCombiner(mix, 0,
-                mixer(cl3, cl4), 0, 3, 4);
+                mixer(cl3, cl4), MIX_FILTER_SECOND_PAIR_ARGS);
     }
 
     private @Stable static MethodHandle SIMPLE_CONCAT;
