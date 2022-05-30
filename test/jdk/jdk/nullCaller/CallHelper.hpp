@@ -24,11 +24,12 @@
 #define __CallHelper_hpp__
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <jni.h>
 #undef NDEBUG
 #include <assert.h>
 #include <string>
-#include <iostream>
+//#include <iostream>  PROBLEM ON Windows
 #include <algorithm>
 
 /*
@@ -48,7 +49,8 @@ protected:
     void emitErrorMessage(const std::string& msg) {
         std::string nm = classname;
         std::replace(nm.begin(), nm.end(), '/', '.');
-        std::cerr << "ERROR: " << nm << "::" << method << ", " << msg << std::endl;
+        ::printf("ERROR: %s::%s, %s\n", nm.c_str(), method.c_str(), msg.c_str());
+        //std::cerr << "ERROR: " << nm << "::" << method << ", " << msg << std::endl;
     }
 
     // check the given object which is expected to be null
@@ -200,6 +202,12 @@ public:
         checkExpectedExceptionThrown(exception);
     }
 };
+
+void emitErrorMessageAndExit(const std::string& msg) {
+    // std::cerr << msg << std::endl;
+    ::printf("ERROR: %s\n", msg.c_str());
+    ::exit(-1);
+}
 
 #endif // __CallHelper_hpp__
 

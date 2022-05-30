@@ -47,8 +47,7 @@ void JDK_8280902(JNIEnv* env) {
 
     // check the message
     if (std::string("Hello!") != env->GetStringUTFChars(msg,NULL)) {
-        std::cerr << "Bundle didn't contain expected content" << std::endl;
-        ::exit(-1);
+        emitErrorMessageAndExit("Bundle didn't contain expected content");
     }
 
     // The following should not throw
@@ -168,8 +167,7 @@ int main(int argc, char** args) {
     vm_args.options = options;
 
     if ((rc = JNI_CreateJavaVM(&jvm, (void**)&env, &vm_args)) != JNI_OK) {
-        std::cerr << "ERROR: cannot create VM." << std::endl;
-        ::exit(-1);
+        emitErrorMessageAndExit("Cannot create VM.");
     }
 
     JDK_8280902(env);
