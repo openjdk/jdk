@@ -23,26 +23,19 @@
  */
 
 #include "precompiled.hpp"
-
-#include "gc/g1/g1_globals.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "memory/virtualspace.hpp"
 
-G1CMBitMap::G1CMBitMap() :
-  _bitmap(),
-  _listener() {
-
+G1CMBitMap::G1CMBitMap() : MarkBitMap(), _listener() {
   _listener.set_bitmap(this);
 }
 
 void G1CMBitMap::initialize(MemRegion heap, G1RegionToSpaceMapper* storage) {
-  _bitmap.initialize(heap, storage->reserved());
+  MarkBitMap::initialize(heap, storage->reserved());
   storage->set_mapping_changed_listener(&_listener);
 }
-
-void G1CMBitMap::print_on_error(outputStream* out, const char* prefix) const { _bitmap.print_on_error(out, prefix); }
 
 void G1CMBitMapMappingChangedListener::on_commit(uint start_region, size_t num_regions, bool zero_filled) {
   if (zero_filled) {

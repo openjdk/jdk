@@ -60,38 +60,17 @@ public:
 
 // A generic mark bitmap for concurrent marking.  This is essentially a wrapper
 // around the BitMap class that is based on HeapWords, with one bit per (1 << _shifter) HeapWords.
-class G1CMBitMap {
-  MarkBitMap _bitmap;
+class G1CMBitMap : public MarkBitMap {
   G1CMBitMapMappingChangedListener _listener;
 
 public:
   G1CMBitMap();
 
-  static size_t compute_size(size_t heap_size) { return MarkBitMap::compute_size(heap_size); }
-  static size_t heap_map_factor() { return MarkBitMap::heap_map_factor(); }
-
+  // Initializes the underlying BitMap to cover the given area.
   void initialize(MemRegion heap, G1RegionToSpaceMapper* storage);
 
-  bool is_marked(oop obj) const;
-  bool is_marked(HeapWord* addr) const;
-
-  inline bool iterate(MarkBitMapClosure* cl, MemRegion mr);
-  // Return the address corresponding to the next marked bit at or after
-  // "addr", and before "limit", if "limit" is non-NULL.  If there is no
-  // such bit, returns "limit" if that is non-NULL, or else "endWord()".
-  inline HeapWord* get_next_marked_addr(const HeapWord* addr,
-                                        HeapWord* limit) const;
-
-  // Write marks.
-  inline void clear(HeapWord* addr);
-  inline void clear(oop obj);
-  inline bool par_mark(HeapWord* addr);
-  inline bool par_mark(oop obj);
-
-  // Clear bitmap.
-  void clear_range(MemRegion mr);
-
-  void print_on_error(outputStream* out, const char* prefix) const;
+  // Apply the closure to the addresses that correspond to marked bits in the bitmap.
+  inline bool iterate(G1CMBitMapClosure* cl, MemRegion mr);
 };
 
 #endif // SHARE_GC_G1_G1CONCURRENTMARKBITMAP_HPP

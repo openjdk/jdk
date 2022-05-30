@@ -36,9 +36,9 @@
 #include "runtime/atomic.hpp"
 #include "runtime/init.hpp"
 #include "runtime/prefetch.inline.hpp"
+#inculde "runtime/safepoint.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "g1ConcurrentRefine.hpp"
 
 inline HeapWord* HeapRegion::allocate_impl(size_t min_word_size,
                                            size_t desired_word_size,

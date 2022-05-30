@@ -27,31 +27,29 @@
 
 #include "gc/g1/g1ConcurrentMarkBitMap.hpp"
 
-#include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/shared/markBitMap.inline.hpp"
 #include "memory/memRegion.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 
-inline bool G1CMBitMap::is_marked(oop obj) const { return _bitmap.is_marked(obj); }
-inline bool G1CMBitMap::is_marked(HeapWord* addr) const { return _bitmap.is_marked(addr); }
+inline bool G1CMBitMap::iterate(G1CMBitMapClosure* cl, MemRegion mr) {
+  assert(!mr.is_empty(), "Does not support empty memregion to iterate over");
+  assert(_covered.contains(mr),
+         "Given MemRegion from " PTR_FORMAT " to " PTR_FORMAT " not contained in heap area",
+         p2i(mr.start()), p2i(mr.end()));
 
-inline bool G1CMBitMap::iterate(MarkBitMapClosure* cl, MemRegion mr) {
-  return _bitmap.iterate(cl, mr);
-}
+  BitMap::idx_t const end_offset = addr_to_offset(mr.end());
+  BitMap::idx_t offset = _bm.get_next_one_offset(addr_to_offset(mr.start()), end_offset);
 
-inline HeapWord* G1CMBitMap::get_next_marked_addr(const HeapWord* addr,
-                                                  HeapWord* const limit) const {
-  return _bitmap.get_next_marked_addr(addr, limit);
-}
-
-inline void G1CMBitMap::clear(HeapWord* addr) { _bitmap.clear(addr); }
-inline void G1CMBitMap::clear(oop obj) { _bitmap.clear(obj); }
-inline bool G1CMBitMap::par_mark(HeapWord* addr) { return _bitmap.par_mark(addr); }
-inline bool G1CMBitMap::par_mark(oop obj) { return _bitmap.par_mark(obj); }
-
-inline void G1CMBitMap::clear_range(MemRegion mr) {
-  _bitmap.clear_range(mr);
+  while (offset < end_offset) {
+    HeapWord* const addr = offset_to_addr(offset);
+    if (!cl->do_addr(addr)) {
+      return false;
+    }
+    size_t const obj_size = cast_to_oop(addr)->size();
+    offset = _bm.get_next_one_offset(offset + (obj_size >> _shifter), end_offset);
+  }
+  return true;
 }
 
 #endif // SHARE_GC_G1_G1CONCURRENTMARKBITMAP_INLINE_HPP
