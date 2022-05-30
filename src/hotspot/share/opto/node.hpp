@@ -1216,6 +1216,14 @@ public:
   // Collect nodes starting from this node, explicitly including/excluding control and data links.
   void collect_nodes(GrowableArray<Node*> *ns, int d, bool ctrl, bool data) const;
 
+  // Node collectors, to be used in implementations of Node::rel().
+  // Collect the entire data input graph. Include control inputs if requested.
+  void collect_nodes_in_all_data(GrowableArray<Node*> *ns, bool ctrl) const;
+  // Collect the entire control input graph. Include data inputs if requested.
+  void collect_nodes_in_all_ctrl(GrowableArray<Node*> *ns, bool data) const;
+  // Collect the entire output graph until hitting and including control nodes.
+  void collect_nodes_out_all_ctrl_boundary(GrowableArray<Node*> *ns) const;
+
   void verify_edges(Unique_Node_List &visited); // Verify bi-directional edges
   static void verify(int verify_depth, VectorSet& visited, Node_List& worklist);
 
