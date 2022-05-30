@@ -332,6 +332,21 @@ implements CRTFlags {
             result = null;
         }
 
+        @Override
+        public void visitExpressionCaseLabel(JCExpressionCaseLabel tree) {
+            SourceRange sr = new SourceRange(startPos(tree), endPos(tree));
+            sr.mergeWith(csp(tree.expr));
+            result = sr;
+        }
+
+        @Override
+        public void visitPatternCaseLabel(JCPatternCaseLabel tree) {
+            SourceRange sr = new SourceRange(startPos(tree), endPos(tree));
+            sr.mergeWith(csp(tree.pat));
+            sr.mergeWith(csp(tree.guard));
+            result = sr;
+        }
+
         public void visitSynchronized(JCSynchronized tree) {
             SourceRange sr = new SourceRange(startPos(tree), endPos(tree));
             sr.mergeWith(csp(tree.lock));

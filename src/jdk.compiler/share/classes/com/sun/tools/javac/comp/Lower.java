@@ -3728,7 +3728,7 @@ public class Lower extends TreeTranslator {
                                             List.nil());
         JCExpression newSelector;
 
-        if (cases.stream().anyMatch(c -> TreeInfo.isNull(c.labels.head))) {
+        if (cases.stream().anyMatch(c -> TreeInfo.isNullCaseLabel(c.labels.head))) {
             //for enum switches with case null, do:
             //switch ($selector != null ? $mapVar[$selector.ordinal()] : -1) {...}
             //replacing case null with case -1:
@@ -3756,7 +3756,7 @@ public class Lower extends TreeTranslator {
         for (JCCase c : cases) {
             if (c.labels.head.hasTag(EXPRESSIONCASELABEL)) {
                 JCExpression pat;
-                if (TreeInfo.isNull(c.labels.head)) {
+                if (TreeInfo.isNullCaseLabel(c.labels.head)) {
                     pat = makeLit(syms.intType, -1);
                 } else {
                     VarSymbol label = (VarSymbol)TreeInfo.symbol(((JCExpressionCaseLabel) c.labels.head).expr);
@@ -3843,7 +3843,7 @@ public class Lower extends TreeTranslator {
 
             for(JCCase oneCase : caseList) {
                 if (oneCase.labels.head.hasTag(EXPRESSIONCASELABEL)) {
-                    if (TreeInfo.isNull(oneCase.labels.head)) {
+                    if (TreeInfo.isNullCaseLabel(oneCase.labels.head)) {
                         nullCase = oneCase;
                         nullCaseLabel = casePosition;
                     } else {
@@ -4005,7 +4005,7 @@ public class Lower extends TreeTranslator {
     private JCTree visitBoxedPrimitiveSwitch(JCTree tree, JCExpression selector, List<JCCase> cases) {
         JCExpression newSelector;
 
-        if (cases.stream().anyMatch(c -> TreeInfo.isNull(c.labels.head))) {
+        if (cases.stream().anyMatch(c -> TreeInfo.isNullCaseLabel(c.labels.head))) {
             //a switch over a boxed primitive, with a null case. Pick two constants that are
             //not used by any branch in the case (c1 and c2), close to other constants that are
             //used in the switch. Then do:
@@ -4015,10 +4015,10 @@ public class Lower extends TreeTranslator {
             JCCase nullCase = null;
 
             for (JCCase c : cases) {
-                if (TreeInfo.isNull(c.labels.head)) {
+                if (TreeInfo.isNullCaseLabel(c.labels.head)) {
                     nullCase = c;
                 } else if (!c.labels.head.hasTag(DEFAULTCASELABEL)) {
-                    constants.add((int) c.labels.head.type.constValue());
+                    constants.add((int) ((JCExpressionCaseLabel) c.labels.head).expr.type.constValue());
                 }
             }
 

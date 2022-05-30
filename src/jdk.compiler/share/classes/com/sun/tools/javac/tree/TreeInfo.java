@@ -1328,7 +1328,7 @@ public class TreeInfo {
         return tree.patternSwitch ||
                tree.cases.stream()
                          .flatMap(c -> c.labels.stream())
-                         .anyMatch(l -> TreeInfo.isNull(l));
+                         .anyMatch(l -> TreeInfo.isNullCaseLabel(l));
     }
 
     public static boolean unguardedCaseLabel(JCCaseLabel cse) {
