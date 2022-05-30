@@ -492,24 +492,6 @@ Node* PhaseIdealLoop::skip_loop_predicates(Node* entry) {
 
 Node* PhaseIdealLoop::skip_all_loop_predicates(Node* entry) {
   Predicates predicates(entry);
-  Node* predicate = NULL;
-  predicate = find_predicate_insertion_point(entry, Deoptimization::Reason_loop_limit_check);
-  if (predicate != NULL) {
-    entry = skip_loop_predicates(entry);
-  }
-  if (UseProfiledLoopPredicate) {
-    predicate = find_predicate_insertion_point(entry, Deoptimization::Reason_profile_predicate);
-    if (predicate != NULL) { // right pattern that can be used by loop predication
-      entry = skip_loop_predicates(entry);
-    }
-  }
-  if (UseLoopPredicate) {
-    predicate = find_predicate_insertion_point(entry, Deoptimization::Reason_predicate);
-    if (predicate != NULL) { // right pattern that can be used by loop predication
-      entry = skip_loop_predicates(entry);
-    }
-  }
-  assert(entry == predicates.skip_all(), "refactoring");
   return predicates.skip_all();
 }
 
