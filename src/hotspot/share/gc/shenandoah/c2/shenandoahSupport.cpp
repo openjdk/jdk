@@ -1464,7 +1464,6 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
     Node* init_ctrl = ctrl;
     IdealLoopTree* loop = phase->get_loop(ctrl);
     Node* raw_mem = fixer.find_mem(ctrl, barrier);
-    Node* init_raw_mem = raw_mem;
     Node* raw_mem_for_ctrl = fixer.find_mem(ctrl, NULL);
     Node* heap_stable_ctrl = NULL;
     Node* null_ctrl = NULL;
@@ -1472,16 +1471,13 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
 
     enum { _heap_stable = 1, _heap_unstable, PATH_LIMIT };
     Node* region = new RegionNode(PATH_LIMIT);
-    Node* phi = PhiNode::make(region, raw_mem, Type::MEMORY, TypeRawPtr::BOTTOM);
 
     enum { _fast_path = 1, _slow_path, _null_path, PATH_LIMIT2 };
     Node* region2 = new RegionNode(PATH_LIMIT2);
-    Node* phi2 = PhiNode::make(region2, raw_mem, Type::MEMORY, TypeRawPtr::BOTTOM);
 
     // Stable path.
     test_gc_state(ctrl, raw_mem, heap_stable_ctrl, phase, ShenandoahHeap::MARKING);
     region->init_req(_heap_stable, heap_stable_ctrl);
-    phi->init_req(_heap_stable, raw_mem);
 
     // Null path
     Node* reg2_ctrl = NULL;
@@ -1489,10 +1485,8 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
     if (null_ctrl != NULL) {
       reg2_ctrl = null_ctrl->in(0);
       region2->init_req(_null_path, null_ctrl);
-      phi2->init_req(_null_path, raw_mem);
     } else {
       region2->del_req(_null_path);
-      phi2->del_req(_null_path);
     }
 
     const int index_offset = in_bytes(ShenandoahThreadLocalData::satb_mark_queue_index_offset());
@@ -1538,20 +1532,13 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
 
     // Fast-path case
     region2->init_req(_fast_path, ctrl);
-    phi2->init_req(_fast_path, index_update);
 
     ctrl = full;
-
-    Node* base = find_bottom_mem(ctrl, phase);
-
-    MergeMemNode* mm = MergeMemNode::make(base);
-    mm->set_memory_at(Compile::AliasIdxRaw, raw_mem);
-    phase->register_new_node(mm, ctrl);
 
     Node* call = new CallLeafNode(ShenandoahBarrierSetC2::write_ref_field_pre_entry_Type(), CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_ref_field_pre_entry), "shenandoah_wb_pre", TypeRawPtr::BOTTOM);
     call->init_req(TypeFunc::Control, ctrl);
     call->init_req(TypeFunc::I_O, phase->C->top());
-    call->init_req(TypeFunc::Memory, mm);
+    call->init_req(TypeFunc::Memory, phase->C->top());
     call->init_req(TypeFunc::FramePtr, phase->C->top());
     call->init_req(TypeFunc::ReturnAdr, phase->C->top());
     call->init_req(TypeFunc::Parms, pre_val);
@@ -1560,31 +1547,24 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
 
     Node* ctrl_proj = new ProjNode(call, TypeFunc::Control);
     phase->register_control(ctrl_proj, loop, call);
-    Node* mem_proj = new ProjNode(call, TypeFunc::Memory);
-    phase->register_new_node(mem_proj, call);
 
     // Slow-path case
     region2->init_req(_slow_path, ctrl_proj);
-    phi2->init_req(_slow_path, mem_proj);
 
     phase->register_control(region2, loop, reg2_ctrl);
-    phase->register_new_node(phi2, region2);
 
     region->init_req(_heap_unstable, region2);
-    phi->init_req(_heap_unstable, phi2);
 
     phase->register_control(region, loop, heap_stable_ctrl->in(0));
-    phase->register_new_node(phi, region);
 
     fix_ctrl(barrier, region, fixer, uses, uses_to_ignore, last, phase);
     for(uint next = 0; next < uses.size(); next++ ) {
       Node *n = uses.at(next);
       assert(phase->get_ctrl(n) == init_ctrl, "bad control");
-      assert(n != init_raw_mem, "should leave input raw mem above the barrier");
+      assert(n != raw_mem, "should leave input raw mem above the barrier");
       phase->set_ctrl(n, region);
       follow_barrier_uses(n, init_ctrl, uses, phase);
     }
-    fixer.fix_mem(init_ctrl, region, init_raw_mem, raw_mem_for_ctrl, phi, uses);
 
     phase->igvn().replace_node(barrier, pre_val);
   }
@@ -2403,272 +2383,6 @@ Node* MemoryGraphFixer::find_mem(Node* ctrl, Node* n) const {
   }
   assert(mem->bottom_type() == Type::MEMORY, "");
   return mem;
-}
-
-bool MemoryGraphFixer::has_mem_phi(Node* region) const {
-  for (DUIterator_Fast imax, i = region->fast_outs(imax); i < imax; i++) {
-    Node* use = region->fast_out(i);
-    if (use->is_Phi() && use->bottom_type() == Type::MEMORY &&
-        (_phase->C->get_alias_index(use->adr_type()) == _alias)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-void MemoryGraphFixer::fix_mem(Node* ctrl, Node* new_ctrl, Node* mem, Node* mem_for_ctrl, Node* new_mem, Unique_Node_List& uses) {
-  assert(_phase->ctrl_or_self(new_mem) == new_ctrl, "");
-  const bool trace = false;
-  DEBUG_ONLY(if (trace) { tty->print("ZZZ control is"); ctrl->dump(); });
-  DEBUG_ONLY(if (trace) { tty->print("ZZZ mem is"); mem->dump(); });
-  GrowableArray<Node*> phis;
-  if (mem_for_ctrl != mem) {
-    Node* old = mem_for_ctrl;
-    Node* prev = NULL;
-    while (old != mem) {
-      prev = old;
-      if (old->is_Store() || old->is_ClearArray() || old->is_LoadStore()) {
-        assert(_alias == Compile::AliasIdxRaw, "");
-        old = old->in(MemNode::Memory);
-      } else if (old->Opcode() == Op_SCMemProj) {
-        assert(_alias == Compile::AliasIdxRaw, "");
-        old = old->in(0);
-      } else {
-        ShouldNotReachHere();
-      }
-    }
-    assert(prev != NULL, "");
-    if (new_ctrl != ctrl) {
-      _memory_nodes.map(ctrl->_idx, mem);
-      _memory_nodes.map(new_ctrl->_idx, mem_for_ctrl);
-    }
-    uint input = (uint)MemNode::Memory;
-    _phase->igvn().replace_input_of(prev, input, new_mem);
-  } else {
-    uses.clear();
-    _memory_nodes.map(new_ctrl->_idx, new_mem);
-    uses.push(new_ctrl);
-    for(uint next = 0; next < uses.size(); next++ ) {
-      Node *n = uses.at(next);
-      assert(n->is_CFG(), "");
-      DEBUG_ONLY(if (trace) { tty->print("ZZZ ctrl"); n->dump(); });
-      for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
-        Node* u = n->fast_out(i);
-        if (!u->is_Root() && u->is_CFG() && u != n) {
-          Node* m = _memory_nodes[u->_idx];
-          if (u->is_Region() && (!u->is_OuterStripMinedLoop() || _include_lsm) &&
-              !has_mem_phi(u) &&
-              u->unique_ctrl_out()->Opcode() != Op_Halt) {
-            DEBUG_ONLY(if (trace) { tty->print("ZZZ region"); u->dump(); });
-            DEBUG_ONLY(if (trace && m != NULL) { tty->print("ZZZ mem"); m->dump(); });
-
-            if (!mem_is_valid(m, u) || !m->is_Phi()) {
-              bool push = true;
-              bool create_phi = true;
-              if (_phase->is_dominator(new_ctrl, u)) {
-                create_phi = false;
-              }
-              if (create_phi) {
-                Node* phi = new PhiNode(u, Type::MEMORY, _phase->C->get_adr_type(_alias));
-                _phase->register_new_node(phi, u);
-                phis.push(phi);
-                DEBUG_ONLY(if (trace) { tty->print("ZZZ new phi"); phi->dump(); });
-                if (!mem_is_valid(m, u)) {
-                  DEBUG_ONLY(if (trace) { tty->print("ZZZ setting mem"); phi->dump(); });
-                  _memory_nodes.map(u->_idx, phi);
-                } else {
-                  DEBUG_ONLY(if (trace) { tty->print("ZZZ NOT setting mem"); m->dump(); });
-                  for (;;) {
-                    assert(m->is_Mem() || m->is_LoadStore() || m->is_Proj(), "");
-                    Node* next = NULL;
-                    if (m->is_Proj()) {
-                      next = m->in(0);
-                    } else {
-                      assert(m->is_Mem() || m->is_LoadStore(), "");
-                      assert(_alias == Compile::AliasIdxRaw, "");
-                      next = m->in(MemNode::Memory);
-                    }
-                    if (_phase->get_ctrl(next) != u) {
-                      break;
-                    }
-                    if (next->is_MergeMem()) {
-                      assert(_phase->get_ctrl(next->as_MergeMem()->memory_at(_alias)) != u, "");
-                      break;
-                    }
-                    if (next->is_Phi()) {
-                      assert(next->adr_type() == TypePtr::BOTTOM && next->in(0) == u, "");
-                      break;
-                    }
-                    m = next;
-                  }
-
-                  DEBUG_ONLY(if (trace) { tty->print("ZZZ setting to phi"); m->dump(); });
-                  assert(m->is_Mem() || m->is_LoadStore(), "");
-                  uint input = (uint)MemNode::Memory;
-                  _phase->igvn().replace_input_of(m, input, phi);
-                  push = false;
-                }
-              } else {
-                DEBUG_ONLY(if (trace) { tty->print("ZZZ skipping region"); u->dump(); });
-              }
-              if (push) {
-                uses.push(u);
-              }
-            }
-          } else if (!mem_is_valid(m, u) &&
-                     !(u->Opcode() == Op_CProj && u->in(0)->Opcode() == Op_NeverBranch && u->as_Proj()->_con == 1)) {
-            uses.push(u);
-          }
-        }
-      }
-    }
-    for (int i = 0; i < phis.length(); i++) {
-      Node* n = phis.at(i);
-      Node* r = n->in(0);
-      DEBUG_ONLY(if (trace) { tty->print("ZZZ fixing new phi"); n->dump(); });
-      for (uint j = 1; j < n->req(); j++) {
-        Node* m = find_mem(r->in(j), NULL);
-        _phase->igvn().replace_input_of(n, j, m);
-        DEBUG_ONLY(if (trace) { tty->print("ZZZ fixing new phi: %d", j); m->dump(); });
-      }
-    }
-  }
-  uint last = _phase->C->unique();
-  MergeMemNode* mm = NULL;
-  int alias = _alias;
-  DEBUG_ONLY(if (trace) { tty->print("ZZZ raw mem is"); mem->dump(); });
-  // Process loads first to not miss an anti-dependency: if the memory
-  // edge of a store is updated before a load is processed then an
-  // anti-dependency may be missed.
-  for (DUIterator i = mem->outs(); mem->has_out(i); i++) {
-    Node* u = mem->out(i);
-    if (u->_idx < last && u->is_Load() && _phase->C->get_alias_index(u->adr_type()) == alias) {
-      Node* m = find_mem(_phase->get_ctrl(u), u);
-      if (m != mem) {
-        DEBUG_ONLY(if (trace) { tty->print("ZZZ setting memory of use"); u->dump(); });
-        _phase->igvn().replace_input_of(u, MemNode::Memory, m);
-        --i;
-      }
-    }
-  }
-  for (DUIterator i = mem->outs(); mem->has_out(i); i++) {
-    Node* u = mem->out(i);
-    if (u->_idx < last) {
-      if (u->is_Mem()) {
-        if (_phase->C->get_alias_index(u->adr_type()) == alias) {
-          Node* m = find_mem(_phase->get_ctrl(u), u);
-          if (m != mem) {
-            DEBUG_ONLY(if (trace) { tty->print("ZZZ setting memory of use"); u->dump(); });
-            _phase->igvn().replace_input_of(u, MemNode::Memory, m);
-            --i;
-          }
-        }
-      } else if (u->is_MergeMem()) {
-        MergeMemNode* u_mm = u->as_MergeMem();
-        if (u_mm->memory_at(alias) == mem) {
-          MergeMemNode* newmm = NULL;
-          for (DUIterator_Fast jmax, j = u->fast_outs(jmax); j < jmax; j++) {
-            Node* uu = u->fast_out(j);
-            assert(!uu->is_MergeMem(), "chain of MergeMems?");
-            if (uu->is_Phi()) {
-              assert(uu->adr_type() == TypePtr::BOTTOM, "");
-              Node* region = uu->in(0);
-              int nb = 0;
-              for (uint k = 1; k < uu->req(); k++) {
-                if (uu->in(k) == u) {
-                  Node* m = find_mem(region->in(k), NULL);
-                  if (m != mem) {
-                    DEBUG_ONLY(if (trace) { tty->print("ZZZ setting memory of phi %d", k); uu->dump(); });
-                    newmm = clone_merge_mem(u, mem, m, _phase->ctrl_or_self(m), i);
-                    if (newmm != u) {
-                      _phase->igvn().replace_input_of(uu, k, newmm);
-                      nb++;
-                      --jmax;
-                    }
-                  }
-                }
-              }
-              if (nb > 0) {
-                --j;
-              }
-            } else {
-              Node* m = find_mem(_phase->ctrl_or_self(uu), uu);
-              if (m != mem) {
-                DEBUG_ONLY(if (trace) { tty->print("ZZZ setting memory of use"); uu->dump(); });
-                newmm = clone_merge_mem(u, mem, m, _phase->ctrl_or_self(m), i);
-                if (newmm != u) {
-                  _phase->igvn().replace_input_of(uu, uu->find_edge(u), newmm);
-                  --j, --jmax;
-                }
-              }
-            }
-          }
-        }
-      } else if (u->is_Phi()) {
-        assert(u->bottom_type() == Type::MEMORY, "what else?");
-        if (_phase->C->get_alias_index(u->adr_type()) == alias || u->adr_type() == TypePtr::BOTTOM) {
-          Node* region = u->in(0);
-          bool replaced = false;
-          for (uint j = 1; j < u->req(); j++) {
-            if (u->in(j) == mem) {
-              Node* m = find_mem(region->in(j), NULL);
-              Node* nnew = m;
-              if (m != mem) {
-                if (u->adr_type() == TypePtr::BOTTOM) {
-                  mm = allocate_merge_mem(mem, m, _phase->ctrl_or_self(m));
-                  nnew = mm;
-                }
-                DEBUG_ONLY(if (trace) { tty->print("ZZZ setting memory of phi %d", j); u->dump(); });
-                _phase->igvn().replace_input_of(u, j, nnew);
-                replaced = true;
-              }
-            }
-          }
-          if (replaced) {
-            --i;
-          }
-        }
-      } else if ((u->adr_type() == TypePtr::BOTTOM && u->Opcode() != Op_StrInflatedCopy) ||
-                 u->adr_type() == NULL) {
-        assert(u->adr_type() != NULL ||
-               u->Opcode() == Op_Rethrow ||
-               u->Opcode() == Op_Return ||
-               u->Opcode() == Op_SafePoint ||
-               (u->is_CallStaticJava() && u->as_CallStaticJava()->uncommon_trap_request() != 0) ||
-               (u->is_CallStaticJava() && u->as_CallStaticJava()->_entry_point == OptoRuntime::rethrow_stub()) ||
-               u->Opcode() == Op_CallLeaf, "");
-        Node* m = find_mem(_phase->ctrl_or_self(u), u);
-        if (m != mem) {
-          mm = allocate_merge_mem(mem, m, _phase->get_ctrl(m));
-          _phase->igvn().replace_input_of(u, u->find_edge(mem), mm);
-          --i;
-        }
-      } else if (_phase->C->get_alias_index(u->adr_type()) == alias) {
-        Node* m = find_mem(_phase->ctrl_or_self(u), u);
-        if (m != mem) {
-          DEBUG_ONLY(if (trace) { tty->print("ZZZ setting memory of use"); u->dump(); });
-          _phase->igvn().replace_input_of(u, u->find_edge(mem), m);
-          --i;
-        }
-      } else if (u->adr_type() != TypePtr::BOTTOM &&
-                 _memory_nodes[_phase->ctrl_or_self(u)->_idx] == u) {
-        Node* m = find_mem(_phase->ctrl_or_self(u), u);
-        assert(m != mem, "");
-        // u is on the wrong slice...
-        assert(u->is_ClearArray(), "");
-        DEBUG_ONLY(if (trace) { tty->print("ZZZ setting memory of use"); u->dump(); });
-        _phase->igvn().replace_input_of(u, u->find_edge(mem), m);
-        --i;
-      }
-    }
-  }
-#ifdef ASSERT
-  assert(new_mem->outcnt() > 0, "");
-  for (int i = 0; i < phis.length(); i++) {
-    Node* n = phis.at(i);
-    assert(n->outcnt() > 0, "new phi must have uses now");
-  }
-#endif
 }
 
 MergeMemNode* MemoryGraphFixer::allocate_merge_mem(Node* mem, Node* rep_proj, Node* rep_ctrl) const {

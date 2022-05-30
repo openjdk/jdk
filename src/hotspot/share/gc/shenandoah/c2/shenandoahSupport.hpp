@@ -118,7 +118,6 @@ private:
   MergeMemNode* clone_merge_mem(Node* u, Node* mem, Node* rep_proj, Node* rep_ctrl, DUIterator& i) const;
   void fix_memory_uses(Node* mem, Node* replacement, Node* rep_proj, Node* rep_ctrl) const;
   bool should_process_phi(Node* phi) const;
-  bool has_mem_phi(Node* region) const;
 
 public:
   MemoryGraphFixer(int alias, bool include_lsm, PhaseIdealLoop* phase) :
@@ -128,7 +127,7 @@ public:
   }
 
   Node* find_mem(Node* ctrl, Node* n) const;
-  void fix_mem(Node* ctrl, Node* region, Node* mem, Node* mem_for_ctrl, Node* mem_phi, Unique_Node_List& uses);
+
   int alias() const { return _alias; }
 
   Node* collect_memory_for_infinite_loop(const Node* in);
