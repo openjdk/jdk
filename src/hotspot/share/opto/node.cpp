@@ -1841,8 +1841,8 @@ void PrintBFS::collect() {
     if (!filter_category(n, filter_visit) && n != _start) {
       continue; // we hit boundary, do not traverse further
     }
-    if (n != _start && (n->is_Root() || n->is_Con())) {
-      continue; // traversing through root / const node would lead to unrelated nodes
+    if (n != _start && n->is_Root()) {
+      continue; // traversing through root node would lead to unrelated nodes
     }
     if (_traverse_inputs && _max_distance > info->distance()) {
       for (uint i = 0; i < n->req(); i++) {
