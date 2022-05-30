@@ -1180,8 +1180,7 @@ public:
 //----------------- Printing, etc
 #ifndef PRODUCT
  private:
-  int _indent; // TODO remove?
-  //TODO: clean up public / private, add more comments about what is for debugger
+  int _indent;
 
  public:
   void set_indent(int indent) { _indent = indent; }

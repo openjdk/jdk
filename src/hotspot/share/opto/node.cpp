@@ -2288,7 +2288,7 @@ void Node::dump(const char* suffix, bool mark, outputStream *st, DumpConfig* dc)
   bool is_new = C->node_arena()->contains(this);
   C->_in_dump_cnt++;
 
-  if (_indent > 0) {// TODO: remove?
+  if (_indent > 0) {
     st->print("%*s", (_indent << 1), "  ");
   }
 
