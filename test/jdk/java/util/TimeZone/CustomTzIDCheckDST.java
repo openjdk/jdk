@@ -43,7 +43,7 @@ public class CustomTzIDCheckDST {
     private static String CUSTOM_TZ = "MEZ-1MESZ,M3.5.0,M10.5.0";
     public static void main(String args[]) throws Throwable {
         if (args.length == 0) {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(List.of("CustomTzIDCheckDST", "runTZTest")); 
+            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(List.of("CustomTzIDCheckDST", "runTZTest"));
             pb.environment().put("TZ", CUSTOM_TZ);
             OutputAnalyzer output = ProcessTools.executeProcess(pb);
             output.shouldHaveExitValue(0);
