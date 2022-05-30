@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,32 +21,47 @@
  * questions.
  */
 
-/*
- * Specifically called by runCustomTzIDCheckDST.sh to check if Daylight savings is
- * properly followed with a custom TZ code set through environment variables.
- * */
-
+/* @test
+ * @bug 8285838
+ * @library /test/lib
+ * @summary This test will ensure that daylight savings rules are followed
+ * appropriately when setting a custom timezone ID via the TZ env variable.
+ * @requires os.family != "windows"
+ * @run main/othervm CustomTzIDCheckDST
+ */
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.time.Month;
 import java.time.DayOfWeek;
 import java.time.ZonedDateTime;
 import java.time.temporal.TemporalAdjusters;
-import java.text.SimpleDateFormat;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 public class CustomTzIDCheckDST {
-    public static void main(String args[]) {
+    private static String CUSTOM_TZ = "MEZ-1MESZ,M3.5.0,M10.5.0";
+    public static void main(String args[]) throws Throwable {
+        if (args.length == 0) {
+            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(List.of("CustomTzIDCheckDST", "runTZTest")); 
+            pb.environment().put("TZ", CUSTOM_TZ);
+            OutputAnalyzer output = ProcessTools.executeProcess(pb);
+            output.shouldHaveExitValue(0);
+        } else {
+            runTZTest();
+        }
+    }
+
+    /* TZ code will always be set to "MEZ-1MESZ,M3.5.0,M10.5.0".
+     * This ensures the transition periods for Daylights Savings should be at March's last
+     * Sunday and October's last Sunday.
+     */
+    private static void runTZTest() {
         Calendar calendar = Calendar.getInstance();
         Date time = calendar.getTime();
         int month = time.getMonth();
         ZonedDateTime date = ZonedDateTime.ofInstant(time.toInstant(), ZoneId.systemDefault());
 
-        /* TZ code will always be set to "MEZ-1MESZ,M3.5.0,M10.5.0" via invoking shell script.
-         * This ensures the transition periods for Daylights Savings should be at March's last
-         * Sunday and October's last Sunday.
-         */
         if ((month > Month.MARCH.getValue() && month < Month.OCTOBER.getValue()) ||
                 (month == Month.MARCH.getValue() && date.isAfter(getLastSundayOfMonth(date))) ||
                 (month == Month.OCTOBER.getValue() && date.isBefore(getLastSundayOfMonth(date)))) {
