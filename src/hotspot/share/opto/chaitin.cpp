@@ -592,29 +592,33 @@ void PhaseChaitin::Register_Allocate() {
 //      }
     }
     for (int i = 0; i < regions.length(); ++i) {
-      Block_List region = regions.at(i);
-      bool skip = false;
-      for (uint j = 0; j < region.size() && !skip; ++j) {
+      Block_List& region = regions.at(i);
+      for (uint j = 0; j < region.size(); ++j) {
         Block *block = region[j];
-        for (uint l = 0; l < block->_num_succs && !skip; ++l) {
+        for (uint l = 0; l < block->_num_succs; ++l) {
           Block *succ = block->_succs[l];
           if (succ->_region != region[0]->_region) {
-            for (uint k = 1; k < succ->end_idx() && !skip; ++k) {
+            uint k;
+            for (k = 1; k < succ->end_idx(); ++k) {
               Node *n = succ->get_node(k);
               if (n->is_Mach() && n->as_Mach()->ideal_Opcode() == Op_CreateEx) {
-                skip = true;
+                break;
               }
+            }
+            if (k < succ->end_idx()) {
+              region.push(succ);
+              succ->_region = region[0]->_region;
             }
           }
         }
       }
-      if (skip) {
-        for (uint j = 0; j < region.size(); ++j) {
-          Block *block = region[j];
-          block->_region = 0;
-        }
-        regions.at_put(i, Block_List());
-      }
+//      if (skip) {
+//        for (uint j = 0; j < region.size(); ++j) {
+//          Block *block = region[j];
+//          block->_region = 0;
+//        }
+//        regions.at_put(i, Block_List());
+//      }
     }
     //    for (uint i = 1; i < regions.length(); ++i) {
 //      Block_List region = regions.at(i);
@@ -637,7 +641,7 @@ void PhaseChaitin::Register_Allocate() {
 //      ResourceMark rm;
 //      stringStream ss;
 //      C->method()->print_short_name(&ss);
-//      if (!strcmp(ss.as_string(), " spec.benchmarks.scimark.SparseCompRow::matmult")) {
+//      if (!strcmp(ss.as_string(), " spec.benchmarks.compress.Compressor::compress")) {
 //        tty->print_cr("XXXX %d", C->compile_id());
 //        _cfg.dump();
 //      }
