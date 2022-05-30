@@ -461,10 +461,10 @@ void PhaseChaitin::Register_Allocate() {
       if (loop->_child == NULL && loop != _cfg._root_loop) {
         GrowableArray<CFGElement*> blocks = loop->_members;
         double f = loop->_freq;
-        if (loop->head()->head()->is_CountedLoop() && loop->head()->head()->as_CountedLoop()->is_strip_mined()) {
-          assert(loop->_parent->head()->head()->is_OuterStripMinedLoop(), "");
-          f = loop->_parent->_freq;
-        }
+//        if (loop->head()->head()->is_CountedLoop() && loop->head()->head()->as_CountedLoop()->is_strip_mined()) {
+//          assert(loop->_parent->head()->head()->is_OuterStripMinedLoop(), "");
+//          f = loop->_parent->_freq;
+//        }
         if (f > RegAllocLoopMinFreq) {
           leaf_loops.push(loop);
         }
@@ -494,18 +494,21 @@ void PhaseChaitin::Register_Allocate() {
     for (int i = 0; i < leaf_loops.length(); i++) {
       CFGLoop* loop = leaf_loops.at(i);
       double trip = loop->trip_count();
-      if (loop->head()->head()->is_CountedLoop() && loop->head()->head()->as_CountedLoop()->is_strip_mined()) {
-        assert(loop->_parent->head()->head()->is_OuterStripMinedLoop(), "");
-        trip = loop->_parent->trip_count();
-        loop = loop->_parent;
-      }
+//      if (loop->head()->head()->is_CountedLoop() && loop->head()->head()->as_CountedLoop()->is_strip_mined()) {
+//        assert(loop->_parent->head()->head()->is_OuterStripMinedLoop(), "");
+//        trip = loop->_parent->trip_count();
+//        loop = loop->_parent;
+//      }
       while (trip < RegAllocLoopMinTrip) {
         loop = loop->_parent;
         assert(loop != NULL && loop != _cfg._root_loop, "");
-        if (!loop->head()->head()->is_OuterStripMinedLoop()) {
-          trip *= loop->trip_count();
-        }
+//        if (!loop->head()->head()->is_OuterStripMinedLoop()) {
+        trip *= loop->trip_count();
+//        }
       }
+//      if (loop->head()->head()->is_CountedLoop() && loop->head()->head()->as_CountedLoop()->is_strip_mined()) {
+//        loop = loop->_parent;
+//      }
       assert(loop->head()->head()->is_Loop(), "");
       uint region = i + 1;
 //      tty->print_cr("XXXX %f %f %f", loop->_freq, loop->head()->_freq, loop->trip_count());
@@ -634,7 +637,7 @@ void PhaseChaitin::Register_Allocate() {
 //      ResourceMark rm;
 //      stringStream ss;
 //      C->method()->print_short_name(&ss);
-//      if (!strcmp(ss.as_string(), " spec.benchmarks.scimark.SparseCompRow::measureSparseMatmult")) {
+//      if (!strcmp(ss.as_string(), " spec.benchmarks.scimark.SparseCompRow::matmult")) {
 //        tty->print_cr("XXXX %d", C->compile_id());
 //        _cfg.dump();
 //      }

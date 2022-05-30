@@ -2709,8 +2709,8 @@ void OuterStripMinedLoopNode::adjust_strip_mined_loop(PhaseIterGVN* igvn) {
     return;
   }
   Node* inner_iv_phi = inner_cl->phi();
+  OuterStripMinedLoopEndNode *outer_le = outer_loop_end();
   if (inner_iv_phi == NULL) {
-    IfNode* outer_le = outer_loop_end();
     Node* iff = igvn->transform(new IfNode(outer_le->in(0), outer_le->in(1), outer_le->_prob, outer_le->_fcnt));
     igvn->replace_node(outer_le, iff);
     inner_cl->clear_strip_mined();
@@ -2735,7 +2735,6 @@ void OuterStripMinedLoopNode::adjust_strip_mined_loop(PhaseIterGVN* igvn) {
     // the outer loop: drop the outer loop but
     // keep the safepoint so we don't run for
     // too long without a safepoint
-    IfNode* outer_le = outer_loop_end();
     Node* iff = igvn->transform(new IfNode(outer_le->in(0), outer_le->in(1), outer_le->_prob, outer_le->_fcnt));
     igvn->replace_node(outer_le, iff);
     inner_cl->clear_strip_mined();
@@ -2846,10 +2845,17 @@ void OuterStripMinedLoopNode::adjust_strip_mined_loop(PhaseIterGVN* igvn) {
     inner_bol->set_req(1, igvn->transform(inner_cmp));
     igvn->replace_input_of(inner_cle, CountedLoopEndNode::TestValue, igvn->transform(inner_bol));
     // Set the outer loop's exit condition too
-    igvn->replace_input_of(outer_loop_end(), 1, outer_bol);
+    igvn->replace_input_of(outer_le, 1, outer_bol);
+
+    float trip_count = inner_cl->profile_trip_cnt();
+    if (trip_count != COUNT_UNKNOWN) {
+      outer_le->_fcnt = outer_le->_fcnt / MIN2(trip_count, (float)LoopStripMiningIter);
+      inner_cle->_prob = 1 - 1 / MIN2(trip_count, (float)LoopStripMiningIter);
+      outer_le->_prob = trip_count > LoopStripMiningIter ? MIN2(1 - LoopStripMiningIter / trip_count, (float)PROB_ALWAYS) : PROB_NEVER;
+    }
+
   } else {
     assert(false, "should be able to adjust outer loop");
-    IfNode* outer_le = outer_loop_end();
     Node* iff = igvn->transform(new IfNode(outer_le->in(0), outer_le->in(1), outer_le->_prob, outer_le->_fcnt));
     igvn->replace_node(outer_le, iff);
     inner_cl->clear_strip_mined();

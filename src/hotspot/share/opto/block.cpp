@@ -338,6 +338,7 @@ void Block::dump_head(const PhaseCFG* cfg, outputStream* st) const {
     // Dump any loop-specific bits, especially for CountedLoops.
     loop->dump_spec(st);
     st->print(")");
+    st->print("%g - %g - %g", bhead->_loop->_freq, bhead->_loop->trip_count(), loop->profile_trip_cnt());
   } else if (has_loop_alignment()) {
     st->print("top-of-loop");
   }
