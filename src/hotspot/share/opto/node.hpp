@@ -1222,7 +1222,6 @@ public:
   // This call defines a class-unique string used to identify class instances
   virtual const char *Name() const;
 
-  void dump_format(PhaseRegAlloc *ra) const; // debug access to MachNode::format(...)
   // RegMask Print Functions
   void dump_in_regmask(int idx) { in_RegMask(idx).dump(); }
   void dump_out_regmask() { out_RegMask().dump(); }
