@@ -23,10 +23,19 @@
 
 /**
  * @test
+ * @bug 8284161
  * @summary Test java.lang.management.ThreadMXBean with virtual threads
- * @modules java.base/java.lang:+open
- * @compile --enable-preview -source ${jdk.version} VirtualThreads.java
- * @run testng/othervm --enable-preview VirtualThreads
+ * @enablePreview
+ * @modules java.base/java.lang:+open java.management
+ * @run testng/othervm VirtualThreads
+ */
+
+/**
+ * @test
+ * @requires vm.continuations
+ * @enablePreview
+ * @modules java.base/java.lang:+open java.management
+ * @run testng/othervm -XX:-VMContinuations VirtualThreads
  */
 
 import java.lang.management.ManagementFactory;
