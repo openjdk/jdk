@@ -1729,6 +1729,7 @@ private:
   };
   Filter filter_visit;
   Filter filter_boundary;
+  bool _sort_idx = false;
   bool _use_color = false;
   bool _print_blocks = false;
   bool _print_old = false;
@@ -1794,7 +1795,7 @@ private:
   };
 
   // filled by sort, printed by print
-  Node_List _printlist;
+  GrowableArray<Node*> _printlist;
 
   // print header + node table
   void print_header();
@@ -1875,6 +1876,10 @@ void PrintBFS::prune() {
   }
 }
 
+int node_idx_cmp(Node** n1, Node** n2) {
+  return (*n1)->_idx - (*n2)->_idx;
+}
+
 // go through worklist in desired order, put the marked ones in printlist
 void PrintBFS::sort() {
   if(_traverse_inputs && !_traverse_outputs) {
@@ -1896,13 +1901,16 @@ void PrintBFS::sort() {
       }
     }
   }
+  if(_sort_idx) {
+    _printlist.sort(node_idx_cmp);
+  }
 }
 
 // go through printlist and print
 void PrintBFS::print() {
-  if( _printlist.size() > 0 ) {
+  if( _printlist.length() > 0 ) {
     print_header();
-    for (uint i = 0; i < _printlist.size(); i++) {
+    for (int i = 0; i < _printlist.length(); i++) {
       Node* n = _printlist.at(i);
       print_node(n);
     }
@@ -1933,6 +1941,7 @@ void PrintBFS::parse_options() {
   parse_options_helper(filter_boundary.data,    "D");
   parse_options_helper(filter_boundary.mixed,   "X");
   parse_options_helper(filter_boundary.other,   "O");
+  parse_options_helper(_sort_idx,               "S");
   parse_options_helper(_use_color,              "#");
   parse_options_helper(_print_blocks,           "B");
   parse_options_helper(_print_old,              "@");
@@ -2120,6 +2129,7 @@ void PrintBFS::print_node(Node* n) {
 //     D: boundary data nodes
 //     X: boundary mixed nodes
 //     O: boundary other nodes
+//     S: sort displayed nodes by node idx
 //     #: display node category in color (maybe not supported in all terminals)
 //     @: print old nodes - before matching (if available)
 //     B: print scheduling blocks (if available)
