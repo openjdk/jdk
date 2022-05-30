@@ -659,6 +659,8 @@ public final class StringConcatFactory {
         throw new IllegalArgumentException("Unexpected count: " + count);
     }
 
+    // Simple prependers, single argument. May be used directly or as a
+    // building block for complex prepender combinators.
     private static MethodHandle prepender(String prefix, Class<?> cl) {
         if (prefix == null) {
             return NULL_PREPENDERS.computeIfAbsent(cl, NULL_PREPEND);
@@ -667,46 +669,79 @@ public final class StringConcatFactory {
                 PREPENDERS.computeIfAbsent(cl, PREPEND), 3, prefix);
     }
 
-    private static final int[] PREPEND_FILTER_TWO_ARGS = new int[] { 0, 1, 3 };
-    private static MethodHandle prepender(String prefix, Class<?> cl, String prefix2, Class<?> cl2) {
-        MethodHandle prepend = MethodHandles.dropArguments(prepender(prefix, cl), 3, cl2);
-        return MethodHandles.filterArgumentsWithCombiner(prepend, 0, prepender(prefix2, cl2), PREPEND_FILTER_TWO_ARGS);
+    private static final int INT_IDX = 0,
+            CHAR_IDX = 1,
+            LONG_IDX = 2,
+            BOOLEAN_IDX = 3,
+            STRING_IDX = 4,
+            TYPE_COUNT = 5;
+    private static final @Stable MethodHandle[][] DOUBLE_PREPENDERS = new MethodHandle[TYPE_COUNT][TYPE_COUNT];
+    private static int classIndex(Class<?> cl) {
+        if (cl == String.class)  return STRING_IDX;
+        if (cl == int.class)     return INT_IDX;
+        if (cl == boolean.class) return BOOLEAN_IDX;
+        if (cl == char.class)    return CHAR_IDX;
+        if (cl == long.class)    return LONG_IDX;
+        throw new IllegalArgumentException("Unexpected class: " + cl);
     }
 
+    // Constant argument lists used by the prepender MH tree builders
+    private static final int[] PREPEND_FILTER_FIRST_ARGS  = new int[] { 0, 1, 2 };
+    private static final int[] PREPEND_FILTER_SECOND_ARGS = new int[] { 0, 1, 3 };
+    private static final int[] PREPEND_FILTER_THIRD_ARGS  = new int[] { 0, 1, 4 };
+    private static final int[] PREPEND_FILTER_FIRST_PAIR_ARGS  = new int[] { 0, 1, 2, 3 };
+    private static final int[] PREPEND_FILTER_SECOND_PAIR_ARGS = new int[] { 0, 1, 4, 5 };
+
+    // Base MH for complex prepender combinators.
     private static final MethodHandle PREPEND_BASE = MethodHandles.dropArguments(
             MethodHandles.identity(long.class), 1, byte[].class);
 
+    private static MethodHandle prepender(String prefix, Class<?> cl, String prefix2, Class<?> cl2) {
+        int idx1 = classIndex(cl);
+        int idx2 = classIndex(cl2);
+        MethodHandle prepend = DOUBLE_PREPENDERS[idx1][idx2];
+        if (prepend == null) {
+            prepend = DOUBLE_PREPENDERS[idx1][idx2] =
+                    MethodHandles.dropArguments(PREPEND_BASE, 2, cl, cl2);
+        }
+        prepend = MethodHandles.filterArgumentsWithCombiner(prepend, 0, prepender(prefix, cl),
+                PREPEND_FILTER_FIRST_ARGS);
+        return MethodHandles.filterArgumentsWithCombiner(prepend, 0, prepender(prefix2, cl2),
+                PREPEND_FILTER_SECOND_ARGS);
+    }
+
+
     private static MethodHandle prepender(int pos, List<String> constants, Class<?>[] ptypes, int count) {
-        // delegate the single argument case
+        // build the simple cases directly
         if (count == 1) {
             return prepender(constants.get(pos), ptypes[pos]);
         }
+        if (count == 2) {
+            return prepender(constants.get(pos), ptypes[pos], constants.get(pos + 1), ptypes[pos + 1]);
+        }
         // build a tree from an unbound prepender, allowing us to bind the constants in a batch as a final step
         MethodHandle prepend = PREPEND_BASE;
-        prepend = switch (count) {
-            case 2 -> MethodHandles.dropArguments(prepend, 2, ptypes[pos], ptypes[pos + 1]);
-            case 3 -> MethodHandles.dropArguments(prepend, 2, ptypes[pos], ptypes[pos + 1],
-                                                  ptypes[pos + 2]);
-            case 4 -> MethodHandles.dropArguments(prepend, 2, ptypes[pos], ptypes[pos + 1],
-                                                  ptypes[pos + 2], ptypes[pos + 3]);
-            default -> throw new IllegalStateException("Unexpected prepender count: " + count);
-        };
-
-        int i;
-        for (i = 0; i < count - 1; i += 2) {
-            MethodHandle nextPrepender = prepender(constants.get(pos + i), ptypes[pos + i],
-                    constants.get(pos + i + 1), ptypes[pos + i + 1]);
+        if (count == 3) {
+            prepend = MethodHandles.dropArguments(prepend, 2,
+                    ptypes[pos], ptypes[pos + 1], ptypes[pos + 2]);
             prepend = MethodHandles.filterArgumentsWithCombiner(prepend, 0,
-                    nextPrepender, 0, 1, 2 + i, 3 + i);
-        }
-        if (i < count) {
-            MethodHandle nextPrepender = prepender(constants.get(pos + i), ptypes[pos + i]);
+                    prepender(constants.get(pos), ptypes[pos], constants.get(pos + 1), ptypes[pos + 1]),
+                    PREPEND_FILTER_FIRST_PAIR_ARGS);
+            return MethodHandles.filterArgumentsWithCombiner(prepend, 0,
+                    prepender(constants.get(pos + 2), ptypes[pos + 2]),
+                    PREPEND_FILTER_THIRD_ARGS);
+        } else if (count == 4) {
+            prepend = MethodHandles.dropArguments(prepend, 2,
+                    ptypes[pos], ptypes[pos + 1], ptypes[pos + 2], ptypes[pos + 3]);
             prepend = MethodHandles.filterArgumentsWithCombiner(prepend, 0,
-                    nextPrepender, 0, 1, 2 + i);
+                    prepender(constants.get(pos), ptypes[pos], constants.get(pos + 1), ptypes[pos + 1]),
+                    PREPEND_FILTER_FIRST_PAIR_ARGS);
+            return MethodHandles.filterArgumentsWithCombiner(prepend, 0,
+                    prepender(constants.get(pos + 2), ptypes[pos + 2], constants.get(pos + 3), ptypes[pos + 3]),
+                    PREPEND_FILTER_SECOND_PAIR_ARGS);
+        } else {
+            throw new IllegalArgumentException("Unexpected count: " + count);
         }
-
-        // type of the MH is (long, byte[], <arg1>, <arg2>, ...)
-        return prepend;
     }
 
     private static MethodHandle mixer(Class<?> cl) {
