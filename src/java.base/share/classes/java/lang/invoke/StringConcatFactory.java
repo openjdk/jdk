@@ -647,35 +647,31 @@ public final class StringConcatFactory {
 
 
     private static MethodHandle foldInLastMixers(MethodHandle mh, long initialLengthCoder, int pos, Class<?>[] ptypes, int count) {
-        if (count == 4) {
-            MethodHandle mix = mixer(ptypes[pos], ptypes[pos + 1], ptypes[pos + 2], ptypes[pos + 3]);
-            mix = MethodHandles.insertArguments(mix,0, initialLengthCoder);
+        MethodHandle mix = switch (count) {
+            case 1 -> mixer(ptypes[pos]);
+            case 2 -> mixer(ptypes[pos], ptypes[pos + 1]);
+            case 3 -> mixer(ptypes[pos], ptypes[pos + 1], ptypes[pos + 2]);
+            case 4 -> mixer(ptypes[pos], ptypes[pos + 1], ptypes[pos + 2], ptypes[pos + 3]);
+            default -> throw new IllegalArgumentException("Unexpected count: " + count);
+        };
+        mix = MethodHandles.insertArguments(mix,0, initialLengthCoder);
+        if (count == 1) {
+            return MethodHandles.foldArgumentsWithCombiner(mh, 0, mix,
+                    1 + pos // selected arguments
+            );
+        } else if (count == 2) {
+            return MethodHandles.foldArgumentsWithCombiner(mh, 0, mix,
+                    1 + pos, 2 + pos // selected arguments
+            );
+        } else if (count == 3) {
+            return MethodHandles.foldArgumentsWithCombiner(mh, 0, mix,
+                    1 + pos, 2 + pos, 3 + pos // selected arguments
+            );
+        } else {
             return MethodHandles.foldArgumentsWithCombiner(mh, 0, mix,
                     1 + pos, 2 + pos, 3 + pos, 4 + pos // selected arguments
             );
         }
-        if (count == 3) {
-            MethodHandle mix = mixer(ptypes[pos], ptypes[pos + 1], ptypes[pos + 2]);
-            mix = MethodHandles.insertArguments(mix,0, initialLengthCoder);
-            return MethodHandles.foldArgumentsWithCombiner(mh, 0, mix,
-                1 + pos, 2 + pos, 3 + pos // selected arguments
-            );
-        }
-        if (count == 2) {
-            MethodHandle mix = mixer(ptypes[pos], ptypes[pos + 1]);
-            mix = MethodHandles.insertArguments(mix,0, initialLengthCoder);
-            return MethodHandles.foldArgumentsWithCombiner(mh, 0, mix,
-                    1 + pos, 2 + pos // selected arguments
-            );
-        }
-        if (count == 1) {
-            MethodHandle mix = mixer(ptypes[pos]);
-            mix = MethodHandles.insertArguments(mix,0, initialLengthCoder);
-            return MethodHandles.foldArgumentsWithCombiner(mh, 0, mix,
-                    1 + pos // selected arguments
-            );
-        }
-        throw new IllegalArgumentException("Unexpected count: " + count);
     }
 
     // Simple prependers, single argument. May be used directly or as a
