@@ -1303,6 +1303,8 @@ public class TreeInfo {
     public static boolean isErrorEnumSwitch(JCExpression selector, List<JCCase> cases) {
         return selector.type.tsym.kind == Kinds.Kind.ERR &&
                cases.stream().flatMap(c -> c.labels.stream())
+                             .filter(l -> l.hasTag(EXPRESSIONCASELABEL))
+                             .map(l -> ((JCExpressionCaseLabel) l).expr)
                              .allMatch(p -> p.hasTag(IDENT));
     }
 

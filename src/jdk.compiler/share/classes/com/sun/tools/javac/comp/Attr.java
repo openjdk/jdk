@@ -1744,7 +1744,7 @@ public class Attr extends JCTree.Visitor {
                             var prevResolveHelper = rs.basicLogResolveHelper;
                             try {
                                 rs.basicLogResolveHelper = rs.silentLogResolveHelper;
-                                attribExpr(label, switchEnv, seltype);
+                                attribExpr(expr, switchEnv, seltype);
                             } finally {
                                 rs.basicLogResolveHelper = prevResolveHelper;
                             }

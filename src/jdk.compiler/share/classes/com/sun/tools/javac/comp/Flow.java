@@ -3074,7 +3074,7 @@ public class Flow {
                             }
                             break;
                         }
-                    case BINDINGPATTERN, PARENTHESIZEDPATTERN:
+                    case PATTERNCASELABEL:
                     case LAMBDA:
                         if ((sym.flags() & (EFFECTIVELY_FINAL | FINAL)) == 0) {
                            reportEffectivelyFinalError(pos, sym);
@@ -3109,7 +3109,7 @@ public class Flow {
         void reportEffectivelyFinalError(DiagnosticPosition pos, Symbol sym) {
             Fragment subKey = switch (currentTree.getTag()) {
                 case LAMBDA -> Fragments.Lambda;
-                case BINDINGPATTERN, PARENTHESIZEDPATTERN -> Fragments.Guard;
+                case PATTERNCASELABEL -> Fragments.Guard;
                 case CLASSDEF -> Fragments.InnerCls;
                 default -> throw new AssertionError("Unexpected tree kind: " + currentTree.getTag());
             };
@@ -3160,8 +3160,14 @@ public class Flow {
 
         @Override
         public void visitPatternCaseLabel(JCPatternCaseLabel tree) {
-            scan(tree.pat);
-            scan(tree.guard);
+             scan(tree.pat);
+            JCTree prevTree = currentTree;
+            try {
+                currentTree = tree;
+                scan(tree.guard);
+            } finally {
+                currentTree = prevTree;
+            }
         }
 
         @Override
