@@ -59,7 +59,7 @@ void CgroupV1Controller::set_subsystem_path(char *cgroup_path) {
         _path = os::strdup(buf);
       } else {
         char *p = strstr(cgroup_path, _root);
-        if (p != NULL && p == _root) {
+        if (p != NULL && p == cgroup_path) {
           if (strlen(cgroup_path) > strlen(_root)) {
             int buflen;
             strncpy(buf, _mount_point, MAXPATHLEN);
