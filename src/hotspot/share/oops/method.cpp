@@ -61,7 +61,6 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/continuationEntry.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
@@ -1334,8 +1333,6 @@ void Method::set_code(const methodHandle& mh, CompiledMethod *code) {
     // This must come last, as it is what's tested in LinkResolver::resolve_static_call
     mh->_from_interpreted_entry = mh->get_i2c_entry();
     OrderAccess::storestore();
-
-    ContinuationEntry::set_enter_nmethod(code);
   } else if (!mh->is_method_handle_intrinsic()) {
     // Instantly compiled code can execute.
     mh->_from_interpreted_entry = mh->get_i2c_entry();
