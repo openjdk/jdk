@@ -70,7 +70,6 @@ class outputStream;
   LOG_TAG(director) \
   NOT_PRODUCT(LOG_TAG(downcall)) \
   LOG_TAG(dump) \
-  NOT_PRODUCT(LOG_TAG(dwarf)) \
   LOG_TAG(dynamic) \
   LOG_TAG(ergo) \
   LOG_TAG(event) \

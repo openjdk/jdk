@@ -219,7 +219,7 @@ class Flags {
     private final List<String> listOfOptions = new ArrayList<>();
 
     Flags(String... flags) {
-        listOfOptions.add("-Xlog:dwarf=info"); // Always add debug flag
+        listOfOptions.add("-XX:TraceDwarfLevel=2"); // Always add debug flag
         listOfOptions.add("-XX:-CreateCoredumpOnCrash"); // Never create dumps
         listOfOptions.addAll(Arrays.asList(flags));
     }

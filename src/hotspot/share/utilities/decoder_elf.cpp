@@ -63,29 +63,31 @@ bool ElfDecoder::get_source_info(address pc, char* filename, size_t filename_len
   int offset_in_library = -1;
   if (!os::dll_address_to_library_name(pc, filepath, sizeof(filepath), &offset_in_library)) {
     // Method not found. offset_in_library should not overflow.
-    log_develop_info(dwarf)("Did not find library for address " INTPTR_FORMAT, p2i(pc));
+    DWARF_LOG_ERROR("Did not find library for address " INTPTR_FORMAT, p2i(pc))
     return false;
   }
 
   if (filepath[JVM_MAXPATHLEN - 1] != '\0') {
-    log_develop_info(dwarf)("File path is too large to fit into buffer of size %d", JVM_MAXPATHLEN);
+    DWARF_LOG_ERROR("File path is too large to fit into buffer of size %d", JVM_MAXPATHLEN);
     return false;
   }
 
   const uint32_t unsigned_offset_in_library = (uint32_t)offset_in_library;
-  log_develop_debug(dwarf)("##### Find filename and line number for offset " PTR32_FORMAT " in library %s #####", unsigned_offset_in_library, filepath);
 
   ElfFile* file = get_elf_file(filepath);
   if (file == NULL) {
     return false;
   }
+  DWARF_LOG_INFO("##### Find filename and line number for offset " PTR32_FORMAT " in library %s #####",
+                 unsigned_offset_in_library, filepath);
 
   if (!file->get_source_info(unsigned_offset_in_library, filename, filename_len, line, is_pc_after_call)) {
     return false;
   }
 
-  log_develop_info(dwarf)("pc: " INTPTR_FORMAT ", offset: " PTR32_FORMAT ", filename: %s, line: %u", p2i(pc), offset_in_library, filename, *line);
-  log_develop_debug(dwarf)(""); // To structure the debug output better.
+  DWARF_LOG_SUMMARY("pc: " INTPTR_FORMAT ", offset: " PTR32_FORMAT ", filename: %s, line: %u",
+                       p2i(pc), offset_in_library, filename, *line);
+  DWARF_LOG_INFO("") // To structure the debug output better.
   return true;
 }
 

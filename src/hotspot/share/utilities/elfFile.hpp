@@ -71,6 +71,27 @@ typedef Elf32_Sym       Elf_Sym;
 #include "memory/allocation.hpp"
 #include "utilities/decoder.hpp"
 
+#ifdef ASSERT
+// Helper macros to print different log levels during DWARF parsing
+#define DWARF_LOG_SUMMARY(format, ...) DWARF_LOG_WITH_LEVEL(1, format, ##__VA_ARGS__) // Same level as error logging
+#define DWARF_LOG_ERROR(format, ...) DWARF_LOG_WITH_LEVEL(1, format, ##__VA_ARGS__)
+#define DWARF_LOG_INFO(format, ...) DWARF_LOG_WITH_LEVEL(2, format, ##__VA_ARGS__)
+#define DWARF_LOG_DEBUG(format, ...) DWARF_LOG_WITH_LEVEL(3, format, ##__VA_ARGS__)
+#define DWARF_LOG_TRACE(format, ...) DWARF_LOG_WITH_LEVEL(4, format, ##__VA_ARGS__)
+
+#define DWARF_LOG_WITH_LEVEL(level, format, ...) \
+    if (TraceDwarfLevel >= level) {         \
+      tty->print("[dwarf] ");               \
+      tty->print_cr(format, ##__VA_ARGS__); \
+    }
+#else
+#define DWARF_LOG_SUMMARY(format, ...)
+#define DWARF_LOG_ERROR(format, ...)
+#define DWARF_LOG_INFO(format, ...)
+#define DWARF_LOG_DEBUG(format, ...)
+#define DWARF_LOG_TRACE(format, ...)
+#endif
+
 class ElfStringTable;
 class ElfSymbolTable;
 class ElfFuncDescTable;
@@ -361,10 +382,17 @@ class ElfFile: public CHeapObj<mtInternal> {
  *  algorithm inside the different sections can be found in the class comments for DebugAranges, DebugAbbrev and
  *  LineNumberProgram further down in this file.
  *
- *  Available (develop) log levels (-Xlog:dwarf=X) which are only present in debug builds:
- *  - info:  Prints the path of parsed DWARF file together with the query and the resulting source information.
- *  - debug: Prints the results of the steps (1) - (4) together with the generated line information matrix.
- *  - trace: Full logging information for intermediate states/results when parsing the DWARF file.
+ *  Available (develop) log levels (-XX:TraceDwarfLevel=[1,4]) which are only present in debug builds. Each level prints
+ *  all the logs of the previous levels and adds some more fine-grained logging:
+ *  - Level 1 (summary + errors):
+ *    - Prints the path of parsed DWARF file together with the resulting source information.
+ *    - Prints all errors.
+ *  - Level 2 (info):
+ *    - Prints the found offsets of all DWARF sections
+ *  - Level 3 (debug):
+ *    - Prints the results of the steps (1) - (4) together with the generated line information matrix.
+ *  - Level 4 (trace):
+ *    - Complete information about intermediate states/results when parsing the DWARF file.
  */
 class DwarfFile : public ElfFile {
 
