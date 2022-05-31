@@ -34,10 +34,20 @@ public class ContinuationSupport {
     }
 
     /**
-     * Return true if the VM has continuation support.
+     * Return true if the VM has continuations support.
      */
     public static boolean isSupported() {
         return SUPPORTED;
+    }
+
+    /**
+     * Ensures that VM has continuations support.
+     * @throws UnsupportedOperationException if not supported
+     */
+    public static void ensureSupported() {
+        if (!isSupported()) {
+            throw new UnsupportedOperationException("VM does not support continuations");
+        }
     }
 
     private static native boolean isSupported0();
