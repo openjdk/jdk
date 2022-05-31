@@ -1791,13 +1791,13 @@ private:
     if (uid == 0) {
       return nullptr;
     }
-    return &_info.at(uid);
+    return &_info.at((int)uid);
   };
   void make_info(Node* node, int distance) {
     assert(find_info(node) == nullptr, "node does not yet have info");
     size_t uid = _info.length()+1;
     _info_uid.Insert(node, (void*)uid);
-    _info.at_put_grow(uid, Info(node, distance));
+    _info.at_put_grow((int)uid, Info(node, distance));
     assert(find_info(node)->node() == node, "stored correct node");
   };
 
