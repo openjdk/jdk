@@ -51,9 +51,6 @@ public class ScaledEtchedBorderTest {
 
     public static final Dimension SIZE = new Dimension(120, 20);
 
-    public static JFrame frame;
-    public static JPanel contentPanel;
-    public static JPanel childPanel;
     public static Color highlight = Color.RED;
     public static Color shadow = Color.BLUE;
 
@@ -69,9 +66,6 @@ public class ScaledEtchedBorderTest {
     public static void main(String[] args) throws Exception {
         boolean showFrame = args.length > 0 && "-show".equals(args[0]);
         SwingUtilities.invokeAndWait(() -> testScaling(showFrame));
-        if (frame != null) {
-            SwingUtilities.invokeAndWait(() -> frame.dispose());
-        }
     }
 
     private static void testScaling(boolean show) {
@@ -179,6 +173,10 @@ public class ScaledEtchedBorderTest {
     }
 
     private static void createGUI(boolean show) {
+        JFrame frame;
+        JPanel contentPanel;
+        JPanel childPanel;
+
         // Render content panel
         contentPanel = new JPanel();
         contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
@@ -197,9 +195,8 @@ public class ScaledEtchedBorderTest {
                 childPanel.setBounds(0, childSize.height * i,
                         childSize.width, childSize.height);
             }
-
-            contentPanel.setSize(childSize.width, childSize.height * 4);
         }
+        contentPanel.setSize(childSize.width, childSize.height * 4);
 
         for (double scaling : scales) {
             // Create BufferedImage
@@ -225,7 +222,8 @@ public class ScaledEtchedBorderTest {
             frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
             frame.getContentPane().add(contentPanel, BorderLayout.CENTER);
             frame.pack();
-            frame.setLocationRelativeTo(null);frame.setVisible(true);
+            frame.setLocationRelativeTo(null);
+            frame.setVisible(true);
         }
     }
 
