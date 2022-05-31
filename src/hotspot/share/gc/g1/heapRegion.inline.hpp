@@ -32,6 +32,7 @@
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
 #include "gc/g1/g1Predictions.hpp"
 #include "gc/g1/g1SegmentedArray.inline.hpp"
+#include "gc/shared/blockOffsetTable.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/prefetch.inline.hpp"
@@ -103,6 +104,11 @@ inline HeapWord* HeapRegion::block_start(const void* addr) {
   // the heap to get to the block reaching into addr.
   HeapWord* n = q + block_size(q);
   return forward_to_block_containing_addr(q, n, addr);
+}
+
+inline HeapWord* HeapRegion::block_start_aligned(const void* p) const {
+  assert(is_aligned(p, BOTConstants::card_size()), "must be");
+  return _bot_part.block_start_reaching_into_card(p);
 }
 
 inline bool HeapRegion::is_obj_dead_with_size(const oop obj, const G1CMBitMap* const prev_bitmap, size_t* size) const {
@@ -351,8 +357,9 @@ HeapWord* HeapRegion::oops_on_memregion_seq_iterate_careful(MemRegion mr,
   HeapWord* const start = mr.start();
   HeapWord* const end = mr.end();
 
-  // Find the obj that extends onto mr.start().
-  HeapWord* cur = block_start(start);
+  // Find the obj that extends onto mr.start(); in the concurrent phase the start
+  // address is always aligned.
+  HeapWord* cur = is_gc_active ? block_start(start) : block_start_aligned(start);
 
   const G1CMBitMap* const bitmap = g1h->concurrent_mark()->prev_mark_bitmap();
   while (true) {

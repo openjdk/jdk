@@ -125,11 +125,11 @@ private:
 
   void check_all_cards(size_t left_card, size_t right_card) const;
 
-public:
   static HeapWord* align_up_by_card_size(HeapWord* const addr) {
     return align_up(addr, BOTConstants::card_size());
   }
 
+public:
   static bool is_crossing_card_boundary(HeapWord* const obj_start,
                                         HeapWord* const obj_end) {
     HeapWord* cur_card_boundary = align_up_by_card_size(obj_start);
