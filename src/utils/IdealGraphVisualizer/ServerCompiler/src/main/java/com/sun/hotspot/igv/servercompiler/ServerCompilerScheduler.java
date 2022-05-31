@@ -184,8 +184,10 @@ public class ServerCompilerScheduler implements Scheduler {
                 } else if (controlSuccs.get(n).size() == 1) {
                     // One successor: end the block if it is a block start node.
                     Node s = controlSuccs.get(n).iterator().next();
-                    if (s.isBlockStart) {
-                        // Block start: end the block.
+                    if (s.isBlockStart || isDummy(n)) {
+                        // Block start or n is a dummy node: end the block. The
+                        // second condition handles ill-formed graphs where join
+                        // Region nodes are not marked as block starts.
                         blockTerminators.add(n);
                         stack.push(s);
                         break;
@@ -701,6 +703,10 @@ public class ServerCompilerScheduler implements Scheduler {
 
     private static boolean isControl(Node n) {
         return n.inputNode.getProperties().get("category").equals("control");
+    }
+
+    private static boolean isDummy(Node n) {
+        return n.inputNode == null;
     }
 
     // Whether b1 dominates b2. Used only for checking the schedule.
