@@ -46,13 +46,14 @@
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.util.Arrays;
+import java.util.concurrent.CyclicBarrier;
 import java.util.stream.Stream;
 
 public class VirtualThreadDeadlocks {
     private static final Object LOCK1 = new Object();
     private static final Object LOCK2 = new Object();
 
-    private static volatile boolean lock2Held;
+    private static final CyclicBarrier barrier = new CyclicBarrier(2);
 
     /**
      * PP = test deadlock with two platform threads
@@ -67,9 +68,7 @@ public class VirtualThreadDeadlocks {
                 : Thread.ofVirtual();
         Thread thread1 = builder1.start(() -> {
             synchronized (LOCK1) {
-                while (!lock2Held) {
-                    try { Thread.sleep(10); } catch (Exception e) { }
-                }
+                try { barrier.await(); } catch (Exception ie) {}
                 synchronized (LOCK2) { }
             }
         });
@@ -81,7 +80,7 @@ public class VirtualThreadDeadlocks {
                 : Thread.ofVirtual();
         Thread thread2 = builder2.start(() -> {
             synchronized (LOCK2) {
-                lock2Held = true;
+                try { barrier.await(); } catch (Exception ie) {}
                 synchronized (LOCK1) { }
             }
         });
@@ -109,6 +108,9 @@ public class VirtualThreadDeadlocks {
     private static void awaitBlocked(Thread thread) throws InterruptedException {
         while (thread.getState() != Thread.State.BLOCKED) {
             Thread.sleep(10);
+            if (!thread.isAlive()) {
+                throw new RuntimeException("Thread " + thread + " is terminated.");
+            }
         }
     }
 
