@@ -348,6 +348,7 @@ public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegm
         return arr;
     }
 
+    @ForceInline
     public void checkAccess(long offset, long length, boolean readOnly) {
         if (!readOnly && isSet(READ_ONLY)) {
             throw new UnsupportedOperationException("Attempt to write a read-only segment");
@@ -402,6 +403,7 @@ public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegm
     }
 
     @Override
+    @ForceInline
     public MemorySessionImpl session() {
         return (MemorySessionImpl)session;
     }
