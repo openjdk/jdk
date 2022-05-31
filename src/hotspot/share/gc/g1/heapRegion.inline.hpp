@@ -370,6 +370,7 @@ inline HeapWord* HeapRegion::oops_on_memregion_iterate_in_unparsable(MemRegion m
   // Find the obj that extends onto mr.start().
   //
   // The BOT itself is stable enough to be read at any time as
+  //
   // * during refinement the individual elements of the BOT are read and written
   //   atomically and any visible mix of new and old BOT entries will eventually lead
   //   to some (possibly outdated) object start.
