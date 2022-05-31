@@ -164,12 +164,6 @@ class ObjectSynchronizer : AllStatic {
   // to interrupt requests and doesn't timeout.
   static void wait_uninterruptibly(Handle obj, JavaThread* current);
 
-  // used by classloading to free classloader object lock,
-  // wait on an internal lock, and reclaim original lock
-  // with original recursion count
-  static intx complete_exit(Handle obj, JavaThread* current);
-  static void reenter (Handle obj, intx recursions, JavaThread* current);
-
   // Inflate light weight monitor to heavy weight monitor
   static ObjectMonitor* inflate(Thread* current, oop obj, const InflateCause cause);
   // This version is only for internal use

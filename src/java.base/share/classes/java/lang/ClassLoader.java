@@ -301,6 +301,9 @@ public abstract class ClassLoader {
     // is parallel capable and the appropriate lock object for class loading.
     private final ConcurrentHashMap<String, Object> parallelLockMap;
 
+    // Synchronization for parallel class loading in this class loader.
+    private final ConcurrentHashMap<String, Thread> placeholders;
+
     // Maps packages to certs
     private final ConcurrentHashMap<String, Certificate[]> package2certs;
 
@@ -381,10 +384,12 @@ public abstract class ClassLoader {
         if (ParallelLoaders.isRegistered(this.getClass())) {
             parallelLockMap = new ConcurrentHashMap<>();
             assertionLock = new Object();
+            placeholders = null;
         } else {
             // no finer-grained lock; lock on the classloader instance
             parallelLockMap = null;
             assertionLock = this;
+            placeholders = new ConcurrentHashMap<>();
         }
         this.package2certs = new ConcurrentHashMap<>();
         this.nameAndId = nameAndId(this);
@@ -753,6 +758,81 @@ public abstract class ClassLoader {
         return null;
     }
 
+    private enum LoadedState { CLAIMED, LOADING, CCE };
+
+    private final LoadedState getPlaceholder(String name) {
+        Thread thread = Thread.currentThread();
+        Thread pt = placeholders.putIfAbsent(name, thread);
+        if (pt == null) {
+            return LoadedState.CLAIMED;
+        } else if (pt == thread) {
+            return LoadedState.CCE;
+        } else {
+            // Another thread is loading this class.
+            return LoadedState.LOADING;
+        }
+    }
+
+    private final void removePlaceholder(String name) {
+        placeholders.remove(name);
+        // Notify threads waiting on the class loader lock
+        // that this class has been loaded or failed.
+        notifyAll();
+    }
+
+    // We only get here if the application has released the
+    // classloader lock when another thread was in the middle of loading a
+    // superclass/superinterface for this class, and now
+    // this thread is also trying to load this class.
+    // To minimize surprises, this thread waits while the first thread
+    // that started to load a class completes the loading or fails.
+    private LoadedState waitForPlaceholder(String name) {
+        LoadedState state;
+        int count = 0;
+        while ((state = getPlaceholder(name)) == LoadedState.LOADING) {
+            try {
+                wait();
+            } catch (InterruptedException e) {
+                // keep waiting, must be uninterruptible
+            }
+        }
+        return state;
+    }
+
+    // Called by VM to load a class. For a non-parallel capable ClassLoader,
+    // wait on the class loader lock if another class has already started loading
+    // this class and we own the class loader lock.
+    private final Class<?> loadClassInternal(String name)
+        throws ClassNotFoundException
+    {
+        // Call loadClass directly for parallel-capable class loaders
+        if (parallelLockMap != null) {
+            return loadClass(name);
+        }
+        synchronized (this) {
+            LoadedState state = getPlaceholder(name);
+            if (state == LoadedState.LOADING) {
+                // notify loading threads
+                notifyAll();
+                state = waitForPlaceholder(name);
+            }
+            // Now load class.
+            if (state == LoadedState.CLAIMED) {
+                Class<?> loadedClass = null;
+                try {
+                    loadedClass = loadClass(name);
+                } finally {
+                    removePlaceholder(name);
+                }
+                return loadedClass;
+            } else {
+                // A class circularity error is detected while loading this class
+                assert (state == LoadedState.CCE);
+                removePlaceholder(name);
+                throw new ClassCircularityError(name);
+            }
+        }
+    }
 
     /**
      * Converts an array of bytes into an instance of class {@code Class}.

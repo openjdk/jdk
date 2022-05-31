@@ -309,7 +309,6 @@ private:
   static InstanceKlass* handle_parallel_loading(JavaThread* current,
                                                 Symbol* name,
                                                 ClassLoaderData* loader_data,
-                                                Handle lockObject,
                                                 bool* throw_circularity_error);
 
   static void define_instance_class(InstanceKlass* k, Handle class_loader, TRAPS);

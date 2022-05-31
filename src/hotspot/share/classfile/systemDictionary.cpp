@@ -483,47 +483,6 @@ InstanceKlass* SystemDictionary::resolve_super_or_fail(Symbol* class_name,
   return superk;
 }
 
-// We only get here if this thread finds that another thread
-// has already claimed the placeholder token for the current operation,
-// but that other thread either never owned or gave up the
-// object lock
-// Waits on SystemDictionary_lock to indicate placeholder table updated
-// On return, caller must recheck placeholder table state
-//
-// We only get here if
-//  1) custom classLoader, i.e. not bootstrap classloader
-//  2) custom classLoader has broken the class loader objectLock
-//     so another thread got here in parallel
-//
-// lockObject must be held.
-// Complicated dance due to lock ordering:
-// Must first release the classloader object lock to
-// allow initial definer to complete the class definition
-// and to avoid deadlock
-// Reclaim classloader lock object with same original recursion count
-// Must release SystemDictionary_lock after notify, since
-// class loader lock must be claimed before SystemDictionary_lock
-// to prevent deadlocks
-//
-// The notify allows applications that did an untimed wait() on
-// the classloader object lock to not hang.
-static void double_lock_wait(JavaThread* thread, Handle lockObject) {
-  assert_lock_strong(SystemDictionary_lock);
-
-  assert(lockObject() != NULL, "lockObject must be non-NULL");
-  bool calledholdinglock
-      = ObjectSynchronizer::current_thread_holds_lock(thread, lockObject);
-  assert(calledholdinglock, "must hold lock for notify");
-  assert(!is_parallelCapable(lockObject), "lockObject must not be parallelCapable");
-  // These don't throw exceptions.
-  ObjectSynchronizer::notifyall(lockObject, thread);
-  intx recursions = ObjectSynchronizer::complete_exit(lockObject, thread);
-  SystemDictionary_lock->wait();
-  SystemDictionary_lock->unlock();
-  ObjectSynchronizer::reenter(lockObject, recursions, thread);
-  SystemDictionary_lock->lock();
-}
-
 // If the class in is in the placeholder table, class loading is in progress.
 // For cases where the application changes threads to load classes, it
 // is critical to ClassCircularity detection that we try loading
@@ -544,23 +503,18 @@ static void handle_parallel_super_load(Symbol* name,
                                                           CHECK);
 }
 
-// parallelCapable class loaders do NOT wait for parallel superclass loads to complete
-// Serial class loaders and bootstrap classloader do wait for superclass loads
-static bool should_wait_for_loading(Handle class_loader) {
-  return class_loader.is_null() || !is_parallelCapable(class_loader);
-}
-
-// For bootstrap and non-parallelCapable class loaders, check and wait for
+// For bootstrap class loader, check and wait for
 // another thread to complete loading this class.
+// For non-parallel capable class loaders, this wait is done in Java.
 InstanceKlass* SystemDictionary::handle_parallel_loading(JavaThread* current,
                                                          Symbol* name,
                                                          ClassLoaderData* loader_data,
-                                                         Handle lockObject,
                                                          bool* throw_circularity_error) {
   PlaceholderEntry* oldprobe = PlaceholderTable::get_entry(name, loader_data);
   if (oldprobe != NULL) {
-    // only need check_seen_thread once, not on each loop
-    // 6341374 java/lang/Instrument with -Xcomp
+    // -Xcomp calls load_signature_classes which might result in loading
+    // a class that's already in the process of loading, so we detect CCE here also.
+    // Only need check_seen_thread once, not on each loop
     if (oldprobe->check_seen_thread(current, PlaceholderTable::LOAD_INSTANCE)) {
       log_circularity_error(name, oldprobe);
       *throw_circularity_error = true;
@@ -571,25 +525,7 @@ InstanceKlass* SystemDictionary::handle_parallel_loading(JavaThread* current,
       while (oldprobe != NULL &&
              (oldprobe->instance_load_in_progress() || oldprobe->super_load_in_progress())) {
 
-        // We only get here if the application has released the
-        // classloader lock when another thread was in the middle of loading a
-        // superclass/superinterface for this class, and now
-        // this thread is also trying to load this class.
-        // To minimize surprises, the first thread that started to
-        // load a class should be the one to complete the loading
-        // with the classfile it initially expected.
-        // This logic has the current thread wait once it has done
-        // all the superclass/superinterface loading it can, until
-        // the original thread completes the class loading or fails
-        // If it completes we will use the resulting InstanceKlass
-        // which we will find below in the systemDictionary.
-        oldprobe = NULL;  // Other thread could delete this placeholder entry
-
-        if (lockObject.is_null()) {
-          SystemDictionary_lock->wait();
-        } else {
-          double_lock_wait(current, lockObject);
-        }
+        SystemDictionary_lock->wait();
 
         // Check if classloading completed while we were waiting
         InstanceKlass* check = loader_data->dictionary()->find_class(current, name);
@@ -614,6 +550,7 @@ void SystemDictionary::post_class_load_event(EventClassLoad* event, const Instan
   event->set_initiatingClassLoader(init_cld);
   event->commit();
 }
+
 
 // SystemDictionary::resolve_instance_class_or_null is the main function for class name resolution.
 // After checking if the InstanceKlass already exists, it checks for ClassCircularityError and
@@ -644,18 +581,6 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
   // before we return a result, we call out to java to check for valid protection domain.
   InstanceKlass* probe = dictionary->find(THREAD, name, protection_domain);
   if (probe != NULL) return probe;
-
-  // Non-bootstrap class loaders will call out to class loader and
-  // define via jvm/jni_DefineClass which will acquire the
-  // class loader object lock to protect against multiple threads
-  // defining the class in parallel by accident.
-  // This lock must be acquired here so the waiter will find
-  // any successful result in the SystemDictionary and not attempt
-  // the define.
-  // ParallelCapable class loaders and the bootstrap classloader
-  // do not acquire lock here.
-  Handle lockObject = get_loader_lock_or_null(class_loader);
-  ObjectLocker ol(lockObject, THREAD);
 
   bool super_load_in_progress  = false;
   InstanceKlass* loaded_class = NULL;
@@ -706,30 +631,26 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
     //    These class loaders lock a per-class object lock when ClassLoader.loadClass()
     //    is called. A LOAD_INSTANCE placeholder isn't used for mutual exclusion.
     // case 3. traditional classloaders that rely on the classloader object lock
-    //    There should be no need for need for LOAD_INSTANCE, except:
-    // case 4. traditional class loaders that break the classloader object lock
-    //    as a legacy deadlock workaround. Detection of this case requires that
-    //    this check is done while holding the classloader object lock,
-    //    and that lock is still held when calling classloader's loadClass.
+    //    There is no need for need for LOAD_INSTANCE, since the loadClassInternal code
+    //    will take out the placeholder in Java code.
     //    For these classloaders, we ensure that the first requestor
     //    completes the load and other requestors wait for completion.
     {
       MutexLocker mu(THREAD, SystemDictionary_lock);
-      if (should_wait_for_loading(class_loader)) {
+      if (class_loader.is_null()) {
         loaded_class = handle_parallel_loading(THREAD,
                                                name,
                                                loader_data,
-                                               lockObject,
                                                &throw_circularity_error);
       }
 
-      // Recheck if the class has been loaded for all class loader cases and
-      // add a LOAD_INSTANCE placeholder while holding the SystemDictionary_lock.
+      // Recheck if the class has been loaded for all class loader cases (after super class check)
+      // and add a LOAD_INSTANCE placeholder while holding the SystemDictionary_lock.
       if (!throw_circularity_error && loaded_class == NULL) {
         InstanceKlass* check = dictionary->find_class(THREAD, name);
         if (check != NULL) {
           loaded_class = check;
-        } else if (should_wait_for_loading(class_loader)) {
+        } else if (class_loader.is_null()) {
           // Add the LOAD_INSTANCE token. Threads will wait on loading to complete for this thread.
           PlaceholderEntry* newprobe = PlaceholderTable::find_and_add(name, loader_data,
                                                                       PlaceholderTable::LOAD_INSTANCE,
@@ -924,8 +845,18 @@ InstanceKlass* SystemDictionary::resolve_class_from_stream(
 
   ClassLoaderData* loader_data = register_loader(class_loader);
 
-  // Classloaders that support parallelism, e.g. bootstrap classloader,
-  // do not acquire lock here
+  // Non-bootstrap class loaders will call out to class loader and
+  // define via jvm/jni_DefineClass which will acquire the
+  // class loader object lock to protect against multiple threads
+  // defining the class in parallel by accident.
+  // This lock must be acquired here so the parallel threads that call loadClass
+  // for this class will find any successful result in the SystemDictionary
+  // after this defineClass.
+  // It is still racy, since the loadClass may acquire the lock first, then there
+  // will be a parallel define through defineClass.  The Java callers should synchronize
+  // calls to defineClass, not the JVM.
+  // ParallelCapable class loaders and the bootstrap classloader
+  // do not acquire lock here.
   Handle lockObject = get_loader_lock_or_null(class_loader);
   ObjectLocker ol(lockObject, THREAD);
 
@@ -1359,14 +1290,11 @@ InstanceKlass* SystemDictionary::load_instance_class_impl(Symbol* class_name, Ha
 
     InstanceKlass* spec_klass = vmClasses::ClassLoader_klass();
 
-    // Call public unsynchronized loadClass(String) directly for all class loaders.
-    // For parallelCapable class loaders, JDK >=7, loadClass(String, boolean) will
-    // acquire a class-name based lock rather than the class loader object lock.
-    // JDK < 7 already acquire the class loader lock in loadClass(String, boolean).
+    // Call public unsynchronized loadClassInternal(String) directly for all class loaders.
     JavaCalls::call_virtual(&result,
                             class_loader,
                             spec_klass,
-                            vmSymbols::loadClass_name(),
+                            SymbolTable::new_permanent_symbol("loadClassInternal"),
                             vmSymbols::string_class_signature(),
                             string,
                             CHECK_NULL);

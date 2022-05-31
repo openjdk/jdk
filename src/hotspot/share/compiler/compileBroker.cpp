@@ -1355,6 +1355,9 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
     method->constants()->resolve_string_constants(CHECK_AND_CLEAR_NONASYNC_NULL);
     // Resolve all classes seen in the signature of the method
     // we are compiling.
+    // This might result in loading a class that we're already loading resulting
+    // in a ClassCircularityError which is why the class loading code detects
+    // this in the loading path and not just the load_super_or_fail path.
     Method::load_signature_classes(method, CHECK_AND_CLEAR_NONASYNC_NULL);
   }
 
