@@ -156,7 +156,7 @@ JVM_END
 #define PKG_FOREIGN "Ljdk/internal/foreign/"
 
 #define MEMACCESS "ScopedMemoryAccess"
-#define SCOPE PKG_FOREIGN "MemorySessionState;"
+#define SCOPE PKG_FOREIGN "MemorySessionImpl$State;"
 
 #define CC (char*)  /*cast a literal from (const char*)*/
 #define FN_PTR(f) CAST_FROM_FN_PTR(void*, &f)

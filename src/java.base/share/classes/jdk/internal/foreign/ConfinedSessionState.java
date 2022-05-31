@@ -29,7 +29,6 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.lang.ref.Cleaner;
 
-import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.vm.annotation.ForceInline;
 
 /**
@@ -38,7 +37,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * owner thread will result in an exception. Because of this restriction, checking the liveness bit
  * can be performed in plain mode.
  */
-public final class ConfinedSessionState extends MemorySessionState {
+public final class ConfinedSessionState extends MemorySessionImpl.State {
 
     private int asyncReleaseCount = 0;
     private final Thread owner;
@@ -54,7 +53,7 @@ public final class ConfinedSessionState extends MemorySessionState {
     }
 
     public ConfinedSessionState(Thread owner, Cleaner cleaner) {
-        super(new ConfinedResourceList(), cleaner);
+        super(new ConfinedList(), cleaner);
         this.owner = owner;
     }
 
@@ -73,7 +72,7 @@ public final class ConfinedSessionState extends MemorySessionState {
     public void acquire() {
         checkValidStateWrapException();
         if (state == MAX_FORKS) {
-            throw new IllegalStateException("Session keep alive limit exceeded");
+            throw tooManyAcquires();
         }
         state++;
     }
@@ -97,30 +96,21 @@ public final class ConfinedSessionState extends MemorySessionState {
         if (state == 0 || state - ((int)ASYNC_RELEASE_COUNT.getVolatile(this)) == 0) {
             state = CLOSED;
         } else {
-            throw new IllegalStateException("Session is acquired by " + state + " clients");
-        }
-    }
-
-    @Override
-    public void checkValidState() {
-        if (owner != null && owner != Thread.currentThread()) {
-            throw new WrongThreadException("Attempted access outside owning thread");
-        } else if (state < OPEN) {
-            throw ScopedMemoryAccess.ScopedAccessError.INSTANCE;
+            throw alreadyAcquired(state);
         }
     }
 
     /**
      * A confined resource list; no races are possible here.
      */
-    static final class ConfinedResourceList extends ResourceList {
+    static final class ConfinedList extends ResourceList {
         @Override
         public void add(ResourceCleanup cleanup) {
             if (fst != ResourceCleanup.CLOSED_LIST) {
                 cleanup.next = fst;
                 fst = cleanup;
             } else {
-                throw new IllegalStateException("Already closed!");
+                throw alreadyClosed();
             }
         }
 
@@ -131,7 +121,7 @@ public final class ConfinedSessionState extends MemorySessionState {
                 fst = ResourceCleanup.CLOSED_LIST;
                 cleanup(prev);
             } else {
-                throw new IllegalStateException("Attempt to cleanup an already closed resource list");
+                throw alreadyClosed();
             }
         }
     }

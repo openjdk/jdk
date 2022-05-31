@@ -475,7 +475,7 @@ public class IOUtil {
     private static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
 
     static Runnable acquireScope(ByteBuffer bb, boolean async) {
-        return NIO_ACCESS.acquireSession(bb, async);
+        return NIO_ACCESS.acquire(bb, async);
     }
 
     private static void releaseScope(Runnable handle) {

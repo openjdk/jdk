@@ -26,7 +26,6 @@ package jdk.internal.foreign.abi;
 
 import jdk.internal.foreign.MemoryAddressImpl;
 import jdk.internal.foreign.MemorySessionImpl;
-import jdk.internal.foreign.MemorySessionState;
 import jdk.internal.foreign.Scoped;
 import jdk.internal.misc.VM;
 import jdk.internal.org.objectweb.asm.ClassReader;
@@ -88,7 +87,7 @@ public class BindingSpecializer {
     private static final String SESSION_DESC = methodType(MemorySession.class).descriptorString();
     private static final String SESSION_IMPL_DESC = methodType(MemorySessionImpl.class).descriptorString();
 
-    private static final String SESSION_STATE_DESC = methodType(MemorySessionState.class).descriptorString();
+    private static final String SESSION_STATE_DESC = methodType(MemorySessionImpl.State.class).descriptorString();
     private static final String CLOSE_DESC = VOID_DESC;
     private static final String ADDRESS_DESC = methodType(MemoryAddress.class).descriptorString();
     private static final String COPY_DESC = methodType(void.class, MemorySegment.class, long.class, MemorySegment.class, long.class, long.class).descriptorString();
@@ -515,7 +514,7 @@ public class BindingSpecializer {
         emitDup(Object.class);
         int nextScopeLocal = scopeSlots[curScopeLocalIdx++];
         emitStore(Object.class, nextScopeLocal); // store off one to release later
-        emitInvokeVirtual(MemorySessionState.class, "acquire", ACQUIRE0_DESC); // call acquire on the other
+        emitInvokeVirtual(MemorySessionImpl.State.class, "acquire", ACQUIRE0_DESC); // call acquire on the other
 
         if (hasOtherScopes) { // avoid ASM generating a bunch of nops for the dead code
             mv.visitJumpInsn(GOTO, end);
@@ -534,7 +533,7 @@ public class BindingSpecializer {
             emitLoad(Object.class, scopeLocal);
             mv.visitJumpInsn(IFNULL, skipRelease);
             emitLoad(Object.class, scopeLocal);
-            emitInvokeVirtual(MemorySessionState.class, "release", RELEASE0_DESC);
+            emitInvokeVirtual(MemorySessionImpl.State.class, "release", RELEASE0_DESC);
             mv.visitLabel(skipRelease);
         }
     }

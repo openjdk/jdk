@@ -183,7 +183,7 @@ class Heap$Type$Buffer$RW$
 #end[streamableType]
 
     public $Type$Buffer get($type$[] dst, int offset, int length) {
-        checkSession();
+        checkState();
         Objects.checkFromIndexSize(offset, length, dst.length);
         int pos = position();
         if (length > limit() - pos)
@@ -194,7 +194,7 @@ class Heap$Type$Buffer$RW$
     }
 
     public $Type$Buffer get(int index, $type$[] dst, int offset, int length) {
-        checkSession();
+        checkState();
         Objects.checkFromIndexSize(index, length, limit());
         Objects.checkFromIndexSize(offset, length, dst.length);
         System.arraycopy(hb, ix(index), dst, offset, length);
@@ -231,7 +231,7 @@ class Heap$Type$Buffer$RW$
 
     public $Type$Buffer put($type$[] src, int offset, int length) {
 #if[rw]
-        checkSession();
+        checkState();
         Objects.checkFromIndexSize(offset, length, src.length);
         int pos = position();
         if (length > limit() - pos)
@@ -246,7 +246,7 @@ class Heap$Type$Buffer$RW$
 
     public $Type$Buffer put($Type$Buffer src) {
 #if[rw]
-        checkSession();
+        checkState();
         super.put(src);
         return this;
 #else[rw]
@@ -256,7 +256,7 @@ class Heap$Type$Buffer$RW$
 
     public $Type$Buffer put(int index, $Type$Buffer src, int offset, int length) {
 #if[rw]
-        checkSession();
+        checkState();
         super.put(index, src, offset, length);
         return this;
 #else[rw]
@@ -266,7 +266,7 @@ class Heap$Type$Buffer$RW$
 
     public $Type$Buffer put(int index, $type$[] src, int offset, int length) {
 #if[rw]
-        checkSession();
+        checkState();
         Objects.checkFromIndexSize(index, length, limit());
         Objects.checkFromIndexSize(offset, length, src.length);
         System.arraycopy(src, offset, hb, ix(index), length);
@@ -280,7 +280,7 @@ class Heap$Type$Buffer$RW$
 
     public $Type$Buffer put(String src, int start, int end) {
 #if[rw]
-        checkSession();
+        checkState();
         int length = end - start;
         Objects.checkFromIndexSize(start, length, src.length());
         int pos = position();
@@ -335,18 +335,18 @@ class Heap$Type$Buffer$RW$
 #if[rw]
 
     public char getChar() {
-        return SCOPED_MEMORY_ACCESS.getCharUnaligned(session(), hb, byteOffset(nextGetIndex(2)), bigEndian);
+        return SCOPED_MEMORY_ACCESS.getCharUnaligned(state(), hb, byteOffset(nextGetIndex(2)), bigEndian);
     }
 
     public char getChar(int i) {
-        return SCOPED_MEMORY_ACCESS.getCharUnaligned(session(), hb, byteOffset(checkIndex(i, 2)), bigEndian);
+        return SCOPED_MEMORY_ACCESS.getCharUnaligned(state(), hb, byteOffset(checkIndex(i, 2)), bigEndian);
     }
 
 #end[rw]
 
     public $Type$Buffer putChar(char x) {
 #if[rw]
-        SCOPED_MEMORY_ACCESS.putCharUnaligned(session(), hb, byteOffset(nextPutIndex(2)), x, bigEndian);
+        SCOPED_MEMORY_ACCESS.putCharUnaligned(state(), hb, byteOffset(nextPutIndex(2)), x, bigEndian);
         return this;
 #else[rw]
         throw new ReadOnlyBufferException();
@@ -355,7 +355,7 @@ class Heap$Type$Buffer$RW$
 
     public $Type$Buffer putChar(int i, char x) {
 #if[rw]
-        SCOPED_MEMORY_ACCESS.putCharUnaligned(session(), hb, byteOffset(checkIndex(i, 2)), x, bigEndian);
+        SCOPED_MEMORY_ACCESS.putCharUnaligned(state(), hb, byteOffset(checkIndex(i, 2)), x, bigEndian);
         return this;
 #else[rw]
         throw new ReadOnlyBufferException();
@@ -387,18 +387,18 @@ class Heap$Type$Buffer$RW$
 #if[rw]
 
     public short getShort() {
-        return SCOPED_MEMORY_ACCESS.getShortUnaligned(session(), hb, byteOffset(nextGetIndex(2)), bigEndian);
+        return SCOPED_MEMORY_ACCESS.getShortUnaligned(state(), hb, byteOffset(nextGetIndex(2)), bigEndian);
     }
 
     public short getShort(int i) {
-        return SCOPED_MEMORY_ACCESS.getShortUnaligned(session(), hb, byteOffset(checkIndex(i, 2)), bigEndian);
+        return SCOPED_MEMORY_ACCESS.getShortUnaligned(state(), hb, byteOffset(checkIndex(i, 2)), bigEndian);
     }
 
 #end[rw]
 
     public $Type$Buffer putShort(short x) {
 #if[rw]
-        SCOPED_MEMORY_ACCESS.putShortUnaligned(session(), hb, byteOffset(nextPutIndex(2)), x, bigEndian);
+        SCOPED_MEMORY_ACCESS.putShortUnaligned(state(), hb, byteOffset(nextPutIndex(2)), x, bigEndian);
         return this;
 #else[rw]
         throw new ReadOnlyBufferException();
@@ -407,7 +407,7 @@ class Heap$Type$Buffer$RW$
 
     public $Type$Buffer putShort(int i, short x) {
 #if[rw]
-        SCOPED_MEMORY_ACCESS.putShortUnaligned(session(), hb, byteOffset(checkIndex(i, 2)), x, bigEndian);
+        SCOPED_MEMORY_ACCESS.putShortUnaligned(state(), hb, byteOffset(checkIndex(i, 2)), x, bigEndian);
         return this;
 #else[rw]
         throw new ReadOnlyBufferException();
@@ -439,18 +439,18 @@ class Heap$Type$Buffer$RW$
 #if[rw]
 
     public int getInt() {
-        return SCOPED_MEMORY_ACCESS.getIntUnaligned(session(), hb, byteOffset(nextGetIndex(4)), bigEndian);
+        return SCOPED_MEMORY_ACCESS.getIntUnaligned(state(), hb, byteOffset(nextGetIndex(4)), bigEndian);
     }
 
     public int getInt(int i) {
-        return SCOPED_MEMORY_ACCESS.getIntUnaligned(session(), hb, byteOffset(checkIndex(i, 4)), bigEndian);
+        return SCOPED_MEMORY_ACCESS.getIntUnaligned(state(), hb, byteOffset(checkIndex(i, 4)), bigEndian);
     }
 
 #end[rw]
 
     public $Type$Buffer putInt(int x) {
 #if[rw]
-        SCOPED_MEMORY_ACCESS.putIntUnaligned(session(), hb, byteOffset(nextPutIndex(4)), x, bigEndian);
+        SCOPED_MEMORY_ACCESS.putIntUnaligned(state(), hb, byteOffset(nextPutIndex(4)), x, bigEndian);
         return this;
 #else[rw]
         throw new ReadOnlyBufferException();
@@ -459,7 +459,7 @@ class Heap$Type$Buffer$RW$
 
     public $Type$Buffer putInt(int i, int x) {
 #if[rw]
-        SCOPED_MEMORY_ACCESS.putIntUnaligned(session(), hb, byteOffset(checkIndex(i, 4)), x, bigEndian);
+        SCOPED_MEMORY_ACCESS.putIntUnaligned(state(), hb, byteOffset(checkIndex(i, 4)), x, bigEndian);
         return this;
 #else[rw]
         throw new ReadOnlyBufferException();
@@ -491,18 +491,18 @@ class Heap$Type$Buffer$RW$
 #if[rw]
 
     public long getLong() {
-        return SCOPED_MEMORY_ACCESS.getLongUnaligned(session(), hb, byteOffset(nextGetIndex(8)), bigEndian);
+        return SCOPED_MEMORY_ACCESS.getLongUnaligned(state(), hb, byteOffset(nextGetIndex(8)), bigEndian);
     }
 
     public long getLong(int i) {
-        return SCOPED_MEMORY_ACCESS.getLongUnaligned(session(), hb, byteOffset(checkIndex(i, 8)), bigEndian);
+        return SCOPED_MEMORY_ACCESS.getLongUnaligned(state(), hb, byteOffset(checkIndex(i, 8)), bigEndian);
     }
 
 #end[rw]
 
     public $Type$Buffer putLong(long x) {
 #if[rw]
-        SCOPED_MEMORY_ACCESS.putLongUnaligned(session(), hb, byteOffset(nextPutIndex(8)), x, bigEndian);
+        SCOPED_MEMORY_ACCESS.putLongUnaligned(state(), hb, byteOffset(nextPutIndex(8)), x, bigEndian);
         return this;
 #else[rw]
         throw new ReadOnlyBufferException();
@@ -511,7 +511,7 @@ class Heap$Type$Buffer$RW$
 
     public $Type$Buffer putLong(int i, long x) {
 #if[rw]
-        SCOPED_MEMORY_ACCESS.putLongUnaligned(session(), hb, byteOffset(checkIndex(i, 8)), x, bigEndian);
+        SCOPED_MEMORY_ACCESS.putLongUnaligned(state(), hb, byteOffset(checkIndex(i, 8)), x, bigEndian);
         return this;
 #else[rw]
         throw new ReadOnlyBufferException();
@@ -543,12 +543,12 @@ class Heap$Type$Buffer$RW$
 #if[rw]
 
     public float getFloat() {
-        int x = SCOPED_MEMORY_ACCESS.getIntUnaligned(session(), hb, byteOffset(nextGetIndex(4)), bigEndian);
+        int x = SCOPED_MEMORY_ACCESS.getIntUnaligned(state(), hb, byteOffset(nextGetIndex(4)), bigEndian);
         return Float.intBitsToFloat(x);
     }
 
     public float getFloat(int i) {
-        int x = SCOPED_MEMORY_ACCESS.getIntUnaligned(session(), hb, byteOffset(checkIndex(i, 4)), bigEndian);
+        int x = SCOPED_MEMORY_ACCESS.getIntUnaligned(state(), hb, byteOffset(checkIndex(i, 4)), bigEndian);
         return Float.intBitsToFloat(x);
     }
 
@@ -557,7 +557,7 @@ class Heap$Type$Buffer$RW$
     public $Type$Buffer putFloat(float x) {
 #if[rw]
         int y = Float.floatToRawIntBits(x);
-        SCOPED_MEMORY_ACCESS.putIntUnaligned(session(), hb, byteOffset(nextPutIndex(4)), y, bigEndian);
+        SCOPED_MEMORY_ACCESS.putIntUnaligned(state(), hb, byteOffset(nextPutIndex(4)), y, bigEndian);
         return this;
 #else[rw]
         throw new ReadOnlyBufferException();
@@ -567,7 +567,7 @@ class Heap$Type$Buffer$RW$
     public $Type$Buffer putFloat(int i, float x) {
 #if[rw]
         int y = Float.floatToRawIntBits(x);
-        SCOPED_MEMORY_ACCESS.putIntUnaligned(session(), hb, byteOffset(checkIndex(i, 4)), y, bigEndian);
+        SCOPED_MEMORY_ACCESS.putIntUnaligned(state(), hb, byteOffset(checkIndex(i, 4)), y, bigEndian);
         return this;
 #else[rw]
         throw new ReadOnlyBufferException();
@@ -599,12 +599,12 @@ class Heap$Type$Buffer$RW$
 #if[rw]
 
     public double getDouble() {
-        long x = SCOPED_MEMORY_ACCESS.getLongUnaligned(session(), hb, byteOffset(nextGetIndex(8)), bigEndian);
+        long x = SCOPED_MEMORY_ACCESS.getLongUnaligned(state(), hb, byteOffset(nextGetIndex(8)), bigEndian);
         return Double.longBitsToDouble(x);
     }
 
     public double getDouble(int i) {
-        long x = SCOPED_MEMORY_ACCESS.getLongUnaligned(session(), hb, byteOffset(checkIndex(i, 8)), bigEndian);
+        long x = SCOPED_MEMORY_ACCESS.getLongUnaligned(state(), hb, byteOffset(checkIndex(i, 8)), bigEndian);
         return Double.longBitsToDouble(x);
     }
 
@@ -613,7 +613,7 @@ class Heap$Type$Buffer$RW$
     public $Type$Buffer putDouble(double x) {
 #if[rw]
         long y = Double.doubleToRawLongBits(x);
-        SCOPED_MEMORY_ACCESS.putLongUnaligned(session(), hb, byteOffset(nextPutIndex(8)), y, bigEndian);
+        SCOPED_MEMORY_ACCESS.putLongUnaligned(state(), hb, byteOffset(nextPutIndex(8)), y, bigEndian);
         return this;
 #else[rw]
         throw new ReadOnlyBufferException();
@@ -623,7 +623,7 @@ class Heap$Type$Buffer$RW$
     public $Type$Buffer putDouble(int i, double x) {
 #if[rw]
         long y = Double.doubleToRawLongBits(x);
-        SCOPED_MEMORY_ACCESS.putLongUnaligned(session(), hb, byteOffset(checkIndex(i, 8)), y, bigEndian);
+        SCOPED_MEMORY_ACCESS.putLongUnaligned(state(), hb, byteOffset(checkIndex(i, 8)), y, bigEndian);
         return this;
 #else[rw]
         throw new ReadOnlyBufferException();

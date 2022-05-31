@@ -30,7 +30,6 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.foreign.UnmapperProxy;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.MemorySessionImpl;
-import jdk.internal.foreign.MemorySessionState;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM.BufferPool;
@@ -38,7 +37,6 @@ import jdk.internal.vm.annotation.ForceInline;
 
 import java.io.FileDescriptor;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
 import java.util.Objects;
 import java.util.Spliterator;
 
@@ -761,7 +759,7 @@ public abstract sealed class Buffer
     }
 
     @ForceInline
-    final MemorySessionState session() {
+    final MemorySessionImpl.State state() {
         if (segment != null) {
             return ((AbstractMemorySegmentImpl)segment).session().state();
         } else {
@@ -769,16 +767,11 @@ public abstract sealed class Buffer
         }
     }
 
-    @ForceInline
-    final boolean isCloseable() {
-        return (segment != null && segment.session().isCloseable());
-    }
-
-    final void checkSession() {
-        MemorySessionState session = session();
-        if (session != null) {
+    final void checkState() {
+        MemorySessionImpl.State state = state();
+        if (state != null) {
             try {
-                session.checkValidState();
+                state.checkValidState();
             } catch (ScopedMemoryAccess.ScopedAccessError e) {
                 throw new IllegalStateException("This segment is already closed");
             }
@@ -834,16 +827,16 @@ public abstract sealed class Buffer
                 }
 
                 @Override
-                public Runnable acquireSession(Buffer buffer, boolean async) {
-                    var session = buffer.session();
-                    if (session == null) {
+                public Runnable acquire(Buffer buffer, boolean async) {
+                    var state = buffer.state();
+                    if (state == null) {
                         return null;
                     }
-                    if (async && session.ownerThread() != null) {
+                    if (async && state.ownerThread() != null) {
                         throw new IllegalStateException("Confined session not supported");
                     }
-                    session.acquire();
-                    return session::release;
+                    state.acquire();
+                    return state::release;
                 }
 
                 @Override

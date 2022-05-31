@@ -51,7 +51,6 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.MappedMemorySegmentImpl;
 import jdk.internal.foreign.MemorySessionImpl;
-import jdk.internal.foreign.MemorySessionState;
 import jdk.internal.misc.Blocker;
 import jdk.internal.misc.ExtendedMapMode;
 import jdk.internal.misc.Unsafe;
@@ -1228,7 +1227,7 @@ public class FileChannelImpl
                 new MappedMemorySegmentImpl(unmapper.address(), unmapper, size,
                                             modes, session);
             MemorySessionImpl.addOrCleanupIfFail(session,
-                new MemorySessionState.ResourceList.ResourceCleanup() {
+                new MemorySessionImpl.State.ResourceCleanup() {
                     @Override
                     public void cleanup() {
                         unmapper.unmap();

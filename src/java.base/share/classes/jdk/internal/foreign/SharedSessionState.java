@@ -25,7 +25,6 @@
 
 package jdk.internal.foreign;
 
-import java.lang.foreign.MemorySession;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.lang.ref.Cleaner;
@@ -44,12 +43,12 @@ import jdk.internal.vm.annotation.ForceInline;
  * Since it is the responsibility of the closing thread to make sure that no concurrent access is possible,
  * checking the liveness bit upon access can be performed in plain mode, as in the confined case.
  */
-public class SharedSessionState extends MemorySessionState {
+public class SharedSessionState extends MemorySessionImpl.State {
 
     private static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
 
     public SharedSessionState(Cleaner cleaner) {
-        super(new SharedResourceList(), cleaner);
+        super(new SharedList(), cleaner);
     }
 
     @Override
@@ -60,10 +59,10 @@ public class SharedSessionState extends MemorySessionState {
             value = (int) STATE.getVolatile(this);
             if (value < OPEN) {
                 //segment is not open!
-                throw new IllegalStateException("Already closed");
+                throw alreadyClosed();
             } else if (value == MAX_FORKS) {
                 //overflow
-                throw new IllegalStateException("Session acquire limit exceeded");
+                throw tooManyAcquires();
             }
         } while (!STATE.compareAndSet(this, value, value + 1));
     }
@@ -76,7 +75,7 @@ public class SharedSessionState extends MemorySessionState {
             value = (int) STATE.getVolatile(this);
             if (value <= OPEN) {
                 //cannot get here - we can't close segment twice
-                throw new IllegalStateException("Already closed");
+                throw alreadyClosed();
             }
         } while (!STATE.compareAndSet(this, value, value - 1));
     }
@@ -84,21 +83,14 @@ public class SharedSessionState extends MemorySessionState {
     public void justClose() {
         int prevState = (int) STATE.compareAndExchange(this, OPEN, CLOSING);
         if (prevState < 0) {
-            throw new IllegalStateException("Already closed");
+            throw alreadyClosed();
         } else if (prevState != OPEN) {
-            throw new IllegalStateException("Session is acquired by " + prevState + " clients");
+            throw alreadyAcquired(prevState);
         }
         boolean success = SCOPED_MEMORY_ACCESS.closeScope(this);
         STATE.setVolatile(this, success ? CLOSED : OPEN);
         if (!success) {
-            throw new IllegalStateException("Session is acquired by 1 client");
-        }
-    }
-
-    @Override
-    public void checkValidState() {
-        if (state < OPEN) {
-            throw ScopedMemoryAccess.ScopedAccessError.INSTANCE;
+            throw alreadyAcquired(1);
         }
     }
 
@@ -115,7 +107,7 @@ public class SharedSessionState extends MemorySessionState {
     /**
      * A shared resource list; this implementation has to handle add vs. add races, as well as add vs. cleanup races.
      */
-    static class SharedResourceList extends ResourceList {
+    static class SharedList extends ResourceList {
 
         static final VarHandle FST;
 
@@ -133,7 +125,7 @@ public class SharedSessionState extends MemorySessionState {
                 ResourceCleanup prev = (ResourceCleanup) FST.getVolatile(this);
                 if (prev == ResourceCleanup.CLOSED_LIST) {
                     // too late
-                    throw new IllegalStateException("Already closed");
+                    throw alreadyClosed();
                 }
                 cleanup.next = prev;
                 if (FST.compareAndSet(this, prev, cleanup)) {
@@ -160,8 +152,25 @@ public class SharedSessionState extends MemorySessionState {
                 }
                 cleanup(prev);
             } else {
-                throw new IllegalStateException("Attempt to cleanup an already closed resource list");
+                throw alreadyClosed();
             }
         }
     }
+
+    public static final class OfImplicit extends SharedSessionState {
+        public OfImplicit() {
+            super(CleanerFactory.cleaner());
+        }
+
+        @Override
+        public void acquire() {
+            // do nothing
+        }
+
+        @Override
+        public void release() {
+            Reference.reachabilityFence(this);
+        }
+    }
+
 }

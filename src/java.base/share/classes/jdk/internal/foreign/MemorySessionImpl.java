@@ -28,11 +28,13 @@ package jdk.internal.foreign;
 
 import java.lang.foreign.MemorySession;
 import java.lang.foreign.SegmentAllocator;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.lang.ref.Cleaner;
 import java.lang.ref.Reference;
 import java.util.Objects;
 
-import jdk.internal.ref.CleanerFactory;
+import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.vm.annotation.ForceInline;
 
 /**
@@ -50,13 +52,13 @@ import jdk.internal.vm.annotation.ForceInline;
  */
 public non-sealed class MemorySessionImpl implements MemorySession, SegmentAllocator {
 
-    final MemorySessionState state;
+    final State state;
 
-    public MemorySessionImpl(MemorySessionState state) {
+    public MemorySessionImpl(State state) {
         this.state = state;
     }
 
-    public MemorySessionState state() {
+    public State state() {
         return state;
     }
 
@@ -90,7 +92,7 @@ public non-sealed class MemorySessionImpl implements MemorySession, SegmentAlloc
     public void addCloseAction(Runnable runnable) {
         Objects.requireNonNull(runnable);
         state.checkValidStateWrapException();
-        state.resourceList.add(MemorySessionState.ResourceList.ResourceCleanup.ofRunnable(runnable));
+        state.resourceList.add(State.ResourceCleanup.ofRunnable(runnable));
     }
 
     @Override
@@ -117,7 +119,7 @@ public non-sealed class MemorySessionImpl implements MemorySession, SegmentAlloc
         ((MemorySessionImpl)session).state.checkValidStateWrapException();
     }
 
-    public static void addOrCleanupIfFail(MemorySession session, MemorySessionState.ResourceList.ResourceCleanup cleanup) {
+    public static void addOrCleanupIfFail(MemorySession session, State.ResourceCleanup cleanup) {
         try {
             session.addCloseAction(cleanup);
         } catch (Throwable ex) {
@@ -137,32 +139,7 @@ public non-sealed class MemorySessionImpl implements MemorySession, SegmentAlloc
         return state.hashCode();
     }
 
-    public final static MemorySessionImpl GLOBAL = new ImplicitSession(null);
-
-    public final static MemorySessionImpl heapSession(Object o) {
-        return new ImplicitSession(o);
-    }
-
-    public final static MemorySessionImpl createConfined(Thread thread, Cleaner cleaner) {
-        return new MemorySessionImpl(new ConfinedSessionState(thread, cleaner));
-    }
-
-    public final static MemorySessionImpl createShared(Cleaner cleaner) {
-        return new MemorySessionImpl(new SharedSessionState(cleaner));
-    }
-
-    public final static MemorySessionImpl createImplicit() {
-        return new ImplicitSession(null);
-    }
-
-    static class ImplicitSession extends MemorySessionImpl {
-
-        final Object ref;
-
-        public ImplicitSession(Object ref) {
-            super(new ImplicitSessionState());
-            this.ref = ref;
-        }
+    public final static MemorySessionImpl GLOBAL = new MemorySessionImpl(new SharedSessionState.OfImplicit()) {
 
         @Override
         public void addCloseAction(Runnable runnable) {
@@ -174,25 +151,178 @@ public non-sealed class MemorySessionImpl implements MemorySession, SegmentAlloc
         public boolean isCloseable() {
             return false;
         }
+    };
 
-        static class ImplicitSessionState extends SharedSessionState {
-            public ImplicitSessionState() {
-                super(CleanerFactory.cleaner());
-            }
+    public final static MemorySessionImpl heapSession(Object o) {
+        return createImplicit(o);
+    }
+
+    public final static MemorySessionImpl createConfined(Thread thread, Cleaner cleaner) {
+        return new MemorySessionImpl(new ConfinedSessionState(thread, cleaner));
+    }
+
+    public final static MemorySessionImpl createShared(Cleaner cleaner) {
+        return new MemorySessionImpl(new SharedSessionState(cleaner));
+    }
+
+    public final static MemorySessionImpl createImplicit(Object ref) {
+        return new MemorySessionImpl(new SharedSessionState.OfImplicit()) {
+            final Object o = ref;
 
             @Override
-            public void checkValidState() {
-                // do nothing
+            public boolean isCloseable() {
+                return false;
             }
+        };
+    }
 
-            @Override
-            public void acquire() {
-                // do nothing
+    public abstract static class State {
+
+        static final int OPEN = 0;
+        static final int CLOSING = -1;
+        static final int CLOSED = -2;
+
+        int state = OPEN;
+
+        static final VarHandle STATE;
+
+        static {
+            try {
+                STATE = MethodHandles.lookup().findVarHandle(State.class, "state", int.class);
+            } catch (Throwable ex) {
+                throw new ExceptionInInitializerError(ex);
             }
+        }
 
-            @Override
-            public void release() {
+        static final int MAX_FORKS = Integer.MAX_VALUE;
+
+        final Cleaner.Cleanable cleanable;
+        final ResourceList resourceList;
+
+        State(ResourceList resourceList, Cleaner cleaner) {
+            this.resourceList = resourceList;
+            cleanable = cleaner != null ?
+                    cleaner.register(this, resourceList) :
+                    null;
+        }
+
+        /**
+         * Closes this session, executing any cleanup action (where provided).
+         *
+         * @throws IllegalStateException if this session is already closed or if this is
+         *                               a confined session and this method is called outside of the owner thread.
+         */
+        public final void close() {
+            try {
+                justClose();
+                if (cleanable != null) {
+                    cleanable.clean();
+                } else {
+                    resourceList.cleanup();
+                }
+            } finally {
                 Reference.reachabilityFence(this);
+            }
+        }
+
+        abstract void justClose();
+
+        public final void checkValidStateWrapException() {
+            try {
+                checkValidState();
+            } catch (ScopedMemoryAccess.ScopedAccessError ex) {
+                throw ex.newRuntimeException();
+            }
+        }
+
+        public abstract boolean isAlive();
+
+        public abstract Thread ownerThread();
+
+        @ForceInline
+        public final void checkValidState() {
+            if (ownerThread() != null && ownerThread() != Thread.currentThread()) {
+                throw WRONG_THREAD;
+            } else if (state < OPEN) {
+                throw ALREADY_CLOSED;
+            }
+        }
+
+        public abstract void acquire();
+
+        public abstract void release();
+
+        static IllegalStateException tooManyAcquires() {
+            return new IllegalStateException("Session acquire limit exceeded");
+        }
+
+        static IllegalStateException alreadyAcquired(int acquires) {
+            return new IllegalStateException(String.format("Session is acquired by %d clients", acquires));
+        }
+
+        static IllegalStateException alreadyClosed() {
+            return new IllegalStateException("Already closed");
+        }
+
+        static WrongThreadException wrongThread() {
+            return new WrongThreadException("Attempted access outside owning thread");
+        }
+
+        static final ScopedMemoryAccess.ScopedAccessError ALREADY_CLOSED = new ScopedMemoryAccess.ScopedAccessError(State::alreadyClosed);
+
+        static final ScopedMemoryAccess.ScopedAccessError WRONG_THREAD = new ScopedMemoryAccess.ScopedAccessError(State::wrongThread);
+
+        /**
+         * A list of all cleanup actions associated with a memory session. Cleanup actions are modelled as instances
+         * of the {@link ResourceCleanup} class, and, together, form a linked list. Depending on whether a session
+         * is shared or confined, different implementations of this class will be used, see {@link ConfinedSessionState.ConfinedList}
+         * and {@link SharedSessionState.SharedList}.
+         */
+        public abstract static class ResourceList implements Runnable {
+            ResourceCleanup fst;
+
+            public abstract void add(ResourceCleanup cleanup);
+
+            abstract void cleanup();
+
+            public final void run() {
+                cleanup(); // cleaner interop
+            }
+
+            static void cleanup(ResourceCleanup first) {
+                ResourceCleanup current = first;
+                while (current != null) {
+                    current.cleanup();
+                    current = current.next;
+                }
+            }
+        }
+
+        public abstract static class ResourceCleanup implements Runnable {
+            ResourceCleanup next;
+
+            public abstract void cleanup();
+
+            public final void run() {
+                cleanup();
+            }
+
+            static final ResourceCleanup CLOSED_LIST = new ResourceCleanup() {
+                @Override
+                public void cleanup() {
+                    throw new IllegalStateException("This resource list has already been closed!");
+                }
+            };
+
+            public static ResourceCleanup ofRunnable(Runnable cleanupAction) {
+                return cleanupAction instanceof ResourceCleanup ?
+                        (ResourceCleanup)cleanupAction :
+                        new ResourceCleanup() {
+                            @Override
+                            public void cleanup() {
+                                cleanupAction.run();
+                            }
+                        };
             }
         }
     }
