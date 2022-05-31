@@ -26,5 +26,5 @@
 package jdk.internal.foreign;
 
 public interface Scoped {
-    MemorySessionImpl sessionImpl();
+    MemorySessionImpl session();
 }

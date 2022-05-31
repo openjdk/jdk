@@ -32,7 +32,7 @@ import java.lang.foreign.MemorySegment;
 import java.lang.foreign.MemorySession;
 import java.lang.ref.Reference;
 import java.util.Objects;
-import jdk.internal.foreign.MemorySessionImpl;
+import jdk.internal.foreign.MemorySessionState;
 import jdk.internal.misc.ScopedMemoryAccess.ScopedAccessError;
 import jdk.internal.misc.VM;
 import jdk.internal.ref.Cleaner;
@@ -308,16 +308,12 @@ class Direct$Type$Buffer$RW$$BO$
 #if[rw]
 
     public long address() {
-        MemorySessionImpl session = session();
+        MemorySessionState session = session();
         if (session != null) {
-            if (session.ownerThread() == null && session.isCloseable()) {
+            if (session.ownerThread() == null && isCloseable()) {
                 throw new UnsupportedOperationException("ByteBuffer derived from closeable shared sessions not supported");
             }
-            try {
-                session.checkValidState();
-            } catch (ScopedAccessError e) {
-                throw new IllegalStateException("This segment is already closed");
-            }
+            session.checkValidStateWrapException();
         }
         return address;
     }

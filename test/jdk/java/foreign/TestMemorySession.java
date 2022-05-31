@@ -370,8 +370,8 @@ public class TestMemorySession {
     }
 
     private void keepAlive(MemorySession child, MemorySession parent) {
-        MemorySessionImpl sessionImpl = MemorySessionImpl.toSessionImpl(parent);
-        sessionImpl.acquire0();
-        child.addCloseAction(sessionImpl::release0);
+        MemorySessionImpl sessionImpl = (MemorySessionImpl)parent;
+        sessionImpl.state().acquire();
+        child.addCloseAction(sessionImpl.state()::release);
     }
 }

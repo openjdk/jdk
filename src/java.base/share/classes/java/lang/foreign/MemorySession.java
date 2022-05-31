@@ -127,7 +127,7 @@ import jdk.internal.javac.PreviewFeature;
  * @since 19
  */
 @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
-public sealed interface MemorySession extends AutoCloseable, SegmentAllocator permits MemorySessionImpl, MemorySessionImpl.NonCloseableView {
+public sealed interface MemorySession extends AutoCloseable, SegmentAllocator permits MemorySessionImpl {
 
     /**
      * {@return {@code true}, if this memory session is alive}

@@ -51,6 +51,7 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.MappedMemorySegmentImpl;
 import jdk.internal.foreign.MemorySessionImpl;
+import jdk.internal.foreign.MemorySessionState;
 import jdk.internal.misc.Blocker;
 import jdk.internal.misc.ExtendedMapMode;
 import jdk.internal.misc.Unsafe;
@@ -1209,8 +1210,7 @@ public class FileChannelImpl
     {
         Objects.requireNonNull(mode,"Mode is null");
         Objects.requireNonNull(session, "Session is null");
-        MemorySessionImpl sessionImpl = MemorySessionImpl.toSessionImpl(session);
-        sessionImpl.checkValidStateSlow();
+        MemorySessionImpl.checkValidState(session);
         if (offset < 0)
             throw new IllegalArgumentException("Requested bytes offset must be >= 0.");
         if (size < 0)
@@ -1227,14 +1227,13 @@ public class FileChannelImpl
             AbstractMemorySegmentImpl segment =
                 new MappedMemorySegmentImpl(unmapper.address(), unmapper, size,
                                             modes, session);
-            MemorySessionImpl.ResourceList.ResourceCleanup resource =
-                new MemorySessionImpl.ResourceList.ResourceCleanup() {
+            MemorySessionImpl.addOrCleanupIfFail(session,
+                new MemorySessionState.ResourceList.ResourceCleanup() {
                     @Override
                     public void cleanup() {
                         unmapper.unmap();
                     }
-                };
-            sessionImpl.addOrCleanupIfFail(resource);
+                });
             return segment;
         } else {
             return new MappedMemorySegmentImpl.EmptyMappedMemorySegmentImpl(modes, session);

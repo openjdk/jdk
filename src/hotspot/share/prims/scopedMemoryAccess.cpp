@@ -156,13 +156,13 @@ JVM_END
 #define PKG_FOREIGN "Ljdk/internal/foreign/"
 
 #define MEMACCESS "ScopedMemoryAccess"
-#define SCOPE PKG_FOREIGN "MemorySessionImpl;"
+#define SCOPE PKG_FOREIGN "MemorySessionState;"
 
 #define CC (char*)  /*cast a literal from (const char*)*/
 #define FN_PTR(f) CAST_FROM_FN_PTR(void*, &f)
 
 static JNINativeMethod jdk_internal_misc_ScopedMemoryAccess_methods[] = {
-    {CC "closeScope0",   CC "(" SCOPE ")Z",           FN_PTR(ScopedMemoryAccess_closeScope)},
+    {CC "closeScope",   CC "(" SCOPE ")Z",           FN_PTR(ScopedMemoryAccess_closeScope)},
 };
 
 #undef CC

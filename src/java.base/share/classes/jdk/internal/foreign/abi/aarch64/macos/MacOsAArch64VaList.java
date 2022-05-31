@@ -127,7 +127,7 @@ public non-sealed class MacOsAArch64VaList implements VaList, Scoped {
     @Override
     public void skip(MemoryLayout... layouts) {
         Objects.requireNonNull(layouts);
-        MemorySessionImpl.toSessionImpl(session()).checkValidStateSlow();
+        MemorySessionImpl.checkValidState(session);
 
         for (MemoryLayout layout : layouts) {
             Objects.requireNonNull(layout);
@@ -148,18 +148,13 @@ public non-sealed class MacOsAArch64VaList implements VaList, Scoped {
     }
 
     @Override
-    public MemorySession session() {
-        return session;
-    }
-
-    @Override
-    public MemorySessionImpl sessionImpl() {
-        return MemorySessionImpl.toSessionImpl(session());
+    public MemorySessionImpl session() {
+        return (MemorySessionImpl)session;
     }
 
     @Override
     public VaList copy() {
-        MemorySessionImpl.toSessionImpl(session()).checkValidStateSlow();
+        MemorySessionImpl.checkValidState(session);
         return new MacOsAArch64VaList(segment, session);
     }
 
@@ -174,7 +169,7 @@ public non-sealed class MacOsAArch64VaList implements VaList, Scoped {
         private final List<SimpleVaArg> args = new ArrayList<>();
 
         public Builder(MemorySession session) {
-            MemorySessionImpl.toSessionImpl(session).checkValidStateSlow();
+            MemorySessionImpl.checkValidState(session);
             this.session = session;
         }
 

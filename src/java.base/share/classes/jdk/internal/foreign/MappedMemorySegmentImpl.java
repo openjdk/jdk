@@ -78,19 +78,19 @@ public class MappedMemorySegmentImpl extends NativeMemorySegmentImpl {
     }
 
     public void load() {
-        SCOPED_MEMORY_ACCESS.load(sessionImpl(), min, unmapper.isSync(), length);
+        SCOPED_MEMORY_ACCESS.load(session().state(), min, unmapper.isSync(), length);
     }
 
     public void unload() {
-        SCOPED_MEMORY_ACCESS.unload(sessionImpl(), min, unmapper.isSync(), length);
+        SCOPED_MEMORY_ACCESS.unload(session().state(), min, unmapper.isSync(), length);
     }
 
     public boolean isLoaded() {
-        return SCOPED_MEMORY_ACCESS.isLoaded(sessionImpl(), min, unmapper.isSync(), length);
+        return SCOPED_MEMORY_ACCESS.isLoaded(session().state(), min, unmapper.isSync(), length);
     }
 
     public void force() {
-        SCOPED_MEMORY_ACCESS.force(sessionImpl(), unmapper.fileDescriptor(), min, unmapper.isSync(), 0, length);
+        SCOPED_MEMORY_ACCESS.force(session().state(), unmapper.fileDescriptor(), min, unmapper.isSync(), 0, length);
     }
 
     public static class EmptyMappedMemorySegmentImpl extends MappedMemorySegmentImpl {

@@ -320,7 +320,7 @@ public non-sealed class LinuxAArch64VaList implements VaList, Scoped {
     @Override
     public void skip(MemoryLayout... layouts) {
         Objects.requireNonNull(layouts);
-        MemorySessionImpl.toSessionImpl(session()).checkValidStateSlow();
+        MemorySessionImpl.checkValidState(session());
         for (MemoryLayout layout : layouts) {
             Objects.requireNonNull(layout);
             TypeClass typeClass = TypeClass.classifyLayout(layout);
@@ -346,13 +346,8 @@ public non-sealed class LinuxAArch64VaList implements VaList, Scoped {
     }
 
     @Override
-    public MemorySession session() {
-        return segment.session();
-    }
-
-    @Override
-    public MemorySessionImpl sessionImpl() {
-        return MemorySessionImpl.toSessionImpl(session());
+    public MemorySessionImpl session() {
+        return (MemorySessionImpl)segment.session();
     }
 
     @Override

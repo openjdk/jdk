@@ -30,6 +30,7 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.foreign.UnmapperProxy;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.MemorySessionImpl;
+import jdk.internal.foreign.MemorySessionState;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM.BufferPool;
@@ -760,16 +761,21 @@ public abstract sealed class Buffer
     }
 
     @ForceInline
-    final MemorySessionImpl session() {
+    final MemorySessionState session() {
         if (segment != null) {
-            return ((AbstractMemorySegmentImpl)segment).sessionImpl();
+            return ((AbstractMemorySegmentImpl)segment).session().state();
         } else {
             return null;
         }
     }
 
+    @ForceInline
+    final boolean isCloseable() {
+        return (segment != null && segment.session().isCloseable());
+    }
+
     final void checkSession() {
-        MemorySessionImpl session = session();
+        MemorySessionState session = session();
         if (session != null) {
             try {
                 session.checkValidState();
@@ -836,8 +842,8 @@ public abstract sealed class Buffer
                     if (async && session.ownerThread() != null) {
                         throw new IllegalStateException("Confined session not supported");
                     }
-                    session.acquire0();
-                    return session::release0;
+                    session.acquire();
+                    return session::release;
                 }
 
                 @Override

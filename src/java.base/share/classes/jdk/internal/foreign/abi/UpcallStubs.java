@@ -29,6 +29,7 @@ import java.lang.foreign.MemorySegment;
 import java.lang.foreign.MemorySession;
 
 import jdk.internal.foreign.MemorySessionImpl;
+import jdk.internal.foreign.MemorySessionState;
 
 public class UpcallStubs {
 
@@ -49,7 +50,7 @@ public class UpcallStubs {
     }
 
     static MemorySegment makeUpcall(long entry, MemorySession session) {
-        MemorySessionImpl.toSessionImpl(session).addOrCleanupIfFail(new MemorySessionImpl.ResourceList.ResourceCleanup() {
+        MemorySessionImpl.addOrCleanupIfFail(session, new MemorySessionState.ResourceList.ResourceCleanup() {
             @Override
             public void cleanup() {
                 freeUpcallStub(entry);

@@ -27,7 +27,7 @@ package java.lang.invoke;
 import jdk.internal.access.JavaNioAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
-import jdk.internal.foreign.MemorySessionImpl;
+import jdk.internal.foreign.MemorySessionState;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.Preconditions;
@@ -614,10 +614,10 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
         }
 
         @ForceInline
-        static MemorySessionImpl session(ByteBuffer bb) {
+        static MemorySessionState session(ByteBuffer bb) {
             MemorySegment segment = NIO_ACCESS.bufferSegment(bb);
             return segment != null ?
-                    ((AbstractMemorySegmentImpl)segment).sessionImpl() : null;
+                    ((AbstractMemorySegmentImpl)segment).session().state() : null;
         }
 
         @ForceInline
