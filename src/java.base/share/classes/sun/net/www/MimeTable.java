@@ -185,7 +185,7 @@ public class MimeTable implements FileNameMap {
         // present, then strip it and use the prefix
         int hashIndex = fname.lastIndexOf(HASH_MARK);
         if (hashIndex > 0) {
-            String ext = getFileExtension(fname.substring(0, hashIndex - 1));
+            String ext = getFileExtension(fname.substring(0, hashIndex));
             if (!ext.isEmpty()) {
                 entry = findByExt(ext);
                 if (entry != null) {
