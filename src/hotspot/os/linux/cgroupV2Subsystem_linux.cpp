@@ -217,12 +217,14 @@ char* CgroupV2Controller::construct_path(char* mount_path, char *cgroup_path) {
   int buflen;
   strncpy(buf, mount_path, MAXPATHLEN);
   buf[MAXPATHLEN] = '\0';
-  buflen = strlen(buf);
-  if ((buflen + strlen(cgroup_path)) > MAXPATHLEN) {
-    return NULL;
+  if (strcmp(cgroup_path, "/") != 0) {
+    buflen = strlen(buf);
+    if ((buflen + strlen(cgroup_path)) > MAXPATHLEN) {
+      return NULL;
+    }
+    strncat(buf, cgroup_path, MAXPATHLEN-buflen);
+    buf[MAXPATHLEN] = '\0';
   }
-  strncat(buf, cgroup_path, MAXPATHLEN-buflen);
-  buf[MAXPATHLEN] = '\0';
   return os::strdup(buf);
 }
 
