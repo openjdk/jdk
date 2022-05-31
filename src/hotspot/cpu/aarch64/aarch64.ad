@@ -2468,6 +2468,9 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
       break;
     case Op_LoadVectorGather:
     case Op_StoreVectorScatter:
+    case Op_CompressV:
+    case Op_CompressM:
+    case Op_ExpandV:
       return false;
     default:
       break;
@@ -8658,7 +8661,6 @@ instruct countTrailingZerosL(iRegINoSp dst, iRegL src) %{
 //
 
 instruct popCountI(iRegINoSp dst, iRegIorL2I src, vRegF tmp) %{
-  predicate(UsePopCountInstruction);
   match(Set dst (PopCountI src));
   effect(TEMP tmp);
   ins_cost(INSN_COST * 13);
@@ -8680,7 +8682,6 @@ instruct popCountI(iRegINoSp dst, iRegIorL2I src, vRegF tmp) %{
 %}
 
 instruct popCountI_mem(iRegINoSp dst, memory4 mem, vRegF tmp) %{
-  predicate(UsePopCountInstruction);
   match(Set dst (PopCountI (LoadI mem)));
   effect(TEMP tmp);
   ins_cost(INSN_COST * 13);
@@ -8703,7 +8704,6 @@ instruct popCountI_mem(iRegINoSp dst, memory4 mem, vRegF tmp) %{
 
 // Note: Long.bitCount(long) returns an int.
 instruct popCountL(iRegINoSp dst, iRegL src, vRegD tmp) %{
-  predicate(UsePopCountInstruction);
   match(Set dst (PopCountL src));
   effect(TEMP tmp);
   ins_cost(INSN_COST * 13);
@@ -8723,7 +8723,6 @@ instruct popCountL(iRegINoSp dst, iRegL src, vRegD tmp) %{
 %}
 
 instruct popCountL_mem(iRegINoSp dst, memory8 mem, vRegD tmp) %{
-  predicate(UsePopCountInstruction);
   match(Set dst (PopCountL (LoadL mem)));
   effect(TEMP tmp);
   ins_cost(INSN_COST * 13);

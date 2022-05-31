@@ -24,7 +24,7 @@
  */
 package jdk.incubator.vector;
 
-import java.nio.ByteBuffer;
+import java.lang.foreign.MemorySegment;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntUnaryOperator;
@@ -476,6 +476,22 @@ final class Int128Vector extends IntVector {
 
     @Override
     @ForceInline
+    public Int128Vector compress(VectorMask<Integer> m) {
+        return (Int128Vector)
+            super.compressTemplate(Int128Mask.class,
+                                   (Int128Mask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Int128Vector expand(VectorMask<Integer> m) {
+        return (Int128Vector)
+            super.expandTemplate(Int128Mask.class,
+                                   (Int128Mask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
     public Int128Vector selectFrom(Vector<Integer> v) {
         return (Int128Vector)
             super.selectFromTemplate((Int128Vector) v);  // specialize
@@ -652,6 +668,15 @@ final class Int128Vector extends IntVector {
         public Int128Mask not() {
             return xor(maskAll(true));
         }
+
+        @Override
+        @ForceInline
+        public Int128Mask compress() {
+            return (Int128Mask)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
+                Int128Vector.class, Int128Mask.class, ETYPE, VLENGTH, null, this,
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
+        }
+
 
         // Binary operations
 
@@ -845,29 +870,15 @@ final class Int128Vector extends IntVector {
     @ForceInline
     @Override
     final
-    IntVector fromByteArray0(byte[] a, int offset) {
-        return super.fromByteArray0Template(a, offset);  // specialize
+    IntVector fromMemorySegment0(MemorySegment ms, long offset) {
+        return super.fromMemorySegment0Template(ms, offset);  // specialize
     }
 
     @ForceInline
     @Override
     final
-    IntVector fromByteArray0(byte[] a, int offset, VectorMask<Integer> m) {
-        return super.fromByteArray0Template(Int128Mask.class, a, offset, (Int128Mask) m);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    IntVector fromByteBuffer0(ByteBuffer bb, int offset) {
-        return super.fromByteBuffer0Template(bb, offset);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    IntVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Integer> m) {
-        return super.fromByteBuffer0Template(Int128Mask.class, bb, offset, (Int128Mask) m);  // specialize
+    IntVector fromMemorySegment0(MemorySegment ms, long offset, VectorMask<Integer> m) {
+        return super.fromMemorySegment0Template(Int128Mask.class, ms, offset, (Int128Mask) m);  // specialize
     }
 
     @ForceInline
@@ -895,22 +906,8 @@ final class Int128Vector extends IntVector {
     @ForceInline
     @Override
     final
-    void intoByteArray0(byte[] a, int offset) {
-        super.intoByteArray0Template(a, offset);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    void intoByteArray0(byte[] a, int offset, VectorMask<Integer> m) {
-        super.intoByteArray0Template(Int128Mask.class, a, offset, (Int128Mask) m);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    void intoByteBuffer0(ByteBuffer bb, int offset, VectorMask<Integer> m) {
-        super.intoByteBuffer0Template(Int128Mask.class, bb, offset, (Int128Mask) m);
+    void intoMemorySegment0(MemorySegment ms, long offset, VectorMask<Integer> m) {
+        super.intoMemorySegment0Template(Int128Mask.class, ms, offset, (Int128Mask) m);
     }
 
 
@@ -919,3 +916,4 @@ final class Int128Vector extends IntVector {
     // ================================================
 
 }
+
