@@ -36,7 +36,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/init.hpp"
 #include "runtime/prefetch.inline.hpp"
-#inculde "runtime/safepoint.hpp"
+#include "runtime/safepoint.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -368,14 +368,34 @@ inline HeapWord* HeapRegion::oops_on_memregion_iterate_in_unparsable(MemRegion m
   HeapWord* const end = MIN2(mr.end(), pb);
 
   // Find the obj that extends onto mr.start().
-  // The BOT is stable enough to be read concurrently.
+  //
+  // The BOT itself is stable enough to be read at any time as
+  // * during refinement the individual elements of the BOT are read and written
+  //   atomically and any visible mix of new and old BOT entries will eventually lead
+  //   to some (possibly outdated) object start.
+  //   The result of block_start() during concurrent refinement may be outdated - the
+  //   scrubbing may have written a (partial) filler object header exactly crossing
+  //   that perceived object start. So we have to advance to the next live object
+  //   (using the bitmap) to be able to start the following iteration.
+  //
+  // * during GC the BOT does not change while reading, and the objects corresponding
+  //   to these block starts are valid as "holes" are filled atomically wrt to
+  //   safepoints.
+  //
   HeapWord* cur = block_start(start, pb);
+
+  if (!is_gc_active) {
+    G1CMBitMap* bitmap = G1CollectedHeap::heap()->concurrent_mark()->mark_bitmap();
+    cur = bitmap->get_next_marked_addr(cur, end);
+    // We might not have found a live object in the range to process. Return in that case.
+    if (cur == end) {
+      return end;
+    }
+  }
 
   while (true) {
     oop obj = cast_to_oop(cur);
     assert(oopDesc::is_oop(obj, true), "Not an oop at " PTR_FORMAT, p2i(cur));
-    assert(obj->klass_or_null() != NULL,
-           "Unparsable heap at " PTR_FORMAT, p2i(cur));
 
     size_t block_size;
     bool is_dead = is_obj_dead_size_below_pb(obj, pb, block_size);
@@ -437,8 +457,6 @@ inline HeapWord* HeapRegion::oops_on_memregion_iterate(MemRegion mr, Closure* cl
   while (true) {
     oop obj = cast_to_oop(cur);
     assert(oopDesc::is_oop(obj, true), "Not an oop at " PTR_FORMAT, p2i(cur));
-    assert(obj->klass_or_null() != NULL,
-           "Unparsable heap at " PTR_FORMAT, p2i(cur));
 
     bool is_precise = false;
 
