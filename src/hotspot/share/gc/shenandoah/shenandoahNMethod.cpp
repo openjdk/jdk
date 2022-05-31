@@ -161,8 +161,7 @@ void ShenandoahNMethod::heal_nmethod(nmethod* nm) {
     ShenandoahKeepAliveClosure cl;
     data->oops_do(&cl);
   } else if (heap->is_concurrent_weak_root_in_progress() ||
-             heap->is_concurrent_strong_root_in_progress() ||
-             (Continuations::enabled() && heap->is_evacuation_in_progress())) {
+             heap->is_concurrent_strong_root_in_progress() ) {
     ShenandoahEvacOOMScope evac_scope;
     heal_nmethod_metadata(data);
   } else {
