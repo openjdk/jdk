@@ -73,7 +73,7 @@ static const struct CheckInsn barrierInsn[] = {
   { 0x000fffff, 0x00028293, "addi   t0, t0, imm1    "},
   { 0xffffffff, 0x00b29293, "slli   t0, t0, 11      "},
   { 0x000fffff, 0x00028293, "addi   t0, t0, imm2    "},
-  { 0xffffffff, 0x00529293, "slli   t0, t0, 5       "},
+  { 0xffffffff, 0x00629293, "slli   t0, t0, 6       "},
   { 0x000fffff, 0x000280e7, "jalr   ra, imm3(t0)    "},
   { 0x00000fff, 0x0000006f, "j      skip            "}
   /* guard: */
