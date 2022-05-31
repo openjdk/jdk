@@ -35,7 +35,7 @@
  * @requires vm.continuations
  * @enablePreview
  * @modules java.base/java.lang:+open java.management
- * @run testng/othervm -XX:-VMContinuations VirtualThreads
+ * @run testng/othervm -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations VirtualThreads
  */
 
 import java.lang.management.ManagementFactory;

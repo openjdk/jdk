@@ -37,7 +37,7 @@
  * @enablePreview
  * @modules java.base/java.lang:+open
  * @library /test/lib
- * @run testng/othervm/timeout=300 -XX:-VMContinuations ThreadAPI
+ * @run testng/othervm/timeout=300 -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations ThreadAPI
  */
 
 import java.time.Duration;

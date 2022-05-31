@@ -36,7 +36,7 @@
  * @requires vm.continuations
  * @enablePreview
  * @library /test/lib
- * @run testng/othervm/timeout=300 -XX:-VMContinuations BlockingSocketOps
+ * @run testng/othervm/timeout=300 -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations BlockingSocketOps
  */
 
 import java.io.Closeable;

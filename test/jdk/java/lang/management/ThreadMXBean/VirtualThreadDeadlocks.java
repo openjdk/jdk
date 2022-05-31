@@ -38,9 +38,9 @@
  * @requires vm.continuations
  * @enablePreview
  * @modules java.management
- * @run main/othervm -XX:-VMContinuations VirtualThreadDeadlocks PP
- * @run main/othervm -XX:-VMContinuations VirtualThreadDeadlocks PV
- * @run main/othervm -XX:-VMContinuations VirtualThreadDeadlocks VV
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations VirtualThreadDeadlocks PP
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations VirtualThreadDeadlocks PV
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations VirtualThreadDeadlocks VV
  */
 
 import java.lang.management.ManagementFactory;
