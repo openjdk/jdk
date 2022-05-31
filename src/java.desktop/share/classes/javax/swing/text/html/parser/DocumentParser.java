@@ -25,14 +25,13 @@
 
 package javax.swing.text.html.parser;
 
-import javax.swing.text.SimpleAttributeSet;
-import javax.swing.text.html.HTMLEditorKit;
-import javax.swing.text.html.HTML;
-import javax.swing.text.ChangedCharSetException;
+import java.io.IOException;
+import java.io.Reader;
 
-import java.util.*;
-import java.io.*;
-import java.net.*;
+import javax.swing.text.ChangedCharSetException;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.html.HTML;
+import javax.swing.text.html.HTMLEditorKit;
 
 /**
  * A Parser for HTML Documents (actually, you can specify a DTD, but
@@ -178,14 +177,10 @@ public class DocumentParser extends javax.swing.text.html.parser.Parser {
 
 
     protected void handleComment(char[] text) {
-        System.out.println("DocumentParser");
         if (debugFlag) {
             debug("comment: ->" + new String(text) + "<-"
                   + " pos: " + getCurrentPos());
         }
-        System.out.println("comment: ->" + new String(text) + "<-"
-                + " pos: " + getCurrentPos());
-        System.out.println("block start: " + getBlockStartPosition());
         callback.handleComment(text, getBlockStartPosition());
     }
 
