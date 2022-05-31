@@ -185,7 +185,7 @@ public:
   // Returns whether the given object is dead based on TAMS and mark word.
   // For an object to be considered dead it must be below TAMS and scrubbed.
   bool is_obj_dead(oop obj, HeapWord* pb) const;
-  bool is_obj_dead_size_below_pb(HeapWord* obj, HeapWord* pb, size_t& block_size) const;
+  bool is_obj_dead_size_below_pb(HeapWord* addr, HeapWord* pb, size_t& block_size) const;
 
   // Returns the object size for all valid block starts
   // and the amount of unallocated words if called on top()
@@ -551,6 +551,7 @@ public:
   // Determine if an object is in the parsable or the to-be-scrubbed area.
   inline bool obj_in_parsable_area(const HeapWord* addr, HeapWord* pb) const;
   inline bool obj_in_scrubbing_area(oop obj, HeapWord* pb) const;
+  inline bool obj_in_scrubbing_area(HeapWord* addr, HeapWord* const pb) const;
 
   bool obj_allocated_since_marking_start(oop obj) const {
     return cast_from_oop<HeapWord*>(obj) >= top_at_mark_start();
