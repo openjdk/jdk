@@ -379,9 +379,7 @@ class ServerImpl implements TimeSource {
                     // modified (leading to ConcurrentModificationException) due to
                     // any subsequent select operations that we invoke on the
                     // selector (in this same thread).
-                    final Set<SelectionKey> copy = new HashSet<>(selected);
-                    // iterate over the copy
-                    for (final SelectionKey key : copy) {
+                    for (final SelectionKey key : selected.toArray(SelectionKey[]::new)) {
                         // remove the key from the original selected keys (live) Set
                         selected.remove(key);
                         if (key.equals (listenerKey)) {
