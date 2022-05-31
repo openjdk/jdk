@@ -511,10 +511,10 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
-    public JCTree visitExpressionCaseLabel(ExpressionCaseLabelTree node, P p) {
-        JCExpressionCaseLabel t = (JCExpressionCaseLabel) node;
+    public JCTree visitConstantCaseLabel(ConstantCaseLabelTree node, P p) {
+        JCConstantCaseLabel t = (JCConstantCaseLabel) node;
         JCExpression expr = copy(t.expr, p);
-        return M.at(t.pos).ExpressionCaseLabel(expr);
+        return M.at(t.pos).ConstantCaseLabel(expr);
     }
 
     @Override

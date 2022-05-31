@@ -878,7 +878,7 @@ public class Pretty extends JCTree.Visitor {
     }
 
     @Override
-    public void visitExpressionCaseLabel(JCExpressionCaseLabel tree) {
+    public void visitConstantCaseLabel(JCConstantCaseLabel tree) {
         try {
             print(tree.expr);
         } catch (IOException e) {

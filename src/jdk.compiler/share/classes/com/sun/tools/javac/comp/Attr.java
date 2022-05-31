@@ -1716,8 +1716,8 @@ public class Attr extends JCTree.Visitor {
                 MatchBindings currentBindings = prevBindings;
                 boolean wasUnconditionalPattern = hasUnconditionalPattern;
                 for (JCCaseLabel label : c.labels) {
-                    if (label.hasTag(EXPRESSIONCASELABEL)) {
-                        JCExpression expr = ((JCExpressionCaseLabel) label).expr;
+                    if (label.hasTag(CONSTANTCASELABEL)) {
+                        JCExpression expr = ((JCConstantCaseLabel) label).expr;
                         if (TreeInfo.isNull(expr)) {
                             preview.checkSourceLevel(expr.pos(), Feature.CASE_NULL);
                             if (hasNullPattern) {

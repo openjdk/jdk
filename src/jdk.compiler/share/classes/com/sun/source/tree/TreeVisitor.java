@@ -279,14 +279,14 @@ public interface TreeVisitor<R,P> {
     R visitDefaultCaseLabel(DefaultCaseLabelTree node, P p);
 
     /**
-     * Visits a {@code ExpressionCaseLabelTree} node.
+     * Visits a {@code ConstantCaseLabelTree} node.
      * @param node the node being visited
      * @param p a parameter value
      * @return a result value
      * @since 19
      */
     @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
-    R visitExpressionCaseLabel(ExpressionCaseLabelTree node, P p);
+    R visitConstantCaseLabel(ConstantCaseLabelTree node, P p);
 
     /**
      * Visits a {@code PatternCaseLabelTree} node.

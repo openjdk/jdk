@@ -245,12 +245,12 @@ public interface Tree {
         DEFAULT_CASE_LABEL(DefaultCaseLabelTree.class),
 
         /**
-         * Used for instances of {@link ExpressionCaseLabelTree}.
+         * Used for instances of {@link ConstantCaseLabelTree}.
          *
          * @since 19
          */
         @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
-        EXPRESSION_CASE_LABEL(ExpressionCaseLabelTree.class),
+        CONSTANT_CASE_LABEL(ConstantCaseLabelTree.class),
 
         /**
          * Used for instances of {@link PatternCaseLabelTree}.

@@ -312,7 +312,7 @@ public class TreeScanner extends Visitor {
     }
 
     @Override
-    public void visitExpressionCaseLabel(JCExpressionCaseLabel tree) {
+    public void visitConstantCaseLabel(JCConstantCaseLabel tree) {
         scan(tree.expr);
     }
 

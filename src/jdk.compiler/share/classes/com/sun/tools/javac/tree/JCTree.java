@@ -246,7 +246,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         /* Case labels.
          */
         DEFAULTCASELABEL,
-        EXPRESSIONCASELABEL,
+        CONSTANTCASELABEL,
         PATTERNCASELABEL,
 
         /** Indexed array expressions, of type Indexed.
@@ -1335,8 +1335,8 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         @Override @DefinedBy(Api.COMPILER_TREE)
         public List<JCExpression> getExpressions() {
             return labels.stream()
-                         .filter(p -> p.hasTag(EXPRESSIONCASELABEL))
-                         .map(p -> ((JCExpressionCaseLabel) p).expr)
+                         .filter(p -> p.hasTag(CONSTANTCASELABEL))
+                         .map(p -> ((JCConstantCaseLabel) p).expr)
                          .collect(List.collector());
         }
 
@@ -2308,39 +2308,39 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
     }
 
-    public static class JCExpressionCaseLabel extends JCCaseLabel
-            implements ExpressionCaseLabelTree {
+    public static class JCConstantCaseLabel extends JCCaseLabel
+            implements ConstantCaseLabelTree {
 
         public JCExpression expr;
 
-        protected JCExpressionCaseLabel(JCExpression expr) {
+        protected JCConstantCaseLabel(JCExpression expr) {
             this.expr = expr;
         }
 
         @Override @DefinedBy(Api.COMPILER_TREE)
-        public JCExpression getExpression() {
+        public JCExpression getConstantExpression() {
             return expr;
         }
 
         @Override
         public void accept(Visitor v) {
-            v.visitExpressionCaseLabel(this);
+            v.visitConstantCaseLabel(this);
         }
 
         @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() {
-            return Kind.EXPRESSION_CASE_LABEL;
+            return Kind.CONSTANT_CASE_LABEL;
         }
 
         @Override
         @DefinedBy(Api.COMPILER_TREE)
         public <R, D> R accept(TreeVisitor<R, D> v, D d) {
-            return v.visitExpressionCaseLabel(this, d);
+            return v.visitConstantCaseLabel(this, d);
         }
 
         @Override
         public Tag getTag() {
-            return EXPRESSIONCASELABEL;
+            return CONSTANTCASELABEL;
         }
 
     }
@@ -3523,7 +3523,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public void visitTypeTest(JCInstanceOf that)         { visitTree(that); }
         public void visitBindingPattern(JCBindingPattern that) { visitTree(that); }
         public void visitDefaultCaseLabel(JCDefaultCaseLabel that) { visitTree(that); }
-        public void visitExpressionCaseLabel(JCExpressionCaseLabel that) { visitTree(that); }
+        public void visitConstantCaseLabel(JCConstantCaseLabel that) { visitTree(that); }
         public void visitPatternCaseLabel(JCPatternCaseLabel that) { visitTree(that); }
         public void visitParenthesizedPattern(JCParenthesizedPattern that) { visitTree(that); }
         public void visitRecordPattern(JCRecordPattern that) { visitTree(that); }

@@ -569,7 +569,7 @@ public class TransTypes extends TreeTranslator {
     }
 
     @Override
-    public void visitExpressionCaseLabel(JCExpressionCaseLabel tree) {
+    public void visitConstantCaseLabel(JCConstantCaseLabel tree) {
         tree.expr = translate(tree.expr, null);
         result = tree;
     }

@@ -671,7 +671,7 @@ public class SimpleTreeVisitor <R,P> implements TreeVisitor<R,P> {
      */
     @Override
     @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
-    public R visitExpressionCaseLabel(ExpressionCaseLabelTree node, P p) {
+    public R visitConstantCaseLabel(ConstantCaseLabelTree node, P p) {
         return defaultAction(node, p);
     }
 

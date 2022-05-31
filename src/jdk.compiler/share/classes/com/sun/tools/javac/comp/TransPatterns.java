@@ -83,7 +83,7 @@ import com.sun.tools.javac.tree.JCTree.JCCaseLabel;
 import com.sun.tools.javac.tree.JCTree.JCClassDecl;
 import com.sun.tools.javac.tree.JCTree.JCContinue;
 import com.sun.tools.javac.tree.JCTree.JCDoWhileLoop;
-import com.sun.tools.javac.tree.JCTree.JCExpressionCaseLabel;
+import com.sun.tools.javac.tree.JCTree.JCConstantCaseLabel;
 import com.sun.tools.javac.tree.JCTree.JCFieldAccess;
 import com.sun.tools.javac.tree.JCTree.JCLambda;
 import com.sun.tools.javac.tree.JCTree.JCMethodInvocation;
@@ -571,7 +571,7 @@ public class TransPatterns extends TreeTranslator {
                         } else {
                             value = i++;
                         }
-                        translatedLabels.add(make.ExpressionCaseLabel(make.Literal(value)));
+                        translatedLabels.add(make.ConstantCaseLabel(make.Literal(value)));
                     }
                 }
                 c.labels = translatedLabels.toList();
@@ -641,8 +641,8 @@ public class TransPatterns extends TreeTranslator {
             } else {
                 return (LoadableConstant) principalType;
             }
-        } else if (l.hasTag(Tag.EXPRESSIONCASELABEL)&& !TreeInfo.isNullCaseLabel(l)) {
-            JCExpression expr = ((JCExpressionCaseLabel) l).expr;
+        } else if (l.hasTag(Tag.CONSTANTCASELABEL)&& !TreeInfo.isNullCaseLabel(l)) {
+            JCExpression expr = ((JCConstantCaseLabel) l).expr;
             if ((expr.type.tsym.flags_field & Flags.ENUM) != 0) {
                 return LoadableConstant.String(((JCIdent) expr).name.toString());
             } else {

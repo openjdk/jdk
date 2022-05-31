@@ -4328,8 +4328,8 @@ public class Check {
         for (List<JCCase> l = cases; l.nonEmpty(); l = l.tail) {
             JCCase c = l.head;
             for (JCCaseLabel label : c.labels) {
-                if (label.hasTag(EXPRESSIONCASELABEL)) {
-                    JCExpression expr = ((JCExpressionCaseLabel) label).expr;
+                if (label.hasTag(CONSTANTCASELABEL)) {
+                    JCExpression expr = ((JCConstantCaseLabel) label).expr;
                     if (TreeInfo.isNull(expr)) {
                         if (wasPattern && !wasTypePattern && !wasNonEmptyFallThrough) {
                             log.error(label.pos(), Errors.FlowsThroughFromPattern);

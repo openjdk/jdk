@@ -3125,7 +3125,7 @@ public class JavacParser implements Parser {
                 return toP(F.at(patternPos).PatternCaseLabel(p, guard));
             } else {
                 JCExpression expr = term(EXPR | NOLAMBDA);
-                return toP(F.at(patternPos).ExpressionCaseLabel(expr));
+                return toP(F.at(patternPos).ConstantCaseLabel(expr));
             }
         }
 

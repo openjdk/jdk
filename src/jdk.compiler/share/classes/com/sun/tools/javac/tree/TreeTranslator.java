@@ -369,7 +369,7 @@ public class TreeTranslator extends JCTree.Visitor {
     }
 
     @Override
-    public void visitExpressionCaseLabel(JCExpressionCaseLabel tree) {
+    public void visitConstantCaseLabel(JCConstantCaseLabel tree) {
         tree.expr = translate(tree.expr);
         result = tree;
     }

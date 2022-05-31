@@ -802,8 +802,8 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
      */
     @Override
     @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
-    public R visitExpressionCaseLabel(ExpressionCaseLabelTree node, P p) {
-        return scan(node.getExpression(), p);
+    public R visitConstantCaseLabel(ConstantCaseLabelTree node, P p) {
+        return scan(node.getConstantExpression(), p);
     }
 
     /**

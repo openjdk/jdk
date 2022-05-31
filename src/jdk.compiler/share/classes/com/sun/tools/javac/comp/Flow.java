@@ -742,8 +742,8 @@ public class Flow {
                                           .flatMap(c -> c.labels.stream())
                                           .filter(TreeInfo::unguardedCaseLabel)
                                           .filter(l -> !l.hasTag(DEFAULTCASELABEL))
-                                          .map(l -> l.hasTag(EXPRESSIONCASELABEL) ? ((JCExpressionCaseLabel) l).expr
-                                                                                  : ((JCPatternCaseLabel) l).pat)
+                                          .map(l -> l.hasTag(CONSTANTCASELABEL) ? ((JCConstantCaseLabel) l).expr
+                                                                                : ((JCPatternCaseLabel) l).pat)
                                           .collect(Collectors.toCollection(HashSet::new));
             return coveredSymbols(pos, selector.type, labels);
         }
@@ -2583,8 +2583,8 @@ public class Flow {
                 if (l.head.stats.isEmpty() &&
                     l.tail.nonEmpty() &&
                     l.tail.head.labels.size() == 1 &&
-                    l.tail.head.labels.head.hasTag(EXPRESSIONCASELABEL) &&
-                    TreeInfo.isNull(((JCExpressionCaseLabel) l.tail.head.labels.head).expr)) {
+                    l.tail.head.labels.head.hasTag(CONSTANTCASELABEL) &&
+                    TreeInfo.isNull(((JCConstantCaseLabel) l.tail.head.labels.head).expr)) {
                     //handling:
                     //case Integer i:
                     //case null:

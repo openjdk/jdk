@@ -28,17 +28,17 @@ package com.sun.source.tree;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * A case label element that refers to an expression
+ * A case label element that refers to a constant expression
  * @since 19
  */
 @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
-public interface ExpressionCaseLabelTree extends CaseLabelTree {
+public interface ConstantCaseLabelTree extends CaseLabelTree {
 
     /**
-     * The expression for the case.
+     * The constant expression for the case.
      *
-     * @return the expression
+     * @return the constant expression
      */
-    public ExpressionTree getExpression();
+    public ExpressionTree getConstantExpression();
 
 }

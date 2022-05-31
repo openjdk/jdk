@@ -1303,8 +1303,8 @@ public class TreeInfo {
     public static boolean isErrorEnumSwitch(JCExpression selector, List<JCCase> cases) {
         return selector.type.tsym.kind == Kinds.Kind.ERR &&
                cases.stream().flatMap(c -> c.labels.stream())
-                             .filter(l -> l.hasTag(EXPRESSIONCASELABEL))
-                             .map(l -> ((JCExpressionCaseLabel) l).expr)
+                             .filter(l -> l.hasTag(CONSTANTCASELABEL))
+                             .map(l -> ((JCConstantCaseLabel) l).expr)
                              .allMatch(p -> p.hasTag(IDENT));
     }
 
@@ -1352,7 +1352,7 @@ public class TreeInfo {
     }
 
     public static boolean isNullCaseLabel(JCCaseLabel label) {
-        return label.hasTag(EXPRESSIONCASELABEL) &&
-               TreeInfo.isNull(((JCExpressionCaseLabel) label).expr);
+        return label.hasTag(CONSTANTCASELABEL) &&
+               TreeInfo.isNull(((JCConstantCaseLabel) label).expr);
     }
 }

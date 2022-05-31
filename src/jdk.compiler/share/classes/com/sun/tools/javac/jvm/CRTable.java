@@ -333,7 +333,7 @@ implements CRTFlags {
         }
 
         @Override
-        public void visitExpressionCaseLabel(JCExpressionCaseLabel tree) {
+        public void visitConstantCaseLabel(JCConstantCaseLabel tree) {
             SourceRange sr = new SourceRange(startPos(tree), endPos(tree));
             sr.mergeWith(csp(tree.expr));
             result = sr;
