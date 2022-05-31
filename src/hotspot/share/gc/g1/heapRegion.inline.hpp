@@ -139,7 +139,7 @@ inline bool HeapRegion::is_obj_dead(const oop obj, HeapWord* const pb) const {
   return obj_is_scrubbed(obj);
 }
 
-inline bool HeapRegion::is_obj_dead_size_below_pb(const oop obj, HeapWord* const pb, size_t& block_size) const {
+inline bool HeapRegion::is_obj_dead_size_below_pb(HeapWord* obj, HeapWord* const pb, size_t& block_size) const {
   assert(is_in_reserved(obj), "Object " PTR_FORMAT " must be in region", p2i(obj));
   assert(!is_closed_archive(), "never walk CA regions for cross-references");
   assert(obj_in_scrubbing_area(obj, pb), "must be");
@@ -149,8 +149,7 @@ inline bool HeapRegion::is_obj_dead_size_below_pb(const oop obj, HeapWord* const
   if (is_live) {
     block_size = obj->size();
   } else {
-    HeapWord* addr = cast_from_oop<HeapWord*>(obj);
-    block_size = pointer_delta(next_live_in_unparsable(bitmap, addr, pb), addr);
+    block_size = pointer_delta(next_live_in_unparsable(bitmap, obj, pb), obj);
   }
   return !is_live;
 }
@@ -370,13 +369,15 @@ inline HeapWord* HeapRegion::oops_on_memregion_iterate_in_unparsable(MemRegion m
   // Find the obj that extends onto mr.start().
   //
   // The BOT itself is stable enough to be read at any time as
+  //
   // * during refinement the individual elements of the BOT are read and written
   //   atomically and any visible mix of new and old BOT entries will eventually lead
   //   to some (possibly outdated) object start.
-  //   The result of block_start() during concurrent refinement may be outdated - the
-  //   scrubbing may have written a (partial) filler object header exactly crossing
-  //   that perceived object start. So we have to advance to the next live object
-  //   (using the bitmap) to be able to start the following iteration.
+  //   The result of block_start() during concurrent refinement may be outdated, and
+  //   the corresponding object unparsable - the scrubbing may have written a (partial)
+  //   filler object header exactly crossing that perceived object start. So we have
+  //   to advance to the next live object to be able to do the iteration.
+  //   The initial is_obj_dead_size_below_pb() call handles this.
   //
   // * during GC the BOT does not change while reading, and the objects corresponding
   //   to these block starts are valid as "holes" are filled atomically wrt to
@@ -384,25 +385,16 @@ inline HeapWord* HeapRegion::oops_on_memregion_iterate_in_unparsable(MemRegion m
   //
   HeapWord* cur = block_start(start, pb);
 
-  if (!is_gc_active) {
-    G1CMBitMap* bitmap = G1CollectedHeap::heap()->concurrent_mark()->mark_bitmap();
-    cur = bitmap->get_next_marked_addr(cur, end);
-    // We might not have found a live object in the range to process. Return in that case.
-    if (cur == end) {
-      return end;
-    }
-  }
-
   while (true) {
-    oop obj = cast_to_oop(cur);
-    assert(oopDesc::is_oop(obj, true), "Not an oop at " PTR_FORMAT, p2i(cur));
-
     size_t block_size;
     bool is_dead = is_obj_dead_size_below_pb(obj, pb, block_size);
     bool is_precise = false;
 
     cur += block_size;
     if (!is_dead) {
+      oop obj = cast_to_oop(cur);
+      assert(oopDesc::is_oop(obj, true), "Not an oop at " PTR_FORMAT, p2i(cur));
+
       // Process live object's references.
 
       // Non-objArrays are usually marked imprecise at the object

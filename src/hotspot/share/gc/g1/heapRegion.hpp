@@ -185,7 +185,7 @@ public:
   // Returns whether the given object is dead based on TAMS and mark word.
   // For an object to be considered dead it must be below TAMS and scrubbed.
   bool is_obj_dead(oop obj, HeapWord* pb) const;
-  bool is_obj_dead_size_below_pb(oop obj, HeapWord* pb, size_t& block_size) const;
+  bool is_obj_dead_size_below_pb(HeapWord* obj, HeapWord* pb, size_t& block_size) const;
 
   // Returns the object size for all valid block starts
   // and the amount of unallocated words if called on top()
