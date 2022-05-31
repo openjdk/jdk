@@ -75,18 +75,11 @@ public class ClassTree {
 
         /**
          * {@return the roots of the hierarchy}
-         * The roots are the classes or interfaces with no superclass or superinterfaces.
+         * Each root is a class or interface with no superclass or superinterfaces.
          * If the hierarchy just contains classes, the root will be {@code java.lang.Object}.
          */
         public SortedSet<TypeElement> roots() {
             return roots;
-        }
-
-        /**
-         * {@return a map containing the type elements in this hierarchy and their subtypes}
-         */
-        public Map<TypeElement, SortedSet<TypeElement>> subtypes() {
-            return subtypes;
         }
 
         /**
@@ -100,7 +93,7 @@ public class ClassTree {
         /**
          * {@return the set of all subtypes of the given type element, or an empty set if there are none}
          *
-         * The set of all subtypes is the transitive closure of the {@linkplain #subtypes() immediate subtypes}
+         * The set of all subtypes is the transitive closure of the {@linkplain #subtypes(TypeElement) immediate subtypes}
          * of the given type element.
          *
          * @param typeElement the type element
@@ -225,7 +218,7 @@ public class ClassTree {
     }
 
     /**
-     * Generate the hierarchies for the given set of type elements.
+     * Generate the hierarchies for the given type elements.
      *
      * @param typeElements the type elements
      */
