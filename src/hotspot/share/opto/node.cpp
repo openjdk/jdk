@@ -1855,8 +1855,6 @@ void PrintBFS::collect() {
   }
 }
 
-
-
 // go through work list, mark those that we want to print
 void PrintBFS::prune() {
   if ( _target == nullptr ) {
@@ -1910,7 +1908,6 @@ void PrintBFS::prune_all_paths() {
     }
   }
 }
-
 
 void PrintBFS::prune_shortest_path() {
   Node* current = _target;
