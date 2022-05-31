@@ -24,7 +24,7 @@
  */
 package jdk.incubator.vector;
 
-import java.nio.ByteBuffer;
+import java.lang.foreign.MemorySegment;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntUnaryOperator;
@@ -463,6 +463,22 @@ final class Float256Vector extends FloatVector {
 
     @Override
     @ForceInline
+    public Float256Vector compress(VectorMask<Float> m) {
+        return (Float256Vector)
+            super.compressTemplate(Float256Mask.class,
+                                   (Float256Mask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Float256Vector expand(VectorMask<Float> m) {
+        return (Float256Vector)
+            super.expandTemplate(Float256Mask.class,
+                                   (Float256Mask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
     public Float256Vector selectFrom(Vector<Float> v) {
         return (Float256Vector)
             super.selectFromTemplate((Float256Vector) v);  // specialize
@@ -649,6 +665,15 @@ final class Float256Vector extends FloatVector {
         public Float256Mask not() {
             return xor(maskAll(true));
         }
+
+        @Override
+        @ForceInline
+        public Float256Mask compress() {
+            return (Float256Mask)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
+                Float256Vector.class, Float256Mask.class, ETYPE, VLENGTH, null, this,
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
+        }
+
 
         // Binary operations
 
@@ -842,29 +867,15 @@ final class Float256Vector extends FloatVector {
     @ForceInline
     @Override
     final
-    FloatVector fromByteArray0(byte[] a, int offset) {
-        return super.fromByteArray0Template(a, offset);  // specialize
+    FloatVector fromMemorySegment0(MemorySegment ms, long offset) {
+        return super.fromMemorySegment0Template(ms, offset);  // specialize
     }
 
     @ForceInline
     @Override
     final
-    FloatVector fromByteArray0(byte[] a, int offset, VectorMask<Float> m) {
-        return super.fromByteArray0Template(Float256Mask.class, a, offset, (Float256Mask) m);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    FloatVector fromByteBuffer0(ByteBuffer bb, int offset) {
-        return super.fromByteBuffer0Template(bb, offset);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    FloatVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Float> m) {
-        return super.fromByteBuffer0Template(Float256Mask.class, bb, offset, (Float256Mask) m);  // specialize
+    FloatVector fromMemorySegment0(MemorySegment ms, long offset, VectorMask<Float> m) {
+        return super.fromMemorySegment0Template(Float256Mask.class, ms, offset, (Float256Mask) m);  // specialize
     }
 
     @ForceInline
@@ -892,22 +903,8 @@ final class Float256Vector extends FloatVector {
     @ForceInline
     @Override
     final
-    void intoByteArray0(byte[] a, int offset) {
-        super.intoByteArray0Template(a, offset);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    void intoByteArray0(byte[] a, int offset, VectorMask<Float> m) {
-        super.intoByteArray0Template(Float256Mask.class, a, offset, (Float256Mask) m);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    void intoByteBuffer0(ByteBuffer bb, int offset, VectorMask<Float> m) {
-        super.intoByteBuffer0Template(Float256Mask.class, bb, offset, (Float256Mask) m);
+    void intoMemorySegment0(MemorySegment ms, long offset, VectorMask<Float> m) {
+        super.intoMemorySegment0Template(Float256Mask.class, ms, offset, (Float256Mask) m);
     }
 
 
@@ -916,3 +913,4 @@ final class Float256Vector extends FloatVector {
     // ================================================
 
 }
+
