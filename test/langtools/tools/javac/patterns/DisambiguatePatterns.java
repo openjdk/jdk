@@ -35,7 +35,7 @@
 import com.sun.source.tree.CaseLabelTree;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
-import com.sun.source.tree.ExpressionCaseLabelTree;
+import com.sun.source.tree.ConstantCaseLabelTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.PatternCaseLabelTree;
 import com.sun.source.tree.SwitchTree;
@@ -139,7 +139,7 @@ public class DisambiguatePatterns {
         SwitchTree st = (SwitchTree) method.getBody().getStatements().get(0);
         CaseLabelTree label = st.getCases().get(0).getLabels().get(0);
         ExpressionType actualType = switch (label) {
-            case ExpressionCaseLabelTree et -> ExpressionType.EXPRESSION;
+            case ConstantCaseLabelTree et -> ExpressionType.EXPRESSION;
             case PatternCaseLabelTree pt -> ExpressionType.PATTERN;
             default -> throw new AssertionError("Unexpected result: " + result);
         };
