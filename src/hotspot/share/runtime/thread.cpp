@@ -1778,8 +1778,8 @@ bool JavaThread::java_suspend() {
   assert(!is_VTMS_transition_disabler(), "no suspend allowed for VTMS transition disablers");
 #endif
 
-  guarantee(Thread::is_JavaThread_protected_by_TLH(/* target */ this),
-            "missing ThreadsListHandle in calling context.");
+  guarantee(Thread::is_JavaThread_protected(/* target */ this),
+            "target JavaThread is not protected in calling context.");
   return this->handshake_state()->suspend();
 }
 
