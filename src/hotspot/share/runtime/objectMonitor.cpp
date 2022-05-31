@@ -1486,7 +1486,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   // Enter the waiting queue, which is a circular doubly linked list in this case
   // but it could be a priority queue or any data structure.
   // _WaitSetLock protects the wait queue.  Normally the wait queue is accessed only
-  // by the the owner of the monitor *except* in the case where park()
+  // by the owner of the monitor *except* in the case where park()
   // returns because of a timeout of interrupt.  Contention is exceptionally rare
   // so we use a simple spin-lock instead of a heavier-weight blocking lock.
 

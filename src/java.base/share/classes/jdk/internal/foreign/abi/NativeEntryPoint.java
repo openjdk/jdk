@@ -25,14 +25,15 @@
 
 package jdk.internal.foreign.abi;
 
+import jdk.internal.ref.CleanerFactory;
+
 import java.lang.invoke.MethodType;
+import java.lang.ref.Cleaner;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * This class describes a 'native invoker', which is used as an appendix argument to linkToNative calls.
+ * This class describes a 'native entry point', which is used as an appendix argument to linkToNative calls.
  */
 public class NativeEntryPoint {
     static {
@@ -40,16 +41,17 @@ public class NativeEntryPoint {
     }
 
     private final MethodType methodType;
-    private final long invoker; // read by VM
+    private final long downcallStubAddress; // read by VM
 
-    private static final Map<CacheKey, Long> INVOKER_CACHE = new ConcurrentHashMap<>();
+    private static final Cleaner CLEANER = CleanerFactory.cleaner();
+    private static final SoftReferenceCache<CacheKey, NativeEntryPoint> NEP_CACHE = new SoftReferenceCache<>();
     private record CacheKey(MethodType methodType, ABIDescriptor abi,
                             List<VMStorage> argMoves, List<VMStorage> retMoves,
                             boolean needsReturnBuffer) {}
 
-    private NativeEntryPoint(MethodType methodType, long invoker) {
+    private NativeEntryPoint(MethodType methodType, long downcallStubAddress) {
         this.methodType = methodType;
-        this.invoker = invoker;
+        this.downcallStubAddress = downcallStubAddress;
     }
 
     public static NativeEntryPoint make(ABIDescriptor abi,
@@ -63,15 +65,24 @@ public class NativeEntryPoint {
         assert (!needsReturnBuffer || methodType.parameterType(1) == long.class) : "return buffer address expected";
 
         CacheKey key = new CacheKey(methodType, abi, Arrays.asList(argMoves), Arrays.asList(returnMoves), needsReturnBuffer);
-        long invoker = INVOKER_CACHE.computeIfAbsent(key, k ->
-            makeInvoker(methodType, abi, argMoves, returnMoves, needsReturnBuffer));
-
-        return new NativeEntryPoint(methodType, invoker);
+        return NEP_CACHE.get(key, k -> {
+            long downcallStub = makeDowncallStub(methodType, abi, argMoves, returnMoves, needsReturnBuffer);
+            NativeEntryPoint nep = new NativeEntryPoint(methodType, downcallStub);
+            CLEANER.register(nep, () -> freeDowncallStub(downcallStub));
+            return nep;
+        });
     }
 
-    private static native long makeInvoker(MethodType methodType, ABIDescriptor abi,
-                                           VMStorage[] encArgMoves, VMStorage[] encRetMoves,
-                                           boolean needsReturnBuffer);
+    private static native long makeDowncallStub(MethodType methodType, ABIDescriptor abi,
+                                                VMStorage[] encArgMoves, VMStorage[] encRetMoves,
+                                                boolean needsReturnBuffer);
+
+    private static native boolean freeDowncallStub0(long downcallStub);
+    private static void freeDowncallStub(long downcallStub) {
+        if (!freeDowncallStub0(downcallStub)) {
+            throw new InternalError("Could not free downcall stub");
+        }
+    }
 
     public MethodType type() {
         return methodType;

@@ -40,6 +40,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
+import static java.lang.invoke.MethodType.methodType;
 import static jdk.internal.foreign.abi.Binding.Tag.*;
 
 public class CallingSequenceBuilder {
@@ -92,6 +93,8 @@ public class CallingSequenceBuilder {
         boolean needsReturnBuffer = needsReturnBuffer();
         long returnBufferSize = needsReturnBuffer ? computeReturnBuferSize() : 0;
         long allocationSize = computeAllocationSize() + returnBufferSize;
+        MethodType callerMethodType;
+        MethodType calleeMethodType;
         if (!forUpcall) {
             addArgumentBinding(0, Addressable.class, ValueLayout.ADDRESS, List.of(
                 Binding.unboxAddress(Addressable.class),
@@ -101,13 +104,48 @@ public class CallingSequenceBuilder {
                     Binding.unboxAddress(MemorySegment.class),
                     Binding.vmStore(abi.retBufAddrStorage(), long.class)));
             }
-        } else if (needsReturnBuffer) { // forUpcall == true
-            addArgumentBinding(0, MemorySegment.class, ValueLayout.ADDRESS, List.of(
-                Binding.vmLoad(abi.retBufAddrStorage(), long.class),
-                Binding.boxAddress(),
-                Binding.toSegment(returnBufferSize)));
+
+            callerMethodType = mt;
+            calleeMethodType = computeCalleeTypeForDowncall();
+        } else { // forUpcall == true
+            if (needsReturnBuffer) {
+                addArgumentBinding(0, MemorySegment.class, ValueLayout.ADDRESS, List.of(
+                        Binding.vmLoad(abi.retBufAddrStorage(), long.class),
+                        Binding.boxAddress(),
+                        Binding.toSegment(returnBufferSize)));
+            }
+
+            callerMethodType = computeCallerTypeForUpcall();
+            calleeMethodType = mt;
         }
-        return new CallingSequence(mt, desc, needsReturnBuffer, returnBufferSize, allocationSize, inputBindings, outputBindings);
+        return new CallingSequence(forUpcall, callerMethodType, calleeMethodType, desc, needsReturnBuffer,
+                returnBufferSize, allocationSize, inputBindings, outputBindings);
+    }
+
+    private MethodType computeCallerTypeForUpcall() {
+        return computeTypeHelper(Binding.VMLoad.class, Binding.VMStore.class);
+    }
+
+    private MethodType computeCalleeTypeForDowncall() {
+        return computeTypeHelper(Binding.VMStore.class, Binding.VMLoad.class);
+    }
+
+    private MethodType computeTypeHelper(Class<? extends Binding.Move> inputVMClass,
+                                         Class<? extends Binding.Move> outputVMClass) {
+        Class<?>[] paramTypes = inputBindings.stream()
+                .flatMap(List::stream)
+                .filter(inputVMClass::isInstance)
+                .map(inputVMClass::cast)
+                .map(Binding.Move::type)
+                .toArray(Class<?>[]::new);
+
+        Binding.Move[] retMoves = outputBindings.stream()
+                .filter(outputVMClass::isInstance)
+                .map(outputVMClass::cast)
+                .toArray(Binding.Move[]::new);
+        Class<?> returnType = retMoves.length == 1 ? retMoves[0].type() : void.class;
+
+        return methodType(returnType, paramTypes);
     }
 
     private long computeAllocationSize() {

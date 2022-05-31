@@ -370,7 +370,7 @@
   template(jdk_internal_foreign_abi_VMStorage_signature,             "Ljdk/internal/foreign/abi/VMStorage;") \
   template(jdk_internal_foreign_abi_VMStorage_array_signature,       "[Ljdk/internal/foreign/abi/VMStorage;") \
   template(jdk_internal_foreign_abi_VMStorage_array_array_signature, "[[Ljdk/internal/foreign/abi/VMStorage;") \
-  template(jdk_internal_foreign_abi_CallConv,                        "jdk/internal/foreign/abi/ProgrammableUpcallHandler$CallRegs") \
+  template(jdk_internal_foreign_abi_CallConv,                        "jdk/internal/foreign/abi/UpcallLinker$CallRegs") \
                                                                                                   \
   /* Support for JVMCI */                                                                         \
   JVMCI_VM_SYMBOLS_DO(template, do_alias)                                                         \
