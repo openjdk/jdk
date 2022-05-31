@@ -1737,8 +1737,8 @@ private:
   bool _use_color = false;
   bool _print_blocks = false;
   bool _print_old = false;
-  void parse_options_helper(bool &variable, const char* character);
-  void parse_options();
+  void print_options_help(bool print_examples);
+  bool parse_options();
 
   // node category (filter / color)
   bool filter_category(Node* n, Filter& filter); // filter node category agains options
@@ -1825,8 +1825,7 @@ bool PrintBFS::configure() {
     tty->print("dump_bfs: max_distance must be non-negative!\n");
     return false;
   }
-  parse_options();
-  return true;
+  return parse_options();
 }
 
 // BFS traverse according to configuration, fill worklist and info
@@ -1965,36 +1964,160 @@ void PrintBFS::print() {
   }
 }
 
-void PrintBFS::parse_options_helper(bool &variable, const char* character) {
-  if (strstr(_options, character) != nullptr) {
-    variable = true;
+void PrintBFS::print_options_help(bool print_examples) {
+  tty->print("Usage: node->dump_bfs(int max_distance, Node* target, char* options)\n");
+  tty->print("\n");
+  tty->print("Usecases:\n");
+  tty->print("  BFS traversal: no target required\n");
+  tty->print("  shortest path: set target\n");
+  tty->print("  all paths: set target and put 'A' in options\n");
+  tty->print("  detect loop: subcase of all paths, have start==target\n");
+  tty->print("\n");
+  tty->print("Arguments:\n");
+  tty->print("  this/start: staring point of BFS\n");
+  tty->print("  target:\n");
+  tty->print("    if nullptr: simple BFS\n");
+  tty->print("    else: shortest path or all paths between this/start and target\n");
+  tty->print("  options:\n");
+  tty->print("    if nullptr: same as \"cdmxo@B\"\n");
+  tty->print("    else: use combination of following characters\n");
+  tty->print("      h: display this help info\n");
+  tty->print("      H: display this help info, with examples\n");
+  tty->print("      +: traverse in-edges (on if neither + nor -)\n");
+  tty->print("      -: traverse out-edges\n");
+  tty->print("      c: visit control nodes\n");
+  tty->print("      m: visit memory nodes\n");
+  tty->print("      d: visit data nodes\n");
+  tty->print("      x: visit mixed nodes\n");
+  tty->print("      o: visit other nodes\n");
+  tty->print("      C: boundary control nodes\n");
+  tty->print("      M: boundary memory nodes\n");
+  tty->print("      D: boundary data nodes\n");
+  tty->print("      X: boundary mixed nodes\n");
+  tty->print("      O: boundary other nodes\n");
+  tty->print("      S: sort displayed nodes by node idx\n");
+  tty->print("      A: all paths (not just shortest path to target)\n");
+  tty->print("      #: display node category in color (not supported in all terminals)\n");
+  tty->print("      @: print old nodes - before matching (if available)\n");
+  tty->print("      B: print scheduling blocks (if available)\n");
+  tty->print("\n");
+  tty->print("recursively follow edges to nodes with permitted visit types,\n");
+  tty->print("on the boundary additionally display nodes allowed in boundary types\n");
+  tty->print("\n");
+  tty->print("output columns:\n");
+  tty->print("  d:     BFS distance to this/start\n");
+  tty->print("  adp:   all paths distance (d_start + d_target)\n");
+  tty->print("  block: block block in which the node has been scheduled [head(), _idom->head(), _dom_depth]\n");
+  tty->print("  old:   old IR node - before matching\n");
+  tty->print("  dump:  node->dump()\n");
+  if (print_examples) {
+    tty->print("\n");
+    tty->print("Examples:\n");
+    tty->print("  if->dump_bfs(10, 0, \"+cxo\")\n");
+    tty->print("    starting at some if node, traverse inputs recursively\n");
+    tty->print("    only along control (mixed and other can also be control)\n");
+    tty->print("  phi->dump_bfs(5, 0, \"-dxo\")\n");
+    tty->print("    starting at phi node, traverse outputs recursively\n");
+    tty->print("    only along data (mixed and other can also have data flow)\n");
+    tty->print("  find_node(385)->dump_bfs(3, 0, \"cdmox+#@B\")\n");
+    tty->print("    find inputs of node 385, up to 3 nodes up (+)\n");
+    tty->print("    traverse all nodes (cdmox), use colors (#)\n");
+    tty->print("    display old nodes and blocks, if they exist\n");
+    tty->print("    useful call to start with\n");
+    tty->print("  find_node(102)->dump_bfs(10,0,\"dCDMOX-\")\n");
+    tty->print("    find non-data dependencies of a data node\n");
+    tty->print("    follow data node outputs until find another category\n");
+    tty->print("    node as the boundary\n");
+    tty->print("  x->dump_bfs(10, y, 0)\n");
+    tty->print("    find shortest path from x to y, along any edge or node\n");
+    tty->print("    will not find a path if it is longer than 10\n");
+    tty->print("    useful to find how x and y are related\n");
+    tty->print("  find_node(741)->dump_bfs(20,find_node(746),\"c+\")\n");
+    tty->print("    find shortest control path  between two nodes\n");
+    tty->print("  find_node(741)->dump_bfs(8,find_node(746),\"cdmxo+A\")\n");
+    tty->print("    find all paths (A) between two nodes of length at most 8\n");
+    tty->print("  find_node(741)->dump_bfs(7,find_node(741),\"c+A\")\n");
+    tty->print("    find all control loops for this node\n");
   }
 }
 
-void PrintBFS::parse_options() {
+bool PrintBFS::parse_options() {
   if (_options == nullptr) {
-    _options = "cmdxo+-@B"; // default options
+    _options = "cmdxo@B"; // default options
   }
-  parse_options_helper(_traverse_inputs,        "+");
-  parse_options_helper(_traverse_outputs,       "-");
-  parse_options_helper(filter_visit.control,    "c");
-  parse_options_helper(filter_visit.memory,     "m");
-  parse_options_helper(filter_visit.data,       "d");
-  parse_options_helper(filter_visit.mixed,      "x");
-  parse_options_helper(filter_visit.other,      "o");
-  parse_options_helper(filter_boundary.control, "C");
-  parse_options_helper(filter_boundary.memory,  "M");
-  parse_options_helper(filter_boundary.data,    "D");
-  parse_options_helper(filter_boundary.mixed,   "X");
-  parse_options_helper(filter_boundary.other,   "O");
-  parse_options_helper(_sort_idx,               "S");
-  parse_options_helper(_all_paths,              "A");
-  parse_options_helper(_use_color,              "#");
-  parse_options_helper(_print_blocks,           "B");
-  parse_options_helper(_print_old,              "@");
+  int len = strlen(_options);
+  for (int i = 0; i < len; i++) {
+    switch(_options[i]) {
+      case '+':
+        _traverse_inputs = true;
+        break;
+      case '-':
+        _traverse_outputs = true;
+        break;
+      case 'c':
+        filter_visit.control = true;
+        break;
+      case 'm':
+        filter_visit.memory = true;
+        break;
+      case 'd':
+        filter_visit.data = true;
+        break;
+      case 'x':
+        filter_visit.mixed = true;
+        break;
+      case 'o':
+        filter_visit.other = true;
+        break;
+      case 'C':
+        filter_boundary.control = true;
+        break;
+      case 'M':
+        filter_boundary.memory = true;
+        break;
+      case 'D':
+        filter_boundary.data = true;
+        break;
+      case 'X':
+        filter_boundary.mixed = true;
+        break;
+      case 'O':
+        filter_boundary.other = true;
+        break;
+      case 'S':
+        _sort_idx = true;
+        break;
+      case 'A':
+        _all_paths = true;
+        break;
+      case '#':
+        _use_color = true;
+        break;
+      case 'B':
+        _print_blocks = true;
+        break;
+      case '@':
+        _print_old = true;
+        break;
+      case 'h':
+        print_options_help(false);
+        return false;
+       case 'H':
+        print_options_help(true);
+        return false;
+      default:
+        tty->print_cr("dump_bfs: Unrecognized option \'%c\'", _options[i]);
+        tty->print_cr("for help, run: find_node(0)->dump_bfs(0,0,\"H\")");
+        return false;
+    }
+  }
+  if (!_traverse_inputs && !_traverse_outputs) {
+    _traverse_inputs = true;
+  }
   Compile* C = Compile::current();
   _print_old &= (C->matcher() != nullptr); // only show old if there are new
   _print_blocks &= (C->cfg() != nullptr); // only show blocks if available
+  return true;
 }
 
 bool PrintBFS::filter_category(Node* n, Filter& filter) {
@@ -2162,70 +2285,11 @@ void PrintBFS::print_node(Node* n) {
 }
 
 //------------------------------dump_bfs--------------------------------------
-// Call this from debugger:
-// BFS traversal of graph, starting at node this/start
-// this/start: staring point of BFS
-// max_distance: maximal distance from this/start BFS visits
-// target:
-//   if nullptr: print all nodes visited during BFS
-//   else: find shortest path from this/start to target, via BFS and backtracking
-// options:
-//   if nullptr: same as "cmdxo+-@B"
-//   else: use combination of these characters
-//     +: traverse in-edges
-//     -: traverse out-edges
-//     c: visit control nodes
-//     m: visit memory nodes
-//     d: visit data nodes
-//     x: visit mixed nodes
-//     o: visit other nodes
-//     C: boundary control nodes
-//     M: boundary memory nodes
-//     D: boundary data nodes
-//     X: boundary mixed nodes
-//     O: boundary other nodes
-//     S: sort displayed nodes by node idx
-//     A: all paths (not just shortest path to target)
-//     #: display node category in color (maybe not supported in all terminals)
-//     @: print old nodes - before matching (if available)
-//     B: print scheduling blocks (if available)
-//
-// recursively follwo edges to nodes with permitted visit types,
-// on the boundary additionally follow nodes allowed in boundary types.
-//
-// examples:
-//   if->dump_bfs(10, 0, "+cxo")
-//     starting at if node, traverse inputs recursively
-//     only along control (mixed and other can also be control)
-//   phi->dump_bfs(5, 0, "-dxo")
-//     starting at phi node, traverse outputs recursively
-//     only along data (mixed and other can also have data flow)
-//   find_node(385)->dump_bfs(3, 0, "cdmox+#@B")
-//     find inputs of node 385, up to 3 nodes up (+)
-//     traverse all nodes (cdmox), use colors (#)
-//     display old nodes and blocks, if they exist
-//     useful call to start with
-//   find_node(102)->dump_bfs(10,0,"dCDMOX-")
-//     find non-data dependencies of a data node
-//     follow data node outputs until find another category
-//     node as the boundary
-//   x->dump_bfs(10, y, 0)
-//     find shortest path from x to y, along any edge or node
-//     will not find a path if it is longer than 10
-//     useful to find how x and y are related
-//   find_node(741)->dump_bfs(20,find_node(746),"c+")
-//     find shortest control path  between two nodes
-//   find_node(741)->dump_bfs(8,find_node(746),"cdmxo+A")
-//     find all paths (A) between two nodes of length at most 8
-//   find_node(741)->dump_bfs(7,find_node(741),"c+A")
-//     find all control loops for this node
-//
-// output columns:
-//   distance: distance to this/start in BFS traversal
-//   apd:      all paths distance (d_start + d_target)
-//   block:    block in which the node has been scheduled [head(), _idom->head(), _dom_depth]
-//   old:      old IR node - before matching
-//   dump
+// Call this from debugger
+// Useful for BFS traversal, shortest path, all path, loop detection, etc
+// Designed to be more readable, and provide additional info
+// To find all options, run:
+//   find_node(0)->dump_bfs(0,0,"H")
 void Node::dump_bfs(const int max_distance, Node* target, char const* options) {
   PrintBFS bfs(this, max_distance, target, options);
   bfs.run();
