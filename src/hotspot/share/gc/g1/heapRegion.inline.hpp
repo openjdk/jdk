@@ -312,7 +312,7 @@ inline bool HeapRegion::in_collection_set() const {
   return G1CollectedHeap::heap()->is_in_cset(this);
 }
 
-template <class Closure, bool is_gc_active>
+template <class Closure, bool in_gc_pause>
 HeapWord* HeapRegion::do_oops_on_memregion_in_humongous(MemRegion mr,
                                                         Closure* cl) {
   assert(is_humongous(), "precondition");
@@ -325,7 +325,7 @@ HeapWord* HeapRegion::do_oops_on_memregion_in_humongous(MemRegion mr,
   // we've already set the card clean, so we must return failure,
   // since the allocating thread could have performed a write to the
   // card that might be missed otherwise.
-  if (!is_gc_active && (obj->klass_or_null_acquire() == NULL)) {
+  if (!in_gc_pause && (obj->klass_or_null_acquire() == NULL)) {
     return NULL;
   }
 
@@ -333,7 +333,7 @@ HeapWord* HeapRegion::do_oops_on_memregion_in_humongous(MemRegion mr,
   // Only filler objects follow a humongous object in the containing
   // regions, and we can ignore those.  So only process the one
   // humongous object.
-  HeapWord* const pb = is_gc_active ? sr->parsable_bottom() : sr->parsable_bottom_acquire();
+  HeapWord* const pb = in_gc_pause ? sr->parsable_bottom() : sr->parsable_bottom_acquire();
   if (sr->is_obj_dead(obj, pb)) {
     // The object is dead. There can be no other object in this region, so return
     // the end of that region.
@@ -360,7 +360,7 @@ HeapWord* HeapRegion::do_oops_on_memregion_in_humongous(MemRegion mr,
   }
 }
 
-template <class Closure, bool is_gc_active>
+template <class Closure, bool in_gc_pause>
 inline HeapWord* HeapRegion::oops_on_memregion_iterate_in_unparsable(MemRegion mr, HeapWord* const pb, Closure* cl) {
   // Cache the boundaries of the area to scan in some locals.
   HeapWord* const start = mr.start();
@@ -385,7 +385,7 @@ inline HeapWord* HeapRegion::oops_on_memregion_iterate_in_unparsable(MemRegion m
   //
   HeapWord* cur = block_start(start, pb);
 
-  if (!is_gc_active) {
+  if (!in_gc_pause) {
     G1CMBitMap* bitmap = G1CollectedHeap::heap()->concurrent_mark()->mark_bitmap();
     cur = bitmap->get_next_marked_addr(cur, end);
     // We might not have found a live object in the range to process. Return in that case.
@@ -428,21 +428,21 @@ inline HeapWord* HeapRegion::oops_on_memregion_iterate_in_unparsable(MemRegion m
 // For performance, the strategy here is to divide the work into two parts: areas
 // below parsable_bottom (unparsable) and above parsable_bottom. The unparsable parts
 // use the bitmap to locate live objects.
-template <class Closure, bool is_gc_active>
+template <class Closure, bool in_gc_pause>
 inline HeapWord* HeapRegion::oops_on_memregion_iterate(MemRegion mr, Closure* cl) {
   // Cache the boundaries of the memory region in some const locals
   HeapWord* const start = mr.start();
   HeapWord* const end = mr.end();
 
   // Snapshot the region's parsable_bottom.
-  HeapWord* const pb = is_gc_active ? parsable_bottom() : parsable_bottom_acquire();
+  HeapWord* const pb = in_gc_pause ? parsable_bottom() : parsable_bottom_acquire();
 
   // Find the obj that extends onto mr.start()
   HeapWord* cur;
   if (obj_in_parsable_area(start, pb)) {
     cur = block_start(start, pb);
   } else {
-    cur = oops_on_memregion_iterate_in_unparsable<Closure, is_gc_active>(mr, pb, cl);
+    cur = oops_on_memregion_iterate_in_unparsable<Closure, in_gc_pause>(mr, pb, cl);
     // We might have scanned beyond end at this point because of imprecise iteration.
     if (cur >= end) {
       return cur;
@@ -480,14 +480,14 @@ inline HeapWord* HeapRegion::oops_on_memregion_iterate(MemRegion mr, Closure* cl
   }
 }
 
-template <bool is_gc_active, class Closure>
+template <bool in_gc_pause, class Closure>
 HeapWord* HeapRegion::oops_on_memregion_seq_iterate_careful(MemRegion mr,
                                                             Closure* cl) {
   assert(MemRegion(bottom(), top()).contains(mr), "Card region not in heap region");
 
   // Special handling for humongous regions.
   if (is_humongous()) {
-    return do_oops_on_memregion_in_humongous<Closure, is_gc_active>(mr, cl);
+    return do_oops_on_memregion_in_humongous<Closure, in_gc_pause>(mr, cl);
   }
   assert(is_old() || is_archive(), "Wrongly trying to iterate over region %u type %s", _hrm_index, get_type_str());
 
@@ -499,7 +499,7 @@ HeapWord* HeapRegion::oops_on_memregion_seq_iterate_careful(MemRegion mr,
   // case there might be objects that have their classes unloaded and
   // therefore needs to be scanned using the bitmap.
 
-  return oops_on_memregion_iterate<Closure, is_gc_active>(mr, cl);
+  return oops_on_memregion_iterate<Closure, in_gc_pause>(mr, cl);
 }
 
 inline int HeapRegion::age_in_surv_rate_group() const {

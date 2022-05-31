@@ -837,7 +837,6 @@ class G1PrintRegionLivenessInfoClosure : public HeapRegionClosure {
   size_t _total_used_bytes;
   size_t _total_capacity_bytes;
   size_t _total_live_bytes;
-  size_t _total_next_live_bytes;
 
   // Accumulator for the remembered set size
   size_t _total_remset_bytes;

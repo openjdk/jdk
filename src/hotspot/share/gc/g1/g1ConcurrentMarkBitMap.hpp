@@ -39,11 +39,11 @@ class G1ConcurrentMark;
 class HeapRegion;
 
 // Closure for iteration over bitmaps
-class G1CMBitMapClosure : public MarkBitMapClosure {
+class G1CMBitMapClosure {
   G1ConcurrentMark* const _cm;
   G1CMTask* const _task;
 public:
-  G1CMBitMapClosure(G1CMTask *task, G1ConcurrentMark* cm) : MarkBitMapClosure(), _cm(cm), _task(task) { }
+  G1CMBitMapClosure(G1CMTask *task, G1ConcurrentMark* cm) : _cm(cm), _task(task) { }
 
   bool do_addr(HeapWord* const addr);
 };

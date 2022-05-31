@@ -29,12 +29,6 @@
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/bitMap.hpp"
 
-// Closure for iteration over set bits of a bitmap.
-class MarkBitMapClosure {
-public:
-  virtual bool do_addr(HeapWord* const addr) = 0;
-};
-
 // A generic mark bitmap for concurrent marking.  This is essentially a wrapper
 // around the BitMap class that is based on HeapWords, with one bit per (1 << _shifter) HeapWords.
 class MarkBitMap {
@@ -84,7 +78,6 @@ public:
     return _bm.at(addr_to_offset(addr));
   }
 
-  inline bool iterate(MarkBitMapClosure* cl, MemRegion mr);
   // Return the address corresponding to the next marked bit at or after
   // "addr", and before "limit", if "limit" is non-NULL.  If there is no
   // such bit, returns "limit" if that is non-NULL, or else "endWord()".

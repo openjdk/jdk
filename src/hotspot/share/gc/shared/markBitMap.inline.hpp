@@ -33,26 +33,6 @@
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 
-inline bool MarkBitMap::iterate(MarkBitMapClosure* cl, MemRegion mr) {
-  assert(!mr.is_empty(), "Does not support empty memregion to iterate over");
-  assert(_covered.contains(mr),
-         "Given MemRegion from " PTR_FORMAT " to " PTR_FORMAT " not contained in heap area",
-         p2i(mr.start()), p2i(mr.end()));
-
-  BitMap::idx_t const end_offset = addr_to_offset(mr.end());
-  BitMap::idx_t offset = _bm.get_next_one_offset(addr_to_offset(mr.start()), end_offset);
-
-  while (offset < end_offset) {
-    HeapWord* const addr = offset_to_addr(offset);
-    if (!cl->do_addr(addr)) {
-      return false;
-    }
-    size_t const obj_size = cast_to_oop(addr)->size();
-    offset = _bm.get_next_one_offset(offset + (obj_size >> _shifter), end_offset);
-  }
-  return true;
-}
-
 inline HeapWord* MarkBitMap::get_next_marked_addr(const HeapWord* const addr,
                                                   HeapWord* const limit) const {
   assert(limit != NULL, "limit must not be NULL");

@@ -267,10 +267,10 @@ private:
 
   void report_region_type_change(G1HeapRegionTraceType::Type to);
 
-  template <class Closure, bool is_gc_active>
+  template <class Closure, bool in_gc_pause>
   inline HeapWord* oops_on_memregion_iterate(MemRegion mr, Closure* cl);
 
-  template <class Closure, bool is_gc_active>
+  template <class Closure, bool in_gc_pause>
   inline HeapWord* oops_on_memregion_iterate_in_unparsable(MemRegion mr, HeapWord* pb, Closure* cl);
 
   // Iterate over the references covered by the given MemRegion in a humongous
@@ -280,7 +280,7 @@ private:
   // Returns the address after the last actually scanned or NULL if the area could
   // not be scanned (That should only happen when invoked concurrently with the
   // mutator).
-  template <class Closure, bool is_gc_active>
+  template <class Closure, bool in_gc_pause>
   inline HeapWord* do_oops_on_memregion_in_humongous(MemRegion mr,
                                                      Closure* cl);
 
@@ -567,7 +567,7 @@ public:
   // Returns the next unscanned address if the designated objects were successfully
   // processed, NULL if an unparseable part of the heap was encountered (That should
   // only happen when invoked concurrently with the mutator).
-  template <bool is_gc_active, class Closure>
+  template <bool in_gc_pause, class Closure>
   inline HeapWord* oops_on_memregion_seq_iterate_careful(MemRegion mr, Closure* cl);
 
   // Routines for managing a list of code roots (attached to the
