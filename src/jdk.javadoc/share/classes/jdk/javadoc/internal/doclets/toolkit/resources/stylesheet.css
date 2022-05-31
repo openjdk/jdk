@@ -62,6 +62,10 @@ h5 {
 h6 {
     font-size:13px;
 }
+/* Disable font boosting */
+h1, h2, h3, h4, h5, h6 {
+    max-height: 2em;
+}
 ul {
     list-style-type:disc;
 }
@@ -352,14 +356,12 @@ ul.see-list-long li:not(:last-child):after {
     text-align:left;
     background-repeat:no-repeat;
     color:#253441;
-    font-weight:bold;
     clear:none;
     overflow:hidden;
     padding:0;
     padding-top:10px;
     padding-left:1px;
     margin:0;
-    white-space:pre;
 }
 .caption a:link, .caption a:visited {
     color:#1f389c;
@@ -369,6 +371,7 @@ ul.see-list-long li:not(:last-child):after {
     color:#FFFFFF;
 }
 .caption span {
+    font-weight:bold;
     white-space:nowrap;
     padding:5px 12px 7px 12px;
     display:inline-block;
@@ -381,14 +384,20 @@ div.table-tabs {
     padding:10px 0 0 1px;
     margin:10px 0 0 0;
 }
+div.table-tabs > span {
+    background-color: #EEE;
+    color: #000;
+    border: none;
+    padding: 5px 12px 8px 12px;
+}
 div.table-tabs > button {
    border: none;
    cursor: pointer;
    padding: 5px 12px 7px 12px;
    font-weight: bold;
-   margin-right: 3px;
+   margin-right: 8px;
 }
-div.table-tabs > button.active-table-tab {
+div.table-tabs > .active-table-tab {
    background: #F8981D;
    color: #253441;
 }
@@ -399,6 +408,18 @@ div.table-tabs > button.table-tab {
 .two-column-search-results {
     display: grid;
     grid-template-columns: minmax(400px, max-content) minmax(400px, auto);
+}
+div.checkboxes {
+    line-height: 18px;
+}
+div.checkboxes > span {
+    margin-left: 10px;
+}
+div.checkboxes > label {
+    margin-left: 8px;
+}
+div.checkboxes > label > input {
+    margin: 0 2px;
 }
 .two-column-summary {
     display: grid;
@@ -431,6 +452,10 @@ div.table-tabs > button.table-tab {
         grid-column-end: span 2;
     }
 }
+.three-column-release-summary {
+    display: grid;
+    grid-template-columns: minmax(40%, max-content) minmax(10%, max-content) minmax(40%, auto);
+}
 @media screen and (max-width: 600px) {
     .two-column-summary {
         display: grid;
@@ -450,6 +475,35 @@ div.table-tabs > button.table-tab {
 .table-header {
     background:#dee3e9;
     font-weight: bold;
+}
+/* Sortable table columns */
+.table-header[onclick] {
+    cursor: pointer;
+}
+.table-header[onclick]::after {
+    content:"";
+    display:inline-block;
+    background-image:url('data:image/svg+xml; utf8, \
+    <svg xmlns="http://www.w3.org/2000/svg" width="125" height="170"> \
+    <path d="M10.101 57.059L63.019 4.142l52.917 52.917M10.101 86.392l52.917 52.917 52.917-52.917" style="opacity:.35;"/></svg>');
+    background-size:100% 100%;
+    width:9px;
+    height:14px;
+    margin-left:4px;
+    margin-bottom:-3px;
+}
+.table-header[onclick].sort-asc::after {
+    background-image:url('data:image/svg+xml; utf8, \
+    <svg xmlns="http://www.w3.org/2000/svg" width="125" height="170"> \
+    <path d="M10.101 57.059L63.019 4.142l52.917 52.917" style="opacity:.75;"/> \
+    <path d="M10.101 86.392l52.917 52.917 52.917-52.917" style="opacity:.35;"/></svg>');
+
+}
+.table-header[onclick].sort-desc::after {
+    background-image:url('data:image/svg+xml; utf8, \
+    <svg xmlns="http://www.w3.org/2000/svg" width="125" height="170"> \
+    <path d="M10.101 57.059L63.019 4.142l52.917 52.917" style="opacity:.35;"/> \
+    <path d="M10.101 86.392l52.917 52.917 52.917-52.917" style="opacity:.75;"/></svg>');
 }
 .col-first, .col-first {
     font-size:13px;
@@ -713,56 +767,6 @@ button.page-search-header {
 span#page-search-link {
     text-decoration: underline;
 }
-.active-table-tab {
-    background: #F8981D;
-    color: #253441;
-}
-button.copy-url {
-    opacity: 80%;
-    transition: opacity 0.2s;
-    margin-left: 0.4em;
-    border: none;
-    border-radius: 3px;
-    cursor: pointer;
-    background: none;
-    padding:0.3em;
-    position: relative;
-    top:0.13em
-}
-button.copy-url img {
-    width: 1.2em;
-    height: 1.2em;
-    padding: 0.01em 0;
-    background: none;
-    position:relative;
-    top: 0.15em;
-}
-div.page-search-info:hover button.copy-url {
-    opacity: 90%;
-}
-div.page-search-info button.copy-url:hover {
-    background-color: #dfe6f1;
-    opacity: 100%;
-}
-button.copy-url span {
-    color: #000000;
-    content: attr(aria-label);
-    font-family:'DejaVu Sans', Arial, Helvetica, sans-serif;
-    font-size: 85%;
-    line-height: 1.2em;
-    padding: 0.2em;
-    position: relative;
-    top: -0.18em;
-    transition: opacity 0.1s;
-    opacity: 0;
-}
-div.page-search-info:hover button.copy-url span {
-    opacity: 90%;
-}
-div.page-search-info button.copy-url:active {
-    background-color: #cfdbee;
-    opacity: 100%;
-}
 .module-graph span {
     display:none;
     position:absolute;
@@ -832,7 +836,111 @@ main a[href*="://"]:focus::after {
         132-240 240 120 120 240-240 132 132V0z" fill="%23bb7a2a"/>\
       </svg>');
 }
-
+/*
+ * Styles for copy-to-clipboard buttons
+ */
+button.copy {
+    opacity: 80%;
+    border: none;
+    border-radius: 3px;
+    position: relative;
+    background:none;
+    transition: opacity 0.2s;
+    cursor: pointer;
+}
+button.copy:hover,
+button.copy:active {
+    opacity: 100%;
+}
+button.copy img {
+    position: relative;
+    background: none;
+}
+button.copy span {
+    color: #303030;
+    position: relative;
+    top: -0.1em;
+    transition: all 0.1s;
+    font-size: 85%;
+    line-height: 1.2em;
+}
+/* header/section copy button */
+button.copy-header {
+    margin: 0 0.2em;
+    padding: 0 4px;
+    height: 1.35em;
+}
+button.copy-header img {
+    height: 1em;
+    top: 0.1em;
+}
+button.copy-header:active {
+    background-color: rgba(128, 128, 160, 0.2);
+}
+/* search page copy button */
+button#page-search-copy {
+    margin-left: 0.4em;
+    padding:0.3em;
+    top:0.13em;
+}
+button#page-search-copy img {
+    width: 1.2em;
+    height: 1.2em;
+    padding: 0.01em 0;
+    top: 0.15em;
+}
+button#page-search-copy span {
+    color: #000000;
+    content: attr(aria-label);
+    line-height: 1.2em;
+    padding: 0.2em;
+    top: -0.18em;
+    opacity: 0;
+}
+div.page-search-info:hover button#page-search-copy,
+div.page-search-info:hover button#page-search-copy span {
+    opacity: 90%;
+}
+div.page-search-info button#page-search-copy:hover {
+    background-color: #dfe6f1;
+}
+div.page-search-info button#page-search-copy:active {
+    background-color: #cfdbee;
+}
+/* snippet copy button */
+button.snippet-copy {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    height: 1.7em;
+    opacity: 50%;
+    padding: 2px;
+}
+button.snippet-copy img {
+    width: 18px;
+    height: 18px;
+    padding: 0.05em 0;
+}
+button.snippet-copy span {
+    content: attr(aria-label);
+    line-height: 1.2em;
+    padding: 0.2em;
+    position: relative;
+    top: -0.5em;
+    display: none;
+}
+div.snippet-container:hover button.snippet-copy span {
+    display: inline;
+}
+div.snippet-container:hover button.snippet-copy {
+    opacity: 80%;
+}
+div.snippet-container button.snippet-copy:hover {
+    opacity: 100%;
+}
+button.snippet-copy:active {
+    background: #d3d3d3;
+}
 /*
  * Styles for user-provided tables.
  *
@@ -1066,49 +1174,6 @@ pre.snippet {
 }
 div.snippet-container {
     position: relative;
-}
-button.snippet-copy {
-    position: absolute;
-    top: 6px;
-    right: 6px;
-    height: 1.7em;
-    opacity: 50%;
-    transition: opacity 0.2s;
-    padding: 2px;
-    border: none;
-    cursor: pointer;
-    background: none;
-}
-button.snippet-copy img {
-    width: 18px;
-    height: 18px;
-    padding: 0.05em 0;
-    background: none;
-}
-div.snippet-container:hover button.snippet-copy {
-    opacity: 80%;
-}
-div.snippet-container button.snippet-copy:hover {
-    opacity: 100%;
-}
-button.snippet-copy span {
-    color: #3d3d3d;
-    content: attr(aria-label);
-    font-family:'DejaVu Sans', Arial, Helvetica, sans-serif;
-    font-size: 85%;
-    line-height: 1.2em;
-    padding: 0.2em;
-    position: relative;
-    white-space: nowrap;
-    top: -0.5em;
-    display: none;
-}
-div.snippet-container:hover button.snippet-copy span {
-    display: inline;
-}
-button.snippet-copy:active {
-    background: #d3d3d3;
-    opacity: 100%;
 }
 @media screen and (max-width: 800px) {
     pre.snippet {
