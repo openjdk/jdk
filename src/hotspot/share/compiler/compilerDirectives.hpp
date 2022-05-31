@@ -128,8 +128,8 @@ public:
   bool is_intrinsic_disabled(const methodHandle& method);
   static ccstrlist canonicalize_control_intrinsic(ccstrlist option_value);
   void finalize(outputStream* st);
-  bool is_c1(CompilerDirectives* directive);
-  bool is_c2(CompilerDirectives* directive);
+  bool is_c1(CompilerDirectives* directive) const;
+  bool is_c2(CompilerDirectives* directive) const;
 
   typedef enum {
 #define enum_of_flags(name, type, dvalue, cc_flag) name##Index,

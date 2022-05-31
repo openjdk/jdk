@@ -193,11 +193,11 @@ DirectiveSet* CompilerDirectives::get_for(AbstractCompiler *comp) {
   }
 }
 
-bool DirectiveSet::is_c1(CompilerDirectives* directive) {
+bool DirectiveSet::is_c1(CompilerDirectives* directive) const {
   return this == directive->_c1_store;
 }
 
-bool DirectiveSet::is_c2(CompilerDirectives* directive) {
+bool DirectiveSet::is_c2(CompilerDirectives* directive) const {
   return this == directive->_c2_store;
 }
 
