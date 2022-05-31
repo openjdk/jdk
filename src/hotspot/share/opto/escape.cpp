@@ -449,6 +449,7 @@ Node* ConnectionGraph::come_from_allocate(Node* n) const {
       case Op_LoadP:
       case Op_LoadN:
       case Op_LoadNKlass:
+      SHENANDOAHGC_ONLY(case Op_ShenandoahLoadReferenceBarrier:)
       case Op_ConP:
       case Op_CreateEx:
       case Op_AllocateArray:
