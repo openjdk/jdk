@@ -59,9 +59,9 @@ public class CustomTzIDCheckDST {
     private static void runTZTest() {
         Calendar calendar = Calendar.getInstance();
         Date time = calendar.getTime();
-        int month = time.getMonth();
+        // Add 1 since getMonth() starts from 0.
+        int month = time.getMonth() + 1;
         ZonedDateTime date = ZonedDateTime.ofInstant(time.toInstant(), ZoneId.systemDefault());
-
         if ((month > Month.MARCH.getValue() && month < Month.OCTOBER.getValue()) ||
                 (month == Month.MARCH.getValue() && date.isAfter(getLastSundayOfMonth(date))) ||
                 (month == Month.OCTOBER.getValue() && date.isBefore(getLastSundayOfMonth(date)))) {
