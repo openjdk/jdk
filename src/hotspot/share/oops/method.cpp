@@ -1329,10 +1329,8 @@ void Method::set_code(const methodHandle& mh, CompiledMethod *code) {
 
     // This is the entry used when we're in interpreter-only mode; see InterpreterMacroAssembler::jump_from_interpreted
     mh->_i2i_entry = mh->get_i2c_entry();
-    OrderAccess::storestore();
     // This must come last, as it is what's tested in LinkResolver::resolve_static_call
-    mh->_from_interpreted_entry = mh->get_i2c_entry();
-    OrderAccess::storestore();
+    Atomic::release_store(&mh->_from_interpreted_entry , mh->get_i2c_entry());
   } else if (!mh->is_method_handle_intrinsic()) {
     // Instantly compiled code can execute.
     mh->_from_interpreted_entry = mh->get_i2c_entry();
