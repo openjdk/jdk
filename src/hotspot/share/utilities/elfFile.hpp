@@ -633,9 +633,16 @@ class DwarfFile : public ElfFile {
   };
 
   // (4) The line number program for the compilation unit at the offset of the .debug_line obtained by (3).
-  // For some reason, GCC emits DWARF 3 for the line number program even though the default is DWARF 4.
-  // Therefore, this class supports DWARF 3 and DWARF 4 parsing specified in section 6.2 of both DWARF specs.
+  // For some reason, earlier GCC versions emit the line number program in DWARF 2 or 3 format even though the
+  // default is DWARF 4. It also mixes the standards (see comments in the parsing code).
+  //
+  // Therefore, this class supports DWARF 2, 3 and 4 parsing as specified in section 6.2 of the DWARF specs.
+  // The parsing of DWARF 2 is already covered by the parsing of DWARF 3 as they use the shared opcodes in the same way.
+  // The parsing of DWARF 4, however, needs some adaptation as it consumes more data for some shared opcodes.
+  //
+  // DWARF 2 standard: https://dwarfstd.org/doc/dwarf-2.0.0.pdf
   // DWARF 3 standard: https://dwarfstd.org/doc/Dwarf3.pdf
+  //
   //
   // Structure of .debug_ling:
   //   Section Header
@@ -667,15 +674,15 @@ class DwarfFile : public ElfFile {
     static constexpr uint8_t DW_LNS_set_basic_block = 7;
     static constexpr uint8_t DW_LNS_const_add_pc = 8;
     static constexpr uint8_t DW_LNS_fixed_advance_pc = 9;
-    static constexpr uint8_t DW_LNS_set_prologue_end = 10;
-    static constexpr uint8_t DW_LNS_set_epilogue_begin = 11;
-    static constexpr uint8_t DW_LNS_set_isa = 12;
+    static constexpr uint8_t DW_LNS_set_prologue_end = 10; // Introduced with DWARF 3
+    static constexpr uint8_t DW_LNS_set_epilogue_begin = 11; // Introduced with DWARF 3
+    static constexpr uint8_t DW_LNS_set_isa = 12; // Introduced with DWARF 3
 
     // Extended opcodes for the line number program defined in section 6.2.5.2 of the DWARF 4 spec.
     static constexpr uint8_t DW_LNE_end_sequence = 1;
     static constexpr uint8_t DW_LNE_set_address = 2;
     static constexpr uint8_t DW_LNE_define_file = 3;
-    static constexpr uint8_t DW_LNE_set_discriminator = 4;
+    static constexpr uint8_t DW_LNE_set_discriminator = 4; // Introduced with DWARF 4
 
     // The header is defined in section 6.2.4 of the DWARF 4 spec.
     struct LineNumberProgramHeader {
@@ -698,7 +705,7 @@ class DwarfFile : public ElfFile {
       // The maximum number of individual operations that may be encoded in an instruction. Line number program opcodes
       // that alter the address and op_index registers use this and minimum_instruction_length in their calculations.
       // For non-VLIW architectures, this field is 1, the op_index register is always 0, and the operation pointer is
-      // simply the address register. This is only used in DWARF 4.
+      // simply the address register. This is only used with DWARF 4.
       uint8_t _maximum_operations_per_instruction;
 
       // The initial value of the is_stmt register.
@@ -715,7 +722,7 @@ class DwarfFile : public ElfFile {
 
       // This array specifies the number of LEB128 operands for each of the standard opcodes. The first element of the
       // array corresponds to the opcode whose value is 1, and the last element corresponds to the opcode whose value is
-      // opcode_base-1. DWARF 3 and 4 use 12 standard opcodes.
+      // opcode_base-1. DWARF 2 uses 9 standard opcodes while DWARF 3 and 4 use 12.
       uint8_t _standard_opcode_lengths[12];
 
       /*
@@ -742,7 +749,7 @@ class DwarfFile : public ElfFile {
       // The index of an operation within a VLIW instruction. The index of the first operation is 0. For non-VLIW
       // architectures, this register will always be 0.
       // The address and op_index registers, taken together, form an operation pointer that can reference any
-      // individual operation with the instruction stream. This field was added in DWARF 4.
+      // individual operation with the instruction stream. This field was introduced with DWARF 4.
       uint32_t _op_index;
 
       // The identity of the source file corresponding to a machine instruction.
@@ -767,24 +774,25 @@ class DwarfFile : public ElfFile {
       bool _end_sequence;
 
       // Indicates that the current address is one (of possibly many) where execution should be suspended for an entry
-      // breakpoint of a function.
+      // breakpoint of a function. This field was introduced with DWARF 3.
       bool _prologue_end;
 
       // Indicates that the current address is one (of possibly many) where execution should be suspended for an exit
-      // breakpoint of a function.
+      // breakpoint of a function. This field was introduced with DWARF 3.
       bool _epilogue_begin;
 
       // Encodes the applicable instruction set architecture for the current instruction.
+      // This field was introduced with DWARF 3.
       uint32_t _isa;
 
-      // Identifies the block to which the current instruction belongs. This field was added in DWARF 4.
+      // Identifies the block to which the current instruction belongs. This field was introduced with DWARF 4.
       uint32_t _discriminator;
 
       /*
        * Additional fields which are not part of the actual state as described in DWARF spec.
        */
       // Header fields
-      // Specifies which DWARF version is used in the .debug_line section. Currently supported: DWARF 3 + 4.
+      // Specifies which DWARF version is used in the .debug_line section. Supported version: DWARF 2, 3, and 4.
       const uint16_t _dwarf_version;
       const bool _initial_is_stmt;
 

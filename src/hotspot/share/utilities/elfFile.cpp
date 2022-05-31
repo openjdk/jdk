@@ -1154,10 +1154,13 @@ bool DwarfFile::LineNumberProgram::read_header() {
     return false;
   }
 
-  if (!_reader.read_word(&_header._version) || (_header._version != 3 && _header._version != 4)) {
-    // DWARF 3 uses version 3 and DWARF 4 uses version 4 as specified in Appendix F of the DWARF 3 and 4 spec, respectively. For some
-    // reason, GCC is currently using version 3 as specified in the DWARF 3 spec for the line number program even though GCC should
-    // be using version 4 for DWARF 4 as it emits DWARF 4 by default.
+  if (!_reader.read_word(&_header._version) || _header._version < 2 || _header._version > 4) {
+    // DWARF 3 uses version 3 and DWARF 4 uses version 4 as specified in Appendix F of the DWARF 3 and 4 spec, respectively.
+    // For some reason, GCC is not following the standard here. While GCC emits DWARF 4 for the other parsed sections,
+    // it chooses a different DWARF standard for .debug_line based on the GCC version:
+    // - GCC 8 and earlier: .debug_line is in DWARF 2 format (= version 2).
+    // - GCC 9 and 10:      .debug_line is in DWARF 3 format (= version 3).
+    // - GCC 11:            .debug_line is in DWARF 4 format (= version 4).
     return false;
   }
 
@@ -1634,7 +1637,7 @@ void DwarfFile::LineNumberProgram::LineNumberProgramState::reset_fields() {
 // Defined in section 6.2.5.1 of the DWARF 4 spec.
 void DwarfFile::LineNumberProgram::LineNumberProgramState::add_to_address_register(const uint32_t operation_advance,
                                                                                    const LineNumberProgramHeader& header) {
-  if (_dwarf_version == 3) {
+  if (_dwarf_version == 2 || _dwarf_version == 3) {
     _address += (uintptr_t)(operation_advance * header._minimum_instruction_length);
   } else if (_dwarf_version == 4) {
     _address += (uintptr_t)(header._minimum_instruction_length *
