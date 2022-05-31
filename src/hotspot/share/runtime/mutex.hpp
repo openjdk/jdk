@@ -92,7 +92,7 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   os::PlatformMonitor _lock;             // Native monitor implementation
   const char* _name;                     // Name of mutex/monitor
 
-  // Debugging fields for naming, deadlock detection, etc. (some only used in debug mode)
+ // Debugging fields for naming, deadlock detection, etc. (some only used in debug mode)
 #ifndef PRODUCT
   bool    _allow_vm_block;
 #endif

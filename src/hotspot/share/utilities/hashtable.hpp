@@ -28,6 +28,7 @@
 #include "memory/allocation.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/handles.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "utilities/tableStatistics.hpp"
 
 // This is a generic hashtable which is implemented as an open hash table with
