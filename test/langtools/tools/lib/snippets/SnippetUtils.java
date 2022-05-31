@@ -44,6 +44,7 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
+import javax.lang.model.element.QualifiedNameable;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.util.Elements;
@@ -103,6 +104,15 @@ public class SnippetUtils {
      */
     public static class SnippetNotFoundException extends Exception {
         public SnippetNotFoundException(String message) {
+            super(message);
+        }
+    }
+
+    /**
+     * Exception used to report that a doc comment could not be found.
+     */
+    public static class DocCommentNotFoundException extends Exception {
+        public DocCommentNotFoundException(String message) {
             super(message);
         }
     }
@@ -232,7 +242,11 @@ public class SnippetUtils {
      * @throws SnippetNotFoundException if the snippet cannot be found
      */
     public SnippetTree getSnippetById(DocCommentTree tree, String id) throws SnippetNotFoundException {
-        return requireNonNull(new SnippetFinder().scan(tree, id), () -> new SnippetNotFoundException(id));
+        SnippetTree result = new SnippetFinder().scan(tree, id);
+        if (result == null) {
+            throw new SnippetNotFoundException(id);
+        }
+        return result;
     }
 
     /**
@@ -241,28 +255,17 @@ public class SnippetUtils {
      * @param element the element
      * @param id      the id
      *
+     * @throws DocCommentNotFoundException if the doc comment for the element cannot be found
      * @throws SnippetNotFoundException if the snippet cannot be found
      */
-    public SnippetTree getSnippetById(Element element, String id) throws SnippetNotFoundException {
-        DocCommentTree tree = getDocCommentTree(element);
-        return requireNonNull(new SnippetFinder().scan(tree, id), () -> new SnippetNotFoundException(id));
-    }
-
-    /**
-     * {@return an item if it is not {@code null}, or else throw an exception}
-     *
-     * @param t the item
-     * @param e a supplier for the exception that will be thrown if the item is null
-     * @param <T> the type of the item
-     * @param <E> the type of the exception that may be thrown
-     *
-     * @throws E if the item is {@code null}
-     */
-    private <T, E extends Exception> T requireNonNull(T t, Supplier<E> e) throws E {
-        if (t == null) {
-            throw e.get();
+    public SnippetTree getSnippetById(Element element, String id)
+            throws DocCommentNotFoundException, SnippetNotFoundException {
+        DocCommentTree docCommentTree = getDocCommentTree(element);
+        if (docCommentTree == null) {
+            var name = (element instanceof QualifiedNameable q) ? q.getQualifiedName() : element.getSimpleName();
+            throw new DocCommentNotFoundException(element.getKind() + " " + name);
         }
-        return t;
+        return getSnippetById(docCommentTree, id);
     }
 
     /**
