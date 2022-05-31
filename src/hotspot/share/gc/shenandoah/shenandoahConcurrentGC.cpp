@@ -507,6 +507,10 @@ public:
   bool is_thread_safe() { return true; }
 };
 
+void ShenandoahConcurrentGC::start_mark() {
+  _mark.start_mark();
+}
+
 void ShenandoahConcurrentGC::op_init_mark() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Should be at safepoint");
@@ -526,7 +530,7 @@ void ShenandoahConcurrentGC::op_init_mark() {
 
   heap->set_concurrent_mark_in_progress(true);
 
-  _mark.start_mark();
+  start_mark();
 
   {
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_update_region_states);
