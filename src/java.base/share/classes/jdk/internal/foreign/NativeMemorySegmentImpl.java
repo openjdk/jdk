@@ -41,14 +41,14 @@ import sun.security.action.GetBooleanAction;
  */
 public class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl {
 
-    public static final MemorySegment EVERYTHING = new NativeMemorySegmentImpl(0, Long.MAX_VALUE, 0, MemorySessionImpl.GLOBAL) {
+    public static final MemorySegment EVERYTHING = new NativeMemorySegmentImpl(0, Long.MAX_VALUE, false, MemorySessionImpl.GLOBAL) {
         @Override
         void checkBounds(long offset, long length) {
             // do nothing
         }
 
         @Override
-        NativeMemorySegmentImpl dup(long offset, long size, int mask, MemorySession scope) {
+        NativeMemorySegmentImpl dup(long offset, long size, boolean isReadOnly, MemorySession scope) {
             throw new IllegalStateException();
         }
     };
@@ -64,8 +64,8 @@ public class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl {
     final long min;
 
     @ForceInline
-    NativeMemorySegmentImpl(long min, long length, int mask, MemorySession session) {
-        super(length, mask, session);
+    NativeMemorySegmentImpl(long min, long length, boolean isReadOnly, MemorySession session) {
+        super(length, isReadOnly, session);
         this.min = min;
     }
 
@@ -77,8 +77,8 @@ public class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl {
     }
 
     @Override
-    NativeMemorySegmentImpl dup(long offset, long size, int mask, MemorySession session) {
-        return new NativeMemorySegmentImpl(min + offset, size, mask, session);
+    NativeMemorySegmentImpl dup(long offset, long size, boolean isReadOnly, MemorySession session) {
+        return new NativeMemorySegmentImpl(min + offset, size, isReadOnly, session);
     }
 
     @Override
@@ -126,7 +126,7 @@ public class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl {
         }
         long alignedBuf = Utils.alignUp(buf, alignmentBytes);
         AbstractMemorySegmentImpl segment = new NativeMemorySegmentImpl(buf, alignedSize,
-                DEFAULT_MODES, session);
+                false, session);
         MemorySessionImpl.addOrCleanupIfFail(session, new MemorySessionImpl.State.ResourceCleanup() {
             @Override
             public void cleanup() {
@@ -143,6 +143,6 @@ public class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl {
 
     public static MemorySegment makeNativeSegmentUnchecked(MemoryAddress min, long bytesSize, MemorySession session) {
         MemorySessionImpl.checkValidState(session);
-        return new NativeMemorySegmentImpl(min.toRawLongValue(), bytesSize, DEFAULT_MODES, session);
+        return new NativeMemorySegmentImpl(min.toRawLongValue(), bytesSize, false, session);
     }
 }

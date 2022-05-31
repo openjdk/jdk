@@ -1199,9 +1199,6 @@ public class FileChannelImpl
         }
     }
 
-    private static final int MAP_MEM_SEG_DEFAULT_MODES = 0;
-    private static final int MAP_MEM_SEG_READ_ONLY = 1;
-
     @Override
     public MemorySegment map(MapMode mode, long offset, long size,
                              MemorySession session)
@@ -1218,14 +1215,11 @@ public class FileChannelImpl
         boolean isSync = isSync(mode);
         int prot = toProt(mode);
         Unmapper unmapper = mapInternal(mode, offset, size, prot, isSync);
-        int modes = MAP_MEM_SEG_DEFAULT_MODES;
-        if (mode == MapMode.READ_ONLY) {
-            modes |= MAP_MEM_SEG_READ_ONLY;
-        }
+        boolean isReadOnly = (mode == MapMode.READ_ONLY);
         if (unmapper != null) {
             AbstractMemorySegmentImpl segment =
                 new MappedMemorySegmentImpl(unmapper.address(), unmapper, size,
-                                            modes, session);
+                                            isReadOnly, session);
             MemorySessionImpl.addOrCleanupIfFail(session,
                 new MemorySessionImpl.State.ResourceCleanup() {
                     @Override
@@ -1235,7 +1229,7 @@ public class FileChannelImpl
                 });
             return segment;
         } else {
-            return new MappedMemorySegmentImpl.EmptyMappedMemorySegmentImpl(modes, session);
+            return new MappedMemorySegmentImpl.EmptyMappedMemorySegmentImpl(isReadOnly, session);
         }
     }
 

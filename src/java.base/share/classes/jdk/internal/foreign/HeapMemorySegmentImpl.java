@@ -44,7 +44,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * the field type storing the 'base' coordinate is just Object; similarly, all the constructor in the subclasses
  * accept an Object 'base' parameter instead of a sharper type (e.g. {@code byte[]}). This is deliberate, as
  * using sharper types would require use of type-conversions, which in turn would inhibit some C2 optimizations,
- * such as the elimination of store barriers in methods like {@link HeapMemorySegmentImpl#dup(long, long, int, MemorySession)}.
+ * such as the elimination of store barriers in methods like {@link HeapMemorySegmentImpl#dup(long, long, boolean, MemorySession)}.
  */
 public abstract class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
 
@@ -60,8 +60,8 @@ public abstract class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
     final Object base;
 
     @ForceInline
-    HeapMemorySegmentImpl(long offset, Object base, long length, int mask) {
-        super(length, mask, MemorySessionImpl.GLOBAL);
+    HeapMemorySegmentImpl(long offset, Object base, long length, boolean isReadOnly) {
+        super(length, isReadOnly, MemorySessionImpl.GLOBAL);
         this.offset = offset;
         this.base = base;
     }
@@ -75,7 +75,7 @@ public abstract class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
     }
 
     @Override
-    abstract HeapMemorySegmentImpl dup(long offset, long size, int mask, MemorySession session);
+    abstract HeapMemorySegmentImpl dup(long offset, long size, boolean isReadOnly, MemorySession session);
 
     @Override
     ByteBuffer makeByteBuffer() {
@@ -90,13 +90,13 @@ public abstract class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
 
     public static class OfByte extends HeapMemorySegmentImpl {
 
-        OfByte(long offset, Object base, long length, int mask) {
-            super(offset, base, length, mask);
+        OfByte(long offset, Object base, long length, boolean isReadOnly) {
+            super(offset, base, length, isReadOnly);
         }
 
         @Override
-        OfByte dup(long offset, long size, int mask, MemorySession session) {
-            return new OfByte(this.offset + offset, base, size, mask);
+        OfByte dup(long offset, long size, boolean isReadOnly, MemorySession session) {
+            return new OfByte(this.offset + offset, base, size, isReadOnly);
         }
 
         @Override
@@ -107,7 +107,7 @@ public abstract class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
         public static MemorySegment fromArray(byte[] arr) {
             Objects.requireNonNull(arr);
             long byteSize = (long)arr.length * Unsafe.ARRAY_BYTE_INDEX_SCALE;
-            return new OfByte(Unsafe.ARRAY_BYTE_BASE_OFFSET, arr, byteSize, DEFAULT_MODES);
+            return new OfByte(Unsafe.ARRAY_BYTE_BASE_OFFSET, arr, byteSize, false);
         }
 
         @Override
@@ -118,13 +118,13 @@ public abstract class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
 
     public static class OfChar extends HeapMemorySegmentImpl {
 
-        OfChar(long offset, Object base, long length, int mask) {
-            super(offset, base, length, mask);
+        OfChar(long offset, Object base, long length, boolean isReadOnly) {
+            super(offset, base, length, isReadOnly);
         }
 
         @Override
-        OfChar dup(long offset, long size, int mask, MemorySession session) {
-            return new OfChar(this.offset + offset, base, size, mask);
+        OfChar dup(long offset, long size, boolean isReadOnly, MemorySession session) {
+            return new OfChar(this.offset + offset, base, size, isReadOnly);
         }
 
         @Override
@@ -135,7 +135,7 @@ public abstract class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
         public static MemorySegment fromArray(char[] arr) {
             Objects.requireNonNull(arr);
             long byteSize = (long)arr.length * Unsafe.ARRAY_CHAR_INDEX_SCALE;
-            return new OfChar(Unsafe.ARRAY_CHAR_BASE_OFFSET, arr, byteSize, DEFAULT_MODES);
+            return new OfChar(Unsafe.ARRAY_CHAR_BASE_OFFSET, arr, byteSize, false);
         }
 
         @Override
@@ -146,13 +146,13 @@ public abstract class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
 
     public static class OfShort extends HeapMemorySegmentImpl {
 
-        OfShort(long offset, Object base, long length, int mask) {
-            super(offset, base, length, mask);
+        OfShort(long offset, Object base, long length, boolean isReadOnly) {
+            super(offset, base, length, isReadOnly);
         }
 
         @Override
-        OfShort dup(long offset, long size, int mask, MemorySession session) {
-            return new OfShort(this.offset + offset, base, size, mask);
+        OfShort dup(long offset, long size, boolean isReadOnly, MemorySession session) {
+            return new OfShort(this.offset + offset, base, size, isReadOnly);
         }
 
         @Override
@@ -163,7 +163,7 @@ public abstract class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
         public static MemorySegment fromArray(short[] arr) {
             Objects.requireNonNull(arr);
             long byteSize = (long)arr.length * Unsafe.ARRAY_SHORT_INDEX_SCALE;
-            return new OfShort(Unsafe.ARRAY_SHORT_BASE_OFFSET, arr, byteSize, DEFAULT_MODES);
+            return new OfShort(Unsafe.ARRAY_SHORT_BASE_OFFSET, arr, byteSize, false);
         }
 
         @Override
@@ -174,13 +174,13 @@ public abstract class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
 
     public static class OfInt extends HeapMemorySegmentImpl {
 
-        OfInt(long offset, Object base, long length, int mask) {
-            super(offset, base, length, mask);
+        OfInt(long offset, Object base, long length, boolean isReadOnly) {
+            super(offset, base, length, isReadOnly);
         }
 
         @Override
-        OfInt dup(long offset, long size, int mask, MemorySession session) {
-            return new OfInt(this.offset + offset, base, size, mask);
+        OfInt dup(long offset, long size, boolean isReadOnly, MemorySession session) {
+            return new OfInt(this.offset + offset, base, size, isReadOnly);
         }
 
         @Override
@@ -191,7 +191,7 @@ public abstract class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
         public static MemorySegment fromArray(int[] arr) {
             Objects.requireNonNull(arr);
             long byteSize = (long)arr.length * Unsafe.ARRAY_INT_INDEX_SCALE;
-            return new OfInt(Unsafe.ARRAY_INT_BASE_OFFSET, arr, byteSize, DEFAULT_MODES);
+            return new OfInt(Unsafe.ARRAY_INT_BASE_OFFSET, arr, byteSize, false);
         }
 
         @Override
@@ -202,13 +202,13 @@ public abstract class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
 
     public static class OfLong extends HeapMemorySegmentImpl {
 
-        OfLong(long offset, Object base, long length, int mask) {
-            super(offset, base, length, mask);
+        OfLong(long offset, Object base, long length, boolean isReadOnly) {
+            super(offset, base, length, isReadOnly);
         }
 
         @Override
-        OfLong dup(long offset, long size, int mask, MemorySession session) {
-            return new OfLong(this.offset + offset, base, size, mask);
+        OfLong dup(long offset, long size, boolean isReadOnly, MemorySession session) {
+            return new OfLong(this.offset + offset, base, size, isReadOnly);
         }
 
         @Override
@@ -219,7 +219,7 @@ public abstract class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
         public static MemorySegment fromArray(long[] arr) {
             Objects.requireNonNull(arr);
             long byteSize = (long)arr.length * Unsafe.ARRAY_LONG_INDEX_SCALE;
-            return new OfLong(Unsafe.ARRAY_LONG_BASE_OFFSET, arr, byteSize, DEFAULT_MODES);
+            return new OfLong(Unsafe.ARRAY_LONG_BASE_OFFSET, arr, byteSize, false);
         }
 
         @Override
@@ -230,13 +230,13 @@ public abstract class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
 
     public static class OfFloat extends HeapMemorySegmentImpl {
 
-        OfFloat(long offset, Object base, long length, int mask) {
-            super(offset, base, length, mask);
+        OfFloat(long offset, Object base, long length, boolean isReadOnly) {
+            super(offset, base, length, isReadOnly);
         }
 
         @Override
-        OfFloat dup(long offset, long size, int mask, MemorySession session) {
-            return new OfFloat(this.offset + offset, base, size, mask);
+        OfFloat dup(long offset, long size, boolean isReadOnly, MemorySession session) {
+            return new OfFloat(this.offset + offset, base, size, isReadOnly);
         }
 
         @Override
@@ -247,7 +247,7 @@ public abstract class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
         public static MemorySegment fromArray(float[] arr) {
             Objects.requireNonNull(arr);
             long byteSize = (long)arr.length * Unsafe.ARRAY_FLOAT_INDEX_SCALE;
-            return new OfFloat(Unsafe.ARRAY_FLOAT_BASE_OFFSET, arr, byteSize, DEFAULT_MODES);
+            return new OfFloat(Unsafe.ARRAY_FLOAT_BASE_OFFSET, arr, byteSize, false);
         }
 
         @Override
@@ -258,13 +258,13 @@ public abstract class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
 
     public static class OfDouble extends HeapMemorySegmentImpl {
 
-        OfDouble(long offset, Object base, long length, int mask) {
-            super(offset, base, length, mask);
+        OfDouble(long offset, Object base, long length, boolean isReadOnly) {
+            super(offset, base, length, isReadOnly);
         }
 
         @Override
-        OfDouble dup(long offset, long size, int mask, MemorySession session) {
-            return new OfDouble(this.offset + offset, base, size, mask);
+        OfDouble dup(long offset, long size, boolean isReadOnly, MemorySession session) {
+            return new OfDouble(this.offset + offset, base, size, isReadOnly);
         }
 
         @Override
@@ -275,7 +275,7 @@ public abstract class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
         public static MemorySegment fromArray(double[] arr) {
             Objects.requireNonNull(arr);
             long byteSize = (long)arr.length * Unsafe.ARRAY_DOUBLE_INDEX_SCALE;
-            return new OfDouble(Unsafe.ARRAY_DOUBLE_BASE_OFFSET, arr, byteSize, DEFAULT_MODES);
+            return new OfDouble(Unsafe.ARRAY_DOUBLE_BASE_OFFSET, arr, byteSize, false);
         }
 
         @Override

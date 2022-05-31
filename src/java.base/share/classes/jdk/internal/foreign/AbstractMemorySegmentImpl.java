@@ -68,21 +68,18 @@ public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegm
 
     private static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
 
-    static final int READ_ONLY = 1;
     static final long NONCE = new Random().nextLong();
-
-    static final int DEFAULT_MODES = 0;
 
     static final JavaNioAccess nioAccess = SharedSecrets.getJavaNioAccess();
 
     final long length;
-    final int mask;
+    final boolean isReadOnly;
     final MemorySession session;
 
     @ForceInline
-    AbstractMemorySegmentImpl(long length, int mask, MemorySession session) {
+    AbstractMemorySegmentImpl(long length, boolean isReadOnly, MemorySession session) {
         this.length = length;
-        this.mask = mask;
+        this.isReadOnly = isReadOnly;
         this.session = session;
     }
 
@@ -90,18 +87,18 @@ public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegm
 
     abstract Object base();
 
-    abstract AbstractMemorySegmentImpl dup(long offset, long size, int mask, MemorySession session);
+    abstract AbstractMemorySegmentImpl dup(long offset, long size, boolean isReadOnly, MemorySession session);
 
     abstract ByteBuffer makeByteBuffer();
 
     @Override
     public AbstractMemorySegmentImpl asReadOnly() {
-        return dup(0, length, mask | READ_ONLY, session);
+        return dup(0, length, true, session);
     }
 
     @Override
     public boolean isReadOnly() {
-        return isSet(READ_ONLY);
+        return isReadOnly;
     }
 
     @Override
@@ -117,7 +114,7 @@ public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegm
     }
 
     private AbstractMemorySegmentImpl asSliceNoCheck(long offset, long newSize) {
-        return dup(offset, newSize, mask, session);
+        return dup(offset, newSize, isReadOnly, session);
     }
 
     @Override
@@ -236,7 +233,7 @@ public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegm
     public final ByteBuffer asByteBuffer() {
         checkArraySize("ByteBuffer", 1);
         ByteBuffer _bb = makeByteBuffer();
-        if (isSet(READ_ONLY)) {
+        if (isReadOnly) {
             //session is IMMUTABLE - obtain a RO byte buffer
             _bb = _bb.asReadOnlyBuffer();
         }
@@ -350,7 +347,7 @@ public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegm
 
     @ForceInline
     public void checkAccess(long offset, long length, boolean readOnly) {
-        if (!readOnly && isSet(READ_ONLY)) {
+        if (!readOnly && this.isReadOnly) {
             throw new UnsupportedOperationException("Attempt to write a read-only segment");
         }
         checkBounds(offset, length);
@@ -369,10 +366,6 @@ public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegm
     }
 
     // Helper methods
-
-    private boolean isSet(int mask) {
-        return (this.mask & mask) != 0;
-    }
 
     public abstract long maxAlignMask();
 
@@ -532,41 +525,41 @@ public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegm
 
         AbstractMemorySegmentImpl bufferSegment = (AbstractMemorySegmentImpl)nioAccess.bufferSegment(bb);
         final MemorySessionImpl bufferSession;
-        int modes;
+        boolean isReadOnly;
         if (bufferSegment != null) {
             bufferSession = bufferSegment.session();
-            modes = bufferSegment.mask;
+            isReadOnly = bufferSegment.isReadOnly;
         } else {
             bufferSession = MemorySessionImpl.heapSession(bb);
-            modes = DEFAULT_MODES;
+            isReadOnly = false;
         }
         if (bb.isReadOnly()) {
-            modes |= READ_ONLY;
+            isReadOnly = true;
         }
         int scaleFactor = getScaleFactor(bb);
         if (base != null) {
             if (base instanceof byte[]) {
-                return new HeapMemorySegmentImpl.OfByte(bbAddress + (pos << scaleFactor), base, size << scaleFactor, modes);
+                return new HeapMemorySegmentImpl.OfByte(bbAddress + (pos << scaleFactor), base, size << scaleFactor, isReadOnly);
             } else if (base instanceof short[]) {
-                return new HeapMemorySegmentImpl.OfShort(bbAddress + (pos << scaleFactor), base, size << scaleFactor, modes);
+                return new HeapMemorySegmentImpl.OfShort(bbAddress + (pos << scaleFactor), base, size << scaleFactor, isReadOnly);
             } else if (base instanceof char[]) {
-                return new HeapMemorySegmentImpl.OfChar(bbAddress + (pos << scaleFactor), base, size << scaleFactor, modes);
+                return new HeapMemorySegmentImpl.OfChar(bbAddress + (pos << scaleFactor), base, size << scaleFactor, isReadOnly);
             } else if (base instanceof int[]) {
-                return new HeapMemorySegmentImpl.OfInt(bbAddress + (pos << scaleFactor), base, size << scaleFactor, modes);
+                return new HeapMemorySegmentImpl.OfInt(bbAddress + (pos << scaleFactor), base, size << scaleFactor, isReadOnly);
             } else if (base instanceof float[]) {
-                return new HeapMemorySegmentImpl.OfFloat(bbAddress + (pos << scaleFactor), base, size << scaleFactor, modes);
+                return new HeapMemorySegmentImpl.OfFloat(bbAddress + (pos << scaleFactor), base, size << scaleFactor, isReadOnly);
             } else if (base instanceof long[]) {
-                return new HeapMemorySegmentImpl.OfLong(bbAddress + (pos << scaleFactor), base, size << scaleFactor, modes);
+                return new HeapMemorySegmentImpl.OfLong(bbAddress + (pos << scaleFactor), base, size << scaleFactor, isReadOnly);
             } else if (base instanceof double[]) {
-                return new HeapMemorySegmentImpl.OfDouble(bbAddress + (pos << scaleFactor), base, size << scaleFactor, modes);
+                return new HeapMemorySegmentImpl.OfDouble(bbAddress + (pos << scaleFactor), base, size << scaleFactor, isReadOnly);
             } else {
                 throw new AssertionError("Cannot get here");
             }
         } else if (unmapper == null) {
-            return new NativeMemorySegmentImpl(bbAddress + (pos << scaleFactor), size << scaleFactor, modes, bufferSession);
+            return new NativeMemorySegmentImpl(bbAddress + (pos << scaleFactor), size << scaleFactor, isReadOnly, bufferSession);
         } else {
             // we can ignore scale factor here, a mapped buffer is always a byte buffer, so scaleFactor == 0.
-            return new MappedMemorySegmentImpl(bbAddress + pos, unmapper, size, modes, bufferSession);
+            return new MappedMemorySegmentImpl(bbAddress + pos, unmapper, size, isReadOnly, bufferSession);
         }
     }
 
