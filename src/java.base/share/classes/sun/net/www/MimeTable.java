@@ -154,9 +154,9 @@ public class MimeTable implements FileNameMap {
     }
 
     /**
-     * Returns the file extension or the empty string if none found.
+     * Extracts the file extension and uses it to look up the entry.
      */
-    private static String getFileExtension(String fname) {
+    private MimeEntry findViaFileExtension(String fname) {
         int i = fname.lastIndexOf('.');
         // REMIND: OS specific delimiters appear here
         i = Math.max(i, fname.lastIndexOf('/'));
@@ -167,7 +167,7 @@ public class MimeTable implements FileNameMap {
             ext = fname.substring(i).toLowerCase();
         }
 
-        return ext;
+        return findByExt(ext);
     }
 
     /**
@@ -185,12 +185,9 @@ public class MimeTable implements FileNameMap {
         // present, then strip it and use the prefix
         int hashIndex = fname.lastIndexOf(HASH_MARK);
         if (hashIndex > 0) {
-            String ext = getFileExtension(fname.substring(0, hashIndex));
-            if (!ext.isEmpty()) {
-                entry = findByExt(ext);
-                if (entry != null) {
-                    return entry;
-                }
+            entry = findViaFileExtension(fname.substring(0, hashIndex));
+            if (entry != null) {
+                return entry;
             }
         }
 
@@ -198,9 +195,8 @@ public class MimeTable implements FileNameMap {
 
         // If either no optional fragment was present, or the entry was not
         // found with the fragment stripped, then try again with the full name
-        String ext = getFileExtension(fname);
-        if (!ext.isEmpty()) {
-            entry = findByExt(ext);
+        if (entry == null) {
+            entry = findViaFileExtension(fname);
         }
 
         return entry;
