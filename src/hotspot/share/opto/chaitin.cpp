@@ -1368,7 +1368,7 @@ void PhaseChaitin::gather_lrg_masks(const Block_List &blocks, bool after_aggress
 
         // Limit result register mask to acceptable registers
         const RegMask &rm = n->out_RegMask();
-        if (block->_region >= region || n->ideal_reg() == Op_RegFlags || n->ideal_reg() == MachProjNode::fat_proj) {
+        if (block->_region >= region || n->ideal_reg() == Op_RegFlags || n->ideal_reg() == MachProjNode::fat_proj || (n->is_Proj() && n->in(0)->is_Start() && n->as_Proj()->_con < TypeFunc::Parms)) {
           lrg.AND( rm );
 //          if (_was_up_in_prev_region.test(n->_idx) && block->_region > region && n->ideal_reg() != Op_RegFlags && n->ideal_reg() != MachProjNode::fat_proj) {
 //            const RegMask* rm = C->matcher()->idealreg2regmask[n->ideal_reg()];

@@ -406,6 +406,7 @@ PhaseCFG::PhaseCFG(Arena* arena, RootNode* root, Matcher& matcher)
 // backwards walk over the control edges.
 uint PhaseCFG::build_cfg() {
   VectorSet visited;
+  uint last = C->unique();
 
   // Allocate stack with enough space to avoid frequent realloc
   Node_Stack nstack(C->live_nodes() >> 1);
@@ -468,10 +469,22 @@ uint PhaseCFG::build_cfg() {
         // will be added when <p,i> is pulled off the node stack
         if ( cnt > 2 ) {             // Merging many things?
           assert( prevproj== bb->pred(i),"");
+          bool has_create_ex = false;
+          for (DUIterator_Fast imax, i = prevproj->fast_outs(imax); i < imax && !has_create_ex; i++) {
+            Node *u = prevproj->fast_out(i);
+            if (u->is_Mach() && u->as_Mach()->ideal_Opcode() == Op_CreateEx) {
+              has_create_ex = true;
+            }
+          }
+          if (has_create_ex) {
+            Node *g = _goto->clone();       // Force it to end in a Goto
+            g->set_req(0, p->in(i));
+            p->set_req(i, g);
+          }
           if(prevproj->is_block_proj() != prevproj) { // Control-dependent edge?
             // Force a block on the control-dependent edge
             Node *g = _goto->clone();       // Force it to end in a Goto
-            g->set_req(0,prevproj);
+            g->set_req(0,p->in(i));
             p->set_req(i,g);
           }
         }
