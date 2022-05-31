@@ -1116,6 +1116,7 @@ void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
   __ cmp(sp, rscratch1);
   __ br(Assembler::LS, L_done);
   __ mov(rscratch1, sp);
+  __ andr(rscratch1, rscratch1, ~((uint64_t)page_size - 1));
   __ str(rscratch1, Address(rthread, JavaThread::shadow_zone_growth_watermark()));
 
   __ bind(L_done);

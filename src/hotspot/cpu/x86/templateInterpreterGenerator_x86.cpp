@@ -793,7 +793,13 @@ void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
   // Otherwise, the next time around the check above would pass the safe limit.
   __ cmpptr(rsp, Address(thread, JavaThread::shadow_zone_safe_limit()));
   __ jccb(Assembler::belowEqual, L_done);
+#ifdef _LP64
+  __ movptr(rscratch1, rsp);
+  __ andptr(rscratch1, ~(page_size - 1));
+  __ movptr(Address(thread, JavaThread::shadow_zone_growth_watermark()), rscratch1);
+#else
   __ movptr(Address(thread, JavaThread::shadow_zone_growth_watermark()), rsp);
+#endif
 
   __ bind(L_done);
 
