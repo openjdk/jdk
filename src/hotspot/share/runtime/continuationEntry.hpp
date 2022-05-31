@@ -30,7 +30,6 @@
 #include "runtime/continuation.hpp"
 #include "utilities/sizes.hpp"
 
-class nmethod;
 class RegisterMap;
 class OopMap;
 class JavaThread;
@@ -52,11 +51,11 @@ public:
 #endif
 
 public:
-  static int return_pc_offset; // friend gen_continuation_enter
-  static void set_enter_nmethod(CompiledMethod* nm); // friend SharedRuntime::generate_native_wrapper
+  static int _return_pc_offset; // friend gen_continuation_enter
+  static void set_enter_code(CompiledMethod* nm); // friend SharedRuntime::generate_native_wrapper
 
 private:
-  static address return_pc;
+  static address _return_pc;
 
 private:
   ContinuationEntry* _parent;
@@ -86,7 +85,7 @@ public:
   ContinuationEntry* parent() const { return _parent; }
   int parent_held_monitor_count() const { return _parent_held_monitor_count; }
 
-  static address entry_pc() { return return_pc; }
+  static address entry_pc() { return _return_pc; }
   intptr_t* entry_sp() const { return (intptr_t*)this; }
   intptr_t* entry_fp() const;
 

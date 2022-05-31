@@ -32,12 +32,12 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
 
-int ContinuationEntry::return_pc_offset = 0;
-address ContinuationEntry::return_pc = nullptr;
+int ContinuationEntry::_return_pc_offset = 0;
+address ContinuationEntry::_return_pc = nullptr;
 
-void ContinuationEntry::set_enter_nmethod(CompiledMethod* cm) {
-  assert(return_pc_offset != 0, "");
-  return_pc = cm->code_begin() + return_pc_offset;
+void ContinuationEntry::set_enter_code(CompiledMethod* cm) {
+  assert(_return_pc_offset != 0, "");
+  _return_pc = cm->code_begin() + _return_pc_offset;
 }
 
 ContinuationEntry* ContinuationEntry::from_frame(const frame& f) {
