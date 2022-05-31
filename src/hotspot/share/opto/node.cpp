@@ -2203,15 +2203,25 @@ void PrintBFS::print_node(Node* n) {
 //   phi->dump_bfs(5, 0, "-dxo")
 //     starting at phi node, traverse outputs recursively
 //     only along data (mixed and other can also have data flow)
-//   x->dump_bfs(10, y, 0)
-//     find shortest path from x to y, along any edge or node
-//     will not find a path if it is longer than 10
-//     useful to find how x and y are related
 //   find_node(385)->dump_bfs(3, 0, "cdmox+#@B")
 //     find inputs of node 385, up to 3 nodes up (+)
 //     traverse all nodes (cdmox), use colors (#)
 //     display old nodes and blocks, if they exist
 //     useful call to start with
+//   find_node(102)->dump_bfs(10,0,"dCDMOX-")
+//     find non-data dependencies of a data node
+//     follow data node outputs until find another category
+//     node as the boundary
+//   x->dump_bfs(10, y, 0)
+//     find shortest path from x to y, along any edge or node
+//     will not find a path if it is longer than 10
+//     useful to find how x and y are related
+//   find_node(741)->dump_bfs(20,find_node(746),"c+")
+//     find shortest control path  between two nodes
+//   find_node(741)->dump_bfs(8,find_node(746),"cdmxo+A")
+//     find all paths (A) between two nodes of length at most 8
+//   find_node(741)->dump_bfs(7,find_node(741),"c+A")
+//     find all control loops for this node
 //
 // output columns:
 //   distance: distance to this/start in BFS traversal
