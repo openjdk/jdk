@@ -49,7 +49,7 @@ public class ForceGC {
         Reference.reachabilityFence(ref);
         System.gc();
 
-        for (int retries = 100; retries > 0; retries--) {
+        for (int retries = 10; retries > 0; retries--) {
             if (booleanSupplier.getAsBoolean()) {
                 return true;
             }
@@ -59,7 +59,7 @@ public class ForceGC {
                 // if the reference has already been removed from the queue.
                 // But it is fine.  For most cases, the 1st GC is sufficient
                 // to trigger and complete the cleanup.
-                queue.remove(100L);
+                queue.remove(1000L);
             } catch (InterruptedException ie) {
                 // ignore, the loop will try again
             }
