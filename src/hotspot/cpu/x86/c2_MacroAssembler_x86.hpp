@@ -348,8 +348,6 @@ public:
   void udivI(Register rax, Register divisor, Register rdx);
   void umodI(Register rax, Register divisor, Register rdx);
   void udivmodI(Register rax, Register divisor, Register rdx, Register tmp);
-  void float_class_check_vfp(int opcode, Register dst, XMMRegister src, KRegister tmp);
-  void double_class_check_vfp(int opcode, Register dst, XMMRegister src, KRegister tmp);
 
 #ifdef _LP64
   void udivL(Register rax, Register divisor, Register rdx);

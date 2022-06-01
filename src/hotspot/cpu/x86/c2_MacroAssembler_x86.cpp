@@ -5317,30 +5317,3 @@ void C2_MacroAssembler::udivmodL(Register rax, Register divisor, Register rdx, R
 }
 #endif
 
-void C2_MacroAssembler::float_class_check_vfp(int opcode, Register dst, XMMRegister src, KRegister tmp) {
-  uint8_t imm8;
-  switch (opcode) {
-  // allows future usecases (ex: isNaN, isFinite)
-    case Op_IsInfiniteF:
-      imm8 = 0x18;
-      break;
-    default:
-      assert(false, "%s", NodeClassNames[opcode]);
-  }
-  vfpclassss(tmp, src, imm8);
-  kmovbl(dst, tmp);
-}
-
-void C2_MacroAssembler::double_class_check_vfp(int opcode, Register dst, XMMRegister src, KRegister tmp) {
-  uint8_t imm8;
-  switch (opcode) {
-    // allows future usecases (ex: isNaN, isFinite)
-    case Op_IsInfiniteD:
-      imm8 = 0x18;
-      break;
-    default:
-      assert(false, "%s", NodeClassNames[opcode]);
-  }
-  vfpclasssd(tmp, src, imm8);
-  kmovbl(dst, tmp);
-}
