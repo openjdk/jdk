@@ -352,6 +352,8 @@ void Handshake::execute(HandshakeClosure* hs_cl, JavaThread* target) {
 
 void Handshake::execute(HandshakeClosure* hs_cl, ThreadsListHandle* tlh, JavaThread* target) {
   JavaThread* self = JavaThread::current();
+  assert(self != target, "don't attempt to Handshake yourself");
+
   HandshakeOperation op(hs_cl, target, Thread::current());
 
   jlong start_time_ns = os::javaTimeNanos();

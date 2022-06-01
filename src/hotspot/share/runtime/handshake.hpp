@@ -69,6 +69,11 @@ class Handshake : public AllStatic {
  public:
   // Execution of handshake operation
   static void execute(HandshakeClosure*       hs_cl);
+
+  // For all methods which takes a target thread:
+  // Do not Handshake::execute a HandshakeClosure if the target thread
+  // is_handshake_safe_for the current thread. Instead use HandshakeClosure::do_thread.
+
   // This version of execute() relies on a ThreadListHandle somewhere in
   // the caller's context to protect target (and we sanity check for that).
   static void execute(HandshakeClosure*       hs_cl, JavaThread* target);
