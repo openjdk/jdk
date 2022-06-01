@@ -1200,7 +1200,7 @@ static int patch_imm_in_li64(address branch, address target) {
   tmp_lower = (tmp_lower << 52) >> 52;
   tmp_upper -= tmp_lower;
   tmp_upper >>= 12;
-  // Load upper 32 bits. Upper = target[63:32], but if target[31] = 1 or (target[31:28] == 0x7ff && target[19] == 1),
+  // Load upper 32 bits. Upper = target[63:32], but if target[31] = 1 or (target[31:20] == 0x7ff && target[19] == 1),
   // upper = target[63:32] + 1.
   Assembler::patch(branch + 0,  31, 12, tmp_upper & 0xfffff);                       // Lui.
   Assembler::patch(branch + 4,  31, 20, tmp_lower & 0xfff);                         // Addi.
