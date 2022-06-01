@@ -783,11 +783,11 @@ struct hostent* os::get_host_by_name(char* name) {
 }
 
 void os::exit(int num) {
-  ::exit(num);
+  ALLOW_C_FUNCTION(::exit, ::exit(num);)
 }
 
 void os::_exit(int num) {
-  ::_exit(num);
+  ALLOW_C_FUNCTION(::_exit, ::_exit(num);)
 }
 
 // Builds a platform dependent Agent_OnLoad_<lib_name> function name
@@ -2003,7 +2003,7 @@ void os::abort(bool dump_core, void* siginfo, const void* context) {
     LINUX_ONLY(if (DumpPrivateMappingsInCore) ClassLoader::close_jrt_image();)
     ::abort(); // dump core
   }
-  ::_exit(1);
+  os::_exit(1);
 }
 
 // Die immediately, no exit hook, no abort hook, no cleanup.

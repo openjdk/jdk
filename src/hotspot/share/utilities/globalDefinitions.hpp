@@ -162,8 +162,8 @@ inline intptr_t p2i(const volatile void* p) {
 // Some of these have os:: replacements that should normally be used instead.
 // Others are considered security concerns, with preferred alternatives.
 
-//FORBID_C_FUNCTION(void exit(int), "use os::exit");
-//FORBID_C_FUNCTION(void _exit(int), "use os::exit");
+FORBID_C_FUNCTION(void exit(int), "use os::exit");
+FORBID_C_FUNCTION(void _exit(int), "use os::exit");
 FORBID_C_FUNCTION(char* strerror(int), "use os::strerror");
 FORBID_C_FUNCTION(char* strtok(char*, const char*), "use strtok_r");
 FORBID_C_FUNCTION(int vsprintf(char*, const char*, va_list), "use os::vsnprintf");

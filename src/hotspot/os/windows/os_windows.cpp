@@ -4139,9 +4139,9 @@ int os::win32::exit_process_or_thread(Ept what, int exit_code) {
   if (what == EPT_THREAD) {
     _endthreadex((unsigned)exit_code);
   } else if (what == EPT_PROCESS) {
-    ::exit(exit_code);
+    ALLOW_C_FUNCTION(::exit, ::exit(exit_code);)
   } else { // EPT_PROCESS_DIE
-    ::_exit(exit_code);
+    ALLOW_C_FUNCTION(::_exit, ::_exit(exit_code);)
   }
 
   // Should not reach here
