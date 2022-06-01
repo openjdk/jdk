@@ -714,11 +714,8 @@ inline int CodeSection::alignment(int section) {
     return (int) CodeEntryAlignment;
   }
   if (CodeBuffer::SECT_STUBS) {
-    // The stub section is hardly on a hot path, and it doesn't need to align to a cache line or so.
-    // Use C2 specific InteriorEntryAlignment to get the smallest alignment
-    int entry_alignment = (int) COMPILER2_PRESENT(InteriorEntryAlignment) NOT_COMPILER2(CodeEntryAlignment);
     // CodeBuffer installer expects sections to be HeapWordSize aligned
-    return MAX2(entry_alignment, HeapWordSize);
+    return HeapWordSize;
   }
   ShouldNotReachHere();
   return 0;

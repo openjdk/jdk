@@ -350,8 +350,6 @@ JVMFlag::Error InteriorEntryAlignmentConstraintFunc(intx value, bool verbose) {
   minimum_alignment = 4;
 #elif defined(S390)
   minimum_alignment = 2;
-#elif defined(AARCH64)
-  minimum_alignment = 4;
 #endif
 
   if (InteriorEntryAlignment < minimum_alignment) {
