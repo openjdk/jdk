@@ -164,7 +164,10 @@ class CopyMoveHelper {
 
                 if (sourceAttrs instanceof PosixFileAttributes sourcePosixAttrs &&
                     targetView instanceof PosixFileAttributeView targetPosixView) {
-                    targetPosixView.setPermissions(sourcePosixAttrs.permissions());
+                    try {
+                        targetPosixView.setPermissions(sourcePosixAttrs.permissions());
+                    } catch (SecurityException ignored) {
+                    }
                 }
             } catch (Throwable x) {
                 // rollback
