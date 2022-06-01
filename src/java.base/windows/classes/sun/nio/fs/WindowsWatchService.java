@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package sun.nio.fs;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.lang.ref.Cleaner.Cleanable;
 import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
 import java.nio.file.StandardWatchEventKinds;
@@ -36,6 +38,8 @@ import java.util.Map;
 import java.util.Set;
 
 import jdk.internal.misc.Unsafe;
+import jdk.internal.ref.Cleaner;
+import jdk.internal.ref.CleanerFactory;
 
 import static sun.nio.fs.WindowsNativeDispatcher.*;
 import static sun.nio.fs.WindowsConstants.*;
@@ -52,6 +56,25 @@ class WindowsWatchService
     // background thread to service I/O completion port
     private final Poller poller;
 
+    private final Cleanable closer;
+
+    private static class Closer implements Runnable {
+        private final Poller poller;
+
+        Closer(Poller poller) {
+            this.poller = poller;
+        }
+
+        public void run() {
+            try {
+                poller.close();
+            } catch (IOException cause) {
+                throw new UncheckedIOException(cause);
+            }
+        }
+    }
+
+
     /**
      * Creates an I/O completion port and a daemon thread to service it
      */
@@ -66,6 +89,9 @@ class WindowsWatchService
 
         this.poller = new Poller(fs, this, port);
         this.poller.start();
+
+        this.closer = CleanerFactory.cleaner().register(this,
+                                                        new Closer(poller));
     }
 
     @Override

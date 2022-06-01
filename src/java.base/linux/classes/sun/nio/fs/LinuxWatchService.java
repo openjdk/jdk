@@ -25,10 +25,21 @@
 
 package sun.nio.fs;
 
-import java.nio.file.*;
-import java.util.*;
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.lang.ref.Cleaner.Cleanable;
+import java.nio.file.Files;
+import java.nio.file.NotDirectoryException;
+import java.nio.file.Path;
+import java.nio.file.StandardWatchEventKinds;
+import java.nio.file.WatchEvent;
+import java.nio.file.WatchKey;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import jdk.internal.misc.Unsafe;
+import jdk.internal.ref.Cleaner;
+import jdk.internal.ref.CleanerFactory;
 
 import static sun.nio.fs.UnixNativeDispatcher.*;
 import static sun.nio.fs.UnixConstants.*;
@@ -49,6 +60,24 @@ class LinuxWatchService
 
     // background thread to read change events
     private final Poller poller;
+
+    private final Cleanable closer;
+
+    private static class Closer implements Runnable {
+        private final Poller poller;
+
+        Closer(Poller poller) {
+            this.poller = poller;
+        }
+
+        public void run() {
+            try {
+                poller.close();
+            } catch (IOException cause) {
+                throw new UncheckedIOException(cause);
+            }
+        }
+    }
 
     LinuxWatchService(UnixFileSystem fs) throws IOException {
         // initialize inotify
@@ -76,6 +105,9 @@ class LinuxWatchService
 
         this.poller = new Poller(fs, this, ifd, sp);
         this.poller.start();
+
+        this.closer = CleanerFactory.cleaner().register(this,
+                                                        new Closer(poller));
     }
 
     @Override

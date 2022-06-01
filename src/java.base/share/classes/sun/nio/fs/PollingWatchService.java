@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package sun.nio.fs;
 
+import java.io.IOException;
+import java.lang.ref.Cleaner.Cleanable;
 import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.DirectoryIteratorException;
 import java.nio.file.DirectoryStream;
@@ -38,9 +40,8 @@ import java.nio.file.WatchKey;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.security.PrivilegedExceptionAction;
 import java.security.PrivilegedActionException;
-import java.io.IOException;
+import java.security.PrivilegedExceptionAction;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -51,6 +52,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import jdk.internal.ref.Cleaner;
+import jdk.internal.ref.CleanerFactory;
 
 /**
  * Simple WatchService implementation that uses periodic tasks to poll
@@ -72,6 +75,43 @@ class PollingWatchService
     // used to execute the periodic tasks that poll for changes
     private final ScheduledExecutorService scheduledExecutor;
 
+    private final Cleanable closer;
+
+    @SuppressWarnings("removal")
+    private static void dispose(Map<Object, PollingWatchKey> map,
+                                ScheduledExecutorService scheduledExecutor) {
+        synchronized (map) {
+            for (Map.Entry<Object, PollingWatchKey> entry: map.entrySet()) {
+                PollingWatchKey watchKey = entry.getValue();
+                watchKey.disable();
+                watchKey.invalidate();
+            }
+            map.clear();
+        }
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            @Override
+            public Void run() {
+                scheduledExecutor.shutdown();
+                return null;
+            }
+         });
+    }
+
+    private static class Closer implements Runnable {
+        private final Map<Object, PollingWatchKey> map;
+        private final ScheduledExecutorService scheduledExecutor;
+
+        Closer(Map<Object, PollingWatchKey> map, ScheduledExecutorService scheduledExecutor) {
+            this.map = map;
+            this.scheduledExecutor = scheduledExecutor;
+        }
+
+        @SuppressWarnings("removal")
+        public void run() {
+            dispose(map, scheduledExecutor);
+        }
+    }
+
     PollingWatchService() {
         // TBD: Make the number of threads configurable
         scheduledExecutor = Executors
@@ -82,6 +122,7 @@ class PollingWatchService
                      t.setDaemon(true);
                      return t;
                  }});
+        this.closer = CleanerFactory.cleaner().register(this, new Closer(map, scheduledExecutor));
     }
 
     /**
@@ -200,24 +241,9 @@ class PollingWatchService
 
     }
 
-    @SuppressWarnings("removal")
     @Override
     void implClose() throws IOException {
-        synchronized (map) {
-            for (Map.Entry<Object, PollingWatchKey> entry: map.entrySet()) {
-                PollingWatchKey watchKey = entry.getValue();
-                watchKey.disable();
-                watchKey.invalidate();
-            }
-            map.clear();
-        }
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            @Override
-            public Void run() {
-                scheduledExecutor.shutdown();
-                return null;
-            }
-         });
+        dispose(map, scheduledExecutor);
     }
 
     /**
