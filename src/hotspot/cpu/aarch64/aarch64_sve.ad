@@ -2365,7 +2365,7 @@ instruct vloadmask_loadV_partial(pRegGov dst, indirect mem, vReg vtmp, pRegGov p
     BasicType to_vect_bt = Matcher::vector_element_basic_type(this);
     Assembler::SIMD_RegVariant size = __ elemType_to_regVariant(to_vect_bt);
     __ sve_ptrue_lanecnt(as_PRegister($ptmp$$reg), size, Matcher::vector_length(this));
-    loadStoreA_predicated(C2_MacroAssembler(&cbuf), false, as_FloatRegister($vtmp$$reg),
+    loadStoreA_predicated(masm, false, as_FloatRegister($vtmp$$reg),
                           as_PRegister($ptmp$$reg), T_BOOLEAN, to_vect_bt, $mem->opcode(),
                           as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
     __ sve_cmp(Assembler::NE, as_PRegister($dst$$reg), size, ptrue, as_FloatRegister($vtmp$$reg), 0);
@@ -2412,7 +2412,7 @@ instruct storeV_vstoremask_partial(indirect mem, pRegGov src, vReg vtmp,
     Assembler::SIMD_RegVariant size = __ elemType_to_regVariant(from_vect_bt);
     __ sve_cpy(as_FloatRegister($vtmp$$reg), size, as_PRegister($src$$reg), 1, false);
     __ sve_ptrue_lanecnt(as_PRegister($ptmp$$reg), size, Matcher::vector_length(this, $src));
-    loadStoreA_predicated(C2_MacroAssembler(&cbuf), true, as_FloatRegister($vtmp$$reg),
+    loadStoreA_predicated(masm, true, as_FloatRegister($vtmp$$reg),
                           as_PRegister($ptmp$$reg), T_BOOLEAN, from_vect_bt, $mem->opcode(),
                           as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
   %}

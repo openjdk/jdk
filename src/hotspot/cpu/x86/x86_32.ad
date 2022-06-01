@@ -1742,7 +1742,7 @@ encode %{
 
   enc_class Java_To_Runtime (method meth) %{    // CALL Java_To_Runtime, Java_To_Runtime_Leaf
     // This is the instruction starting address for relocation info.
-    __ set_insts_mark();
+    __ set_inst_mark();
     $$$emit8$primary;
     // CALL directly to the runtime
     emit_d32_reloc(masm, ($meth$$method - (int)(masm.pc()) - 4),
@@ -1796,7 +1796,7 @@ encode %{
   enc_class Java_Static_Call (method meth) %{    // JAVA STATIC CALL
     // CALL to fixup routine.  Fixup routine uses ScopeDesc info to determine
     // who we intended to call.
-    __ set_insts_mark();
+    __ set_inst_mark();
     $$$emit8$primary;
 
     if (!_method) {
@@ -1823,7 +1823,7 @@ encode %{
   %}
 
   enc_class Java_Dynamic_Call (method meth) %{    // JAVA DYNAMIC CALL
-    __ ic_call((address)$meth$$method, resolved_method_index(cbuf));
+    __ ic_call((address)$meth$$method, resolved_method_index(masm));
     __ post_call_nop();
   %}
 
@@ -1832,11 +1832,11 @@ encode %{
     assert( -128 <= disp && disp <= 127, "compiled_code_offset isn't small");
 
     // CALL *[EAX+in_bytes(Method::from_compiled_code_entry_point_offset())]
-    __ set_insts_mark();
+    __ set_inst_mark();
     $$$emit8$primary;
-    emit_rm(cbuf, 0x01, $secondary, EAX_enc );  // R/M byte
-    emit_d8(cbuf, disp);             // Displacement
-    __ clear_insts_mark();
+    emit_rm(masm, 0x01, $secondary, EAX_enc );  // R/M byte
+    emit_d8(masm, disp);             // Displacement
+    __ clear_inst_mark();
     __ post_call_nop();
   %}
 
@@ -2768,10 +2768,10 @@ encode %{
     // PUSH src2.lo
     emit_opcode(masm,               0x50+$src2$$reg  );
     // CALL directly to the runtime
-    __ set_insts_mark();
-    emit_opcode(cbuf,0xE8);       // Call into runtime
-    emit_d32_reloc(cbuf, (CAST_FROM_FN_PTR(address, SharedRuntime::ldiv) - cbuf.insts_end()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
-    __ cleear_insts_mark();
+    __ set_inst_mark();
+    emit_opcode(masm,0xE8);       // Call into runtime
+    emit_d32_reloc(masm, (CAST_FROM_FN_PTR(address, SharedRuntime::ldiv) - masm.pc()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
+    __ clear_inst_mark();
     __ post_call_nop();
     // Restore stack
     emit_opcode(masm, 0x83); // add  SP, #framesize
@@ -2789,10 +2789,10 @@ encode %{
     // PUSH src2.lo
     emit_opcode(masm,               0x50+$src2$$reg  );
     // CALL directly to the runtime
-    __ set_insts_mark();
-    emit_opcode(cbuf,0xE8);       // Call into runtime
-    emit_d32_reloc(cbuf, (CAST_FROM_FN_PTR(address, SharedRuntime::lrem ) - cbuf.insts_end()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
-    __ clear_insts_mark();
+    __ set_inst_mark();
+    emit_opcode(masm,0xE8);       // Call into runtime
+    emit_d32_reloc(masm, (CAST_FROM_FN_PTR(address, SharedRuntime::lrem ) - masm.pc()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
+    __ clear_inst_mark();
     __ post_call_nop();
     // Restore stack
     emit_opcode(masm, 0x83); // add  SP, #framesize
@@ -2861,11 +2861,11 @@ encode %{
   %}
 
   enc_class enc_rethrow() %{
-    __ set_insts_mark();
-    emit_opcode(cbuf, 0xE9);        // jmp    entry
-    emit_d32_reloc(cbuf, (int)OptoRuntime::rethrow_stub() - ((int)cbuf.insts_end())-4,
+    __ set_inst_mark();
+    emit_opcode(masm, 0xE9);        // jmp    entry
+    emit_d32_reloc(masm, (int)OptoRuntime::rethrow_stub() - ((int)masm.pc())-4,
                    runtime_call_Relocation::spec(), RELOC_IMM32 );
-    __ clear_insts_mark();
+    __ clear_inst_mark();
     __ post_call_nop();
   %}
 
@@ -2912,10 +2912,10 @@ encode %{
     emit_opcode(masm,0xD9 );      // FLD     ST(i)
     emit_d8    (masm,0xC0-1+$src$$reg );
     // CALL directly to the runtime
-    __ set_insts_mark();
-    emit_opcode(cbuf,0xE8);       // Call into runtime
-    emit_d32_reloc(cbuf, (StubRoutines::x86::d2i_wrapper() - cbuf.insts_end()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
-    __ clear_insts_mark();
+    __ set_inst_mark();
+    emit_opcode(masm,0xE8);       // Call into runtime
+    emit_d32_reloc(masm, (StubRoutines::x86::d2i_wrapper() - masm.pc()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
+    __ clear_inst_mark();
     __ post_call_nop();
     // Carry on here...
   %}
@@ -2956,10 +2956,10 @@ encode %{
     emit_opcode(masm,0xD9 );      // FLD     ST(i)
     emit_d8    (masm,0xC0-1+$src$$reg );
     // CALL directly to the runtime
-    __ set_insts_mark();
-    emit_opcode(cbuf,0xE8);       // Call into runtime
-    emit_d32_reloc(cbuf, (StubRoutines::x86::d2l_wrapper() - cbuf.insts_end()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
-    __ clear_insts_mark();
+    __ set_inst_mark();
+    emit_opcode(masm,0xE8);       // Call into runtime
+    emit_d32_reloc(masm, (StubRoutines::x86::d2l_wrapper() - masm.pc()) - 4, runtime_call_Relocation::spec(), RELOC_IMM32 );
+    __ clear_inst_mark();
     __ post_call_nop();
     // Carry on here...
   %}
