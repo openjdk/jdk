@@ -62,10 +62,6 @@ public class VMDeprecatedOptions {
             {"CreateMinidumpOnCrash", "false"}
           }
         ));
-        if (Platform.isLinux()) {
-            deprecated.add(new String[] {"UseContainerCpuShares",           "false"});
-            deprecated.add(new String[] {"PreferContainerQuotaForCPUCount", "true"});
-        }
         DEPRECATED_OPTIONS = deprecated.toArray(new String[][]{});
     };
 
