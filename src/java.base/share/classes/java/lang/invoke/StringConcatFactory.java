@@ -875,8 +875,7 @@ public final class StringConcatFactory {
     private static MethodHandle floatStringifier() {
         MethodHandle mh = FLOAT_STRINGIFIER;
         if (mh == null) {
-            FLOAT_STRINGIFIER = mh =
-                    lookupStatic(MethodHandles.publicLookup(), String.class, "valueOf", String.class, float.class);
+            FLOAT_STRINGIFIER = mh = stringValueOf(float.class);
         }
         return mh;
     }
@@ -884,8 +883,7 @@ public final class StringConcatFactory {
     private static MethodHandle doubleStringifier() {
         MethodHandle mh = DOUBLE_STRINGIFIER;
         if (mh == null) {
-            DOUBLE_STRINGIFIER = mh =
-                    lookupStatic(MethodHandles.publicLookup(), String.class, "valueOf", String.class, double.class);
+            DOUBLE_STRINGIFIER = mh = stringValueOf(double.class);
         }
         return mh;
     }
@@ -894,8 +892,7 @@ public final class StringConcatFactory {
     private static MethodHandle intStringifier() {
         MethodHandle mh = INT_STRINGIFIER;
         if (mh == null) {
-            INT_STRINGIFIER = mh =
-                    lookupStatic(MethodHandles.publicLookup(), String.class, "valueOf", String.class, int.class);
+            INT_STRINGIFIER = mh = stringValueOf(int.class);
         }
         return mh;
     }
@@ -904,8 +901,7 @@ public final class StringConcatFactory {
     private static MethodHandle longStringifier() {
         MethodHandle mh = LONG_STRINGIFIER;
         if (mh == null) {
-            LONG_STRINGIFIER = mh =
-                    lookupStatic(MethodHandles.publicLookup(), String.class, "valueOf", String.class, long.class);
+            LONG_STRINGIFIER = mh = stringValueOf(long.class);
         }
         return mh;
     }
@@ -914,8 +910,7 @@ public final class StringConcatFactory {
     private static MethodHandle charStringifier() {
         MethodHandle mh = CHAR_STRINGIFIER;
         if (mh == null) {
-            CHAR_STRINGIFIER = mh =
-                    lookupStatic(MethodHandles.publicLookup(), String.class, "valueOf", String.class, char.class);
+            CHAR_STRINGIFIER = mh = stringValueOf(char.class);
         }
         return mh;
     }
@@ -924,8 +919,7 @@ public final class StringConcatFactory {
     private static MethodHandle booleanStringifier() {
         MethodHandle mh = BOOLEAN_STRINGIFIER;
         if (mh == null) {
-            BOOLEAN_STRINGIFIER = mh =
-                    lookupStatic(MethodHandles.publicLookup(), String.class, "valueOf", String.class, boolean.class);
+            BOOLEAN_STRINGIFIER = mh = stringValueOf(boolean.class);
         }
         return mh;
     }
@@ -965,10 +959,10 @@ public final class StringConcatFactory {
     private static final @Stable MethodHandle[] MIXERS          = new MethodHandle[TYPE_COUNT];
     private static final long INITIAL_CODER = JLA.stringConcatInitialCoder();
 
-    private static MethodHandle lookupStatic(Lookup lookup, Class<?> refc, String name,
-                                     Class<?> rtype, Class<?>... ptypes) {
+    private static MethodHandle stringValueOf(Class<?> ptype) {
         try {
-            return lookup.findStatic(refc, name, MethodType.methodType(rtype, ptypes));
+            return MethodHandles.publicLookup()
+                .findStatic(String.class, "valueOf", MethodType.methodType(String.class, ptype));
         } catch (NoSuchMethodException | IllegalAccessException e) {
             throw new AssertionError(e);
         }
