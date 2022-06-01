@@ -173,7 +173,6 @@ vmTestbase/nsk/jdwp/ThreadReference/ForceEarlyReturn/forceEarlyReturn001/forceEa
 compiler/codecache/stress/UnexpectedDeoptimizationAllTest.java                      8286642 generic-i586
 compiler/codecache/stress/UnexpectedDeoptimizationTest.java                         8286642 generic-i586
 runtime/cds/appcds/redefineClass/RedefineRunningMethods_Shared.java                 8286642 generic-i586
-runtime/ClassFile/PreviewVersion.java                                               8286642 generic-i586
 runtime/jni/IsVirtualThread/IsVirtualThread.java                                    8286642 generic-i586
 runtime/vthread/JNIMonitor/JNIMonitor.java                                          8286642 generic-i586
 runtime/vthread/RedefineClass.java                                                  8286642 generic-i586
