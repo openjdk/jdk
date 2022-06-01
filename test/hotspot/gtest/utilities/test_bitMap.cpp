@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "unittest.hpp"
@@ -104,7 +105,9 @@ class BitMapTest {
     if (size > 0) {
       map.set_bit(size / 2);
     }
-    map.print_on(tty);
+
+    LogStreamHandle(Info, test) stream;
+    map.print_on(&stream);
   }
 
 #endif

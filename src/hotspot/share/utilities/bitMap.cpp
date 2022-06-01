@@ -693,11 +693,11 @@ void BitMap::write_to(bm_word_t* buffer, size_t buffer_size_in_bytes) const {
 void BitMap::print_on(outputStream* st) const {
   st->print("Bitmap (" SIZE_FORMAT " bits):", size());
   for (idx_t index = 0; index < size(); index++) {
-    if ((index % 50) == 0) {
+    if ((index % 64) == 0) {
       st->cr();
       st->print(SIZE_FORMAT_W(5) ":", index);
     }
-    if ((index % 10) == 0) {
+    if ((index % 8) == 0) {
       st->print(" ");
     }
     st->print("%c", at(index) ? 'S' : '.');
