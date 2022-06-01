@@ -1055,8 +1055,7 @@ public class JEditorPane extends JTextComponent {
                     putClientProperty("charset", charset);
                 }
             }
-        }
-        catch (IndexOutOfBoundsException | NullPointerException e) {
+        } catch (IndexOutOfBoundsException | NullPointerException e) {
             // malformed parameter list, use charset we have
         } catch (Exception e) {
             // malformed parameter list, use charset we have; but complain
