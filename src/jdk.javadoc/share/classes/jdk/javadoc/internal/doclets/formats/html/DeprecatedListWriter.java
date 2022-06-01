@@ -35,6 +35,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
+import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DeprecatedAPIListBuilder;
@@ -90,7 +91,7 @@ public class DeprecatedListWriter extends SummaryListWriter<DeprecatedAPIListBui
                         ? contents.getContent("doclet.Deprecated_API_Checkbox_Other_Releases")
                         : Text.of(release);
                 HtmlId htmlId = HtmlId.of("release-" + releaseIndex);
-                tabs.add(HtmlTree.LABEL(htmlId.name(),
+                tabs.add(new HtmlTree(TagName.WBR)).add(HtmlTree.LABEL(htmlId.name(),
                                 HtmlTree.INPUT("checkbox", htmlId)
                                         .put(HtmlAttr.CHECKED, "")
                                         .put(HtmlAttr.ONCLICK,

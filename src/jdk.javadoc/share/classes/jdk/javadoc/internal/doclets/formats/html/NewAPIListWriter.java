@@ -33,6 +33,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
@@ -86,7 +87,7 @@ public class NewAPIListWriter extends SummaryListWriter<NewAPIBuilder> {
                 int releaseIndex = i + 1;
                 String release = releases.get(i);
                 HtmlId htmlId = HtmlId.of("release-" + releaseIndex);
-                tabs.add(HtmlTree.LABEL(htmlId.name(),
+                tabs.add(new HtmlTree(TagName.WBR)).add(HtmlTree.LABEL(htmlId.name(),
                                 HtmlTree.INPUT("checkbox", htmlId)
                                         .put(HtmlAttr.CHECKED, "")
                                         .put(HtmlAttr.ONCLICK,
