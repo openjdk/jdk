@@ -5320,43 +5320,27 @@ void C2_MacroAssembler::udivmodL(Register rax, Register divisor, Register rdx, R
 void C2_MacroAssembler::float_class_check_vfp(int opcode, Register dst, XMMRegister src, KRegister tmp) {
   uint8_t imm8;
   switch (opcode) {
-    case Op_IsFiniteF:
-      imm8 = 0x99;
-      break;
+  // allows future usecases (ex: isNaN, isFinite)
     case Op_IsInfiniteF:
       imm8 = 0x18;
       break;
-    case Op_IsNaNF:
-       imm8 = 0x81;
-       break;
     default:
       assert(false, "%s", NodeClassNames[opcode]);
   }
   vfpclassss(tmp, src, imm8);
   kmovbl(dst, tmp);
-  if (opcode == Op_IsFiniteF) {
-    xorl(dst, 0x1); // flip last bit
-  }
 }
 
 void C2_MacroAssembler::double_class_check_vfp(int opcode, Register dst, XMMRegister src, KRegister tmp) {
   uint8_t imm8;
   switch (opcode) {
-    case Op_IsFiniteD:
-      imm8 = 0x99;
-      break;
+    // allows future usecases (ex: isNaN, isFinite)
     case Op_IsInfiniteD:
       imm8 = 0x18;
       break;
-    case Op_IsNaND:
-       imm8 = 0x81;
-       break;
     default:
       assert(false, "%s", NodeClassNames[opcode]);
   }
   vfpclasssd(tmp, src, imm8);
   kmovbl(dst, tmp);
-  if (opcode == Op_IsFiniteD) {
-    xorl(dst, 0x1); // flip last bit
-  }
 }

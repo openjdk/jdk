@@ -75,35 +75,12 @@ public class DoubleClassCheck {
 
     @Benchmark
     @OperationsPerInvocation(BUFFER_SIZE)
-    public void testIsFiniteStore() {
-        for (int i = 0; i < BUFFER_SIZE; i++) {
-            storeOutputs[i] = Double.isFinite(inputs[i]);
-        }
-    }
-
-    @Benchmark
-    @OperationsPerInvocation(BUFFER_SIZE)
     public void testIsInfiniteStore() {
         for (int i = 0; i < BUFFER_SIZE; i++) {
             storeOutputs[i] = Double.isInfinite(inputs[i]);
         }
     }
 
-    @Benchmark
-    @OperationsPerInvocation(BUFFER_SIZE)
-    public void testIsNaNStore() {
-        for (int i = 0; i < BUFFER_SIZE; i++) {
-            storeOutputs[i] = Double.isNaN(inputs[i]);
-        }
-    }
-
-    @Benchmark
-    @OperationsPerInvocation(BUFFER_SIZE)
-    public void testIsFiniteCMov() {
-        for (int i = 0; i < BUFFER_SIZE; i++) {
-            cmovOutputs[i] = Double.isFinite(inputs[i]) ? 9 : 7;
-        }
-    }
 
     @Benchmark
     @OperationsPerInvocation(BUFFER_SIZE)
@@ -113,21 +90,6 @@ public class DoubleClassCheck {
         }
     }
 
-    @Benchmark
-    @OperationsPerInvocation(BUFFER_SIZE)
-    public void testIsNaNCMov() {
-        for (int i = 0; i < BUFFER_SIZE; i++) {
-            cmovOutputs[i] = Double.isNaN(inputs[i]) ? 9 : 7;
-        }
-    }
-
-    @Benchmark
-    @OperationsPerInvocation(BUFFER_SIZE)
-    public void testIsFiniteBranch() {
-        for (int i = 0; i < BUFFER_SIZE; i++) {
-            cmovOutputs[i] = Double.isFinite(inputs[i]) ? call() : 7;
-        }
-    }
 
     @Benchmark
     @OperationsPerInvocation(BUFFER_SIZE)
@@ -136,14 +98,5 @@ public class DoubleClassCheck {
             cmovOutputs[i] = Double.isInfinite(inputs[i]) ? call() : 7;
         }
     }
-
-    @Benchmark
-    @OperationsPerInvocation(BUFFER_SIZE)
-    public void testIsNaNBranch() {
-        for (int i = 0; i < BUFFER_SIZE; i++) {
-            cmovOutputs[i] = Double.isNaN(inputs[i]) ? call() : 7;
-        }
-    }
-
 
 }

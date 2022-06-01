@@ -74,13 +74,6 @@ public class FloatClassCheck {
         }
     }
 
-    @Benchmark
-    @OperationsPerInvocation(BUFFER_SIZE)
-    public void testIsFiniteStore() {
-        for (int i = 0; i < BUFFER_SIZE; i++) {
-            storeOutputs[i] = Float.isFinite(inputs[i]);
-        }
-    }
 
     @Benchmark
     @OperationsPerInvocation(BUFFER_SIZE)
@@ -90,21 +83,6 @@ public class FloatClassCheck {
         }
     }
 
-    @Benchmark
-    @OperationsPerInvocation(BUFFER_SIZE)
-    public void testIsNaNStore() {
-        for (int i = 0; i < BUFFER_SIZE; i++) {
-            storeOutputs[i] = Float.isNaN(inputs[i]);
-        }
-    }
-
-    @Benchmark
-    @OperationsPerInvocation(BUFFER_SIZE)
-    public void testIsFiniteCMov() {
-        for (int i = 0; i < BUFFER_SIZE; i++) {
-            cmovOutputs[i] = Float.isFinite(inputs[i]) ? 9 : 7;
-        }
-    }
 
     @Benchmark
     @OperationsPerInvocation(BUFFER_SIZE)
@@ -114,35 +92,12 @@ public class FloatClassCheck {
         }
     }
 
-    @Benchmark
-    @OperationsPerInvocation(BUFFER_SIZE)
-    public void testIsNaNCMov() {
-        for (int i = 0; i < BUFFER_SIZE; i++) {
-            cmovOutputs[i] = Float.isNaN(inputs[i]) ? 9 : 7;
-        }
-    }
-
-    @Benchmark
-    @OperationsPerInvocation(BUFFER_SIZE)
-    public void testIsFiniteBranch() {
-        for (int i = 0; i < BUFFER_SIZE; i++) {
-            cmovOutputs[i] = Float.isFinite(inputs[i]) ? call() : 7;
-        }
-    }
 
     @Benchmark
     @OperationsPerInvocation(BUFFER_SIZE)
     public void testIsInfiniteBranch() {
         for (int i = 0; i < BUFFER_SIZE; i++) {
             cmovOutputs[i] = Float.isInfinite(inputs[i]) ? call() : 7;
-        }
-    }
-
-    @Benchmark
-    @OperationsPerInvocation(BUFFER_SIZE)
-    public void testIsNaNBranch() {
-        for (int i = 0; i < BUFFER_SIZE; i++) {
-            cmovOutputs[i] = Float.isNaN(inputs[i]) ? call() : 7;
         }
     }
 

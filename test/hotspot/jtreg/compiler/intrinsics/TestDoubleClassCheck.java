@@ -61,16 +61,6 @@ public class TestDoubleClassCheck {
 
     @Test // needs to be run in (fast) debug mode
     @Warmup(10000)
-    @IR(counts = {"IsFiniteD", ">= 1"}) // Atleast one IsFiniteD node is generated if intrinsic is used
-    public void testIsFinite() {
-        for (int i = 0; i < BUFFER_SIZE; i++) {
-            outputs[i] = Double.isFinite(inputs[i]);
-        }
-        checkResult("isFinite");
-    }
-
-    @Test // needs to be run in (fast) debug mode
-    @Warmup(10000)
     @IR(counts = {"IsInfiniteD", ">= 1"}) // Atleast one IsInfiniteD node is generated if intrinsic is used
     public void testIsInfinite() {
         for (int i = 0; i < BUFFER_SIZE; i++) {
@@ -79,15 +69,6 @@ public class TestDoubleClassCheck {
         checkResult("isInfinite");
     }
 
-    @Test // needs to be run in (fast) debug mode
-    @Warmup(10000)
-    @IR(counts = {"IsNaND", ">= 1"}) // Atleast one IsNaND node is generated if intrinsic is used
-    public void testIsNaN() {
-        for (int i = 0; i < BUFFER_SIZE; i++) {
-            outputs[i] = Double.isNaN(inputs[i]);
-        }
-        checkResult("isNaN");
-    }
 
     public void checkResult(String method) {
         for (int i=0; i < BUFFER_SIZE; i++) {

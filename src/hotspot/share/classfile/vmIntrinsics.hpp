@@ -205,13 +205,7 @@ class methodHandle;
                                                                                                                         \
   do_intrinsic(_floatIsInfinite,          java_lang_Float,        isInfinite_name,    float_bool_signature,      F_S)   \
    do_name(     isInfinite_name,                                  "isInfinite")                                         \
-  do_intrinsic(_floatIsFinite,            java_lang_Float,        isFinite_name,      float_bool_signature,      F_S)   \
-   do_name(     isFinite_name,                                    "isFinite")                                           \
-  do_intrinsic(_floatIsNaN,               java_lang_Float,        isNaN_name,         float_bool_signature,      F_S)   \
-   do_name(     isNaN_name,                                       "isNaN")                                              \
   do_intrinsic(_doubleIsInfinite,         java_lang_Double,       isInfinite_name,    double_bool_signature,     F_S)   \
-  do_intrinsic(_doubleIsFinite,           java_lang_Double,       isFinite_name,      double_bool_signature,     F_S)   \
-  do_intrinsic(_doubleIsNaN,              java_lang_Double,       isNaN_name,         double_bool_signature,     F_S)   \
                                                                                                                         \
   do_intrinsic(_floatToRawIntBits,        java_lang_Float,        floatToRawIntBits_name,   float_int_signature, F_SN)  \
    do_name(     floatToRawIntBits_name,                          "floatToRawIntBits")                                   \
