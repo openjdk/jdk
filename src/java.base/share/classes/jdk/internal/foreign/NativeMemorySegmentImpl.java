@@ -73,7 +73,7 @@ public class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl {
     @Override
     public MemoryAddress address() {
         checkValidState();
-        return MemoryAddress.ofLong(unsafeGetOffset());
+        return MemoryAddress.ofLong(min());
     }
 
     @Override
@@ -93,12 +93,12 @@ public class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl {
     }
 
     @Override
-    long min() {
+    public long min() {
         return min;
     }
 
     @Override
-    Object base() {
+    public Object base() {
         return null;
     }
 

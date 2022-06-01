@@ -1077,12 +1077,12 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
         dstImpl.checkAccess(dstOffset, size, false);
         if (srcElementLayout.byteSize() == 1 || srcElementLayout.order() == dstElementLayout.order()) {
             ScopedMemoryAccess.getScopedMemoryAccess().copyMemory(srcImpl.session().state(), dstImpl.session().state(),
-                    srcImpl.unsafeGetBase(), srcImpl.unsafeGetOffset() + srcOffset,
-                    dstImpl.unsafeGetBase(), dstImpl.unsafeGetOffset() + dstOffset, size);
+                    srcImpl.base(), srcImpl.min() + srcOffset,
+                    dstImpl.base(), dstImpl.min() + dstOffset, size);
         } else {
             ScopedMemoryAccess.getScopedMemoryAccess().copySwapMemory(srcImpl.session().state(), dstImpl.session().state(),
-                    srcImpl.unsafeGetBase(), srcImpl.unsafeGetOffset() + srcOffset,
-                    dstImpl.unsafeGetBase(), dstImpl.unsafeGetOffset() + dstOffset, size, srcElementLayout.byteSize());
+                    srcImpl.base(), srcImpl.min() + srcOffset,
+                    dstImpl.base(), dstImpl.min() + dstOffset, size, srcElementLayout.byteSize());
         }
     }
 
@@ -1890,11 +1890,11 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
         Objects.checkFromIndexSize(dstIndex, elementCount, Array.getLength(dstArray));
         if (dstWidth == 1 || srcLayout.order() == ByteOrder.nativeOrder()) {
             ScopedMemoryAccess.getScopedMemoryAccess().copyMemory(srcImpl.session().state(), null,
-                    srcImpl.unsafeGetBase(), srcImpl.unsafeGetOffset() + srcOffset,
+                    srcImpl.base(), srcImpl.min() + srcOffset,
                     dstArray, dstBase + (dstIndex * dstWidth), elementCount * dstWidth);
         } else {
             ScopedMemoryAccess.getScopedMemoryAccess().copySwapMemory(srcImpl.session().state(), null,
-                    srcImpl.unsafeGetBase(), srcImpl.unsafeGetOffset() + srcOffset,
+                    srcImpl.base(), srcImpl.min() + srcOffset,
                     dstArray, dstBase + (dstIndex * dstWidth), elementCount * dstWidth, dstWidth);
         }
     }
@@ -1943,11 +1943,11 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
         if (srcWidth == 1 || dstLayout.order() == ByteOrder.nativeOrder()) {
             ScopedMemoryAccess.getScopedMemoryAccess().copyMemory(null, destImpl.session().state(),
                     srcArray, srcBase + (srcIndex * srcWidth),
-                    destImpl.unsafeGetBase(), destImpl.unsafeGetOffset() + dstOffset, elementCount * srcWidth);
+                    destImpl.base(), destImpl.min() + dstOffset, elementCount * srcWidth);
         } else {
             ScopedMemoryAccess.getScopedMemoryAccess().copySwapMemory(null, destImpl.session().state(),
                     srcArray, srcBase + (srcIndex * srcWidth),
-                    destImpl.unsafeGetBase(), destImpl.unsafeGetOffset() + dstOffset, elementCount * srcWidth, srcWidth);
+                    destImpl.base(), destImpl.min() + dstOffset, elementCount * srcWidth, srcWidth);
         }
     }
 

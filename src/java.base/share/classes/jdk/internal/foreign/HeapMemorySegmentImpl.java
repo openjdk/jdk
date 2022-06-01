@@ -67,10 +67,10 @@ public abstract class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
     }
 
     @Override
-    abstract Object base();
+    public abstract Object base();
 
     @Override
-    long min() {
+    public long min() {
         return offset;
     }
 
@@ -100,7 +100,7 @@ public abstract class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
         }
 
         @Override
-        byte[] base() {
+        public byte[] base() {
             return (byte[])Objects.requireNonNull(base);
         }
 
@@ -128,7 +128,7 @@ public abstract class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
         }
 
         @Override
-        char[] base() {
+        public char[] base() {
             return (char[])Objects.requireNonNull(base);
         }
 
@@ -156,7 +156,7 @@ public abstract class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
         }
 
         @Override
-        short[] base() {
+        public short[] base() {
             return (short[])Objects.requireNonNull(base);
         }
 
@@ -184,7 +184,7 @@ public abstract class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
         }
 
         @Override
-        int[] base() {
+        public int[] base() {
             return (int[])Objects.requireNonNull(base);
         }
 
@@ -212,7 +212,7 @@ public abstract class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
         }
 
         @Override
-        long[] base() {
+        public long[] base() {
             return (long[])Objects.requireNonNull(base);
         }
 
@@ -240,7 +240,7 @@ public abstract class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
         }
 
         @Override
-        float[] base() {
+        public float[] base() {
             return (float[])Objects.requireNonNull(base);
         }
 
@@ -268,7 +268,7 @@ public abstract class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
         }
 
         @Override
-        double[] base() {
+        public double[] base() {
             return (double[])Objects.requireNonNull(base);
         }
 

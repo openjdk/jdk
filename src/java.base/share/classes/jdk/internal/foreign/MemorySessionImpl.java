@@ -58,7 +58,6 @@ public non-sealed class MemorySessionImpl implements MemorySession, SegmentAlloc
         this.state = state;
     }
 
-    @ForceInline
     public State state() {
         return state;
     }

@@ -74,18 +74,18 @@ public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegm
 
     final long length;
     final boolean isReadOnly;
-    final MemorySession session;
+    final MemorySessionImpl session;
 
     @ForceInline
     AbstractMemorySegmentImpl(long length, boolean isReadOnly, MemorySession session) {
         this.length = length;
         this.isReadOnly = isReadOnly;
-        this.session = session;
+        this.session = (MemorySessionImpl)session;
     }
 
-    abstract long min();
+    public abstract long min();
 
-    abstract Object base();
+    public abstract Object base();
 
     abstract AbstractMemorySegmentImpl dup(long offset, long size, boolean isReadOnly, MemorySession session);
 
@@ -357,21 +357,13 @@ public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegm
         MemorySessionImpl.checkValidState(session());
     }
 
-    public long unsafeGetOffset() {
-        return min();
-    }
-
-    public Object unsafeGetBase() {
-        return base();
-    }
-
     // Helper methods
 
     public abstract long maxAlignMask();
 
     @ForceInline
     public final boolean isAlignedForElement(long offset, MemoryLayout layout) {
-        return (((unsafeGetOffset() + offset) | maxAlignMask()) & (layout.byteAlignment() - 1)) == 0;
+        return (((min() + offset) | maxAlignMask()) & (layout.byteAlignment() - 1)) == 0;
     }
 
     private int checkArraySize(String typeName, int elemSize) {
@@ -396,9 +388,8 @@ public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegm
     }
 
     @Override
-    @ForceInline
     public MemorySessionImpl session() {
-        return (MemorySessionImpl)session;
+        return session;
     }
 
     private IndexOutOfBoundsException outOfBoundException(long offset, long length) {
@@ -496,8 +487,8 @@ public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegm
     public boolean equals(Object o) {
         return o instanceof AbstractMemorySegmentImpl that &&
                 isNative() == that.isNative() &&
-                unsafeGetOffset() == that.unsafeGetOffset() &&
-                unsafeGetBase() == that.unsafeGetBase() &&
+                min() == that.min() &&
+                base() == that.base() &&
                 length == that.length &&
                 session.equals(that.session);
     }
@@ -506,8 +497,8 @@ public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegm
     public int hashCode() {
         return Objects.hash(
                 isNative(),
-                unsafeGetOffset(),
-                unsafeGetBase(),
+                min(),
+                base(),
                 length,
                 session
         );
