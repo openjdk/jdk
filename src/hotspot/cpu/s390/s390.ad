@@ -689,15 +689,15 @@ uint MachBreakpointNode::size(PhaseRegAlloc *ra_) const {
   return MachNode::size(ra_);
 }
 
-static inline void z_emit16(CodeBuffer &cbuf, long value) {
+static inline void z_emit16(C2_MacroAssembler &masm, long value) {
   __ emit_instruction((unsigned long)value, 2);
 }
 
-static inline void z_emit32(CodeBuffer &cbuf, long value) {
+static inline void z_emit32(C2_MacroAssembler &masm, long value) {
   __ emit_instruction((unsigned long)value, 4);
 }
 
-static inline void z_emit48(CodeBuffer &cbuf, long value) {
+static inline void z_emit48(C2_MacroAssembler &masm, long value) {
   __ emit_instruction((unsigned long)value, 6);
 }
 
@@ -719,7 +719,7 @@ static inline void z_assert_aligned(C2_MacroAssembler &masm, int disp, Register 
   __ z_illtrap();
 }
 
-int emit_call_reloc(C2_MacroAssembler &_masm, intptr_t entry_point, relocInfo::relocType rtype,
+int emit_call_reloc(C2_MacroAssembler &masm, intptr_t entry_point, relocInfo::relocType rtype,
                     PhaseRegAlloc* ra_, bool is_native_call = false) {
   __ set_inst_mark(); // Used in z_enc_java_static_call() and emit_java_to_interp().
   address old_mark = __ inst_mark();
@@ -750,7 +750,7 @@ int emit_call_reloc(C2_MacroAssembler &_masm, intptr_t entry_point, relocInfo::r
   return (ret_off - start_off);
 }
 
-static int emit_call_reloc(C2_MacroAssembler &_masm, intptr_t entry_point, RelocationHolder const& rspec) {
+static int emit_call_reloc(C2_MacroAssembler &masm, intptr_t entry_point, RelocationHolder const& rspec) {
   __ set_inst_mark(); // Used in z_enc_java_static_call() and emit_java_to_interp().
   address old_mark = __ inst_mark();
   unsigned int start_off = __ offset();
@@ -997,7 +997,7 @@ static unsigned int z_ld_st_helper(C2_MacroAssembler *masm, const char *op_str, 
 
 static unsigned int z_mvc_helper(C2_MacroAssembler *masm, int len, int dst_off, int src_off, bool do_print, outputStream *os) {
   if (masm) {
-    __ z_mvc(dst_off, len-1, Z_SP, src_off, Z_SP);
+    masm->z_mvc(dst_off, len-1, Z_SP, src_off, Z_SP);
   }
 
 #if !defined(PRODUCT)
@@ -1216,7 +1216,7 @@ void MachNopNode::format(PhaseRegAlloc *, outputStream *os) const {
 void MachNopNode::emit(C2_MacroAssembler &masm, PhaseRegAlloc * ra_) const {
   int rem_space = 0;
   if (!(ra_->C->output()->in_scratch_emit_size())) {
-    rem_space = masm.insts()->remaining();
+    rem_space = masm.code_section()->remaining();
     if (rem_space <= _count*2 + 8) {
       tty->print("NopNode: _count = %3.3d, remaining space before = %d", _count, rem_space);
     }
@@ -1228,7 +1228,7 @@ void MachNopNode::emit(C2_MacroAssembler &masm, PhaseRegAlloc * ra_) const {
 
   if (!(ra_->C->output()->in_scratch_emit_size())) {
     if (rem_space <= _count*2 + 8) {
-      int rem_space2 = masm.insts()->remaining();
+      int rem_space2 = masm.code_section()->remaining();
       tty->print_cr(", after = %d", rem_space2);
     }
   }
@@ -2075,15 +2075,15 @@ encode %{
     int ret_offset = 0;
 
     if (!_method) {
-      ret_offset = emit_call_reloc(_masm, $meth$$method,
+      ret_offset = emit_call_reloc(masm, $meth$$method,
                                    relocInfo::runtime_call_w_cp_type, ra_);
     } else {
       int method_index = resolved_method_index(masm);
       if (_optimized_virtual) {
-        ret_offset = emit_call_reloc(_masm, $meth$$method,
+        ret_offset = emit_call_reloc(masm, $meth$$method,
                                      opt_virtual_call_Relocation::spec(method_index));
       } else {
-        ret_offset = emit_call_reloc(_masm, $meth$$method,
+        ret_offset = emit_call_reloc(masm, $meth$$method,
                                      static_call_Relocation::spec(method_index));
       }
     }
@@ -2121,7 +2121,7 @@ encode %{
       __ relocate(virtual_call_Relocation::spec(virtual_call_oop_addr, method_index));
       unsigned int ret_off = __ offset();
       assert(__ offset() - start_off == 6, "bad prelude len: %d", __ offset() - start_off);
-      ret_off += emit_call_reloc(_masm, $meth$$method, relocInfo::none, ra_);
+      ret_off += emit_call_reloc(masm, $meth$$method, relocInfo::none, ra_);
       assert(_method, "lazy_constant may be wrong when _method==null");
     } else {
       assert(!UseInlineCaches, "expect vtable calls only if not using ICs");
