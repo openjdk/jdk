@@ -517,8 +517,7 @@ instruct vmask_reinterpret_diff_esize(pRegGov dst, pRegGov src, vReg tmp, rFlags
 // vector abs
 
 instruct vabsB(vReg dst, vReg src) %{
-  predicate(UseSVE > 0 &&
-            !n->as_Vector()->is_predicated_vector());
+  predicate(UseSVE > 0);
   match(Set dst (AbsVB src));
   ins_cost(SVE_COST);
   format %{ "sve_abs $dst, $src\t# vector (sve) (B)" %}
@@ -530,8 +529,7 @@ instruct vabsB(vReg dst, vReg src) %{
 %}
 
 instruct vabsS(vReg dst, vReg src) %{
-  predicate(UseSVE > 0 &&
-            !n->as_Vector()->is_predicated_vector());
+  predicate(UseSVE > 0);
   match(Set dst (AbsVS src));
   ins_cost(SVE_COST);
   format %{ "sve_abs $dst, $src\t# vector (sve) (H)" %}
@@ -543,8 +541,7 @@ instruct vabsS(vReg dst, vReg src) %{
 %}
 
 instruct vabsI(vReg dst, vReg src) %{
-  predicate(UseSVE > 0 &&
-            !n->as_Vector()->is_predicated_vector());
+  predicate(UseSVE > 0);
   match(Set dst (AbsVI src));
   ins_cost(SVE_COST);
   format %{ "sve_abs $dst, $src\t# vector (sve) (S)" %}
@@ -556,8 +553,7 @@ instruct vabsI(vReg dst, vReg src) %{
 %}
 
 instruct vabsL(vReg dst, vReg src) %{
-  predicate(UseSVE > 0 &&
-            !n->as_Vector()->is_predicated_vector());
+  predicate(UseSVE > 0);
   match(Set dst (AbsVL src));
   ins_cost(SVE_COST);
   format %{ "sve_abs $dst, $src\t# vector (sve) (D)" %}
@@ -569,8 +565,7 @@ instruct vabsL(vReg dst, vReg src) %{
 %}
 
 instruct vabsF(vReg dst, vReg src) %{
-  predicate(UseSVE > 0 &&
-            !n->as_Vector()->is_predicated_vector());
+  predicate(UseSVE > 0);
   match(Set dst (AbsVF src));
   ins_cost(SVE_COST);
   format %{ "sve_fabs $dst, $src\t# vector (sve) (S)" %}
@@ -582,8 +577,7 @@ instruct vabsF(vReg dst, vReg src) %{
 %}
 
 instruct vabsD(vReg dst, vReg src) %{
-  predicate(UseSVE > 0 &&
-            !n->as_Vector()->is_predicated_vector());
+  predicate(UseSVE > 0);
   match(Set dst (AbsVD src));
   ins_cost(SVE_COST);
   format %{ "sve_fabs $dst, $src\t# vector (sve) (D)" %}
@@ -1456,10 +1450,8 @@ instruct vfmadD_masked(vReg dst_src1, vReg src2, vReg src3, pRegGov pg) %{
 // vector fmls
 
 // dst_src1 = dst_src1 + -src2 * src3
-// The NegVF must not be predicated.
 instruct vfmlsF1(vReg dst_src1, vReg src2, vReg src3) %{
-  predicate(UseFMA && UseSVE > 0 &&
-            !n->in(2)->in(1)->as_Vector()->is_predicated_vector());
+  predicate(UseFMA && UseSVE > 0);
   match(Set dst_src1 (FmaVF dst_src1 (Binary (NegVF src2) src3)));
   ins_cost(SVE_COST);
   format %{ "sve_fmls $dst_src1, $src2, $src3\t # vector (sve) (S)" %}
@@ -1471,10 +1463,8 @@ instruct vfmlsF1(vReg dst_src1, vReg src2, vReg src3) %{
 %}
 
 // dst_src1 = dst_src1 + src2 * -src3
-// The NegVF must not be predicated.
 instruct vfmlsF2(vReg dst_src1, vReg src2, vReg src3) %{
-  predicate(UseFMA && UseSVE > 0 &&
-            !n->in(2)->in(2)->as_Vector()->is_predicated_vector());
+  predicate(UseFMA && UseSVE > 0);
   match(Set dst_src1 (FmaVF dst_src1 (Binary src2 (NegVF src3))));
   ins_cost(SVE_COST);
   format %{ "sve_fmls $dst_src1, $src2, $src3\t # vector (sve) (S)" %}
@@ -1486,10 +1476,8 @@ instruct vfmlsF2(vReg dst_src1, vReg src2, vReg src3) %{
 %}
 
 // dst_src1 = dst_src1 + -src2 * src3
-// The NegVD must not be predicated.
 instruct vfmlsD1(vReg dst_src1, vReg src2, vReg src3) %{
-  predicate(UseFMA && UseSVE > 0 &&
-            !n->in(2)->in(1)->as_Vector()->is_predicated_vector());
+  predicate(UseFMA && UseSVE > 0);
   match(Set dst_src1 (FmaVD dst_src1 (Binary (NegVD src2) src3)));
   ins_cost(SVE_COST);
   format %{ "sve_fmls $dst_src1, $src2, $src3\t # vector (sve) (D)" %}
@@ -1501,10 +1489,8 @@ instruct vfmlsD1(vReg dst_src1, vReg src2, vReg src3) %{
 %}
 
 // dst_src1 = dst_src1 + src2 * -src3
-// The NegVD must not be predicated.
 instruct vfmlsD2(vReg dst_src1, vReg src2, vReg src3) %{
-  predicate(UseFMA && UseSVE > 0 &&
-            !n->in(2)->in(2)->as_Vector()->is_predicated_vector());
+  predicate(UseFMA && UseSVE > 0);
   match(Set dst_src1 (FmaVD dst_src1 (Binary src2 (NegVD src3))));
   ins_cost(SVE_COST);
   format %{ "sve_fmls $dst_src1, $src2, $src3\t # vector (sve) (D)" %}
@@ -1518,10 +1504,8 @@ instruct vfmlsD2(vReg dst_src1, vReg src2, vReg src3) %{
 // vector fmsb - predicated
 
 // dst_src1 = dst_src1 * -src2 + src3
-// The NegVF must not be predicated.
 instruct vfmsbF_masked(vReg dst_src1, vReg src2, vReg src3, pRegGov pg) %{
-  predicate(UseFMA && UseSVE > 0 &&
-            !n->in(1)->in(2)->as_Vector()->is_predicated_vector());
+  predicate(UseFMA && UseSVE > 0);
   match(Set dst_src1 (FmaVF (Binary dst_src1 (NegVF src2)) (Binary src3 pg)));
   ins_cost(SVE_COST);
   format %{ "sve_fmsb $dst_src1, $pg, $src2, $src3\t # vector (sve) (S)" %}
@@ -1533,10 +1517,8 @@ instruct vfmsbF_masked(vReg dst_src1, vReg src2, vReg src3, pRegGov pg) %{
 %}
 
 // dst_src1 = dst_src1 * -src2 + src3
-// The NegVD must not be predicated.
 instruct vfmsbD_masked(vReg dst_src1, vReg src2, vReg src3, pRegGov pg) %{
-  predicate(UseFMA && UseSVE > 0 &&
-            !n->in(1)->in(2)->as_Vector()->is_predicated_vector());
+  predicate(UseFMA && UseSVE > 0);
   match(Set dst_src1 (FmaVD (Binary dst_src1 (NegVD src2)) (Binary src3 pg)));
   ins_cost(SVE_COST);
   format %{ "sve_fmsb $dst_src1, $pg, $src2, $src3\t # vector (sve) (D)" %}
@@ -1550,11 +1532,8 @@ instruct vfmsbD_masked(vReg dst_src1, vReg src2, vReg src3, pRegGov pg) %{
 // vector fnmla
 
 // dst_src1 = -dst_src1 + -src2 * src3
-// The NegVF must not be predicated.
 instruct vfnmlaF1(vReg dst_src1, vReg src2, vReg src3) %{
-  predicate(UseFMA && UseSVE > 0 &&
-            !n->in(1)->as_Vector()->is_predicated_vector() &&
-            !n->in(2)->in(1)->as_Vector()->is_predicated_vector());
+  predicate(UseFMA && UseSVE > 0);
   match(Set dst_src1 (FmaVF (NegVF dst_src1) (Binary (NegVF src2) src3)));
   ins_cost(SVE_COST);
   format %{ "sve_fnmla $dst_src1, $src2, $src3\t # vector (sve) (S)" %}
@@ -1566,11 +1545,8 @@ instruct vfnmlaF1(vReg dst_src1, vReg src2, vReg src3) %{
 %}
 
 // dst_src1 = -dst_src1 + src2 * -src3
-// The NegVF must not be predicated.
 instruct vfnmlaF2(vReg dst_src1, vReg src2, vReg src3) %{
-  predicate(UseFMA && UseSVE > 0 &&
-            !n->in(1)->as_Vector()->is_predicated_vector() &&
-            !n->in(2)->in(2)->as_Vector()->is_predicated_vector());
+  predicate(UseFMA && UseSVE > 0);
   match(Set dst_src1 (FmaVF (NegVF dst_src1) (Binary src2 (NegVF src3))));
   ins_cost(SVE_COST);
   format %{ "sve_fnmla $dst_src1, $src2, $src3\t # vector (sve) (S)" %}
@@ -1582,11 +1558,8 @@ instruct vfnmlaF2(vReg dst_src1, vReg src2, vReg src3) %{
 %}
 
 // dst_src1 = -dst_src1 + -src2 * src3
-// The NegVD must not be predicated.
 instruct vfnmlaD1(vReg dst_src1, vReg src2, vReg src3) %{
-  predicate(UseFMA && UseSVE > 0 &&
-            !n->in(1)->as_Vector()->is_predicated_vector() &&
-            !n->in(2)->in(1)->as_Vector()->is_predicated_vector());
+  predicate(UseFMA && UseSVE > 0);
   match(Set dst_src1 (FmaVD (NegVD dst_src1) (Binary (NegVD src2) src3)));
   ins_cost(SVE_COST);
   format %{ "sve_fnmla $dst_src1, $src2, $src3\t # vector (sve) (D)" %}
@@ -1598,11 +1571,8 @@ instruct vfnmlaD1(vReg dst_src1, vReg src2, vReg src3) %{
 %}
 
 // dst_src1 = -dst_src1 + src2 * -src3
-// The NegVD must not be predicated.
 instruct vfnmlaD2(vReg dst_src1, vReg src2, vReg src3) %{
-  predicate(UseFMA && UseSVE > 0 &&
-            !n->in(1)->as_Vector()->is_predicated_vector() &&
-            !n->in(2)->in(2)->as_Vector()->is_predicated_vector());
+  predicate(UseFMA && UseSVE > 0);
   match(Set dst_src1 (FmaVD (NegVD dst_src1) (Binary src2 (NegVD src3))));
   ins_cost(SVE_COST);
   format %{ "sve_fnmla $dst_src1, $src2, $src3\t # vector (sve) (D)" %}
@@ -1616,11 +1586,8 @@ instruct vfnmlaD2(vReg dst_src1, vReg src2, vReg src3) %{
 // vector fnmad - predicated
 
 // dst_src1 = -src3 + dst_src1 * -src2
-// The NegVF must not be predicated.
 instruct vfnmadF_masked(vReg dst_src1, vReg src2, vReg src3, pRegGov pg) %{
-  predicate(UseFMA && UseSVE > 0 &&
-            !n->in(1)->in(2)->as_Vector()->is_predicated_vector() &&
-            !n->in(2)->in(1)->as_Vector()->is_predicated_vector());
+  predicate(UseFMA && UseSVE > 0);
   match(Set dst_src1 (FmaVF (Binary dst_src1 (NegVF src2)) (Binary (NegVF src3) pg)));
   ins_cost(SVE_COST);
   format %{ "sve_fnmad $dst_src1, $pg, $src2, $src3\t # vector (sve) (S)" %}
@@ -1632,11 +1599,8 @@ instruct vfnmadF_masked(vReg dst_src1, vReg src2, vReg src3, pRegGov pg) %{
 %}
 
 // dst_src1 = -src3 + dst_src1 * -src2
-// The NegVD must not be predicated.
 instruct vfnmadD_masked(vReg dst_src1, vReg src2, vReg src3, pRegGov pg) %{
-  predicate(UseFMA && UseSVE > 0 &&
-            !n->in(1)->in(2)->as_Vector()->is_predicated_vector() &&
-            !n->in(2)->in(1)->as_Vector()->is_predicated_vector());
+  predicate(UseFMA && UseSVE > 0);
   match(Set dst_src1 (FmaVD (Binary dst_src1 (NegVD src2)) (Binary (NegVD src3) pg)));
   ins_cost(SVE_COST);
   format %{ "sve_fnmad $dst_src1, $pg, $src2, $src3\t # vector (sve) (D)" %}
@@ -1650,10 +1614,8 @@ instruct vfnmadD_masked(vReg dst_src1, vReg src2, vReg src3, pRegGov pg) %{
 // vector fnmls
 
 // dst_src1 = -dst_src1 + src2 * src3
-// The NegVF must not be predicated.
 instruct vfnmlsF(vReg dst_src1, vReg src2, vReg src3) %{
-  predicate(UseFMA && UseSVE > 0 &&
-            !n->in(1)->as_Vector()->is_predicated_vector());
+  predicate(UseFMA && UseSVE > 0);
   match(Set dst_src1 (FmaVF (NegVF dst_src1) (Binary src2 src3)));
   ins_cost(SVE_COST);
   format %{ "sve_fnmls $dst_src1, $src2, $src3\t # vector (sve) (S)" %}
@@ -1665,10 +1627,8 @@ instruct vfnmlsF(vReg dst_src1, vReg src2, vReg src3) %{
 %}
 
 // dst_src1 = -dst_src1 + src2 * src3
-// The NegVD must not be predicated.
 instruct vfnmlsD(vReg dst_src1, vReg src2, vReg src3) %{
-  predicate(UseFMA && UseSVE > 0 &&
-            !n->in(1)->as_Vector()->is_predicated_vector());
+  predicate(UseFMA && UseSVE > 0);
   match(Set dst_src1 (FmaVD (NegVD dst_src1) (Binary src2 src3)));
   ins_cost(SVE_COST);
   format %{ "sve_fnmls $dst_src1, $src2, $src3\t # vector (sve) (D)" %}
@@ -1682,10 +1642,8 @@ instruct vfnmlsD(vReg dst_src1, vReg src2, vReg src3) %{
 // vector fnmsb - predicated
 
 // dst_src1 = -src3 + dst_src1 * src2
-// The NegVF must not be predicated.
 instruct vfnmsbF_masked(vReg dst_src1, vReg src2, vReg src3, pRegGov pg) %{
-  predicate(UseFMA && UseSVE > 0 &&
-            !n->in(2)->in(1)->as_Vector()->is_predicated_vector());
+  predicate(UseFMA && UseSVE > 0);
   match(Set dst_src1 (FmaVF (Binary dst_src1 src2) (Binary (NegVF src3) pg)));
   ins_cost(SVE_COST);
   format %{ "sve_fnmsb $dst_src1, $pg, $src2, $src3\t # vector (sve) (S)" %}
@@ -1697,10 +1655,8 @@ instruct vfnmsbF_masked(vReg dst_src1, vReg src2, vReg src3, pRegGov pg) %{
 %}
 
 // dst_src1 = -src3 + dst_src1 * src2
-// The NegVD must not be predicated.
 instruct vfnmsbD_masked(vReg dst_src1, vReg src2, vReg src3, pRegGov pg) %{
-  predicate(UseFMA && UseSVE > 0 &&
-            !n->in(2)->in(1)->as_Vector()->is_predicated_vector());
+  predicate(UseFMA && UseSVE > 0);
   match(Set dst_src1 (FmaVD (Binary dst_src1 src2) (Binary (NegVD src3) pg)));
   ins_cost(SVE_COST);
   format %{ "sve_fnmsb $dst_src1, $pg, $src2, $src3\t # vector (sve) (D)" %}
@@ -2102,8 +2058,7 @@ instruct vmulD_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
 // vector neg
 
 instruct vnegI(vReg dst, vReg src) %{
-  predicate(UseSVE > 0 &&
-            !n->as_Vector()->is_predicated_vector());
+  predicate(UseSVE > 0);
   match(Set dst (NegVI src));
   ins_cost(SVE_COST);
   format %{ "sve_neg $dst, $src\t# vector (sve) (B/H/S)" %}
@@ -2116,8 +2071,7 @@ instruct vnegI(vReg dst, vReg src) %{
 %}
 
 instruct vnegL(vReg dst, vReg src) %{
-  predicate(UseSVE > 0 &&
-            !n->as_Vector()->is_predicated_vector());
+  predicate(UseSVE > 0);
   match(Set dst (NegVL src));
   ins_cost(SVE_COST);
   format %{ "sve_neg $dst, $src\t# vector (sve) (D)" %}
@@ -2129,8 +2083,7 @@ instruct vnegL(vReg dst, vReg src) %{
 %}
 
 instruct vnegF(vReg dst, vReg src) %{
-  predicate(UseSVE > 0 &&
-            !n->as_Vector()->is_predicated_vector());
+  predicate(UseSVE > 0);
   match(Set dst (NegVF src));
   ins_cost(SVE_COST);
   format %{ "sve_fneg $dst, $src\t# vector (sve) (S)" %}
@@ -2142,8 +2095,7 @@ instruct vnegF(vReg dst, vReg src) %{
 %}
 
 instruct vnegD(vReg dst, vReg src) %{
-  predicate(UseSVE > 0 &&
-            !n->as_Vector()->is_predicated_vector());
+  predicate(UseSVE > 0);
   match(Set dst (NegVD src));
   ins_cost(SVE_COST);
   format %{ "sve_fneg $dst, $src\t# vector (sve) (D)" %}
@@ -2212,8 +2164,7 @@ instruct vnegD_masked(vReg dst_src, pRegGov pg) %{
 // vector popcount
 
 instruct vpopcountI(vReg dst, vReg src) %{
-  predicate(UseSVE > 0 &&
-            !n->as_Vector()->is_predicated_vector());
+  predicate(UseSVE > 0);
   match(Set dst (PopCountVI src));
   ins_cost(SVE_COST);
   format %{ "sve_cnt $dst, $src\t# vector (sve) (B/H/S)" %}
@@ -2227,7 +2178,6 @@ instruct vpopcountI(vReg dst, vReg src) %{
 
 instruct vpopcountL(vReg dst, vReg src) %{
   predicate(UseSVE > 0 &&
-            !n->as_Vector()->is_predicated_vector() &&
             n->bottom_type()->is_vect()->element_basic_type() == T_LONG);
   match(Set dst (PopCountVL src));
   ins_cost(SVE_COST);
@@ -2245,7 +2195,6 @@ instruct vpopcountL(vReg dst, vReg src) %{
 // "vpopcountL" rule.
 instruct vpopcountLI(vReg dst, vReg src, vReg vtmp) %{
   predicate(UseSVE > 0 &&
-            !n->as_Vector()->is_predicated_vector() &&
             n->bottom_type()->is_vect()->element_basic_type() == T_INT);
   match(Set dst (PopCountVL src));
   effect(TEMP_DEF dst, TEMP vtmp);
@@ -2338,7 +2287,7 @@ instruct vstoremask_narrow(vReg dst, pRegGov src, vReg tmp, immI_gt_1 size) %{
 
 // VectorLoadMask+LoadVector, and the VectorLoadMask is unpredicated.
 instruct vloadmask_loadV(pRegGov dst, indirect mem, vReg vtmp, rFlagsReg cr) %{
-  predicate(UseSVE > 0 && !n->is_predicated_vector() &&
+  predicate(UseSVE > 0 &&
             type2aelembytes(n->bottom_type()->is_vect()->element_basic_type()) > 1);
   match(Set dst (VectorLoadMask (LoadVector mem)));
   effect(TEMP vtmp, KILL cr);
@@ -2383,7 +2332,7 @@ instruct vloadmask_loadV_masked(pRegGov dst, indirect mem, pRegGov pg, vReg vtmp
 
 // VectorLoadMask+LoadVectorMasked, and the VectorLoadMask is unpredicated.
 instruct vloadmask_loadVMasked(pRegGov dst, vmemA mem, pRegGov pg, vReg vtmp, rFlagsReg cr) %{
-  predicate(UseSVE > 0 && !n->is_predicated_vector() &&
+  predicate(UseSVE > 0 &&
             type2aelembytes(n->bottom_type()->is_vect()->element_basic_type()) > 1);
   match(Set dst (VectorLoadMask (LoadVectorMasked mem pg)));
   effect(TEMP vtmp, KILL cr);
@@ -4041,8 +3990,7 @@ instruct vlslL_imm_masked(vReg dst_src, immI shift, pRegGov pg) %{
 // vector sqrt
 
 instruct vsqrtF(vReg dst, vReg src) %{
-  predicate(UseSVE > 0 &&
-            !n->as_Vector()->is_predicated_vector());
+  predicate(UseSVE > 0);
   match(Set dst (SqrtVF src));
   ins_cost(SVE_COST);
   format %{ "sve_fsqrt $dst, $src\t# vector (sve) (S)" %}
@@ -4054,8 +4002,7 @@ instruct vsqrtF(vReg dst, vReg src) %{
 %}
 
 instruct vsqrtD(vReg dst, vReg src) %{
-  predicate(UseSVE > 0 &&
-            !n->as_Vector()->is_predicated_vector());
+  predicate(UseSVE > 0);
   match(Set dst (SqrtVD src));
   ins_cost(SVE_COST);
   format %{ "sve_fsqrt $dst, $src\t# vector (sve) (D)" %}
@@ -5355,7 +5302,7 @@ instruct vmask_truecount(iRegINoSp dst, pReg src) %{
 // Return the index of the first mask lane that is set, or vector length if none of
 // them are set.
 instruct vmask_firsttrue(iRegINoSp dst, pReg src, pReg ptmp) %{
-  predicate(UseSVE > 0 && !n->is_predicated_vector());
+  predicate(UseSVE > 0);
   match(Set dst (VectorMaskFirstTrue src));
   effect(TEMP ptmp);
   ins_cost(2 * SVE_COST);
@@ -5455,7 +5402,7 @@ instruct vmaskAll_immI(pRegGov dst, immI src, rFlagsReg cr) %{
 %}
 
 instruct vmaskAllI(pRegGov dst, iRegIorL2I src, vReg tmp, rFlagsReg cr) %{
-  predicate(UseSVE > 0 && !n->is_predicated_vector());
+  predicate(UseSVE > 0);
   match(Set dst (MaskAll src));
   effect(TEMP tmp, KILL cr);
   ins_cost(2 * SVE_COST);
@@ -5491,7 +5438,7 @@ instruct vmaskAll_immL(pRegGov dst, immL src, rFlagsReg cr) %{
 %}
 
 instruct vmaskAllL(pRegGov dst, iRegL src, vReg tmp, rFlagsReg cr) %{
-  predicate(UseSVE > 0 && !n->is_predicated_vector());
+  predicate(UseSVE > 0);
   match(Set dst (MaskAll src));
   effect(TEMP tmp, KILL cr);
   ins_cost(2 * SVE_COST);
@@ -5577,8 +5524,7 @@ instruct vmaskcmp_masked(pRegGov dst, vReg src1, vReg src2, immI cond, pRegGov p
 // vector load mask
 
 instruct vloadmaskB(pRegGov dst, vReg src, rFlagsReg cr) %{
-  predicate(UseSVE > 0 && !n->is_predicated_vector() &&
-            n->bottom_type()->is_vect()->element_basic_type() == T_BYTE);
+  predicate(UseSVE > 0 && n->bottom_type()->is_vect()->element_basic_type() == T_BYTE);
   match(Set dst (VectorLoadMask src));
   effect(KILL cr);
   ins_cost(SVE_COST);
@@ -5591,8 +5537,7 @@ instruct vloadmaskB(pRegGov dst, vReg src, rFlagsReg cr) %{
 %}
 
 instruct vloadmask_extend(pRegGov dst, vReg src, vReg tmp, rFlagsReg cr) %{
-  predicate(UseSVE > 0 && !n->is_predicated_vector() &&
-            n->bottom_type()->is_vect()->element_basic_type() != T_BYTE);
+  predicate(UseSVE > 0 && n->bottom_type()->is_vect()->element_basic_type() != T_BYTE);
   match(Set dst (VectorLoadMask src));
   effect(TEMP tmp, KILL cr);
   ins_cost(3 * SVE_COST);
@@ -5607,8 +5552,7 @@ instruct vloadmask_extend(pRegGov dst, vReg src, vReg tmp, rFlagsReg cr) %{
 %}
 
 instruct vloadmaskB_masked(pRegGov dst, vReg src, pRegGov pg, rFlagsReg cr) %{
-  predicate(UseSVE > 0 &&
-            n->bottom_type()->is_vect()->element_basic_type() == T_BYTE);
+  predicate(UseSVE > 0 && n->bottom_type()->is_vect()->element_basic_type() == T_BYTE);
   match(Set dst (VectorLoadMask src pg));
   effect(KILL cr);
   ins_cost(SVE_COST);
@@ -5780,8 +5724,7 @@ instruct vexpand(vReg dst, vReg src, pRegGov pg) %{
 // ------------------------------ CountLeadingZerosV ------------------------------
 
 instruct vcountLeadingZeros(vReg dst, vReg src) %{
-  predicate(UseSVE > 0 &&
-            !n->as_Vector()->is_predicated_vector());
+  predicate(UseSVE > 0);
   match(Set dst (CountLeadingZerosV src));
   ins_cost(SVE_COST);
   format %{ "sve_clz $dst, $src\t# vector (sve)" %}
@@ -5812,8 +5755,7 @@ instruct vcountLeadingZeros_masked(vReg dst_src, pRegGov pg) %{
 // ------------------------------ CountTrailingZerosV -----------------------------
 
 instruct vcountTrailingZeros(vReg dst, vReg src) %{
-  predicate(UseSVE > 0 &&
-            !n->as_Vector()->is_predicated_vector());
+  predicate(UseSVE > 0);
   match(Set dst (CountTrailingZerosV src));
   ins_cost(2 * SVE_COST);
   format %{ "sve_rbit $dst, $src\n\t"
@@ -5849,8 +5791,7 @@ instruct vcountTrailingZeros_masked(vReg dst_src, pRegGov pg) %{
 // ---------------------------------- ReverseV ------------------------------------
 
 instruct vreverse(vReg dst, vReg src) %{
-  predicate(UseSVE > 0 &&
-            !n->as_Vector()->is_predicated_vector());
+  predicate(UseSVE > 0);
   match(Set dst (ReverseV src));
   ins_cost(SVE_COST);
   format %{ "sve_rbit $dst, $src\t# vector (sve)" %}
@@ -5881,8 +5822,7 @@ instruct vreverse_masked(vReg dst_src, pRegGov pg) %{
 // -------------------------------- ReverseBytesV ---------------------------------
 
 instruct vreverseBytes(vReg dst, vReg src) %{
-  predicate(UseSVE > 0 &&
-            !n->as_Vector()->is_predicated_vector());
+  predicate(UseSVE > 0);
   match(Set dst (ReverseBytesV src));
   ins_cost(SVE_COST);
   format %{ "sve_revb $dst, $src\t# vector (sve)" %}
