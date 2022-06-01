@@ -51,7 +51,6 @@ import java.awt.Point;
 import java.awt.Robot;
 
 public class bug5047379 {
-    static volatile boolean isTooltipAdded;
     static JFrame frame;
     static JButton a;
     static JButton b;
@@ -169,15 +168,6 @@ public class bug5047379 {
 
         frame.pack();
         frame.setLocationRelativeTo(null);
-
-        JLayeredPane layeredPane = (JLayeredPane) Util.findSubComponent(
-                frame, "JLayeredPane");
-        layeredPane.addContainerListener(new ContainerAdapter() {
-            @Override
-            public void componentAdded(ContainerEvent e) {
-                isTooltipAdded = true;
-            }
-        });
         frame.setVisible(true);
     }
 };
