@@ -92,7 +92,7 @@ public class Util {
      * Returns true if the given Thread is a virtual thread.
      *
      * @implNote This method uses reflection because Thread::isVirtual is a preview API
-     * and the java.management cannot be compiled with --enable-preview.
+     * and the java.management module cannot be compiled with --enable-preview.
      */
     public static boolean isVirtual(Thread thread) {
         try {
