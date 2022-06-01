@@ -34,6 +34,7 @@ import javax.lang.model.element.PackageElement;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
+import jdk.javadoc.internal.doclets.formats.html.markup.Script;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
@@ -131,6 +132,15 @@ public class SummaryListWriter<L extends SummaryAPIListBuilder> extends SubWrite
             }
         }
         bodyContents.addMainContent(content);
+        bodyContents.addMainContent(new Script("""
+                document.addEventListener("DOMContentLoaded", function(e) {
+                    document.querySelectorAll('input[type="checkbox"]').forEach(
+                        function(c, i) {
+                            c.disabled = false;
+                            c.onclick();
+                        });
+                    });
+                """).asContent());
         bodyContents.setFooter(getFooter());
         body.add(bodyContents);
         printHtmlDocument(null, description, body);
@@ -140,7 +150,7 @@ public class SummaryListWriter<L extends SummaryAPIListBuilder> extends SubWrite
      * Add the index link.
      *
      * @param id the id for the link
-     * @param headingKey
+     * @param headingKey the key for the heading content
      * @param content the content to which the index link will be added
      */
     protected void addIndexLink(HtmlId id, String headingKey, Content content) {
