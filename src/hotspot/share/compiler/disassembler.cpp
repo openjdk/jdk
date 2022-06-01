@@ -838,7 +838,7 @@ bool Disassembler::load_library(outputStream* st) {
     _decode_instructions_virtual = CAST_TO_FN_PTR(Disassembler::decode_func_virtual,
                                           os::dll_lookup(_library, decode_instructions_virtual_name));
   } else {
-    log_warning(os)("Failed to load hsdis library: %s", buf);
+    log_warning(os)("Try to load hsdis library failed");
   }
   _tried_to_load_library = true;
   _library_usable        = _decode_instructions_virtual != NULL;
