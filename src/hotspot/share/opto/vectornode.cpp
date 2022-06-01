@@ -279,7 +279,7 @@ int VectorNode::replicate_opcode(BasicType bt) {
 
 bool VectorNode::vector_size_supported(BasicType bt, uint vlen) {
   return (Matcher::vector_size_supported(bt, vlen) &&
-          (vlen * type2aelembytes(bt) <= SuperWordMaxVectorSize));
+          (vlen * type2aelembytes(bt) <= (uint)SuperWordMaxVectorSize));
 }
 
 // Also used to check if the code generator
