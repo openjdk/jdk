@@ -37,7 +37,7 @@ public class ForceGC {
      * returns true, or a predefined waiting time (10 seconds) elapses.
      *
      * @param booleanSupplier boolean supplier
-     * @return true if the {@code booleanSupplier} returns true, or false 
+     * @return true if the {@code booleanSupplier} returns true, or false
      *     if did not complete after 10 Seconds
      */
     public static boolean wait(BooleanSupplier booleanSupplier) {
