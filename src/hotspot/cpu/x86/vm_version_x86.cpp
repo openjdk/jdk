@@ -1305,11 +1305,11 @@ void VM_Version::get_processor_features() {
     }
   } else {
     if (SuperWordMaxVectorSize > MaxVectorSize) {
-      warning("SuperWordMaxVectorSize cannot be greater than MaxVectorSize %ld", MaxVectorSize);
+      warning("SuperWordMaxVectorSize cannot be greater than MaxVectorSize %i", (int) MaxVectorSize);
       FLAG_SET_DEFAULT(SuperWordMaxVectorSize, MaxVectorSize);
     }
     if (!is_power_of_2(SuperWordMaxVectorSize)) {
-      warning("SuperWordMaxVectorSize must be a power of 2, setting to MaxVectorSize: %ld", MaxVectorSize);
+      warning("SuperWordMaxVectorSize must be a power of 2, setting to MaxVectorSize: %i", (int) MaxVectorSize);
       FLAG_SET_DEFAULT(SuperWordMaxVectorSize, MaxVectorSize);
     }
   }
