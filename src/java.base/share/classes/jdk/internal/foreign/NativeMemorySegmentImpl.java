@@ -48,7 +48,7 @@ public class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl {
         }
 
         @Override
-        NativeMemorySegmentImpl dup(long offset, long size, boolean isReadOnly, MemorySession scope) {
+        NativeMemorySegmentImpl dup(long offset, long size, boolean isReadOnly, MemorySessionImpl session) {
             throw new IllegalStateException();
         }
     };
@@ -64,7 +64,7 @@ public class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl {
     final long min;
 
     @ForceInline
-    NativeMemorySegmentImpl(long min, long length, boolean isReadOnly, MemorySession session) {
+    NativeMemorySegmentImpl(long min, long length, boolean isReadOnly, MemorySessionImpl session) {
         super(length, isReadOnly, session);
         this.min = min;
     }
@@ -77,7 +77,7 @@ public class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl {
     }
 
     @Override
-    NativeMemorySegmentImpl dup(long offset, long size, boolean isReadOnly, MemorySession session) {
+    NativeMemorySegmentImpl dup(long offset, long size, boolean isReadOnly, MemorySessionImpl session) {
         return new NativeMemorySegmentImpl(min + offset, size, isReadOnly, session);
     }
 
@@ -126,7 +126,7 @@ public class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl {
         }
         long alignedBuf = Utils.alignUp(buf, alignmentBytes);
         AbstractMemorySegmentImpl segment = new NativeMemorySegmentImpl(buf, alignedSize,
-                false, session);
+                false, (MemorySessionImpl)session);
         MemorySessionImpl.addOrCleanupIfFail(session, new MemorySessionImpl.State.ResourceCleanup() {
             @Override
             public void cleanup() {
@@ -143,6 +143,6 @@ public class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl {
 
     public static MemorySegment makeNativeSegmentUnchecked(MemoryAddress min, long bytesSize, MemorySession session) {
         MemorySessionImpl.checkValidState(session);
-        return new NativeMemorySegmentImpl(min.toRawLongValue(), bytesSize, false, session);
+        return new NativeMemorySegmentImpl(min.toRawLongValue(), bytesSize, false, (MemorySessionImpl)session);
     }
 }

@@ -44,7 +44,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * the field type storing the 'base' coordinate is just Object; similarly, all the constructor in the subclasses
  * accept an Object 'base' parameter instead of a sharper type (e.g. {@code byte[]}). This is deliberate, as
  * using sharper types would require use of type-conversions, which in turn would inhibit some C2 optimizations,
- * such as the elimination of store barriers in methods like {@link HeapMemorySegmentImpl#dup(long, long, boolean, MemorySession)}.
+ * such as the elimination of store barriers in methods like {@link HeapMemorySegmentImpl#dup(long, long, boolean, MemorySessionImpl)}.
  */
 public abstract class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
 
@@ -75,7 +75,7 @@ public abstract class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
     }
 
     @Override
-    abstract HeapMemorySegmentImpl dup(long offset, long size, boolean isReadOnly, MemorySession session);
+    abstract HeapMemorySegmentImpl dup(long offset, long size, boolean isReadOnly, MemorySessionImpl session);
 
     @Override
     ByteBuffer makeByteBuffer() {
@@ -95,7 +95,7 @@ public abstract class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
         }
 
         @Override
-        OfByte dup(long offset, long size, boolean isReadOnly, MemorySession session) {
+        OfByte dup(long offset, long size, boolean isReadOnly, MemorySessionImpl session) {
             return new OfByte(this.offset + offset, base, size, isReadOnly);
         }
 
@@ -123,7 +123,7 @@ public abstract class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
         }
 
         @Override
-        OfChar dup(long offset, long size, boolean isReadOnly, MemorySession session) {
+        OfChar dup(long offset, long size, boolean isReadOnly, MemorySessionImpl session) {
             return new OfChar(this.offset + offset, base, size, isReadOnly);
         }
 
@@ -151,7 +151,7 @@ public abstract class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
         }
 
         @Override
-        OfShort dup(long offset, long size, boolean isReadOnly, MemorySession session) {
+        OfShort dup(long offset, long size, boolean isReadOnly, MemorySessionImpl session) {
             return new OfShort(this.offset + offset, base, size, isReadOnly);
         }
 
@@ -179,7 +179,7 @@ public abstract class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
         }
 
         @Override
-        OfInt dup(long offset, long size, boolean isReadOnly, MemorySession session) {
+        OfInt dup(long offset, long size, boolean isReadOnly, MemorySessionImpl session) {
             return new OfInt(this.offset + offset, base, size, isReadOnly);
         }
 
@@ -207,7 +207,7 @@ public abstract class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
         }
 
         @Override
-        OfLong dup(long offset, long size, boolean isReadOnly, MemorySession session) {
+        OfLong dup(long offset, long size, boolean isReadOnly, MemorySessionImpl session) {
             return new OfLong(this.offset + offset, base, size, isReadOnly);
         }
 
@@ -235,7 +235,7 @@ public abstract class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
         }
 
         @Override
-        OfFloat dup(long offset, long size, boolean isReadOnly, MemorySession session) {
+        OfFloat dup(long offset, long size, boolean isReadOnly, MemorySessionImpl session) {
             return new OfFloat(this.offset + offset, base, size, isReadOnly);
         }
 
@@ -263,7 +263,7 @@ public abstract class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
         }
 
         @Override
-        OfDouble dup(long offset, long size, boolean isReadOnly, MemorySession session) {
+        OfDouble dup(long offset, long size, boolean isReadOnly, MemorySessionImpl session) {
             return new OfDouble(this.offset + offset, base, size, isReadOnly);
         }
 

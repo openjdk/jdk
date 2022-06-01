@@ -77,17 +77,17 @@ public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegm
     final MemorySessionImpl session;
 
     @ForceInline
-    AbstractMemorySegmentImpl(long length, boolean isReadOnly, MemorySession session) {
+    AbstractMemorySegmentImpl(long length, boolean isReadOnly, MemorySessionImpl session) {
         this.length = length;
         this.isReadOnly = isReadOnly;
-        this.session = (MemorySessionImpl)session;
+        this.session = session;
     }
 
     public abstract long min();
 
     public abstract Object base();
 
-    abstract AbstractMemorySegmentImpl dup(long offset, long size, boolean isReadOnly, MemorySession session);
+    abstract AbstractMemorySegmentImpl dup(long offset, long size, boolean isReadOnly, MemorySessionImpl session);
 
     abstract ByteBuffer makeByteBuffer();
 

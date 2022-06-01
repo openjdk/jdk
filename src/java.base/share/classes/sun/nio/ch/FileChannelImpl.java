@@ -1219,7 +1219,7 @@ public class FileChannelImpl
         if (unmapper != null) {
             AbstractMemorySegmentImpl segment =
                 new MappedMemorySegmentImpl(unmapper.address(), unmapper, size,
-                                            isReadOnly, session);
+                                            isReadOnly, (MemorySessionImpl)session);
             MemorySessionImpl.addOrCleanupIfFail(session,
                 new MemorySessionImpl.State.ResourceCleanup() {
                     @Override
@@ -1229,7 +1229,7 @@ public class FileChannelImpl
                 });
             return segment;
         } else {
-            return new MappedMemorySegmentImpl.EmptyMappedMemorySegmentImpl(isReadOnly, session);
+            return new MappedMemorySegmentImpl.EmptyMappedMemorySegmentImpl(isReadOnly, (MemorySessionImpl)session);
         }
     }
 
