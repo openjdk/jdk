@@ -182,7 +182,7 @@ void emit_nop(C2_MacroAssembler &masm) {
 
 void emit_call_reloc(C2_MacroAssembler &masm, const MachCallNode *n, MachOper *m, RelocationHolder const& rspec) {
   int ret_addr_offset0 = n->as_MachCall()->ret_addr_offset();
-  int call_site_offset = masm.insts()->mark_off();
+  int call_site_offset = masm.code_section()->mark_off();
   __ set_inst_mark(); // needed in emit_to_interp_stub() to locate the call
   address target = (address)m->method();
   assert(n->as_MachCall()->entry_point() == target, "sanity");
@@ -312,7 +312,7 @@ void MachPrologNode::emit(C2_MacroAssembler &masm, PhaseRegAlloc *ra_) const {
   }
 
   // offset from scratch buffer is not valid
-  if (strcmp(masm.name(), "Compile::Fill_buffer") == 0) {
+  if (strcmp(masm.code()->name(), "Compile::Fill_buffer") == 0) {
     C->output()->set_frame_complete( __ offset() );
   }
 
@@ -452,7 +452,7 @@ uint MachSpillCopyNode::implementation( C2_MacroAssembler *masm,
         src_first_rc  = rc_float;
         src_second_rc = rc_float;
         if (masm) {
-          __ ldr_double(Rmemcopy, Address(SP, offset));
+          masm->ldr_double(Rmemcopy, Address(SP, offset));
         } else if (!do_size) {
           st->print(LDR_DOUBLE "   R_%s,[R_SP + #%d]\t! spill",OptoReg::regname(src_first),offset);
         }
@@ -460,7 +460,7 @@ uint MachSpillCopyNode::implementation( C2_MacroAssembler *masm,
         src_first     = OptoReg::Name(R_mem_copy_lo_num);
         src_first_rc  = rc_float;
         if (masm) {
-          __ ldr_float(Rmemcopy, Address(SP, offset));
+          masm->ldr_float(Rmemcopy, Address(SP, offset));
         } else if (!do_size) {
           st->print(LDR_FLOAT "   R_%s,[R_SP + #%d]\t! spill",OptoReg::regname(src_first),offset);
         }
@@ -479,7 +479,7 @@ uint MachSpillCopyNode::implementation( C2_MacroAssembler *masm,
     // Else normal reg-reg copy
     assert( src_second != dst_first, "smashed second before evacuating it" );
     if (masm) {
-      __ mov(reg_to_register_object(Matcher::_regEncode[dst_first]), reg_to_register_object(Matcher::_regEncode[src_first]));
+      masm->mov(reg_to_register_object(Matcher::_regEncode[dst_first]), reg_to_register_object(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
     } else if (!do_size) {
       st->print("MOV    R_%s, R_%s\t# spill",
@@ -500,7 +500,7 @@ uint MachSpillCopyNode::implementation( C2_MacroAssembler *masm,
       if (src_second_rc != rc_bad && is_iRegLd_memhd(src_first, src_second, offset)) {
         assert((src_first&1)==0 && src_first+1 == src_second, "pair of registers must be aligned/contiguous");
         if (masm) {
-          __ str_64(reg_to_register_object(Matcher::_regEncode[src_first]), Address(SP, offset));
+          masm->str_64(reg_to_register_object(Matcher::_regEncode[src_first]), Address(SP, offset));
 #ifndef PRODUCT
         } else if (!do_size) {
           if (size != 0) st->print("\n\t");
@@ -510,7 +510,7 @@ uint MachSpillCopyNode::implementation( C2_MacroAssembler *masm,
         return size + 4;
       } else {
         if (masm) {
-          __ str_32(reg_to_register_object(Matcher::_regEncode[src_first]), Address(SP, offset));
+          masm->str_32(reg_to_register_object(Matcher::_regEncode[src_first]), Address(SP, offset));
 #ifndef PRODUCT
         } else if (!do_size) {
           if (size != 0) st->print("\n\t");
@@ -532,7 +532,7 @@ uint MachSpillCopyNode::implementation( C2_MacroAssembler *masm,
       if (src_second_rc != rc_bad && is_iRegLd_memhd(dst_first, dst_second, offset)) {
         assert((src_first&1)==0 && src_first+1 == src_second, "pair of registers must be aligned/contiguous");
         if (masm) {
-          __ ldr_64(reg_to_register_object(Matcher::_regEncode[dst_first]), Address(SP, offset));
+          masm->ldr_64(reg_to_register_object(Matcher::_regEncode[dst_first]), Address(SP, offset));
 #ifndef PRODUCT
         } else if (!do_size) {
           if (size != 0) st->print("\n\t");
@@ -542,7 +542,7 @@ uint MachSpillCopyNode::implementation( C2_MacroAssembler *masm,
         return size + 4;
       } else {
         if (masm) {
-          __ ldr_32(reg_to_register_object(Matcher::_regEncode[dst_first]), Address(SP, offset));
+          masm->ldr_32(reg_to_register_object(Matcher::_regEncode[dst_first]), Address(SP, offset));
 #ifndef PRODUCT
         } else if (!do_size) {
           if (size != 0) st->print("\n\t");
@@ -559,7 +559,7 @@ uint MachSpillCopyNode::implementation( C2_MacroAssembler *masm,
     if (src_second_rc != rc_bad) {
       assert((src_first&1)==0 && src_first+1 == src_second && (dst_first&1)==0 && dst_first+1 == dst_second, "pairs of registers must be aligned/contiguous");
       if (masm) {
-      __ mov_double(reg_to_FloatRegister_object(Matcher::_regEncode[dst_first]), reg_to_FloatRegister_object(Matcher::_regEncode[src_first]));
+        masm->mov_double(reg_to_FloatRegister_object(Matcher::_regEncode[dst_first]), reg_to_FloatRegister_object(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
       } else if (!do_size) {
         st->print(MOV_DOUBLE "    R_%s, R_%s\t# spill",
@@ -570,7 +570,7 @@ uint MachSpillCopyNode::implementation( C2_MacroAssembler *masm,
       return 4;
     }
     if (masm) {
-      __ mov_float(reg_to_FloatRegister_object(Matcher::_regEncode[dst_first]), reg_to_FloatRegister_object(Matcher::_regEncode[src_first]));
+      masm->mov_float(reg_to_FloatRegister_object(Matcher::_regEncode[dst_first]), reg_to_FloatRegister_object(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
     } else if (!do_size) {
       st->print(MOV_FLOAT "    R_%s, R_%s\t# spill",
@@ -592,7 +592,7 @@ uint MachSpillCopyNode::implementation( C2_MacroAssembler *masm,
       if (src_second_rc != rc_bad) {
         assert((src_first&1)==0 && src_first+1 == src_second && (dst_first&1)==0 && dst_first+1 == dst_second, "pairs of registers and stack slots must be aligned/contiguous");
         if (masm) {
-          __ str_double(reg_to_FloatRegister_object(Matcher::_regEncode[src_first]), Address(SP, offset));
+          masm->str_double(reg_to_FloatRegister_object(Matcher::_regEncode[src_first]), Address(SP, offset));
 #ifndef PRODUCT
         } else if (!do_size) {
           if (size != 0) st->print("\n\t");
@@ -602,7 +602,7 @@ uint MachSpillCopyNode::implementation( C2_MacroAssembler *masm,
         return size + 4;
       } else {
         if (masm) {
-          __ str_float(reg_to_FloatRegister_object(Matcher::_regEncode[src_first]), Address(SP, offset));
+          masm->str_float(reg_to_FloatRegister_object(Matcher::_regEncode[src_first]), Address(SP, offset));
 #ifndef PRODUCT
         } else if (!do_size) {
           if (size != 0) st->print("\n\t");
@@ -625,7 +625,7 @@ uint MachSpillCopyNode::implementation( C2_MacroAssembler *masm,
       if (src_second_rc != rc_bad) {
         assert((src_first&1)==0 && src_first+1 == src_second && (dst_first&1)==0 && dst_first+1 == dst_second, "pairs of registers and stack slots must be aligned/contiguous");
         if (masm) {
-          __ ldr_double(reg_to_FloatRegister_object(Matcher::_regEncode[dst_first]), Address(SP, offset));
+          masm->ldr_double(reg_to_FloatRegister_object(Matcher::_regEncode[dst_first]), Address(SP, offset));
 #ifndef PRODUCT
         } else if (!do_size) {
           if (size != 0) st->print("\n\t");
@@ -635,7 +635,7 @@ uint MachSpillCopyNode::implementation( C2_MacroAssembler *masm,
         return size + 4;
       } else {
         if (masm) {
-          __ ldr_float(reg_to_FloatRegister_object(Matcher::_regEncode[dst_first]), Address(SP, offset));
+          masm->ldr_float(reg_to_FloatRegister_object(Matcher::_regEncode[dst_first]), Address(SP, offset));
 #ifndef PRODUCT
         } else if (!do_size) {
           if (size != 0) st->print("\n\t");
@@ -655,7 +655,7 @@ uint MachSpillCopyNode::implementation( C2_MacroAssembler *masm,
       assert((src_first&1)==0 && src_first+1 == src_second, "pairs of registers must be aligned/contiguous");
       assert(src_second_rc == rc_int && dst_second_rc == rc_float, "unsupported");
       if (masm) {
-        __ fmdrr(reg_to_FloatRegister_object(Matcher::_regEncode[dst_first]), reg_to_register_object(Matcher::_regEncode[src_first]), reg_to_register_object(Matcher::_regEncode[src_second]));
+        masm->fmdrr(reg_to_FloatRegister_object(Matcher::_regEncode[dst_first]), reg_to_register_object(Matcher::_regEncode[src_first]), reg_to_register_object(Matcher::_regEncode[src_second]));
 #ifndef PRODUCT
       } else if (!do_size) {
         if (size != 0) st->print("\n\t");
@@ -665,7 +665,7 @@ uint MachSpillCopyNode::implementation( C2_MacroAssembler *masm,
       return size + 4;
     } else {
       if (masm) {
-        __ fmsr(reg_to_FloatRegister_object(Matcher::_regEncode[dst_first]), reg_to_register_object(Matcher::_regEncode[src_first]));
+        masm->fmsr(reg_to_FloatRegister_object(Matcher::_regEncode[dst_first]), reg_to_register_object(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
       } else if (!do_size) {
         if (size != 0) st->print("\n\t");
@@ -684,7 +684,7 @@ uint MachSpillCopyNode::implementation( C2_MacroAssembler *masm,
       assert((dst_first&1)==0 && dst_first+1 == dst_second, "pairs of registers must be aligned/contiguous");
       assert(src_second_rc == rc_float && dst_second_rc == rc_int, "unsupported");
       if (masm) {
-        __ fmrrd(reg_to_register_object(Matcher::_regEncode[dst_first]), reg_to_register_object(Matcher::_regEncode[dst_second]), reg_to_FloatRegister_object(Matcher::_regEncode[src_first]));
+        masm->fmrrd(reg_to_register_object(Matcher::_regEncode[dst_first]), reg_to_register_object(Matcher::_regEncode[dst_second]), reg_to_FloatRegister_object(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
       } else if (!do_size) {
         if (size != 0) st->print("\n\t");
@@ -694,7 +694,7 @@ uint MachSpillCopyNode::implementation( C2_MacroAssembler *masm,
       return size + 4;
     } else {
       if (masm) {
-        __ fmrs(reg_to_register_object(Matcher::_regEncode[dst_first]), reg_to_FloatRegister_object(Matcher::_regEncode[src_first]));
+        masm->fmrs(reg_to_register_object(Matcher::_regEncode[dst_first]), reg_to_FloatRegister_object(Matcher::_regEncode[src_first]));
 #ifndef PRODUCT
       } else if (!do_size) {
         if (size != 0) st->print("\n\t");
@@ -718,7 +718,7 @@ uint MachSpillCopyNode::implementation( C2_MacroAssembler *masm,
   // happened already as part of a 64-bit move)
   if (src_second_rc == rc_int && dst_second_rc == rc_int) {
     if (masm) {
-      __ mov(reg_to_register_object(Matcher::_regEncode[dst_second]), reg_to_register_object(Matcher::_regEncode[src_second]));
+      masm->mov(reg_to_register_object(Matcher::_regEncode[dst_second]), reg_to_register_object(Matcher::_regEncode[src_second]));
 #ifndef PRODUCT
     } else if (!do_size) {
       if (size != 0) st->print("\n\t");
@@ -739,7 +739,7 @@ uint MachSpillCopyNode::implementation( C2_MacroAssembler *masm,
       return 0;
     } else {
       if (masm) {
-        __ str(reg_to_register_object(Matcher::_regEncode[src_second]), Address(SP, offset));
+        masm->str(reg_to_register_object(Matcher::_regEncode[src_second]), Address(SP, offset));
 #ifndef PRODUCT
       } else if (!do_size) {
         if (size != 0) st->print("\n\t");
@@ -758,7 +758,7 @@ uint MachSpillCopyNode::implementation( C2_MacroAssembler *masm,
       return 0;
     } else {
       if (masm) {
-        __ ldr(reg_to_register_object(Matcher::_regEncode[dst_second]), Address(SP, offset));
+        masm->ldr(reg_to_register_object(Matcher::_regEncode[dst_second]), Address(SP, offset));
 #ifndef PRODUCT
       } else if (!do_size) {
         if (size != 0) st->print("\n\t");
@@ -1216,15 +1216,15 @@ encode %{
 
   enc_class preserve_SP %{
     // preserve mark
-    address mark = masm.insts()->mark();
-    debug_only(int off0 = masm.inst_size());
+    address mark = masm.inst_mark();
+    debug_only(int off0 = masm.offset());
     // FP is preserved across all calls, even compiled calls.
     // Use it to preserve SP in places where the callee might change the SP.
     __ mov(Rmh_SP_save, SP);
-    debug_only(int off1 = masm.inst_size());
+    debug_only(int off1 = masm.offset());
     assert(off1 - off0 == 4, "correct size prediction");
     // restore mark
-    masm.insts()->set_mark(mark);
+    masm.set_inst_mark(mark);
   %}
 
   enc_class restore_SP %{

@@ -1212,7 +1212,7 @@ void emit_nop(C2_MacroAssembler &masm) {
 
 static inline void emit_long(C2_MacroAssembler &masm, int value) {
   *((int*)(masm.pc())) = value;
-  masm.set_insts_end(masm.pc() + BytesPerInstWord);
+  masm.set_inst_end(masm.pc() + BytesPerInstWord);
 }
 
 //=============================================================================
@@ -1232,7 +1232,7 @@ class CallStubImpl {
  public:
 
   // Emit call stub, compiled java to interpreter.
-  static void emit_trampoline_stub(C2_MacroAssembler &_masm, int destination_toc_offset, int insts_call_instruction_offset);
+  static void emit_trampoline_stub(C2_MacroAssembler &masm, int destination_toc_offset, int insts_call_instruction_offset);
 
   // Size of call trampoline stub.
   // This doesn't need to be accurate to the byte, but it
@@ -1263,7 +1263,7 @@ source %{
 //   load the call target from the constant pool
 //   branch via CTR (LR/link still points to the call-site above)
 
-void CallStubImpl::emit_trampoline_stub(C2_MacroAssembler &_masm, int destination_toc_offset, int insts_call_instruction_offset) {
+void CallStubImpl::emit_trampoline_stub(C2_MacroAssembler &masm, int destination_toc_offset, int insts_call_instruction_offset) {
   address stub = __ emit_trampoline_stub(destination_toc_offset, insts_call_instruction_offset);
   if (stub == NULL) {
     ciEnv::current()->record_out_of_memory_failure();
@@ -1294,7 +1294,7 @@ typedef struct {
 // - Add a relocation at the branch-and-link instruction.
 // - Emit a branch-and-link.
 // - Remember the return pc offset.
-EmitCallOffsets emit_call_with_trampoline_stub(C2_MacroAssembler &_masm, address entry_point, relocInfo::relocType rtype) {
+EmitCallOffsets emit_call_with_trampoline_stub(C2_MacroAssembler &masm, address entry_point, relocInfo::relocType rtype) {
   EmitCallOffsets offsets = { -1, -1 };
   const int start_offset = __ offset();
   offsets.insts_call_instruction_offset = __ offset();
@@ -1311,7 +1311,7 @@ EmitCallOffsets emit_call_with_trampoline_stub(C2_MacroAssembler &_masm, address
   const int     entry_point_toc_offset = __ offset_to_method_toc(entry_point_toc_addr);
 
   // Emit the trampoline stub which will be related to the branch-and-link below.
-  CallStubImpl::emit_trampoline_stub(_masm, entry_point_toc_offset, offsets.insts_call_instruction_offset);
+  CallStubImpl::emit_trampoline_stub(masm, entry_point_toc_offset, offsets.insts_call_instruction_offset);
   if (ciEnv::current()->failing()) { return offsets; } // Code cache may be full.
   __ relocate(rtype);
 
@@ -1550,7 +1550,7 @@ void MachPrologNode::emit(C2_MacroAssembler &masm, PhaseRegAlloc *ra_) const {
 
   if (C->stub_function() == NULL) {
     BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-    bs->nmethod_entry_barrier(&_masm, push_frame_temp);
+    bs->nmethod_entry_barrier(&masm, push_frame_temp);
   }
 
   C->output()->set_frame_complete(masm.offset());
@@ -3329,7 +3329,7 @@ encode %{
 
     if (!_method) {
       // A call to a runtime wrapper, e.g. new, new_typeArray_Java, uncommon_trap.
-      emit_call_with_trampoline_stub(_masm, entry_point, relocInfo::runtime_call_type);
+      emit_call_with_trampoline_stub(masm, entry_point, relocInfo::runtime_call_type);
     } else {
       // Remember the offset not the address.
       const int start_offset = __ offset();
@@ -3348,7 +3348,7 @@ encode %{
       const int entry_point_toc_offset = __ offset_to_method_toc(entry_point_toc_addr);
 
       // Emit the trampoline stub which will be related to the branch-and-link below.
-      CallStubImpl::emit_trampoline_stub(_masm, entry_point_toc_offset, start_offset);
+      CallStubImpl::emit_trampoline_stub(masm, entry_point_toc_offset, start_offset);
       if (ciEnv::current()->failing()) { return; } // Code cache may be full.
       int method_index = resolved_method_index(masm);
       __ relocate(_optimized_virtual ? opt_virtual_call_Relocation::spec(method_index)
@@ -3381,7 +3381,7 @@ encode %{
         return;
       }
       const int entry_point_const_toc_offset = __ offset_to_method_toc(entry_point_const);
-      CallStubImpl::emit_trampoline_stub(_masm, entry_point_const_toc_offset, __ offset());
+      CallStubImpl::emit_trampoline_stub(masm, entry_point_const_toc_offset, __ offset());
       if (ra_->C->env()->failing()) { return; } // Code cache may be full.
 
       // Build relocation at call site with ic position as data.
@@ -3493,7 +3493,7 @@ encode %{
       // CALL to fixup routine.  Fixup routine uses ScopeDesc info
       // to determine who we intended to call.
       __ relocate(virtual_call_Relocation::spec(virtual_call_meta_addr));
-      emit_call_with_trampoline_stub(_masm, (address)$meth$$method, relocInfo::none);
+      emit_call_with_trampoline_stub(masm, (address)$meth$$method, relocInfo::none);
       assert(((MachCallDynamicJavaNode*)this)->ret_addr_offset() == __ offset() - start_offset,
              "Fix constant in ret_addr_offset(), expected %d", __ offset() - start_offset);
     } else {

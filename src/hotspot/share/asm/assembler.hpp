@@ -333,9 +333,12 @@ class AbstractAssembler : public ResourceObj  {
   OopRecorder*  oop_recorder() const   { return _oop_recorder; }
   void      set_oop_recorder(OopRecorder* r) { _oop_recorder = r; }
 
-  address       inst_mark() const { return code_section()->mark();       }
-  void      set_inst_mark()       {        code_section()->set_mark();   }
-  void    clear_inst_mark()       {        code_section()->clear_mark(); }
+  address       inst_mark() const         { return code_section()->mark();          }
+  void      set_inst_mark()               {        code_section()->set_mark();      }
+  void      set_inst_mark(address addr)   {        code_section()->set_mark(addr);  }
+  void    clear_inst_mark()               {        code_section()->clear_mark();    }
+
+  void set_inst_end(address addr)         {        code_section()->set_end(addr);   }
 
   // Constants in code
   void relocate(RelocationHolder const& rspec, int format = 0) {

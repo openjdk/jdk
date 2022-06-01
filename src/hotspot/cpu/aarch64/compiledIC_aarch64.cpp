@@ -36,7 +36,7 @@
 
 address CompiledStaticCall::emit_to_interp_stub(MacroAssembler &masm, address mark) {
   precond(masm.code()->stubs()->start() != badAddress);
-  precond(masm->code()->stubs()->end() != badAddress);
+  precond(masm.code()->stubs()->end() != badAddress);
 
   // Stub is fixed up when the corresponding call is converted from
   // calling compiled code to calling interpreted code.
