@@ -184,9 +184,8 @@ void G1FullGCPrepareTask::G1ResetMetadataClosure::scrub_skip_compacting_region(H
     // marked object.
     HeapWord* scrub_start = current_obj;
     HeapWord* scrub_end = bitmap->get_next_marked_addr(scrub_start, limit);
-    if (scrub_start != scrub_end) {
-      hr->fill_range_with_dead_objects(scrub_start, scrub_end);
-    }
+    assert(scrub_start != scrub_end, "must advance");
+    hr->fill_range_with_dead_objects(scrub_start, scrub_end);
 
     current_obj = scrub_end;
   }

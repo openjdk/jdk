@@ -806,19 +806,18 @@ void HeapRegion::fill_with_dummy_object(HeapWord* address, size_t word_size, boo
 
 void HeapRegion::fill_range_with_dead_objects(HeapWord* start, HeapWord* end) {
   size_t range_size = pointer_delta(end, start);
-  if (range_size >= CollectedHeap::min_fill_size()) {
-    // Fill the dead range with objects. G1 might need to create two objects if
-    // the range is larger than half a region, which is the max_fill_size().
-    CollectedHeap::fill_with_objects(start, range_size);
-    HeapWord* current = start;
-    do {
-      // Update the BOT if the a threshold is crossed.
-      size_t obj_size = cast_to_oop(current)->size();
-      update_bot_for_block(current, current + obj_size);
 
-      // Advance to the next object.
-      current += obj_size;
-      guarantee(current <= end, "Should never go past end");
-    } while (current != end);
-  }
+  // Fill the dead range with objects. G1 might need to create two objects if
+  // the range is larger than half a region, which is the max_fill_size().
+  CollectedHeap::fill_with_objects(start, range_size);
+  HeapWord* current = start;
+  do {
+    // Update the BOT if the a threshold is crossed.
+    size_t obj_size = cast_to_oop(current)->size();
+    update_bot_for_block(current, current + obj_size);
+
+    // Advance to the next object.
+    current += obj_size;
+    guarantee(current <= end, "Should never go past end");
+  } while (current != end);
 }

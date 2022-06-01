@@ -107,7 +107,7 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
     //  - been allocated after rebuild start, or
     //  - been eagerly reclaimed by a young collection (only humongous)
     // In these cases we do not need to scan through the given region.
-    bool should_rebuild_or_scrub(HeapRegion* hr) {
+    bool should_rebuild_or_scrub(HeapRegion* hr) const {
       return _cm->top_at_rebuild_start(hr->hrm_index()) != NULL;
     }
 
@@ -170,17 +170,9 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
       assert(!_bitmap->is_marked(scrub_start), "Should not scrub live object");
 
       HeapWord* scrub_end = _bitmap->get_next_marked_addr(scrub_start, limit);
-      if (scrub_start != scrub_end) {
-        // Only scrub if range is non-empty.
-        hr->fill_range_with_dead_objects(scrub_start, scrub_end);
-        assert(hr->obj_is_scrubbed(cast_to_oop(scrub_start)), "Scrubbing failed");
-      }
+      assert(scrub_start != scrub_end, "must advance");
 
-      // At this point make sure we are either at the scrubbing limit or that the next
-      // object is live. Need to compare to the limit first to not accidentally query the
-      // bitmap outside the committed heap.
-      assert(scrub_end == limit || _bitmap->is_marked(scrub_end),
-             "We should either step to the next live object or the limit");
+      hr->fill_range_with_dead_objects(scrub_start, scrub_end);
 
       // Return the next object to handle.
       return scrub_end;
@@ -192,7 +184,6 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
 
       while (start < limit) {
         if (_bitmap->is_marked(start)) {
-          assert(!cast_to_oop(start)->is_gc_marked(), "No live objects in G1 should be GC marked");
           //  Live object, need to scan to rebuild remembered sets for this object.
           start += scan_object(hr, start);
         } else {
@@ -279,8 +270,9 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
         return true;
       } else if (_bitmap->is_marked(humongous) && should_rebuild_or_scrub(hr)) {
         // Only verify that the marked size matches the rebuilt size if this object was marked
-        // and the object should still be handled. The should handle state can change during
-        // rebuild for humongous objects that are eagerly reclaimed so we need to check this.
+        // and the object should still be handled. The should_rebuild_or_scrub() state can
+        // change during rebuild for humongous objects that are eagerly reclaimed so we need to
+        // check this.
         // If the object has not been marked the size from marking will be 0.
         assert_marked_words(hr);
       }
@@ -328,7 +320,7 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
   };
 
 public:
-  G1RebuildRSAndScrubTask(G1ConcurrentMark* cm, bool should_rebuild, uint num_workers) :
+  G1RebuildRSAndScrubTask(G1ConcurrentMark* cm, uint num_workers) :
     WorkerTask("Scrub dead objects"),
     _cm(cm),
     _hr_claimer(num_workers) { }
@@ -345,6 +337,6 @@ public:
 void G1ConcurrentRebuildAndScrub::rebuild_and_scrub(G1ConcurrentMark* cm, WorkerThreads* workers) {
   uint num_workers = workers->active_workers();
 
-  G1RebuildRSAndScrubTask task(cm, true, num_workers);
+  G1RebuildRSAndScrubTask task(cm, num_workers);
   workers->run_task(&task, num_workers);
 }

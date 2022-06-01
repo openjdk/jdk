@@ -91,7 +91,7 @@ bool TestIteratorFn::do_bit(size_t offset) {
   return true;
 }
 
-static idx_t compute_search_fwd_expected(idx_t search_start,
+static idx_t compute_expected(idx_t search_start,
                                          idx_t search_end,
                                          idx_t left_bit,
                                          idx_t right_bit) {
@@ -108,10 +108,10 @@ static idx_t compute_search_fwd_expected(idx_t search_start,
   return expected;
 }
 
-static void test_search_fwd_ranges(BitMap& test_ones,
-                                   BitMap& test_zeros,
-                                   idx_t left,
-                                   idx_t right) {
+static void test_search_ranges(BitMap& test_ones,
+                               BitMap& test_zeros,
+                               idx_t left,
+                               idx_t right) {
   // Test get_next_one_offset with full range of map.
   EXPECT_EQ(left, test_ones.get_next_one_offset(0));
   EXPECT_EQ(right, test_ones.get_next_one_offset(left + 1));
@@ -168,7 +168,7 @@ static void test_search_fwd_ranges(BitMap& test_ones,
           ASSERT_LE(start, end);       // test bug if fail
           ASSERT_LT(end, BITMAP_SIZE); // test bug if fail
 
-          idx_t expected = compute_search_fwd_expected(start, end, left, right);
+          idx_t expected = compute_expected(start, end, left, right);
 
           EXPECT_EQ(expected, test_ones.get_next_one_offset(start, end));
           EXPECT_EQ(expected, test_zeros.get_next_zero_offset(start, end));
@@ -179,7 +179,7 @@ static void test_search_fwd_ranges(BitMap& test_ones,
           }
 
           idx_t start2 = MIN2(expected + 1, end);
-          idx_t expected2 = compute_search_fwd_expected(start2, end, left, right);
+          idx_t expected2 = compute_expected(start2, end, left, right);
 
           EXPECT_EQ(expected2, test_ones.get_next_one_offset(start2, end));
           EXPECT_EQ(expected2, test_zeros.get_next_zero_offset(start2, end));
@@ -194,7 +194,7 @@ static void test_search_fwd_ranges(BitMap& test_ones,
   }
 }
 
-TEST(BitMap, search_fwd) {
+TEST(BitMap, search) {
   CHeapBitMap test_ones(BITMAP_SIZE);
   CHeapBitMap test_zeros(BITMAP_SIZE);
 
@@ -238,7 +238,7 @@ TEST(BitMap, search_fwd) {
           EXPECT_FALSE(test_zeros.at(right));
 
           // Apply the test.
-          test_search_fwd_ranges(test_ones, test_zeros, left, right);
+          test_search_ranges(test_ones, test_zeros, left, right);
 
           // Remove the right bit.
           test_ones.clear_bit(right);
