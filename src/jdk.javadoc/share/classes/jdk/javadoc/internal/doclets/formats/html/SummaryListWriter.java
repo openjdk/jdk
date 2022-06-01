@@ -132,6 +132,8 @@ public class SummaryListWriter<L extends SummaryAPIListBuilder> extends SubWrite
             }
         }
         bodyContents.addMainContent(content);
+        // The script below enables checkboxes in the page and invokes their click handler
+        // to restore any previous state, which unfortunately doesn't work on all browsers.
         bodyContents.addMainContent(new Script("""
                 document.addEventListener("DOMContentLoaded", function(e) {
                     document.querySelectorAll('input[type="checkbox"]').forEach(
