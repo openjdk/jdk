@@ -655,23 +655,18 @@ public final class StringConcatFactory {
             default -> throw new IllegalArgumentException("Unexpected count: " + count);
         };
         mix = MethodHandles.insertArguments(mix,0, initialLengthCoder);
-        if (count == 1) {
-            return MethodHandles.foldArgumentsWithCombiner(mh, 0, mix,
-                    1 + pos // selected arguments
-            );
-        } else if (count == 2) {
-            return MethodHandles.foldArgumentsWithCombiner(mh, 0, mix,
-                    1 + pos, 2 + pos // selected arguments
-            );
-        } else if (count == 3) {
-            return MethodHandles.foldArgumentsWithCombiner(mh, 0, mix,
-                    1 + pos, 2 + pos, 3 + pos // selected arguments
-            );
-        } else {
-            return MethodHandles.foldArgumentsWithCombiner(mh, 0, mix,
-                    1 + pos, 2 + pos, 3 + pos, 4 + pos // selected arguments
-            );
-        }
+        // apply selected arguments on the 1-4 arg mixer and fold in the result
+        return switch (count) {
+            case 1 -> MethodHandles.foldArgumentsWithCombiner(mh, 0, mix,
+                    1 + pos);
+            case 2 -> MethodHandles.foldArgumentsWithCombiner(mh, 0, mix,
+                    1 + pos, 2 + pos);
+            case 3 -> MethodHandles.foldArgumentsWithCombiner(mh, 0, mix,
+                    1 + pos, 2 + pos, 3 + pos);
+            case 4 -> MethodHandles.foldArgumentsWithCombiner(mh, 0, mix,
+                    1 + pos, 2 + pos, 3 + pos, 4 + pos);
+            default -> throw new IllegalArgumentException();
+        };
     }
 
     // Simple prependers, single argument. May be used directly or as a
