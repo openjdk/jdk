@@ -300,6 +300,8 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
   # Prepend the extra path to the global path
   UTIL_PREPEND_TO_PATH([PATH],$EXTRA_PATH)
 
+  UTIL_FIXUP_PATH([SYSROOT])
+
   AC_MSG_CHECKING([for sysroot])
   AC_MSG_RESULT([$SYSROOT])
   AC_SUBST(SYSROOT)
