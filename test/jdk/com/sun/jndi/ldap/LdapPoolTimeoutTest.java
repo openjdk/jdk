@@ -121,7 +121,9 @@ public class LdapPoolTimeoutTest {
             String msg = e.getCause() == null ? e.getMessage() : e.getCause().getMessage();
             System.err.println("MSG RTE: " + msg);
             // assertCompletion may wrap a CommunicationException in an RTE
-            assertTrue(msg != null && msg.contains("Network is unreachable"));
+            assertTrue(msg != null);
+            assertTrue(msg.contains("Network is unreachable")
+                        || msg.contains("No route to host"));
         } catch (NamingException ex) {
             String msg = ex.getCause() == null ? ex.getMessage() : ex.getCause().getMessage();
             System.err.println("MSG: " + msg);
