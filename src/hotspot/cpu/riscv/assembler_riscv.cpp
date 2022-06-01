@@ -118,7 +118,7 @@ void Assembler::_li(Register Rd, int64_t imm) {
 
 void Assembler::li64(Register Rd, int64_t imm) {
    // Load upper 32 bits. upper = imm[63:32], but if imm[31] == 1 or
-   // (imm[31:28] == 0x7ff && imm[19] == 1), upper = imm[63:32] + 1.
+   // (imm[31:20] == 0x7ff && imm[19] == 1), upper = imm[63:32] + 1.
    int64_t lower = imm & 0xffffffff;
    lower -= ((lower << 44) >> 44);
    int64_t tmp_imm = ((uint64_t)(imm & 0xffffffff00000000)) + (uint64_t)lower;
@@ -273,7 +273,7 @@ void Assembler::wrap_label(Register Rt, Label &L, jal_jalr_insn insn) {
 }
 
 void Assembler::movptr_with_offset(Register Rd, address addr, int32_t &offset) {
-  uintptr_t imm64 = (uintptr_t)addr;
+  int64_t imm64 = (int64_t)addr;
 #ifndef PRODUCT
   {
     char buffer[64];
@@ -281,10 +281,10 @@ void Assembler::movptr_with_offset(Register Rd, address addr, int32_t &offset) {
     block_comment(buffer);
   }
 #endif
-  assert(is_unsigned_imm_in_range(imm64, 47, 0) || (imm64 == (uintptr_t)-1),
+  assert(is_unsigned_imm_in_range(imm64, 47, 0) || (imm64 == (int64_t)-1),
          "bit 47 overflows in address constant");
   // Load upper 31 bits
-  int32_t imm = imm64 >> 17;
+  int64_t imm = imm64 >> 17;
   int64_t upper = imm, lower = imm;
   lower = (lower << 52) >> 52;
   upper -= lower;
