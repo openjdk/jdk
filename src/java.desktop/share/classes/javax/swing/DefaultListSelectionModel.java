@@ -284,7 +284,7 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
      *          on this model,
      *          or an empty array if no such
      *          listeners have been added
-     * @exception ClassCastException if <code>listenerType</code> doesn't
+     * @throws ClassCastException if <code>listenerType</code> doesn't
      *          specify a class or interface that implements
      *          <code>java.util.EventListener</code>
      *
@@ -750,7 +750,7 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
      * Returns a clone of this selection model with the same selection.
      * <code>listenerLists</code> are not duplicated.
      *
-     * @exception CloneNotSupportedException if the selection model does not
+     * @throws CloneNotSupportedException if the selection model does not
      *    both (a) implement the Cloneable interface and (b) define a
      *    <code>clone</code> method.
      */

@@ -57,8 +57,9 @@ import jdk.jfr.internal.tool.PrettyWriter;
  *
  * @since 9
  */
-public class RecordedObject {
-
+public sealed class RecordedObject
+   permits RecordedEvent, RecordedClassLoader, RecordedClass, RecordedMethod,
+           RecordedStackTrace, RecordedFrame, RecordedThread, RecordedThreadGroup {
     static{
         JdkJfrConsumer access = new JdkJfrConsumer() {
             @Override
@@ -329,7 +330,7 @@ public class RecordedObject {
                 return v;
             }
         }
-        throw new IllegalArgumentException("\"Attempt to get unknown field \"" + name + "\"");
+        throw new IllegalArgumentException("Attempt to get unknown field \"" + name + "\"");
     }
 
     // Gets a value, but checks that type and name is correct first

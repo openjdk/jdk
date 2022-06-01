@@ -83,9 +83,9 @@ public class FileCacheImageInputStream extends ImageInputStreamImpl {
      * cache file should be created, or {@code null} to use the
      * system directory.
      *
-     * @exception IllegalArgumentException if {@code stream} is
+     * @throws IllegalArgumentException if {@code stream} is
      * {@code null}.
-     * @exception IllegalArgumentException if {@code cacheDir} is
+     * @throws IllegalArgumentException if {@code cacheDir} is
      * non-{@code null} but is not a directory.
      * @throws IOException if a cache file cannot be created.
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,9 +36,9 @@ public class CollatorProviderImpl extends CollatorProvider {
 
     static Locale[] avail = {
         Locale.JAPAN,
-        new Locale("ja", "JP", "osaka"),
-        new Locale("ja", "JP", "kyoto"),
-        new Locale("xx", "YY", "ZZZZ")};
+        Locale.of("ja", "JP", "osaka"),
+        Locale.of("ja", "JP", "kyoto"),
+        Locale.of("xx", "YY", "ZZZZ")};
 
     static String[] dialect = {
         "\u3067\u3059\u3002",

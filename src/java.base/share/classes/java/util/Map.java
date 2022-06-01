@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -420,6 +420,9 @@ public interface Map<K, V> {
      * <pre> {@code
      * var entries = map.entrySet().stream().map(Map.Entry::copyOf).toList()
      * }</pre>
+     *
+     * @param <K> the type of the key
+     * @param <V> the type of the value
      *
      * @see Map#entrySet()
      * @since 1.2

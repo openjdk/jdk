@@ -652,7 +652,7 @@ WB_ENTRY(jlong, WB_NMTMalloc(JNIEnv* env, jobject o, jlong size))
   return addr;
 WB_END
 
-// Alloc memory with pseudo call stack. The test can create psudo malloc
+// Alloc memory with pseudo call stack. The test can create pseudo malloc
 // allocation site to stress the malloc tracking.
 WB_ENTRY(jlong, WB_NMTMallocWithPseudoStack(JNIEnv* env, jobject o, jlong size, jint pseudo_stack))
   address pc = (address)(size_t)pseudo_stack;

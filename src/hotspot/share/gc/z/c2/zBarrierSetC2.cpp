@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,7 +143,7 @@ RegMask& ZLoadBarrierStubC2::live() const {
 Label* ZLoadBarrierStubC2::entry() {
   // The _entry will never be bound when in_scratch_emit_size() is true.
   // However, we still need to return a label that is not bound now, but
-  // will eventually be bound. Any lable will do, as it will only act as
+  // will eventually be bound. Any label will do, as it will only act as
   // a placeholder, so we return the _continuation label.
   return Compile::current()->output()->in_scratch_emit_size() ? &_continuation : &_entry;
 }

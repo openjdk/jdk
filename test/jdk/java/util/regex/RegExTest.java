@@ -36,7 +36,7 @@
  * 6345469 6988218 6693451 7006761 8140212 8143282 8158482 8176029 8184706
  * 8194667 8197462 8184692 8221431 8224789 8228352 8230829 8236034 8235812
  * 8216332 8214245 8237599 8241055 8247546 8258259 8037397 8269753 8276694
- *
+ * 8280403 8264160 8281315
  * @library /test/lib
  * @library /lib/testlibrary/java/lang
  * @build jdk.test.lib.RandomFactory
@@ -51,14 +51,9 @@ import java.nio.CharBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Scanner;
+import java.util.*;
 import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.MatchResult;
@@ -3854,11 +3849,11 @@ public class RegExTest {
         }
 
         // bounds/word align
-        twoFindIndexes(" \u0180sherman\u0400 ", bound, 1, 10);
+        twoFindIndexes(" \u0180sherman\u0400 ", boundU, 1, 10);
         assertTrue(bwbU.reset("\u0180sherman\u0400").matches());
-        twoFindIndexes(" \u0180sh\u0345erman\u0400 ", bound, 1, 11);
+        twoFindIndexes(" \u0180sh\u0345erman\u0400 ", boundU, 1, 11);
         assertTrue(bwbU.reset("\u0180sh\u0345erman\u0400").matches());
-        twoFindIndexes(" \u0724\u0739\u0724 ", bound, 1, 4);
+        twoFindIndexes(" \u0724\u0739\u0724 ", boundU, 1, 4);
         assertTrue(bwbU.reset("\u0724\u0739\u0724").matches());
         assertTrue(bwbEU.reset("\u0724\u0739\u0724").matches());
     }
@@ -4503,6 +4498,8 @@ public class RegExTest {
     }
 
     //This test is for 8037397
+    //Ensure we don't drop nested interior character classes to the right of an
+    //intersection operator.
     @Test
     public static void droppedClassesWithIntersection() {
         String rx = "[A-Z&&[A-Z]0-9]";
@@ -4530,6 +4527,9 @@ public class RegExTest {
     }
 
     //This test is for 8269753
+    //This is for ensuring that the caret doesn't point at the wrong character
+    //in a syntax exception message because we previously didn't compensate for
+    //tabs when rendering the offending string that contained tab characters.
     @Test
     public static void errorMessageCaretIndentation() {
         String pattern = "\t**";
@@ -4540,6 +4540,8 @@ public class RegExTest {
     }
 
     //This test is for 8276694
+    //Ensure our error message indicates we have an unescaped backslash when we
+    //encounter one.
     @Test
     public static void unescapedBackslash() {
         String pattern = "\\";
@@ -4549,6 +4551,7 @@ public class RegExTest {
     }
 
     //This test is for 8280403
+    //Given bad intersection syntax, we should throw a PatternSyntaxException.
     @Test
     public static void badIntersectionSyntax() {
         String pattern = "[˜\\H +F&&]";
@@ -4557,12 +4560,101 @@ public class RegExTest {
         assertTrue(e.getMessage().contains("Bad intersection syntax"));
     }
 
+    //This test is for 8264160
+    //Here we check for inconsistencies between the behavior of \w and the
+    //behavior of \b. Prior to this fix, the two flags did not behave in a
+    //consistent way ie \b would recognize non-\w characters as part of a word
+    //in some cases. This test verifies that the two behave consistently
+    //for all codepoints we support.
+    @Test
+    public static void wordBoundaryInconsistencies() {
+        Pattern basicWordCharPattern = Pattern.compile("\\w");
+        Pattern basicWordCharBoundaryPattern =
+                Pattern.compile(";\\b.", Pattern.DOTALL);
+
+        Pattern unicodeWordCharPattern =
+                Pattern.compile("\\w", Pattern.UNICODE_CHARACTER_CLASS);
+
+        Pattern unicodeWordCharBoundaryPattern =
+                Pattern.compile(";\\b.",
+                        Pattern.DOTALL | Pattern.UNICODE_CHARACTER_CLASS);
+
+        IntFunction<Boolean> basicWordCharCheck =
+                (cp) -> cpMatches(basicWordCharPattern, cp, false);
+
+        IntFunction<Boolean> basicBoundaryCharCheck =
+                (cp) -> cpMatches(basicWordCharBoundaryPattern,
+                                  cp, true);
+
+        IntFunction<Boolean> unicodeWordCharCheck =
+                (cp) -> cpMatches(unicodeWordCharPattern, cp, false);
+
+        IntFunction<Boolean> unicodeBoundaryCharCheck =
+                (cp) -> cpMatches(unicodeWordCharBoundaryPattern,
+                                  cp,true);
+
+        //basic pattern comparison
+        for(int cp = 0; cp <= Character.MAX_CODE_POINT; cp++){
+            assertEquals(basicWordCharCheck.apply(cp),
+                    basicBoundaryCharCheck.apply(cp),
+                    "Codepoint: " + cp);
+            assertEquals(unicodeWordCharCheck.apply(cp),
+                    unicodeBoundaryCharCheck.apply(cp),
+                    "Codepoint: " + cp);
+        }
+    }
+
+    private static boolean cpMatches(Pattern p, int cp, boolean boundary) {
+        String cpString;
+        if (Character.isBmpCodePoint(cp)) {
+            cpString = "" + ((char) cp);
+        } else {
+            cpString = "" + Character.highSurrogate(cp) +
+                    Character.lowSurrogate(cp);
+        }
+
+        if (boundary) {
+            return p.matcher(";" + cpString).matches();
+        } else {
+            return p.matcher(cpString).matches();
+        }
+    }
+
+    //This test is for 8281560
+    //Checks that when the Canonical Equivalence flag is set, the behavior for
+    //Matcher::hitEnd is equivalent for these similar, patterns that saw
+    //inconsistencies.
+    @Test
+    public static void prematureHitEndInNFCCharProperty() {
+        var testInput = "a1a1";
+        var pat1 = "(a+|1+)";
+        var pat2 = "([a]+|[1]+)";
+
+        var matcher1 = Pattern.compile(pat1, Pattern.CANON_EQ).matcher(testInput);
+        var matcher2 = Pattern.compile(pat2, Pattern.CANON_EQ).matcher(testInput);
+
+        ArrayList<Boolean> results1 = new ArrayList<>();
+        ArrayList<Boolean> results2 = new ArrayList<>();
+
+        while (matcher1.find()) {
+            results1.add(matcher1.hitEnd());
+        }
+
+        while (matcher2.find()) {
+            results2.add(matcher2.hitEnd());
+        }
+
+        assertEquals(results1, results2);
+    }
+
     //This test is for 8281315
+    //Checks that we are able to correctly match this case with a backref
+    //without encountering an IndexOutOfBoundsException.
     @Test
     public static void iOOBForCIBackrefs(){
         String line = "\ud83d\udc95\ud83d\udc95\ud83d\udc95";
         var pattern2 = Pattern.compile("(?i)(.)\\1{2,}");
         assertTrue(pattern2.matcher(line).find());
-
     }
 }
+

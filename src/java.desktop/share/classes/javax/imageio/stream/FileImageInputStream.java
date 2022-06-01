@@ -60,13 +60,13 @@ public class FileImageInputStream extends ImageInputStreamImpl {
      *
      * @param f a {@code File} to read from.
      *
-     * @exception IllegalArgumentException if {@code f} is
+     * @throws IllegalArgumentException if {@code f} is
      * {@code null}.
-     * @exception SecurityException if a security manager exists
+     * @throws SecurityException if a security manager exists
      * and does not allow read access to the file.
-     * @exception FileNotFoundException if {@code f} is a
+     * @throws FileNotFoundException if {@code f} is a
      * directory or cannot be opened for reading for any other reason.
-     * @exception IOException if an I/O error occurs.
+     * @throws IOException if an I/O error occurs.
      */
     public FileImageInputStream(File f)
         throws FileNotFoundException, IOException {
@@ -83,7 +83,7 @@ public class FileImageInputStream extends ImageInputStreamImpl {
      *
      * @param raf a {@code RandomAccessFile} to read from.
      *
-     * @exception IllegalArgumentException if {@code raf} is
+     * @throws IllegalArgumentException if {@code raf} is
      * {@code null}.
      */
     public FileImageInputStream(RandomAccessFile raf) {

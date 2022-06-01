@@ -51,6 +51,7 @@
 <li><a href="#atomic">&lt;atomic&gt;</a></li>
 <li><a href="#uniform-initialization">Uniform Initialization</a></li>
 <li><a href="#local-function-objects">Local Function Objects</a></li>
+<li><a href="#inheriting-constructors">Inheriting constructors</a></li>
 <li><a href="#additional-permitted-features">Additional Permitted Features</a></li>
 <li><a href="#excluded-features">Excluded Features</a></li>
 <li><a href="#undecided-features">Undecided Features</a></li>
@@ -210,7 +211,7 @@ while ( test_foo(args...) ) { // No, excess spaces around control</code></pre></
 <p>Rationale: Other than to implement exceptions (which HotSpot doesn't use), most potential uses of <a href="https://en.wikipedia.org/wiki/Run-time_type_information" title="Runtime Type Information">RTTI</a> are better done via virtual functions. Some of the remainder can be replaced by bespoke mechanisms. The cost of the additional runtime data structures needed to support <a href="https://en.wikipedia.org/wiki/Run-time_type_information" title="Runtime Type Information">RTTI</a> are deemed not worthwhile, given the alternatives.</p>
 <h3 id="memory-allocation">Memory Allocation</h3>
 <p>Do not use the standard global allocation and deallocation functions (operator new and related functions). Use of these functions by HotSpot code is disabled for some platforms.</p>
-<p>Rationale: HotSpot often uses &quot;resource&quot; or &quot;arena&quot; allocation. Even where heap allocation is used, the standard global functions are avoided in favor of wrappers around malloc and free that support the VM's Native Memory Tracking (NMT) feature.</p>
+<p>Rationale: HotSpot often uses &quot;resource&quot; or &quot;arena&quot; allocation. Even where heap allocation is used, the standard global functions are avoided in favor of wrappers around malloc and free that support the VM's Native Memory Tracking (NMT) feature. Typically, uses of the global operator new are inadvertent and therefore often associated with memory leaks.</p>
 <p>Native memory allocation failures are often treated as non-recoverable. The place where &quot;out of memory&quot; is (first) detected may be an innocent bystander, unrelated to the actual culprit.</p>
 <h3 id="class-inheritance">Class Inheritance</h3>
 <p>Use public single inheritance.</p>
@@ -270,8 +271,8 @@ while ( test_foo(args...) ) { // No, excess spaces around control</code></pre></
 <p>The underlying type of a <em>scoped-enum</em> should also be specified explicitly if conversions may be applied to values of that type.</p>
 <p>Due to bugs in certain (very old) compilers, there is widespread use of enums and avoidance of in-class initialization of static integral constant members. Compilers having such bugs are no longer supported. Except where an enum is semantically appropriate, new code should use integral constants.</p>
 <h3 id="thread_local">thread_local</h3>
-<p>Do not use <code>thread_local</code> (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2659.htm">n2659</a>); instead, use the HotSpot macro <code>THREAD_LOCAL</code>. The initializer must be a constant expression.</p>
-<p>As was discussed in the review for <a href="https://mail.openjdk.java.net/pipermail/hotspot-dev/2019-September/039487.html">JDK-8230877</a>, <code>thread_local</code> allows dynamic initialization and destruction semantics. However, that support requires a run-time penalty for references to non-function-local <code>thread_local</code> variables defined in a different translation unit, even if they don't need dynamic initialization. Dynamic initialization and destruction of namespace-scoped thread local variables also has the same ordering problems as for ordinary namespace-scoped variables.</p>
+<p>Avoid use of <code>thread_local</code> (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2659.htm">n2659</a>); and instead, use the HotSpot macro <code>THREAD_LOCAL</code>, for which the initializer must be a constant expression. When <code>thread_local</code> must be used, use the Hotspot macro <code>APPROVED_CPP_THREAD_LOCAL</code> to indicate that the use has been given appropriate consideration.</p>
+<p>As was discussed in the review for <a href="https://mail.openjdk.java.net/pipermail/hotspot-dev/2019-September/039487.html">JDK-8230877</a>, <code>thread_local</code> allows dynamic initialization and destruction semantics. However, that support requires a run-time penalty for references to non-function-local <code>thread_local</code> variables defined in a different translation unit, even if they don't need dynamic initialization. Dynamic initialization and destruction of non-local <code>thread_local</code> variables also has the same ordering problems as for ordinary non-local variables. So we avoid use of <code>thread_local</code> in general, limiting its use to only those cases where dynamic initialization or destruction are essential. See <a href="https://bugs.openjdk.java.net/browse/JDK-8282469">JDK-8282469</a> for further discussion.</p>
 <h3 id="nullptr">nullptr</h3>
 <p>Prefer <code>nullptr</code> (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2431.pdf">n2431</a>) to <code>NULL</code>. Don't use (constexpr or literal) 0 for pointers.</p>
 <p>For historical reasons there are widespread uses of both <code>NULL</code> and of integer 0 as a pointer value.</p>
@@ -405,6 +406,10 @@ while ( test_foo(args...) ) { // No, excess spaces around control</code></pre></
 <ul>
 <li>Make () more optional for lambdas (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p1102r2.html">p1102r2</a>)</li>
 </ul>
+<h3 id="inheriting-constructors">Inheriting constructors</h3>
+<p>Do not use <em>inheriting constructors</em> (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2540.htm">n2540</a>).</p>
+<p>C++11 provides simple syntax allowing a class to inherit the constructors of a base class. Unfortunately there are a number of problems with the original specification, and C++17 contains significant revisions (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2015/p0136r1.html" title="p0136r1">p0136r1</a> opens with a list of 8 Core Issues). Since HotSpot doesn't support use of C++17, use of inherited constructors could run into those problems. Such uses might also change behavior in a future HotSpot update to use C++17 or later, potentially in subtle ways that could lead to hard to diagnose problems. Because of this, HotSpot code must not use inherited constructors.</p>
+<p>Note that gcc7 provides the <code>-fnew-inheriting-ctors</code> option to use the <a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2015/p0136r1.html" title="p0136r1">p0136r1</a> semantics. This is enabled by default when using C++17 or later. It is also enabled by default for <code>fabi-version=11</code> (introduced by gcc7) or higher when using C++11/14, as the change is considered a Defect Report that applies to those versions. Earlier versions of gcc don't have that option, and other supported compilers may not have anything similar.</p>
 <h3 id="additional-permitted-features">Additional Permitted Features</h3>
 <ul>
 <li><p><code>constexpr</code> (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2235.pdf">n2235</a>) (<a href="https://isocpp.org/files/papers/N3652.html">n3652</a>)</p></li>
@@ -423,6 +428,7 @@ while ( test_foo(args...) ) { // No, excess spaces around control</code></pre></
 <li><p><code>final</code> virtual specifiers for classes and virtual functions (<a href="http://www.open-std.org/JTC1/SC22/WG21/docs/papers/2009/n2928.htm">n2928</a>), (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2010/n3206.htm">n3206</a>), (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2011/n3272.htm">n3272</a>)</p></li>
 <li><p><code>override</code> virtual specifiers for virtual functions (<a href="http://www.open-std.org/JTC1/SC22/WG21/docs/papers/2009/n2928.htm">n2928</a>), (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2010/n3206.htm">n3206</a>), (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2011/n3272.htm">n3272</a>)</p></li>
 <li><p>Range-based <code>for</code> loops (<a href="http://www.open-std.org/JTC1/SC22/WG21/docs/papers/2009/n2930.html">n2930</a>) (<a href="https://en.cppreference.com/w/cpp/language/range-for">range-for</a>)</p></li>
+<li><p>Unrestricted Unions (<a href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2544.pdf">n2544</a>)</p></li>
 </ul>
 <h3 id="excluded-features">Excluded Features</h3>
 <ul>

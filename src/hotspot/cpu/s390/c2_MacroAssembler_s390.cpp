@@ -823,52 +823,64 @@ unsigned int C2_MacroAssembler::string_inflate_const(Register src, Register dst,
   return offset() - block_start;
 }
 
-// Kills src.
-unsigned int C2_MacroAssembler::has_negatives(Register result, Register src, Register cnt,
-                                              Register odd_reg, Register even_reg, Register tmp) {
-  int block_start = offset();
-  Label Lloop1, Lloop2, Lslow, Lnotfound, Ldone;
-  const Register addr = src, mask = tmp;
+// Returns the number of non-negative bytes (aka US-ASCII characters) found
+// before the first negative byte is encountered.
+unsigned int C2_MacroAssembler::count_positives(Register result, Register src, Register cnt, Register tmp) {
+  const unsigned int block_start   = offset();
+  const unsigned int byte_mask     = 0x80;
+  const unsigned int twobyte_mask  = byte_mask<<8 | byte_mask;
+  const unsigned int unroll_factor = 16;
+  const unsigned int log_unroll_factor = exact_log2(unroll_factor);
+  Register pos  = src;     // current position in src array, restored at end
+  Register ctr  = result;  // loop counter, result value
+  Register mask = tmp;     // holds the sign detection mask
+  Label unrolledLoop, unrolledDone, byteLoop, allDone;
 
-  BLOCK_COMMENT("has_negatives {");
+  assert_different_registers(result, src, cnt, tmp);
 
-  z_llgfr(Z_R1, cnt);      // Number of bytes to read. (Must be a positive simm32.)
-  z_llilf(mask, 0x80808080);
-  z_lhi(result, 1);        // Assume true.
-  // Last possible addr for fast loop.
-  z_lay(odd_reg, -16, Z_R1, src);
-  z_chi(cnt, 16);
-  z_brl(Lslow);
+  BLOCK_COMMENT("count_positives {");
 
-  // ind1: index, even_reg: index increment, odd_reg: index limit
-  z_iihf(mask, 0x80808080);
-  z_lghi(even_reg, 16);
+  lgr_if_needed(pos, src);              // current position in src array
+  z_srak(ctr, cnt, log_unroll_factor);  // # iterations of unrolled loop
+  z_brnh(unrolledDone);                 // array too short for unrolled loop
 
-  bind(Lloop1); // 16 bytes per iteration.
-  z_lg(Z_R0, Address(addr));
-  z_lg(Z_R1, Address(addr, 8));
-  z_ogr(Z_R0, Z_R1);
-  z_ngr(Z_R0, mask);
-  z_brne(Ldone);           // If found return 1.
-  z_brxlg(addr, even_reg, Lloop1);
+  z_iilf(mask, twobyte_mask<<16 | twobyte_mask);
+  z_iihf(mask, twobyte_mask<<16 | twobyte_mask);
 
-  bind(Lslow);
-  z_aghi(odd_reg, 16-1);   // Last possible addr for slow loop.
-  z_lghi(even_reg, 1);
-  z_cgr(addr, odd_reg);
-  z_brh(Lnotfound);
+  bind(unrolledLoop);
+    z_lmg(Z_R0, Z_R1, 0, pos);
+    z_ogr(Z_R0, Z_R1);
+    z_ngr(Z_R0, mask);
+    z_brne(unrolledDone);               // There is a negative byte somewhere.
+                                        // ctr and pos are not updated yet ->
+                                        // delegate finding correct pos to byteLoop.
+    add2reg(pos, unroll_factor);
+    z_brct(ctr, unrolledLoop);
 
-  bind(Lloop2); // 1 byte per iteration.
-  z_cli(Address(addr), 0x80);
-  z_brnl(Ldone);           // If found return 1.
-  z_brxlg(addr, even_reg, Lloop2);
+  // Once we arrive here, we have to examine at most (unroll_factor - 1) bytes more.
+  // We then either have reached the end of the array or we hit a negative byte.
+  bind(unrolledDone);
+  z_sll(ctr, log_unroll_factor);        // calculate # bytes not processed by unrolled loop
+                                        // > 0 only if a negative byte was found
+  z_lr(Z_R0, cnt);                      // calculate remainder bytes
+  z_nilf(Z_R0, unroll_factor - 1);
+  z_ar(ctr, Z_R0);                      // remaining bytes
+  z_brnh(allDone);                      // shortcut if nothing left to do
 
-  bind(Lnotfound);
-  z_lhi(result, 0);
+  bind(byteLoop);
+    z_cli(0, pos, byte_mask);           // unsigned comparison! byte@pos must be smaller that byte_mask
+    z_brnl(allDone);                    // negative byte found.
 
-  bind(Ldone);
+    add2reg(pos, 1);
+    z_brct(ctr, byteLoop);
 
-  BLOCK_COMMENT("} has_negatives");
+  bind(allDone);
+
+  z_srk(ctr, cnt, ctr);                 // # bytes actually processed (= cnt or index of first negative byte)
+  z_sgfr(pos, ctr);                     // restore src
+  z_lgfr(result, ctr);                  // unnecessary. Only there to be sure the high word has a defined state.
+
+  BLOCK_COMMENT("} count_positives");
 
   return offset() - block_start;
 }

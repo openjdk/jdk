@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -132,8 +132,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="BA">Bɔ̀síníà àti Ɛtisɛgófínà</territory>
 			<territory type="BE">Bégíɔ́mù</territory>
 			<territory type="BJ">Bɛ̀nɛ̀</territory>
+			<territory type="BL">Ìlú Bátílɛ́mì</territory>
 			<territory type="BN">Búrúnɛ́lì</territory>
 			<territory type="BO">Bɔ̀lífíyà</territory>
+			<territory type="BQ">Káríbíánì ti Nɛ́dálándì</territory>
 			<territory type="BW">Bɔ̀tìsúwánà</territory>
 			<territory type="BZ">Bèlísɛ̀</territory>
 			<territory type="CH">switishilandi</territory>
@@ -176,12 +178,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="PS" alt="short">Palɛsítínì</territory>
 			<territory type="PT">Pɔ́túgà</territory>
 			<territory type="QO">Agbègbè Òshɔ́ɔ́níà</territory>
+			<territory type="RS">Sɛ́bíà</territory>
 			<territory type="RU">Rɔshia</territory>
 			<territory type="SC">Sheshɛlɛsi</territory>
 			<territory type="SH">Hɛlena</territory>
+			<territory type="SJ">Sífábáàdì àti Jánì Máyɛ̀nì</territory>
 			<territory type="SN">Sɛnɛga</territory>
 			<territory type="ST">Sao tomi ati piriishipi</territory>
 			<territory type="SV">Ɛɛsáfádò</territory>
+			<territory type="SX">Síntì Mátɛ́ɛ̀nì</territory>
 			<territory type="SZ">Sashiland</territory>
 			<territory type="TC">Tɔɔki ati Etikun Kakɔsi</territory>
 			<territory type="TD">Shààdì</territory>
@@ -662,6 +667,27 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/St_Thomas">
 				<exemplarCity>ìlú St Tɔ́màsì</exemplarCity>
 			</zone>
+			<metazone type="Africa_Western">
+				<long>
+					<generic>Àkókò Ìwɔ̀-Oòrùn Afírikà</generic>
+					<standard>Àkókò Ìwɔ̀-Oòrùn Àfɛnukò Afírikà</standard>
+					<daylight>Àkókò Ìwɔ̀-Oòrùn Ooru Afírikà</daylight>
+				</long>
+			</metazone>
+			<metazone type="Alaska">
+				<long>
+					<generic>Àkókò Alásíkà</generic>
+					<standard>Àkókò Àfɛnukò Alásíkà</standard>
+					<daylight>Àkókò Ìyálɛ̀ta Alásíkà</daylight>
+				</long>
+			</metazone>
+			<metazone type="Amazon">
+				<long>
+					<generic>Àkókò Amásɔ́nì</generic>
+					<standard>Àkókò Afɛnukò Amásɔ́nì</standard>
+					<daylight>Àkókò Oru Amásɔ́nì</daylight>
+				</long>
+			</metazone>
 			<metazone type="America_Central">
 				<long>
 					<generic>àkókò àárín gbùngbùn</generic>
@@ -697,11 +723,39 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Aago Soma Argentina</daylight>
 				</long>
 			</metazone>
+			<metazone type="Argentina_Western">
+				<long>
+					<generic>Àkókò Iwɔ́-oòrùn Ajɛ́ntínà</generic>
+					<standard>Àkókò Iwɔ́-oòrùn Àfɛnukò Ajɛ́ntínà</standard>
+					<daylight>Àkókò Oru Iwɔ́-oòrùn Ajɛ́ntínà</daylight>
+				</long>
+			</metazone>
 			<metazone type="Atlantic">
 				<long>
 					<generic>Àkókò Àtìláńtíìkì</generic>
 					<standard>Àkókò àsikò Àtìláńtíìkì</standard>
 					<daylight>Àkókò Ìyálɛta Àtìláńtíìkì</daylight>
+				</long>
+			</metazone>
+			<metazone type="Azores">
+				<long>
+					<generic>Àkókò Ásɔ́sì</generic>
+					<standard>Àkókò Àfɛnukò Ásɔ́sì</standard>
+					<daylight>Àkókò Ooru Ásɔ́sì</daylight>
+				</long>
+			</metazone>
+			<metazone type="Cape_Verde">
+				<long>
+					<generic>Àkókò Képú Fáàdì</generic>
+					<standard>Àkókò Àfɛnukò Képú Fáàdì</standard>
+					<daylight>Àkókò Sɔ́mà Képú Fáàdì</daylight>
+				</long>
+			</metazone>
+			<metazone type="Chile">
+				<long>
+					<generic>Àkókò Shílè</generic>
+					<standard>Àkókò Àfɛnukò Shílè</standard>
+					<daylight>Àkókò Oru Shílè</daylight>
 				</long>
 			</metazone>
 			<metazone type="China">
@@ -739,6 +793,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Àkókò Sɔmà Ìhà Ìwɔ Oòrùn Europe</daylight>
 				</long>
 			</metazone>
+			<metazone type="Falkland">
+				<long>
+					<generic>Àkókò Fókílándì</generic>
+					<standard>Àkókò Àfɛnukò Etíkun Fókílándì</standard>
+					<daylight>Àkókò Ooru Etíkun Fókílándì</daylight>
+				</long>
+			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
 					<generic>Àkókò Ìlà oorùn Greenland</generic>
@@ -765,6 +826,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Àkókò Ìwɔ̀ oorùn Indonesia</standard>
 				</long>
 			</metazone>
+			<metazone type="Irkutsk">
+				<long>
+					<generic>Àkókò Íkósíkì</generic>
+					<standard>Àkókò Àfɛnukò Íkósíkì</standard>
+					<daylight>Àkókò Sɔmà Íkúsíkì</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mauritius">
+				<long>
+					<generic>Àkókò Máríshúshì</generic>
+					<standard>Àkókò Àfɛnukò Máríshúshì</standard>
+					<daylight>Àkókò Ooru Máríshúshì</daylight>
+				</long>
+			</metazone>
 			<metazone type="Mexico_Northwest">
 				<long>
 					<generic>Àkókò Apá Ìwɔ̀ Oorùn Mɛ́shíkò</generic>
@@ -786,11 +861,52 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Àkókò Ojúmɔmɔ Newfoundland</daylight>
 				</long>
 			</metazone>
+			<metazone type="Paraguay">
+				<long>
+					<generic>Àkókò Párágúwè</generic>
+					<standard>Àkókò Àfɛnukò Párágúwè</standard>
+					<daylight>Àkókò Ooru Párágúwè</daylight>
+				</long>
+			</metazone>
+			<metazone type="Peru">
+				<long>
+					<generic>Àkókò Pérù</generic>
+					<standard>Àkókò Àfɛnukò Pérù</standard>
+					<daylight>Àkókò Ooru Pérù</daylight>
+				</long>
+			</metazone>
 			<metazone type="Pierre_Miquelon">
 				<long>
 					<generic>Àkókò Pierre &amp; Miquelon</generic>
 					<standard>Àkókò Àfɛnukò Pierre &amp; Miquelon</standard>
 					<daylight>Àkókò Ojúmɔmɔ Pierre &amp; Miquelon</daylight>
+				</long>
+			</metazone>
+			<metazone type="Reunion">
+				<long>
+					<standard>Àkókò Rɛ́yúníɔ́nì</standard>
+				</long>
+			</metazone>
+			<metazone type="Seychelles">
+				<long>
+					<standard>Àkókò Sèshɛ́ɛ̀lì</standard>
+				</long>
+			</metazone>
+			<metazone type="South_Georgia">
+				<long>
+					<standard>Àkókò Gúsù Jɔ́jíà</standard>
+				</long>
+			</metazone>
+			<metazone type="Uruguay">
+				<long>
+					<generic>Aago Uruguay</generic>
+					<standard>Àkókò Àfɛnukò Úrúgúwè</standard>
+					<daylight>Aago Soma Uruguay</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yukon">
+				<long>
+					<standard>Àkókò Yúkɔ́nì</standard>
 				</long>
 			</metazone>
 		</timeZoneNames>
@@ -822,7 +938,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>Diami ti Awon Orílɛ́ède Arabu</displayName>
 			</currency>
 			<currency type="ALL">
-				<displayName>Lɛ́kɛ̀ Àlìbéníà</displayName>
+				<displayName>Lɛ́ɛ̀kì Àlìbáníà</displayName>
 				<displayName count="other">lɛ́kè Àlìbéníà</displayName>
 			</currency>
 			<currency type="AMD">
@@ -905,9 +1021,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="CDF">
 				<displayName count="other">àwɔn firanki Kongo</displayName>
 			</currency>
-			<currency type="CHF">
-				<displayName>Faransi ti Orílɛ́ède Siwisi</displayName>
-			</currency>
 			<currency type="CLP">
 				<displayName>Pɛ́sò Shílè</displayName>
 				<displayName count="other">àwɔn pɛ́sò Shílè</displayName>
@@ -982,8 +1095,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">àwɔn sídì Gana</displayName>
 			</currency>
 			<currency type="GIP">
-				<displayName>Pɔ́n-ùn Gibraltar</displayName>
-				<displayName count="other">àwɔn pɔ́n-ùn Gibraltar</displayName>
+				<displayName>Pɔ́n-ùn Gibúrátà</displayName>
+				<displayName count="other">àwɔn pɔ́n-ùn Gibúrátà</displayName>
 			</currency>
 			<currency type="GMD">
 				<displayName count="other">àwɔn dalasi Gamibia</displayName>
@@ -1010,7 +1123,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">àwɔn Lɛmipírà Ɔ́ńdúrà</displayName>
 			</currency>
 			<currency type="HRK">
-				<displayName count="other">àwɔn kúnà Croatian</displayName>
+				<displayName>Kúnà Kúróshíà</displayName>
+				<displayName count="other">àwɔn kúnà Kúróshíà</displayName>
 			</currency>
 			<currency type="HTG">
 				<displayName>Gɔ́dì Àítì</displayName>
@@ -1025,6 +1139,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="INR">
 				<displayName>Rupi ti Orílɛ́ède Indina</displayName>
+			</currency>
+			<currency type="ISK">
+				<displayName count="other">kórónɔ̀ Áílándíìkì</displayName>
 			</currency>
 			<currency type="JMD">
 				<displayName>Dɔ́là Jàmáíkà</displayName>
@@ -1068,6 +1185,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="LSL">
 				<displayName>Loti ti Orílɛ́ède Lesoto</displayName>
+				<displayName count="other">Lótì ti Lɛ̀sótò</displayName>
 			</currency>
 			<currency type="LYD">
 				<displayName count="other">àwɔn dínà Líbíyà</displayName>
@@ -1120,8 +1238,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">àwɔn kɔ̀dóbà Naikarágúà</displayName>
 			</currency>
 			<currency type="NOK">
-				<displayName>Kírónì Nɔ́ɔ́wè</displayName>
-				<displayName count="other">kìrónà Nɔ́ɔ́wè</displayName>
+				<displayName>kórónì Nɔ́wè</displayName>
+				<displayName count="other">kórónà Nɔ́wè</displayName>
 			</currency>
 			<currency type="NPR">
 				<displayName>Rúpìì Nɛ̵́pààlì</displayName>
@@ -1467,7 +1585,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="light-lumen">
 				<displayName>àmì lumɛ́ɛ̀nì</displayName>
-				<unitPattern count="other">{0} àmi lumɛ́ɛ̀nì</unitPattern>
+				<unitPattern count="other">{0} Lúmɛ́nì</unitPattern>
 			</unit>
 			<unit type="volume-dessert-spoon">
 				<displayName>shíbí oúnjɛ́ kékeré</displayName>
@@ -1510,6 +1628,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="duration-second">
 				<displayName>ìsh àáy</displayName>
 				<unitPattern count="other">{0} ìsh àáy</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<unitPattern count="other">{0} Lúmɛ́nì</unitPattern>
 			</unit>
 		</unitLength>
 	</units>

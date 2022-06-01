@@ -60,13 +60,11 @@ public class SignatureUtil {
             if (algName.startsWith("OID.")) {
                 algName = algName.substring(4);
             }
-
             KnownOIDs ko = KnownOIDs.findMatch(algName);
             if (ko != null) {
                 return ko.stdName().toUpperCase(Locale.ENGLISH);
             }
         }
-
         return algName;
     }
 
@@ -153,17 +151,10 @@ public class SignatureUtil {
                     createAlgorithmParameters(sigName, paramBytes);
                 paramSpec = RSAUtil.getParamSpec(params);
             } else if (sigName.contains("ECDSA")) {
-                try {
-                    Provider p = Signature.getInstance(sigName).getProvider();
-                    paramSpec = ECUtil.getECParameterSpec(p, paramBytes);
-                } catch (Exception e) {
-                    throw new ProviderException("Error handling EC parameters", e);
-                }
-                // ECUtil discards exception and returns null, so we need to check
-                // the returned value
-                if (paramSpec == null) {
-                    throw new ProviderException("Error handling EC parameters");
-                }
+                // Some certificates have params in an ECDSA algorithmID.
+                // According to RFC 3279 2.2.3 and RFC 5758 3.2,
+                // they are useless and should be ignored.
+                return null;
             } else {
                 throw new ProviderException
                      ("Unrecognized algorithm for signature parameters " +
@@ -491,12 +482,11 @@ public class SignatureUtil {
      * @return the default alg, might be null if unsupported
      */
     public static String getDefaultSigAlgForKey(PrivateKey k) {
-        String kAlg = k.getAlgorithm();
-        return switch (kAlg.toUpperCase(Locale.ENGLISH)) {
-            case "DSA", "RSA" -> ifcFfcStrength(KeyUtil.getKeySize(k))
-                    + "with" + kAlg;
-            case "EC" -> ecStrength(KeyUtil.getKeySize(k))
-                    + "withECDSA";
+        String kAlg = k.getAlgorithm().toUpperCase(Locale.ENGLISH);
+        return switch (kAlg) {
+            case "DSA" -> "SHA256withDSA";
+            case "RSA" -> ifcFfcStrength(KeyUtil.getKeySize(k)) + "withRSA";
+            case "EC" -> ecStrength(KeyUtil.getKeySize(k)) + "withECDSA";
             case "EDDSA" -> k instanceof EdECPrivateKey
                     ? ((EdECPrivateKey) k).getParams().getName()
                     : kAlg;
@@ -521,11 +511,16 @@ public class SignatureUtil {
                 64, PSSParameterSpec.TRAILER_FIELD_BC);
     }
 
-    // The following values are from SP800-57 part 1 rev 4 tables 2 and 3
+    // SP800-57 part 1 rev5 table 2 "Comparable security strengths of
+    // symmetric block cipher and asymmetric-key algorithms", and table 3
+    // "Maximum security strengths for hash and hash-based functions"
+    // define security strength for various algorithms.
+    // Besides matching the security strength, the default algorithms may
+    // also be chosen based on various recommendations such as NIST CNSA.
 
     /**
-     * Return the default message digest algorithm with the same security
-     * strength as the specified EC key size.
+     * Return the default message digest algorithm based on the specified
+     * EC key size.
      *
      * Attention: sync with the @implNote inside
      * {@link jdk.security.jarsigner.JarSigner.Builder#getDefaultSignatureAlgorithm}.
@@ -533,27 +528,27 @@ public class SignatureUtil {
     private static String ecStrength (int bitLength) {
         if (bitLength >= 512) { // 256 bits of strength
             return "SHA512";
-        } else if (bitLength >= 384) {  // 192 bits of strength
+        } else {
+            // per CNSA, use SHA-384
             return "SHA384";
-        } else { // 128 bits of strength and less
-            return "SHA256";
         }
     }
 
     /**
-     * Return the default message digest algorithm with the same security
-     * strength as the specified IFC/FFC key size.
+     * Return the default message digest algorithm based on both the
+     * security strength of the specified IFC/FFC key size, i.e. RSA,
+     * RSASSA-PSS, and the recommendation from NIST CNSA, e.g. use SHA-384
+     * and min 3072-bit.
      *
      * Attention: sync with the @implNote inside
      * {@link jdk.security.jarsigner.JarSigner.Builder#getDefaultSignatureAlgorithm}.
      */
-    private static String ifcFfcStrength (int bitLength) {
-        if (bitLength > 7680) { // 256 bits
+    private static String ifcFfcStrength(int bitLength) {
+        if (bitLength > 7680) { // 256 bits security strength
             return "SHA512";
-        } else if (bitLength > 3072) {  // 192 bits
-            return "SHA384";
-        } else  { // 128 bits and less
-            return "SHA256";
+        } else {
+            // per CNSA, use SHA-384 unless keysize is too small
+            return (bitLength >= 624 ? "SHA384" : "SHA256");
         }
     }
 }

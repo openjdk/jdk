@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -417,29 +417,30 @@ public final class JarSigner {
         /**
          * Gets the default digest algorithm.
          *
-         * @implNote This implementation returns "SHA-256". The value may
+         * @implNote This implementation returns "SHA-384". The value may
          * change in the future.
          *
          * @return the default digest algorithm.
          */
         public static String getDefaultDigestAlgorithm() {
-            return "SHA-256";
+            return "SHA-384";
         }
 
         /**
          * Gets the default signature algorithm for a private key.
-         * For example, SHA256withRSA for a 2048-bit RSA key, and
+         * For example, SHA384withRSA for a 2048-bit RSA key, and
          * SHA384withECDSA for a 384-bit EC key.
          *
          * @implNote This implementation makes use of comparable strengths
-         * as defined in Tables 2 and 3 of NIST SP 800-57 Part 1-Rev.4.
-         * Specifically, if a DSA or RSA key with a key size greater than 7680
+         * as defined in Tables 2 and 3 of NIST SP 800-57 Part 1-Rev.5 as
+         * well as NIST recommendations as appropriate.
+         * Specifically, if an RSA key with a key size greater than 7680
          * bits, or an EC key with a key size greater than or equal to 512 bits,
          * SHA-512 will be used as the hash function for the signature.
-         * If a DSA or RSA key has a key size greater than 3072 bits, or an
-         * EC key has a key size greater than or equal to 384 bits, SHA-384 will
-         * be used. Otherwise, SHA-256 will be used. The value may
-         * change in the future.
+         * Otherwise, SHA-384 will be used unless the key size is too small
+         * for resulting signature algorithm. As for DSA keys, the SHA256withDSA
+         * signature algorithm is returned regardless of key size.
+         * The value may change in the future.
          *
          * @param key the private key.
          * @return the default signature algorithm. Returns null if a default

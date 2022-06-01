@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ import sun.util.logging.PlatformLogger;
  * @test
  * @bug     8140364
  * @summary JDK implementation specific unit test for JDK internal artifacts.
- *          Tests all bridge methods with the a custom backend whose
+ *          Tests all bridge methods with a custom backend whose
  *          loggers implement PlatformLogger.Bridge.
  * @modules java.base/sun.util.logging
  *          java.base/jdk.internal.logger

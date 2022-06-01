@@ -262,7 +262,7 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
 
     @Test(dataProvider="roundTripAtOverlap")
     public void test_roundTripAtOverlap(String pattern, String input) {
-        var dtf = DateTimeFormatter.ofPattern(pattern);
+        var dtf = DateTimeFormatter.ofPattern(pattern, Locale.US);
         assertEquals(dtf.format(ZonedDateTime.parse(input, dtf)), input);
         var lc = input.toLowerCase(Locale.ROOT);
         try {
@@ -270,7 +270,7 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
             fail("Should throw DateTimeParseException");
         } catch (DateTimeParseException ignore) {}
 
-        dtf = new DateTimeFormatterBuilder().parseCaseInsensitive().appendPattern(pattern).toFormatter();
+        dtf = new DateTimeFormatterBuilder().parseCaseInsensitive().appendPattern(pattern).toFormatter(Locale.US);
         assertEquals(dtf.format(ZonedDateTime.parse(input, dtf)), input);
         assertEquals(dtf.format(ZonedDateTime.parse(lc, dtf)), input);
     }

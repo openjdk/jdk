@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,36 +30,30 @@ import javax.lang.model.type.TypeMirror;
 
 /**
  * The interface for writing method output.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
-
 public interface MethodWriter extends MemberWriter {
 
     /**
-     * Get the method details tree header.
+     * Get the method details header.
      *
-     * @param memberDetailsTree the content tree representing member details
-     * @return content tree for the method details header
+     * @param content the content representing member details
+     * @return the method details header
      */
-    Content getMethodDetailsTreeHeader(Content memberDetailsTree);
+    Content getMethodDetailsHeader(Content content);
 
     /**
-     * Get the method documentation tree header.
+     * Get the method documentation header.
      *
      * @param method the method being documented
-     * @return content tree for the method documentation header
+     * @return the method documentation header
      */
-    Content getMethodDocTreeHeader(ExecutableElement method);
+    Content getMethodHeader(ExecutableElement method);
 
     /**
      * Get the signature for the given method.
      *
      * @param method the method being documented
-     * @return content tree for the method signature
+     * @return the method signature
      */
     Content getSignature(ExecutableElement method);
 
@@ -67,48 +61,48 @@ public interface MethodWriter extends MemberWriter {
      * Add the deprecated output for the given method.
      *
      * @param method the method being documented
-     * @param methodDocTree content tree to which the deprecated information will be added
+     * @param methodContent the content to which the deprecated information will be added
      */
-    void addDeprecated(ExecutableElement method, Content methodDocTree);
+    void addDeprecated(ExecutableElement method, Content methodContent);
 
     /**
      * Adds the preview output for the given member.
      *
      * @param member the member being documented
-     * @param contentTree content tree to which the preview information will be added
+     * @param content the content to which the preview information will be added
      */
-    void addPreview(ExecutableElement member, Content contentTree);
+    void addPreview(ExecutableElement member, Content content);
 
     /**
      * Add the comments for the given method.
      *
      * @param holder the holder type (not erasure) of the method
      * @param method the method being documented
-     * @param methodDocTree the content tree to which the comments will be added
+     * @param methodContent the content to which the comments will be added
      */
-    void addComments(TypeMirror holder, ExecutableElement method, Content methodDocTree);
+    void addComments(TypeMirror holder, ExecutableElement method, Content methodContent);
 
     /**
      * Add the tags for the given method.
      *
      * @param method the method being documented
-     * @param methodDocTree the content tree to which the tags will be added
+     * @param methodContent the content to which the tags will be added
      */
-    void addTags(ExecutableElement method, Content methodDocTree);
+    void addTags(ExecutableElement method, Content methodContent);
 
     /**
-     * Get the method details tree.
+     * Get the method details.
      *
-     * @param methodDetailsTreeHeader the content tree representing method details header
-     * @param methodDetailsTree the content tree representing method details
-     * @return content tree for the method details
+     * @param methodDetailsHeader the content representing method details header
+     * @param methodDetails the content representing method details
+     * @return the method details
      */
-    Content getMethodDetails(Content methodDetailsTreeHeader, Content methodDetailsTree);
+    Content getMethodDetails(Content methodDetailsHeader, Content methodDetails);
 
     /**
-     * Gets the member header tree.
+     * Gets the member header.
      *
-     * @return a content tree for the member header
+     * @return the member header
      */
-    Content getMemberTreeHeader();
+    Content getMemberHeader();
 }

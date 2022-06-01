@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -360,14 +360,14 @@ public:
 
   // Attempt to fold similar nodes among this node's children. We only fold leaf nodes
   // (no child class loaders).
-  // For non-leaf nodes (class loaders with child class loaders), do this recursivly.
+  // For non-leaf nodes (class loaders with child class loaders), do this recursively.
   void fold_children() {
     LoaderTreeNode* node = _child;
     LoaderTreeNode* prev = NULL;
     while (node != NULL) {
       LoaderTreeNode* matching_node = NULL;
       if (node->is_leaf()) {
-        // Look among the preceeding node siblings for a match.
+        // Look among the preceding node siblings for a match.
         for (LoaderTreeNode* node2 = _child; node2 != node && matching_node == NULL;
             node2 = node2->_next) {
           if (node2->is_leaf() && node->can_fold_into(node2)) {

@@ -163,7 +163,10 @@ class VM_Version : public Abstract_VM_Version {
                mmx_amd   : 1,
                mmx       : 1,
                fxsr      : 1,
-                         : 4,
+               fxsr_opt  : 1,
+               pdpe1gb   : 1,
+               rdtscp    : 1,
+                         : 1,
                long_mode : 1,
                tdnow2    : 1,
                tdnow     : 1;
@@ -250,7 +253,11 @@ class VM_Version : public Abstract_VM_Version {
              avx512_bitalg : 1,
                            : 1,
           avx512_vpopcntdq : 1,
-                           : 17;
+                           : 1,
+                           : 1,
+                     mawau : 5,
+                     rdpid : 1,
+                           : 9;
     } bits;
   };
 
@@ -260,7 +267,8 @@ class VM_Version : public Abstract_VM_Version {
       uint32_t             : 2,
              avx512_4vnniw : 1,
              avx512_4fmaps : 1,
-                           : 10,
+        fast_short_rep_mov : 1,
+                           : 9,
                  serialize : 1,
                            : 17;
     } bits;
@@ -361,7 +369,12 @@ protected:
     decl(AVX512_VBMI2,      "avx512_vbmi2",      44) /* VBMI2 shift left double instructions */ \
     decl(AVX512_VBMI,       "avx512_vbmi",       45) /* Vector BMI instructions */ \
     decl(HV,                "hv",                46) /* Hypervisor instructions */ \
-    decl(SERIALIZE,         "serialize",         47) /* CPU SERIALIZE */
+    decl(SERIALIZE,         "serialize",         47) /* CPU SERIALIZE */ \
+    decl(RDTSCP,            "rdtscp",            48) /* RDTSCP instruction */ \
+    decl(RDPID,             "rdpid",             49) /* RDPID instruction */ \
+    decl(FSRM,              "fsrm",              50) /* Fast Short REP MOV */ \
+    decl(GFNI,              "gfni",              51) /* Vector GFNI instructions */ \
+    decl(AVX512_BITALG,     "avx512_bitalg",     52) /* Vector sub-word popcount and bit gather instructions */
 
 #define DECLARE_CPU_FEATURE_FLAG(id, name, bit) CPU_##id = (1ULL << bit),
     CPU_FEATURE_FLAGS(DECLARE_CPU_FEATURE_FLAG)
@@ -591,8 +604,12 @@ protected:
           result |= CPU_AVX512_VPCLMULQDQ;
         if (_cpuid_info.sef_cpuid7_ecx.bits.vaes != 0)
           result |= CPU_AVX512_VAES;
+        if (_cpuid_info.sef_cpuid7_ecx.bits.gfni != 0)
+          result |= CPU_GFNI;
         if (_cpuid_info.sef_cpuid7_ecx.bits.avx512_vnni != 0)
           result |= CPU_AVX512_VNNI;
+        if (_cpuid_info.sef_cpuid7_ecx.bits.avx512_bitalg != 0)
+          result |= CPU_AVX512_BITALG;
         if (_cpuid_info.sef_cpuid7_ecx.bits.avx512_vbmi != 0)
           result |= CPU_AVX512_VBMI;
         if (_cpuid_info.sef_cpuid7_ecx.bits.avx512_vbmi2 != 0)
@@ -611,6 +628,8 @@ protected:
       result |= CPU_AES;
     if (_cpuid_info.sef_cpuid7_ebx.bits.erms != 0)
       result |= CPU_ERMS;
+    if (_cpuid_info.sef_cpuid7_edx.bits.fast_short_rep_mov != 0)
+      result |= CPU_FSRM;
     if (_cpuid_info.std_cpuid1_ecx.bits.clmul != 0)
       result |= CPU_CLMUL;
     if (_cpuid_info.sef_cpuid7_ebx.bits.rtm != 0)
@@ -625,6 +644,10 @@ protected:
       result |= CPU_FMA;
     if (_cpuid_info.sef_cpuid7_ebx.bits.clflushopt != 0)
       result |= CPU_FLUSHOPT;
+    if (_cpuid_info.ext_cpuid1_edx.bits.rdtscp != 0)
+      result |= CPU_RDTSCP;
+    if (_cpuid_info.sef_cpuid7_ecx.bits.rdpid != 0)
+      result |= CPU_RDPID;
 
     // AMD|Hygon features.
     if (is_amd_family()) {
@@ -868,8 +891,11 @@ public:
   static bool supports_avx()          { return (_features & CPU_AVX) != 0; }
   static bool supports_avx2()         { return (_features & CPU_AVX2) != 0; }
   static bool supports_tsc()          { return (_features & CPU_TSC) != 0; }
+  static bool supports_rdtscp()       { return (_features & CPU_RDTSCP) != 0; }
+  static bool supports_rdpid()        { return (_features & CPU_RDPID) != 0; }
   static bool supports_aes()          { return (_features & CPU_AES) != 0; }
   static bool supports_erms()         { return (_features & CPU_ERMS) != 0; }
+  static bool supports_fsrm()         { return (_features & CPU_FSRM) != 0; }
   static bool supports_clmul()        { return (_features & CPU_CLMUL) != 0; }
   static bool supports_rtm()          { return (_features & CPU_RTM) != 0; }
   static bool supports_bmi1()         { return (_features & CPU_BMI1) != 0; }
@@ -897,7 +923,9 @@ public:
   static bool supports_avx512_vpopcntdq()  { return (_features & CPU_AVX512_VPOPCNTDQ) != 0; }
   static bool supports_avx512_vpclmulqdq() { return (_features & CPU_AVX512_VPCLMULQDQ) != 0; }
   static bool supports_avx512_vaes()  { return (_features & CPU_AVX512_VAES) != 0; }
+  static bool supports_gfni()         { return (_features & CPU_GFNI) != 0; }
   static bool supports_avx512_vnni()  { return (_features & CPU_AVX512_VNNI) != 0; }
+  static bool supports_avx512_bitalg()  { return (_features & CPU_AVX512_BITALG) != 0; }
   static bool supports_avx512_vbmi()  { return (_features & CPU_AVX512_VBMI) != 0; }
   static bool supports_avx512_vbmi2() { return (_features & CPU_AVX512_VBMI2) != 0; }
   static bool supports_hv()           { return (_features & CPU_HV) != 0; }
@@ -1043,6 +1071,25 @@ public:
   // Note: CPU_FLUSHOPT and CPU_CLWB bits should always be zero for 32-bit
   static bool supports_clflushopt() { return ((_features & CPU_FLUSHOPT) != 0); }
   static bool supports_clwb() { return ((_features & CPU_CLWB) != 0); }
+
+  // Old CPUs perform lea on AGU which causes additional latency transferring the
+  // value from/to ALU for other operations
+  static bool supports_fast_2op_lea() {
+    return (is_intel() && supports_avx()) || // Sandy Bridge and above
+           (is_amd()   && supports_avx());   // Jaguar and Bulldozer and above
+  }
+
+  // Pre Icelake Intels suffer inefficiency regarding 3-operand lea, which contains
+  // all of base register, index register and displacement immediate, with 3 latency.
+  // Note that when the address contains no displacement but the base register is
+  // rbp or r13, the machine code must contain a zero displacement immediate,
+  // effectively transform a 2-operand lea into a 3-operand lea. This can be
+  // replaced by add-add or lea-add
+  static bool supports_fast_3op_lea() {
+    return supports_fast_2op_lea() &&
+           ((is_intel() && supports_clwb() && !is_intel_skylake()) || // Icelake and above
+            is_amd());
+  }
 
 #ifdef __APPLE__
   // Is the CPU running emulated (for example macOS Rosetta running x86_64 code on M1 ARM (aarch64)

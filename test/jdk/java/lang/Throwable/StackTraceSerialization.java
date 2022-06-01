@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,7 +126,7 @@ public class StackTraceSerialization {
      * Returns true if e1 and e2 have equal stack traces and their
      * causes are recursively equal (by the same definition) and their
      * suppressed exception information is equals.  Returns false or
-     * throws NullPointerExeption otherwise.
+     * throws NullPointerException otherwise.
      */
     private static boolean equal(Throwable t1, Throwable t2) {
         return t1==t2 ||

@@ -28,7 +28,7 @@
 //----------REGISTER DEFINITION BLOCK------------------------------------------
 // This information is used by the matcher and the register allocator to
 // describe individual registers and classes of registers within the target
-// archtecture.
+// architecture.
 
 register %{
 //----------Architecture Description Register Definitions----------------------
@@ -488,7 +488,7 @@ reg_def R31_H   (  NS,  NS, Op_RegI, 31, r31_sp->as_VMReg()->next());
 // Special Registers
 // ----------------------------
 
-// the AArch64 CSPR status flag register is not directly acessible as
+// the AArch64 CSPR status flag register is not directly accessible as
 // instruction operand. the FPSR status flag register is a system
 // register which can be written/read using MSR/MRS but again does not
 // appear as an operand (a code identifying the FSPR occurs as an
@@ -1199,6 +1199,9 @@ reg_class gov_pr (
     // P7, non-allocatable, preserved with all elements preset to TRUE.
 );
 
+reg_class p0_reg(P0);
+reg_class p1_reg(P1);
+
 // Singleton class for condition codes
 reg_class int_flags(RFLAGS);
 
@@ -1279,12 +1282,12 @@ class HandlerImpl {
   static int emit_deopt_handler(C2_MacroAssembler &masm);
 
   static uint size_exception_handler() {
-    return MacroAssembler::far_branch_size();
+    return MacroAssembler::far_codestub_branch_size();
   }
 
   static uint size_deopt_handler() {
     // count one adr and one far branch instruction
-    return 4 * NativeInstruction::instruction_size;
+    return NativeInstruction::instruction_size + MacroAssembler::far_codestub_branch_size();
   }
 };
 
@@ -1310,6 +1313,9 @@ public:
 
   // predicate controlling translation of CompareAndSwapX
   bool needs_acquiring_load_exclusive(const Node *load);
+
+  // Assert that the given node is not a variable shift.
+  bool assert_not_var_shift(const Node* n);
 
   // predicate controlling addressing modes
   bool size_fits_all_mem_uses(AddPNode* addp, int shift);
@@ -1505,7 +1511,7 @@ source %{
   // node sequence to a normal volatile get because of the
   // introduction of some CPUOrder memory barriers to bracket the
   // Load. However, but the same basic skeleton of a LoadX feeding a
-  // MemBarAcquire, possibly thorugh an optional DecodeN, is still
+  // MemBarAcquire, possibly through an optional DecodeN, is still
   // present
   //
   //   MemBarCPUOrder
@@ -1725,6 +1731,12 @@ bool needs_acquiring_load_exclusive(const Node *n)
   return true;
 }
 
+// Assert that the given node is not a variable shift.
+bool assert_not_var_shift(const Node* n) {
+  assert(!n->as_ShiftV()->is_var_shift(), "illegal variable shift");
+  return true;
+}
+
 #define __ masm.
 
 // advance declarations for helper functions to convert register
@@ -1764,16 +1776,6 @@ int MachCallRuntimeNode::ret_addr_offset() {
   //   lea(rscratch1, RuntimeAddress(addr)
   //   stp(zr, rscratch2, Address(__ pre(sp, -2 * wordSize)))
   //   blr(rscratch1)
-  CodeBlob *cb = CodeCache::find_blob(_entry_point);
-  if (cb) {
-    return 1 * NativeInstruction::instruction_size;
-  } else {
-    return 6 * NativeInstruction::instruction_size;
-  }
-}
-
-int MachCallNativeNode::ret_addr_offset() {
-  // This is implemented using aarch64_enc_java_to_runtime as above.
   CodeBlob *cb = CodeCache::find_blob(_entry_point);
   if (cb) {
     return 1 * NativeInstruction::instruction_size;
@@ -2374,7 +2376,7 @@ int HandlerImpl::emit_deopt_handler(C2_MacroAssembler& masm)
   __ adr(lr, __ pc());
   __ far_jump(RuntimeAddress(SharedRuntime::deopt_blob()->unpack()));
 
-  assert(__ offset() - offset <= (int) size_deopt_handler(), "overflow");
+  assert(__ offset() - offset == (int) size_deopt_handler(), "overflow");
   __ end_a_stub();
   return offset;
 }
@@ -2441,6 +2443,7 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
       }
       break;
     case Op_MulVL:
+    case Op_PopulateIndex:
       return false;
     case Op_VectorLoadShuffle:
     case Op_VectorRearrange:
@@ -2450,6 +2453,9 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
       break;
     case Op_LoadVectorGather:
     case Op_StoreVectorScatter:
+    case Op_CompressV:
+    case Op_CompressM:
+    case Op_ExpandV:
       return false;
     default:
       break;
@@ -3795,6 +3801,9 @@ encode %{
       }
     }
 
+    _masm.clear_inst_mark();
+    __ post_call_nop();
+
     // Only non uncommon_trap calls need to reinitialize ptrue.
     if (Compile::current()->max_vector_size() > 0 && uncommon_trap_request() == 0) {
       __ reinitialize_ptrue();
@@ -3807,7 +3816,10 @@ encode %{
     if (call == NULL) {
       ciEnv::current()->record_failure("CodeCache is full");
       return;
-    } else if (Compile::current()->max_vector_size() > 0) {
+    }
+    _masm.clear_inst_mark();
+    __ post_call_nop();
+    if (Compile::current()->max_vector_size() > 0) {
       __ reinitialize_ptrue();
     }
   %}
@@ -3835,6 +3847,8 @@ encode %{
         ciEnv::current()->record_failure("CodeCache is full");
         return;
       }
+      _masm.clear_inst_mark();
+      __ post_call_nop();
     } else {
       Label retaddr;
       __ adr(rscratch2, retaddr);
@@ -3843,6 +3857,7 @@ encode %{
       __ stp(zr, rscratch2, Address(__ pre(sp, -2 * wordSize)));
       __ blr(rscratch1);
       __ bind(retaddr);
+      __ post_call_nop();
       __ add(sp, sp, 2 * wordSize);
     }
     if (Compile::current()->max_vector_size() > 0) {
@@ -4086,10 +4101,10 @@ encode %{
 //         Region 6-7 is determined per call site.
 // Note 2: If the calling convention leaves holes in the incoming argument
 //         area, those holes are owned by SELF.  Holes in the outgoing area
-//         are owned by the CALLEE.  Holes should not be nessecary in the
+//         are owned by the CALLEE.  Holes should not be necessary in the
 //         incoming area, as the Java calling convention is completely under
 //         the control of the AD file.  Doubles can be sorted and packed to
-//         avoid holes.  Holes in the outgoing arguments may be nessecary for
+//         avoid holes.  Holes in the outgoing arguments may be necessary for
 //         varargs C calling conventions.
 // Note 3: Region 0-3 is even aligned, with pad2 as needed.  Region 3-5 is
 //         even aligned with pad0 as needed.
@@ -5683,6 +5698,24 @@ operand pReg()
 operand pRegGov()
 %{
   constraint(ALLOC_IN_RC(gov_pr));
+  match(RegVectMask);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand pRegGov_P0()
+%{
+  constraint(ALLOC_IN_RC(p0_reg));
+  match(RegVectMask);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand pRegGov_P1()
+%{
+  constraint(ALLOC_IN_RC(p1_reg));
   match(RegVectMask);
   op_cost(0);
   format %{ %}
@@ -8606,7 +8639,6 @@ instruct countTrailingZerosL(iRegINoSp dst, iRegL src) %{
 //
 
 instruct popCountI(iRegINoSp dst, iRegIorL2I src, vRegF tmp) %{
-  predicate(UsePopCountInstruction);
   match(Set dst (PopCountI src));
   effect(TEMP tmp);
   ins_cost(INSN_COST * 13);
@@ -8628,7 +8660,6 @@ instruct popCountI(iRegINoSp dst, iRegIorL2I src, vRegF tmp) %{
 %}
 
 instruct popCountI_mem(iRegINoSp dst, memory4 mem, vRegF tmp) %{
-  predicate(UsePopCountInstruction);
   match(Set dst (PopCountI (LoadI mem)));
   effect(TEMP tmp);
   ins_cost(INSN_COST * 13);
@@ -8651,7 +8682,6 @@ instruct popCountI_mem(iRegINoSp dst, memory4 mem, vRegF tmp) %{
 
 // Note: Long.bitCount(long) returns an int.
 instruct popCountL(iRegINoSp dst, iRegL src, vRegD tmp) %{
-  predicate(UsePopCountInstruction);
   match(Set dst (PopCountL src));
   effect(TEMP tmp);
   ins_cost(INSN_COST * 13);
@@ -8671,7 +8701,6 @@ instruct popCountL(iRegINoSp dst, iRegL src, vRegD tmp) %{
 %}
 
 instruct popCountL_mem(iRegINoSp dst, memory8 mem, vRegD tmp) %{
-  predicate(UsePopCountInstruction);
   match(Set dst (PopCountL (LoadL mem)));
   effect(TEMP tmp);
   ins_cost(INSN_COST * 13);
@@ -11080,10 +11109,26 @@ instruct mulHiL_rReg(iRegLNoSp dst, iRegL src1, iRegL src2, rFlagsReg cr)
   match(Set dst (MulHiL src1 src2));
 
   ins_cost(INSN_COST * 7);
-  format %{ "smulh   $dst, $src1, $src2, \t# mulhi" %}
+  format %{ "smulh   $dst, $src1, $src2\t# mulhi" %}
 
   ins_encode %{
     __ smulh(as_Register($dst$$reg),
+             as_Register($src1$$reg),
+             as_Register($src2$$reg));
+  %}
+
+  ins_pipe(lmul_reg_reg);
+%}
+
+instruct umulHiL_rReg(iRegLNoSp dst, iRegL src1, iRegL src2, rFlagsReg cr)
+%{
+  match(Set dst (UMulHiL src1 src2));
+
+  ins_cost(INSN_COST * 7);
+  format %{ "umulh   $dst, $src1, $src2\t# umulhi" %}
+
+  ins_encode %{
+    __ umulh(as_Register($dst$$reg),
              as_Register($src1$$reg),
              as_Register($src2$$reg));
   %}
@@ -11563,6 +11608,108 @@ instruct regI_not_reg(iRegINoSp dst,
   %}
 
   ins_pipe(ialu_reg);
+%}
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct NegI_reg_URShift_reg(iRegINoSp dst,
+                              immI0 zero, iRegIorL2I src1, immI src2) %{
+  match(Set dst (SubI zero (URShiftI src1 src2)));
+
+  ins_cost(1.9 * INSN_COST);
+  format %{ "negw  $dst, $src1, LSR $src2" %}
+
+  ins_encode %{
+    __ negw(as_Register($dst$$reg), as_Register($src1$$reg),
+            Assembler::LSR, $src2$$constant & 0x1f);
+  %}
+
+  ins_pipe(ialu_reg_shift);
+%}
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct NegI_reg_RShift_reg(iRegINoSp dst,
+                              immI0 zero, iRegIorL2I src1, immI src2) %{
+  match(Set dst (SubI zero (RShiftI src1 src2)));
+
+  ins_cost(1.9 * INSN_COST);
+  format %{ "negw  $dst, $src1, ASR $src2" %}
+
+  ins_encode %{
+    __ negw(as_Register($dst$$reg), as_Register($src1$$reg),
+            Assembler::ASR, $src2$$constant & 0x1f);
+  %}
+
+  ins_pipe(ialu_reg_shift);
+%}
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct NegI_reg_LShift_reg(iRegINoSp dst,
+                              immI0 zero, iRegIorL2I src1, immI src2) %{
+  match(Set dst (SubI zero (LShiftI src1 src2)));
+
+  ins_cost(1.9 * INSN_COST);
+  format %{ "negw  $dst, $src1, LSL $src2" %}
+
+  ins_encode %{
+    __ negw(as_Register($dst$$reg), as_Register($src1$$reg),
+            Assembler::LSL, $src2$$constant & 0x1f);
+  %}
+
+  ins_pipe(ialu_reg_shift);
+%}
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct NegL_reg_URShift_reg(iRegLNoSp dst,
+                              immL0 zero, iRegL src1, immI src2) %{
+  match(Set dst (SubL zero (URShiftL src1 src2)));
+
+  ins_cost(1.9 * INSN_COST);
+  format %{ "neg  $dst, $src1, LSR $src2" %}
+
+  ins_encode %{
+    __ neg(as_Register($dst$$reg), as_Register($src1$$reg),
+            Assembler::LSR, $src2$$constant & 0x3f);
+  %}
+
+  ins_pipe(ialu_reg_shift);
+%}
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct NegL_reg_RShift_reg(iRegLNoSp dst,
+                              immL0 zero, iRegL src1, immI src2) %{
+  match(Set dst (SubL zero (RShiftL src1 src2)));
+
+  ins_cost(1.9 * INSN_COST);
+  format %{ "neg  $dst, $src1, ASR $src2" %}
+
+  ins_encode %{
+    __ neg(as_Register($dst$$reg), as_Register($src1$$reg),
+            Assembler::ASR, $src2$$constant & 0x3f);
+  %}
+
+  ins_pipe(ialu_reg_shift);
+%}
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct NegL_reg_LShift_reg(iRegLNoSp dst,
+                              immL0 zero, iRegL src1, immI src2) %{
+  match(Set dst (SubL zero (LShiftL src1 src2)));
+
+  ins_cost(1.9 * INSN_COST);
+  format %{ "neg  $dst, $src1, LSL $src2" %}
+
+  ins_encode %{
+    __ neg(as_Register($dst$$reg), as_Register($src1$$reg),
+            Assembler::LSL, $src2$$constant & 0x3f);
+  %}
+
+  ins_pipe(ialu_reg_shift);
 %}
 
 // This pattern is automatically generated from aarch64_ad.m4
@@ -15004,6 +15151,30 @@ instruct convL2D_reg_reg(vRegD dst, iRegL src) %{
   ins_pipe(fp_l2d);
 %}
 
+instruct round_double_reg(iRegLNoSp dst, vRegD src, vRegD ftmp, rFlagsReg cr)
+%{
+  match(Set dst (RoundD src));
+  effect(TEMP_DEF dst, TEMP ftmp, KILL cr);
+  format %{ "java_round_double $dst,$src"%}
+  ins_encode %{
+    __ java_round_double($dst$$Register, as_FloatRegister($src$$reg),
+                         as_FloatRegister($ftmp$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct round_float_reg(iRegINoSp dst, vRegF src, vRegF ftmp, rFlagsReg cr)
+%{
+  match(Set dst (RoundF src));
+  effect(TEMP_DEF dst, TEMP ftmp, KILL cr);
+  format %{ "java_round_float $dst,$src"%}
+  ins_encode %{
+    __ java_round_float($dst$$Register, as_FloatRegister($src$$reg),
+                        as_FloatRegister($ftmp$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 // stack <-> reg and reg <-> reg shuffles with no conversion
 
 instruct MoveF2I_stack_reg(iRegINoSp dst, stackSlotF src) %{
@@ -15255,7 +15426,11 @@ instruct clearArray_imm_reg(immL cnt, iRegP_R10 base, iRegL_R11 temp, Universe d
   format %{ "ClearArray $cnt, $base" %}
 
   ins_encode %{
-    __ zero_words($base$$Register, (uint64_t)$cnt$$constant);
+    address tpc = __ zero_words($base$$Register, (uint64_t)$cnt$$constant);
+    if (tpc == NULL) {
+      ciEnv::current()->record_failure("CodeCache is full");
+      return;
+    }
   %}
 
   ins_pipe(pipe_class_memory);
@@ -15307,10 +15482,10 @@ instruct overflowAddL_reg_imm(rFlagsReg cr, iRegL op1, immLAddSub op2)
 %{
   match(Set cr (OverflowAddL op1 op2));
 
-  format %{ "cmn   $op1, $op2\t# overflow check long" %}
+  format %{ "adds  zr, $op1, $op2\t# overflow check long" %}
   ins_cost(INSN_COST);
   ins_encode %{
-    __ cmn($op1$$Register, $op2$$constant);
+    __ adds(zr, $op1$$Register, $op2$$constant);
   %}
 
   ins_pipe(icmp_reg_imm);
@@ -16592,21 +16767,6 @@ instruct CallLeafNoFPDirect(method meth)
   ins_pipe(pipe_class_call);
 %}
 
-instruct CallNativeDirect(method meth)
-%{
-  match(CallNative);
-
-  effect(USE meth);
-
-  ins_cost(CALL_COST);
-
-  format %{ "CALL, native $meth" %}
-
-  ins_encode( aarch64_enc_java_to_runtime(meth) );
-
-  ins_pipe(pipe_class_call);
-%}
-
 // Tail Call; Jump from runtime stub to Java code.
 // Also known as an 'interprocedural jump'.
 // Target of jump will eventually return to caller.
@@ -16739,7 +16899,7 @@ instruct partialSubtypeCheckVsZero(iRegP_R4 sub, iRegP_R0 super, iRegP_R2 temp, 
 instruct string_compareU(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 cnt2,
                         iRegI_R0 result, iRegP_R10 tmp1, iRegL_R11 tmp2, rFlagsReg cr)
 %{
-  predicate(((StrCompNode*)n)->encoding() == StrIntrinsicNode::UU);
+  predicate((UseSVE == 0) && (((StrCompNode*)n)->encoding() == StrIntrinsicNode::UU));
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(KILL tmp1, KILL tmp2, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
@@ -16749,7 +16909,7 @@ instruct string_compareU(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 c
     __ string_compare($str1$$Register, $str2$$Register,
                       $cnt1$$Register, $cnt2$$Register, $result$$Register,
                       $tmp1$$Register, $tmp2$$Register,
-                      fnoreg, fnoreg, fnoreg, StrIntrinsicNode::UU);
+                      fnoreg, fnoreg, fnoreg, pnoreg, pnoreg, StrIntrinsicNode::UU);
   %}
   ins_pipe(pipe_class_memory);
 %}
@@ -16757,7 +16917,7 @@ instruct string_compareU(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 c
 instruct string_compareL(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 cnt2,
                         iRegI_R0 result, iRegP_R10 tmp1, iRegL_R11 tmp2, rFlagsReg cr)
 %{
-  predicate(((StrCompNode*)n)->encoding() == StrIntrinsicNode::LL);
+  predicate((UseSVE == 0) && (((StrCompNode*)n)->encoding() == StrIntrinsicNode::LL));
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(KILL tmp1, KILL tmp2, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
@@ -16766,7 +16926,7 @@ instruct string_compareL(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 c
     __ string_compare($str1$$Register, $str2$$Register,
                       $cnt1$$Register, $cnt2$$Register, $result$$Register,
                       $tmp1$$Register, $tmp2$$Register,
-                      fnoreg, fnoreg, fnoreg, StrIntrinsicNode::LL);
+                      fnoreg, fnoreg, fnoreg, pnoreg, pnoreg, StrIntrinsicNode::LL);
   %}
   ins_pipe(pipe_class_memory);
 %}
@@ -16775,7 +16935,7 @@ instruct string_compareUL(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 
                         iRegI_R0 result, iRegP_R10 tmp1, iRegL_R11 tmp2,
                         vRegD_V0 vtmp1, vRegD_V1 vtmp2, vRegD_V2 vtmp3, rFlagsReg cr)
 %{
-  predicate(((StrCompNode*)n)->encoding() == StrIntrinsicNode::UL);
+  predicate((UseSVE == 0) && (((StrCompNode*)n)->encoding() == StrIntrinsicNode::UL));
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(KILL tmp1, KILL tmp2, KILL vtmp1, KILL vtmp2, KILL vtmp3,
          USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
@@ -16786,7 +16946,7 @@ instruct string_compareUL(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 
                       $cnt1$$Register, $cnt2$$Register, $result$$Register,
                       $tmp1$$Register, $tmp2$$Register,
                       $vtmp1$$FloatRegister, $vtmp2$$FloatRegister,
-                      $vtmp3$$FloatRegister, StrIntrinsicNode::UL);
+                      $vtmp3$$FloatRegister, pnoreg, pnoreg, StrIntrinsicNode::UL);
   %}
   ins_pipe(pipe_class_memory);
 %}
@@ -16795,7 +16955,7 @@ instruct string_compareLU(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 
                         iRegI_R0 result, iRegP_R10 tmp1, iRegL_R11 tmp2,
                         vRegD_V0 vtmp1, vRegD_V1 vtmp2, vRegD_V2 vtmp3, rFlagsReg cr)
 %{
-  predicate(((StrCompNode*)n)->encoding() == StrIntrinsicNode::LU);
+  predicate((UseSVE == 0) && (((StrCompNode*)n)->encoding() == StrIntrinsicNode::LU));
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(KILL tmp1, KILL tmp2, KILL vtmp1, KILL vtmp2, KILL vtmp3,
          USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
@@ -16806,7 +16966,7 @@ instruct string_compareLU(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 
                       $cnt1$$Register, $cnt2$$Register, $result$$Register,
                       $tmp1$$Register, $tmp2$$Register,
                       $vtmp1$$FloatRegister, $vtmp2$$FloatRegister,
-                      $vtmp3$$FloatRegister,StrIntrinsicNode::LU);
+                      $vtmp3$$FloatRegister, pnoreg, pnoreg, StrIntrinsicNode::LU);
   %}
   ins_pipe(pipe_class_memory);
 %}
@@ -17049,13 +17209,13 @@ instruct array_equalsC(iRegP_R1 ary1, iRegP_R2 ary2, iRegI_R0 result,
   ins_pipe(pipe_class_memory);
 %}
 
-instruct has_negatives(iRegP_R1 ary1, iRegI_R2 len, iRegI_R0 result, rFlagsReg cr)
+instruct count_positives(iRegP_R1 ary1, iRegI_R2 len, iRegI_R0 result, rFlagsReg cr)
 %{
-  match(Set result (HasNegatives ary1 len));
+  match(Set result (CountPositives ary1 len));
   effect(USE_KILL ary1, USE_KILL len, KILL cr);
-  format %{ "has negatives byte[] $ary1,$len -> $result" %}
+  format %{ "count positives byte[] $ary1,$len -> $result" %}
   ins_encode %{
-    address tpc = __ has_negatives($ary1$$Register, $len$$Register, $result$$Register);
+    address tpc = __ count_positives($ary1$$Register, $len$$Register, $result$$Register);
     if (tpc == NULL) {
       ciEnv::current()->record_failure("CodeCache is full");
       return;
@@ -17211,7 +17371,7 @@ instruct tlsLoadP(thread_RegP dst)
 //
 // // Change (inc mov) to lea
 // peephole %{
-//   // increment preceeded by register-register move
+//   // increment preceded by register-register move
 //   peepmatch ( incI_iReg movI );
 //   // require that the destination register of the increment
 //   // match the destination register of the move

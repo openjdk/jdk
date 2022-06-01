@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1079,11 +1079,11 @@ public class TestSnippetTag extends SnippetTester {
         checkExit(Exit.ERROR);
         checkOutput(Output.OUT, true,
                     """
-                    A.java:4: error: File not found: %s""".formatted(fileName));
+                    A.java:4: error: file not found on source path or snippet path: %s""".formatted(fileName));
         checkOutput("pkg/A.html", true, """
                         <details class="invalid-tag">
                         <summary>invalid @snippet</summary>
-                        <pre>File not found: text.txt</pre>
+                        <pre>file not found on source path or snippet path: text.txt</pre>
                         </details>
                         """);
         checkNoCrashes();
@@ -1140,7 +1140,7 @@ public class TestSnippetTag extends SnippetTester {
         checkExit(Exit.ERROR);
         checkOutput(Output.OUT, true,
                     """
-                    A.java:4: error: File not found: %s""".formatted(fileName));
+                    A.java:4: error: file not found on source path or snippet path: %s""".formatted(fileName));
         checkNoCrashes();
     }
 
@@ -1869,7 +1869,7 @@ public class TestSnippetTag extends SnippetTester {
         checkExit(Exit.ERROR);
         checkOutput(Output.OUT, true,
                     """
-                    A.java:4: error: File not found: %s""".formatted(fileName));
+                    A.java:4: error: file not found on source path or snippet path: %s""".formatted(fileName));
         checkNoCrashes();
     }
 

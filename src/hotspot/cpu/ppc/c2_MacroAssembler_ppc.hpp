@@ -63,6 +63,6 @@
   void string_indexof_char(Register result, Register haystack, Register haycnt,
                            Register needle, jchar needleChar, Register tmp1, Register tmp2, bool is_byte);
 
-  void has_negatives(Register src, Register cnt, Register result, Register tmp1, Register tmp2);
+  void count_positives(Register src, Register cnt, Register result, Register tmp1, Register tmp2);
 
 #endif // CPU_PPC_C2_MACROASSEMBLER_PPC_HPP

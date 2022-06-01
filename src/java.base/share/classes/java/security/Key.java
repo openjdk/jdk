@@ -63,7 +63,7 @@ package java.security;
  * </pre>
  *
  * For more information, see
- * <a href="http://tools.ietf.org/html/rfc5280">RFC 5280:
+ * <a href="https://tools.ietf.org/html/rfc5280">RFC 5280:
  * Internet X.509 Public Key Infrastructure Certificate and CRL Profile</a>.
  *
  * <LI>A Format
@@ -93,8 +93,6 @@ package java.security;
  * @see KeyFactory
  * @see KeyRep
  * @see java.security.spec.KeySpec
- * @see Identity
- * @see Signer
  *
  * @author Benjamin Renaud
  * @since 1.1

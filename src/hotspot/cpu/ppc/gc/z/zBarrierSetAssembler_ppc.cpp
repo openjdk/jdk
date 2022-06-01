@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -270,7 +270,7 @@ void ZBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, R
 
   assert_different_registers(jni_env, obj, tmp);
 
-  // Resolve the pointer using the standard implementation for weak tag handling and pointer verfication.
+  // Resolve the pointer using the standard implementation for weak tag handling and pointer verification.
   BarrierSetAssembler::try_resolve_jobject_in_native(masm, dst, jni_env, obj, tmp, slowpath);
 
   // Check whether pointer is dirty.
@@ -526,7 +526,7 @@ class ZSetupArguments {
         __ mr_if_needed(R3_ARG1, _ref);
       } else if (_ref_addr.base() != R3_ARG1) {
         __ mr(R3_ARG1, _ref);
-        __ add(R4_ARG2, (intptr_t) _ref_addr.disp(), _ref_addr.base()); // Cloberring _ref
+        __ add(R4_ARG2, (intptr_t) _ref_addr.disp(), _ref_addr.base()); // Clobbering _ref
       } else {
         // Arguments are provided in inverse order (i.e. _ref == R4_ARG2, _ref_addr == R3_ARG1)
         __ mr(R0, _ref);

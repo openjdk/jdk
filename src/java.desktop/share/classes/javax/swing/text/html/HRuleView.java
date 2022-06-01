@@ -245,7 +245,7 @@ class HRuleView extends View  {
      * @param pos the position to convert
      * @param a the allocated region to render into
      * @return the bounding box of the given position
-     * @exception BadLocationException  if the given position does not
+     * @throws BadLocationException  if the given position does not
      * represent a valid location in the associated document
      * @see View#modelToView
      */

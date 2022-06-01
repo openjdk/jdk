@@ -76,8 +76,8 @@ class aarch64 {
 
  public:
 
-  static address _has_negatives;
-  static address _has_negatives_long;
+  static address _count_positives;
+  static address _count_positives_long;
 
   static address get_previous_sp_entry()
   {
@@ -132,12 +132,12 @@ class aarch64 {
     return _zero_blocks;
   }
 
-  static address has_negatives() {
-    return _has_negatives;
+  static address count_positives() {
+    return _count_positives;
   }
 
-  static address has_negatives_long() {
-      return _has_negatives_long;
+  static address count_positives_long() {
+      return _count_positives_long;
   }
 
   static address large_array_equals() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,7 +26,7 @@
 #include "precompiled.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "runtime/os.hpp"
-#include "runtime/stubRoutines.hpp"
+#include "runtime/safefetch.hpp"
 #include "runtime/thread.hpp"
 #include "signals_posix.hpp"
 #include "utilities/debug.hpp"
@@ -59,7 +59,7 @@ void VMError::reporting_started() {
 void VMError::interrupt_reporting_thread() {
   // We misuse SIGILL here, but it does not really matter. We need
   //  a signal which is handled by crash_handler and not likely to
-  //  occurr during error reporting itself.
+  //  occur during error reporting itself.
   ::pthread_kill(reporter_thread_id, SIGILL);
 }
 
@@ -67,7 +67,6 @@ static void crash_handler(int sig, siginfo_t* info, void* ucVoid) {
 
   PosixSignals::unblock_error_signals();
 
-  // support safefetch faults in error handling
   ucontext_t* const uc = (ucontext_t*) ucVoid;
   address pc = (uc != NULL) ? os::Posix::ucontext_get_pc(uc) : NULL;
 
@@ -76,9 +75,8 @@ static void crash_handler(int sig, siginfo_t* info, void* ucVoid) {
     pc = (address) info->si_addr;
   }
 
-  // Needed to make it possible to call SafeFetch.. APIs in error handling.
-  if (uc && pc && StubRoutines::is_safefetch_fault(pc)) {
-    os::Posix::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));
+  // Handle safefetch here too, to be able to use SafeFetch() inside the error handler
+  if (handle_safefetch(sig, pc, uc)) {
     return;
   }
 

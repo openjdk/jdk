@@ -55,14 +55,14 @@ public class FileImageOutputStream extends ImageOutputStreamImpl {
      *
      * @param f a {@code File} to write to.
      *
-     * @exception IllegalArgumentException if {@code f} is
+     * @throws IllegalArgumentException if {@code f} is
      * {@code null}.
-     * @exception SecurityException if a security manager exists
+     * @throws SecurityException if a security manager exists
      * and does not allow write access to the file.
-     * @exception FileNotFoundException if {@code f} does not denote
+     * @throws FileNotFoundException if {@code f} does not denote
      * a regular file or it cannot be opened for reading and writing for any
      * other reason.
-     * @exception IOException if an I/O error occurs.
+     * @throws IOException if an I/O error occurs.
      */
     public FileImageOutputStream(File f)
         throws FileNotFoundException, IOException {
@@ -75,7 +75,7 @@ public class FileImageOutputStream extends ImageOutputStreamImpl {
      *
      * @param raf a {@code RandomAccessFile} to write to.
      *
-     * @exception IllegalArgumentException if {@code raf} is
+     * @throws IllegalArgumentException if {@code raf} is
      * {@code null}.
      */
     public FileImageOutputStream(RandomAccessFile raf) {
@@ -141,9 +141,9 @@ public class FileImageOutputStream extends ImageOutputStreamImpl {
      * performed.  The file length will not be increased until a write
      * is performed.
      *
-     * @exception IndexOutOfBoundsException if {@code pos} is smaller
+     * @throws IndexOutOfBoundsException if {@code pos} is smaller
      * than the flushed position.
-     * @exception IOException if any other I/O error occurs.
+     * @throws IOException if any other I/O error occurs.
      */
     public void seek(long pos) throws IOException {
         checkClosed();

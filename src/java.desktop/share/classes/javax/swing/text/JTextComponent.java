@@ -672,7 +672,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * component's {@code TransferHandler}.
      *
      * @param b whether or not to enable automatic drag handling
-     * @exception HeadlessException if
+     * @throws HeadlessException if
      *            <code>b</code> is <code>true</code> and
      *            <code>GraphicsEnvironment.isHeadless()</code>
      *            returns <code>true</code>
@@ -1358,7 +1358,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * @param offs the offset &ge; 0
      * @param len the length &ge; 0
      * @return the text
-     * @exception BadLocationException if the offset or length are invalid
+     * @throws BadLocationException if the offset or length are invalid
      */
     public String getText(int offs, int len) throws BadLocationException {
         return getDocument().getText(offs, len);
@@ -1376,7 +1376,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * @return the coordinates as a rectangle, with (r.x, r.y) as the location
      *   in the coordinate system, or null if the component does
      *   not yet have a positive size.
-     * @exception BadLocationException if the given position does not
+     * @throws BadLocationException if the given position does not
      *   represent a valid location in the associated document
      * @see TextUI#modelToView
      *
@@ -1400,7 +1400,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * @return the coordinates as a rectangle, with (r.x, r.y) as the location
      *   in the coordinate system, or null if the component does
      *   not yet have a positive size.
-     * @exception BadLocationException if the given position does not
+     * @throws BadLocationException if the given position does not
      *   represent a valid location in the associated document
      * @see TextUI#modelToView2D
      *
@@ -1545,7 +1545,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * an exception is thrown.
      *
      * @param pos the position
-     * @exception    IllegalArgumentException if the value supplied
+     * @throws    IllegalArgumentException if the value supplied
      *               for <code>position</code> is less than zero or greater
      *               than the component's text length
      * @see #setCaretPosition
@@ -1617,7 +1617,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      *   of documents (such as html for example) might be
      *   able to make use of this information; if non-<code>null</code>,
      *   it is added as a property of the document
-     * @exception IOException as thrown by the stream being
+     * @throws IOException as thrown by the stream being
      *  used to initialize
      * @see EditorKit#createDefaultDocument
      * @see #setDocument
@@ -1643,7 +1643,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * text.
      *
      * @param out the output stream
-     * @exception IOException on any I/O error
+     * @throws IOException on any I/O error
      */
     public void write(Writer out) throws IOException {
         Document doc = getDocument();
@@ -1672,7 +1672,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * an exception is thrown.
      *
      * @param position the position
-     * @exception    IllegalArgumentException if the value supplied
+     * @throws    IllegalArgumentException if the value supplied
      *               for <code>position</code> is less than zero or greater
      *               than the component's text length
      */
@@ -1743,7 +1743,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * use <code>DocumentListener</code>.
      *
      * @return the text
-     * @exception NullPointerException if the document is <code>null</code>
+     * @throws NullPointerException if the document is <code>null</code>
      * @see #setText
      */
     public String getText() {
@@ -1763,7 +1763,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * <code>null</code> or the document empty, returns <code>null</code>.
      *
      * @return the text
-     * @exception IllegalArgumentException if the selection doesn't
+     * @throws IllegalArgumentException if the selection doesn't
      *  have a valid mapping into the document for some reason
      * @see #setText
      */
@@ -2013,7 +2013,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * @param direction less than zero to scroll up/left, greater than
      *   zero for down/right
      * @return the "unit" increment for scrolling in the specified direction
-     * @exception IllegalArgumentException for an invalid orientation
+     * @throws IllegalArgumentException for an invalid orientation
      * @see JScrollBar#setUnitIncrement
      */
     public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) {
@@ -2043,7 +2043,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * @param direction less than zero to scroll up/left, greater than zero
      *  for down/right
      * @return the "block" increment for scrolling in the specified direction
-     * @exception IllegalArgumentException for an invalid orientation
+     * @throws IllegalArgumentException for an invalid orientation
      * @see JScrollBar#setBlockIncrement
      */
     public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ public class ZipEntry implements ZipConstants, Cloneable {
     long crc = -1;      // crc-32 of entry data
     long size = -1;     // uncompressed size of entry data
     long csize = -1;    // compressed size of entry data
-    boolean csizeSet = false; // Only true if csize was explicitely set by
+    boolean csizeSet = false; // Only true if csize was explicitly set by
                         // a call to setCompressedSize()
     int method = -1;    // compression method
     int flag = 0;       // general purpose flag
@@ -562,7 +562,7 @@ public class ZipEntry implements ZipConstants, Cloneable {
                             // and compressed file size fields.
                             // If invalid zip64 extra fields, simply skip. Even
                             // it's rare, it's possible the entry size happens to
-                            // be the magic value and it "accidently" has some
+                            // be the magic value and it "accidentally" has some
                             // bytes in extra match the id.
                             if (sz >= 16) {
                                 size = get64(extra, off);

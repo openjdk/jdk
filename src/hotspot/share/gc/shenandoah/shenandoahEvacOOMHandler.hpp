@@ -37,7 +37,7 @@
  * load-reference-barrier (i.e. it cannot copy the object to to-space), it does not
  * necessarily follow we can return immediately from the LRB (and store to from-space).
  *
- * In very basic case, on such failure we may wait until the the evacuation is over,
+ * In very basic case, on such failure we may wait until the evacuation is over,
  * and then resolve the forwarded copy, and to the store there. This is possible
  * because other threads might still have space in their GCLABs, and successfully
  * evacuate the object.
