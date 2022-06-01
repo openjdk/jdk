@@ -200,8 +200,7 @@ class LambdaForm {
             };
         }
         static BasicType basicType(Class<?> type) {
-            if (!type.isPrimitive())  return L_TYPE;
-            return basicType(Wrapper.forPrimitiveType(type).basicTypeChar());
+            return basicType(Wrapper.basicTypeChar(type));
         }
         static int[] basicTypeOrds(BasicType[] types) {
             if (types == null) {
