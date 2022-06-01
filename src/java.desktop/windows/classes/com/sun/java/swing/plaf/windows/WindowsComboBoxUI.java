@@ -365,9 +365,9 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
 
             if (((JComboBox)c).getBorder() instanceof EmptyBorder) {
                 if (arrowButton != null) {
-                    Insets margin = arrowButton.getMargin();
-                    d.height += margin.top + margin.bottom;
-                    d.width += margin.left + margin.right;
+                    Insets buttonInsets = arrowButton.getInsets();;
+                    d.height += buttonInsets.top + buttonInsets.bottom;;
+                    d.width += buttonInsets.getMinimumSize().width;
                 } else {
                     d.height += isEditable ? 2 : 4;
                 }
@@ -375,8 +375,14 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
                 d.height += isEditable ? 4 : 6;
             }
         } else {
-            d.width += 4;
-            d.height += 2;
+            if (arrowButton != null) {
+                Insets margin = arrowButton.getMargin();
+                d.height += margin.top + margin.bottom;
+                d.width += margin.left + margin.right;
+            } else {
+                d.width += 4;
+                d.height += 2;
+            }
         }
         return d;
     }
