@@ -173,7 +173,7 @@ public:
         assert(m != NULL);
     }
 
-    // call an method returning an object checking for exceptions and
+    // call a method returning an object checking for exceptions and
     // the the return value is not null.
     jobject callReturnNotNull(jobject arg) {
         jobject robj = env->CallStaticObjectMethod(c, m, arg);
