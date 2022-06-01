@@ -1444,7 +1444,7 @@ Node *SafePointNode::peek_monitor_obj() const {
   return monitor_obj(jvms(), mon);
 }
 
-Node *SafePointNode::peek_operand(uint off) const {
+Node* SafePointNode::peek_operand(uint off) const {
   assert(jvms()->sp() > 0, "must have an operand");
   assert(off < jvms()->sp(), "off is out-of-range");
   return stack(jvms(), jvms()->sp() - off - 1);

@@ -603,13 +603,12 @@ class Parse : public GraphKit {
 #endif
 };
 
-// Specialized uncommon_trap of unstable_if
-// We have 2 optimizations for them:
-//   1. remove trivial UnstableIf traps, which do not prune any basic block
+// Specialized uncommon_trap of unstable_if, we have 2 optimizations for them:
+//   1. suppress trivial Unstable_If traps
 //   2. use next_bci of _path to update live locals.
 class UnstableIfTrap {
   CallStaticJavaNode* _unc;
-  Parse::Block* _path;  // the pruned path, which is only invalid in parse time.
+  Parse::Block* _path;  // the pruned path
   int _next_bci;        // speculative bci which takes _path.
 
 public:
@@ -625,7 +624,7 @@ public:
   int next_bci() const { return _next_bci; }
 
   void set_bci(int bci) {
-    assert(bci == -1 || _next_bci == -1, "attempt to overwrite unc_bci");
+    assert(bci == -1 || _next_bci == -1, "attempt to overwrite next_bci");
     _next_bci = bci;
   }
 

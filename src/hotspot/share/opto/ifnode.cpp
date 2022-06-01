@@ -792,9 +792,9 @@ bool IfNode::is_dominator_unc(CallStaticJavaNode* dom_unc, CallStaticJavaNode* u
 }
 
 // Return projection that leads to an uncommon trap if any
-ProjNode* IfNode::uncommon_trap_proj(CallStaticJavaNode*& call, Deoptimization::DeoptReason reason) const {
+ProjNode* IfNode::uncommon_trap_proj(CallStaticJavaNode*& call) const {
   for (int i = 0; i < 2; i++) {
-    call = proj_out(i)->is_uncommon_trap_proj(reason);
+    call = proj_out(i)->is_uncommon_trap_proj(Deoptimization::Reason_none);
     if (call != NULL) {
       return proj_out(i);
     }
@@ -1088,9 +1088,6 @@ Node* IfNode::merge_uncommon_traps(ProjNode* proj, ProjNode* success, ProjNode* 
     // execution at the first one
     igvn->replace_input_of(dom_unc, 0, r);
     igvn->replace_input_of(unc, 0, igvn->C->top());
-
-    //// suppress unstable_if optimization for the dominating if.
-    //proj->in(0)->as_If()->set_unc_bci(-1);
   }
   int trap_request = dom_unc->uncommon_trap_request();
   Deoptimization::DeoptReason reason = Deoptimization::trap_request_reason(trap_request);
@@ -1298,8 +1295,6 @@ void IfNode::reroute_side_effect_free_unc(ProjNode* proj, ProjNode* dom_proj, Ph
 
   igvn->replace_node(otherproj, igvn->C->top());
   igvn->C->root()->add_req(halt);
-  //// suppress unstable_if optimization for the dominating if.
-  //c->in(0)->as_If()->set_unc_bci(-1);
 }
 
 Node* IfNode::fold_compares(PhaseIterGVN* igvn) {

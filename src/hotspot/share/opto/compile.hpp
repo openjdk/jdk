@@ -96,7 +96,6 @@ class nmethod;
 class Node_Stack;
 struct Final_Reshape_Counts;
 
-
 enum LoopOptsMode {
   LoopOptsDefault,
   LoopOptsNone,
@@ -551,10 +550,6 @@ class Compile : public Phase {
   bool              eliminate_boxing() const    { return _options._eliminate_boxing; }
   /** Do aggressive boxing elimination. */
   bool              aggressive_unboxing() const { return _options._eliminate_boxing && AggressiveUnboxing; }
-  /** Adjust liveness for unstable ifs. */
-  bool              aggressive_unstable_if() const {
-    return AggressiveLivenessForUnstableIf && !env()->should_retain_local_variables();
-  }
   bool              should_install_code() const { return _options._install_code; }
   /** Do locks coarsening. */
   bool              do_locks_coarsening() const { return _options._do_locks_coarsening; }

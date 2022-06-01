@@ -1855,8 +1855,6 @@ void Compile::process_for_post_loop_opts_igvn(PhaseIterGVN& igvn) {
   }
 }
 
-// only record well-formed if nodes.
-// we only process a node once,so it is fine with duplication.
 void Compile::record_unstable_if(UnstableIfTrap* trap) {
   if (AggressiveLivenessForUnstableIf) {
     _unstable_ifs.append(trap);
@@ -1888,8 +1886,7 @@ void Compile::preprocess_unstable_ifs() {
 }
 
 // Re-calculate unstable_if traps with the liveness of next_bci, which points to the unlikely path.
-// It needs to be done after igvn because fold-compares may fuse uncommon_traps and
-// before renumbering.
+// It needs to be done after igvn because fold-compares may fuse uncommon_traps and before renumbering.
 void Compile::process_for_unstable_ifs(PhaseIterGVN& igvn) {
   if (!AggressiveLivenessForUnstableIf)
     return;
