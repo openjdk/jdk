@@ -26,7 +26,6 @@
 package sun.util.locale.provider;
 
 import java.security.AccessController;
-import java.security.AccessControlException;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
@@ -435,7 +434,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
      */
     @Override
     public Locale[] getAvailableLocales() {
-        return AvailableJRELocales.localeList.clone();
+        return AvailableJRELocales.localeList;
     }
 
     public Set<String> getLanguageTagSet(String category) {
