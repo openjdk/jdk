@@ -26,7 +26,7 @@
 /* Test for JDK-8280902
  * ResourceBundle::getBundle may throw NPE when invoked by JNI code with no caller frame
  */
-void JDK_8280902(JNIEnv* env) {
+void getBundle(JNIEnv* env) {
     StaticCall m_ResourceBundle_getBundle { env,
         "java/util/ResourceBundle", "getBundle",
         "(Ljava/lang/String;)Ljava/util/ResourceBundle;" };
@@ -46,7 +46,7 @@ void JDK_8280902(JNIEnv* env) {
     jstring msg = (jstring) m_ResourceBundle_getString.callReturnNotNull(b, env->NewStringUTF("message"));
 
     // check the message
-    if (std::string("Hello!") != env->GetStringUTFChars(msg,NULL)) {
+    if (std::string("Hello!") != env->GetStringUTFChars(msg, NULL)) {
         emitErrorMessageAndExit("Bundle didn't contain expected content");
     }
 
@@ -61,7 +61,7 @@ void JDK_8280902(JNIEnv* env) {
  *
  * The call should throw ICE
  */
-void JDK_8281000(JNIEnv* env) {
+void registerAsParallelCapable(JNIEnv* env) {
     StaticCall m_ClassLoader_registerAsParallelCapable { env,
         "java/lang/ClassLoader", "registerAsParallelCapable", "()Z" };
 
@@ -77,7 +77,7 @@ void JDK_8281000(JNIEnv* env) {
  * found with the system classloader (to match FindClass() used above).
  * Class exp = Class.forName("open.OpenResources");
  */
-void JDK_8281001(JNIEnv* env) {
+void forName(JNIEnv* env) {
 /* coming soon
     StaticCall m_Class_forName { env,
         "java/lang/Class", "forName", "(Ljava/lang/String;)Ljava/lang/Class;" };
@@ -91,7 +91,7 @@ void JDK_8281001(JNIEnv* env) {
  *
  * The call should throw ICE
  */
-void JDK_8281003(JNIEnv* env) {
+void lookup(JNIEnv* env) {
     StaticCall m_MethodHandles_lookup { env,
         "java/lang/invoke/MethodHandles", "lookup", "()Ljava/lang/invoke/MethodHandles$Lookup;" };
 
@@ -110,7 +110,7 @@ void JDK_8281003(JNIEnv* env) {
  * open.OpenResources.  One should be able to get the resource through
  * either the Class or the Module with getResourceAsStream.
  */
-void JDK_8281006(JNIEnv *env) {
+void getResourceAsStream(JNIEnv *env) {
     InstanceCall m_InputStream_close { env,
         "java/io/InputStream", "close", "()V" };
     InstanceCall m_Class_getModule {env,
@@ -170,11 +170,11 @@ int main(int argc, char** args) {
         emitErrorMessageAndExit("Cannot create VM.");
     }
 
-    JDK_8280902(env);
-    JDK_8281000(env);
-    JDK_8281001(env);
-    JDK_8281003(env);
-    JDK_8281006(env);
+    getBundle(env);
+    registerAsParallelCapable(env);
+    forName(env);
+    lookup(env);
+    getResourceAsStream(env);
 
     jvm->DestroyJavaVM();
     return 0;

@@ -314,7 +314,8 @@ jdk_other = \
     jdk/dynalink \
     jdk/internal/jline \
     com/sun/jndi \
-    lib/testlibrary
+    lib/testlibrary \
+    jni/nullCaller
 
 #
 # SCTP is its own group as it is highly sensitive to kernel/network config
