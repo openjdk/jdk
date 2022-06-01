@@ -45,12 +45,12 @@ package java.math;
  * {@linkplain MathContext#getPrecision() precision} being used in the
  * computation. Assuming the mathematical result is within the
  * exponent range of {@code BigDecimal}, the mathematical result will
- * be exactly representable in the result precision or fall between
- * two representable values. In the case of falling between two
+ * be exactly representable in the result precision or will fall between
+ * two adjacent representable values. In the case of falling between two
  * representable values, the rounding policy determines which of those
  * two bracketing values is the result. For in-range real numbers, for
  * a given set of representable values, a rounding policy maps a
- * continuous segment of real number line to a singe representable
+ * continuous segment of real number line to a single representable
  * value where the real number numerically equal to a representable
  * value is mapped to that value.
  *
@@ -105,7 +105,7 @@ package java.math;
  * @apiNote
  * Five of the rounding modes declared in this class correspond to
  * rounding-direction attributes defined in the <cite>IEEE Standard
- * for Floating-Point Arithmetic</cite>, IEEE 754-2019. Where present,
+ * for Floating-Point Arithmetic</cite>. Where present,
  * this correspondence will be noted in the documentation of the
  * particular constant.
  *
@@ -160,9 +160,9 @@ public enum RoundingMode {
          * @apiNote
          * This rounding mode is analogous to the rounding policy used
          * for the {@code float} and {@code double} operators
-         * conversion to an integer value and remainder (JLS {@jls
+         * remainder and conversion to an integer value (JLS {@jls
          * 15.4}).
-         * This mode corresponds to the IEEE 754-2019 rounding-direction
+         * This mode corresponds to the IEEE 754 rounding-direction
          * attribute roundTowardZero.
          *
          *<p>Example:
@@ -193,7 +193,7 @@ public enum RoundingMode {
          * result is positive, behaves as for {@code RoundingMode.UP};
          * if negative, behaves as for {@code RoundingMode.DOWN}.  Note
          * that this rounding mode never decreases the calculated value.
-         * This mode corresponds to the IEEE 754-2019 rounding-direction
+         * This mode corresponds to the IEEE 754 rounding-direction
          * attribute roundTowardPositive.
          *
          *<p>Example:
@@ -224,7 +224,7 @@ public enum RoundingMode {
          * result is positive, behave as for {@code RoundingMode.DOWN};
          * if negative, behave as for {@code RoundingMode.UP}.  Note that
          * this rounding mode never increases the calculated value.
-         * This mode corresponds to the IEEE 754-2019 rounding-direction
+         * This mode corresponds to the IEEE 754 rounding-direction
          * attribute roundTowardNegative.
          *
          *<p>Example:
@@ -257,7 +257,7 @@ public enum RoundingMode {
          * fraction is &ge; 0.5; otherwise, behaves as for
          * {@code RoundingMode.DOWN}.  Note that this is the rounding
          * mode commonly taught at school.
-         * This mode corresponds to the IEEE 754-2019 rounding-direction
+         * This mode corresponds to the IEEE 754 rounding-direction
          * attribute roundTiesToAway.
          *
          *<p>Example:
@@ -321,14 +321,14 @@ public enum RoundingMode {
          * discarded fraction is odd; behaves as for
          * {@code RoundingMode.HALF_DOWN} if it's even.
          * @apiNote
-         * Note that this
+         * This
          * is the rounding mode that statistically minimizes cumulative
          * error when applied repeatedly over a sequence of calculations.
          * It is sometimes known as {@literal "Banker's rounding,"} and is
          * chiefly used in the USA.  This rounding mode is analogous to
          * the rounding policy used for most {@code float} and {@code double}
          * arithmetic operators in Java (JLS {@jls 15.4}).
-         * This mode corresponds to the IEEE 754-2019 rounding-direction
+         * This mode corresponds to the IEEE 754 rounding-direction
          * attribute roundTiesToEven.
          *
          *<p>Example:

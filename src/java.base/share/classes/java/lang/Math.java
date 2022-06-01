@@ -766,8 +766,8 @@ public final class Math {
      * equal to the value of {@code Integer.MAX_VALUE}.</ul>
      *
      * @apiNote
-     * This method corresponds to the convertToIntegerTiesToEven
-     * operation defined in IEEE 754.
+     * This method corresponds to the convertTowardPositive operation
+     * defined in IEEE 754.
      *
      * @param   a   a floating-point value to be rounded to an integer.
      * @return  the value of the argument rounded to the nearest
@@ -819,8 +819,8 @@ public final class Math {
      * equal to the value of {@code Long.MAX_VALUE}.</ul>
      *
      * @apiNote
-     * This method corresponds to the convertToIntegerTiesToEven
-     * operation defined in IEEE 754.
+     * This method corresponds to the convertTowardPositive operation
+     * defined in IEEE 754.
      *
      * @param   a   a floating-point value to be rounded to a
      *          {@code long}.
@@ -2786,8 +2786,12 @@ public final class Math {
      * <li>If the argument is NaN or infinite, then the result is
      * {@link Float#MAX_EXPONENT} + 1.
      * <li>If the argument is zero or subnormal, then the result is
-     * {@link Float#MIN_EXPONENT} -1.
+     * {@link Float#MIN_EXPONENT} - 1.
      * </ul>
+     * @apiNote
+     * This method is analogous to the logB operation defined in IEEE
+     * 754, but returns a different value on subnormal arguments.
+     *
      * @param f a {@code float} value
      * @return the unbiased exponent of the argument
      * @since 1.6
@@ -2810,8 +2814,12 @@ public final class Math {
      * <li>If the argument is NaN or infinite, then the result is
      * {@link Double#MAX_EXPONENT} + 1.
      * <li>If the argument is zero or subnormal, then the result is
-     * {@link Double#MIN_EXPONENT} -1.
+     * {@link Double#MIN_EXPONENT} - 1.
      * </ul>
+     * @apiNote
+     * This method is analogous to the logB operation defined in IEEE
+     * 754, but returns a different value on subnormal arguments.
+     *
      * @param d a {@code double} value
      * @return the unbiased exponent of the argument
      * @since 1.6

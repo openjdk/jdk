@@ -492,6 +492,10 @@ public final class Float extends Number
      * Returns {@code true} if the specified number is a
      * Not-a-Number (NaN) value, {@code false} otherwise.
      *
+     * @apiNote
+     * This method corresponds to the isNaN operation defined in IEEE
+     * 754.
+     *
      * @param   v   the value to be tested.
      * @return  {@code true} if the argument is NaN;
      *          {@code false} otherwise.
@@ -503,6 +507,10 @@ public final class Float extends Number
     /**
      * Returns {@code true} if the specified number is infinitely
      * large in magnitude, {@code false} otherwise.
+     *
+     * @apiNote
+     * This method corresponds to the isInfinite operation defined in
+     * IEEE 754.
      *
      * @param   v   the value to be tested.
      * @return  {@code true} if the argument is positive infinity or
@@ -517,6 +525,10 @@ public final class Float extends Number
      * Returns {@code true} if the argument is a finite floating-point
      * value; returns {@code false} otherwise (for NaN and infinity
      * arguments).
+     *
+     * @apiNote
+     * This method corresponds to the isFinite operation defined in
+     * IEEE 754.
      *
      * @param f the {@code float} value to be tested
      * @return {@code true} if the argument is a finite
@@ -993,6 +1005,10 @@ public final class Float extends Number
      * Returns the greater of two {@code float} values
      * as if by calling {@link Math#max(float, float) Math.max}.
      *
+     * @apiNote
+     * This method corresponds to the maximum operation defined in
+     * IEEE 754.
+     *
      * @param a the first operand
      * @param b the second operand
      * @return the greater of {@code a} and {@code b}
@@ -1006,6 +1022,10 @@ public final class Float extends Number
     /**
      * Returns the smaller of two {@code float} values
      * as if by calling {@link Math#min(float, float) Math.min}.
+     *
+     * @apiNote
+     * This method corresponds to the minimum operation defined in
+     * IEEE 754.
      *
      * @param a the first operand
      * @param b the second operand
