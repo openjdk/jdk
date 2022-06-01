@@ -388,12 +388,12 @@ public class HashSet<E>
      * without resizing the set.
      *
      * @param numElements    the expected number of elements
-     * @param <E>         the type of elements maintained by this set
+     * @param <T>         the type of elements maintained by the new set
      * @return the newly created set
      * @throws IllegalArgumentException if numElements is negative
      * @since 19
      */
-    public static <E> HashSet<E> newHashSet(int numElements) {
+    public static <T> HashSet<T> newHashSet(int numElements) {
         return new HashSet<>(HashMap.calculateHashMapCapacity(numElements));
     }
 

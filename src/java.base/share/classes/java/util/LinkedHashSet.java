@@ -209,12 +209,12 @@ public class LinkedHashSet<E>
      * without resizing the set.
      *
      * @param numElements    the expected number of elements
-     * @param <E>         the type of elements maintained by this set
+     * @param <T>         the type of elements maintained by the new set
      * @return the newly created set
      * @throws IllegalArgumentException if numElements is negative
      * @since 19
      */
-    public static <E> LinkedHashSet<E> newLinkedHashSet(int numElements) {
+    public static <T> LinkedHashSet<T> newLinkedHashSet(int numElements) {
         return new LinkedHashSet<>(HashMap.calculateHashMapCapacity(numElements));
     }
 
