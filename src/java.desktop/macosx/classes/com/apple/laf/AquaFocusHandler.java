@@ -88,7 +88,7 @@ public class AquaFocusHandler implements FocusListener, PropertyChangeListener {
 
             // this call added to change focus ring color (for
             // table and list) according to accent color changes.
-            changeFocusRingColor();
+            reloadFocusRingColor();
             repaintBorder = true;
         } else if (wasTemporary) {
             // The FRAME_ACTIVE_PROPERTY change event is sent after a component
@@ -194,14 +194,16 @@ public class AquaFocusHandler implements FocusListener, PropertyChangeListener {
 
     // focus ring changes for tables and list for
     // on-the-fly accent color changes
-    private static void changeFocusRingColor() {
+    private static void reloadFocusRingColor() {
         Color focusRingColor = UIManager.getColor("CellFocus.color");
 
         if (focusRingColor != null) {
             Color prominentFocusRing = AquaLookAndFeel.deriveProminentFocusRing(
                     focusRingColor);
             BorderUIResource.LineBorderUIResource focusCellHighlightBorder =
-                    new BorderUIResource.LineBorderUIResource(prominentFocusRing, 2);
+                    new BorderUIResource.LineBorderUIResource(
+                            prominentFocusRing, 2);
+
             UIManager.getDefaults().put("Table.focusCellHighlightBorder",
                     focusCellHighlightBorder);
             UIManager.getDefaults().put("List.focusCellHighlightBorder",
