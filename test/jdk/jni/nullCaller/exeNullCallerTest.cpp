@@ -25,6 +25,14 @@
 
 /*
  * Test for JDK-8280902
+ *
+ * A call to ResourceBundle::getBundle() should not throw NPE when
+ * called with a null caller.  This test fetches a simple bundle in
+ * the test module and makes sure it can read the expected value of
+ * 'Hello!' using the key 'message'.
+ *
+ * This also tests that ResourceBundle::clearCache() doesn't throw an
+ * NPE when called with a null caller.
  */
 void getBundle(JNIEnv* env) {
     StaticCall m_ResourceBundle_getBundle { env,
@@ -37,32 +45,32 @@ void getBundle(JNIEnv* env) {
         "java/util/ResourceBundle", "clearCache", "()V"
     };
 
-    // The following should not throw
-    // b = ResourceBundle.getBundle("NullCallerResource");
+    // b = ResourceBundle.getBundle("open/NullCallerResource");
     jobject b = m_ResourceBundle_getBundle.callReturnNotNull(
         env->NewStringUTF("open/NullCallerResource"));
 
     // msg = b.getString("message");
     jstring msg = (jstring) m_ResourceBundle_getString.callReturnNotNull(b, env->NewStringUTF("message"));
 
-    // check the message
     if (std::string("Hello!") != env->GetStringUTFChars(msg, NULL)) {
         emitErrorMessageAndExit("Bundle didn't contain expected content");
     }
 
-    // The following should not throw
     // ResourceBundle.clearCache()
     m_ResourceBundle_clearCache.callVoidMethod();
 }
 
 /*
  * Test for JDK-8281000
+ *
+ * This test checks to make sure that calling ClassLoader::registerAsParallelCapable()
+ * with a null caller results in an ICE being thrown.
  */
 void registerAsParallelCapable(JNIEnv* env) {
     StaticCall m_ClassLoader_registerAsParallelCapable { env,
         "java/lang/ClassLoader", "registerAsParallelCapable", "()Z" };
 
-    // The call should throw ICE
+    // ClassLoader.registerAsParallelCapable();
     m_ClassLoader_registerAsParallelCapable.
         callBooleanMethodWithException("java/lang/IllegalCallerException");
 }
@@ -85,12 +93,14 @@ void forName(JNIEnv* env) {
 
 /*
  * Test for JDK-8281003
+ *
+ * The call to MethodHandles::lookup should throw ICE when called with
+ * a null caller.
  */
 void lookup(JNIEnv* env) {
     StaticCall m_MethodHandles_lookup { env,
         "java/lang/invoke/MethodHandles", "lookup", "()Ljava/lang/invoke/MethodHandles$Lookup;" };
 
-    // The call should throw ICE
     m_MethodHandles_lookup.
         callObjectMethodWithException("java/lang/IllegalCallerException");
 }
