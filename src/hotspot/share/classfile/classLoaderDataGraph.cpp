@@ -319,13 +319,11 @@ class ClassLoaderDataGraphIteratorBase : public StackObj {
   ClassLoaderData* _next;
   Thread*          _thread;
   HandleMark       _hm;  // clean up handles when this is done.
-  Handle           _holder;
   NoSafepointVerifier _nsv; // No safepoints allowed in this scope
                             // unless verifying at a safepoint.
 
 public:
   ClassLoaderDataGraphIteratorBase() : _next(ClassLoaderDataGraph::_head), _thread(Thread::current()), _hm(_thread) {
-    _thread = Thread::current();
     if (keep_alive) {
       assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
     } else {
@@ -341,7 +339,9 @@ public:
     }
     if (cld != NULL) {
       // Keep cld that is being returned alive.
-      _holder = Handle(_thread, keep_alive ? cld->holder() : cld->holder_no_keepalive());
+      if (keep_alive) {
+        Handle(_thread, cld->holder());
+      }
       _next = cld->next();
     } else {
       _next = NULL;
