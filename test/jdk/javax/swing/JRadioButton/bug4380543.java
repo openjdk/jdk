@@ -62,7 +62,7 @@ public class bug4380543 {
             "else press Pass.";
     static PassFailJFrame passFailJFrame;
 
-    public static void main(String args[]) throws Exception {
+    public static void main(String[] args) throws Exception {
 
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
@@ -82,33 +82,30 @@ public class bug4380543 {
 }
 
 class testFrame extends JFrame implements ActionListener {
-    JPanel buttonsPanel;
-
-    Map<String, String> lookAndFeelMaps = new HashMap<String, String>();
-    public testFrame() throws InterruptedException {
+    final Map<String, String> lookAndFeelMap = new HashMap<>();
+    public testFrame() {
         initMap();
         initComponents();
     }
 
-    public void initMap()
-    {
-        String sLnF;
-        String sMapKey;
+    public void initMap() {
+        String sLnFClassName;
+        String sLnFName;
         UIManager.LookAndFeelInfo[] lookAndFeel = UIManager.getInstalledLookAndFeels();
         for (UIManager.LookAndFeelInfo look : lookAndFeel) {
 
-            sLnF = look.getClassName();
-            sMapKey = sLnF.substring(sLnF.lastIndexOf(".")+1);
-            sMapKey = sMapKey.replaceAll("LookAndFeel","");
-            sMapKey = sMapKey.trim();
+            sLnFClassName = look.getClassName();
+            sLnFName = sLnFClassName.substring(sLnFClassName.lastIndexOf(".")+1);
+            sLnFName = sLnFName.replaceAll("LookAndFeel","");
+            sLnFName = sLnFName.trim();
 
-            lookAndFeelMaps.put(sMapKey, sLnF);
+            lookAndFeelMap.put(sLnFName, sLnFClassName);
         }
     }
 
-    public void initComponents() throws InterruptedException {
+    public void initComponents() {
         JPanel p = new JPanel();
-        buttonsPanel = new JPanel();
+        JPanel buttonsPanel = new JPanel();
         buttonsPanel.setLayout(new BoxLayout(buttonsPanel, BoxLayout.Y_AXIS));
 
         JRadioButton rb  = new JRadioButton("JRadioButton");
@@ -125,8 +122,8 @@ class testFrame extends JFrame implements ActionListener {
 
         getContentPane().add(buttonsPanel);
 
-        for (Map.Entry mapElement : lookAndFeelMaps.entrySet()) {
-            String btnName = mapElement.getKey().toString();
+        for (Map.Entry<String, String> mapElement : lookAndFeelMap.entrySet()) {
+            String btnName = mapElement.getKey();
             JButton btn = new JButton(btnName);
             btn.setActionCommand(btnName);
             btn.addActionListener(this);
@@ -151,10 +148,7 @@ class testFrame extends JFrame implements ActionListener {
     }
     //Changing the Look and Feel on user selection
     public void actionPerformed(ActionEvent e) {
-        String key = e.getActionCommand();
-        String val = lookAndFeelMaps.get(key);
-
-        setLookAndFeel(val);
+        setLookAndFeel(lookAndFeelMap.get(e.getActionCommand()));
         SwingUtilities.updateComponentTreeUI(this);
     }
 }
