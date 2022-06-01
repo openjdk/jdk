@@ -95,6 +95,19 @@ class BitMapTest {
     EXPECT_TRUE(map.is_same(map2)) << "With init_size " << init_size;
   }
 
+#ifndef PRODUCT
+
+  static void testPrintOn(BitMap::idx_t size) {
+    ResourceMark rm;
+
+    ResourceBitMap map(size);
+    if (size > 0) {
+      map.set_bit(size / 2);
+    }
+    map.print_on(tty);
+  }
+
+#endif
 };
 
 TEST_VM(BitMap, resize_grow) {
@@ -148,3 +161,13 @@ TEST_VM(BitMap, reinitialize) {
   BitMapTest::testReinitialize(BitMapTest::BITMAP_SIZE >> 3);
   BitMapTest::testReinitialize(BitMapTest::BITMAP_SIZE);
 }
+
+#ifndef PRODUCT
+
+TEST_VM(BitMap, print_on) {
+  BitMapTest::testPrintOn(0);
+  BitMapTest::testPrintOn(BitMapTest::BITMAP_SIZE >> 3);
+  BitMapTest::testPrintOn(BitMapTest::BITMAP_SIZE);
+}
+
+#endif
