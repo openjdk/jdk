@@ -339,7 +339,7 @@ class StaticCallInfo {
 class CompiledStaticCall : public ResourceObj {
  public:
   // Code
-  static address emit_to_interp_stub(C2_MacroAssembler &masm, address mark = NULL);
+  static address emit_to_interp_stub(MacroAssembler &masm, address mark = NULL);
   static int to_interp_stub_size();
   static int to_trampoline_stub_size();
   static int reloc_to_interp_stub();

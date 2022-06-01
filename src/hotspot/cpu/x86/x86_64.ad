@@ -2132,14 +2132,14 @@ encode %{
     // JAVA STATIC CALL
     // CALL to fixup routine.  Fixup routine uses ScopeDesc info to
     // determine who we intended to call.
-    masm.set_inst_mark();
+    __ set_inst_mark();
     $$$emit8$primary;
 
     if (!_method) {
       emit_d32_reloc(masm, (int) ($meth$$method - ((intptr_t) masm.pc()) - 4),
                      runtime_call_Relocation::spec(),
                      RELOC_DISP32);
-      masm.clear_inst_mark();
+      __ clear_inst_mark();
     } else {
       int method_index = resolved_method_index(masm);
       RelocationHolder rspec = _optimized_virtual ? opt_virtual_call_Relocation::spec(method_index)
@@ -2149,18 +2149,18 @@ encode %{
       // Emit stubs for static call.
       address mark = masm.inst_mark();
       address stub = CompiledStaticCall::emit_to_interp_stub(masm, mark);
-      masm.clear_inst_mark();
+      __ clear_inst_mark();
       if (stub == NULL) {
         ciEnv::current()->record_failure("CodeCache is full");
         return;
       }
     }
-    _masm.clear_inst_mark();
+    __ clear_inst_mark();
     __ post_call_nop();
   %}
 
   enc_class Java_Dynamic_Call(method meth) %{
-    __ ic_call((address)$meth$$method, resolved_method_index(cbuf));
+    __ ic_call((address)$meth$$method, resolved_method_index(masm));
     __ post_call_nop();
   %}
 

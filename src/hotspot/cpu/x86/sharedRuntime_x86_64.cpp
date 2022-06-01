@@ -1350,8 +1350,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
   __ verify_oop(rax);
   __ jmp(rbx);
 
-  CodeBuffer* cbuf = masm->code_section()->outer();
-  address stub = CompiledStaticCall::emit_to_interp_stub(*cbuf, mark);
+  address stub = CompiledStaticCall::emit_to_interp_stub(*masm, mark);
 }
 
 static void gen_special_dispatch(MacroAssembler* masm,
