@@ -155,8 +155,7 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
             Thread c = Thread.currentThread();
             Thread t = requests.putIfAbsent(key, c);
             if (t == null || t == c) {
-                assert cached == null;
-                return cached;
+                return null;
             }
             // Otherwise, an other thread is currently performing authentication:
             // wait until it finishes.
