@@ -162,11 +162,22 @@ int VectorNode::opcode(int sopc, BasicType bt) {
   case Op_RoundD:
     return (bt == T_LONG ? Op_RoundVD : 0);
   case Op_PopCountI:
-    // Unimplemented for subword types since bit count changes
-    // depending on size of lane (and sign bit).
-    return (bt == T_INT ? Op_PopCountVI : 0);
+    return Op_PopCountVI;
   case Op_PopCountL:
     return Op_PopCountVL;
+  case Op_ReverseI:
+  case Op_ReverseL:
+    return (is_integral_type(bt) ? Op_ReverseV : 0);
+  case Op_ReverseBytesS:
+  case Op_ReverseBytesI:
+  case Op_ReverseBytesL:
+    return (is_integral_type(bt) ? Op_ReverseBytesV : 0);
+  case Op_CompressBits:
+    // Not implemented. Returning 0 temporarily
+    return 0;
+  case Op_ExpandBits:
+    // Not implemented. Returning 0 temporarily
+    return 0;
   case Op_LShiftI:
     switch (bt) {
     case T_BOOLEAN:
@@ -245,6 +256,12 @@ int VectorNode::opcode(int sopc, BasicType bt) {
     return Op_VectorCastF2X;
   case Op_ConvD2L:
     return Op_VectorCastD2X;
+  case Op_CountLeadingZerosI:
+  case Op_CountLeadingZerosL:
+    return Op_CountLeadingZerosV;
+  case Op_CountTrailingZerosI:
+  case Op_CountTrailingZerosL:
+    return Op_CountTrailingZerosV;
   case Op_SignumF:
     return Op_SignumVF;
   case Op_SignumD:
@@ -317,15 +334,16 @@ bool VectorNode::is_muladds2i(Node* n) {
   return false;
 }
 
-bool VectorNode::is_vpopcnt_long(Node* n) {
-  if (n->Opcode() == Op_PopCountL) {
-    return true;
+bool VectorNode::is_type_transition_long_to_int(Node* n) {
+  switch(n->Opcode()) {
+    case Op_PopCountL:
+    case Op_CountLeadingZerosL:
+    case Op_CountTrailingZerosL:
+       return true;
+    default:
+       return false;
   }
-  return false;
 }
-
-
-
 
 bool VectorNode::is_roundopD(Node* n) {
   if (n->Opcode() == Op_RoundDoubleMode) {
@@ -595,6 +613,9 @@ VectorNode* VectorNode::make(int vopc, Node* n1, Node* n2, const TypeVect* vt, b
   case Op_NegVF: return new NegVFNode(n1, vt);
   case Op_NegVD: return new NegVDNode(n1, vt);
 
+  case Op_ReverseV: return new ReverseVNode(n1, vt);
+  case Op_ReverseBytesV: return new ReverseBytesVNode(n1, vt);
+
   case Op_SqrtVF: return new SqrtVFNode(n1, vt);
   case Op_SqrtVD: return new SqrtVDNode(n1, vt);
 
@@ -628,6 +649,12 @@ VectorNode* VectorNode::make(int vopc, Node* n1, Node* n2, const TypeVect* vt, b
   case Op_RoundDoubleModeV: return new RoundDoubleModeVNode(n1, n2, vt);
 
   case Op_MulAddVS2VI: return new MulAddVS2VINode(n1, n2, vt);
+
+  case Op_ExpandV: return new ExpandVNode(n1, n2, vt);
+  case Op_CompressV: return new CompressVNode(n1, n2, vt);
+  case Op_CompressM: assert(n1 == NULL, ""); return new CompressMNode(n2, vt);
+  case Op_CountLeadingZerosV: return new CountLeadingZerosVNode(n1, vt);
+  case Op_CountTrailingZerosV: return new CountTrailingZerosVNode(n1, vt);
   default:
     fatal("Missed vector creation for '%s'", NodeClassNames[vopc]);
     return NULL;
@@ -1667,6 +1694,38 @@ Node* NegVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     }
   }
   return NULL;
+}
+
+Node* ReverseBytesVNode::Identity(PhaseGVN* phase) {
+  if (is_predicated_using_blend()) {
+    return this;
+  }
+  // ReverseBytesV (ReverseBytesV X , MASK) , MASK =>  X
+  if (in(1)->Opcode() == Op_ReverseBytesV) {
+    if (is_predicated_vector() && in(1)->is_predicated_vector() && in(2) == in(1)->in(2)) {
+      return in(1)->in(1);
+    } else {
+      // ReverseBytesV (ReverseBytesV X) =>  X
+      return in(1)->in(1);
+    }
+  }
+  return this;
+}
+
+Node* ReverseVNode::Identity(PhaseGVN* phase) {
+  if (is_predicated_using_blend()) {
+    return this;
+  }
+  // ReverseV (ReverseV X , MASK) , MASK =>  X
+  if (in(1)->Opcode() == Op_ReverseV) {
+    if (is_predicated_vector() && in(1)->is_predicated_vector() && in(2) == in(1)->in(2)) {
+      return in(1)->in(1);
+    } else {
+      // ReverseV (ReverseV X) =>  X
+      return in(1)->in(1);
+    }
+  }
+  return this;
 }
 
 #ifndef PRODUCT

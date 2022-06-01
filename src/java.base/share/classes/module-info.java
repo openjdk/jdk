@@ -158,6 +158,8 @@ module java.base {
         jdk.jartool,
         jdk.jlink,
         jdk.net;
+    exports jdk.internal.foreign to
+        jdk.incubator.vector;
     exports jdk.internal.event to
         jdk.jfr;
     exports jdk.internal.jimage to

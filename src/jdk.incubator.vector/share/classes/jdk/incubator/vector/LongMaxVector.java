@@ -24,7 +24,7 @@
  */
 package jdk.incubator.vector;
 
-import java.nio.ByteBuffer;
+import java.lang.foreign.MemorySegment;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntUnaryOperator;
@@ -466,6 +466,22 @@ final class LongMaxVector extends LongVector {
 
     @Override
     @ForceInline
+    public LongMaxVector compress(VectorMask<Long> m) {
+        return (LongMaxVector)
+            super.compressTemplate(LongMaxMask.class,
+                                   (LongMaxMask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public LongMaxVector expand(VectorMask<Long> m) {
+        return (LongMaxVector)
+            super.expandTemplate(LongMaxMask.class,
+                                   (LongMaxMask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
     public LongMaxVector selectFrom(Vector<Long> v) {
         return (LongMaxVector)
             super.selectFromTemplate((LongMaxVector) v);  // specialize
@@ -636,6 +652,15 @@ final class LongMaxVector extends LongVector {
         public LongMaxMask not() {
             return xor(maskAll(true));
         }
+
+        @Override
+        @ForceInline
+        public LongMaxMask compress() {
+            return (LongMaxMask)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
+                LongMaxVector.class, LongMaxMask.class, ETYPE, VLENGTH, null, this,
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
+        }
+
 
         // Binary operations
 
@@ -829,29 +854,15 @@ final class LongMaxVector extends LongVector {
     @ForceInline
     @Override
     final
-    LongVector fromByteArray0(byte[] a, int offset) {
-        return super.fromByteArray0Template(a, offset);  // specialize
+    LongVector fromMemorySegment0(MemorySegment ms, long offset) {
+        return super.fromMemorySegment0Template(ms, offset);  // specialize
     }
 
     @ForceInline
     @Override
     final
-    LongVector fromByteArray0(byte[] a, int offset, VectorMask<Long> m) {
-        return super.fromByteArray0Template(LongMaxMask.class, a, offset, (LongMaxMask) m);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    LongVector fromByteBuffer0(ByteBuffer bb, int offset) {
-        return super.fromByteBuffer0Template(bb, offset);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    LongVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Long> m) {
-        return super.fromByteBuffer0Template(LongMaxMask.class, bb, offset, (LongMaxMask) m);  // specialize
+    LongVector fromMemorySegment0(MemorySegment ms, long offset, VectorMask<Long> m) {
+        return super.fromMemorySegment0Template(LongMaxMask.class, ms, offset, (LongMaxMask) m);  // specialize
     }
 
     @ForceInline
@@ -879,22 +890,8 @@ final class LongMaxVector extends LongVector {
     @ForceInline
     @Override
     final
-    void intoByteArray0(byte[] a, int offset) {
-        super.intoByteArray0Template(a, offset);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    void intoByteArray0(byte[] a, int offset, VectorMask<Long> m) {
-        super.intoByteArray0Template(LongMaxMask.class, a, offset, (LongMaxMask) m);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    void intoByteBuffer0(ByteBuffer bb, int offset, VectorMask<Long> m) {
-        super.intoByteBuffer0Template(LongMaxMask.class, bb, offset, (LongMaxMask) m);
+    void intoMemorySegment0(MemorySegment ms, long offset, VectorMask<Long> m) {
+        super.intoMemorySegment0Template(LongMaxMask.class, ms, offset, (LongMaxMask) m);
     }
 
 
@@ -903,3 +900,4 @@ final class LongMaxVector extends LongVector {
     // ================================================
 
 }
+

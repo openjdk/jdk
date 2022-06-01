@@ -28,6 +28,10 @@ import java.util.Objects;
 
 import jdk.internal.vm.annotation.ForceInline;
 
+import jdk.internal.misc.Unsafe;
+
+import jdk.internal.vm.vector.VectorSupport;
+
 import static jdk.incubator.vector.VectorOperators.*;
 
 abstract class AbstractMask<E> extends VectorMask<E> {
@@ -77,7 +81,15 @@ abstract class AbstractMask<E> extends VectorMask<E> {
 
     @Override
     public void intoArray(boolean[] bits, int i) {
-        System.arraycopy(getBits(), 0, bits, i, length());
+        AbstractSpecies<E> vsp = (AbstractSpecies<E>) vectorSpecies();
+        int laneCount = vsp.laneCount();
+        i = VectorIntrinsics.checkFromIndexSize(i, laneCount, bits.length);
+        VectorSupport.store(
+            vsp.maskType(), vsp.elementType(), laneCount,
+            bits, (long) i + Unsafe.ARRAY_BOOLEAN_BASE_OFFSET,
+            this, bits, i,
+            (c, idx, s) -> System.arraycopy(s.getBits(), 0, c, (int) idx, s.length()));
+
     }
 
     @Override
@@ -192,6 +204,15 @@ abstract class AbstractMask<E> extends VectorMask<E> {
         return this.andNot(badMask);
     }
 
+    @Override
+    @ForceInline
+    public VectorMask<E> indexInRange(long offset, long limit) {
+        int vlength = length();
+        Vector<E> iota = vectorSpecies().zero().addIndex(1);
+        VectorMask<E> badMask = checkIndex0(offset, limit, iota, vlength);
+        return this.andNot(badMask);
+    }
+
     /*package-private*/
     @ForceInline
     AbstractVector<E>
@@ -215,7 +236,7 @@ abstract class AbstractMask<E> extends VectorMask<E> {
      */
     /*package-private*/
     @ForceInline
-    void checkIndexByLane(int offset, int alength,
+    void checkIndexByLane(int offset, int length,
                           Vector<E> iota,
                           int esize) {
         if (VectorIntrinsics.VECTOR_ACCESS_OOB_CHECK == 0) {
@@ -229,15 +250,15 @@ abstract class AbstractMask<E> extends VectorMask<E> {
         int vlength = length();
         VectorMask<E> badMask;
         if (esize == 1) {
-            badMask = checkIndex0(offset, alength, iota, vlength);
+            badMask = checkIndex0(offset, length, iota, vlength);
         } else if (offset >= 0) {
             // Masked access to multi-byte lanes in byte array.
             // It could be aligned anywhere.
-            int elemCount = Math.min(vlength, (alength - offset) / esize);
+            int elemCount = Math.min(vlength, (length - offset) / esize);
             badMask = checkIndex0(0, elemCount, iota, vlength);
         } else {
             int clipOffset = Math.max(offset, -(vlength * esize));
-            badMask = checkIndex0(clipOffset, alength,
+            badMask = checkIndex0(clipOffset, length,
                                   iota.lanewise(VectorOperators.MUL, esize),
                                   vlength * esize);
         }
@@ -245,20 +266,20 @@ abstract class AbstractMask<E> extends VectorMask<E> {
         if (badMask.anyTrue()) {
             int badLane = badMask.firstTrue();
             throw ((AbstractMask<E>)badMask)
-                   .checkIndexFailed(offset, badLane, alength, esize);
+                   .checkIndexFailed(offset, badLane, length, esize);
         }
     }
 
     private
     @ForceInline
-    VectorMask<E> checkIndex0(int offset, int alength,
+    VectorMask<E> checkIndex0(int offset, int length,
                               Vector<E> iota, int vlength) {
         // An active lane is bad if its number is greater than
-        // alength-offset, since when added to offset it will step off
+        // length-offset, since when added to offset it will step off
         // of the end of the array.  To avoid overflow when
         // converting, clip the comparison value to [0..vlength]
         // inclusive.
-        int indexLimit = Math.max(0, Math.min(alength - offset, vlength));
+        int indexLimit = Math.max(0, Math.min(length - offset, vlength));
         VectorMask<E> badMask =
             iota.compare(GE, iota.broadcast(indexLimit));
         if (offset < 0) {
@@ -280,14 +301,90 @@ abstract class AbstractMask<E> extends VectorMask<E> {
         return badMask;
     }
 
-    private IndexOutOfBoundsException checkIndexFailed(int offset, int lane,
-                                                       int alength, int esize) {
+    /**
+     * Test if a masked memory access at a given offset into an array
+     * of the given length will stay within the array.
+     * The per-lane offsets are iota*esize.
+     */
+    /*package-private*/
+    @ForceInline
+    void checkIndexByLane(long offset, long length,
+                          Vector<E> iota,
+                          int esize) {
+        if (VectorIntrinsics.VECTOR_ACCESS_OOB_CHECK == 0) {
+            return;
+        }
+        // Although the specification is simple, the implementation is
+        // tricky, because the value iota*esize might possibly
+        // overflow.  So we calculate our test values as scalars,
+        // clipping to the range [-1..VLENGTH], and test them against
+        // the unscaled iota vector, whose values are in [0..VLENGTH-1].
+        int vlength = length();
+        VectorMask<E> badMask;
+        if (esize == 1) {
+            badMask = checkIndex0(offset, length, iota, vlength);
+        } else if (offset >= 0) {
+            // Masked access to multi-byte lanes in byte array.
+            // It could be aligned anywhere.
+            // 0 <= elemCount <= vlength
+            int elemCount = (int) Math.min(vlength, (length - offset) / esize);
+            badMask = checkIndex0(0, elemCount, iota, vlength);
+        } else {
+            // -vlength * esize <= clipOffset <= 0
+            int clipOffset = (int) Math.max(offset, -(vlength * esize));
+            badMask = checkIndex0(clipOffset, length,
+                    iota.lanewise(VectorOperators.MUL, esize),
+                    vlength * esize);
+        }
+        badMask = badMask.and(this);
+        if (badMask.anyTrue()) {
+            int badLane = badMask.firstTrue();
+            throw ((AbstractMask<E>)badMask)
+                    .checkIndexFailed(offset, badLane, length, esize);
+        }
+    }
+
+    private
+    @ForceInline
+    VectorMask<E> checkIndex0(long offset, long length,
+                              Vector<E> iota, int vlength) {
+        // An active lane is bad if its number is greater than
+        // length-offset, since when added to offset it will step off
+        // of the end of the array.  To avoid overflow when
+        // converting, clip the comparison value to [0..vlength]
+        // inclusive.
+        // 0 <= indexLimit <= vlength
+        int indexLimit = (int) Math.max(0, Math.min(length - offset, vlength));
+        VectorMask<E> badMask =
+                iota.compare(GE, iota.broadcast(indexLimit));
+        if (offset < 0) {
+            // An active lane is bad if its number is less than
+            // -offset, because when added to offset it will then
+            // address an array element at a negative index.  To avoid
+            // overflow when converting, clip the comparison value at
+            // vlength.  This specific expression works correctly even
+            // when offset is Integer.MIN_VALUE.
+            // 0 <= firstGoodIndex <= vlength
+            int firstGoodIndex = (int) -Math.max(offset, -vlength);
+            VectorMask<E> badMask2 =
+                    iota.compare(LT, iota.broadcast(firstGoodIndex));
+            if (indexLimit >= vlength) {
+                badMask = badMask2;  // 1st badMask is all true
+            } else {
+                badMask = badMask.or(badMask2);
+            }
+        }
+        return badMask;
+    }
+
+    private IndexOutOfBoundsException checkIndexFailed(long offset, int lane,
+                                                       long length, int esize) {
         String msg = String.format("Masked range check failed: "+
                                    "vector mask %s out of bounds at "+
-                                   "index %d+%d in array of length %d",
-                                   this, offset, lane * esize, alength);
+                                   "index %d+%d for length %d",
+                                   this, offset, lane * esize, length);
         if (esize != 1) {
-            msg += String.format(" (each lane spans %d array elements)", esize);
+            msg += String.format(" (each lane spans %d elements)", esize);
         }
         throw new IndexOutOfBoundsException(msg);
     }
