@@ -63,6 +63,7 @@ public class CheckCodeCacheInfo {
                        + " #\\d+ deoptimization = " + entry
                        + " #\\d+ adapter = " + entry
                        + " #\\d+ buffer blob = " + entry
+                       + " #\\d+ MH intrinsic = " + entry
                        + " #\\d+ other = " + entry;
     }
 

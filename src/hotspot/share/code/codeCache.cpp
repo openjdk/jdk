@@ -1408,6 +1408,7 @@ void CodeCache::print_internals() {
   int deoptimizationStubCount = 0;
   int uncommonTrapStubCount = 0;
   int bufferBlobCount = 0;
+  int mhIntrinsicCount = 0;
   int total = 0;
   int nmethodAlive = 0;
   int nmethodNotEntrant = 0;
@@ -1459,6 +1460,8 @@ void CodeCache::print_internals() {
         adapterCount++;
       } else if (cb->is_buffer_blob()) {
         bufferBlobCount++;
+      } else if (cb->is_mh_intrinsic()) {
+        mhIntrinsicCount++;
       }
     }
   }
@@ -1488,6 +1491,7 @@ void CodeCache::print_internals() {
   tty->print_cr("runtime_stubs: %d",runtimeStubCount);
   tty->print_cr("adapters: %d",adapterCount);
   tty->print_cr("buffer blobs: %d",bufferBlobCount);
+  tty->print_cr("MH intrinsics: %d",mhIntrinsicCount);
   tty->print_cr("deoptimization_stubs: %d",deoptimizationStubCount);
   tty->print_cr("uncommon_traps: %d",uncommonTrapStubCount);
   tty->print_cr("\nnmethod size distribution (non-zombie java)");
@@ -1520,6 +1524,7 @@ void CodeCache::print() {
   CodeBlob_sizes deoptimizationStub;
   CodeBlob_sizes adapter;
   CodeBlob_sizes bufferBlob;
+  CodeBlob_sizes mhIntrinsic;
   CodeBlob_sizes other;
 
   FOR_ALL_ALLOCABLE_HEAPS(heap) {
@@ -1542,6 +1547,8 @@ void CodeCache::print() {
         adapter.add(cb);
       } else if (cb->is_buffer_blob()) {
         bufferBlob.add(cb);
+      } else if (cb->is_mh_intrinsic()) {
+        mhIntrinsic.add(cb);
       } else {
         other.add(cb);
       }
@@ -1575,6 +1582,7 @@ void CodeCache::print() {
     { "deoptimization", &deoptimizationStub },
     { "adapter",        &adapter },
     { "buffer blob",    &bufferBlob },
+    { "MH intrinsic",   &mhIntrinsic },
     { "other",          &other },
   };
   tty->print_cr("Non-nmethod blobs:");
