@@ -97,16 +97,19 @@ public abstract non-sealed class MemorySessionImpl implements Scoped, MemorySess
             addInternal(resource);
         } catch (Throwable ex) {
             resource.cleanup();
+            throw ex;
         }
     }
 
     void addInternal(ResourceList.ResourceCleanup resource) {
-        try {
-            checkValidStateSlow();
-            resourceList.add(resource);
-        } catch (ScopedMemoryAccess.ScopedAccessError err) {
-            throw new IllegalStateException("Already closed");
-        }
+        checkValidStateSlow();
+        // Note: from here on we no longer check the session state. Two cases are possible: either the resource cleanup
+        // is added to the list when the session is still open, in which case everything works ok; or the resource
+        // cleanup is added while the session is being closed. In this latter case, what matters is whether we have already
+        // called `ResourceList::cleanup` to run all the cleanup actions. If not, we can still add this resource
+        // to the list (and, in case of an add vs. close race, it might happen that the cleanup action will be
+        // called immediately after).
+        resourceList.add(resource);
     }
 
     protected MemorySessionImpl(Thread owner, ResourceList resourceList, Cleaner cleaner) {
@@ -199,7 +202,7 @@ public abstract non-sealed class MemorySessionImpl implements Scoped, MemorySess
     @ForceInline
     public final void checkValidState() {
         if (owner != null && owner != Thread.currentThread()) {
-            throw new IllegalStateException("Attempted access outside owning thread");
+            throw new WrongThreadException("Attempted access outside owning thread");
         }
         if (state < OPEN) {
             throw ScopedMemoryAccess.ScopedAccessError.INSTANCE;
@@ -213,7 +216,7 @@ public abstract non-sealed class MemorySessionImpl implements Scoped, MemorySess
      */
     public final void checkValidStateSlow() {
         if (owner != null && Thread.currentThread() != owner) {
-            throw new IllegalStateException("Attempted access outside owning thread");
+            throw new WrongThreadException("Attempted access outside owning thread");
         } else if (!isAlive()) {
             throw new IllegalStateException("Already closed");
         }
