@@ -29,7 +29,6 @@
 #undef NDEBUG
 #include <assert.h>
 #include <string>
-//#include <iostream>  PROBLEM ON Windows
 #include <algorithm>
 
 /*
@@ -50,7 +49,6 @@ protected:
         std::string nm = classname;
         std::replace(nm.begin(), nm.end(), '/', '.');
         ::printf("ERROR: %s::%s, %s\n", nm.c_str(), method.c_str(), msg.c_str());
-        //std::cerr << "ERROR: " << nm << "::" << method << ", " << msg << std::endl;
     }
 
     // check the given object which is expected to be null
@@ -191,20 +189,19 @@ public:
     // call method returning boolean that is expected to throw the
     // given exception
     void callBooleanMethodWithException(const std::string& exception) {
-        env->CallStaticBooleanMethod(c,m);
+        env->CallStaticBooleanMethod(c, m);
         checkExpectedExceptionThrown(exception);
     }
 
     // call method returning an object that is expected to throw the
     // given exception
     void callObjectMethodWithException(const std::string& exception) {
-        env->CallStaticObjectMethod(c,m);
+        env->CallStaticObjectMethod(c, m);
         checkExpectedExceptionThrown(exception);
     }
 };
 
 void emitErrorMessageAndExit(const std::string& msg) {
-    // std::cerr << msg << std::endl;
     ::printf("ERROR: %s\n", msg.c_str());
     ::exit(-1);
 }

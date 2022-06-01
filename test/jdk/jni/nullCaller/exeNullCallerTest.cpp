@@ -23,8 +23,8 @@
 
 #include "CallHelper.hpp"
 
-/* Test for JDK-8280902
- * ResourceBundle::getBundle may throw NPE when invoked by JNI code with no caller frame
+/*
+ * Test for JDK-8280902
  */
 void getBundle(JNIEnv* env) {
     StaticCall m_ResourceBundle_getBundle { env,
@@ -39,8 +39,8 @@ void getBundle(JNIEnv* env) {
 
     // The following should not throw
     // b = ResourceBundle.getBundle("NullCallerResource");
-    jobject b =m_ResourceBundle_getBundle.callReturnNotNull(
-        env->NewStringUTF("open/NullCallerResource") );
+    jobject b = m_ResourceBundle_getBundle.callReturnNotNull(
+        env->NewStringUTF("open/NullCallerResource"));
 
     // msg = b.getString("message");
     jstring msg = (jstring) m_ResourceBundle_getString.callReturnNotNull(b, env->NewStringUTF("message"));
@@ -57,21 +57,18 @@ void getBundle(JNIEnv* env) {
 
 /*
  * Test for JDK-8281000
- * ClassLoader::registerAsParallelCapable throws NPE if caller is null
- *
- * The call should throw ICE
  */
 void registerAsParallelCapable(JNIEnv* env) {
     StaticCall m_ClassLoader_registerAsParallelCapable { env,
         "java/lang/ClassLoader", "registerAsParallelCapable", "()Z" };
 
+    // The call should throw ICE
     m_ClassLoader_registerAsParallelCapable.
         callBooleanMethodWithException("java/lang/IllegalCallerException");
 }
 
 /*
- * Test for JDK-8281001 -
- * Class::forName(String) defaults to system class loader if the caller is null
+ * Test for JDK-8281001
  *
  * Try and load a class using Class::forName in the module n which should be
  * found with the system classloader (to match FindClass() used above).
@@ -87,14 +84,13 @@ void forName(JNIEnv* env) {
 }
 
 /*
- * Test for JDK-8281003 - MethodHandles::lookup throws NPE if caller is null
- *
- * The call should throw ICE
+ * Test for JDK-8281003
  */
 void lookup(JNIEnv* env) {
     StaticCall m_MethodHandles_lookup { env,
         "java/lang/invoke/MethodHandles", "lookup", "()Ljava/lang/invoke/MethodHandles$Lookup;" };
 
+    // The call should throw ICE
     m_MethodHandles_lookup.
         callObjectMethodWithException("java/lang/IllegalCallerException");
 }

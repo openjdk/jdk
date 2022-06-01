@@ -69,8 +69,7 @@ public class NullCallerTest {
      */
     static void compileTestModule() throws Exception {
         // javac -d mods/$TESTMODULE src/$TESTMODULE/**
-        boolean compiled
-                = CompilerUtils.compile(SRC_DIR.resolve(TEST_MODULE), TEST_MOD_DIR);
+        boolean compiled = CompilerUtils.compile(SRC_DIR.resolve(TEST_MODULE), TEST_MOD_DIR);
         assert (compiled);
 
         // copy resources
