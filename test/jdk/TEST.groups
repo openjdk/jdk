@@ -110,7 +110,8 @@ jdk_lang = \
     jdk/internal/jimage \
     jdk/internal/math \
     jdk/internal/vm \
-    jdk/modules
+    jdk/modules \
+    jni/nullCaller
 
 # All of the java.util package
 jdk_util = \
@@ -314,8 +315,7 @@ jdk_other = \
     jdk/dynalink \
     jdk/internal/jline \
     com/sun/jndi \
-    lib/testlibrary \
-    jni/nullCaller
+    lib/testlibrary
 
 #
 # SCTP is its own group as it is highly sensitive to kernel/network config
