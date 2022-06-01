@@ -208,7 +208,7 @@ int SuperWord::max_vector_size(BasicType bt) {
   if (max_vector > sw_max_vector_limit) {
     max_vector = sw_max_vector_limit;
   }
-  return max_vector; 
+  return max_vector;
 }
 
 //------------------------------early unrolling analysis------------------------------
@@ -365,7 +365,7 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
       if (is_java_primitive(bt) == false) continue;
 
       int cur_max_vector = max_vector_size(bt);
-      
+
       // If a max vector exists which is not larger than _local_loop_unroll_factor
       // stop looking, we already have the max vector to map to.
       if (cur_max_vector < local_loop_unroll_factor) {
