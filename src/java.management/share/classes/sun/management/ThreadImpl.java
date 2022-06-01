@@ -583,7 +583,7 @@ public class ThreadImpl implements ThreadMXBean {
     }
 
     /**
-     * Returns the ThreadInfo objects from the given array that coresspond to platform
+     * Returns the ThreadInfo objects from the given array that correspond to platform
      * threads.
      */
     private ThreadInfo[] platformThreads(ThreadInfo[] infos) {
