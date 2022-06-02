@@ -70,7 +70,7 @@ public class bug5047379 {
         testRobot.waitForIdle();
         Point movePoint = getButtonPoint(b);
         testRobot.mouseMove(movePoint.x, movePoint.y);
-        testRobot.delay(1000);
+        testRobot.delay(2000);
         testRobot.waitForIdle();
         handleToolTip();
     }
@@ -130,8 +130,8 @@ public class bug5047379 {
         JTextArea area = new JTextArea();
         JPanel p = new JPanel();
 
-        String text = "Mouse is hover over button B for the \t\t\n";
-        text += "ToolTip to appear. Here is what should show\t\t\n";
+        String text = "The mouse will hover over button B, so the\t\t\n";
+        text += "ToolTip will appear. Here is what should show\t\t\n";
         text += "The word \\\"TEXT\\\" and then \\\"CTRL-B\\\"\\n\"\t\t";
         text += "\n";
 
@@ -170,4 +170,4 @@ public class bug5047379 {
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
-};
+}
