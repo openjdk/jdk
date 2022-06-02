@@ -87,7 +87,11 @@ public class TestDwarf {
                 }
             }
         } else {
-            test();
+            try {
+                test();
+            } catch (UnsupportedDwarfVersionException e) {
+                System.out.println("Skip test due to a DWARF section that is in an unsupported version by the parser.");
+            }
         }
     }
 
@@ -149,20 +153,7 @@ public class TestDwarf {
                         pattern = Pattern.compile("[CV][\\s\\t]+\\[([a-zA-Z0-9_.]+)\\+0x.+][\\s\\t]+.*\\+0x.+[\\s\\t]+\\([a-zA-Z0-9_.]+\\.[a-z]+:[1-9][0-9]*\\)");
                         matcher = pattern.matcher(line);
                         if (!matcher.find()) {
-                            pattern = Pattern.compile("[CV][\\s\\t]+\\[([a-zA-Z0-9_.]+)\\+0x.+][\\s\\t]+.*\\+0x");
-                            matcher = pattern.matcher(line);
-                            Asserts.assertTrue(matcher.find(), "Must find library in \"" + line + "\"");
-                            // Check if there are symbols available for library. If not, then we cannot find any source information for this library.
-                            // This can happen if this test is run without any JDK debug symbols at all but also for some libraries like libpthread.so
-                            // which usually has no symbols available.
-                            String library = matcher.group(1);
-                            // We should always find symbols for libTestDwarf.so.
-                            Asserts.assertFalse(library.equals("libTestDwarf.so"), "Could not find filename or line number in \"" + line + "\" for libTestDwarf.so");
-                            pattern = Pattern.compile("Failed to load DWARF file for library.*" + library + ".*or find DWARF sections directly inside it");
-                            matcher = pattern.matcher(crashOutputString);
-                            Asserts.assertTrue(matcher.find(), "Could not find filename or line number in \"" + line + "\"");
-                            System.out.println("Did not find symbols for " + library + ". If they are not in the same directory as " + library + " consider setting " +
-                                               "the environmental variable _JVM_DWARF_PATH to point to the debug symbols directory.");
+                            checkNoSourceLine(crashOutputString, line);
                         }
 
                         // Check additional DWARF constraints
@@ -181,6 +172,41 @@ public class TestDwarf {
             Asserts.assertGreaterThan(matches, 0, "Could not find any stack frames");
         } else {
             throw new RuntimeException("Could not find an hs_err_file");
+        }
+    }
+
+    /**
+     * There are some valid cases where we cannot find source information. Check these.
+     */
+    private static void checkNoSourceLine(String crashOutputString, String line) {
+        Pattern pattern = Pattern.compile("[CV][\\s\\t]+\\[([a-zA-Z0-9_.]+)\\+0x.+][\\s\\t]+.*\\+0x");
+        Matcher matcher = pattern.matcher(line);
+        Asserts.assertTrue(matcher.find(), "Must find library in \"" + line + "\"");
+        // Check if there are symbols available for library. If not, then we cannot find any source information for this library.
+        // This can happen if this test is run without any JDK debug symbols at all but also for some libraries like libpthread.so
+        // which usually has no symbols available.
+        String library = matcher.group(1);
+        pattern = Pattern.compile("Failed to load DWARF file for library.*" + library + ".*or find DWARF sections directly inside it");
+        matcher = pattern.matcher(crashOutputString);
+        if (!matcher.find()) {
+            bailoutIfUnsupportedDwarfVersion(crashOutputString);
+            Asserts.fail("Could not find filename or line number in \"" + line + "\"");
+        }
+        // We should always find symbols for libTestDwarf.so.
+        Asserts.assertFalse(library.equals("libTestDwarf.so"), "Could not find filename or line number in \"" + line + "\" for libTestDwarf.so");
+        System.out.println("Did not find symbols for " + library + ". If they are not in the same directory as " + library + " consider setting " +
+                           "the environmental variable _JVM_DWARF_PATH to point to the debug symbols directory.");
+    }
+
+    /**
+     * Some older GCC versions might emit DWARF sections in an old format that is not supported by the DWARF parser.
+     * If this is the case, skip this entire test by throwing UnsupportedDwarfVersionException.
+     */
+    private static void bailoutIfUnsupportedDwarfVersion(String crashOutputString) {
+        Pattern pattern = Pattern.compile(".debug_\\S+ in unsupported DWARF version \\d+");
+        Matcher matcher = pattern.matcher(crashOutputString);
+        if (matcher.find()) {
+            throw new UnsupportedDwarfVersionException();
         }
     }
 
@@ -212,6 +238,8 @@ public class TestDwarf {
     private static native void crashNativeDereferenceNull();
     private static native void crashNativeMultipleMethods(int x);
 }
+
+class UnsupportedDwarfVersionException extends RuntimeException { }
 
 class MyException extends RuntimeException { }
 
