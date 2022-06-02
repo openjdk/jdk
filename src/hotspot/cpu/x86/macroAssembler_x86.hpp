@@ -950,6 +950,15 @@ public:
                    Register buf, Register state, Register ofs, Register limit, Register rsp,
                    bool multi_block, XMMRegister shuf_mask);
   void avx_ghash(Register state, Register htbl, Register data, Register blocks);
+
+  void cc20_quarter_round_avx(XMMRegister aVec, XMMRegister bVec,
+          XMMRegister cVec, XMMRegister dVec, XMMRegister scratch,
+          int vector_len);
+  void cc20_shift_lane_org(XMMRegister bVec, XMMRegister cVec,
+          XMMRegister dVec, int vector_len, bool colToDiag);
+  void cc20_keystream_collate_avx512(XMMRegister aVec, XMMRegister bVec,
+          XMMRegister cVec, XMMRegister dVec,
+          Register baseAddr, int baseOffset);
 #endif
 
 #ifdef _LP64
