@@ -1729,6 +1729,12 @@ private:
     bool _data = false;
     bool _mixed = false;
     bool _other = false;
+    bool is_empty() const {
+      return !(_control || _memory || _data || _mixed || _other);
+    }
+    void set_all() {
+      _control = _memory = _data = _mixed = _other = true;
+    }
   };
   Filter _filter_visit;
   Filter _filter_boundary;
@@ -2010,6 +2016,11 @@ void PrintBFS::print_options_help(bool print_examples) {
   tty->print("  block: block block in which the node has been scheduled [head(), _idom->head(), _dom_depth]\n");
   tty->print("  old:   old IR node - before matching\n");
   tty->print("  dump:  node->dump()\n");
+  tty->print("\n");
+  tty->print("Note: if none of the \"cmdxo\" characters are in the options string\n");
+  tty->print("      then we set all of them.\n");
+  tty->print("      This allows for short strings like \"#\" for colored input traversal\n");
+  tty->print("      or \"-#\" for colored output traversal.\n");
   if (print_examples) {
     tty->print("\n");
     tty->print("Examples:\n");
@@ -2113,6 +2124,9 @@ bool PrintBFS::parse_options() {
   }
   if (!_traverse_inputs && !_traverse_outputs) {
     _traverse_inputs = true;
+  }
+  if (_filter_visit.is_empty()) {
+    _filter_visit.set_all();
   }
   Compile* C = Compile::current();
   _print_old &= (C->matcher() != nullptr); // only show old if there are new
