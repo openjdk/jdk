@@ -844,6 +844,8 @@ void MacroAssembler::post_call_nop() {
   InstructionMark im(this);
   relocate(post_call_nop_Relocation::spec());
   nop();
+  movk(zr, 0);
+  movk(zr, 0);
 }
 
 // these are no-ops overridden by InterpreterMacroAssembler
