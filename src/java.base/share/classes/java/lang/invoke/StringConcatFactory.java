@@ -31,8 +31,6 @@ import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.Wrapper;
 
 import java.lang.invoke.MethodHandles.Lookup;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 
 import static java.lang.invoke.MethodType.methodType;
@@ -335,7 +333,7 @@ public final class StringConcatFactory {
                     lookup.lookupClass().getName());
         }
 
-        List<String> elements = parseRecipe(concatType, recipe, constants);
+        String[] constantStrings = parseRecipe(concatType, recipe, constants);
 
         if (!concatType.returnType().isAssignableFrom(String.class)) {
             throw new StringConcatException(
@@ -352,7 +350,7 @@ public final class StringConcatFactory {
 
         try {
             return new ConstantCallSite(
-                    generateMHInlineCopy(concatType, elements)
+                    generateMHInlineCopy(concatType, constantStrings)
                             .viewAsType(concatType, true));
         } catch (Error e) {
             // Pass through any error
@@ -362,15 +360,22 @@ public final class StringConcatFactory {
         }
     }
 
-    private static List<String> parseRecipe(MethodType concatType,
-                                            String recipe,
-                                            Object[] constants)
+    private static String[] parseRecipe(MethodType concatType,
+                                        String recipe,
+                                        Object[] constants)
         throws StringConcatException
     {
 
         Objects.requireNonNull(recipe, "Recipe is null");
-        // Element list containing interleaving String constants
-        List<String> elements = new ArrayList<>();
+        int paramCount = concatType.parameterCount();
+        // Array containing interleaving String constants, starting with
+        // the first prefix and ending with the final prefix:
+        //
+        //   consts[0] + arg0 + consts[1] + arg 1 + ... + consts[paramCount].
+        //
+        // consts will be null if there's no constant to insert at a position.
+        // An empty String constant will be replaced by null.
+        String[] consts = new String[paramCount + 1];
 
         int cCount = 0;
         int oCount = 0;
@@ -389,26 +394,19 @@ public final class StringConcatFactory {
                 // into the recipe
                 acc.append(constants[cCount++]);
             } else if (c == TAG_ARG) {
-                // Flush any accumulated characters into a constant
-                if (acc.length() > 0) {
-                    elements.add(acc.toString());
-                    acc.setLength(0);
-                } else {
-                    elements.add(null);
+                // Check for overflow
+                if (oCount >= paramCount) {
+                    throw argumentMismatch(concatType, oCount);
                 }
-                oCount++;
+
+                // Flush any accumulated characters into a constant
+                consts[oCount++] = acc.length() > 0 ? acc.toString() : null;
+                acc.setLength(0);
             } else {
                 // Not a special character, this is a constant embedded into
                 // the recipe itself.
                 acc.append(c);
             }
-        }
-
-        // Flush the remaining characters as constant:
-        if (acc.length() > 0) {
-            elements.add(acc.toString());
-        } else {
-            elements.add(null);
         }
         if (oCount != concatType.parameterCount()) {
             throw argumentMismatch(concatType, oCount);
@@ -416,7 +414,10 @@ public final class StringConcatFactory {
         if (cCount < constants.length) {
             throw constantMismatch(constants, cCount);
         }
-        return elements;
+
+        // Flush the remaining characters as constant:
+        consts[oCount] = acc.length() > 0 ? acc.toString() : null;
+        return consts;
     }
 
     private static StringConcatException argumentMismatch(MethodType concatType,
@@ -445,16 +446,17 @@ public final class StringConcatFactory {
      * most notably, the private String constructor that accepts byte[] arrays
      * without copying.
      */
-    private static MethodHandle generateMHInlineCopy(MethodType mt, List<String> constants) {
+    private static MethodHandle generateMHInlineCopy(MethodType mt, String[] constants) {
         int paramCount = mt.parameterCount();
-        String suffix = constants.get(paramCount);
+        String suffix = constants[paramCount];
 
         // Fast-path trivial concatenations
         if (paramCount == 0) {
             return MethodHandles.insertArguments(newStringifier(), 0, suffix == null ? "" : suffix);
         }
         if (paramCount == 1) {
-            String prefix = constants.get(0);
+            String prefix = constants[0];
+            // Empty constants will be
             if (prefix == null) {
                 if (suffix == null) {
                     return unaryConcat(mt.parameterType(0));
@@ -467,7 +469,7 @@ public final class StringConcatFactory {
             } // fall-through if there's both a prefix and suffix
         }
         if (paramCount == 2 && !mt.hasPrimitives() && suffix == null
-                && constants.get(0) == null && constants.get(1) == null) {
+                && constants[0] == null && constants[1] == null) {
             // Two reference arguments, no surrounding constants
             return simpleConcat();
         }
@@ -513,12 +515,11 @@ public final class StringConcatFactory {
         // their lengths and adjusting the encoded coder bit if needed
         long initialLengthCoder = INITIAL_CODER;
 
-        for (int i = 0; i < paramCount; i++) {
-            var constant = constants.get(i);
+        for (String constant : constants) {
             if (constant != null) {
                 initialLengthCoder = JLA.stringConcatMix(initialLengthCoder, constant);
             }
-        } // deal with suffix later, if needed
+        }
 
         // Mix in prependers. This happens when (byte[], long) = (storage, indexCoder) is already
         // known from the combinators below. We are assembling the string backwards, so the index coded
@@ -533,7 +534,7 @@ public final class StringConcatFactory {
             // initialLengthCoder is adjusted to have the correct coder
             // and length: The newArrayWithSuffix method expects only the coder of the
             // suffix to be encoded into indexCoder
-            initialLengthCoder = JLA.stringConcatMix(initialLengthCoder, suffix) - suffix.length();
+            initialLengthCoder -= suffix.length();
             newArrayCombinator = newArrayWithSuffix(suffix);
         } else {
             newArrayCombinator = newArray();
@@ -578,7 +579,7 @@ public final class StringConcatFactory {
     // the number of unique MH combinator tree shapes we'll create in an application.
     // Additionally we do this in chunks to reduce the number of combinators bound to the root tree,
     // which simplifies the shape and makes construction of similar trees use less unique LF classes
-    private static MethodHandle filterInPrependers(MethodHandle mh, List<String> constants, Class<?>[] ptypes) {
+    private static MethodHandle filterInPrependers(MethodHandle mh, String[] constants, Class<?>[] ptypes) {
         int pos;
         int[] argPositions = null;
         MethodHandle prepend;
@@ -725,6 +726,7 @@ public final class StringConcatFactory {
             MethodHandles.identity(long.class), 1, byte[].class);
 
     private static final @Stable MethodHandle[][] DOUBLE_PREPENDERS = new MethodHandle[TYPE_COUNT][TYPE_COUNT];
+
     private static MethodHandle prepender(String prefix, Class<?> cl, String prefix2, Class<?> cl2) {
         int idx1 = classIndex(cl);
         int idx2 = classIndex(cl2);
@@ -739,13 +741,13 @@ public final class StringConcatFactory {
                 PREPEND_FILTER_SECOND_ARGS);
     }
 
-    private static MethodHandle prepender(int pos, List<String> constants, Class<?>[] ptypes, int count) {
+    private static MethodHandle prepender(int pos, String[] constants, Class<?>[] ptypes, int count) {
         // build the simple cases directly
         if (count == 1) {
-            return prepender(constants.get(pos), ptypes[pos]);
+            return prepender(constants[pos], ptypes[pos]);
         }
         if (count == 2) {
-            return prepender(constants.get(pos), ptypes[pos], constants.get(pos + 1), ptypes[pos + 1]);
+            return prepender(constants[pos], ptypes[pos], constants[pos + 1], ptypes[pos + 1]);
         }
         // build a tree from an unbound prepender, allowing us to bind the constants in a batch as a final step
         MethodHandle prepend = PREPEND_BASE;
@@ -753,19 +755,19 @@ public final class StringConcatFactory {
             prepend = MethodHandles.dropArguments(prepend, 2,
                     ptypes[pos], ptypes[pos + 1], ptypes[pos + 2]);
             prepend = MethodHandles.filterArgumentsWithCombiner(prepend, 0,
-                    prepender(constants.get(pos), ptypes[pos], constants.get(pos + 1), ptypes[pos + 1]),
+                    prepender(constants[pos], ptypes[pos], constants[pos + 1], ptypes[pos + 1]),
                     PREPEND_FILTER_FIRST_PAIR_ARGS);
             return MethodHandles.filterArgumentsWithCombiner(prepend, 0,
-                    prepender(constants.get(pos + 2), ptypes[pos + 2]),
+                    prepender(constants[pos + 2], ptypes[pos + 2]),
                     PREPEND_FILTER_THIRD_ARGS);
         } else if (count == 4) {
             prepend = MethodHandles.dropArguments(prepend, 2,
                     ptypes[pos], ptypes[pos + 1], ptypes[pos + 2], ptypes[pos + 3]);
             prepend = MethodHandles.filterArgumentsWithCombiner(prepend, 0,
-                    prepender(constants.get(pos), ptypes[pos], constants.get(pos + 1), ptypes[pos + 1]),
+                    prepender(constants[pos], ptypes[pos], constants[pos + 1], ptypes[pos + 1]),
                     PREPEND_FILTER_FIRST_PAIR_ARGS);
             return MethodHandles.filterArgumentsWithCombiner(prepend, 0,
-                    prepender(constants.get(pos + 2), ptypes[pos + 2], constants.get(pos + 3), ptypes[pos + 3]),
+                    prepender(constants[pos + 2], ptypes[pos + 2], constants[pos + 3], ptypes[pos + 3]),
                     PREPEND_FILTER_SECOND_PAIR_ARGS);
         } else {
             throw new IllegalArgumentException("Unexpected count: " + count);
