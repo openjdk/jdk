@@ -38,6 +38,7 @@ import com.sun.tools.javac.util.JCDiagnostic.SimpleDiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.Warning;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.MandatoryWarningHandler;
+import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Options;
 
 import javax.tools.JavaFileObject;
@@ -78,6 +79,7 @@ public class Preview {
 
     private final Set<JavaFileObject> sourcesWithPreviewFeatures = new HashSet<>();
 
+    private final Names names;
     private final Lint lint;
     private final Log log;
     private final Source source;
@@ -95,6 +97,7 @@ public class Preview {
     Preview(Context context) {
         context.put(previewKey, this);
         Options options = Options.instance(context);
+        names = Names.instance(context);
         enabled = options.isSet(PREVIEW);
         log = Log.instance(context);
         lint = Lint.instance(context);
@@ -115,7 +118,22 @@ public class Preview {
             }
         }
         return majorVersionToSource;
-   }
+    }
+
+    /**
+     * Returns true if {@code s} is deemed to participate in the preview of {@code previewSymbol}, and
+     * therefore no warnings or errors will be produced.
+     *
+     * @param s the symbol depending on the preview symbol
+     * @param previewSymbol the preview symbol marked with @Preview
+     * @return true if {@code s} is participating in the preview of {@code previewSymbol}
+     */
+    public boolean participatesInPreview(Symbol s, Symbol previewSymbol) {
+        // Hardcode the incubating vector API module for now
+        // Will generalize with an annotation, @PreviewParticipating say, later
+        return previewSymbol.packge().modle == s.packge().modle ||
+                s.packge().modle.name == names.jdk_incubator_vector;
+    }
 
     /**
      * Report usage of a preview feature. Usages reported through this method will affect the

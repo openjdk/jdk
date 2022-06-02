@@ -1050,7 +1050,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
 
   __ rt_call(CAST_FROM_FN_PTR(address, StubRoutines::cont_thaw()));
   oop_maps->add_gc_map(__ pc() - start, map->deep_copy());
-  ContinuationEntry::return_pc_offset = __ pc() - start;
+  ContinuationEntry::_return_pc_offset = __ pc() - start;
   __ post_call_nop();
 
   __ bind(exit);
@@ -1195,7 +1195,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                                               in_ByteSize(-1),
                                               oop_maps,
                                               exception_offset);
-    ContinuationEntry::set_enter_nmethod(nm);
+    ContinuationEntry::set_enter_code(nm);
     return nm;
   }
 
