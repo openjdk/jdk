@@ -74,7 +74,7 @@ void ShenandoahNMethod::oops_do(OopClosure* oops, bool fix_relocations) {
 }
 
 void ShenandoahNMethod::heal_nmethod_metadata(ShenandoahNMethod* nmethod_data) {
-  ShenandoahEvacuateUpdateMetadataClosure cl;
+  ShenandoahEvacuateUpdateMetadataClosure<> cl;
   nmethod_data->oops_do(&cl, true /*fix relocation*/);
 }
 

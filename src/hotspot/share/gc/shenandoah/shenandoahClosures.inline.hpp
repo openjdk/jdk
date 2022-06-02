@@ -108,18 +108,18 @@ void ShenandoahUpdateRefsClosure::do_oop_work(T* p) {
 void ShenandoahUpdateRefsClosure::do_oop(oop* p)       { do_oop_work(p); }
 void ShenandoahUpdateRefsClosure::do_oop(narrowOop* p) { do_oop_work(p); }
 
-template <bool atomic>
-ShenandoahEvacuateUpdateRootClosureBase<atomic>::ShenandoahEvacuateUpdateRootClosureBase() :
-  _heap(ShenandoahHeap::heap()) {
+template <DecoratorSet MO>
+ShenandoahEvacuateUpdateMetadataClosure<MO>::ShenandoahEvacuateUpdateMetadataClosure() :
+  _heap(ShenandoahHeap::heap()), _thread(Thread::current()) {
 }
 
-template <bool atomic>
+template <DecoratorSet MO>
 template <class T>
-void ShenandoahEvacuateUpdateRootClosureBase<atomic>::do_oop_work(T* p, Thread* t) {
+void ShenandoahEvacuateUpdateMetadataClosure<MO>::do_oop_work(T* p) {
   assert(_heap->is_concurrent_weak_root_in_progress() ||
          _heap->is_concurrent_strong_root_in_progress(),
          "Only do this in root processing phase");
-  assert(t == Thread::current(), "Wrong thread");
+  assert(_thread == Thread::current(), "Wrong thread");
 
   T o = RawAccess<>::oop_load(p);
   if (! CompressedOops::is_null(o)) {
@@ -129,28 +129,46 @@ void ShenandoahEvacuateUpdateRootClosureBase<atomic>::do_oop_work(T* p, Thread* 
       shenandoah_assert_marked(p, obj);
       oop resolved = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
       if (resolved == obj) {
-        resolved = _heap->evacuate_object(obj, t);
+        resolved = _heap->evacuate_object(obj, _thread);
       }
-      if (atomic) {
-        ShenandoahHeap::atomic_update_oop(resolved, p, o);
-      } else {
-        RawAccess<IS_NOT_NULL | MO_UNORDERED>::oop_store(p, resolved);
-      }
+      RawAccess<IS_NOT_NULL | MO>::oop_store(p, resolved);
     }
   }
 }
-template <bool atomic>
-void ShenandoahEvacuateUpdateRootClosureBase<atomic>::do_oop(oop* p) {
-  do_oop_work(p, Thread::current());
+template <DecoratorSet MO>
+void ShenandoahEvacuateUpdateMetadataClosure<MO>::do_oop(oop* p) {
+  do_oop_work(p);
 }
 
-template <bool atomic>
-void ShenandoahEvacuateUpdateRootClosureBase<atomic>::do_oop(narrowOop* p) {
-  do_oop_work(p, Thread::current());
+template <DecoratorSet MO>
+void ShenandoahEvacuateUpdateMetadataClosure<MO>::do_oop(narrowOop* p) {
+  do_oop_work(p);
 }
 
 ShenandoahEvacuateUpdateRootsClosure::ShenandoahEvacuateUpdateRootsClosure() :
-  ShenandoahEvacuateUpdateRootClosureBase<true>() {
+  _heap(ShenandoahHeap::heap()) {
+}
+
+template <typename T>
+void ShenandoahEvacuateUpdateRootsClosure::do_oop_work(T* p, Thread* t) {
+  assert(_heap->is_concurrent_weak_root_in_progress() ||
+         _heap->is_concurrent_strong_root_in_progress(),
+         "Only do this in root processing phase");
+  assert(t == Thread::current(), "Wrong thread");
+
+  T o = RawAccess<>::oop_load(p);
+  if (!CompressedOops::is_null(o)) {
+    oop obj = CompressedOops::decode_not_null(o);
+    if (_heap->in_collection_set(obj)) {
+      assert(_heap->is_evacuation_in_progress(), "Only do this when evacuation is in progress");
+      shenandoah_assert_marked(p, obj);
+      oop resolved = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
+      if (resolved == obj) {
+        resolved = _heap->evacuate_object(obj, t);
+      }
+      ShenandoahHeap::atomic_update_oop(resolved, p, o);
+    }
+  }
 }
 
 void ShenandoahEvacuateUpdateRootsClosure::do_oop(oop* p) {
@@ -164,7 +182,7 @@ void ShenandoahEvacuateUpdateRootsClosure::do_oop(narrowOop* p) {
 }
 
 ShenandoahContextEvacuateUpdateRootsClosure::ShenandoahContextEvacuateUpdateRootsClosure() :
-  ShenandoahEvacuateUpdateRootClosureBase<true>(),
+  ShenandoahEvacuateUpdateRootsClosure(),
   _thread(Thread::current()) {
 }
 
