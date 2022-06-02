@@ -279,6 +279,18 @@ static const Type* bitshuffle_value(const TypeInteger* src_type, const TypeInteg
                        static_cast<const Type*>(TypeLong::make(lo, hi, Type::WidenMax));
 }
 
+jlong CompressBitsNode::compress_bits(jlong src, jlong mask, int bit_count) {
+  jlong res = 0;
+  for (int i = 0, j = 0; i < bit_count; i++) {
+    if(mask & 0x1) {
+      res |= (src & 0x1) << j++;
+    }
+    src >>= 1;
+    mask >>= 1;
+  }
+  return res;
+}
+
 const Type* CompressBitsNode::Value(PhaseGVN* phase) const {
   const Type* t1 = phase->type(in(1));
   const Type* t2 = phase->type(in(2));
@@ -293,21 +305,26 @@ const Type* CompressBitsNode::Value(PhaseGVN* phase) const {
 
   // Constant fold if both src and mask are constants.
   if (src_type->is_con() && mask_type->is_con()) {
-    jlong res = 0;
     jlong src = src_type->get_con_as_long(bt);
     jlong mask = mask_type->get_con_as_long(bt);
-    for (int i = 0, j = 0; i < w; i++) {
-      if(mask & 0x1) {
-        res |= (src & 0x1) << j++;
-      }
-      src >>= 1;
-      mask >>= 1;
-    }
+    jlong res = compress_bits(src, mask, w);
     return bt == T_INT ? static_cast<const Type*>(TypeInt::make(res)) :
                          static_cast<const Type*>(TypeLong::make(res));
   }
 
   return bitshuffle_value(src_type, mask_type, Op_CompressBits, bt);
+}
+
+jlong ExpandBitsNode::expand_bits(jlong src, jlong mask, int bit_count) {
+  jlong res = 0;
+  for (int i = 0; i < bit_count; i++) {
+    if(mask & 0x1) {
+      res |= (src & 0x1) << i;
+      src >>= 1;
+    }
+    mask >>= 1;
+  }
+  return res;
 }
 
 const Type* ExpandBitsNode::Value(PhaseGVN* phase) const {
@@ -324,16 +341,9 @@ const Type* ExpandBitsNode::Value(PhaseGVN* phase) const {
 
   // Constant fold if both src and mask are constants.
   if (src_type->is_con() && mask_type->is_con()) {
-     jlong res = 0;
      jlong src = src_type->get_con_as_long(bt);
      jlong mask = mask_type->get_con_as_long(bt);
-     for (int i = 0; i < w; i++) {
-       if(mask & 0x1) {
-         res |= (src & 0x1) << i;
-         src >>= 1;
-       }
-       mask >>= 1;
-     }
+     jlong res = expand_bits(src, mask, w);
      return bt == T_INT ? static_cast<const Type*>(TypeInt::make(res)) :
                           static_cast<const Type*>(TypeLong::make(res));
   }

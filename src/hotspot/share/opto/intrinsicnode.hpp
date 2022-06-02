@@ -273,6 +273,7 @@ class CompressBitsNode : public TypeNode {
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual Node* Identity(PhaseGVN* phase);
   virtual const Type* Value(PhaseGVN* phase) const;
+  static jlong compress_bits(jlong src, jlong mask, int bit_size);
 };
 
 class ExpandBitsNode : public TypeNode {
@@ -285,6 +286,7 @@ class ExpandBitsNode : public TypeNode {
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual Node* Identity(PhaseGVN* phase);
   virtual const Type* Value(PhaseGVN* phase) const;
+  static jlong expand_bits(jlong src, jlong mask, int bit_size);
 };
 
 //---------- IsInfiniteFNode -----------------------------------------------------
