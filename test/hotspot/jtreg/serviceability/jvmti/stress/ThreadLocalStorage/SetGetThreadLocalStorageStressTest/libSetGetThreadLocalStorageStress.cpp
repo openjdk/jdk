@@ -203,7 +203,8 @@ VirtualThreadEnd(jvmtiEnv *jvmti, JNIEnv *jni, jthread vthread) {
 
 /* ============================================================================= */
 
-jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
+JNIEXPORT jint JNICALL
+Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jvmtiEnv * jvmti = NULL;
 
   jvmtiEventCallbacks callbacks;
@@ -266,4 +267,3 @@ jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   }
   return JNI_OK;
 }
-

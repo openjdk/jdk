@@ -2380,7 +2380,7 @@ doPendingTasks(JNIEnv *env, ThreadNode *node)
 
         if (resumer != NULL) {
             /*
-             * trackAppResume indirectly aquires handlerLock. For proper lock
+             * trackAppResume indirectly acquires handlerLock. For proper lock
              * ordering handlerLock has to be acquired before threadLock.
              */
             debugMonitorExit(threadLock);

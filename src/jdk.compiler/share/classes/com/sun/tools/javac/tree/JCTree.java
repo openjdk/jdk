@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -241,8 +241,9 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
          */
         BINDINGPATTERN,
         DEFAULTCASELABEL,
-        GUARDPATTERN,
         PARENTHESIZEDPATTERN,
+
+        RECORDPATTERN,
 
         /** Indexed array expressions, of type Indexed.
          */
@@ -1284,9 +1285,10 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public List<JCCase> cases;
         /** Position of closing brace, optional. */
         public int endpos = Position.NOPOS;
-        public boolean hasTotalPattern;
+        public boolean hasUnconditionalPattern;
         public boolean isExhaustive;
         public boolean patternSwitch;
+        public boolean wasEnumSelector;
         protected JCSwitch(JCExpression selector, List<JCCase> cases) {
             this.selector = selector;
             this.cases = cases;
@@ -1371,9 +1373,10 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public List<JCCase> cases;
         /** Position of closing brace, optional. */
         public int endpos = Position.NOPOS;
-        public boolean hasTotalPattern;
+        public boolean hasUnconditionalPattern;
         public boolean isExhaustive;
         public boolean patternSwitch;
+        public boolean wasEnumSelector;
         protected JCSwitchExpression(JCExpression selector, List<JCCase> cases) {
             this.selector = selector;
             this.cases = cases;
@@ -2243,6 +2246,11 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
     public abstract static class JCPattern extends JCCaseLabel
             implements PatternTree {
 
+        public JCExpression guard;
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public JCExpression getGuard() { return guard; }
+
         @Override
         public boolean isExpression() {
             return false;
@@ -2362,46 +2370,62 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         }
     }
 
-    public static class JCGuardPattern extends JCPattern
-            implements GuardedPatternTree {
-        public JCPattern patt;
-        public JCExpression expr;
+    public static class JCRecordPattern extends JCPattern
+            implements DeconstructionPatternTree {
+        public JCExpression deconstructor;
+        public List<JCPattern> nested;
+        public JCVariableDecl var;
+        public ClassSymbol record;
+        public List<Type> fullComponentTypes;
 
-        public JCGuardPattern(JCPattern patt, JCExpression expr) {
-            this.patt = patt;
-            this.expr = expr;
+        protected JCRecordPattern(JCExpression deconstructor, List<JCPattern> nested,
+                                  JCVariableDecl var) {
+            this.deconstructor = deconstructor;
+            this.nested = nested;
+            this.var = var;
+        }
+
+        @DefinedBy(Api.COMPILER_TREE)
+        public Name getBinding() {
+            return null;
         }
 
         @Override @DefinedBy(Api.COMPILER_TREE)
-        public PatternTree getPattern() {
-            return patt;
+        public ExpressionTree getDeconstructor() {
+            return deconstructor;
         }
 
         @Override @DefinedBy(Api.COMPILER_TREE)
-        public ExpressionTree getExpression() {
-            return expr;
+        public List<? extends JCPattern> getNestedPatterns() {
+            return nested;
         }
 
         @Override
         public void accept(Visitor v) {
-            v.visitGuardPattern(this);
+            v.visitRecordPattern(this);
         }
 
         @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() {
-            return Kind.GUARDED_PATTERN;
+            return Kind.DECONSTRUCTION_PATTERN;
         }
 
         @Override
         @DefinedBy(Api.COMPILER_TREE)
         public <R, D> R accept(TreeVisitor<R, D> v, D d) {
-            return v.visitGuardedPattern(this, d);
+            return v.visitDeconstructionPattern(this, d);
         }
 
         @Override
         public Tag getTag() {
-            return Tag.GUARDPATTERN;
+            return RECORDPATTERN;
         }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public VariableTree getVariable() {
+            return var;
+        }
+
     }
 
     /**
@@ -3446,7 +3470,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public void visitBindingPattern(JCBindingPattern that) { visitTree(that); }
         public void visitDefaultCaseLabel(JCDefaultCaseLabel that) { visitTree(that); }
         public void visitParenthesizedPattern(JCParenthesizedPattern that) { visitTree(that); }
-        public void visitGuardPattern(JCGuardPattern that) { visitTree(that); }
+        public void visitRecordPattern(JCRecordPattern that) { visitTree(that); }
         public void visitIndexed(JCArrayAccess that)         { visitTree(that); }
         public void visitSelect(JCFieldAccess that)          { visitTree(that); }
         public void visitReference(JCMemberReference that)   { visitTree(that); }

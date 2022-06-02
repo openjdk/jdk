@@ -104,6 +104,7 @@ bool Continuation::is_continuation_scope_mounted(JavaThread* thread, oop cont_sc
 // The continuation object can be extracted from the thread.
 bool Continuation::is_cont_barrier_frame(const frame& f) {
   assert(f.is_interpreted_frame() || f.cb() != nullptr, "");
+  if (!Continuations::enabled()) return false;
   return is_return_barrier_entry(f.is_interpreted_frame() ? ContinuationHelper::InterpretedFrame::return_pc(f)
                                                           : ContinuationHelper::CompiledFrame::return_pc(f));
 }
@@ -411,7 +412,11 @@ void Continuations::init() {
 // While virtual threads are in Preview, there are some VM mechanisms we disable if continuations aren't used
 // See NMethodSweeper::do_stack_scanning and nmethod::is_not_on_continuation_stack
 bool Continuations::enabled() {
+#if defined(AMD64) || defined(AARCH64)
   return Arguments::enable_preview();
+#else
+  return false;
+#endif
 }
 
 // We initialize the _gc_epoch to 2, because previous_completed_gc_marking_cycle

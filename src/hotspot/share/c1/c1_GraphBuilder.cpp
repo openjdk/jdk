@@ -3139,7 +3139,7 @@ BlockBegin* GraphBuilder::setup_start_block(int osr_bci, BlockBegin* std_entry, 
   // necessary if std_entry is also a backward branch target because
   // then phi functions may be necessary in the header block.  It's
   // also necessary when profiling so that there's a single block that
-  // can increment the the counters.
+  // can increment the counters.
   // In addition, with range check elimination, we may need a valid block
   // that dominates all the rest to insert range predicates.
   BlockBegin* new_header_block;
@@ -3326,7 +3326,7 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
       // Compiles where the root method is an intrinsic need a special
       // compilation environment because the bytecodes for the method
       // shouldn't be parsed during the compilation, only the special
-      // Intrinsic node should be emitted.  If this isn't done the the
+      // Intrinsic node should be emitted.  If this isn't done the
       // code for the inlined version will be different than the root
       // compiled version which could lead to monotonicity problems on
       // intel.
@@ -3844,7 +3844,7 @@ void GraphBuilder::fill_sync_handler(Value lock, BlockBegin* sync_handler, bool 
     }
   }
 
-  // perform the throw as if at the the call site
+  // perform the throw as if at the call site
   apush(exception);
   throw_op(bci);
 
@@ -4145,20 +4145,28 @@ bool GraphBuilder::try_method_handle_inline(ciMethod* callee, bool ignore_return
       const int args_base = state()->stack_size() - callee->arg_size();
       ValueType* type = state()->stack_at(args_base)->type();
       if (type->is_constant()) {
-        ciMethod* target = type->as_ObjectType()->constant_value()->as_method_handle()->get_vmtarget();
-        // We don't do CHA here so only inline static and statically bindable methods.
-        if (target->is_static() || target->can_be_statically_bound()) {
-          if (ciMethod::is_consistent_info(callee, target)) {
-            Bytecodes::Code bc = target->is_static() ? Bytecodes::_invokestatic : Bytecodes::_invokevirtual;
-            ignore_return = ignore_return || (callee->return_type()->is_void() && !target->return_type()->is_void());
-            if (try_inline(target, /*holder_known*/ !callee->is_static(), ignore_return, bc)) {
-              return true;
+        ciObject* mh = type->as_ObjectType()->constant_value();
+        if (mh->is_method_handle()) {
+          ciMethod* target = mh->as_method_handle()->get_vmtarget();
+
+          // We don't do CHA here so only inline static and statically bindable methods.
+          if (target->is_static() || target->can_be_statically_bound()) {
+            if (ciMethod::is_consistent_info(callee, target)) {
+              Bytecodes::Code bc = target->is_static() ? Bytecodes::_invokestatic : Bytecodes::_invokevirtual;
+              ignore_return = ignore_return || (callee->return_type()->is_void() && !target->return_type()->is_void());
+              if (try_inline(target, /*holder_known*/ !callee->is_static(), ignore_return, bc)) {
+                return true;
+              }
+            } else {
+              print_inlining(target, "signatures mismatch", /*success*/ false);
             }
           } else {
-            print_inlining(target, "signatures mismatch", /*success*/ false);
+            assert(false, "no inlining through MH::invokeBasic"); // missing optimization opportunity due to suboptimal LF shape
+            print_inlining(target, "not static or statically bindable", /*success*/ false);
           }
         } else {
-          print_inlining(target, "not static or statically bindable", /*success*/ false);
+          assert(mh->is_null_object(), "not a null");
+          print_inlining(callee, "receiver is always null", /*success*/ false);
         }
       } else {
         print_inlining(callee, "receiver not constant", /*success*/ false);
@@ -4231,7 +4239,8 @@ bool GraphBuilder::try_method_handle_inline(ciMethod* callee, bool ignore_return
     break;
 
   case vmIntrinsics::_linkToNative:
-    break; // TODO: NYI
+    print_inlining(callee, "native call", /*success*/ false);
+    break;
 
   default:
     fatal("unexpected intrinsic %d: %s", vmIntrinsics::as_int(iid), vmIntrinsics::name_at(iid));

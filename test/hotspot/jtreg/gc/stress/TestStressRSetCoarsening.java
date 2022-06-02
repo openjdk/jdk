@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -240,7 +240,7 @@ public class TestStressRSetCoarsening {
         final int HOWL_TO_FULL_THRESHOLD = (cardsPerRegion * coarsenHowlToFullPercent) / 100;
 
         // regToRegRefCounts - array of reference counts from region to region
-        // at the the end of iteration.
+        // at the end of iteration.
         // The number of test iterations is array length - 1.
         // If c[i] > c[i-1] then during the iteration i more references will
         // be created.

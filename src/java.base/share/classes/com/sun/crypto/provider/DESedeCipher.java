@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,8 @@ import javax.crypto.spec.*;
  * @see DESCipher
  */
 
-public final class DESedeCipher extends CipherSpi {
+public sealed class DESedeCipher extends CipherSpi
+        permits PKCS12PBECipherCore.PBEWithSHA1AndDESede {
 
     /*
      * internal CipherCore object which does the real work.

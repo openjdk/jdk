@@ -205,7 +205,8 @@ VMDeath(jvmtiEnv *jvmti, JNIEnv *jni) {
   callbacksEnabled = NSK_FALSE;
 }
 
-JNIEXPORT jint JNICALL Java_breakpoint01_check(JNIEnv *jni, jobject obj) {
+JNIEXPORT jint JNICALL
+Java_breakpoint01_check(JNIEnv *jni, jobject obj) {
   for (int i = 0; i < METH_NUM; i++) {
     if (bpEvents[i] != 1) {
       result = STATUS_FAILED;
@@ -222,7 +223,8 @@ JNIEXPORT jint JNICALL Java_breakpoint01_check(JNIEnv *jni, jobject obj) {
   return result;
 }
 
-jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
+JNIEXPORT jint JNICALL
+Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jvmtiCapabilities caps;
   jvmtiError err;
   jint res;

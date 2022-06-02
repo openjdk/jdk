@@ -232,7 +232,8 @@ callbackThreadEnd(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
   LOG("  ... received THREAD_END event for unknown thread: %p\n", (void*)thread);
 }
 
-jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
+JNIEXPORT jint JNICALL
+Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jvmtiEnv* jvmti = NULL;
 
   timeout =  60 * 1000;

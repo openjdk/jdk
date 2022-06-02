@@ -974,6 +974,9 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
       case Op_RoundD: {
           body_size += Matcher::scalar_op_pre_select_sz_estimate(n->Opcode(), n->bottom_type()->basic_type());
       } break;
+      case Op_CountTrailingZerosV:
+      case Op_CountLeadingZerosV:
+      case Op_ReverseV:
       case Op_RoundVF:
       case Op_RoundVD:
       case Op_PopCountVI:
@@ -3791,7 +3794,7 @@ bool PhaseIdealLoop::do_intrinsify_fill() {
 }
 
 
-// Examine an inner loop looking for a a single store of an invariant
+// Examine an inner loop looking for a single store of an invariant
 // value in a unit stride loop,
 bool PhaseIdealLoop::match_fill_loop(IdealLoopTree* lpt, Node*& store, Node*& store_value,
                                      Node*& shift, Node*& con) {
