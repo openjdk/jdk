@@ -46,7 +46,6 @@ import java.nio.ByteBuffer;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.text.MessageFormat;
-import java.util.Arrays;
 import java.util.Locale;
 
 /**
@@ -406,8 +405,7 @@ final class SessionTicketExtension {
             // If resumption is not in progress, return an empty value
             if (!chc.isResumption || chc.resumingSession == null
                     || chc.resumingSession.getPskIdentity() == null
-                    || !Arrays.asList(ProtocolVersion.PROTOCOLS_10_12)
-                        .contains(chc.resumingSession.getProtocolVersion())) {
+                    || chc.resumingSession.getProtocolVersion().useTLS13PlusSpec()) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine("Stateless resumption supported");
                 }
