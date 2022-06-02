@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.text.spi.DateFormatSymbolsProvider;
 import java.text.spi.DecimalFormatSymbolsProvider;
 import java.text.spi.NumberFormatProvider;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -308,23 +309,16 @@ public abstract class LocaleProviderAdapter {
     }
 
     public static Locale[] toLocaleArray(Set<String> tags) {
-        Locale[] locs = new Locale[tags.size() + 1];
-        int index = 0;
-        locs[index++] = Locale.ROOT;
-        for (String tag : tags) {
-            switch (tag) {
-            case "ja-JP-JP":
-                locs[index++] = JRELocaleConstants.JA_JP_JP;
-                break;
-            case "th-TH-TH":
-                locs[index++] = JRELocaleConstants.TH_TH_TH;
-                break;
-            default:
-                locs[index++] = Locale.forLanguageTag(tag);
-                break;
-            }
-        }
-        return locs;
+        return tags.stream()
+            .map(t -> {
+                return switch (t) {
+                    case "ja-JP-JP" -> JRELocaleConstants.JA_JP_JP;
+                    case "no-NO-NY" -> JRELocaleConstants.NO_NO_NY;
+                    case "th-TH-TH" -> JRELocaleConstants.TH_TH_TH;
+                    default -> Locale.forLanguageTag(t);
+                };
+            })
+            .toArray(Locale[]::new);
     }
 
     /**
