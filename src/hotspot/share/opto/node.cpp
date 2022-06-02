@@ -1601,6 +1601,159 @@ Node* old_root() {
   return nullptr;
 }
 
+// Worklist, nodes are added only once
+class Worklist {
+public:
+  Worklist() : _visited_set(cmpkey, hashkey) {}
+  void add(Node* node) {
+    if (not_a_node(node)) {
+      return; // Gracefully handle NULL, -1, 0xabababab, etc.
+    }
+    if (_visited_set[node] == nullptr) {
+      _visited_set.Insert(node, node);
+      _worklist.push(node);
+    }
+  }
+  Node* next() {
+    if (_index < _worklist.size()) {
+      return _worklist[_index++];
+    }
+    return nullptr;
+  }
+private:
+  uint _index = 0;
+  Dict _visited_set;
+  Node_List _worklist;
+};
+
+// BFS traverse all reachable nodes from start, call callback on them
+template <typename Callback>
+void visit_nodes(Node* start, Callback callback) {
+  Worklist worklist;
+  worklist.add(start);
+  for (Node* n = worklist.next(); n != nullptr; n = worklist.next()) {
+    callback(n);
+    for (uint i = 0; i < n->len(); i++) {
+      worklist.add(n->in(i));
+    }
+    for (uint i = 0; i < n->outcnt(); i++) {
+      worklist.add(n->raw_out(i));
+    }
+  }
+}
+
+// BFS traverse from start, return node with idx
+Node* find_node_by_idx(Node* start, uint idx) {
+  Node* result = nullptr;
+  auto callback = [&] (Node* n) {
+    if (n->_idx == idx) {
+      if (result != nullptr) {
+        tty->print("find_node_by_idx: " INTPTR_FORMAT " and " INTPTR_FORMAT " both have idx==%d\n",
+          (uintptr_t)result, (uintptr_t)n, idx);
+      }
+      result = n;
+    }
+  };
+  visit_nodes(start, callback);
+  return result;
+}
+
+// TODO: can we replace find_node ???
+// call from debugger: find node with idx in new/current graph
+Node* find_node_by_idx(uint idx) {
+  Node* root =  Compile::current()->root();
+  return find_node_by_idx(root, idx);
+}
+
+// TODO: can we replace find_old_node ???
+// call from debugger: find node with idx in old graph
+Node* find_old_node_by_idx(uint idx) {
+  Node* root =  old_root();
+  return find_node_by_idx(root, idx);
+}
+
+// check if str matches the star_pattern
+// eg. str "_abc____def__" would match pattern "abc*def"
+bool is_star_match(const char* star_pattern, const char* str) {
+  char buf[strlen(star_pattern) + 1]; // copy parts of pattern into this
+  const char* s = str;
+  const char* r = star_pattern;
+  while(strlen(r) > 0) {
+    // find next section in pattern
+    const char* r_end = strstr(r, "*");
+    const char* r_part = r;
+    if (r_end != nullptr) { // copy part into buffer
+      size_t r_part_len = r_end-r;
+      strncpy(buf, r, r_part_len);
+      buf[r_part_len] = '\0'; // end of string
+      r_part = buf;
+    }
+    // find this section in s
+    const char* s_match = strstr(s, r_part);
+    if (s_match == nullptr) {
+      return false; // r_part did not match - abort
+    }
+    size_t match_len = strlen(r_part);
+    s = s_match + match_len; // advance to match position plus part length
+    r += match_len + 1; // advance by part length and "*"
+  }
+  return true; // all parts of pattern matched
+}
+
+Node* find_node_by_name(Node* start, const char* name) {
+  Node* result = nullptr;
+  auto callback = [&] (Node* n) {
+    if (is_star_match(name, n->Name())) {
+      n->dump();
+      result = n;
+    }
+  };
+  visit_nodes(start, callback);
+  return result;
+}
+
+// call from debugger: find node with name pattern in new/current graph
+// name can contain "*" in match pattern to match any characters
+Node* find_node_by_name(const char* name) {
+  Node* root =  Compile::current()->root();
+  return find_node_by_name(root, name);
+}
+
+// call from debugger: find node with name pattern in old graph
+// name can contain "*" in match pattern to match any characters
+Node* find_old_node_by_name(const char* name) {
+  Node* root =  old_root();
+  return find_node_by_name(root, name);
+}
+
+Node* find_node_by_dump(Node* start, const char* pattern) {
+  Node* result = nullptr;
+  auto callback = [&] (Node* n) {
+    stringStream stream;
+    n->dump("", false, &stream);
+    if (is_star_match(pattern, stream.base())) {
+      n->dump();
+      result = n;
+    }
+  };
+  visit_nodes(start, callback);
+  return result;
+}
+
+// call from debugger: find node with dump pattern in new/current graph
+// can contain "*" in match pattern to match any characters
+Node* find_node_by_dump(const char* pattern) {
+  Node* root =  Compile::current()->root();
+  return find_node_by_dump(root, pattern);
+}
+
+// call from debugger: find node with name pattern in old graph
+// can contain "*" in match pattern to match any characters
+Node* find_old_node_by_dump(const char* pattern) {
+  Node* root =  old_root();
+  return find_node_by_dump(root, pattern);
+}
+
 // Call this from debugger, search in same graph as n:
 Node* find_node(Node* n, const int idx) {
   return n->find(idx);
