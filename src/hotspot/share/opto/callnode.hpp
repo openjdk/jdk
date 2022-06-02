@@ -656,7 +656,7 @@ public:
   virtual void copy_call_debug_info(PhaseIterGVN* phase, SafePointNode* sfpt) {}
 
 #ifndef PRODUCT
-  virtual void        dump_req(outputStream *st = tty, DumpConfig* dc = nullptr) const;
+  virtual void        dump_req(outputStream* st = tty, DumpConfig* dc = nullptr) const;
   virtual void        dump_spec(outputStream* st) const;
 #endif
 };
