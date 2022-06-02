@@ -72,18 +72,21 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
 public class Table extends Content {
     private final HtmlStyle tableStyle;
     private Content caption;
-    private Map<Content, Predicate<Element>> tabMap;
+    private List<Tab> tabs;
+    private Set<Tab> occurringTabs;
     private Content defaultTab;
-    private Set<Content> tabs;
-    private HtmlStyle tabListStyle = HtmlStyle.tableTabs;
-    private HtmlStyle activeTabStyle = HtmlStyle.activeTableTab;
-    private HtmlStyle tabStyle = HtmlStyle.tableTab;
+    private boolean renderTabs = true;
     private TableHeader header;
     private List<HtmlStyle> columnStyles;
-    private List<HtmlStyle> stripedStyles = Arrays.asList(HtmlStyle.evenRowColor, HtmlStyle.oddRowColor);
+    private HtmlStyle gridStyle;
     private final List<Content> bodyRows;
     private HtmlId id;
     private boolean alwaysShowDefaultTab = false;
+
+    /**
+     * A record containing the data for a table tab.
+     */
+    record Tab(Content label, Predicate<Element> predicate, int index) {}
 
     /**
      * Creates a builder for an HTML element representing a table.
@@ -119,11 +122,13 @@ public class Table extends Content {
      * @return this object
      */
     public Table addTab(Content label, Predicate<Element> predicate) {
-        if (tabMap == null) {
-            tabMap = new LinkedHashMap<>();     // preserves order that tabs are added
-            tabs = new HashSet<>();             // order not significant
+        if (tabs == null) {
+            tabs = new ArrayList<>();         // preserves order that tabs are added
+            occurringTabs = new HashSet<>();  // order not significant
         }
-        tabMap.put(label, predicate);
+        // Use current size of tabs list as id so we have tab ids that are consistent
+        // across tables with the same tabs but different content.
+        tabs.add(new Tab(label, predicate, tabs.size() + 1));
         return this;
     }
 
@@ -150,17 +155,14 @@ public class Table extends Content {
     }
 
     /**
-     * Sets the name of the styles used to display the tabs.
+     * Allows to set whether tabs should be rendered for this table. Some pages use their
+     * own controls to select table catetories, in which case the tabs are omitted.
      *
-     * @param tabListStyle      the style for the {@code <div>} element containing the tabs
-     * @param activeTabStyle    the style for the active tab
-     * @param tabStyle          the style for other tabs
-     * @return  this object
+     * @param renderTabs true if table tabs should be rendered
+     * @return this object
      */
-    public Table setTabStyles(HtmlStyle tabListStyle, HtmlStyle activeTabStyle, HtmlStyle tabStyle) {
-        this.tabListStyle = tabListStyle;
-        this.activeTabStyle = activeTabStyle;
-        this.tabStyle = tabStyle;
+    public Table setRenderTabs(boolean renderTabs) {
+        this.renderTabs = renderTabs;
         return this;
     }
 
@@ -177,19 +179,6 @@ public class Table extends Content {
      */
     public Table setHeader(TableHeader header) {
         this.header = header;
-        return this;
-    }
-
-    /**
-     * Sets the styles used for {@code <tr>} tags, to give a "striped" appearance.
-     * The defaults are currently {@code evenRowColor} and {@code oddRowColor}.
-     *
-     * @param evenRowStyle  the style to use for even-numbered rows
-     * @param oddRowStyle   the style to use for odd-numbered rows
-     * @return this object
-     */
-    public Table setStripedStyles(HtmlStyle evenRowStyle, HtmlStyle oddRowStyle) {
-        stripedStyles = Arrays.asList(evenRowStyle, oddRowStyle);
         return this;
     }
 
@@ -221,6 +210,19 @@ public class Table extends Content {
      */
     public Table setColumnStyles(List<HtmlStyle> styles) {
         columnStyles = styles;
+        return this;
+    }
+
+    /**
+     * Sets the style for the table's grid which controls allocation of space among table columns.
+     * The style should contain a {@code display: grid;} property and its number of columns must
+     * match the number of column styles and content passed to other methods in this class.
+     *
+     * @param gridStyle the grid style
+     * @return this object
+     */
+    public Table setGridStyle(HtmlStyle gridStyle) {
+        this.gridStyle = gridStyle;
         return this;
     }
 
@@ -299,7 +301,7 @@ public class Table extends Content {
      *      and {@code element} is null
      */
     public void addRow(Element element, List<Content> contents) {
-        if (tabMap != null && element == null) {
+        if (tabs != null && element == null) {
             throw new NullPointerException();
         }
         if (contents.size() != columnStyles.size()) {
@@ -308,27 +310,21 @@ public class Table extends Content {
 
         Content row = new ContentBuilder();
 
-        HtmlStyle rowStyle = null;
-        if (stripedStyles != null) {
-            int rowIndex = bodyRows.size();
-            rowStyle = stripedStyles.get(rowIndex % 2);
-        }
+        int rowIndex = bodyRows.size();
+        HtmlStyle rowStyle = rowIndex % 2 == 0 ? HtmlStyle.evenRowColor : HtmlStyle.oddRowColor;
+
         List<String> tabClasses = new ArrayList<>();
-        if (tabMap != null) {
+        if (tabs != null) {
             // Construct a series of values to add to the HTML 'class' attribute for the cells of
             // this row, such that there is a default value and a value corresponding to each tab
             // whose predicate matches the element. The values correspond to the equivalent ids.
             // The values are used to determine the cells to make visible when a tab is selected.
             tabClasses.add(id.name());
-            int tabIndex = 1;
-            for (Map.Entry<Content, Predicate<Element>> e : tabMap.entrySet()) {
-                Content label = e.getKey();
-                Predicate<Element> predicate = e.getValue();
-                if (predicate.test(element)) {
-                    tabs.add(label);
-                    tabClasses.add(HtmlIds.forTab(id, tabIndex).name());
+            for (Tab tab : tabs) {
+                if (tab.predicate().test(element)) {
+                    occurringTabs.add(tab);
+                    tabClasses.add(HtmlIds.forTab(id, tab.index()).name());
                 }
-                tabIndex++;
             }
         }
         int colIndex = 0;
@@ -336,9 +332,8 @@ public class Table extends Content {
             HtmlStyle cellStyle = columnStyles.get(colIndex);
             // Always add content to make sure the cell isn't dropped
             var cell = HtmlTree.DIV(cellStyle).addUnchecked(c.isEmpty() ? Text.EMPTY : c);
-            if (rowStyle != null) {
-                cell.addStyle(rowStyle);
-            }
+            cell.addStyle(rowStyle);
+
             for (String tabClass : tabClasses) {
                 cell.addStyle(tabClass);
             }
@@ -375,35 +370,42 @@ public class Table extends Content {
         } else {
             main = new ContentBuilder();
         }
-        HtmlStyle columnStyle = switch (columnStyles.size()) {
-            case 2 -> HtmlStyle.twoColumnSummary;
-            case 3 -> HtmlStyle.threeColumnSummary;
-            case 4 -> HtmlStyle.fourColumnSummary;
-            default -> throw new IllegalStateException();
-        };
+        // If no grid style is set use on of the default styles
+        if (gridStyle == null) {
+            gridStyle = switch (columnStyles.size()) {
+                case 2 -> HtmlStyle.twoColumnSummary;
+                case 3 -> HtmlStyle.threeColumnSummary;
+                case 4 -> HtmlStyle.fourColumnSummary;
+                default -> throw new IllegalStateException();
+            };
+        }
 
-        var table = HtmlTree.DIV(tableStyle).addStyle(columnStyle);
-        if ((tabMap == null || tabs.size() == 1) && !alwaysShowDefaultTab) {
-            if (tabMap == null) {
+        var table = HtmlTree.DIV(tableStyle).addStyle(gridStyle);
+        if ((tabs == null || occurringTabs.size() == 1) && !alwaysShowDefaultTab) {
+            if (tabs == null) {
                 main.add(caption);
             } else {
-                main.add(getCaption(tabs.iterator().next()));
+                main.add(getCaption(occurringTabs.iterator().next().label()));
             }
             table.add(getTableBody());
             main.add(table);
         } else {
-            var tablist = HtmlTree.DIV(tabListStyle)
+            var tablist = HtmlTree.DIV(HtmlStyle.tableTabs)
                     .put(HtmlAttr.ROLE, "tablist")
                     .put(HtmlAttr.ARIA_ORIENTATION, "horizontal");
 
-            int tabIndex = 0;
-            tablist.add(createTab(HtmlIds.forTab(id, tabIndex), activeTabStyle, true, defaultTab));
-            table.put(HtmlAttr.ARIA_LABELLEDBY, HtmlIds.forTab(id, tabIndex).name());
-            for (Content tabLabel : tabMap.keySet()) {
-                tabIndex++;
-                if (tabs.contains(tabLabel)) {
-                    HtmlTree tab = createTab(HtmlIds.forTab(id, tabIndex), tabStyle, false, tabLabel);
-                    tablist.add(tab);
+            HtmlId defaultTabId = HtmlIds.forTab(id, 0);
+            if (renderTabs) {
+                tablist.add(createTab(defaultTabId, HtmlStyle.activeTableTab, true, defaultTab));
+            } else {
+                tablist.add(getCaption(defaultTab));
+            }
+            table.put(HtmlAttr.ARIA_LABELLEDBY, defaultTabId.name());
+            if (renderTabs) {
+                for (Tab tab : tabs) {
+                    if (occurringTabs.contains(tab)) {
+                        tablist.add(createTab(HtmlIds.forTab(id, tab.index()), HtmlStyle.tableTab, false, tab.label()));
+                    }
                 }
             }
             if (id == null) {
@@ -440,40 +442,6 @@ public class Table extends Content {
         tableContent.add(header);
         bodyRows.forEach(tableContent::add);
         return tableContent;
-    }
-
-    /**
-     * Returns whether or not the table needs JavaScript support.
-     * It requires such support if tabs have been added.
-     *
-     * @return true if JavaScript is required
-     */
-    public boolean needsScript() {
-        return (tabs != null) && (tabs.size() > 1);
-    }
-
-    /**
-     * Returns the script to be used in conjunction with the table.
-     *
-     * @return the script
-     */
-    public String getScript() {
-        if (tabMap == null)
-            throw new IllegalStateException();
-
-        StringBuilder sb = new StringBuilder();
-
-        // Add the variables defining the stylenames
-        appendStyleInfo(sb,
-                stripedStyles.get(0), stripedStyles.get(1), tabStyle, activeTabStyle);
-        return sb.toString();
-    }
-
-    private void appendStyleInfo(StringBuilder sb, HtmlStyle... styles) {
-        for (HtmlStyle style : styles) {
-            sb.append("var ").append(style.name()).append(" = \"").append(style.cssName()).append("\";\n");
-        }
-
     }
 
     private HtmlTree getCaption(Content title) {
