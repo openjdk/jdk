@@ -1733,7 +1733,11 @@ private:
       return !(_control || _memory || _data || _mixed || _other);
     }
     void set_all() {
-      _control = _memory = _data = _mixed = _other = true;
+      _control = true;
+      _memory = true;
+      _data = true;
+      _mixed = true;
+      _other = true;
     }
   };
   Filter _filter_visit;
