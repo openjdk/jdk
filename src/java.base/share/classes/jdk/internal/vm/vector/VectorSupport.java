@@ -41,6 +41,7 @@ public class VectorSupport {
     public static final int VECTOR_OP_ABS  = 0;
     public static final int VECTOR_OP_NEG  = 1;
     public static final int VECTOR_OP_SQRT = 2;
+    public static final int VECTOR_OP_BIT_COUNT = 3;
 
     // Binary
     public static final int VECTOR_OP_ADD  = 4;
@@ -75,6 +76,23 @@ public class VectorSupport {
     // Rotate operations
     public static final int VECTOR_OP_LROTATE = 24;
     public static final int VECTOR_OP_RROTATE = 25;
+
+    // Compression expansion operations
+    public static final int VECTOR_OP_COMPRESS = 26;
+    public static final int VECTOR_OP_EXPAND = 27;
+    public static final int VECTOR_OP_MASK_COMPRESS = 28;
+
+    // Leading/Trailing zeros count operations
+    public static final int VECTOR_OP_TZ_COUNT  = 29;
+    public static final int VECTOR_OP_LZ_COUNT  = 30;
+
+    // Reverse operation
+    public static final int VECTOR_OP_REVERSE   = 31;
+    public static final int VECTOR_OP_REVERSE_BYTES = 32;
+
+    // Compress and Expand Bits operation
+    public static final int VECTOR_OP_COMPRESS_BITS = 33;
+    public static final int VECTOR_OP_EXPAND_BITS = 34;
 
     // Math routines
     public static final int VECTOR_OP_TAN = 101;
@@ -363,7 +381,7 @@ public class VectorSupport {
     public interface LoadOperation<C,
                                    VM extends VectorPayload,
                                    S extends VectorSpecies<?>> {
-        VM load(C container, int index, S s);
+        VM load(C container, long index, S s);
     }
 
     @IntrinsicCandidate
@@ -375,7 +393,7 @@ public class VectorSupport {
     VM load(Class<? extends VM> vmClass, Class<E> eClass,
             int length,
             Object base, long offset,
-            C container, int index, S s,
+            C container, long index, S s,
             LoadOperation<C, VM, S> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
         return defaultImpl.load(container, index, s);
@@ -387,7 +405,7 @@ public class VectorSupport {
                                                V extends Vector<?>,
                                                S extends VectorSpecies<?>,
                                                M extends VectorMask<?>> {
-        V load(C container, int index, S s, M m);
+        V load(C container, long index, S s, M m);
     }
 
     @IntrinsicCandidate
@@ -400,7 +418,7 @@ public class VectorSupport {
     V loadMasked(Class<? extends V> vClass, Class<M> mClass, Class<E> eClass,
                  int length,
                  Object base, long offset,
-                 M m, C container, int index, S s,
+                 M m, C container, long index, S s,
                  LoadVectorMaskedOperation<C, V, S, M> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
         return defaultImpl.load(container, index, s, m);
@@ -437,18 +455,18 @@ public class VectorSupport {
     /* ============================================================================ */
 
     public interface StoreVectorOperation<C,
-                                          V extends Vector<?>> {
-        void store(C container, int index, V v);
+                                          V extends VectorPayload> {
+        void store(C container, long index, V v);
     }
 
     @IntrinsicCandidate
     public static
     <C,
-     V extends Vector<?>>
+     V extends VectorPayload>
     void store(Class<?> vClass, Class<?> eClass,
                int length,
                Object base, long offset,
-               V v, C container, int index,
+               V v, C container, long index,
                StoreVectorOperation<C, V> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
         defaultImpl.store(container, index, v);
@@ -457,7 +475,7 @@ public class VectorSupport {
     public interface StoreVectorMaskedOperation<C,
                                                 V extends Vector<?>,
                                                 M extends VectorMask<?>> {
-        void store(C container, int index, V v, M m);
+        void store(C container, long index, V v, M m);
     }
 
     @IntrinsicCandidate
@@ -469,7 +487,7 @@ public class VectorSupport {
     void storeMasked(Class<? extends V> vClass, Class<M> mClass, Class<E> eClass,
                      int length,
                      Object base, long offset,
-                     V v, M m, C container, int index,
+                     V v, M m, C container, long index,
                      StoreVectorMaskedOperation<C, V, M> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
         defaultImpl.store(container, index, v, m);
@@ -622,6 +640,26 @@ public class VectorSupport {
               VectorConvertOp<VOUT, VIN, S> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
         return defaultImpl.apply(v, s);
+    }
+
+    /* ============================================================================ */
+
+    public interface CompressExpandOperation<V extends Vector<?>,
+                                     M extends VectorMask<?>> {
+        VectorPayload apply(V v, M m);
+    }
+
+    @IntrinsicCandidate
+    public static
+    <V extends Vector<E>,
+     M extends VectorMask<E>,
+     E>
+    VectorPayload compressExpandOp(int opr,
+                                   Class<? extends V> vClass, Class<? extends M> mClass, Class<E> eClass,
+                                   int length, V v, M m,
+                                   CompressExpandOperation<V, M> defaultImpl) {
+        assert isNonCapturingLambda(defaultImpl) : defaultImpl;
+        return defaultImpl.apply(v, m);
     }
 
     /* ============================================================================ */

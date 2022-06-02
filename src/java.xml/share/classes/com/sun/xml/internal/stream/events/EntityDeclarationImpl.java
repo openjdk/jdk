@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import jdk.xml.internal.JdkXmlUtils;
 /**
  *
  * This class store all the information for a particular EntityDeclaration. EntityDeclaration interface
- * has various get* functiosn to retirve information about a particular EntityDeclaration.
+ * has various get* functions to retrieve information about a particular EntityDeclaration.
  *
  * @author  Neeraj Bajaj, Sun Microsystems.
  */

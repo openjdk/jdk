@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -386,15 +386,15 @@ public class HttpNegotiateServer {
         };
 
         System.err.println("\n\nExpecting to succeed when executing " +
-                "with the the logged in subject.");
+                "with the logged in subject.");
 
         try {
             Subject.callAs(subject, test_action);
             System.err.println("\n\nConnection succeed when executing " +
-                    "with the the logged in subject.");
+                    "with the logged in subject.");
         } catch (CompletionException e) {
             System.err.println("\n\nFailure unexpected when executing " +
-                    "with the the logged in subject.");
+                    "with the logged in subject.");
             e.printStackTrace();
             throw new RuntimeException("Failed to login as subject");
         }

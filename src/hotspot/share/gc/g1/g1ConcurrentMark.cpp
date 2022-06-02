@@ -1219,7 +1219,7 @@ void G1ConcurrentMark::remark() {
 
   double start = os::elapsedTime();
 
-  verify_during_pause(G1HeapVerifier::G1VerifyRemark, VerifyOption_G1UsePrevMarking, "Remark before");
+  verify_during_pause(G1HeapVerifier::G1VerifyRemark, VerifyOption::G1UsePrevMarking, "Remark before");
 
   {
     GCTraceTime(Debug, gc, phases) debug("Finalize Marking", _gc_timer_cm);
@@ -1280,7 +1280,7 @@ void G1ConcurrentMark::remark() {
 
     compute_new_sizes();
 
-    verify_during_pause(G1HeapVerifier::G1VerifyRemark, VerifyOption_G1UsePrevMarking, "Remark after");
+    verify_during_pause(G1HeapVerifier::G1VerifyRemark, VerifyOption::G1UsePrevMarking, "Remark after");
 
     assert(!restart_for_overflow(), "sanity");
     // Completely reset the marking state since marking completed
@@ -1289,7 +1289,7 @@ void G1ConcurrentMark::remark() {
     // We overflowed.  Restart concurrent marking.
     _restart_for_overflow = true;
 
-    verify_during_pause(G1HeapVerifier::G1VerifyRemark, VerifyOption_G1UsePrevMarking, "Remark overflow");
+    verify_during_pause(G1HeapVerifier::G1VerifyRemark, VerifyOption::G1UsePrevMarking, "Remark overflow");
 
     // Clear the marking state because we will be restarting
     // marking due to overflowing the global mark stack.
@@ -1435,7 +1435,7 @@ void G1ConcurrentMark::cleanup() {
 
   double start = os::elapsedTime();
 
-  verify_during_pause(G1HeapVerifier::G1VerifyCleanup, VerifyOption_G1UsePrevMarking, "Cleanup before");
+  verify_during_pause(G1HeapVerifier::G1VerifyCleanup, VerifyOption::G1UsePrevMarking, "Cleanup before");
 
   if (needs_remembered_set_rebuild()) {
     GCTraceTime(Debug, gc, phases) debug("Update Remembered Set Tracking After Rebuild", _gc_timer_cm);
@@ -1445,7 +1445,7 @@ void G1ConcurrentMark::cleanup() {
     log_debug(gc, phases)("No Remembered Sets to update after rebuild");
   }
 
-  verify_during_pause(G1HeapVerifier::G1VerifyCleanup, VerifyOption_G1UsePrevMarking, "Cleanup after");
+  verify_during_pause(G1HeapVerifier::G1VerifyCleanup, VerifyOption::G1UsePrevMarking, "Cleanup after");
 
   // We need to make this be a "collection" so any collection pause that
   // races with it goes around and waits for Cleanup to finish.
@@ -1554,7 +1554,7 @@ class G1CMDrainMarkingStackClosure : public VoidClosure {
       //
       // G1CMTask::do_marking_step() is called in a loop, which we'll exit
       // if there's nothing more to do (i.e. we've completely drained the
-      // entries that were pushed as a a result of applying the 'keep alive'
+      // entries that were pushed as a result of applying the 'keep alive'
       // closure to the entries on the discovered ref lists) or we overflow
       // the global marking stack.
       //

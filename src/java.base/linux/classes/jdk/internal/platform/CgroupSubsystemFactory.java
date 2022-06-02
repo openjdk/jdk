@@ -36,6 +36,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -108,9 +109,9 @@ public class CgroupSubsystemFactory {
         Map<String, CgroupInfo> infos = result.getInfos();
         if (result.isCgroupV2()) {
             // For unified it doesn't matter which controller we pick.
-            CgroupInfo anyController = infos.get(MEMORY_CTRL);
-            CgroupSubsystem subsystem = CgroupV2Subsystem.getInstance(anyController);
-            return subsystem != null ? new CgroupMetrics(subsystem) : null;
+            CgroupInfo anyController = infos.values().iterator().next();
+            CgroupSubsystem subsystem = CgroupV2Subsystem.getInstance(Objects.requireNonNull(anyController));
+            return new CgroupMetrics(subsystem);
         } else {
             CgroupV1Subsystem subsystem = CgroupV1Subsystem.getInstance(infos);
             return subsystem != null ? new CgroupV1MetricsImpl(subsystem) : null;
@@ -143,6 +144,10 @@ public class CgroupSubsystemFactory {
             }
             CgroupInfo info = CgroupInfo.fromCgroupsLine(line);
             switch (info.getName()) {
+            // Only the following controllers are important to Java. All
+            // other controllers (such as freezer) are ignored and
+            // are not considered in the checks below for
+            // anyCgroupsV1Controller/anyCgroupsV2Controller.
             case CPU_CTRL:      infos.put(CPU_CTRL, info); break;
             case CPUACCT_CTRL:  infos.put(CPUACCT_CTRL, info); break;
             case CPUSET_CTRL:   infos.put(CPUSET_CTRL, info); break;
@@ -220,6 +225,12 @@ public class CgroupSubsystemFactory {
      */
     private static void setCgroupV2Path(Map<String, CgroupInfo> infos,
                                         String[] tokens) {
+        String name = tokens[1];
+        if (!name.equals("")) {
+            // This must be a v1 controller that we have ignored (e.g., freezer)
+            assert infos.get(name) == null;
+            return;
+        }
         int hierarchyId = Integer.parseInt(tokens[0]);
         String cgroupPath = tokens[2];
         for (CgroupInfo info: infos.values()) {

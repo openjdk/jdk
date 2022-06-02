@@ -24,7 +24,7 @@
  */
 package jdk.incubator.vector;
 
-import java.nio.ByteBuffer;
+import java.lang.foreign.MemorySegment;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntUnaryOperator;
@@ -482,6 +482,22 @@ final class $vectortype$ extends $abstractvectortype$ {
 
     @Override
     @ForceInline
+    public $vectortype$ compress(VectorMask<$Boxtype$> m) {
+        return ($vectortype$)
+            super.compressTemplate($masktype$.class,
+                                   ($masktype$) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public $vectortype$ expand(VectorMask<$Boxtype$> m) {
+        return ($vectortype$)
+            super.expandTemplate($masktype$.class,
+                                   ($masktype$) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
     public $vectortype$ selectFrom(Vector<$Boxtype$> v) {
         return ($vectortype$)
             super.selectFromTemplate(($vectortype$) v);  // specialize
@@ -920,6 +936,15 @@ final class $vectortype$ extends $abstractvectortype$ {
             return xor(maskAll(true));
         }
 
+        @Override
+        @ForceInline
+        public $masktype$ compress() {
+            return ($masktype$)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
+                $vectortype$.class, $masktype$.class, ETYPE, VLENGTH, null, this,
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
+        }
+
+
         // Binary operations
 
         @Override
@@ -1159,29 +1184,15 @@ final class $vectortype$ extends $abstractvectortype$ {
     @ForceInline
     @Override
     final
-    $abstractvectortype$ fromByteArray0(byte[] a, int offset) {
-        return super.fromByteArray0Template(a, offset);  // specialize
+    $abstractvectortype$ fromMemorySegment0(MemorySegment ms, long offset) {
+        return super.fromMemorySegment0Template(ms, offset);  // specialize
     }
 
     @ForceInline
     @Override
     final
-    $abstractvectortype$ fromByteArray0(byte[] a, int offset, VectorMask<$Boxtype$> m) {
-        return super.fromByteArray0Template($masktype$.class, a, offset, ($masktype$) m);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    $abstractvectortype$ fromByteBuffer0(ByteBuffer bb, int offset) {
-        return super.fromByteBuffer0Template(bb, offset);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    $abstractvectortype$ fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<$Boxtype$> m) {
-        return super.fromByteBuffer0Template($masktype$.class, bb, offset, ($masktype$) m);  // specialize
+    $abstractvectortype$ fromMemorySegment0(MemorySegment ms, long offset, VectorMask<$Boxtype$> m) {
+        return super.fromMemorySegment0Template($masktype$.class, ms, offset, ($masktype$) m);  // specialize
     }
 
     @ForceInline
@@ -1219,22 +1230,8 @@ final class $vectortype$ extends $abstractvectortype$ {
     @ForceInline
     @Override
     final
-    void intoByteArray0(byte[] a, int offset) {
-        super.intoByteArray0Template(a, offset);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    void intoByteArray0(byte[] a, int offset, VectorMask<$Boxtype$> m) {
-        super.intoByteArray0Template($masktype$.class, a, offset, ($masktype$) m);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    void intoByteBuffer0(ByteBuffer bb, int offset, VectorMask<$Boxtype$> m) {
-        super.intoByteBuffer0Template($masktype$.class, bb, offset, ($masktype$) m);
+    void intoMemorySegment0(MemorySegment ms, long offset, VectorMask<$Boxtype$> m) {
+        super.intoMemorySegment0Template($masktype$.class, ms, offset, ($masktype$) m);
     }
 
 #if[short]
@@ -1251,3 +1248,4 @@ final class $vectortype$ extends $abstractvectortype$ {
     // ================================================
 
 }
+

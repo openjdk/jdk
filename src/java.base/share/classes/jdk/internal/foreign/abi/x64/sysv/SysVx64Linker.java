@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,36 +25,22 @@
 package jdk.internal.foreign.abi.x64.sysv;
 
 
-import java.lang.foreign.Linker;
+import jdk.internal.foreign.abi.AbstractLinker;
+
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemoryAddress;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.MemorySession;
 import java.lang.foreign.VaList;
-
-import jdk.internal.foreign.SystemLookup;
-import jdk.internal.foreign.abi.SharedUtils;
-
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Consumer;
 
 /**
  * ABI implementation based on System V ABI AMD64 supplement v.0.99.6
  */
-public final class SysVx64Linker implements Linker {
-    public static final int MAX_INTEGER_ARGUMENT_REGISTERS = 6;
-    public static final int MAX_INTEGER_RETURN_REGISTERS = 2;
-    public static final int MAX_VECTOR_ARGUMENT_REGISTERS = 8;
-    public static final int MAX_VECTOR_RETURN_REGISTERS = 2;
-    public static final int MAX_X87_RETURN_REGISTERS = 2;
-
+public final class SysVx64Linker extends AbstractLinker {
     private static SysVx64Linker instance;
-
-    static final long ADDRESS_SIZE = 64; // bits
 
     public static SysVx64Linker getInstance() {
         if (instance == null) {
@@ -63,35 +49,20 @@ public final class SysVx64Linker implements Linker {
         return instance;
     }
 
-    public static VaList newVaList(Consumer<VaList.Builder> actions, MemorySession session) {
-        SysVVaList.Builder builder = SysVVaList.builder(session);
+    @Override
+    protected MethodHandle arrangeDowncall(MethodType inferredMethodType, FunctionDescriptor function) {
+        return CallArranger.arrangeDowncall(inferredMethodType, function);
+    }
+
+    @Override
+    protected MemorySegment arrangeUpcall(MethodHandle target, MethodType targetType, FunctionDescriptor function, MemorySession scope) {
+        return CallArranger.arrangeUpcall(target, targetType, function, scope);
+    }
+
+    public static VaList newVaList(Consumer<VaList.Builder> actions, MemorySession scope) {
+        SysVVaList.Builder builder = SysVVaList.builder(scope);
         actions.accept(builder);
         return builder.build();
-    }
-
-    @Override
-    public final MethodHandle downcallHandle(FunctionDescriptor function) {
-        Objects.requireNonNull(function);
-        MethodType type = SharedUtils.inferMethodType(function, false);
-        MethodHandle handle = CallArranger.arrangeDowncall(type, function);
-        if (!type.returnType().equals(MemorySegment.class)) {
-            // not returning segment, just insert a throwing allocator
-            handle = MethodHandles.insertArguments(handle, 1, SharedUtils.THROWING_ALLOCATOR);
-        }
-        return SharedUtils.wrapDowncall(handle, function);
-    }
-
-    @Override
-    public final MemorySegment upcallStub(MethodHandle target, FunctionDescriptor function, MemorySession session) {
-        Objects.requireNonNull(session);
-        Objects.requireNonNull(target);
-        Objects.requireNonNull(function);
-        SharedUtils.checkExceptions(target);
-        MethodType type = SharedUtils.inferMethodType(function, true);
-        if (!type.equals(target.type())) {
-            throw new IllegalArgumentException("Wrong method handle type: " + target.type());
-        }
-        return CallArranger.arrangeUpcall(target, target.type(), function, session);
     }
 
     public static VaList newVaListOfAddress(MemoryAddress ma, MemorySession session) {
@@ -100,10 +71,5 @@ public final class SysVx64Linker implements Linker {
 
     public static VaList emptyVaList() {
         return SysVVaList.empty();
-    }
-
-    @Override
-    public SystemLookup defaultLookup() {
-        return SystemLookup.getInstance();
     }
 }
