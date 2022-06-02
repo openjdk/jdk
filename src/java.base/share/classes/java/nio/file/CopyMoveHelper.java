@@ -117,6 +117,7 @@ class CopyMoveHelper {
                                                    PosixFileAttributes.class,
                                                    linkOptions);
             } catch (SecurityException ignored) {
+                // okay to continue if RuntimePermission("accessUserInformation") not granted
             }
         }
         if (sourceAttrs == null)
@@ -167,6 +168,7 @@ class CopyMoveHelper {
                     try {
                         targetPosixView.setPermissions(sourcePosixAttrs.permissions());
                     } catch (SecurityException ignored) {
+                        // okay to continue if RuntimePermission("accessUserInformation") not granted
                     }
                 }
             } catch (Throwable x) {
