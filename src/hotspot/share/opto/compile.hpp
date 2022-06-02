@@ -734,8 +734,12 @@ class Compile : public Phase {
   void record_for_post_loop_opts_igvn(Node* n);
   void remove_from_post_loop_opts_igvn(Node* n);
   void process_for_post_loop_opts_igvn(PhaseIterGVN& igvn);
-  void process_for_unstable_ifs(PhaseIterGVN& igvn);
-  void preprocess_unstable_ifs();
+
+  void remove_unstable_if_trap(CallStaticJavaNode* trap);
+  void remove_useless_unstable_if_traps(Unique_Node_List &useful);
+  void preprocess_unstable_if_traps();
+  void process_for_unstable_if_traps(PhaseIterGVN& igvn);
+
   void sort_macro_nodes();
 
   // remove the opaque nodes that protect the predicates so that the unused checks and
@@ -805,7 +809,6 @@ class Compile : public Phase {
                                              _dead_node_count = 0;
                                            }
   void         record_unstable_if(UnstableIfTrap* trap);
-  void         remove_unstable_if(CallStaticJavaNode* trap);
   uint          live_nodes() const         {
     int  val = _unique - _dead_node_count;
     assert (val >= 0, "number of tracked dead nodes %d more than created nodes %d", _unique, _dead_node_count);
@@ -978,7 +981,6 @@ class Compile : public Phase {
   }
 
   void remove_useless_nodes       (GrowableArray<Node*>&        node_list, Unique_Node_List &useful);
-  void remove_useless_unstable_ifs(Unique_Node_List &useful);
 
   void remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines, Unique_Node_List &useful);
   void remove_useless_late_inlines(GrowableArray<CallGenerator*>* inlines, Node* dead);
