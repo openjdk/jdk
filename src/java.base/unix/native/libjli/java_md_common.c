@@ -133,7 +133,7 @@ Resolve(char *indir, char *cmd)
     if ((snprintf_result < 0) || (snprintf_result >= (int)sizeof(name))) {
       return NULL;
     }
-    if (!ProgramExists(name)) return 0;
+    if (!ProgramExists(name)) return NULL;
     real = JLI_MemAlloc(PATH_MAX + 2);
     if (!realpath(name, real))
         JLI_StrCpy(real, name);
@@ -158,7 +158,7 @@ FindExecName(char *program)
         return Resolve("", program+1);
 
     /* relative path? */
-    if (JLI_StrRChr(program, FILE_SEPARATOR) != 0) {
+    if (JLI_StrRChr(program, FILE_SEPARATOR) != NULL) {
         char buf[PATH_MAX+2];
         return Resolve(getcwd(cwdbuf, sizeof(cwdbuf)), program);
     }
@@ -169,10 +169,10 @@ FindExecName(char *program)
     tmp_path = JLI_MemAlloc(JLI_StrLen(path) + 2);
     JLI_StrCpy(tmp_path, path);
 
-    for (f=tmp_path; *f && result==0; ) {
+    for (f = tmp_path; *f && result == NULL; ) {
         char *s = f;
         while (*f && (*f != PATH_SEPARATOR)) ++f;
-        if (*f) *f++ = 0;
+        if (*f) *f++ = '\0';
         if (*s == FILE_SEPARATOR)
             result = Resolve(s, program);
         else {
@@ -182,7 +182,7 @@ FindExecName(char *program)
                     FILE_SEPARATOR, s);
             result = Resolve(dir, program);
         }
-        if (result != 0) break;
+        if (result != NULL) break;
     }
 
     JLI_MemFree(tmp_path);

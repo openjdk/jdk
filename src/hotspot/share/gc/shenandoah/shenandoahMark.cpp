@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2021, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
+#include "runtime/continuation.hpp"
 
 ShenandoahMarkRefsSuperClosure::ShenandoahMarkRefsSuperClosure(ShenandoahObjToScanQueue* q,  ShenandoahReferenceProcessor* rp) :
   MetadataVisitingOopIterateClosure(rp),
@@ -43,6 +44,20 @@ ShenandoahMarkRefsSuperClosure::ShenandoahMarkRefsSuperClosure(ShenandoahObjToSc
 
 ShenandoahMark::ShenandoahMark() :
   _task_queues(ShenandoahHeap::heap()->marking_context()->task_queues()) {
+}
+
+void ShenandoahMark::start_mark() {
+  // Tell the sweeper that we start a marking cycle.
+  if (!Continuations::is_gc_marking_cycle_active()) {
+    Continuations::on_gc_marking_cycle_start();
+  }
+}
+
+void ShenandoahMark::end_mark() {
+  // Tell the sweeper that we finished a marking cycle.
+  // Unlike other GCs, we do not arm the nmethods
+  // when marking terminates.
+  Continuations::on_gc_marking_cycle_finish();
 }
 
 void ShenandoahMark::clear() {

@@ -26,6 +26,7 @@
 /**
 * @test
 * @summary Basic tests for jdk.internal.vm.Continuation
+* @requires vm.continuations
 * @modules java.base/jdk.internal.vm
 * @build java.base/java.lang.StackWalkerHelper
 *
