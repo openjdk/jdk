@@ -32,7 +32,6 @@
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
-import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import javax.swing.JToolTip;
@@ -43,8 +42,6 @@ import javax.swing.UIManager;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.awt.event.ContainerAdapter;
-import java.awt.event.ContainerEvent;
 import java.awt.event.KeyEvent;
 import java.awt.GridLayout;
 import java.awt.Point;
