@@ -1667,12 +1667,11 @@ Node* find_node_by_idx(Node* start, uint idx, bool traverse_output, bool only_ct
 // eg. str "_abc____def__" would match pattern "abc*def"
 bool is_star_match(const char* star_pattern, const char* str) {
   const int N = 1000;
-  if (strlen(star_pattern) > N-1) {
-    return false; // pattern too long
-  }
+  char pattern[N]; // copy pattern into this to ensure null termination
+  jio_snprintf(pattern, N, "%s", star_pattern);// ensures null termination
   char buf[N]; // copy parts of pattern into this
   const char* s = str;
-  const char* r = star_pattern;
+  const char* r = &pattern[0]; // cast array to char*
   while(strlen(r) > 0) {
     // find next section in pattern
     const char* r_end = strstr(r, "*");
