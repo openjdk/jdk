@@ -167,6 +167,10 @@ public class SharedSessionState extends MemorySessionImpl.State {
             // do nothing
         }
 
+        public boolean isImplicit() {
+            return true;
+        }
+
         @Override
         public void release() {
             Reference.reachabilityFence(this);

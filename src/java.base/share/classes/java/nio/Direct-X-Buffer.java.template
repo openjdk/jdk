@@ -311,7 +311,7 @@ class Direct$Type$Buffer$RW$$BO$
     public long address() {
         MemorySessionImpl.State state = state();
         if (state != null) {
-            if (state.ownerThread() == null && !(state instanceof SharedSessionState.OfImplicit)) {
+            if (state.ownerThread() == null && !state.isImplicit()) {
                 throw new UnsupportedOperationException("ByteBuffer derived from closeable shared sessions not supported");
             }
             state.checkValidStateWrapException();

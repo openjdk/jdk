@@ -106,6 +106,7 @@ public non-sealed class MemorySessionImpl implements MemorySession, SegmentAlloc
 
     @Override
     public final MemorySession asNonCloseable() {
+        if (!isCloseable()) return this;
         return new MemorySessionImpl(state) {
             @Override
             public boolean isCloseable() {
@@ -233,6 +234,10 @@ public non-sealed class MemorySessionImpl implements MemorySession, SegmentAlloc
             } catch (ScopedMemoryAccess.ScopedAccessError ex) {
                 throw ex.newRuntimeException();
             }
+        }
+
+        public boolean isImplicit() {
+            return false;
         }
 
         public abstract boolean isAlive();
