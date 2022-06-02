@@ -45,10 +45,10 @@
 //
 // The remark pause recorded two pointers within the regions:
 //
-// parsable_bottom: this is the TAMS of the recent marking for that region. Objects
-//                  below that may or may not be dead (as per mark bitmap).
-//                  This task needs to remove the dead objects, replacing them
-//                  with filler objects so that they can be walked through later.
+// parsable_bottom (pb): this is the TAMS of the recent marking for that region. Objects
+//                       below that may or may not be dead (as per mark bitmap).
+//                       This task needs to remove the dead objects, replacing them
+//                       with filler objects so that they can be walked through later.
 //
 // top_at_rebuild_start (tars): at rebuild phase start we record the current top: up to
 //                              this address (live) objects need to be scanned for references
@@ -170,8 +170,6 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
       assert(!_bitmap->is_marked(scrub_start), "Should not scrub live object");
 
       HeapWord* scrub_end = _bitmap->get_next_marked_addr(scrub_start, limit);
-      assert(scrub_start != scrub_end, "must advance");
-
       hr->fill_range_with_dead_objects(scrub_start, scrub_end);
 
       // Return the next object to handle.

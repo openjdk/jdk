@@ -130,6 +130,7 @@ private:
   // Return the address of the beginning of the block that contains "addr".
   // "q" is a block boundary that is <= "addr"; "n" is the address of the
   // next block (or the end of the space.)
+  // "pb" is the current value of the region's parsable_bottom.
   inline HeapWord* forward_to_block_containing_addr(HeapWord* q, HeapWord* n,
                                                     const void* addr,
                                                     HeapWord* pb) const;
@@ -154,7 +155,7 @@ public:
   //  The elements of the array are initialized to zero.
   G1BlockOffsetTablePart(G1BlockOffsetTable* array, HeapRegion* hr);
 
-  void update(HeapWord* pb);
+  void update();
 
   void verify() const;
 
@@ -163,6 +164,7 @@ public:
   // namely updating of shared array entries that "point" too far
   // backwards.  This can occur, for example, when lab allocation is used
   // in a space covered by the table.)
+  // "pb" is the current value of the region's parsable_bottom.
   inline HeapWord* block_start(const void* addr, HeapWord* pb);
 
   void update_for_block(HeapWord* blk_start, HeapWord* blk_end) {

@@ -85,11 +85,11 @@ inline HeapWord* HeapRegion::block_start(const void* addr, HeapWord* const pb) {
   return _bot_part.block_start(addr, pb);
 }
 
-inline bool HeapRegion::obj_in_scrubbing_area(oop obj, HeapWord* const pb) const {
-  return !obj_in_parsable_area(cast_from_oop<HeapWord*>(obj), pb);
+inline bool HeapRegion::obj_in_unparsable_area(oop obj, HeapWord* const pb) {
+  return !HeapRegion::obj_in_parsable_area(cast_from_oop<HeapWord*>(obj), pb);
 }
 
-inline bool HeapRegion::obj_in_parsable_area(const HeapWord* addr, HeapWord* const pb) const {
+inline bool HeapRegion::obj_in_parsable_area(const HeapWord* addr, HeapWord* const pb) {
   return addr >= pb;
 }
 
@@ -131,7 +131,7 @@ inline bool HeapRegion::is_obj_dead(const oop obj, HeapWord* const pb) const {
 
   // From Remark until a region has been concurrently scrubbed, parts of the
   // region is not guaranteed to be parsable. Use the bitmap for liveness.
-  if (obj_in_scrubbing_area(obj, pb)) {
+  if (obj_in_unparsable_area(obj, pb)) {
     return !is_marked_in_bitmap(obj);
   }
 
@@ -142,7 +142,7 @@ inline bool HeapRegion::is_obj_dead(const oop obj, HeapWord* const pb) const {
 inline bool HeapRegion::is_obj_dead_size_below_pb(const oop obj, HeapWord* const pb, size_t& block_size) const {
   assert(is_in_reserved(obj), "Object " PTR_FORMAT " must be in region", p2i(obj));
   assert(!is_closed_archive(), "never walk CA regions for cross-references");
-  assert(obj_in_scrubbing_area(obj, pb), "must be");
+  assert(obj_in_unparsable_area(obj, pb), "must be");
 
   G1CMBitMap* bitmap = G1CollectedHeap::heap()->concurrent_mark()->mark_bitmap();
   bool is_live = bitmap->is_marked(obj);

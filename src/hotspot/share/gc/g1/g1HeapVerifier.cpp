@@ -224,7 +224,7 @@ public:
       }
 
       o->oop_iterate(&isLive);
-      if (_hr->obj_in_scrubbing_area(o, _hr->parsable_bottom())) {
+      if (_hr->obj_in_unparsable_area(o, _hr->parsable_bottom())) {
         size_t obj_size = o->size();    // Make sure we don't overflow
         _live_bytes += (obj_size * HeapWordSize);
       }

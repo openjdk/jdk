@@ -177,18 +177,19 @@ public:
   // Update skip-compacting heap region to be consistent after Full GC.
   void reset_skip_compacting_after_full_gc();
 
-  // All allocated blocks are occupied by objects in a HeapRegion
+  // All allocated blocks are occupied by objects in a HeapRegion.
   bool block_is_obj(const HeapWord* p, HeapWord* pb) const;
 
   bool obj_is_scrubbed(oop obj) const;
 
-  // Returns whether the given object is dead based on TAMS and mark word.
-  // For an object to be considered dead it must be below TAMS and scrubbed.
+  // Returns whether the given object is dead based on the given parsable_bottom (pb).
+  // For an object to be considered dead it must be below pb and scrubbed.
   bool is_obj_dead(oop obj, HeapWord* pb) const;
   bool is_obj_dead_size_below_pb(oop obj, HeapWord* pb, size_t& block_size) const;
 
-  // Returns the object size for all valid block starts
-  // and the amount of unallocated words if called on top()
+  // Returns the object size for all valid block starts. If parsable_bottom (pb)
+  // is given, calculates the block size based on that parsable_bottom, not the
+  // current value of this HeapRegion.
   size_t block_size(const HeapWord* p) const;
   size_t block_size(const HeapWord* p, HeapWord* pb) const;
 
@@ -198,7 +199,7 @@ public:
   inline void apply_to_marked_objects(G1CMBitMap* bitmap, ApplyToMarkedClosure* closure);
 
   void update_bot() {
-    _bot_part.update(parsable_bottom());
+    _bot_part.update();
   }
 
 private:
@@ -381,7 +382,7 @@ public:
   inline void note_end_of_scrubbing();
 
   // During the concurrent scrubbing phase, can there be any areas with unloaded
-  // classes in this region?
+  // classes or dead objects in this region?
   // This set only includes old and open archive regions - humongous regions only
   // contain a single object which is either dead or live, contents of closed archive
   // regions never die (so is always contiguous), and young regions are never even
@@ -549,8 +550,8 @@ public:
   void record_surv_words_in_group(size_t words_survived);
 
   // Determine if an object is in the parsable or the to-be-scrubbed area.
-  inline bool obj_in_parsable_area(const HeapWord* addr, HeapWord* pb) const;
-  inline bool obj_in_scrubbing_area(oop obj, HeapWord* pb) const;
+  inline static bool obj_in_parsable_area(const HeapWord* addr, HeapWord* pb);
+  inline static bool obj_in_unparsable_area(oop obj, HeapWord* pb);
 
   bool obj_allocated_since_marking_start(oop obj) const {
     return cast_from_oop<HeapWord*>(obj) >= top_at_mark_start();
