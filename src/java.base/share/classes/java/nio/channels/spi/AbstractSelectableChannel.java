@@ -230,7 +230,10 @@ public abstract class AbstractSelectableChannel
                 SelectionKey k = findKey(sel);
                 if (k != null) {
                     k.attach(att);
-                    k.interestOps(ops);
+                    try {
+                        k.interestOps(ops);
+                    } catch (CancelledKeyException ignored) {
+                    }
                 } else {
                     // New registration
                     k = ((AbstractSelector)sel).register(this, ops, att);

@@ -227,7 +227,6 @@ public abstract class SelectorImpl
             k.cancel();
             throw e;
         } catch (CancelledKeyException ignored) {
-            keys.remove(k);
         }
         return k;
     }
