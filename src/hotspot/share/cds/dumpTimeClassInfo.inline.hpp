@@ -39,41 +39,30 @@
 // This function must be called only inside a safepoint, where the value of
 // k->is_loader_alive() will not change.
 template<typename Function>
-void DumpTimeSharedClassTable::iterate(Function function) const {
+void DumpTimeSharedClassTable::iterate_all_live_classes(Function function) const {
   auto wrapper = [&] (InstanceKlass* k, DumpTimeClassInfo& info) {
     assert(SafepointSynchronize::is_at_safepoint(), "invariant");
     assert_lock_strong(DumpTimeTable_lock);
     if (k->is_loader_alive()) {
-      bool result = function(k, info);
+      function(k, info);
       assert(k->is_loader_alive(), "must not change");
-      return result;
     } else {
       if (!SystemDictionaryShared::is_excluded_class(k)) {
         SystemDictionaryShared::warn_excluded(k, "Class loader not alive");
         SystemDictionaryShared::set_excluded_locked(k);
       }
-      return true;
     }
   };
-  DumpTimeSharedClassTableBaseType::iterate(wrapper);
+  DumpTimeSharedClassTableBaseType::iterate_all(wrapper);
 }
 
-// same as above, but unconditionally iterate all entries
-template<typename Function>
-void DumpTimeSharedClassTable::iterate_all(Function function) const {
-  auto wrapper = [&] (InstanceKlass* k, DumpTimeClassInfo& v) {
-    function(k, v);
-    return true;
-  };
-  iterate(wrapper);
-}
 
 template<class ITER>
-void DumpTimeSharedClassTable::iterate(ITER* iter) const {
+void DumpTimeSharedClassTable::iterate_all_live_classes(ITER* iter) const {
   auto function = [&] (InstanceKlass* k, DumpTimeClassInfo& v) {
-    return iter->do_entry(k, v);
+    iter->do_entry(k, v);
   };
-  iterate(function);
+  iterate_all_live_classes(function);
 }
 
 #endif // INCLUDE_CDS
