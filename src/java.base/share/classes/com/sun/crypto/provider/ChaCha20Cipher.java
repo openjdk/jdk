@@ -61,7 +61,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
     private static final int STATE_CONST_3 = 0x6b206574;
 
     // The keystream block size in bytes and as integers
-    private static final int KS_MAX_LEN = 256;
+    private static final int KS_MAX_LEN = 1024;
     private static final int KS_BLK_SIZE = 64;
     private static final int KS_SIZE_INTS = KS_BLK_SIZE / Integer.BYTES;
     private static final int CIPHERBUF_BASE = 1024;
