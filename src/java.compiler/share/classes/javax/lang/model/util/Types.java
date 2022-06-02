@@ -35,6 +35,10 @@ import javax.lang.model.type.*;
 /**
  * Utility methods for operating on types.
  *
+ * Where a method returns a type mirror or a collection of type
+ * mirrors, any type mirrors represent types with no type annotations,
+ * unless otherwise indicated.
+ *
  * <p><b>Compatibility Note:</b> Methods may be added to this interface
  * in future releases of the platform.
  *
@@ -235,6 +239,8 @@ public interface Types {
     /**
      * {@return an array type with the specified component type}
      *
+     * Annotations on the component type are preserved.
+     *
      * @param componentType  the component type
      * @throws IllegalArgumentException if the component type is not valid for
      *          an array
@@ -244,6 +250,8 @@ public interface Types {
     /**
      * {@return a new wildcard type}  Either of the wildcard's
      * bounds may be specified, or neither, but not both.
+     *
+     * Annotations on the bounds are preserved.
      *
      * @param extendsBound  the extends (upper) bound, or {@code null} if none
      * @param superBound    the super (lower) bound, or {@code null} if none

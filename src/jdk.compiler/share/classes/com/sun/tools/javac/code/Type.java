@@ -446,6 +446,41 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
             public Type visitWildcardType(WildcardType wt, Void aVoid) {
                 return super.visitWildcardType((WildcardType)wt.typeNoMetadata(), aVoid);
             }
+
+            @Override
+            public Type visitMethodType(MethodType t, Void aVoid) {
+                return super.visitMethodType((MethodType)t.typeNoMetadata(), aVoid);
+            }
+
+            @Override
+            public Type visitPackageType(PackageType t, Void aVoid) {
+                return super.visitPackageType((PackageType)t.typeNoMetadata(), aVoid);
+            }
+
+            @Override
+            public Type visitModuleType(ModuleType t, Void aVoid) {
+                return super.visitModuleType((ModuleType)t.typeNoMetadata(), aVoid);
+            }
+
+            @Override
+            public Type visitCapturedType(CapturedType t, Void aVoid) {
+                return super.visitCapturedType((CapturedType)t.typeNoMetadata(), aVoid);
+            }
+
+            @Override
+            public Type visitForAll(ForAll t, Void aVoid) {
+                return super.visitForAll((ForAll)t.typeNoMetadata(), aVoid);
+            }
+
+            @Override
+            public Type visitUndetVar(UndetVar t, Void aVoid) {
+                return super.visitUndetVar((UndetVar)t.typeNoMetadata(), aVoid);
+            }
+
+            @Override
+            public Type visitErrorType(ErrorType t, Void aVoid) {
+                return super.visitErrorType((ErrorType)t.typeNoMetadata(), aVoid);
+            }
         };
 
     public Type preannotatedType() {
@@ -2446,7 +2481,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
      * type itself) of the operation implemented by this visitor; use
      * Void if a second argument is not needed.
      */
-    public interface Visitor<R,S> {
+    public interface Visitor<R,S> {  // Primitive types omitted?
         R visitClassType(ClassType t, S s);
         R visitWildcardType(WildcardType t, S s);
         R visitArrayType(ArrayType t, S s);

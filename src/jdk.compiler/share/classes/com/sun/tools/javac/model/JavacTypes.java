@@ -125,7 +125,7 @@ public class JavacTypes implements javax.lang.model.util.Types {
         validateTypeNotIn(t, EXEC_OR_PKG_OR_MOD);
         Type ty = (Type)t;
         return types.directSupertypes(ty).stream()
-                .map(Type::stripMetadataIfNeeded)
+                .map(Type::stripMetadata)
                 .toList();
     }
 
@@ -134,7 +134,7 @@ public class JavacTypes implements javax.lang.model.util.Types {
         TypeKind kind = t.getKind();
         if (kind == TypeKind.PACKAGE || kind == TypeKind.MODULE)
             throw new IllegalArgumentException(t.toString());
-        return types.erasure((Type)t).stripMetadataIfNeeded();
+        return types.erasure((Type)t).stripMetadata();
     }
 
     @DefinedBy(Api.LANGUAGE_MODEL)
@@ -155,7 +155,7 @@ public class JavacTypes implements javax.lang.model.util.Types {
     @DefinedBy(Api.LANGUAGE_MODEL)
     public TypeMirror capture(TypeMirror t) {
         validateTypeNotIn(t, EXEC_OR_PKG_OR_MOD);
-        return types.capture((Type)t).stripMetadataIfNeeded();
+        return types.capture((Type)t).stripMetadata();
     }
 
     @DefinedBy(Api.LANGUAGE_MODEL)
