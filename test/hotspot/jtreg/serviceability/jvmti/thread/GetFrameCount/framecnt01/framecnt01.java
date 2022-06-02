@@ -33,6 +33,7 @@
  * COMMENTS
  *     Ported from JVMDI.
  *
+ * @requires vm.continuations
  * @library /test/lib
  * @compile --enable-preview -source ${jdk.version} framecnt01.java
  * @run main/othervm/native --enable-preview -agentlib:framecnt01 framecnt01
