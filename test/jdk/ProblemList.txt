@@ -179,7 +179,6 @@ java/awt/Mixing/NonOpaqueInternalFrame.java 7124549 macosx-all
 java/awt/Focus/ActualFocusedWindowTest/ActualFocusedWindowRetaining.java 6829264 generic-all
 java/awt/datatransfer/DragImage/MultiResolutionDragImageTest.java 8080982 generic-all
 java/awt/datatransfer/SystemFlavorMap/AddFlavorTest.java 8079268 linux-all
-java/awt/Toolkit/ScreenInsetsTest/ScreenInsetsTest.java 6829250 windows-all
 java/awt/Toolkit/RealSync/Test.java 6849383 linux-all
 java/awt/LightweightComponent/LightweightEventTest/LightweightEventTest.java 8159252 windows-all
 java/awt/EventDispatchThread/HandleExceptionOnEDT/HandleExceptionOnEDT.java 8072110 macosx-all
@@ -486,7 +485,8 @@ java/beans/XMLEncoder/Test6570354.java 8015593 macosx-all
 
 # jdk_foreign
 
-java/foreign/TestMismatch.java 8249684 macosx-all
+java/foreign/TestUpcallStack.java 8275584 macosx-aarch64
+java/foreign/TestDowncallStack.java 8275584 macosx-aarch64
 
 ############################################################################
 
@@ -652,7 +652,6 @@ javax/sound/midi/Sequencer/Looping.java 8136897 generic-all
 
 javax/swing/plaf/basic/BasicTextUI/8001470/bug8001470.java 8233177 linux-all,windows-all
 
-javax/swing/border/TestTitledBorderLeak.java 8213531 linux-all
 javax/swing/JWindow/ShapedAndTranslucentWindows/ShapedTranslucentPerPixelTranslucentGradient.java 8233582 linux-all
 javax/swing/JWindow/ShapedAndTranslucentWindows/ShapedPerPixelTranslucentGradient.java 8233582 linux-all
 javax/swing/JWindow/ShapedAndTranslucentWindows/PerPixelTranslucentSwing.java 8194128 macosx-all
@@ -682,15 +681,9 @@ java/awt/Window/8159168/SetShapeTest.java 8274106 macosx-aarch64
 java/awt/image/multiresolution/MultiResolutionJOptionPaneIconTest.java 8274106 macosx-aarch64
 javax/swing/JFrame/8175301/ScaledFrameBackgroundTest.java 8274106 macosx-aarch64
 
-# macos12 failure
-javax/swing/JMenu/4515762/bug4515762.java 8276074 macosx-all
-
 sanity/client/SwingSet/src/ToolTipDemoTest.java 8225012 windows-all,macosx-all
-sanity/client/SwingSet/src/ScrollPaneDemoTest.java 8225013 linux-all
 sanity/client/SwingSet/src/ButtonDemoScreenshotTest.java 8265770 macosx-all
-javax/swing/JTree/4908142/bug4908142.java 8278348 macosx-all
 javax/swing/JTable/8236907/LastVisibleRow.java 8284619 macosx-all
-javax/swing/JInternalFrame/8146321/JInternalFrameIconTest.java 8284888 macosx-aarch64
 
 ############################################################################
 
@@ -760,12 +753,10 @@ javax/script/Test7.java                                         8239361 generic-
 
 # jdk_jfr
 
-jdk/jfr/event/runtime/TestNetworkUtilizationEvent.java          8228990 macosx-all,linux-all,windows-all
 jdk/jfr/event/compiler/TestCodeSweeper.java                     8225209 generic-all
 jdk/jfr/event/os/TestThreadContextSwitches.java                 8247776 windows-all
 jdk/jfr/startupargs/TestStartName.java                          8214685 windows-x64
 jdk/jfr/startupargs/TestStartDuration.java                      8214685 windows-x64
-jdk/jfr/api/consumer/recordingstream/TestOnEvent.java           8255404 linux-x64
 jdk/jfr/jvm/TestWaste.java                                      8282427 generic-all
 
 ############################################################################
@@ -807,3 +798,61 @@ java/awt/event/MouseEvent/SpuriousExitEnter/SpuriousExitEnter.java 8254841 macos
 java/awt/Focus/AppletInitialFocusTest/AppletInitialFocusTest1.java 8256289 windows-x64
 java/awt/FullScreen/TranslucentWindow/TranslucentWindow.java 8258103 linux-all
 java/awt/Focus/FrameMinimizeTest/FrameMinimizeTest.java 8016266 linux-x64
+
+# Loom is not implemented on x86_32 yet
+
+com/sun/management/HotSpotDiagnosticMXBean/DumpThreads.java     8286642 generic-i586
+java/lang/instrument/ParallelTransformerLoaderTest.java         8286642 generic-i586
+java/lang/management/ThreadMXBean/VirtualThreadDeadlocks.java   8286642 generic-i586
+java/lang/management/ThreadMXBean/VirtualThreads.java           8286642 generic-i586
+java/lang/ref/CleanerTest.java                                  8286642 generic-i586
+java/lang/Thread/BuilderTest.java                               8286642 generic-i586
+java/lang/Thread/virtual/Collectable.java                       8286642 generic-i586
+java/lang/Thread/virtual/CustomScheduler.java                   8286642 generic-i586
+java/lang/Thread/virtual/GetStackTrace.java                     8286642 generic-i586
+java/lang/Thread/virtual/GetStackTraceWhenRunnable.java         8286642 generic-i586
+java/lang/Thread/virtual/HoldsLock.java                         8286642 generic-i586
+java/lang/Thread/virtual/JfrEvents.java                         8286642 generic-i586
+java/lang/Thread/virtual/Locking.java                           8286642 generic-i586
+java/lang/Thread/virtual/ParkWithFixedThreadPool.java           8286642 generic-i586
+java/lang/Thread/virtual/Parking.java                           8286642 generic-i586
+java/lang/Thread/virtual/Reflection.java                        8286642 generic-i586
+java/lang/Thread/virtual/ShutdownHook.java                      8286642 generic-i586
+java/lang/Thread/virtual/StackTraces.java                       8286642 generic-i586
+java/lang/Thread/virtual/ThreadAPI.java                         8286642 generic-i586
+java/lang/Thread/virtual/ThreadLocals.java                      8286642 generic-i586
+java/lang/Thread/virtual/TracePinnedThreads.java                8286642 generic-i586
+java/lang/Thread/virtual/WaitNotify.java                        8286642 generic-i586
+java/lang/Thread/virtual/stress/GetStackTraceALot.java#id0      8286642 generic-i586
+java/lang/Thread/virtual/stress/GetStackTraceALot.java#id1      8286642 generic-i586
+java/lang/Thread/virtual/stress/PinALot.java#id0                8286642 generic-i586
+java/lang/Thread/virtual/stress/PinALot.java#id1                8286642 generic-i586
+java/lang/Thread/virtual/stress/PingPong.java                   8286642 generic-i586
+java/lang/Thread/virtual/stress/Skynet.java#id0                 8286642 generic-i586
+java/lang/Thread/virtual/stress/Skynet.java#id1                 8286642 generic-i586
+java/lang/Thread/virtual/stress/SleepALot.java#id0              8286642 generic-i586
+java/lang/Thread/virtual/stress/SleepALot.java#id1              8286642 generic-i586
+java/lang/Thread/virtual/stress/TimedGet.java                   8286642 generic-i586
+java/lang/Thread/virtual/stress/YieldALot.java#id0              8286642 generic-i586
+java/lang/Thread/virtual/stress/YieldALot.java#id1              8286642 generic-i586
+java/net/vthread/BlockingSocketOps.java                         8286642 generic-i586
+java/net/vthread/HttpALot.java                                  8286642 generic-i586
+java/net/vthread/InterruptHttp.java                             8286642 generic-i586
+java/nio/channels/vthread/BlockingChannelOps.java               8286642 generic-i586
+java/util/concurrent/ExecutorService/CloseTest.java             8286642 generic-i586
+java/util/concurrent/ThreadPerTaskExecutor/ThreadPerTaskExecutorTest.java   8286642 generic-i586
+jdk/internal/misc/ThreadFlock/ThreadFlockTest.java              8286642 generic-i586
+jdk/internal/vm/Continuation/Basic.java                         8286642 generic-i586
+jdk/internal/vm/Continuation/ClassUnloading.java                8286642 generic-i586
+jdk/internal/vm/Continuation/Fuzz.java                          8286642 generic-i586
+jdk/internal/vm/Continuation/HumongousStack.java                8286642 generic-i586
+jdk/internal/vm/Continuation/LiveFramesDriver.java              8286642 generic-i586
+jdk/internal/vm/Continuation/Scoped.java                        8286642 generic-i586
+jdk/jfr/event/runtime/TestThreadSleepEvent.java                 8286642 generic-i586
+jdk/jfr/event/runtime/TestVirtualThreadEndEvent.java            8286642 generic-i586
+jdk/jfr/event/runtime/TestVirtualThreadStartEvent.java          8286642 generic-i586
+jdk/jfr/jvm/TestVirtualThreadExclusion.java                     8286642 generic-i586
+jdk/jfr/jvm/TestGetEventWriter.java                             8286642 generic-i586
+jdk/jfr/threading/TestDeepVirtualStackTrace.java                8286642 generic-i586
+jdk/jfr/threading/TestManyVirtualThreads.java                   8286642 generic-i586
+jdk/jfr/threading/TestNestedVirtualThreads.java                 8286642 generic-i586

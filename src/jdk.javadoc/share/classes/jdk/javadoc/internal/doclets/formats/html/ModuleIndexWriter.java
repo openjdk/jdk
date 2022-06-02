@@ -111,10 +111,6 @@ public class ModuleIndexWriter extends AbstractOverviewIndexWriter {
             }
 
             target.add(table);
-
-            if (table.needsScript()) {
-                mainBodyScript.append(table.getScript());
-            }
         }
     }
 }
