@@ -82,7 +82,7 @@
           "actual size could be less depending on elements type")           \
           range(0, max_jint)                                                \
                                                                             \
-  product(intx, SuperWordMaxVectorSize, 64,                                 \
+  develop(intx, SuperWordMaxVectorSize, 64,                                 \
           "Vector size limit in bytes for superword, "                      \
           "superword vector size limit in bytes")                           \
           range(0, max_jint)                                                \
