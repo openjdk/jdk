@@ -22,13 +22,33 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.internal.vm;
 
-#include "jni.h"
-#include "jvm.h"
+/**
+ * Defines a static method to test if the VM has continuations support.
+ */
+public class ContinuationSupport {
+    private static final boolean SUPPORTED = isSupported0();
 
-#include "jdk_internal_misc_PreviewFeatures.h"
+    private ContinuationSupport() {
+    }
 
-JNIEXPORT jboolean JNICALL
-Java_jdk_internal_misc_PreviewFeatures_isPreviewEnabled(JNIEnv *env, jclass cls) {
-    return JVM_IsPreviewEnabled();
+    /**
+     * Return true if the VM has continuations support.
+     */
+    public static boolean isSupported() {
+        return SUPPORTED;
+    }
+
+    /**
+     * Ensures that VM has continuations support.
+     * @throws UnsupportedOperationException if not supported
+     */
+    public static void ensureSupported() {
+        if (!isSupported()) {
+            throw new UnsupportedOperationException("VM does not support continuations");
+        }
+    }
+
+    private static native boolean isSupported0();
 }
