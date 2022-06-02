@@ -313,6 +313,7 @@ jdk_other = \
     javax/xml \
     -javax/xml/crypto \
     jdk/dynalink \
+    jdk/incubator/concurrent \
     jdk/internal/jline \
     com/sun/jndi \
     lib/testlibrary
