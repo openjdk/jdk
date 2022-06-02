@@ -44,6 +44,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vframeArray.hpp"
 #include "utilities/align.hpp"
+#include "utilities/macros.hpp"
 #include "vmreg_ppc.inline.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
@@ -259,7 +260,7 @@ OopMap* RegisterSaver::push_frame_reg_args_and_save_live_registers(MacroAssemble
   // If return_pc_adjustment != 0 adjust the return pc by return_pc_adjustment.
   // Updated return pc is returned in R31 (if not return_pc_is_pre_saved).
 
-  // calcualte frame size
+  // calculate frame size
   const int regstosave_num       = sizeof(RegisterSaver_LiveRegs) /
                                    sizeof(RegisterSaver::LiveRegType);
   const int vsregstosave_num     = save_vectors ? (sizeof(RegisterSaver_LiveVSRegs) /
@@ -1851,7 +1852,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
   __ verify_thread();
 
-  // Native nmethod wrappers never take possesion of the oop arguments.
+  // Native nmethod wrappers never take possession of the oop arguments.
   // So the caller will gc the arguments.
   // The only thing we need an oopMap for is if the call is static.
   //
@@ -2869,7 +2870,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
 
   // The following is basically a call_VM. However, we need the precise
   // address of the call in order to generate an oopmap. Hence, we do all the
-  // work outselves.
+  // work ourselves.
   __ set_last_Java_frame(/*sp=*/R1_SP, /*pc=*/noreg);
 
   // The return address must always be correct so that the frame constructor

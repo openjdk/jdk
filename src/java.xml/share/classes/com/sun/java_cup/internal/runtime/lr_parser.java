@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 
 package com.sun.java_cup.internal.runtime;
 
+import com.sun.org.apache.xalan.internal.xsltc.compiler.sym;
+import java.util.Arrays;
 import java.util.Stack;
 
 /** This class implements a skeleton table driven LR parser.  In general,
@@ -134,9 +136,19 @@ import java.util.Stack;
  * @see     com.sun.java_cup.internal.runtime.Symbol
  * @see     com.sun.java_cup.internal.runtime.virtual_parse_stack
  * @author  Frank Flannery
+ *
+ * @LastModified: Jan 2022
  */
 
 public abstract class lr_parser {
+    public static final int ID_GROUP = 1;
+    public static final int ID_OPERATOR = 2;
+    public static final int ID_TOTAL_OPERATOR = 3;
+
+    private boolean isLiteral = false;
+    private int grpCount = 0;
+    private int opCount = 0;
+    private int totalOpCount = 0;
 
   /*-----------------------------------------------------------*/
   /*--- Constructor(s) ----------------------------------------*/
@@ -355,8 +367,29 @@ public abstract class lr_parser {
    *  the "scan with" clause.  Do not recycle objects; every call to
    *  scan() should return a fresh object.
    */
-  public Symbol scan() throws java.lang.Exception {
-    return getScanner().next_token();
+  public Symbol scan() throws Exception {
+      Symbol s = getScanner().next_token();
+
+      if (s.sym == sym.LPAREN) {
+          if (!isLiteral) {
+            grpCount++;
+          }
+          opCount++; // function
+          isLiteral = false;
+      } else if (contains(sym.OPERATORS, s.sym)) {
+          opCount++;
+          isLiteral = false;
+      }
+
+      if (s.sym == sym.Literal || s.sym == sym.QNAME) {
+          isLiteral = true;
+      }
+
+    return s;
+  }
+
+  private boolean contains(final int[] arr, final int key) {
+    return Arrays.stream(arr).anyMatch(i -> i == key);
   }
 
   /*. . . . . . . . . . . . . . . . . . . . . . . . . . . . . .*/
@@ -552,6 +585,9 @@ public abstract class lr_parser {
 
       /* do user initialization */
       user_init();
+      isLiteral = false;
+      grpCount = 0;
+      opCount = 0;
 
       /* get the first token */
       cur_token = scan();
@@ -630,7 +666,27 @@ public abstract class lr_parser {
                 }
             }
         }
+
+      totalOpCount += opCount;
       return lhs_sym;
+    }
+
+    /**
+     * Returns the count of operators in XPath expressions.
+     *
+     * @param id the ID of the count
+     * @return the count associated with the ID
+     */
+    public int getCount(int id) {
+        switch (id) {
+            case ID_GROUP:
+                return grpCount;
+            case ID_OPERATOR:
+                return opCount;
+            case ID_TOTAL_OPERATOR:
+                return totalOpCount;
+        }
+        return 0;
     }
 
   /*. . . . . . . . . . . . . . . . . . . . . . . . . . . . . .*/

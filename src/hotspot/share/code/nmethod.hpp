@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,7 +129,7 @@ class nmethod : public CompiledMethod {
   // Unclaimed (C)-> N|SD (C)-> X|SD: the nmethod has been processed strongly from
   //   the beginning by a single thread.
   //
-  // "|" describes the concatentation of bits in _oops_do_mark_link.
+  // "|" describes the concatenation of bits in _oops_do_mark_link.
   //
   // The diagram also describes the threads responsible for changing the nmethod to
   // the next state by marking the _transition_ with (C) and (O), which mean "current"
@@ -334,7 +334,7 @@ class nmethod : public CompiledMethod {
   // Inform external interfaces that a compiled method has been unloaded
   void post_compiled_method_unload();
 
-  // Initailize fields to their default values
+  // Initialize fields to their default values
   void init_defaults();
 
   // Offsets

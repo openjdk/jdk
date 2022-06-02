@@ -3159,45 +3159,6 @@ class StubGenerator: public StubCodeGenerator {
 #endif
   }
 
-  // Safefetch stubs.
-  void generate_safefetch(const char* name, int size, address* entry, address* fault_pc, address* continuation_pc) {
-    // safefetch signatures:
-    //   int      SafeFetch32(int*      adr, int      errValue);
-    //   intptr_t SafeFetchN (intptr_t* adr, intptr_t errValue);
-    //
-    // arguments:
-    //   R3_ARG1 = adr
-    //   R4_ARG2 = errValue
-    //
-    // result:
-    //   R3_RET  = *adr or errValue
-
-    StubCodeMark mark(this, "StubRoutines", name);
-
-    // Entry point, pc or function descriptor.
-    *entry = __ function_entry();
-
-    // Load *adr into R4_ARG2, may fault.
-    *fault_pc = __ pc();
-    switch (size) {
-      case 4:
-        // int32_t, signed extended
-        __ lwa(R4_ARG2, 0, R3_ARG1);
-        break;
-      case 8:
-        // int64_t
-        __ ld(R4_ARG2, 0, R3_ARG1);
-        break;
-      default:
-        ShouldNotReachHere();
-    }
-
-    // return errValue or *adr
-    *continuation_pc = __ pc();
-    __ mr(R3_RET, R4_ARG2);
-    __ blr();
-  }
-
   // Stub for BigInteger::multiplyToLen()
   //
   //  Arguments:
@@ -3549,7 +3510,7 @@ class StubGenerator: public StubCodeGenerator {
    * scratch:
    *   R2, R6-R12
    *
-   * Ouput:
+   * Output:
    *   R3_RET     - int   crc result
    */
   // Compute CRC32 function.
@@ -3997,7 +3958,7 @@ class StubGenerator: public StubCodeGenerator {
 
       // Each element of non_match correspond to one each of the 16 input
       // characters.  Those elements that become 0x00 after the xxland
-      // instuction are invalid Base64 characters.
+      // instruction are invalid Base64 characters.
       __ xxland(non_match->to_vsr(), M, bit);
 
       // Compare each element to zero
@@ -4573,14 +4534,6 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_crc32c_table_addr = StubRoutines::ppc::generate_crc_constants(REVERSE_CRC32C_POLY);
       StubRoutines::_updateBytesCRC32C = generate_CRC32_updateBytes(true);
     }
-
-    // Safefetch stubs.
-    generate_safefetch("SafeFetch32", sizeof(int),     &StubRoutines::_safefetch32_entry,
-                                                       &StubRoutines::_safefetch32_fault_pc,
-                                                       &StubRoutines::_safefetch32_continuation_pc);
-    generate_safefetch("SafeFetchN", sizeof(intptr_t), &StubRoutines::_safefetchN_entry,
-                                                       &StubRoutines::_safefetchN_fault_pc,
-                                                       &StubRoutines::_safefetchN_continuation_pc);
   }
 
   void generate_all() {

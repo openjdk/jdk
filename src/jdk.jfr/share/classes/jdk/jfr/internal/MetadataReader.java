@@ -66,6 +66,7 @@ final class MetadataReader {
     public MetadataReader(RecordingInput input) throws IOException {
         this.input = input;
         int size = input.readInt();
+        input.require(size, "Metadata string pool size %d exceeds available data" );
         this.pool = new ArrayList<>(size);
         StringParser p = new StringParser(null, false);
         for (int i = 0; i < size; i++) {

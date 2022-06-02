@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!--
- Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 
 <Metadata>
 
-  <!-- Internal events are only to be used during development, i.e. temporary time measurements, without the need 
+  <!-- Internal events are only to be used during development, i.e. temporary time measurements, without the need
        to modify .jfc files etc. Code that commits an internal event should NEVER be checked in.
 
        Example usage:
@@ -41,7 +41,7 @@
        }
 
        $ make images
-       $ java -XX:StartFlightRecording:settings=none,filename=dump.jfr ...  
+       $ java -XX:StartFlightRecording:settings=none,filename=dump.jfr ...
        ...
        $ jfr print dump.jfr
 
@@ -67,14 +67,14 @@
   <Event name="Text" category="Java Virtual Machine, Internal" label="Text" startTime="false" thread="true" stackTrace="false" internal="true">
     <Field type="string" name="text" label="Text"/>
   </Event>
-  
+
   <Event name="ZThreadDebug" category="Java Virtual Machine, GC, Detailed" label="ZGC Thread Event" description="Temporary latency measurements used during development and debugging of ZGC" thread="true" internal="true">
     <Field type="uint" name="gcId" label="GC Identifier" relation="GcId"/>
     <Field type="string" name="name" label="Name" />
   </Event>
 
   <!-- Ordinary and experimental events !-->
-  
+
   <Event name="ThreadStart" category="Java Application" label="Java Thread Start" thread="true" startTime="false" stackTrace="true">
     <Field type="Thread" name="thread" label="New Java Thread" />
     <Field type="Thread" name="parentThread" label="Parent Java Thread" />
@@ -424,25 +424,25 @@
   </Event>
 
   <Event name="PromoteObjectInNewPLAB" category="Java Virtual Machine, GC, Detailed" label="Promotion in new PLAB"
-    description="Object survived scavenge and was copied to a new Promotion Local Allocation Buffer (PLAB). Supported GCs are Parallel Scavange, G1 and CMS with Parallel New. Due to promotion being done in parallel an object might be reported multiple times as the GC threads race to copy all objects."
+    description="Object survived scavenge and was copied to a new Promotion Local Allocation Buffer (PLAB). Supported GCs are Parallel Scavenge, G1 and CMS with Parallel New. Due to promotion being done in parallel an object might be reported multiple times as the GC threads race to copy all objects."
     thread="true" stackTrace="false" startTime="false">
     <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" description="Identifier signifying GC during which the object was promoted" />
     <Field type="Class" name="objectClass" label="Object Class" description="Class of promoted object" />
     <Field type="ulong" contentType="bytes" name="objectSize" label="Object Size" description="Size of promoted object" />
     <Field type="uint" name="tenuringAge" label="Object Tenuring Age"
-      description="Tenuring age of a surviving object before being copied. The tenuring age of an object is a value between 0-15 and is incremented each scavange the object survives. Newly allocated objects have tenuring age 0." />
+      description="Tenuring age of a surviving object before being copied. The tenuring age of an object is a value between 0-15 and is incremented each scavenge the object survives. Newly allocated objects have tenuring age 0." />
     <Field type="boolean" name="tenured" label="Tenured" description="True if object was promoted to Old space, otherwise the object was aged and copied to a Survivor space" />
     <Field type="ulong" contentType="bytes" name="plabSize" label="PLAB Size" description="Size of the allocated PLAB to which the object was copied" />
   </Event>
 
   <Event name="PromoteObjectOutsidePLAB" category="Java Virtual Machine, GC, Detailed" label="Promotion outside PLAB"
-    description="Object survived scavenge and was copied directly to the heap. Supported GCs are Parallel Scavange, G1 and CMS with Parallel New. Due to promotion being done in parallel an object might be reported multiple times as the GC threads race to copy all objects."
+    description="Object survived scavenge and was copied directly to the heap. Supported GCs are Parallel Scavenge, G1 and CMS with Parallel New. Due to promotion being done in parallel an object might be reported multiple times as the GC threads race to copy all objects."
     thread="true" stackTrace="false" startTime="false">
     <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" description="Identifier signifying GC during which the object was promoted" />
     <Field type="Class" name="objectClass" label="Object Class" description="Class of promoted object" />
     <Field type="ulong" contentType="bytes" name="objectSize" label="Object Size" description="Size of promoted object" />
     <Field type="uint" name="tenuringAge" label="Object Tenuring Age"
-      description="Tenuring age of a surviving object before being copied. The tenuring age of an object is a value between 0-15 and is incremented each scavange the object survives. Newly allocated objects have tenuring age 0." />
+      description="Tenuring age of a surviving object before being copied. The tenuring age of an object is a value between 0-15 and is incremented each scavenge the object survives. Newly allocated objects have tenuring age 0." />
     <Field type="boolean" name="tenured" label="Tenured" description="True if object was promoted to Old space, otherwise the object was aged and copied to a Survivor space" />
   </Event>
 
@@ -622,7 +622,7 @@
 
   <Event name="ExecuteVMOperation" category="Java Virtual Machine, Runtime" label="VM Operation" description="Execution of a VM Operation" thread="true">
     <Field type="VMOperationType" name="operation" label="Operation" />
-    <Field type="boolean" name="safepoint" label="At Safepoint" description="If the operation occured at a safepoint" />
+    <Field type="boolean" name="safepoint" label="At Safepoint" description="If the operation occurred at a safepoint" />
     <Field type="boolean" name="blocking" label="Caller Blocked" description="If the calling thread was blocked until the operation was complete" />
     <Field type="Thread" name="caller" label="Caller" transition="from"
       description="Thread requesting operation. If non-blocking, will be set to 0 indicating thread is unknown" />

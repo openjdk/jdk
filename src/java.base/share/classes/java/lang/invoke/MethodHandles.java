@@ -5601,7 +5601,7 @@ assertEquals("XY", (String) f2.invokeExact("x", "y")); // XY
         for (int pos : positions) {
             ptypes[pos - 1] = newParamType;
         }
-        MethodType newType = MethodType.makeImpl(targetType.rtype(), ptypes, true);
+        MethodType newType = MethodType.methodType(targetType.rtype(), ptypes, true);
 
         LambdaForm lform = result.editor().filterRepeatedArgumentForm(BasicType.basicType(newParamType), positions);
         return result.copyWithExtendL(newType, lform, filter);
@@ -5876,6 +5876,7 @@ System.out.println((int) f0.invokeExact("x", "y")); // 2
      * V adapter(A... a, B... b) {
      *     T t = target(a...);
      *     return filter(b..., t);
+     * }
      * }</pre></blockquote>
      * <p>
      * If the filter handle is a unary function, then this method behaves like {@link #filterReturnValue(MethodHandle, MethodHandle)}.

@@ -32,7 +32,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 /**
  * The interface for writing class output.
  */
-
 public interface ClassWriter {
 
     /**

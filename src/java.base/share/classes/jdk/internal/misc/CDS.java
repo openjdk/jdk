@@ -328,7 +328,7 @@ public class CDS {
         if (!tempArchiveFile.renameTo(archiveFile)) {
             throw new RuntimeException("Cannot rename temp file " + tempArchiveFileName + " to archive file" + archiveFileName);
         }
-        // Everyting goes well, print out the file name.
+        // Everything goes well, print out the file name.
         String archiveFilePath = new File(archiveFileName).getAbsolutePath();
         System.out.println("The process was attached by jcmd and dumped a " + (isStatic ? "static" : "dynamic") + " archive " + archiveFilePath);
         return archiveFilePath;

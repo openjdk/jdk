@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -102,7 +102,7 @@ class SimulatedOperandStack: CHeapObj<mtInternal> {
   // written, we don't know any more whether it was written as the
   // corresponding parameter, or whether another local has been
   // mapped to the slot. So we don't want to print 'parameter<i>' any
-  // more, but 'local<i>'. Similary for 'this'.
+  // more, but 'local<i>'. Similarly for 'this'.
   // Therefore, during the analysis, we mark a bit for local slots that
   // get written and propagate this information.
   // We only run the analysis for 64 slots. If a method has more
@@ -152,7 +152,7 @@ class SimulatedOperandStack: CHeapObj<mtInternal> {
 //
 // It analyses the bytecode to assemble Java-like message text
 // to give precise information where in a larger expression the
-// exception occured.
+// exception occurred.
 //
 // To assemble this message text, it is needed to know how
 // operand stack slot entries were pushed on the operand stack.

@@ -1177,7 +1177,7 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, bool search_append_only, TR
     // class is still loaded from the runtime image even if it might
     // appear in the _patch_mod_entries. The runtime shared class visibility
     // check will determine if a shared class is visible based on the runtime
-    // environemnt, including the runtime --patch-module setting.
+    // environment, including the runtime --patch-module setting.
     //
     // DynamicDumpSharedSpaces requires UseSharedSpaces to be enabled. Since --patch-module
     // is not supported with UseSharedSpaces, it is not supported with DynamicDumpSharedSpaces.
@@ -1562,7 +1562,7 @@ void ClassLoader::create_javabase() {
   JavaThread* current = JavaThread::current();
 
   // Create java.base's module entry for the boot
-  // class loader prior to loading j.l.Ojbect.
+  // class loader prior to loading j.l.Object.
   ClassLoaderData* null_cld = ClassLoaderData::the_null_class_loader_data();
 
   // Get module entry table
@@ -1585,7 +1585,7 @@ void ClassLoader::create_javabase() {
 }
 
 // Please keep following two functions at end of this file. With them placed at top or in middle of the file,
-// they could get inlined by agressive compiler, an unknown trick, see bug 6966589.
+// they could get inlined by aggressive compiler, an unknown trick, see bug 6966589.
 void PerfClassTraceTime::initialize() {
   if (!UsePerfData) return;
 

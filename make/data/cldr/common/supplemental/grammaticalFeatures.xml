@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE supplementalData SYSTEM "../../common/dtd/ldmlSupplemental.dtd">
+<!--
+Copyright © 2019 Unicode, Inc.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+For terms of use, see http://www.unicode.org/copyright.html
+-->
+
+<!--
+
+These are the grammatical features that are used in each locale to mark inflected forms of nouns.
+
+CLDR textual items may be tagged with grammatical features when these are needed to ensure that the
+correct forms are used in context.
+
+For instance, in Russian "Уменьши яркость света до 33 процентов" ("dim the light to 33 percent"),
+the 'percent' unit must be expressed in plural and in the genitive case, whereas "1%" would be
+expressed in different cases depending on the context. The case usage is implicit in short form
+"33%", but the full form requires the grammatical variant marked by case and number to be expressed
+correctly.
+
+In romance languages, nouns such as unit names have an intrinsic grammatical gender, which
+propagates by agreement to other parts of sentence. For example, in French "2 jours sont passés"
+("two days have gone by") expresses the participle "passés" in the plural masculine form, whereas
+"2 heures sont passées" requires the participle in the plural feminine form to agree with the
+grammatical gender of the unit "h", even when short forms are used.
+
+Note that plural status is not included here: CLDR handles plurals with special categories in
+plurals.xml and ordinals.xml. See those files and the LDML spec for more information.
+
+-->
+
+<supplementalData>
+  <version number="$Revision: 1 $"/>
+  <grammaticalData>
+    <grammaticalFeatures targets="nominal" locales="af en fil ja ko lo ms my ne th vi zh">
+      <!-- No grammatical features (number is not considered). 
+      	   However, the data doesn't yet clearly distinguish semantic gender from non-semantic gender; that is to come later. -->
+    </grammaticalFeatures>
+    <grammaticalFeatures targets="nominal" locales="ca es fr it pt"> <!-- add lij if it is added as a locale -->
+      <grammaticalGender values="masculine feminine"/>
+    </grammaticalFeatures>
+    <grammaticalFeatures targets="nominal" locales="nl">
+      <grammaticalGender values="common neuter"/>
+    </grammaticalFeatures>
+    <grammaticalFeatures targets="nominal" locales="hy">
+      <grammaticalCase values="nominative ablative  dative locative instrumental"/>
+    </grammaticalFeatures>
+    <grammaticalFeatures targets="nominal" locales="te">
+      <grammaticalCase values="nominative oblique accusative dative locative instrumental"/>
+      <grammaticalCase scope="units"/>
+    </grammaticalFeatures>
+    <grammaticalFeatures targets="nominal" locales="ta">
+      <grammaticalCase values="nominative genitive accusative dative locative instrumental ablative vocative"/>
+      <grammaticalCase scope="units" values="nominative accusative dative ablative"/>
+    </grammaticalFeatures>
+    <grammaticalFeatures targets="nominal" locales="fi">
+      <grammaticalCase values="nominative abessive ablative adessive allative comitative elative essive genitive illative inessive instrumental partitive translative"/>
+      <grammaticalCase scope="units" values="nominative elative illative partitive genitive"/>
+      <!-- Finnish nouns also inflect in possessives, with agreement on number and person. -->
+    </grammaticalFeatures>
+    <grammaticalFeatures targets="nominal" locales="hu">
+      <grammaticalCase values="nominative ablative accusative adessive allative causal dative delative elative essive illative inessive instrumental sublative superessive terminative translative"/>
+      <grammaticalCase scope="units" values="nominative accusative instrumental terminative translative"/>
+      <!-- Hungarian nouns also inflect in possessives, with agreement on number and person. -->
+    </grammaticalFeatures>
+    <grammaticalFeatures targets="nominal" locales="kk tr">
+      <grammaticalCase values="nominative genitive dative accusative instrumental ablative locative"/>
+      <grammaticalCase scope="units"/>
+    </grammaticalFeatures>
+    <grammaticalFeatures targets="nominal" locales="az ky uz">
+      <grammaticalCase values="nominative genitive dative accusative ablative locative"/>
+      <grammaticalCase scope="units"/>
+    </grammaticalFeatures>
+    <grammaticalFeatures targets="nominal" locales="id">
+      <grammaticalDefiniteness values="definite indefinite"/>
+      <!-- Indonesian nouns inflect in a possessive expression, with agreement on person. -->
+    </grammaticalFeatures>
+    <grammaticalFeatures targets="nominal" locales="el">
+      <grammaticalCase values="nominative genitive accusative vocative"/>
+      <grammaticalCase scope="units" values="nominative genitive accusative"/>
+      <grammaticalGender values="masculine feminine neuter"/>
+    </grammaticalFeatures>
+    <grammaticalFeatures targets="nominal" locales="sl">
+      <grammaticalCase values="nominative genitive accusative dative instrumental locative"/>
+      <grammaticalGender values="masculine feminine neuter"/>
+    </grammaticalFeatures>
+    <grammaticalFeatures targets="nominal" locales="de">
+      <grammaticalCase values="nominative genitive dative accusative"/>
+      <grammaticalGender values="masculine feminine neuter"/>
+    </grammaticalFeatures>
+    <grammaticalFeatures targets="nominal" locales="hi pa">
+      <grammaticalCase values="nominative oblique"/>
+      <grammaticalGender values="masculine feminine"/>
+    </grammaticalFeatures>
+    <grammaticalFeatures targets="nominal" locales="ur">
+      <grammaticalCase values="nominative oblique"/>
+      <grammaticalCase scope="units"/>
+      <grammaticalGender values="masculine feminine"/>
+    </grammaticalFeatures>
+    <grammaticalFeatures targets="nominal" locales="ml"> <!-- Holding back on ml until we get more reliable information -->
+      <grammaticalCase values="nominative genitive dative accusative instrumental locative comitative locativecopulative sociative"/>
+      <grammaticalCase scope="units"/> 
+      <grammaticalGender values="animate inanimate feminine neuter"/>
+      <grammaticalGender scope="units"/>
+    </grammaticalFeatures>
+    <grammaticalFeatures targets="nominal" locales="mr">
+      <grammaticalCase values="nominative accusative dative ergative locative ablative genitive"/>
+      <grammaticalGender values="masculine feminine neuter"/>
+      <!-- Genitive agrees in gender, case and number with the antecedent. -->
+      <!-- Oblique can be further inflected by semantics-defining suffixes. -->
+    </grammaticalFeatures>
+    <grammaticalFeatures targets="nominal" locales="gu">
+      <grammaticalCase values="nominative genitive accusative dative locative instrumental vocative"/>
+      <grammaticalCase  scope="units"/>
+      <grammaticalGender values="masculine feminine neuter"/>
+      <grammaticalGender scope="units"/>
+    </grammaticalFeatures>
+    <grammaticalFeatures targets="nominal" locales="kn">
+      <grammaticalCase values="nominative genitive accusative dative locative instrumental vocative"/>
+      <grammaticalCase scope="units" values="nominative genitive accusative dative locative"/>
+      <grammaticalGender values="masculine feminine neuter"/>
+      <grammaticalGender scope="units" values="neuter"/>
+    </grammaticalFeatures>
+    <grammaticalFeatures targets="nominal" locales="he">
+      <grammaticalGender values="masculine feminine"/>
+      <grammaticalDefiniteness values="definite indefinite construct"/>
+      <!-- Note that Hebrew nouns also inflect in possessives, with agreement on person, number and gender -->
+    </grammaticalFeatures>
+    <grammaticalFeatures targets="nominal" locales="ar">
+      <grammaticalCase values="nominative genitive accusative"/>
+      <grammaticalCase scope="units"/>
+      <grammaticalGender values="masculine feminine"/>
+      <grammaticalDefiniteness values="definite indefinite construct"/>
+      <!-- Note that Arabic nouns also inflect in possessives, with agreement on person, number and gender -->
+    </grammaticalFeatures>
+    <grammaticalFeatures targets="nominal" locales="fa">
+      <grammaticalDefiniteness values="definite indefinite construct"/>
+      <!-- Note that Persian nouns also inflect in possessives, with agreement on person and number -->
+    </grammaticalFeatures>
+    <grammaticalFeatures targets="nominal" locales="bn">
+      <grammaticalCase values="nominative accusative genitive locative"/>
+      <grammaticalCase scope="units"/>
+      <grammaticalDefiniteness values="definite indefinite"/>
+      <!-- Gender is only used for expressing human activities/professions. -->
+    </grammaticalFeatures>
+    <grammaticalFeatures targets="nominal" locales="si">
+      <grammaticalCase values="nominative genitive ablative accusative dative"/>
+      <grammaticalCase scope="units"/>
+      <grammaticalGender values="masculine feminine neuter"/>
+      <grammaticalGender scope="units"/>
+      <grammaticalDefiniteness values="definite indefinite"/>
+      <!-- Neuter is only used for inanimate nouns; plurals have no definiteness marker. -->
+    </grammaticalFeatures>
+    <grammaticalFeatures targets="nominal" locales="is">
+      <grammaticalCase values="nominative genitive dative accusative"/>
+      <grammaticalGender values="masculine feminine neuter"/>
+      <grammaticalDefiniteness values="definite indefinite"/>
+    </grammaticalFeatures>
+    <grammaticalFeatures targets="nominal" locales="da">
+      <grammaticalCase values="nominative genitive"/>
+      <grammaticalGender values="common neuter"/>
+      <grammaticalDefiniteness values="definite indefinite unspecified"/>
+    </grammaticalFeatures>
+    <grammaticalFeatures targets="nominal" locales="sv">
+      <grammaticalCase values="nominative genitive"/>
+      <grammaticalGender values="common neuter"/>
+      <grammaticalDefiniteness values="definite indefinite"/>
+    </grammaticalFeatures>
+    <grammaticalFeatures targets="nominal" locales="ro">
+      <grammaticalCase values="nominative genitive"/>
+      <grammaticalGender values="masculine feminine neuter"/>
+      <grammaticalDefiniteness values="definite indefinite"/>
+    </grammaticalFeatures>
+    <grammaticalFeatures targets="nominal" locales="am">
+      <grammaticalCase values="nominative accusative"/>
+      <grammaticalDefiniteness values="definite indefinite"/>
+      <!-- Gender is only used for expressing human activities/professions. -->
+    </grammaticalFeatures>
+    <grammaticalFeatures targets="nominal" locales="nb nn no">
+      <grammaticalCase values="nominative genitive"/>
+      <grammaticalGender values="masculine feminine neuter"/>
+      <grammaticalDefiniteness values="definite indefinite"/>
+    </grammaticalFeatures>
+    <grammaticalFeatures targets="nominal" locales="uk">
+      <grammaticalCase values="nominative genitive dative accusative instrumental vocative locative"/>
+      <grammaticalCase scope="units" values="nominative genitive accusative dative locative instrumental"/>
+      <grammaticalGender values="masculine feminine neuter"/>
+    </grammaticalFeatures>
+    <grammaticalFeatures targets="nominal" locales="lv">
+      <grammaticalCase values="nominative genitive dative accusative vocative locative"/>
+      <grammaticalCase scope="units" values="nominative genitive dative accusative locative"/>
+      <grammaticalGender values="masculine feminine"/>
+    </grammaticalFeatures>
+    <grammaticalFeatures targets="nominal" locales="lt">
+      <grammaticalCase values="nominative genitive dative accusative instrumental vocative locative"/>
+      <grammaticalCase scope="units" values="nominative genitive dative accusative instrumental locative"/>
+      <grammaticalGender values="masculine feminine"/>
+    </grammaticalFeatures>
+    <grammaticalFeatures targets="nominal" locales="cs sk">
+      <grammaticalCase values="nominative genitive dative accusative instrumental vocative locative"/>
+      <grammaticalCase scope="units" values="nominative genitive dative accusative instrumental locative"/>
+      <grammaticalGender values="animate inanimate feminine neuter"/>
+      <grammaticalGender scope="units" values="inanimate feminine neuter"/>
+      <!-- Czech also inflects in polarity (negation is a prefix) -->
+    </grammaticalFeatures>
+    <grammaticalFeatures targets="nominal" locales="hr sr">
+      <grammaticalCase values="nominative genitive dative accusative instrumental vocative locative"/>
+      <grammaticalCase scope="units" values="nominative genitive accusative instrumental"/>
+      <grammaticalGender values="animate inanimate feminine neuter"/>
+      <grammaticalGender scope="units" values="inanimate feminine neuter"/>
+    </grammaticalFeatures>
+    <grammaticalFeatures targets="nominal" locales="ru">
+      <grammaticalCase values="nominative genitive dative accusative instrumental prepositional vocative locative"/>
+      <grammaticalCase scope="units" values="nominative accusative dative genitive prepositional instrumental"/>
+      <grammaticalGender values="masculine feminine neuter"/>
+    </grammaticalFeatures>
+    <grammaticalFeatures targets="nominal" locales="pl">
+      <grammaticalCase values="nominative genitive dative accusative instrumental vocative locative"/>
+      <grammaticalCase scope="units" values="accusative genitive nominative"/>
+      <grammaticalGender values="animate inanimate personal feminine neuter"/>
+      <grammaticalGender scope="units" values="inanimate feminine neuter"/>
+    </grammaticalFeatures>
+    <grammaticalDerivations locales="root">
+	<!-- determine the gender of a compound unit from the gender of its components -->
+	<!-- The attributeValues of value are: 0 (=gender of the first element), 1 (=gender of second element), or one of the valid gender values for the language -->
+	
+	  <deriveCompound feature="gender" structure="per" value="0"/> <!-- gender(gram-per-meter) ←  gender(gram) --> 
+	  <deriveCompound feature="gender" structure="times" value="1"/> <!-- gender(newton-meter) ←  gender(meter) --> 
+	  <deriveCompound feature="gender" structure="power" value="0"/> <!-- gender(square-meter) ←  gender(meter) --> 
+	  <deriveCompound feature="gender" structure="prefix" value="0"/> <!-- gender(kilometer) ←  gender(meter)--> 
+	
+	<!-- from the pluralCategory of the compound unit, determine the pluralCategory of its components -->
+	<!-- The attributeValues of value0 and value1 are: compound (=the pluralCategory of the compound),  or one of the valid plural category values for the language -->
+	
+	  <deriveComponent feature="plural" structure="per" value0="compound" value1="one"/> <!-- compound(gram-per-meter) ⇒  compound(gram) “per" singular(meter) -->
+	  <deriveComponent feature="plural" structure="times" value0="one"  value1="compound"/>  <!-- compound(newton-meter) ⇒  singular(newton) “-" compound(meter) -->
+	  <deriveComponent feature="plural" structure="power" value0="one"  value1="compound"/>  <!-- compound(square-meter) ⇒  singular(square) compound(meter) -->
+	  <deriveComponent feature="plural" structure="prefix" value0="one"  value1="compound"/> <!-- compound(kilometer) ⇒  singular(kilo) compound(meter) -->
+	
+	<!-- from the grammatical case of the compound unit, determine the grammatical case of its components -->
+	<!-- The attributeValues of value0 and value1 are: compound (=the grammatical case of the compound),  or one of the valid grammatical case values for the language -->
+
+	  <deriveComponent feature="case" structure="per" value0="compound" value1="nominative"/> <!-- compound(gram-per-meter) ⇒ compound(gram) “per" nominative(meter) -->
+	  <deriveComponent feature="case" structure="times" value0="nominative"  value1="compound"/> <!-- compound(newton-meter) ⇒  nominative(newton) “-" compound(meter) -->
+	  <deriveComponent feature="case" structure="power" value0="nominative"  value1="compound"/> <!-- compound(square-meter) ⇒  nominative(square) compound(meter) -->
+	  <deriveComponent feature="case" structure="prefix" value0="nominative"  value1="compound"/><!--compound(kilometer) ⇒  nominative(kilo) compound(meter) -->
+	</grammaticalDerivations>
+	<grammaticalDerivations locales="de">
+	<!-- determine the gender of a compound unit from the gender of its components -->
+	<!-- The attributeValues of value are: 0 (=gender of the first element), 1 (=gender of second element), or one of the valid gender values for the language -->
+	
+	  <deriveCompound feature="gender" structure="per" value="0"/> <!-- gender(gram-per-meter) ←  gender(gram) --> 
+	  <deriveCompound feature="gender" structure="times" value="1"/> <!-- gender(newton-meter) ←  gender(meter) --> 
+	  <deriveCompound feature="gender" structure="power" value="0"/> <!-- gender(square-meter) ←  gender(meter) --> 
+	  <deriveCompound feature="gender" structure="prefix" value="0"/> <!-- gender(kilometer) ←  gender(meter)--> 
+	
+	<!-- from the pluralCategory of the compound unit, determine the pluralCategory of its components -->
+	<!-- The attributeValues of value0 and value1 are: compound (=the pluralCategory of the compound),  or one of the valid plural category values for the language -->
+	
+	  <deriveComponent feature="plural" structure="per" value0="compound" value1="one"/> <!-- compound(gram-per-meter) ⇒  compound(gram) “per" singular(meter) -->
+	  <deriveComponent feature="plural" structure="times" value0="one"  value1="compound"/>  <!-- compound(newton-meter) ⇒  singular(newton) “-" compound(meter) -->
+	  <deriveComponent feature="plural" structure="power" value0="one"  value1="compound"/>  <!-- compound(square-meter) ⇒  singular(square) compound(meter) -->
+	  <deriveComponent feature="plural" structure="prefix" value0="one"  value1="compound"/> <!-- compound(kilometer) ⇒  singular(kilo) compound(meter) -->
+	
+	<!-- from the grammatical case of the compound unit, determine the grammatical case of its components -->
+	<!-- The attributeValues of value0 and value1 are: compound (=the grammatical case of the compound),  or one of the valid grammatical case values for the language -->
+
+	  <deriveComponent feature="case" structure="per" value0="compound" value1="accusative"/> <!-- compound(gram-per-meter) ⇒ compound(gram) “per" accusative(meter) -->
+	  <deriveComponent feature="case" structure="times" value0="nominative"  value1="compound"/> <!-- compound(newton-meter) ⇒  nominative(newton) “-" compound(meter) -->
+	  <deriveComponent feature="case" structure="power" value0="nominative"  value1="compound"/> <!-- compound(square-meter) ⇒  nominative(square) compound(meter) -->
+	  <deriveComponent feature="case" structure="prefix" value0="nominative"  value1="compound"/><!--compound(kilometer) ⇒  nominative(kilo) compound(meter) -->
+	</grammaticalDerivations>
+	<grammaticalDerivations locales="fr">
+	<!-- determine the gender of a compound unit from the gender of its components -->
+	<!-- The attributeValues of value are: 0 (=gender of the first element), 1 (=gender of second element), or one of the valid gender values for the language -->
+	
+	  <deriveCompound feature="gender" structure="per" value="0"/> <!-- gender(gram-per-meter) ←  gender(gram) --> 
+	  <deriveCompound feature="gender" structure="times" value="0"/> <!-- gender(newton-meter) ←  gender(newton) --> 
+	  <deriveCompound feature="gender" structure="power" value="0"/> <!-- gender(square-meter) ←  gender(meter) --> 
+	  <deriveCompound feature="gender" structure="prefix" value="0"/> <!-- gender(kilometer) ←  gender(meter)--> 
+	
+	<!-- from the pluralCategory of the compound unit, determine the pluralCategory of its components -->
+	<!-- The attributeValues of value0 and value1 are: compound (=the pluralCategory of the compound),  or one of the valid plural category values for the language -->
+	
+	  <deriveComponent feature="plural" structure="per" value0="compound" value1="one"/> <!-- compound(gram-per-meter) ⇒  compound(gram) “per" singular(meter) -->
+	  <deriveComponent feature="plural" structure="times" value0="compound"  value1="compound"/>  <!-- compound(newton-meter) ⇒  compound(newton) “-" compound(meter) -->
+	  <deriveComponent feature="plural" structure="power" value0="compound"  value1="compound"/>  <!-- compound(square-meter) ⇒  compound(square) compound(meter) -->
+	  <deriveComponent feature="plural" structure="prefix" value0="one"  value1="compound"/> <!-- compound(kilometer) ⇒  singular(kilo) compound(meter) -->
+	
+	</grammaticalDerivations>
+  </grammaticalData>
+</supplementalData>

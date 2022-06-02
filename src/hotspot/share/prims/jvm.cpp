@@ -1490,7 +1490,7 @@ JVM_ENTRY(jstring, JVM_GetClassSignature(JNIEnv *env, jclass cls))
   JvmtiVMObjectAllocEventCollector oam;
   ResourceMark rm(THREAD);
   oop mirror = JNIHandles::resolve_non_null(cls);
-  // Return null for arrays and primatives
+  // Return null for arrays and primitives
   if (!java_lang_Class::is_primitive(mirror)) {
     Klass* k = java_lang_Class::as_Klass(mirror);
     if (k->is_instance_klass()) {

@@ -34,7 +34,7 @@ import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 
 /**
- * An inline Taglet used to denote literal code fragments.
+ * An inline taglet used to denote literal code fragments.
  * The enclosed text is interpreted as not containing HTML markup or
  * nested javadoc tags, and is rendered in a font suitable for code.
  *
@@ -45,7 +45,6 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
  * displays as:
  * <blockquote>  The type {@code List<P>}  </blockquote>
  */
-
 public class CodeTaglet extends BaseTaglet {
 
     CodeTaglet() {

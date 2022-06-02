@@ -27,7 +27,7 @@
 //----------REGISTER DEFINITION BLOCK------------------------------------------
 // This information is used by the matcher and the register allocator to
 // describe individual registers and classes of registers within the target
-// archtecture.
+// architecture.
 
 register %{
 //----------Architecture Description Register Definitions----------------------
@@ -1883,6 +1883,12 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
         return false;
       }
       if (UseAVX < 3 && !VM_Version::supports_bmi2()) {
+        return false;
+      }
+      break;
+    case Op_SignumVD:
+    case Op_SignumVF:
+      if (UseAVX < 1) {
         return false;
       }
       break;
@@ -6089,6 +6095,36 @@ instruct signumD_reg(regD dst, regD zero, regD one, rRegP scratch, rFlagsReg cr)
   ins_pipe( pipe_slow );
 %}
 
+instruct signumV_reg_avx(vec dst, vec src, vec zero, vec one, vec xtmp1) %{
+  predicate(!VM_Version::supports_avx512vl() && Matcher::vector_length_in_bytes(n) <= 32);
+  match(Set dst (SignumVF src (Binary zero one)));
+  match(Set dst (SignumVD src (Binary zero one)));
+  effect(TEMP dst, TEMP xtmp1);
+  format %{ "vector_signum_avx $dst, $src\t! using $xtmp1 as TEMP" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    int vec_enc = vector_length_encoding(this);
+    __ vector_signum_avx(opcode, $dst$$XMMRegister, $src$$XMMRegister, $zero$$XMMRegister, $one$$XMMRegister,
+                         $xtmp1$$XMMRegister, vec_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct signumV_reg_evex(vec dst, vec src, vec zero, vec one, kReg ktmp1) %{
+  predicate(VM_Version::supports_avx512vl() || Matcher::vector_length_in_bytes(n) == 64);
+  match(Set dst (SignumVF src (Binary zero one)));
+  match(Set dst (SignumVD src (Binary zero one)));
+  effect(TEMP dst, TEMP ktmp1);
+  format %{ "vector_signum_evex $dst, $src\t! using $ktmp1 as TEMP" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    int vec_enc = vector_length_encoding(this);
+    __ vector_signum_evex(opcode, $dst$$XMMRegister, $src$$XMMRegister, $zero$$XMMRegister, $one$$XMMRegister,
+                          $ktmp1$$KRegister, vec_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 // ---------------------------------------
 // For copySign use 0xE4 as writemask for vpternlog
 // Desired Truth Table: A -> xmm0 bit, B -> xmm1 bit, C -> xmm2 bit
@@ -6663,13 +6699,13 @@ instruct vshift16S_var_nobw(vec dst, vec src, vec shift, vec vtmp1, vec vtmp2, r
     int opcode = this->ideal_Opcode();
     bool sign = (opcode != Op_URShiftVS);
     int vlen_enc = Assembler::AVX_256bit;
-    // Shift lower half, with result in vtmp2 usign vtmp1 as TEMP
+    // Shift lower half, with result in vtmp2 using vtmp1 as TEMP
     __ vextendwd(sign, $vtmp2$$XMMRegister, $src$$XMMRegister, vlen_enc);
     __ vpmovzxwd($vtmp1$$XMMRegister, $shift$$XMMRegister, vlen_enc);
     __ varshiftd(opcode, $vtmp2$$XMMRegister, $vtmp2$$XMMRegister, $vtmp1$$XMMRegister, vlen_enc);
     __ vpand($vtmp2$$XMMRegister, $vtmp2$$XMMRegister, ExternalAddress(vector_int_to_short_mask()), vlen_enc, $scratch$$Register);
 
-    // Shift upper half, with result in dst usign vtmp1 as TEMP
+    // Shift upper half, with result in dst using vtmp1 as TEMP
     __ vextracti128_high($dst$$XMMRegister, $src$$XMMRegister);
     __ vextracti128_high($vtmp1$$XMMRegister, $shift$$XMMRegister);
     __ vextendwd(sign, $dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
@@ -8781,7 +8817,7 @@ instruct vmasked_load64(vec dst, memory mem, kReg mask) %{
   ins_encode %{
     BasicType elmType =  this->bottom_type()->is_vect()->element_basic_type();
     int vector_len = vector_length_encoding(this);
-    __ evmovdqu(elmType, $mask$$KRegister, $dst$$XMMRegister, $mem$$Address, vector_len);
+    __ evmovdqu(elmType, $mask$$KRegister, $dst$$XMMRegister, $mem$$Address, false, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -8814,7 +8850,7 @@ instruct vmasked_store64(memory mem, vec src, kReg mask) %{
     const MachNode* src_node = static_cast<const MachNode*>(this->in(this->operand_index($src)));
     BasicType elmType =  src_node->bottom_type()->is_vect()->element_basic_type();
     int vector_len = vector_length_encoding(src_node);
-    __ evmovdqu(elmType, $mask$$KRegister, $mem$$Address, $src$$XMMRegister, vector_len);
+    __ evmovdqu(elmType, $mask$$KRegister, $mem$$Address, $src$$XMMRegister, true, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}

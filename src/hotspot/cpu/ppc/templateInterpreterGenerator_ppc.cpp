@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -81,7 +81,7 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
   // first C-argument and to return the result_handler in
   // R3_RET. Since native_entry will copy the jni-pointer to the
   // first C-argument slot later on, it is OK to occupy this slot
-  // temporarilly. Then we copy the argument list on the java
+  // temporarily. Then we copy the argument list on the java
   // expression stack into native varargs format on the native stack
   // and load arguments into argument registers. Integer arguments in
   // the varargs vector will be sign-extended to 8 bytes.
@@ -2030,7 +2030,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
     __ stw(R11_scratch1, in_bytes(JavaThread::popframe_condition_offset()), R16_thread);
 
     // Return from the current method into the deoptimization blob. Will eventually
-    // end up in the deopt interpeter entry, deoptimization prepared everything that
+    // end up in the deopt interpreter entry, deoptimization prepared everything that
     // we will reexecute the call that called us.
     __ merge_frames(/*top_frame_sp*/ R21_sender_SP, /*reload return_pc*/ return_pc, R11_scratch1, R12_scratch2);
     __ mtlr(return_pc);

@@ -1332,7 +1332,7 @@ bool Parse::seems_never_taken(float prob) const {
 // True if the comparison seems to be the kind that will not change its
 // statistics from true to false.  See comments in adjust_map_after_if.
 // This question is only asked along paths which are already
-// classifed as untaken (by seems_never_taken), so really,
+// classified as untaken (by seems_never_taken), so really,
 // if a path is never taken, its controlling comparison is
 // already acting in a stable fashion.  If the comparison
 // seems stable, we will put an expensive uncommon trap
@@ -1802,7 +1802,7 @@ Node* Parse::optimize_cmp_with_klass(Node* c) {
 
 //------------------------------do_one_bytecode--------------------------------
 // Parse this bytecode, and alter the Parsers JVM->Node mapping
-void Parse::do_one_bytecode() {
+void Parse::do_one_bytecode_common() {
   Node *a, *b, *c, *d;          // Handy temps
   BoolTest::mask btest;
   int i;
@@ -2750,16 +2750,4 @@ void Parse::do_one_bytecode() {
     tty->print("\nUnhandled bytecode %s\n", Bytecodes::name(bc()) );
     ShouldNotReachHere();
   }
-
-#ifndef PRODUCT
-  if (C->should_print_igv(1)) {
-    IdealGraphPrinter* printer = C->igv_printer();
-    char buffer[256];
-    jio_snprintf(buffer, sizeof(buffer), "Bytecode %d: %s", bci(), Bytecodes::name(bc()));
-    bool old = printer->traverse_outs();
-    printer->set_traverse_outs(true);
-    printer->print_method(buffer, 4);
-    printer->set_traverse_outs(old);
-  }
-#endif
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1111,7 +1111,7 @@ JRT_END
 
 
 JRT_ENTRY(void, InterpreterRuntime::at_safepoint(JavaThread* current))
-  // We used to need an explict preserve_arguments here for invoke bytecodes. However,
+  // We used to need an explicit preserve_arguments here for invoke bytecodes. However,
   // stack traversal automatically takes care of preserving arguments for invoke, so
   // this is no longer needed.
 
@@ -1248,7 +1248,7 @@ JRT_END
 
 #ifndef SHARING_FAST_NATIVE_FINGERPRINTS
 // Dummy definition (else normalization method is defined in CPU
-// dependant code)
+// dependent code)
 uint64_t InterpreterRuntime::normalize_fast_native_fingerprint(uint64_t fingerprint) {
   return fingerprint;
 }
@@ -1309,7 +1309,7 @@ void SignatureHandlerLibrary::add(const methodHandle& method) {
       initialize();
       // lookup method signature's fingerprint
       uint64_t fingerprint = Fingerprinter(method).fingerprint();
-      // allow CPU dependant code to optimize the fingerprints for the fast handler
+      // allow CPU dependent code to optimize the fingerprints for the fast handler
       fingerprint = InterpreterRuntime::normalize_fast_native_fingerprint(fingerprint);
       handler_index = _fingerprints->find(fingerprint);
       // create handler if necessary
@@ -1324,7 +1324,7 @@ void SignatureHandlerLibrary::add(const methodHandle& method) {
         if (handler == NULL) {
           // use slow signature handler (without memorizing it in the fingerprints)
         } else {
-          // debugging suppport
+          // debugging support
           if (PrintSignatureHandlers && (handler != Interpreter::slow_signature_handler())) {
             ttyLocker ttyl;
             tty->cr();

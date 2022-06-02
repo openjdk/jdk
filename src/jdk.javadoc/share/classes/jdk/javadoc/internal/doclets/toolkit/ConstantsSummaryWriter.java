@@ -36,7 +36,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 /**
  * The interface for writing constants summary output.
  */
-
 public interface ConstantsSummaryWriter {
 
     /**

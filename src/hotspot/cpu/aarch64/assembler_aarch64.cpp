@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020 Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -353,6 +353,53 @@ bool Assembler::operand_valid_for_sve_add_sub_immediate(int64_t imm) {
 
 bool Assembler::operand_valid_for_logical_immediate(bool is32, uint64_t imm) {
   return encode_logical_immediate(is32, imm) != 0xffffffff;
+}
+
+// Check immediate encoding for movi.
+// Return the shift amount which can be {0, 8, 16, 24} for B/H/S types. As the D type
+// movi does not have shift variant, in this case the return value is the immediate
+// after encoding.
+// Return -1 if the input imm64 can not be encoded.
+int Assembler::operand_valid_for_movi_immediate(uint64_t imm64, SIMD_Arrangement T) {
+  if (T == T1D || T == T2D) {
+     // To encode into movi, the 64-bit imm must be in the form of
+     // 'aaaaaaaabbbbbbbbccccccccddddddddeeeeeeeeffffffffgggggggghhhhhhhh'
+     // and encoded in "a:b:c:d:e:f:g:h".
+     uint64_t tmp = imm64;
+     uint64_t one_byte = 0;
+     for (int i = 0; i < 8; i++) {
+       one_byte = tmp & 0xffULL;
+       if (one_byte != 0xffULL && one_byte != 0) {
+         return -1; // can not be encoded
+       }
+       tmp = tmp >> 8;
+     }
+
+     imm64 &= 0x0101010101010101ULL;
+     imm64 |= (imm64 >> 7);
+     imm64 |= (imm64 >> 14);
+     imm64 |= (imm64 >> 28);
+
+     return imm64 & 0xff;
+  }
+
+  uint32_t imm32 = imm64 & 0xffffffffULL;
+  if (T == T8B || T == T16B) {       // 8-bit variant
+    if (0 == (imm32 & ~0xff))        return 0;
+  } else if(T == T4H || T == T8H) {  // 16-bit variant
+    if (0 == (imm32 & ~0xff))        return 0;
+    if (0 == (imm32 & ~0xff00))      return 8;
+  } else if (T == T2S || T == T4S) { // 32-bit variant
+    if (0 == (imm32 & ~0xff))        return 0;
+    if (0 == (imm32 & ~0xff00))      return 8;
+    if (0 == (imm32 & ~0xff0000))    return 16;
+    if (0 == (imm32 & ~0xff000000))  return 24;
+  } else {
+    assert(false, "unsupported");
+    ShouldNotReachHere();
+  }
+
+  return -1;
 }
 
 bool Assembler::operand_valid_for_sve_logical_immediate(unsigned elembits, uint64_t imm) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -433,7 +433,7 @@ final class CertificateRequest {
             if (signatureSchemes == null || signatureSchemes.isEmpty()) {
                 throw handshakeContext.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                         "No signature algorithms specified for " +
-                        "CertificateRequest hanshake message");
+                        "CertificateRequest handshake message");
             }
             this.algorithmIds = new int[signatureSchemes.size()];
             int i = 0;

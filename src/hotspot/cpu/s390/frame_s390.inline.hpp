@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -93,7 +93,7 @@ inline BasicObjectLock** frame::interpreter_frame_monitors_addr() const {
   return (BasicObjectLock**) &(ijava_state()->monitors);
 }
 
-// The next two funcions read and write z_ijava_state.monitors.
+// The next two functions read and write z_ijava_state.monitors.
 inline BasicObjectLock* frame::interpreter_frame_monitors() const {
   return *interpreter_frame_monitors_addr();
 }

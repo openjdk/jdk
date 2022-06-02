@@ -1817,35 +1817,39 @@ methodHandle SharedRuntime::reresolve_call_site(TRAPS) {
     // CLEANUP - with lazy deopt shouldn't need this lock
     nmethodLocker nmlock(caller_nm);
 
+    // Check relocations for the matching call to 1) avoid false positives,
+    // and 2) determine the type.
     if (call_addr != NULL) {
+      // On x86 the logic for finding a call instruction is blindly checking for a call opcode 5
+      // bytes back in the instruction stream so we must also check for reloc info.
       RelocIterator iter(caller_nm, call_addr, call_addr+1);
-      int ret = iter.next(); // Get item
+      bool ret = iter.next(); // Get item
       if (ret) {
-        assert(iter.addr() == call_addr, "must find call");
-        if (iter.type() == relocInfo::static_call_type) {
-          is_static_call = true;
-        } else {
-          assert(iter.type() == relocInfo::virtual_call_type ||
-                 iter.type() == relocInfo::opt_virtual_call_type
-                , "unexpected relocInfo. type");
-        }
-      } else {
-        assert(!UseInlineCaches, "relocation info. must exist for this address");
-      }
+        bool is_static_call = false;
+        switch (iter.type()) {
+          case relocInfo::static_call_type:
+            is_static_call = true;
 
-      // Cleaning the inline cache will force a new resolve. This is more robust
-      // than directly setting it to the new destination, since resolving of calls
-      // is always done through the same code path. (experience shows that it
-      // leads to very hard to track down bugs, if an inline cache gets updated
-      // to a wrong method). It should not be performance critical, since the
-      // resolve is only done once.
-
-      for (;;) {
-        ICRefillVerifier ic_refill_verifier;
-        if (!clear_ic_at_addr(caller_nm, call_addr, is_static_call)) {
-          InlineCacheBuffer::refill_ic_stubs();
-        } else {
-          break;
+          case relocInfo::virtual_call_type:
+          case relocInfo::opt_virtual_call_type:
+            // Cleaning the inline cache will force a new resolve. This is more robust
+            // than directly setting it to the new destination, since resolving of calls
+            // is always done through the same code path. (experience shows that it
+            // leads to very hard to track down bugs, if an inline cache gets updated
+            // to a wrong method). It should not be performance critical, since the
+            // resolve is only done once.
+            guarantee(iter.addr() == call_addr, "must find call");
+            for (;;) {
+              ICRefillVerifier ic_refill_verifier;
+              if (!clear_ic_at_addr(caller_nm, call_addr, is_static_call)) {
+                InlineCacheBuffer::refill_ic_stubs();
+              } else {
+                break;
+              }
+            }
+            break;
+          default:
+            break;
         }
       }
     }
@@ -2085,7 +2089,7 @@ char* SharedRuntime::generate_class_cast_message(
     klass_separator = (target_klass != NULL) ? "; " : "";
   }
 
-  // add 3 for parenthesis and preceeding space
+  // add 3 for parenthesis and preceding space
   msglen += strlen(caster_klass_description) + strlen(target_klass_description) + strlen(klass_separator) + 3;
 
   char* message = NEW_RESOURCE_ARRAY_RETURN_NULL(char, msglen);
@@ -2918,7 +2922,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::create_adapter(AdapterBlob*& new_ada
   }
   entry->relocate(new_adapter->content_begin());
 #ifndef PRODUCT
-  // debugging suppport
+  // debugging support
   if (PrintAdapterHandlers || PrintStubCode) {
     ttyLocker ttyl;
     entry->print_adapter_on(tty);

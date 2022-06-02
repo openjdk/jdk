@@ -35,7 +35,7 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
- *  Encapsulates information about a link.
+ * Encapsulates information about a link.
  */
 public abstract class LinkInfo {
 

@@ -145,6 +145,7 @@ public final class EventDirectoryStream extends AbstractEventStream {
         }
         currentChunkStartNanos = repositoryFiles.getTimestamp(path);
         try (RecordingInput input = new RecordingInput(path.toFile(), fileAccess)) {
+            input.setStreamed();
             currentParser = new ChunkParser(input, disp.parserConfiguration, parserState);
             long segmentStart = currentParser.getStartNanos() + currentParser.getChunkDuration();
             long filterStart = validStartTime ? disp.startNanos : segmentStart;

@@ -41,7 +41,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 /**
  * The factory for constructing builders.
  */
-
 public class BuilderFactory {
 
     /**

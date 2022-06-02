@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -190,7 +190,7 @@ class BitMap {
 
   // Resize the backing bitmap memory.
   //
-  // Old bits are transfered to the new memory
+  // Old bits are transferred to the new memory
   // and the extended memory is cleared.
   template <class Allocator>
   void resize(const Allocator& allocator, idx_t new_size_in_bits, bool clear);
@@ -370,7 +370,7 @@ class ResourceBitMap : public BitMap {
 
   // Resize the backing bitmap memory.
   //
-  // Old bits are transfered to the new memory
+  // Old bits are transferred to the new memory
   // and the extended memory is cleared.
   void resize(idx_t new_size_in_bits);
 
@@ -415,7 +415,7 @@ class CHeapBitMap : public BitMap {
 
   // Resize the backing bitmap memory.
   //
-  // Old bits are transfered to the new memory
+  // Old bits are transferred to the new memory
   // and the extended memory is (optionally) cleared.
   void resize(idx_t new_size_in_bits, bool clear = true);
 

@@ -1723,7 +1723,7 @@ public class DecimalFormat extends NumberFormat {
         }
     }
 
-    // ======== End fast-path formating logic for double =========================
+    // ======== End fast-path formatting logic for double =========================
 
     /**
      * Complete the formatting of a finite number.  On entry, the digitList must

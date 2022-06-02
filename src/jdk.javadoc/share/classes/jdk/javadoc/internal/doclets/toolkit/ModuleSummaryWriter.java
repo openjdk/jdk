@@ -30,7 +30,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 /**
  * The interface for writing module summary output.
  */
-
 public interface ModuleSummaryWriter {
 
     /**

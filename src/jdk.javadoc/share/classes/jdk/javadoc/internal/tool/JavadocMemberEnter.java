@@ -39,8 +39,8 @@ import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 
 /**
- *  Javadoc's own memberEnter phase does a few things above and beyond that
- *  done by javac.
+ * Javadoc's own memberEnter phase does a few things above and beyond that
+ * done by javac.
  */
 public class JavadocMemberEnter extends MemberEnter {
     public static JavadocMemberEnter instance0(Context context) {

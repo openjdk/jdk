@@ -34,9 +34,8 @@ import com.sun.source.doctree.SummaryTree;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 
 /**
- * A taglet that represents the @summary tag.
+ * A taglet that represents the {@code {@summary}} tag.
  */
-
 public class SummaryTaglet extends BaseTaglet {
 
     public SummaryTaglet() {

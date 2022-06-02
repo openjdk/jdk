@@ -106,6 +106,9 @@ public class DocPaths {
     /** The name of the default jQuery UI javascript file. */
     public static final DocPath JQUERY_UI_JS = DocPath.create("jquery-ui.min.js");
 
+    /** The name of the jQuery UI stylesheet file containing structural declarations. */
+    public static final DocPath JQUERY_UI_STRUCTURE_CSS = DocPath.create("jquery-ui.structure.min.css");
+
     /** The name of the directory for legal files. */
     public static final DocPath LEGAL = DocPath.create("legal");
 
@@ -144,6 +147,9 @@ public class DocPaths {
 
     /** The name of the directory for the script files. */
     public static final DocPath SCRIPT_DIR = DocPath.create("script-dir");
+
+    /** The name of the file for search page. */
+    public static final DocPath SEARCH_PAGE = DocPath.create("search.html");
 
     /** The name of the file for all system properties. */
     public static final DocPath SYSTEM_PROPERTIES = DocPath.create("system-properties.html");
@@ -283,6 +289,9 @@ public class DocPaths {
 
     /** The name of the template for the search javascript file. */
     public static final DocPath SEARCH_JS_TEMPLATE = DocPath.create("search.js.template");
+
+    /** The name of the search javascript file. */
+    public static final DocPath SEARCH_PAGE_JS = DocPath.create("search-page.js");
 
     /** The name of the file for the serialized form info. */
     public static final DocPath SERIALIZED_FORM = DocPath.create("serialized-form.html");

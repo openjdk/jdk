@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,8 @@ $(eval $(call SetupJavaCompilation, BUILD_JDK_MICROBENCHMARK, \
     DISABLED_WARNINGS := processing rawtypes cast serial, \
     SRC := $(MICROBENCHMARK_SRC), \
     BIN := $(MICROBENCHMARK_CLASSES), \
-    JAVAC_FLAGS := --add-exports java.base/sun.security.util=ALL-UNNAMED, \
+    JAVAC_FLAGS := --add-exports java.base/sun.security.util=ALL-UNNAMED \
+        --add-exports java.base/sun.invoke.util=ALL-UNNAMED, \
     JAVA_FLAGS := --add-modules jdk.unsupported --limit-modules java.management, \
 ))
 

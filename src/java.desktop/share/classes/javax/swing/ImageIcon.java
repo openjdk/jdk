@@ -324,6 +324,7 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      */
     protected void loadImage(Image image) {
         MediaTracker mTracker = getTracker();
+        boolean interrupted = false;
         synchronized(mTracker) {
             int id = getNextID();
 
@@ -331,10 +332,15 @@ public class ImageIcon implements Icon, Serializable, Accessible {
             try {
                 mTracker.waitForID(id, 0);
             } catch (InterruptedException e) {
-                System.out.println("INTERRUPTED while loading Image");
+                interrupted = true;
             }
+
             loadStatus = mTracker.statusID(id, false);
             mTracker.removeImage(image, id);
+
+            if (interrupted && ((loadStatus & MediaTracker.LOADING) != 0)) {
+                loadStatus = MediaTracker.ABORTED;
+            }
 
             width = image.getWidth(imageObserver);
             height = image.getHeight(imageObserver);

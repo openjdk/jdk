@@ -31,7 +31,6 @@ import javax.lang.model.type.TypeMirror;
 /**
  * The interface for writing method output.
  */
-
 public interface MethodWriter extends MemberWriter {
 
     /**

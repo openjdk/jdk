@@ -166,7 +166,7 @@ public class CurrencyTest {
         // check an invalid country code
         boolean gotException = false;
         try {
-            Currency.getInstance(new Locale("", "EU"));
+            Currency.getInstance(Locale.of("", "EU"));
         } catch (IllegalArgumentException e) {
             gotException = true;
         }
@@ -176,7 +176,7 @@ public class CurrencyTest {
     }
 
     static void checkCountryCurrency(String countryCode, String expected) {
-        Locale locale = new Locale("", countryCode);
+        Locale locale = Locale.of("", countryCode);
         Currency currency = Currency.getInstance(locale);
         String code = (currency != null) ? currency.getCurrencyCode() : null;
         if (!(expected == null ? code == null : expected.equals(code))) {
@@ -257,11 +257,11 @@ public class CurrencyTest {
         testDisplayName("USD", Locale.ENGLISH, "US Dollar");
         testDisplayName("FRF", Locale.FRENCH, "franc fran\u00e7ais");
         testDisplayName("DEM", Locale.GERMAN, "Deutsche Mark");
-        testDisplayName("ESP", new Locale("es"), "peseta espa\u00f1ola");
-        testDisplayName("ITL", new Locale("it"), "lira italiana");
+        testDisplayName("ESP", Locale.of("es"), "peseta espa\u00f1ola");
+        testDisplayName("ITL", Locale.ITALIAN, "lira italiana");
         testDisplayName("JPY", Locale.JAPANESE, "\u65e5\u672c\u5186");
         testDisplayName("KRW", Locale.KOREAN, "\ub300\ud55c\ubbfc\uad6d \uc6d0");
-        testDisplayName("SEK", new Locale("sv"), "svensk krona");
+        testDisplayName("SEK", Locale.of("sv"), "svensk krona");
         testDisplayName("CNY", Locale.SIMPLIFIED_CHINESE, "\u4eba\u6c11\u5e01");
         testDisplayName("TWD", Locale.TRADITIONAL_CHINESE, "\u65b0\u53f0\u5e63");
     }

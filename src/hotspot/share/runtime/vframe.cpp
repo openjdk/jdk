@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -328,7 +328,7 @@ static StackValue* create_stack_value_from_oop_map(const InterpreterOopMap& oop_
 static bool is_in_expression_stack(const frame& fr, const intptr_t* const addr) {
   assert(addr != NULL, "invariant");
 
-  // Ensure to be 'inside' the expresion stack (i.e., addr >= sp for Intel).
+  // Ensure to be 'inside' the expression stack (i.e., addr >= sp for Intel).
   // In case of exceptions, the expression stack is invalid and the sp
   // will be reset to express this condition.
   if (frame::interpreter_frame_expression_stack_direction() > 0) {
@@ -624,7 +624,7 @@ void entryVFrame::print_value() const {
 
 void entryVFrame::print() {
   vframe::print();
-  tty->print_cr("C Chunk inbetween Java");
+  tty->print_cr("C Chunk in between Java");
   tty->print_cr("C     link " INTPTR_FORMAT, p2i(_fr.link()));
 }
 

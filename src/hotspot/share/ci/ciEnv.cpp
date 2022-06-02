@@ -309,7 +309,7 @@ ciEnv::~ciEnv() {
 // Cache Jvmti state
 bool ciEnv::cache_jvmti_state() {
   VM_ENTRY_MARK;
-  // Get Jvmti capabilities under lock to get consistant values.
+  // Get Jvmti capabilities under lock to get consistent values.
   MutexLocker mu(JvmtiThreadState_lock);
   _jvmti_redefinition_count             = JvmtiExport::redefinition_count();
   _jvmti_can_hotswap_or_post_breakpoint = JvmtiExport::can_hotswap_or_post_breakpoint();
@@ -1614,7 +1614,7 @@ void ciEnv::find_dynamic_call_sites() {
         }
       }
 
-      // Look for MethodHandle contant pool entries
+      // Look for MethodHandle constant pool entries
       RecordLocation fp(this, "@cpi %s", ik->name()->as_quoted_ascii());
       int len = pool->length();
       for (int i = 0; i < len; ++i) {

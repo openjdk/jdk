@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -327,9 +327,7 @@ final class GssKrb5Server extends GssKrb5Base implements SaslServer {
             return null;
         } catch (GSSException e) {
             throw new SaslException("Final handshake step failed", e);
-        } catch (IOException e) {
-            throw new SaslException("Problem with callback handler", e);
-        } catch (UnsupportedCallbackException e) {
+        } catch (IOException | UnsupportedCallbackException e) {
             throw new SaslException("Problem with callback handler", e);
         }
     }

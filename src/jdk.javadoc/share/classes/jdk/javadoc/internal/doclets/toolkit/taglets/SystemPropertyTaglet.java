@@ -36,7 +36,6 @@ import java.util.EnumSet;
 /**
  * A taglet that represents the {@code @systemProperty} tag.
  */
-
 public class SystemPropertyTaglet extends BaseTaglet {
 
     SystemPropertyTaglet(){

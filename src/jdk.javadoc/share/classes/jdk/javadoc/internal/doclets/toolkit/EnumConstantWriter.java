@@ -31,7 +31,6 @@ import javax.lang.model.element.VariableElement;
 /**
  * The interface for writing enum constant output.
  */
-
 public interface EnumConstantWriter extends MemberWriter {
 
     /**

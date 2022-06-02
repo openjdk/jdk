@@ -140,6 +140,7 @@ public class ASMifier extends Printer {
         classVersions.put(Opcodes.V16, "V16");
         classVersions.put(Opcodes.V17, "V17");
         classVersions.put(Opcodes.V18, "V18");
+        classVersions.put(Opcodes.V19, "V19");
         CLASS_VERSIONS = Collections.unmodifiableMap(classVersions);
     }
 
@@ -168,9 +169,8 @@ public class ASMifier extends Printer {
     /**
       * Constructs a new {@link ASMifier}.
       *
-      * @param api the ASM API version implemented by this class. Must be one of {@link Opcodes#ASM4},
-      *     {@link Opcodes#ASM5}, {@link Opcodes#ASM6}, {@link Opcodes#ASM7}, {@link Opcodes#ASM8} or
-      *     {@link Opcodes#ASM9}.
+      * @param api the ASM API version implemented by this class. Must be one of the {@code
+      *     ASM}<i>x</i> values in {@link Opcodes}.
       * @param visitorVariableName the name of the visitor variable in the produced code.
       * @param annotationVisitorId identifier of the annotation visitor variable in the produced code.
       */
@@ -298,6 +298,7 @@ public class ASMifier extends Printer {
     @Override
     public Printer visitModule(final String name, final int flags, final String version) {
         stringBuilder.setLength(0);
+        stringBuilder.append("{\n");
         stringBuilder.append("ModuleVisitor moduleVisitor = classWriter.visitModule(");
         appendConstant(name);
         stringBuilder.append(", ");
@@ -854,14 +855,14 @@ public class ASMifier extends Printer {
     }
 
     @Override
-    public void visitVarInsn(final int opcode, final int var) {
+    public void visitVarInsn(final int opcode, final int varIndex) {
         stringBuilder.setLength(0);
         stringBuilder
                 .append(name)
                 .append(".visitVarInsn(")
                 .append(OPCODES[opcode])
                 .append(", ")
-                .append(var)
+                .append(varIndex)
                 .append(");\n");
         text.add(stringBuilder.toString());
     }
@@ -967,12 +968,12 @@ public class ASMifier extends Printer {
     }
 
     @Override
-    public void visitIincInsn(final int var, final int increment) {
+    public void visitIincInsn(final int varIndex, final int increment) {
         stringBuilder.setLength(0);
         stringBuilder
                 .append(name)
                 .append(".visitIincInsn(")
-                .append(var)
+                .append(varIndex)
                 .append(", ")
                 .append(increment)
                 .append(");\n");
@@ -1232,9 +1233,9 @@ public class ASMifier extends Printer {
                 .append("{\n")
                 .append(ANNOTATION_VISITOR0)
                 .append(name)
-                .append(".")
+                .append('.')
                 .append(method)
-                .append("(")
+                .append('(')
                 .append(typeRef);
         if (typePath == null) {
             stringBuilder.append(", null, ");
@@ -1317,11 +1318,7 @@ public class ASMifier extends Printer {
             if (!isEmpty) {
                 stringBuilder.append(" | ");
             }
-            if ((accessFlags & ACCESS_MODULE) == 0) {
-                stringBuilder.append("ACC_FINAL");
-            } else {
-                stringBuilder.append("ACC_TRANSITIVE");
-            }
+            stringBuilder.append("ACC_FINAL");
             isEmpty = false;
         }
         if ((accessFlags & Opcodes.ACC_STATIC) != 0) {
@@ -1483,7 +1480,7 @@ public class ASMifier extends Printer {
             stringBuilder.append(handle.getOwner()).append(COMMA);
             stringBuilder.append(handle.getName()).append(COMMA);
             stringBuilder.append(handle.getDesc()).append("\", ");
-            stringBuilder.append(handle.isInterface()).append(")");
+            stringBuilder.append(handle.isInterface()).append(')');
         } else if (value instanceof ConstantDynamic) {
             stringBuilder.append("new ConstantDynamic(\"");
             ConstantDynamic constantDynamic = (ConstantDynamic) value;

@@ -38,7 +38,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
- * An inline Taglet representing the value tag. This tag should only be used with
+ * An inline taglet representing the value tag. This tag should only be used with
  * constant fields that have a value.  It is used to access the value of constant
  * fields.  This inline tag has an optional field name parameter.  If the name is
  * specified, the constant value is retrieved from the specified field.  A link
@@ -46,7 +46,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
  * is retrieved for the field that the inline tag appears on.  The name is specified
  * in the following format:  [fully qualified class name]#[constant field name].
  */
-
 public class ValueTaglet extends BaseTaglet {
 
     /**

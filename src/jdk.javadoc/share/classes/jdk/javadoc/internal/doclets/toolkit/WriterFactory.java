@@ -36,7 +36,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 /**
  * The interface for a factory creates writers.
  */
-
 public interface WriterFactory {
 
     /**

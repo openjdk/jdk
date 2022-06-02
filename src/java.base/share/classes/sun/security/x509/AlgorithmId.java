@@ -73,7 +73,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
 
     /**
      * Parameters for this algorithm.  These are stored in unparsed
-     * DER-encoded form; subclasses can be made to automaticaly parse
+     * DER-encoded form; subclasses can be made to automatically parse
      * them so there is fast access to these parameters.
      */
     protected transient byte[] encodedParams;

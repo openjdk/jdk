@@ -457,7 +457,7 @@ inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, 
     // touch anything in oop, while it still being prefetched to get enough
     // time for prefetch to work. This is why we try to scan the bitmap linearly,
     // disregarding the object size. However, since we know forwarding pointer
-    // preceeds the object, we can skip over it. Once we cannot trust the bitmap,
+    // precedes the object, we can skip over it. Once we cannot trust the bitmap,
     // there is no point for prefetching the oop contents, as oop->size() will
     // touch it prematurely.
 

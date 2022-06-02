@@ -34,7 +34,6 @@ import java.util.Map;
 /**
  * This class manages the visible member table for each type element.
  */
-
 public class VisibleMemberCache {
     private final Map<TypeElement, VisibleMemberTable> cache;
     private final BaseConfiguration configuration;

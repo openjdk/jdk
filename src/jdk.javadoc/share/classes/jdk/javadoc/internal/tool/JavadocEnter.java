@@ -39,8 +39,8 @@ import static com.sun.tools.javac.code.Kinds.Kind.*;
 import com.sun.tools.javac.main.JavaCompiler;
 
 /**
- *  Javadoc's own enter phase does a few things above and beyond that
- *  done by javac.
+ * Javadoc's own enter phase does a few things above and beyond that
+ * done by javac.
  */
 public class JavadocEnter extends Enter {
     public static JavadocEnter instance(Context context) {

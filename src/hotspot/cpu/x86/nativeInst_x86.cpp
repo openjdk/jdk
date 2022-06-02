@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -214,8 +214,8 @@ void NativeCall::insert(address code_pos, address entry) {
 }
 
 // MT-safe patching of a call instruction.
-// First patches first word of instruction to two jmp's that jmps to them
-// selfs (spinlock). Then patches the last byte, and then atomicly replaces
+// First patches first word of instruction to two jmp's that jmps to themselves
+// (spinlock). Then patches the last byte, and then atomically replaces
 // the jmp's with the first 4 byte of the new instruction.
 void NativeCall::replace_mt_safe(address instr_addr, address code_buffer) {
   assert(Patching_lock->is_locked() ||
@@ -496,7 +496,7 @@ void NativeJump::check_verified_entry_alignment(address entry, address verified_
 
 
 // MT safe inserting of a jump over an unknown instruction sequence (used by nmethod::makeZombie)
-// The problem: jmp <dest> is a 5-byte instruction. Atomical write can be only with 4 bytes.
+// The problem: jmp <dest> is a 5-byte instruction. Atomic write can be only with 4 bytes.
 // First patches the first word atomically to be a jump to itself.
 // Then patches the last byte  and then atomically patches the first word (4-bytes),
 // thus inserting the desired jump
@@ -596,8 +596,8 @@ void NativeGeneralJump::insert_unconditional(address code_pos, address entry) {
 
 
 // MT-safe patching of a long jump instruction.
-// First patches first word of instruction to two jmp's that jmps to them
-// selfs (spinlock). Then patches the last byte, and then atomicly replaces
+// First patches first word of instruction to two jmp's that jmps to themselves
+// (spinlock). Then patches the last byte, and then atomically replaces
 // the jmp's with the first 4 byte of the new instruction.
 void NativeGeneralJump::replace_mt_safe(address instr_addr, address code_buffer) {
    assert (instr_addr != NULL, "illegal address for code patching (4)");

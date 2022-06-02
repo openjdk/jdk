@@ -37,7 +37,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 /**
  * The interface for writing serialized form output.
  */
-
 public interface SerializedFormWriter {
 
     /**

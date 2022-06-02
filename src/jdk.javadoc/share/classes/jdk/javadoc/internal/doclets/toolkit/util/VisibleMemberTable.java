@@ -89,7 +89,6 @@ import jdk.javadoc.internal.doclets.toolkit.PropertyUtils;
  * type, as its own view, and will present some form of this to the
  * doclet as and when required to.
  */
-
 public class VisibleMemberTable {
 
     public enum Kind {
@@ -203,7 +202,7 @@ public class VisibleMemberTable {
      * a. The list may or may not contain simple overridden methods.
      * A simple overridden method is one that overrides a super method
      * with no specification changes as indicated by the existence of a
-     * sole {@code @inheritDoc} or devoid of any API comments.
+     * sole {@code {@inheritDoc}} or devoid of any API comments.
      * <p>
      * b.The list may contain (extra) members, inherited by inaccessible
      * super types, primarily package private types. These members are
@@ -464,7 +463,8 @@ public class VisibleMemberTable {
     }
 
     private boolean mustDocument(Element e) {
-        return !utils.hasHiddenTag(e) && utils.shouldDocument(e);
+        // these checks are ordered in a particular way to avoid parsing unless absolutely necessary
+        return utils.shouldDocument(e) && !utils.hasHiddenTag(e);
     }
 
     private boolean allowInheritedMembers(Element e, Kind kind, LocalMemberTable lmt) {

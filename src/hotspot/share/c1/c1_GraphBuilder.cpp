@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -224,8 +224,10 @@ void BlockListBuilder::handle_exceptions(BlockBegin* current, int cur_bci) {
 }
 
 void BlockListBuilder::handle_jsr(BlockBegin* current, int sr_bci, int next_bci) {
-  // start a new block after jsr-bytecode and link this block into cfg
-  make_block_at(next_bci, current);
+  if (next_bci < method()->code_size()) {
+    // start a new block after jsr-bytecode and link this block into cfg
+    make_block_at(next_bci, current);
+  }
 
   // start a new block at the subroutine entry at mark it with special flag
   BlockBegin* sr_block = make_block_at(sr_bci, current);
@@ -244,6 +246,8 @@ void BlockListBuilder::set_leaders() {
   // during bytecode iteration. This would require the creation of a new block at the
   // branch target and a modification of the successor lists.
   const BitMap& bci_block_start = method()->bci_block_start();
+
+  int end_bci = method()->code_size();
 
   ciBytecodeStream s(method());
   while (s.next() != ciBytecodeStream::EOBC()) {
@@ -315,7 +319,9 @@ void BlockListBuilder::set_leaders() {
       case Bytecodes::_if_acmpne: // fall through
       case Bytecodes::_ifnull:    // fall through
       case Bytecodes::_ifnonnull:
-        make_block_at(s.next_bci(), current);
+        if (s.next_bci() < end_bci) {
+          make_block_at(s.next_bci(), current);
+        }
         make_block_at(s.get_dest(), current);
         current = NULL;
         break;
@@ -2651,7 +2657,7 @@ Value PhiSimplifier::simplify(Value v) {
       }
     }
 
-    // sucessfully simplified phi function
+    // successfully simplified phi function
     assert(subst != NULL, "illegal phi function");
     _has_substitutions = true;
     phi->clear(Phi::visited);

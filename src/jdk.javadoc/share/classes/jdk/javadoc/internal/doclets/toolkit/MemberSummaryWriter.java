@@ -35,7 +35,6 @@ import com.sun.source.doctree.DocTree;
 /**
  * The interface for writing member summary output.
  */
-
 public interface MemberSummaryWriter {
 
     /**

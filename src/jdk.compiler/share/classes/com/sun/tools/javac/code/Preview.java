@@ -152,7 +152,6 @@ public class Preview {
     public void warnPreview(JavaFileObject classfile, int majorVersion) {
         Assert.check(isEnabled());
         if (lint.isEnabled(LintCategory.PREVIEW)) {
-            sourcesWithPreviewFeatures.add(log.currentSourceFile());
             log.mandatoryWarning(LintCategory.PREVIEW, null,
                     Warnings.PreviewFeatureUseClassfile(classfile, majorVersionToSource.get(majorVersion).name));
         }

@@ -157,8 +157,7 @@ public class HostnameChecker {
                                 InetAddress.getByName(ipAddress))) {
                             return;
                         }
-                    } catch (UnknownHostException e) {
-                    } catch (SecurityException e) {}
+                    } catch (UnknownHostException | SecurityException e) {}
                 }
             }
         }

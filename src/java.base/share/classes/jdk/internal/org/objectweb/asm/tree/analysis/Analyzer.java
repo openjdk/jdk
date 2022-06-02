@@ -284,17 +284,17 @@ public class Analyzer<V extends Value> implements Opcodes {
                     } else if (insnOpcode != ATHROW && (insnOpcode < IRETURN || insnOpcode > RETURN)) {
                         if (subroutine != null) {
                             if (insnNode instanceof VarInsnNode) {
-                                int var = ((VarInsnNode) insnNode).var;
-                                subroutine.localsUsed[var] = true;
+                                int varIndex = ((VarInsnNode) insnNode).var;
+                                subroutine.localsUsed[varIndex] = true;
                                 if (insnOpcode == LLOAD
                                         || insnOpcode == DLOAD
                                         || insnOpcode == LSTORE
                                         || insnOpcode == DSTORE) {
-                                    subroutine.localsUsed[var + 1] = true;
+                                    subroutine.localsUsed[varIndex + 1] = true;
                                 }
                             } else if (insnNode instanceof IincInsnNode) {
-                                int var = ((IincInsnNode) insnNode).var;
-                                subroutine.localsUsed[var] = true;
+                                int varIndex = ((IincInsnNode) insnNode).var;
+                                subroutine.localsUsed[varIndex] = true;
                             }
                         }
                         merge(insnIndex + 1, currentFrame, subroutine);

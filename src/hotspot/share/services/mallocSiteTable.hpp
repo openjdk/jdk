@@ -103,7 +103,7 @@ class MallocSiteTable : AllStatic {
   // The statistics data can be obtained via Jcmd
   // jcmd <pid> VM.native_memory statistics.
 
-  // Currently, (number of buckets / number of entires) ratio is
+  // Currently, (number of buckets / number of entries) ratio is
   // about 1 / 6
   enum {
     table_base_size = 128,   // The base size is calculated from statistics to give

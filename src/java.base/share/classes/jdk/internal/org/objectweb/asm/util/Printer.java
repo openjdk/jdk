@@ -323,9 +323,8 @@ public abstract class Printer {
     private static final String UNSUPPORTED_OPERATION = "Must be overridden";
 
     /**
-      * The ASM API version implemented by this class. The value of this field must be one of {@link
-      * Opcodes#ASM4}, {@link Opcodes#ASM5}, {@link Opcodes#ASM6}, {@link Opcodes#ASM7}, {@link
-      * Opcodes#ASM8} or {@link Opcodes#ASM9}.
+      * The ASM API version implemented by this class. The value of this field must be one of the
+      * {@code ASM}<i>x</i> values in {@link Opcodes}.
       */
     protected final int api;
 
@@ -351,8 +350,8 @@ public abstract class Printer {
     /**
       * Constructs a new {@link Printer}.
       *
-      * @param api the ASM API version implemented by this printer. Must be one of {@link
-      *     Opcodes#ASM4}, {@link Opcodes#ASM5}, {@link Opcodes#ASM6} or {@link Opcodes#ASM7}.
+      * @param api the ASM API version implemented by this printer. Must be one of the {@code
+      *     ASM}<i>x</i> values in {@link Opcodes}.
       */
     protected Printer(final int api) {
         this.api = api;
@@ -950,10 +949,10 @@ public abstract class Printer {
       *
       * @param opcode the opcode of the local variable instruction to be visited. This opcode is either
       *     ILOAD, LLOAD, FLOAD, DLOAD, ALOAD, ISTORE, LSTORE, FSTORE, DSTORE, ASTORE or RET.
-      * @param var the operand of the instruction to be visited. This operand is the index of a local
-      *     variable.
+      * @param varIndex the operand of the instruction to be visited. This operand is the index of a
+      *     local variable.
       */
-    public abstract void visitVarInsn(int opcode, int var);
+    public abstract void visitVarInsn(int opcode, int varIndex);
 
     /**
       * Method instruction. See {@link jdk.internal.org.objectweb.asm.MethodVisitor#visitTypeInsn}.
@@ -1067,10 +1066,10 @@ public abstract class Printer {
     /**
       * Method instruction. See {@link jdk.internal.org.objectweb.asm.MethodVisitor#visitIincInsn}.
       *
-      * @param var index of the local variable to be incremented.
+      * @param varIndex index of the local variable to be incremented.
       * @param increment amount to increment the local variable by.
       */
-    public abstract void visitIincInsn(int var, int increment);
+    public abstract void visitIincInsn(int varIndex, int increment);
 
     /**
       * Method instruction. See {@link jdk.internal.org.objectweb.asm.MethodVisitor#visitTableSwitchInsn}.
