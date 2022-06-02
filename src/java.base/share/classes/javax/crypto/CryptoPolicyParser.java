@@ -129,7 +129,7 @@ final class CryptoPolicyParser {
          * The crypto jurisdiction policy must be consistent. The
          * following hashtable is used for checking consistency.
          */
-        Hashtable<String, Vector<String>> processedPermissions = null;
+        Hashtable<String, Vector<String>> processedPermissions = new Hashtable<>();
 
         /*
          * The main parsing loop.  The loop is executed once for each entry
@@ -494,8 +494,7 @@ final class CryptoPolicyParser {
         String thisExemptionMechanism =
             exemptionMechanism == null ? "none" : exemptionMechanism;
 
-        if (processedPermissions == null) {
-            processedPermissions = new Hashtable<>();
+        if (processedPermissions.isEmpty()) {
             Vector<String> exemptionMechanisms = new Vector<>(1);
             exemptionMechanisms.addElement(thisExemptionMechanism);
             processedPermissions.put(alg, exemptionMechanisms);
