@@ -170,14 +170,6 @@ public class Pretty extends JCTree.Visitor {
      * Traversal methods
      *************************************************************************/
 
-    /** Exception to propagate IOException through visitXYZ methods */
-    private static class UncheckedIOException extends Error {
-        static final long serialVersionUID = -4032692679158424751L;
-        UncheckedIOException(IOException e) {
-            super(e.getMessage(), e);
-        }
-    }
-
     /** Visitor argument: the current precedence level.
      */
     int prec;
@@ -194,7 +186,7 @@ public class Pretty extends JCTree.Visitor {
                 tree.accept(this);
             }
         } catch (UncheckedIOException ex) {
-            throw new IOException(ex.getMessage(), ex);
+            throw ex.getCause();
         } finally {
             this.prec = prevPrec;
         }
@@ -908,6 +900,10 @@ public class Pretty extends JCTree.Visitor {
     public void visitBindingPattern(JCBindingPattern patt) {
         try {
             printExpr(patt.var);
+            if (patt.guard != null) {
+                print(" when ");
+                printExpr(patt.guard);
+            }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -919,17 +915,30 @@ public class Pretty extends JCTree.Visitor {
             print("(");
             printExpr(patt.pattern);
             print(")");
+            if (patt.guard != null) {
+                print(" when ");
+                printExpr(patt.guard);
+            }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
     }
 
     @Override
-    public void visitGuardPattern(JCGuardPattern patt) {
+    public void visitRecordPattern(JCRecordPattern tree) {
         try {
-            printExpr(patt.patt);
-            print(" && ");
-            printExpr(patt.expr);
+            printExpr(tree.deconstructor);
+            print("(");
+            printExprs(tree.nested);
+            print(")");
+            if (tree.var != null) {
+                print(" ");
+                print(tree.var.name);
+            }
+            if (tree.guard != null) {
+                print(" when ");
+                printExpr(tree.guard);
+            }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

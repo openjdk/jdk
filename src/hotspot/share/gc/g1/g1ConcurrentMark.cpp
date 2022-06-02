@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +66,7 @@
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/continuation.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
@@ -814,6 +815,8 @@ G1PreConcurrentStartTask::G1PreConcurrentStartTask(GCCause::Cause cause, G1Concu
 void G1ConcurrentMark::pre_concurrent_start(GCCause::Cause cause) {
   assert_at_safepoint_on_vm_thread();
 
+  G1CollectedHeap::start_codecache_marking_cycle_if_inactive();
+
   G1PreConcurrentStartTask cl(cause, this);
   G1CollectedHeap::heap()->run_batch_task(&cl);
 
@@ -1216,7 +1219,7 @@ void G1ConcurrentMark::remark() {
 
   double start = os::elapsedTime();
 
-  verify_during_pause(G1HeapVerifier::G1VerifyRemark, VerifyOption_G1UsePrevMarking, "Remark before");
+  verify_during_pause(G1HeapVerifier::G1VerifyRemark, VerifyOption::G1UsePrevMarking, "Remark before");
 
   {
     GCTraceTime(Debug, gc, phases) debug("Finalize Marking", _gc_timer_cm);
@@ -1277,7 +1280,7 @@ void G1ConcurrentMark::remark() {
 
     compute_new_sizes();
 
-    verify_during_pause(G1HeapVerifier::G1VerifyRemark, VerifyOption_G1UsePrevMarking, "Remark after");
+    verify_during_pause(G1HeapVerifier::G1VerifyRemark, VerifyOption::G1UsePrevMarking, "Remark after");
 
     assert(!restart_for_overflow(), "sanity");
     // Completely reset the marking state since marking completed
@@ -1286,7 +1289,7 @@ void G1ConcurrentMark::remark() {
     // We overflowed.  Restart concurrent marking.
     _restart_for_overflow = true;
 
-    verify_during_pause(G1HeapVerifier::G1VerifyRemark, VerifyOption_G1UsePrevMarking, "Remark overflow");
+    verify_during_pause(G1HeapVerifier::G1VerifyRemark, VerifyOption::G1UsePrevMarking, "Remark overflow");
 
     // Clear the marking state because we will be restarting
     // marking due to overflowing the global mark stack.
@@ -1297,6 +1300,9 @@ void G1ConcurrentMark::remark() {
     GCTraceTime(Debug, gc, phases) debug("Report Object Count", _gc_timer_cm);
     report_object_count(mark_finished);
   }
+
+  Continuations::on_gc_marking_cycle_finish();
+  Continuations::arm_all_nmethods();
 
   // Statistics
   double now = os::elapsedTime();
@@ -1429,7 +1435,7 @@ void G1ConcurrentMark::cleanup() {
 
   double start = os::elapsedTime();
 
-  verify_during_pause(G1HeapVerifier::G1VerifyCleanup, VerifyOption_G1UsePrevMarking, "Cleanup before");
+  verify_during_pause(G1HeapVerifier::G1VerifyCleanup, VerifyOption::G1UsePrevMarking, "Cleanup before");
 
   if (needs_remembered_set_rebuild()) {
     GCTraceTime(Debug, gc, phases) debug("Update Remembered Set Tracking After Rebuild", _gc_timer_cm);
@@ -1439,7 +1445,7 @@ void G1ConcurrentMark::cleanup() {
     log_debug(gc, phases)("No Remembered Sets to update after rebuild");
   }
 
-  verify_during_pause(G1HeapVerifier::G1VerifyCleanup, VerifyOption_G1UsePrevMarking, "Cleanup after");
+  verify_during_pause(G1HeapVerifier::G1VerifyCleanup, VerifyOption::G1UsePrevMarking, "Cleanup after");
 
   // We need to make this be a "collection" so any collection pause that
   // races with it goes around and waits for Cleanup to finish.
@@ -1548,7 +1554,7 @@ class G1CMDrainMarkingStackClosure : public VoidClosure {
       //
       // G1CMTask::do_marking_step() is called in a loop, which we'll exit
       // if there's nothing more to do (i.e. we've completely drained the
-      // entries that were pushed as a a result of applying the 'keep alive'
+      // entries that were pushed as a result of applying the 'keep alive'
       // closure to the entries on the discovered ref lists) or we overflow
       // the global marking stack.
       //
@@ -1772,7 +1778,7 @@ class G1RemarkThreadsClosure : public ThreadClosure {
   G1RemarkThreadsClosure(G1CollectedHeap* g1h, G1CMTask* task) :
     _qset(G1BarrierSet::satb_mark_queue_set()),
     _cm_cl(g1h, task),
-    _code_cl(&_cm_cl, !CodeBlobToOopClosure::FixRelocations),
+    _code_cl(&_cm_cl, !CodeBlobToOopClosure::FixRelocations, true /* keepalive nmethods */),
     _claim_token(Threads::thread_claim_token()) {}
 
   void do_thread(Thread* thread) {
@@ -1780,7 +1786,7 @@ class G1RemarkThreadsClosure : public ThreadClosure {
       // Transfer any partial buffer to the qset for completed buffer processing.
       _qset.flush_queue(G1ThreadLocalData::satb_mark_queue(thread));
       if (thread->is_Java_thread()) {
-        // In theory it should not be neccessary to explicitly walk the nmethods to find roots for concurrent marking
+        // In theory it should not be necessary to explicitly walk the nmethods to find roots for concurrent marking
         // however the liveness of oops reachable from nmethods have very complex lifecycles:
         // * Alive if on the stack of an executing method
         // * Weakly reachable otherwise
@@ -1898,6 +1904,7 @@ G1ConcurrentMark::claim_region(uint worker_id) {
       assert(_finger >= end, "the finger should have moved forward");
 
       if (limit > bottom) {
+        assert(!curr_region->is_closed_archive(), "CA regions should be skipped");
         return curr_region;
       } else {
         assert(limit == bottom,
@@ -2016,7 +2023,7 @@ void G1ConcurrentMark::concurrent_cycle_abort() {
   // shared marking bitmap that must be cleaned up.
   // If there are multiple full gcs during shutdown we do this work repeatedly for
   // nothing, but this situation should be extremely rare (a full gc after shutdown
-  // has been signalled is alredy rare), and this work should be negligible compared
+  // has been signalled is already rare), and this work should be negligible compared
   // to actual full gc work.
   if (!cm_thread()->in_progress() && !_g1h->concurrent_mark_is_terminating()) {
     return;

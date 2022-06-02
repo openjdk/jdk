@@ -97,8 +97,8 @@ class CompilerPhaseTypeHelper {
   static const char* to_description(CompilerPhaseType cpt) {
     return phase_descriptions[cpt];
   }
-  static int to_bitmask(CompilerPhaseType cpt) {
-    return (1 << cpt);
+  static uint64_t to_bitmask(CompilerPhaseType cpt) {
+    return (UINT64_C(1) << cpt);
   }
 };
 

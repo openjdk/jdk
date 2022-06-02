@@ -199,7 +199,7 @@ public class ValidateISO4217 {
         }
         testCurrencyDefined(currencyCode, numericCode, digits);
 
-        Locale loc = new Locale("", country);
+        Locale loc = Locale.of("", country);
         try {
             Currency currency = Currency.getInstance(loc);
             if (!currency.getCurrencyCode().equals(currencyCode)) {
@@ -257,7 +257,7 @@ public class ValidateISO4217 {
                 if (codes[toIndex(country)] == UNDEFINED) {
                     ex = false;
                     try {
-                        Currency.getInstance(new Locale("", country));
+                        Currency.getInstance(Locale.of("", country));
                     }
                     catch (IllegalArgumentException e) {
                         ex = true;
@@ -270,7 +270,7 @@ public class ValidateISO4217 {
                 } else if (codes[toIndex(country)] == SKIPPED) {
                     Currency cur = null;
                     try {
-                        cur = Currency.getInstance(new Locale("", country));
+                        cur = Currency.getInstance(Locale.of("", country));
                     }
                     catch (Exception e) {
                         System.err.println("Error: " + e + ": Country=" +

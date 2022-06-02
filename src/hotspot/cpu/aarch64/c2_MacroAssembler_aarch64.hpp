@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,8 @@
   void string_compare(Register str1, Register str2,
                       Register cnt1, Register cnt2, Register result,
                       Register tmp1, Register tmp2, FloatRegister vtmp1,
-                      FloatRegister vtmp2, FloatRegister vtmp3, int ae);
+                      FloatRegister vtmp2, FloatRegister vtmp3,
+                      PRegister pgtmp1, PRegister pgtmp2, int ae);
 
   void string_indexof(Register str1, Register str2,
                       Register cnt1, Register cnt2,
@@ -61,7 +62,7 @@
   // Pack the lowest-numbered bit of each mask element in src into a long value
   // in dst, at most the first 64 lane elements.
   void sve_vmask_tolong(Register dst, PRegister src, BasicType bt, int lane_cnt,
-                        FloatRegister vtmp1, FloatRegister vtmp2, PRegister pgtmp);
+                        FloatRegister vtmp1, FloatRegister vtmp2);
 
   // SIMD&FP comparison
   void neon_compare(FloatRegister dst, BasicType bt, FloatRegister src1,
@@ -91,24 +92,33 @@
   // in the range of [0, lane_cnt), or to false otherwise.
   void sve_ptrue_lanecnt(PRegister dst, SIMD_RegVariant size, int lane_cnt);
 
-  // Generate predicate through whilelo, by comparing ZR with an unsigned
-  // immediate. rscratch1 will be clobbered.
-  inline void sve_whilelo_zr_imm(PRegister pd, SIMD_RegVariant size, uint imm) {
-    assert(UseSVE > 0, "not supported");
-    mov(rscratch1, imm);
-    sve_whilelo(pd, size, zr, rscratch1);
-  }
-
   // Extract a scalar element from an sve vector at position 'idx'.
-  // rscratch1 will be clobbered.
-  // T could be FloatRegister or Register.
-  template<class T>
-  inline void sve_extract(T dst, SIMD_RegVariant size, PRegister pg, FloatRegister src, int idx) {
-    assert(UseSVE > 0, "not supported");
-    assert(pg->is_governing(), "This register has to be a governing predicate register");
-    mov(rscratch1, idx);
-    sve_whilele(pg, size, zr, rscratch1);
-    sve_lastb(dst, size, pg, src);
-  }
+  // The input elements in src are expected to be of integral type.
+  void sve_extract_integral(Register dst, SIMD_RegVariant size, FloatRegister src, int idx,
+                            bool is_signed, FloatRegister vtmp);
+
+  // java.lang.Math::round intrinsics
+  void vector_round_neon(FloatRegister dst, FloatRegister src, FloatRegister tmp1,
+                         FloatRegister tmp2, FloatRegister tmp3,
+                         SIMD_Arrangement T);
+  void vector_round_sve(FloatRegister dst, FloatRegister src, FloatRegister tmp1,
+                        FloatRegister tmp2, PRegister ptmp,
+                        SIMD_RegVariant T);
+
+  // Pack active elements of src, under the control of mask, into the
+  // lowest-numbered elements of dst. Any remaining elements of dst will
+  // be filled with zero.
+  void sve_compress_byte(FloatRegister dst, FloatRegister src, PRegister mask,
+                         FloatRegister vtmp1, FloatRegister vtmp2,
+                         FloatRegister vtmp3, FloatRegister vtmp4,
+                         PRegister ptmp, PRegister pgtmp);
+
+  void sve_compress_short(FloatRegister dst, FloatRegister src, PRegister mask,
+                          FloatRegister vtmp1, FloatRegister vtmp2,
+                          PRegister pgtmp);
+
+  void neon_reverse_bits(FloatRegister dst, FloatRegister src, BasicType bt, bool isQ);
+
+  void neon_reverse_bytes(FloatRegister dst, FloatRegister src, BasicType bt, bool isQ);
 
 #endif // CPU_AARCH64_C2_MACROASSEMBLER_AARCH64_HPP

@@ -62,7 +62,7 @@ import sun.security.x509.*;
  * number. Other unique combinations include the issuer, subject,
  * subjectKeyIdentifier and/or the subjectPublicKey criteria.
  * <p>
- * Please refer to <a href="http://tools.ietf.org/html/rfc5280">RFC 5280:
+ * Please refer to <a href="https://tools.ietf.org/html/rfc5280">RFC 5280:
  * Internet X.509 Public Key Infrastructure Certificate and CRL Profile</a> for
  * definitions of the X.509 certificate extensions mentioned below.
  * <p>

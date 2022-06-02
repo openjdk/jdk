@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ import toolbox.JavaTask;
 import toolbox.JavacTask;
 import toolbox.Task;
 import toolbox.TestRunner;
-import toolbox.TestRunner;
+import toolbox.TestRunner.Test;
 import toolbox.ToolBox;
 
 public class SourceLauncherTest extends TestRunner {
@@ -231,6 +231,7 @@ public class SourceLauncherTest extends TestRunner {
                 "error: cannot use source-code launcher with a security manager enabled");
     }
 
+    @Test
     public void testSystemProperty(Path base) throws IOException {
         tb.writeJavaFiles(base,
             "class ShowProperty {\n" +

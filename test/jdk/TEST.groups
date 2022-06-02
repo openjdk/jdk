@@ -1,4 +1,4 @@
-#  Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+#  Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
 #  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 #  This code is free software; you can redistribute it and/or modify it
@@ -109,6 +109,7 @@ jdk_lang = \
     jdk/internal/ref \
     jdk/internal/jimage \
     jdk/internal/math \
+    jdk/internal/vm \
     jdk/modules
 
 # All of the java.util package
@@ -263,6 +264,18 @@ jdk_native_sanity = \
 jdk_launcher = \
     tools/launcher \
     sun/tools
+
+jdk_loom = \
+    com/sun/management/HotSpotDiagnosticMXBean/ \
+    java/lang/Thread \
+    java/lang/ThreadGroup \
+    java/lang/management/ThreadMXBean \
+    java/util/concurrent \
+    java/net/vthread \
+    java/nio/channels/vthread \
+    jdk/internal/misc/ThreadFlock \
+    jdk/internal/vm/Continuation \
+    jdk/jfr/threading
 
 #
 # Tool (and tool API) tests are split into core and svc groups

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,11 +38,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind;
  * The superclass for all member builders.  Member builders are only executed
  * within Class Builders.  They essentially build sub-components.  For example,
  * method documentation is a sub-component of class documentation.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public abstract class AbstractMemberBuilder extends AbstractBuilder {
 
@@ -73,13 +68,12 @@ public abstract class AbstractMemberBuilder extends AbstractBuilder {
     }
 
     /**
-     *
      * Build the documentation.
      *
-     * @param contentTree The content tree into which to add the documentation
-     * @throws DocletException  if there is a problem building the documentation
+     * @param target the content into which to add the documentation
+     * @throws DocletException if there is a problem building the documentation
      */
-    public abstract void build(Content contentTree) throws DocletException;
+    public abstract void build(Content target) throws DocletException;
 
     /**
      * Returns true if this subbuilder has anything to document.

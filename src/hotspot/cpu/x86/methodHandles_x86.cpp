@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -203,6 +203,21 @@ void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
   BLOCK_COMMENT("} jump_to_lambda_form");
 }
 
+void MethodHandles::jump_to_native_invoker(MacroAssembler* _masm, Register nep_reg, Register temp_target) {
+  BLOCK_COMMENT("jump_to_native_invoker {");
+  assert_different_registers(nep_reg, temp_target);
+  assert(nep_reg != noreg, "required register");
+
+  // Load the invoker, as NEP -> .invoker
+  __ verify_oop(nep_reg);
+  __ access_load_at(T_ADDRESS, IN_HEAP, temp_target,
+                    Address(nep_reg, NONZERO(jdk_internal_foreign_abi_NativeEntryPoint::downcall_stub_address_offset_in_bytes())),
+                    noreg, noreg);
+
+  __ jmp(temp_target);
+  BLOCK_COMMENT("} jump_to_native_invoker");
+}
+
 
 // Code generation
 address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* _masm,
@@ -314,7 +329,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
   Register temp2 = rscratch2;
   Register temp3 = rax;
   if (for_compiler_entry) {
-    assert(receiver_reg == (iid == vmIntrinsics::_linkToStatic ? noreg : j_rarg0), "only valid assignment");
+    assert(receiver_reg == (iid == vmIntrinsics::_linkToStatic || iid == vmIntrinsics::_linkToNative ? noreg : j_rarg0), "only valid assignment");
     assert_different_registers(temp1,        j_rarg0, j_rarg1, j_rarg2, j_rarg3, j_rarg4, j_rarg5);
     assert_different_registers(temp2,        j_rarg0, j_rarg1, j_rarg2, j_rarg3, j_rarg4, j_rarg5);
     assert_different_registers(temp3,        j_rarg0, j_rarg1, j_rarg2, j_rarg3, j_rarg4, j_rarg5);
@@ -324,7 +339,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
   Register temp2 = rdi;
   Register temp3 = rax;
   if (for_compiler_entry) {
-    assert(receiver_reg == (iid == vmIntrinsics::_linkToStatic ? noreg : rcx), "only valid assignment");
+    assert(receiver_reg == (iid == vmIntrinsics::_linkToStatic || iid == vmIntrinsics::_linkToNative ? noreg : rcx), "only valid assignment");
     assert_different_registers(temp1,        rcx, rdx);
     assert_different_registers(temp2,        rcx, rdx);
     assert_different_registers(temp3,        rcx, rdx);
@@ -336,13 +351,12 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
   assert_different_registers(temp1, temp2, temp3, receiver_reg);
   assert_different_registers(temp1, temp2, temp3, member_reg);
 
-  if (iid == vmIntrinsics::_invokeBasic || iid == vmIntrinsics::_linkToNative) {
-    if (iid == vmIntrinsics::_linkToNative) {
-      assert(for_compiler_entry, "only compiler entry is supported");
-    }
+  if (iid == vmIntrinsics::_invokeBasic) {
     // indirect through MH.form.vmentry.vmtarget
     jump_to_lambda_form(_masm, receiver_reg, rbx_method, temp1, for_compiler_entry);
-
+  } else if (iid == vmIntrinsics::_linkToNative) {
+    assert(for_compiler_entry, "only compiler entry is supported");
+    jump_to_native_invoker(_masm, member_reg, temp1);
   } else {
     // The method is a member invoker used by direct method handles.
     if (VerifyMethodHandles) {
@@ -631,7 +645,7 @@ void MethodHandles::trace_method_handle(MacroAssembler* _masm, const char* adapt
   __ enter();
   __ andptr(rsp, -16); // align stack if needed for FPU state
   __ pusha();
-  __ mov(rbx, rsp); // for retreiving saved_regs
+  __ mov(rbx, rsp); // for retrieving saved_regs
   // Note: saved_regs must be in the entered frame for the
   // robust stack walking implemented in trace_method_handle_stub.
 

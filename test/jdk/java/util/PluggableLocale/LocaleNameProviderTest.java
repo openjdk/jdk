@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,8 +123,8 @@ public class LocaleNameProviderTest extends ProviderTest {
     }
 
     void variantFallbackTest() {
-        Locale YY = new Locale("yy", "YY", "YYYY");
-        Locale YY_suffix = new Locale("yy", "YY", "YYYY_suffix");
+        Locale YY = Locale.of("yy", "YY", "YYYY");
+        Locale YY_suffix = Locale.of("yy", "YY", "YYYY_suffix");
         String retVrnt = null;
         String message = "variantFallbackTest() succeeded.";
 

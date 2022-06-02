@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,11 +41,6 @@ import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.
 
 /**
  * Builds the Constants Summary Page.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class ConstantsSummaryBuilder extends AbstractBuilder {
 
@@ -127,27 +122,27 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
      * @throws DocletException if there is a problem while building the documentation
      */
     protected void buildConstantSummary() throws DocletException {
-        Content contentTree = writer.getHeader();
+        Content content = writer.getHeader();
 
         buildContents();
         buildConstantSummaries();
 
         writer.addFooter();
-        writer.printDocument(contentTree);
+        writer.printDocument(content);
     }
 
     /**
      * Build the list of packages.
      */
     protected void buildContents() {
-        Content contentListTree = writer.getContentsHeader();
+        Content contentList = writer.getContentsHeader();
         printedPackageHeaders.clear();
         for (PackageElement pkg : configuration.packages) {
             if (hasConstantField(pkg) && !hasPrintedPackageIndex(pkg)) {
-                writer.addLinkToPackageContent(pkg, printedPackageHeaders, contentListTree);
+                writer.addLinkToPackageContent(pkg, printedPackageHeaders, contentList);
             }
         }
-        writer.addContentsList(contentListTree);
+        writer.addContentsList(contentList);
     }
 
     /**
@@ -157,30 +152,30 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
      */
     protected void buildConstantSummaries() throws DocletException {
         printedPackageHeaders.clear();
-        Content summariesTree = writer.getConstantSummaries();
+        Content summaries = writer.getConstantSummaries();
         for (PackageElement aPackage : configuration.packages) {
             if (hasConstantField(aPackage)) {
                 currentPackage = aPackage;
                 //Build the documentation for the current package.
 
-                buildPackageHeader(summariesTree);
-                buildClassConstantSummary(summariesTree);
+                buildPackageHeader(summaries);
+                buildClassConstantSummary();
 
                 first = false;
             }
         }
-        writer.addConstantSummaries(summariesTree);
+        writer.addConstantSummaries(summaries);
     }
 
     /**
      * Build the header for the given package.
      *
-     * @param summariesTree the tree to which the package header will be added
+     * @param target the content to which the package header will be added
      */
-    protected void buildPackageHeader(Content summariesTree) {
+    protected void buildPackageHeader(Content target) {
         PackageElement abbrevPkg = configuration.workArounds.getAbbreviatedPackageElement(currentPackage);
         if (!printedPackageHeaders.contains(abbrevPkg)) {
-            writer.addPackageName(currentPackage, summariesTree, first);
+            writer.addPackageName(currentPackage, target, first);
             printedPackageHeaders.add(abbrevPkg);
         }
     }
@@ -188,16 +183,14 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
     /**
      * Build the summary for the current class.
      *
-     * @param summariesTree the tree to which the class constant summary will be added
      * @throws DocletException if there is a problem while building the documentation
-     *
      */
-    protected void buildClassConstantSummary(Content summariesTree)
+    protected void buildClassConstantSummary()
             throws DocletException {
         SortedSet<TypeElement> classes = !currentPackage.isUnnamed()
                 ? utils.getAllClasses(currentPackage)
                 : configuration.typeElementCatalog.allUnnamedClasses();
-        Content classConstantTree = writer.getClassConstantHeader();
+        Content classConstantHeader = writer.getClassConstantHeader();
         for (TypeElement te : classes) {
             if (!typeElementsWithConstFields.contains(te) ||
                 !utils.isIncluded(te)) {
@@ -206,20 +199,20 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
             currentClass = te;
             //Build the documentation for the current class.
 
-            buildConstantMembers(classConstantTree);
+            buildConstantMembers(classConstantHeader);
 
         }
-        writer.addClassConstant(summariesTree, classConstantTree);
+        writer.addClassConstant(classConstantHeader);
     }
 
     /**
      * Build the summary of constant members in the class.
      *
-     * @param classConstantTree the tree to which the constant members table
-     *                          will be added
+     * @param target the content to which the constant members table
+     *               will be added
      */
-    protected void buildConstantMembers(Content classConstantTree) {
-        new ConstantFieldBuilder(currentClass).buildMembersSummary(classConstantTree);
+    protected void buildConstantMembers(Content target) {
+        new ConstantFieldBuilder(currentClass).buildMembersSummary(target);
     }
 
     /**
@@ -296,13 +289,13 @@ public class ConstantsSummaryBuilder extends AbstractBuilder {
         /**
          * Builds the table of constants for a given class.
          *
-         * @param classConstantTree the tree to which the class constants table
-         *                          will be added
+         * @param target the content to which the class constants table
+         *               will be added
          */
-        protected void buildMembersSummary(Content classConstantTree) {
+        protected void buildMembersSummary(Content target) {
             SortedSet<VariableElement> members = members();
             if (!members.isEmpty()) {
-                writer.addConstantMembers(typeElement, members, classConstantTree);
+                writer.addConstantMembers(typeElement, members, target);
             }
         }
 

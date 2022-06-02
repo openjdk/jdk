@@ -39,7 +39,7 @@ import jdk.jfr.internal.Type;
 public final class FileReadEvent extends AbstractJDKEvent {
 
     // The order of these fields must be the same as the parameters in
-    // EventHandler::write(..., String, long, boolean)
+    // commit(..., String, long, boolean)
 
     @Label("Path")
     @Description("Full path of the file, or N/A if a file descriptor was used to create the stream, for example System.in")
@@ -53,4 +53,8 @@ public final class FileReadEvent extends AbstractJDKEvent {
     @Label("End of File")
     @Description("If end of file was reached")
     public boolean endOfFile;
+
+    public static void commit(long start, long duration, String path, long bytesRead, boolean endOfFile) {
+        // Generated
+    }
 }

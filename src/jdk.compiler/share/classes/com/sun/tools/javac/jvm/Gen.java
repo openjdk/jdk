@@ -860,6 +860,10 @@ public class Gen extends JCTree.Visitor {
      *  @param pt      The expression's expected type (proto-type).
      */
     public Item genExpr(JCTree tree, Type pt) {
+        if (!code.isAlive()) {
+            return items.makeStackItem(pt);
+        }
+
         Type prevPt = this.pt;
         try {
             if (tree.type.constValue() != null) {

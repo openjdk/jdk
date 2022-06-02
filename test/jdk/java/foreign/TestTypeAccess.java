@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,13 @@
 
 /*
  * @test
+ * @enablePreview
  * @run testng TestTypeAccess
  */
 
-import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.ResourceScope;
-import jdk.incubator.foreign.ValueLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.MemorySession;
+import java.lang.foreign.ValueLayout;
 import org.testng.annotations.*;
 
 import java.lang.invoke.VarHandle;
@@ -52,32 +53,32 @@ public class TestTypeAccess {
 
     @Test(expectedExceptions=ClassCastException.class)
     public void testMemoryAddressValueGetAsString() {
-        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            MemorySegment s = MemorySegment.allocateNative(8, 8, scope);
+        try (MemorySession session = MemorySession.openConfined()) {
+            MemorySegment s = MemorySegment.allocateNative(8, 8, session);
             String address = (String)ADDR_HANDLE.get(s.address());
         }
     }
 
     @Test(expectedExceptions=ClassCastException.class)
     public void testMemoryAddressValueSetAsString() {
-        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            MemorySegment s = MemorySegment.allocateNative(8, 8, scope);
+        try (MemorySession session = MemorySession.openConfined()) {
+            MemorySegment s = MemorySegment.allocateNative(8, 8, session);
             ADDR_HANDLE.set(s.address(), "string");
         }
     }
 
     @Test(expectedExceptions=WrongMethodTypeException.class)
     public void testMemoryAddressValueGetAsPrimitive() {
-        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            MemorySegment s = MemorySegment.allocateNative(8, 8, scope);
+        try (MemorySession session = MemorySession.openConfined()) {
+            MemorySegment s = MemorySegment.allocateNative(8, 8, session);
             int address = (int)ADDR_HANDLE.get(s.address());
         }
     }
 
     @Test(expectedExceptions=WrongMethodTypeException.class)
     public void testMemoryAddressValueSetAsPrimitive() {
-        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            MemorySegment s = MemorySegment.allocateNative(8, 8, scope);
+        try (MemorySession session = MemorySession.openConfined()) {
+            MemorySegment s = MemorySegment.allocateNative(8, 8, session);
             ADDR_HANDLE.set(s.address(), 1);
         }
     }

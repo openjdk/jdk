@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ public class waitingthreads002a {
     static Object lockingObject = new Object();
     static final int threadCount = 5;
     static final String threadNamePrefix = "MyThread-";
-    static waitingthreads002aThread[] threads = new waitingthreads002aThread[threadCount];
+    static Thread[] threads = new Thread[threadCount];
 
     //------------------------------------------------------ mutable common method
 
@@ -87,7 +87,8 @@ public class waitingthreads002a {
                     display("entered: synchronized (waitnotifyObj) {}");
 
                     for (int i = 0; i < threadCount; i++) {
-                        threads[i] = new waitingthreads002aThread(threadNamePrefix + i);
+                        String name = threadNamePrefix + i;
+                        threads[i] = JDIThreadFactory.newThread(new waitingthreads002aThread(name), name);
                         threads[i].start();
                         try {
                             waitnotifyObj.wait();

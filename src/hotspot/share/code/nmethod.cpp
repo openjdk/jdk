@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,9 @@
 #include "compiler/compilerDirectives.hpp"
 #include "compiler/directivesParser.hpp"
 #include "compiler/disassembler.hpp"
-#include "compiler/oopMap.hpp"
+#include "compiler/oopMap.inline.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "interpreter/bytecode.hpp"
 #include "logging/log.hpp"
@@ -51,9 +53,11 @@
 #include "oops/method.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/weakHandle.inline.hpp"
 #include "prims/jvmtiImpl.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/continuation.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/flags/flagSetting.hpp"
@@ -422,13 +426,14 @@ int nmethod::total_size() const {
     nul_chk_table_size();
 }
 
-address* nmethod::orig_pc_addr(const frame* fr) {
-  return (address*) ((address)fr->unextended_sp() + _orig_pc_offset);
-}
-
 const char* nmethod::compile_kind() const {
   if (is_osr_method())     return "osr";
-  if (method() != NULL && is_native_method())  return "c2n";
+  if (method() != NULL && is_native_method()) {
+    if (method()->is_continuation_enter_intrinsic()) {
+      return "cnt";
+    }
+    return "c2n";
+  }
   return NULL;
 }
 
@@ -460,7 +465,8 @@ nmethod* nmethod::new_native_nmethod(const methodHandle& method,
   int frame_size,
   ByteSize basic_lock_owner_sp_offset,
   ByteSize basic_lock_sp_offset,
-  OopMapSet* oop_maps) {
+  OopMapSet* oop_maps,
+  int exception_handler) {
   code_buffer->finalize_oop_references(method);
   // create nmethod
   nmethod* nm = NULL;
@@ -471,6 +477,9 @@ nmethod* nmethod::new_native_nmethod(const methodHandle& method,
     CodeOffsets offsets;
     offsets.set_value(CodeOffsets::Verified_Entry, vep_offset);
     offsets.set_value(CodeOffsets::Frame_Complete, frame_complete);
+    if (exception_handler != -1) {
+      offsets.set_value(CodeOffsets::Exceptions, exception_handler);
+    }
     nm = new (native_nmethod_size, CompLevel_none)
     nmethod(method(), compiler_none, native_nmethod_size,
             compile_id, &offsets,
@@ -502,8 +511,7 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
   ExceptionHandlerTable* handler_table,
   ImplicitExceptionTable* nul_chk_table,
   AbstractCompiler* compiler,
-  int comp_level,
-  const GrowableArrayView<RuntimeStub*>& native_invokers
+  int comp_level
 #if INCLUDE_JVMCI
   , char* speculations,
   int speculations_len,
@@ -525,7 +533,6 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
       CodeBlob::allocation_size(code_buffer, sizeof(nmethod))
       + adjust_pcs_size(debug_info->pcs_size())
       + align_up((int)dependencies->size_in_bytes(), oopSize)
-      + align_up(checked_cast<int>(native_invokers.data_size_in_bytes()), oopSize)
       + align_up(handler_table->size_in_bytes()    , oopSize)
       + align_up(nul_chk_table->size_in_bytes()    , oopSize)
 #if INCLUDE_JVMCI
@@ -541,8 +548,7 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
             handler_table,
             nul_chk_table,
             compiler,
-            comp_level,
-            native_invokers
+            comp_level
 #if INCLUDE_JVMCI
             , speculations,
             speculations_len,
@@ -603,7 +609,7 @@ nmethod::nmethod(
   ByteSize basic_lock_owner_sp_offset,
   ByteSize basic_lock_sp_offset,
   OopMapSet* oop_maps )
-  : CompiledMethod(method, "native nmethod", type, nmethod_size, sizeof(nmethod), code_buffer, offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false),
+  : CompiledMethod(method, "native nmethod", type, nmethod_size, sizeof(nmethod), code_buffer, offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false, true),
   _is_unloading_state(0),
   _native_receiver_sp_offset(basic_lock_owner_sp_offset),
   _native_basic_lock_sp_offset(basic_lock_sp_offset)
@@ -622,16 +628,16 @@ nmethod::nmethod(
     // values something that will never match a pc like the nmethod vtable entry
     _exception_offset        = 0;
     _orig_pc_offset          = 0;
+    _gc_epoch                = Continuations::gc_epoch();
 
     _consts_offset           = data_offset();
-    _stub_offset             = data_offset();
+    _stub_offset             = content_offset()      + code_buffer->total_offset_of(code_buffer->stubs());
     _oops_offset             = data_offset();
-    _metadata_offset         = _oops_offset         + align_up(code_buffer->total_oop_size(), oopSize);
-    scopes_data_offset       = _metadata_offset     + align_up(code_buffer->total_metadata_size(), wordSize);
+    _metadata_offset         = _oops_offset          + align_up(code_buffer->total_oop_size(), oopSize);
+    scopes_data_offset       = _metadata_offset      + align_up(code_buffer->total_metadata_size(), wordSize);
     _scopes_pcs_offset       = scopes_data_offset;
     _dependencies_offset     = _scopes_pcs_offset;
-    _native_invokers_offset     = _dependencies_offset;
-    _handler_table_offset    = _native_invokers_offset;
+    _handler_table_offset    = _dependencies_offset;
     _nul_chk_table_offset    = _handler_table_offset;
 #if INCLUDE_JVMCI
     _speculations_offset     = _nul_chk_table_offset;
@@ -649,6 +655,8 @@ nmethod::nmethod(
     _pc_desc_container.reset_to(NULL);
     _hotness_counter         = NMethodSweeper::hotness_counter_reset_val();
 
+    _exception_offset        = code_offset()         + offsets->value(CodeOffsets::Exceptions);
+
     _scopes_data_begin = (address) this + scopes_data_offset;
     _deopt_handler_begin = (address) this + deoptimize_offset;
     _deopt_mh_handler_begin = (address) this + deoptimize_mh_offset;
@@ -662,6 +670,8 @@ nmethod::nmethod(
     debug_only(Universe::heap()->verify_nmethod(this));
 
     CodeCache::commit(this);
+
+    finalize_relocations();
   }
 
   if (PrintNativeNMethods || PrintDebugInfo || PrintRelocations || PrintDependencies) {
@@ -727,15 +737,14 @@ nmethod::nmethod(
   ExceptionHandlerTable* handler_table,
   ImplicitExceptionTable* nul_chk_table,
   AbstractCompiler* compiler,
-  int comp_level,
-  const GrowableArrayView<RuntimeStub*>& native_invokers
+  int comp_level
 #if INCLUDE_JVMCI
   , char* speculations,
   int speculations_len,
   int jvmci_data_size
 #endif
   )
-  : CompiledMethod(method, "nmethod", type, nmethod_size, sizeof(nmethod), code_buffer, offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false),
+  : CompiledMethod(method, "nmethod", type, nmethod_size, sizeof(nmethod), code_buffer, offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false, true),
   _is_unloading_state(0),
   _native_receiver_sp_offset(in_ByteSize(-1)),
   _native_basic_lock_sp_offset(in_ByteSize(-1))
@@ -754,6 +763,7 @@ nmethod::nmethod(
     _comp_level              = comp_level;
     _orig_pc_offset          = orig_pc_offset;
     _hotness_counter         = NMethodSweeper::hotness_counter_reset_val();
+    _gc_epoch                = Continuations::gc_epoch();
 
     // Section offsets
     _consts_offset           = content_offset()      + code_buffer->total_offset_of(code_buffer->consts());
@@ -805,8 +815,7 @@ nmethod::nmethod(
 
     _scopes_pcs_offset       = scopes_data_offset    + align_up(debug_info->data_size       (), oopSize);
     _dependencies_offset     = _scopes_pcs_offset    + adjust_pcs_size(debug_info->pcs_size());
-    _native_invokers_offset  = _dependencies_offset  + align_up((int)dependencies->size_in_bytes(), oopSize);
-    _handler_table_offset    = _native_invokers_offset + align_up(checked_cast<int>(native_invokers.data_size_in_bytes()), oopSize);
+    _handler_table_offset    = _dependencies_offset  + align_up((int)dependencies->size_in_bytes(), oopSize);
     _nul_chk_table_offset    = _handler_table_offset + align_up(handler_table->size_in_bytes(), oopSize);
 #if INCLUDE_JVMCI
     _speculations_offset     = _nul_chk_table_offset + align_up(nul_chk_table->size_in_bytes(), oopSize);
@@ -828,16 +837,14 @@ nmethod::nmethod(
     code_buffer->copy_values_to(this);
     debug_info->copy_to(this);
     dependencies->copy_to(this);
-    if (native_invokers.is_nonempty()) { // can not get address of zero-length array
-      // Copy native stubs
-      memcpy(native_invokers_begin(), native_invokers.adr_at(0), native_invokers.data_size_in_bytes());
-    }
     clear_unloading_state();
 
     Universe::heap()->register_nmethod(this);
     debug_only(Universe::heap()->verify_nmethod(this));
 
     CodeCache::commit(this);
+
+    finalize_relocations();
 
     // Copy contents of ExceptionHandlerTable to nmethod
     handler_table->copy_to(this);
@@ -996,10 +1003,6 @@ void nmethod::print_nmethod(bool printmethod) {
       print_dependencies();
       tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
     }
-    if (printmethod && native_invokers_begin() < native_invokers_end()) {
-      print_native_invokers();
-      tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
-    }
     if (printmethod || PrintExceptionHandlers) {
       print_handler_table();
       tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
@@ -1060,12 +1063,6 @@ void nmethod::copy_values(GrowableArray<Metadata*>* array) {
   }
 }
 
-void nmethod::free_native_invokers() {
-  for (RuntimeStub** it = native_invokers_begin(); it < native_invokers_end(); it++) {
-    CodeCache::free(*it);
-  }
-}
-
 void nmethod::fix_oop_relocations(address begin, address end, bool initialize_immediates) {
   // re-patch all oop-bearing instructions, just in case some oops moved
   RelocIterator iter(this, begin, end);
@@ -1085,6 +1082,84 @@ void nmethod::fix_oop_relocations(address begin, address end, bool initialize_im
   }
 }
 
+static void install_post_call_nop_displacement(nmethod* nm, address pc) {
+  NativePostCallNop* nop = nativePostCallNop_at((address) pc);
+  intptr_t cbaddr = (intptr_t) nm;
+  intptr_t offset = ((intptr_t) pc) - cbaddr;
+
+  int oopmap_slot = nm->oop_maps()->find_slot_for_offset((intptr_t) pc - (intptr_t) nm->code_begin());
+  if (oopmap_slot < 0) { // this can happen at asynchronous (non-safepoint) stackwalks
+    log_debug(codecache)("failed to find oopmap for cb: " INTPTR_FORMAT " offset: %d", cbaddr, (int) offset);
+  } else if (((oopmap_slot & 0xff) == oopmap_slot) && ((offset & 0xffffff) == offset)) {
+    jint value = (oopmap_slot << 24) | (jint) offset;
+    nop->patch(value);
+  } else {
+    log_debug(codecache)("failed to encode %d %d", oopmap_slot, (int) offset);
+  }
+}
+
+void nmethod::finalize_relocations() {
+  NoSafepointVerifier nsv;
+
+  // Make sure that post call nops fill in nmethod offsets eagerly so
+  // we don't have to race with deoptimization
+  RelocIterator iter(this);
+  while (iter.next()) {
+    if (iter.type() == relocInfo::post_call_nop_type) {
+      post_call_nop_Relocation* const reloc = iter.post_call_nop_reloc();
+      address pc = reloc->addr();
+      install_post_call_nop_displacement(this, pc);
+    }
+  }
+}
+
+void nmethod::make_deoptimized() {
+  if (!Continuations::enabled()) {
+    return;
+  }
+
+  assert(method() == NULL || can_be_deoptimized(), "");
+  assert(!is_zombie(), "");
+
+  CompiledICLocker ml(this);
+  assert(CompiledICLocker::is_safe(this), "mt unsafe call");
+  ResourceMark rm;
+  RelocIterator iter(this, oops_reloc_begin());
+
+  while (iter.next()) {
+
+    switch (iter.type()) {
+      case relocInfo::virtual_call_type:
+      case relocInfo::opt_virtual_call_type: {
+        CompiledIC *ic = CompiledIC_at(&iter);
+        address pc = ic->end_of_call();
+        NativePostCallNop* nop = nativePostCallNop_at(pc);
+        if (nop != NULL) {
+          nop->make_deopt();
+        }
+        assert(NativeDeoptInstruction::is_deopt_at(pc), "check");
+        break;
+      }
+      case relocInfo::static_call_type: {
+        CompiledStaticCall *csc = compiledStaticCall_at(iter.reloc());
+        address pc = csc->end_of_call();
+        NativePostCallNop* nop = nativePostCallNop_at(pc);
+        //tty->print_cr(" - static pc %p", pc);
+        if (nop != NULL) {
+          nop->make_deopt();
+        }
+        // We can't assert here, there are some calls to stubs / runtime
+        // that have reloc data and doesn't have a post call NOP.
+        //assert(NativeDeoptInstruction::is_deopt_at(pc), "check");
+        break;
+      }
+      default:
+        break;
+    }
+  }
+  // Don't deopt this again.
+  mark_deoptimized();
+}
 
 void nmethod::verify_clean_inline_caches() {
   assert(CompiledICLocker::is_safe(this), "mt unsafe call");
@@ -1135,6 +1210,21 @@ void nmethod::mark_as_seen_on_stack() {
   set_stack_traversal_mark(NMethodSweeper::traversal_count());
 }
 
+void nmethod::mark_as_maybe_on_continuation() {
+  assert(is_alive(), "Must be an alive method");
+  _gc_epoch = Continuations::gc_epoch();
+}
+
+bool nmethod::is_maybe_on_continuation_stack() {
+  if (!Continuations::enabled()) {
+    return false;
+  }
+
+  // If the condition below is true, it means that the nmethod was found to
+  // be alive the previous completed marking cycle.
+  return _gc_epoch >= Continuations::previous_completed_gc_marking_cycle();
+}
+
 // Tell if a non-entrant method can be converted to a zombie (i.e.,
 // there are no activations on the stack, not in use by the VM,
 // and not in use by the ServiceThread)
@@ -1153,7 +1243,7 @@ bool nmethod::can_convert_to_zombie() {
   // If an is_unloading() nmethod is still not_entrant, then it is not safe to
   // convert it to zombie due to GC unloading interactions. However, if it
   // has become unloaded, then it is okay to convert such nmethods to zombie.
-  return stack_traversal_mark() + 1 < NMethodSweeper::traversal_count() &&
+  return stack_traversal_mark()+1 < NMethodSweeper::traversal_count() && !is_maybe_on_continuation_stack() &&
          !is_locked_by_vm() && (!is_unloading() || is_unloaded());
 }
 
@@ -1846,12 +1936,16 @@ void nmethod::do_unloading(bool unloading_occurred) {
   } else {
     guarantee(unload_nmethod_caches(unloading_occurred),
               "Should not need transition stubs");
+    BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+    if (bs_nm != NULL) {
+      bs_nm->disarm(this);
+    }
   }
 }
 
 void nmethod::oops_do(OopClosure* f, bool allow_dead) {
   // make sure the oops ready to receive visitors
-  assert(allow_dead || is_alive(), "should not call follow on dead nmethod");
+  assert(allow_dead || is_alive(), "should not call follow on dead nmethod: %d", _state);
 
   // Prevent extra code cache walk for platforms that don't have immediate oops.
   if (relocInfo::mustIterateImmediateOopsInCode()) {
@@ -1878,6 +1972,20 @@ void nmethod::oops_do(OopClosure* f, bool allow_dead) {
     if (*p == Universe::non_oop_word())  continue;  // skip non-oops
     f->do_oop(p);
   }
+}
+
+void nmethod::follow_nmethod(OopIterateClosure* cl) {
+  // Process oops in the nmethod
+  oops_do(cl);
+
+  // CodeCache sweeper support
+  mark_as_maybe_on_continuation();
+
+  BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+  bs_nm->disarm(this);
+
+  // There's an assumption made that this function is not used by GCs that
+  // relocate objects, and therefore we don't call fix_oop_relocations.
 }
 
 nmethod* volatile nmethod::_oops_do_mark_nmethods;
@@ -2715,14 +2823,6 @@ void nmethod::print_pcs_on(outputStream* st) {
   }
 }
 
-void nmethod::print_native_invokers() {
-  ResourceMark m;       // in case methods get printed via debugger
-  tty->print_cr("Native invokers:");
-  for (RuntimeStub** itt = native_invokers_begin(); itt < native_invokers_end(); itt++) {
-    (*itt)->print_on(tty);
-  }
-}
-
 void nmethod::print_handler_table() {
   ExceptionHandlerTable(this).print(code_begin());
 }
@@ -2903,7 +3003,7 @@ void nmethod::decode2(outputStream* ost) const {
 #if defined(SUPPORT_ABSTRACT_ASSEMBLY)
 
   // Compressed undisassembled disassembly format.
-  // The following stati are defined/supported:
+  // The following status values are defined/supported:
   //   = 0 - currently at bol() position, nothing printed yet on current line.
   //   = 1 - currently at position after print_location().
   //   > 1 - in the midst of printing instruction stream bytes.
@@ -3130,7 +3230,7 @@ const char* nmethod::reloc_string_for(u_char* begin, u_char* end) {
   return have_one ? "other" : NULL;
 }
 
-// Return a the last scope in (begin..end]
+// Return the last scope in (begin..end]
 ScopeDesc* nmethod::scope_desc_in(address begin, address end) {
   PcDesc* p = pc_desc_near(begin+1);
   if (p != NULL && p->real_pc(this) <= end) {

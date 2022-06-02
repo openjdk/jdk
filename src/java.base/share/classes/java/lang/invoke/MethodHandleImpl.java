@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,8 @@ package java.lang.invoke;
 
 import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.invoke.NativeEntryPoint;
+import jdk.internal.foreign.abi.NativeEntryPoint;
 import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.vm.annotation.ForceInline;
@@ -290,7 +289,7 @@ abstract class MethodHandleImpl {
         BoundMethodHandle mh = target.rebind();
 
         // Match each unique conversion to the positions at which it is to be applied
-        var convSpecMap = new HashMap<Object, int[]>(((4 * convCount) / 3) + 1);
+        HashMap<Object, int[]> convSpecMap = HashMap.newHashMap(convCount);
         for (int i = 0; i < convSpecs.length - MH_RECEIVER_OFFSET; i++) {
             Object convSpec = convSpecs[i];
             if (convSpec == null) continue;
@@ -323,7 +322,7 @@ abstract class MethodHandleImpl {
                 for (int pos : positions) {
                     ptypes[pos - 1] = newType;
                 }
-                midType = MethodType.makeImpl(midType.rtype(), ptypes, true);
+                midType = MethodType.methodType(midType.rtype(), ptypes, true);
             }
             LambdaForm form2;
             if (positions.length > 1) {
@@ -451,7 +450,7 @@ abstract class MethodHandleImpl {
     static final class AsVarargsCollector extends DelegatingMethodHandle {
         private final MethodHandle target;
         private final Class<?> arrayType;
-        private @Stable MethodHandle asCollectorCache;
+        private MethodHandle asCollectorCache;
 
         AsVarargsCollector(MethodHandle target, Class<?> arrayType) {
             this(target.type(), target, arrayType);
@@ -1581,19 +1580,13 @@ abstract class MethodHandleImpl {
             }
 
             @Override
-            public void ensureCustomized(MethodHandle mh) {
-                mh.customize();
+            public VarHandle memorySegmentViewHandle(Class<?> carrier, long alignmentMask, ByteOrder order) {
+                return VarHandles.memorySegmentViewHandle(carrier, alignmentMask, order);
             }
 
             @Override
-            public VarHandle memoryAccessVarHandle(Class<?> carrier, boolean skipAlignmentMaskCheck, long alignmentMask,
-                                                   ByteOrder order) {
-                return VarHandles.makeMemoryAddressViewHandle(carrier, skipAlignmentMaskCheck, alignmentMask, order);
-            }
-
-            @Override
-            public MethodHandle nativeMethodHandle(NativeEntryPoint nep, MethodHandle fallback) {
-                return NativeMethodHandle.make(nep, fallback);
+            public MethodHandle nativeMethodHandle(NativeEntryPoint nep) {
+                return NativeMethodHandle.make(nep);
             }
 
             @Override

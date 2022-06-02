@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@
  * The class itself defines a programming interface to which
  * applications may write.  The implementations themselves may then be
  * written by independent third-party vendors and plugged in
- * seamlessly as needed.  Therefore application developers may take
+ * seamlessly as needed.  Therefore, application developers may take
  * advantage of any number of provider-based implementations without
  * having to add or rewrite code.
  *

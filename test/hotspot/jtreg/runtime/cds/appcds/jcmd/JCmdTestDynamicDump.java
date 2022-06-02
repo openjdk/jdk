@@ -28,11 +28,10 @@
  * @summary Test jcmd to dump dynamic shared archive.
  * @requires vm.cds
  * @requires vm.flagless
- * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
+ * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @modules jdk.jcmd/sun.tools.common:+open
- * @compile ../test-classes/Hello.java JCmdTestDumpBase.java
- * @build sun.hotspot.WhiteBox
- * @build JCmdTestLingeredApp JCmdTestDynamicDump
+ * @build jdk.test.lib.apps.LingeredApp sun.hotspot.WhiteBox Hello
+ *        JCmdTestDumpBase JCmdTestLingeredApp JCmdTestDynamicDump
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm/timeout=480 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI JCmdTestDynamicDump
  */

@@ -198,14 +198,14 @@ class LIR_Const: public LIR_OprPtr {
 class LIR_Opr {
  public:
   // value structure:
-  //     data       opr-type opr-kind
-  // +--------------+-------+-------+
-  // [max...........|7 6 5 4|3 2 1 0]
-  //                               ^
-  //                         is_pointer bit
+  //          data        other-non-data opr-type opr-kind
+  // +-------------------+--------------+-------+-----+
+  // [max...............................|6 5 4 3|2 1 0]
+  //                                                 ^
+  //                                           is_pointer bit
   //
   // lowest bit cleared, means it is a structure pointer
-  // we need  4 bits to represent types
+  // we need 4 bits to represent types
 
  private:
   friend class LIR_OprFact;
@@ -630,7 +630,7 @@ class LIR_OprFact: public AllStatic {
                                LIR_Opr::single_size);
   }
 
-  // Platform dependant.
+  // Platform dependent.
   static LIR_Opr double_fpu(int reg1, int reg2 = -1 /*fnoreg*/);
 
 #ifdef ARM32
@@ -776,7 +776,7 @@ class LIR_OprFact: public AllStatic {
   }
 
   // 'index' is computed by FrameMap::local_stack_pos(index); do not use other parameters as
-  // the index is platform independent; a double stack useing indeces 2 and 3 has always
+  // the index is platform independent; a double stack using indices 2 and 3 has always
   // index 2.
   static LIR_Opr stack(int index, BasicType type) {
     LIR_Opr res;
@@ -1696,7 +1696,7 @@ class LIR_OpBranch: public LIR_Op2 {
  private:
   Label*        _label;
   BlockBegin*   _block;  // if this is a branch to a block, this is the block
-  BlockBegin*   _ublock; // if this is a float-branch, this is the unorderd block
+  BlockBegin*   _ublock; // if this is a float-branch, this is the unordered block
   CodeStub*     _stub;   // if this is a branch to a stub, this is the stub
 
  public:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -759,9 +759,9 @@ public final class LdapClient implements PooledConnection {
                                    Hashtable<String, Boolean> binaryAttrs) {
         String id = attrid.toLowerCase(Locale.ENGLISH);
 
-        return ((id.indexOf(";binary") != -1) ||
+        return id.contains(";binary") ||
             defaultBinaryAttrs.containsKey(id) ||
-            ((binaryAttrs != null) && (binaryAttrs.containsKey(id))));
+            ((binaryAttrs != null) && (binaryAttrs.containsKey(id)));
     }
 
     // package entry point; used by Connection

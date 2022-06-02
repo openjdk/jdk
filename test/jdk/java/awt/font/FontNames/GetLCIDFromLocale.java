@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,12 +52,12 @@ public class GetLCIDFromLocale {
         test(Locale.US, 0x0409);
         test(Locale.GERMAN, 0x0407);
         test(Locale.GERMANY, 0x0407);
-        test(new Locale("de", "AT"), 0x0c07);
-        test(new Locale("ar"), 0x0401);
-        test(new Locale("ar", "SA"), 0x0401);
-        test(new Locale("ar", "EG"), 0x0c01);
-        test(new Locale("??"), 0x0409);
-        test(new Locale("??", "??"), 0x0409);
+        test(Locale.of("de", "AT"), 0x0c07);
+        test(Locale.of("ar"), 0x0401);
+        test(Locale.of("ar", "SA"), 0x0401);
+        test(Locale.of("ar", "EG"), 0x0c01);
+        test(Locale.of("??"), 0x0409);
+        test(Locale.of("??", "??"), 0x0409);
         test(Locale.KOREA, 0x0412);
     }
 

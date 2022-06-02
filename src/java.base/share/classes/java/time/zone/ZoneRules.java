@@ -974,11 +974,11 @@ public final class ZoneRules implements Serializable {
             doyEst = zeroDay - (365 * yearEst + yearEst / 4 - yearEst / 100 + yearEst / 400);
         }
         yearEst += adjust;  // reset any negative year
-        int marchDoy0 = (int) doyEst;
 
-        // convert march-based values back to january-based
-        int marchMonth0 = (marchDoy0 * 5 + 2) / 153;
-        yearEst += marchMonth0 / 10;
+        // convert march-based values back to january-based, adjust year
+        if (doyEst >= 306) {
+            yearEst++;
+        }
 
         // Cap to the max value
         return (int)Math.min(yearEst, Year.MAX_VALUE);

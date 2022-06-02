@@ -118,7 +118,7 @@ define SetupJarArchiveBody
     $1_JARINDEX = true
   endif
   # When this macro is run in the same makefile as the java compilation, dependencies are
-  # transfered in make variables. When the macro is run in a different makefile than the
+  # transferred in make variables. When the macro is run in a different makefile than the
   # java compilation, the dependencies need to be found in the filesystem.
   $1_ORIG_DEPS := $$($1_DEPENDENCIES)
   ifeq ($$($1_DEPENDENCIES), )
@@ -150,9 +150,9 @@ define SetupJarArchiveBody
   # Capture extra files is the same for both CAPTURE_CONTENTS and SCAPTURE_CONTENTS so
   # only define it once to avoid duplication.
   # The list of extra files might be long, so need to use ListPathsSafely to print
-  # them out to a separte file. Then process the contents of that file to rewrite
+  # them out to a separate file. Then process the contents of that file to rewrite
   # into -C <dir> <file> lines.
-  # The EXTRA_FILES_RESOLVED varible must be set in the macro so that it's evaluated
+  # The EXTRA_FILES_RESOLVED variable must be set in the macro so that it's evaluated
   # in the recipe when the files are guaranteed to exist.
   $1_CAPTURE_EXTRA_FILES=\
       $$(eval $1_EXTRA_FILES_RESOLVED:=$$(call DoubleDollar, \

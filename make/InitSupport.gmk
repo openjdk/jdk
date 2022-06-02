@@ -312,14 +312,7 @@ else # $(HAS_SPEC)=true
     ifeq ($$(SOURCE_DATE), updated)
       # For static values of SOURCE_DATE (not "updated"), these are set in spec.gmk
       export SOURCE_DATE_EPOCH := $$(shell $$(DATE) +"%s")
-      ifeq ($$(IS_GNU_DATE), yes)
-        export SOURCE_DATE_ISO_8601 := $$(shell $$(DATE) --utc \
-            --date="@$$(SOURCE_DATE_EPOCH)" +"$$(ISO_8601_FORMAT_STRING)" \
-            2> /dev/null)
-      else
-        export SOURCE_DATE_ISO_8601 := $$(shell $$(DATE) -u -j -f "%s" \
-            "$$(SOURCE_DATE_EPOCH)" +"$$(ISO_8601_FORMAT_STRING)" 2> /dev/null)
-      endif
+      export SOURCE_DATE_ISO_8601 := $$(call EpochToISO8601, $$(SOURCE_DATE_EPOCH))
     endif
   endef
 
@@ -468,10 +461,10 @@ else # $(HAS_SPEC)=true
 	    $(PRINTF) "\n=== Make failed targets repeated here ===\n" ; \
 	    $(GREP) "recipe for target .* failed" $(BUILD_LOG) ; \
 	    $(PRINTF) "=== End of repeated output ===\n" ; \
-	    $(PRINTF) "\nHint: Try searching the build log for the name of the first failed target.\n" ; \
+	    $(PRINTF) "\nHELP: Try searching the build log for the name of the first failed target.\n" ; \
 	  else \
 	    $(PRINTF) "\nNo indication of failed target found.\n" ; \
-	    $(PRINTF) "Hint: Try searching the build log for '] Error'.\n" ; \
+	    $(PRINTF) "HELP: Try searching the build log for '] Error'.\n" ; \
 	  fi \
 	)
   endef

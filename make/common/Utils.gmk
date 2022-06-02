@@ -146,7 +146,7 @@ RelativePathHelper = \
         $(if $($2_dotdots), $($2_dotdots), .))
 
 ################################################################################
-# Filter out duplicate sub strings while preserving order. Keeps the first occurance.
+# Filter out duplicate sub strings while preserving order. Keeps the first occurrence.
 uniq = \
     $(strip $(if $1,$(firstword $1) $(call uniq,$(filter-out $(firstword $1),$1))))
 
@@ -215,6 +215,21 @@ And = \
 Or = \
   $(strip $(if $(filter-out true false, $1), $(error Non-boolean values: $1)) \
   $(if $(strip $(filter-out false, $1)), true, false))
+
+
+################################################################################
+# Convert an UNIX epoch based timestamp (as an integer) to an ISO 8601 date
+# string.
+# Param 1 - timestamp
+ifeq ($(IS_GNU_DATE), yes)
+  EpochToISO8601 = \
+    $(shell $(DATE) --utc --date="@$(strip $1)" \
+         +"$(ISO_8601_FORMAT_STRING)" 2> /dev/null)
+else
+  EpochToISO8601 = \
+    $(shell $(DATE) -u -j -f "%s" "$(strip $1)" \
+         +"$(ISO_8601_FORMAT_STRING)" 2> /dev/null)
+endif
 
 ################################################################################
 # Parse a multiple-keyword variable, like FOO="KEYWORD1=val1;KEYWORD2=val2;..."

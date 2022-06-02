@@ -280,7 +280,7 @@ bool DependencyContext::claim_cleanup() {
 // that is_unloading() will be unlinked and placed on the purge list.
 nmethodBucket* DependencyContext::dependencies_not_unloading() {
   for (;;) {
-    // Need acquire becase the read value could come from a concurrent insert.
+    // Need acquire because the read value could come from a concurrent insert.
     nmethodBucket* head = Atomic::load_acquire(_dependency_context_addr);
     if (head == NULL || !head->get_nmethod()->is_unloading()) {
       return head;

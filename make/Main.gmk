@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -259,6 +259,13 @@ $(eval $(call SetupTarget, hotspot-ide-project, \
 
 ALL_TARGETS += $(HOTSPOT_VARIANT_TARGETS) $(HOTSPOT_VARIANT_GENSRC_TARGETS) \
     $(HOTSPOT_VARIANT_LIBS_TARGETS)
+
+################################################################################
+# Help and user support
+
+$(eval $(call SetupTarget, doctor, \
+    MAKEFILE := Doctor, \
+))
 
 ################################################################################
 # Generate libs and launcher targets for creating compile_commands.json fragments

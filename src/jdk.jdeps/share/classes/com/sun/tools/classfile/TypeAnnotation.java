@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ public class TypeAnnotation {
     @Override
     public String toString() {
         try {
-            return "@" + constant_pool.getUTF8Value(annotation.type_index).toString().substring(1) +
+            return "@" + constant_pool.getUTF8Value(annotation.type_index).substring(1) +
                     " pos: " + position.toString();
         } catch (Exception e) {
             e.printStackTrace();
@@ -338,7 +338,7 @@ public class TypeAnnotation {
         public TargetType type = TargetType.UNKNOWN;
 
         // For generic/array types.
-        // TODO: or should we use null? Noone will use this object.
+        // TODO: or should we use null? No one will use this object.
         public List<TypePathEntry> location = new ArrayList<>(0);
 
         // Tree position.
