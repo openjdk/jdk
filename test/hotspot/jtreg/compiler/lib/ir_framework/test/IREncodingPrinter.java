@@ -33,6 +33,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.HashSet;
 
 /**
  * Prints an encoding to the dedicated test framework socket whether @IR rules of @Test methods should be applied or not.
@@ -72,7 +73,7 @@ public class IREncodingPrinter {
             for (IR irAnno : irAnnos) {
                 ruleIndex = i + 1;
                 try {
-                    if (shouldApplyIrRule(irAnno)) {
+                    if (shouldApplyIrRule(irAnno, m.getName())) {
                         validRules.add(ruleIndex);
                     }
                 } catch (TestFormatException e) {
@@ -94,7 +95,7 @@ public class IREncodingPrinter {
         }
     }
 
-    private boolean shouldApplyIrRule(IR irAnno) {
+    private boolean shouldApplyIrRule(IR irAnno, String m) {
         checkIRAnnotations(irAnno);
         if (isDefaultRegexUnsupported(irAnno)) {
             return false;
@@ -113,6 +114,22 @@ public class IREncodingPrinter {
 
         if (irAnno.applyIfOr().length != 0) {
             return !hasNoRequiredFlags(irAnno.applyIfOr(), "applyIfOr");
+        }
+
+        if (irAnno.applyIfTargetFeatureAnd().length != 0) {
+            boolean check = hasRequiredFeaturesAnd(irAnno.applyIfTargetFeatureAnd(), "applyIfTargetFeatureAnd");
+            if (!check) {
+                System.out.println("Disabling IR validation for " + m + ", all feature constraints not met.");
+            }
+            return check;
+        }
+
+        if (irAnno.applyIfTargetFeatureOr().length != 0) {
+            boolean check = hasRequiredFeaturesOr(irAnno.applyIfTargetFeatureOr(), "applyIfTargetFeatureOr");
+            if (!check) {
+                System.out.println("Disabling IR validation for " + m + ", none of the feature constraint is met.");
+            }
+            return check;
         }
         // No conditions, always apply.
         return true;
@@ -136,6 +153,16 @@ public class IREncodingPrinter {
             applyRules++;
             TestFormat.checkNoThrow(irAnno.applyIf().length <= 2,
                                     "Use applyIfAnd or applyIfOr or only 1 condition for applyIf" + failAt());
+        }
+        if (irAnno.applyIfTargetFeatureAnd().length != 0) {
+            applyRules++;
+            TestFormat.checkNoThrow((irAnno.applyIfTargetFeatureAnd().length & 1) == 0,
+                                    "Argument count for applyIfTargetFeatureAnd should be multiple of two" + failAt());
+        }
+        if (irAnno.applyIfTargetFeatureOr().length != 0) {
+            applyRules++;
+            TestFormat.checkNoThrow((irAnno.applyIfTargetFeatureOr().length & 1) == 0,
+                                    "Argument count for applyIfTargetFeatureOr should be multiple of two" + failAt());
         }
         if (irAnno.applyIfNot().length != 0) {
             applyRules++;
@@ -174,6 +201,62 @@ public class IREncodingPrinter {
             }
         }
         return returnValue;
+    }
+
+    private boolean hasRequiredFeaturesAnd(String[] andRules, String ruleType) {
+        for (int i = 0; i < andRules.length; i++) {
+            String feature = andRules[i];
+            i++;
+            String value = andRules[i];
+            TestFormat.check((value.contains("true") || value.contains("false")), "Incorrect value in " + ruleType + failAt());
+            if (!checkTargetFeature(feature, value)) {
+                // Rule will not be applied but keep processing the other flags to verify that they are same.
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean hasRequiredFeaturesOr(String[] orRules, String ruleType) {
+        boolean returnValue = false;
+        for (int i = 0; i < orRules.length; i++) {
+            String feature = orRules[i];
+            i++;
+            String value = orRules[i];
+            TestFormat.check((value.contains("true") || value.contains("false")), "Incorrect value in " + ruleType + failAt());
+            returnValue |= checkTargetFeature(feature, value);
+        }
+        return returnValue;
+    }
+
+    private boolean checkTargetFeature(String feature, String value) {
+        String s = WHITE_BOX.getCPUFeatures();
+        // Following feature list is in sync with suppressed feature list for KNL target.
+        // Please refer vm_version_x86.cpp for details.
+        HashSet<String> knlFeatureSet = new HashSet<String>();
+        knlFeatureSet.add("AVX512BW");
+        knlFeatureSet.add("AVX512VL");
+        knlFeatureSet.add("AVX512DQ");
+        knlFeatureSet.add("AVX512_VNNI");
+        knlFeatureSet.add("AVX512_VAES");
+        knlFeatureSet.add("AVX512_VPOPCNTDQ");
+        knlFeatureSet.add("AVX512_VPCLMULQDQ");
+        knlFeatureSet.add("AVX512_VBMI");
+        knlFeatureSet.add("AVX512_VBMI2");
+        knlFeatureSet.add("CLWB");
+        knlFeatureSet.add("FLUSHOPT");
+        knlFeatureSet.add("GFNI");
+        knlFeatureSet.add("AVX512_BITALG");
+        Boolean isKNLFlagEnabled = (Boolean)WHITE_BOX.getBooleanVMFlag("UseKNLSettings");
+        // Perform the feature check if UseKNLSetting flag is set to off or if
+        // feature is supported by KNL target.
+        if (isKNLFlagEnabled == null || (isKNLFlagEnabled.booleanValue() && !knlFeatureSet.contains(feature.toUpperCase()))) {
+            if ((value.contains("true") && s.contains(feature)) ||
+               (value.contains("false") && !s.contains(feature))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean hasNoRequiredFlags(String[] orRules, String ruleType) {
