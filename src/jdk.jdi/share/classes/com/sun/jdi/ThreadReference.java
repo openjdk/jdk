@@ -248,7 +248,7 @@ public interface ThreadReference extends ObjectReference {
      * @throws IncompatibleThreadStateException if the thread is
      * not suspended in the target VM
      * @throws IndexOutOfBoundsException if the specified range is not
-     * within the range of stack frame indicies.
+     * within the range of stack frame indices.
      * That is, the exception is thrown if any of the following are true:
      * <pre>    start &lt; 0
      *    start &gt;= {@link #frameCount}

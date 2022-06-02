@@ -368,6 +368,19 @@ void ThreadService::reset_contention_time_stat(JavaThread* thread) {
   }
 }
 
+bool ThreadService::is_virtual_or_carrier_thread(JavaThread* jt) {
+  oop threadObj = jt->threadObj();
+  if (threadObj != NULL && threadObj->is_a(vmClasses::BasicVirtualThread_klass())) {
+    // a virtual thread backed by JavaThread
+    return true;
+  }
+  if (jt->is_vthread_mounted()) {
+    // carrier thread
+    return true;
+  }
+  return false;
+}
+
 // Find deadlocks involving raw monitors, object monitors and concurrent locks
 // if concurrent_locks is true.
 // We skip virtual thread carriers under the assumption that the current scheduler, ForkJoinPool,
@@ -388,15 +401,19 @@ DeadlockCycle* ThreadService::find_deadlocks_at_safepoint(ThreadsList * t_list, 
   // Initialize the depth-first-number for each JavaThread.
   JavaThreadIterator jti(t_list);
   for (JavaThread* jt = jti.first(); jt != NULL; jt = jti.next()) {
-    if (jt->is_vthread_mounted()) continue;
-    jt->set_depth_first_number(-1);
+    if (!is_virtual_or_carrier_thread(jt)) {
+      jt->set_depth_first_number(-1);
+    }
   }
 
   DeadlockCycle* deadlocks = NULL;
   DeadlockCycle* last = NULL;
   DeadlockCycle* cycle = new DeadlockCycle();
   for (JavaThread* jt = jti.first(); jt != NULL; jt = jti.next()) {
-    if (jt->is_vthread_mounted()) continue;
+    if (is_virtual_or_carrier_thread(jt)) {
+      // skip virtual and carrier threads
+      continue;
+    }
     if (jt->depth_first_number() >= 0) {
       // this thread was already visited
       continue;
@@ -471,7 +488,7 @@ DeadlockCycle* ThreadService::find_deadlocks_at_safepoint(ThreadsList * t_list, 
         }
       }
 
-      if (currentThread == NULL || currentThread->is_vthread_mounted()) {
+      if (currentThread == NULL || is_virtual_or_carrier_thread(currentThread)) {
         // No dependency on another thread
         break;
       }

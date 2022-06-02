@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -229,14 +229,6 @@ public interface Tree {
         BINDING_PATTERN(BindingPatternTree.class),
 
         /**
-         * Used for instances of {@link GuardedPatternTree}.
-         *
-         * @since 17
-         */
-        @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
-        GUARDED_PATTERN(GuardedPatternTree.class),
-
-        /**
          * Used for instances of {@link ParenthesizedPatternTree}.
          *
          * @since 17
@@ -251,6 +243,14 @@ public interface Tree {
          */
         @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
         DEFAULT_CASE_LABEL(DefaultCaseLabelTree.class),
+
+        /**
+         * Used for instances of {@link DeconstructionPatternTree}.
+         *
+         * @since 19
+         */
+        @PreviewFeature(feature=PreviewFeature.Feature.RECORD_PATTERNS, reflective=true)
+        DECONSTRUCTION_PATTERN(DeconstructionPatternTree.class),
 
         /**
          * Used for instances of {@link PrimitiveTypeTree}.
