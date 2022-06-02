@@ -25,6 +25,7 @@
  * @test
  * @key randomness
  * @summary Fuzz tests for jdk.internal.vm.Continuation
+ * @requires vm.continuations
  * @modules java.base/jdk.internal.vm
  *
  * @requires vm.flavor == "server" & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4)

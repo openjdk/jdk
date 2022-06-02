@@ -78,7 +78,10 @@ jobs:
           FEATURE=${{ fromJson(steps.check_deps.outputs.dependencies).DEFAULT_VERSION_FEATURE }}
           INTERIM=${{ fromJson(steps.check_deps.outputs.dependencies).DEFAULT_VERSION_INTERIM }}
           UPDATE=${{ fromJson(steps.check_deps.outputs.dependencies).DEFAULT_VERSION_UPDATE }}
-          if [ "x${UPDATE}" != "x0" ]; then
+          PATCH=${{ fromJson(steps.check_deps.outputs.dependencies).DEFAULT_VERSION_PATCH }}
+          if [ "x${PATCH}" != "x0" ]; then
+             V=${FEATURE}.${INTERIM}.${UPDATE}.${PATCH}
+          elif [ "x${UPDATE}" != "x0" ]; then
              V=${FEATURE}.${INTERIM}.${UPDATE}
           elif [ "x${INTERIM}" != "x0" ]; then
              V={FEATURE}.${INTERIM}
@@ -358,14 +361,102 @@ jobs:
           JTREG_KEYWORDS="!headful"
           JTREG="JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash"
 
-      - name: Check that all tests executed successfully
-        if: steps.run_tests.outcome != 'skipped'
-        run: >
-          if ! grep --include=test-summary.txt -lqr build/*/test-results -e "TEST SUCCESS" ; then
-            cat build/*/test-results/*/text/newfailures.txt ;
-            cat build/*/test-results/*/text/other_errors.txt ;
-            exit 1 ;
+      - name: Generate test failure summary
+        run: |
+          #
+          test_suite_name=$(cat build/run-test-prebuilt/test-support/test-last-ids.txt)
+          results_dir=build/run-test-prebuilt/test-results/$test_suite_name/text
+
+          failures=$(sed -e 's!\(.*\)\.java!\1!' -e '/^#/d' $results_dir/newfailures.txt || true)
+          errors=$(sed -e 's!\(.*\)\.java!\1!' -e '/^#/d' $results_dir/other_errors.txt || true)
+          failure_count=$(echo $failures | wc -w || true)
+          error_count=$(echo $errors | wc -w || true)
+
+          if [[ "$failures" = "" && "$errors" = "" ]]; then
+            # If we have nothing to report, exit this step now
+            exit 0
           fi
+
+          echo "::error:: Test run reported $failure_count test failure(s) and $error_count error(s). See summary for details."
+
+          echo "### :boom: Test failures summary" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "$failures" != "" ]]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "These tests reported failure:" >> $GITHUB_STEP_SUMMARY
+            for test in $failures; do
+              anchor="$(echo "$test" | tr [A-Z/] [a-z_])"
+              echo "* [$test](#user-content-$anchor)"
+            done >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [[ "$errors" != "" ]]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "These tests reported errors:"  >> $GITHUB_STEP_SUMMARY
+            for test in $errors; do
+              anchor="$(echo "$test" | tr [A-Z/] [a-z_])"
+              echo "* [$test](#user-content-$anchor)"
+            done >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Collect failed test output
+        run: |
+          #
+          # This is a separate step, since if the markdown from a step gets bigger than
+          # 1024 kB it is skipped, but then the summary above is still generated
+          test_suite_name=$(cat build/run-test-prebuilt/test-support/test-last-ids.txt)
+          results_dir=build/run-test-prebuilt/test-results/$test_suite_name/text
+          report_dir=build/run-test-prebuilt/test-support/$test_suite_name
+
+          failures=$(sed -e 's!\(.*\)\.java!\1!' -e '/^#/d' $results_dir/newfailures.txt || true)
+          errors=$(sed -e 's!\(.*\)\.java!\1!' -e '/^#/d' $results_dir/other_errors.txt || true)
+
+          if [[ "$failures" = "" && "$errors" = "" ]]; then
+            # If we have nothing to report, exit this step now
+            exit 0
+          fi
+
+          echo "### Test output for failed tests" >> $GITHUB_STEP_SUMMARY
+          for test in $failures $errors; do
+            anchor="$(echo "$test" | tr [A-Z/] [a-z_])"
+            base_path="$(echo "$test" | tr '#' '_')"
+            report_file="$report_dir/$base_path.jtr"
+            hs_err_files="$report_dir/$base_path/hs_err*.log"
+            echo "####  <a id="$anchor">$test"
+
+            echo "<details><summary>View test results</summary>"
+            echo ""
+            echo '```'
+            if [[ -f "$report_file" ]]; then
+              cat "$report_file"
+            else
+              echo "Error: Result file $report_file not found"
+            fi
+            echo '```'
+            echo "</details>"
+            echo ""
+
+            if [[ "$hs_err_files" != "" ]]; then
+              echo "<details><summary>View HotSpot error log</summary>"
+              echo ""
+              for hs_err in $hs_err_files; do
+                echo '```'
+                echo "$hs_err:"
+                echo ""
+                cat "$hs_err"
+                echo '```'
+              done
+
+              echo "</details>"
+              echo ""
+            fi
+
+          done >> $GITHUB_STEP_SUMMARY
+
+          echo ":arrow_right: To see the entire test log, click the job in the list to the left"  >> $GITHUB_STEP_SUMMARY
+
+          # This will abort the entire job in GHA, which is what we want
+          exit 1
 
       - name: Create suitable test log artifact name
         if: always()
@@ -824,14 +915,102 @@ jobs:
           JTREG_KEYWORDS="!headful"
           JTREG="JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash"
 
-      - name: Check that all tests executed successfully
-        if: steps.run_tests.outcome != 'skipped'
-        run: >
-          if ! grep --include=test-summary.txt -lqr build/*/test-results -e "TEST SUCCESS" ; then
-            cat build/*/test-results/*/text/newfailures.txt ;
-            cat build/*/test-results/*/text/other_errors.txt ;
-            exit 1 ;
+      - name: Generate test failure summary
+        run: |
+          #
+          test_suite_name=$(cat build/run-test-prebuilt/test-support/test-last-ids.txt)
+          results_dir=build/run-test-prebuilt/test-results/$test_suite_name/text
+
+          failures=$(sed -e 's!\(.*\)\.java!\1!' -e '/^#/d' $results_dir/newfailures.txt || true)
+          errors=$(sed -e 's!\(.*\)\.java!\1!' -e '/^#/d' $results_dir/other_errors.txt || true)
+          failure_count=$(echo $failures | wc -w || true)
+          error_count=$(echo $errors | wc -w || true)
+
+          if [[ "$failures" = "" && "$errors" = "" ]]; then
+            # If we have nothing to report, exit this step now
+            exit 0
           fi
+
+          echo "::error:: Test run reported $failure_count test failure(s) and $error_count error(s). See summary for details."
+
+          echo "### :boom: Test failures summary" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "$failures" != "" ]]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "These tests reported failure:" >> $GITHUB_STEP_SUMMARY
+            for test in $failures; do
+              anchor="$(echo "$test" | tr [A-Z/] [a-z_])"
+              echo "* [$test](#user-content-$anchor)"
+            done >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [[ "$errors" != "" ]]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "These tests reported errors:"  >> $GITHUB_STEP_SUMMARY
+            for test in $errors; do
+              anchor="$(echo "$test" | tr [A-Z/] [a-z_])"
+              echo "* [$test](#user-content-$anchor)"
+            done >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Collect failed test output
+        run: |
+          #
+          # This is a separate step, since if the markdown from a step gets bigger than
+          # 1024 kB it is skipped, but then the summary above is still generated
+          test_suite_name=$(cat build/run-test-prebuilt/test-support/test-last-ids.txt)
+          results_dir=build/run-test-prebuilt/test-results/$test_suite_name/text
+          report_dir=build/run-test-prebuilt/test-support/$test_suite_name
+
+          failures=$(sed -e 's!\(.*\)\.java!\1!' -e '/^#/d' $results_dir/newfailures.txt || true)
+          errors=$(sed -e 's!\(.*\)\.java!\1!' -e '/^#/d' $results_dir/other_errors.txt || true)
+
+          if [[ "$failures" = "" && "$errors" = "" ]]; then
+            # If we have nothing to report, exit this step now
+            exit 0
+          fi
+
+          echo "### Test output for failed tests" >> $GITHUB_STEP_SUMMARY
+          for test in $failures $errors; do
+            anchor="$(echo "$test" | tr [A-Z/] [a-z_])"
+            base_path="$(echo "$test" | tr '#' '_')"
+            report_file="$report_dir/$base_path.jtr"
+            hs_err_files="$report_dir/$base_path/hs_err*.log"
+            echo "####  <a id="$anchor">$test"
+
+            echo "<details><summary>View test results</summary>"
+            echo ""
+            echo '```'
+            if [[ -f "$report_file" ]]; then
+              cat "$report_file"
+            else
+              echo "Error: Result file $report_file not found"
+            fi
+            echo '```'
+            echo "</details>"
+            echo ""
+
+            if [[ "$hs_err_files" != "" ]]; then
+              echo "<details><summary>View HotSpot error log</summary>"
+              echo ""
+              for hs_err in $hs_err_files; do
+                echo '```'
+                echo "$hs_err:"
+                echo ""
+                cat "$hs_err"
+                echo '```'
+              done
+
+              echo "</details>"
+              echo ""
+            fi
+
+          done >> $GITHUB_STEP_SUMMARY
+
+          echo ":arrow_right: To see the entire test log, click the job in the list to the left"  >> $GITHUB_STEP_SUMMARY
+
+          # This will abort the entire job in GHA, which is what we want
+          exit 1
 
       - name: Create suitable test log artifact name
         if: always()
@@ -918,7 +1097,7 @@ jobs:
 
       - name: Install cygwin
         run: |
-          Start-Process -FilePath "$HOME\cygwin\setup-x86_64.exe" -ArgumentList "--quiet-mode --packages cygwin=3.2.0-1,autoconf,make,zip,unzip --root $HOME\cygwin\cygwin64 --local-package-dir $HOME\cygwin\packages --site http://mirrors.kernel.org/sourceware/cygwin --no-desktop --no-shortcuts --no-startmenu --no-admin" -Wait -NoNewWindow
+          Start-Process -FilePath "$HOME\cygwin\setup-x86_64.exe" -ArgumentList "--quiet-mode --packages cygwin=3.3.5-1,autoconf,make,zip,unzip --root $HOME\cygwin\cygwin64 --local-package-dir $HOME\cygwin\packages --site http://mirrors.kernel.org/sourceware/cygwin --no-desktop --no-shortcuts --no-startmenu --no-admin" -Wait -NoNewWindow
 
       - name: Checkout the source
         uses: actions/checkout@v3
@@ -1017,7 +1196,7 @@ jobs:
 
       - name: Install cygwin
         run: |
-          Start-Process -FilePath "$HOME\cygwin\setup-x86_64.exe" -ArgumentList "--quiet-mode --packages cygwin=3.2.0-1,autoconf,make,zip,unzip --root $HOME\cygwin\cygwin64 --local-package-dir $HOME\cygwin\packages --site http://mirrors.kernel.org/sourceware/cygwin --no-desktop --no-shortcuts --no-startmenu --no-admin" -Wait -NoNewWindow
+          Start-Process -FilePath "$HOME\cygwin\setup-x86_64.exe" -ArgumentList "--quiet-mode --packages cygwin=3.3.5-1,autoconf,make,zip,unzip --root $HOME\cygwin\cygwin64 --local-package-dir $HOME\cygwin\packages --site http://mirrors.kernel.org/sourceware/cygwin --no-desktop --no-shortcuts --no-startmenu --no-admin" -Wait -NoNewWindow
 
       - name: Checkout the source
         uses: actions/checkout@v3
@@ -1199,7 +1378,7 @@ jobs:
 
       - name: Install cygwin
         run: |
-          Start-Process -FilePath "$HOME\cygwin\setup-x86_64.exe" -ArgumentList "--quiet-mode --packages cygwin=3.2.0-1,autoconf,make,zip,unzip --root $HOME\cygwin\cygwin64 --local-package-dir $HOME\cygwin\packages --site http://mirrors.kernel.org/sourceware/cygwin --no-desktop --no-shortcuts --no-startmenu --no-admin" -Wait -NoNewWindow
+          Start-Process -FilePath "$HOME\cygwin\setup-x86_64.exe" -ArgumentList "--quiet-mode --packages cygwin=3.3.5-1,autoconf,make,zip,unzip --root $HOME\cygwin\cygwin64 --local-package-dir $HOME\cygwin\packages --site http://mirrors.kernel.org/sourceware/cygwin --no-desktop --no-shortcuts --no-startmenu --no-admin" -Wait -NoNewWindow
 
       - name: Restore jtreg artifact
         id: jtreg_restore
@@ -1661,14 +1840,102 @@ jobs:
           JTREG_KEYWORDS="!headful"
           JTREG="JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash"
 
-      - name: Check that all tests executed successfully
-        if: steps.run_tests.outcome != 'skipped'
-        run: >
-          if ! grep --include=test-summary.txt -lqr build/*/test-results -e "TEST SUCCESS" ; then
-            cat build/*/test-results/*/text/newfailures.txt ;
-            cat build/*/test-results/*/text/other_errors.txt ;
-            exit 1 ;
+      - name: Generate test failure summary
+        run: |
+          #
+          test_suite_name=$(cat build/run-test-prebuilt/test-support/test-last-ids.txt)
+          results_dir=build/run-test-prebuilt/test-results/$test_suite_name/text
+
+          failures=$(sed -e 's!\(.*\)\.java!\1!' -e '/^#/d' $results_dir/newfailures.txt || true)
+          errors=$(sed -e 's!\(.*\)\.java!\1!' -e '/^#/d' $results_dir/other_errors.txt || true)
+          failure_count=$(echo $failures | wc -w || true)
+          error_count=$(echo $errors | wc -w || true)
+
+          if [[ "$failures" = "" && "$errors" = "" ]]; then
+            # If we have nothing to report, exit this step now
+            exit 0
           fi
+
+          echo "::error:: Test run reported $failure_count test failure(s) and $error_count error(s). See summary for details."
+
+          echo "### :boom: Test failures summary" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "$failures" != "" ]]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "These tests reported failure:" >> $GITHUB_STEP_SUMMARY
+            for test in $failures; do
+              anchor="$(echo "$test" | tr [A-Z/] [a-z_])"
+              echo "* [$test](#user-content-$anchor)"
+            done >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [[ "$errors" != "" ]]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "These tests reported errors:"  >> $GITHUB_STEP_SUMMARY
+            for test in $errors; do
+              anchor="$(echo "$test" | tr [A-Z/] [a-z_])"
+              echo "* [$test](#user-content-$anchor)"
+            done >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Collect failed test output
+        run: |
+          #
+          # This is a separate step, since if the markdown from a step gets bigger than
+          # 1024 kB it is skipped, but then the summary above is still generated
+          test_suite_name=$(cat build/run-test-prebuilt/test-support/test-last-ids.txt)
+          results_dir=build/run-test-prebuilt/test-results/$test_suite_name/text
+          report_dir=build/run-test-prebuilt/test-support/$test_suite_name
+
+          failures=$(sed -e 's!\(.*\)\.java!\1!' -e '/^#/d' $results_dir/newfailures.txt || true)
+          errors=$(sed -e 's!\(.*\)\.java!\1!' -e '/^#/d' $results_dir/other_errors.txt || true)
+
+          if [[ "$failures" = "" && "$errors" = "" ]]; then
+            # If we have nothing to report, exit this step now
+            exit 0
+          fi
+
+          echo "### Test output for failed tests" >> $GITHUB_STEP_SUMMARY
+          for test in $failures $errors; do
+            anchor="$(echo "$test" | tr [A-Z/] [a-z_])"
+            base_path="$(echo "$test" | tr '#' '_')"
+            report_file="$report_dir/$base_path.jtr"
+            hs_err_files="$report_dir/$base_path/hs_err*.log"
+            echo "####  <a id="$anchor">$test"
+
+            echo "<details><summary>View test results</summary>"
+            echo ""
+            echo '```'
+            if [[ -f "$report_file" ]]; then
+              cat "$report_file"
+            else
+              echo "Error: Result file $report_file not found"
+            fi
+            echo '```'
+            echo "</details>"
+            echo ""
+
+            if [[ "$hs_err_files" != "" ]]; then
+              echo "<details><summary>View HotSpot error log</summary>"
+              echo ""
+              for hs_err in $hs_err_files; do
+                echo '```'
+                echo "$hs_err:"
+                echo ""
+                cat "$hs_err"
+                echo '```'
+              done
+
+              echo "</details>"
+              echo ""
+            fi
+
+          done >> $GITHUB_STEP_SUMMARY
+
+          echo ":arrow_right: To see the entire test log, click the job in the list to the left"  >> $GITHUB_STEP_SUMMARY
+
+          # This will abort the entire job in GHA, which is what we want
+          exit 1
 
       - name: Create suitable test log artifact name
         if: always()
