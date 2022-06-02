@@ -394,6 +394,10 @@ void Compile::remove_useless_node(Node* dead) {
     remove_useless_late_inlines(         &_string_late_inlines, dead);
     remove_useless_late_inlines(         &_boxing_late_inlines, dead);
     remove_useless_late_inlines(&_vector_reboxing_late_inlines, dead);
+
+    if (dead->is_CallStaticJava()) {
+      invalidate_unstable_if(dead->as_CallStaticJava());
+    }
   }
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   bs->unregister_potential_barrier_node(dead);
@@ -432,6 +436,7 @@ void Compile::remove_useless_nodes(Unique_Node_List &useful) {
   remove_useless_nodes(_skeleton_predicate_opaqs, useful);
   remove_useless_nodes(_expensive_nodes,    useful); // remove useless expensive nodes
   remove_useless_nodes(_for_post_loop_igvn, useful); // remove useless node recorded for post loop opts IGVN pass
+  remove_useless_unstable_ifs(useful); // remove useless unstable_if traps
   remove_useless_coarsened_locks(useful);            // remove useless coarsened locks nodes
 
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
@@ -605,7 +610,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _skeleton_predicate_opaqs (comp_arena(), 8, 0, NULL),
                   _expensive_nodes   (comp_arena(), 8, 0, NULL),
                   _for_post_loop_igvn(comp_arena(), 8, 0, NULL),
-                  _unstable_ifs      (comp_arena(), 8, 0, NULL),
+                  _unstable_if_traps (comp_arena(), 8, 0, NULL),
                   _coarsened_locks   (comp_arena(), 8, 0, NULL),
                   _congraph(NULL),
                   NOT_PRODUCT(_igv_printer(NULL) COMMA)
@@ -1857,46 +1862,63 @@ void Compile::process_for_post_loop_opts_igvn(PhaseIterGVN& igvn) {
 
 void Compile::record_unstable_if(UnstableIfTrap* trap) {
   if (AggressiveLivenessForUnstableIf) {
-    _unstable_ifs.append(trap);
+    _unstable_if_traps.append(trap);
   }
 }
 
+void Compile::remove_useless_unstable_ifs(Unique_Node_List& useful) {
+  for (int i = _unstable_if_traps.length() - 1; i >= 0; i--) {
+    UnstableIfTrap* trap = _unstable_if_traps.at(i);
+    Node* n = trap->uncommon_trap();
+    if (!useful.member(n)) {
+      _unstable_if_traps.delete_at(i); // replaces i-th with last element which is known to be useful (already processed)
+    }
+  }
+}
+
+// Invalidate the speculative bci of unstable_if trap and skip the optimization.
+//
+// 'fold-compares' may use the uncommon_trap of the dominating IfNode to cover the fused
+// IfNode. This breaks the unstable_if trap invariant: control takes the unstable path
+// when deoptimization does happen.
 void Compile::invalidate_unstable_if(CallStaticJavaNode* unc) {
-  for (int i = 0; i < _unstable_ifs.length(); ++i) {
-    UnstableIfTrap* trap = _unstable_ifs.at(i);
+  for (int i = 0; i < _unstable_if_traps.length(); ++i) {
+    UnstableIfTrap* trap = _unstable_if_traps.at(i);
     if (trap->uncommon_trap() == unc) {
-      trap->set_bci(-1);
+      _unstable_if_traps.delete_at(i); // replaces i-th with last element which is known to be useful (already processed)
       break;
     }
   }
 }
 
-uint trivial_unstable_ifs          = 0;
-uint unstable_ifs_all              = 0;
+#ifndef PRODUCT
+uint trivial_unstable_if_traps          = 0;
+uint unstable_if_traps_all              = 0;
+#endif
 
 void Compile::preprocess_unstable_ifs() {
-  Atomic::add(&unstable_ifs_all, (uint)_unstable_ifs.length());
+#ifndef PRODUCT
+  Atomic::add(&unstable_if_traps_all, (uint)_unstable_if_traps.length());
 
-  for (int i=0; i < _unstable_ifs.length(); i++) {
-    UnstableIfTrap* trap = _unstable_ifs.at(i);
+  for (int i = 0; i < _unstable_if_traps.length(); i++) {
+    UnstableIfTrap* trap = _unstable_if_traps.at(i);
     if (trap->is_trivial()) {
-      Atomic::inc(&trivial_unstable_ifs);
+      Atomic::inc(&trivial_unstable_if_traps);
     }
   }
+#endif
 }
 
 // Re-calculate unstable_if traps with the liveness of next_bci, which points to the unlikely path.
 // It needs to be done after igvn because fold-compares may fuse uncommon_traps and before renumbering.
 void Compile::process_for_unstable_ifs(PhaseIterGVN& igvn) {
-  if (!AggressiveLivenessForUnstableIf)
-    return;
-
-  while (_unstable_ifs.length() > 0) {
-    UnstableIfTrap* trap = _unstable_ifs.pop();
+  while (_unstable_if_traps.length() > 0) {
+    UnstableIfTrap* trap = _unstable_if_traps.pop();
     CallStaticJavaNode* unc = trap->uncommon_trap();
     int next_bci = trap->next_bci();
 
-    if (next_bci != -1 && !_dead_node_list.test(unc->_idx)) {
+    if (next_bci != -1) {
+      assert(!_dead_node_list.test(unc->_idx), "changing a dead node!");
       JVMState* jvms = unc->jvms();
       ciMethod* method = jvms->method();
       ciBytecodeStream iter(method);

@@ -66,8 +66,8 @@ uint Parse::BytecodeParseHistogram::_nodes_constructed[Bytecodes::number_of_code
 uint Parse::BytecodeParseHistogram::_nodes_transformed[Bytecodes::number_of_codes];
 uint Parse::BytecodeParseHistogram::_new_values       [Bytecodes::number_of_codes];
 
-extern uint trivial_unstable_ifs;
-extern uint unstable_ifs_all;
+extern uint trivial_unstable_if_traps;
+extern uint unstable_if_traps_all;
 //------------------------------print_statistics-------------------------------
 void Parse::print_statistics() {
   tty->print_cr("--- Compiler Statistics ---");
@@ -94,9 +94,9 @@ void Parse::print_statistics() {
                   SharedRuntime::_implicit_null_throws);
   }
 
-  if (unstable_ifs_all) {
-    tty->print_cr("%u trivial unstable_ifs (%2d%%)", trivial_unstable_ifs,
-                  (100 * trivial_unstable_ifs / unstable_ifs_all));
+  if (unstable_if_traps_all) {
+    tty->print_cr("%u trivial unstable_if traps (%2u%%)", trivial_unstable_if_traps,
+                  (100 * trivial_unstable_if_traps / unstable_if_traps_all));
   }
 
   if (PrintParseStatistics && BytecodeParseHistogram::initialized()) {

@@ -607,32 +607,24 @@ class Parse : public GraphKit {
 //   1. suppress trivial Unstable_If traps
 //   2. use next_bci of _path to update live locals.
 class UnstableIfTrap {
-  CallStaticJavaNode* _unc;
-  Parse::Block* _path;  // the pruned path
-  int _next_bci;        // speculative bci which takes _path.
+  CallStaticJavaNode* const _unc;
+  Parse::Block* const _path;  // the pruned path
 
 public:
-  UnstableIfTrap(CallStaticJavaNode* call, Parse::Block* path): _unc(call), _path(path), _next_bci(-1) {
+  UnstableIfTrap(CallStaticJavaNode* call, Parse::Block* path): _unc(call), _path(path){
     assert(_unc != NULL && Deoptimization::trap_request_reason(_unc->uncommon_trap_request()) == Deoptimization::Reason_unstable_if,
           "invalid uncommon_trap call!");
-
-    if (_path != NULL) {
-      _next_bci = _path->start();
-    }
   }
 
-  int next_bci() const { return _next_bci; }
-
-  void set_bci(int bci) {
-    assert(bci == -1 || _next_bci == -1, "attempt to overwrite next_bci");
-    _next_bci = bci;
+  int next_bci() const {
+    return _path == nullptr ? -1 : _path->start();
   }
 
   // This can only be determined in parse-time.
   // if _path has only one predecessor, it is trivial if this block is small(1~2 bytecodes)
   // or if _path has more than one predecessor and has been parsed, _unc does not mask out any real code.
   bool is_trivial() const {
-    return _path->is_parsed();
+    return _path != nullptr && _path->is_parsed();
   }
 
   Parse::Block* path() const {
@@ -645,7 +637,7 @@ public:
 
   inline void* operator new(size_t x) throw() {
     Compile* C = Compile::current();
-    return C->node_arena()->AmallocWords(x);
+    return C->comp_arena()->AmallocWords(x);
   }
 };
 
