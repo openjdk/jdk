@@ -302,7 +302,7 @@ bool VectorNode::implemented(int opc, uint vlen, BasicType bt) {
     if (VectorNode::is_vector_integral_negate(vopc)) {
       return is_vector_integral_negate_supported(vopc, vlen, bt, false);
     }
-    return vopc > 0 && Matcher::match_rule_supported_vector(vopc, vlen, bt);
+    return vopc > 0 && Matcher::match_rule_supported_vectorization(vopc, vlen, bt);
   }
   return false;
 }
@@ -1232,7 +1232,7 @@ bool VectorCastNode::implemented(int opc, uint vlen, BasicType src_type, BasicTy
       (vlen > 1) && is_power_of_2(vlen) &&
       Matcher::vector_size_supported(dst_type, vlen)) {
     int vopc = VectorCastNode::opcode(src_type);
-    return vopc > 0 && Matcher::match_rule_supported_vector(vopc, vlen, dst_type);
+    return vopc > 0 && Matcher::match_rule_supported_vectorization(vopc, vlen, dst_type);
   }
   return false;
 }
@@ -1326,7 +1326,7 @@ bool ReductionNode::implemented(int opc, uint vlen, BasicType bt) {
       (vlen > 1) && is_power_of_2(vlen) &&
       Matcher::vector_size_supported(bt, vlen)) {
     int vopc = ReductionNode::opcode(opc, bt);
-    return vopc != opc && Matcher::match_rule_supported_vector(vopc, vlen, bt);
+    return vopc != opc && Matcher::match_rule_supported_vectorization(vopc, vlen, bt);
   }
   return false;
 }

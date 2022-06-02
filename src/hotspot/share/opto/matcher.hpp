@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -324,6 +324,9 @@ public:
   // NOTE: If this function is used more commonly in the future, ADLC
   // should generate this one.
   static const bool match_rule_supported(int opcode);
+
+  // Identify extra cases that we might want to vectorize automatically.
+  static const bool match_rule_supported_vectorization(int opcode, int vlen, BasicType bt);
 
   // identify extra cases that we might want to provide match rules for
   // e.g. Op_ vector nodes and other intrinsics while guarding with vlen
