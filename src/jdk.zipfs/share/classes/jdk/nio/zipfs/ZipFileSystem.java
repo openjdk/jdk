@@ -151,9 +151,9 @@ class ZipFileSystem extends FileSystem {
         this.forceEnd64 = isTrue(env, "forceZIP64End");
         this.defaultCompressionMethod = getDefaultCompressionMethod(env);
         this.supportPosix = isTrue(env, PROPERTY_POSIX);
-        this.defaultOwner = initOwner(zfpath, env);
-        this.defaultGroup = initGroup(zfpath, env);
-        this.defaultPermissions = initPermissions(env);
+        this.defaultOwner = supportPosix ? initOwner(zfpath, env) : null;
+        this.defaultGroup = supportPosix ? initGroup(zfpath, env) : null;
+        this.defaultPermissions = supportPosix ? initPermissions(env) : null;
         this.supportedFileAttributeViews = supportPosix ?
             Set.of("basic", "posix", "zip") : Set.of("basic", "zip");
         if (Files.notExists(zfpath)) {
@@ -868,7 +868,7 @@ class ZipFileSystem extends FileSystem {
     }
 
     private void checkOptions(Set<? extends OpenOption> options) {
-        // check for options of null type and option is an intance of StandardOpenOption
+        // check for options of null type and option is an instance of StandardOpenOption
         for (OpenOption option : options) {
             if (option == null)
                 throw new NullPointerException();
@@ -3027,7 +3027,7 @@ class ZipFileSystem extends FileSystem {
             }
             if (elenEXTT != 0) {
                 writeShort(os, EXTID_EXTT);
-                writeShort(os, elenEXTT - 4);// size for the folowing data block
+                writeShort(os, elenEXTT - 4);// size for the following data block
                 int fbyte = 0x1;
                 if (atime != -1)           // mtime and atime
                     fbyte |= 0x2;

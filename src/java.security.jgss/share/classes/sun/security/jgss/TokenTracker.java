@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,12 +36,12 @@ import java.util.LinkedList;
  * Each element of the list is an interval [a, b]. Its existence in the
  * list implies that all token numbers in the range a, a+1, ..., b-1, b
  * have arrived. Gaps in arrived token numbers are represented by the
- * numbers that fall in between two elements of the list. eg. {[a,b],
+ * numbers that fall in between two elements of the list. e.g. {[a,b],
  * [c,d]} indicates that the token numbers b+1, ..., c-1 have not arrived
  * yet.
  *
  * The maximum number of intervals that we keep track of is
- * MAX_INTERVALS. Thus if there are too many gaps, then some of the older
+ * MAX_INTERVALS. Thus, if there are too many gaps, then some older
  * sequence numbers are deleted from the list. The earliest sequence number
  * that exists in the list is the windowStart. The next expected sequence
  * number, or expectedNumber, is one greater than the latest sequence
@@ -63,13 +63,13 @@ public class TokenTracker {
 
     static final int MAX_INTERVALS = 5;
 
-    private int initNumber;
+    private final int initNumber;
     private int windowStart;
     private int expectedNumber;
 
     private int windowStartIndex = 0;
 
-    private LinkedList<Entry> list = new LinkedList<Entry>();
+    private final LinkedList<Entry> list = new LinkedList<>();
 
     public TokenTracker(int initNumber) {
 
@@ -78,7 +78,7 @@ public class TokenTracker {
         this.expectedNumber = initNumber;
 
         // Make an entry with one less than the expected first token
-        Entry entry = new Entry(initNumber-1);
+        Entry entry = new Entry(initNumber - 1);
 
         list.add(entry);
     }
@@ -90,7 +90,7 @@ public class TokenTracker {
      * a in a new interval ahead of the whole list.
      */
     private int getIntervalIndex(int number) {
-        Entry entry = null;
+        Entry entry;
         int i;
         // Start from the rear to optimize for the normal case
         for (i = list.size() - 1; i >= 0; i--) {
@@ -235,7 +235,7 @@ public class TokenTracker {
 
         Entry entry;
         Entry entryBefore = null;
-        Entry entryAfter = null;
+        Entry entryAfter;
 
         boolean appended = false;
         boolean prepended = false;
@@ -329,7 +329,7 @@ public class TokenTracker {
             }
         }
 
-        // Finally we are ready to actually add to the list at index
+        // Finally, we are ready to actually add to the list at index
         // 'prevEntryPos+1'
 
         list.add(prevEntryPos+1, entry);
@@ -356,7 +356,7 @@ public class TokenTracker {
      * tokens. Each entry is actually an interval of numbers, all of which
      * have been received.
      */
-    class Entry {
+    static class Entry {
 
         private int start;
         private int end;
