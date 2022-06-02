@@ -1700,15 +1700,24 @@ bool is_star_match(const char* star_pattern, const char* str) {
   return true; // all parts of pattern matched
 }
 
+int node_idx_cmp(Node** n1, Node** n2) {
+  return (*n1)->_idx - (*n2)->_idx;
+}
+
 Node* find_node_by_name(Node* start, const char* name) {
   Node* result = nullptr;
+  GrowableArray<Node*> ns;
   auto callback = [&] (Node* n) {
     if (is_star_match(name, n->Name())) {
-      n->dump();
+      ns.push(n);
       result = n;
     }
   };
   visit_nodes(start, callback);
+  ns.sort(node_idx_cmp);
+  for (int i = 0; i < ns.length(); i++) {
+    ns.at(i)->dump();
+  }
   return result;
 }
 
@@ -1728,15 +1737,20 @@ Node* find_old_node_by_name(const char* name) {
 
 Node* find_node_by_dump(Node* start, const char* pattern) {
   Node* result = nullptr;
+  GrowableArray<Node*> ns;
   auto callback = [&] (Node* n) {
     stringStream stream;
     n->dump("", false, &stream);
     if (is_star_match(pattern, stream.base())) {
-      n->dump();
+      ns.push(n);
       result = n;
     }
   };
   visit_nodes(start, callback);
+  ns.sort(node_idx_cmp);
+  for (int i = 0; i < ns.length(); i++) {
+    ns.at(i)->dump();
+  }
   return result;
 }
 
