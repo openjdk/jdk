@@ -1795,7 +1795,7 @@ private:
 
   void make_info(Node* node, const int distance) {
     assert(find_info(node) == nullptr, "node does not yet have info");
-    size_t uid = _info.length()+1;
+    size_t uid = _info.length() + 1;
     _info_uid.Insert(node, (void*)uid);
     _info.at_put_grow((int)uid, Info(node, distance));
     assert(find_info(node)->node() == node, "stored correct node");
@@ -2240,7 +2240,7 @@ void PrintBFS::maybe_traverse(Node* src, Node* dst) {
       _worklist.push(dst);
       int d = 0;
       if (dst != _start) {
-        d = find_info(src)->distance()+1;
+        d = find_info(src)->distance() + 1;
       }
       make_info(dst, d);
     }
