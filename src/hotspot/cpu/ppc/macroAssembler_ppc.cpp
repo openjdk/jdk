@@ -1460,7 +1460,7 @@ void MacroAssembler::atomic_get_and_modify_generic(Register dest_current_value, 
     modval = tmp1;
     shift_amount = tmp2;
     val32 = tmp3;
-    // Need some preperation: Compute shift amount, align address. Note: shorts must be 2 byte aligned.
+    // Need some preparation: Compute shift amount, align address. Note: shorts must be 2 byte aligned.
 #ifdef VM_LITTLE_ENDIAN
     rldic(shift_amount, addr_base, 3, 64-5); // (dest & 3) * 8;
     clrrdi(addr_base, addr_base, 2);
@@ -1537,7 +1537,7 @@ void MacroAssembler::cmpxchg_loop_body(ConditionRegister flag, Register dest_cur
     shift_amount = tmp1;
     val32 = tmp2;
     modval = tmp2;
-    // Need some preperation: Compute shift amount, align address. Note: shorts must be 2 byte aligned.
+    // Need some preparation: Compute shift amount, align address. Note: shorts must be 2 byte aligned.
 #ifdef VM_LITTLE_ENDIAN
     rldic(shift_amount, addr_base, 3, 64-5); // (dest & 3) * 8;
     clrrdi(addr_base, addr_base, 2);
@@ -1669,7 +1669,7 @@ void MacroAssembler::cmpxchg_generic(ConditionRegister flag, Register dest_curre
   // (flag == eq) => (dest_current_value == compare_value), ( swapped)
 }
 
-// Preforms atomic compare exchange:
+// Performs atomic compare exchange:
 //   if (compare_value == *addr_base)
 //     *addr_base = exchange_value
 //     int_flag_success = 1;
@@ -2275,7 +2275,7 @@ void MacroAssembler::rtm_counters_update(Register abort_status, Register rtm_cou
           if (failure_bit[nbit] == tm_transaction_level) {
             // Don't check outer transaction, TL = 1 (bit 63). Hence only
             // 11 bits in the TL field are checked to find out if failure
-            // occured in a nested transaction. This check also matches
+            // occurred in a nested transaction. This check also matches
             // the case when nesting_of = 1 (nesting overflow).
             rldicr_(temp_Reg, abort_status_R0, failure_bit[nbit], 10);
           } else if (failure_bit[nbit] == tm_failure_code) {
@@ -2414,7 +2414,7 @@ void MacroAssembler::rtm_retry_lock_on_abort(Register retry_count_Reg, Register 
   // transactional state, like for instance trying to write the TFHAR after a
   // transaction is started; or when there is (B) a Nesting Overflow (too many
   // nested transactions); or when (C) the Footprint overflows (too many
-  // addressess touched in TM state so there is no more space in the footprint
+  // addresses touched in TM state so there is no more space in the footprint
   // area to track them); or in case of (D) a Self-Induced Conflict, i.e. a
   // store is performed to a given address in TM state, then once in suspended
   // state the same address is accessed. Failure (A) is very unlikely to occur

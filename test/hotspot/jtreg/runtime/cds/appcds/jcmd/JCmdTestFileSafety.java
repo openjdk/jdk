@@ -27,11 +27,10 @@
  * @bug 8265465 8267075
  * @summary Test jcmd to dump static shared archive.
  * @requires vm.cds
- * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
+ * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @modules jdk.jcmd/sun.tools.common:+open
- * @compile ../test-classes/Hello.java JCmdTestDumpBase.java
- * @build sun.hotspot.WhiteBox
- * @build JCmdTestLingeredApp JCmdTestFileSafety
+ * @build jdk.test.lib.apps.LingeredApp sun.hotspot.WhiteBox Hello
+ *        JCmdTestDumpBase JCmdTestLingeredApp JCmdTestFileSafety
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm/timeout=480 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI JCmdTestFileSafety
  */

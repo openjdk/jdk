@@ -468,7 +468,7 @@ void MacroAssembler::sha256(bool multi_block) {
 #endif
 
   // Load 16 elements from w out of the loop.
-  // Order of the int values is Endianess specific.
+  // Order of the int values is Endianness specific.
   VectorRegister w0 = VR17;
   VectorRegister w1 = VR18;
   VectorRegister w2 = VR19;
@@ -1021,7 +1021,7 @@ void MacroAssembler::sha512(bool multi_block) {
   }
 
   // Load 16 elements from w out of the loop.
-  // Order of the long values is Endianess specific.
+  // Order of the long values is Endianness specific.
   VectorRegister w0 = VR10;
   VectorRegister w1 = VR11;
   VectorRegister w2 = VR12;

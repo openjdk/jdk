@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ class PSOldGen : public CHeapObj<mtGC> {
 
 #ifdef ASSERT
   void assert_block_in_covered_region(MemRegion new_memregion) {
-    // Explictly capture current covered_region in a local
+    // Explicitly capture current covered_region in a local
     MemRegion covered_region = this->start_array()->covered_region();
     assert(covered_region.contains(new_memregion),
            "new region is not in covered_region [ " PTR_FORMAT ", " PTR_FORMAT " ], "

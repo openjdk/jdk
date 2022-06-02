@@ -1,0 +1,2 @@
+NoCrashForError.java:10:13: compiler.err.operator.cant.be.applied: !, java.lang.Number
+1 error

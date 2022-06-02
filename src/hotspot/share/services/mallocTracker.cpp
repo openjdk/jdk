@@ -24,7 +24,7 @@
 #include "precompiled.hpp"
 
 #include "runtime/os.hpp"
-#include "runtime/safefetch.inline.hpp"
+#include "runtime/safefetch.hpp"
 #include "services/mallocSiteTable.hpp"
 #include "services/mallocTracker.hpp"
 #include "services/memTracker.hpp"
@@ -293,7 +293,7 @@ void* MallocTracker::record_free(void* memblock) {
 // signals popping up, e.g. when writing an hs_err file.
 bool MallocTracker::print_pointer_information(const void* p, outputStream* st) {
   assert(MemTracker::enabled(), "NMT must be enabled");
-  if (CanUseSafeFetch32() && os::is_readable_pointer(p)) {
+  if (os::is_readable_pointer(p)) {
     const NMT_TrackingLevel tracking_level = MemTracker::tracking_level();
     const MallocHeader* mhdr = malloc_header(p);
     char msg[256];

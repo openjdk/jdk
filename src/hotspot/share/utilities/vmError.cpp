@@ -44,7 +44,7 @@
 #include "runtime/init.hpp"
 #include "runtime/os.hpp"
 #include "runtime/osThread.hpp"
-#include "runtime/safefetch.inline.hpp"
+#include "runtime/safefetch.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/thread.inline.hpp"
@@ -597,18 +597,14 @@ void VMError::report(outputStream* st, bool _verbose) {
     // to test that resetting the signal handler works correctly.
     if (_verbose && TestSafeFetchInErrorHandler) {
       st->print_cr("Will test SafeFetch...");
-      if (CanUseSafeFetch32()) {
-        int* const invalid_pointer = (int*)segfault_address;
-        const int x = 0x76543210;
-        int i1 = SafeFetch32(invalid_pointer, x);
-        int i2 = SafeFetch32(invalid_pointer, x);
-        if (i1 == x && i2 == x) {
-          st->print_cr("SafeFetch OK."); // Correctly deflected and returned default pattern
-        } else {
-          st->print_cr("??");
-        }
+      int* const invalid_pointer = (int*)segfault_address;
+      const int x = 0x76543210;
+      int i1 = SafeFetch32(invalid_pointer, x);
+      int i2 = SafeFetch32(invalid_pointer, x);
+      if (i1 == x && i2 == x) {
+        st->print_cr("SafeFetch OK."); // Correctly deflected and returned default pattern
       } else {
-        st->print_cr("not possible; skipped.");
+        st->print_cr("??");
       }
     }
 #endif // ASSERT
@@ -883,6 +879,14 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->cr();
      }
 
+  STEP("printing registers")
+
+     // printing registers
+     if (_verbose && _context) {
+       os::print_context(st, _context);
+       st->cr();
+     }
+
   STEP("printing register info")
 
      // decode register contents if possible
@@ -892,11 +896,11 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->cr();
      }
 
-  STEP("printing registers, top of stack, instructions near pc")
+  STEP("printing top of stack, instructions near pc")
 
-     // registers, top of stack, instructions near pc
+     // printing top of stack, instructions near pc
      if (_verbose && _context) {
-       os::print_context(st, _context);
+       os::print_tos_pc(st, _context);
        st->cr();
      }
 
@@ -1150,6 +1154,15 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->cr();
      }
 
+#ifndef _WIN32
+  STEP("printing locale settings")
+
+     if (_verbose) {
+       os::Posix::print_active_locale(st);
+       st->cr();
+     }
+#endif
+
   STEP("printing signal handlers")
 
      if (_verbose) {
@@ -1330,6 +1343,12 @@ void VMError::print_vm_info(outputStream* st) {
 
   os::print_environment_variables(st, env_list);
   st->cr();
+
+  // STEP("printing locale settings")
+#ifndef _WIN32
+  os::Posix::print_active_locale(st);
+  st->cr();
+#endif
 
   // STEP("printing signal handlers")
 

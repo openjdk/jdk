@@ -398,7 +398,12 @@ class CompileReplay : public StackObj {
 
       ik->link_class(CHECK_NULL);
 
-      Bytecode_invoke bytecode(caller, bci);
+      Bytecode_invoke bytecode = Bytecode_invoke_check(caller, bci);
+      if (!Bytecodes::is_defined(bytecode.code()) || !bytecode.is_valid()) {
+        report_error("no invoke found at bci");
+        return NULL;
+      }
+      bytecode.verify();
       int index = bytecode.index();
 
       ConstantPoolCacheEntry* cp_cache_entry = NULL;
@@ -1383,7 +1388,7 @@ int ciReplay::replay_impl(TRAPS) {
   if (ReplaySuppressInitializers > 2) {
     // ReplaySuppressInitializers > 2 means that we want to allow
     // normal VM bootstrap but once we get into the replay itself
-    // don't allow any intializers to be run.
+    // don't allow any initializers to be run.
     ReplaySuppressInitializers = 1;
   }
 

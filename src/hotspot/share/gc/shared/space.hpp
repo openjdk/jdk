@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -446,7 +446,7 @@ class ContiguousSpace: public CompactibleSpace {
   // In debug mode mangle (write it with a particular bit
   // pattern) the unused part of a space.
 
-  // Used to save the an address in a space for later use during mangling.
+  // Used to save the address in a space for later use during mangling.
   void set_top_for_allocations(HeapWord* v) PRODUCT_RETURN;
   // Used to save the space's current top for later use during mangling.
   void set_top_for_allocations() PRODUCT_RETURN;

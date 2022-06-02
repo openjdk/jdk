@@ -153,7 +153,7 @@
                      The bitmap of ignored signals.
 
               34. sigcatch %lu
-                     The bitmap of catched signals.
+                     The bitmap of caught signals.
 
               35. wchan %lu
                      This  is the "channel" in which the process is waiting.  It is the address of a system call, and can be looked up in a namelist if you need

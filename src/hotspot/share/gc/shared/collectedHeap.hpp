@@ -104,6 +104,10 @@ class CollectedHeap : public CHeapObj<mtGC> {
   size_t _capacity_at_last_gc;
   size_t _used_at_last_gc;
 
+  // First, set it to java_lang_Object.
+  // Then, set it to FillerObject after the FillerObject_klass loading is complete.
+  static Klass* _filler_object_klass;
+
  protected:
   // Not used by all GCs
   MemRegion _reserved;
@@ -112,6 +116,8 @@ class CollectedHeap : public CHeapObj<mtGC> {
 
   // Used for filler objects (static, but initialized in ctor).
   static size_t _filler_array_max_size;
+
+  static size_t _stack_chunk_max_size; // 0 for no limit
 
   // Last time the whole heap has been examined in support of RMI
   // MaxObjectInspectionAge.
@@ -202,6 +208,18 @@ class CollectedHeap : public CHeapObj<mtGC> {
 
   static inline size_t filler_array_max_size() {
     return _filler_array_max_size;
+  }
+
+  static inline size_t stack_chunk_max_size() {
+    return _stack_chunk_max_size;
+  }
+
+  static inline Klass* filler_object_klass() {
+    return _filler_object_klass;
+  }
+
+  static inline void set_filler_object_klass(Klass* k) {
+    _filler_object_klass = k;
   }
 
   virtual Name kind() const = 0;
@@ -372,6 +390,15 @@ class CollectedHeap : public CHeapObj<mtGC> {
   virtual MetaWord* satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,
                                                        size_t size,
                                                        Metaspace::MetadataType mdtype);
+
+  // Return true, if accesses to the object would require barriers.
+  // This is used by continuations to copy chunks of a thread stack into StackChunk object or out of a StackChunk
+  // object back into the thread stack. These chunks may contain references to objects. It is crucial that
+  // the GC does not attempt to traverse the object while we modify it, because its structure (oopmap) is changed
+  // when stack chunks are stored into it.
+  // StackChunk objects may be reused, the GC must not assume that a StackChunk object is always a freshly
+  // allocated object.
+  virtual bool requires_barriers(stackChunkOop obj) const = 0;
 
   // Returns "true" iff there is a stop-world GC in progress.  (I assume
   // that it should answer "false" for the concurrent part of a concurrent

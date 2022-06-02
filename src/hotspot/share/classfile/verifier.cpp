@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1219,7 +1219,7 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
                 bad_type_msg, "aastore");
             return;
           }
-          // 4938384: relaxed constraint in JVMS 3nd edition.
+          // 4938384: relaxed constraint in JVMS 3rd edition.
           no_control_flow = false; break;
         case Bytecodes::_pop :
           current_frame.pop_stack(
@@ -2947,15 +2947,15 @@ void ClassVerifier::verify_invoke_instructions(
                   _klass, ref_class, method_name, method_sig, true)) {
               // It's protected access, check if stack object is
               // assignable to current class.
-              bool is_assignable = current_type().is_assignable_from(
-                stack_object_type, this, true, CHECK_VERIFY(this));
-              if (!is_assignable) {
-                if (ref_class_type.name() == vmSymbols::java_lang_Object()
-                    && stack_object_type.is_array()
-                    && method_name == vmSymbols::clone_name()) {
-                  // Special case: arrays pretend to implement public Object
-                  // clone().
-                } else {
+              if (ref_class_type.name() == vmSymbols::java_lang_Object()
+                  && stack_object_type.is_array()
+                  && method_name == vmSymbols::clone_name()) {
+                // Special case: arrays pretend to implement public Object
+                // clone().
+              } else {
+                bool is_assignable = current_type().is_assignable_from(
+                  stack_object_type, this, true, CHECK_VERIFY(this));
+                if (!is_assignable) {
                   verify_error(ErrorContext::bad_type(bci,
                       current_frame->stack_top_ctx(),
                       TypeOrigin::implicit(current_type())),

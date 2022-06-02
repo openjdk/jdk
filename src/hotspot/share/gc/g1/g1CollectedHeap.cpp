@@ -1493,6 +1493,9 @@ G1CollectedHeap::G1CollectedHeap() :
   // objects are created.
   _filler_array_max_size = _humongous_object_threshold_in_words;
 
+  // Override the default _stack_chunk_max_size so that no humongous stack chunks are created
+  _stack_chunk_max_size = _humongous_object_threshold_in_words;
+
   uint n_queues = ParallelGCThreads;
   _task_queues = new G1ScannerTasksQueueSet(n_queues);
 
@@ -1893,6 +1896,7 @@ bool G1CollectedHeap::should_do_concurrent_full_gc(GCCause::Cause cause) {
     case GCCause::_g1_humongous_allocation: return true;
     case GCCause::_g1_periodic_collection:  return G1PeriodicGCInvokesConcurrent;
     case GCCause::_wb_breakpoint:           return true;
+    case GCCause::_codecache_GC_threshold:  return true;
     default:                                return is_user_requested_concurrent_full_gc(cause);
   }
 }
@@ -2404,9 +2408,9 @@ bool G1CollectedHeap::is_obj_dead_cond(const oop obj,
                                        const HeapRegion* hr,
                                        const VerifyOption vo) const {
   switch (vo) {
-  case VerifyOption_G1UsePrevMarking: return is_obj_dead(obj, hr);
-  case VerifyOption_G1UseFullMarking: return is_obj_dead_full(obj, hr);
-  default:                            ShouldNotReachHere();
+    case VerifyOption::G1UsePrevMarking: return is_obj_dead(obj, hr);
+    case VerifyOption::G1UseFullMarking: return is_obj_dead_full(obj, hr);
+    default:                            ShouldNotReachHere();
   }
   return false; // keep some compilers happy
 }
@@ -2414,9 +2418,9 @@ bool G1CollectedHeap::is_obj_dead_cond(const oop obj,
 bool G1CollectedHeap::is_obj_dead_cond(const oop obj,
                                        const VerifyOption vo) const {
   switch (vo) {
-  case VerifyOption_G1UsePrevMarking: return is_obj_dead(obj);
-  case VerifyOption_G1UseFullMarking: return is_obj_dead_full(obj);
-  default:                            ShouldNotReachHere();
+    case VerifyOption::G1UsePrevMarking: return is_obj_dead(obj);
+    case VerifyOption::G1UseFullMarking: return is_obj_dead_full(obj);
+    default:                            ShouldNotReachHere();
   }
   return false; // keep some compilers happy
 }
@@ -3313,7 +3317,7 @@ HeapRegion* G1CollectedHeap::alloc_highest_free_region() {
   return NULL;
 }
 
-void G1CollectedHeap::mark_evac_failure_object(const oop obj, uint worker_id) const {
+void G1CollectedHeap::mark_evac_failure_object(const oop obj) const {
   // All objects failing evacuation are live. What we'll do is
   // that we'll update the prev marking info so that they are
   // all under PTAMS and explicitly marked.
@@ -3394,7 +3398,7 @@ void G1CollectedHeap::update_used_after_gc(bool evacuation_failed) {
 
     assert(_archive_allocator == nullptr, "must be, should not contribute to used");
   } else {
-    // The "used" of the the collection set have already been subtracted
+    // The "used" of the collection set have already been subtracted
     // when they were freed.  Add in the bytes used.
     increase_used(_bytes_used_during_gc);
   }
@@ -3450,4 +3454,17 @@ GrowableArray<MemoryPool*> G1CollectedHeap::memory_pools() {
 void G1CollectedHeap::fill_with_dummy_object(HeapWord* start, HeapWord* end, bool zap) {
   HeapRegion* region = heap_region_containing(start);
   region->fill_with_dummy_object(start, pointer_delta(end, start), zap);
+}
+
+void G1CollectedHeap::start_codecache_marking_cycle_if_inactive() {
+  if (!Continuations::is_gc_marking_cycle_active()) {
+    // This is the normal case when we do not call collect when a
+    // concurrent mark is ongoing. We then start a new code marking
+    // cycle. If, on the other hand, a concurrent mark is ongoing, we
+    // will be conservative and use the last code marking cycle. Code
+    // caches marked between the two concurrent marks will live a bit
+    // longer than needed.
+    Continuations::on_gc_marking_cycle_start();
+    Continuations::arm_all_nmethods();
+  }
 }

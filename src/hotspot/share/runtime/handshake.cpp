@@ -424,29 +424,6 @@ void Handshake::execute(AsyncHandshakeClosure* hs_cl, JavaThread* target) {
   target->handshake_state()->add_operation(op);
 }
 
-HandshakeState::HandshakeState(JavaThread* target) :
-  _handshakee(target),
-  _queue(),
-  _lock(Monitor::nosafepoint, "HandshakeState_lock"),
-  _active_handshaker(),
-  _async_exceptions_blocked(false),
-  _suspended(false),
-  _async_suspend_handshake(false)
-{
-}
-
-void HandshakeState::add_operation(HandshakeOperation* op) {
-  // Adds are done lock free and so is arming.
-  _queue.push(op);
-  SafepointMechanism::arm_local_poll_release(_handshakee);
-}
-
-bool HandshakeState::operation_pending(HandshakeOperation* op) {
-  MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
-  MatchOp mo(op);
-  return _queue.contains(mo);
-}
-
 // Filters
 static bool non_self_executable_filter(HandshakeOperation* op) {
   return !op->is_async();
@@ -462,6 +439,39 @@ static bool is_ThreadDeath_filter(HandshakeOperation* op) {
 }
 static bool no_suspend_no_async_exception_filter(HandshakeOperation* op) {
   return !op->is_suspend() && !op->is_async_exception();
+}
+static bool all_ops_filter(HandshakeOperation* op) {
+  return true;
+}
+
+HandshakeState::HandshakeState(JavaThread* target) :
+  _handshakee(target),
+  _queue(),
+  _lock(Monitor::nosafepoint, "HandshakeState_lock"),
+  _active_handshaker(),
+  _async_exceptions_blocked(false),
+  _suspended(false),
+  _async_suspend_handshake(false) {
+}
+
+HandshakeState::~HandshakeState() {
+  while (has_operation()) {
+    HandshakeOperation* op = _queue.pop(all_ops_filter);
+    guarantee(op->is_async(), "Only async operations may still be present on queue");
+    delete op;
+  }
+}
+
+void HandshakeState::add_operation(HandshakeOperation* op) {
+  // Adds are done lock free and so is arming.
+  _queue.push(op);
+  SafepointMechanism::arm_local_poll_release(_handshakee);
+}
+
+bool HandshakeState::operation_pending(HandshakeOperation* op) {
+  MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
+  MatchOp mo(op);
+  return _queue.contains(mo);
 }
 
 HandshakeOperation* HandshakeState::get_op_for_self(bool allow_suspend, bool check_async_exception) {
@@ -515,7 +525,7 @@ bool HandshakeState::process_by_self(bool allow_suspend, bool check_async_except
   assert(Thread::current() == _handshakee, "should call from _handshakee");
   assert(!_handshakee->is_terminated(), "should not be a terminated thread");
 
-  _handshakee->frame_anchor()->make_walkable(_handshakee);
+  _handshakee->frame_anchor()->make_walkable();
   // Threads shouldn't block if they are in the middle of printing, but...
   ttyLocker::break_tty_lock_for_safepoint(os::current_thread_id());
 
@@ -723,6 +733,7 @@ public:
 };
 
 bool HandshakeState::suspend() {
+  JVMTI_ONLY(assert(!_handshakee->is_in_VTMS_transition(), "no suspend allowed in VTMS transition");)
   JavaThread* self = JavaThread::current();
   if (_handshakee == self) {
     // If target is the current thread we can bypass the handshake machinery

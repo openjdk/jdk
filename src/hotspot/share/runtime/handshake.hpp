@@ -126,6 +126,7 @@ class HandshakeState {
 
  public:
   HandshakeState(JavaThread* thread);
+  ~HandshakeState();
 
   void add_operation(HandshakeOperation* op);
 

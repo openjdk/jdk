@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.util.Optional;
 
 import jdk.internal.math.FloatingDecimal;
 import jdk.internal.math.DoubleConsts;
+import jdk.internal.math.DoubleToDecimal;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
@@ -147,6 +148,9 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * @jls 15.21.1 Numerical Equality Operators == and !=
  * @jls 15.20.1 Numerical Comparison Operators {@code <}, {@code <=}, {@code >}, and {@code >=}
  *
+ * @see <a href="https://standards.ieee.org/ieee/754/6210/">
+ *      <cite>IEEE Standard for Floating-Point Arithmetic</cite></a>
+ *
  * @author  Lee Boynton
  * @author  Arthur van Hoff
  * @author  Joseph D. Darcy
@@ -206,13 +210,29 @@ public final class Double extends Number
     public static final double MIN_VALUE = 0x0.0000000000001P-1022; // 4.9e-324
 
     /**
+     * The number of bits used to represent a {@code double} value.
+     *
+     * @since 1.5
+     */
+    public static final int SIZE = 64;
+
+    /**
+     * The number of bits in the significand of a {@code double} value.
+     * This is the parameter N in section {@jls 4.2.3} of
+     * <cite>The Java Language Specification</cite>.
+     *
+     * @since 19
+     */
+    public static final int PRECISION = 53;
+
+    /**
      * Maximum exponent a finite {@code double} variable may have.
      * It is equal to the value returned by
      * {@code Math.getExponent(Double.MAX_VALUE)}.
      *
      * @since 1.6
      */
-    public static final int MAX_EXPONENT = 1023;
+    public static final int MAX_EXPONENT = (1 << (SIZE - PRECISION - 1)) - 1; // 1023
 
     /**
      * Minimum exponent a normalized {@code double} variable may
@@ -221,14 +241,7 @@ public final class Double extends Number
      *
      * @since 1.6
      */
-    public static final int MIN_EXPONENT = -1022;
-
-    /**
-     * The number of bits used to represent a {@code double} value.
-     *
-     * @since 1.5
-     */
-    public static final int SIZE = 64;
+    public static final int MIN_EXPONENT = 1 - MAX_EXPONENT; // -1022
 
     /**
      * The number of bytes used to represent a {@code double} value.
@@ -268,39 +281,109 @@ public final class Double extends Number
      * {@code "-0.0"} and positive zero produces the result
      * {@code "0.0"}.
      *
-     * <li>If <i>m</i> is greater than or equal to 10<sup>-3</sup> but less
-     * than 10<sup>7</sup>, then it is represented as the integer part of
-     * <i>m</i>, in decimal form with no leading zeroes, followed by
-     * '{@code .}' ({@code '\u005Cu002E'}), followed by one or
-     * more decimal digits representing the fractional part of <i>m</i>.
+     * <li> Otherwise <i>m</i> is positive and finite.
+     * It is converted to a string in two stages:
+     * <ul>
+     * <li> <em>Selection of a decimal</em>:
+     * A well-defined decimal <i>d</i><sub><i>m</i></sub>
+     * is selected to represent <i>m</i>.
+     * This decimal is (almost always) the <em>shortest</em> one that
+     * rounds to <i>m</i> according to the round to nearest
+     * rounding policy of IEEE 754 floating-point arithmetic.
+     * <li> <em>Formatting as a string</em>:
+     * The decimal <i>d</i><sub><i>m</i></sub> is formatted as a string,
+     * either in plain or in computerized scientific notation,
+     * depending on its value.
+     * </ul>
+     * </ul>
+     * </ul>
      *
-     * <li>If <i>m</i> is less than 10<sup>-3</sup> or greater than or
-     * equal to 10<sup>7</sup>, then it is represented in so-called
-     * "computerized scientific notation." Let <i>n</i> be the unique
-     * integer such that 10<sup><i>n</i></sup> &le; <i>m</i> {@literal <}
-     * 10<sup><i>n</i>+1</sup>; then let <i>a</i> be the
-     * mathematically exact quotient of <i>m</i> and
-     * 10<sup><i>n</i></sup> so that 1 &le; <i>a</i> {@literal <} 10. The
-     * magnitude is then represented as the integer part of <i>a</i>,
-     * as a single decimal digit, followed by '{@code .}'
-     * ({@code '\u005Cu002E'}), followed by decimal digits
-     * representing the fractional part of <i>a</i>, followed by the
-     * letter '{@code E}' ({@code '\u005Cu0045'}), followed
-     * by a representation of <i>n</i> as a decimal integer, as
-     * produced by the method {@link Integer#toString(int)}.
+     * <p>A <em>decimal</em> is a number of the form
+     * <i>s</i>&times;10<sup><i>i</i></sup>
+     * for some (unique) integers <i>s</i> &gt; 0 and <i>i</i> such that
+     * <i>s</i> is not a multiple of 10.
+     * These integers are the <em>significand</em> and
+     * the <em>exponent</em>, respectively, of the decimal.
+     * The <em>length</em> of the decimal is the (unique)
+     * positive integer <i>n</i> meeting
+     * 10<sup><i>n</i>-1</sup> &le; <i>s</i> &lt; 10<sup><i>n</i></sup>.
+     *
+     * <p>The decimal <i>d</i><sub><i>m</i></sub> for a finite positive <i>m</i>
+     * is defined as follows:
+     * <ul>
+     * <li>Let <i>R</i> be the set of all decimals that round to <i>m</i>
+     * according to the usual <em>round to nearest</em> rounding policy of
+     * IEEE 754 floating-point arithmetic.
+     * <li>Let <i>p</i> be the minimal length over all decimals in <i>R</i>.
+     * <li>When <i>p</i> &ge; 2, let <i>T</i> be the set of all decimals
+     * in <i>R</i> with length <i>p</i>.
+     * Otherwise, let <i>T</i> be the set of all decimals
+     * in <i>R</i> with length 1 or 2.
+     * <li>Define <i>d</i><sub><i>m</i></sub> as the decimal in <i>T</i>
+     * that is closest to <i>m</i>.
+     * Or if there are two such decimals in <i>T</i>,
+     * select the one with the even significand.
+     * </ul>
+     *
+     * <p>The (uniquely) selected decimal <i>d</i><sub><i>m</i></sub>
+     * is then formatted.
+     * Let <i>s</i>, <i>i</i> and <i>n</i> be the significand, exponent and
+     * length of <i>d</i><sub><i>m</i></sub>, respectively.
+     * Further, let <i>e</i> = <i>n</i> + <i>i</i> - 1 and let
+     * <i>s</i><sub>1</sub>&hellip;<i>s</i><sub><i>n</i></sub>
+     * be the usual decimal expansion of <i>s</i>.
+     * Note that <i>s</i><sub>1</sub> &ne; 0
+     * and <i>s</i><sub><i>n</i></sub> &ne; 0.
+     * Below, the decimal point {@code '.'} is {@code '\u005Cu002E'}
+     * and the exponent indicator {@code 'E'} is {@code '\u005Cu0045'}.
+     * <ul>
+     * <li>Case -3 &le; <i>e</i> &lt; 0:
+     * <i>d</i><sub><i>m</i></sub> is formatted as
+     * <code>0.0</code>&hellip;<code>0</code><!--
+     * --><i>s</i><sub>1</sub>&hellip;<i>s</i><sub><i>n</i></sub>,
+     * where there are exactly -(<i>n</i> + <i>i</i>) zeroes between
+     * the decimal point and <i>s</i><sub>1</sub>.
+     * For example, 123 &times; 10<sup>-4</sup> is formatted as
+     * {@code 0.0123}.
+     * <li>Case 0 &le; <i>e</i> &lt; 7:
+     * <ul>
+     * <li>Subcase <i>i</i> &ge; 0:
+     * <i>d</i><sub><i>m</i></sub> is formatted as
+     * <i>s</i><sub>1</sub>&hellip;<i>s</i><sub><i>n</i></sub><!--
+     * --><code>0</code>&hellip;<code>0.0</code>,
+     * where there are exactly <i>i</i> zeroes
+     * between <i>s</i><sub><i>n</i></sub> and the decimal point.
+     * For example, 123 &times; 10<sup>2</sup> is formatted as
+     * {@code 12300.0}.
+     * <li>Subcase <i>i</i> &lt; 0:
+     * <i>d</i><sub><i>m</i></sub> is formatted as
+     * <i>s</i><sub>1</sub>&hellip;<!--
+     * --><i>s</i><sub><i>n</i>+<i>i</i></sub><code>.</code><!--
+     * --><i>s</i><sub><i>n</i>+<i>i</i>+1</sub>&hellip;<!--
+     * --><i>s</i><sub><i>n</i></sub>,
+     * where there are exactly -<i>i</i> digits to the right of
+     * the decimal point.
+     * For example, 123 &times; 10<sup>-1</sup> is formatted as
+     * {@code 12.3}.
+     * </ul>
+     * <li>Case <i>e</i> &lt; -3 or <i>e</i> &ge; 7:
+     * computerized scientific notation is used to format
+     * <i>d</i><sub><i>m</i></sub>.
+     * Here <i>e</i> is formatted as by {@link Integer#toString(int)}.
+     * <ul>
+     * <li>Subcase <i>n</i> = 1:
+     * <i>d</i><sub><i>m</i></sub> is formatted as
+     * <i>s</i><sub>1</sub><code>.0E</code><i>e</i>.
+     * For example, 1 &times; 10<sup>23</sup> is formatted as
+     * {@code 1.0E23}.
+     * <li>Subcase <i>n</i> &gt; 1:
+     * <i>d</i><sub><i>m</i></sub> is formatted as
+     * <i>s</i><sub>1</sub><code>.</code><i>s</i><sub>2</sub><!--
+     * -->&hellip;<i>s</i><sub><i>n</i></sub><code>E</code><i>e</i>.
+     * For example, 123 &times; 10<sup>-21</sup> is formatted as
+     * {@code 1.23E-19}.
      * </ul>
      * </ul>
-     * How many digits must be printed for the fractional part of
-     * <i>m</i> or <i>a</i>? There must be at least one digit to represent
-     * the fractional part, and beyond that as many, but only as many, more
-     * digits as are needed to uniquely distinguish the argument value from
-     * adjacent values of type {@code double}. That is, suppose that
-     * <i>x</i> is the exact mathematical value represented by the decimal
-     * representation produced by this method for a finite nonzero argument
-     * <i>d</i>. Then <i>d</i> must be the {@code double} value nearest
-     * to <i>x</i>; or if two {@code double} values are equally close
-     * to <i>x</i>, then <i>d</i> must be one of them and the least
-     * significant bit of the significand of <i>d</i> must be {@code 0}.
      *
      * <p>To create localized string representations of a floating-point
      * value, use subclasses of {@link java.text.NumberFormat}.
@@ -309,7 +392,7 @@ public final class Double extends Number
      * @return a string representation of the argument.
      */
     public static String toString(double d) {
-        return FloatingDecimal.toJavaFormatString(d);
+        return DoubleToDecimal.toString(d);
     }
 
     /**

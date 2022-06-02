@@ -4908,7 +4908,7 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
                 if (count < cmax) {
                     // Let's check if we have already tried and failed
                     // at this starting position "i" in the past.
-                    // If yes, then just return false wihtout trying
+                    // If yes, then just return false without trying
                     // again, to stop the exponential backtracking.
                     if (posIndex != -1 &&
                         matcher.localsPos[posIndex].contains(i)) {

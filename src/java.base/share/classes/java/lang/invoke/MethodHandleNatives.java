@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -238,7 +238,7 @@ class MethodHandleNatives {
                 throw new InternalError(err);
             } catch (NoSuchFieldException | IllegalAccessException ex) {
                 String err = (name+": JVM has "+vmval+" which Java does not define");
-                // ignore exotic ops the JVM cares about; we just wont issue them
+                // ignore exotic ops the JVM cares about; we just won't issue them
                 //System.err.println("warning: "+err);
                 continue;
             }
@@ -393,7 +393,7 @@ class MethodHandleNatives {
      * The JVM wants a pointer to a MethodType.  Oblige it by finding or creating one.
      */
     static MethodType findMethodHandleType(Class<?> rtype, Class<?>[] ptypes) {
-        return MethodType.makeImpl(rtype, ptypes, true);
+        return MethodType.methodType(rtype, ptypes, true);
     }
 
     /**
@@ -561,7 +561,7 @@ class MethodHandleNatives {
             }
             // Access descriptor at end
             guardParams[guardParams.length - 1] = VarHandle.AccessDescriptor.class;
-            MethodType guardType = MethodType.makeImpl(guardReturnType, guardParams, true);
+            MethodType guardType = MethodType.methodType(guardReturnType, guardParams, true);
 
             MemberName linker = new MemberName(
                     VarHandleGuards.class, getVarHandleGuardMethodName(guardType),

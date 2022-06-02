@@ -569,7 +569,7 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
              * java.lang.annotation.Annotation."
              *
              * The methods in Object or Annotation meeting the other
-             * criteria (no arguments, contrained return type, etc.)
+             * criteria (no arguments, constrained return type, etc.)
              * above are:
              *
              * String toString()
@@ -666,8 +666,8 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
                 if (!(memberType.isInstance(value) ||
                       value instanceof ExceptionProxy)) {
                     value = new AnnotationTypeMismatchExceptionProxy(
-                            value.getClass() + "[" + value + "]").setMember(
-                                annotationType.members().get(name));
+                                Objects.toIdentityString(value))
+                        .setMember(annotationType.members().get(name));
                 }
             }
             mv.put(name, value);

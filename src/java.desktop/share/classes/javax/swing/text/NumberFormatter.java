@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,15 @@
  */
 package javax.swing.text;
 
-import java.lang.reflect.*;
-import java.text.*;
-import java.util.*;
+import java.lang.reflect.Constructor;
+import java.text.AttributedCharacterIterator;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.text.Format;
+import java.text.NumberFormat;
+import java.text.ParseException;
+import java.util.Map;
+
 import sun.reflect.misc.ReflectUtil;
 import sun.swing.SwingUtilities2;
 
@@ -97,7 +103,7 @@ public class NumberFormatter extends InternationalFormatter {
     private String specialChars;
 
     /**
-     * Creates a <code>NumberFormatter</code> with the a default
+     * Creates a <code>NumberFormatter</code> with the default
      * <code>NumberFormat</code> instance obtained from
      * <code>NumberFormat.getNumberInstance()</code>.
      */
