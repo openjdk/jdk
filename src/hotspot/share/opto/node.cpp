@@ -1628,22 +1628,27 @@ private:
 
 // BFS traverse all reachable nodes from start, call callback on them
 template <typename Callback>
-void visit_nodes(Node* start, Callback callback) {
+void visit_nodes(Node* start, Callback callback, bool traverse_output, bool only_ctrl) {
   Worklist worklist;
   worklist.add(start);
   for (Node* n = worklist.next(); n != nullptr; n = worklist.next()) {
     callback(n);
     for (uint i = 0; i < n->len(); i++) {
-      worklist.add(n->in(i));
+      if (!only_ctrl || n->is_Region() || (n->Opcode() == Op_Root) || (i == TypeFunc::Control)) {
+        // If only_ctrl is set: Add regions, the root node, or control inputs only
+        worklist.add(n->in(i));
+      }
     }
-    for (uint i = 0; i < n->outcnt(); i++) {
-      worklist.add(n->raw_out(i));
+    if (traverse_output && !only_ctrl) {
+      for (uint i = 0; i < n->outcnt(); i++) {
+        worklist.add(n->raw_out(i));
+      }
     }
   }
 }
 
 // BFS traverse from start, return node with idx
-Node* find_node_by_idx(Node* start, uint idx) {
+Node* find_node_by_idx(Node* start, uint idx, bool traverse_output, bool only_ctrl) {
   Node* result = nullptr;
   auto callback = [&] (Node* n) {
     if (n->_idx == idx) {
@@ -1654,22 +1659,8 @@ Node* find_node_by_idx(Node* start, uint idx) {
       result = n;
     }
   };
-  visit_nodes(start, callback);
+  visit_nodes(start, callback, traverse_output, only_ctrl);
   return result;
-}
-
-// TODO: can we replace find_node ???
-// call from debugger: find node with idx in new/current graph
-Node* find_node_by_idx(uint idx) {
-  Node* root =  Compile::current()->root();
-  return find_node_by_idx(root, idx);
-}
-
-// TODO: can we replace find_old_node ???
-// call from debugger: find node with idx in old graph
-Node* find_old_node_by_idx(uint idx) {
-  Node* root =  old_root();
-  return find_node_by_idx(root, idx);
 }
 
 // check if str matches the star_pattern
@@ -1713,7 +1704,26 @@ Node* find_node_by_name(Node* start, const char* name) {
       result = n;
     }
   };
-  visit_nodes(start, callback);
+  visit_nodes(start, callback, true, false);
+  ns.sort(node_idx_cmp);
+  for (int i = 0; i < ns.length(); i++) {
+    ns.at(i)->dump();
+  }
+  return result;
+}
+
+Node* find_node_by_dump(Node* start, const char* pattern) {
+  Node* result = nullptr;
+  GrowableArray<Node*> ns;
+  auto callback = [&] (Node* n) {
+    stringStream stream;
+    n->dump("", false, &stream);
+    if (is_star_match(pattern, stream.base())) {
+      ns.push(n);
+      result = n;
+    }
+  };
+  visit_nodes(start, callback, true, false);
   ns.sort(node_idx_cmp);
   for (int i = 0; i < ns.length(); i++) {
     ns.at(i)->dump();
@@ -1733,25 +1743,6 @@ Node* find_node_by_name(const char* name) {
 Node* find_old_node_by_name(const char* name) {
   Node* root =  old_root();
   return find_node_by_name(root, name);
-}
-
-Node* find_node_by_dump(Node* start, const char* pattern) {
-  Node* result = nullptr;
-  GrowableArray<Node*> ns;
-  auto callback = [&] (Node* n) {
-    stringStream stream;
-    n->dump("", false, &stream);
-    if (is_star_match(pattern, stream.base())) {
-      ns.push(n);
-      result = n;
-    }
-  };
-  visit_nodes(start, callback);
-  ns.sort(node_idx_cmp);
-  for (int i = 0; i < ns.length(); i++) {
-    ns.at(i)->dump();
-  }
-  return result;
 }
 
 // call from debugger: find node with dump pattern in new/current graph
@@ -1813,54 +1804,7 @@ Node* Node::find_ctrl(int idx) {
 // not found or if the node to be found is not a control node (search will not find it).
 Node* Node::find(const int idx, bool only_ctrl) {
   ResourceMark rm;
-  VectorSet old_space;
-  VectorSet new_space;
-  Node_List worklist;
-  Arena* old_arena = Compile::current()->old_arena();
-  add_to_worklist(this, &worklist, old_arena, &old_space, &new_space);
-  Node* result = NULL;
-  int node_idx = (idx >= 0) ? idx : -idx;
-
-  for (uint list_index = 0; list_index < worklist.size(); list_index++) {
-    Node* n = worklist[list_index];
-
-    if ((int)n->_idx == node_idx debug_only(|| n->debug_idx() == node_idx)) {
-      if (result != NULL) {
-        tty->print("find: " INTPTR_FORMAT " and " INTPTR_FORMAT " both have idx==%d\n",
-                  (uintptr_t)result, (uintptr_t)n, node_idx);
-      }
-      result = n;
-    }
-
-    for (uint i = 0; i < n->len(); i++) {
-      if (!only_ctrl || n->is_Region() || (n->Opcode() == Op_Root) || (i == TypeFunc::Control)) {
-        // If only_ctrl is set: Add regions, the root node, or control inputs only
-        add_to_worklist(n->in(i), &worklist, old_arena, &old_space, &new_space);
-      }
-    }
-
-    // Also search along forward edges if idx is negative and the search is not done on control nodes only
-    if (idx < 0 && !only_ctrl) {
-      for (uint i = 0; i < n->outcnt(); i++) {
-        add_to_worklist(n->raw_out(i), &worklist, old_arena, &old_space, &new_space);
-      }
-    }
-  }
-  return result;
-}
-
-bool Node::add_to_worklist(Node* n, Node_List* worklist, Arena* old_arena, VectorSet* old_space, VectorSet* new_space) {
-  if (not_a_node(n)) {
-    return false; // Gracefully handle NULL, -1, 0xabababab, etc.
-  }
-
-  // Contained in new_space or old_space? Check old_arena first since it's mostly empty.
-  VectorSet* v = old_arena->contains(n) ? old_space : new_space;
-  if (!v->test_set(n->_idx)) {
-    worklist->push(n);
-    return true;
-  }
-  return false;
+  return find_node_by_idx(this, abs(idx), (idx >= 0), only_ctrl);
 }
 
 // -----------------------------Name-------------------------------------------
