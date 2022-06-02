@@ -890,7 +890,7 @@ void PhaseChaitin::Register_Allocate() {
       // Return whether or not something spills.
       spills = Select(region);
     }
-    if (regions.length() > 1) {
+    if (regions.length() > 1/* || C->method() != NULL*/) {
       _was_up_in_prev_region.clear();
 #ifdef ASSERT
       stringStream ss;

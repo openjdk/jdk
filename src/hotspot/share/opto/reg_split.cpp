@@ -770,26 +770,47 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
         }  // end if found correct phi
       }  // end for all phi's
 
-      if (b->_region > region && needs_phi) {
-        if (b->head()->is_Loop() && 0) {
-          needs_phi = false;
-        } else if (0) {
-          uint min_region = max_juint;
-          uint max_region = 0;
-          for (uint i = 1; i < b->num_preds(); i++) {
-            Block *pred = _cfg.get_block_for_node(b->pred(i));
-            min_region = MIN2(pred->_region, min_region);
-            max_region = MAX2(pred->_region, max_region);
-          }
-          needs_phi = min_region <= region && max_region > region;
-        }
-        if (b->head()->is_Loop() && needs_phi && 0) {
-          Node* def = Reaches[_cfg.get_block_for_node(b->pred(1))->_pre_order][slidx];
-          if (def->rematerialize() && !has_uses_in_region(def, b->_region, has_uses_in_region_result, slidx)) {
-            needs_phi = false;
-          }
-        }
-      }
+//      if (b->_region > region && needs_phi) {
+////        if (b->head()->is_Loop() && 0) {
+////          needs_phi = false;
+////        } else if (0) {
+////          uint min_region = max_juint;
+////          uint max_region = 0;
+////          for (uint i = 1; i < b->num_preds(); i++) {
+////            Block *pred = _cfg.get_block_for_node(b->pred(i));
+////            min_region = MIN2(pred->_region, min_region);
+////            max_region = MAX2(pred->_region, max_region);
+////          }
+////          needs_phi = min_region <= region && max_region > region;
+////        }
+////        if (b->head()->is_Loop() && needs_phi && 0) {
+////          Node* def = Reaches[_cfg.get_block_for_node(b->pred(1))->_pre_order][slidx];
+////          if (def->rematerialize() && !has_uses_in_region(def, b->_region, has_uses_in_region_result, slidx)) {
+////            needs_phi = false;
+////          }
+////        }
+//        if (b->head()->is_Loop() || true) {
+//          Node* def = NULL;
+//          for (uint i = 1; i < b->num_preds(); ++i) {
+//            Block* pred = _cfg.get_block_for_node(b->pred(i));
+//            Node* d = Reaches[pred->_pre_order][slidx];
+//            if (d == NULL) {
+//              continue;
+//            }
+//            if (def == NULL) {
+//              def = d;
+//            } else {
+//              assert(def == d, "");
+//            }
+//          }
+//          if (def->rematerialize() && lrgs(lidx)._region == region) {
+//            tty->print_cr("YYYYYYYYYYY");
+//            def->dump();
+//            b->dump();
+//            needs_phi = false;
+//          }
+//        }
+//      }
 
       // If a phi is needed or exist, check for it
       if( needs_phi || has_phi ) {
@@ -1621,7 +1642,8 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena, Block_List bloc
               if ((lrgs(defidx)._region > region && (defup || (defup != _was_up_in_prev_region.test(def->_idx))) /*&& (!def->rematerialize() ||
                                                                                                                    has_uses_in_region(def, b->_succs[i]->_region, has_uses_in_region_result, slidx))*/) ||
                   (lrgs(defidx)._region == region && b->_loop->head()->_region > b->_region &&
-                   b->_loop->head()->_region > region && defup != UP[b->_loop->head()->_pre_order][slidx])) {
+                   b->_loop->head()->_region > region && defup != UP[b->_loop->head()->_pre_order][slidx]) ||
+                      (lrgs(defidx)._region == region && def->rematerialize() && !lrgs(defidx).is_singledef())) {
 //              tty->print("ZZZZ %d -> %d %s %d %d %s", b->_rpo, b->_succs[i]->_rpo, Reachblock[slidx]->rematerialize() ? "rematerialize" : "", slidx, defidx, defup ? "UP" : "DOWN"); Reachblock[slidx]->dump();
 
                 assert(b->_num_succs == 1, "");
