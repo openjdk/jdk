@@ -365,24 +365,25 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
 
             if (((JComboBox)c).getBorder() instanceof EmptyBorder) {
                 if (arrowButton != null) {
-                    Insets buttonInsets = arrowButton.getInsets();;
-                    d.height += buttonInsets.top + buttonInsets.bottom;;
-                    d.width += buttonInsets.getMinimumSize().width;
+                    Insets buttonInsets = arrowButton.getInsets();
+                    d.height += buttonInsets.top + buttonInsets.bottom;
+                    d.width += buttonInsets.right;
+                    d.width += arrowButton.getMinimumSize().width;
                 } else {
                     d.height += isEditable ? 2 : 4;
                 }
             } else {
-                d.height += isEditable ? 4 : 6;
+                if (arrowButton != null) {
+                    Insets margin = arrowButton.getMargin();
+                    d.height += margin.top + margin.bottom;
+                } else {
+                    d.height += isEditable ? 4 : 6;
+                }
             }
         } else {
-            if (arrowButton != null) {
-                Insets margin = arrowButton.getMargin();
-                d.height += margin.top + margin.bottom;
-                d.width += margin.left + margin.right;
-            } else {
-                d.width += 4;
-                d.height += 2;
-            }
+            d.width += 4;
+            d.height += 2;
+
         }
         return d;
     }
