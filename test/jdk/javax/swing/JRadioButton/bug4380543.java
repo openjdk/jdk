@@ -45,20 +45,19 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
-import java.util.HashMap;
-import java.util.Map;
-
 public class bug4380543 {
     static testFrame testObj;
     static String instructions
-            = "INSTRUCTIONS:" +
-            "\n 1. This is a Windows specific test. If you are not on " +
-            "Windows, press Pass." +
-            "\n 2. Check if the Left insets(margins) is set visually " +
-            "similar to other three sides around Radio Button and CheckBox" +
-            "(insets set to 20 on all 4 sides)." +
-            "\n 3. If Left insets(margins) appear Empty, press Fail, " +
-            "else press Pass.";
+            = """
+            INSTRUCTIONS:
+               1. Check if the Left insets(margins) is set visually
+                  similar to other three sides around Radio Button      
+                  and CheckBox (insets set to 20 on all 4 sides).
+               2. Rendering depends on OS and its Supported Look and Feel.
+                  Verify only with those L&F where Margin is Visible.
+               3. If Left insets(margins) appear Empty, press Fail, 
+                  else press Pass.
+            """;
     static PassFailJFrame passFailJFrame;
 
     public static void main(String[] args) throws Exception {
@@ -81,25 +80,8 @@ public class bug4380543 {
 }
 
 class testFrame extends JFrame implements ActionListener {
-    final Map<String, String> lookAndFeelMap = new HashMap<>();
     public testFrame() {
-        initMap();
         initComponents();
-    }
-
-    public void initMap() {
-        String sLnFClassName;
-        String sLnFName;
-        UIManager.LookAndFeelInfo[] lookAndFeel = UIManager.getInstalledLookAndFeels();
-        for (UIManager.LookAndFeelInfo look : lookAndFeel) {
-
-            sLnFClassName = look.getClassName();
-            sLnFName = sLnFClassName.substring(sLnFClassName.lastIndexOf(".")+1);
-            sLnFName = sLnFName.replaceAll("LookAndFeel","");
-            sLnFName = sLnFName.trim();
-
-            lookAndFeelMap.put(sLnFName, sLnFClassName);
-        }
     }
 
     public void initComponents() {
@@ -120,11 +102,10 @@ class testFrame extends JFrame implements ActionListener {
         buttonsPanel.add(cb);
 
         getContentPane().add(buttonsPanel);
-
-        for (Map.Entry<String, String> mapElement : lookAndFeelMap.entrySet()) {
-            String btnName = mapElement.getKey();
-            JButton btn = new JButton(btnName);
-            btn.setActionCommand(btnName);
+        UIManager.LookAndFeelInfo[] lookAndFeel = UIManager.getInstalledLookAndFeels();
+        for (UIManager.LookAndFeelInfo look : lookAndFeel) {
+            JButton btn = new JButton(look.getName());
+            btn.setActionCommand(look.getClassName());
             btn.addActionListener(this);
             p.add(btn);
         }
@@ -145,9 +126,10 @@ class testFrame extends JFrame implements ActionListener {
             throw new RuntimeException(e);
         }
     }
+
     //Changing the Look and Feel on user selection
     public void actionPerformed(ActionEvent e) {
-        setLookAndFeel(lookAndFeelMap.get(e.getActionCommand()));
+        setLookAndFeel(e.getActionCommand());
         SwingUtilities.updateComponentTreeUI(this);
     }
 }
