@@ -79,6 +79,14 @@ class CgroupV1Subsystem: public CgroupSubsystem {
     jlong memory_soft_limit_in_bytes();
     jlong memory_usage_in_bytes();
     jlong memory_max_usage_in_bytes();
+
+    jlong kernel_memory_usage_in_bytes();
+    jlong kernel_memory_limit_in_bytes();
+    jlong kernel_memory_max_usage_in_bytes();
+
+    jlong memory_swap_current_in_bytes();
+    jlong memory_swap_max_limit_in_bytes();
+
     char * cpu_cpuset_cpus();
     char * cpu_cpuset_memory_nodes();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,6 +98,31 @@ jlong OSContainer::memory_usage_in_bytes() {
 jlong OSContainer::memory_max_usage_in_bytes() {
   assert(cgroup_subsystem != NULL, "cgroup subsystem not available");
   return cgroup_subsystem->memory_max_usage_in_bytes();
+}
+
+jlong OSContainer::kernel_memory_usage_in_bytes() {
+  assert(cgroup_subsystem != NULL, "cgroup subsystem not available");
+  return cgroup_subsystem->kernel_memory_usage_in_bytes();
+}
+
+jlong OSContainer::kernel_memory_limit_in_bytes() {
+  assert(cgroup_subsystem != NULL, "cgroup subsystem not available");
+  return cgroup_subsystem->kernel_memory_limit_in_bytes();
+}
+
+jlong OSContainer::kernel_memory_max_usage_in_bytes() {
+  assert(cgroup_subsystem != NULL, "cgroup subsystem not available");
+  return cgroup_subsystem->kernel_memory_max_usage_in_bytes();
+}
+
+jlong OSContainer::memory_swap_current_in_bytes() {
+  assert(cgroup_subsystem != NULL, "cgroup subsystem not available");
+  return cgroup_subsystem->memory_swap_current_in_bytes();
+}
+
+jlong OSContainer::memory_swap_max_limit_in_bytes() {
+  assert(cgroup_subsystem != NULL, "cgroup subsystem not available");
+  return cgroup_subsystem->memory_swap_max_limit_in_bytes();
 }
 
 char * OSContainer::cpu_cpuset_cpus() {

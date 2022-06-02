@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -208,6 +208,53 @@ jlong CgroupV1Subsystem::memory_max_usage_in_bytes() {
                      "Maximum Memory Usage is: " JLONG_FORMAT, JLONG_FORMAT, memmaxusage);
   return memmaxusage;
 }
+
+/* kernel_memory_usage_in_bytes
+ *
+ * Return the amount of used kernel memory for this process.
+ *
+ * return:
+ *    kernel memory usage in bytes or
+ *    -1 for unlimited
+ *    OSCONTAINER_ERROR for not supported
+ */
+jlong CgroupV1Subsystem::kernel_memory_usage_in_bytes() {
+  GET_CONTAINER_INFO(jlong, _memory->controller(), "/memory.kmem.usage_in_bytes",
+                     "Kernel Memory Usage is: " JLONG_FORMAT, JLONG_FORMAT, kmem_usage);
+  return kmem_usage;
+}
+
+jlong CgroupV1Subsystem::kernel_memory_limit_in_bytes() {
+  GET_CONTAINER_INFO(julong, _memory->controller(), "/memory.kmem.limit_in_bytes",
+                     "Kernel Memory Limit is: " JULONG_FORMAT, JULONG_FORMAT, kmem_limit);
+  if (kmem_limit >= _unlimited_memory) {
+    return (jlong)-1;
+  }
+  return (jlong)kmem_limit;
+}
+
+/* kernel_memory_max_usage_in_bytes
+ *
+ * Return the maximum amount of used kernel memory for this process.
+ *
+ * return:
+ *    max kernel memory usage in bytes or
+ *    OSCONTAINER_ERROR for not supported
+ */
+jlong CgroupV1Subsystem::kernel_memory_max_usage_in_bytes() {
+  GET_CONTAINER_INFO(jlong, _memory->controller(), "/memory.kmem.max_usage_in_bytes",
+                     "Maximum Kernel Memory Usage is: " JLONG_FORMAT, JLONG_FORMAT, kmem_max_usage);
+  return kmem_max_usage;
+}
+
+jlong CgroupV1Subsystem::memory_swap_current_in_bytes() {
+  return OSCONTAINER_ERROR;
+}
+
+jlong CgroupV1Subsystem::memory_swap_max_limit_in_bytes() {
+  return OSCONTAINER_ERROR;
+}
+
 
 char * CgroupV1Subsystem::cpu_cpuset_cpus() {
   GET_CONTAINER_INFO_CPTR(cptr, _cpuset, "/cpuset.cpus",

@@ -52,6 +52,13 @@ class OSContainer: AllStatic {
   static jlong memory_usage_in_bytes();
   static jlong memory_max_usage_in_bytes();
 
+  static jlong kernel_memory_usage_in_bytes();
+  static jlong kernel_memory_limit_in_bytes();
+  static jlong kernel_memory_max_usage_in_bytes();
+
+  static jlong memory_swap_current_in_bytes();
+  static jlong memory_swap_max_limit_in_bytes();
+
   static int active_processor_count();
 
   static char * cpu_cpuset_cpus();
