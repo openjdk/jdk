@@ -27,6 +27,7 @@
  * @bug 7160951 8152492 8178448
  * @summary [macosx] ActionListener called twice for JMenuItem using ScreenMenuBar
  * @author vera.akulova@oracle.com
+ * @requires (os.family == "mac")
  * @modules java.desktop/java.awt:open
  * @library /test/lib
  * @build jdk.test.lib.Platform
