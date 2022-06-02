@@ -37,6 +37,7 @@
  *     Converted the test to use GetThreadState instead of GetThreadStatus.
  *     Ported from JVMDI.
  *
+ * @requires vm.continuations
  * @library /test/lib
  * @compile --enable-preview -source ${jdk.version} thrstat03.java
  * @run main/othervm/native --enable-preview  -agentlib:thrstat03 thrstat03 5
