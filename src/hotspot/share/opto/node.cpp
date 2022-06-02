@@ -1666,7 +1666,11 @@ Node* find_node_by_idx(Node* start, uint idx, bool traverse_output, bool only_ct
 // check if str matches the star_pattern
 // eg. str "_abc____def__" would match pattern "abc*def"
 bool is_star_match(const char* star_pattern, const char* str) {
-  char buf[strlen(star_pattern) + 1]; // copy parts of pattern into this
+  const int N = 1000;
+  if (strlen(star_pattern) > N-1) {
+    return false; // pattern too long
+  }
+  char buf[N]; // copy parts of pattern into this
   const char* s = str;
   const char* r = star_pattern;
   while(strlen(r) > 0) {
@@ -1677,7 +1681,7 @@ bool is_star_match(const char* star_pattern, const char* str) {
       size_t r_part_len = r_end-r;
       strncpy(buf, r, r_part_len);
       buf[r_part_len] = '\0'; // end of string
-      r_part = buf;
+      r_part = &buf[0]; // cast array to char*
     }
     // find this section in s
     const char* s_match = strstr(s, r_part);
