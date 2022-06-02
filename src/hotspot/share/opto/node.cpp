@@ -1765,9 +1765,9 @@ private:
   DumpConfigColored _dcc;
 
   // node info
-  Node* old_node(Node* n); // mach node -> prior IR node
-  void print_node_idx(Node* n); // to tty
-  void print_node_block(Node* n); // to tty: head idx, _idom, _dom_depth
+  static Node* old_node(Node* n); // mach node -> prior IR node
+  static void print_node_idx(Node* n); // to tty
+  static void print_node_block(Node* n); // to tty: head idx, _idom, _dom_depth
 
   // traversal data structures
   Node_List _worklist; // BFS queue
@@ -2324,23 +2324,23 @@ uint log10(const uint i) {
 }
 
 // -----------------------------dump_idx---------------------------------------
-void Node::dump_idx(bool align, outputStream *st, DumpConfig* dc) const {
+void Node::dump_idx(bool align, outputStream* st, DumpConfig* dc) const {
   if (dc != nullptr) {
     dc->pre_dump(st, this);
   }
   Compile* C = Compile::current();
   bool is_new = C->node_arena()->contains(this);
-  if(align) { // print prefix empty spaces$
+  if (align) { // print prefix empty spaces$
     // +1 for leading digit, +1 for "o"
     uint max_width = log10(C->unique()) + 2;
     // +1 for leading digit, maybe +1 for "o"
     uint width = log10(_idx) + 1 + (is_new ? 0 : 1);
-    while(max_width > width) {
+    while (max_width > width) {
       st->print(" ");
       width++;
     }
   }
-  if(!is_new) {
+  if (!is_new) {
     st->print("o");
   }
   st->print("%d", _idx);
@@ -2350,7 +2350,7 @@ void Node::dump_idx(bool align, outputStream *st, DumpConfig* dc) const {
 }
 
 // -----------------------------dump_name--------------------------------------
-void Node::dump_name(outputStream *st, DumpConfig* dc) const {
+void Node::dump_name(outputStream* st, DumpConfig* dc) const {
   if (dc != nullptr) {
     dc->pre_dump(st, this);
   }
@@ -2430,7 +2430,7 @@ void Node::set_debug_orig(Node* orig) {
 
 //------------------------------dump------------------------------------------
 // Dump a Node
-void Node::dump(const char* suffix, bool mark, outputStream *st, DumpConfig* dc) const {
+void Node::dump(const char* suffix, bool mark, outputStream* st, DumpConfig* dc) const {
   Compile* C = Compile::current();
   bool is_new = C->node_arena()->contains(this);
   C->_in_dump_cnt++;
@@ -2516,7 +2516,7 @@ void Node::dump(const char* suffix, bool mark, outputStream *st, DumpConfig* dc)
 }
 
 //------------------------------dump_req--------------------------------------
-void Node::dump_req(outputStream *st, DumpConfig* dc) const {
+void Node::dump_req(outputStream* st, DumpConfig* dc) const {
   // Dump the required input edges
   for (uint i = 0; i < req(); i++) {    // For all required inputs
     Node* d = in(i);
@@ -2533,7 +2533,7 @@ void Node::dump_req(outputStream *st, DumpConfig* dc) const {
 
 
 //------------------------------dump_prec-------------------------------------
-void Node::dump_prec(outputStream *st, DumpConfig* dc) const {
+void Node::dump_prec(outputStream* st, DumpConfig* dc) const {
   // Dump the precedence edges
   int any_prec = 0;
   for (uint i = req(); i < len(); i++) {       // For all precedence inputs
@@ -2548,7 +2548,7 @@ void Node::dump_prec(outputStream *st, DumpConfig* dc) const {
 }
 
 //------------------------------dump_out--------------------------------------
-void Node::dump_out(outputStream *st, DumpConfig* dc) const {
+void Node::dump_out(outputStream* st, DumpConfig* dc) const {
   // Delimit the output edges
   st->print(" [[ ");
   // Dump the output edges
