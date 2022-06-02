@@ -141,7 +141,7 @@ public class ArrayType<T> extends OpenType<T> {
     private transient Integer  myHashCode = null;       // As this instance is immutable, these two values
     private transient String   myToString = null;       // need only be calculated once.
 
-    // indexes refering to columns in the PRIMITIVE_ARRAY_TYPES table.
+    // indexes referring to columns in the PRIMITIVE_ARRAY_TYPES table.
     private static final int PRIMITIVE_WRAPPER_NAME_INDEX = 0;
     private static final int PRIMITIVE_TYPE_NAME_INDEX = 1;
     private static final int PRIMITIVE_TYPE_KEY_INDEX  = 2;
@@ -666,7 +666,7 @@ public class ArrayType<T> extends OpenType<T> {
     }
 
 
-    /* *** Methods overriden from class Object *** */
+    /* *** Methods overridden from class Object *** */
 
     /**
      * Compares the specified {@code obj} parameter with this

@@ -2592,8 +2592,11 @@ void TemplateTable::_return(TosState state) {
 #endif
     __ jcc(Assembler::zero, no_safepoint);
     __ push(state);
+    __ push_cont_fastpath(NOT_LP64(thread) LP64_ONLY(r15_thread));
     __ call_VM(noreg, CAST_FROM_FN_PTR(address,
                                        InterpreterRuntime::at_safepoint));
+    NOT_LP64(__ get_thread(thread);)
+    __ pop_cont_fastpath(NOT_LP64(thread) LP64_ONLY(r15_thread));
     __ pop(state);
     __ bind(no_safepoint);
   }
@@ -4361,6 +4364,11 @@ void TemplateTable::monitorenter() {
   __ movptr(Address(rmon, BasicObjectLock::obj_offset_in_bytes()), rax);
   __ lock_object(rmon);
 
+  // The object is stored so counter should be increased even if stackoverflow is generated
+  Register rthread = LP64_ONLY(r15_thread) NOT_LP64(rbx);
+  NOT_LP64(__ get_thread(rthread);)
+  __ inc_held_monitor_count(rthread);
+
   // check to make sure this monitor doesn't cause stack overflow after locking
   __ save_bcp();  // in case of exception
   __ generate_stack_overflow_check(0);
@@ -4419,6 +4427,11 @@ void TemplateTable::monitorexit() {
   __ bind(found);
   __ push_ptr(rax); // make sure object is on stack (contract with oopMaps)
   __ unlock_object(rtop);
+
+  Register rthread = LP64_ONLY(r15_thread) NOT_LP64(rax);
+  NOT_LP64(__ get_thread(rthread);)
+  __ dec_held_monitor_count(rthread);
+
   __ pop_ptr(rax); // discard object
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -541,7 +541,7 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
     result = runtime()->register_method(jvmci_env(), method, nmethod_handle, entry_bci, &_offsets, _orig_pc_offset, &buffer,
                                         stack_slots, _debug_recorder->_oopmaps, &_exception_handler_table, &_implicit_exception_table,
                                         compiler, _debug_recorder, _dependencies, id,
-                                        has_unsafe_access, _has_wide_vector, compiled_code, mirror,
+                                        _has_monitors, has_unsafe_access, _has_wide_vector, compiled_code, mirror,
                                         failed_speculations, speculations, speculations_len);
     if (result == JVMCI::ok) {
       nmethod* nm = nmethod_handle.code()->as_nmethod_or_null();
@@ -1003,6 +1003,9 @@ void CodeInstaller::record_scope(jint pc_offset, JVMCIObject position, ScopeMode
     jint local_count = jvmci_env()->get_BytecodeFrame_numLocals(frame);
     jint expression_count = jvmci_env()->get_BytecodeFrame_numStack(frame);
     jint monitor_count = jvmci_env()->get_BytecodeFrame_numLocks(frame);
+    if (monitor_count > 0 && !_has_monitors) {
+      _has_monitors = true;
+    }
     JVMCIObjectArray values = jvmci_env()->get_BytecodeFrame_values(frame);
     JVMCIObjectArray slotKinds = jvmci_env()->get_BytecodeFrame_slotKinds(frame);
 
@@ -1061,10 +1064,9 @@ void CodeInstaller::record_scope(jint pc_offset, JVMCIObject position, ScopeMode
   }
 
   // has_ea_local_in_scope and arg_escape should be added to JVMCI
-  const bool is_opt_native         = false;
   const bool has_ea_local_in_scope = false;
   const bool arg_escape            = false;
-  _debug_recorder->describe_scope(pc_offset, method, NULL, bci, reexecute, throw_exception, is_mh_invoke, is_opt_native, return_oop,
+  _debug_recorder->describe_scope(pc_offset, method, NULL, bci, reexecute, throw_exception, is_mh_invoke, return_oop,
                                   has_ea_local_in_scope, arg_escape,
                                   locals_token, expressions_token, monitors_token);
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -23,31 +23,29 @@
 
 /*
  * @test
+ * @enablePreview
  * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
- * @modules jdk.incubator.foreign
  * @run testng/othervm
  *     --enable-native-access=ALL-UNNAMED
  *     TestNULLAddress
  */
 
-import jdk.incubator.foreign.Addressable;
-import jdk.incubator.foreign.CLinker;
-import jdk.incubator.foreign.FunctionDescriptor;
-import jdk.incubator.foreign.MemoryAddress;
-import jdk.incubator.foreign.NativeSymbol;
-import jdk.incubator.foreign.ResourceScope;
 import org.testng.annotations.Test;
 
+import java.lang.foreign.Addressable;
+import java.lang.foreign.Linker;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.MemoryAddress;
 import java.lang.invoke.MethodHandle;
 
 public class TestNULLAddress {
 
-    static final CLinker LINKER = CLinker.systemCLinker();
+    static final Linker LINKER = Linker.nativeLinker();
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testNULLLinking() {
         LINKER.downcallHandle(
-                NativeSymbol.ofAddress("nullAddress", MemoryAddress.NULL, ResourceScope.globalScope()),
+                MemoryAddress.NULL,
                 FunctionDescriptor.ofVoid());
     }
 
@@ -55,7 +53,7 @@ public class TestNULLAddress {
     public void testNULLVirtual() throws Throwable {
         MethodHandle mh = LINKER.downcallHandle(
                 FunctionDescriptor.ofVoid());
-        mh.invokeExact(NativeSymbol.ofAddress("null", MemoryAddress.NULL, ResourceScope.globalScope()));
+        mh.invokeExact((Addressable)MemoryAddress.NULL);
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)

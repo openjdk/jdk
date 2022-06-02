@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/javaClasses.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "gc/shared/allocTracer.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/memAllocator.hpp"
@@ -269,13 +269,17 @@ HeapWord* MemAllocator::allocate_inside_tlab(Allocation& allocation) const {
   assert(UseTLAB, "should use UseTLAB");
 
   // Try allocating from an existing TLAB.
-  HeapWord* mem = _thread->tlab().allocate(_word_size);
+  HeapWord* mem = allocate_inside_tlab_fast();
   if (mem != NULL) {
     return mem;
   }
 
   // Try refilling the TLAB and allocating the object in it.
   return allocate_inside_tlab_slow(allocation);
+}
+
+HeapWord* MemAllocator::allocate_inside_tlab_fast() const {
+  return _thread->tlab().allocate(_word_size);
 }
 
 HeapWord* MemAllocator::allocate_inside_tlab_slow(Allocation& allocation) const {
@@ -372,6 +376,21 @@ oop MemAllocator::allocate() const {
   return obj;
 }
 
+oop MemAllocator::try_allocate_in_existing_tlab() {
+  oop obj = NULL;
+  {
+    HeapWord* mem = allocate_inside_tlab_fast();
+    if (mem != NULL) {
+      obj = initialize(mem);
+    } else {
+      // The unhandled oop detector will poison local variable obj,
+      // so reset it to NULL if mem is NULL.
+      obj = NULL;
+    }
+  }
+  return obj;
+}
+
 void MemAllocator::mem_clear(HeapWord* mem) const {
   assert(mem != NULL, "cannot initialize NULL object");
   const size_t hs = oopDesc::header_size();
@@ -424,5 +443,22 @@ oop ClassAllocator::initialize(HeapWord* mem) const {
   assert(_word_size > 0, "oop_size must be positive.");
   mem_clear(mem);
   java_lang_Class::set_oop_size(mem, _word_size);
+  return finish(mem);
+}
+
+// Does the minimal amount of initialization needed for a TLAB allocation.
+// We don't need to do a full initialization, as such an allocation need not be immediately walkable.
+oop StackChunkAllocator::initialize(HeapWord* mem) const {
+  assert(_stack_size > 0, "");
+  assert(_stack_size <= max_jint, "");
+  assert(_word_size > _stack_size, "");
+
+  // zero out fields (but not the stack)
+  const size_t hs = oopDesc::header_size();
+  Copy::fill_to_aligned_words(mem + hs, vmClasses::StackChunk_klass()->size_helper() - hs);
+
+  jdk_internal_vm_StackChunk::set_size(mem, (int)_stack_size);
+  jdk_internal_vm_StackChunk::set_sp(mem, (int)_stack_size);
+
   return finish(mem);
 }

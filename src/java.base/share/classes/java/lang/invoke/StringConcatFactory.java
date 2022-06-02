@@ -496,7 +496,19 @@ public final class StringConcatFactory {
         Class<?>[] ptypes = mt.erase().parameterArray();
         MethodHandle[] filters = null;
         for (int i = 0; i < ptypes.length; i++) {
-            MethodHandle filter = stringifierFor(ptypes[i]);
+            Class<?> cl = ptypes[i];
+            MethodHandle filter = null;
+            if (cl == byte.class || cl == short.class) {
+                // use int for subword integral types; still need special mixers
+                // and prependers for char, boolean
+                ptypes[i] = int.class;
+            } else if (cl == Object.class) {
+                filter = objectStringifier();
+            } else if (cl == float.class) {
+                filter = floatStringifier();
+            } else if (cl == double.class) {
+                filter = doubleStringifier();
+            }
             if (filter != null) {
                 if (filters == null) {
                     filters = new MethodHandle[ptypes.length];
@@ -823,24 +835,6 @@ public final class StringConcatFactory {
         PREPENDERS = new ConcurrentHashMap<>();
         NULL_PREPENDERS = new ConcurrentHashMap<>();
         MIXERS = new ConcurrentHashMap<>();
-    }
-
-    /**
-     * Returns a stringifier for references and floats/doubles only.
-     * Always returns null for other primitives.
-     *
-     * @param t class to stringify
-     * @return stringifier; null, if not available
-     */
-    private static MethodHandle stringifierFor(Class<?> t) {
-        if (t == Object.class) {
-            return objectStringifier();
-        } else if (t == float.class) {
-            return floatStringifier();
-        } else if (t == double.class) {
-            return doubleStringifier();
-        }
-        return null;
     }
 
     private static MethodHandle lookupStatic(Lookup lookup, Class<?> refc, String name,

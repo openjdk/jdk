@@ -200,6 +200,7 @@ class MacroAssembler: public Assembler {
   void align(int modulus);
   void align(int modulus, int target);
 
+  void post_call_nop();
   // A 5 byte nop that is safe for patching (see patch_verified_entry)
   void fat_nop();
 
@@ -214,10 +215,11 @@ class MacroAssembler: public Assembler {
 #ifdef _LP64
   // Support for argument shuffling
 
-  void move32_64(VMRegPair src, VMRegPair dst);
-  void long_move(VMRegPair src, VMRegPair dst);
-  void float_move(VMRegPair src, VMRegPair dst);
-  void double_move(VMRegPair src, VMRegPair dst);
+  // bias in bytes
+  void move32_64(VMRegPair src, VMRegPair dst, Register tmp = rax, int in_stk_bias = 0, int out_stk_bias = 0);
+  void long_move(VMRegPair src, VMRegPair dst, Register tmp = rax, int in_stk_bias = 0, int out_stk_bias = 0);
+  void float_move(VMRegPair src, VMRegPair dst, Register tmp = rax, int in_stk_bias = 0, int out_stk_bias = 0);
+  void double_move(VMRegPair src, VMRegPair dst, Register tmp = rax, int in_stk_bias = 0, int out_stk_bias = 0);
   void move_ptr(VMRegPair src, VMRegPair dst);
   void object_move(OopMap* map,
                    int oop_handle_offset,
@@ -293,6 +295,9 @@ class MacroAssembler: public Assembler {
                     Register arg_1, Register arg_2);
   void call_VM_leaf(address entry_point,
                     Register arg_1, Register arg_2, Register arg_3);
+
+  void call_VM_leaf(address entry_point,
+                    Register arg_1, Register arg_2, Register arg_3, Register arg_4);
 
   // These always tightly bind to MacroAssembler::call_VM_leaf_base
   // bypassing the virtual implementation
@@ -518,6 +523,13 @@ class MacroAssembler: public Assembler {
 
   void push_CPU_state();
   void pop_CPU_state();
+
+  void push_cont_fastpath(Register java_thread);
+  void pop_cont_fastpath(Register java_thread);
+  void inc_held_monitor_count(Register java_thread);
+  void dec_held_monitor_count(Register java_thread);
+  void reset_held_monitor_count(Register java_thread);
+  DEBUG_ONLY(void stop_if_in_cont(Register cont_reg, const char* name);)
 
   // Round up to a power of two
   void round_to(Register reg, int modulus);
@@ -867,6 +879,11 @@ public:
   void jump(ArrayAddress entry);
 
   // Floating
+
+  void push_f(XMMRegister r);
+  void pop_f(XMMRegister r);
+  void push_d(XMMRegister r);
+  void pop_d(XMMRegister r);
 
   void andpd(XMMRegister dst, Address src) { Assembler::andpd(dst, src); }
   void andpd(XMMRegister dst, AddressLiteral src, Register scratch_reg = rscratch1);
@@ -1330,6 +1347,11 @@ public:
 
   using Assembler::vbroadcastsd;
   void vbroadcastsd(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = rscratch1);
+  void vpbroadcastq(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = rscratch1);
+  void vpbroadcastq(XMMRegister dst, XMMRegister src, int vector_len) { Assembler::vpbroadcastq(dst, src, vector_len); }
+  void vpbroadcastq(XMMRegister dst, Address src, int vector_len) { Assembler::vpbroadcastq(dst, src, vector_len); }
+
+
 
   void vpcmpeqb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
 
