@@ -1716,8 +1716,8 @@ public class Attr extends JCTree.Visitor {
                 MatchBindings currentBindings = prevBindings;
                 boolean wasUnconditionalPattern = hasUnconditionalPattern;
                 for (JCCaseLabel label : c.labels) {
-                    if (label.hasTag(CONSTANTCASELABEL)) {
-                        JCExpression expr = ((JCConstantCaseLabel) label).expr;
+                    if (label instanceof JCConstantCaseLabel constLabel) {
+                        JCExpression expr = constLabel.expr;
                         if (TreeInfo.isNull(expr)) {
                             preview.checkSourceLevel(expr.pos(), Feature.CASE_NULL);
                             if (hasNullPattern) {
@@ -1772,7 +1772,7 @@ public class Attr extends JCTree.Visitor {
                                 }
                             }
                         }
-                    } else if (label.hasTag(DEFAULTCASELABEL)) {
+                    } else if (label instanceof JCDefaultCaseLabel def) {
                         if (hasDefault) {
                             log.error(label.pos(), Errors.DuplicateDefaultLabel);
                         } else if (hasUnconditionalPattern) {
@@ -1780,9 +1780,9 @@ public class Attr extends JCTree.Visitor {
                         }
                         hasDefault = true;
                         matchBindings = MatchBindingsComputer.EMPTY;
-                    } else {
+                    } else if (label instanceof JCPatternCaseLabel patternlabel) {
                         //pattern
-                        JCPattern pat = ((JCPatternCaseLabel) label).pat;
+                        JCPattern pat = patternlabel.pat;
                         attribExpr(pat, switchEnv);
                         Type primaryType = TreeInfo.primaryPatternType(pat);
                         if (!primaryType.hasTag(TYPEVAR)) {
@@ -1790,7 +1790,7 @@ public class Attr extends JCTree.Visitor {
                         }
                         checkCastablePattern(pat.pos(), seltype, primaryType);
                         Type patternType = types.erasure(primaryType);
-                        JCExpression guard = ((JCPatternCaseLabel) label).guard;
+                        JCExpression guard = patternlabel.guard;
                         if (guard != null) {
                             MatchBindings afterPattern = matchBindings;
                             Env<AttrContext> bodyEnv = bindingEnv(env, matchBindings.bindingsWhenTrue);
@@ -1827,6 +1827,8 @@ public class Attr extends JCTree.Visitor {
                                 coveredTypesForPatterns = coveredTypesForPatterns.prepend(patternType);
                             }
                         }
+                    } else {
+                        Assert.error();
                     }
                     currentBindings = matchBindingsComputer.switchCase(label, currentBindings, matchBindings);
                 }

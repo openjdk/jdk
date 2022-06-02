@@ -738,14 +738,14 @@ public class Flow {
 
         private Set<Symbol> coveredSymbolsForCases(DiagnosticPosition pos,
                                                    JCExpression selector, List<JCCase> cases) {
-            HashSet<JCTree> labels = cases.stream()
-                                          .flatMap(c -> c.labels.stream())
-                                          .filter(TreeInfo::unguardedCaseLabel)
-                                          .filter(l -> !l.hasTag(DEFAULTCASELABEL))
-                                          .map(l -> l.hasTag(CONSTANTCASELABEL) ? ((JCConstantCaseLabel) l).expr
-                                                                                : ((JCPatternCaseLabel) l).pat)
-                                          .collect(Collectors.toCollection(HashSet::new));
-            return coveredSymbols(pos, selector.type, labels);
+            HashSet<JCTree> labelValues = cases.stream()
+                                               .flatMap(c -> c.labels.stream())
+                                               .filter(TreeInfo::unguardedCaseLabel)
+                                               .filter(l -> !l.hasTag(DEFAULTCASELABEL))
+                                               .map(l -> l.hasTag(CONSTANTCASELABEL) ? ((JCConstantCaseLabel) l).expr
+                                                                                     : ((JCPatternCaseLabel) l).pat)
+                                               .collect(Collectors.toCollection(HashSet::new));
+            return coveredSymbols(pos, selector.type, labelValues);
         }
 
         private Set<Symbol> coveredSymbols(DiagnosticPosition pos, Type targetType,
@@ -753,16 +753,16 @@ public class Flow {
             Set<Symbol> coveredSymbols = new HashSet<>();
             Map<Symbol, List<JCRecordPattern>> deconstructionPatternsBySymbol = new HashMap<>();
 
-            for (JCTree label : labels) {
-                switch (label.getTag()) {
+            for (JCTree labelValue : labels) {
+                switch (labelValue.getTag()) {
                     case BINDINGPATTERN, PARENTHESIZEDPATTERN -> {
-                        Type primaryPatternType = TreeInfo.primaryPatternType((JCPattern) label);
+                        Type primaryPatternType = TreeInfo.primaryPatternType((JCPattern) labelValue);
                         if (!primaryPatternType.hasTag(NONE)) {
                             coveredSymbols.add(primaryPatternType.tsym);
                         }
                     }
                     case RECORDPATTERN -> {
-                        JCRecordPattern dpat = (JCRecordPattern) label;
+                        JCRecordPattern dpat = (JCRecordPattern) labelValue;
                         Symbol type = dpat.record;
                         List<JCRecordPattern> augmentedPatterns =
                                 deconstructionPatternsBySymbol.getOrDefault(type, List.nil())
@@ -772,8 +772,8 @@ public class Flow {
                     }
 
                     default -> {
-                        Assert.check(label instanceof JCExpression, label.getTag().name());
-                        JCExpression expr = (JCExpression) label;
+                        Assert.check(labelValue instanceof JCExpression, labelValue.getTag().name());
+                        JCExpression expr = (JCExpression) labelValue;
                         if (expr.hasTag(IDENT) && ((JCIdent) expr).sym.isEnum())
                             coveredSymbols.add(((JCIdent) expr).sym);
                     }
@@ -2583,8 +2583,7 @@ public class Flow {
                 if (l.head.stats.isEmpty() &&
                     l.tail.nonEmpty() &&
                     l.tail.head.labels.size() == 1 &&
-                    l.tail.head.labels.head.hasTag(CONSTANTCASELABEL) &&
-                    TreeInfo.isNull(((JCConstantCaseLabel) l.tail.head.labels.head).expr)) {
+                    TreeInfo.isNullCaseLabel(l.tail.head.labels.head)) {
                     //handling:
                     //case Integer i:
                     //case null:
