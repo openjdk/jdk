@@ -31,6 +31,8 @@
 */
 
 import java.awt.Component;
+import java.awt.Robot;
+
 import javax.swing.UIManager;
 import javax.swing.SwingUtilities;
 import javax.swing.JFrame;
@@ -45,29 +47,40 @@ import javax.swing.table.TableCellRenderer;
 
 public class TableRendererTest{
     static TableRendererSample testObj;
-    static String instructions
-            = " INSTRUCTIONS:" +
-            " 1. This is a Windows specific test. If you are not on Windows, press Pass."+
-            " 2. Check if the Table with header and rows are painted without NPE."+
-            " 3. If the table appears without any NPE, press Pass";
-    static PassFailJFrame passFailJFrame;
+    static Boolean PassFailStatus = true;
 
     public static void main(String[] args) throws Exception {
         UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
+        Robot robot = new Robot();
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
                 try {
-                    passFailJFrame = new PassFailJFrame(instructions);
+                    Thread.currentThread().setUncaughtExceptionHandler(new ExceptionCheck());
                     testObj = new TableRendererSample();
                     //Adding the Test Frame to handle dispose
-                    PassFailJFrame.addTestFrame(testObj);
-                    PassFailJFrame.positionTestFrame(testObj, PassFailJFrame.Position.HORIZONTAL);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
         });
-        passFailJFrame.awaitAndCheck();
+
+        robot.delay(2000);
+        robot.waitForIdle();
+
+        if (!PassFailStatus) {
+            testObj.dispose();
+            throw new RuntimeException("Test Case Failed. NPE raised!");
+        }
+        System.out.println("Test Pass!");
+        testObj.dispose();
+    }
+
+    static class ExceptionCheck implements Thread.UncaughtExceptionHandler {
+        public void uncaughtException(Thread t, Throwable e)
+        {
+            PassFailStatus = false;
+            System.out.println("Uncaught Exception Handled : " + e);
+        }
     }
 }
 
