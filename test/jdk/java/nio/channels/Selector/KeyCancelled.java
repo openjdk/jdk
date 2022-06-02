@@ -56,8 +56,9 @@ public class KeyCancelled {
             });
             t.start();
 
-            try (SocketChannel c = s.provider().openSocketChannel()) {
-                for (int i = 0; i < 10_000; i++) {
+            for (int i = 0; i < 5; i++) {
+                try (SocketChannel c = s.provider().openSocketChannel()) {
+                    System.out.printf("i: %d%n", i);
                     c.configureBlocking(false);
                     // Sometimes this throws CancelledKeyException, because
                     // the key is cancelled by the other thread part-way through
