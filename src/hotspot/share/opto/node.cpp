@@ -1700,17 +1700,17 @@ class PrintBFS {
 public:
   PrintBFS(Node* start, const int max_distance, Node* target, char const* options)
   : _start(start), _max_distance(max_distance), _target(target), _options(options),
-    _dcc(this), _info_uid((CmpKey)&cmp, hashkey) {
-  };
+    _dcc(this), _info_uid(cmpkey, hashkey) {}
+
   void run();
 private:
   // pipeline steps
   bool configure();
   void collect();
-  void prune();
-  void prune_all();
-  void prune_all_paths();
-  void prune_shortest_path();
+  void select();
+  void select_all();
+  void select_all_paths();
+  void select_shortest_path();
   void sort();
   void print();
 
@@ -1724,30 +1724,30 @@ private:
   bool _traverse_inputs = false;
   bool _traverse_outputs = false;
   struct Filter {
-    bool control = false;
-    bool memory = false;
-    bool data = false;
-    bool mixed = false;
-    bool other = false;
+    bool _control = false;
+    bool _memory = false;
+    bool _data = false;
+    bool _mixed = false;
+    bool _other = false;
   };
-  Filter filter_visit;
-  Filter filter_boundary;
+  Filter _filter_visit;
+  Filter _filter_boundary;
   bool _sort_idx = false;
   bool _all_paths = false;
   bool _use_color = false;
   bool _print_blocks = false;
   bool _print_old = false;
-  void print_options_help(bool print_examples);
+  static void print_options_help(bool print_examples);
   bool parse_options();
 
   // node category (filter / color)
-  bool filter_category(Node* n, Filter& filter); // filter node category agains options
+  static bool filter_category(Node* n, Filter& filter); // filter node category against options
 public:
   class DumpConfigColored : public Node::DumpConfig {
   public:
     DumpConfigColored(PrintBFS* bfs) : _bfs(bfs) {};
-    virtual void pre_dump(outputStream *st, const Node* n);
-    virtual void post_dump(outputStream *st);
+    virtual void pre_dump(outputStream* st, const Node* n);
+    virtual void post_dump(outputStream* st);
   private:
     PrintBFS* _bfs;
   };
@@ -1755,9 +1755,9 @@ private:
   DumpConfigColored _dcc;
 
   // node info
-  Node* old_node (Node* n); // mach node -> prior IR node
-  void print_node_idx (Node* n); // to tty
-  void print_node_block (Node* n); // to tty: head idx, _idom, _dom_depth
+  Node* old_node(Node* n); // mach node -> prior IR node
+  void print_node_idx(Node* n); // to tty
+  void print_node_block(Node* n); // to tty: head idx, _idom, _dom_depth
 
   // traversal data structures
   Node_List _worklist; // BFS queue
@@ -1768,32 +1768,32 @@ private:
   public:
     Info() : Info(nullptr, 0) {};
     Info(Node* node, int distance)
-      : _node(node), _distance(distance) {};
+      : _node(node), _distance_from_start(distance) {};
     Node* node() { return _node; };
-    int distance() { return _distance; };
-    int d2() {return _d2; }
-    void set_d2(int d) { _d2 = d; }
-    Node_List edge_fwd; // pointing away from _start
+    int distance() const { return _distance_from_start; };
+    int distance_from_target() const { return _distance_from_target; }
+    void set_distance_from_target(int d) { _distance_from_target = d; }
     Node_List edge_bwd; // pointing toward _start
-    bool is_marked() { return _mark; } // marked to keep during pruning
+    bool is_marked() const { return _mark; } // marked to keep during select
     void set_mark() { _mark = true; }
   private:
     Node* _node;
-    int _distance; // distance from _start
-    int _d2 = 0; // distance from _target if _all_paths
+    int _distance_from_start; // distance from _start
+    int _distance_from_target = 0; // distance from _target if _all_paths
     bool _mark = false;
   };
-  static int cmp(const Node* n1, const Node* n2) { return n1 != n2; }
-  Dict _info_uid;             // Node -> uid
-  GrowableArray <Info> _info; // uid  -> info
+  Dict _info_uid;            // Node -> uid
+  GrowableArray<Info> _info; // uid  -> info
+
   Info* find_info(const Node* n) {
     size_t uid = (size_t)_info_uid[n];
     if (uid == 0) {
       return nullptr;
     }
     return &_info.at((int)uid);
-  };
-  void make_info(Node* node, int distance) {
+  }
+
+  void make_info(Node* node, const int distance) {
     assert(find_info(node) == nullptr, "node does not yet have info");
     size_t uid = _info.length()+1;
     _info_uid.Insert(node, (void*)uid);
@@ -1802,10 +1802,10 @@ private:
   };
 
   // filled by sort, printed by print
-  GrowableArray<Node*> _printlist;
+  GrowableArray<Node*> _print_list;
 
   // print header + node table
-  void print_header();
+  void print_header() const;
   void print_node(Node* n);
 };
 
@@ -1814,14 +1814,14 @@ void PrintBFS::run() {
     return;
   }
   collect();
-  prune();
+  select();
   sort();
   print();
 }
 
 // set up configuration for BFS and print
 bool PrintBFS::configure() {
-  if(_max_distance < 0) {
+  if (_max_distance < 0) {
     tty->print("dump_bfs: max_distance must be non-negative!\n");
     return false;
   }
@@ -1835,7 +1835,7 @@ void PrintBFS::collect() {
   while (pos < _worklist.size()) {
     Node* n = _worklist.at(pos++); // next node to traverse
     Info* info = find_info(n);
-    if (!filter_category(n, filter_visit) && n != _start) {
+    if (!filter_category(n, _filter_visit) && n != _start) {
       continue; // we hit boundary, do not traverse further
     }
     if (n != _start && n->is_Root()) {
@@ -1855,24 +1855,24 @@ void PrintBFS::collect() {
 }
 
 // go through work list, mark those that we want to print
-void PrintBFS::prune() {
-  if ( _target == nullptr ) {
-    prune_all();
+void PrintBFS::select() {
+  if (_target == nullptr ) {
+    select_all();
   } else {
     if (find_info(_target) == nullptr) {
       tty->print("Could not find target in BFS.\n");
       return;
     }
-    if(_all_paths) {
-      prune_all_paths();
+    if (_all_paths) {
+      select_all_paths();
     } else {
-      prune_shortest_path();
+      select_shortest_path();
     }
   }
 }
 
 // take all nodes from BFS
-void PrintBFS::prune_all() {
+void PrintBFS::select_all() {
   for (uint i = 0; i < _worklist.size(); i++) {
     Node* n = _worklist.at(i);
     Info* info = find_info(n);
@@ -1881,24 +1881,24 @@ void PrintBFS::prune_all() {
 }
 
 // traverse backward from target, along edges found in BFS
-void PrintBFS::prune_all_paths() {
+void PrintBFS::select_all_paths() {
   uint pos = 0;
   Node_List backtrace;
   // start from target
   backtrace.push(_target);
   find_info(_target)->set_mark();
   // traverse backward
-  while(pos < backtrace.size()) {
+  while (pos < backtrace.size()) {
     Node* n = backtrace.at(pos++);
     Info* info = find_info(n);
-    for(uint i=0; i<info->edge_bwd.size(); i++) {
+    for (uint i = 0; i < info->edge_bwd.size(); i++) {
       // all backward edges
       Node* back = info->edge_bwd.at(i);
       Info* back_info = find_info(back);
-      if(!back_info->is_marked()) {
+      if (!back_info->is_marked()) {
         // not yet found this on way back.
-        back_info->set_d2(info->d2()+1);
-        if(back_info->d2() + back_info->distance() <= _max_distance) {
+        back_info->set_distance_from_target(info->distance_from_target() + 1);
+        if (back_info->distance_from_target() + back_info->distance() <= _max_distance) {
           // total distance is small enough
           back_info->set_mark();
           backtrace.push(back);
@@ -1908,7 +1908,7 @@ void PrintBFS::prune_all_paths() {
   }
 }
 
-void PrintBFS::prune_shortest_path() {
+void PrintBFS::select_shortest_path() {
   Node* current = _target;
   while (true) {
     Info* info = find_info(current);
@@ -1925,15 +1925,15 @@ int node_idx_cmp(Node** n1, Node** n2) {
   return (*n1)->_idx - (*n2)->_idx;
 }
 
-// go through worklist in desired order, put the marked ones in printlist
+// go through worklist in desired order, put the marked ones in print list
 void PrintBFS::sort() {
-  if(_traverse_inputs && !_traverse_outputs) {
+  if (_traverse_inputs && !_traverse_outputs) {
     // reverse order
-    for (int i = _worklist.size()-1; i >= 0; i--) {
+    for (int i = _worklist.size() - 1; i >= 0; i--) {
       Node* n = _worklist.at(i);
       Info* info = find_info(n);
       if (info->is_marked()) {
-        _printlist.push(n);
+        _print_list.push(n);
       }
     }
   } else {
@@ -1942,21 +1942,21 @@ void PrintBFS::sort() {
       Node* n = _worklist.at(i);
       Info* info = find_info(n);
       if (info->is_marked()) {
-        _printlist.push(n);
+        _print_list.push(n);
       }
     }
   }
-  if(_sort_idx) {
-    _printlist.sort(node_idx_cmp);
+  if (_sort_idx) {
+    _print_list.sort(node_idx_cmp);
   }
 }
 
 // go through printlist and print
 void PrintBFS::print() {
-  if( _printlist.length() > 0 ) {
+  if (_print_list.length() > 0 ) {
     print_header();
-    for (int i = 0; i < _printlist.length(); i++) {
-      Node* n = _printlist.at(i);
+    for (int i = 0; i < _print_list.length(); i++) {
+      Node* n = _print_list.at(i);
       print_node(n);
     }
   } else {
@@ -2045,9 +2045,9 @@ bool PrintBFS::parse_options() {
   if (_options == nullptr) {
     _options = "cmdxo@B"; // default options
   }
-  int len = strlen(_options);
-  for (int i = 0; i < len; i++) {
-    switch(_options[i]) {
+  size_t len = strlen(_options);
+  for (size_t i = 0; i < len; i++) {
+    switch (_options[i]) {
       case '+':
         _traverse_inputs = true;
         break;
@@ -2055,34 +2055,34 @@ bool PrintBFS::parse_options() {
         _traverse_outputs = true;
         break;
       case 'c':
-        filter_visit.control = true;
+        _filter_visit._control = true;
         break;
       case 'm':
-        filter_visit.memory = true;
+        _filter_visit._memory = true;
         break;
       case 'd':
-        filter_visit.data = true;
+        _filter_visit._data = true;
         break;
       case 'x':
-        filter_visit.mixed = true;
+        _filter_visit._mixed = true;
         break;
       case 'o':
-        filter_visit.other = true;
+        _filter_visit._other = true;
         break;
       case 'C':
-        filter_boundary.control = true;
+        _filter_boundary._control = true;
         break;
       case 'M':
-        filter_boundary.memory = true;
+        _filter_boundary._memory = true;
         break;
       case 'D':
-        filter_boundary.data = true;
+        _filter_boundary._data = true;
         break;
       case 'X':
-        filter_boundary.mixed = true;
+        _filter_boundary._mixed = true;
         break;
       case 'O':
-        filter_boundary.other = true;
+        _filter_boundary._other = true;
         break;
       case 'S':
         _sort_idx = true;
@@ -2121,18 +2121,18 @@ bool PrintBFS::parse_options() {
 }
 
 bool PrintBFS::filter_category(Node* n, Filter& filter) {
-  const Type *t = n->bottom_type();
+  const Type* t = n->bottom_type();
   switch (t->category()) {
     case Type::Category::Data:
-      return filter.data;
+      return filter._data;
     case Type::Category::Memory:
-      return filter.memory;
+      return filter._memory;
     case Type::Category::Mixed:
-      return filter.mixed;
+      return filter._mixed;
     case Type::Category::Control:
-      return filter.control;
+      return filter._control;
     case Type::Category::Other:
-      return filter.other;
+      return filter._other;
     case Type::Category::Undef:
       n->dump();
       assert(false, "category undef ??");
@@ -2143,8 +2143,8 @@ bool PrintBFS::filter_category(Node* n, Filter& filter) {
   return false;
 }
 
-void PrintBFS::DumpConfigColored::pre_dump(outputStream *st, const Node* n) {
-  if(!_bfs->_use_color) {
+void PrintBFS::DumpConfigColored::pre_dump(outputStream* st, const Node* n) {
+  if (!_bfs->_use_color) {
     return;
   }
   Info* info = _bfs->find_info(n);
@@ -2152,7 +2152,7 @@ void PrintBFS::DumpConfigColored::pre_dump(outputStream *st, const Node* n) {
     return;
   }
 
-  const Type *t = n->bottom_type();
+  const Type* t = n->bottom_type();
   switch (t->category()) {
     case Type::Category::Data:
       st->print("\u001b[34m");
@@ -2180,14 +2180,14 @@ void PrintBFS::DumpConfigColored::pre_dump(outputStream *st, const Node* n) {
   }
 }
 
-void PrintBFS::DumpConfigColored::post_dump(outputStream *st) {
-  if(!_bfs->_use_color) {
+void PrintBFS::DumpConfigColored::post_dump(outputStream* st) {
+  if (!_bfs->_use_color) {
     return;
   }
   st->print("\u001b[0m"); // white
 }
 
-Node* PrintBFS::old_node (Node* n) {
+Node* PrintBFS::old_node(Node* n) {
   Compile* C = Compile::current();
   if (C->matcher() == nullptr || !C->node_arena()->contains(n)) {
     return (Node*)nullptr;
@@ -2196,7 +2196,7 @@ Node* PrintBFS::old_node (Node* n) {
   }
 }
 
-void PrintBFS::print_node_idx (Node* n) {
+void PrintBFS::print_node_idx(Node* n) {
   Compile* C = Compile::current();
   char buf[30];
   if (n == nullptr) {
@@ -2209,7 +2209,7 @@ void PrintBFS::print_node_idx (Node* n) {
   tty->print("%6s", buf);
 }
 
-void PrintBFS::print_node_block (Node* n) {
+void PrintBFS::print_node_block(Node* n) {
   Compile* C = Compile::current();
   Block* b = C->node_arena()->contains(n)
              ? C->cfg()->get_block_for_node(n)
@@ -2220,7 +2220,7 @@ void PrintBFS::print_node_block (Node* n) {
     tty->print("   _");
   } else {
     print_node_idx(b->head());
-    if(b->_idom) {
+    if (b->_idom) {
       print_node_idx(b->_idom->head());
     } else {
       tty->print("     _");
@@ -2232,10 +2232,10 @@ void PrintBFS::print_node_block (Node* n) {
 // filter, and add to worklist, add info, note traversal edges
 void PrintBFS::maybe_traverse(Node* src, Node* dst) {
   if (dst != nullptr &&
-     (filter_category(dst, filter_visit) ||
-      filter_category(dst, filter_boundary) ||
+     (filter_category(dst, _filter_visit) ||
+      filter_category(dst, _filter_boundary) ||
       dst == _start)) { // correct category or start?
-    if( find_info(dst) == nullptr ){
+    if (find_info(dst) == nullptr) {
       // never visited - set up info
       _worklist.push(dst);
       int d = 0;
@@ -2245,14 +2245,13 @@ void PrintBFS::maybe_traverse(Node* src, Node* dst) {
       make_info(dst, d);
     }
     if (src != dst) {
-      // traversal edges useful during pruning
-      find_info(src)->edge_fwd.push(dst);
+      // traversal edges useful during select
       find_info(dst)->edge_bwd.push(src);
     }
   }
 }
 
-void PrintBFS::print_header() {
+void PrintBFS::print_header() const {
   tty->print("   d");                         // distance
   if (_all_paths) {
     tty->print(" apd");                       // all paths distance
@@ -2260,7 +2259,7 @@ void PrintBFS::print_header() {
   if (_print_blocks) {
     tty->print(" [head  idom  d]");           // block
   }
-  if(_print_old) {
+  if (_print_old) {
     tty->print("   old");                     // old node
   }
   tty->print(" dump\n");                      // node dump
@@ -2271,7 +2270,7 @@ void PrintBFS::print_node(Node* n) {
   tty->print("%4d", find_info(n)->distance());// distance
   if (_all_paths) {
     Info* info = find_info(n);
-    int apd = info->distance() + info->d2();
+    int apd = info->distance() + info->distance_from_target();
     tty->print("%4d", apd);                   // all paths distance
   }
   if (_print_blocks) {
