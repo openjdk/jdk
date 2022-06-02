@@ -24,7 +24,7 @@
  */
 package jdk.incubator.vector;
 
-import java.nio.ByteBuffer;
+import java.lang.foreign.MemorySegment;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntUnaryOperator;
@@ -463,6 +463,22 @@ final class Float512Vector extends FloatVector {
 
     @Override
     @ForceInline
+    public Float512Vector compress(VectorMask<Float> m) {
+        return (Float512Vector)
+            super.compressTemplate(Float512Mask.class,
+                                   (Float512Mask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Float512Vector expand(VectorMask<Float> m) {
+        return (Float512Vector)
+            super.expandTemplate(Float512Mask.class,
+                                   (Float512Mask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
     public Float512Vector selectFrom(Vector<Float> v) {
         return (Float512Vector)
             super.selectFromTemplate((Float512Vector) v);  // specialize
@@ -666,6 +682,15 @@ final class Float512Vector extends FloatVector {
             return xor(maskAll(true));
         }
 
+        @Override
+        @ForceInline
+        public Float512Mask compress() {
+            return (Float512Mask)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
+                Float512Vector.class, Float512Mask.class, ETYPE, VLENGTH, null, this,
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
+        }
+
+
         // Binary operations
 
         @Override
@@ -858,29 +883,15 @@ final class Float512Vector extends FloatVector {
     @ForceInline
     @Override
     final
-    FloatVector fromByteArray0(byte[] a, int offset) {
-        return super.fromByteArray0Template(a, offset);  // specialize
+    FloatVector fromMemorySegment0(MemorySegment ms, long offset) {
+        return super.fromMemorySegment0Template(ms, offset);  // specialize
     }
 
     @ForceInline
     @Override
     final
-    FloatVector fromByteArray0(byte[] a, int offset, VectorMask<Float> m) {
-        return super.fromByteArray0Template(Float512Mask.class, a, offset, (Float512Mask) m);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    FloatVector fromByteBuffer0(ByteBuffer bb, int offset) {
-        return super.fromByteBuffer0Template(bb, offset);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    FloatVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Float> m) {
-        return super.fromByteBuffer0Template(Float512Mask.class, bb, offset, (Float512Mask) m);  // specialize
+    FloatVector fromMemorySegment0(MemorySegment ms, long offset, VectorMask<Float> m) {
+        return super.fromMemorySegment0Template(Float512Mask.class, ms, offset, (Float512Mask) m);  // specialize
     }
 
     @ForceInline
@@ -908,22 +919,8 @@ final class Float512Vector extends FloatVector {
     @ForceInline
     @Override
     final
-    void intoByteArray0(byte[] a, int offset) {
-        super.intoByteArray0Template(a, offset);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    void intoByteArray0(byte[] a, int offset, VectorMask<Float> m) {
-        super.intoByteArray0Template(Float512Mask.class, a, offset, (Float512Mask) m);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    void intoByteBuffer0(ByteBuffer bb, int offset, VectorMask<Float> m) {
-        super.intoByteBuffer0Template(Float512Mask.class, bb, offset, (Float512Mask) m);
+    void intoMemorySegment0(MemorySegment ms, long offset, VectorMask<Float> m) {
+        super.intoMemorySegment0Template(Float512Mask.class, ms, offset, (Float512Mask) m);
     }
 
 
@@ -932,3 +929,4 @@ final class Float512Vector extends FloatVector {
     // ================================================
 
 }
+

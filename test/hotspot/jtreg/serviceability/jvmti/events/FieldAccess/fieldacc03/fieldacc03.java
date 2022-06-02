@@ -38,6 +38,7 @@ import java.io.PrintStream;
  * COMMENTS
  *     Ported from JVMDI.
  *
+ * @requires vm.continuations
  * @library /test/lib
  * @compile --enable-preview -source ${jdk.version} fieldacc03.java
  * @run main/othervm/native --enable-preview -agentlib:fieldacc03 fieldacc03

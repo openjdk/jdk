@@ -2577,8 +2577,9 @@ void MacroAssembler::vmovdqu(XMMRegister dst, AddressLiteral src, Register scrat
 }
 
 void MacroAssembler::vmovdqu(XMMRegister dst, AddressLiteral src, Register scratch_reg, int vector_len) {
-  assert(vector_len <= AVX_256bit, "AVX2 vector length");
-  if (vector_len == AVX_256bit) {
+  if (vector_len == AVX_512bit) {
+    evmovdquq(dst, src, AVX_512bit, scratch_reg);
+  } else if (vector_len == AVX_256bit) {
     vmovdqu(dst, src, scratch_reg);
   } else {
     movdqu(dst, src, scratch_reg);
@@ -3227,6 +3228,15 @@ void MacroAssembler::vpand(XMMRegister dst, XMMRegister nds, AddressLiteral src,
 void MacroAssembler::vpbroadcastw(XMMRegister dst, XMMRegister src, int vector_len) {
   assert(((dst->encoding() < 16 && src->encoding() < 16) || VM_Version::supports_avx512vlbw()),"XMM register should be 0-15");
   Assembler::vpbroadcastw(dst, src, vector_len);
+}
+
+void MacroAssembler::vpbroadcastq(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch) {
+  if (reachable(src)) {
+    Assembler::vpbroadcastq(dst, as_Address(src), vector_len);
+  } else {
+    lea(rscratch, src);
+    Assembler::vpbroadcastq(dst, Address(rscratch, 0), vector_len);
+  }
 }
 
 void MacroAssembler::vbroadcastsd(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch) {
@@ -4153,7 +4163,7 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
 
   // Get super_klass value into rax (even if it was in rdi or rcx).
   bool pushed_rax = false, pushed_rcx = false, pushed_rdi = false;
-  if (super_klass != rax || UseCompressedOops) {
+  if (super_klass != rax) {
     if (!IS_A_TEMP(rax)) { push(rax); pushed_rax = true; }
     mov(rax, super_klass);
   }
