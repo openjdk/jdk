@@ -841,7 +841,7 @@ bool IfNode::has_only_uncommon_traps(ProjNode* proj, ProjNode*& success, ProjNod
           !igvn->C->too_many_traps(dom_method, dom_bci, Deoptimization::Reason_range_check)) {
         success = unc_proj;
         fail = unc_proj->other_if_proj();
-        igvn->C->invalidate_unstable_if(dom_unc);
+        igvn->C->remove_unstable_if(dom_unc);
         return true;
       }
     }

@@ -396,7 +396,7 @@ void Compile::remove_useless_node(Node* dead) {
     remove_useless_late_inlines(&_vector_reboxing_late_inlines, dead);
 
     if (dead->is_CallStaticJava()) {
-      invalidate_unstable_if(dead->as_CallStaticJava());
+      remove_unstable_if(dead->as_CallStaticJava());
     }
   }
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
@@ -777,8 +777,6 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
 
     if (failing())  return;
 
-    preprocess_unstable_ifs();
-
     print_method(PHASE_BEFORE_REMOVEUSELESS, 3);
 
     // Remove clutter produced by parsing.
@@ -790,6 +788,8 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
 
   // Note:  Large methods are capped off in do_one_bytecode().
   if (failing())  return;
+
+  preprocess_unstable_ifs();
 
   // After parsing, node notes are no longer automagic.
   // They must be propagated by register_new_node_with_optimizer(),
@@ -1876,16 +1876,16 @@ void Compile::remove_useless_unstable_ifs(Unique_Node_List& useful) {
   }
 }
 
-// Invalidate the speculative bci of unstable_if trap and skip the optimization.
+// remove unstable_if trap of unc from candicates. It is either dead or fold-compares case.
 //
 // 'fold-compares' may use the uncommon_trap of the dominating IfNode to cover the fused
 // IfNode. This breaks the unstable_if trap invariant: control takes the unstable path
 // when deoptimization does happen.
-void Compile::invalidate_unstable_if(CallStaticJavaNode* unc) {
+void Compile::remove_unstable_if(CallStaticJavaNode* unc) {
   for (int i = 0; i < _unstable_if_traps.length(); ++i) {
     UnstableIfTrap* trap = _unstable_if_traps.at(i);
     if (trap->uncommon_trap() == unc) {
-      _unstable_if_traps.delete_at(i); // replaces i-th with last element which is known to be useful (already processed)
+      _unstable_if_traps.delete_at(i);
       break;
     }
   }

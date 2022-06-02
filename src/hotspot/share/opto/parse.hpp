@@ -608,16 +608,24 @@ class Parse : public GraphKit {
 //   2. use next_bci of _path to update live locals.
 class UnstableIfTrap {
   CallStaticJavaNode* const _unc;
-  Parse::Block* const _path;  // the pruned path
+  // Parse::_blocks outlive Parse object itself.
+  // They are reclaimed by ResourceMark in CompileBroker::invoke_compiler_on_method().
+  Parse::Block* const _path; // The pruned path.
 
 public:
-  UnstableIfTrap(CallStaticJavaNode* call, Parse::Block* path): _unc(call), _path(path){
+  UnstableIfTrap(CallStaticJavaNode* call, Parse::Block* path): _unc(call), _path(path) {
     assert(_unc != NULL && Deoptimization::trap_request_reason(_unc->uncommon_trap_request()) == Deoptimization::Reason_unstable_if,
           "invalid uncommon_trap call!");
   }
 
+  // The starting point of the pruned block, where control should go
+  // when deoptimization does happen.
   int next_bci() const {
     return _path == nullptr ? -1 : _path->start();
+  }
+
+  Parse::Block* path() const {
+    return _path;
   }
 
   // This can only be determined in parse-time.
@@ -625,10 +633,6 @@ public:
   // or if _path has more than one predecessor and has been parsed, _unc does not mask out any real code.
   bool is_trivial() const {
     return _path != nullptr && _path->is_parsed();
-  }
-
-  Parse::Block* path() const {
-    return _path;
   }
 
   CallStaticJavaNode* uncommon_trap() const {
