@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
    @requires (os.family == "windows")
    @library /java/awt/regtesthelpers
    @build PassFailJFrame
-   @summary Check if No NPE occurs when JTable.updateUI is called
+   @summary Test to check if table is printed without NPE
    @run main/manual TableRendererTest
 */
 
@@ -46,11 +46,10 @@ import javax.swing.table.TableCellRenderer;
 public class TableRendererTest{
     static TableRendererSample testObj;
     static String instructions
-            = """
-            INSTRUCTIONS:
-             1. This is a Windows specific test. If you are not on Windows, press Pass.
-             2. Check if the Table with header and rows are painted without NPE.
-             3. If the table appears without any NPE, press Pass,\s""";
+            = " INSTRUCTIONS:" +
+            " 1. This is a Windows specific test. If you are not on Windows, press Pass."+
+            " 2. Check if the Table with header and rows are painted without NPE."+
+            " 3. If the table appears without any NPE, press Pass";
     static PassFailJFrame passFailJFrame;
 
     public static void main(String[] args) throws Exception {
@@ -93,21 +92,17 @@ class TableRendererSample extends JFrame {
 
     private JPanel jContentPane = null;
     private JScrollPane jScrollPane = null;
-    private JTable table1 = null;
-    private JScrollPane jScrollPane1 = null;
-    private JTable table2 = null;
+    private JTable table = null;
 
     public TableRendererSample() {
         super();
         initialize();
-        table2.updateUI();
-        table1.updateUI();
-
+        table.updateUI();
         this.setVisible(true);
     }
 
-   private void initialize() {
-        this.setSize(753, 658);
+    private void initialize() {
+        this.setSize(363, 658);
         this.setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         this.setContentPane(getJContentPane());
         this.setTitle("JFrame");
@@ -118,7 +113,6 @@ class TableRendererSample extends JFrame {
             jContentPane = new JPanel();
             jContentPane.setLayout(null);
             jContentPane.add(getJScrollPane(), null);
-            jContentPane.add(getJScrollPane1(), null);
         }
         return jContentPane;
     }
@@ -126,47 +120,31 @@ class TableRendererSample extends JFrame {
     private JScrollPane getJScrollPane() {
         if (jScrollPane == null) {
             jScrollPane = new JScrollPane();
-            jScrollPane.setBounds(new java.awt.Rectangle(358,0,387,618));
-            jScrollPane.setViewportView(getTable1());
+            jScrollPane.setBounds(new java.awt.Rectangle(0,0,350,618));
+            jScrollPane.setViewportView(getTable());
         }
         return jScrollPane;
     }
 
-    private JTable getTable1() {
-        if (table1 == null) {
-            table1 = new JTable(new MyModel());
-        }
-        return table1;
-    }
-
-    private JScrollPane getJScrollPane1() {
-        if (jScrollPane1 == null) {
-            jScrollPane1 = new JScrollPane();
-            jScrollPane1.setBounds(new java.awt.Rectangle(0,0,350,618));
-            jScrollPane1.setViewportView(getTable2());
-        }
-        return jScrollPane1;
-    }
-
-    private JTable getTable2() {
-        if (table2 == null) {
-            table2 = new MyJTable(new MyModel());
-            JTableHeader header = table2.getTableHeader();
+    private JTable getTable() {
+        if (table == null) {
+            table = new MyJTable(new MyModel());
+            JTableHeader header = table.getTableHeader();
             TableCellRenderer render = new DecoratedHeaderRenderer(header.getDefaultRenderer());
             header.setDefaultRenderer(render);
         }
-        return table2;
+        return table;
     }
 
-
     private static class DecoratedHeaderRenderer implements TableCellRenderer {
-        public DecoratedHeaderRenderer(TableCellRenderer render){
+        public DecoratedHeaderRenderer(TableCellRenderer render) {
             this.render = render;
         }
+
         private final TableCellRenderer render;
+
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-            return render.getTableCellRendererComponent(table,value,isSelected,hasFocus,row,column);
+            return render.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
         }
     }
 }
-
