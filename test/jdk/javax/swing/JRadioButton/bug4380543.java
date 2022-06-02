@@ -51,11 +51,11 @@ public class bug4380543 {
             = """
             INSTRUCTIONS:
                1. Check if the Left insets(margins) is set visually
-                  similar to other three sides around Radio Button      
-                  and CheckBox (insets set to 20 on all 4 sides).
+                  similar to other three sides around Radio Button
+                   and CheckBox (insets set to 20 on all 4 sides).
                2. Rendering depends on OS and its Supported Look and Feel.
                   Verify only with those L&F where Margin is Visible.
-               3. If Left insets(margins) appear Empty, press Fail, 
+               3. If Left insets(margins) appear Empty, press Fail,
                   else press Pass.
             """;
     static PassFailJFrame passFailJFrame;
