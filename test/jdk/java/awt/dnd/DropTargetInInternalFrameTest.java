@@ -132,8 +132,7 @@ public class DropTargetInInternalFrameTest implements Serializable {
             SwingUtilities
                     .invokeAndWait(DropTargetInInternalFrameTest::disposeFrame);
             System.out.println(
-                    "Test Failed, Waited too long, but the Drag Button " +
-                    "doesn't gain focus yet");
+                    "Test failed, waited too long for the drag button to gain focus");
         }
         final AtomicReference<Point> p1Ref = new AtomicReference<>();
         final AtomicReference<Point> p2Ref = new AtomicReference<>();
@@ -154,8 +153,7 @@ public class DropTargetInInternalFrameTest implements Serializable {
 
         if (!dropLatch.await(5, TimeUnit.SECONDS)) {
             captureScreen();
-            System.out.println("Test Failed, Waited too long, but Drop not " +
-                               "complete yet");
+            System.out.println("Test Failed, Waited too long for the Drop to complete");
         }
         int calledMethods = dropTargetPanel.getCalledMethods();
         SwingUtilities
@@ -163,13 +161,11 @@ public class DropTargetInInternalFrameTest implements Serializable {
         System.out.println("CalledMethods = " + calledMethods);
         if ((calledMethods & DropTargetPanel.ENTER_CALLED) == 0) {
             throw new RuntimeException(
-                    "Test Failed, DropTargetListener.dragEnter() not " +
-                    "called.");
+                    "Test Failed, DropTargetListener.dragEnter() not called");
         }
         if ((calledMethods & DropTargetPanel.OVER_CALLED) == 0) {
             throw new RuntimeException(
-                    "Test Failed, DropTargetListener.dragOver() not " +
-                    "called.");
+                    "Test Failed, DropTargetListener.dragOver() not called");
         }
         if ((calledMethods & DropTargetPanel.DROP_CALLED) == 0) {
             throw new RuntimeException(
