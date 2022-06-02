@@ -896,15 +896,12 @@ void VM_Version::get_processor_features() {
   }
   if (FLAG_IS_DEFAULT(UseAVX)) {
     // Don't use AVX-512 on older Skylakes unless explicitly requested.
-    if (use_avx_limit > 2 && is_intel_skylake()) {
-      if (_stepping < 5) {
-        FLAG_SET_DEFAULT(UseAVX, 2);
-      }
+    if (use_avx_limit > 2 && is_intel_skylake() && _stepping < 5) {
+      FLAG_SET_DEFAULT(UseAVX, 2);
     } else {
       FLAG_SET_DEFAULT(UseAVX, use_avx_limit);
     }
   }
-
   if (UseAVX > use_avx_limit) {
     warning("UseAVX=%d is not supported on this CPU, setting it to UseAVX=%d", (int) UseAVX, use_avx_limit);
     FLAG_SET_DEFAULT(UseAVX, use_avx_limit);
@@ -1300,9 +1297,9 @@ void VM_Version::get_processor_features() {
 
   if (FLAG_IS_DEFAULT(SuperWordMaxVectorSize)) {
     if (FLAG_IS_DEFAULT(UseAVX) && UseAVX > 2 &&
-        is_intel_skylake() && _stepping > 5) {
+        is_intel_skylake() && _stepping >= 5) {
       // Limit auto vectorization to 256 bit (32 byte) by default on Cascade Lake
-      FLAG_SET_DEFAULT(SuperWordMaxVectorSize, 32);
+      FLAG_SET_DEFAULT(SuperWordMaxVectorSize, MIN2(MaxVectorSize, (intx)32));
     } else {
       FLAG_SET_DEFAULT(SuperWordMaxVectorSize, MaxVectorSize);
     }
