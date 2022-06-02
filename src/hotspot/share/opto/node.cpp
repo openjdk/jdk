@@ -1804,7 +1804,7 @@ Node* Node::find_ctrl(int idx) {
 // not found or if the node to be found is not a control node (search will not find it).
 Node* Node::find(const int idx, bool only_ctrl) {
   ResourceMark rm;
-  return find_node_by_idx(this, abs(idx), (idx >= 0), only_ctrl);
+  return find_node_by_idx(this, abs(idx), (idx < 0), only_ctrl);
 }
 
 // -----------------------------Name-------------------------------------------
