@@ -42,6 +42,7 @@ import java.io.*;
  * COMMENTS
  *     Fixed the 5031200 bug.
  *
+ * @requires vm.continuations
  * @library /test/lib
  * @compile --enable-preview -source ${jdk.version} classload01.java
  * @run main/othervm/native --enable-preview -agentlib:classload01 classload01

@@ -37,6 +37,7 @@
  * COMMENTS
  *     Ported from JVMDI.
  *
+ * @requires vm.continuations
  * @library /test/lib
  * @compile --enable-preview -source ${jdk.version} getstacktr06.java
  * @run main/othervm/native --enable-preview -agentlib:getstacktr06 getstacktr06
