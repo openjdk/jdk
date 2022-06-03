@@ -318,12 +318,10 @@ public class Flags {
         HAS_RESOURCE,
 
         //ClassSymbols:
-        /**TODO: Flag is set for nested classes that do not access instance members
+        /** Flag is set for nested classes that do not access instance members
          *  or `this' of an outer class and therefore don't need to be passed
          *  a this$n reference.  This value is currently set only for anonymous
          *  classes in superclass constructor calls.
-         *  todo: use this value for optimizing away this$n parameters in
-         *  other cases.
          */
         NOOUTERTHIS,
 
@@ -390,10 +388,14 @@ public class Flags {
          */
         RECOVERABLE,
 
-        /**TODO:*/
+        /**
+         * Flag to indicate the given ClassSymbol is a value based.
+         */
         VALUE_BASED,
 
-        /**TODO:*/
+        /**
+         * Flag to indicate the super classes of this ClassSymbol has been attributed.
+         */
         SUPER_OWNER_ATTRIBUTED,
 
         //ModuleSymbols:
@@ -494,12 +496,9 @@ public class Flags {
          */
         UNION,
 
-        /**TODO: Flag is set for nested classes that do not access instance members
-         *  or `this' of an outer class and therefore don't need to be passed
-         *  a this$n reference.  This value is currently set only for anonymous
-         *  classes in superclass constructor calls.
-         *  todo: use this value for optimizing away this$n parameters in
-         *  other cases.
+        /**
+         * Flag to mark synthetic outer instance variables that are not needed and
+         * should be eliminated.
          */
         NOOUTERTHIS,
         ;
