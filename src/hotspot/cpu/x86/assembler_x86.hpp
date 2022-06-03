@@ -1443,9 +1443,11 @@ private:
   void size_prefix();
 
   void lzcntl(Register dst, Register src);
+  void lzcntl(Register dst, Address src);
 
 #ifdef _LP64
   void lzcntq(Register dst, Register src);
+  void lzcntq(Register dst, Address src);
 #endif
 
   enum Membar_mask_bits {
@@ -1995,8 +1997,10 @@ private:
   void rolq(Register dst, int imm8);
   void rorq(Register dst);
   void rorq(Register dst, int imm8);
+  void rorxl(Register dst, Register src, int imm8);
+  void rorxl(Register dst, Address src, int imm8);
   void rorxq(Register dst, Register src, int imm8);
-  void rorxd(Register dst, Register src, int imm8);
+  void rorxq(Register dst, Address src, int imm8);
 #endif
 
   void sahf();
@@ -2132,7 +2136,9 @@ private:
 
   // BMI - count trailing zeros
   void tzcntl(Register dst, Register src);
+  void tzcntl(Register dst, Address src);
   void tzcntq(Register dst, Register src);
+  void tzcntq(Register dst, Address src);
 
   // Unordered Compare Scalar Double-Precision Floating-Point Values and set EFLAGS
   void ucomisd(XMMRegister dst, Address src);
@@ -2208,10 +2214,18 @@ private:
   void vminss(XMMRegister dst, XMMRegister nds, XMMRegister src);
   void vminsd(XMMRegister dst, XMMRegister nds, XMMRegister src);
 
+  void sarxl(Register dst, Register src1, Register src2);
+  void sarxl(Register dst, Address src1, Register src2);
+  void sarxq(Register dst, Register src1, Register src2);
+  void sarxq(Register dst, Address src1, Register src2);
   void shlxl(Register dst, Register src1, Register src2);
+  void shlxl(Register dst, Address src1, Register src2);
   void shlxq(Register dst, Register src1, Register src2);
+  void shlxq(Register dst, Address src1, Register src2);
   void shrxl(Register dst, Register src1, Register src2);
+  void shrxl(Register dst, Address src1, Register src2);
   void shrxq(Register dst, Register src1, Register src2);
+  void shrxq(Register dst, Address src1, Register src2);
 
   void bzhiq(Register dst, Register src1, Register src2);
 
