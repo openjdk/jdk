@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
    @library /java/awt/regtesthelpers
    @build PassFailJFrame
    @summary Test to check if table is printed without NPE
-   @run main/manual TableRendererTest
+   @run main TableRendererTest
 */
 
 import java.awt.Component;
@@ -37,26 +37,27 @@ import javax.swing.UIManager;
 import javax.swing.SwingUtilities;
 import javax.swing.JFrame;
 import javax.swing.JTable;
-import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
 import javax.swing.table.AbstractTableModel;
-import javax.swing.table.TableModel;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellRenderer;
 
 public class TableRendererTest{
-    static TableRendererSample testObj;
     static Boolean PassFailStatus = true;
+    static JFrame frame = null;
+    private static JScrollPane jScrollPane = null;
+    private static JTable table = null;
 
     public static void main(String[] args) throws Exception {
         UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
+
         Robot robot = new Robot();
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
                 try {
                     Thread.currentThread().setUncaughtExceptionHandler(new ExceptionCheck());
-                    testObj = new TableRendererSample();
+                    initialize();
                     //Adding the Test Frame to handle dispose
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -68,11 +69,32 @@ public class TableRendererTest{
         robot.waitForIdle();
 
         if (!PassFailStatus) {
-            testObj.dispose();
+            frame.dispose();
             throw new RuntimeException("Test Case Failed. NPE raised!");
         }
         System.out.println("Test Pass!");
-        testObj.dispose();
+        frame.dispose();
+    }
+
+    static void initialize() {
+        frame = new JFrame();
+        frame.setTitle("JFrame");
+        table = new JTable(new MyModel());
+        jScrollPane = new JScrollPane();
+        jScrollPane.setBounds(new java.awt.Rectangle(0,0,350,618));
+        jScrollPane.setViewportView(table);
+
+        JTableHeader header = table.getTableHeader();
+        TableCellRenderer render = new DecoratedHeaderRenderer(header.getDefaultRenderer());
+        header.setDefaultRenderer(render);
+
+        frame.getContentPane().add(jScrollPane,null);
+        frame.setSize(363, 658);
+        frame.setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
+
+        table.updateUI();
+
+        frame.setVisible(true);
     }
 
     static class ExceptionCheck implements Thread.UncaughtExceptionHandler {
@@ -82,9 +104,7 @@ public class TableRendererTest{
             System.out.println("Uncaught Exception Handled : " + e);
         }
     }
-}
 
-class TableRendererSample extends JFrame {
     static class MyModel extends AbstractTableModel {
         public int getRowCount() {
             return 10;
@@ -97,59 +117,7 @@ class TableRendererSample extends JFrame {
         }
     }
 
-    static class MyJTable extends JTable {
-        public MyJTable(TableModel model){
-            super(model);
-        }
-    }
-
-    private JPanel jContentPane = null;
-    private JScrollPane jScrollPane = null;
-    private JTable table = null;
-
-    public TableRendererSample() {
-        super();
-        initialize();
-        table.updateUI();
-        this.setVisible(true);
-    }
-
-    private void initialize() {
-        this.setSize(363, 658);
-        this.setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
-        this.setContentPane(getJContentPane());
-        this.setTitle("JFrame");
-    }
-
-    private JPanel getJContentPane() {
-        if (jContentPane == null) {
-            jContentPane = new JPanel();
-            jContentPane.setLayout(null);
-            jContentPane.add(getJScrollPane(), null);
-        }
-        return jContentPane;
-    }
-
-    private JScrollPane getJScrollPane() {
-        if (jScrollPane == null) {
-            jScrollPane = new JScrollPane();
-            jScrollPane.setBounds(new java.awt.Rectangle(0,0,350,618));
-            jScrollPane.setViewportView(getTable());
-        }
-        return jScrollPane;
-    }
-
-    private JTable getTable() {
-        if (table == null) {
-            table = new MyJTable(new MyModel());
-            JTableHeader header = table.getTableHeader();
-            TableCellRenderer render = new DecoratedHeaderRenderer(header.getDefaultRenderer());
-            header.setDefaultRenderer(render);
-        }
-        return table;
-    }
-
-    private static class DecoratedHeaderRenderer implements TableCellRenderer {
+    static class DecoratedHeaderRenderer implements TableCellRenderer {
         public DecoratedHeaderRenderer(TableCellRenderer render) {
             this.render = render;
         }
