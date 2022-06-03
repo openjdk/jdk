@@ -294,8 +294,8 @@ public class VisibleMemberTable {
     /**
      * Returns a set of visible type elements in this type element's lineage.
      * <p>
-     * This method returns the super-types in the inheritance
-     * order C, B, A, j.l.O. The super-interfaces however are
+     * This method returns the supertypes in the inheritance
+     * order C, B, A, j.l.O. The superinterfaces however are
      * alpha sorted and appended to the resulting set.
      *
      * @return the set of visible classes in this map

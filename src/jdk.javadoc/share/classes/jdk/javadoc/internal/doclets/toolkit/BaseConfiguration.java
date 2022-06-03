@@ -87,7 +87,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 import jdk.javadoc.internal.doclint.DocLint;
 
 /**
- * Configure the output based on the options. Doclets should sub-class
+ * Configure the output based on the options. Doclets should subclass
  * BaseConfiguration, to configure and add their own options. This class contains
  * all user options which are supported by the standard doclet.
  */
