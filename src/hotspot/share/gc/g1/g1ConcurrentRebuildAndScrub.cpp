@@ -63,14 +63,19 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
   G1ConcurrentMark* _cm;
   HeapRegionClaimer _hr_claimer;
 
+  const bool _should_rebuild_remset;
+
   class G1RebuildRSAndScrubRegionClosure : public HeapRegionClosure {
     G1ConcurrentMark* _cm;
     const G1CMBitMap* _bitmap;
 
     G1RebuildRemSetClosure _rebuild_closure;
 
+    const bool _should_rebuild_remset;
+
     size_t _marked_words;
     size_t _processed_words;
+
     const size_t ProcessingYieldLimitInWords = G1RebuildRemSetChunkSize / HeapWordSize;
 
     void reset_marked_words() {
@@ -149,7 +154,10 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
       oop obj = cast_to_oop(current);
       size_t obj_size = obj->size();
 
-      if (obj_size > ProcessingYieldLimitInWords) {
+      if (!_should_rebuild_remset) {
+        // Not rebuilding, just step to next object.
+        add_processed_words(obj_size);
+      } else if (obj_size > ProcessingYieldLimitInWords) {
         // Large object, needs to be chunked to avoid stalling safepoints.
         MemRegion mr(current, obj_size);
         scan_large_object(hr, obj, mr);
@@ -249,6 +257,11 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
     bool scan_humongous_region(HeapRegion* hr, HeapWord* const pb) {
       assert(should_rebuild_or_scrub(hr), "must be");
 
+      if (!_should_rebuild_remset) {
+        // When not rebuilding there is nothing to do for humongous objects.
+        return false;
+      }
+
       // At this point we should only have live humongous objects, that
       // means it must either be:
       // - marked
@@ -281,10 +294,11 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
     }
 
   public:
-    G1RebuildRSAndScrubRegionClosure(G1ConcurrentMark* cm, uint worker_id) :
+    G1RebuildRSAndScrubRegionClosure(G1ConcurrentMark* cm, bool should_rebuild_remset, uint worker_id) :
       _cm(cm),
       _bitmap(_cm->mark_bitmap()),
       _rebuild_closure(G1CollectedHeap::heap(), worker_id),
+      _should_rebuild_remset(should_rebuild_remset),
       _marked_words(0),
       _processed_words(0) { }
 
@@ -321,23 +335,24 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
   };
 
 public:
-  G1RebuildRSAndScrubTask(G1ConcurrentMark* cm, uint num_workers) :
+  G1RebuildRSAndScrubTask(G1ConcurrentMark* cm, bool should_rebuild_remset, uint num_workers) :
     WorkerTask("Scrub dead objects"),
     _cm(cm),
-    _hr_claimer(num_workers) { }
+    _hr_claimer(num_workers),
+    _should_rebuild_remset(should_rebuild_remset) { }
 
   void work(uint worker_id) {
     SuspendibleThreadSetJoiner sts_join;
 
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    G1RebuildRSAndScrubRegionClosure cl(_cm, worker_id);
+    G1RebuildRSAndScrubRegionClosure cl(_cm, _should_rebuild_remset, worker_id);
     g1h->heap_region_par_iterate_from_worker_offset(&cl, &_hr_claimer, worker_id);
   }
 };
 
-void G1ConcurrentRebuildAndScrub::rebuild_and_scrub(G1ConcurrentMark* cm, WorkerThreads* workers) {
+void G1ConcurrentRebuildAndScrub::rebuild_and_scrub(G1ConcurrentMark* cm, bool should_rebuild_remset, WorkerThreads* workers) {
   uint num_workers = workers->active_workers();
 
-  G1RebuildRSAndScrubTask task(cm, num_workers);
+  G1RebuildRSAndScrubTask task(cm, should_rebuild_remset, num_workers);
   workers->run_task(&task, num_workers);
 }

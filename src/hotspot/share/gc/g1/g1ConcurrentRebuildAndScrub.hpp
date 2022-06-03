@@ -34,7 +34,7 @@ class WorkerThreads;
 class G1ConcurrentRebuildAndScrub : AllStatic {
 public:
 
-  static void rebuild_and_scrub(G1ConcurrentMark* cm, WorkerThreads* workers);
+  static void rebuild_and_scrub(G1ConcurrentMark* cm, bool should_rebuild_remset, WorkerThreads* workers);
 };
 
 

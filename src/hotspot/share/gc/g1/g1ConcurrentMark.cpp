@@ -1981,7 +1981,7 @@ void G1ConcurrentMark::rebuild_and_scrub() {
     log_debug(gc, marking)("Skipping Remembered Set Rebuild. No regions selected for rebuild, will only scrub");
   }
 
-  G1ConcurrentRebuildAndScrub::rebuild_and_scrub(this, _concurrent_workers);
+  G1ConcurrentRebuildAndScrub::rebuild_and_scrub(this, needs_remembered_set_rebuild(), _concurrent_workers);
 }
 
 void G1ConcurrentMark::print_stats() {
