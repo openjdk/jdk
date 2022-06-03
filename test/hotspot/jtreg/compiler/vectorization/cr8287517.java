@@ -26,8 +26,6 @@
 * @bug 8287517
 * @summary Test bug fix for JDK-8287517 related to fuzzer test failure in x86_64
 * @requires vm.compiler2.enabled
-* @requires (os.simpleArch == "x64" & vm.cpu.features ~= ".*avx2.*") |
-*           (os.simpleArch == "aarch64" & vm.cpu.features ~= ".*sve.*")
 * @run main/othervm -Xcomp -XX:CompileOnly=compiler/vectorization/cr8287517.test -XX:MaxVectorSize=8 compiler.vectorization.cr8287517
 */
 
