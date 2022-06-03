@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,29 @@
   @key headful
   @bug 4799136
   @summary Tests that type-ahead for dialog works and doesn't block program
-  @library    ../../regtesthelpers
-  @modules java.desktop/sun.awt
-  @build      Util
   @run main TestDialogTypeAhead
 */
 
-import java.awt.*;
-import java.awt.event.*;
+
+import java.awt.AWTEvent;
+import java.awt.Button;
+import java.awt.Component;
+import java.awt.DefaultKeyboardFocusManager;
+import java.awt.Dialog;
+import java.awt.Dimension;
+import java.awt.EventQueue;
+import java.awt.Frame;
+import java.awt.KeyboardFocusManager;
+import java.awt.Point;
+import java.awt.Robot;
+import java.awt.Toolkit;
+import java.awt.event.AWTEventListener;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.lang.reflect.InvocationTargetException;
 
 public class TestDialogTypeAhead {
@@ -49,8 +64,17 @@ public class TestDialogTypeAhead {
 
     public static void main(final String[] args) {
         TestDialogTypeAhead app = new TestDialogTypeAhead();
-        app.init();
-        app.start();
+        try {
+            app.init();
+            app.start();
+        } finally {
+            if (d != null) {
+                d.dispose();
+            }
+            if (f != null) {
+                f.dispose();
+            }
+        }
     }
 
     public void init()
@@ -73,13 +97,12 @@ public class TestDialogTypeAhead {
         ok.addKeyListener(new KeyAdapter() {
                 public void keyPressed(KeyEvent e) {
                     System.err.println("OK pressed");
-                    d.dispose();
-                    f.dispose();
                     // Typed-ahead key events should only be accepted if
                     // they arrive after FOCUS_GAINED
                     if (gotFocus) {
                         pressSema.raise();
                     }
+
                 }
             });
         ok.addFocusListener(new FocusAdapter() {
@@ -112,6 +135,7 @@ public class TestDialogTypeAhead {
     {
         try {
             robot = new Robot();
+            robot.setAutoDelay(100);
         } catch (Exception e) {
             throw new RuntimeException("Can't create robot:" + e);
         }
@@ -128,6 +152,7 @@ public class TestDialogTypeAhead {
 
         robot.keyPress(KeyEvent.VK_SPACE);
         robot.keyRelease(KeyEvent.VK_SPACE);
+
         try {
             robotSema.doWait(1000);
         } catch (InterruptedException ie) {
@@ -149,13 +174,13 @@ public class TestDialogTypeAhead {
         if (!pressSema.getState()) {
             throw new RuntimeException("Type-ahead doesn't work");
         }
-
     }// start()
 
-    private void moveMouseOver(Container c) {
+    private void moveMouseOver(Component c) {
         Point p = c.getLocationOnScreen();
         Dimension d = c.getSize();
-        robot.mouseMove(p.x + (int)(d.getWidth()/2), p.y + (int)(d.getHeight()/2));
+        robot.mouseMove(p.x + (int)(d.getWidth()/2),
+                p.y + (int)(d.getHeight()/2));
     }
     private void waitForIdle() {
         try {
@@ -209,7 +234,10 @@ public class TestDialogTypeAhead {
         }
         comp.removeFocusListener(fa);
         if (!comp.isFocusOwner()) {
-            throw new RuntimeException("Can't make " + comp + " focused, current owner is " + KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner());
+            throw new RuntimeException("Can't make " + comp + " focused,"
+                    + "current owner is "
+                    + KeyboardFocusManager
+                    .getCurrentKeyboardFocusManager().getFocusOwner());
         }
     }
 
@@ -257,4 +285,3 @@ public class TestDialogTypeAhead {
         }
     }
 }// class TestDialogTypeAhead
-

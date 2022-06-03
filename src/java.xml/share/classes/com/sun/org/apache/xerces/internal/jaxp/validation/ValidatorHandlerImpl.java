@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -70,6 +70,7 @@ import javax.xml.transform.sax.SAXResult;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.validation.TypeInfoProvider;
 import javax.xml.validation.ValidatorHandler;
+import jdk.xml.internal.JdkConstants;
 import jdk.xml.internal.JdkXmlUtils;
 import org.w3c.dom.TypeInfo;
 import org.w3c.dom.ls.LSInput;
@@ -94,7 +95,7 @@ import org.xml.sax.ext.EntityResolver2;
  * @author Kohsuke Kawaguchi
  * @author Michael Glavassevich, IBM
  *
- * @LastModified: Oct 2017
+ * @LastModified: May 2021
  */
 final class ValidatorHandlerImpl extends ValidatorHandler implements
     DTDHandler, EntityState, PSVIProvider, ValidatorHelper, XMLDocumentHandler {
@@ -137,7 +138,7 @@ final class ValidatorHandlerImpl extends ValidatorHandler implements
 
     /** Property identifier: Security property manager. */
     private static final String XML_SECURITY_PROPERTY_MANAGER =
-            Constants.XML_SECURITY_PROPERTY_MANAGER;
+            JdkConstants.XML_SECURITY_PROPERTY_MANAGER;
 
     //
     // Data
@@ -675,7 +676,7 @@ final class ValidatorHandlerImpl extends ValidatorHandler implements
                 XMLReader reader = saxSource.getXMLReader();
                 if( reader==null ) {
                     // create one now
-                    reader = JdkXmlUtils.getXMLReader(fComponentManager.getFeature(JdkXmlUtils.OVERRIDE_PARSER),
+                    reader = JdkXmlUtils.getXMLReader(fComponentManager.getFeature(JdkConstants.OVERRIDE_PARSER),
                             fComponentManager.getFeature(XMLConstants.FEATURE_SECURE_PROCESSING));
 
                     try {

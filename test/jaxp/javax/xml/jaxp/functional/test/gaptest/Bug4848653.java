@@ -44,7 +44,7 @@ import org.xml.sax.XMLReader;
  * @test
  * @bug 4848653
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true test.gaptest.Bug4848653
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow test.gaptest.Bug4848653
  * @run testng/othervm test.gaptest.Bug4848653
  * @summary Verify JAXP schemaLanguage property is ignored if setValidating(false)
  */

@@ -26,7 +26,7 @@
  * @summary Unit test for java.nio.file.Files
  * @library ..
  * @build CheckPermissions
- * @run main/othervm CheckPermissions
+ * @run main/othervm -Djava.security.manager=allow CheckPermissions
  */
 
 import java.nio.ByteBuffer;

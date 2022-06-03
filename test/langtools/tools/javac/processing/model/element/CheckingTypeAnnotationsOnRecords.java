@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,35 +32,24 @@
  *      jdk.compiler/com.sun.tools.javac.util
  * @build toolbox.ToolBox toolbox.JavacTask
  * @build JavacTestingAbstractProcessor
- * @compile --enable-preview -source ${jdk.version} CheckingTypeAnnotationsOnRecords.java
- * @run main/othervm --enable-preview CheckingTypeAnnotationsOnRecords
+ * @run main/othervm CheckingTypeAnnotationsOnRecords
  */
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
 
-import javax.annotation.processing.*;
-import javax.lang.model.SourceVersion;
-import javax.lang.model.element.Element;
-import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.RecordComponentElement;
-import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.VariableElement;
-import javax.lang.model.type.TypeKind;
-import javax.lang.model.util.ElementFilter;
-import javax.lang.model.util.ElementScanner14;
-import javax.tools.Diagnostic.Kind;
 import javax.tools.*;
 
 import java.lang.annotation.*;
 import java.util.*;
 import javax.annotation.processing.*;
+import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
 import javax.lang.model.type.*;
-import javax.tools.Diagnostic.Kind;
+import javax.lang.model.util.ElementFilter;
+import javax.lang.model.util.ElementScanner14;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -144,10 +133,7 @@ public class CheckingTypeAnnotationsOnRecords extends TestRunner {
 
         for (Mode mode : new Mode[] {Mode.API}) {
             new JavacTask(tb, mode)
-                    .options("-nowarn",
-                            "-processor", Processor.class.getName(),
-                            "--enable-preview",
-                            "-source", Integer.toString(Runtime.version().feature()))
+                    .options("-nowarn", "-processor", Processor.class.getName())
                     .files(findJavaFiles(src))
                     .outdir(classes)
                     .run()
@@ -294,7 +280,7 @@ public class CheckingTypeAnnotationsOnRecords extends TestRunner {
         }
 
         private void error(String text) {
-            processingEnv.getMessager().printMessage(Kind.ERROR, text);
+            processingEnv.getMessager().printError(text);
         }
     }
 }

@@ -120,7 +120,7 @@ class G1BarrierSetC1 : public ModRefBarrierSetC1 {
 
   virtual void pre_barrier(LIRAccess& access, LIR_Opr addr_opr,
                            LIR_Opr pre_val, CodeEmitInfo* info);
-  virtual void post_barrier(LIRAccess& access, LIR_OprDesc* addr, LIR_OprDesc* new_val);
+  virtual void post_barrier(LIRAccess& access, LIR_Opr addr, LIR_Opr new_val);
 
   virtual void load_at_resolved(LIRAccess& access, LIR_Opr result);
 

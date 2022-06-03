@@ -30,9 +30,9 @@ package com.sun.jndi.ldap.pool;
  *
  * @author Rosanna Lee
  */
-final public class PoolCleaner implements Runnable {
-    final private Pool[] pools;
-    final private long period;
+public final class PoolCleaner implements Runnable {
+    private final Pool[] pools;
+    private final long period;
 
     /**
      * @param period ms to wait between cleaning

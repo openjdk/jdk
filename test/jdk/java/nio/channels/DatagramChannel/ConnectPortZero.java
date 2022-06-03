@@ -54,8 +54,8 @@ import static org.testng.Assert.assertThrows;
  * @build jdk.test.lib.net.IPSupport
  * @summary Check that DatagramChannel throws expected Exception when connecting
  *          to port 0
- * @run testng/othervm ConnectPortZero
- * @run testng/othervm -Djava.net.preferIPv4Stack=true ConnectPortZero
+ * @run testng/othervm -Djava.security.manager=allow ConnectPortZero
+ * @run testng/othervm -Djava.security.manager=allow -Djava.net.preferIPv4Stack=true ConnectPortZero
  */
 
 public class ConnectPortZero {

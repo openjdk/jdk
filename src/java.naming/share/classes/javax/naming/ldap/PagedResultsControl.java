@@ -110,7 +110,7 @@ import com.sun.jndi.ldap.BerEncoder;
  * @see PagedResultsResponseControl
  * @author Vincent Ryan
  */
-final public class PagedResultsControl extends BasicControl {
+public final class PagedResultsControl extends BasicControl {
 
     /**
      * The paged-results control's assigned object identifier

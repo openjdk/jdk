@@ -162,7 +162,7 @@ public class SerializerMessages_de extends ListResourceBundle {
                 "Fragment kann nicht festgelegt werden, wenn der Pfad null ist" },
 
             {   MsgKey.ER_FRAG_FOR_GENERIC_URI,
-                "Fragment kann nur f\u00FCr einen generischen URI festgelegt werden" },
+                "Fragment kann nur f\u00FCr eine generische URI festgelegt werden" },
 
             {   MsgKey.ER_NO_SCHEME_IN_URI,
                 "Kein Schema gefunden in URI" },

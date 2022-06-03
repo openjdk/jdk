@@ -29,7 +29,7 @@
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
  * @run main/othervm TestECGenSpec
- * @run main/othervm TestECGenSpec sm
+ * @run main/othervm -Djava.security.manager=allow TestECGenSpec sm
  */
 
 import java.security.AlgorithmParameters;

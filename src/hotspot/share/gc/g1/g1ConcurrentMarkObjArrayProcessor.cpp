@@ -43,9 +43,9 @@ size_t G1CMObjArrayProcessor::process_array_slice(objArrayOop obj, HeapWord* sta
 }
 
 size_t G1CMObjArrayProcessor::process_obj(oop obj) {
-  assert(should_be_sliced(obj), "Must be an array object %d and large " SIZE_FORMAT, obj->is_objArray(), (size_t)obj->size());
+  assert(should_be_sliced(obj), "Must be an array object %d and large " SIZE_FORMAT, obj->is_objArray(), obj->size());
 
-  return process_array_slice(objArrayOop(obj), cast_from_oop<HeapWord*>(obj), (size_t)objArrayOop(obj)->size());
+  return process_array_slice(objArrayOop(obj), cast_from_oop<HeapWord*>(obj), objArrayOop(obj)->size());
 }
 
 size_t G1CMObjArrayProcessor::process_slice(HeapWord* slice) {
@@ -61,13 +61,13 @@ size_t G1CMObjArrayProcessor::process_slice(HeapWord* slice) {
                                   r->humongous_start_region()->bottom() :
                                   g1h->block_start(slice);
 
-  assert(oop(start_address)->is_objArray(), "Address " PTR_FORMAT " does not refer to an object array ", p2i(start_address));
+  assert(cast_to_oop(start_address)->is_objArray(), "Address " PTR_FORMAT " does not refer to an object array ", p2i(start_address));
   assert(start_address < slice,
          "Object start address " PTR_FORMAT " must be smaller than decoded address " PTR_FORMAT,
          p2i(start_address),
          p2i(slice));
 
-  objArrayOop objArray = objArrayOop(start_address);
+  objArrayOop objArray = objArrayOop(cast_to_oop(start_address));
 
   size_t already_scanned = slice - start_address;
   size_t remaining = objArray->size() - already_scanned;

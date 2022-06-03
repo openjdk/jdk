@@ -28,7 +28,6 @@
 #import "java_awt_dnd_DnDConstants.h"
 
 #import <Cocoa/Cocoa.h>
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 
 #import "AWTEvent.h"
 #import "AWTView.h"
@@ -572,7 +571,7 @@ static BOOL                sNeedsEnter;
         GET_DSCP_CLASS();
         DECLARE_METHOD(dragDropFinishedMethod, CDragSourceContextPeerClass, "dragDropFinished", "(ZIII)V");
         DLog3(@"  -> posting dragDropFinished, point %f, %f", point.x, point.y);
-        (*env)->CallVoidMethod(env, fDragSourceContextPeer, dragDropFinishedMethod, success, dragOp, (jint) point.x, (jint) point.y); // AWT_THREADING Safe (event)
+        (*env)->CallVoidMethod(env, fDragSourceContextPeer, dragDropFinishedMethod, success, dragOp, (jint) point.x, (jint) point.y);
         CHECK_EXCEPTION();
         DECLARE_METHOD(resetHoveringMethod, CDragSourceContextPeerClass, "resetHovering", "()V");
         (*env)->CallVoidMethod(env, fDragSourceContextPeer, resetHoveringMethod); // Hust reset static variable
@@ -594,7 +593,7 @@ static BOOL                sNeedsEnter;
 {
     AWT_ASSERT_NOT_APPKIT_THREAD;
 
-    [self performSelectorOnMainThread:@selector(doDrag) withObject:nil waitUntilDone:YES]; // AWT_THREADING Safe (called from unique asynchronous thread)
+    [self performSelectorOnMainThread:@selector(doDrag) withObject:nil waitUntilDone:YES];
 }
 
 /********************************  BEGIN NSDraggingSource Interface  ********************************/
@@ -613,7 +612,7 @@ static BOOL                sNeedsEnter;
 
     GET_DSCP_CLASS();
     DECLARE_METHOD(operationChangedMethod, CDragSourceContextPeerClass, "operationChanged", "(IIII)V");
-    (*env)->CallVoidMethod(env, fDragSourceContextPeer, operationChangedMethod, targetActions, modifiedModifiers, (jint) point.x, (jint) point.y); // AWT_THREADING Safe (event)
+    (*env)->CallVoidMethod(env, fDragSourceContextPeer, operationChangedMethod, targetActions, modifiedModifiers, (jint) point.x, (jint) point.y);
     CHECK_EXCEPTION();
 }
 
@@ -688,11 +687,11 @@ JNI_COCOA_ENTER(env);
         DLog3(@"  -> posting dragMotion, point %f, %f", point.x, point.y);
         GET_DSCP_CLASS();
         DECLARE_METHOD(dragMotionMethod, CDragSourceContextPeerClass, "dragMotion", "(IIII)V");
-        (*env)->CallVoidMethod(env, fDragSourceContextPeer, dragMotionMethod, targetActions, (jint) fModifiers, (jint) point.x, (jint) point.y); // AWT_THREADING Safe (event)
+        (*env)->CallVoidMethod(env, fDragSourceContextPeer, dragMotionMethod, targetActions, (jint) fModifiers, (jint) point.x, (jint) point.y);
         CHECK_EXCEPTION();
         DLog3(@"  -> posting dragMouseMoved, point %f, %f", point.x, point.y);
         DECLARE_METHOD(dragMouseMovedMethod, CDragSourceContextPeerClass, "dragMouseMoved", "(IIII)V");
-        (*env)->CallVoidMethod(env, fDragSourceContextPeer, dragMouseMovedMethod, targetActions, (jint) fModifiers, (jint) point.x, (jint) point.y); // AWT_THREADING Safe (event)
+        (*env)->CallVoidMethod(env, fDragSourceContextPeer, dragMouseMovedMethod, targetActions, (jint) fModifiers, (jint) point.x, (jint) point.y);
         CHECK_EXCEPTION();
     }
 JNI_COCOA_EXIT(env);
@@ -719,7 +718,7 @@ JNI_COCOA_EXIT(env);
     DLog3(@"  -> posting dragEnter, point %f, %f", point.x, point.y);
     GET_DSCP_CLASS();
     DECLARE_METHOD(dragEnterMethod, CDragSourceContextPeerClass, "dragEnter", "(IIII)V");
-    (*env)->CallVoidMethod(env, fDragSourceContextPeer, dragEnterMethod, targetActions, (jint) fModifiers, (jint) point.x, (jint) point.y); // AWT_THREADING Safe (event)
+    (*env)->CallVoidMethod(env, fDragSourceContextPeer, dragEnterMethod, targetActions, (jint) fModifiers, (jint) point.x, (jint) point.y);
      CHECK_EXCEPTION();
 }
 
@@ -731,7 +730,7 @@ JNI_COCOA_EXIT(env);
     DLog3(@"  -> posting dragExit, point %f, %f", point.x, point.y);
     GET_DSCP_CLASS();
     DECLARE_METHOD(dragExitMethod, CDragSourceContextPeerClass, "dragExit", "(II)V");
-    (*env)->CallVoidMethod(env, fDragSourceContextPeer, dragExitMethod, (jint) point.x, (jint) point.y); // AWT_THREADING Safe (event)
+    (*env)->CallVoidMethod(env, fDragSourceContextPeer, dragExitMethod, (jint) point.x, (jint) point.y);
     CHECK_EXCEPTION();
 
 }

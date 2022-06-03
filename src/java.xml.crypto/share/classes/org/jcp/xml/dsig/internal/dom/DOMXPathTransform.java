@@ -21,21 +21,22 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
- */
-/*
- * $Id: DOMXPathTransform.java 1854026 2019-02-21 09:30:01Z coheigea $
+ * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
  */
 package org.jcp.xml.dsig.internal.dom;
 
-import javax.xml.crypto.*;
-import javax.xml.crypto.dsig.*;
-import javax.xml.crypto.dsig.spec.TransformParameterSpec;
-import javax.xml.crypto.dsig.spec.XPathFilterParameterSpec;
 import java.security.InvalidAlgorithmParameterException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+
+import javax.xml.crypto.MarshalException;
+import javax.xml.crypto.XMLCryptoContext;
+import javax.xml.crypto.XMLStructure;
+import javax.xml.crypto.dsig.XMLSignature;
+import javax.xml.crypto.dsig.spec.TransformParameterSpec;
+import javax.xml.crypto.dsig.spec.XPathFilterParameterSpec;
+
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -74,7 +75,7 @@ public final class DOMXPathTransform extends ApacheTransform {
         if (attributes != null) {
             int length = attributes.getLength();
             Map<String, String> namespaceMap =
-                new HashMap<>(length);
+                new HashMap<>((int) Math.ceil(length / 0.75));
             for (int i = 0; i < length; i++) {
                 Attr attr = (Attr)attributes.item(i);
                 String prefix = attr.getPrefix();

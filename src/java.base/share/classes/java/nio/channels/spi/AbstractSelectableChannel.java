@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import java.util.function.Consumer;
  * blocking mode of this channel as well as its current set of selection keys.
  * It performs all of the synchronization required to implement the {@link
  * java.nio.channels.SelectableChannel} specification.  Implementations of the
- * abstract protected methods defined in this class need not synchronize
+ * protected abstract methods defined in this class need not synchronize
  * against other threads that might be engaged in the same operations.  </p>
  *
  *
@@ -76,7 +76,7 @@ public abstract class AbstractSelectableChannel
     // Lock for registration and configureBlocking operations
     private final Object regLock = new Object();
 
-    // True when non-blocking, need regLock to change;
+    // True when the channel is configured non-blocking, need regLock to change;
     private volatile boolean nonBlocking;
 
     /**

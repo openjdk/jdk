@@ -42,7 +42,7 @@ import org.xml.sax.SAXException;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/functional
- * @run testng/othervm -DrunSecMngr=true org.w3c.dom.ptests.TextTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow org.w3c.dom.ptests.TextTest
  * @run testng/othervm org.w3c.dom.ptests.TextTest
  * @summary Test for Text implementation returned by Document.createTextNode(String)
  */

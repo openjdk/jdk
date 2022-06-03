@@ -23,7 +23,7 @@
  */
 
 /*
- * @test TestHumongousMoves
+ * @test
  * @summary Check Shenandoah reacts on setting humongous moves correctly
  * @key randomness
  * @requires vm.gc.Shenandoah

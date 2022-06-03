@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,9 +162,17 @@ abstract class TlsPrfGenerator extends KeyGeneratorSpi {
                     spec.getPRFHashAlg(), spec.getPRFHashLength(),
                     spec.getPRFBlockSize()) :
                 doTLS10PRF(secret, labelBytes, spec.getSeed(), n));
-            return new SecretKeySpec(prfBytes, "TlsPrf");
+            try {
+                return new SecretKeySpec(prfBytes, "TlsPrf");
+            } finally {
+                Arrays.fill(prfBytes, (byte)0);
+            }
         } catch (GeneralSecurityException e) {
             throw new ProviderException("Could not generate PRF", e);
+        } finally {
+            if (secret != null) {
+                Arrays.fill(secret, (byte) 0);
+            }
         }
     }
 
@@ -257,6 +265,7 @@ abstract class TlsPrfGenerator extends KeyGeneratorSpi {
         if (seclen > 64) {              // 64: block size of HMAC-MD5
             md5.update(secret, 0, seclen);
             secKey = md5.digest();
+            md5.reset();
             keyLen = secKey.length;
         }
         expand(md5, 16, secKey, 0, keyLen, labelBytes, seed, output,
@@ -267,6 +276,7 @@ abstract class TlsPrfGenerator extends KeyGeneratorSpi {
         if (seclen > 64) {              // 64: block size of HMAC-SHA1
             sha.update(secret, off, seclen);
             secKey = sha.digest();
+            sha.reset();
             keyLen = secKey.length;
             off = 0;
         }
@@ -351,12 +361,15 @@ abstract class TlsPrfGenerator extends KeyGeneratorSpi {
             digest.update(tmp);
             digest.digest(tmp, 0, hmacSize);
 
+            digest.reset();
+
             int k = Math.min(hmacSize, remaining);
             for (int i = 0; i < k; i++) {
                 output[ofs++] ^= tmp[i];
             }
             remaining -= k;
         }
+        Arrays.fill(tmp, (byte)0);
     }
 
     /**

@@ -51,7 +51,7 @@ import com.sun.jdi.request.*;
  * The test works as follows.                                   <BR>
  * A debugger launchs a debuggee which creates new thread, thread2. <BR>
  * The tested class TestClass is specified outside of the class <BR>
- *      Threadnewinstance002a extends Thread                    <BR>
+ *      Threadnewinstance002a extends JDITask                   <BR>
  * After getting thread2 running but locked at a monitor        <BR>
  * the debugger informs the debugger of the thread2 creation    <BR>
  * and waits for an instruction from it.                        <BR>

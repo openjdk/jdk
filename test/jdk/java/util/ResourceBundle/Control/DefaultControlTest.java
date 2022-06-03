@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 /*
  * @test
- * @bug 5102289 6278334
+ * @bug 5102289 6278334 8261179
  * @summary Test the default Control implementation. The expiration
  * functionality of newBundle, getTimeToLive, and needsReload is
  * tested by ExpirationTest.sh. The factory methods are tested
@@ -141,35 +141,54 @@ public class DefaultControlTest {
 
     private static void testGetCandidateLocales() {
         Map<Locale, Locale[]> candidateData = new HashMap<Locale, Locale[]>();
-        candidateData.put(new Locale("ja", "JP", "YOK"), new Locale[] {
-                              new Locale("ja", "JP", "YOK"),
-                              new Locale("ja", "JP"),
-                              new Locale("ja"),
-                              new Locale("") });
-        candidateData.put(new Locale("ja", "JP"), new Locale[] {
-                              new Locale("ja", "JP"),
-                              new Locale("ja"),
-                              new Locale("") });
-        candidateData.put(new Locale("ja"), new Locale[] {
-                              new Locale("ja"),
-                              new Locale("") });
+        candidateData.put(Locale.of("ja", "JP", "YOK"), new Locale[] {
+                              Locale.of("ja", "JP", "YOK"),
+                              Locale.of("ja", "JP"),
+                              Locale.of("ja"),
+                              Locale.ROOT });
+        candidateData.put(Locale.of("ja", "JP"), new Locale[] {
+                              Locale.of("ja", "JP"),
+                              Locale.of("ja"),
+                              Locale.ROOT });
+        candidateData.put(Locale.of("ja"), new Locale[] {
+                              Locale.of("ja"),
+                              Locale.ROOT });
 
-        candidateData.put(new Locale("ja", "", "YOK"), new Locale[] {
-                              new Locale("ja", "", "YOK"),
-                              new Locale("ja"),
-                              new Locale("") });
-        candidateData.put(new Locale("", "JP", "YOK"), new Locale[] {
-                              new Locale("", "JP", "YOK"),
-                              new Locale("", "JP"),
-                              new Locale("") });
-        candidateData.put(new Locale("", "", "YOK"), new Locale[] {
-                              new Locale("", "", "YOK"),
-                              new Locale("") });
-        candidateData.put(new Locale("", "JP"), new Locale[] {
-                              new Locale("", "JP"),
-                              new Locale("") });
-        candidateData.put(new Locale(""), new Locale[] {
-                              new Locale("") });
+        candidateData.put(Locale.of("ja", "", "YOK"), new Locale[] {
+                              Locale.of("ja", "", "YOK"),
+                              Locale.of("ja"),
+                              Locale.ROOT });
+        candidateData.put(Locale.of("", "JP", "YOK"), new Locale[] {
+                              Locale.of("", "JP", "YOK"),
+                              Locale.of("", "JP"),
+                              Locale.ROOT });
+        candidateData.put(Locale.of("", "", "YOK"), new Locale[] {
+                              Locale.of("", "", "YOK"),
+                              Locale.ROOT });
+        candidateData.put(Locale.of("", "JP"), new Locale[] {
+                              Locale.of("", "JP"),
+                              Locale.ROOT });
+        candidateData.put(Locale.ROOT, new Locale[] {
+                              Locale.ROOT });
+
+        // Norwegian Bokmal
+        candidateData.put(Locale.forLanguageTag("nb-NO-POSIX"), new Locale[] {
+                Locale.forLanguageTag("nb-NO-POSIX"),
+                Locale.forLanguageTag("no-NO-POSIX"),
+                Locale.forLanguageTag("nb-NO"),
+                Locale.forLanguageTag("no-NO"),
+                Locale.forLanguageTag("nb"),
+                Locale.forLanguageTag("no"),
+                Locale.ROOT});
+        candidateData.put(Locale.forLanguageTag("no-NO-POSIX"), new Locale[] {
+                Locale.forLanguageTag("no-NO-POSIX"),
+                Locale.forLanguageTag("nb-NO-POSIX"),
+                Locale.forLanguageTag("no-NO"),
+                Locale.forLanguageTag("nb-NO"),
+                Locale.forLanguageTag("no"),
+                Locale.forLanguageTag("nb"),
+                Locale.ROOT});
+
 
         for (Locale locale : candidateData.keySet()) {
             List<Locale> candidates = CONTROL.getCandidateLocales("any", locale);
@@ -233,7 +252,7 @@ public class DefaultControlTest {
             }
 
             testNo = 2;
-            rb = CONTROL.newBundle("TestResourceRB", new Locale(""),
+            rb = CONTROL.newBundle("TestResourceRB", Locale.ROOT,
                                    CLAZZ, LOADER, false);
             s = rb.getString("type");
             if (!s.equals(CLAZZ)) {
@@ -267,7 +286,7 @@ public class DefaultControlTest {
         }
 
         try {
-            rb = CONTROL.newBundle("NonResourceBundle", new Locale(""),
+            rb = CONTROL.newBundle("NonResourceBundle", Locale.ROOT,
                                    "java.class", LOADER, false);
             error("newBundle: doesn't throw ClassCastException with a non-ResourceBundle subclass.");
         } catch (ClassCastException cce) {
@@ -335,21 +354,21 @@ public class DefaultControlTest {
     private static void testToBundleName() {
         final String name = "J2SE";
         Map<Locale, String> bundleNames = new HashMap<Locale, String>();
-        bundleNames.put(new Locale("ja", "JP", "YOK"),
+        bundleNames.put(Locale.of("ja", "JP", "YOK"),
                         name + "_" + "ja" + "_" + "JP" + "_" + "YOK");
-        bundleNames.put(new Locale("ja", "JP"),
+        bundleNames.put(Locale.of("ja", "JP"),
                         name + "_" + "ja" + "_" + "JP");
-        bundleNames.put(new Locale("ja"),
+        bundleNames.put(Locale.of("ja"),
                         name + "_" + "ja");
-        bundleNames.put(new Locale("ja", "", "YOK"),
+        bundleNames.put(Locale.of("ja", "", "YOK"),
                         name + "_" + "ja" + "_" + "" + "_" + "YOK");
-        bundleNames.put(new Locale("", "JP", "YOK"),
+        bundleNames.put(Locale.of("", "JP", "YOK"),
                         name + "_" + "" + "_" + "JP" + "_" + "YOK");
-        bundleNames.put(new Locale("", "", "YOK"),
+        bundleNames.put(Locale.of("", "", "YOK"),
                         name + "_" + "" + "_" + "" + "_" + "YOK");
-        bundleNames.put(new Locale("", "JP"),
+        bundleNames.put(Locale.of("", "JP"),
                         name + "_" + "" + "_" + "JP");
-        bundleNames.put(new Locale(""),
+        bundleNames.put(Locale.ROOT,
                         name);
 
         for (Locale locale : bundleNames.keySet()) {

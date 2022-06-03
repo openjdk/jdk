@@ -30,7 +30,6 @@
 
 #import <sys/param.h> // for MAXPATHLEN
 #import <CoreFoundation/CoreFoundation.h>
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 
 /*
  * Class:     com_apple_laf_AquaFileView
@@ -44,7 +43,7 @@
     jstring returnValue = NULL;
 JNI_COCOA_ENTER(env);
 
-    returnValue = JNFNSToJavaString(env, getRunningJavaBundle());
+    returnValue = NSStringToJavaString(env, getRunningJavaBundle());
 
 JNI_COCOA_EXIT(env);
     return returnValue;
@@ -61,7 +60,7 @@ JNIEXPORT jstring JNICALL Java_com_apple_laf_AquaFileView_getNativePathToSharedJ
     jstring returnValue = NULL;
 JNI_COCOA_ENTER(env);
 
-    returnValue = JNFNSToJavaString(env, [[NSBundle bundleWithIdentifier:@"com.apple.JavaVM"] bundlePath]);
+    returnValue = NSStringToJavaString(env, [[NSBundle bundleWithIdentifier:@"com.apple.JavaVM"] bundlePath]);
 
 JNI_COCOA_EXIT(env);
     return returnValue;
@@ -79,7 +78,7 @@ JNIEXPORT jstring JNICALL Java_com_apple_laf_AquaFileView_getNativeMachineName
 JNI_COCOA_ENTER(env);
 
     CFStringRef machineName = CSCopyMachineName();
-    returnValue = JNFNSToJavaString(env, (NSString*)machineName);
+    returnValue = NSStringToJavaString(env, (NSString*)machineName);
 
     if (machineName != NULL) {
         CFRelease(machineName);
@@ -169,7 +168,7 @@ JNI_COCOA_ENTER(env);
         if (theErr == noErr) {
             CFMutableStringRef mutableDisplayName = CFStringCreateMutableCopy(NULL, 0, displayName);
             CFStringNormalize(mutableDisplayName, kCFStringNormalizationFormC);
-            returnValue = JNFNSToJavaString(env, (NSString *)mutableDisplayName);
+            returnValue = NSStringToJavaString(env, (NSString *)mutableDisplayName);
             CFRelease(mutableDisplayName);
         }
 

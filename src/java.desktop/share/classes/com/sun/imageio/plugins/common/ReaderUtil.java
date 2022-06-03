@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ package com.sun.imageio.plugins.common;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.io.IOException;
+import java.util.List;
+import java.util.ArrayList;
 import javax.imageio.stream.ImageInputStream;
 
 /**
@@ -212,5 +214,48 @@ public class ReaderUtil {
             result |= (value & 0x7f);
         }
         return result;
+    }
+
+    /**
+     * An utility method to allocate and initialize a byte array
+     * step by step with pre-defined limit, instead of allocating
+     * a large array up-front based on the length derived from
+     * an image header.
+     *
+     * @param iis a {@code ImageInputStream} to decode data and store
+     * it in byte array.
+     * @param length the size of data to decode
+     *
+     * @return array of size length when decode succeeeds
+     *
+     * @throws IOException if decoding of stream fails
+     */
+    public static byte[] staggeredReadByteStream(ImageInputStream iis,
+        int length) throws IOException {
+        final int UNIT_SIZE = 1024000;
+        byte[] decodedData;
+        if (length < UNIT_SIZE) {
+            decodedData = new byte[length];
+            iis.readFully(decodedData, 0, length);
+        } else {
+            int bytesToRead = length;
+            int bytesRead = 0;
+            List<byte[]> bufs = new ArrayList<>();
+            while (bytesToRead != 0) {
+                int sz = Math.min(bytesToRead, UNIT_SIZE);
+                byte[] unit = new byte[sz];
+                iis.readFully(unit, 0, sz);
+                bufs.add(unit);
+                bytesRead += sz;
+                bytesToRead -= sz;
+            }
+            decodedData = new byte[bytesRead];
+            int copiedBytes = 0;
+            for (byte[] ba : bufs) {
+                System.arraycopy(ba, 0, decodedData, copiedBytes, ba.length);
+                copiedBytes += ba.length;
+            }
+        }
+        return decodedData;
     }
 }

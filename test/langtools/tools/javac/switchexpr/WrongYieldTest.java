@@ -2,7 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 8223305 8226522
  * @summary Ensure proper errors are returned for yields.
- * @compile/fail/ref=WrongYieldTest.out -XDrawDiagnostics -XDshould-stop.at=ATTR WrongYieldTest.java
+ * @compile/fail/ref=WrongYieldTest.out -XDrawDiagnostics -XDshould-stop.ifError=ATTR -XDshould-stop.ifNoError=ATTR WrongYieldTest.java
  */
 
 package t;

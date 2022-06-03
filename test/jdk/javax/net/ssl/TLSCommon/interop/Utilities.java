@@ -219,15 +219,17 @@ public class Utilities {
      */
     public static <T> boolean waitFor(Predicate<T> predicate, T t) {
         long deadline = System.currentTimeMillis() + Utilities.TIMEOUT * 1000;
-        while (!predicate.test(t) && System.currentTimeMillis() < deadline) {
+        boolean predicateResult = predicate.test(t);
+        while (!predicateResult && System.currentTimeMillis() < deadline) {
             try {
                 TimeUnit.SECONDS.sleep(1);
+                predicateResult = predicate.test(t);
             } catch (InterruptedException e) {
                 throw new RuntimeException("Sleep is interrupted.", e);
             }
         }
 
-        return predicate.test(t);
+        return predicateResult;
     }
 
     /*
@@ -275,48 +277,6 @@ public class Utilities {
             return Enum.valueOf(enumType, name);
         }).collect(Collectors.toList()).toArray(
                 (T[]) Array.newInstance(enumType, 0));
-    }
-
-    /*
-     * Executes shell command and return a OutputAnalyzer wrapping the process.
-     */
-    public static OutputAnalyzer shell(String command) throws IOException {
-        Process process = shellProc(command);
-        OutputAnalyzer oa = new OutputAnalyzer(process);
-        try {
-            process.waitFor();
-            return oa;
-        } catch (InterruptedException e) {
-            throw new RuntimeException("Shell process is interruptted!", e);
-        }
-    }
-
-    /*
-     * Executes shell command and redirect the output to a local file,
-     * and return the process.
-     */
-    public static Process shellProc(String command, Path outputPath)
-            throws IOException {
-        String[] cmds = new String[3];
-        cmds[0] = "sh";
-        cmds[1] = "-c";
-        cmds[2] = command;
-        if (DEBUG) {
-            System.out.println("[sh -c " + command + "]");
-        }
-        ProcessBuilder pb = new ProcessBuilder(cmds);
-        pb.redirectErrorStream(true);
-        if (outputPath != null) {
-            pb.redirectOutput(outputPath.toFile());
-        }
-        return pb.start();
-    }
-
-    /*
-     * Executes shell command and return the process.
-     */
-    public static Process shellProc(String command) throws IOException {
-        return shellProc(command, null);
     }
 
     /*
@@ -377,14 +337,14 @@ public class Utilities {
      */
     public static boolean isSessionResumed(ResumptionMode mode,
             byte[] firstSessionId, byte[] secondSessionId,
-            long secondConnStartTime, long secondSessionCreationTime) {
+            long firstSessionCreationTime, long secondSessionCreationTime) {
         System.out.println("ResumptionMode: " + mode);
         System.out.println("firstSessionId: " + Arrays.toString(firstSessionId));
         System.out.println("secondSessionId: " + Arrays.toString(secondSessionId));
-        System.out.println("secondConnStartTime: " + secondConnStartTime);
+        System.out.println("firstSessionCreationTime: " + firstSessionCreationTime);
         System.out.println("secondSessionCreationTime: " + secondSessionCreationTime);
 
-        boolean resumed = secondConnStartTime > secondSessionCreationTime;
+        boolean resumed = firstSessionCreationTime == secondSessionCreationTime;
         if (mode == ResumptionMode.ID) {
             resumed = resumed && firstSessionId.length > 0
                     && Arrays.equals(firstSessionId, secondSessionId);

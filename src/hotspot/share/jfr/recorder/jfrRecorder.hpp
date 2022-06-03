@@ -36,7 +36,7 @@ class Thread;
 //
 class JfrRecorder : public JfrCHeapObj {
   friend class Jfr;
-  friend void recorderthread_entry(JavaThread*, Thread*);
+  friend void recorderthread_entry(JavaThread*, JavaThread*);
  private:
   static bool on_create_vm_1();
   static bool on_create_vm_2();

@@ -25,6 +25,7 @@
  * @test
  * @bug 4994637
  * @summary Tests custom map encoding
+ * @run main/othervm -Djava.security.manager=allow Test4994637
  * @author Sergey Malenkov
  */
 

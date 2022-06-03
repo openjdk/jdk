@@ -40,6 +40,7 @@ public final class FinishedStream extends EventByteStream {
         this.buffer = new byte[blockSize];
     }
 
+    @Override
     public synchronized byte[] read() throws IOException {
         // OK to reuse buffer since this
         // is only used for serialization
@@ -62,5 +63,4 @@ public final class FinishedStream extends EventByteStream {
     public synchronized void close() throws IOException {
         inputStream.close();
     }
-
 }

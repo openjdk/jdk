@@ -40,7 +40,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8169778
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true javax.xml.parsers.ptests.SAXParserFactTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow javax.xml.parsers.ptests.SAXParserFactTest
  * @run testng/othervm javax.xml.parsers.ptests.SAXParserFactTest
  */
 @Listeners({jaxp.library.BasePolicy.class})

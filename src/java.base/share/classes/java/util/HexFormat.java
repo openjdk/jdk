@@ -150,20 +150,24 @@ public final class HexFormat {
     };
     // Analysis has shown that generating the whole array allows the JIT to generate
     // better code compared to a slimmed down array, such as one cutting off after 'f'
-    private static final byte[] DIGITS = new byte[] {
-            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-            -1, -1, -1, -1, -1, -1, -1, -1,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, -1, -1,
-            -1, -1, -1, -1, -1, 10, 11, 12, 13, 14, 15, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 10, 11, 12,
-            13, 14, 15, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
+    private static final byte[] DIGITS = {
+            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+             0,  1,  2,  3,  4,  5,  6,  7,  8,  9, -1, -1, -1, -1, -1, -1,
+            -1, 10, 11, 12, 13, 14, 15, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, 10, 11, 12, 13, 14, 15, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    };
     /**
      * Format each byte of an array as a pair of hexadecimal digits.
      * The hexadecimal characters are from lowercase alpha digits.
@@ -171,7 +175,7 @@ public final class HexFormat {
     private static final HexFormat HEX_FORMAT =
             new HexFormat("", "", "", LOWERCASE_DIGITS);
 
-    private static final byte[] EMPTY_BYTES = new byte[0];
+    private static final byte[] EMPTY_BYTES = {};
 
     private final String delimiter;
     private final String prefix;
@@ -191,7 +195,7 @@ public final class HexFormat {
         this.delimiter = Objects.requireNonNull(delimiter, "delimiter");
         this.prefix = Objects.requireNonNull(prefix, "prefix");
         this.suffix = Objects.requireNonNull(suffix, "suffix");
-        this.digits = Objects.requireNonNull(digits, "digits");
+        this.digits = digits;
     }
 
     /**
@@ -468,7 +472,8 @@ public final class HexFormat {
     }
 
     /**
-     * Checked that the requested size for the result string is less than the max array size.
+     * Checked that the requested size for the result string is
+     * less than or equal to the max array size.
      *
      * @param length the requested size of a byte array.
      * @return the length
@@ -526,7 +531,7 @@ public final class HexFormat {
             string = string.subSequence(fromIndex, toIndex);
         }
 
-        if (string.length() == 0)
+        if (string.isEmpty())
             return EMPTY_BYTES;
         if (delimiter.isEmpty() && prefix.isEmpty() && suffix.isEmpty())
             return parseNoDelimiter(string);
@@ -534,7 +539,7 @@ public final class HexFormat {
         // avoid overflow for max length prefix or suffix
         long valueChars = prefix.length() + 2L + suffix.length();
         long stride = valueChars + delimiter.length();
-        if (string.length() < valueChars || (string.length() - valueChars) % stride != 0)
+        if ((string.length() - valueChars) % stride != 0)
             throw new IllegalArgumentException("extra or missing delimiters " +
                     "or values consisting of prefix, two hexadecimal digits, and suffix");
 
@@ -545,16 +550,10 @@ public final class HexFormat {
         byte[] bytes = new byte[len];
         int i, offset;
         for (i = 0, offset = prefix.length(); i < len - 1; i++, offset += 2 + between.length()) {
-            int v = fromHexDigits(string, offset);
-            if (v < 0)
-                throw new IllegalArgumentException("input contains non-hexadecimal characters");
-            bytes[i] = (byte) v;
+            bytes[i] = (byte) fromHexDigits(string, offset);
             checkLiteral(string, offset + 2, between);
         }
-        int v = fromHexDigits(string, offset);
-        if (v < 0)
-            throw new IllegalArgumentException("input contains non-hexadecimal characters");
-        bytes[i] = (byte) v;
+        bytes[i] = (byte) fromHexDigits(string, offset);
 
         return bytes;
     }
@@ -830,21 +829,15 @@ public final class HexFormat {
      * @throws IllegalArgumentException if the string length is not valid or
      *          the string contains non-hexadecimal characters
      */
-    private byte[] parseNoDelimiter(CharSequence string) {
+    private static byte[] parseNoDelimiter(CharSequence string) {
         if ((string.length() & 1) != 0)
             throw new IllegalArgumentException("string length not even: " +
                     string.length());
 
         byte[] bytes = new byte[string.length() / 2];
-        int illegal = 0;        // Accumulate logical-or of all bytes
         for (int i = 0; i < bytes.length; i++) {
-            int v = fromHexDigits(string, i * 2);
-            bytes[i] = (byte) v;
-            illegal |= v;
+            bytes[i] = (byte) fromHexDigits(string, i * 2);
         }
-        // check if any character was an illegal character
-        if (illegal < 0)
-            throw new IllegalArgumentException("input contains non-hexadecimal characters");
 
         return bytes;
     }
@@ -877,7 +870,7 @@ public final class HexFormat {
      * @return {@code true} if the character is valid a hexadecimal character,
      *          otherwise {@code false}
      */
-    public boolean isHexDigit(int ch) {
+    public static boolean isHexDigit(int ch) {
         return ((ch >>> 8) == 0 && DIGITS[ch] >= 0);
     }
 
@@ -889,13 +882,12 @@ public final class HexFormat {
      * <li>{@code (ch - 'A' + 10)} for {@code 'A'} through {@code 'F'} inclusive, and
      * <li>{@code (ch - 'a' + 10)} for {@code 'a'} through {@code 'f'} inclusive.
      * </ul>
-     * The delimiter, prefix, suffix, and uppercase parameters are not used.
      *
      * @param ch a character or codepoint
      * @return the value {@code 0-15}
      * @throws  NumberFormatException if the codepoint is not a hexadecimal character
      */
-    public int fromHexDigit(int ch) {
+    public static int fromHexDigit(int ch) {
         int value;
         if ((ch >>> 8) == 0 && (value = DIGITS[ch]) >= 0) {
             return value;
@@ -907,7 +899,6 @@ public final class HexFormat {
      * Returns a value parsed from two hexadecimal characters in a string.
      * The characters in the range from {@code index} to {@code index + 1},
      * inclusive, must be valid hex digits according to {@link #fromHexDigit(int)}.
-     * The delimiter, prefix, suffix, and uppercase parameters are not used.
      *
      * @param string a CharSequence containing the characters
      * @param index the index of the first character of the range
@@ -917,8 +908,7 @@ public final class HexFormat {
      * @throws  IndexOutOfBoundsException if the range is out of bounds
      *          for the {@code CharSequence}
      */
-    private int fromHexDigits(CharSequence string, int index) {
-        Objects.requireNonNull(string, "string");
+    private static int fromHexDigits(CharSequence string, int index) {
         int high = fromHexDigit(string.charAt(index));
         int low = fromHexDigit(string.charAt(index + 1));
         return (high << 4) | low;
@@ -929,14 +919,14 @@ public final class HexFormat {
      * The hexadecimal characters are parsed from most significant to least significant
      * using {@link #fromHexDigit(int)} to form an unsigned value.
      * The value is zero extended to 32 bits and is returned as an {@code int}.
-     * The delimiter, prefix, suffix, and uppercase parameters are not used.
      *
      * @apiNote
      * {@link Integer#parseInt(String, int) Integer.parseInt(s, 16)} and
      * {@link Integer#parseUnsignedInt(String, int) Integer.parseUnsignedInt(s, 16)}
      * are similar but allow all Unicode hexadecimal digits defined by
      * {@link Character#digit(char, int) Character.digit(ch, 16)}.
-     * {@code HexFormat} uses only hexadecimal characters "0-9, "A-F", and "a-f".
+     * {@code HexFormat} uses only hexadecimal characters
+     * {@code "0-9"}, {@code "A-F"} and {@code "a-f"}.
      * Signed hexadecimal strings can be parsed with {@link Integer#parseInt(String, int)}.
      *
      * @param string a CharSequence containing up to eight hexadecimal characters
@@ -944,14 +934,8 @@ public final class HexFormat {
      * @throws  IllegalArgumentException if the string length is greater than eight (8) or
      *      if any of the characters is not a hexadecimal character
      */
-    public int fromHexDigits(CharSequence string) {
-        Objects.requireNonNull(string, "string");
-        int length = checkDigitCount(0, string.length(), 8);
-        int value = 0;
-        for (int i = 0; i < length; i++) {
-            value = (value << 4) + fromHexDigit(string.charAt(i));
-        }
-        return value;
+    public static int fromHexDigits(CharSequence string) {
+        return fromHexDigits(string, 0, string.length());
     }
 
     /**
@@ -961,14 +945,14 @@ public final class HexFormat {
      * are parsed from most significant to least significant
      * using {@link #fromHexDigit(int)} to form an unsigned value.
      * The value is zero extended to 32 bits and is returned as an {@code int}.
-     * The delimiter, prefix, suffix, and uppercase parameters are not used.
      *
      * @apiNote
      * {@link Integer#parseInt(String, int) Integer.parseInt(s, 16)} and
      * {@link Integer#parseUnsignedInt(String, int) Integer.parseUnsignedInt(s, 16)}
      * are similar but allow all Unicode hexadecimal digits defined by
      * {@link Character#digit(char, int) Character.digit(ch, 16)}.
-     * {@code HexFormat} uses only hexadecimal characters "0-9, "A-F", and "a-f".
+     * {@code HexFormat} uses only hexadecimal characters
+     * {@code "0-9"}, {@code "A-F"} and {@code "a-f"}.
      * Signed hexadecimal strings can be parsed with {@link Integer#parseInt(String, int)}.
      *
      * @param string a CharSequence containing the characters
@@ -980,7 +964,7 @@ public final class HexFormat {
      * @throws  IllegalArgumentException if length of the range is greater than eight (8) or
      *          if any of the characters is not a hexadecimal character
      */
-    public int fromHexDigits(CharSequence string, int fromIndex, int toIndex) {
+    public static int fromHexDigits(CharSequence string, int fromIndex, int toIndex) {
         Objects.requireNonNull(string, "string");
         Objects.checkFromToIndex(fromIndex, toIndex, string.length());
         int length = checkDigitCount(fromIndex, toIndex, 8);
@@ -996,14 +980,14 @@ public final class HexFormat {
      * The hexadecimal characters are parsed from most significant to least significant
      * using {@link #fromHexDigit(int)} to form an unsigned value.
      * The value is zero extended to 64 bits and is returned as a {@code long}.
-     * The delimiter, prefix, suffix, and uppercase parameters are not used.
      *
      * @apiNote
      * {@link Long#parseLong(String, int) Long.parseLong(s, 16)} and
      * {@link Long#parseUnsignedLong(String, int) Long.parseUnsignedLong(s, 16)}
      * are similar but allow all Unicode hexadecimal digits defined by
      * {@link Character#digit(char, int) Character.digit(ch, 16)}.
-     * {@code HexFormat} uses only hexadecimal characters "0-9, "A-F", and "a-f".
+     * {@code HexFormat} uses only hexadecimal characters
+     * {@code "0-9"}, {@code "A-F"} and {@code "a-f"}.
      * Signed hexadecimal strings can be parsed with {@link Long#parseLong(String, int)}.
      *
      * @param string a CharSequence containing up to sixteen hexadecimal characters
@@ -1011,14 +995,8 @@ public final class HexFormat {
      * @throws  IllegalArgumentException if the string length is greater than sixteen (16) or
      *         if any of the characters is not a hexadecimal character
      */
-    public long fromHexDigitsToLong(CharSequence string) {
-        Objects.requireNonNull(string, "string");
-        int length = checkDigitCount(0, string.length(), 16);
-        long value = 0L;
-        for (int i = 0; i < length; i++) {
-            value = (value << 4) + fromHexDigit(string.charAt(i));
-        }
-        return value;
+    public static long fromHexDigitsToLong(CharSequence string) {
+        return fromHexDigitsToLong(string, 0, string.length());
     }
 
     /**
@@ -1028,14 +1006,14 @@ public final class HexFormat {
      * are parsed from most significant to least significant
      * using {@link #fromHexDigit(int)} to form an unsigned value.
      * The value is zero extended to 64 bits and is returned as a {@code long}.
-     * The delimiter, prefix, suffix, and uppercase parameters are not used.
      *
      * @apiNote
      * {@link Long#parseLong(String, int) Long.parseLong(s, 16)} and
      * {@link Long#parseUnsignedLong(String, int) Long.parseUnsignedLong(s, 16)}
      * are similar but allow all Unicode hexadecimal digits defined by
      * {@link Character#digit(char, int) Character.digit(ch, 16)}.
-     * {@code HexFormat} uses only hexadecimal characters "0-9, "A-F", and "a-f".
+     * {@code HexFormat} uses only hexadecimal characters
+     * {@code "0-9"}, {@code "A-F"} and {@code "a-f"}.
      * Signed hexadecimal strings can be parsed with {@link Long#parseLong(String, int)}.
      *
      * @param string a CharSequence containing the characters
@@ -1047,7 +1025,7 @@ public final class HexFormat {
      * @throws  IllegalArgumentException if the length of the range is greater than sixteen (16) or
      *          if any of the characters is not a hexadecimal character
      */
-    public long fromHexDigitsToLong(CharSequence string, int fromIndex, int toIndex) {
+    public static long fromHexDigitsToLong(CharSequence string, int fromIndex, int toIndex) {
         Objects.requireNonNull(string, "string");
         Objects.checkFromToIndex(fromIndex, toIndex, string.length());
         int length = checkDigitCount(fromIndex, toIndex, 16);
@@ -1074,10 +1052,10 @@ public final class HexFormat {
         if (o == null || getClass() != o.getClass())
             return false;
         HexFormat otherHex = (HexFormat) o;
-        return delimiter.equals(otherHex.delimiter) &&
+        return Arrays.equals(digits, otherHex.digits) &&
+                delimiter.equals(otherHex.delimiter) &&
                 prefix.equals(otherHex.prefix) &&
-                suffix.equals(otherHex.suffix) &&
-                Arrays.equals(digits, otherHex.digits);
+                suffix.equals(otherHex.suffix);
     }
 
     /**

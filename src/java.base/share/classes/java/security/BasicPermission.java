@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -260,6 +260,10 @@ public abstract class BasicPermission extends Permission
     /**
      * readObject is called to restore the state of the BasicPermission from
      * a stream.
+     *
+     * @param  s the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
     @java.io.Serial
     private void readObject(ObjectInputStream s)
@@ -360,27 +364,25 @@ final class BasicPermissionCollection
      */
     @Override
     public void add(Permission permission) {
-        if (! (permission instanceof BasicPermission))
+        if (!(permission instanceof BasicPermission basicPermission))
             throw new IllegalArgumentException("invalid permission: "+
                                                permission);
         if (isReadOnly())
             throw new SecurityException("attempt to add a Permission to a readonly PermissionCollection");
-
-        BasicPermission bp = (BasicPermission) permission;
 
         // make sure we only add new BasicPermissions of the same class
         // Also check null for compatibility with deserialized form from
         // previous versions.
         if (permClass == null) {
             // adding first permission
-            permClass = bp.getClass();
+            permClass = basicPermission.getClass();
         } else {
-            if (bp.getClass() != permClass)
+            if (basicPermission.getClass() != permClass)
                 throw new IllegalArgumentException("invalid permission: " +
                                                 permission);
         }
 
-        String canonName = bp.getCanonicalName();
+        String canonName = basicPermission.getCanonicalName();
         perms.put(canonName, permission);
 
         // No sync on all_allowed; staleness OK
@@ -401,13 +403,11 @@ final class BasicPermissionCollection
      */
     @Override
     public boolean implies(Permission permission) {
-        if (! (permission instanceof BasicPermission))
+        if (!(permission instanceof BasicPermission basicPermission))
             return false;
 
-        BasicPermission bp = (BasicPermission) permission;
-
         // random subclasses of BasicPermission do not imply each other
-        if (bp.getClass() != permClass)
+        if (basicPermission.getClass() != permClass)
             return false;
 
         // short circuit if the "*" Permission was added
@@ -418,7 +418,7 @@ final class BasicPermissionCollection
         // Check for full match first. Then work our way up the
         // path looking for matches on a.b..*
 
-        String path = bp.getCanonicalName();
+        String path = basicPermission.getCanonicalName();
         //System.out.println("check "+path);
 
         Permission x = perms.get(path);
@@ -488,13 +488,17 @@ final class BasicPermissionCollection
         new ObjectStreamField("permClass", Class.class),
     };
 
-    /**
+    /*
      * @serialData Default fields.
      */
-    /*
+
+    /**
      * Writes the contents of the perms field out as a Hashtable for
      * serialization compatibility with earlier releases. all_allowed
      * and permClass unchanged.
+     *
+     * @param  out the {@code ObjectOutputStream} to which data is written
+     * @throws IOException if an I/O error occurs
      */
     @java.io.Serial
     private void writeObject(ObjectOutputStream out) throws IOException {
@@ -517,6 +521,10 @@ final class BasicPermissionCollection
     /**
      * readObject is called to restore the state of the
      * BasicPermissionCollection from a stream.
+     *
+     * @param  in the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
     @java.io.Serial
     private void readObject(java.io.ObjectInputStream in)

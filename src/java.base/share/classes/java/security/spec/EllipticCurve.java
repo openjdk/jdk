@@ -169,15 +169,11 @@ public class EllipticCurve {
      */
     public boolean equals(Object obj) {
         if (this == obj) return true;
-        if (obj instanceof EllipticCurve) {
-            EllipticCurve curve = (EllipticCurve) obj;
-            if ((field.equals(curve.field)) &&
-                (a.equals(curve.a)) &&
-                (b.equals(curve.b))) {
-                    return true;
-            }
-        }
-        return false;
+
+        return obj instanceof EllipticCurve other
+                && field.equals(other.field)
+                && a.equals(other.a)
+                && b.equals(other.b);
     }
 
     /**

@@ -38,11 +38,11 @@ import javax.naming.ldap.Control;
 
 import com.sun.jndi.url.ldap.ldapURLContextFactory;
 
-final public class LdapCtxFactory implements ObjectFactory, InitialContextFactory {
+public final class LdapCtxFactory implements ObjectFactory, InitialContextFactory {
     /**
      * The type of each address in an LDAP reference.
      */
-    public final static String ADDRESS_TYPE = "URL";
+    public static final String ADDRESS_TYPE = "URL";
 
     // ----------------- ObjectFactory interface --------------------
 
@@ -189,6 +189,10 @@ final public class LdapCtxFactory implements ObjectFactory, InitialContextFactor
                     ctx = getLdapCtxFromUrl(
                             r.getDomainName(), url, new LdapURL(u), env);
                     return ctx;
+                } catch (AuthenticationException e) {
+                    // do not retry on a different endpoint to avoid blocking
+                    // the user if authentication credentials are wrong.
+                    throw e;
                 } catch (NamingException e) {
                     // try the next element
                     lastException = e;
@@ -241,6 +245,10 @@ final public class LdapCtxFactory implements ObjectFactory, InitialContextFactor
         for (String u : urls) {
             try {
                 return getUsingURL(u, env);
+            } catch (AuthenticationException e) {
+                // do not retry on a different URL to avoid blocking
+                // the user if authentication credentials are wrong.
+                throw e;
             } catch (NamingException e) {
                 ex = e;
             }

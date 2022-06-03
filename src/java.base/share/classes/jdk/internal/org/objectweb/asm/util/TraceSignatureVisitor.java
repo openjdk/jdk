@@ -56,6 +56,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package jdk.internal.org.objectweb.asm.util;
 
 import java.util.Collections;
@@ -140,13 +141,13 @@ public final class TraceSignatureVisitor extends SignatureVisitor {
       * @param accessFlags for class type signatures, the access flags of the class.
       */
     public TraceSignatureVisitor(final int accessFlags) {
-        super(/* latest api = */ Opcodes.ASM8);
+        super(/* latest api = */ Opcodes.ASM9);
         this.isInterface = (accessFlags & Opcodes.ACC_INTERFACE) != 0;
         this.declaration = new StringBuilder();
     }
 
     private TraceSignatureVisitor(final StringBuilder stringBuilder) {
-        super(/* latest api = */ Opcodes.ASM8);
+        super(/* latest api = */ Opcodes.ASM9);
         this.isInterface = false;
         this.declaration = stringBuilder;
     }
@@ -373,3 +374,4 @@ public final class TraceSignatureVisitor extends SignatureVisitor {
         }
     }
 }
+

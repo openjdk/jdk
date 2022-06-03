@@ -40,7 +40,7 @@ public class LegacyAlgorithmConstraints extends AbstractAlgorithmConstraints {
     public static final String PROPERTY_TLS_LEGACY_ALGS =
             "jdk.tls.legacyAlgorithms";
 
-    private final List<String> legacyAlgorithms;
+    private final Set<String> legacyAlgorithms;
 
     public LegacyAlgorithmConstraints(String propertyName,
             AlgorithmDecomposer decomposer) {

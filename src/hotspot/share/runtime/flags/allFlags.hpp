@@ -28,6 +28,7 @@
 #include "compiler/compiler_globals.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/tlab_globals.hpp"
+#include "runtime/flags/debug_globals.hpp"
 #include "runtime/globals.hpp"
 
 // Put LP64/ARCH/JVMCI/COMPILER1/COMPILER2 at the top,
@@ -104,6 +105,15 @@
     constraint)               \
                               \
   RUNTIME_OS_FLAGS(           \
+    develop,                  \
+    develop_pd,               \
+    product,                  \
+    product_pd,               \
+    notproduct,               \
+    range,                    \
+    constraint)               \
+                              \
+  DEBUG_RUNTIME_FLAGS(        \
     develop,                  \
     develop_pd,               \
     product,                  \

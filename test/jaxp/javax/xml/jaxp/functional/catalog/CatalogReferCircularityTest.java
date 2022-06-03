@@ -35,7 +35,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8077931
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true catalog.CatalogReferCircularityTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow catalog.CatalogReferCircularityTest
  * @run testng/othervm catalog.CatalogReferCircularityTest
  * @summary Via nextCatalog entry, the catalog reference chain may be
  *          a (partial) closed circuit. For instance, a catalog may use itself

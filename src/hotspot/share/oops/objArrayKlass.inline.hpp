@@ -25,12 +25,13 @@
 #ifndef SHARE_OOPS_OBJARRAYKLASS_INLINE_HPP
 #define SHARE_OOPS_OBJARRAYKLASS_INLINE_HPP
 
+#include "oops/objArrayKlass.hpp"
+
 #include "memory/memRegion.hpp"
 #include "memory/iterator.hpp"
 #include "oops/arrayKlass.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/klass.hpp"
-#include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/macros.hpp"

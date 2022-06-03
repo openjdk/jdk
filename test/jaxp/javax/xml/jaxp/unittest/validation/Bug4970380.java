@@ -35,7 +35,7 @@ import org.xml.sax.SAXNotRecognizedException;
  * @test
  * @bug 4970380
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.Bug4970380
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.Bug4970380
  * @run testng/othervm validation.Bug4970380
  * @summary Test validatorHandler.getFeature(...) with unknown name and "http://xml.org/sax/features/namespace-prefixes".
  */

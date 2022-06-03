@@ -37,19 +37,19 @@ public class ElementValuePairGen
 
     private final ElementValueGen value;
 
-    private final ConstantPoolGen cpool;
+    private final ConstantPoolGen constantPoolGen;
 
     public ElementValuePairGen(final ElementValuePair nvp, final ConstantPoolGen cpool,
             final boolean copyPoolEntries)
     {
-        this.cpool = cpool;
+        this.constantPoolGen = cpool;
         // J5ASSERT:
         // Could assert nvp.getNameString() points to the same thing as
-        // cpool.getConstant(nvp.getNameIndex())
+        // constantPoolGen.getConstant(nvp.getNameIndex())
         // if
-        // (!nvp.getNameString().equals(((ConstantUtf8)cpool.getConstant(nvp.getNameIndex())).getBytes()))
+        // (!nvp.getNameString().equals(((ConstantUtf8)constantPoolGen.getConstant(nvp.getNameIndex())).getBytes()))
         // {
-        // throw new RuntimeException("envp buggered");
+        // throw new IllegalArgumentException("envp buggered");
         // }
         if (copyPoolEntries)
         {
@@ -68,7 +68,7 @@ public class ElementValuePairGen
     public ElementValuePair getElementNameValuePair()
     {
         final ElementValue immutableValue = value.getElementValue();
-        return new ElementValuePair(nameIdx, immutableValue, cpool
+        return new ElementValuePair(nameIdx, immutableValue, constantPoolGen
                 .getConstantPool());
     }
 
@@ -77,7 +77,7 @@ public class ElementValuePairGen
     {
         this.nameIdx = idx;
         this.value = value;
-        this.cpool = cpool;
+        this.constantPoolGen = cpool;
     }
 
     public ElementValuePairGen(final String name, final ElementValueGen value,
@@ -85,7 +85,7 @@ public class ElementValuePairGen
     {
         this.nameIdx = cpool.addUtf8(name);
         this.value = value;
-        this.cpool = cpool;
+        this.constantPoolGen = cpool;
     }
 
     protected void dump(final DataOutputStream dos) throws IOException
@@ -101,8 +101,8 @@ public class ElementValuePairGen
 
     public final String getNameString()
     {
-        // ConstantString cu8 = (ConstantString)cpool.getConstant(nameIdx);
-        return ((ConstantUtf8) cpool.getConstant(nameIdx)).getBytes();
+        // ConstantString cu8 = (ConstantString)constantPoolGen.getConstant(nameIdx);
+        return ((ConstantUtf8) constantPoolGen.getConstant(nameIdx)).getBytes();
     }
 
     public final ElementValueGen getValue()

@@ -54,14 +54,26 @@ final class SSLExtensions {
             ByteBuffer m, SSLExtension[] extensions) throws IOException {
         this.handshakeMessage = hm;
 
+        if (m.remaining() < 2) {
+            throw hm.handshakeContext.conContext.fatal(
+                    Alert.DECODE_ERROR,
+                    "Incorrect extensions: no length field");
+        }
+
         int len = Record.getInt16(m);
+        if (len > m.remaining()) {
+            throw hm.handshakeContext.conContext.fatal(
+                    Alert.DECODE_ERROR,
+                    "Insufficient extensions data");
+        }
+
         encodedLength = len + 2;        // 2: the length of the extensions.
         while (len > 0) {
             int extId = Record.getInt16(m);
             int extLen = Record.getInt16(m);
             if (extLen > m.remaining()) {
                 throw hm.handshakeContext.conContext.fatal(
-                        Alert.ILLEGAL_PARAMETER,
+                        Alert.DECODE_ERROR,
                         "Error parsing extension (" + extId +
                         "): no sufficient data");
             }

@@ -20,10 +20,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.openjdk.bench.java.math;
 
 import org.openjdk.jmh.annotations.Benchmark;
@@ -209,6 +205,17 @@ public class BigIntegers {
         for (BigInteger s : smallShiftArray) {
             tmp = s.shiftRight(shift);
             bh.consume(tmp);
+        }
+    }
+
+    /** Invokes the gcd method of BigInteger with different values. */
+    @Benchmark
+    @OperationsPerInvocation(TESTSIZE)
+    public void testGcd(Blackhole bh) {
+        for (int i = 0; i < TESTSIZE; i++) {
+            BigInteger i1 = shiftArray[TESTSIZE - i - 1];
+            BigInteger i2 = shiftArray[i];
+            bh.consume(i2.gcd(i1));
         }
     }
 }

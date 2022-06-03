@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ import com.sun.tools.javac.util.Options;
  * For each combination of options, a separate task/context is created and kept, as most option
  * values are cached inside components themselves.
  * <p>
- * When the compilation redefines sensitive classes (e.g. classes in the the java.* packages), the
+ * When the compilation redefines sensitive classes (e.g. classes in the java.* packages), the
  * task/context is not reused.
  * <p>
  * When the task is reused, then packages that were already listed won't be listed again.
@@ -295,10 +295,9 @@ public class JavacTaskPool {
         TreeScanner<Void, Symtab> pollutionScanner = new TreeScanner<Void, Symtab>() {
             @Override @DefinedBy(Api.COMPILER_TREE)
             public Void scan(Tree tree, Symtab syms) {
-                if (tree instanceof LetExpr) {
-                    LetExpr le = (LetExpr) tree;
-                    scan(le.defs, syms);
-                    scan(le.expr, syms);
+                if (tree instanceof LetExpr letExpr) {
+                    scan(letExpr.defs, syms);
+                    scan(letExpr.expr, syms);
                     return null;
                 } else {
                     return super.scan(tree, syms);
@@ -360,7 +359,7 @@ public class JavacTaskPool {
          */
         static class ReusableJavaCompiler extends JavaCompiler {
 
-            final static Factory<JavaCompiler> factory = ReusableJavaCompiler::new;
+            static final Factory<JavaCompiler> factory = ReusableJavaCompiler::new;
 
             ReusableJavaCompiler(Context context) {
                 super(context);
@@ -387,7 +386,7 @@ public class JavacTaskPool {
          */
         static class ReusableLog extends Log {
 
-            final static Factory<Log> factory = ReusableLog::new;
+            static final Factory<Log> factory = ReusableLog::new;
 
             Context context;
 

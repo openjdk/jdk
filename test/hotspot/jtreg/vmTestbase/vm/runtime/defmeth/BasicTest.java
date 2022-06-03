@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,20 +21,36 @@
  * questions.
  */
 
+/*
+ * @test
+ *
+ * @modules java.base/jdk.internal.org.objectweb.asm:+open java.base/jdk.internal.org.objectweb.asm.util:+open
+ * @library /vmTestbase /test/lib
+ *
+ * @comment build retransform.jar in current dir
+ * @run driver vm.runtime.defmeth.shared.BuildJar
+ *
+ * @run driver jdk.test.lib.FileInstaller . .
+ * @run main/othervm/native
+ *      -agentlib:redefineClasses
+ *      -javaagent:retransform.jar
+ *      vm.runtime.defmeth.BasicTest
+ */
+
 package vm.runtime.defmeth;
 
+import java.util.Map;
+import java.util.Set;
+
 import nsk.share.TestFailure;
-import nsk.share.test.TestBase;
 import vm.runtime.defmeth.shared.MemoryClassLoader;
-import vm.runtime.defmeth.shared.annotation.KnownFailure;
 import vm.runtime.defmeth.shared.annotation.NotApplicableFor;
 import vm.runtime.defmeth.shared.builder.TestBuilder;
 import vm.runtime.defmeth.shared.data.*;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
 import vm.runtime.defmeth.shared.DefMethTest;
+import vm.runtime.defmeth.shared.executor.TestExecutor;
 
-import java.util.Map;
-
+import static jdk.internal.org.objectweb.asm.Opcodes.*;
 import static vm.runtime.defmeth.shared.ExecutionMode.*;
 
 /**
@@ -43,7 +59,11 @@ import static vm.runtime.defmeth.shared.ExecutionMode.*;
 public class BasicTest extends DefMethTest {
 
     public static void main(String[] args) {
-        TestBase.runTest(new BasicTest(), args);
+        DefMethTest.runTest(BasicTest.class,
+                /* majorVer */ Set.of(MIN_MAJOR_VER, MAX_MAJOR_VER),
+                /* flags    */ Set.of(0, ACC_SYNCHRONIZED),
+                /* redefine */ Set.of(false, true),
+                /* execMode */ Set.of(DIRECT, REFLECTION, INVOKE_EXACT, INVOKE_GENERIC, INVOKE_WITH_ARGS, INDY));
     }
 
     /*
@@ -64,12 +84,7 @@ public class BasicTest extends DefMethTest {
      * objectref does not implement the resolved interface, invokevirtual throws
      * an IncompatibleClassChangeError.
      */
-    @KnownFailure(modes = {
-        REFLECTION,                           // throws IAE
-        INVOKE_GENERIC, INVOKE_WITH_ARGS})    // throws ClassCastException
-    public void testInterfaceNotImplemented() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testInterfaceNotImplemented(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()V").emptyBody().build()
             .build();
@@ -90,15 +105,13 @@ public class BasicTest extends DefMethTest {
             // code must run, and that is where the ClassCastException occurs.
             // This exception can be thrown from code that is cleanly
             // compiled and does no bytecode generation, so an ICCE would
-        // be inappropriate since no classes are changed.
+            // be inappropriate since no classes are changed.
             expectedClass = ClassCastException.class;
         } else {
             expectedClass = IncompatibleClassChangeError.class;
         }
 
-        b.test().callSite(I, C, "m", "()V").throws_(expectedClass).done()
-
-        .run();
+        b.test().callSite(I, C, "m", "()V").throws_(expectedClass).done();
     }
 
     /*
@@ -109,12 +122,7 @@ public class BasicTest extends DefMethTest {
      *
      * ...
      */
-    @KnownFailure(modes = {
-        DIRECT, REFLECTION, INVOKE_WITH_ARGS, // NSME, instead of AME
-        INVOKE_EXACT, INVOKE_GENERIC, INDY})        // IncompatibleClassChangeError, instead of AME
-    public void testNoMatch() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testNoMatch(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "(Ljava/lang/Object;)V").emptyBody().build()
             .build();
@@ -123,9 +131,7 @@ public class BasicTest extends DefMethTest {
 
         b.test().callSite(C, C, "m",  "()I").throws_(NoSuchMethodError.class).done()
          .test().callSite(C, C, "m1", "()V").throws_(NoSuchMethodError.class).done()
-         .test().callSite(C, C, "m", "(I)V").throws_(NoSuchMethodError.class).done()
-
-        .run();
+         .test().callSite(C, C, "m", "(I)V").throws_(NoSuchMethodError.class).done();
     }
 
     /*
@@ -140,9 +146,7 @@ public class BasicTest extends DefMethTest {
      *
      * ...
      */
-    public void testNonPublic() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testNonPublic(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m1", "()V").private_().emptyBody().build()
                 .defaultMethod("m2", "()I").private_().returns(1).build()
@@ -151,9 +155,7 @@ public class BasicTest extends DefMethTest {
         ConcreteClass C = b.clazz("C").implement(I).build();
 
         b.test().callSite(C, C, "m1",  "()V").throws_(NoSuchMethodError.class).done()
-         .test().callSite(C, C, "m2",  "()I").throws_(NoSuchMethodError.class).done()
-
-        .run();
+         .test().callSite(C, C, "m2",  "()I").throws_(NoSuchMethodError.class).done();
     }
 
     /*
@@ -167,9 +169,7 @@ public class BasicTest extends DefMethTest {
      * }
      *
      */
-    public void testNonPublicOverride() {
-        TestBuilder b = factory.getBuilder();
-
+    public void testNonPublicOverride(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("m", "()I").returns(1).build()
             .build();
@@ -188,27 +188,23 @@ public class BasicTest extends DefMethTest {
 
          b.test().callSite(I, C, "m", "()I").returns(1).done()
           .test().callSite(I, D, "m", "()I").throws_(IllegalAccessError.class).done()
-          .test().callSite(I, E, "m", "()I").throws_(IllegalAccessError.class).done()
-
-        .run();
+          .test().callSite(I, E, "m", "()I").throws_(IllegalAccessError.class).done();
     }
 
 
     /**
      * interface I {
-     *   static { throw new RE()}
+     *   static { throw new RE(); }
      *   public default void m() {}
      * }
      *
      * class C implements I {}
      *
-     * TEST: C c = new C(); ==> LinkageError
+     * TEST: C c = new C(); ==> ExceptionInInitializerError
      * Static initialization of class C will trigger
      * I's static initialization due to I's default method.
      */
-    public void testStaticInit() throws ClassNotFoundException {
-        TestBuilder b = factory.getBuilder();
-
+    public void testStaticInit(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("<clinit>", "()V")
                     .flags(ACC_STATIC)
@@ -221,26 +217,26 @@ public class BasicTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").implement(I).build();
 
-        b.test().callSite(I, C, "m", "()V").throws_(LinkageError.class).done()
+        boolean isReflectionMode = factory.getExecutionMode().equals("REFLECTION");
+        Class expectedError = isReflectionMode ? RuntimeException.class
+                                               : ExceptionInInitializerError.class;
 
-        .run();
+        b.test().new_(C).throws_(expectedError).done();
     }
 
     /**
      * interface I {
-     *   static { throw new RE()}
+     *   static { throw new RE(); }
      *   private default void m() {}
      * }
      *
      * class C implements I {}
      *
-     * TEST: C c = new C(); ==> LinkageError
+     * TEST: C c = new C(); ==> ExceptionInInitializerError
      * Static initialization of class C will trigger
      * I's static initialization due to I's private concrete method.
      */
-    public void testStaticInitPrivate() throws ClassNotFoundException {
-        TestBuilder b = factory.getBuilder();
-
+    public void testStaticInitPrivate(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("<clinit>", "()V")
                     .flags(ACC_STATIC)
@@ -254,15 +250,11 @@ public class BasicTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").implement(I).build();
 
-        Class expectedClass;
-        if (factory.getExecutionMode().equals("REFLECTION")) {
-            expectedClass = NoSuchMethodException.class;
-        } else {
-            expectedClass = LinkageError.class;
-        }
-        b.test().callSite(I, C, "m", "()V").throws_(expectedClass).done()
+        boolean isReflectionMode = factory.getExecutionMode().equals("REFLECTION");
+        Class expectedError = isReflectionMode ? RuntimeException.class
+                                               : ExceptionInInitializerError.class;
 
-        .run();
+        b.test().new_(C).throws_(expectedError).done();
     }
 
     /**
@@ -279,9 +271,7 @@ public class BasicTest extends DefMethTest {
      * Static initialization of class C will not trigger
      * I's static initialization since I has no concrete methods.
      */
-    public void testNotStaticInitNoDefault() throws ClassNotFoundException {
-        TestBuilder b = factory.getBuilder();
-
+    public void testNotStaticInitNoDefault(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("<clinit>", "()V")
                     .flags(ACC_STATIC)
@@ -296,9 +286,7 @@ public class BasicTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").implement(I,J).build();
 
-        b.test().callSite(C, C, "m", "()I").returns(1).done()
-
-        .run();
+        b.test().callSite(C, C, "m", "()I").returns(1).done();
     }
 
     /*
@@ -318,9 +306,8 @@ public class BasicTest extends DefMethTest {
     // disabling this test for REFLECTION and INVOKE for now until
     // loader constraint issue associated with those modes has been resolved
     @NotApplicableFor(modes = { REFLECTION, INVOKE_WITH_ARGS, INVOKE_EXACT, INVOKE_GENERIC, INDY })
-    public void testLoaderConstraint() throws Exception{
+    public void testLoaderConstraint() {
         TestBuilder b = factory.getBuilder();
-
         ConcreteClass A = b.clazz("A").build();
 
         Interface I = b.intf("I")
@@ -329,10 +316,10 @@ public class BasicTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").implement(I).build();
 
-        b.test().callSite(I, C, "m", "()LA;").throws_(LinkageError.class).done()
-         .test().callSite(C, C, "m", "()LA;").throws_(LinkageError.class).done()
+        b.test().callSite(I, C, "m", "()LA;").throws_(LinkageError.class).done();
+        b.test().callSite(C, C, "m", "()LA;").throws_(LinkageError.class).done();
 
-         .prepare(new TestBuilder.LoaderConstructor() {
+        TestExecutor executor = b.prepare(new TestBuilder.LoaderConstructor() {
                 @Override
                 public MemoryClassLoader construct(Map<String, byte[]> classFiles) {
                     final byte[] cfI = classFiles.get("I");
@@ -376,6 +363,8 @@ public class BasicTest extends DefMethTest {
 
                     return l2;
                 }
-            }).run();
+            });
+
+        executor.run();
     }
 }

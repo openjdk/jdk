@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ import sun.security.util.DerValue;
  */
 class KeyImpl implements SecretKey, Destroyable, Serializable {
 
+    @Serial
     private static final long serialVersionUID = -7889313790214321193L;
 
     private transient byte[] keyBytes;
@@ -75,7 +76,7 @@ class KeyImpl implements SecretKey, Destroyable, Serializable {
      * @param principal the principal from which to derive the salt
      * @param password the password that should be used to compute the
      * key.
-     * @param algorithm the name for the algorithm that this key wil be
+     * @param algorithm the name for the algorithm that this key will be
      * used for. This parameter may be null in which case "DES" will be
      * assumed.
      */
@@ -176,27 +177,41 @@ class KeyImpl implements SecretKey, Destroyable, Serializable {
     }
 
     /**
+     * Writes the state of this object to the stream.
+
      * @serialData this {@code KeyImpl} is serialized by
-     * writing out the ASN1 Encoded bytes of the encryption key.
-     * The ASN1 encoding is defined in RFC4120 and as  follows:
+     * writing out the ASN.1 Encoded bytes of the encryption key.
+     * The ASN.1 encoding is defined in RFC4120 as follows:
      * EncryptionKey   ::= SEQUENCE {
      *          keytype    [0] Int32 -- actually encryption type --,
      *          keyvalue   [1] OCTET STRING
+     *
+     * @param  oos the {@code ObjectOutputStream} to which data is written
+     * @throws IOException if an I/O error occurs
      * }
      */
-    private void writeObject(ObjectOutputStream ois)
+    @Serial
+    private void writeObject(ObjectOutputStream oos)
                 throws IOException {
         if (destroyed) {
            throw new IOException("This key is no longer valid");
         }
 
         try {
-           ois.writeObject((new EncryptionKey(keyType, keyBytes)).asn1Encode());
+           oos.writeObject((new EncryptionKey(keyType, keyBytes)).asn1Encode());
         } catch (Asn1Exception ae) {
            throw new IOException(ae.getMessage());
         }
     }
 
+    /**
+     * Restores the state of this object from the stream.
+     *
+     * @param  ois the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
+     */
+    @Serial
     private void readObject(ObjectInputStream ois)
                 throws IOException, ClassNotFoundException {
         try {
@@ -235,20 +250,15 @@ class KeyImpl implements SecretKey, Destroyable, Serializable {
         if (other == this)
             return true;
 
-        if (! (other instanceof KeyImpl)) {
+        if (! (other instanceof KeyImpl otherKey)) {
             return false;
         }
 
-        KeyImpl otherKey = ((KeyImpl) other);
         if (isDestroyed() || otherKey.isDestroyed()) {
             return false;
         }
 
-        if(keyType != otherKey.getKeyType() ||
-                !Arrays.equals(keyBytes, otherKey.getEncoded())) {
-            return false;
-        }
-
-        return true;
+        return keyType == otherKey.getKeyType() &&
+                Arrays.equals(keyBytes, otherKey.getEncoded());
     }
 }

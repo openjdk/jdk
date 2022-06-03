@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import java.lang.invoke.VarHandle.VarHandleDesc;
 
 /**
  * A <a href="package-summary.html#nominal">nominal descriptor</a> for a loadable
- * constant value, as defined in JVMS 4.4. Such a descriptor can be resolved via
+ * constant value, as defined in JVMS {@jvms 4.4}. Such a descriptor can be resolved via
  * {@link ConstantDesc#resolveConstantDesc(MethodHandles.Lookup)} to yield the
  * constant value itself.
  *
@@ -68,15 +68,6 @@ import java.lang.invoke.VarHandle.VarHandleDesc;
  * {@link Object#equals(Object)} method. There is no guarantee that any
  * particular entity will always be represented by the same descriptor instance.
  *
- * @apiNote In the future, if the Java language permits, {@linkplain ConstantDesc}
- * may become a {@code sealed} interface, which would prohibit subclassing except by
- * explicitly permitted types.  Clients can assume that the following
- * set of subtypes is exhaustive: {@link String}, {@link Integer},
- * {@link Long}, {@link Float}, {@link Double}, {@link ClassDesc},
- * {@link MethodTypeDesc}, {@link MethodHandleDesc}, and
- * {@link DynamicConstantDesc}; this list may be extended to reflect future
- * changes to the constant pool format as defined in JVMS 4.4.
- *
  * @see Constable
  * @see ConstantDescs
  *
@@ -84,10 +75,19 @@ import java.lang.invoke.VarHandle.VarHandleDesc;
  *
  * @since 12
  */
-public interface ConstantDesc {
+public sealed interface ConstantDesc
+        permits ClassDesc,
+                MethodHandleDesc,
+                MethodTypeDesc,
+                Double,
+                DynamicConstantDesc,
+                Float,
+                Integer,
+                Long,
+                String {
     /**
      * Resolves this descriptor reflectively, emulating the resolution behavior
-     * of JVMS 5.4.3 and the access control behavior of JVMS 5.4.4.  The resolution
+     * of JVMS {@jvms 5.4.3} and the access control behavior of JVMS {@jvms 5.4.4}.  The resolution
      * and access control context is provided by the {@link MethodHandles.Lookup}
      * parameter.  No caching of the resulting value is performed.
      *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,14 @@ int LogBytesPerHeapOop = 0;
 int LogBitsPerHeapOop  = 0;
 int BytesPerHeapOop    = 0;
 int BitsPerHeapOop     = 0;
+
+// Old CDS options
+bool DumpSharedSpaces;
+bool DynamicDumpSharedSpaces;
+bool RequireSharedSpaces;
+extern "C" {
+JNIEXPORT jboolean UseSharedSpaces = true;
+}
 
 // Object alignment, in units of HeapWords.
 // Defaults are -1 so things will break badly if incorrectly initialized.
@@ -390,6 +398,3 @@ STATIC_ASSERT(nth_bit(1|2) == 0x8);
 
 STATIC_ASSERT(right_n_bits(3)   == 0x7);
 STATIC_ASSERT(right_n_bits(1|2) == 0x7);
-
-STATIC_ASSERT(left_n_bits(3)   == (intptr_t) LP64_ONLY(0xE000000000000000) NOT_LP64(0xE0000000));
-STATIC_ASSERT(left_n_bits(1|2) == (intptr_t) LP64_ONLY(0xE000000000000000) NOT_LP64(0xE0000000));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import java.util.Properties;
  *
  */
 
+@SuppressWarnings("removal")
 public class NetProperties {
     private static Properties props = new Properties();
     static {
@@ -67,10 +68,9 @@ public class NetProperties {
             File f = new File(fname, "conf");
             f = new File(f, "net.properties");
             fname = f.getCanonicalPath();
-            InputStream in = new FileInputStream(fname);
-            BufferedInputStream bin = new BufferedInputStream(in);
-            props.load(bin);
-            bin.close();
+            try (FileInputStream in = new FileInputStream(fname)) {
+                props.load(in);
+            }
         } catch (Exception e) {
             // Do nothing. We couldn't find or access the file
             // so we won't have default properties...
@@ -92,8 +92,7 @@ public class NetProperties {
         String def = props.getProperty(key);
         try {
             return System.getProperty(key, def);
-        } catch (IllegalArgumentException e) {
-        } catch (NullPointerException e) {
+        } catch (IllegalArgumentException | NullPointerException e) {
         }
         return null;
     }
@@ -115,8 +114,7 @@ public class NetProperties {
 
         try {
             val = System.getProperty(key, props.getProperty(key));
-        } catch (IllegalArgumentException e) {
-        } catch (NullPointerException e) {
+        } catch (IllegalArgumentException | NullPointerException e) {
         }
 
         if (val != null) {
@@ -144,8 +142,7 @@ public class NetProperties {
 
         try {
             val = System.getProperty(key, props.getProperty(key));
-        } catch (IllegalArgumentException e) {
-        } catch (NullPointerException e) {
+        } catch (IllegalArgumentException | NullPointerException e) {
         }
 
         if (val != null) {

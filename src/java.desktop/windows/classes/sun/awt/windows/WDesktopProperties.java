@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,12 +89,7 @@ final class WDesktopProperties {
      * Returns String[] containing available property names
      */
     private String [] getKeyNames() {
-        Object[]  keys = map.keySet().toArray();
-        String[]  sortedKeys = new String[keys.length];
-
-        for ( int nkey = 0; nkey < keys.length; nkey++ ) {
-            sortedKeys[nkey] = keys[nkey].toString();
-        }
+        String[] sortedKeys = map.keySet().toArray(new String[0]);
         Arrays.sort(sortedKeys);
         return sortedKeys;
     }
@@ -111,7 +106,7 @@ final class WDesktopProperties {
     private synchronized void setBooleanProperty(String key, boolean value) {
         assert( key != null );
         if (log.isLoggable(PlatformLogger.Level.FINE)) {
-            log.fine(key + "=" + String.valueOf(value));
+            log.fine(key + "=" + value);
         }
         map.put(key, Boolean.valueOf(value));
     }
@@ -122,7 +117,7 @@ final class WDesktopProperties {
     private synchronized void setIntegerProperty(String key, int value) {
         assert( key != null );
         if (log.isLoggable(PlatformLogger.Level.FINE)) {
-            log.fine(key + "=" + String.valueOf(value));
+            log.fine(key + "=" + value);
         }
         map.put(key, Integer.valueOf(value));
     }
@@ -273,7 +268,7 @@ final class WDesktopProperties {
 
         Boolean smoothingOn = (Boolean)map.get("win.text.fontSmoothingOn");
 
-        if (smoothingOn != null && smoothingOn.equals(Boolean.TRUE)) {
+        if (Boolean.TRUE.equals(smoothingOn)) {
             Integer typeID = (Integer)map.get("win.text.fontSmoothingType");
             /* "1" is GASP/Standard but we'll also use that if the return
              * value is anything other than "2" for LCD.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,16 @@
 
 package com.sun.imageio.plugins.gif;
 
-import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import javax.imageio.ImageTypeSpecifier;
+
 import javax.imageio.metadata.IIOInvalidTreeException;
-import javax.imageio.metadata.IIOMetadata;
-import javax.imageio.metadata.IIOMetadataNode;
-import javax.imageio.metadata.IIOMetadataFormat;
 import javax.imageio.metadata.IIOMetadataFormatImpl;
+import javax.imageio.metadata.IIOMetadataNode;
+
 import org.w3c.dom.Node;
+
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
 public class GIFImageMetadata extends GIFMetadata {
 
@@ -132,11 +131,7 @@ public class GIFImageMetadata extends GIFMetadata {
     }
 
     private String toISO8859(byte[] data) {
-        try {
-            return new String(data, "ISO-8859-1");
-        } catch (UnsupportedEncodingException e) {
-            return "";
-        }
+        return new String(data, ISO_8859_1);
     }
 
     private Node getNativeTree() {
@@ -384,12 +379,7 @@ public class GIFImageMetadata extends GIFMetadata {
 
         while (commentIter.hasNext()) {
             byte[] comment = commentIter.next();
-            String s = null;
-            try {
-                s = new String(comment, "ISO-8859-1");
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException("Encoding ISO-8859-1 unknown!");
-            }
+            String s = new String(comment, ISO_8859_1);
 
             node = new IIOMetadataNode("TextEntry");
             node.setAttribute("value", s);

@@ -561,6 +561,14 @@ constexpr JVMFlag flagTable_verify_constexpr[] = { MATERIALIZE_ALL_FLAGS };
 JVMFlag* JVMFlag::flags = flagTable;
 size_t JVMFlag::numFlags = (sizeof(flagTable) / sizeof(JVMFlag));
 
+#define JVM_FLAG_TYPE_SIGNATURE(t) JVMFlag::type_signature<t>(),
+
+const int JVMFlag::type_signatures[] = {
+  JVM_FLAG_NON_STRING_TYPES_DO(JVM_FLAG_TYPE_SIGNATURE)
+  JVMFlag::type_signature<ccstr>(),
+  JVMFlag::type_signature<ccstr>()
+};
+
 // Search the flag table for a named flag
 JVMFlag* JVMFlag::find_flag(const char* name, size_t length, bool allow_locked, bool return_flag) {
   JVMFlag* flag = JVMFlagLookup::find(name, length);

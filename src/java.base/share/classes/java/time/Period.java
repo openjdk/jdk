@@ -992,13 +992,10 @@ public final class Period
         if (this == obj) {
             return true;
         }
-        if (obj instanceof Period) {
-            Period other = (Period) obj;
-            return years == other.years &&
-                    months == other.months &&
-                    days == other.days;
-        }
-        return false;
+        return (obj instanceof Period other)
+                && years == other.years
+                && months == other.months
+                && days == other.days;
     }
 
     /**

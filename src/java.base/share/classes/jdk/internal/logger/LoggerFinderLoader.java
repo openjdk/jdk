@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.util.Locale;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import sun.security.util.SecurityConstants;
+import sun.security.action.GetBooleanAction;
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -95,10 +96,11 @@ public final class LoggerFinderLoader {
     // Whether multiple provider should be considered as an error.
     // This is further submitted to the configuration error policy.
     private static boolean ensureSingletonProvider() {
-        return Boolean.parseBoolean(
-                GetPropertyAction.privilegedGetProperty("jdk.logger.finder.singleton"));
+        return GetBooleanAction.privilegedGetProperty
+            ("jdk.logger.finder.singleton");
     }
 
+    @SuppressWarnings("removal")
     private static Iterator<System.LoggerFinder> findLoggerFinderProviders() {
         final Iterator<System.LoggerFinder> iterator;
         if (System.getSecurityManager() == null) {
@@ -128,7 +130,7 @@ public final class LoggerFinderLoader {
                 result = iterator.next();
                 if (iterator.hasNext() && ensureSingletonProvider()) {
                     throw new ServiceConfigurationError(
-                            "More than on LoggerFinder implementation");
+                            "More than one LoggerFinder implementation");
                 }
             } else {
                 result = loadDefaultImplementation();
@@ -163,6 +165,7 @@ public final class LoggerFinderLoader {
         return result;
     }
 
+    @SuppressWarnings("removal")
     private static System.LoggerFinder loadDefaultImplementation() {
         final SecurityManager sm = System.getSecurityManager();
         final Iterator<DefaultLoggerFinder> iterator;
@@ -199,6 +202,7 @@ public final class LoggerFinderLoader {
     }
 
     public static System.LoggerFinder getLoggerFinder() {
+        @SuppressWarnings("removal")
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(LOGGERFINDER_PERMISSION);

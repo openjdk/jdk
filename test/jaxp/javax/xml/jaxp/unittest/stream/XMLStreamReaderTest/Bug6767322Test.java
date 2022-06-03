@@ -36,7 +36,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 6767322
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.XMLStreamReaderTest.Bug6767322Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.XMLStreamReaderTest.Bug6767322Test
  * @run testng/othervm stream.XMLStreamReaderTest.Bug6767322Test
  * @summary Test XMLStreamReader.getVersion() returns null if a version isn't declared.
  */

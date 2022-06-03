@@ -52,7 +52,7 @@ public class TestPackageAnnotation extends JavadocTester {
                 """
                     <main role="main">
                     <div class="header">
-                    <h1 title="Package" class="title">Package&nbsp;pkg1</h1>
+                    <h1 title="Package pkg1" class="title">Package pkg1</h1>
                     </div>
                     <hr>
                     <div class="package-signature"><span class="annotations">@Deprecated(since="1&lt;2&gt;3")
@@ -88,7 +88,7 @@ public class TestPackageAnnotation extends JavadocTester {
                 """
                     <main role="main">
                     <div class="header">
-                    <h1 title="Package" class="title">Package&nbsp;pkg3</h1>
+                    <h1 title="Package pkg3" class="title">Package pkg3</h1>
                     </div>
                     <hr>
                     <div class="package-signature"><span class="annotations">@Deprecated(since="1&lt;2&gt;3")

@@ -230,8 +230,6 @@ public class TestOptionsWithRanges {
          */
         excludeTestMaxRange("ConcGCThreads");
         excludeTestMaxRange("G1ConcRefinementThreads");
-        excludeTestMaxRange("G1RSetRegionEntries");
-        excludeTestMaxRange("G1RSetSparseRegionEntries");
         excludeTestMaxRange("G1UpdateBufferSize");
         excludeTestMaxRange("InitialHeapSize");
         excludeTestMaxRange("MaxHeapSize");
@@ -258,6 +256,14 @@ public class TestOptionsWithRanges {
         excludeTestMaxRange("ProfiledCodeHeapSize");
         excludeTestMaxRange("NonNMethodCodeHeapSize");
         excludeTestMaxRange("CodeCacheExpansionSize");
+
+        /*
+         * Exclude CompileThresholdScaling from max range testing, because
+         * it is expected to print "outside the allowed range" warnings for the
+         * scaled flag and the "outside the allowed range" warning does not
+         * refer to CompileThresholdScaling itself.
+         */
+        excludeTestMaxRange("CompileThresholdScaling");
 
         List<JVMOption> testSubset = getTestSubset(args);
 

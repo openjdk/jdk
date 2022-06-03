@@ -101,12 +101,14 @@ public class AutoScrollOnSelectAndAppend {
     public AutoScrollOnSelectAndAppend() {
         try {
             robot = new Robot();
+            robot.setAutoDelay(100);
         } catch (Exception ex) {
             throw new RuntimeException("Robot Creation Failed.");
         }
         frame = new Frame();
         frame.setSize(200, 200);
         frame.setLayout(new FlowLayout());
+        frame.setLocationRelativeTo(null);
 
         textArea = new TextArea(5, 20);
         composeTextArea();
@@ -128,11 +130,11 @@ public class AutoScrollOnSelectAndAppend {
         // Delay to make sure auto scroll is finished.
         robot.waitForIdle();
         robot.delay(500);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         robot.delay(100);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         robot.waitForIdle();
     }
 

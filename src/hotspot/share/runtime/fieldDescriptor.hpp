@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,8 +113,8 @@ class fieldDescriptor {
 
   // Print
   void print() const;
-  void print_on(outputStream* st) const         PRODUCT_RETURN;
-  void print_on_for(outputStream* st, oop obj)  PRODUCT_RETURN;
+  void print_on(outputStream* st) const;
+  void print_on_for(outputStream* st, oop obj);
   void verify() const                           PRODUCT_RETURN;
 };
 

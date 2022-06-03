@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,6 +95,7 @@ class XPStyle {
      * @return the singleton instance of this class or null if XP styles
      * are not active or if this is not Windows XP
      */
+    @SuppressWarnings("removal")
     static synchronized XPStyle getXP() {
         if (themeActive == null) {
             Toolkit toolkit = Toolkit.getDefaultToolkit();
@@ -300,7 +301,7 @@ class XPStyle {
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    private class XPFillBorder extends LineBorder implements UIResource {
+    private static class XPFillBorder extends LineBorder implements UIResource {
         XPFillBorder(Color color, int thickness) {
             super(color, thickness);
         }
@@ -397,7 +398,7 @@ class XPStyle {
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    private class XPEmptyBorder extends EmptyBorder implements UIResource {
+    private static class XPEmptyBorder extends EmptyBorder implements UIResource {
         XPEmptyBorder(Insets m) {
             super(m.top+2, m.left+2, m.bottom+2, m.right+2);
         }

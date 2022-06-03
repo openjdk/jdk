@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,13 +76,13 @@ CompiledMethodLoad(jvmtiEnv *jvmti_env, jmethodID method, jint code_size,
         return;
     }
 
-    if (phase != JVMTI_PHASE_LIVE) {
+    if (phase != JVMTI_PHASE_START && phase != JVMTI_PHASE_LIVE) {
         result = STATUS_FAILED;
-        NSK_COMPLAIN1("TEST FAILED: CompiledMethodLoad event received during non-live phase %s\n",
+        NSK_COMPLAIN1("TEST FAILED: CompiledMethodLoad event received during wrong phase %s\n",
             TranslatePhase(phase));
     }
     else
-        NSK_DISPLAY0("CHECK PASSED: CompiledMethodLoad event received during the live phase as expected\n\n");
+        NSK_DISPLAY0("CHECK PASSED: CompiledMethodLoad event received during the start or live phase as expected\n\n");
 }
 /************************/
 

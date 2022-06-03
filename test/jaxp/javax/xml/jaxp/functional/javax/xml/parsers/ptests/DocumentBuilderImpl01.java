@@ -48,7 +48,7 @@ import org.xml.sax.InputSource;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true javax.xml.parsers.ptests.DocumentBuilderImpl01
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow javax.xml.parsers.ptests.DocumentBuilderImpl01
  * @run testng/othervm javax.xml.parsers.ptests.DocumentBuilderImpl01
  */
 @Listeners({jaxp.library.FilePolicy.class})

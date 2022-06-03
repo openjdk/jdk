@@ -34,7 +34,13 @@ define_pd_global(intx, CompilerThreadStackSize,  1024);
 define_pd_global(intx, ThreadStackSize,          1024); // 0 => use system default
 define_pd_global(intx, VMThreadStackSize,        1024);
 #else
-define_pd_global(intx, CompilerThreadStackSize,  512);
+// Some tests in debug VM mode run out of compile thread stack.
+// Observed on some x86_32 VarHandles tests during escape analysis.
+#ifdef ASSERT
+define_pd_global(intx, CompilerThreadStackSize,   768);
+#else
+define_pd_global(intx, CompilerThreadStackSize,   512);
+#endif
 // ThreadStackSize 320 allows a couple of test cases to run while
 // keeping the number of threads that can be created high.  System
 // default ThreadStackSize appears to be 512 which is too big.

@@ -26,8 +26,6 @@
 
 #import "PrinterSurfaceData.h"
 #import "jni_util.h"
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
-
 
 //#define DEBUG 1
 #if defined DEBUG

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2013 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -147,15 +147,15 @@ void SignatureHandlerLibrary::pd_set_handler(address handler) {
 
 
 // Access function to get the signature.
-JRT_ENTRY(address, InterpreterRuntime::get_signature(JavaThread* thread, Method* method))
-  methodHandle m(thread, method);
+JRT_ENTRY(address, InterpreterRuntime::get_signature(JavaThread* current, Method* method))
+  methodHandle m(current, method);
   assert(m->is_native(), "sanity check");
   Symbol *s = m->signature();
   return (address) s->base();
 JRT_END
 
-JRT_ENTRY(address, InterpreterRuntime::get_result_handler(JavaThread* thread, Method* method))
-  methodHandle m(thread, method);
+JRT_ENTRY(address, InterpreterRuntime::get_result_handler(JavaThread* current, Method* method))
+  methodHandle m(current, method);
   assert(m->is_native(), "sanity check");
   return AbstractInterpreter::result_handler(m->result_type());
 JRT_END

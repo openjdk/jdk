@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,7 @@ class KeepAliveStreamCleaner
 
     static {
         final String maxDataKey = "http.KeepAlive.remainingData";
+        @SuppressWarnings("removal")
         int maxData = AccessController.doPrivileged(
             new PrivilegedAction<Integer>() {
                 public Integer run() {
@@ -72,6 +73,7 @@ class KeepAliveStreamCleaner
         MAX_DATA_REMAINING = maxData;
 
         final String maxCapacityKey = "http.KeepAlive.queuedConnections";
+        @SuppressWarnings("removal")
         int maxCapacity = AccessController.doPrivileged(
             new PrivilegedAction<Integer>() {
                 public Integer run() {

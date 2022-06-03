@@ -1,8 +1,0 @@
-remove("dump_spec", "FramePtr|ReturnAdr|I_O"); 
-removeInputs("name", "Root");
-var f = new RemoveSelfLoopsFilter("Remove Self-Loops");
-f.apply(graph);
-removeInputs("name", "SafePoint|CallStaticJava|CallDynamicJava|CallJava|CallLeaf|CallRuntime|AbstractLock|CallLeafNoFP|Call|CallStaticJavaDirect", 5);
-removeInputs("name", "Unlock|Lock", 7);
-removeInputs("name", "Allocate", 7);
-removeInputs("name", "AllocateArray", 9);

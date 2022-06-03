@@ -28,17 +28,43 @@ package gc.epsilon;
  * @requires vm.gc.Epsilon
  * @summary Test allocations from many threads
  *
- * @run main/othervm -Xmx128m -Xss512k                                        -XX:-UseTLAB -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC gc.epsilon.TestManyThreads
- * @run main/othervm -Xmx128m -Xss512k -Xint                                  -XX:-UseTLAB -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC gc.epsilon.TestManyThreads
- * @run main/othervm -Xmx128m -Xss512k -Xbatch -Xcomp                         -XX:-UseTLAB -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC gc.epsilon.TestManyThreads
- * @run main/othervm -Xmx128m -Xss512k -Xbatch -Xcomp -XX:TieredStopAtLevel=1 -XX:-UseTLAB -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC gc.epsilon.TestManyThreads
- * @run main/othervm -Xmx128m -Xss512k -Xbatch -Xcomp -XX:-TieredCompilation  -XX:-UseTLAB -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC gc.epsilon.TestManyThreads
+ * @run main/othervm -XX:-UseTLAB -Xmx256m -Xss512k
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
+ *                   gc.epsilon.TestManyThreads
  *
- * @run main/othervm -Xmx128m -Xss512k                                        -XX:+UseTLAB -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC gc.epsilon.TestManyThreads
- * @run main/othervm -Xmx128m -Xss512k -Xint                                  -XX:+UseTLAB -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC gc.epsilon.TestManyThreads
- * @run main/othervm -Xmx128m -Xss512k -Xbatch -Xcomp                         -XX:+UseTLAB -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC gc.epsilon.TestManyThreads
- * @run main/othervm -Xmx128m -Xss512k -Xbatch -Xcomp -XX:TieredStopAtLevel=1 -XX:+UseTLAB -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC gc.epsilon.TestManyThreads
- * @run main/othervm -Xmx128m -Xss512k -Xbatch -Xcomp -XX:-TieredCompilation  -XX:+UseTLAB -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC gc.epsilon.TestManyThreads
+ * @run main/othervm -XX:-UseTLAB -Xmx256m -Xss512k
+ *                   -Xint
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
+ *                   gc.epsilon.TestManyThreads
+ *
+ * @run main/othervm -XX:-UseTLAB -Xmx256m -Xss512k
+ *                   -Xbatch -Xcomp -XX:TieredStopAtLevel=1
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
+ *                   gc.epsilon.TestManyThreads
+ *
+ * @run main/othervm -XX:-UseTLAB -Xmx256m -Xss512k
+ *                   -Xbatch -Xcomp -XX:-TieredCompilation
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
+ *                   gc.epsilon.TestManyThreads
+ *
+ * @run main/othervm -XX:+UseTLAB -Xmx256m -Xss512k
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
+ *                   gc.epsilon.TestManyThreads
+ *
+ * @run main/othervm -XX:+UseTLAB -Xmx256m -Xss512k
+ *                   -Xint
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
+ *                   gc.epsilon.TestManyThreads
+ *
+ * @run main/othervm -XX:+UseTLAB -Xmx256m -Xss512k
+ *                   -Xbatch -Xcomp -XX:TieredStopAtLevel=1
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
+ *                   gc.epsilon.TestManyThreads
+ *
+ * @run main/othervm -XX:+UseTLAB -Xmx256m -Xss512k
+ *                   -Xbatch -Xcomp -XX:-TieredCompilation
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
+ *                   gc.epsilon.TestManyThreads
  */
 
 import java.util.concurrent.atomic.*;

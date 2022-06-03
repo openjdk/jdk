@@ -23,7 +23,6 @@
  * questions.
  */
 
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 #import <JavaRuntimeSupport/JavaRuntimeSupport.h>
 
 
@@ -216,7 +215,7 @@ Java_sun_lwawt_macosx_CMenu_nativeSetMenuTitle
 {
 JNI_COCOA_ENTER(env);
     // Set the menu's title.
-    [((CMenu *)jlong_to_ptr(menuObject)) setJavaMenuTitle:JNFJavaToNSString(env, label)];
+    [((CMenu *)jlong_to_ptr(menuObject)) setJavaMenuTitle:JavaStringToNSString(env, label)];
 JNI_COCOA_EXIT(env);
 }
 

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
 * Copyright (c) 2020, Arm Limited. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
@@ -29,8 +29,9 @@
  * @requires os.arch == "aarch64" & vm.compiler2.enabled & os.family == "linux"
  * @summary Verify VM SVE checking behavior
  * @library /test/lib
- * @run main/othervm/native compiler.c2.aarch64.TestSVEWithJNI
+ * @requires vm.flagless
  *
+ * @run main/othervm/native compiler.c2.aarch64.TestSVEWithJNI
  */
 
 package compiler.c2.aarch64;

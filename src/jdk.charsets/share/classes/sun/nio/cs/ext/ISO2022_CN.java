@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
-import java.nio.charset.CharacterCodingException;
 import sun.nio.cs.DoubleByte;
 import sun.nio.cs.HistoricallyNamedCharset;
 import sun.nio.cs.US_ASCII;
@@ -86,17 +85,13 @@ public class ISO2022_CN
         private boolean shiftOut;
         private byte currentSODesig;
 
-        private static final Charset gb2312 = new EUC_CN();
-        private static final Charset cns = new EUC_TW();
-        private final DoubleByte.Decoder gb2312Decoder;
-        private final EUC_TW.Decoder cnsDecoder;
+        private static final DoubleByte.Decoder GB2312 =
+                (DoubleByte.Decoder)new EUC_CN().newDecoder();
 
         Decoder(Charset cs) {
             super(cs, 1.0f, 1.0f);
             shiftOut = false;
             currentSODesig = SODesigGB;
-            gb2312Decoder = (DoubleByte.Decoder)gb2312.newDecoder();
-            cnsDecoder = (EUC_TW.Decoder)cns.newDecoder();
         }
 
         protected void implReset() {
@@ -107,34 +102,30 @@ public class ISO2022_CN
         private char cnsDecode(byte byte1, byte byte2, byte SS) {
             byte1 |= MSB;
             byte2 |= MSB;
-            int p = 0;
+            int p;
             if (SS == ISO_SS2_7)
                 p = 1;    //plane 2, index -- 1
             else if (SS == ISO_SS3_7)
                 p = 2;    //plane 3, index -- 2
             else
                 return REPLACE_CHAR;  //never happen.
-            char[] ret = cnsDecoder.toUnicode(byte1 & 0xff,
-                                              byte2 & 0xff,
-                                              p);
-            if (ret == null || ret.length == 2)
-                return REPLACE_CHAR;
-            return ret[0];
+            return EUC_TW.Decoder.decodeSingleOrReplace(byte1 & 0xff,
+                                                        byte2 & 0xff,
+                                                        p,
+                                                        REPLACE_CHAR);
         }
 
         private char SODecode(byte byte1, byte byte2, byte SOD) {
             byte1 |= MSB;
             byte2 |= MSB;
             if (SOD == SODesigGB) {
-                return gb2312Decoder.decodeDouble(byte1 & 0xff,
-                                                  byte2 & 0xff);
+                return GB2312.decodeDouble(byte1 & 0xff,
+                                           byte2 & 0xff);
             } else {    // SOD == SODesigCNS
-                char[] ret = cnsDecoder.toUnicode(byte1 & 0xff,
-                                                  byte2 & 0xff,
-                                                  0);
-                if (ret == null)
-                    return REPLACE_CHAR;
-                return ret[0];
+                return EUC_TW.Decoder.decodeSingleOrReplace(byte1 & 0xff,
+                                                            byte2 & 0xff,
+                                                            0,
+                                                            REPLACE_CHAR);
             }
         }
 
@@ -142,9 +133,9 @@ public class ISO2022_CN
                                              CharBuffer dst)
         {
             int mark = src.position();
-            byte b1 = 0, b2 = 0, b3 = 0, b4 = 0;
-            int inputSize = 0;
-            char c = REPLACE_CHAR;
+            byte b1, b2, b3, b4;
+            int inputSize;
+            char c;
             try {
                 while (src.hasRemaining()) {
                     b1 = src.get();
@@ -264,21 +255,17 @@ public class ISO2022_CN
         private CoderResult decodeArrayLoop(ByteBuffer src,
                                             CharBuffer dst)
         {
-            int inputSize = 0;
-            byte b1 = 0, b2 = 0, b3 = 0, b4 = 0;
-            char c = REPLACE_CHAR;
+            int inputSize;
+            byte b1, b2, b3, b4;
+            char c;
 
             byte[] sa = src.array();
             int sp = src.arrayOffset() + src.position();
             int sl = src.arrayOffset() + src.limit();
-            assert (sp <= sl);
-            sp = (sp <= sl ? sp : sl);
 
             char[] da = dst.array();
             int dp = dst.arrayOffset() + dst.position();
             int dl = dst.arrayOffset() + dst.limit();
-            assert (dp <= dl);
-            dp = (dp <= dl ? dp : dl);
 
             try {
                 while (sp < sl) {
@@ -306,7 +293,7 @@ public class ISO2022_CN
 
                                 if ((b3 & (byte)0x80) != 0)
                                     return CoderResult.malformedForLength(inputSize);
-                                if (b3 == 'A'){              // "$A"
+                                if (b3 == 'A') {              // "$A"
                                     /* <ESC>$A is not a legal designator sequence for
                                        ISO2022_CN, it is listed as an escape sequence
                                        for GB2312 in ISO2022-JP-2. Keep it here just for

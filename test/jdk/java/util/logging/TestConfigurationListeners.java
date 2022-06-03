@@ -48,8 +48,8 @@ import java.util.logging.LoggingPermission;
  *                LogManager.removeConfigurationListener;
  * @build TestConfigurationListeners
  * @run main/othervm TestConfigurationListeners UNSECURE
- * @run main/othervm TestConfigurationListeners PERMISSION
- * @run main/othervm TestConfigurationListeners SECURE
+ * @run main/othervm -Djava.security.manager=allow TestConfigurationListeners PERMISSION
+ * @run main/othervm -Djava.security.manager=allow TestConfigurationListeners SECURE
  * @author danielfuchs
  */
 public class TestConfigurationListeners {

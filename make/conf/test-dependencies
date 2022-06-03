@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,19 @@
 
 # Versions and download locations for dependencies used by pre-submit testing.
 
-BOOT_JDK_VERSION=15
-JTREG_VERSION=5.1
-JTREG_BUILD=b01
+BOOT_JDK_VERSION=18
+JTREG_VERSION=6.1
+JTREG_BUILD=1
 GTEST_VERSION=1.8.1
 
-LINUX_X64_BOOT_JDK_FILENAME=openjdk-15_linux-x64_bin.tar.gz
-LINUX_X64_BOOT_JDK_URL=https://download.java.net/java/GA/jdk15/779bf45e88a44cbd9ea6621d33e33db1/36/GPL/openjdk-15_linux-x64_bin.tar.gz
-LINUX_X64_BOOT_JDK_SHA256=bb67cadee687d7b486583d03c9850342afea4593be4f436044d785fba9508fb7
+LINUX_X64_BOOT_JDK_FILENAME=openjdk-18_linux-x64_bin.tar.gz
+LINUX_X64_BOOT_JDK_URL=https://download.java.net/java/GA/jdk18/43f95e8614114aeaa8e8a5fcf20a682d/36/GPL/openjdk-18_linux-x64_bin.tar.gz
+LINUX_X64_BOOT_JDK_SHA256=0f60aef7b8504983d6e374fe94d09a7bedcf05ec559e812d801a33bd4ebd23d0
 
-WINDOWS_X64_BOOT_JDK_FILENAME=openjdk-15_windows-x64_bin.zip
-WINDOWS_X64_BOOT_JDK_URL=https://download.java.net/java/GA/jdk15/779bf45e88a44cbd9ea6621d33e33db1/36/GPL/openjdk-15_windows-x64_bin.zip
-WINDOWS_X64_BOOT_JDK_SHA256=764e39a71252a9791118a31ae56a4247c049463bda5eb72497122ec50b1d07f8
+WINDOWS_X64_BOOT_JDK_FILENAME=openjdk-18_windows-x64_bin.zip
+WINDOWS_X64_BOOT_JDK_URL=https://download.java.net/java/GA/jdk18/43f95e8614114aeaa8e8a5fcf20a682d/36/GPL/openjdk-18_windows-x64_bin.zip
+WINDOWS_X64_BOOT_JDK_SHA256=a5b91d4c12752d44aa75df70ae3e2311287b3e60c288b07dade106376c688277
 
-MACOS_X64_BOOT_JDK_FILENAME=openjdk-115_osx-x64_bin.tar.gz
-MACOS_X64_BOOT_JDK_URL=https://download.java.net/java/GA/jdk15/779bf45e88a44cbd9ea6621d33e33db1/36/GPL/openjdk-15_osx-x64_bin.tar.gz
-MACOS_X64_BOOT_JDK_SHA256=ab842c8c0953b816be308c098c1a021177a4776bef24da85b6bafbbd657c7e1a
+MACOS_X64_BOOT_JDK_FILENAME=openjdk-18_macos-x64_bin.tar.gz
+MACOS_X64_BOOT_JDK_URL=https://download.java.net/java/GA/jdk18/43f95e8614114aeaa8e8a5fcf20a682d/36/GPL/openjdk-18_macos-x64_bin.tar.gz
+MACOS_X64_BOOT_JDK_SHA256=527b61b4265caf45cdcbacfcf8fbcd0b4b280bede1eff32a5b252d855ff0534b

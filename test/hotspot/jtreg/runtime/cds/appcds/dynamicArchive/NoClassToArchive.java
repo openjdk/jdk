@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,15 +39,16 @@
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive/test-classes
  * @build StrConcatApp
  * @build sun.hotspot.WhiteBox
- * @run driver ClassFileInstaller -jar strConcatApp.jar StrConcatApp
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar strConcatApp.jar StrConcatApp
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. NoClassToArchive
  */
 
 import java.io.File;
+import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class NoClassToArchive extends DynamicArchiveTestBase {
     static final String warningMessage =
@@ -107,13 +108,10 @@ public class NoClassToArchive extends DynamicArchiveTestBase {
     private static void doTestCustomBase(String baseArchiveName, String topArchiveName) throws Exception {
         String appJar = ClassFileInstaller.getJarPath("strConcatApp.jar");
         // dump class list by running the StrConcatApp
-        ProcessBuilder pb = ProcessTools.createTestJvm(
-            "-XX:DumpLoadedClassList=" + classList,
-            "-cp",
-            appJar,
-            appClass);
-        OutputAnalyzer output = TestCommon.executeAndLog(pb, "dumpClassList");
-        TestCommon.checkExecReturn(output, 0, true, "length = 0");
+        CDSTestUtils.dumpClassList(classList, "-cp", appJar, appClass)
+            .assertNormalExit(output -> {
+                output.shouldContain("length = 0");
+            });
 
         // create a custom base archive based on the class list
         TestCommon.dumpBaseArchive(baseArchiveName, "-XX:SharedClassListFile=" + classList);

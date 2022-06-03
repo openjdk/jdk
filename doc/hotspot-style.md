@@ -56,12 +56,19 @@ can be pointed out here.
 
 Proposed changes should be discussed on the
 [HotSpot Developers](mailto:hotspot-dev@openjdk.java.net) mailing
-list, and approved by
-[rough consensus](https://en.wikipedia.org/wiki/Rough_consensus) of
+list.  Changes are likely to be cautious and incremental, since HotSpot
+coders have been using these guidelines for years.
+
+Substantive changes are approved by
+[rough consensus](https://www.rfc-editor.org/rfc/rfc7282.html) of
 the [HotSpot Group](https://openjdk.java.net/census#hotspot) Members.
 The Group Lead determines whether consensus has been reached.
-Changes are likely to be cautious and incremental, since HotSpot
-coders have been using these guidelines for years.
+
+Editorial changes (changes that only affect the description of HotSpot
+style, not its substance) do not require the full consensus gathering
+process.  The normal HotSpot pull request process may be used for
+editorial changes, with the additional requirement that the requisite
+reviewers are also HotSpot Group Members.
 
 ## Structure and Formatting
 
@@ -137,6 +144,11 @@ a .inline.hpp file.
 
 * .inline.hpp files should only be included in .cpp or .inline.hpp
 files.
+
+* All .inline.hpp files should include their corresponding .hpp file as
+the first include line. Declarations needed by other files should be put
+in the .hpp file, and not in the .inline.hpp file. This rule exists to
+resolve problems with circular dependencies between .inline.hpp files.
 
 * All .cpp files include precompiled.hpp as the first include line.
 
@@ -282,7 +294,9 @@ well.
 or consistency.  Gratuitous whitespace changes will make integrations
 and backports more difficult.
 
-* Use One-True-Brace-Style. The opening brace for a function or class
+* Use [One-True-Brace-Style](
+https://en.wikipedia.org/wiki/Indentation_style#Variant:_1TBS_(OTBS)).
+The opening brace for a function or class
 is normally at the end of the line; it is sometimes moved to the
 beginning of the next line for emphasis.  Substatements are enclosed
 in braces, even if there is only a single statement.  Extremely simple
@@ -404,7 +418,7 @@ Similar discussions for some other projects:
 * [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html) &mdash;
 Currently (2020) targeting C++17.
 
-* [C++11 and C++14 use in Chromium](https://chromium-cpp.appspot.com) &mdash;
+* [C++11 and C++14 use in Chromium](https://chromium.googlesource.com/chromium/src/+/main/styleguide/c++/c++-features.md) &mdash;
 Categorizes features as allowed, banned, or to be discussed.
 
 * [llvm Coding Standards](https://llvm.org/docs/CodingStandards.html) &mdash;
@@ -457,7 +471,9 @@ code is disabled for some platforms.
 Rationale: HotSpot often uses "resource" or "arena" allocation.  Even
 where heap allocation is used, the standard global functions are
 avoided in favor of wrappers around malloc and free that support the
-VM's Native Memory Tracking (NMT) feature.
+VM's Native Memory Tracking (NMT) feature.  Typically, uses of the global
+operator new are inadvertent and therefore often associated with memory
+leaks.
 
 Native memory allocation failures are often treated as non-recoverable.
 The place where "out of memory" is (first) detected may be an innocent
@@ -591,9 +607,7 @@ use can make code much harder to understand.
 Only use if the function body has a very small number of `return`
 statements, and generally relatively little other code.
 
-* Generic lambdas.  Lambdas are not (yet) permitted.
-
-* Lambda init captures.  Lambdas are not (yet) permitted.
+* Also see [lambda expressions](#lambdaexpressions).
 
 ### Expression SFINAE
 
@@ -619,7 +633,7 @@ Here are a few closely related example bugs:<br>
 ### enum
 
 Where appropriate, _scoped-enums_ should be used.
-([n2347](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2347.pdf)) 
+([n2347](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2347.pdf))
 
 Use of _unscoped-enums_ is permitted, though ordinary constants may be
 preferable when the automatic initializer feature isn't used.
@@ -639,10 +653,12 @@ integral constants.
 
 ### thread_local
 
-Do not use `thread_local`
+Avoid use of `thread_local`
 ([n2659](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2659.htm));
-instead, use the HotSpot macro `THREAD_LOCAL`.  The initializer must
-be a constant expression.
+and instead, use the HotSpot macro `THREAD_LOCAL`, for which the initializer must
+be a constant expression. When `thread_local` must be used, use the Hotspot macro
+`APPROVED_CPP_THREAD_LOCAL` to indicate that the use has been given appropriate
+consideration.
 
 As was discussed in the review for
 [JDK-8230877](https://mail.openjdk.java.net/pipermail/hotspot-dev/2019-September/039487.html),
@@ -651,14 +667,18 @@ semantics.  However, that support requires a run-time penalty for
 references to non-function-local `thread_local` variables defined in a
 different translation unit, even if they don't need dynamic
 initialization.  Dynamic initialization and destruction of
-namespace-scoped thread local variables also has the same ordering
-problems as for ordinary namespace-scoped variables.
+non-local `thread_local` variables also has the same ordering
+problems as for ordinary non-local variables. So we avoid use of
+`thread_local` in general, limiting its use to only those cases where dynamic
+initialization or destruction are essential. See
+[JDK-8282469](https://bugs.openjdk.java.net/browse/JDK-8282469)
+for further discussion.
 
 ### nullptr
 
 Prefer `nullptr`
 ([n2431](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2431.pdf))
-to `NULL`.  Don't use (constexpr or literal) 0 for pointers. 
+to `NULL`.  Don't use (constexpr or literal) 0 for pointers.
 
 For historical reasons there are widespread uses of both `NULL` and of
 integer 0 as a pointer value.
@@ -698,10 +718,301 @@ Some relevant sections from cppreference.com:
 Although related, the use of `std::initializer_list` remains forbidden, as
 part of the avoidance of the C++ Standard Library in HotSpot code.
 
+### Local Function Objects
+
+* Local function objects, including lambda expressions, may be used.
+* Lambda expressions must only be used as a downward value.
+* Prefer `[&]` as the capture list of a lambda expression.
+* Return type deduction for lambda expressions is permitted, and indeed encouraged.
+* An empty parameter list for a lambda expression may be elided.
+* A lambda expression must not be `mutable`.
+* Generic lambda expressions are permitted.
+* Lambda expressions should be relatively simple.
+* Anonymous lambda expressions should not overly clutter the enclosing expression.
+* An anonymous lambda expression must not be directly invoked.
+* Bind expressions are forbidden.
+
+Single-use function objects can be defined locally within a function,
+directly at the point of use.  This is an alternative to having a function
+or function object class defined at class or namespace scope.
+
+This usage was somewhat limited by C++03, which does not permit such a class
+to be used as a template parameter.  That restriction was removed by C++11
+([n2657]). Use of this feature is permitted.
+
+Many HotSpot protocols involve "function-like" objects that involve some
+named member function rather than a call operator.  For example, a function
+that performs some action on all threads might be written as
+
+```
+void do_something() {
+  struct DoSomething : public ThreadClosure {
+    virtual void do_thread(Thread* t) {
+      ... do something with t ...
+    }
+  } closure;
+  Threads::threads_do(&closure);
+}
+```
+
+HotSpot code has historically usually placed the DoSomething class at
+namespace (or sometimes class) scope.  This separates the function's code
+from its use, often to the detriment of readability.  It requires giving the
+class a globally unique name (if at namespace scope).  It also loses the
+information that the class is intended for use in exactly one place, and
+does not have any subclasses.  (However, the latter can now be indicated by
+declaring it `final`.)  Often, for simplicity, a local class will skip
+things like access control and accessor functions, giving the enclosing
+function direct access to the implementation and eliminating some
+boilerplate that might be provided if the class is in some outer (more
+accessible) scope.  On the other hand, if there is a lot of surrounding code
+in the function body or the local class is of significant size, defining it
+locally can increase clutter and reduce readability.
+
+<a name="lambdaexpressions"></a>
+C++11 added _lambda expressions_ as a new way to write a function object.
+Simple lambda expressions can be significantly more concise than a function
+object, eliminating a lot of boiler-plate.  On the other hand, a complex
+lambda expression may not provide much, if any, readability benefit compared
+to an ordinary function object.  Also, while a lambda can encapsulate a call
+to a "function-like" object, it cannot be used in place of such.
+
+A common use for local functions is as one-use [RAII] objects.  The amount
+of boilerplate for a function object class (local or not) makes such usage
+somewhat clumsy and verbose.  But with the help of a small amount of
+supporting utility code, lambdas work particularly well for this use case.
+
+Another use for local functions is [partial application][PARTIALAPP].  Again
+here, lambdas are typically much simpler and less verbose than function
+object classes.
+
+Because of these benefits, lambda expressions are permitted in HotSpot code,
+with some restrictions and usage guidance.  An anonymous lambda is one which
+is passed directly as an argument.  A named lambda is the value of a
+variable, which is its name.
+
+Lambda expressions should only be passed downward.  In particular, a lambda
+should not be returned from a function or stored in a global variable,
+whether directly or as the value of a member of some other object.  Lambda
+capture is syntactically subtle (by design), and propagating a lambda in
+such ways can easily pass references to captured values to places where they
+are no longer valid.  In particular, members of the enclosing `this` object
+are effectively captured by reference, even if the default capture is
+by-value.  For such uses-cases a function object class should be used to
+make the desired value capturing and propagation explicit.
+
+Limiting the capture list to `[&]` (implicitly capture by reference) is a
+simplifying restriction that still provides good support for HotSpot usage,
+while reducing the cases a reader must recognize and understand.
+
+* Many common lambda uses require reference capture.  Not permitting it
+would substantially reduce the utility of lambdas.
+
+* Referential transparency.  Implicit reference capture makes variable
+references in the lambda body have the same meaning they would have in the
+enclosing code.  There isn't a semantic barrier across which the meaning of
+a variable changes.
+
+* Explicit reference capture introduces significant clutter, especially when
+lambda expressions are relatively small and simple, as they should be in
+HotSpot code.
+
+* There are a number of reasons why by-value capture might be used, but for
+the most part they don't apply to HotSpot code, given other usage restrictions.
+
+    * A primary use-case for by-value capture is to support escaping uses,
+    where values captured by-reference might become invalid.  That use-case
+    doesn't apply if only downward lambdas are used.
+
+    * By-value capture can also make a lambda-local copy for mutation, which
+    requires making the lambda `mutable`; see below.
+
+    * By-value capture might be viewed as an optimization, avoiding any
+    overhead for reference capture of cheap to copy values.  But the
+    compiler can often eliminate any such overhead.
+
+    * By-value capture by a non-`mutable` lambda makes the captured values
+    const, preventing any modification by the lambda and making the captured
+    value unaffected by modifications to the outer variable.  But this only
+    applies to captured auto variables, not member variables, and is
+    inconsistent with referential transparency.
+
+* Non-capturing lambdas (with an empty capture list - `[]`) have limited
+utility.  There are cases where no captures are required (pure functions,
+for example), but if the function is small and simple then that's obvious
+anyway.
+
+* Capture initializers (a C++14 feature - [N3649]) are not permitted.
+Capture initializers inherently increase the complexity of the capture list,
+and provide little benefit over an additional in-scope local variable.
+
+The use of `mutable` lambda expressions is forbidden because there don't
+seem to be many, if any, good use-cases for them in HotSpot.  A lambda
+expression needs to be mutable in order to modify a by-value captured value.
+But with only downward lambdas, such usage seems likely to be rare and
+complicated.  It is better to use a function object class in any such cases
+that arise, rather than requiring all HotSpot developers to understand this
+relatively obscure feature.
+
+While it is possible to directly invoke an anonymous lambda expression, that
+feature should not be used, as such a form can be confusing to readers.
+Instead, name the lambda and call it by name.
+
+Some reasons to prefer a named lambda instead of an anonymous lambda are
+
+* The body contains non-trivial control flow or declarations or other nested
+constructs.
+
+* Its role in an argument list is hard to guess without examining the
+function declaration.  Give it a name that indicates its purpose.
+
+* It has an unusual capture list.
+
+* It has a complex explicit return type or parameter types.
+
+Lambda expressions, and particularly anonymous lambda expressions, should be
+simple and compact.  One-liners are good.  Anonymous lambdas should usually
+be limited to a couple lines of body code.  More complex lambdas should be
+named.  A named lambda should not clutter the enclosing function and make it
+long and complex; do continue to break up large functions via the use of
+separate helper functions.
+
+An anonymous lambda expression should either be a one-liner in a one-line
+expression, or isolated in its own set of lines.  Don't place part of a
+lambda expression on the same line as other arguments to a function.  The
+body of a multi-line lambda argument should be indented from the start of
+the capture list, as if that were the start of an ordinary function
+definition.  The body of a multi-line named lambda should be indented one
+step from the variable's indentation.
+
+Some examples:
+
+1. `foo([&] { ++counter; });`
+2. `foo(x, [&] { ++counter; });`
+3. `foo([&] { if (predicate) ++counter; });`
+4. `foo([&] { auto tmp = process(x); tmp.f(); return tmp.g(); })`
+5. Separate one-line lambda from other arguments:
+
+    ```
+    foo(c.begin(), c.end(),
+        [&] (const X& x) { do_something(x); return x.value(); });
+    ```
+6. Indentation for multi-line lambda:
+
+    ```
+    c.do_entries([&] (const X& x) {
+                   do_something(x, a);
+                   do_something1(x, b);
+                   do_something2(x, c);
+                 });
+    ```
+7. Separate multi-line lambda from other arguments:
+
+    ```
+    foo(c.begin(), c.end(),
+        [&] (const X& x) {
+          do_something(x, a);
+          do_something1(x, b);
+          do_something2(x, c);
+        });
+    ```
+8. Multi-line named lambda:
+
+    ```
+    auto do_entry = [&] (const X& x) {
+      do_something(x, a);
+      do_something1(x, b);
+      do_something2(x, c);
+    };
+    ```
+
+Item 4, and especially items 6 and 7, are pushing the simplicity limits for
+anonymous lambdas.  Item 6 might be better written using a named lambda:
+```
+c.do_entries(do_entry);
+```
+
+Note that C++11 also added _bind expressions_ as a way to write a function
+object for partial application, using `std::bind` and related facilities
+from the Standard Library.  `std::bind` generalizes and replaces some of the
+binders from C++03.  Bind expressions are not permitted in HotSpot code.
+They don't provide enough benefit over lambdas or local function classes in
+the cases where bind expressions are applicable to warrant the introduction
+of yet another mechanism in this space into HotSpot code.
+
+References:
+
+* Local and unnamed types as template parameters ([n2657])
+* New wording for C++0x lambdas ([n2927])
+* Generalized lambda capture (init-capture) ([N3648])
+* Generic (polymorphic) lambda expressions ([N3649])
+
+[n2657]: http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2657.htm
+[n2927]: http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2009/n2927.pdf
+[N3648]: https://isocpp.org/files/papers/N3648.html
+[N3649]: https://isocpp.org/files/papers/N3649.html
+
+References from C++17
+
+* Wording for constexpr lambda ([p0170r1])
+* Lambda capture of *this by Value ([p0018r3])
+
+[p0170r1]: http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0170r1.pdf
+[p0018r3]: http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0018r3.html
+
+References from C++20
+
+* Allow lambda capture [=, this] ([p0409r2])
+* Familiar template syntax for generic lambdas ([p0428r2])
+* Simplifying implicit lambda capture ([p0588r1])
+* Default constructible and assignable stateless lambdas ([p0624r2])
+* Lambdas in unevaluated contexts ([p0315r4])
+* Allow pack expansion in lambda init-capture ([p0780r2]) ([p2095r0])
+* Deprecate implicit capture of this via [=] ([p0806r2])
+
+[p0409r2]: http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0409r2.html
+[p0428r2]: http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0428r2.pdf
+[p0588r1]: http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0588r1.html
+[p0624r2]: http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0624r2.pdf
+[p0315r4]: http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/p0315r4.pdf
+[p0780r2]: http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0780r2.html
+[p2095r0]: http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p2095r0.html
+[p0806r2]: http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0806r2.html
+
+References from C++23
+
+* Make () more optional for lambdas  ([p1102r2])
+
+[p1102r2]: http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2020/p1102r2.html
+
+### Inheriting constructors
+
+Do not use _inheriting constructors_
+([n2540](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2540.htm)).
+
+C++11 provides simple syntax allowing a class to inherit the constructors of a
+base class.  Unfortunately there are a number of problems with the original
+specification, and C++17 contains significant revisions ([p0136r1] opens with
+a list of 8 Core Issues).  Since HotSpot doesn't support use of C++17, use of
+inherited constructors could run into those problems. Such uses might also
+change behavior in a future HotSpot update to use C++17 or later, potentially
+in subtle ways that could lead to hard to diagnose problems.  Because of this,
+HotSpot code must not use inherited constructors.
+
+Note that gcc7 provides the `-fnew-inheriting-ctors` option to use the
+[p0136r1] semantics.  This is enabled by default when using C++17 or later.
+It is also enabled by default for `fabi-version=11` (introduced by gcc7) or
+higher when using C++11/14, as the change is considered a Defect Report that
+applies to those versions.  Earlier versions of gcc don't have that option,
+and other supported compilers may not have anything similar.
+
+[p0136r1]: http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2015/p0136r1.html
+  "p0136r1"
+
 ### Additional Permitted Features
 
 * `constexpr`
-([n2235](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2235.pdf)) 
+([n2235](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2235.pdf))
 ([n3652](https://isocpp.org/files/papers/N3652.html))
 
 * Sized deallocation
@@ -747,12 +1058,17 @@ part of the avoidance of the C++ Standard Library in HotSpot code.
 ([n3206](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2010/n3206.htm)),
 ([n3272](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2011/n3272.htm))
 
-* Local and unnamed types as template parameters
-([n2657](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2657.htm))
+* `override` virtual specifiers for virtual functions
+([n2928](http://www.open-std.org/JTC1/SC22/WG21/docs/papers/2009/n2928.htm)),
+([n3206](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2010/n3206.htm)),
+([n3272](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2011/n3272.htm))
 
 * Range-based `for` loops
 ([n2930](http://www.open-std.org/JTC1/SC22/WG21/docs/papers/2009/n2930.html))
 ([range-for](https://en.cppreference.com/w/cpp/language/range-for))
+
+* Unrestricted Unions
+([n2544](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2544.pdf))
 
 ### Excluded Features
 
@@ -785,7 +1101,7 @@ namespace std;` to avoid needing to qualify Standard Library names.
 ([n2179](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2179.html)) &mdash;
 HotSpot does not permit the use of exceptions, so this feature isn't useful.
 
-* Avoid namespace-scoped variables with non-constexpr initialization.
+* Avoid non-local variables with non-constexpr initialization.
 In particular, avoid variables with types requiring non-trivial
 initialization or destruction.  Initialization order problems can be
 difficult to deal with and lead to surprises, as can destruction
@@ -806,17 +1122,14 @@ in HotSpot code because of the "no implicit boolean" guideline.)
 
 * Avoid covariant return types.
 
-* Avoid `goto` statements. 
+* Avoid `goto` statements.
 
 ### Undecided Features
 
 This list is incomplete; it serves to explicitly call out some
 features that have not yet been discussed.
 
-* `overrides` virtual specifiers for virtual functions 
-([n3272](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2011/n3272.htm))
-
-* Trailing return type syntax for functions 
+* Trailing return type syntax for functions
 ([n2541](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2541.htm))
 
 * Variable templates
@@ -830,10 +1143,7 @@ features that have not yet been discussed.
 
 * Rvalue references and move semantics
 
-* Lambdas
-
-
-[ADL]: https://en.cppreference.com/w/cpp/language/adl 
+[ADL]: https://en.cppreference.com/w/cpp/language/adl
   "Argument Dependent Lookup"
 
 [ODR]: https://en.cppreference.com/w/cpp/language/definition
@@ -847,3 +1157,6 @@ features that have not yet been discussed.
 
 [SFINAE]: https://en.cppreference.com/w/cpp/language/sfinae
   "Substitution Failure Is Not An Error"
+
+[PARTIALAPP]: https://en.wikipedia.org/wiki/Partial_application
+  "Partial Application"

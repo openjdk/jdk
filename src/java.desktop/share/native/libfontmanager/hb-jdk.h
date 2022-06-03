@@ -38,13 +38,11 @@ typedef struct JDKFontInfo_Struct {
     JNIEnv* env;
     jobject font2D;
     jobject fontStrike;
-    jlong nativeFont;
     float matrix[4];
     float ptSize;
     float xPtSize;
     float yPtSize;
     float devScale; // How much applying the full glyph tx scales x distance.
-    jboolean aat;
 } JDKFontInfo;
 
 

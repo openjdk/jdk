@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,9 @@
   @run        main DeiconifiedFrameLoosesFocus
 */
 
-import java.awt.*;
+import java.awt.Frame;
+import java.awt.Robot;
+import java.awt.Toolkit;
 import test.java.awt.regtesthelpers.Util;
 
 public class DeiconifiedFrameLoosesFocus {
@@ -41,7 +43,11 @@ public class DeiconifiedFrameLoosesFocus {
     public static void main(String[] args) {
         DeiconifiedFrameLoosesFocus app = new DeiconifiedFrameLoosesFocus();
         app.init();
-        app.start();
+        try {
+            app.start();
+        } finally {
+            frame.dispose();
+        }
     }
 
     public void init() {
@@ -61,6 +67,7 @@ public class DeiconifiedFrameLoosesFocus {
         frame.setVisible(true);
 
         Util.waitForIdle(robot);
+        robot.delay(1000);
 
         if (!frame.isFocused()) {
             Util.clickOnTitle(frame, robot);
@@ -79,10 +86,12 @@ public class DeiconifiedFrameLoosesFocus {
         frame.setExtendedState(Frame.ICONIFIED);
 
         Util.waitForIdle(robot);
+        robot.delay(500);
 
         frame.setExtendedState(Frame.NORMAL);
 
         Util.waitForIdle(robot);
+        robot.delay(500);
 
         if (!frame.isFocused()) {
             throw new TestFailedException("the Frame didn't regain focus after restoring!");

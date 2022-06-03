@@ -29,11 +29,11 @@
             class, can be redefined.
  * @modules java.base/jdk.internal.misc
  * @modules java.instrument
- *          jdk.jartool/sun.tools.jar
  * @requires vm.jvmti
- * @compile --enable-preview -source ${jdk.version} RedefinePermittedSubclass.java
- * @run main/othervm --enable-preview RedefinePermittedSubclass buildagent
- * @run main/othervm/timeout=6000 --enable-preview RedefinePermittedSubclass runtest
+ * @requires vm.flagless
+ * @compile RedefinePermittedSubclass.java
+ * @run driver RedefinePermittedSubclass buildagent
+ * @run driver/timeout=6000 RedefinePermittedSubclass runtest
  */
 
 import java.io.FileNotFoundException;
@@ -41,12 +41,17 @@ import java.io.PrintWriter;
 import java.lang.RuntimeException;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.Instrumentation;
-import java.security.ProtectionDomain;
 import java.lang.instrument.IllegalClassFormatException;
+import java.security.ProtectionDomain;
+import java.util.spi.ToolProvider;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class RedefinePermittedSubclass {
+
+    private static final ToolProvider JAR = ToolProvider.findFirst("jar")
+        .orElseThrow(() -> new RuntimeException("ToolProvider for jar not found"));
 
     non-sealed class A extends Tester {
        public void printIt() { System.out.println("In A"); }
@@ -99,8 +104,8 @@ public class RedefinePermittedSubclass {
             throw new RuntimeException("Could not write manifest file for the agent", e);
         }
 
-        sun.tools.jar.Main jarTool = new sun.tools.jar.Main(System.out, System.err, "jar");
-        if (!jarTool.run(new String[] { "-cmf", "MANIFEST.MF", "redefineagent.jar", "RedefinePermittedSubclass.class" })) {
+        if (JAR.run(System.out, System.err, "-cmf",  "MANIFEST.MF", "redefineagent.jar",
+                    "RedefinePermittedSubclass.class") != 0) {
             throw new RuntimeException("Could not write the agent jar file");
         }
     }
@@ -120,11 +125,11 @@ public class RedefinePermittedSubclass {
         }
         if (argv.length == 1 && argv[0].equals("runtest")) {
             String[] javaArgs1 = { "-XX:MetaspaceSize=12m", "-XX:MaxMetaspaceSize=12m",
-                                   "-javaagent:redefineagent.jar", "--enable-preview",
-                                   "RedefinePermittedSubclass"};
+                                   "-javaagent:redefineagent.jar", "RedefinePermittedSubclass"};
             ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(javaArgs1);
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
             output.shouldNotContain("processing of -javaagent failed");
+            output.shouldHaveExitValue(0);
         }
     }
 }

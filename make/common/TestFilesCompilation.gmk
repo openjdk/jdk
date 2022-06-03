@@ -62,11 +62,7 @@ define SetupTestFilesCompilationBody
     $1_OUTPUT_SUBDIR := lib
     $1_BASE_CFLAGS := $(CFLAGS_JDKLIB)
     $1_BASE_CXXFLAGS := $(CXXFLAGS_JDKLIB)
-    ifeq ($(call isTargetOs, windows), false)
-	$1_LDFLAGS := $(LDFLAGS_JDKLIB) $$(call SET_SHARED_LIBRARY_ORIGIN) -pthread
-    else
-	$1_LDFLAGS := $(LDFLAGS_JDKLIB) $$(call SET_SHARED_LIBRARY_ORIGIN)
-    endif
+    $1_LDFLAGS := $(LDFLAGS_JDKLIB) $$(call SET_SHARED_LIBRARY_ORIGIN)
     $1_COMPILATION_TYPE := LIBRARY
   else ifeq ($$($1_TYPE), PROGRAM)
     $1_PREFIX = exe
@@ -81,7 +77,7 @@ define SetupTestFilesCompilationBody
 
   # Locate all files with the matching prefix
   $1_FILE_LIST := \
-      $$(call FindFiles, $$($1_SOURCE_DIRS), $$($1_PREFIX)*.c $$($1_PREFIX)*.cpp)
+      $$(call FindFiles, $$($1_SOURCE_DIRS), $$($1_PREFIX)*.c $$($1_PREFIX)*.cpp $$($1_PREFIX)*.m)
 
   $1_EXCLUDE_PATTERN := $$(addprefix %/, $$($1_EXCLUDE))
   $1_FILTERED_FILE_LIST := $$(filter-out $$($1_EXCLUDE_PATTERN), $$($1_FILE_LIST))

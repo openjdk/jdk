@@ -146,7 +146,7 @@ public class FuncHere extends Function {
      * @param vars
      * @param globalsSize
      */
-    public void fixupVariables(List<QName> vars, int globalsSize) {
+    public void fixupVariables(List<QName> vars, int globalsSize) { //NOPMD
         // do nothing
     }
 }

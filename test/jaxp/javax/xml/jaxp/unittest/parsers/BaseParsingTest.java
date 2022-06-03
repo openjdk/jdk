@@ -48,7 +48,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * @test
  * @bug 8169450 8222415 8219692
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true parsers.BaseParsingTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow parsers.BaseParsingTest
  * @run testng/othervm parsers.BaseParsingTest
  * @summary Tests that verify base parsing
  */

@@ -60,7 +60,7 @@ public class JavaTokenizer extends UnicodeReader {
     private static final boolean scannerDebug = false;
 
     /**
-     * Sentinal for non-value.
+     * Sentinel for non-value.
      */
     private int NOT_FOUND = -1;
 
@@ -639,6 +639,13 @@ public class JavaTokenizer extends UnicodeReader {
                     lexError(pos, Errors.InvalidHexNumber);
                     break;
                 }
+            }
+            // If it is not a floating point literal,
+            // the octal number should be rescanned correctly.
+            if (radix == 8) {
+                sb.setLength(0);
+                reset(pos);
+                scanDigits(pos, 8);
             }
 
             if (acceptOneOf('l', 'L')) {

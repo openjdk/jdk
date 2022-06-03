@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -36,7 +36,7 @@
   static void load_klass_from_Class(MacroAssembler* _masm, Register klass_reg, Register temp_reg, Register temp2_reg);
 
   static void verify_klass(MacroAssembler* _masm,
-                           Register obj_reg, VMClassID klass_id,
+                           Register obj_reg, vmClassID klass_id,
                            Register temp_reg, Register temp2_reg,
                            const char* error_message = "wrong klass") NOT_DEBUG_RETURN;
 
@@ -59,3 +59,6 @@
                                   Register recv, Register method_temp,
                                   Register temp2, Register temp3,
                                   bool for_compiler_entry);
+
+  static void jump_to_native_invoker(MacroAssembler* _masm,
+                                     Register nep_reg, Register temp);

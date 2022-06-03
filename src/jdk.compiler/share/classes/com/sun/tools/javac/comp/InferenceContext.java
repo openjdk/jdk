@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,11 @@ package com.sun.tools.javac.comp;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.ArrayType;
@@ -50,7 +50,6 @@ import com.sun.tools.javac.comp.Infer.InferenceException;
 import com.sun.tools.javac.comp.Infer.InferenceStep;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.Assert;
-import com.sun.tools.javac.util.Filter;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Warner;
@@ -147,11 +146,11 @@ public class InferenceContext {
 
     /* Returns the corresponding inference variables.
      */
-    private List<Type> filterVars(Filter<UndetVar> fu) {
+    private List<Type> filterVars(Predicate<UndetVar> fu) {
         ListBuffer<Type> res = new ListBuffer<>();
         for (Type t : undetvars) {
             UndetVar uv = (UndetVar)t;
-            if (fu.accepts(uv)) {
+            if (fu.test(uv)) {
                 res.append(uv.qtype);
             }
         }
@@ -393,7 +392,7 @@ public class InferenceContext {
         Map<Type, Set<Type>> minMap = new LinkedHashMap<>();
 
         void scan(List<Type> roots) {
-            roots.stream().forEach(this::visit);
+            roots.forEach(this::visit);
         }
 
         @Override

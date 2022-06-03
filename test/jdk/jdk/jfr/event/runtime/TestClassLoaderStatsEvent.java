@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -82,8 +80,7 @@ public class TestClassLoaderStatsEvent {
                 Events.assertField(event, "classCount").equal(2L);
                 Events.assertField(event, "chunkSize").above(1L);
                 Events.assertField(event, "blockSize").above(1L);
-                // Hidden classes stats include both hidden and unsafe anonymous classes.
-                Events.assertField(event, "hiddenClassCount").equal(4L);
+                Events.assertField(event, "hiddenClassCount").equal(2L);
                 Events.assertField(event, "hiddenChunkSize").above(0L);
                 Events.assertField(event, "hiddenBlockSize").above(0L);
                 isAnyFound = true;
@@ -99,8 +96,8 @@ public class TestClassLoaderStatsEvent {
             throw new RuntimeException("TestClass defined by wrong classloader: " + c.getClassLoader());
         }
 
-        // Compile a class for method createNonFindableClasses() to use to create both a
-        // weak hidden class and an anonymous class.
+        // Compile a class for method createNonFindableClasses() to use to create a
+        // non-strong hidden class.
         byte klassbuf[] = InMemoryJavaCompiler.compile("jdk.jfr.event.runtime.TestClass",
             "package jdk.jfr.event.runtime; " +
             "public class TestClass { " +

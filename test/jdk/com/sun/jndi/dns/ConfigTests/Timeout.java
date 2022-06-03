@@ -30,7 +30,7 @@ import java.time.Instant;
 
 /*
  * @test
- * @bug 8200151
+ * @bug 8200151 8265309
  * @summary Tests that we can set the initial UDP timeout interval and the
  *          number of retries.
  * @library ../lib/

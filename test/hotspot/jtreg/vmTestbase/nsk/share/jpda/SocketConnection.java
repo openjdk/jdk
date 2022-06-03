@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,8 +52,6 @@ class BasicSocketConnection {
     protected InputStream sin = null;
 
     protected OutputStream sout = null;
-
-    protected Process connectingProcess = null;
 
     protected volatile boolean connected = false;
 
@@ -257,11 +255,6 @@ class BasicSocketConnection {
                 } catch (ConnectException e) {
                     logger.display("Attempt #" + i + " to attach for " + name + " connection failed:\n\t" + e);
                     lastException = e;
-                    // check if listening process still alive
-                    if (!checkConnectingProcess()) {
-                        shouldStop = true;
-                        throw new Failure("Break attaching to " + name + " connection: " + "listening process exited");
-                    }
                     // sleep between attempts
                     try {
                         Thread.sleep(DebugeeBinder.CONNECT_TRY_DELAY);
@@ -308,31 +301,6 @@ class BasicSocketConnection {
      */
     public Socket getSocket() {
         return socket;
-    }
-
-    /**
-     * Return true if another connecting process is still alive.
-     */
-    public boolean checkConnectingProcess() {
-        if (connectingProcess == null) {
-            // no process to check
-            return true;
-        }
-        try {
-            int exitCode = connectingProcess.exitValue();
-        } catch (IllegalThreadStateException e) {
-            // process is still alive
-            return true;
-        }
-        // process exited
-        return false;
-    }
-
-    /**
-     * Set another connecting process to control if it is still alive.
-     */
-    public void setConnectingProcess(Process process) {
-        connectingProcess = process;
     }
 
     /**

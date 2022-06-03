@@ -25,6 +25,8 @@
 #ifndef SHARE_JVMCI_JNIACCESSMARK_INLINE_HPP
 #define SHARE_JVMCI_JNIACCESSMARK_INLINE_HPP
 
+// No jniAccessMark.hpp
+
 #include "code/nmethod.hpp"
 #include "jvmci/jvmciEnv.hpp"
 #include "runtime/interfaceSupport.inline.hpp"

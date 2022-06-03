@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -435,6 +435,11 @@ handleEventCommandSingle(JNIEnv *env, PacketOutputStream *out,
         case EI_THREAD_END:
             writeThreadEvent(env, out, evinfo);
             break;
+        case EI_VIRTUAL_THREAD_START:
+        case EI_VIRTUAL_THREAD_END:
+            /* These events should already have been converted to THREAD_START and THREAD_END. */
+            EXIT_ERROR(AGENT_ERROR_INVALID_EVENT_TYPE,"should be THREAD_START or THREAD_END");
+            break;
         case EI_CLASS_LOAD:
         case EI_CLASS_PREPARE:
             writeClassEvent(env, out, evinfo);
@@ -561,6 +566,10 @@ handleReportEventCompositeCommand(JNIEnv *env,
 
     outStream_sendCommand(&out);
     outStream_destroy(&out);
+
+    // TODO - vthread node cleanup: if we didn't do any suspending, we should allow the vthread
+    // ThreadNode to be released at this point. The thread in question can be extracted the way
+    // it is done in the first loop above.
 }
 
 static void
@@ -1045,12 +1054,12 @@ eventHelper_reportEvents(jbyte sessionID, struct bag *eventBag)
 
 void
 eventHelper_recordEvent(EventInfo *evinfo, jint id, jbyte suspendPolicy,
-                         struct bag *eventBag)
+                        struct bag *eventBag)
 {
     JNIEnv *env = getEnv();
     CommandSingle *command = bagAdd(eventBag);
     if (command == NULL) {
-        EXIT_ERROR(AGENT_ERROR_OUT_OF_MEMORY,"badAdd(eventBag)");
+        EXIT_ERROR(AGENT_ERROR_OUT_OF_MEMORY,"bagAdd(eventBag)");
     }
 
     command->singleKind = COMMAND_SINGLE_EVENT;

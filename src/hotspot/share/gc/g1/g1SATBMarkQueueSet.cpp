@@ -91,14 +91,14 @@ static inline bool requires_marking(const void* entry, G1CollectedHeap* g1h) {
     return false;
   }
 
-  assert(oopDesc::is_oop(oop(entry), true /* ignore mark word */),
+  assert(oopDesc::is_oop(cast_to_oop(entry), true /* ignore mark word */),
          "Invalid oop in SATB buffer: " PTR_FORMAT, p2i(entry));
 
   return true;
 }
 
 static inline bool discard_entry(const void* entry, G1CollectedHeap* g1h) {
-  return !requires_marking(entry, g1h) || g1h->is_marked_next((oop)entry);
+  return !requires_marking(entry, g1h) || g1h->is_marked_next(cast_to_oop(entry));
 }
 
 // Workaround for not yet having std::bind.

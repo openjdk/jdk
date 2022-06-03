@@ -46,7 +46,7 @@ int ZeroStack::suggest_size(Thread *thread) const {
 }
 
 void ZeroStack::handle_overflow(TRAPS) {
-  JavaThread *thread = THREAD->as_Java_thread();
+  JavaThread *thread = THREAD;
 
   // Set up the frame anchor if it isn't already
   bool has_last_Java_frame = thread->has_last_Java_frame();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -58,7 +58,7 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 
 #define COMPRESSED_CLASS_POINTERS_DEPENDS_ON_COMPRESSED_OOPS false
 
-#if defined(_WIN64)
+#if defined(__APPLE__) || defined(_WIN64)
 #define R18_RESERVED
 #define R18_RESERVED_ONLY(code) code
 #define NOT_R18_RESERVED(code)
@@ -66,5 +66,7 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 #define R18_RESERVED_ONLY(code)
 #define NOT_R18_RESERVED(code) code
 #endif
+
+#define USE_POINTERS_TO_REGISTER_IMPL_ARRAY
 
 #endif // CPU_AARCH64_GLOBALDEFINITIONS_AARCH64_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +66,7 @@ public class XTrayIconPeer implements TrayIconPeer,
     static final int TRAY_ICON_WIDTH = 24;
     static final int TRAY_ICON_HEIGHT = 24;
 
+    @SuppressWarnings("removal")
     XTrayIconPeer(TrayIcon target)
       throws AWTException
     {

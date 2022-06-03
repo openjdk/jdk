@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/preserveException.hpp"
 
 #define __ Disassembler::hook<MacroAssembler>(__FILE__, __LINE__, _masm)->
@@ -72,7 +73,7 @@ static int check_nonzero(const char* xname, int x) {
 
 #ifdef ASSERT
 void MethodHandles::verify_klass(MacroAssembler* _masm,
-                                 Register obj, VMClassID klass_id,
+                                 Register obj, vmClassID klass_id,
                                  const char* error_message) {
   InstanceKlass** klass_addr = vmClasses::klass_addr_at(klass_id);
   Klass* klass = vmClasses::klass_at(klass_id);
@@ -202,6 +203,21 @@ void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
   BLOCK_COMMENT("} jump_to_lambda_form");
 }
 
+void MethodHandles::jump_to_native_invoker(MacroAssembler* _masm, Register nep_reg, Register temp_target) {
+  BLOCK_COMMENT("jump_to_native_invoker {");
+  assert_different_registers(nep_reg, temp_target);
+  assert(nep_reg != noreg, "required register");
+
+  // Load the invoker, as NEP -> .invoker
+  __ verify_oop(nep_reg);
+  __ access_load_at(T_ADDRESS, IN_HEAP, temp_target,
+                    Address(nep_reg, NONZERO(jdk_internal_foreign_abi_NativeEntryPoint::downcall_stub_address_offset_in_bytes())),
+                    noreg, noreg);
+
+  __ jmp(temp_target);
+  BLOCK_COMMENT("} jump_to_native_invoker");
+}
+
 
 // Code generation
 address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* _masm,
@@ -313,7 +329,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
   Register temp2 = rscratch2;
   Register temp3 = rax;
   if (for_compiler_entry) {
-    assert(receiver_reg == (iid == vmIntrinsics::_linkToStatic ? noreg : j_rarg0), "only valid assignment");
+    assert(receiver_reg == (iid == vmIntrinsics::_linkToStatic || iid == vmIntrinsics::_linkToNative ? noreg : j_rarg0), "only valid assignment");
     assert_different_registers(temp1,        j_rarg0, j_rarg1, j_rarg2, j_rarg3, j_rarg4, j_rarg5);
     assert_different_registers(temp2,        j_rarg0, j_rarg1, j_rarg2, j_rarg3, j_rarg4, j_rarg5);
     assert_different_registers(temp3,        j_rarg0, j_rarg1, j_rarg2, j_rarg3, j_rarg4, j_rarg5);
@@ -323,7 +339,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
   Register temp2 = rdi;
   Register temp3 = rax;
   if (for_compiler_entry) {
-    assert(receiver_reg == (iid == vmIntrinsics::_linkToStatic ? noreg : rcx), "only valid assignment");
+    assert(receiver_reg == (iid == vmIntrinsics::_linkToStatic || iid == vmIntrinsics::_linkToNative ? noreg : rcx), "only valid assignment");
     assert_different_registers(temp1,        rcx, rdx);
     assert_different_registers(temp2,        rcx, rdx);
     assert_different_registers(temp3,        rcx, rdx);
@@ -335,13 +351,12 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
   assert_different_registers(temp1, temp2, temp3, receiver_reg);
   assert_different_registers(temp1, temp2, temp3, member_reg);
 
-  if (iid == vmIntrinsics::_invokeBasic || iid == vmIntrinsics::_linkToNative) {
-    if (iid == vmIntrinsics::_linkToNative) {
-      assert(for_compiler_entry, "only compiler entry is supported");
-    }
+  if (iid == vmIntrinsics::_invokeBasic) {
     // indirect through MH.form.vmentry.vmtarget
     jump_to_lambda_form(_masm, receiver_reg, rbx_method, temp1, for_compiler_entry);
-
+  } else if (iid == vmIntrinsics::_linkToNative) {
+    assert(for_compiler_entry, "only compiler entry is supported");
+    jump_to_native_invoker(_masm, member_reg, temp1);
   } else {
     // The method is a member invoker used by direct method handles.
     if (VerifyMethodHandles) {
@@ -502,7 +517,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
 
 #ifndef PRODUCT
 void trace_method_handle_stub(const char* adaptername,
-                              oop mh,
+                              oopDesc* mh,
                               intptr_t* saved_regs,
                               intptr_t* entry_sp) {
   // called as a leaf from native code: do not block the JVM!
@@ -554,18 +569,25 @@ void trace_method_handle_stub(const char* adaptername,
       PreserveExceptionMark pem(Thread::current());
       FrameValues values;
 
-      // Current C frame
       frame cur_frame = os::current_frame();
 
       if (cur_frame.fp() != 0) {  // not walkable
 
         // Robust search of trace_calling_frame (independent of inlining).
         // Assumes saved_regs comes from a pusha in the trace_calling_frame.
+        //
+        // We have to start the search from cur_frame, because trace_calling_frame may be it.
+        // It is guaranteed that trace_calling_frame is different from the top frame.
+        // But os::current_frame() does NOT return the top frame: it returns the next frame under it (caller's frame).
+        // (Due to inlining and tail call optimizations, caller's frame doesn't necessarily correspond to the immediate
+        // caller in the source code.)
         assert(cur_frame.sp() < saved_regs, "registers not saved on stack ?");
-        frame trace_calling_frame = os::get_sender_for_C_frame(&cur_frame);
+        frame trace_calling_frame = cur_frame;
         while (trace_calling_frame.fp() < saved_regs) {
+          assert(trace_calling_frame.cb() == NULL, "not a C frame");
           trace_calling_frame = os::get_sender_for_C_frame(&trace_calling_frame);
         }
+        assert(trace_calling_frame.sp() < saved_regs, "wrong frame");
 
         // safely create a frame and call frame::describe
         intptr_t *dump_sp = trace_calling_frame.sender_sp();
@@ -623,7 +645,7 @@ void MethodHandles::trace_method_handle(MacroAssembler* _masm, const char* adapt
   __ enter();
   __ andptr(rsp, -16); // align stack if needed for FPU state
   __ pusha();
-  __ mov(rbx, rsp); // for retreiving saved_regs
+  __ mov(rbx, rsp); // for retrieving saved_regs
   // Note: saved_regs must be in the entered frame for the
   // robust stack walking implemented in trace_method_handle_stub.
 

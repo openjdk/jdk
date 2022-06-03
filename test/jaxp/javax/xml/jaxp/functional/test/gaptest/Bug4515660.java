@@ -54,7 +54,7 @@ import org.xml.sax.helpers.XMLFilterImpl;
  * @test
  * @bug 4515660
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true test.gaptest.Bug4515660
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow test.gaptest.Bug4515660
  * @run testng/othervm test.gaptest.Bug4515660
  * @summary verify property org.xml.sax.driver is used by SAXTransformerFactory
  */

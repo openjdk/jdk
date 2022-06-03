@@ -340,6 +340,8 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      */
     DoubleStream flatMapToDouble(Function<? super T, ? extends DoubleStream> mapper);
 
+    // THE EXAMPLES USED IN THE JAVADOC MUST BE IN SYNC WITH THEIR CORRESPONDING
+    // TEST IN test/jdk/java/util/stream/examples/JavadocExamples.java.
     /**
      * Returns a stream consisting of the results of replacing each element of
      * this stream with multiple elements, specifically zero or more elements.
@@ -386,8 +388,8 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * <pre>{@code
      *     Stream<Number> numbers = ... ;
      *     List<Integer> integers = numbers.<Integer>mapMulti((number, consumer) -> {
-     *             if (number instanceof Integer)
-     *                 consumer.accept((Integer) number);
+     *             if (number instanceof Integer i)
+     *                 consumer.accept(i);
      *         })
      *         .collect(Collectors.toList());
      * }</pre>
@@ -397,8 +399,8 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * <pre>{@code
      * class C {
      *     static void expandIterable(Object e, Consumer<Object> c) {
-     *         if (e instanceof Iterable) {
-     *             for (Object ie: (Iterable<?>) e) {
+     *         if (e instanceof Iterable<?> elements) {
+     *             for (Object ie : elements) {
      *                 expandIterable(ie, c);
      *             }
      *         } else if (e != null) {
@@ -407,8 +409,8 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      *     }
      *
      *     public static void main(String[] args) {
-     *         Stream<Object> stream = ...;
-     *         Stream<Object> expandedStream = stream.mapMulti(C::expandIterable);
+     *         var nestedList = List.of(1, List.of(2, List.of(3, 4)), 5);
+     *         Stream<Object> expandedStream = nestedList.stream().mapMulti(C::expandIterable);
      *     }
      * }
      * }</pre>

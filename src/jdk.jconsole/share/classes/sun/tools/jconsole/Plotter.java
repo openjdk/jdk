@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,15 +91,15 @@ public class Plotter extends JComponent
     };
 
 
-    final static long SECOND = 1000;
-    final static long MINUTE = 60 * SECOND;
-    final static long HOUR   = 60 * MINUTE;
-    final static long DAY    = 24 * HOUR;
+    static final long SECOND = 1000;
+    static final long MINUTE = 60 * SECOND;
+    static final long HOUR   = 60 * MINUTE;
+    static final long DAY    = 24 * HOUR;
 
-    final static Color bgColor = new Color(250, 250, 250);
-    final static Color defaultColor = Color.blue.darker();
+    static final Color bgColor = new Color(250, 250, 250);
+    static final Color defaultColor = Color.blue.darker();
 
-    final static int ARRAY_SIZE_INCREMENT = 4000;
+    static final int ARRAY_SIZE_INCREMENT = 4000;
 
     private static Stroke dashedStroke;
 
@@ -221,7 +221,7 @@ public class Plotter extends JComponent
     }
 
     /**
-     * @param minutes the displayed time range in minutes, or -1 to diaplay all data
+     * @param minutes the displayed time range in minutes, or -1 to display all data
      */
     public void setViewRange(int minutes) {
         if (minutes != viewRange) {

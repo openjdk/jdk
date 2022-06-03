@@ -28,7 +28,7 @@
 #include "classfile/vmClassMacros.hpp"
 #include "utilities/enumIterator.hpp"
 
-enum class VMClassID : int {
+enum class vmClassID : int {
   #define DECLARE_VM_CLASS(name, symbol) _VM_CLASS_ENUM(name), _VM_CLASS_ENUM(symbol) = _VM_CLASS_ENUM(name),
   VM_CLASSES_DO(DECLARE_VM_CLASS)
   #undef DECLARE_VM_CLASS
@@ -38,6 +38,6 @@ enum class VMClassID : int {
   LAST = LIMIT - 1   // inclusive upper limit
 };
 
-ENUMERATOR_RANGE(VMClassID, VMClassID::FIRST, VMClassID::LAST) // (inclusive start, inclusive end)
+ENUMERATOR_RANGE(vmClassID, vmClassID::FIRST, vmClassID::LAST) // (inclusive start, inclusive end)
 
 #endif // SHARE_CLASSFILE_VMCLASSID_HPP

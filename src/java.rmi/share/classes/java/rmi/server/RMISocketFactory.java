@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,12 +131,13 @@ public abstract class RMISocketFactory
      * @see java.lang.SecurityManager#checkSetFactory()
      * @since 1.1
      */
-    public synchronized static void setSocketFactory(RMISocketFactory fac)
+    public static synchronized void setSocketFactory(RMISocketFactory fac)
         throws IOException
     {
         if (factory != null) {
             throw new SocketException("factory already defined");
         }
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkSetFactory();
@@ -152,7 +153,7 @@ public abstract class RMISocketFactory
      * @see #setSocketFactory(RMISocketFactory)
      * @since 1.1
      */
-    public synchronized static RMISocketFactory getSocketFactory()
+    public static synchronized RMISocketFactory getSocketFactory()
     {
         return factory;
     }
@@ -165,7 +166,7 @@ public abstract class RMISocketFactory
      * @return the default RMI socket factory
      * @since 1.1
      */
-    public synchronized static RMISocketFactory getDefaultSocketFactory() {
+    public static synchronized RMISocketFactory getDefaultSocketFactory() {
         if (defaultSocketFactory == null) {
             defaultSocketFactory =
                 new sun.rmi.transport.tcp.TCPDirectSocketFactory();
@@ -192,8 +193,9 @@ public abstract class RMISocketFactory
      * @see java.rmi.server.RMIFailureHandler#failure(Exception)
      * @since 1.1
      */
-    public synchronized static void setFailureHandler(RMIFailureHandler fh)
+    public static synchronized void setFailureHandler(RMIFailureHandler fh)
     {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkSetFactory();
@@ -208,7 +210,7 @@ public abstract class RMISocketFactory
      * @see #setFailureHandler(RMIFailureHandler)
      * @since 1.1
      */
-    public synchronized static RMIFailureHandler getFailureHandler()
+    public static synchronized RMIFailureHandler getFailureHandler()
     {
         return handler;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,10 @@ public class ZCollectedHeap extends CollectedHeap {
         return heap().used();
     }
 
-
+    @Override
+    public boolean isInReserved(Address a) {
+        return heap().isIn(a);
+    }
 
     private OopHandle oop_load_barrier(Address oopAddress) {
         oopAddress = ZBarrier.weak_barrier(oopAddress);
@@ -106,7 +109,6 @@ public class ZCollectedHeap extends CollectedHeap {
     @Override
     public OopHandle oop_load_in_native(Address addr) {
         Address oopAddress = addr.getAddressAt(0);
-
         return oop_load_barrier(oopAddress);
     }
 

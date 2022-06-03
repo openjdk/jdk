@@ -28,8 +28,6 @@
 #import "JNIUtilities.h"
 #import "ThreadUtilities.h"
 
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
-
 #define MAX_DISPLAYS 64
 
 /*
@@ -114,19 +112,18 @@ static void displaycb_handle
 
     [ThreadUtilities performOnMainThreadWaiting:NO block:^() {
 
-        JNFPerformEnvBlock(JNFThreadDetachImmediately, ^(JNIEnv *env) {
-            jobject cgeRef = (jobject)userInfo;
+        JNIEnv *env = [ThreadUtilities getJNIEnvUncached];
+        jobject cgeRef = (jobject)userInfo;
 
-            jobject graphicsEnv = (*env)->NewLocalRef(env, cgeRef);
-            if (graphicsEnv == NULL) return; // ref already GC'd
-            DECLARE_CLASS(jc_CGraphicsEnvironment, "sun/awt/CGraphicsEnvironment");
-            DECLARE_METHOD(jm_displayReconfiguration,
-                    jc_CGraphicsEnvironment, "_displayReconfiguration","(IZ)V");
-            (*env)->CallVoidMethod(env, graphicsEnv, jm_displayReconfiguration,
-                    (jint) display, (jboolean) flags & kCGDisplayRemoveFlag);
-            (*env)->DeleteLocalRef(env, graphicsEnv);
-            CHECK_EXCEPTION();
-        });
+        jobject graphicsEnv = (*env)->NewLocalRef(env, cgeRef);
+        if (graphicsEnv == NULL) return; // ref already GC'd
+        DECLARE_CLASS(jc_CGraphicsEnvironment, "sun/awt/CGraphicsEnvironment");
+        DECLARE_METHOD(jm_displayReconfiguration,
+                jc_CGraphicsEnvironment, "_displayReconfiguration","(IZ)V");
+        (*env)->CallVoidMethod(env, graphicsEnv, jm_displayReconfiguration,
+                (jint) display, (jboolean) flags & kCGDisplayRemoveFlag);
+        (*env)->DeleteLocalRef(env, graphicsEnv);
+        CHECK_EXCEPTION();
     }];
 }
 

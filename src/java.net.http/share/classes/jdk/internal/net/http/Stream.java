@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@ import java.io.UncheckedIOException;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.net.URI;
+import java.net.http.HttpResponse.BodyHandler;
+import java.net.http.HttpResponse.ResponseInfo;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -97,11 +99,12 @@ import jdk.internal.net.http.hpack.DecodingCallback;
  */
 class Stream<T> extends ExchangeImpl<T> {
 
+    private static final String COOKIE_HEADER = "Cookie";
     final Logger debug = Utils.getDebugLogger(this::dbgString, Utils.DEBUG);
 
     final ConcurrentLinkedQueue<Http2Frame> inputQ = new ConcurrentLinkedQueue<>();
     final SequentialScheduler sched =
-            SequentialScheduler.synchronizedScheduler(this::schedule);
+            SequentialScheduler.lockingScheduler(this::schedule);
     final SubscriptionBase userSubscription =
             new SubscriptionBase(sched, this::cancel, this::onSubscriptionError);
 
@@ -245,7 +248,7 @@ class Stream<T> extends ExchangeImpl<T> {
                         debug.log("already completed: dropping error %s", (Object) t);
                 }
             } catch (Throwable x) {
-                Log.logError("Subscriber::onError threw exception: {0}", (Object) t);
+                Log.logError("Subscriber::onError threw exception: {0}", t);
             } finally {
                 cancelImpl(t);
                 drainInputQueue();
@@ -298,6 +301,9 @@ class Stream<T> extends ExchangeImpl<T> {
         return endStream;
     }
 
+    // This method is called by Http2Connection::decrementStreamCount in order
+    // to make sure that the stream count is decremented only once for
+    // a given stream.
     boolean deRegister() {
         return DEREGISTERED.compareAndSet(this, false, true);
     }
@@ -310,7 +316,8 @@ class Stream<T> extends ExchangeImpl<T> {
         try {
             Log.logTrace("Reading body on stream {0}", streamid);
             debug.log("Getting BodySubscriber for: " + response);
-            BodySubscriber<T> bodySubscriber = handler.apply(new ResponseInfoImpl(response));
+            Http2StreamResponseSubscriber<T> bodySubscriber =
+                    createResponseSubscriber(handler, new ResponseInfoImpl(response));
             CompletableFuture<T> cf = receiveData(bodySubscriber, executor);
 
             PushGroup<?> pg = exchange.getPushGroup();
@@ -327,11 +334,27 @@ class Stream<T> extends ExchangeImpl<T> {
     }
 
     @Override
+    Http2StreamResponseSubscriber<T> createResponseSubscriber(BodyHandler<T> handler, ResponseInfo response) {
+        Http2StreamResponseSubscriber<T> subscriber =
+                new Http2StreamResponseSubscriber<>(handler.apply(response));
+        registerResponseSubscriber(subscriber);
+        return subscriber;
+    }
+
+    // The Http2StreamResponseSubscriber is registered with the HttpClient
+    // to ensure that it gets completed if the SelectorManager aborts due
+    // to unexpected exceptions.
+    private void registerResponseSubscriber(Http2StreamResponseSubscriber<?> subscriber) {
+        client().registerSubscriber(subscriber);
+    }
+
+    private void subscriberCompleted(Http2StreamResponseSubscriber<?> subscriber) {
+        client().subscriberCompleted(subscriber);
+    }
+
+    @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("streamid: ")
-                .append(streamid);
-        return sb.toString();
+        return "streamid: " + streamid;
     }
 
     private void receiveDataFrame(DataFrame df) {
@@ -386,10 +409,13 @@ class Stream<T> extends ExchangeImpl<T> {
         if (isCanceled()) {
             Throwable t = getCancelCause();
             responseBodyCF.completeExceptionally(t);
-        } else {
-            pendingResponseSubscriber = bodySubscriber;
-            sched.runOrSchedule(); // in case data waiting already to be processed
         }
+
+        // ensure that the body subscriber will be subsribed and onError() is
+        // invoked
+        pendingResponseSubscriber = bodySubscriber;
+        sched.runOrSchedule(); // in case data waiting already to be processed, or error
+
         return responseBodyCF;
     }
 
@@ -398,7 +424,6 @@ class Stream<T> extends ExchangeImpl<T> {
         return sendBodyImpl().thenApply( v -> this);
     }
 
-    @SuppressWarnings("unchecked")
     Stream(Http2Connection connection,
            Exchange<T> e,
            WindowController windowController)
@@ -455,7 +480,7 @@ class Stream<T> extends ExchangeImpl<T> {
             case ResetFrame.TYPE        ->  incoming_reset((ResetFrame) frame);
             case PriorityFrame.TYPE     ->  incoming_priority((PriorityFrame) frame);
 
-            default -> throw new IOException("Unexpected frame: " + frame.toString());
+            default -> throw new IOException("Unexpected frame: " + frame);
         }
     }
 
@@ -652,10 +677,16 @@ class Stream<T> extends ExchangeImpl<T> {
         // Filter context restricted from userHeaders
         userh = HttpHeaders.of(userh.map(), Utils.CONTEXT_RESTRICTED(client()));
 
+        // Don't override Cookie values that have been set by the CookieHandler.
         final HttpHeaders uh = userh;
+        BiPredicate<String, String> overrides =
+                (k, v) -> COOKIE_HEADER.equalsIgnoreCase(k)
+                          || uh.firstValue(k).isEmpty();
 
         // Filter any headers from systemHeaders that are set in userHeaders
-        sysh = HttpHeaders.of(sysh.map(), (k,v) -> uh.firstValue(k).isEmpty());
+        //   except for "Cookie:" - user cookies will be appended to system
+        //   cookies
+        sysh = HttpHeaders.of(sysh.map(), overrides);
 
         OutgoingHeaders<Stream<T>> f = new OutgoingHeaders<>(sysh, userh, this);
         if (contentLength == 0) {
@@ -840,7 +871,7 @@ class Stream<T> extends ExchangeImpl<T> {
             this.contentLength = contentLen;
             this.remainingContentLength = contentLen;
             this.sendScheduler =
-                    SequentialScheduler.synchronizedScheduler(this::trySend);
+                    SequentialScheduler.lockingScheduler(this::trySend);
         }
 
         @Override
@@ -926,7 +957,6 @@ class Stream<T> extends ExchangeImpl<T> {
                     // handle bytes to send downstream
                     while (item.hasRemaining() && state == 0) {
                         if (debug.on()) debug.log("trySend: %d", item.remaining());
-                        assert !endStreamSent : "internal error, send data after END_STREAM flag";
                         DataFrame df = getDataFrame(item);
                         if (df == null) {
                             if (debug.on())
@@ -947,9 +977,12 @@ class Stream<T> extends ExchangeImpl<T> {
                                 connection.resetStream(streamid, ResetFrame.PROTOCOL_ERROR);
                                 throw new IOException(msg);
                             } else if (remainingContentLength == 0) {
+                                assert !endStreamSent : "internal error, send data after END_STREAM flag";
                                 df.setFlag(DataFrame.END_STREAM);
                                 endStreamSent = true;
                             }
+                        } else {
+                            assert !endStreamSent : "internal error, send data after END_STREAM flag";
                         }
                         if ((state = streamState) != 0) {
                             if (debug.on()) debug.log("trySend: cancelled: %s", String.valueOf(t));
@@ -1475,6 +1508,21 @@ class Stream<T> extends ExchangeImpl<T> {
             if (Log.headers() && Log.trace()) {
                 Log.logTrace("RECEIVED HEADER (streamid={0}): {1}: {2}",
                              streamid, n, v);
+            }
+        }
+    }
+
+    final class Http2StreamResponseSubscriber<U> extends HttpBodySubscriberWrapper<U> {
+        Http2StreamResponseSubscriber(BodySubscriber<U> subscriber) {
+            super(subscriber);
+        }
+
+        @Override
+        protected void complete(Throwable t) {
+            try {
+                Stream.this.subscriberCompleted(this);
+            } finally {
+                super.complete(t);
             }
         }
     }

@@ -419,12 +419,9 @@ enum NamedGroup {
         return spec.encodePossessionPublicKey(namedGroupPossession);
     }
 
-    SSLCredentials decodeCredentials(byte[] encoded,
-            AlgorithmConstraints constraints,
-            ExceptionSupplier onConstraintFail)
-            throws IOException, GeneralSecurityException {
-        return spec.decodeCredentials(
-                this, encoded, constraints, onConstraintFail);
+    SSLCredentials decodeCredentials(
+            byte[] encoded) throws IOException, GeneralSecurityException {
+        return spec.decodeCredentials(this, encoded);
     }
 
     SSLPossession createPossession(SecureRandom random) {
@@ -436,30 +433,13 @@ enum NamedGroup {
         return spec.createKeyDerivation(hc);
     }
 
-    interface ExceptionSupplier {
-        void apply(String s) throws SSLException;
-    }
-
     // A list of operations related to named groups.
     private interface NamedGroupScheme {
-        default void checkConstraints(PublicKey publicKey,
-                AlgorithmConstraints constraints,
-                ExceptionSupplier onConstraintFail) throws SSLException {
-            if (!constraints.permits(
-                    EnumSet.of(CryptoPrimitive.KEY_AGREEMENT), publicKey)) {
-                onConstraintFail.apply("key share entry does not "
-                        + "comply with algorithm constraints");
-            }
-        }
-
         byte[] encodePossessionPublicKey(
                 NamedGroupPossession namedGroupPossession);
 
-        SSLCredentials decodeCredentials(
-                NamedGroup ng, byte[] encoded,
-                AlgorithmConstraints constraints,
-                ExceptionSupplier onConstraintFail
-            ) throws IOException, GeneralSecurityException;
+        SSLCredentials decodeCredentials(NamedGroup ng,
+                byte[] encoded) throws IOException, GeneralSecurityException;
 
         SSLPossession createPossession(NamedGroup ng, SecureRandom random);
 
@@ -524,13 +504,10 @@ enum NamedGroup {
         }
 
         @Override
-        public SSLCredentials decodeCredentials(NamedGroup ng, byte[] encoded,
-                    AlgorithmConstraints constraints,
-                    ExceptionSupplier onConstraintFail
-                ) throws IOException, GeneralSecurityException {
+        public SSLCredentials decodeCredentials(NamedGroup ng,
+                byte[] encoded) throws IOException, GeneralSecurityException {
             if (scheme != null) {
-                return scheme.decodeCredentials(
-                        ng, encoded, constraints, onConstraintFail);
+                return scheme.decodeCredentials(ng, encoded);
             }
 
             return null;
@@ -567,18 +544,9 @@ enum NamedGroup {
         }
 
         @Override
-        public SSLCredentials decodeCredentials(NamedGroup ng, byte[] encoded,
-                AlgorithmConstraints constraints,
-                ExceptionSupplier onConstraintFail
-            ) throws IOException, GeneralSecurityException {
-
-            DHKeyExchange.DHECredentials result
-                    = DHKeyExchange.DHECredentials.valueOf(ng, encoded);
-
-            checkConstraints(result.getPublicKey(), constraints,
-                    onConstraintFail);
-
-            return result;
+        public SSLCredentials decodeCredentials(NamedGroup ng,
+                byte[] encoded) throws IOException, GeneralSecurityException {
+            return DHKeyExchange.DHECredentials.valueOf(ng, encoded);
         }
 
         @Override
@@ -605,18 +573,9 @@ enum NamedGroup {
         }
 
         @Override
-        public SSLCredentials decodeCredentials(NamedGroup ng, byte[] encoded,
-                AlgorithmConstraints constraints,
-                ExceptionSupplier onConstraintFail
-            ) throws IOException, GeneralSecurityException {
-
-            ECDHKeyExchange.ECDHECredentials result
-                    = ECDHKeyExchange.ECDHECredentials.valueOf(ng, encoded);
-
-            checkConstraints(result.getPublicKey(), constraints,
-                    onConstraintFail);
-
-            return result;
+        public SSLCredentials decodeCredentials(NamedGroup ng,
+                byte[] encoded) throws IOException, GeneralSecurityException {
+            return ECDHKeyExchange.ECDHECredentials.valueOf(ng, encoded);
         }
 
         @Override
@@ -641,18 +600,9 @@ enum NamedGroup {
         }
 
         @Override
-        public SSLCredentials decodeCredentials(NamedGroup ng, byte[] encoded,
-                AlgorithmConstraints constraints,
-                ExceptionSupplier onConstraintFail
-            ) throws IOException, GeneralSecurityException {
-
-            XDHKeyExchange.XDHECredentials result
-                    = XDHKeyExchange.XDHECredentials.valueOf(ng, encoded);
-
-            checkConstraints(result.getPublicKey(), constraints,
-                    onConstraintFail);
-
-            return result;
+        public SSLCredentials decodeCredentials(NamedGroup ng,
+                byte[] encoded) throws IOException, GeneralSecurityException {
+            return XDHKeyExchange.XDHECredentials.valueOf(ng, encoded);
         }
 
         @Override

@@ -44,7 +44,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 6620632
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.EventsTest.Issue48Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.EventsTest.Issue48Test
  * @run testng/othervm stream.EventsTest.Issue48Test
  * @summary Test XMLEventReader can parse notation and entity information from DTD Event.
  */

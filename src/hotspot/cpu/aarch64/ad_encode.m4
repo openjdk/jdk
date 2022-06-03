@@ -29,7 +29,7 @@ define(choose, `loadStore($1, &MacroAssembler::$3, $2, $4,
   %}')dnl
 define(access, `
     $3Register $1_reg = as_$3Register($$1$$reg);
-    $4choose(MacroAssembler(&cbuf), $1_reg,$2,$mem->opcode(),
+    $4choose(C2_MacroAssembler(&cbuf), $1_reg,$2,$mem->opcode(),
         as_Register($mem$$base),$mem$$index,$mem$$scale,$mem$$disp,$5)')dnl
 define(load,`
   // This encoding class is generated automatically from ad_encode.m4.
@@ -59,7 +59,7 @@ define(STORE0,`
   // This encoding class is generated automatically from ad_encode.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_$2`'0(memory$4 mem) %{
-    MacroAssembler _masm(&cbuf);
+    C2_MacroAssembler _masm(&cbuf);
     choose(_masm,zr,$2,$mem->opcode(),
         as_$3Register($mem$$base),$mem$$index,$mem$$scale,$mem$$disp,$4)')dnl
 STORE(iRegI,strb,,,1)
@@ -72,7 +72,7 @@ STORE(iRegL,str,,
 `// we sometimes get asked to store the stack pointer into the
     // current thread -- we cannot do that directly on AArch64
     if (src_reg == r31_sp) {
-      MacroAssembler _masm(&cbuf);
+      C2_MacroAssembler _masm(&cbuf);
       assert(as_Register($mem$$base) == rthread, "unexpected store for sp");
       __ mov(rscratch2, sp);
       src_reg = rscratch2;
@@ -84,32 +84,8 @@ STORE(vRegD,strd,Float,,8)
 
   // This encoding class is generated automatically from ad_encode.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-  enc_class aarch64_enc_strw_immn(immN src, memory1 mem) %{
-    MacroAssembler _masm(&cbuf);
-    address con = (address)$src$$constant;
-    // need to do this the hard way until we can manage relocs
-    // for 32 bit constants
-    __ movoop(rscratch2, (jobject)con);
-    if (con) __ encode_heap_oop_not_null(rscratch2);
-    choose(_masm,rscratch2,strw,$mem->opcode(),
-        as_Register($mem$$base),$mem$$index,$mem$$scale,$mem$$disp, 4)
-
-  // This encoding class is generated automatically from ad_encode.m4.
-  // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-  enc_class aarch64_enc_strw_immnk(immN src, memory4 mem) %{
-    MacroAssembler _masm(&cbuf);
-    address con = (address)$src$$constant;
-    // need to do this the hard way until we can manage relocs
-    // for 32 bit constants
-    __ movoop(rscratch2, (jobject)con);
-    __ encode_klass_not_null(rscratch2);
-    choose(_masm,rscratch2,strw,$mem->opcode(),
-        as_Register($mem$$base),$mem$$index,$mem$$scale,$mem$$disp, 4)
-
-  // This encoding class is generated automatically from ad_encode.m4.
-  // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
   enc_class aarch64_enc_strb0_ordered(memory4 mem) %{
-      MacroAssembler _masm(&cbuf);
+      C2_MacroAssembler _masm(&cbuf);
       __ membar(Assembler::StoreStore);
       loadStore(_masm, &MacroAssembler::strb, zr, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 1);

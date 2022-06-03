@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -27,12 +27,12 @@ import com.sun.org.apache.bcel.internal.util.ByteSequence;
 /**
  * Select - Abstract super class for LOOKUPSWITCH and TABLESWITCH instructions.
  *
- * <p>We use our super's <code>target</code> property as the default target.
+ * <p>We use our super's {@code target} property as the default target.
  *
  * @see LOOKUPSWITCH
  * @see TABLESWITCH
  * @see InstructionList
- * @LastModified: Jan 2020
+ * @LastModified: May 2021
  */
 public abstract class Select extends BranchInstruction implements VariableLengthInstruction,
         StackConsumer /* @since 6.0 */, StackProducer {

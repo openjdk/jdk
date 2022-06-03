@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,15 @@
  * @summary Possible JVM deadlock in ThreadTimesClosure when using HotspotInternal non-public API.
  * @modules java.management/sun.management
  * @run main/othervm -XX:+UsePerfData -Xmx128m ThreadCpuTimesDeadlock
+ */
+
+/*
+ * @test
+ * @bug 8264649
+ * @summary OSR compiled method crash when UseTLAB is off
+ * @requires vm.debug
+ * @modules java.management/sun.management
+ * @run main/othervm -XX:-UseTLAB -XX:+UsePerfData -Xmx128m ThreadCpuTimesDeadlock
  */
 
 import java.lang.management.ManagementFactory;

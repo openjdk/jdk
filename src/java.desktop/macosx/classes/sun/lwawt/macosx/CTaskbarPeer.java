@@ -31,7 +31,7 @@ import java.awt.PopupMenu;
 import java.awt.Taskbar.Feature;
 import java.awt.peer.TaskbarPeer;
 
-final public class CTaskbarPeer implements TaskbarPeer {
+public final class CTaskbarPeer implements TaskbarPeer {
 
     CTaskbarPeer() {}
 

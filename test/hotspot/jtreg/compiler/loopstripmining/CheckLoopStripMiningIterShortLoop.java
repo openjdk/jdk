@@ -25,10 +25,9 @@
  * @test
  * @bug 8196294
  * @summary when loop strip is enabled, LoopStripMiningIterShortLoop should be not null
+ * @requires vm.flagless
  * @requires vm.flavor == "server"
  * @library /test/lib /
- * @modules java.base/jdk.internal.misc
- *          java.management
  * @run driver CheckLoopStripMiningIterShortLoop
  */
 
@@ -40,6 +39,7 @@ public class CheckLoopStripMiningIterShortLoop {
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC", "-XX:+PrintFlagsFinal", "-version");
         OutputAnalyzer out = new OutputAnalyzer(pb.start());
+        out.shouldHaveExitValue(0);
 
         long iter = Long.parseLong(out.firstMatch("uintx LoopStripMiningIter                      = (\\d+)", 1));
         long iterShort = Long.parseLong(out.firstMatch("uintx LoopStripMiningIterShortLoop             = (\\d+)", 1));

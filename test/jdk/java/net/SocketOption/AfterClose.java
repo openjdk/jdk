@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@
  * @bug 8224477
  * @summary Ensures that IOException is thrown after the socket is closed
  * @run testng AfterClose
- * @run testng/othervm -Djdk.net.usePlainSocketImpl AfterClose
- * @run testng/othervm -Djdk.net.usePlainDatagramSocketImpl AfterClose
  */
 
 import java.io.IOException;
@@ -107,6 +105,8 @@ public class AfterClose {
             map.put((SocketOption<?>)field.get(null), listOf(10, 100));
             field = c.getField("SO_INCOMING_NAPI_ID");
             map.put((SocketOption<?>)field.get(null), listOf(RO));
+            field = c.getField("IP_DONTFRAGMENT");
+            map.put((SocketOption<?>)field.get(null), listOf(TRUE, FALSE));
         } catch (ClassNotFoundException e) {
             // ignore, jdk.net module not present
         } catch (ReflectiveOperationException e) {

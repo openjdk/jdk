@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,10 +101,9 @@ public enum JavaKind {
 
     /**
      * Returns the name of the kind as a single upper case character. For the void and primitive
-     * kinds, this is the <i>FieldType</i> term in
-     * <a href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.3.2-200">
-     * table 4.3-A</a> of the JVM Specification. For {@link #Object}, the character {@code 'A'} is
-     * returned and for {@link #Illegal}, {@code '-'} is returned.
+     * kinds, this is the <i>FieldType</i> term in table 4.3-A of JVMS {@jvms 4.3.2}. For
+     * {@link #Object}, the character {@code 'A'} is returned and for {@link #Illegal}, {@code '-'}
+     * is returned.
      */
     public char getTypeChar() {
         return typeChar;
@@ -473,7 +472,7 @@ public enum JavaKind {
             case Long:
                 return 64;
             default:
-                throw new IllegalArgumentException("illegal call to bits on " + this);
+                throw new IllegalArgumentException("illegal call to getBitCount() on " + this);
         }
     }
 }

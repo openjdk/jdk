@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,8 +103,6 @@ void RootChunkArea::split(chunklevel_t target_level, Metachunk* c, FreeChunkList
   DEBUG_ONLY(chunklevel::check_valid_level(target_level));
   assert(target_level > c->level(), "Wrong target level");
 
-  const chunklevel_t starting_level = c->level();
-
   while (c->level() < target_level) {
 
     log_trace(metaspace)("Splitting chunk: " METACHUNK_FULL_FORMAT ".", METACHUNK_FULL_FORMAT_ARGS(c));
@@ -198,8 +196,6 @@ Metachunk* RootChunkArea::merge(Metachunk* c, FreeChunkListVector* freelists) {
   DEBUG_ONLY(c->verify();)
 
   log_trace(metaspace)("Attempting to merge chunk " METACHUNK_FORMAT ".", METACHUNK_FORMAT_ARGS(c));
-
-  const chunklevel_t starting_level = c->level();
 
   bool stop = false;
   Metachunk* result = NULL;
@@ -377,7 +373,7 @@ bool RootChunkArea::is_free() const {
   }
 
 void RootChunkArea::verify() const {
-  assert_lock_strong(MetaspaceExpand_lock);
+  assert_lock_strong(Metaspace_lock);
   assert_is_aligned(_base, chunklevel::MAX_CHUNK_BYTE_SIZE);
 
   // Iterate thru all chunks in this area. They must be ordered correctly,
@@ -389,7 +385,6 @@ void RootChunkArea::verify() const {
 
     const Metachunk* c = _first_chunk;
     const MetaWord* expected_next_base = _base;
-    const MetaWord* const area_end = _base + word_size();
 
     while (c != NULL) {
       assrt_(c->is_free() || c->is_in_use(),
@@ -415,7 +410,7 @@ void RootChunkArea::verify() const {
 }
 
 void RootChunkArea::verify_area_is_ideally_merged() const {
-  SOMETIMES(assert_lock_strong(MetaspaceExpand_lock);)
+  SOMETIMES(assert_lock_strong(Metaspace_lock);)
   int num_chunk = 0;
   for (const Metachunk* c = _first_chunk; c != NULL; c = c->next_in_vs()) {
     if (!c->is_root_chunk() && c->is_free()) {
@@ -479,16 +474,6 @@ RootChunkAreaLUT::~RootChunkAreaLUT() {
     _arr[i].~RootChunkArea();
   }
   FREE_C_HEAP_ARRAY(RootChunkArea, _arr);
-}
-
-// Returns true if all areas in this area table are free (only contain free chunks).
-bool RootChunkAreaLUT::is_free() const {
-  for (int i = 0; i < _num; i++) {
-    if (!_arr[i].is_free()) {
-      return false;
-    }
-  }
-  return true;
 }
 
 #ifdef ASSERT

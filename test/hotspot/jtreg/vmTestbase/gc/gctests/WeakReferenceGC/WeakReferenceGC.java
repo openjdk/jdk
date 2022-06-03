@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,10 @@
  *
  * @library /vmTestbase
  *          /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm
+ *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      gc.gctests.WeakReferenceGC.WeakReferenceGC
  *      -numList 50
  *      -qFactor 0.9
@@ -94,10 +97,11 @@ package gc.gctests.WeakReferenceGC;
 
 import java.util.*;
 import java.lang.ref.*;
+
+import jdk.test.whitebox.WhiteBox;
 import nsk.share.TestFailure;
 import nsk.share.gc.GC;
 import nsk.share.gc.ThreadedGCTest;
-import nsk.share.gc.gp.GarbageUtils;
 
 public class WeakReferenceGC extends ThreadedGCTest {
 
@@ -170,13 +174,13 @@ public class WeakReferenceGC extends ThreadedGCTest {
         private void parseTestParams(String args[]) {
                 for (int i = 0; i < args.length; i++) {
                         if (args[i].compareTo("-numList") == 0) {
-                                numLists = new Integer(args[++i]).intValue();
+                                numLists = Integer.valueOf(args[++i]).intValue();
                         } else if (args[i].compareTo("-qFactor") == 0) {
-                                qFactor = new Float(args[++i]).floatValue();
+                                qFactor = Float.valueOf(args[++i]).floatValue();
                         } else if (args[i].compareTo("-gcCount") == 0) {
-                                gcCount = new Integer(args[++i]).intValue();
+                                gcCount = Integer.valueOf(args[++i]).intValue();
                         } else if (args[i].compareTo("-iter") == 0) {
-                                loopCount = new Integer(args[++i]).intValue();
+                                loopCount = Integer.valueOf(args[++i]).intValue();
                                 // } else {
                                 // System.err.println("usage : " +
                                 // "java WeakReferenceGC [-numList <n>] " +
@@ -198,9 +202,7 @@ public class WeakReferenceGC extends ThreadedGCTest {
                         if (!getExecutionController().continueExecution()) {
                                 return;
                         }
-                        if (GarbageUtils.eatMemory(getExecutionController()) == 0) {
-                                return; // We were unable to provoke OOME before timeout is over
-                        }
+                        WhiteBox.getWhiteBox().fullGC();
                         try {
                                 while ((numEnqueued < numLists) &&
                                        (refQueue.remove(1000) != null)) {

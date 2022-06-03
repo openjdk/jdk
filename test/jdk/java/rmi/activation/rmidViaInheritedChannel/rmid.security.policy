@@ -1,7 +1,0 @@
-grant {
-    permission java.lang.RuntimePermission "selectorProvider";
-    permission java.lang.RuntimePermission "accessClassInPackage.sun.nio.ch";
-    permission java.net.SocketPermission "*", "connect,accept";
-    permission java.util.PropertyPermission "java.rmi.activation.port", "write";
-    permission java.util.PropertyPermission "test.java.rmi.rmidViaInheritedChannel.registry.port", "read";
-};

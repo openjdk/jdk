@@ -27,7 +27,7 @@ import java.awt.color.ICC_ProfileRGB;
 
 /**
  * @test
- * @bug 4176618 7042594
+ * @bug 4176618 7042594 6211198
  * @summary This interactive test verifies that passing null to
  *          ICC_ProfileRGB.getInstance() does not crash the VM.
  *          An IllegalArgumentException: Invalid ICC Profile Data should be

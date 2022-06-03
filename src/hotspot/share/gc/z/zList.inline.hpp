@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZLIST_INLINE_HPP
 
 #include "gc/z/zList.hpp"
+
 #include "utilities/debug.hpp"
 
 template <typename T>

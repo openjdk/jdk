@@ -25,6 +25,7 @@
  * @test
  * @bug 6777487
  * @summary Tests private field access for CheckedRandomAccessList
+ * @run main/othervm -Djava.security.manager=allow TestCheckedRandomAccessList
  * @author Sergey Malenkov
  */
 

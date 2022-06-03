@@ -40,12 +40,12 @@ public:
 
   /* Returns the raw value from forwardee slot.
    */
-  static inline HeapWord* get_forwardee_raw(oop obj);
+  static inline oop get_forwardee_raw(oop obj);
 
   /* Returns the raw value from forwardee slot without any checks.
    * Used for quick verification.
    */
-  static inline HeapWord* get_forwardee_raw_unchecked(oop obj);
+  static inline oop get_forwardee_raw_unchecked(oop obj);
 
   /**
    * Returns true if the object is forwarded, false otherwise.

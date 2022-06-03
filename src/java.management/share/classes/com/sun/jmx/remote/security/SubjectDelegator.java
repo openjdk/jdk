@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ public class SubjectDelegator {
        operation on behalf of the delegatedSubject.  If the
        authenticatedAccessControlContext does not have permission to
        delegate to that subject, throw SecurityException.  */
+    @SuppressWarnings("removal")
     public AccessControlContext
         delegatedContext(AccessControlContext authenticatedACC,
                          Subject delegatedSubject,
@@ -75,6 +76,7 @@ public class SubjectDelegator {
         return getDelegatedAcc(delegatedSubject, removeCallerContext);
     }
 
+    @SuppressWarnings("removal")
     private AccessControlContext getDelegatedAcc(Subject delegatedSubject, boolean removeCallerContext) {
         if (removeCallerContext) {
             return JMXSubjectDomainCombiner.getDomainCombinerContext(delegatedSubject);
@@ -92,6 +94,7 @@ public class SubjectDelegator {
      * @return {@code true} if the connector server creator can delegate to all
      * the authenticated principals in the subject. Otherwise, {@code false}.
      */
+    @SuppressWarnings("removal")
     public static synchronized boolean
         checkRemoveCallerContext(Subject subject) {
         try {

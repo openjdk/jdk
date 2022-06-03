@@ -343,7 +343,7 @@ public class DepsAnalyzer {
     public Graph<Node> moduleGraph() {
         Graph.Builder<Node> builder = new Graph.Builder<>();
 
-        archives().stream()
+        archives()
             .forEach(m -> {
                 Node u = new Node(m.getName(), Info.REQUIRES);
                 builder.addNode(u);

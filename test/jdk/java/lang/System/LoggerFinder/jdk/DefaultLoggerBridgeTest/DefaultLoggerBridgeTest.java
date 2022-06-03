@@ -59,8 +59,8 @@ import sun.util.logging.internal.LoggingProviderImpl;
  *          java.base/jdk.internal.logger
  *          java.logging/sun.util.logging.internal
  * @run  main/othervm DefaultLoggerBridgeTest NOSECURITY
- * @run  main/othervm DefaultLoggerBridgeTest NOPERMISSIONS
- * @run  main/othervm DefaultLoggerBridgeTest WITHPERMISSIONS
+ * @run  main/othervm -Djava.security.manager=allow DefaultLoggerBridgeTest NOPERMISSIONS
+ * @run  main/othervm -Djava.security.manager=allow DefaultLoggerBridgeTest WITHPERMISSIONS
  * @author danielfuchs
  */
 public class DefaultLoggerBridgeTest {

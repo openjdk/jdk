@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.time.temporal.WeekFields;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.StreamHandler;
@@ -126,7 +127,7 @@ public class LocaleProviders {
     }
 
     static void adapterTest(String expected, String lang, String ctry) {
-        Locale testLocale = new Locale(lang, ctry);
+        Locale testLocale = Locale.of(lang, ctry);
         LocaleProviderAdapter ldaExpected =
             LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.valueOf(expected));
         if (!ldaExpected.getDateFormatProvider().isSupportedLocale(testLocale)) {
@@ -247,7 +248,7 @@ public class LocaleProviders {
     static void bug8013086Test(String lang, String ctry) {
         try {
             // Throws a NullPointerException if the test fails.
-            System.out.println(new SimpleDateFormat("z", new Locale(lang, ctry)).parse("UTC"));
+            System.out.println(new SimpleDateFormat("z", Locale.of(lang, ctry)).parse("UTC"));
         } catch (ParseException pe) {
             // ParseException is fine in this test, as it's not "UTC"
         }
@@ -257,7 +258,7 @@ public class LocaleProviders {
         if (IS_WINDOWS) {
             Date sampleDate = new Date(0x10000000000L);
             String expected = "\u5e73\u6210 16.11.03 (\u6c34) \u5348\u524d 11:53:47";
-            Locale l = new Locale("ja", "JP", "JP");
+            Locale l = Locale.of("ja", "JP", "JP");
             SimpleDateFormat sdf = new SimpleDateFormat("GGGG yyyy.MMM.dd '('E')' a hh:mm:ss", l);
             sdf.setTimeZone(TimeZone.getTimeZone("America/Los_Angeles"));
             String result = sdf.format(sampleDate);
@@ -294,7 +295,7 @@ public class LocaleProviders {
 
     static void bug8220227Test() {
         if (IS_WINDOWS) {
-            Locale l = new Locale("xx","XX");
+            Locale l = Locale.of("xx","XX");
             String country = l.getDisplayCountry();
             if (country.endsWith("(XX)")) {
                 throw new RuntimeException(
@@ -398,22 +399,29 @@ public class LocaleProviders {
     }
 
     static void bug8245241Test(String expected) {
-        LogRecord[] lra = new LogRecord[1];
-        StreamHandler handler = new StreamHandler() {
+        // this will ensure LocaleProviderAdapter initialization
+        DateFormat.getDateInstance();
+        LogConfig.handler.flush();
+
+        if (LogConfig.logRecordList.stream()
+                .noneMatch(r -> r.getLevel() == Level.INFO &&
+                                r.getMessage().equals(expected))) {
+            throw new RuntimeException("Expected log was not emitted.");
+        }
+    }
+
+    // Set the root logger on loading the logging class
+    public static class LogConfig {
+        final static CopyOnWriteArrayList<LogRecord> logRecordList = new CopyOnWriteArrayList<>();
+        final static StreamHandler handler = new StreamHandler() {
             @Override
             public void publish(LogRecord record) {
-                lra[0] = record;
+                logRecordList.add(record);
+                System.out.println("LogRecord: " + record.getMessage());
             }
         };
-        getLogManager().getLogger("").addHandler(handler);
-
-        DateFormat.getDateInstance(); // this will init LocaleProviderAdapter
-        handler.flush();
-
-        if (lra[0] == null ||
-            lra[0].getLevel() != Level.INFO ||
-            !lra[0].getMessage().equals(expected)) {
-            throw new RuntimeException("Expected log was not emitted. LogRecord: " + lra[0]);
+        static {
+            getLogManager().getLogger("").addHandler(handler);
         }
     }
 

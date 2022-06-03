@@ -24,33 +24,11 @@
  */
 package jdk.incubator.vector;
 
-import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.ForceInline;
 
-import java.nio.Buffer;
-import java.nio.ByteBuffer;
 import java.util.Objects;
 
 /*non-public*/ class VectorIntrinsics {
-    static final Unsafe U = Unsafe.getUnsafe();
-
-    static final long BUFFER_ADDRESS
-            = U.objectFieldOffset(Buffer.class, "address");
-
-    // Buffer.limit
-    static final long BUFFER_LIMIT
-            = U.objectFieldOffset(Buffer.class, "limit");
-
-    // ByteBuffer.hb
-    static final long BYTE_BUFFER_HB
-            = U.objectFieldOffset(ByteBuffer.class, "hb");
-
-    // ByteBuffer.isReadOnly
-    static final long BYTE_BUFFER_IS_READ_ONLY
-            = U.objectFieldOffset(ByteBuffer.class, "isReadOnly");
-
-    /* ============================================================================ */
-
     static final int VECTOR_ACCESS_OOB_CHECK = Integer.getInteger("jdk.incubator.vector.VECTOR_ACCESS_OOB_CHECK", 2);
 
     @ForceInline
@@ -68,6 +46,16 @@ import java.util.Objects;
 
     @ForceInline
     static int checkFromIndexSize(int ix, int vlen, int length) {
+        switch (VectorIntrinsics.VECTOR_ACCESS_OOB_CHECK) {
+            case 0: return ix; // no range check
+            case 1: return Objects.checkFromIndexSize(ix, vlen, length);
+            case 2: return Objects.checkIndex(ix, length - (vlen - 1));
+            default: throw new InternalError();
+        }
+    }
+
+    @ForceInline
+    static long checkFromIndexSize(long ix, long vlen, long length) {
         switch (VectorIntrinsics.VECTOR_ACCESS_OOB_CHECK) {
             case 0: return ix; // no range check
             case 1: return Objects.checkFromIndexSize(ix, vlen, length);
@@ -114,9 +102,30 @@ import java.util.Objects;
         if (index >= 0) {
             return index - (index % size);
         } else {
-            return index - Math.floorMod(index, Math.abs(size));
+            return index - Math.floorMod(index, size);
         }
     }
+
+    // If the index is not already a multiple of size,
+    // round it down to the next smaller multiple of size.
+    // It is an error if size is less than zero.
+    @ForceInline
+    static long roundDown(long index, int size) {
+        if ((size & (size - 1)) == 0) {
+            // Size is zero or a power of two, so we got this.
+            return index & ~(size - 1);
+        } else {
+            return roundDownNPOT(index, size);
+        }
+    }
+    private static long roundDownNPOT(long index, int size) {
+        if (index >= 0) {
+            return index - (index % size);
+        } else {
+            return index - Math.floorMod(index, size);
+        }
+    }
+
     @ForceInline
     static int wrapToRange(int index, int size) {
         if ((size & (size - 1)) == 0) {
@@ -132,19 +141,5 @@ import java.util.Objects;
         } else {
             return Math.floorMod(index, Math.abs(size));
         }
-    }
-
-    /* ============================================================================ */
-
-    /*package-private*/
-    @ForceInline
-    static Object bufferBase(ByteBuffer bb) {
-        return U.getReference(bb, BYTE_BUFFER_HB);
-    }
-
-    /*package-private*/
-    @ForceInline
-    static long bufferAddress(ByteBuffer bb, long offset) {
-        return U.getLong(bb, BUFFER_ADDRESS) + offset;
     }
 }

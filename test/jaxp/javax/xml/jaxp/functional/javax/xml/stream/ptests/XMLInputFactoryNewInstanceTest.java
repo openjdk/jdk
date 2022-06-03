@@ -43,7 +43,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8169778
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true javax.xml.stream.ptests.XMLInputFactoryNewInstanceTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow javax.xml.stream.ptests.XMLInputFactoryNewInstanceTest
  * @run testng/othervm javax.xml.stream.ptests.XMLInputFactoryNewInstanceTest
  * @summary Tests for XMLInputFactory.newFactory(factoryId , classLoader)
  */

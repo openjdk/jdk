@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@
 #include "memory/metaspace/metaspaceCommon.hpp"
 #include "memory/metaspace/virtualSpaceList.hpp"
 #include "memory/metaspace/virtualSpaceNode.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/mutexLocker.hpp"
 
 namespace metaspace {
@@ -73,9 +74,11 @@ VirtualSpaceList::VirtualSpaceList(const char* name, ReservedSpace rs, CommitLim
 }
 
 VirtualSpaceList::~VirtualSpaceList() {
-  assert_lock_strong(MetaspaceExpand_lock);
-  // Note: normally, there is no reason ever to delete a vslist since they are
-  // global objects, but for gtests it makes sense to allow this.
+  assert_lock_strong(Metaspace_lock);
+  // Delete every single mapping in this list.
+  // Please note that this only gets executed during gtests under controlled
+  // circumstances, so we do not have any concurrency issues here. The "real"
+  // lists in metaspace are immortal.
   VirtualSpaceNode* vsn = _first_node;
   VirtualSpaceNode* vsn2 = vsn;
   while (vsn != NULL) {
@@ -90,13 +93,13 @@ VirtualSpaceList::~VirtualSpaceList() {
 // List must be expandable for this to work.
 void VirtualSpaceList::create_new_node() {
   assert(_can_expand, "List is not expandable");
-  assert_lock_strong(MetaspaceExpand_lock);
+  assert_lock_strong(Metaspace_lock);
 
   VirtualSpaceNode* vsn = VirtualSpaceNode::create_node(Settings::virtual_space_node_default_word_size(),
                                                         _commit_limiter,
                                                         &_reserved_words_counter, &_committed_words_counter);
   vsn->set_next(_first_node);
-  _first_node = vsn;
+  Atomic::release_store(&_first_node, vsn);
   _nodes_counter.increment();
 }
 
@@ -105,7 +108,7 @@ void VirtualSpaceList::create_new_node() {
 // Hence, before using this chunk, it must be committed.
 // Also, no limits are checked, since no committing takes place.
 Metachunk*  VirtualSpaceList::allocate_root_chunk() {
-  assert_lock_strong(MetaspaceExpand_lock);
+  assert_lock_strong(Metaspace_lock);
 
   if (_first_node == NULL ||
       _first_node->free_words() < chunklevel::MAX_CHUNK_WORD_SIZE) {
@@ -134,46 +137,9 @@ Metachunk*  VirtualSpaceList::allocate_root_chunk() {
   return c;
 }
 
-// Attempts to purge nodes. This will remove and delete nodes which only contain free chunks.
-// The free chunks are removed from the freelists before the nodes are deleted.
-// Return number of purged nodes.
-int VirtualSpaceList::purge(FreeChunkListVector* freelists) {
-  assert_lock_strong(MetaspaceExpand_lock);
-  UL(debug, "purging.");
-
-  VirtualSpaceNode* vsn = _first_node;
-  VirtualSpaceNode* prev_vsn = NULL;
-  int num = 0, num_purged = 0;
-  while (vsn != NULL) {
-    VirtualSpaceNode* next_vsn = vsn->next();
-    bool purged = vsn->attempt_purge(freelists);
-    if (purged) {
-      // Note: from now on do not dereference vsn!
-      UL2(debug, "purged node @" PTR_FORMAT ".", p2i(vsn));
-      if (_first_node == vsn) {
-        _first_node = next_vsn;
-      }
-      DEBUG_ONLY(vsn = (VirtualSpaceNode*)((uintptr_t)(0xdeadbeef));)
-      if (prev_vsn != NULL) {
-        prev_vsn->set_next(next_vsn);
-      }
-      num_purged++;
-      _nodes_counter.decrement();
-    } else {
-      prev_vsn = vsn;
-    }
-    vsn = next_vsn;
-    num ++;
-  }
-
-  UL2(debug, "purged %d nodes (before: %d, now: %d)",
-      num_purged, num, num_nodes());
-  return num_purged;
-}
-
 // Print all nodes in this space list.
 void VirtualSpaceList::print_on(outputStream* st) const {
-  MutexLocker fcl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
 
   st->print_cr("vsl %s:", _name);
   const VirtualSpaceNode* vsn = _first_node;
@@ -190,7 +156,7 @@ void VirtualSpaceList::print_on(outputStream* st) const {
 
 #ifdef ASSERT
 void VirtualSpaceList::verify_locked() const {
-  assert_lock_strong(MetaspaceExpand_lock);
+  assert_lock_strong(Metaspace_lock);
   assert(_name != NULL, "Sanity");
 
   int n = 0;
@@ -216,28 +182,20 @@ void VirtualSpaceList::verify_locked() const {
 }
 
 void VirtualSpaceList::verify() const {
-  MutexLocker fcl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
   verify_locked();
 }
 #endif
 
 // Returns true if this pointer is contained in one of our nodes.
 bool VirtualSpaceList::contains(const MetaWord* p) const {
-  const VirtualSpaceNode* vsn = _first_node;
+  // Note: needs to work without locks.
+  const VirtualSpaceNode* vsn = Atomic::load_acquire(&_first_node);
   while (vsn != NULL) {
     if (vsn->contains(p)) {
       return true;
     }
     vsn = vsn->next();
-  }
-  return false;
-}
-
-// Returns true if the vslist is not expandable and no more root chunks
-// can be allocated.
-bool VirtualSpaceList::is_full() const {
-  if (!_can_expand && _first_node != NULL && _first_node->free_words() == 0) {
-    return true;
   }
   return false;
 }

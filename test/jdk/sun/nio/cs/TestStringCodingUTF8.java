@@ -24,7 +24,7 @@
 /* @test
    @bug 7040220 8054307
    @summary Test if StringCoding and NIO result have the same de/encoding result for UTF-8
- * @run main/othervm/timeout=2000 TestStringCodingUTF8
+ * @run main/othervm/timeout=2000 -Djava.security.manager=allow TestStringCodingUTF8
  * @key randomness
  */
 

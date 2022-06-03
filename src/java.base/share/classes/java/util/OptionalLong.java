@@ -293,14 +293,10 @@ public final class OptionalLong {
             return true;
         }
 
-        if (!(obj instanceof OptionalLong)) {
-            return false;
-        }
-
-        OptionalLong other = (OptionalLong) obj;
-        return (isPresent && other.isPresent)
+        return obj instanceof OptionalLong other
+                && (isPresent && other.isPresent
                 ? value == other.value
-                : isPresent == other.isPresent;
+                : isPresent == other.isPresent);
     }
 
     /**
@@ -330,7 +326,7 @@ public final class OptionalLong {
     @Override
     public String toString() {
         return isPresent
-                ? String.format("OptionalLong[%s]", value)
+                ? ("OptionalLong[" + value + "]")
                 : "OptionalLong.empty";
     }
 }

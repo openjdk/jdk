@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,13 @@
  * @test TestInvalidJVMCIOption
  * @bug 8257220
  * @summary Ensures invalid JVMCI options do not crash the VM with a hs-err log.
- * @requires vm.jvmci & vm.compMode == "Xmixed"
+ * @requires vm.flagless
+ * @requires vm.jvmci
  * @library /test/lib
  * @run driver TestInvalidJVMCIOption
  */
 
+import jdk.test.lib.Asserts;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
@@ -45,13 +47,10 @@ public class TestInvalidJVMCIOption {
         String expectStdout = String.format(
             "Error parsing JVMCI options: Could not find option jvmci.XXXXXXXXX%n" +
             "Error: A fatal exception has occurred. Program will exit.%n");
-        String actualStdout = output.getStdout();
-        if (!actualStdout.equals(expectStdout)) {
-            throw new RuntimeException(String.format("Invalid STDOUT:%nExpect:%n%s%nActual:%n%s", expectStdout, actualStdout));
-        }
-        if (!output.getStderr().isEmpty()) {
-            throw new RuntimeException("STDERR was not empty: " + output.getStderr());
-        }
+
+        Asserts.assertEQ(expectStdout, output.getStdout());
+        output.stderrShouldBeEmpty();
+
         output.shouldHaveExitValue(1);
     }
 }

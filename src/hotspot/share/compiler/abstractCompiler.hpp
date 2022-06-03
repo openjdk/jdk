@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,11 +100,6 @@ class AbstractCompiler : public CHeapObj<mtCompiler> {
   // Name of this compiler
   virtual const char* name() = 0;
 
-  // Missing feature tests
-  virtual bool supports_native()                 { return true; }
-  virtual bool supports_osr   ()                 { return true; }
-  virtual bool can_compile_method(const methodHandle& method)  { return true; }
-
   // Determine if the current compiler provides an intrinsic
   // for method 'method'. An intrinsic is available if:
   //  - the intrinsic is enabled (by using the appropriate command-line flag,
@@ -119,7 +114,7 @@ class AbstractCompiler : public CHeapObj<mtCompiler> {
   // Usually, the compilation context is the caller of the method 'method'.
   // The only case when for a non-recursive method 'method' the compilation context
   // is not the caller of the 'method' (but it is the method itself) is
-  // java.lang.ref.Referene::get.
+  // java.lang.ref.Reference::get.
   // For java.lang.ref.Reference::get, the intrinsic version is used
   // instead of the compiled version so that the value in the referent
   // field can be registered by the G1 pre-barrier code. The intrinsified
@@ -170,6 +165,17 @@ class AbstractCompiler : public CHeapObj<mtCompiler> {
     ShouldNotReachHere();
   }
 
+  // Notifies this compiler that the current thread (`current`) is about to stop.
+  // The current thread currently holds the CompileThread_lock.
+  virtual void stopping_compiler_thread(CompilerThread* current) {
+    // Do nothing
+  }
+
+  // Notifies this compiler that queue is empty just prior to waiting on
+  // MethodCompileQueue_lock which is held by the current thread (`thread`).
+  virtual void on_empty_queue(CompileQueue* queue, CompilerThread* thread) {
+    // Do nothing
+  }
 
   // Print compilation timers and statistics
   virtual void print_timers() {

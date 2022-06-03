@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #define SHARE_GC_SHARED_CONCURRENTGCBREAKPOINTS_HPP
 
 #include "gc/shared/gcCause.hpp"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class Monitor;
@@ -67,7 +67,7 @@ public:
   // postcondition: is_controlled().
   static void acquire_control();
 
-  // Release control of the concurrent collector, cancelling any preceeding
+  // Release control of the concurrent collector, cancelling any preceding
   // run_to() or run_to_idle() request.
   //
   // precondition: Calling thread must be a Java thread.
@@ -75,7 +75,7 @@ public:
   // postcondiiton: !is_controlled().
   static void release_control();
 
-  // Requests the concurrent collector to be idle. Cancels any preceeding
+  // Requests the concurrent collector to be idle. Cancels any preceding
   // run_to() request. No new concurrent collections will be started while
   // the request is active.  If a collection is already in progress, it is
   // allowed to complete before this function returns.
@@ -87,7 +87,7 @@ public:
   static void run_to_idle();
 
   // Requests the concurrent collector to run until the named breakpoint is
-  // reached.  Cancels any preceeding run_to_idle(). If the collector is
+  // reached.  Cancels any preceding run_to_idle(). If the collector is
   // presently idle, starts a collection with cause GCCause::_wb_breakpoint.
   // If the collector is presently stopped at a breakpoint, the previous
   // request is replaced by the new request and the collector is allowed to

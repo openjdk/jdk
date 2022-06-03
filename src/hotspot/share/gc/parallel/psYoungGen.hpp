@@ -90,7 +90,7 @@ class PSYoungGen : public CHeapObj<mtGC> {
   MemRegion reserved() const { return _reserved; }
 
   bool is_in(const void* p) const {
-    return _virtual_space->contains((void *)p);
+    return _virtual_space->is_in_committed(p);
   }
 
   bool is_in_reserved(const void* p) const {

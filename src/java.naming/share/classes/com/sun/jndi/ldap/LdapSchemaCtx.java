@@ -43,7 +43,7 @@ import com.sun.jndi.toolkit.dir.HierMemDirCtx;
 
 final class LdapSchemaCtx extends HierMemDirCtx {
 
-    static private final boolean debug = false;
+    private static final boolean debug = false;
 
     private static final int LEAF = 0;  // schema object (e.g. attribute type defn)
     private static final int SCHEMA_ROOT = 1;   // schema tree root
@@ -96,7 +96,7 @@ final class LdapSchemaCtx extends HierMemDirCtx {
 
     // override to ignore obj and use attrs
     // treat same as createSubcontext
-    final public void bind(Name name, Object obj, Attributes attrs)
+    public final void bind(Name name, Object obj, Attributes attrs)
         throws NamingException {
         if (!setupMode) {
             if (obj != null) {
@@ -112,7 +112,7 @@ final class LdapSchemaCtx extends HierMemDirCtx {
             (LdapSchemaCtx)super.doCreateSubcontext(name, attrs);
     }
 
-    final protected void doBind(Name name, Object obj, Attributes attrs,
+    protected final void doBind(Name name, Object obj, Attributes attrs,
         boolean useFactory) throws NamingException {
         if (!setupMode) {
             throw new SchemaViolationException(
@@ -123,7 +123,7 @@ final class LdapSchemaCtx extends HierMemDirCtx {
     }
 
     // override to use bind() instead
-    final public void rebind(Name name, Object obj, Attributes attrs)
+    public final void rebind(Name name, Object obj, Attributes attrs)
         throws NamingException {
         try {
             doLookup(name, false);
@@ -134,7 +134,7 @@ final class LdapSchemaCtx extends HierMemDirCtx {
         }
     }
 
-    final protected void doRebind(Name name, Object obj, Attributes attrs,
+    protected final void doRebind(Name name, Object obj, Attributes attrs,
         boolean useFactory) throws NamingException {
         if (!setupMode) {
             throw new SchemaViolationException(
@@ -144,7 +144,7 @@ final class LdapSchemaCtx extends HierMemDirCtx {
         }
     }
 
-    final protected void doUnbind(Name name) throws NamingException {
+    protected final void doUnbind(Name name) throws NamingException {
         if (!setupMode) {
             // Update server
             try {
@@ -160,7 +160,7 @@ final class LdapSchemaCtx extends HierMemDirCtx {
         super.doUnbind(name);
     }
 
-    final protected void doRename(Name oldname, Name newname)
+    protected final void doRename(Name oldname, Name newname)
         throws NamingException {
         if (!setupMode) {
             throw new SchemaViolationException("Cannot rename a schema object");
@@ -169,7 +169,7 @@ final class LdapSchemaCtx extends HierMemDirCtx {
         }
     }
 
-    final protected void doDestroySubcontext(Name name) throws NamingException {
+    protected final void doDestroySubcontext(Name name) throws NamingException {
         if (!setupMode) {
             // Update server
             try {
@@ -203,7 +203,7 @@ final class LdapSchemaCtx extends HierMemDirCtx {
             }
     }
 
-    final protected DirContext doCreateSubcontext(Name name, Attributes attrs)
+    protected final DirContext doCreateSubcontext(Name name, Attributes attrs)
         throws NamingException {
 
         if (attrs == null || attrs.size() == 0) {
@@ -222,7 +222,7 @@ final class LdapSchemaCtx extends HierMemDirCtx {
         return newEntry;
     }
 
-    final private static Attributes deepClone(Attributes orig)
+    private static final Attributes deepClone(Attributes orig)
         throws NamingException {
         BasicAttributes copy = new BasicAttributes(true);
         NamingEnumeration<? extends Attribute> attrs = orig.getAll();
@@ -232,7 +232,7 @@ final class LdapSchemaCtx extends HierMemDirCtx {
         return copy;
     }
 
-    final protected void doModifyAttributes(ModificationItem[] mods)
+    protected final void doModifyAttributes(ModificationItem[] mods)
         throws NamingException {
         if (setupMode) {
             super.doModifyAttributes(mods);
@@ -253,13 +253,13 @@ final class LdapSchemaCtx extends HierMemDirCtx {
     // we override this so the superclass creates the right kind of contexts
     // Default is to create LEAF objects; caller will change after creation
     // if necessary
-    final protected HierMemDirCtx createNewCtx() {
+    protected final HierMemDirCtx createNewCtx() {
         LdapSchemaCtx ctx = new LdapSchemaCtx(LEAF, myEnv, info);
         return ctx;
     }
 
 
-    final private void addServerSchema(Attributes attrs)
+    private final void addServerSchema(Attributes attrs)
         throws NamingException {
         Attribute schemaAttr;
 
@@ -304,7 +304,7 @@ final class LdapSchemaCtx extends HierMemDirCtx {
       * on the server and there might not be any checks for extra spaces
       * or parens.
       */
-    final private void deleteServerSchema(Attributes origAttrs)
+    private final void deleteServerSchema(Attributes origAttrs)
         throws NamingException {
 
         Attribute origAttrVal;
@@ -347,7 +347,7 @@ final class LdapSchemaCtx extends HierMemDirCtx {
       * are eliminated. A modification is done by deleting the original
       * value and adding a new value with the modification.
       */
-    final private void modifyServerSchema(Attributes origAttrs,
+    private final void modifyServerSchema(Attributes origAttrs,
         Attributes newAttrs) throws NamingException {
 
         Attribute newAttrVal;
@@ -386,7 +386,7 @@ final class LdapSchemaCtx extends HierMemDirCtx {
         info.modifyAttributes(myEnv, mods);
     }
 
-    final static private class SchemaInfo {
+    private static final class SchemaInfo {
         private LdapCtx schemaEntry;
         private String schemaEntryName;
         LdapSchemaParser parser;

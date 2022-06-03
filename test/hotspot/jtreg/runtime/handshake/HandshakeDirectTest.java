@@ -28,71 +28,51 @@
  * @summary This test tries to stress direct handshakes between threads while suspending them.
  * @library /testlibrary /test/lib
  * @build HandshakeDirectTest
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UseBiasedLocking -XX:+SafepointALot -XX:BiasedLockingDecayTime=100000000 -XX:BiasedLockingBulkRebiasThreshold=1000000 -XX:BiasedLockingBulkRevokeThreshold=1000000 HandshakeDirectTest
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UseBiasedLocking -XX:GuaranteedSafepointInterval=10 -XX:+HandshakeALot -XX:+SafepointALot -XX:BiasedLockingDecayTime=100000000 -XX:BiasedLockingBulkRebiasThreshold=1000000 -XX:BiasedLockingBulkRevokeThreshold=1000000 HandshakeDirectTest
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI HandshakeDirectTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:GuaranteedSafepointInterval=10 -XX:+HandshakeALot -XX:+SafepointALot HandshakeDirectTest
  */
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.Semaphore;
+import sun.hotspot.WhiteBox;
 import java.io.*;
 
 public class HandshakeDirectTest  implements Runnable {
     static final int WORKING_THREADS = 32;
-    static final int DIRECT_HANDSHAKES_MARK = 500000;
+    static final int DIRECT_HANDSHAKES_MARK = 300000;
     static Thread[] workingThreads = new Thread[WORKING_THREADS];
-    static Semaphore[] handshakeSem = new Semaphore[WORKING_THREADS];
     static Object[] locks = new Object[WORKING_THREADS];
-    static boolean[] isBiased = new boolean[WORKING_THREADS];
     static AtomicInteger handshakeCount = new AtomicInteger(0);
 
     @Override
     public void run() {
         int me = Integer.parseInt(Thread.currentThread().getName());
+        WhiteBox wb = WhiteBox.getWhiteBox();
 
-        while (true) {
-            try {
-                if (!isBiased[me]) {
-                    handshakeSem[me].acquire();
-                    synchronized(locks[me]) {
-                        isBiased[me] = true;
-                    }
-                    handshakeSem[me].release();
-                }
-
+        while (handshakeCount.get() < DIRECT_HANDSHAKES_MARK) {
+            boolean walked = false;
+            synchronized(locks[me]) {
                 // Handshake directly some other worker
                 int handshakee = ThreadLocalRandom.current().nextInt(0, WORKING_THREADS - 1);
                 if (handshakee == me) {
                     // Pick another thread instead of me.
                     handshakee = handshakee != 0 ? handshakee - 1 : handshakee + 1;
                 }
-                handshakeSem[handshakee].acquire();
-                if (isBiased[handshakee]) {
-                    // Revoke biased lock
-                    synchronized(locks[handshakee]) {
-                        handshakeCount.incrementAndGet();
-                    }
-                    // Create new lock to be biased
-                    locks[handshakee] = new Object();
-                    isBiased[handshakee] = false;
+                // Inflate locks[handshakee] if possible
+                System.identityHashCode(locks[handshakee]);
+                walked = wb.handshakeReadMonitors(workingThreads[handshakee]);
+                if (walked) {
+                    handshakeCount.incrementAndGet();
                 }
-                handshakeSem[handshakee].release();
-                if (handshakeCount.get() >= DIRECT_HANDSHAKES_MARK) {
-                    break;
-                }
-            } catch(InterruptedException ie) {
-                throw new Error("Unexpected interrupt");
             }
+            locks[me] = new Object();
         }
     }
 
     public static void main(String... args) throws Exception {
         HandshakeDirectTest test = new HandshakeDirectTest();
-
-        // Initialize semaphores
-        for (int i = 0; i < WORKING_THREADS; i++) {
-            handshakeSem[i] = new Semaphore(1);
-        }
 
         // Initialize locks
         for (int i = 0; i < WORKING_THREADS; i++) {

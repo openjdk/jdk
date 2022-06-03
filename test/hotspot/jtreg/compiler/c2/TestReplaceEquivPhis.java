@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2021, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 8243670
  * @summary Unexpected test result caused by C2 MergeMemNode::Ideal
+ * @requires vm.compiler2.enabled
  *
  * @run main/othervm -Xcomp -XX:-SplitIfBlocks
  *      -XX:CompileOnly=compiler.c2.TestReplaceEquivPhis::test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,14 +101,16 @@ public class CoreUtils {
      * @param crashOutputString {@code String} to search in for the core file path
      * @return Location of core file if found in the output, otherwise {@code null}.
      */
-    public static String getCoreFileLocation(String crashOutputString) throws IOException {
+    public static String getCoreFileLocation(String crashOutputString, long pid) throws IOException {
         unzipCores(new File("."));
 
         // Find the core file
         String coreFileLocation = parseCoreFileLocationFromOutput(crashOutputString);
         if (coreFileLocation != null) {
-            System.out.println("Found core file: " + coreFileLocation);
-            Asserts.assertGT(new File(coreFileLocation).length(), 0L, "Unexpected core size");
+            long coreFileSize = new File(coreFileLocation).length();
+            System.out.println("Found core file " + coreFileLocation +
+                               ", size = " + coreFileSize / 1024 / 1024 + "mb");
+            Asserts.assertGT(coreFileSize, 0L, "Unexpected core size");
 
             // Make sure the core file is moved into the cwd if not already there.
             Path corePath = Paths.get(coreFileLocation);
@@ -124,7 +126,8 @@ public class CoreUtils {
             return coreFileLocation; // success!
         }
 
-        // See if we can figure out the likely reason the core file was not found.
+        // See if we can figure out the likely reason the core file was not found. Recover from
+        // failure if possible.
         // Throw SkippedException if appropriate.
         if (Platform.isOSX()) {
             File coresDir = new File("/cores");
@@ -135,12 +138,12 @@ public class CoreUtils {
             if (!coresDir.canWrite()) {
                 throw new SkippedException("Directory \"" + coresDir + "\" is not writable");
             }
-            if (Platform.isSignedOSX()) {
+            if (Platform.isHardenedOSX()) {
                 if (Platform.getOsVersionMajor() > 10 ||
                     (Platform.getOsVersionMajor() == 10 && Platform.getOsVersionMinor() >= 15))
                 {
-                    // We can't generate cores files with signed binaries on OSX 10.15 and later.
-                    throw new SkippedException("Cannot produce core file with signed binary on OSX 10.15 and later");
+                    // We can't generate cores files with hardened binaries on OSX 10.15 and later.
+                    throw new SkippedException("Cannot produce core file with hardened binary on OSX 10.15 and later");
                 }
             }
         } else if (Platform.isLinux()) {
@@ -152,6 +155,30 @@ public class CoreUtils {
                     line = line.trim();
                     System.out.println(line);
                     if (line.startsWith("|")) {
+                        if (line.split("\s", 2)[0].endsWith("systemd-coredump")) {
+                            // A systemd linux system. Try to retrieve core
+                            // file. It can take a few seconds for the system to
+                            // process the just produced core file so we may need to
+                            // retry a few times.
+                            System.out.println("Running systemd-coredump: trying coredumpctl command");
+                            String core = "core";
+                            try {
+                                for (int i = 0; i < 10; i++) {
+                                    Thread.sleep(5000);
+                                    OutputAnalyzer out = ProcessTools.executeProcess("coredumpctl", "dump",  "-1",  "-o", core, String.valueOf(pid));
+                                    if (!out.getOutput().contains("output may be incomplete")) {
+                                        break;
+                                    }
+                                }
+                            } catch(Throwable t) {
+                            }
+                            final File coreFile = new File(core);
+                            if (coreFile.exists()) {
+                                Asserts.assertGT(coreFile.length(), 0L, "Unexpected core size");
+                                System.out.println("coredumpctl succeeded");
+                                return core;
+                            }
+                        }
                         System.out.println(
                             "\nThis system uses a crash report tool ($cat /proc/sys/kernel/core_pattern).\n" +
                             "Core files might not be generated. Please reset /proc/sys/kernel/core_pattern\n" +

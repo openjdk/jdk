@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,11 @@
 
 package java.nio;
 
-import jdk.internal.misc.Unsafe;
-
 import java.io.FileDescriptor;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import jdk.internal.misc.Blocker;
+import jdk.internal.misc.Unsafe;
 
 /* package */ class MappedMemoryUtils {
 
@@ -59,10 +61,10 @@ import java.io.FileDescriptor;
         // considering the loop as dead code.
         Unsafe unsafe = Unsafe.getUnsafe();
         int ps = Bits.pageSize();
-        int count = Bits.pageCount(length);
+        long count = Bits.pageCount(length);
         long a = mappingAddress(address, offset);
         byte x = 0;
-        for (int i=0; i<count; i++) {
+        for (long i=0; i<count; i++) {
             // TODO consider changing to getByteOpaque thus avoiding
             // dead code elimination and the need to calculate a checksum
             x ^= unsafe.getByte(a);
@@ -94,16 +96,25 @@ import java.io.FileDescriptor;
         } else {
             // force writeback via file descriptor
             long offset = mappingOffset(address, index);
-            force0(fd, mappingAddress(address, offset, index), mappingLength(offset, length));
+            long mappingAddress = mappingAddress(address, offset, index);
+            long mappingLength = mappingLength(offset, length);
+            long comp = Blocker.begin();
+            try {
+                force0(fd, mappingAddress, mappingLength);
+            } catch (IOException cause) {
+                throw new UncheckedIOException(cause);
+            } finally {
+                Blocker.end(comp);
+            }
         }
     }
 
     // native methods
 
-    private static native boolean isLoaded0(long address, long length, int pageCount);
+    private static native boolean isLoaded0(long address, long length, long pageCount);
     private static native void load0(long address, long length);
     private static native void unload0(long address, long length);
-    private static native void force0(FileDescriptor fd, long address, long length);
+    private static native void force0(FileDescriptor fd, long address, long length) throws IOException;
 
     // utility methods
 
@@ -132,7 +143,7 @@ import java.io.FileDescriptor;
         return mappingAddress(address, mappingOffset, 0);
     }
 
-    // Given an offset previously otained from calling
+    // Given an offset previously obtained from calling
     // mappingOffset(index) returns the largest page aligned address
     // of the mapping less than or equal to the address of the buffer
     // element identified by index.
@@ -141,7 +152,7 @@ import java.io.FileDescriptor;
         return indexAddress - mappingOffset;
     }
 
-    // given a mappingOffset previously otained from calling
+    // given a mappingOffset previously obtained from calling
     // mappingOffset(index) return that offset added to the supplied
     // length.
     private static long mappingLength(long mappingOffset, long length) {

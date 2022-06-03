@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import jdk.tools.jlink.internal.Platform;
 import jdk.tools.jlink.plugin.PluginException;
@@ -106,7 +105,7 @@ public final class ExcludeVMPlugin extends AbstractPlugin {
                 }
             }
             return false;
-        }).collect(Collectors.toList());
+        }).toList();
         return ret;
     }
 
@@ -246,8 +245,9 @@ public final class ExcludeVMPlugin extends AbstractPlugin {
     }
 
     private static String[] jvmlibs(ResourcePoolModule module) {
-        Platform platform = Platform.getTargetPlatform(module);
-        switch (platform) {
+        String targetPlatform = module.targetPlatform();
+        Platform platform = Platform.parsePlatform(targetPlatform);
+        switch (platform.os()) {
             case WINDOWS:
                 return new String[] { "jvm.dll" };
             case MACOS:

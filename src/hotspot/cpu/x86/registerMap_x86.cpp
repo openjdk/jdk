@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,10 +54,14 @@ address RegisterMap::pd_location(VMReg reg) const {
         // XMM0-15 case (0 < offset_in_bytes < 16). No need to adjust base register (or offset).
       }
     }
-    address base_location = location(base_reg);
+    address base_location = location(base_reg, nullptr);
     if (base_location != NULL) {
       return base_location + offset_in_bytes;
     }
   }
   return NULL;
+}
+
+address RegisterMap::pd_location(VMReg base_reg, int slot_idx) const {
+  return location(base_reg->next(slot_idx), nullptr);
 }

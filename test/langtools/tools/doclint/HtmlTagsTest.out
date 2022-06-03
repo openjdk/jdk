@@ -16,6 +16,9 @@ HtmlTagsTest.java:29: error: element not closed: html
 HtmlTagsTest.java:34: error: block element not allowed within inline element <span>: p
      * <span> <p> </span>
               ^
+HtmlTagsTest.java:34: warning: empty <p> tag
+     * <span> <p> </span>
+              ^
 HtmlTagsTest.java:39: error: block element not allowed within @link: p
      * {@link java.lang.String <p> }
                                ^
@@ -41,4 +44,4 @@ HtmlTagsTest.java:65: error: tag not allowed here: <b>
      * <ul> <b>text</b> <li> ... </li> </ul>
             ^
 13 errors
-1 warning
+2 warnings

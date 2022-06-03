@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -305,7 +305,15 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
         }
 
         // performs icon and text rect calculations
-        final String text = layoutAndGetText(g, b, aquaBorder, i, viewRect, iconRect, textRect);
+        final String text;
+        final View v = (View)c.getClientProperty(BasicHTML.propertyKey);
+        if (v != null) {
+            // use zero insets for view since layout only handles text calculations
+            text = layoutAndGetText(g, b, aquaBorder, new Insets(0,0,0,0),
+                    viewRect, iconRect, textRect);
+        } else {
+            text = layoutAndGetText(g, b, aquaBorder, i, viewRect, iconRect, textRect);
+        }
 
         // Paint the Icon
         if (b.getIcon() != null) {
@@ -317,13 +325,41 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
         }
 
         if (text != null && !text.isEmpty()) {
-            final View v = (View)c.getClientProperty(BasicHTML.propertyKey);
             if (v != null) {
                 v.paint(g, textRect);
             } else {
                 paintText(g, b, textRect, text);
             }
         }
+    }
+
+    protected void paintFocus(Graphics g, AbstractButton b,
+                              Rectangle viewRect, Rectangle textRect, Rectangle iconRect) {
+        Graphics2D g2d = null;
+        Stroke oldStroke = null;
+        Object oldAntialiasingHint = null;
+        Color oldColor = g.getColor();
+        if (g instanceof Graphics2D) {
+            g2d = (Graphics2D)g;
+            oldStroke = g2d.getStroke();
+            oldAntialiasingHint = g2d.getRenderingHint(RenderingHints.KEY_ANTIALIASING);
+            g2d.setStroke(new BasicStroke(3));
+            g2d.setRenderingHint(
+                    RenderingHints.KEY_ANTIALIASING,
+                    RenderingHints.VALUE_ANTIALIAS_ON);
+
+        }
+        Color ringColor = UIManager.getColor("Focus.color");
+        g.setColor(ringColor);
+        g.drawRoundRect(5, 3, b.getWidth() - 10, b.getHeight() - 7, 15, 15);
+        if (g2d != null) {
+            // Restore old state of Java2D renderer
+            g2d.setStroke(oldStroke);
+            g2d.setRenderingHint(
+                    RenderingHints.KEY_ANTIALIASING,
+                    oldAntialiasingHint);
+        }
+        g.setColor(oldColor);
     }
 
     protected String layoutAndGetText(final Graphics g, final AbstractButton b, final AquaButtonBorder aquaBorder, final Insets i, Rectangle viewRect, Rectangle iconRect, Rectangle textRect) {

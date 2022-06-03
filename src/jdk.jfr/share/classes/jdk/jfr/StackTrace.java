@@ -45,7 +45,7 @@ public @interface StackTrace {
     /**
      * Settings name {@code "stackTrace"} to be used for enabling event stack traces.
      */
-    public final static String NAME = "stackTrace";
+    public static final String NAME = "stackTrace";
 
     /**
      * Returns if the stack trace from the {@code Event#commit()} method should be recorded.

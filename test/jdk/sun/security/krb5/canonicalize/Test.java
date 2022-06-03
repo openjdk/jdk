@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,21 +25,16 @@
  * @bug 6682516 8149521
  * @summary SPNEGO_HTTP_AUTH/WWW_KRB and SPNEGO_HTTP_AUTH/WWW_SPNEGO failed on all non-windows platforms
  * @modules java.security.jgss/sun.security.krb5
- * @run main/othervm  -Djava.security.krb5.conf=krb5.conf Test
+ * @run main/othervm -Djdk.net.hosts.file=${test.src}/TestHosts
+ *      -Djava.security.krb5.realm=THIS.REALM
+ *      -Djava.security.krb5.kdc=localhost
+ *      -Djava.security.krb5.conf=krb5.conf Test
  */
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import sun.security.krb5.PrincipalName;
 
 public class Test {
     public static void main(String[] args) throws Exception {
-        // This config file is generated using Kerberos.app on a Mac
-        String hostsFileName = System.getProperty("test.src", ".") + "/TestHosts";
-        System.setProperty("jdk.net.hosts.file", hostsFileName);
-        System.setProperty("java.security.krb5.realm", "THIS.REALM");
-        System.setProperty("java.security.krb5.kdc", "localhost");
-
         // add using canonicalized name
         check("c1", "c1.this.domain");
         check("c1.this", "c1.this.domain");

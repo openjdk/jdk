@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,16 @@
 #include "asm/codeBuffer.hpp"
 #include "compiler/compilerDefinitions.hpp"
 #include "compiler/oopMap.hpp"
+#include "runtime/javaFrameAnchor.hpp"
 #include "runtime/frame.hpp"
 #include "runtime/handles.hpp"
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
+
+class ImmutableOopMap;
+class ImmutableOopMapSet;
+class JNIHandleBlock;
+class OopMapSet;
 
 // CodeBlob Types
 // Used in the CodeCache to assign CodeBlobs to different CodeHeaps
@@ -41,8 +47,7 @@ struct CodeBlobType {
     MethodProfiled      = 1,    // Execution level 2 and 3 (profiled) nmethods
     NonNMethod          = 2,    // Non-nmethods like Buffers, Adapters and Runtime Stubs
     All                 = 3,    // All types (No code cache segmentation)
-    AOT                 = 4,    // AOT methods
-    NumTypes            = 5     // Number of CodeBlobTypes
+    NumTypes            = 4     // Number of CodeBlobTypes
   };
 };
 
@@ -51,10 +56,6 @@ struct CodeBlobType {
 // Subtypes are:
 //  CompiledMethod       : Compiled Java methods (include method that calls to native code)
 //   nmethod             : JIT Compiled Java methods
-//   AOTCompiledMethod   : AOT Compiled Java methods - Not in the CodeCache!
-//                         AOTCompiledMethod objects are allocated in the C-Heap, the code they
-//                         point to is allocated in the AOTCodeHeap which is in the C-Heap as
-//                         well (i.e. it's the memory where the shared library was loaded to)
 //  RuntimeBlob          : Non-compiled method code; generated glue code
 //   BufferBlob          : Used for non-relocatable code such as interpreter, stubroutines, etc.
 //    AdapterBlob        : Used to hold C2I/I2C adapters
@@ -66,22 +67,21 @@ struct CodeBlobType {
 //    ExceptionBlob      : Used for stack unrolling
 //    SafepointBlob      : Used to handle illegal instruction exceptions
 //    UncommonTrapBlob   : Used to handle uncommon traps
+//   UpcallStub  : Used for upcalls from native code
 //
 //
-// Layout (all except AOTCompiledMethod) : continuous in the CodeCache
+// Layout : continuous in the CodeCache
 //   - header
 //   - relocation
 //   - content space
 //     - instruction space
 //   - data space
-//
-// Layout (AOTCompiledMethod) : in the C-Heap
-//   - header -\
-//     ...     |
-//   - code  <-/
 
 
 class CodeBlobLayout;
+class UpcallStub; // for as_upcall_stub()
+class RuntimeStub; // for as_runtime_stub()
+class JavaFrameAnchor; // for UpcallStub::jfa_for_frame
 
 class CodeBlob {
   friend class VMStructs;
@@ -111,18 +111,30 @@ protected:
   ImmutableOopMapSet* _oop_maps;                 // OopMap for this CodeBlob
   bool                _caller_must_gc_arguments;
 
+  bool                _is_compiled;
+
   const char*         _name;
   S390_ONLY(int       _ctable_offset;)
 
-  NOT_PRODUCT(CodeStrings _strings;)
+#ifndef PRODUCT
+  AsmRemarks _asm_remarks;
+  DbgStrings _dbg_strings;
 
-  CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& layout, int frame_complete_offset, int frame_size, ImmutableOopMapSet* oop_maps, bool caller_must_gc_arguments);
-  CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& layout, CodeBuffer* cb, int frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments);
+ ~CodeBlob() {
+    _asm_remarks.clear();
+    _dbg_strings.clear();
+  }
+#endif // not PRODUCT
 
+  CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& layout, int frame_complete_offset,
+           int frame_size, ImmutableOopMapSet* oop_maps,
+           bool caller_must_gc_arguments, bool compiled = false);
+  CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& layout, CodeBuffer* cb, int frame_complete_offset,
+           int frame_size, OopMapSet* oop_maps,
+           bool caller_must_gc_arguments, bool compiled = false);
 public:
   // Only used by unit test.
-  CodeBlob()
-    : _type(compiler_none) {}
+  CodeBlob() : _type(compiler_none) {}
 
   // Returns the space needed for CodeBlob
   static unsigned int allocation_size(CodeBuffer* cb, int header_size);
@@ -142,8 +154,9 @@ public:
   virtual bool is_adapter_blob() const                { return false; }
   virtual bool is_vtable_blob() const                 { return false; }
   virtual bool is_method_handles_adapter_blob() const { return false; }
-  virtual bool is_aot() const                         { return false; }
-  virtual bool is_compiled() const                    { return false; }
+  virtual bool is_upcall_stub() const                 { return false; }
+  bool is_compiled() const                            { return _is_compiled; }
+  const bool* is_compiled_addr() const                { return &_is_compiled; }
 
   inline bool is_compiled_by_c1() const    { return _type == compiler_c1; };
   inline bool is_compiled_by_c2() const    { return _type == compiler_c2; };
@@ -157,6 +170,8 @@ public:
   CompiledMethod* as_compiled_method_or_null() { return is_compiled() ? (CompiledMethod*) this : NULL; }
   CompiledMethod* as_compiled_method()         { assert(is_compiled(), "must be compiled"); return (CompiledMethod*) this; }
   CodeBlob* as_codeblob_or_null() const        { return (CodeBlob*) this; }
+  UpcallStub* as_upcall_stub() const           { assert(is_upcall_stub(), "must be upcall stub"); return (UpcallStub*) this; }
+  RuntimeStub* as_runtime_stub() const         { assert(is_runtime_stub(), "must be runtime blob"); return (RuntimeStub*) this; }
 
   // Boundaries
   address header_begin() const        { return (address) this; }
@@ -211,7 +226,9 @@ public:
   // OopMap for frame
   ImmutableOopMapSet* oop_maps() const           { return _oop_maps; }
   void set_oop_maps(OopMapSet* p);
-  const ImmutableOopMap* oop_map_for_return_address(address return_address);
+
+  const ImmutableOopMap* oop_map_for_slot(int slot, address return_address) const;
+  const ImmutableOopMap* oop_map_for_return_address(address return_address) const;
   virtual void preserve_callee_argument_oops(frame fr, const RegisterMap* reg_map, OopClosure* f) = 0;
 
   // Frame support. Sizes are in word units.
@@ -233,19 +250,21 @@ public:
   void dump_for_addr(address addr, outputStream* st, bool verbose) const;
   void print_code();
 
-  // Print the comment associated with offset on stream, if there is one
+  // Print to stream, any comments associated with offset.
   virtual void print_block_comment(outputStream* stream, address block_begin) const {
-  #ifndef PRODUCT
-    intptr_t offset = (intptr_t)(block_begin - code_begin());
-    _strings.print_block_comment(stream, offset);
-  #endif
+#ifndef PRODUCT
+    ptrdiff_t offset = block_begin - code_begin();
+    assert(offset >= 0, "Expecting non-negative offset!");
+    _asm_remarks.print(uint(offset), stream);
+#endif
   }
 
 #ifndef PRODUCT
-  void set_strings(CodeStrings& strings) {
-    assert(!is_aot(), "invalid on aot");
-    _strings.copy(strings);
-  }
+  AsmRemarks &asm_remarks() { return _asm_remarks; }
+  DbgStrings &dbg_strings() { return _dbg_strings; }
+
+  void use_remarks(AsmRemarks &remarks) { _asm_remarks.share(remarks); }
+  void use_strings(DbgStrings &strings) { _dbg_strings.share(strings); }
 #endif
 };
 
@@ -363,6 +382,8 @@ class RuntimeBlob : public CodeBlob {
     bool        caller_must_gc_arguments = false
   );
 
+  static void free(RuntimeBlob* blob);
+
   // GC support
   virtual bool is_alive() const                  = 0;
 
@@ -388,6 +409,7 @@ class BufferBlob: public RuntimeBlob {
   friend class AdapterBlob;
   friend class VtableBlob;
   friend class MethodHandlesAdapterBlob;
+  friend class UpcallStub;
   friend class WhiteBox;
 
  private:
@@ -456,7 +478,7 @@ public:
 
 class MethodHandlesAdapterBlob: public BufferBlob {
 private:
-  MethodHandlesAdapterBlob(int size)                 : BufferBlob("MethodHandles adapters", size) {}
+  MethodHandlesAdapterBlob(int size): BufferBlob("MethodHandles adapters", size) {}
 
 public:
   // Creation
@@ -500,6 +522,8 @@ class RuntimeStub: public RuntimeBlob {
     OopMapSet*  oop_maps,
     bool        caller_must_gc_arguments
   );
+
+  static void free(RuntimeStub* stub) { RuntimeBlob::free(stub); }
 
   // Typing
   bool is_runtime_stub() const                   { return true; }
@@ -725,6 +749,60 @@ class SafepointBlob: public SingletonBlob {
 
   // Typing
   bool is_safepoint_stub() const                 { return true; }
+};
+
+//----------------------------------------------------------------------------------------------------
+
+class UpcallLinker;
+
+// A (Panama) upcall stub. Not used by JNI.
+class UpcallStub: public RuntimeBlob {
+  friend class UpcallLinker;
+ private:
+  intptr_t _exception_handler_offset;
+  jobject _receiver;
+  ByteSize _frame_data_offset;
+
+  UpcallStub(const char* name, CodeBuffer* cb, int size,
+                     intptr_t exception_handler_offset,
+                     jobject receiver, ByteSize frame_data_offset);
+
+  void* operator new(size_t s, unsigned size) throw();
+
+  struct FrameData {
+    JavaFrameAnchor jfa;
+    JavaThread* thread;
+    JNIHandleBlock* old_handles;
+    JNIHandleBlock* new_handles;
+  };
+
+  // defined in frame_ARCH.cpp
+  FrameData* frame_data_for_frame(const frame& frame) const;
+ public:
+  // Creation
+  static UpcallStub* create(const char* name, CodeBuffer* cb,
+                            intptr_t exception_handler_offset,
+                            jobject receiver, ByteSize frame_data_offset);
+
+  static void free(UpcallStub* blob);
+
+  address exception_handler() { return code_begin() + _exception_handler_offset; }
+  jobject receiver() { return _receiver; }
+
+  JavaFrameAnchor* jfa_for_frame(const frame& frame) const;
+
+  // Typing
+  virtual bool is_upcall_stub() const override { return true; }
+
+  // GC/Verification support
+  void oops_do(OopClosure* f, const frame& frame);
+  virtual void preserve_callee_argument_oops(frame fr, const RegisterMap* reg_map, OopClosure* f) override;
+  virtual bool is_alive() const override { return true; }
+  virtual void verify() override;
+
+  // Misc.
+  virtual void print_on(outputStream* st) const override;
+  virtual void print_value_on(outputStream* st) const override;
 };
 
 #endif // SHARE_CODE_CODEBLOB_HPP

@@ -5,7 +5,7 @@
  *   PostScript hinter global hinting management (body).
  *   Inspired by the new auto-hinter module.
  *
- * Copyright (C) 2001-2020 by
+ * Copyright (C) 2001-2022 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used
@@ -17,10 +17,9 @@
  */
 
 
-#include <ft2build.h>
-#include FT_FREETYPE_H
-#include FT_INTERNAL_OBJECTS_H
-#include FT_INTERNAL_CALC_H
+#include <freetype/freetype.h>
+#include <freetype/internal/ftobjs.h>
+#include <freetype/internal/ftcalc.h>
 #include "pshglob.h"
 
 #ifdef DEBUG_HINTER
@@ -651,7 +650,7 @@
     FT_Error     error;
 
 
-    if ( !FT_NEW( globals ) )
+    if ( !FT_QNEW( globals ) )
     {
       FT_UInt    count;
       FT_Short*  read;

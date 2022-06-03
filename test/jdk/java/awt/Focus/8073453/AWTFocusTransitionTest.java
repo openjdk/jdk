@@ -26,12 +26,18 @@
  * @key headful
  * @bug 8073453
  * @summary Focus doesn't move when pressing Shift + Tab keys
- * @author Dmitry Markov
  * @compile AWTFocusTransitionTest.java
  * @run main/othervm AWTFocusTransitionTest
  */
 
-import java.awt.*;
+import java.awt.Button;
+import java.awt.Component;
+import java.awt.DefaultFocusTraversalPolicy;
+import java.awt.Frame;
+import java.awt.GridLayout;
+import java.awt.Panel;
+import java.awt.Robot;
+import java.awt.TextField;
 import java.awt.event.KeyEvent;
 
 public class AWTFocusTransitionTest {
@@ -43,7 +49,7 @@ public class AWTFocusTransitionTest {
 
     public static void main(String[] args) throws Exception {
         robot = new Robot();
-        robot.setAutoDelay(50);
+        robot.setAutoDelay(100);
 
         try {
             createAndShowGUI();
@@ -101,14 +107,15 @@ public class AWTFocusTransitionTest {
         p.add(panel);
 
         frame.add(p);
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 
     private static void checkFocusOwner(Component component) {
         if (component != frame.getFocusOwner()) {
-            throw new RuntimeException("Test Failed! Incorrect focus owner: " + frame.getFocusOwner() +
+            throw new RuntimeException("Test Failed! Incorrect focus " +
+                    "owner: " + frame.getFocusOwner() +
                     ", but expected: " + component);
         }
     }
 }
-

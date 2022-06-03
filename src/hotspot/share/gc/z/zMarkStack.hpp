@@ -64,6 +64,8 @@ public:
 
   void push(T* stack);
   T* pop();
+
+  void clear();
 };
 
 using ZMarkStack = ZStack<ZMarkStackEntry, ZMarkStackSlots>;
@@ -138,6 +140,9 @@ public:
   void install(ZMarkStripeSet* stripes,
                ZMarkStripe* stripe,
                ZMarkStack* stack);
+
+  ZMarkStack* steal(ZMarkStripeSet* stripes,
+                    ZMarkStripe* stripe);
 
   bool push(ZMarkStackAllocator* allocator,
             ZMarkStripeSet* stripes,

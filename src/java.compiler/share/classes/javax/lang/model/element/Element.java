@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,9 +52,6 @@ import javax.lang.model.util.*;
  * hierarchy since an implementation may choose to have a single object
  * implement multiple {@code Element} subinterfaces.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @see Elements
  * @see TypeMirror
  * @since 1.6
@@ -117,8 +114,9 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
 
     /**
      * Returns the modifiers of this element, excluding annotations.
-     * Implicit modifiers, such as the {@code public} and {@code static}
-     * modifiers of interface members, are included.
+     * Implicit modifiers, such as the {@code public} and {@code
+     * static} modifiers of interface members (JLS section {@jls
+     * 9.3}), are included.
      *
      * @return the modifiers of this element, or an empty set if there are none
      */
@@ -230,6 +228,7 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
      * @see Elements#getAllMembers
      * @jls 8.8.9 Default Constructor
      * @jls 8.9 Enum Classes
+     * @jls 8.10 Record Classes
      * @revised 9
      */
     List<? extends Element> getEnclosedElements();
@@ -292,7 +291,7 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
      * <p>Note that any annotations returned by this method are
      * declaration annotations.
      *
-     * @since 8
+     * @since 1.8
      */
     @Override
     <A extends Annotation> A[] getAnnotationsByType(Class<A> annotationType);

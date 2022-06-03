@@ -41,22 +41,22 @@ import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 class AppImageBundler extends AbstractBundler {
 
     @Override
-    final public String getName() {
+    public final String getName() {
         return I18N.getString("app.bundler.name");
     }
 
     @Override
-    final public String getID() {
+    public final String getID() {
         return "app";
     }
 
     @Override
-    final public String getBundleType() {
+    public final String getBundleType() {
         return "IMAGE";
     }
 
     @Override
-    final public boolean validate(Map<String, ? super Object> params)
+    public final boolean validate(Map<String, ? super Object> params)
             throws ConfigException {
         try {
             Objects.requireNonNull(params);
@@ -81,7 +81,7 @@ class AppImageBundler extends AbstractBundler {
     }
 
     @Override
-    final public Path execute(Map<String, ? super Object> params,
+    public final Path execute(Map<String, ? super Object> params,
             Path outputParentDir) throws PackagerException {
         if (StandardBundlerParam.isRuntimeInstaller(params)) {
             return PREDEFINED_RUNTIME_IMAGE.fetchFrom(params);
@@ -98,12 +98,12 @@ class AppImageBundler extends AbstractBundler {
     }
 
     @Override
-    final public boolean supported(boolean runtimeInstaller) {
+    public final boolean supported(boolean runtimeInstaller) {
         return true;
     }
 
     @Override
-    final public boolean isDefault() {
+    public final boolean isDefault() {
         return false;
     }
 

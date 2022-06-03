@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,9 @@ public:
 
 class ZServiceabilityMemoryManager : public GCMemoryManager {
 public:
-  ZServiceabilityMemoryManager(ZServiceabilityMemoryPool* pool);
+  ZServiceabilityMemoryManager(const char* name,
+                               const char* end_message,
+                               ZServiceabilityMemoryPool* pool);
 };
 
 class ZServiceability {
@@ -51,7 +53,8 @@ private:
   const size_t                 _min_capacity;
   const size_t                 _max_capacity;
   ZServiceabilityMemoryPool    _memory_pool;
-  ZServiceabilityMemoryManager _memory_manager;
+  ZServiceabilityMemoryManager _cycle_memory_manager;
+  ZServiceabilityMemoryManager _pause_memory_manager;
   ZServiceabilityCounters*     _counters;
 
 public:
@@ -60,7 +63,8 @@ public:
   void initialize();
 
   MemoryPool* memory_pool();
-  GCMemoryManager* memory_manager();
+  GCMemoryManager* cycle_memory_manager();
+  GCMemoryManager* pause_memory_manager();
   ZServiceabilityCounters* counters();
 };
 
@@ -74,8 +78,9 @@ public:
 
 class ZServiceabilityPauseTracer : public StackObj {
 private:
-  SvcGCMarker         _svc_gc_marker;
-  TraceCollectorStats _counters_stats;
+  SvcGCMarker             _svc_gc_marker;
+  TraceCollectorStats     _counters_stats;
+  TraceMemoryManagerStats _memory_manager_stats;
 
 public:
   ZServiceabilityPauseTracer();

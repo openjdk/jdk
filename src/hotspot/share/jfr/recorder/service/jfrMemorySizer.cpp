@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 const julong MAX_ADJUSTED_GLOBAL_BUFFER_SIZE = 1 * M;
 const julong MIN_ADJUSTED_GLOBAL_BUFFER_SIZE_CUTOFF = 512 * K;
 const julong MIN_GLOBAL_BUFFER_SIZE = 64 * K;
+const julong MAX_GLOBAL_BUFFER_SIZE = 2 * G;
 // implies at least 2 * MIN_GLOBAL_BUFFER SIZE
 const julong MIN_BUFFER_COUNT = 2;
 // MAX global buffer count open ended
@@ -37,6 +38,7 @@ const julong DEFAULT_BUFFER_COUNT = 20;
 // MAX thread local buffer size == size of a single global buffer (runtime determined)
 // DEFAULT thread local buffer size = 2 * os page size (runtime determined)
 const julong MIN_THREAD_BUFFER_SIZE = 4 * K;
+const julong MAX_THREAD_BUFFER_SIZE = 2 * G;
 const julong MIN_MEMORY_SIZE = 1 * M;
 const julong DEFAULT_MEMORY_SIZE = 10 * M;
 
@@ -305,6 +307,11 @@ static void thread_buffer_size(JfrMemoryOptions* options) {
   options->global_buffer_size = div_total_by_units(options->memory_size, options->buffer_count);
   if (options->thread_buffer_size > options->global_buffer_size) {
     options->global_buffer_size = options->thread_buffer_size;
+    if (options->memory_size_configured) {
+      options->buffer_count = div_total_by_per_unit(options->memory_size, options->global_buffer_size);
+    } else {
+      options->memory_size = multiply(options->global_buffer_size, options->buffer_count);
+    }
     options->buffer_count = div_total_by_per_unit(options->memory_size, options->global_buffer_size);
   }
   assert(options->global_buffer_size >= options->thread_buffer_size, "invariant");
@@ -324,7 +331,8 @@ static void assert_post_condition(const JfrMemoryOptions* options) {
   assert(options->memory_size % os::vm_page_size() == 0, "invariant");
   assert(options->global_buffer_size % os::vm_page_size() == 0, "invariant");
   assert(options->thread_buffer_size % os::vm_page_size() == 0, "invariant");
-  assert(options->buffer_count > 0, "invariant");
+  assert(options->buffer_count >= MIN_BUFFER_COUNT, "invariant");
+  assert(options->global_buffer_size >= options->thread_buffer_size, "invariant");
 }
 #endif
 
@@ -428,6 +436,10 @@ bool JfrMemorySizer::adjust_options(JfrMemoryOptions* options) {
       break;
     default:
       default_size(options);
+  }
+  if (options->buffer_count < MIN_BUFFER_COUNT ||
+      options->global_buffer_size < options->thread_buffer_size) {
+    return false;
   }
   DEBUG_ONLY(assert_post_condition(options);)
   return true;

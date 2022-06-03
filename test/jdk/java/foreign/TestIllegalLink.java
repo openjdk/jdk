@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -24,34 +24,31 @@
 
 /*
  * @test
+ * @enablePreview
  * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
- * @run testng/othervm -Dforeign.restricted=permit TestIllegalLink
+ * @run testng/othervm --enable-native-access=ALL-UNNAMED TestIllegalLink
  */
 
-import jdk.incubator.foreign.CLinker;
-import jdk.incubator.foreign.FunctionDescriptor;
-import jdk.incubator.foreign.MemoryAddress;
-import jdk.incubator.foreign.MemoryLayout;
-import jdk.incubator.foreign.MemoryLayouts;
-import jdk.incubator.foreign.MemorySegment;
+import java.lang.foreign.Addressable;
+import java.lang.foreign.Linker;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.MemoryAddress;
+import java.lang.foreign.MemoryLayout;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import java.lang.invoke.MethodType;
-
-import static jdk.incubator.foreign.CLinker.C_INT;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
-public class TestIllegalLink {
+public class TestIllegalLink extends NativeTestHelper {
 
-    private static final MemoryAddress dummyTarget = MemoryAddress.NULL;
-    private static final CLinker ABI = CLinker.getInstance();
+    private static final Addressable DUMMY_TARGET = MemoryAddress.ofLong(1);
+    private static final Linker ABI = Linker.nativeLinker();
 
     @Test(dataProvider = "types")
-    public void testTypeMismatch(MethodType mt, FunctionDescriptor desc, String expectedExceptionMessage) {
+    public void testTypeMismatch(FunctionDescriptor desc, String expectedExceptionMessage) {
         try {
-            ABI.downcallHandle(dummyTarget, mt, desc);
+            ABI.downcallHandle(DUMMY_TARGET, desc);
             fail("Expected IllegalArgumentException was not thrown");
         } catch (IllegalArgumentException e) {
             assertTrue(e.getMessage().contains(expectedExceptionMessage));
@@ -62,49 +59,20 @@ public class TestIllegalLink {
     public static Object[][] types() {
         return new Object[][]{
             {
-                MethodType.methodType(void.class),
-                FunctionDescriptor.of(C_INT),
-                "Return type mismatch"
+                FunctionDescriptor.of(MemoryLayout.paddingLayout(64)),
+                "Unsupported layout: x64"
             },
             {
-                MethodType.methodType(void.class),
-                FunctionDescriptor.ofVoid(C_INT),
-                "Arity mismatch"
+                FunctionDescriptor.ofVoid(MemoryLayout.paddingLayout(64)),
+                "Unsupported layout: x64"
             },
             {
-                MethodType.methodType(void.class, int.class),
-                FunctionDescriptor.ofVoid(MemoryLayout.ofPaddingBits(32)),
-                "Expected a ValueLayout"
+                    FunctionDescriptor.of(MemoryLayout.sequenceLayout(2, C_INT)),
+                    "Unsupported layout: [2:i32]"
             },
             {
-                MethodType.methodType(void.class, boolean.class),
-                FunctionDescriptor.ofVoid(MemoryLayouts.BITS_8_LE),
-                "Unsupported carrier"
-            },
-            {
-                MethodType.methodType(void.class, int.class),
-                FunctionDescriptor.ofVoid(MemoryLayouts.BITS_64_LE),
-                "Carrier size mismatch"
-            },
-            {
-                MethodType.methodType(void.class, MemoryAddress.class),
-                FunctionDescriptor.ofVoid(MemoryLayout.ofPaddingBits(64)),
-                "Expected a ValueLayout"
-            },
-            {
-                MethodType.methodType(void.class, MemoryAddress.class),
-                FunctionDescriptor.ofVoid(MemoryLayouts.BITS_16_LE),
-                "Address size mismatch"
-            },
-            {
-                MethodType.methodType(void.class, MemorySegment.class),
-                FunctionDescriptor.ofVoid(MemoryLayouts.BITS_64_LE),
-                "Expected a GroupLayout"
-            },
-            {
-                MethodType.methodType(void.class, String.class),
-                FunctionDescriptor.ofVoid(MemoryLayouts.BITS_64_LE),
-                "Unsupported carrier"
+                    FunctionDescriptor.ofVoid(MemoryLayout.sequenceLayout(2, C_INT)),
+                    "Unsupported layout: [2:i32]"
             },
         };
     }

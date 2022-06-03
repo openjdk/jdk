@@ -56,12 +56,12 @@ class ShenandoahHeapRegionClosure;
 class ShenandoahCollectionSet;
 class ShenandoahFreeSet;
 class ShenandoahConcurrentMark;
-class ShenandoahMarkCompact;
+class ShenandoahFullGC;
 class ShenandoahMonitoringSupport;
 class ShenandoahPacer;
 class ShenandoahReferenceProcessor;
 class ShenandoahVerifier;
-class ShenandoahWorkGang;
+class ShenandoahWorkerThreads;
 class VMStructs;
 
 // Used for buffering per-region liveness data.
@@ -125,7 +125,8 @@ class ShenandoahHeap : public CollectedHeap {
   // Supported GC
   friend class ShenandoahConcurrentGC;
   friend class ShenandoahDegenGC;
-  friend class ShenandoahMarkCompact;
+  friend class ShenandoahFullGC;
+  friend class ShenandoahUnload;
 
 // ---------- Locks that guard important data structures in Heap
 //
@@ -148,6 +149,7 @@ public:
   ShenandoahHeap(ShenandoahCollectorPolicy* policy);
   jint initialize();
   void post_initialize();
+  void initialize_mode();
   void initialize_heuristics();
 
   void initialize_serviceability();
@@ -161,6 +163,11 @@ public:
 
   void prepare_for_verify();
   void verify(VerifyOption vo);
+
+// WhiteBox testing support.
+  bool supports_concurrent_gc_breakpoints() const {
+    return true;
+  }
 
 // ---------- Heap counters and metrics
 //
@@ -200,15 +207,15 @@ public:
 //
 private:
   uint _max_workers;
-  ShenandoahWorkGang* _workers;
-  ShenandoahWorkGang* _safepoint_workers;
+  ShenandoahWorkerThreads* _workers;
+  ShenandoahWorkerThreads* _safepoint_workers;
 
 public:
   uint max_workers();
   void assert_gc_workers(uint nworker) NOT_DEBUG_RETURN;
 
-  WorkGang* workers() const;
-  WorkGang* safepoint_workers();
+  WorkerThreads* workers() const;
+  WorkerThreads* safepoint_workers();
 
   void gc_threads_do(ThreadClosure* tcl) const;
 
@@ -258,6 +265,9 @@ public:
 
     // Heap is under updating: needs no additional barriers.
     UPDATEREFS_BITPOS = 3,
+
+    // Heap is under weak-reference/roots processing: needs weak-LRB barriers.
+    WEAK_ROOTS_BITPOS  = 4,
   };
 
   enum GCState {
@@ -266,6 +276,7 @@ public:
     MARKING       = 1 << MARKING_BITPOS,
     EVACUATION    = 1 << EVACUATION_BITPOS,
     UPDATEREFS    = 1 << UPDATEREFS_BITPOS,
+    WEAK_ROOTS    = 1 << WEAK_ROOTS_BITPOS,
   };
 
 private:
@@ -275,7 +286,6 @@ private:
   ShenandoahSharedFlag   _full_gc_move_in_progress;
   ShenandoahSharedFlag   _progress_last_gc;
   ShenandoahSharedFlag   _concurrent_strong_root_in_progress;
-  ShenandoahSharedFlag   _concurrent_weak_root_in_progress;
 
   void set_gc_state_all_threads(char state);
   void set_gc_state_mask(uint mask, bool value);
@@ -364,7 +374,6 @@ private:
 
   void rendezvous_threads();
   void recycle_trash();
-
 public:
   void notify_gc_progress()    { _progress_last_gc.set();   }
   void notify_gc_no_progress() { _progress_last_gc.unset(); }
@@ -461,6 +470,8 @@ public:
 
   bool is_in(const void* p) const;
 
+  bool requires_barriers(stackChunkOop obj) const;
+
   MemRegion reserved_region() const { return _reserved; }
   bool is_in_reserved(const void* addr) const { return _reserved.contains(addr); }
 
@@ -475,7 +486,7 @@ public:
   // Used for native heap walkers: heap dumpers, mostly
   void object_iterate(ObjectClosure* cl);
   // Parallel heap iteration support
-  virtual ParallelObjectIterator* parallel_object_iterator(uint workers);
+  virtual ParallelObjectIteratorImpl* parallel_object_iterator(uint workers);
 
   // Keep alive an object that was loaded with AS_NO_KEEPALIVE.
   void keep_alive(oop obj);
@@ -626,13 +637,19 @@ public:
   template <class T>
   inline void update_with_forwarded(T* p);
 
-  static inline oop cas_oop(oop n, narrowOop* addr, oop c);
-  static inline oop cas_oop(oop n, oop* addr, oop c);
-  static inline oop cas_oop(oop n, narrowOop* addr, narrowOop c);
+  static inline void atomic_update_oop(oop update,       oop* addr,       oop compare);
+  static inline void atomic_update_oop(oop update, narrowOop* addr,       oop compare);
+  static inline void atomic_update_oop(oop update, narrowOop* addr, narrowOop compare);
+
+  static inline bool atomic_update_oop_check(oop update,       oop* addr,       oop compare);
+  static inline bool atomic_update_oop_check(oop update, narrowOop* addr,       oop compare);
+  static inline bool atomic_update_oop_check(oop update, narrowOop* addr, narrowOop compare);
+
+  static inline void atomic_clear_oop(      oop* addr,       oop compare);
+  static inline void atomic_clear_oop(narrowOop* addr,       oop compare);
+  static inline void atomic_clear_oop(narrowOop* addr, narrowOop compare);
 
   void trash_humongous_region_at(ShenandoahHeapRegion *r);
-
-  void deduplicate_string(oop str);
 
 private:
   void trash_cset_regions();

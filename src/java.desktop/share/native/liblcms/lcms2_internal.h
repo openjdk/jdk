@@ -27,7 +27,7 @@
 // However, the following notice accompanied the original version of this
 // file:
 //
-//---------------------------------------------------------------------------------
+
 //
 //  Little Color Management System
 //  Copyright (c) 1998-2020 Marti Maria Saguer
@@ -937,13 +937,7 @@ cmsStage*                          _cmsStageClipNegatives(cmsContext ContextID, 
 
 
 // For curve set only
-cmsToneCurve**     _cmsStageGetPtrToCurveSet(const cmsStage* mpe);
-
-
-// Pipeline Evaluator (in floating point)
-typedef void (* _cmsPipelineEvalFloatFn)(const cmsFloat32Number In[],
-                                         cmsFloat32Number Out[],
-                                         const void* Data);
+cmsToneCurve**  _cmsStageGetPtrToCurveSet(const cmsStage* mpe);
 
 struct _cmsPipeline_struct {
 
@@ -953,7 +947,7 @@ struct _cmsPipeline_struct {
     // Data & evaluators
     void *Data;
 
-   _cmsOPTeval16Fn         Eval16Fn;
+   _cmsPipelineEval16Fn    Eval16Fn;
    _cmsPipelineEvalFloatFn EvalFloatFn;
    _cmsFreeUserDataFn      FreeDataFn;
    _cmsDupUserDataFn       DupDataFn;
@@ -1000,14 +994,14 @@ cmsSEQ* _cmsCompileProfileSequence(cmsContext ContextID, cmsUInt32Number nProfil
 
 CMSCHECKPOINT cmsUInt16Number  CMSEXPORT _cmsQuantizeVal(cmsFloat64Number i, cmsUInt32Number MaxSamples);
 
-cmsUInt32Number  _cmsReasonableGridpointsByColorspace(cmsColorSpaceSignature Colorspace, cmsUInt32Number dwFlags);
+CMSAPI cmsUInt32Number  CMSEXPORT _cmsReasonableGridpointsByColorspace(cmsColorSpaceSignature Colorspace, cmsUInt32Number dwFlags);
 
 cmsBool          _cmsEndPointsBySpace(cmsColorSpaceSignature Space,
                                       cmsUInt16Number **White,
                                       cmsUInt16Number **Black,
                                       cmsUInt32Number *nOutputs);
 
-cmsBool          _cmsOptimizePipeline(cmsContext ContextID,
+CMSAPI cmsBool CMSEXPORT _cmsOptimizePipeline(cmsContext ContextID,
                                       cmsPipeline**    Lut,
                                       cmsUInt32Number  Intent,
                                       cmsUInt32Number* InputFormat,

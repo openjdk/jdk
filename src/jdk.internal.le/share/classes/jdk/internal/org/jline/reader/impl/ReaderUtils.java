@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2016, the original author or authors.
+ * Copyright (c) 2002-2020, the original author or authors.
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -9,6 +9,7 @@
 package jdk.internal.org.jline.reader.impl;
 
 import jdk.internal.org.jline.reader.LineReader;
+import jdk.internal.org.jline.utils.Levenshtein;
 
 public class ReaderUtils {
 
@@ -65,6 +66,16 @@ public class ReaderUtils {
             }
         }
         return nb;
+    }
+
+    public static int distance(String word, String cand) {
+        if (word.length() < cand.length()) {
+            int d1 = Levenshtein.distance(word, cand.substring(0, Math.min(cand.length(), word.length())));
+            int d2 = Levenshtein.distance(word, cand);
+            return Math.min(d1, d2);
+        } else {
+            return Levenshtein.distance(word, cand);
+        }
     }
 
 }

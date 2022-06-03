@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@
 package sun.awt.X11;
 
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
 
 @SuppressWarnings("serial") // JDK-implementation class
 public class XCreateWindowParams extends HashMap<Object, Object> {
@@ -81,11 +79,12 @@ public class XCreateWindowParams extends HashMap<Object, Object> {
         return this;
     }
     public String toString() {
-        StringBuffer buf = new StringBuffer();
-        Iterator<Map.Entry<Object, Object>> eIter = entrySet().iterator();
-        while (eIter.hasNext()) {
-            Map.Entry<Object, Object> entry = eIter.next();
-            buf.append(entry.getKey() + ": " + entry.getValue() + "\n");
+        StringBuilder buf = new StringBuilder();
+        for (Entry<Object, Object> entry : entrySet()) {
+            buf.append(entry.getKey())
+               .append(": ")
+               .append(entry.getValue())
+               .append("\n");
         }
         return buf.toString();
     }

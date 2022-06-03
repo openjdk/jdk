@@ -26,6 +26,7 @@
 #define SHARE_GC_G1_G1OOPSTARCHUNKEDLIST_INLINE_HPP
 
 #include "gc/g1/g1OopStarChunkedList.hpp"
+
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/iterator.hpp"

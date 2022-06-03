@@ -26,7 +26,7 @@
  * @bug 7103570 8189291
  * @author David Holmes
  * @run main/othervm AtomicUpdaters
- * @run main/othervm AtomicUpdaters UseSM
+ * @run main/othervm -Djava.security.manager=allow AtomicUpdaters UseSM
  * @summary Checks the (in)ability to create field updaters for differently
  *          accessible fields in different locations with/without a security
  *          manager

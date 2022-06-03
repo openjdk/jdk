@@ -27,7 +27,6 @@
 #import "ThreadUtilities.h"
 #import "JNIUtilities.h"
 #import <Cocoa/Cocoa.h>
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 
 @interface CClipboard : NSObject { }
 @property NSInteger changeCount;
@@ -99,7 +98,7 @@
         DECLARE_METHOD(jm_lostOwnership, jc_CClipboard, "notifyLostOwnership", "()V");
         @synchronized(self) {
             if (self.clipboardOwner) {
-                (*env)->CallVoidMethod(env, self.clipboardOwner, jm_lostOwnership); // AWT_THREADING Safe (event)
+                (*env)->CallVoidMethod(env, self.clipboardOwner, jm_lostOwnership);
                 CHECK_EXCEPTION();
                 (*env)->DeleteGlobalRef(env, self.clipboardOwner);
                 self.clipboardOwner = NULL;

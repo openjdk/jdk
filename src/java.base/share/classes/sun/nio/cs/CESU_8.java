@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,9 @@
  */
 
 package sun.nio.cs;
+
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
 
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
@@ -73,8 +76,11 @@ class CESU_8 extends Unicode
         dst.position(dp - dst.arrayOffset());
     }
 
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+
     private static class Decoder extends CharsetDecoder
                                  implements ArrayDecoder {
+
         private Decoder(Charset cs) {
             super(cs, 1.0f, 1.0f);
         }
@@ -94,27 +100,6 @@ class CESU_8 extends Unicode
         private static boolean isMalformed3_2(int b1, int b2) {
             return (b1 == (byte)0xe0 && (b2 & 0xe0) == 0x80) ||
                    (b2 & 0xc0) != 0x80;
-        }
-
-
-        //  [F0]     [90..BF] [80..BF] [80..BF]
-        //  [F1..F3] [80..BF] [80..BF] [80..BF]
-        //  [F4]     [80..8F] [80..BF] [80..BF]
-        //  only check 80-be range here, the [0xf0,0x80...] and [0xf4,0x90-...]
-        //  will be checked by Character.isSupplementaryCodePoint(uc)
-        private static boolean isMalformed4(int b2, int b3, int b4) {
-            return (b2 & 0xc0) != 0x80 || (b3 & 0xc0) != 0x80 ||
-                   (b4 & 0xc0) != 0x80;
-        }
-
-        // only used when there is less than 4 bytes left in src buffer
-        private static boolean isMalformed4_2(int b1, int b2) {
-            return (b1 == 0xf0 && b2 == 0x90) ||
-                   (b2 & 0xc0) != 0x80;
-        }
-
-        private static boolean isMalformed4_3(int b3) {
-            return (b3 & 0xc0) != 0x80;
         }
 
         private static CoderResult malformedN(ByteBuffer src, int nb) {
@@ -202,17 +187,19 @@ class CESU_8 extends Unicode
         {
             // This method is optimized for ASCII input.
             byte[] sa = src.array();
-            int sp = src.arrayOffset() + src.position();
-            int sl = src.arrayOffset() + src.limit();
+            int soff = src.arrayOffset();
+            int sp = soff + src.position();
+            int sl = soff + src.limit();
 
             char[] da = dst.array();
-            int dp = dst.arrayOffset() + dst.position();
-            int dl = dst.arrayOffset() + dst.limit();
-            int dlASCII = dp + Math.min(sl - sp, dl - dp);
+            int doff = dst.arrayOffset();
+            int dp = doff + dst.position();
+            int dl = doff + dst.limit();
 
-            // ASCII only loop
-            while (dp < dlASCII && sa[sp] >= 0)
-                da[dp++] = (char) sa[sp++];
+            int n = JLA.decodeASCII(sa, sp, da, dp, Math.min(sl - sp, dl - dp));
+            sp += n;
+            dp += n;
+
             while (sp < sl) {
                 int b1 = sa[sp];
                 if (b1 >= 0) {
@@ -447,7 +434,6 @@ class CESU_8 extends Unicode
         }
 
         private Surrogate.Parser sgp;
-        private char[] c2;
         private CoderResult encodeArrayLoop(CharBuffer src,
                                             ByteBuffer dst)
         {
@@ -458,11 +444,12 @@ class CESU_8 extends Unicode
             byte[] da = dst.array();
             int dp = dst.arrayOffset() + dst.position();
             int dl = dst.arrayOffset() + dst.limit();
-            int dlASCII = dp + Math.min(sl - sp, dl - dp);
 
-            // ASCII only loop
-            while (dp < dlASCII && sa[sp] < '\u0080')
-                da[dp++] = (byte) sa[sp++];
+            // Handle ASCII-only prefix
+            int n = JLA.encodeASCII(sa, sp, da, dp, Math.min(sl - sp, dl - dp));
+            sp += n;
+            dp += n;
+
             while (sp < sl) {
                 char c = sa[sp];
                 if (c < 0x80) {
@@ -562,11 +549,11 @@ class CESU_8 extends Unicode
         public int encode(char[] sa, int sp, int len, byte[] da) {
             int sl = sp + len;
             int dp = 0;
-            int dlASCII = dp + Math.min(len, da.length);
 
-            // ASCII only optimized loop
-            while (dp < dlASCII && sa[sp] < '\u0080')
-                da[dp++] = (byte) sa[sp++];
+            // Handle ASCII-only prefix
+            int n = JLA.encodeASCII(sa, sp, da, dp, Math.min(len, da.length));
+            sp += n;
+            dp += n;
 
             while (sp < sl) {
                 char c = sa[sp++];

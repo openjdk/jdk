@@ -44,7 +44,7 @@ import static org.testng.Assert.*;
  * @bug 8183266
  * @summary verifies the specification of the XPathEvaluationResult API
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true javax.xml.xpath.ptests.XPathEvaluationResultTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow javax.xml.xpath.ptests.XPathEvaluationResultTest
  * @run testng/othervm javax.xml.xpath.ptests.XPathEvaluationResultTest
  */
 @Listeners({jaxp.library.BasePolicy.class})

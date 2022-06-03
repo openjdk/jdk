@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,7 +123,7 @@ public class Basic {
             moduleName = mn; mainClass = mc; version = v; message = m; hashes = h;
             this.requires = requires != null ? requires : Collections.emptySet();
             this.exports = exports != null ? exports : Collections.emptySet();
-            this.uses = uses != null ? uses : Collections.emptySet();;
+            this.uses = uses != null ? uses : Collections.emptySet();
             this.provides = provides != null ? provides : Collections.emptySet();
             this.packages = Stream.concat(this.exports.stream(), contains.stream())
                                   .collect(Collectors.toSet());
@@ -170,6 +170,8 @@ public class Basic {
                         conceals = stringToSet(line);
                     } else if (line.contains("VM warning:")) {
                         continue;  // ignore server vm warning see#8196748
+                    } else if (line.contains("WARNING: JNI access from module not specified in --enable-native-access:")) {
+                        continue;
                     } else {
                         throw new AssertionError("Unknown value " + line);
                     }
@@ -1091,9 +1093,6 @@ public class Basic {
     {
 
         List<String> commands = new ArrayList<>();
-        if (!TOOL_VM_OPTIONS.isEmpty()) {
-            commands.addAll(Arrays.asList(TOOL_VM_OPTIONS.split("\\s+", -1)));
-        }
         commands.add("-d");
         commands.add(dest.toString());
         if (dest.toString().contains("bar")) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,8 +79,8 @@ final class ListHelper implements XScrollbarClient {
     // Holds the true if mouse is dragging outside of the area of the list
     // The flag is used at the moment of the dragging and releasing mouse
     // See 6243382 for more information
-    private boolean mouseDraggedOutVertically = false;
-    private volatile boolean vsbVisibilityChanged = false;
+    private boolean mouseDraggedOutVertically;
+    private volatile boolean vsbVisibilityChanged;
 
     /*
      * Comment
@@ -147,7 +147,7 @@ final class ListHelper implements XScrollbarClient {
     }
 
     void removeAll() {
-        items.removeAll(items);
+        items.clear();
         updateScrollbars();
     }
 
@@ -566,10 +566,8 @@ final class ListHelper implements XScrollbarClient {
     }
 
     private boolean isItemSelected(int index) {
-        Iterator<Integer> itr = selected.iterator();
-        while (itr.hasNext()) {
-            Integer val = itr.next();
-            if (val.intValue() == index) {
+        for (int val : selected) {
+            if (val == index) {
                 return true;
             }
         }

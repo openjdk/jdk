@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,10 +66,7 @@ import java.net.*;
  *          (protocol) dependent. These components are ignored by the
  *          default local protocol, <em>local:</em>. For the default remote
  *          protocol, <em>rmi</em>, the Path component is interpreted as
- *          the name of the RMI remote object. The Query component may
- *          contain an access mode specifier <em>?mode=</em> specifying
- *          <em>"r"</em> or <em>"rw"</em> access (write access currently
- *          ignored). The Fragment part is ignored.
+ *          the name of the RMI remote object. The Fragment part is ignored.
  *       </p></li>
  * </ul>
  * <p>
@@ -106,7 +103,7 @@ public class HostIdentifier {
      * by the string.
      */
     private URI canonicalize(String uriString) throws URISyntaxException {
-        if ((uriString == null) || (uriString.compareTo("localhost") == 0)) {
+        if (uriString == null || uriString.equals("localhost")) {
             uriString = "//localhost";
             return new URI(uriString);
         }
@@ -247,7 +244,7 @@ public class HostIdentifier {
         String authority = vmid.getAuthority();
 
         // check for 'file:' VmIdentifiers and handled as a special case.
-        if ((scheme != null) && (scheme.compareTo("file") == 0)) {
+        if ("file".equals(scheme)) {
             try {
                 uri = new URI("file://localhost");
             } catch (URISyntaxException e) { };
@@ -343,7 +340,7 @@ public class HostIdentifier {
         String host = vmid.getHost();
         String authority = vmid.getAuthority();
 
-        if ((scheme != null) && (scheme.compareTo("file") == 0)) {
+        if ("file".equals(scheme)) {
             // don't attempt to resolve a file based VmIdentifier.
             return vmid;
         }
@@ -495,26 +492,6 @@ public class HostIdentifier {
      */
     public String getFragment() {
         return uri.getFragment();
-    }
-
-    /**
-     * Return the mode indicated in this HostIdentifier.
-     *
-     * @return String - the mode string. If no mode is specified, then "r"
-     *                  is returned. otherwise, the specified mode is returned.
-     */
-    public String getMode() {
-        String query = getQuery();
-        if (query != null) {
-            String[] queryArgs = query.split("\\+");
-            for (int i = 0; i < queryArgs.length; i++) {
-                if (queryArgs[i].startsWith("mode=")) {
-                    int index = queryArgs[i].indexOf('=');
-                    return queryArgs[i].substring(index+1);
-                }
-            }
-        }
-        return "r";
     }
 
     /**

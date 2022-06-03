@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -199,7 +199,7 @@ TEST_VM(metaspace, chunk_buddy_stuff) {
     // buddies are adjacent in memory
     // (next/prev_in_vs needs lock)
     {
-      MutexLocker fcl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
+      MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
       EXPECT_EQ(c1->next_in_vs(), c2);
       EXPECT_EQ(c1->end(), c2->base());
       EXPECT_NULL(c1->prev_in_vs()); // since we know this is the first in the area
@@ -316,7 +316,7 @@ TEST_VM(metaspace, chunk_split_and_merge) {
       // Splitting/Merging chunks is usually done by the chunkmanager, and no explicit
       // outside API exists. So we split/merge chunks via the underlying vs node, directly.
       // This means that we have to go through some extra hoops to not trigger any asserts.
-      MutexLocker fcl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
+      MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
       c->reset_used_words();
       c->set_free();
       c->vsnode()->split(target_lvl, c, &splinters);
@@ -350,7 +350,7 @@ TEST_VM(metaspace, chunk_split_and_merge) {
     // Revert the split by using merge. This should result in all splinters coalescing
     // to one chunk.
     {
-      MutexLocker fcl(MetaspaceExpand_lock, Mutex::_no_safepoint_check_flag);
+      MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
       Metachunk* merged = c->vsnode()->merge(c, &splinters);
 
       // the merged chunk should occupy the same address as the splinter

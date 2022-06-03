@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,9 @@
  *
  */
 #include "precompiled.hpp"
-
 #include "logging/log.hpp"
-#include "memory/metaspace.hpp"
+#include "memory/metaspaceUtils.hpp"
+#include "memory/metaspaceStats.hpp"
 #include "runtime/os.hpp"
 #include "runtime/threadCritical.hpp"
 #include "services/memTracker.hpp"
@@ -320,14 +320,9 @@ address ReservedMemoryRegion::thread_stack_uncommitted_bottom() const {
 }
 
 bool VirtualMemoryTracker::initialize(NMT_TrackingLevel level) {
+  assert(_reserved_regions == NULL, "only call once");
   if (level >= NMT_summary) {
     VirtualMemorySummary::initialize();
-  }
-  return true;
-}
-
-bool VirtualMemoryTracker::late_initialize(NMT_TrackingLevel level) {
-  if (level >= NMT_summary) {
     _reserved_regions = new (std::nothrow, ResourceObj::C_HEAP, mtNMT)
       SortedLinkedList<ReservedMemoryRegion, compare_reserved_region_base>();
     return (_reserved_regions != NULL);
@@ -677,50 +672,32 @@ bool VirtualMemoryTracker::walk_virtual_memory(VirtualMemoryWalker* walker) {
   return true;
 }
 
-// Transition virtual memory tracking level.
-bool VirtualMemoryTracker::transition(NMT_TrackingLevel from, NMT_TrackingLevel to) {
-  assert (from != NMT_minimal, "cannot convert from the lowest tracking level to anything");
-  if (to == NMT_minimal) {
-    assert(from == NMT_summary || from == NMT_detail, "Just check");
-    // Clean up virtual memory tracking data structures.
-    ThreadCritical tc;
-    // Check for potential race with other thread calling transition
-    if (_reserved_regions != NULL) {
-      delete _reserved_regions;
-      _reserved_regions = NULL;
+class PrintRegionWalker : public VirtualMemoryWalker {
+private:
+  const address               _p;
+  outputStream*               _st;
+public:
+  PrintRegionWalker(const void* p, outputStream* st) :
+    _p((address)p), _st(st) { }
+
+  bool do_allocation_site(const ReservedMemoryRegion* rgn) {
+    if (rgn->contain_address(_p)) {
+      _st->print_cr(PTR_FORMAT " in mmap'd memory region [" PTR_FORMAT " - " PTR_FORMAT "] by %s",
+        p2i(_p), p2i(rgn->base()), p2i(rgn->base() + rgn->size()), rgn->flag_name());
+      if (MemTracker::tracking_level() == NMT_detail) {
+        rgn->call_stack()->print_on(_st);
+        _st->cr();
+      }
+      return false;
     }
+    return true;
   }
+};
 
-  return true;
-}
+// If p is contained within a known memory region, print information about it to the
+// given stream and return true; false otherwise.
+bool VirtualMemoryTracker::print_containing_region(const void* p, outputStream* st) {
+  PrintRegionWalker walker(p, st);
+  return !walk_virtual_memory(&walker);
 
-// Metaspace Support
-MetaspaceSnapshot::MetaspaceSnapshot() {
-  for (int index = (int)Metaspace::ClassType; index < (int)Metaspace::MetadataTypeCount; index ++) {
-    Metaspace::MetadataType type = (Metaspace::MetadataType)index;
-    assert_valid_metadata_type(type);
-    _reserved_in_bytes[type]  = 0;
-    _committed_in_bytes[type] = 0;
-    _used_in_bytes[type]      = 0;
-    _free_in_bytes[type]      = 0;
-  }
-}
-
-void MetaspaceSnapshot::snapshot(Metaspace::MetadataType type, MetaspaceSnapshot& mss) {
-  assert_valid_metadata_type(type);
-
-  mss._reserved_in_bytes[type]   = MetaspaceUtils::reserved_bytes(type);
-  mss._committed_in_bytes[type]  = MetaspaceUtils::committed_bytes(type);
-  mss._used_in_bytes[type]       = MetaspaceUtils::used_bytes(type);
-
-  // The answer to "what is free" in metaspace is complex and cannot be answered with a single number.
-  // Free as in available to all loaders? Free, pinned to one loader? For now, keep it simple.
-  mss._free_in_bytes[type] = mss._committed_in_bytes[type] - mss._used_in_bytes[type];
-}
-
-void MetaspaceSnapshot::snapshot(MetaspaceSnapshot& mss) {
-  snapshot(Metaspace::NonClassType, mss);
-  if (Metaspace::using_class_space()) {
-    snapshot(Metaspace::ClassType, mss);
-  }
 }

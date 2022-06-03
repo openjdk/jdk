@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -279,21 +279,18 @@ public class addthreadfilter001 extends JDIBase {
         log2("......setting up ThreadDeathRequest");
         ThreadDeathRequest tdr1 = eventRManager.createThreadDeathRequest();
 //        tdr1.addThreadFilter(mainThread);
-        tdr1.addCountFilter(1);
         tdr1.setSuspendPolicy(EventRequest.SUSPEND_ALL);
         tdr1.putProperty("number", "ThreadDeathRequest1");
         tdr1.enable();
 
         ThreadDeathRequest tdr2 = eventRManager.createThreadDeathRequest();
 //        tsr2.addThreadFilter(mainThread);
-        tdr2.addCountFilter(1);
         tdr2.setSuspendPolicy(EventRequest.SUSPEND_ALL);
         tdr2.putProperty("number", "ThreadDeathRequest2");
         tdr2.enable();
 
         ThreadDeathRequest tdr3 = eventRManager.createThreadDeathRequest();
         tdr3.addThreadFilter(testThread);
-        tdr3.addCountFilter(1);
         tdr3.setSuspendPolicy(EventRequest.SUSPEND_ALL);
         tdr3.putProperty("number", "ThreadDeathRequest3");
         tdr3.enable();
@@ -302,7 +299,7 @@ public class addthreadfilter001 extends JDIBase {
         vm.resume();
 
         log2("......waiting for ThreadDeathEvent");
-        getEventSet();
+        getEventSetForThreadStartDeath(testThread.name());
         EventSet eventSet1 = eventSet;
         if ( !(eventIterator.nextEvent() instanceof ThreadDeathEvent) ) {
             testExitCode = FAILED;

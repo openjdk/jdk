@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,26 +49,19 @@ public class $NAME_CLZ$ extends Charset
     }
 
     public CharsetDecoder newDecoder() {
-        initb2c();
-        return new  DoubleByte.Decoder$DECTYPE$(this, b2c, b2cSB, $B2MIN$, $B2MAX$, $ASCIICOMPATIBLE$);
+        return new DoubleByte.Decoder$DECTYPE$(this, DecodeHolder.b2c, DecodeHolder.b2cSB, $B2MIN$, $B2MAX$, $ASCIICOMPATIBLE$);
     }
 
     public CharsetEncoder newEncoder() {
-        initc2b();
-        return new DoubleByte.Encoder$ENCTYPE$(this, $ENC_REPLACEMENT$ c2b, c2bIndex, $ASCIICOMPATIBLE$);
+        return new DoubleByte.Encoder$ENCTYPE$(this, $ENC_REPLACEMENT$ EncodeHolder.c2b, EncodeHolder.c2bIndex, $ASCIICOMPATIBLE$);
     }
 
-    $B2C$
-    static char[][] b2c = new char[b2cStr.length][];
-    static char[] b2cSB;
-    private static volatile boolean b2cInitialized = false;
+    static class DecodeHolder {
+        $B2C$
+        static final char[][] b2c = new char[b2cStr.length][];
+        static final char[] b2cSB;
 
-    static void initb2c() {
-        if (b2cInitialized)
-            return;
-        synchronized (b2c) {
-            if (b2cInitialized)
-                return;
+        static {
             for (int i = 0; i < b2cStr.length; i++) {
                 if (b2cStr[i] == null)
                     b2c[i] = DoubleByte.B2C_UNMAPPABLE;
@@ -76,26 +69,20 @@ public class $NAME_CLZ$ extends Charset
                     b2c[i] = b2cStr[i].toCharArray();
             }
             b2cSB = b2cSBStr.toCharArray();
-            b2cInitialized = true;
         }
     }
 
-    static char[] c2b = new char[$C2BLENGTH$];
-    static char[] c2bIndex = new char[0x100];
-    private static volatile boolean c2bInitialized = false;
+    static class EncodeHolder {
+        static final char[] c2b = new char[$C2BLENGTH$];
+        static final char[] c2bIndex = new char[0x100];
 
-    static void initc2b() {
-        if (c2bInitialized)
-            return;
-        synchronized (c2b) {
-            if (c2bInitialized)
-                return;
+        static {
             $NONROUNDTRIP_B2C$
             $NONROUNDTRIP_C2B$
-            DoubleByte.Encoder.initC2B(b2cStr, b2cSBStr, b2cNR, c2bNR,
+            DoubleByte.Encoder.initC2B(DecodeHolder.b2cStr, DecodeHolder.b2cSBStr,
+                                       b2cNR, c2bNR,
                                        $B2MIN$, $B2MAX$,
                                        c2b, c2bIndex);
-            c2bInitialized = true;
         }
     }
 }

@@ -37,22 +37,13 @@ class ShenandoahHeapRegionSetIterator : public StackObj {
 private:
   const ShenandoahHeapRegionSet* _set;
   ShenandoahHeap* const _heap;
-
-  shenandoah_padding(0);
-  volatile jint _current_index;
-  shenandoah_padding(1);
+  size_t _current_index;
 
   // No implicit copying: iterators should be passed by reference to capture the state
   NONCOPYABLE(ShenandoahHeapRegionSetIterator);
 
 public:
   ShenandoahHeapRegionSetIterator(const ShenandoahHeapRegionSet* const set);
-
-  // Reset existing iterator to new set
-  void reset(const ShenandoahHeapRegionSet* const set);
-
-  // MT version
-  ShenandoahHeapRegion* claim_next();
 
   // Single-thread version
   ShenandoahHeapRegion* next();
@@ -63,21 +54,14 @@ class ShenandoahHeapRegionSet : public CHeapObj<mtGC> {
 private:
   ShenandoahHeap* const _heap;
   size_t const          _map_size;
-  size_t const          _region_size_bytes_shift;
   jbyte* const          _set_map;
-  // Bias set map's base address for fast test if an oop is in set
-  jbyte* const          _biased_set_map;
   size_t                _region_count;
 
 public:
   ShenandoahHeapRegionSet();
   ~ShenandoahHeapRegionSet();
 
-  // Add region to set
   void add_region(ShenandoahHeapRegion* r);
-  bool add_region_check_for_duplicates(ShenandoahHeapRegion* r);
-
-  // Remove region from set
   void remove_region(ShenandoahHeapRegion* r);
 
   size_t count()  const { return _region_count; }
@@ -85,16 +69,10 @@ public:
 
   inline bool is_in(ShenandoahHeapRegion* r) const;
   inline bool is_in(size_t region_idx)       const;
-  inline bool is_in(oop p)                   const;
 
   void print_on(outputStream* out) const;
 
   void clear();
-
-private:
-  jbyte* biased_map_address() const {
-    return _biased_set_map;
-  }
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGIONSET_HPP

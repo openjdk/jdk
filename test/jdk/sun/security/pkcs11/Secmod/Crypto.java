@@ -29,7 +29,7 @@
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
  * @run main/othervm Crypto
- * @run main/othervm Crypto sm policy
+ * @run main/othervm -Djava.security.manager=allow Crypto sm policy
  */
 
 import java.io.File;

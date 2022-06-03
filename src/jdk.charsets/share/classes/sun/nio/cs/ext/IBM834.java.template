@@ -1,6 +1,5 @@
-
 /*
- * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,20 +48,18 @@ public class IBM834 extends Charset
     }
 
     public CharsetDecoder newDecoder() {
-        IBM933.initb2c();
         return new DoubleByte.Decoder_DBCSONLY(
-            this, IBM933.b2c, null, 0x40, 0xfe);  // hardcode the b2min/max
+            this, IBM933.DecodeHolder.b2c, null, 0x40, 0xfe);  // hardcode the b2min/max
     }
 
     public CharsetEncoder newEncoder() {
-        IBM933.initc2b();
         return new Encoder(this);
     }
 
     protected static class Encoder extends DoubleByte.Encoder_DBCSONLY {
         public Encoder(Charset cs) {
             super(cs, new byte[] {(byte)0xfe, (byte)0xfe},
-                  IBM933.c2b, IBM933.c2bIndex, false);
+                  IBM933.EncodeHolder.c2b, IBM933.EncodeHolder.c2bIndex, false);
         }
 
         public int encodeChar(char ch) {

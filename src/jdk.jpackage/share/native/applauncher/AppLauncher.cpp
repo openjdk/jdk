@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,11 +91,28 @@ tstring findJvmLib(const CfgFile& cfgFile, const tstring& defaultRuntimePath,
 }
 } // namespace
 
+bool AppLauncher::libEnvVariableContainsAppDir() const {
+    tstring value = SysInfo::getEnvVariable(std::nothrow,
+            libEnvVarName, tstring());
+#ifdef _WIN32
+    value = tstrings::toLower(value);
+#endif
+
+    const tstring_array tokens = tstrings::split(value,
+            tstring(1, FileUtils::pathSeparator));
+    return tokens.end() != std::find(tokens.begin(), tokens.end(),
+#ifdef _WIN32
+        tstrings::toLower(appDirPath)
+#else
+        appDirPath
+#endif
+    );
+}
+
 Jvm* AppLauncher::createJvmLauncher() const {
     const tstring cfgFilePath = FileUtils::mkpath()
-        << appDirPath
-        << FileUtils::basename(FileUtils::replaceSuffix(
-                launcherPath, _T(".cfg")));
+        << appDirPath << FileUtils::stripExeSuffix(
+            FileUtils::basename(launcherPath)) + _T(".cfg");
 
     LOG_TRACE(tstrings::any() << "Launcher config file path: \""
             << cfgFilePath << "\"");
@@ -114,6 +131,13 @@ Jvm* AppLauncher::createJvmLauncher() const {
     }
 
     std::unique_ptr<Jvm> jvm(new Jvm());
+
+    if (!libEnvVariableContainsAppDir()) {
+        (*jvm).addEnvVariable(libEnvVarName, SysInfo::getEnvVariable(
+                std::nothrow, libEnvVarName)
+                + FileUtils::pathSeparator
+                + appDirPath);
+    }
 
     (*jvm)
         .setPath(findJvmLib(cfgFile, defaultRuntimePath, jvmLibNames))

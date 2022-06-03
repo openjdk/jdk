@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,6 @@ class BCEscapeAnalyzer : public ResourceObj {
   VectorSet         _arg_local;
   VectorSet         _arg_stack;
   VectorSet         _arg_returned;
-  VectorSet         _dirty;
   enum{ ARG_OFFSET_MAX = 31};
   uint              *_arg_modified;
 
@@ -84,7 +83,6 @@ class BCEscapeAnalyzer : public ResourceObj {
   void clear_bits(ArgumentMap vars, VectorSet &bs);
   void set_method_escape(ArgumentMap vars);
   void set_global_escape(ArgumentMap vars, bool merge = false);
-  void set_dirty(ArgumentMap vars);
   void set_modified(ArgumentMap vars, int offs, int size);
 
   bool is_recursive_call(ciMethod* callee);
@@ -139,7 +137,7 @@ class BCEscapeAnalyzer : public ResourceObj {
     return !_conservative && _return_local;
   }
 
-  // True iff only newly allocated unescaped objects are returned.
+  // True iff only newly allocated non-escaped objects are returned.
   bool is_return_allocated() const {
     return !_conservative && _return_allocated && !_allocated_escapes;
   }

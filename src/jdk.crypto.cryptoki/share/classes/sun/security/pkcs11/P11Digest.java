@@ -56,15 +56,15 @@ final class P11Digest extends MessageDigestSpi implements Cloneable,
     MessageDigestSpi2 {
 
     /* fields initialized, no session acquired */
-    private final static int S_BLANK    = 1;
+    private static final int S_BLANK    = 1;
 
     /* data in buffer, session acquired, but digest not initialized */
-    private final static int S_BUFFERED = 2;
+    private static final int S_BUFFERED = 2;
 
     /* session initialized for digesting */
-    private final static int S_INIT     = 3;
+    private static final int S_INIT     = 3;
 
-    private final static int BUFFER_SIZE = 96;
+    private static final int BUFFER_SIZE = 96;
 
     // token instance
     private final Token token;

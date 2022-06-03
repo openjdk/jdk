@@ -151,7 +151,7 @@ public abstract class Authenticator {
      *     is required. Any response headers needing to be sent back to the client are set
      *     in the given {@code HttpExchange}. The response code to be returned must be
      *     provided in the {@code Retry} object. {@code Retry} may occur multiple times.
-     * <ul/>
+     * </ul>
      *
      * @param exch the {@code HttpExchange} upon which authenticate is called
      * @return the result

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,12 +40,13 @@ import java.awt.event.WindowListener;
 import java.awt.image.ColorModel;
 import java.awt.peer.WindowPeer;
 import java.util.ArrayList;
-import java.util.Vector;
 
 import sun.awt.windows.WWindowPeer;
 import sun.java2d.SunGraphicsEnvironment;
 import sun.java2d.opengl.WGLGraphicsConfig;
 import sun.java2d.windows.WindowsFlags;
+
+import static java.awt.peer.ComponentPeer.SET_BOUNDS;
 
 import static sun.awt.Win32GraphicsEnvironment.debugScaleX;
 import static sun.awt.Win32GraphicsEnvironment.debugScaleY;
@@ -96,6 +97,7 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
         // is run as an NT service.  To prevent the loading of ddraw.dll
         // completely, sun.awt.nopixfmt should be set as well.  Apps which use
         // OpenGL w/ Java probably don't want to set this.
+        @SuppressWarnings("removal")
         String nopixfmt = java.security.AccessController.doPrivileged(
             new sun.security.action.GetPropertyAction("sun.awt.nopixfmt"));
         pfDisabled = (nopixfmt != null);
@@ -213,12 +215,12 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
 
             int max = getMaxConfigs(screen);
             int defaultPixID = getDefaultPixID(screen);
-            Vector<GraphicsConfiguration> v = new Vector<>( max );
+            ArrayList<GraphicsConfiguration> v = new ArrayList<>( max );
             if (defaultPixID == 0) {
                 // Workaround for failing GDI calls
                 defaultConfig = Win32GraphicsConfig.getConfig(this,
                                                               defaultPixID);
-                v.addElement(defaultConfig);
+                v.add(defaultConfig);
             }
             else {
                 for (int i = 1; i <= max; i++) {
@@ -226,17 +228,16 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
                         if (i == defaultPixID) {
                             defaultConfig = Win32GraphicsConfig.getConfig(
                              this, i);
-                            v.addElement(defaultConfig);
+                            v.add(defaultConfig);
                         }
                         else {
-                            v.addElement(Win32GraphicsConfig.getConfig(
+                            v.add(Win32GraphicsConfig.getConfig(
                              this, i));
                         }
                     }
                 }
             }
-            configs = new GraphicsConfiguration[v.size()];
-            v.copyInto(configs);
+            configs = v.toArray(new GraphicsConfiguration[0]);
         }
         return configs.clone();
     }
@@ -348,6 +349,7 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
     }
 
     private static boolean isFSExclusiveModeAllowed() {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             if (fullScreenExclusivePermission == null) {
@@ -441,6 +443,21 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
     protected native void enterFullScreenExclusive(int screen, WindowPeer w);
     protected native void exitFullScreenExclusive(int screen, WindowPeer w);
 
+    /**
+     * Reapplies the size of this graphics device to
+     * the given full-screen window.
+     * @param w a Window that needs resizing
+     * @param b new full-screen window bounds
+     */
+    private static void resizeFSWindow(final Window w, final Rectangle b) {
+        if (w != null) {
+            WindowPeer peer = AWTAccessor.getComponentAccessor().getPeer(w);
+            if (peer != null) {
+                peer.setBounds(b.x, b.y, b.width, b.height, SET_BOUNDS);
+            }
+        }
+    }
+
     @Override
     public boolean isDisplayChangeSupported() {
         return (isFullScreenSupported() && getFullScreenWindow() != null);
@@ -463,13 +480,9 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
             WWindowPeer peer = AWTAccessor.getComponentAccessor().getPeer(w);
             configDisplayMode(screen, peer, dm.getWidth(), dm.getHeight(),
                 dm.getBitDepth(), dm.getRefreshRate());
-            // resize the fullscreen window to the dimensions of the new
-            // display mode
-            Rectangle screenBounds = getDefaultConfiguration().getBounds();
-            w.setBounds(screenBounds.x, screenBounds.y,
-                        screenBounds.width, screenBounds.height);
-            // Note: no call to replaceSurfaceData is required here since
-            // replacement will be caused by an upcoming display change event
+            // Note: the full-screen window will get resized to the dimensions of the new
+            // display mode in the upcoming display change event, when the DPI scales
+            // would already be correctly set etc.
         } else {
             throw new IllegalStateException("Must be in fullscreen mode " +
                                             "in order to set display mode");
@@ -529,6 +542,10 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
         defaultConfig = null;
         configs = null;
         initScaleFactors();
+
+        Rectangle screenBounds = getDefaultConfiguration().getBounds();
+        resizeFSWindow(getFullScreenWindow(), screenBounds);
+
         // pass on to all top-level windows on this display
         topLevels.notifyListeners();
     }

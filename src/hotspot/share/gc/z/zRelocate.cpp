@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/z/zAbort.inline.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zBarrier.inline.hpp"
 #include "gc/z/zForwarding.inline.hpp"
@@ -64,7 +65,7 @@ static uintptr_t relocate_object_inner(ZForwarding* forwarding, uintptr_t from_a
 
   // Allocate object
   const size_t size = ZUtils::object_size(from_addr);
-  const uintptr_t to_addr = ZHeap::heap()->alloc_object_non_blocking(size);
+  const uintptr_t to_addr = ZHeap::heap()->alloc_object_for_relocation(size);
   if (to_addr == 0) {
     // Allocation failed
     return 0;
@@ -77,7 +78,7 @@ static uintptr_t relocate_object_inner(ZForwarding* forwarding, uintptr_t from_a
   const uintptr_t to_addr_final = forwarding_insert(forwarding, from_addr, to_addr, cursor);
   if (to_addr_final != to_addr) {
     // Already relocated, try undo allocation
-    ZHeap::heap()->undo_alloc_object(to_addr, size);
+    ZHeap::heap()->undo_alloc_object_for_relocation(to_addr, size);
   }
 
   return to_addr_final;
@@ -103,9 +104,14 @@ uintptr_t ZRelocate::relocate_object(ZForwarding* forwarding, uintptr_t from_add
       return to_addr;
     }
 
-    // Failed to relocate object. Wait for a worker thread to
-    // complete relocation of this page, and then forward object.
-    forwarding->wait_page_released();
+    // Failed to relocate object. Wait for a worker thread to complete
+    // relocation of this page, and then forward the object. If the GC
+    // aborts the relocation phase before the page has been relocated,
+    // then wait return false and we just forward the object in-place.
+    if (!forwarding->wait_page_released()) {
+      // Forward object in-place
+      return forwarding_insert(forwarding, from_addr, from_addr, &cursor);
+    }
   }
 
   // Forward object
@@ -339,8 +345,15 @@ public:
   }
 
   void do_forwarding(ZForwarding* forwarding) {
-    // Relocate objects
     _forwarding = forwarding;
+
+    // Check if we should abort
+    if (ZAbort::should_abort()) {
+      _forwarding->abort_page();
+      return;
+    }
+
+    // Relocate objects
     _forwarding->object_iterate(this);
 
     // Verify
@@ -402,5 +415,5 @@ public:
 
 void ZRelocate::relocate(ZRelocationSet* relocation_set) {
   ZRelocateTask task(relocation_set);
-  _workers->run_concurrent(&task);
+  _workers->run(&task);
 }

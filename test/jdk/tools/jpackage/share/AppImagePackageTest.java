@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,10 @@ import java.nio.file.Path;
 import java.nio.file.Files;
 import java.io.IOException;
 import java.util.List;
+import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.PackageTest;
-import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.RunnablePackageTest.Action;
 import jdk.jpackage.test.Annotations.Test;
 
@@ -68,7 +68,9 @@ public class AppImagePackageTest {
     }
 
     @Test
-    public static void testEmpty() throws IOException {
+    @Parameter("true")
+    @Parameter("false")
+    public static void testEmpty(boolean withIcon) throws IOException {
         final String name = "EmptyAppImagePackageTest";
         final String imageName = name + (TKit.isOSX() ? ".app" : "");
         Path appImageDir = TKit.createTempDirectory(null).resolve(imageName);
@@ -81,6 +83,9 @@ public class AppImagePackageTest {
         new PackageTest()
         .addInitializer(cmd -> {
             cmd.addArguments("--app-image", appImageDir);
+            if (withIcon) {
+                cmd.addArguments("--icon", iconPath("icon"));
+            }
             cmd.removeArgumentWithValue("--input");
 
             // on mac, with --app-image and without --mac-package-identifier,
@@ -88,7 +93,12 @@ public class AppImagePackageTest {
             if (TKit.isOSX()) {
                 cmd.addArguments("--mac-package-identifier", name);
             }
-        }).run(new Action[] { Action.CREATE, Action.UNPACK });
+        }).run(Action.CREATE, Action.UNPACK);
         // default: {CREATE, UNPACK, VERIFY}, but we can't verify foreign image
+    }
+
+    private static Path iconPath(String name) {
+        return TKit.TEST_SRC_ROOT.resolve(Path.of("resources", name
+                + TKit.ICON_SUFFIX));
     }
 }

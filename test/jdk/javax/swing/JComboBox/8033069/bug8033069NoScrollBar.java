@@ -45,9 +45,8 @@ import javax.swing.UnsupportedLookAndFeelException;
  * @library ../../regtesthelpers
  * @build Util
  * @run main bug8033069NoScrollBar
- * @author Alexey Ivanov
  */
-public class bug8033069NoScrollBar implements Runnable {
+public class bug8033069NoScrollBar {
 
     private static final String[] NO_SCROLL_ITEMS = new String[] {
         "A", "B", "C", "D", "E", "F"
@@ -60,6 +59,9 @@ public class bug8033069NoScrollBar implements Runnable {
     private JFrame frame;
     private JComboBox cb1;
     private JComboBox cb2;
+
+    private volatile Point p;
+    private volatile Dimension d;
 
     public static void main(String[] args) throws Exception {
         iterateLookAndFeels(new bug8033069NoScrollBar(NO_SCROLL_ITEMS));
@@ -98,24 +100,34 @@ public class bug8033069NoScrollBar implements Runnable {
         frame.add(panel);
 
         frame.pack();
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
+    }
+
+    private void disposeUI() {
+        if (frame != null) {
+            frame.dispose();
+        }
     }
 
     public void runTest() throws Exception {
         try {
-            SwingUtilities.invokeAndWait(this);
+            SwingUtilities.invokeAndWait(this::setupUI);
 
             robot.waitForIdle();
             assertFalse("cb1 popup is visible",
                         Util.invokeOnEDT(cb1::isPopupVisible));
 
             // Move mouse pointer to the center of the fist combo box
-            Point p = cb1.getLocationOnScreen();
-            Dimension d = cb1.getSize();
+            SwingUtilities.invokeAndWait(() -> {
+                p = cb1.getLocationOnScreen();
+                d = cb1.getSize();
+            });
+
             robot.mouseMove(p.x + d.width / 2, p.y + d.height / 2);
             // Click it to open popup
-            robot.mousePress(InputEvent.BUTTON1_MASK);
-            robot.mouseRelease(InputEvent.BUTTON1_MASK);
+            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
             robot.waitForIdle();
             assertTrue("cb1 popup is not visible",
@@ -146,8 +158,11 @@ public class bug8033069NoScrollBar implements Runnable {
 
 
             // Move mouse pointer to the center of the second combo box
-            p = cb2.getLocationOnScreen();
-            d = cb2.getSize();
+            SwingUtilities.invokeAndWait(() -> {
+                p = cb2.getLocationOnScreen();
+                d = cb2.getSize();
+            });
+
             robot.mouseMove(p.x + d.width / 2, p.y + d.height / 2);
 
             robot.mouseWheel(1);
@@ -155,17 +170,10 @@ public class bug8033069NoScrollBar implements Runnable {
             assertFalse("cb1 popup is visible after mouse wheel up on cb2",
                         Util.invokeOnEDT(cb1::isPopupVisible));
         } finally {
-            if (frame != null) {
-                frame.dispose();
-            }
+            SwingUtilities.invokeAndWait(this::disposeUI);
         }
 
         System.out.println("Test passed");
-    }
-
-    @Override
-    public void run() {
-        setupUI();
     }
 
     private static void assertTrue(String message, boolean value) {

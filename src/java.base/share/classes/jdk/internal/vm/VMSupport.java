@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,25 +77,6 @@ public class VMSupport {
 
     public static byte[] serializeAgentPropertiesToByteArray() throws IOException {
         return serializePropertiesToByteArray(getAgentProperties());
-    }
-
-    /*
-     * Returns true if the given JAR file has the Class-Path attribute in the
-     * main section of the JAR manifest. Throws RuntimeException if the given
-     * path is not a JAR file or some other error occurs.
-     */
-    public static boolean isClassPathAttributePresent(String path) {
-        try {
-            Manifest man = (new JarFile(path)).getManifest();
-            if (man != null) {
-                if (man.getMainAttributes().getValue(Attributes.Name.CLASS_PATH) != null) {
-                    return true;
-                }
-            }
-            return false;
-        } catch (IOException ioe) {
-            throw new RuntimeException(ioe.getMessage());
-        }
     }
 
     /*

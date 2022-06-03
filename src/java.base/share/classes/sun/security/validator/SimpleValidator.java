@@ -167,7 +167,7 @@ public final class SimpleValidator extends Validator {
         AlgorithmChecker appAlgChecker = null;
         if (constraints != null) {
             appAlgChecker = new AlgorithmChecker(anchor, constraints, null,
-                    null, variant);
+                    variant);
         }
 
         // verify top down, starting at the certificate issued by

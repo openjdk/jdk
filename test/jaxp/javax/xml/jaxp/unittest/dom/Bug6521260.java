@@ -41,7 +41,7 @@ import org.xml.sax.SAXException;
  * @test
  * @bug 6521260
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true dom.Bug6521260
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow dom.Bug6521260
  * @run testng/othervm dom.Bug6521260
  * @summary Test setAttributeNS doesn't result in an unsorted internal list of attributes.
  */

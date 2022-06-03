@@ -481,12 +481,12 @@ public class PKCS9Attribute implements DerEncoder {
                                   "attribute not supported.");
             // break unnecessary
         case 10:    // issuerAndserialNumber attribute -- not supported
-            throw new IOException("PKCS9 IssuerAndSerialNumber" +
+            throw new IOException("PKCS9 IssuerAndSerialNumber " +
                                   "attribute not supported.");
             // break unnecessary
         case 11:    // RSA DSI proprietary
         case 12:    // RSA DSI proprietary
-            throw new IOException("PKCS9 RSA DSI attributes" +
+            throw new IOException("PKCS9 RSA DSI attributes " +
                                   "11 and 12, not supported.");
             // break unnecessary
         case 13:    // S/MIME unused attribute
@@ -604,12 +604,12 @@ public class PKCS9Attribute implements DerEncoder {
                                   "attribute not supported.");
             // break unnecessary
         case 10:    // issuerAndserialNumber attribute -- not supported
-            throw new IOException("PKCS9 IssuerAndSerialNumber" +
+            throw new IOException("PKCS9 IssuerAndSerialNumber " +
                                   "attribute not supported.");
             // break unnecessary
         case 11:    // RSA DSI proprietary
         case 12:    // RSA DSI proprietary
-            throw new IOException("PKCS9 RSA DSI attributes" +
+            throw new IOException("PKCS9 RSA DSI attributes " +
                                   "11 and 12, not supported.");
             // break unnecessary
         case 13:    // S/MIME unused attribute

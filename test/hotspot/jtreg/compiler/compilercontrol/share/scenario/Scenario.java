@@ -49,18 +49,21 @@ import java.util.function.Consumer;
  */
 public final class Scenario {
     private final boolean isValid;
+    private final boolean isJcmdValid;
     private final Map<Executable, State> states;
     private final List<Consumer<OutputAnalyzer>> processors;
     private final Executor executor;
     private final Consumer<List<OutputAnalyzer>> jcmdProcessor;
 
     private Scenario(boolean isValid,
+                     boolean isJcmdValid,
                      List<String> vmopts,
                      Map<Executable, State> states,
                      List<CompileCommand> compileCommands,
                      List<JcmdCommand> jcmdCommands,
                      List<CompileCommand> directives) {
         this.isValid = isValid;
+        this.isJcmdValid = isJcmdValid;
         this.states = states;
         processors = new ArrayList<>();
         processors.add(new LogProcessor(states));
@@ -121,7 +124,18 @@ public final class Scenario {
         } else {
             // two cases for invalid inputs.
             if (mainOutput.getExitValue() == 0) {
-                mainOutput.shouldContain("CompileCommand: An error occurred during parsing");
+                if (!isJcmdValid) {
+                    boolean parse_error_found = false;
+                    for(OutputAnalyzer out : outputList) {
+                        if (out.getOutput().contains("Parsing of compiler directives failed")) {
+                            parse_error_found = true;
+                            break;
+                        }
+                    }
+                    Asserts.assertTrue(parse_error_found, "'Parsing of compiler directives failed' missing from output");
+                } else {
+                    mainOutput.shouldContain("CompileCommand: An error occurred during parsing");
+                }
             } else {
                 Asserts.assertNE(mainOutput.getExitValue(), 0, "VM should exit with "
                         + "error for incorrect directives");
@@ -253,6 +267,7 @@ public final class Scenario {
 
         public Scenario build() {
             boolean isValid = true;
+            boolean isJcmdValid = true;
 
             // Get states from each of the state builders
             Map<Executable, State> commandFileStates
@@ -315,6 +330,7 @@ public final class Scenario {
                 options.addAll(builder.getOptions());
                 isValid &= builder.isValid();
             }
+            isJcmdValid = jcmdStateBuilder.isFileValid;
             options.addAll(jcmdStateBuilder.getOptions());
 
             /*
@@ -328,7 +344,7 @@ public final class Scenario {
                         .forEach(entry -> entry.getValue().setLog(true));
             }
 
-            return new Scenario(isValid, options, finalStates, ccList,
+            return new Scenario(isValid, isJcmdValid, options, finalStates, ccList,
                     jcmdCommands, directives);
         }
 

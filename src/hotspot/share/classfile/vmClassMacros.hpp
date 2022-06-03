@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,10 @@
 #ifndef SHARE_CLASSFILE_VMCLASSMACROS_HPP
 #define SHARE_CLASSFILE_VMCLASSMACROS_HPP
 
-// _VM_CLASS_ENUM - internal: should be used only by VMClass*.{hpp,cpp}
+// _VM_CLASS_ENUM - internal: should be used only by vmClass*.{hpp,cpp}
 #define _VM_CLASS_ENUM(kname)    kname##_knum
 
-#define VM_CLASS_ID(kname)      VMClassID::_VM_CLASS_ENUM(kname)
+#define VM_CLASS_ID(kname)      vmClassID::_VM_CLASS_ENUM(kname)
 
 // VM_CLASSES_DO iterates the classes that are directly referenced
 // by the VM, suhch as java.lang.Object and java.lang.String. These
@@ -37,7 +37,7 @@
 //
 // Each VM class has a short klass name (like Object_klass),
 // and a vmSymbol name (like java_lang_Object). Both of these can
-// be used to find the VMClassID for this class. The following two
+// be used to find the vmClassID for this class. The following two
 // macros will evaluate to the same value:
 //
 //    VM_CLASS_ID(Object_klass)
@@ -87,7 +87,11 @@
   do_klass(Finalizer_klass,                             java_lang_ref_Finalizer                               ) \
                                                                                                                 \
   do_klass(Thread_klass,                                java_lang_Thread                                      ) \
+  do_klass(Thread_FieldHolder_klass,                    java_lang_Thread_FieldHolder                          ) \
+  do_klass(Thread_Constants_klass,                      java_lang_Thread_Constants                            ) \
   do_klass(ThreadGroup_klass,                           java_lang_ThreadGroup                                 ) \
+  do_klass(BasicVirtualThread_klass,                    java_lang_BaseVirtualThread                           ) \
+  do_klass(VirtualThread_klass,                         java_lang_VirtualThread                               ) \
   do_klass(Properties_klass,                            java_util_Properties                                  ) \
   do_klass(Module_klass,                                java_lang_Module                                      ) \
   do_klass(reflect_AccessibleObject_klass,              java_lang_reflect_AccessibleObject                    ) \
@@ -95,6 +99,11 @@
   do_klass(reflect_Parameter_klass,                     java_lang_reflect_Parameter                           ) \
   do_klass(reflect_Method_klass,                        java_lang_reflect_Method                              ) \
   do_klass(reflect_Constructor_klass,                   java_lang_reflect_Constructor                         ) \
+                                                                                                                \
+  do_klass(Runnable_klass,                              java_lang_Runnable                                    ) \
+  do_klass(ContinuationScope_klass,                     jdk_internal_vm_ContinuationScope                     ) \
+  do_klass(Continuation_klass,                          jdk_internal_vm_Continuation                          ) \
+  do_klass(StackChunk_klass,                            jdk_internal_vm_StackChunk                            ) \
                                                                                                                 \
   /* NOTE: needed too early in bootstrapping process to have checks based on JDK version */                     \
   /* It's okay if this turns out to be NULL in non-1.4 JDKs. */                                                 \
@@ -118,7 +127,10 @@
   do_klass(MethodType_klass,                            java_lang_invoke_MethodType                           ) \
   do_klass(BootstrapMethodError_klass,                  java_lang_BootstrapMethodError                        ) \
   do_klass(CallSite_klass,                              java_lang_invoke_CallSite                             ) \
-  do_klass(NativeEntryPoint_klass,                      jdk_internal_invoke_NativeEntryPoint                  ) \
+  do_klass(NativeEntryPoint_klass,                      jdk_internal_foreign_abi_NativeEntryPoint             ) \
+  do_klass(ABIDescriptor_klass,                         jdk_internal_foreign_abi_ABIDescriptor                ) \
+  do_klass(VMStorage_klass,                             jdk_internal_foreign_abi_VMStorage                    ) \
+  do_klass(CallConv_klass,                              jdk_internal_foreign_abi_CallConv                     ) \
   do_klass(Context_klass,                               java_lang_invoke_MethodHandleNatives_CallSiteContext  ) \
   do_klass(ConstantCallSite_klass,                      java_lang_invoke_ConstantCallSite                     ) \
   do_klass(MutableCallSite_klass,                       java_lang_invoke_MutableCallSite                      ) \
@@ -135,6 +147,8 @@
   /* support for CDS */                                                                                         \
   do_klass(ByteArrayInputStream_klass,                  java_io_ByteArrayInputStream                          ) \
   do_klass(URL_klass,                                   java_net_URL                                          ) \
+  do_klass(URLClassLoader_klass,                        java_net_URLClassLoader                               ) \
+  do_klass(Enum_klass,                                  java_lang_Enum                                        ) \
   do_klass(Jar_Manifest_klass,                          java_util_jar_Manifest                                ) \
   do_klass(jdk_internal_loader_BuiltinClassLoader_klass,jdk_internal_loader_BuiltinClassLoader                ) \
   do_klass(jdk_internal_loader_ClassLoaders_klass,      jdk_internal_loader_ClassLoaders                      ) \
@@ -180,6 +194,9 @@
   do_klass(vector_Vector_klass,                         jdk_internal_vm_vector_Vector                         ) \
   do_klass(vector_VectorMask_klass,                     jdk_internal_vm_vector_VectorMask                     ) \
   do_klass(vector_VectorShuffle_klass,                  jdk_internal_vm_vector_VectorShuffle                  ) \
+                                                                                                                \
+  /* GC support */                                                                                              \
+  do_klass(FillerObject_klass,                          jdk_internal_vm_FillerObject                          ) \
                                                                                                                 \
   /*end*/
 

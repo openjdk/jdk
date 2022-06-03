@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,8 +181,10 @@ public class SimpleAsynchronousFileChannelImpl
         if (!shared && !writing)
             throw new NonWritableChannelException();
 
+        long len = (size != 0) ? size : Long.MAX_VALUE - Math.max(0, position);
+
         // add to lock table
-        final FileLockImpl fli = addToFileLockTable(position, size, shared);
+        final FileLockImpl fli = addToFileLockTable(position, len, shared);
         if (fli == null) {
             Throwable exc = new ClosedChannelException();
             if (handler == null)
@@ -203,7 +205,7 @@ public class SimpleAsynchronousFileChannelImpl
                     try {
                         begin();
                         do {
-                            n = nd.lock(fdObj, true, position, size, shared);
+                            n = nd.lock(fdObj, true, position, len, shared);
                         } while ((n == FileDispatcher.INTERRUPTED) && isOpen());
                         if (n != FileDispatcher.LOCKED || !isOpen()) {
                             throw new AsynchronousCloseException();
@@ -247,6 +249,9 @@ public class SimpleAsynchronousFileChannelImpl
             throw new NonReadableChannelException();
         if (!shared && !writing)
             throw new NonWritableChannelException();
+
+        if (size == 0)
+            size = Long.MAX_VALUE - Math.max(0, position);
 
         // add to lock table
         FileLockImpl fli = addToFileLockTable(position, size, shared);

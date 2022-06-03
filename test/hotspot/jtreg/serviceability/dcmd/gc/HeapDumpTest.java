@@ -50,13 +50,15 @@ import jdk.test.lib.dcmd.PidJcmdExecutor;
 public class HeapDumpTest {
     protected String heapDumpArgs = "";
 
-    public void run(CommandExecutor executor) throws IOException {
+    public void run(CommandExecutor executor, boolean overwrite) throws IOException {
         File dump = new File("jcmd.gc.heap_dump." + System.currentTimeMillis() + ".hprof");
-        if (dump.exists()) {
+        if (!overwrite && dump.exists()) {
             dump.delete();
+        } else if (overwrite) {
+            dump.createNewFile();
         }
 
-        String cmd = "GC.heap_dump " + heapDumpArgs + " " + dump.getAbsolutePath();
+        String cmd = "GC.heap_dump " + (overwrite ? "-overwrite " : "") + heapDumpArgs + " " + dump.getAbsolutePath();
         executor.execute(cmd);
 
         verifyHeapDump(dump);
@@ -85,7 +87,12 @@ public class HeapDumpTest {
     /* GC.heap_dump is not available over JMX, running jcmd pid executor instead */
     @Test
     public void pid() throws IOException {
-        run(new PidJcmdExecutor());
+        run(new PidJcmdExecutor(), false);
+    }
+
+    @Test
+    public void pidRewrite() throws IOException {
+        run(new PidJcmdExecutor(), true);
     }
 }
 

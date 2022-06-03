@@ -37,7 +37,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 7037352
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.XMLStreamWriterTest.Bug7037352Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.XMLStreamWriterTest.Bug7037352Test
  * @run testng/othervm stream.XMLStreamWriterTest.Bug7037352Test
  * @summary Test XMLStreamWriter.getNamespaceContext().getPrefix with XML_NS_URI and XMLNS_ATTRIBUTE_NS_URI.
  */

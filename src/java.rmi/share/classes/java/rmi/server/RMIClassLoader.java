@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,6 +114,7 @@ public class RMIClassLoader {
         newDefaultProviderInstance();
 
     /** provider instance */
+    @SuppressWarnings("removal")
     private static final RMIClassLoaderSpi provider =
         AccessController.doPrivileged(
             new PrivilegedAction<RMIClassLoaderSpi>() {
@@ -323,7 +324,7 @@ public class RMIClassLoader {
      * {@link RMIClassLoaderSpi#getClassLoader(String)} method
      * of the provider instance, passing <code>codebase</code> as the argument.
      *
-     * <p>If there is a security manger, its <code>checkPermission</code>
+     * <p>If there is a security manager, its <code>checkPermission</code>
      * method will be invoked with a
      * <code>RuntimePermission("getClassLoader")</code> permission;
      * this could result in a <code>SecurityException</code>.
@@ -601,6 +602,7 @@ public class RMIClassLoader {
      * @since   1.4
      */
     public static RMIClassLoaderSpi getDefaultProviderInstance() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new RuntimePermission("setFactory"));
@@ -692,10 +694,8 @@ public class RMIClassLoader {
             } catch (InstantiationException e) {
                 throw new InstantiationError(e.getMessage());
             } catch (ClassCastException e) {
-                Error error = new LinkageError(
-                    "provider class not assignable to RMIClassLoaderSpi");
-                error.initCause(e);
-                throw error;
+                throw new LinkageError(
+                    "provider class not assignable to RMIClassLoaderSpi", e);
             }
         }
 
@@ -709,10 +709,8 @@ public class RMIClassLoader {
             try {
                 return iter.next();
             } catch (ClassCastException e) {
-                Error error = new LinkageError(
-                    "provider class not assignable to RMIClassLoaderSpi");
-                error.initCause(e);
-                throw error;
+                throw new LinkageError(
+                    "provider class not assignable to RMIClassLoaderSpi", e);
             }
         }
 

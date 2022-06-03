@@ -30,7 +30,6 @@
 #import "sun_lwawt_macosx_CPrinterPageDialog.h"
 
 #import <Cocoa/Cocoa.h>
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 
 #import "PrinterView.h"
 #import "PrintModel.h"
@@ -87,7 +86,7 @@ static NSPrintInfo* createDefaultNSPrintInfo(JNIEnv* env, jstring printer)
     NSPrintInfo* defaultPrintInfo = [[NSPrintInfo sharedPrintInfo] copy];
     if (printer != NULL)
     {
-        NSPrinter* nsPrinter = [NSPrinter printerWithName:JNFJavaToNSString(env, printer)];
+        NSPrinter* nsPrinter = [NSPrinter printerWithName:JavaStringToNSString(env, printer)];
         if (nsPrinter != nil)
         {
             [defaultPrintInfo setPrinter:nsPrinter];
@@ -345,7 +344,7 @@ static void javaPageFormatToNSPrintInfo(JNIEnv* env, jobject srcPrintJob, jobjec
     jobject printerNameObj = (*env)->CallObjectMethod(env, srcPrintJob, jm_getPrinterName);
     CHECK_EXCEPTION();
     if (printerNameObj == NULL) return;
-    NSString *printerName = JNFJavaToNSString(env, printerNameObj);
+    NSString *printerName = JavaStringToNSString(env, printerNameObj);
     if (printerName == nil) return;
     NSPrinter *printer = [NSPrinter printerWithName:printerName];
     if (printer == nil) return;
@@ -364,7 +363,7 @@ static void nsPrintInfoToJavaPrinterJob(JNIEnv* env, NSPrintInfo* src, jobject d
 
     // get the selected printer's name, and set the appropriate PrintService on the Java side
     NSString *name = [[src printer] name];
-    jstring printerName = JNFNSToJavaString(env, name);
+    jstring printerName = NSStringToJavaString(env, name);
     (*env)->CallVoidMethod(env, dstPrinterJob, jm_setService, printerName);
     CHECK_EXCEPTION();
 
@@ -375,7 +374,7 @@ static void nsPrintInfoToJavaPrinterJob(JNIEnv* env, NSPrintInfo* src, jobject d
         CHECK_EXCEPTION();
         NSURL *url = [printingDictionary objectForKey:NSPrintJobSavingURL];
         NSString *nsStr = [url absoluteString];
-        jstring str = JNFNSToJavaString(env, nsStr);
+        jstring str = NSStringToJavaString(env, nsStr);
         (*env)->CallVoidMethod(env, dstPrinterJob, jm_setDestinationFile, str);
         CHECK_EXCEPTION();
     } else {
@@ -491,7 +490,7 @@ static void javaPrinterJobToNSPrintInfo(JNIEnv* env, jobject srcPrinterJob, jobj
     CHECK_EXCEPTION();
     if (dest != NULL) {
        [dst setJobDisposition:NSPrintSaveJob];
-       NSString *nsDestStr = JNFJavaToNSString(env, dest);
+       NSString *nsDestStr = JavaStringToNSString(env, dest);
        NSURL *nsURL = [NSURL fileURLWithPath:nsDestStr isDirectory:NO];
        [printingDictionary setObject:nsURL forKey:NSPrintJobSavingURL];
     } else {
@@ -628,7 +627,7 @@ JNI_COCOA_ENTER(env);
         jobject printerTrayObj = (*env)->CallObjectMethod(env, jthis, jm_getPrinterTray);
         CHECK_EXCEPTION();
         if (printerTrayObj != NULL) {
-            NSString *printerTray = JNFJavaToNSString(env, printerTrayObj);
+            NSString *printerTray = JavaStringToNSString(env, printerTrayObj);
             if (printerTray != nil) {
                 [[printInfo printSettings] setObject:printerTray forKey:@"InputSlot"];
             }
@@ -642,7 +641,7 @@ JNI_COCOA_ENTER(env);
         jobject printerNameObj = (*env)->CallObjectMethod(env, jthis, jm_getPrinterName);
         CHECK_EXCEPTION();
         if (printerNameObj != NULL) {
-            NSString *printerName = JNFJavaToNSString(env, printerNameObj);
+            NSString *printerName = JavaStringToNSString(env, printerNameObj);
             if (printerName != nil) {
                 NSPrinter *printer = [NSPrinter printerWithName:printerName];
                 if (printer != nil) [printInfo setPrinter:printer];

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@ void Location::print_on(outputStream* st) const {
   case float_in_dbl: st->print(",float");      break;
   case dbl:          st->print(",double");     break;
   case addr:         st->print(",address");    break;
+  case vector:       st->print(",vector");     break;
   default:           st->print("Wrong location type %d", type());
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,31 +27,32 @@ package sun.management.counter.perf;
 
 import sun.management.counter.*;
 import java.nio.*;
-import java.io.UnsupportedEncodingException;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 class PerfDataEntry {
     private class EntryFieldOffset {
-        private final static int SIZEOF_BYTE = 1;
-        private final static int SIZEOF_INT  = 4;
-        private final static int SIZEOF_LONG = 8;
+        private static final int SIZEOF_BYTE = 1;
+        private static final int SIZEOF_INT  = 4;
+        private static final int SIZEOF_LONG = 8;
 
-        private final static int ENTRY_LENGTH_SIZE    = SIZEOF_INT;
-        private final static int NAME_OFFSET_SIZE     = SIZEOF_INT;
-        private final static int VECTOR_LENGTH_SIZE   = SIZEOF_INT;
-        private final static int DATA_TYPE_SIZE       = SIZEOF_BYTE;
-        private final static int FLAGS_SIZE           = SIZEOF_BYTE;
-        private final static int DATA_UNIT_SIZE       = SIZEOF_BYTE;
-        private final static int DATA_VAR_SIZE        = SIZEOF_BYTE;
-        private final static int DATA_OFFSET_SIZE     = SIZEOF_INT;
+        private static final int ENTRY_LENGTH_SIZE    = SIZEOF_INT;
+        private static final int NAME_OFFSET_SIZE     = SIZEOF_INT;
+        private static final int VECTOR_LENGTH_SIZE   = SIZEOF_INT;
+        private static final int DATA_TYPE_SIZE       = SIZEOF_BYTE;
+        private static final int FLAGS_SIZE           = SIZEOF_BYTE;
+        private static final int DATA_UNIT_SIZE       = SIZEOF_BYTE;
+        private static final int DATA_VAR_SIZE        = SIZEOF_BYTE;
+        private static final int DATA_OFFSET_SIZE     = SIZEOF_INT;
 
-        final static int ENTRY_LENGTH  = 0;
-        final static int NAME_OFFSET   = ENTRY_LENGTH + ENTRY_LENGTH_SIZE;
-        final static int VECTOR_LENGTH = NAME_OFFSET + NAME_OFFSET_SIZE;;
-        final static int DATA_TYPE     = VECTOR_LENGTH + VECTOR_LENGTH_SIZE;
-        final static int FLAGS         = DATA_TYPE + DATA_TYPE_SIZE;
-        final static int DATA_UNIT     = FLAGS + FLAGS_SIZE;
-        final static int DATA_VAR      = DATA_UNIT + DATA_UNIT_SIZE;
-        final static int DATA_OFFSET   = DATA_VAR + DATA_VAR_SIZE;
+        static final int ENTRY_LENGTH  = 0;
+        static final int NAME_OFFSET   = ENTRY_LENGTH + ENTRY_LENGTH_SIZE;
+        static final int VECTOR_LENGTH = NAME_OFFSET + NAME_OFFSET_SIZE;;
+        static final int DATA_TYPE     = VECTOR_LENGTH + VECTOR_LENGTH_SIZE;
+        static final int FLAGS         = DATA_TYPE + DATA_TYPE_SIZE;
+        static final int DATA_UNIT     = FLAGS + FLAGS_SIZE;
+        static final int DATA_VAR      = DATA_UNIT + DATA_UNIT_SIZE;
+        static final int DATA_OFFSET   = DATA_VAR + DATA_VAR_SIZE;
     }
 
     private String       name;
@@ -127,14 +128,7 @@ class PerfDataEntry {
         }
 
         // convert name into a String
-        try {
-            name = new String(symbolBytes, "UTF-8");
-        }
-        catch (UnsupportedEncodingException e) {
-            // should not reach here
-            // "UTF-8" is always a known encoding
-            throw new InternalError(e.getMessage(), e);
-        }
+        name = new String(symbolBytes, UTF_8);
 
         if (variability == Variability.INVALID) {
             throw new InstrumentationException("Invalid variability attribute:" +

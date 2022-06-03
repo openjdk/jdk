@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2016, the original author or authors.
+ * Copyright (c) 2002-2020, the original author or authors.
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -15,6 +15,7 @@ package jdk.internal.org.jline.reader;
 public class EndOfFileException extends RuntimeException {
 
     private static final long serialVersionUID = 528485360925144689L;
+    private String partialLine;
 
     public EndOfFileException() {
     }
@@ -33,5 +34,14 @@ public class EndOfFileException extends RuntimeException {
 
     public EndOfFileException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
         super(message, cause, enableSuppression, writableStackTrace);
+    }
+
+    public EndOfFileException partialLine(String partialLine) {
+        this.partialLine = partialLine;
+        return this;
+    }
+
+    public String getPartialLine() {
+        return partialLine;
     }
 }

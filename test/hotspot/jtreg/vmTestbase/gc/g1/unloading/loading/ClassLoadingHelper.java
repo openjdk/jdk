@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@ package gc.g1.unloading.loading;
 
 import gc.g1.unloading.ExecutionTask;
 import gc.g1.unloading.bytecode.*;
-//import gc.g1.unloading.check.*;
 import gc.g1.unloading.check.Assertion;
 import gc.g1.unloading.check.ClassAssertion;
 import gc.g1.unloading.check.PhantomizedAssertion;
@@ -42,7 +41,9 @@ import gc.g1.unloading.configuration.TestConfiguration;
 import gc.g1.unloading.keepref.*;
 import nsk.share.test.ExecutionController;
 import sun.hotspot.WhiteBox;
-import jdk.internal.misc.Unsafe;
+
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandles.Lookup;
 
 import java.lang.ref.*;
 import java.lang.reflect.Field;
@@ -71,6 +72,10 @@ public class ClassLoadingHelper {
 
     private TestConfiguration configuration;
 
+    // This should be TRUE for bytecode generators that use ASM to create the bytecodes
+    // instead of creating Java source and then compiling with InMemoryJavaCompiler.
+    private boolean prepend_package = true;
+
     /**
      * Constructor that creates instance of helper. All arguments are self-explaining.
      * @param executionController
@@ -89,6 +94,7 @@ public class ClassLoadingHelper {
         thread.start();
 
         if (configuration.isInMemoryCompilation() && !configuration.isHumongousClass() && !(configuration.getKeepRefMode() == KeepRefMode.THREAD_ITSELF)) {
+            prepend_package = false;
             bf = new BytecodeGeneratorFactory(random.nextLong());
         } else {
             if (configuration.isHumongousClass()) {
@@ -107,7 +113,11 @@ public class ClassLoadingHelper {
      * @return
      */
     public Collection<Assertion> loadClassThatGonnaLive(String className_) {
-        Bytecode kit = bf.createBytecode(className_);
+        // if generating the bytecodes using ASM then prepend the package name to
+        // the classname so that, when created as a hidden class, it will be in the
+        // same package as its lookup class.
+        Bytecode kit = bf.createBytecode(prepend_package ?
+                                         "gc.g1.unloading.loading." + className_ : className_);
         String className = kit.getClassName();
         byte[] bytecode = kit.getBytecode();
         Class<?> clazz = loadClass(className, bytecode);
@@ -118,12 +128,8 @@ public class ClassLoadingHelper {
 
         warmUpClassIfNeeded(object);
         Assertion assertion;
-        // The JVM prepends the host class's package to the anonymous class name.
-        if (configuration.getClassloadingMethod() != ClassloadingMethod.ANONYMOUS_CLASSLOADER) {
-            assertion = new ClassAssertion(className, true);
-        } else {
-            assertion = new ClassAssertion("gc/g1/unloading/loading/" + className, true);
-        }
+        assertion = new ClassAssertion(className, true);
+
         switch (configuration.getKeepRefMode()) {
             case STRONG_REFERENCE:
                 assertion.keepLink(referenceToKeep);
@@ -178,7 +184,11 @@ public class ClassLoadingHelper {
      */
     public Collection<Assertion> loadClassThatGonnaDie(String className_) {
         Collection<Assertion> returnValue = new LinkedList<>();
-        Bytecode kit = bf.createBytecode(className_);
+        // if generating the bytecodes using ASM then prepend the package name to
+        // the classname so that, when created as a hidden class, it will be in the
+        // same package as its lookup class.
+        Bytecode kit = bf.createBytecode(prepend_package ?
+                                         "gc.g1.unloading.loading." + className_ : className_);
         String className = kit.getClassName();
         byte[] bytecode = kit.getBytecode();
         Class<?> clazz = loadClass(className, bytecode);
@@ -193,12 +203,7 @@ public class ClassLoadingHelper {
 
         warmUpClassIfNeeded(object);
         Assertion assertion;
-        // The JVM prepends the host class's package to the anonymous class name.
-        if (configuration.getClassloadingMethod() != ClassloadingMethod.ANONYMOUS_CLASSLOADER) {
-            assertion = new ClassAssertion(className, false);
-        } else {
-            assertion = new ClassAssertion("gc/g1/unloading/loading/" + className, false);
-        }
+        assertion = new ClassAssertion(className, false);
         switch (configuration.getReleaseRefMode()) {
             case WEAK:
                 assertion.keepLink(new WeakReference<Object>(referenceToKeep));
@@ -246,11 +251,12 @@ public class ClassLoadingHelper {
                     return Class.forName(className, true, new ReflectionClassloader(bytecode, className));
                 case JNI:
                     return JNIClassloader.loadThroughJNI(className, bytecode);
-                case ANONYMOUS_CLASSLOADER:
-                    return getUnsafe().defineAnonymousClass(ClassLoadingHelper.class, bytecode, NO_CP_PATCHES);
+                case HIDDEN_CLASSLOADER:
+                    Lookup lookup = MethodHandles.lookup();
+                    return lookup.defineHiddenClass(bytecode, true).lookupClass();
             }
             return null;
-        } catch (ClassNotFoundException e) {
+        } catch (ClassNotFoundException | IllegalAccessException e) {
             throw new RuntimeException("Test bug!", e);
         }
     }
@@ -322,10 +328,6 @@ public class ClassLoadingHelper {
         } catch (InterruptedException e) {
             throw new RuntimeException("Got InterruptedException while sleeping.", e);
         }
-    }
-
-    private static Unsafe getUnsafe() {
-        return Unsafe.getUnsafe();
     }
 
 }

@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -27,6 +25,7 @@ package jdk.jfr.jcmd;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.stream.Collectors;
 
 import jdk.test.lib.Asserts;
@@ -119,5 +118,17 @@ public class JcmdHelper {
 
     public static OutputAnalyzer jcmdCheck(String recordingName, boolean verbose) {
         return jcmd("JFR.check", "name=" + recordingName, "verbose=" + verbose);
+    }
+
+    public static String readFilename(OutputAnalyzer output) throws Exception {
+        Iterator<String> it = output.asLines().iterator();
+        while (it.hasNext()) {
+            String line = it.next();
+            if (line.contains("written to")) {
+                line = it.next(); // blank line
+                return it.next();
+            }
+        }
+        throw new Exception("Could not find filename of dumped recording.");
     }
 }

@@ -31,7 +31,7 @@ import org.w3c.dom.Document;
  * @test
  * @bug 6493687
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.Bug6493687
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.Bug6493687
  * @run testng/othervm validation.Bug6493687
  * @summary Test validator.validate(new DOMSource(node)) without any exception.
  */

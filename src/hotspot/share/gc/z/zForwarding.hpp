@@ -48,6 +48,7 @@ private:
   ZPage*                 _page;
   mutable ZConditionLock _ref_lock;
   volatile int32_t       _ref_count;
+  bool                   _ref_abort;
   bool                   _in_place;
 
   ZForwardingEntry* entries() const;
@@ -70,8 +71,9 @@ public:
   bool retain_page();
   ZPage* claim_page();
   void release_page();
-  void wait_page_released() const;
+  bool wait_page_released() const;
   ZPage* detach_page();
+  void abort_page();
 
   void set_in_place();
   bool in_place() const;

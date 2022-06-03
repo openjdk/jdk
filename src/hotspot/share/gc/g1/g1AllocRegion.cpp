@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,10 +43,7 @@ void G1AllocRegion::setup(G1CollectedHeap* g1h, HeapRegion* dummy_region) {
 
   // Make sure that any allocation attempt on this region will fail
   // and will not trigger any asserts.
-  assert(dummy_region->allocate_no_bot_updates(1) == NULL, "should fail");
-  assert(dummy_region->allocate(1) == NULL, "should fail");
   DEBUG_ONLY(size_t assert_tmp);
-  assert(dummy_region->par_allocate_no_bot_updates(1, 1, &assert_tmp) == NULL, "should fail");
   assert(dummy_region->par_allocate(1, 1, &assert_tmp) == NULL, "should fail");
 
   _g1h = g1h;
@@ -60,7 +57,7 @@ size_t G1AllocRegion::fill_up_remaining_space(HeapRegion* alloc_region) {
 
   // Other threads might still be trying to allocate using a CAS out
   // of the region we are trying to retire, as they can do so without
-  // holding the lock. So, we first have to make sure that noone else
+  // holding the lock. So, we first have to make sure that no one else
   // can allocate out of it by doing a maximal allocation. Even if our
   // CAS attempt fails a few times, we'll succeed sooner or later
   // given that failed CAS attempts mean that the region is getting
@@ -68,7 +65,7 @@ size_t G1AllocRegion::fill_up_remaining_space(HeapRegion* alloc_region) {
   size_t free_word_size = alloc_region->free() / HeapWordSize;
 
   // This is the minimum free chunk we can turn into a dummy
-  // object. If the free space falls below this, then noone can
+  // object. If the free space falls below this, then no one can
   // allocate in this region anyway (all allocation requests will be
   // of a size larger than this) so we won't have to perform the dummy
   // allocation.
@@ -77,8 +74,9 @@ size_t G1AllocRegion::fill_up_remaining_space(HeapRegion* alloc_region) {
   while (free_word_size >= min_word_size_to_fill) {
     HeapWord* dummy = par_allocate(alloc_region, free_word_size);
     if (dummy != NULL) {
-      // If the allocation was successful we should fill in the space.
-      CollectedHeap::fill_with_object(dummy, free_word_size);
+      // If the allocation was successful we should fill in the space. If the
+      // allocation was in old any necessary BOT updates will be done.
+      alloc_region->fill_with_dummy_object(dummy, free_word_size);
       alloc_region->set_pre_dummy_top(dummy);
       result += free_word_size * HeapWordSize;
       break;
@@ -256,7 +254,6 @@ G1AllocRegion::G1AllocRegion(const char* name,
   : _alloc_region(NULL),
     _count(0),
     _used_bytes_before(0),
-    _bot_updates(bot_updates),
     _name(name),
     _node_index(node_index)
  { }
@@ -374,7 +371,7 @@ HeapRegion* OldGCAllocRegion::release() {
     // Determine how far we are from the next card boundary. If it is smaller than
     // the minimum object size we can allocate into, expand into the next card.
     HeapWord* top = cur->top();
-    HeapWord* aligned_top = align_up(top, BOTConstants::N_bytes);
+    HeapWord* aligned_top = align_up(top, BOTConstants::card_size());
 
     size_t to_allocate_words = pointer_delta(aligned_top, top, HeapWordSize);
 
@@ -389,7 +386,7 @@ HeapRegion* OldGCAllocRegion::release() {
       // original problem cannot occur.
       if (to_allocate_words >= G1CollectedHeap::min_fill_size()) {
         HeapWord* dummy = attempt_allocation(to_allocate_words);
-        CollectedHeap::fill_with_object(dummy, to_allocate_words);
+        cur->fill_with_dummy_object(dummy, to_allocate_words);
       }
     }
   }

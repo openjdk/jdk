@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,6 +65,7 @@ public class ResourceManager {
         numSockets = new AtomicInteger();
     }
 
+    @SuppressWarnings("removal")
     public static void beforeUdpCreate() throws SocketException {
         if (System.getSecurityManager() != null) {
             if (numSockets.incrementAndGet() > maxSockets) {
@@ -74,6 +75,7 @@ public class ResourceManager {
         }
     }
 
+    @SuppressWarnings("removal")
     public static void afterUdpClose() {
         if (System.getSecurityManager() != null) {
             numSockets.decrementAndGet();

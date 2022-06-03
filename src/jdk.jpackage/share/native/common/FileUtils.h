@@ -72,6 +72,9 @@ namespace FileUtils {
      */
     tstring replaceSuffix(const tstring& path, const tstring& suffix=tstring());
 
+    // remove the executable suffix if there is one
+    tstring stripExeSuffix(const tstring& path);
+
     /**
      * Returns absolute path of the given path.
      * If the given string is empty, returns absolute path to the current

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,19 +110,18 @@ public class ObjectStreamField
         this.unshared = unshared;
         this.field = null;
 
-        switch (signature.charAt(0)) {
-            case 'Z': type = Boolean.TYPE; break;
-            case 'B': type = Byte.TYPE; break;
-            case 'C': type = Character.TYPE; break;
-            case 'S': type = Short.TYPE; break;
-            case 'I': type = Integer.TYPE; break;
-            case 'J': type = Long.TYPE; break;
-            case 'F': type = Float.TYPE; break;
-            case 'D': type = Double.TYPE; break;
-            case 'L':
-            case '[': type = Object.class; break;
-            default: throw new IllegalArgumentException("illegal signature");
-        }
+        type = switch (signature.charAt(0)) {
+            case 'Z'      -> Boolean.TYPE;
+            case 'B'      -> Byte.TYPE;
+            case 'C'      -> Character.TYPE;
+            case 'S'      -> Short.TYPE;
+            case 'I'      -> Integer.TYPE;
+            case 'J'      -> Long.TYPE;
+            case 'F'      -> Float.TYPE;
+            case 'D'      -> Double.TYPE;
+            case 'L', '[' -> Object.class;
+            default       -> throw new IllegalArgumentException("illegal signature");
+        };
     }
 
     /**
@@ -214,6 +213,7 @@ public class ObjectStreamField
      * @return  a {@code Class} object representing the type of the
      *          serializable field
      */
+    @SuppressWarnings("removal")
     @CallerSensitive
     public Class<?> getType() {
         if (System.getSecurityManager() != null) {

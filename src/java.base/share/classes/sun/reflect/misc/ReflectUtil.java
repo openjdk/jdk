@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,6 +82,7 @@ public final class ReflectUtil {
      * @param m the {@code Member} about to be accessed
      */
     public static void conservativeCheckMemberAccess(Member m) throws SecurityException{
+        @SuppressWarnings("removal")
         final SecurityManager sm = System.getSecurityManager();
         if (sm == null)
             return;
@@ -114,6 +115,7 @@ public final class ReflectUtil {
      * also check the package access on the proxy interfaces.
      */
     public static void checkPackageAccess(Class<?> clazz) {
+        @SuppressWarnings("removal")
         SecurityManager s = System.getSecurityManager();
         if (s != null) {
             privateCheckPackageAccess(s, clazz);
@@ -123,13 +125,9 @@ public final class ReflectUtil {
     /**
      * NOTE: should only be called if a SecurityManager is installed
      */
-    private static void privateCheckPackageAccess(SecurityManager s, Class<?> clazz) {
-        while (clazz.isArray()) {
-            clazz = clazz.getComponentType();
-        }
-
+    private static void privateCheckPackageAccess(@SuppressWarnings("removal") SecurityManager s, Class<?> clazz) {
         String pkg = clazz.getPackageName();
-        if (pkg != null && !pkg.isEmpty()) {
+        if (!pkg.isEmpty()) {
             s.checkPackageAccess(pkg);
         }
 
@@ -145,6 +143,7 @@ public final class ReflectUtil {
      * the true caller (application).
      */
     public static void checkPackageAccess(String name) {
+        @SuppressWarnings("removal")
         SecurityManager s = System.getSecurityManager();
         if (s != null) {
             String cname = name.replace('/', '.');
@@ -211,6 +210,7 @@ public final class ReflectUtil {
      * @param clazz Proxy class object
      */
     public static void checkProxyPackageAccess(Class<?> clazz) {
+        @SuppressWarnings("removal")
         SecurityManager s = System.getSecurityManager();
         if (s != null) {
             privateCheckProxyPackageAccess(s, clazz);
@@ -220,7 +220,7 @@ public final class ReflectUtil {
     /**
      * NOTE: should only be called if a SecurityManager is installed
      */
-    private static void privateCheckProxyPackageAccess(SecurityManager s, Class<?> clazz) {
+    private static void privateCheckProxyPackageAccess(@SuppressWarnings("removal") SecurityManager s, Class<?> clazz) {
         // check proxy interfaces if the given class is a proxy class
         if (Proxy.isProxyClass(clazz)) {
             for (Class<?> intf : clazz.getInterfaces()) {
@@ -239,6 +239,7 @@ public final class ReflectUtil {
     public static void checkProxyPackageAccess(ClassLoader ccl,
                                                Class<?>... interfaces)
     {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             for (Class<?> intf : interfaces) {
@@ -312,12 +313,4 @@ public final class ReflectUtil {
         return false;
     }
 
-    /**
-     * Checks if {@code Class cls} is a VM-anonymous class
-     * as defined by {@link jdk.internal.misc.Unsafe#defineAnonymousClass}
-     * (not to be confused with a Java Language anonymous inner class).
-     */
-    public static boolean isVMAnonymousClass(Class<?> cls) {
-        return cls.getName().indexOf('/') > -1;
-    }
 }

@@ -33,9 +33,8 @@ import org.w3c.dom.NodeList;
  */
 public class HelperNodeList implements NodeList {
 
-    /** Field nodes */
-    List<Node> nodes = new ArrayList<>();
-    boolean allNodesMustHaveSameParent = false;
+    private final List<Node> nodes = new ArrayList<>();
+    private final boolean allNodesMustHaveSameParent;
 
     /**
      *

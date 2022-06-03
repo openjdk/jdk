@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ public class HelloStringPlus {
         System.out.println("Hello String: " + testString1);
 
         WhiteBox wb = WhiteBox.getWhiteBox();
-        if (!wb.isShared(testString1) && !wb.areSharedStringsIgnored()) {
+        if (wb.areSharedStringsMapped() && !wb.isSharedInternedString(testString1)) {
             throw new RuntimeException("testString1 is not shared");
         }
 
@@ -66,7 +66,7 @@ public class HelloStringPlus {
         // Check intern() method for "" string
         String empty = "";
         String empty_interned = empty.intern();
-        if (!wb.isShared(empty)) {
+        if (wb.areSharedStringsMapped() && !wb.isSharedInternedString(empty)) {
            throw new RuntimeException("Empty string should be shared");
         }
         if (empty_interned != empty) {

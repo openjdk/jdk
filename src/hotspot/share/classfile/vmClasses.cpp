@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,28 +23,30 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/heapShared.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/dictionary.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
-#include "memory/heapShared.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/universe.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceRefKlass.hpp"
+#include "oops/instanceStackChunkKlass.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/globals.hpp"
 
-InstanceKlass* vmClasses::_klasses[static_cast<int>(VMClassID::LIMIT)]
+InstanceKlass* vmClasses::_klasses[static_cast<int>(vmClassID::LIMIT)]
                                                  =  { NULL /*, NULL...*/ };
 InstanceKlass* vmClasses::_box_klasses[T_VOID+1] =  { NULL /*, NULL...*/ };
 
 
 // CDS: scan and relocate all classes referenced by _klasses[].
 void vmClasses::metaspace_pointers_do(MetaspaceClosure* it) {
-  for (auto id : EnumRange<VMClassID>{}) {
+  for (auto id : EnumRange<vmClassID>{}) {
     it->push(klass_addr_at(id));
   }
 }
@@ -79,7 +81,7 @@ bool vmClasses::contain(Klass* k) {
 }
 #endif
 
-bool vmClasses::resolve(VMClassID id, TRAPS) {
+bool vmClasses::resolve(vmClassID id, TRAPS) {
   InstanceKlass** klassp = &_klasses[as_int(id)];
 
 #if INCLUDE_CDS
@@ -102,9 +104,9 @@ bool vmClasses::resolve(VMClassID id, TRAPS) {
   return ((*klassp) != NULL);
 }
 
-void vmClasses::resolve_until(VMClassID limit_id, VMClassID &start_id, TRAPS) {
+void vmClasses::resolve_until(vmClassID limit_id, vmClassID &start_id, TRAPS) {
   assert((int)start_id <= (int)limit_id, "IDs are out of order!");
-  for (auto id : EnumRange<VMClassID>{start_id, limit_id}) { // (inclusive start, exclusive end)
+  for (auto id : EnumRange<vmClassID>{start_id, limit_id}) { // (inclusive start, exclusive end)
     resolve(id, CHECK);
   }
 
@@ -117,15 +119,15 @@ void vmClasses::resolve_all(TRAPS) {
 
   // Create the ModuleEntry for java.base.  This call needs to be done here,
   // after vmSymbols::initialize() is called but before any classes are pre-loaded.
-  ClassLoader::classLoader_init2(CHECK);
+  ClassLoader::classLoader_init2(THREAD);
 
   // Preload commonly used klasses
-  VMClassID scan = VMClassID::FIRST;
+  vmClassID scan = vmClassID::FIRST;
   // first do Object, then String, Class
+  resolve_through(VM_CLASS_ID(Object_klass), scan, CHECK);
+  CollectedHeap::set_filler_object_klass(vmClasses::Object_klass());
 #if INCLUDE_CDS
   if (UseSharedSpaces) {
-    resolve_through(VM_CLASS_ID(Object_klass), scan, CHECK);
-
     // It's unsafe to access the archived heap regions before they
     // are fixed up, so we must do the fixup as early as possible
     // before the archived java objects are accessed by functions
@@ -133,13 +135,13 @@ void vmClasses::resolve_all(TRAPS) {
     // ConstantPool::restore_unshareable_info (restores the archived
     // resolved_references array object).
     //
-    // HeapShared::fixup_mapped_heap_regions() fills the empty
+    // HeapShared::fixup_regions() fills the empty
     // spaces in the archived heap regions and may use
-    // SystemDictionary::Object_klass(), so we can do this only after
+    // vmClasses::Object_klass(), so we can do this only after
     // Object_klass is resolved. See the above resolve_through()
     // call. No mirror objects are accessed/restored in the above call.
     // Mirrors are restored after java.lang.Class is loaded.
-    HeapShared::fixup_mapped_heap_regions();
+    HeapShared::fixup_regions();
 
     // Initialize the constant pool for the Object_class
     assert(Object_klass()->is_shared(), "must be");
@@ -185,11 +187,13 @@ void vmClasses::resolve_all(TRAPS) {
   vmClasses::PhantomReference_klass()->set_reference_type(REF_PHANTOM);
 
   // JSR 292 classes
-  VMClassID jsr292_group_start = VM_CLASS_ID(MethodHandle_klass);
-  VMClassID jsr292_group_end   = VM_CLASS_ID(VolatileCallSite_klass);
+  vmClassID jsr292_group_start = VM_CLASS_ID(MethodHandle_klass);
+  vmClassID jsr292_group_end   = VM_CLASS_ID(VolatileCallSite_klass);
   resolve_until(jsr292_group_start, scan, CHECK);
   resolve_through(jsr292_group_end, scan, CHECK);
-  resolve_until(VMClassID::LIMIT, scan, CHECK);
+  resolve_until(vmClassID::LIMIT, scan, CHECK);
+
+  CollectedHeap::set_filler_object_klass(vmClasses::FillerObject_klass());
 
   _box_klasses[T_BOOLEAN] = vmClasses::Boolean_klass();
   _box_klasses[T_CHAR]    = vmClasses::Character_klass();
@@ -206,12 +210,14 @@ void vmClasses::resolve_all(TRAPS) {
   if (UseSharedSpaces) {
     JVMTI_ONLY(assert(JvmtiExport::is_early_phase(),
                       "All well known classes must be resolved in JVMTI early phase"));
-    for (auto id : EnumRange<VMClassID>{}) {
+    for (auto id : EnumRange<vmClassID>{}) {
       InstanceKlass* k = _klasses[as_int(id)];
       assert(k->is_shared(), "must not be replaced by JVMTI class file load hook");
     }
   }
 #endif
+
+  InstanceStackChunkKlass::init_offset_of_stack();
 }
 
 #if INCLUDE_CDS
@@ -239,7 +245,7 @@ void vmClasses::resolve_shared_class(InstanceKlass* klass, ClassLoaderData* load
   }
 
   klass->restore_unshareable_info(loader_data, domain, NULL, THREAD);
-  SystemDictionary::load_shared_class_misc(klass, loader_data, CHECK);
+  SystemDictionary::load_shared_class_misc(klass, loader_data);
   Dictionary* dictionary = loader_data->dictionary();
   unsigned int hash = dictionary->compute_hash(klass->name());
   dictionary->add_klass(hash, klass->name(), klass);

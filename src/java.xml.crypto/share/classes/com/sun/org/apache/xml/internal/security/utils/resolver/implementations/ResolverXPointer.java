@@ -53,11 +53,6 @@ public class ResolverXPointer extends ResourceResolverSpi {
     private static final String XP = "#xpointer(id(";
     private static final int XP_LENGTH = XP.length();
 
-    @Override
-    public boolean engineIsThreadSafe() {
-        return true;
-    }
-
     /**
      * {@inheritDoc}
      */
@@ -77,7 +72,7 @@ public class ResolverXPointer extends ResourceResolverSpi {
             if (context.secureValidation) {
                 Element start = context.attr.getOwnerDocument().getDocumentElement();
                 if (!XMLUtils.protectAgainstWrappingAttack(start, id)) {
-                    Object exArgs[] = { id };
+                    Object[] exArgs = { id };
                     throw new ResourceResolverException(
                         "signature.Verification.MultipleIDs", exArgs, context.uriToResolve, context.baseUri
                     );
@@ -85,7 +80,7 @@ public class ResolverXPointer extends ResourceResolverSpi {
             }
 
             if (resultNode == null) {
-                Object exArgs[] = { id };
+                Object[] exArgs = { id };
 
                 throw new ResourceResolverException(
                     "signature.Verification.MissingID", exArgs, context.uriToResolve, context.baseUri
@@ -110,14 +105,7 @@ public class ResolverXPointer extends ResourceResolverSpi {
      * {@inheritDoc}
      */
     public boolean engineCanResolveURI(ResourceResolverContext context) {
-        if (context.uriToResolve == null) {
-            return false;
-        }
-        if (isXPointerSlash(context.uriToResolve) || isXPointerId(context.uriToResolve)) {
-            return true;
-        }
-
-        return false;
+        return isXPointerSlash(context.uriToResolve) || isXPointerId(context.uriToResolve);
     }
 
     /**
@@ -127,11 +115,7 @@ public class ResolverXPointer extends ResourceResolverSpi {
      * @return true if begins with xpointer
      */
     private static boolean isXPointerSlash(String uri) {
-        if (uri.equals("#xpointer(/)")) {
-            return true;
-        }
-
-        return false;
+        return "#xpointer(/)".equals(uri);
     }
 
     /**
@@ -141,7 +125,7 @@ public class ResolverXPointer extends ResourceResolverSpi {
      * @return whether it has an xpointer id
      */
     private static boolean isXPointerId(String uri) {
-        if (uri.startsWith(XP) && uri.endsWith("))")) {
+        if (uri != null && uri.startsWith(XP) && uri.endsWith("))")) {
             String idPlusDelim = uri.substring(XP_LENGTH, uri.length() - 2);
 
             int idLen = idPlusDelim.length() -1;

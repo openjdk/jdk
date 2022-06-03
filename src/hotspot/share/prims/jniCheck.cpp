@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #include "jni.h"
 #include "jvm.h"
 #include "classfile/javaClasses.inline.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
@@ -59,7 +59,7 @@
 
 // Execute the given block of source code with the thread in VM state.
 // To do this, transition from the NATIVE state to the VM state, execute
-// the code, and transtition back.  The ThreadInVMfromNative constructor
+// the code, and transition back.  The ThreadInVMfromNative constructor
 // performs the transition to VM state, its destructor restores the
 // NATIVE state.
 
@@ -99,11 +99,12 @@ extern "C" {                                                             \
       tty->print_cr("%s", fatal_using_jnienv_in_nonjava);                \
       os::abort(true);                                                   \
     }                                                                    \
-    JavaThread* thr = cur->as_Java_thread();                             \
+    JavaThread* thr = JavaThread::cast(cur);                             \
     JNIEnv* xenv = thr->jni_environment();                               \
     if (env != xenv) {                                                   \
       NativeReportJNIFatalError(thr, warn_wrong_jnienv);                 \
     }                                                                    \
+    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, thr));         \
     VM_ENTRY_BASE(result_type, header, thr)
 
 
@@ -513,7 +514,7 @@ Klass* jniCheck::validate_class(JavaThread* thr, jclass clazz, bool allow_primit
     ReportJNIFatalError(thr, fatal_received_null_class);
   }
 
-  if (mirror->klass() != SystemDictionary::Class_klass()) {
+  if (mirror->klass() != vmClasses::Class_klass()) {
     ReportJNIFatalError(thr, fatal_class_not_a_class);
   }
 
@@ -530,7 +531,7 @@ void jniCheck::validate_throwable_klass(JavaThread* thr, Klass* klass) {
   assert(klass != NULL, "klass argument must have a value");
 
   if (!klass->is_instance_klass() ||
-      !klass->is_subclass_of(SystemDictionary::Throwable_klass())) {
+      !klass->is_subclass_of(vmClasses::Throwable_klass())) {
     ReportJNIFatalError(thr, fatal_class_not_a_throwable_class);
   }
 }
@@ -2013,7 +2014,16 @@ JNI_ENTRY_CHECKED(jobject,
   checked_jni_GetModule(JNIEnv *env,
                         jclass clazz))
     functionEnter(thr);
-    jobject result = UNCHECKED()->GetModule(env,clazz);
+    jobject result = UNCHECKED()->GetModule(env, clazz);
+    functionExit(thr);
+    return result;
+JNI_END
+
+JNI_ENTRY_CHECKED(jboolean,
+  checked_jni_IsVirtualThread(JNIEnv *env,
+                              jobject obj))
+    functionEnter(thr);
+    jboolean result = UNCHECKED()->IsVirtualThread(env, obj);
     functionExit(thr);
     return result;
 JNI_END
@@ -2303,7 +2313,11 @@ struct JNINativeInterface_  checked_jni_NativeInterface = {
 
     // Module Features
 
-    checked_jni_GetModule
+    checked_jni_GetModule,
+
+    // Virtual threads
+
+    checked_jni_IsVirtualThread
 };
 
 

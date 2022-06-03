@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import jdk.test.lib.Utils;
  * @test
  * @requires vm.hasSA
  * @library /test/lib
- * @run main/othervm TestJhsdbJstackLock
+ * @run driver TestJhsdbJstackLock
  */
 
 public class TestJhsdbJstackLock {
@@ -65,7 +65,7 @@ public class TestJhsdbJstackLock {
             out.shouldMatch("^\\s+- locked <0x[0-9a-f]+> \\(a java\\.lang\\.Thread\\)$");
             out.shouldMatch("^\\s+- locked <0x[0-9a-f]+> \\(a java\\.lang\\.Class for int\\)$");
 
-            out.stderrShouldBeEmptyIgnoreVMWarnings();
+            out.stderrShouldBeEmptyIgnoreDeprecatedWarnings();
 
             System.out.println("Test Completed");
         } finally {

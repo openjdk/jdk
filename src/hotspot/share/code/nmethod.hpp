@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ class DepChange;
 class DirectiveSet;
 class DebugInformationRecorder;
 class JvmtiThreadState;
+class OopIterateClosure;
 
 // nmethods (native methods) are the compiled code versions of Java methods.
 //
@@ -73,13 +74,15 @@ class nmethod : public CompiledMethod {
   // Shared fields for all nmethod's
   int       _entry_bci;        // != InvocationEntryBci if this nmethod is an on-stack replacement method
 
+  uint64_t  _gc_epoch;
+
   // To support simple linked-list chaining of nmethods:
   nmethod*  _osr_link;         // from InstanceKlass::osr_nmethods_head
 
   // STW two-phase nmethod root processing helpers.
   //
   // When determining liveness of a given nmethod to do code cache unloading,
-  // some collectors need to to different things depending on whether the nmethods
+  // some collectors need to do different things depending on whether the nmethods
   // need to absolutely be kept alive during root processing; "strong"ly reachable
   // nmethods are known to be kept alive at root processing, but the liveness of
   // "weak"ly reachable ones is to be determined later.
@@ -129,7 +132,7 @@ class nmethod : public CompiledMethod {
   // Unclaimed (C)-> N|SD (C)-> X|SD: the nmethod has been processed strongly from
   //   the beginning by a single thread.
   //
-  // "|" describes the concatentation of bits in _oops_do_mark_link.
+  // "|" describes the concatenation of bits in _oops_do_mark_link.
   //
   // The diagram also describes the threads responsible for changing the nmethod to
   // the next state by marking the _transition_ with (C) and (O), which mean "current"
@@ -207,7 +210,6 @@ class nmethod : public CompiledMethod {
   int _scopes_data_offset;
   int _scopes_pcs_offset;
   int _dependencies_offset;
-  int _native_invokers_offset;
   int _handler_table_offset;
   int _nul_chk_table_offset;
 #if INCLUDE_JVMCI
@@ -256,7 +258,7 @@ class nmethod : public CompiledMethod {
   // stack.  An not_entrant method can be removed when there are no
   // more activations, i.e., when the _stack_traversal_mark is less than
   // current sweep traversal index.
-  volatile long _stack_traversal_mark;
+  volatile int64_t _stack_traversal_mark;
 
   // The _hotness_counter indicates the hotness of a method. The higher
   // the value the hotter the method. The hotness counter of a nmethod is
@@ -269,17 +271,13 @@ class nmethod : public CompiledMethod {
   volatile uint8_t _is_unloading_state;
 
   // These are used for compiled synchronized native methods to
-  // locate the owner and stack slot for the BasicLock so that we can
-  // properly revoke the bias of the owner if necessary. They are
+  // locate the owner and stack slot for the BasicLock. They are
   // needed because there is no debug information for compiled native
   // wrappers and the oop maps are insufficient to allow
   // frame::retrieve_receiver() to work. Currently they are expected
   // to be byte offsets from the Java stack pointer for maximum code
-  // sharing between platforms. Note that currently biased locking
-  // will never cause Class instances to be biased but this code
-  // handles the static synchronized case as well.
-  // JVMTI's GetLocalInstance() also uses these offsets to find the receiver
-  // for non-static native wrapper frames.
+  // sharing between platforms. JVMTI's GetLocalInstance() uses these
+  // offsets to find the receiver for non-static native wrapper frames.
   ByteSize _native_receiver_sp_offset;
   ByteSize _native_basic_lock_sp_offset;
 
@@ -313,8 +311,7 @@ class nmethod : public CompiledMethod {
           ExceptionHandlerTable* handler_table,
           ImplicitExceptionTable* nul_chk_table,
           AbstractCompiler* compiler,
-          int comp_level,
-          const GrowableArrayView<BufferBlob*>& native_invokers
+          int comp_level
 #if INCLUDE_JVMCI
           , char* speculations,
           int speculations_len,
@@ -338,7 +335,7 @@ class nmethod : public CompiledMethod {
   // Inform external interfaces that a compiled method has been unloaded
   void post_compiled_method_unload();
 
-  // Initailize fields to their default values
+  // Initialize fields to their default values
   void init_defaults();
 
   // Offsets
@@ -362,8 +359,7 @@ class nmethod : public CompiledMethod {
                               ExceptionHandlerTable* handler_table,
                               ImplicitExceptionTable* nul_chk_table,
                               AbstractCompiler* compiler,
-                              int comp_level,
-                              const GrowableArrayView<BufferBlob*>& native_invokers = GrowableArrayView<BufferBlob*>::EMPTY
+                              int comp_level
 #if INCLUDE_JVMCI
                               , char* speculations = NULL,
                               int speculations_len = 0,
@@ -389,7 +385,8 @@ class nmethod : public CompiledMethod {
                                      int frame_size,
                                      ByteSize receiver_sp_offset,
                                      ByteSize basic_lock_sp_offset,
-                                     OopMapSet* oop_maps);
+                                     OopMapSet* oop_maps,
+                                     int exception_handler = -1);
 
   // type info
   bool is_nmethod() const                         { return true; }
@@ -412,9 +409,7 @@ class nmethod : public CompiledMethod {
   PcDesc* scopes_pcs_begin      () const          { return (PcDesc*)(header_begin() + _scopes_pcs_offset   ); }
   PcDesc* scopes_pcs_end        () const          { return (PcDesc*)(header_begin() + _dependencies_offset) ; }
   address dependencies_begin    () const          { return           header_begin() + _dependencies_offset  ; }
-  address dependencies_end      () const          { return           header_begin() + _native_invokers_offset ; }
-  BufferBlob** native_invokers_begin() const         { return (BufferBlob**)(header_begin() + _native_invokers_offset) ; }
-  BufferBlob** native_invokers_end  () const         { return (BufferBlob**)(header_begin() + _handler_table_offset); }
+  address dependencies_end      () const          { return           header_begin() + _handler_table_offset ; }
   address handler_table_begin   () const          { return           header_begin() + _handler_table_offset ; }
   address handler_table_end     () const          { return           header_begin() + _nul_chk_table_offset ; }
   address nul_chk_table_begin   () const          { return           header_begin() + _nul_chk_table_offset ; }
@@ -530,8 +525,6 @@ class nmethod : public CompiledMethod {
   void copy_values(GrowableArray<jobject>* oops);
   void copy_values(GrowableArray<Metadata*>* metadata);
 
-  void free_native_invokers();
-
   // Relocation support
 private:
   void fix_oop_relocations(address begin, address end, bool initialize_immediates);
@@ -542,8 +535,8 @@ public:
   void fix_oop_relocations()                           { fix_oop_relocations(NULL, NULL, false); }
 
   // Sweeper support
-  long  stack_traversal_mark()                    { return _stack_traversal_mark; }
-  void  set_stack_traversal_mark(long l)          { _stack_traversal_mark = l; }
+  int64_t stack_traversal_mark()                  { return _stack_traversal_mark; }
+  void    set_stack_traversal_mark(int64_t l)     { _stack_traversal_mark = l; }
 
   // On-stack replacement support
   int   osr_entry_bci() const                     { assert(is_osr_method(), "wrong kind of nmethod"); return _entry_bci; }
@@ -570,6 +563,8 @@ public:
 
   // See comment at definition of _last_seen_on_stack
   void mark_as_seen_on_stack();
+  void mark_as_maybe_on_continuation();
+  bool is_maybe_on_continuation_stack();
   bool can_convert_to_zombie();
 
   // Evolution support. We make old (discarded) compiled methods point to new Method*s.
@@ -598,6 +593,9 @@ public:
   // All-in-one claiming of nmethods: returns true if the caller successfully claimed that
   // nmethod.
   bool oops_do_try_claim();
+
+  // Loom support for following nmethods on the stack
+  void follow_nmethod(OopIterateClosure* cl);
 
   // Class containing callbacks for the oops_do_process_weak/strong() methods
   // below.
@@ -636,9 +634,7 @@ public:
   void copy_scopes_pcs(PcDesc* pcs, int count);
   void copy_scopes_data(address buffer, int size);
 
-  // Accessor/mutator for the original pc of a frame before a frame was deopted.
-  address get_original_pc(const frame* fr) { return *orig_pc_addr(fr); }
-  void    set_original_pc(const frame* fr, address pc) { *orig_pc_addr(fr) = pc; }
+  int orig_pc_offset() { return _orig_pc_offset; }
 
   // jvmti support:
   void post_compiled_method_load_event(JvmtiThreadState* state = NULL);
@@ -668,9 +664,9 @@ public:
   void print_scopes() { print_scopes_on(tty); }
   void print_scopes_on(outputStream* st)          PRODUCT_RETURN;
   void print_value_on(outputStream* st) const;
-  void print_native_invokers();
   void print_handler_table();
   void print_nul_chk_table();
+  void print_recorded_oop(int log_n, int index);
   void print_recorded_oops();
   void print_recorded_metadata();
 
@@ -735,7 +731,7 @@ public:
   // is it ok to patch at address?
   bool is_patchable_at(address instr_address);
 
-  // UseBiasedLocking support
+  // JVMTI's GetLocalInstance() support
   ByteSize native_receiver_sp_offset() {
     return _native_receiver_sp_offset;
   }
@@ -757,6 +753,9 @@ public:
   virtual CompiledStaticCall* compiledStaticCall_at(Relocation* call_site) const;
   virtual CompiledStaticCall* compiledStaticCall_at(address addr) const;
   virtual CompiledStaticCall* compiledStaticCall_before(address addr) const;
+
+  virtual void  make_deoptimized();
+  void finalize_relocations();
 };
 
 // Locks an nmethod so its code will not get removed and it will not

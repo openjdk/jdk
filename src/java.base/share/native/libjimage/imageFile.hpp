@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -371,7 +371,12 @@ private:
 
 public:
     ImageFileReaderTable();
-    ~ImageFileReaderTable();
+// ~ImageFileReaderTable()
+// Bug 8166727
+//
+// WARNING: Should never close jimage files.
+//          Threads may still be running during shutdown.
+//
 
     // Return the number of entries.
     inline u4 count() { return _count; }
@@ -396,7 +401,7 @@ public:
 // index is then memory mapped to allow load on demand and sharing.  The
 // -XX:+MemoryMapImage flag determines if the entire file is loaded (server use.)
 // An image can be used by Hotspot and multiple reference points in the JDK, thus
-// it is desirable to share a reader.    To accomodate sharing, a share table is
+// it is desirable to share a reader.    To accommodate sharing, a share table is
 // defined (see ImageFileReaderTable in imageFile.cpp)  To track the number of
 // uses, ImageFileReader keeps a use count (_use).  Use is incremented when
 // 'opened' by reference point and decremented when 'closed'.    Use of zero
@@ -455,13 +460,13 @@ public:
     // Close an image file if the file is not in use elsewhere.
     static void close(ImageFileReader *reader);
 
-    // Return an id for the specifed ImageFileReader.
+    // Return an id for the specified ImageFileReader.
     static u8 reader_to_ID(ImageFileReader *reader);
 
     // Validate the image id.
     static bool id_check(u8 id);
 
-    // Return an id for the specifed ImageFileReader.
+    // Return an id for the specified ImageFileReader.
     static ImageFileReader* id_to_reader(u8 id);
 
     // Open image file for read access.

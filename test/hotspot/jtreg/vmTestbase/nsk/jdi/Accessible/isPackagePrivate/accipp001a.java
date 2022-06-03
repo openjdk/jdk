@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,16 +41,16 @@ public class accipp001a {
     long    l0, l1[]={l0}, l2[][]={l1}, l3[][][]={l2}, l4[][][][]={l3};
     short   s0, s1[]={s0}, s2[][]={s1}, s3[][][]={s2}, s4[][][][]={s3};
 
-    Boolean   Z0  = new Boolean(true),  Z1[] ={Z0},  Z2[][]={Z1},   Z3[][][]={Z2},   Z4[][][][]={Z3};
-    Byte      B0  = new Byte("0"),      B1[] ={B0},  B2[][]={B1},   B3[][][]={B2},   B4[][][][]={B3};
-    Character C0  = new Character('0'), C1[] ={C0},  C2[][]={C1},   C3[][][]={C2},   C4[][][][]={C3};
-    Double    D0  = new Double(0),      D1[] ={D0},  D2[][]={D1},   D3[][][]={D2},   D4[][][][]={D3};
-    Float     F0  = new Float(0),       F1[] ={F0},  F2[][]={F1},   F3[][][]={F2},   F4[][][][]={F3};
-    Integer   I0  = new Integer(0),     I1[] ={I0},  I2[][]={I1},   I3[][][]={I2},   I4[][][][]={I3};
-    Long      L0  = new Long(0),        L1[] ={L0},  L2[][]={L1},   L3[][][]={L2},   L4[][][][]={L3};
-    Short     Sh0 = new Short("1"),     Sh1[]={Sh0}, Sh2[][]={Sh1}, Sh3[][][]={Sh2}, Sh4[][][][]={Sh3};
-    String    S0  = new String(" "),    S1[] ={S0},  S2[][]={S1},   S3[][][]={S2},   S4[][][][]={S3};
-    Object    O0  = new Object(),       O1[] ={O0},  O2[][]={O1},   O3[][][]={O2},   O4[][][][]={O3};
+    Boolean   Z0  = Boolean.valueOf(true),  Z1[] ={Z0},  Z2[][]={Z1},   Z3[][][]={Z2},   Z4[][][][]={Z3};
+    Byte      B0  = Byte.valueOf("0"),      B1[] ={B0},  B2[][]={B1},   B3[][][]={B2},   B4[][][][]={B3};
+    Character C0  = Character.valueOf('0'), C1[] ={C0},  C2[][]={C1},   C3[][][]={C2},   C4[][][][]={C3};
+    Double    D0  = Double.valueOf(0),      D1[] ={D0},  D2[][]={D1},   D3[][][]={D2},   D4[][][][]={D3};
+    Float     F0  = Float.valueOf(0),       F1[] ={F0},  F2[][]={F1},   F3[][][]={F2},   F4[][][][]={F3};
+    Integer   I0  = Integer.valueOf(0),     I1[] ={I0},  I2[][]={I1},   I3[][][]={I2},   I4[][][][]={I3};
+    Long      L0  = Long.valueOf(0),        L1[] ={L0},  L2[][]={L1},   L3[][][]={L2},   L4[][][][]={L3};
+    Short     Sh0 = Short.valueOf("1"),     Sh1[]={Sh0}, Sh2[][]={Sh1}, Sh3[][][]={Sh2}, Sh4[][][][]={Sh3};
+    String    S0  = new String(" "),        S1[] ={S0},  S2[][]={S1},   S3[][][]={S2},   S4[][][][]={S3};
+    Object    O0  = new Object(),           O1[] ={O0},  O2[][]={O1},   O3[][][]={O2},   O4[][][][]={O3};
 
     private   static class  U {} // private ==> package private
     protected static class  V {}

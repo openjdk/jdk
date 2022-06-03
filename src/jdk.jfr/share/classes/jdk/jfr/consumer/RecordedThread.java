@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package jdk.jfr.consumer;
 
 import jdk.jfr.internal.consumer.ObjectContext;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * A recorded thread.
@@ -103,4 +104,15 @@ public final class RecordedThread extends RecordedObject {
     public long getId() {
         return uniqueId;
     }
+
+    /**
+     * {@return {@code true} if this is a virtual Thread, {@code false} otherwise}
+     *
+     * @since 19
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.VIRTUAL_THREADS)
+    public boolean isVirtual() {
+        return getTyped("virtual", Boolean.class, Boolean.FALSE);
+    }
+
 }

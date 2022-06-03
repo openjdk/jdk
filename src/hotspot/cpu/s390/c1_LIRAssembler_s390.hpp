@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -47,7 +47,6 @@
 
   enum {
     _call_stub_size = 512, // See Compile::MAX_stubs_size and CompiledStaticCall::emit_to_interp_stub.
-    _call_aot_stub_size = 0,
     _exception_handler_size = DEBUG_ONLY(1*K) NOT_DEBUG(128),
     _deopt_handler_size = DEBUG_ONLY(1*K) NOT_DEBUG(64)
   };

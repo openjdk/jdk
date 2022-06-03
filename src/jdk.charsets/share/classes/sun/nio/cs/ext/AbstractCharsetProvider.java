@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,11 +68,11 @@ public class AbstractCharsetProvider
     private String packagePrefix;
 
     protected AbstractCharsetProvider() {
-        packagePrefix = "sun.nio.cs";
+        packagePrefix = "sun.nio.cs.";
     }
 
     protected AbstractCharsetProvider(String pkgPrefixName) {
-        packagePrefix = pkgPrefixName;
+        packagePrefix = pkgPrefixName.concat(".");
     }
 
     /* Add an entry to the given map, but only if no mapping yet exists
@@ -144,7 +144,7 @@ public class AbstractCharsetProvider
         // Instantiate the charset and cache it
         try {
 
-            Class<?> c = Class.forName(packagePrefix + "." + cln,
+            Class<?> c = Class.forName(packagePrefix.concat(cln),
                                        true,
                                        this.getClass().getClassLoader());
 

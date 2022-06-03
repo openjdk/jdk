@@ -54,7 +54,7 @@ import org.xml.sax.SAXParseException;
  * @test
  * @bug 8158084 8162438 8162442 8163535 8166220
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true catalog.CatalogSupport3
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow catalog.CatalogSupport3
  * @run testng/othervm catalog.CatalogSupport3
  * @summary extends CatalogSupport tests, verifies that the use of the Catalog may
  * be disabled through the API property.

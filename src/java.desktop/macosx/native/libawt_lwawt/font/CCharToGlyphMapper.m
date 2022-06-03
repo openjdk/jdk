@@ -25,8 +25,6 @@
 
 #import "JNIUtilities.h"
 
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
-
 #import "AWTFont.h"
 #import "CoreTextSupport.h"
 

@@ -140,7 +140,7 @@ public interface EventContext extends Context {
      *<p>
      * The value of this constant is {@code 0}.
      */
-    public final static int OBJECT_SCOPE = 0;
+    public static final int OBJECT_SCOPE = 0;
 
     /**
      * Constant for expressing interest in events concerning objects
@@ -149,7 +149,7 @@ public interface EventContext extends Context {
      *<p>
      * The value of this constant is {@code 1}.
      */
-    public final static int ONELEVEL_SCOPE = 1;
+    public static final int ONELEVEL_SCOPE = 1;
 
     /**
      * Constant for expressing interest in events concerning objects
@@ -158,7 +158,7 @@ public interface EventContext extends Context {
      *<p>
      * The value of this constant is {@code 2}.
      */
-    public final static int SUBTREE_SCOPE = 2;
+    public static final int SUBTREE_SCOPE = 2;
 
 
     /**

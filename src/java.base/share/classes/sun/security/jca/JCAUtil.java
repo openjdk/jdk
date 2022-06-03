@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package sun.security.jca;
 
 import java.lang.ref.*;
-
 import java.security.*;
 
 /**
@@ -59,6 +58,8 @@ public final class JCAUtil {
         public static SecureRandom instance = new SecureRandom();
     }
 
+    private static volatile SecureRandom def = null;
+
     /**
      * Get a SecureRandom instance. This method should be used by JDK
      * internal code in favor of calling "new SecureRandom()". That needs to
@@ -69,4 +70,27 @@ public final class JCAUtil {
         return CachedSecureRandomHolder.instance;
     }
 
+    // called by sun.security.jca.Providers class when provider list is changed
+    static void clearDefSecureRandom() {
+        def = null;
+    }
+
+    /**
+     * Get the default SecureRandom instance. This method is the
+     * optimized version of "new SecureRandom()" which re-uses the default
+     * SecureRandom impl if the provider table is the same.
+     */
+    public static SecureRandom getDefSecureRandom() {
+        SecureRandom result = def;
+        if (result == null) {
+            synchronized (JCAUtil.class) {
+                result = def;
+                if (result == null) {
+                    def = result = new SecureRandom();
+                }
+            }
+        }
+        return result;
+
+    }
 }

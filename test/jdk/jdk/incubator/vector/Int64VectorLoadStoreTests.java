@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @enablePreview
  * @modules jdk.incubator.vector java.base/jdk.internal.vm.annotation
  * @run testng/othervm -XX:-TieredCompilation Int64VectorLoadStoreTests
  *
@@ -30,6 +31,9 @@
 
 // -- This file was mechanically generated: Do not edit! -- //
 
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.MemorySession;
+import java.lang.foreign.ValueLayout;
 import jdk.incubator.vector.IntVector;
 import jdk.incubator.vector.VectorMask;
 import jdk.incubator.vector.VectorSpecies;
@@ -39,24 +43,21 @@ import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
 import java.nio.ByteOrder;
-import java.nio.ReadOnlyBufferException;
 import java.util.List;
 import java.util.function.*;
 
 @Test
-public class Int64VectorLoadStoreTests extends AbstractVectorTest {
+public class Int64VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
     static final VectorSpecies<Integer> SPECIES =
                 IntVector.SPECIES_64;
 
-    static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 10);
+    static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 100);
+
+    static final ValueLayout.OfInt ELEMENT_LAYOUT = ValueLayout.JAVA_INT.withBitAlignment(8);
 
 
     static final int BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / 64);
-
-    static final int BUFFER_SIZE = Integer.getInteger("jdk.incubator.vector.test.buffer-size", BUFFER_REPS * (64 / 8));
 
     static void assertArraysEquals(int[] r, int[] a, boolean[] mask) {
         int i = 0;
@@ -66,17 +67,6 @@ public class Int64VectorLoadStoreTests extends AbstractVectorTest {
             }
         } catch (AssertionError e) {
             Assert.assertEquals(r[i], mask[i % SPECIES.length()] ? a[i] : (int) 0, "at index #" + i);
-        }
-    }
-
-    static void assertArraysEquals(byte[] r, byte[] a, boolean[] mask) {
-        int i = 0;
-        try {
-            for (; i < a.length; i++) {
-                Assert.assertEquals(r[i], mask[(i*8/SPECIES.elementSize()) % SPECIES.length()] ? a[i] : (byte) 0);
-            }
-        } catch (AssertionError e) {
-            Assert.assertEquals(r[i], mask[(i*8/SPECIES.elementSize()) % SPECIES.length()] ? a[i] : (byte) 0, "at index #" + i);
         }
     }
 
@@ -119,7 +109,7 @@ public class Int64VectorLoadStoreTests extends AbstractVectorTest {
             })
     );
 
-    // Relative to byte[] array.length or ByteBuffer.limit()
+    // Relative to byte[] array.length or MemorySegment.byteSize()
     static final List<IntFunction<Integer>> BYTE_INDEX_GENERATORS = List.of(
             withToString("-1", (int l) -> {
                 return -1;
@@ -190,28 +180,9 @@ public class Int64VectorLoadStoreTests extends AbstractVectorTest {
     }
 
     @DataProvider
-    public Object[][] intIndexMapProvider() {
-        return INDEX_GENERATORS.stream().
-                flatMap(fim -> INT_GENERATORS.stream().map(fa -> {
-                    return new Object[] {fa, fim};
-                })).
-                toArray(Object[][]::new);
-    }
-
-    @DataProvider
-    public Object[][] intIndexMapMaskProvider() {
-        return BOOLEAN_MASK_GENERATORS.stream().
-                flatMap(fm -> INDEX_GENERATORS.stream().
-                    flatMap(fim -> INT_GENERATORS.stream().map(fa -> {
-                        return new Object[] {fa, fim, fm};
-                    }))).
-                toArray(Object[][]::new);
-    }
-
-    @DataProvider
-    public Object[][] intByteBufferProvider() {
+    public Object[][] intMemorySegmentProvider() {
         return INT_GENERATORS.stream().
-                flatMap(fa -> BYTE_BUFFER_GENERATORS.stream().
+                flatMap(fa -> MEMORY_SEGMENT_GENERATORS.stream().
                         flatMap(fb -> BYTE_ORDER_VALUES.stream().map(bo -> {
                             return new Object[]{fa, fb, bo};
                         }))).
@@ -219,32 +190,13 @@ public class Int64VectorLoadStoreTests extends AbstractVectorTest {
     }
 
     @DataProvider
-    public Object[][] intByteBufferMaskProvider() {
+    public Object[][] intMemorySegmentMaskProvider() {
         return BOOLEAN_MASK_GENERATORS.stream().
                 flatMap(fm -> INT_GENERATORS.stream().
-                        flatMap(fa -> BYTE_BUFFER_GENERATORS.stream().
+                        flatMap(fa -> MEMORY_SEGMENT_GENERATORS.stream().
                                 flatMap(fb -> BYTE_ORDER_VALUES.stream().map(bo -> {
                             return new Object[]{fa, fb, fm, bo};
                         })))).
-                toArray(Object[][]::new);
-    }
-
-    @DataProvider
-    public Object[][] intByteArrayProvider() {
-        return INT_GENERATORS.stream().
-                flatMap(fa -> BYTE_ORDER_VALUES.stream().map(bo -> {
-                    return new Object[]{fa, bo};
-                })).
-                toArray(Object[][]::new);
-    }
-
-    @DataProvider
-    public Object[][] intByteArrayMaskProvider() {
-        return BOOLEAN_MASK_GENERATORS.stream().
-                flatMap(fm -> INT_GENERATORS.stream().
-                    flatMap(fa -> BYTE_ORDER_VALUES.stream().map(bo -> {
-                        return new Object[]{fa, fm, bo};
-                    }))).
                 toArray(Object[][]::new);
     }
 
@@ -267,28 +219,16 @@ public class Int64VectorLoadStoreTests extends AbstractVectorTest {
                 toArray(Object[][]::new);
     }
 
-    static ByteBuffer toBuffer(int[] a, IntFunction<ByteBuffer> fb) {
-        ByteBuffer bb = fb.apply(a.length * SPECIES.elementSize() / 8);
-        for (int v : a) {
-            bb.putInt(v);
+    static MemorySegment toSegment(int[] a, IntFunction<MemorySegment> fb) {
+        MemorySegment ms = fb.apply(a.length * SPECIES.elementSize() / 8);
+        for (int i = 0; i < a.length; i++) {
+            ms.set(ELEMENT_LAYOUT, i * SPECIES.elementSize() / 8 , a[i]);
         }
-        return bb.clear();
+        return ms;
     }
 
-    static int[] bufferToArray(ByteBuffer bb) {
-        IntBuffer db = bb.asIntBuffer();
-        int[] d = new int[db.capacity()];
-        db.get(0, d);
-        return d;
-    }
-
-    static byte[] toByteArray(int[] a, IntFunction<byte[]> fb, ByteOrder bo) {
-        byte[] b = fb.apply(a.length * SPECIES.elementSize() / 8);
-        IntBuffer bb = ByteBuffer.wrap(b, 0, b.length).order(bo).asIntBuffer();
-        for (int v : a) {
-            bb.put(v);
-        }
-        return b;
+    static int[] segmentToArray(MemorySegment ms) {
+        return ms.toArray(ELEMENT_LAYOUT);
     }
 
 
@@ -328,45 +268,24 @@ public class Int64VectorLoadStoreTests extends AbstractVectorTest {
     }
 
     @DontInline
-    static IntVector fromByteArray(byte[] a, int i, ByteOrder bo) {
-        return IntVector.fromByteArray(SPECIES, a, i, bo);
+    static IntVector fromMemorySegment(MemorySegment a, int i, ByteOrder bo) {
+        return IntVector.fromMemorySegment(SPECIES, a, i, bo);
     }
 
     @DontInline
-    static IntVector fromByteArray(byte[] a, int i, ByteOrder bo, VectorMask<Integer> m) {
-        return IntVector.fromByteArray(SPECIES, a, i, bo, m);
+    static IntVector fromMemorySegment(MemorySegment a, int i, ByteOrder bo, VectorMask<Integer> m) {
+        return IntVector.fromMemorySegment(SPECIES, a, i, bo, m);
     }
 
     @DontInline
-    static void intoByteArray(IntVector v, byte[] a, int i, ByteOrder bo) {
-        v.intoByteArray(a, i, bo);
+    static void intoMemorySegment(IntVector v, MemorySegment a, int i, ByteOrder bo) {
+        v.intoMemorySegment(a, i, bo);
     }
 
     @DontInline
-    static void intoByteArray(IntVector v, byte[] a, int i, ByteOrder bo, VectorMask<Integer> m) {
-        v.intoByteArray(a, i, bo, m);
+    static void intoMemorySegment(IntVector v, MemorySegment a, int i, ByteOrder bo, VectorMask<Integer> m) {
+        v.intoMemorySegment(a, i, bo, m);
     }
-
-    @DontInline
-    static IntVector fromByteBuffer(ByteBuffer a, int i, ByteOrder bo) {
-        return IntVector.fromByteBuffer(SPECIES, a, i, bo);
-    }
-
-    @DontInline
-    static IntVector fromByteBuffer(ByteBuffer a, int i, ByteOrder bo, VectorMask<Integer> m) {
-        return IntVector.fromByteBuffer(SPECIES, a, i, bo, m);
-    }
-
-    @DontInline
-    static void intoByteBuffer(IntVector v, ByteBuffer a, int i, ByteOrder bo) {
-        v.intoByteBuffer(a, i, bo);
-    }
-
-    @DontInline
-    static void intoByteBuffer(IntVector v, ByteBuffer a, int i, ByteOrder bo, VectorMask<Integer> m) {
-        v.intoByteBuffer(a, i, bo, m);
-    }
-
 
     @Test(dataProvider = "intProvider")
     static void loadStoreArray(IntFunction<int[]> fa) {
@@ -538,48 +457,45 @@ public class Int64VectorLoadStoreTests extends AbstractVectorTest {
     }
 
 
-    @Test(dataProvider = "intByteBufferProvider")
-    static void loadStoreByteBuffer(IntFunction<int[]> fa,
-                                    IntFunction<ByteBuffer> fb,
-                                    ByteOrder bo) {
-        ByteBuffer a = toBuffer(fa.apply(SPECIES.length()), fb);
-        ByteBuffer r = fb.apply(a.limit());
+    @Test(dataProvider = "intMemorySegmentProvider")
+    static void loadStoreMemorySegment(IntFunction<int[]> fa,
+                                       IntFunction<MemorySegment> fb,
+                                       ByteOrder bo) {
+        MemorySegment a = toSegment(fa.apply(SPECIES.length()), fb);
+        MemorySegment r = fb.apply((int) a.byteSize());
 
-        int l = a.limit();
+        int l = (int) a.byteSize();
         int s = SPECIES.vectorByteSize();
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < l; i += s) {
-                IntVector av = IntVector.fromByteBuffer(SPECIES, a, i, bo);
-                av.intoByteBuffer(r, i, bo);
+                IntVector av = IntVector.fromMemorySegment(SPECIES, a, i, bo);
+                av.intoMemorySegment(r, i, bo);
             }
         }
-        Assert.assertEquals(a.position(), 0, "Input buffer position changed");
-        Assert.assertEquals(a.limit(), l, "Input buffer limit changed");
-        Assert.assertEquals(r.position(), 0, "Result buffer position changed");
-        Assert.assertEquals(r.limit(), l, "Result buffer limit changed");
-        Assert.assertEquals(r, a, "Buffers not equal");
+        long m = r.mismatch(a);
+        Assert.assertEquals(m, -1, "Segments not equal");
     }
 
     @Test(dataProvider = "intByteProviderForIOOBE")
-    static void loadByteBufferIOOBE(IntFunction<int[]> fa, IntFunction<Integer> fi) {
-        ByteBuffer a = toBuffer(fa.apply(SPECIES.length()), ByteBuffer::allocateDirect);
-        ByteBuffer r = ByteBuffer.allocateDirect(a.limit());
+    static void loadMemorySegmentIOOBE(IntFunction<int[]> fa, IntFunction<Integer> fi) {
+        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, Integer.SIZE, MemorySession.openImplicit()));
+        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), Integer.SIZE, MemorySession.openImplicit());
 
-        int l = a.limit();
+        int l = (int) a.byteSize();
         int s = SPECIES.vectorByteSize();
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < l; i += s) {
-                IntVector av = fromByteBuffer(a, i, ByteOrder.nativeOrder());
-                av.intoByteBuffer(r, i, ByteOrder.nativeOrder());
+                IntVector av = fromMemorySegment(a, i, ByteOrder.nativeOrder());
+                av.intoMemorySegment(r, i, ByteOrder.nativeOrder());
             }
         }
 
-        int index = fi.apply(a.limit());
-        boolean shouldFail = isIndexOutOfBounds(SPECIES.vectorByteSize(), index, a.limit());
+        int index = fi.apply((int) a.byteSize());
+        boolean shouldFail = isIndexOutOfBounds(SPECIES.vectorByteSize(), index, (int) a.byteSize());
         try {
-            fromByteBuffer(a, index, ByteOrder.nativeOrder());
+            fromMemorySegment(a, index, ByteOrder.nativeOrder());
             if (shouldFail) {
                 Assert.fail("Failed to throw IndexOutOfBoundsException");
             }
@@ -591,25 +507,25 @@ public class Int64VectorLoadStoreTests extends AbstractVectorTest {
     }
 
     @Test(dataProvider = "intByteProviderForIOOBE")
-    static void storeByteBufferIOOBE(IntFunction<int[]> fa, IntFunction<Integer> fi) {
-        ByteBuffer a = toBuffer(fa.apply(SPECIES.length()), ByteBuffer::allocateDirect);
-        ByteBuffer r = ByteBuffer.allocateDirect(a.limit());
+    static void storeMemorySegmentIOOBE(IntFunction<int[]> fa, IntFunction<Integer> fi) {
+        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, Integer.SIZE, MemorySession.openImplicit()));
+        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), Integer.SIZE, MemorySession.openImplicit());
 
-        int l = a.limit();
+        int l = (int) a.byteSize();
         int s = SPECIES.vectorByteSize();
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < l; i += s) {
-                IntVector av = IntVector.fromByteBuffer(SPECIES, a, i, ByteOrder.nativeOrder());
-                intoByteBuffer(av, r, i, ByteOrder.nativeOrder());
+                IntVector av = IntVector.fromMemorySegment(SPECIES, a, i, ByteOrder.nativeOrder());
+                intoMemorySegment(av, r, i, ByteOrder.nativeOrder());
             }
         }
 
-        int index = fi.apply(a.limit());
-        boolean shouldFail = isIndexOutOfBounds(SPECIES.vectorByteSize(), index, a.limit());
+        int index = fi.apply((int) a.byteSize());
+        boolean shouldFail = isIndexOutOfBounds(SPECIES.vectorByteSize(), index, (int) a.byteSize());
         try {
-            IntVector av = IntVector.fromByteBuffer(SPECIES, a, 0, ByteOrder.nativeOrder());
-            intoByteBuffer(av, r, index, ByteOrder.nativeOrder());
+            IntVector av = IntVector.fromMemorySegment(SPECIES, a, 0, ByteOrder.nativeOrder());
+            intoMemorySegment(av, r, index, ByteOrder.nativeOrder());
             if (shouldFail) {
                 Assert.fail("Failed to throw IndexOutOfBoundsException");
             }
@@ -620,70 +536,61 @@ public class Int64VectorLoadStoreTests extends AbstractVectorTest {
         }
     }
 
-
-    @Test(dataProvider = "intByteBufferMaskProvider")
-    static void loadStoreByteBufferMask(IntFunction<int[]> fa,
-                                        IntFunction<ByteBuffer> fb,
-                                        IntFunction<boolean[]> fm,
-                                        ByteOrder bo) {
+    @Test(dataProvider = "intMemorySegmentMaskProvider")
+    static void loadStoreMemorySegmentMask(IntFunction<int[]> fa,
+                                           IntFunction<MemorySegment> fb,
+                                           IntFunction<boolean[]> fm,
+                                           ByteOrder bo) {
         int[] _a = fa.apply(SPECIES.length());
-        ByteBuffer a = toBuffer(_a, fb);
-        ByteBuffer r = fb.apply(a.limit());
+        MemorySegment a = toSegment(_a, fb);
+        MemorySegment r = fb.apply((int) a.byteSize());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Integer> vmask = VectorMask.fromValues(SPECIES, mask);
 
-        int l = a.limit();
+        int l = (int) a.byteSize();
         int s = SPECIES.vectorByteSize();
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < l; i += s) {
-                IntVector av = IntVector.fromByteBuffer(SPECIES, a, i, bo, vmask);
-                av.intoByteBuffer(r, i, bo);
+                IntVector av = IntVector.fromMemorySegment(SPECIES, a, i, bo, vmask);
+                av.intoMemorySegment(r, i, bo);
             }
         }
-        Assert.assertEquals(a.position(), 0, "Input buffer position changed");
-        Assert.assertEquals(a.limit(), l, "Input buffer limit changed");
-        Assert.assertEquals(r.position(), 0, "Result buffer position changed");
-        Assert.assertEquals(r.limit(), l, "Result buffer limit changed");
-        assertArraysEquals(bufferToArray(r), _a, mask);
+        assertArraysEquals(segmentToArray(r), _a, mask);
 
 
-        r = fb.apply(a.limit());
+        r = fb.apply((int) a.byteSize());
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < l; i += s) {
-                IntVector av = IntVector.fromByteBuffer(SPECIES, a, i, bo);
-                av.intoByteBuffer(r, i, bo, vmask);
+                IntVector av = IntVector.fromMemorySegment(SPECIES, a, i, bo);
+                av.intoMemorySegment(r, i, bo, vmask);
             }
         }
-        Assert.assertEquals(a.position(), 0, "Input buffer position changed");
-        Assert.assertEquals(a.limit(), l, "Input buffer limit changed");
-        Assert.assertEquals(r.position(), 0, "Result buffer position changed");
-        Assert.assertEquals(r.limit(), l, "Result buffer limit changed");
-        assertArraysEquals(bufferToArray(r), _a, mask);
+        assertArraysEquals(segmentToArray(r), _a, mask);
     }
 
     @Test(dataProvider = "intByteMaskProviderForIOOBE")
-    static void loadByteBufferMaskIOOBE(IntFunction<int[]> fa, IntFunction<Integer> fi, IntFunction<boolean[]> fm) {
-        ByteBuffer a = toBuffer(fa.apply(SPECIES.length()), ByteBuffer::allocateDirect);
-        ByteBuffer r = ByteBuffer.allocateDirect(a.limit());
+    static void loadMemorySegmentMaskIOOBE(IntFunction<int[]> fa, IntFunction<Integer> fi, IntFunction<boolean[]> fm) {
+        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, Integer.SIZE, MemorySession.openImplicit()));
+        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), Integer.SIZE, MemorySession.openImplicit());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Integer> vmask = VectorMask.fromValues(SPECIES, mask);
 
-        int l = a.limit();
+        int l = (int) a.byteSize();
         int s = SPECIES.vectorByteSize();
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < l; i += s) {
-                IntVector av = fromByteBuffer(a, i, ByteOrder.nativeOrder(), vmask);
-                av.intoByteBuffer(r, i, ByteOrder.nativeOrder());
+                IntVector av = fromMemorySegment(a, i, ByteOrder.nativeOrder(), vmask);
+                av.intoMemorySegment(r, i, ByteOrder.nativeOrder());
             }
         }
 
-        int index = fi.apply(a.limit());
-        boolean shouldFail = isIndexOutOfBoundsForMask(mask, index, a.limit(), SPECIES.elementSize() / 8);
+        int index = fi.apply((int) a.byteSize());
+        boolean shouldFail = isIndexOutOfBoundsForMask(mask, index, (int) a.byteSize(), SPECIES.elementSize() / 8);
         try {
-            fromByteBuffer(a, index, ByteOrder.nativeOrder(), vmask);
+            fromMemorySegment(a, index, ByteOrder.nativeOrder(), vmask);
             if (shouldFail) {
                 Assert.fail("Failed to throw IndexOutOfBoundsException");
             }
@@ -695,27 +602,27 @@ public class Int64VectorLoadStoreTests extends AbstractVectorTest {
     }
 
     @Test(dataProvider = "intByteMaskProviderForIOOBE")
-    static void storeByteBufferMaskIOOBE(IntFunction<int[]> fa, IntFunction<Integer> fi, IntFunction<boolean[]> fm) {
-        ByteBuffer a = toBuffer(fa.apply(SPECIES.length()), ByteBuffer::allocateDirect);
-        ByteBuffer r = ByteBuffer.allocateDirect(a.limit());
+    static void storeMemorySegmentMaskIOOBE(IntFunction<int[]> fa, IntFunction<Integer> fi, IntFunction<boolean[]> fm) {
+        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, Integer.SIZE, MemorySession.openImplicit()));
+        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), Integer.SIZE, MemorySession.openImplicit());
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Integer> vmask = VectorMask.fromValues(SPECIES, mask);
 
-        int l = a.limit();
+        int l = (int) a.byteSize();
         int s = SPECIES.vectorByteSize();
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < l; i += s) {
-                IntVector av = IntVector.fromByteBuffer(SPECIES, a, i, ByteOrder.nativeOrder());
-                intoByteBuffer(av, r, i, ByteOrder.nativeOrder(), vmask);
+                IntVector av = IntVector.fromMemorySegment(SPECIES, a, i, ByteOrder.nativeOrder());
+                intoMemorySegment(av, r, i, ByteOrder.nativeOrder(), vmask);
             }
         }
 
-        int index = fi.apply(a.limit());
-        boolean shouldFail = isIndexOutOfBoundsForMask(mask, index, a.limit(), SPECIES.elementSize() / 8);
+        int index = fi.apply((int) a.byteSize());
+        boolean shouldFail = isIndexOutOfBoundsForMask(mask, index, (int) a.byteSize(), SPECIES.elementSize() / 8);
         try {
-            IntVector av = IntVector.fromByteBuffer(SPECIES, a, 0, ByteOrder.nativeOrder());
-            intoByteBuffer(av, a, index, ByteOrder.nativeOrder(), vmask);
+            IntVector av = IntVector.fromMemorySegment(SPECIES, a, 0, ByteOrder.nativeOrder());
+            intoMemorySegment(av, a, index, ByteOrder.nativeOrder(), vmask);
             if (shouldFail) {
                 Assert.fail("Failed to throw IndexOutOfBoundsException");
             }
@@ -726,213 +633,35 @@ public class Int64VectorLoadStoreTests extends AbstractVectorTest {
         }
     }
 
+    @Test(dataProvider = "intMemorySegmentProvider")
+    static void loadStoreReadonlyMemorySegment(IntFunction<int[]> fa,
+                                               IntFunction<MemorySegment> fb,
+                                               ByteOrder bo) {
+        MemorySegment a = toSegment(fa.apply(SPECIES.length()), fb).asReadOnly();
 
-    @Test(dataProvider = "intByteBufferProvider")
-    static void loadStoreReadonlyByteBuffer(IntFunction<int[]> fa,
-                                    IntFunction<ByteBuffer> fb,
-                                    ByteOrder bo) {
-        ByteBuffer a = toBuffer(fa.apply(SPECIES.length()), fb).asReadOnlyBuffer();
+        Assert.assertThrows(
+                UnsupportedOperationException.class,
+                () -> SPECIES.zero().intoMemorySegment(a, 0, bo)
+        );
 
-        try {
-            SPECIES.zero().intoByteBuffer(a, 0, bo);
-            Assert.fail("ReadOnlyBufferException expected");
-        } catch (ReadOnlyBufferException e) {
-        }
+        Assert.assertThrows(
+                UnsupportedOperationException.class,
+                () -> SPECIES.zero().intoMemorySegment(a, 0, bo, SPECIES.maskAll(true))
+        );
 
-        try {
-            SPECIES.zero().intoByteBuffer(a, 0, bo, SPECIES.maskAll(true));
-            Assert.fail("ReadOnlyBufferException expected");
-        } catch (ReadOnlyBufferException e) {
-        }
+        Assert.assertThrows(
+                UnsupportedOperationException.class,
+                () -> SPECIES.zero().intoMemorySegment(a, 0, bo, SPECIES.maskAll(false))
+        );
 
-        try {
-            SPECIES.zero().intoByteBuffer(a, 0, bo, SPECIES.maskAll(false));
-            Assert.fail("ReadOnlyBufferException expected");
-        } catch (ReadOnlyBufferException e) {
-        }
-
-        try {
-            VectorMask<Integer> m = SPECIES.shuffleFromOp(i -> i % 2 == 0 ? 1 : -1)
-                    .laneIsValid();
-            SPECIES.zero().intoByteBuffer(a, 0, bo, m);
-            Assert.fail("ReadOnlyBufferException expected");
-        } catch (ReadOnlyBufferException e) {
-        }
+        VectorMask<Integer> m = SPECIES.shuffleFromOp(i -> i % 2 == 0 ? 1 : -1)
+                .laneIsValid();
+        Assert.assertThrows(
+                UnsupportedOperationException.class,
+                () -> SPECIES.zero().intoMemorySegment(a, 0, bo, m)
+        );
     }
 
-
-    @Test(dataProvider = "intByteArrayProvider")
-    static void loadStoreByteArray(IntFunction<int[]> fa,
-                                    ByteOrder bo) {
-        byte[] a = toByteArray(fa.apply(SPECIES.length()), byte[]::new, bo);
-        byte[] r = new byte[a.length];
-
-        int s = SPECIES.vectorByteSize();
-        int l = a.length;
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            for (int i = 0; i < l; i += s) {
-                IntVector av = IntVector.fromByteArray(SPECIES, a, i, bo);
-                av.intoByteArray(r, i, bo);
-            }
-        }
-        Assert.assertEquals(r, a, "Byte arrays not equal");
-    }
-
-    @Test(dataProvider = "intByteProviderForIOOBE")
-    static void loadByteArrayIOOBE(IntFunction<int[]> fa, IntFunction<Integer> fi) {
-        byte[] a = toByteArray(fa.apply(SPECIES.length()), byte[]::new, ByteOrder.nativeOrder());
-        byte[] r = new byte[a.length];
-
-        int s = SPECIES.vectorByteSize();
-        int l = a.length;
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            for (int i = 0; i < l; i += s) {
-                IntVector av = fromByteArray(a, i, ByteOrder.nativeOrder());
-                av.intoByteArray(r, i, ByteOrder.nativeOrder());
-            }
-        }
-
-        int index = fi.apply(a.length);
-        boolean shouldFail = isIndexOutOfBounds(SPECIES.vectorByteSize(), index, a.length);
-        try {
-            fromByteArray(a, index, ByteOrder.nativeOrder());
-            if (shouldFail) {
-                Assert.fail("Failed to throw IndexOutOfBoundsException");
-            }
-        } catch (IndexOutOfBoundsException e) {
-            if (!shouldFail) {
-                Assert.fail("Unexpected IndexOutOfBoundsException");
-            }
-        }
-    }
-
-    @Test(dataProvider = "intByteProviderForIOOBE")
-    static void storeByteArrayIOOBE(IntFunction<int[]> fa, IntFunction<Integer> fi) {
-        byte[] a = toByteArray(fa.apply(SPECIES.length()), byte[]::new, ByteOrder.nativeOrder());
-        byte[] r = new byte[a.length];
-
-        int s = SPECIES.vectorByteSize();
-        int l = a.length;
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            for (int i = 0; i < l; i += s) {
-                IntVector av = IntVector.fromByteArray(SPECIES, a, i, ByteOrder.nativeOrder());
-                intoByteArray(av, r, i, ByteOrder.nativeOrder());
-            }
-        }
-
-        int index = fi.apply(a.length);
-        boolean shouldFail = isIndexOutOfBounds(SPECIES.vectorByteSize(), index, a.length);
-        try {
-            IntVector av = IntVector.fromByteArray(SPECIES, a, 0, ByteOrder.nativeOrder());
-            intoByteArray(av, r, index, ByteOrder.nativeOrder());
-            if (shouldFail) {
-                Assert.fail("Failed to throw IndexOutOfBoundsException");
-            }
-        } catch (IndexOutOfBoundsException e) {
-            if (!shouldFail) {
-                Assert.fail("Unexpected IndexOutOfBoundsException");
-            }
-        }
-    }
-
-
-    @Test(dataProvider = "intByteArrayMaskProvider")
-    static void loadStoreByteArrayMask(IntFunction<int[]> fa,
-                                  IntFunction<boolean[]> fm,
-                                  ByteOrder bo) {
-        byte[] a = toByteArray(fa.apply(SPECIES.length()), byte[]::new, bo);
-        byte[] r = new byte[a.length];
-        boolean[] mask = fm.apply(SPECIES.length());
-        VectorMask<Integer> vmask = VectorMask.fromValues(SPECIES, mask);
-
-        int s = SPECIES.vectorByteSize();
-        int l = a.length;
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-          for (int i = 0; i < l; i += s) {
-              IntVector av = IntVector.fromByteArray(SPECIES, a, i, bo, vmask);
-              av.intoByteArray(r, i, bo);
-          }
-        }
-        assertArraysEquals(r, a, mask);
-
-
-        r = new byte[a.length];
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            for (int i = 0; i < l; i += s) {
-                IntVector av = IntVector.fromByteArray(SPECIES, a, i, bo);
-                av.intoByteArray(r, i, bo, vmask);
-            }
-        }
-        assertArraysEquals(r, a, mask);
-    }
-
-    @Test(dataProvider = "intByteMaskProviderForIOOBE")
-    static void loadByteArrayMaskIOOBE(IntFunction<int[]> fa, IntFunction<Integer> fi, IntFunction<boolean[]> fm) {
-        byte[] a = toByteArray(fa.apply(SPECIES.length()), byte[]::new, ByteOrder.nativeOrder());
-        byte[] r = new byte[a.length];
-        boolean[] mask = fm.apply(SPECIES.length());
-        VectorMask<Integer> vmask = VectorMask.fromValues(SPECIES, mask);
-
-        int s = SPECIES.vectorByteSize();
-        int l = a.length;
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            for (int i = 0; i < l; i += s) {
-                IntVector av = fromByteArray(a, i, ByteOrder.nativeOrder(), vmask);
-                av.intoByteArray(r, i, ByteOrder.nativeOrder());
-            }
-        }
-
-        int index = fi.apply(a.length);
-        boolean shouldFail = isIndexOutOfBoundsForMask(mask, index, a.length, SPECIES.elementSize() / 8);
-        try {
-            fromByteArray(a, index, ByteOrder.nativeOrder(), vmask);
-            if (shouldFail) {
-                Assert.fail("Failed to throw IndexOutOfBoundsException");
-            }
-        } catch (IndexOutOfBoundsException e) {
-            if (!shouldFail) {
-                Assert.fail("Unexpected IndexOutOfBoundsException");
-            }
-        }
-    }
-
-    @Test(dataProvider = "intByteMaskProviderForIOOBE")
-    static void storeByteArrayMaskIOOBE(IntFunction<int[]> fa, IntFunction<Integer> fi, IntFunction<boolean[]> fm) {
-        byte[] a = toByteArray(fa.apply(SPECIES.length()), byte[]::new, ByteOrder.nativeOrder());
-        byte[] r = new byte[a.length];
-        boolean[] mask = fm.apply(SPECIES.length());
-        VectorMask<Integer> vmask = VectorMask.fromValues(SPECIES, mask);
-
-        int s = SPECIES.vectorByteSize();
-        int l = a.length;
-
-        for (int ic = 0; ic < INVOC_COUNT; ic++) {
-            for (int i = 0; i < l; i += s) {
-                IntVector av = IntVector.fromByteArray(SPECIES, a, i, ByteOrder.nativeOrder());
-                intoByteArray(av, r, i, ByteOrder.nativeOrder(), vmask);
-            }
-        }
-
-        int index = fi.apply(a.length);
-        boolean shouldFail = isIndexOutOfBoundsForMask(mask, index, a.length, SPECIES.elementSize() / 8);
-        try {
-            IntVector av = IntVector.fromByteArray(SPECIES, a, 0, ByteOrder.nativeOrder());
-            intoByteArray(av, a, index, ByteOrder.nativeOrder(), vmask);
-            if (shouldFail) {
-                Assert.fail("Failed to throw IndexOutOfBoundsException");
-            }
-        } catch (IndexOutOfBoundsException e) {
-            if (!shouldFail) {
-                Assert.fail("Unexpected IndexOutOfBoundsException");
-            }
-        }
-    }
 
     @Test(dataProvider = "maskProvider")
     static void loadStoreMask(IntFunction<boolean[]> fm) {
@@ -948,6 +677,7 @@ public class Int64VectorLoadStoreTests extends AbstractVectorTest {
         Assert.assertEquals(r, a);
     }
 
+
     @Test
     static void loadStoreShuffle() {
         IntUnaryOperator fn = a -> a + 5;
@@ -959,4 +689,159 @@ public class Int64VectorLoadStoreTests extends AbstractVectorTest {
             Assert.assertEquals(r, a);
        }
     }
+
+
+
+
+
+    // Gather/Scatter load/store tests
+
+    static void assertGatherArraysEquals(int[] r, int[] a, int[] indexMap) {
+        int i = 0;
+        int j = 0;
+        try {
+            for (; i < a.length; i += SPECIES.length()) {
+                j = i;
+                for (; j < i + SPECIES.length(); j++) {
+                    Assert.assertEquals(r[j], a[i + indexMap[j]]);
+                }
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(r[j], a[i + indexMap[j]], "at index #" + j);
+        }
+    }
+
+    static void assertGatherArraysEquals(int[] r, int[] a, int[] indexMap, boolean[] mask) {
+        int i = 0;
+        int j = 0;
+        try {
+            for (; i < a.length; i += SPECIES.length()) {
+                j = i;
+                for (; j < i + SPECIES.length(); j++) {
+                    Assert.assertEquals(r[j], mask[j % SPECIES.length()] ? a[i + indexMap[j]]: (int) 0);
+                }
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(r[i], mask[j % SPECIES.length()] ? a[i + indexMap[j]]: (int) 0, "at index #" + j);
+        }
+    }
+
+    static void assertScatterArraysEquals(int[] r, int[] a, int[] indexMap, boolean[] mask) {
+        int[] expected = new int[r.length];
+
+        // Store before checking, since the same location may be stored to more than once
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            for (int j = i; j < i + SPECIES.length(); j++) {
+                if (mask[j % SPECIES.length()]) {
+                    expected[i + indexMap[j]] = a[j];
+                }
+            }
+        }
+
+        Assert.assertEquals(r, expected);
+    }
+
+    static void assertScatterArraysEquals(int[] r, int[] a, int[] indexMap) {
+        int[] expected = new int[r.length];
+
+        // Store before checking, since the same location may be stored to more than once
+        for (int i = 0; i < a.length; i += SPECIES.length()) {
+            for (int j = i; j < i + SPECIES.length(); j++) {
+                expected[i + indexMap[j]] = a[j];
+            }
+        }
+
+        Assert.assertEquals(r, expected);
+    }
+
+    @DataProvider
+    public Object[][] gatherScatterProvider() {
+        return INT_INDEX_GENERATORS.stream().
+                flatMap(fs -> INT_GENERATORS.stream().map(fa -> {
+                    return new Object[] {fa, fs};
+                })).
+                toArray(Object[][]::new);
+    }
+
+    @DataProvider
+    public Object[][] gatherScatterMaskProvider() {
+        return BOOLEAN_MASK_GENERATORS.stream().
+          flatMap(fs -> INT_INDEX_GENERATORS.stream().flatMap(fm ->
+            INT_GENERATORS.stream().map(fa -> {
+                    return new Object[] {fa, fm, fs};
+            }))).
+            toArray(Object[][]::new);
+    }
+
+
+    @Test(dataProvider = "gatherScatterProvider")
+    static void gather(IntFunction<int[]> fa, BiFunction<Integer,Integer,int[]> fs) {
+        int[] a = fa.apply(SPECIES.length());
+        int[] b = fs.apply(a.length, SPECIES.length());
+        int[] r = new int[a.length];
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                IntVector av = IntVector.fromArray(SPECIES, a, i, b, i);
+                av.intoArray(r, i);
+            }
+        }
+
+        assertGatherArraysEquals(r, a, b);
+    }
+
+    @Test(dataProvider = "gatherScatterMaskProvider")
+    static void gatherMask(IntFunction<int[]> fa, BiFunction<Integer,Integer,int[]> fs, IntFunction<boolean[]> fm) {
+        int[] a = fa.apply(SPECIES.length());
+        int[] b = fs.apply(a.length, SPECIES.length());
+        int[] r = new int[a.length];
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Integer> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                IntVector av = IntVector.fromArray(SPECIES, a, i, b, i, vmask);
+                av.intoArray(r, i);
+            }
+        }
+
+        assertGatherArraysEquals(r, a, b, mask);
+    }
+
+    @Test(dataProvider = "gatherScatterProvider")
+    static void scatter(IntFunction<int[]> fa, BiFunction<Integer,Integer,int[]> fs) {
+        int[] a = fa.apply(SPECIES.length());
+        int[] b = fs.apply(a.length, SPECIES.length());
+        int[] r = new int[a.length];
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                IntVector av = IntVector.fromArray(SPECIES, a, i);
+                av.intoArray(r, i, b, i);
+            }
+        }
+
+        assertScatterArraysEquals(r, a, b);
+    }
+
+    @Test(dataProvider = "gatherScatterMaskProvider")
+    static void scatterMask(IntFunction<int[]> fa, BiFunction<Integer,Integer,int[]> fs, IntFunction<boolean[]> fm) {
+        int[] a = fa.apply(SPECIES.length());
+        int[] b = fs.apply(a.length, SPECIES.length());
+        int[] r = new int[a.length];
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Integer> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                IntVector av = IntVector.fromArray(SPECIES, a, i);
+                av.intoArray(r, i, b, i, vmask);
+            }
+        }
+
+        assertScatterArraysEquals(r, a, b, mask);
+    }
+
+
+
 }

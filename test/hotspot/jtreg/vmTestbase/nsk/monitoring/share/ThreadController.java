@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -604,6 +604,7 @@ class WaitingThread extends BaseThread {
 
         expectedMethods.add(ThreadsGroupLocks.PlainCountDownLatch.class.getName() + ".await");
         expectedMethods.add(Object.class.getName() + ".wait");
+        expectedMethods.add(Object.class.getName() + ".wait0");
 
         switch (controller.invocationType) {
             case ThreadController.JAVA_TYPE:
@@ -652,9 +653,16 @@ class SleepingThread extends BaseThread {
 
         this.threadsGroupLocks = threadsGroupLocks;
 
-        expectedLength += 3;
+        expectedLength += 4;
 
         expectedMethods.add(Thread.class.getName() + ".sleep");
+        expectedMethods.add(Thread.class.getName() + ".sleep0");
+        expectedMethods.add(Thread.class.getName() + ".currentCarrierThread");
+        expectedMethods.add(Thread.class.getName() + ".currentThread");
+        // jdk.internal.event.ThreadSleepEvent not accessible
+        expectedMethods.add("jdk.internal.event.ThreadSleepEvent.<clinit>");
+        expectedMethods.add("jdk.internal.event.ThreadSleepEvent.isEnabled");
+        expectedMethods.add("jdk.internal.event.ThreadSleepEvent.isTurnedOn");
         expectedMethods.add(SleepingThread.class.getName() + ".run");
 
         switch (controller.invocationType) {
@@ -719,9 +727,14 @@ class RunningThread extends BaseThread {
         super(controller, name, log, threadsGroupLocks);
         this.threadsGroupLocks = threadsGroupLocks;
 
-        expectedLength += 2;
+        expectedLength += 3;
 
         expectedMethods.add(Thread.class.getName() + ".yield");
+        expectedMethods.add(Thread.class.getName() + ".getVirtualThread");
+        expectedMethods.add(Thread.class.getName() + ".currentCarrierThread");
+        expectedMethods.add(Thread.class.getName() + ".currentThread");
+        expectedMethods.add(Thread.class.getName() + ".currentThread0");
+        expectedMethods.add(Thread.class.getName() + ".yield0");
 
         switch (controller.invocationType) {
             case ThreadController.JAVA_TYPE:

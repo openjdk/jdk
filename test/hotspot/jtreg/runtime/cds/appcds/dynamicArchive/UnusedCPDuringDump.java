@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @build sun.hotspot.WhiteBox
  * @compile ../test-classes/Hello.java
- * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Dtest.cds.copy.child.stdout=false -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. UnusedCPDuringDump
  */
 
@@ -66,8 +66,7 @@ public class UnusedCPDuringDump extends DynamicArchiveTestBase {
              "-cp", dir.getPath(),
              "Hello")
             .assertNormalExit(output -> {
-                 output.shouldContain("Buffer-space to target-space delta")
-                        .shouldContain("Written dynamic archive 0x");
+                 output.shouldContain("Written dynamic archive 0x");
                 });
 
         // Running with -cp different from dumping. It should be fine because

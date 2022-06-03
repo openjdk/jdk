@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 #include "jfr/support/jfrAllocationTracer.hpp"
 #endif
 
-void AllocTracer::send_allocation_outside_tlab(Klass* klass, HeapWord* obj, size_t alloc_size, Thread* thread) {
+void AllocTracer::send_allocation_outside_tlab(Klass* klass, HeapWord* obj, size_t alloc_size, JavaThread* thread) {
   JFR_ONLY(JfrAllocationTracer tracer(klass, obj, alloc_size, true, thread);)
   EventObjectAllocationOutsideTLAB event;
   if (event.should_commit()) {
@@ -41,7 +41,7 @@ void AllocTracer::send_allocation_outside_tlab(Klass* klass, HeapWord* obj, size
   }
 }
 
-void AllocTracer::send_allocation_in_new_tlab(Klass* klass, HeapWord* obj, size_t tlab_size, size_t alloc_size, Thread* thread) {
+void AllocTracer::send_allocation_in_new_tlab(Klass* klass, HeapWord* obj, size_t tlab_size, size_t alloc_size, JavaThread* thread) {
   JFR_ONLY(JfrAllocationTracer tracer(klass, obj, alloc_size, false, thread);)
   EventObjectAllocationInNewTLAB event;
   if (event.should_commit()) {

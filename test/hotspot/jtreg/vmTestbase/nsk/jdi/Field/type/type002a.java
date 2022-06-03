@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,23 +56,23 @@ class type002aClassToCheck {
     // No array fields
     class Class {}
     Class     X0 = new Class();
-    Boolean   Z0 = new Boolean(true);
-    Byte      B0 = new Byte(Byte.MIN_VALUE);
-    Character C0 = new Character('\u00ff');
-    Double    D0 = new Double(1);
-    Float     F0 = new Float(1f);
-    Integer   I0 = new Integer(1);
-    Long      L0 = new Long(1l);
+    Boolean   Z0 = Boolean.valueOf(true);
+    Byte      B0 = Byte.valueOf(Byte.MIN_VALUE);
+    Character C0 = Character.valueOf('\u00ff');
+    Double    D0 = Double.valueOf(1);
+    Float     F0 = Float.valueOf(1f);
+    Integer   I0 = Integer.valueOf(1);
+    Long      L0 = Long.valueOf(1l);
     String    S0 = new String();
     Object    O0 = new Object();
 
-    static    Long LS0 = new Long(1l);
-    private   Long LP0 = new Long(1l);
-    public    Long LU0 = new Long(1l);
-    protected Long LR0 = new Long(1l);
-    transient Long LT0 = new Long(1l);
-    volatile  Long LV0 = new Long(1l);
-    final     Long LF0 = new Long(1l);
+    static    Long LS0 = Long.valueOf(1l);
+    private   Long LP0 = Long.valueOf(1l);
+    public    Long LU0 = Long.valueOf(1l);
+    protected Long LR0 = Long.valueOf(1l);
+    transient Long LT0 = Long.valueOf(1l);
+    volatile  Long LV0 = Long.valueOf(1l);
+    final     Long LF0 = Long.valueOf(1l);
 
     interface Inter {}
     static class InterClass implements Inter {}

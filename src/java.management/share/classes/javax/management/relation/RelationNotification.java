@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,6 +121,7 @@ public class RelationNotification extends Notification {
     static {
         try {
             GetPropertyAction act = new GetPropertyAction("jmx.serial.form");
+            @SuppressWarnings("removal")
             String form = AccessController.doPrivileged(act);
             compat = (form != null && form.equals("1.0"));
         } catch (Exception e) {
@@ -574,7 +575,7 @@ public class RelationNotification extends Notification {
             throw new InvalidObjectException("Invalid object read");
         }
 
-        // assign deserialized vaules to object fields
+        // assign deserialized values to object fields
         relationObjName = safeGetObjectName(tmpRelationObjName);
         newRoleValue = safeGetObjectNameList(tmpNewRoleValue);
         oldRoleValue = safeGetObjectNameList(tmpOldRoleValue);

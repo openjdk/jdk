@@ -794,7 +794,7 @@ public abstract class Rectangle2D extends RectangularShape {
      * {@code true}. The {@code contains} method does not
      * return {@code true} for points on the right or bottom
      * edges of a rectangle. Therefore, if the added point falls on
-     * the left or bottom edge of the enlarged rectangle,
+     * the right or bottom edge of the enlarged rectangle,
      * {@code contains} returns {@code false} for that point.
      * @param newx the X coordinate of the new point
      * @param newy the Y coordinate of the new point
@@ -820,7 +820,7 @@ public abstract class Rectangle2D extends RectangularShape {
      * {@code true}. The {@code contains}
      * method does not return {@code true} for points on the right
      * or bottom edges of a rectangle. Therefore, if the added point falls
-     * on the left or bottom edge of the enlarged rectangle,
+     * on the right or bottom edge of the enlarged rectangle,
      * {@code contains} returns {@code false} for that point.
      * @param     pt the new {@code Point2D} to add to this
      * {@code Rectangle2D}.

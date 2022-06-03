@@ -50,9 +50,8 @@ import sun.java2d.cmm.ProfileDeferralInfo;
  * this kind of profile are monochrome input profiles, monochrome display
  * profiles, and monochrome output profiles.
  * <p>
- * The advantage of this class is that it provides a lookup table that Java
- * or native methods can use directly to optimize color conversion in some
- * cases.
+ * The advantage of this class is that it provides a lookup table that Java or
+ * native methods can use directly to optimize color conversion in some cases.
  * <p>
  * To transform from a GRAY device profile color space to the CIEXYZ Profile
  * Connection Space, the device gray component is transformed by a lookup
@@ -66,7 +65,7 @@ import sun.java2d.cmm.ProfileDeferralInfo;
  * The inverse transform is done by converting the PCS Y components to device
  * Gray via the inverse of the grayTRC.
  */
-public class ICC_ProfileGray extends ICC_Profile {
+public final class ICC_ProfileGray extends ICC_Profile {
 
     /**
      * Use serialVersionUID from JDK 1.2 for interoperability.

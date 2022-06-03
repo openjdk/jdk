@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -151,25 +149,33 @@ public class TestOnEvent {
     }
 
     private static void testOnEventAfterStart() {
+        log("Entering testOnEventAfterStart()");
         try (RecordingStream r = new RecordingStream()) {
             EventProducer p = new EventProducer();
             p.start();
             Thread addHandler = new Thread(() ->  {
                 r.onEvent(e -> {
                     // Got event, close stream
+                    log("Executing onEvent");
                     r.close();
+                    log("RecordingStream closed");
                 });
             });
             r.onFlush(() ->  {
                 // Only add handler once
                 if (!"started".equals(addHandler.getName()))  {
                     addHandler.setName("started");
+                    log("About to start addHandler thread");
                     addHandler.start();
                 }
             });
+            log("About to start RecordingStream");
             r.start();
+            log("About to kill EventProducer");
             p.kill();
+            log("EventProducer killed");
         }
+        log("Leaving testOnEventAfterStart()");
     }
 
     // Starts recording stream and ensures stream

@@ -26,19 +26,19 @@
  * @bug 8044500 8194486
  * @summary Add kinit options and krb5.conf flags that allow users to
  *          obtain renewable tickets and specify ticket lifetimes
- * @library ../../../../java/security/testlibrary/ /test/lib
+ * @library /test/lib
  * @compile -XDignore.symbol.file Renewal.java
  * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
  * @run main/othervm -Djdk.net.hosts.file=TestHosts Renewal
  */
 
+import jdk.test.lib.process.Proc;
 import sun.security.krb5.Config;
 import sun.security.krb5.internal.ccache.Credentials;
 import sun.security.krb5.internal.ccache.FileCredentialsCache;
 
 import javax.security.auth.kerberos.KerberosTicket;
 import java.util.Date;
-import java.util.Random;
 import java.util.Set;
 
 // The basic krb5 test skeleton you can copy from

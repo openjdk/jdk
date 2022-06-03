@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,6 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Random;
 import java.util.function.BooleanSupplier;
 import java.util.concurrent.TimeUnit;
@@ -360,17 +359,20 @@ public final class Utils {
             // which are incompatible with native Windows routines.
             // So on Windows test only addresses with numeric scope.
             // On other platforms test both symbolic and numeric scopes.
-            conf.ip6Addresses().forEach(addr6 -> {
-                try {
-                    result.add(Inet6Address.getByAddress(null, addr6.getAddress(), addr6.getScopeId()));
-                } catch (UnknownHostException e) {
-                    // cannot happen!
-                    throw new RuntimeException("Unexpected", e);
-                }
-                if (!Platform.isWindows()) {
-                    result.add(addr6);
-                }
-            });
+            conf.ip6Addresses()
+                    // test only IPv6 loopback and link-local addresses (JDK-8224775)
+                    .filter(addr -> addr.isLinkLocalAddress() || addr.isLoopbackAddress())
+                    .forEach(addr6 -> {
+                        try {
+                            result.add(Inet6Address.getByAddress(null, addr6.getAddress(), addr6.getScopeId()));
+                        } catch (UnknownHostException e) {
+                            // cannot happen!
+                            throw new RuntimeException("Unexpected", e);
+                        }
+                        if (!Platform.isWindows()) {
+                            result.add(addr6);
+                        }
+                    });
         } catch (IOException e) {
             // cannot happen!
             throw new RuntimeException("Unexpected", e);
@@ -494,7 +496,7 @@ public final class Utils {
      * the seed based on string representation of {@link Runtime#version()} is used.
      * Otherwise, the seed is randomly generated.
      * The used seed printed to stdout.
-     *
+     * The printing is not in the synchronized block so as to prevent carrier threads starvation.
      * @return {@link java.util.Random} generator with particular seed.
      */
     public static Random getRandomInstance() {
@@ -502,10 +504,12 @@ public final class Utils {
             synchronized (Utils.class) {
                 if (RANDOM_GENERATOR == null) {
                     RANDOM_GENERATOR = new Random(SEED);
-                    System.out.printf("For random generator using seed: %d%n", SEED);
-                    System.out.printf("To re-run test with same seed value please add \"-D%s=%d\" to command line.%n", SEED_PROPERTY_NAME, SEED);
+                } else {
+                    return RANDOM_GENERATOR;
                 }
             }
+            System.out.printf("For random generator using seed: %d%n", SEED);
+            System.out.printf("To re-run test with same seed value please add \"-D%s=%d\" to command line.%n", SEED_PROPERTY_NAME, SEED);
         }
         return RANDOM_GENERATOR;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,6 @@ public:
   uintptr_t relocate_object(ZForwarding* forwarding, uintptr_t from_addr) const;
   uintptr_t forward_object(ZForwarding* forwarding, uintptr_t from_addr) const;
 
-  void start();
   void relocate(ZRelocationSet* relocation_set);
 };
 

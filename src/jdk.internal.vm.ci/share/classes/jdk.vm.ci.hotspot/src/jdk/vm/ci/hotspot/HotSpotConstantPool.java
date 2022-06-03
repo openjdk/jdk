@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,11 @@ import static jdk.vm.ci.hotspot.CompilerToVM.compilerToVM;
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
 import static jdk.vm.ci.hotspot.HotSpotVMConfig.config;
 import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.common.NativeImageReinitialize;
@@ -140,6 +145,8 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
         final JvmConstant jvmMethodType = add(new JvmConstant(c.jvmConstantMethodType, "MethodType"));
         final JvmConstant jvmMethodTypeInError = add(new JvmConstant(c.jvmConstantMethodTypeInError, "MethodTypeInError"));
         final JvmConstant jvmInvokeDynamic = add(new JvmConstant(c.jvmConstantInvokeDynamic, "InvokeDynamic"));
+        final JvmConstant jvmDynamic = add(new JvmConstant(c.jvmConstantDynamic, "Dynamic"));
+        final JvmConstant jvmDynamicInError = add(new JvmConstant(c.jvmConstantDynamicInError, "DynamicInError"));
 
         private JvmConstant add(JvmConstant constant) {
             table[indexOf(constant.tag)] = constant;
@@ -516,6 +523,93 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
         return UNSAFE.getInt(getMetaspaceConstantPool() + config().constantPoolFlagsOffset);
     }
 
+    static class BootstrapMethodInvocationImpl implements BootstrapMethodInvocation {
+        private final boolean indy;
+        private final ResolvedJavaMethod method;
+        private final String name;
+        private final JavaConstant type;
+        private final List<JavaConstant> staticArguments;
+
+        BootstrapMethodInvocationImpl(boolean indy, ResolvedJavaMethod method, String name, JavaConstant type, List<JavaConstant> staticArguments) {
+            this.indy = indy;
+            this.method = method;
+            this.name = name;
+            this.type = type;
+            this.staticArguments = staticArguments;
+        }
+
+        @Override
+        public ResolvedJavaMethod getMethod() {
+            return method;
+        }
+
+        @Override
+        public String getName() {
+            return name;
+        }
+
+        @Override
+        public boolean isInvokeDynamic() {
+            return indy;
+        }
+
+        @Override
+        public JavaConstant getType() {
+            return type;
+        }
+
+        @Override
+        public List<JavaConstant> getStaticArguments() {
+            return staticArguments;
+        }
+
+        @Override
+        public String toString() {
+            String static_args = staticArguments.stream().map(BootstrapMethodInvocationImpl::argumentAsString).collect(Collectors.joining(", ", "[", "]"));
+            return "BootstrapMethod[" + (indy ? "indy" : "condy") +
+                            ", method:" + method.format("%H.%n(%p)") +
+                            ", name: " + name +
+                            ", type: " + type.toValueString() +
+                            ", static arguments:" + static_args;
+        }
+
+        private static String argumentAsString(JavaConstant arg) {
+            String type = arg.getJavaKind().getJavaName();
+            String value = arg.toValueString();
+            return type + ":" + value;
+        }
+    }
+
+    @Override
+    public BootstrapMethodInvocation lookupBootstrapMethodInvocation(int rawCpi, int opcode) {
+        int cpi = opcode == -1 ? rawCpi : rawIndexToConstantPoolIndex(rawCpi, opcode);
+        final JvmConstant tag = getTagAt(cpi);
+        switch (tag.name) {
+            case "InvokeDynamic":
+            case "Dynamic":
+                Object[] bsmi = compilerToVM().resolveBootstrapMethod(this, cpi);
+                ResolvedJavaMethod method = (ResolvedJavaMethod) bsmi[0];
+                String name = (String) bsmi[1];
+                JavaConstant type = (JavaConstant) bsmi[2];
+                Object staticArguments = bsmi[3];
+                List<JavaConstant> staticArgumentsList;
+                if (staticArguments == null) {
+                    staticArgumentsList = List.of();
+                } else if (staticArguments instanceof JavaConstant) {
+                    staticArgumentsList = List.of((JavaConstant) staticArguments);
+                } else if (staticArguments instanceof JavaConstant[]) {
+                    staticArgumentsList = List.of((JavaConstant[]) staticArguments);
+                } else {
+                    int[] bsciArgs = (int[]) staticArguments;
+                    String message = String.format("Resolving bootstrap static arguments for %s using BootstrapCallInfo %s not supported", method.format("%H.%n(%p)"), Arrays.toString(bsciArgs));
+                    throw new IllegalArgumentException(message);
+                }
+                return new BootstrapMethodInvocationImpl(tag.name.equals("InvokeDynamic"), method, name, type, staticArgumentsList);
+            default:
+                return null;
+        }
+    }
+
     @Override
     public Object lookupConstant(int cpi) {
         assert cpi != 0;
@@ -545,6 +639,8 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
             case "MethodHandleInError":
             case "MethodType":
             case "MethodTypeInError":
+            case "Dynamic":
+            case "DynamicInError":
                 return compilerToVM().resolvePossiblyCachedConstantInPool(this, cpi);
             default:
                 throw new JVMCIError("Unknown constant pool tag %s", tag);

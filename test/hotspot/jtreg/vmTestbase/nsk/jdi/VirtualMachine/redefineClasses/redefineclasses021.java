@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,10 +48,8 @@ import java.io.*;
  *     <code>newclassXX/redefineclasses021a.java</code> - redefining debuggees  <br>
  *
  * This test performs the following cases:                                      <br>
- *    1. newclass01 - adding <code>public</code> interface-modifier                 <br>
- *    2. newclass02 - adding <code>protected</code> interface-modifier              <br>
- *    3. newclass03 - adding <code>private</code> interface-modifier                <br>
- *    4. newclass04 - adding <code>static</code> interface-modifier                 <br>
+ *    1. newclass01 - adding <code>public</code> interface-modifier             <br>
+ *    2. newclass02 - removing <code>public</code> interface-modifier           <br>
  * The test checks two different cases for suspended debugee and not
  * suspended one.
  * When <code>canRedefineClasses()</code> is <code>false</code>, the test is
@@ -66,21 +64,23 @@ public class redefineclasses021 {
     private final static String prefix = "nsk.jdi.VirtualMachine.redefineClasses.";
     private final static String debuggerName = prefix + "redefineclasses021";
     private final static String debugeeName = debuggerName + "a";
-    public  final static String testedClassName = debuggerName + "b$redefineclasses021bi";
 
     private final static String[][] subDirs = {
-            {"newclass01","adding <public> interface-modifier"},
-            {"newclass02","adding <protected> interface-modifier"},
-            {"newclass03","adding <private> interface-modifier"},
-            {"newclass04","adding <static> interface-modifier"}
+        {"newclass01","adding <public> interface-modifier", debuggerName + "b$redefineclasses021bi"},
+        {"newclass02","removing <public> interface-modifier", debuggerName + "b$redefineclasses021bir"},
     };
 
-    private final static String newClassFile = File.separator
+    private final static String newClassFile(String testedClassName) {
+        return File.separator
                     + testedClassName.replace('.',File.separatorChar)
                     + ".class";
-    private final static String oldClassFile
-            = ClassFileFinder.findClassFile(testedClassName, Utils.TEST_CLASS_PATH)
+    }
+
+    private final static String oldClassFile(String testedClassName) {
+        return ClassFileFinder.findClassFile(testedClassName, Utils.TEST_CLASS_PATH)
                              .toString();
+    }
+
     private static final String dashes = "--------------------------";
 
     private static int exitStatus;
@@ -88,8 +88,6 @@ public class redefineclasses021 {
     private static Debugee debugee;
     private static String testDir;
     private static String statDebugee;
-
-    private ReferenceType testedClass;
 
     private static void display(String msg) {
         log.display(msg);
@@ -140,9 +138,6 @@ public class redefineclasses021 {
             return;
         }
 
-        testedClass = debugee.classByName(testedClassName);
-        display(typePrompt(testedClass) + "\t:" + testedClass.name());
-
         display("\nTEST BEGINS");
         display("===========");
 
@@ -162,61 +157,43 @@ public class redefineclasses021 {
         Map<? extends com.sun.jdi.ReferenceType,byte[]> mapBytes;
         boolean alreadyComplained = false;
         for (int i = 0; i < subDirs.length; i++) {
+
+            String testedClassName = subDirs[i][2];
+            ReferenceType testedClass = debugee.classByName(testedClassName);
+            display(typePrompt(testedClass) + "\t:" + testedClass.name());
+
             display("\n" + subDirs[i][1] + ">>>");
-            mapBytes = mapClassToBytes(testDir + File.separator + subDirs [i][0] + newClassFile);
+            mapBytes = mapClassToBytes(testedClass, testDir + File.separator + subDirs [i][0] + newClassFile(testedClassName));
             try {
                 debugee.VM().redefineClasses(mapBytes);
-                if (i < 3) {
-                    if (!debugee.VM().canUnrestrictedlyRedefineClasses()) {
-                        exitStatus = Consts.TEST_FAILED;
-                        if (!alreadyComplained) {
-                            alreadyComplained = true;
-                            complain("***" + dashes);
-                            complain("***" + statDebugee);
-                            complain("***" + dashes);
-                        }
-                        complain("***UnsupportedOperationException is not thrown");
-                        complain("***\twhile " + subDirs[i][1]);
-
-                        display(">return to the previous state...");
-                        mapBytes = mapClassToBytes(oldClassFile);
-                        try {
-                            debugee.VM().redefineClasses(mapBytes);
-                        } catch (Exception e) {
-                            throw new Failure(UNEXPECTED_STRING + e);
-                        }
+                if (!debugee.VM().canUnrestrictedlyRedefineClasses()) {
+                    exitStatus = Consts.TEST_FAILED;
+                    if (!alreadyComplained) {
+                        alreadyComplained = true;
+                        complain("***" + dashes);
+                        complain("***" + statDebugee);
+                        complain("***" + dashes);
                     }
-                } else {
-                    display("!!!No exception is thrown!!! Member interfaces are always implicitly static");
+                    complain("***UnsupportedOperationException is not thrown");
+                    complain("***\twhile " + subDirs[i][1]);
+
+                    display(">return to the previous state...");
+                    mapBytes = mapClassToBytes(testedClass, oldClassFile(testedClassName));
+                    try {
+                        debugee.VM().redefineClasses(mapBytes);
+                    } catch (Exception e) {
+                        throw new Failure(UNEXPECTED_STRING + e);
+                    }
                 }
             } catch (UnsupportedOperationException e) {
-                if (i == 3) {
-                    complain(statDebugee + UNEXPECTED_STRING
-                                + "UnsupportedOperationException");
-                    exitStatus = Consts.TEST_FAILED;
-                } else {
-                    if (!debugee.VM().canUnrestrictedlyRedefineClasses()) {
-                        display(EXPECTED_STRING + e);
-                    } else {
-                        exitStatus = Consts.TEST_FAILED;
-                        if (!alreadyComplained) {
-                            alreadyComplained = true;
-                            complain("***" + dashes);
-                            complain("***" + statDebugee);
-                            complain("***" + dashes);
-                        }
-                        complain(statDebugee + UNEXPECTED_STRING
-                                    + "UnsupportedOperationException");
-                        complain("***\twhile " + subDirs[i][1]);
-                    }
-                }
+                display(EXPECTED_STRING + e);
             } catch (Exception e) {
                 throw new Failure(UNEXPECTED_STRING + e);
             }
         }
     }
 
-    private Map<? extends com.sun.jdi.ReferenceType,byte[]> mapClassToBytes(String fileName) {
+    private Map<? extends com.sun.jdi.ReferenceType,byte[]> mapClassToBytes(ReferenceType testedClass, String fileName) {
         display("class-file\t:" + fileName);
         File fileToBeRedefined = new File(fileName);
         int fileToRedefineLength = (int )fileToBeRedefined.length();

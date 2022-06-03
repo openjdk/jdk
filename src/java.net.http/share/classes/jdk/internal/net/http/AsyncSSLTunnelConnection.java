@@ -33,6 +33,7 @@ import java.util.function.Function;
 import jdk.internal.net.http.common.MinimalFuture;
 import jdk.internal.net.http.common.SSLTube;
 import jdk.internal.net.http.common.Utils;
+import static jdk.internal.net.http.common.Utils.ProxyHeaders;
 
 /**
  * An SSL tunnel built on a Plain (CONNECT) TCP tunnel.
@@ -47,7 +48,7 @@ class AsyncSSLTunnelConnection extends AbstractAsyncSSLConnection {
                              HttpClientImpl client,
                              String[] alpn,
                              InetSocketAddress proxy,
-                             HttpHeaders proxyHeaders)
+                             ProxyHeaders proxyHeaders)
     {
         super(addr, client, Utils.getServerName(addr), addr.getPort(), alpn);
         this.plainConnection = new PlainTunnelingConnection(addr, proxy, client, proxyHeaders);

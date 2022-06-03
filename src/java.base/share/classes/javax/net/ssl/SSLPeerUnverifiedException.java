@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,9 +39,7 @@ package javax.net.ssl;
  * @since 1.4
  * @author David Brownell
  */
-public
-class SSLPeerUnverifiedException extends SSLException
-{
+public class SSLPeerUnverifiedException extends SSLException {
     @java.io.Serial
     private static final long serialVersionUID = -8919512675000600547L;
 
@@ -51,8 +49,23 @@ class SSLPeerUnverifiedException extends SSLException
      *
      * @param reason describes the problem.
      */
-    public SSLPeerUnverifiedException(String reason)
-    {
+    public SSLPeerUnverifiedException(String reason) {
         super(reason);
+    }
+
+    /**
+     * Creates a {@code SSLPeerUnverifiedException} with the specified detail
+     * message and cause.
+     *
+     * @param message the detail message (which is saved for later retrieval
+     *        by the {@link #getMessage()} method).
+     * @param cause the cause (which is saved for later retrieval by the
+     *        {@link #getCause()} method).  (A {@code null} value is
+     *        permitted, and indicates that the cause is nonexistent or
+     *        unknown.)
+     * @since 19
+     */
+    public SSLPeerUnverifiedException(String message, Throwable cause) {
+        super(message, cause);
     }
 }

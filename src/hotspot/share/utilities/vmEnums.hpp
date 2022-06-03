@@ -32,7 +32,7 @@
 enum class JavaThreadStatus : int;
 enum class JVMFlagOrigin : int;
 enum JVMFlagsEnum : int;
-enum class VMClassID : int;
+enum class vmClassID : int;
 enum class vmIntrinsicID : int;
 enum class vmSymbolID : int;
 

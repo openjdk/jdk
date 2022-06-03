@@ -25,8 +25,9 @@
 #ifndef SHARE_GC_SHARED_OOPSTORAGESET_INLINE_HPP
 #define SHARE_GC_SHARED_OOPSTORAGESET_INLINE_HPP
 
-#include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageSet.hpp"
+
+#include "gc/shared/oopStorage.inline.hpp"
 #include "utilities/enumIterator.hpp"
 
 template <typename Closure>

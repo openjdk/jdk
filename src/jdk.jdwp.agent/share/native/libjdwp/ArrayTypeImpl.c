@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -227,7 +227,7 @@ newInstance(PacketInputStream *in, PacketOutputStream *out)
     error = classSignature(arrayClass, &signature, NULL);
     if ( error != JVMTI_ERROR_NONE ) {
         outStream_setError(out, map2jdwpError(error));
-        return JNI_FALSE;
+        return JNI_TRUE;
     }
     componentSignature = componentTypeSignature(signature);
 

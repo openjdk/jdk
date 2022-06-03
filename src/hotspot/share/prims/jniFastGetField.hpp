@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_PRIMS_JNIFASTGETFIELD_HPP
 #define SHARE_PRIMS_JNIFASTGETFIELD_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "prims/jvm_misc.hpp"
 
 // Basic logic of a fast version of jni_Get<Primitive>Field:
@@ -64,6 +64,11 @@ class JNI_FastGetField : AllStatic {
 
   static address generate_fast_get_int_field0(BasicType type);
   static address generate_fast_get_float_field0(BasicType type);
+
+#ifdef AARCH64
+  template<int BType>
+  static address generate_fast_get_int_field1();
+#endif // AARCH64
 
  public:
 #if defined(_WINDOWS) && !defined(_WIN64)

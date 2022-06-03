@@ -72,6 +72,7 @@ class CausedFocusEvent extends FocusEvent {
         throw new IllegalStateException();
     }
 
+    @SuppressWarnings("removal")
     @Serial
     Object readResolve() throws ObjectStreamException {
         FocusEvent.Cause newCause;

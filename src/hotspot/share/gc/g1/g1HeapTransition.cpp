@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 #include "gc/g1/g1HeapTransition.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "logging/logStream.hpp"
-#include "memory/metaspace.hpp"
+#include "memory/metaspaceUtils.hpp"
 
 G1HeapTransition::Data::Data(G1CollectedHeap* g1_heap) :
   _eden_length(g1_heap->eden_regions_count()),
@@ -35,6 +35,7 @@ G1HeapTransition::Data::Data(G1CollectedHeap* g1_heap) :
   _old_length(g1_heap->old_regions_count()),
   _archive_length(g1_heap->archive_regions_count()),
   _humongous_length(g1_heap->humongous_regions_count()),
+  _meta_sizes(MetaspaceUtils::get_combined_statistics()),
   _eden_length_per_node(NULL),
   _survivor_length_per_node(NULL) {
 

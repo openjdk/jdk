@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.nio.file.Path;
 import java.util.MissingResourceException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -47,12 +48,6 @@ import jdk.javadoc.internal.doclets.toolkit.Resources;
 /**
  * Abstraction for handling files, which may be specified directly
  * (e.g. via a path on the command line) or relative to a Location.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
- *
  */
 public abstract class DocFile {
 
@@ -63,6 +58,11 @@ public abstract class DocFile {
 
     /** Create a DocFile for a file that will be opened for reading. */
     public static DocFile createFileForInput(BaseConfiguration configuration, String file) {
+        return DocFileFactory.getFactory(configuration).createFileForInput(file);
+    }
+
+    /** Create a DocFile for a file that will be opened for reading. */
+    public static DocFile createFileForInput(BaseConfiguration configuration, Path file) {
         return DocFileFactory.getFactory(configuration).createFileForInput(file);
     }
 

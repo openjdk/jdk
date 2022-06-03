@@ -62,6 +62,7 @@ import com.sun.swingset3.demos.colorchooser.ColorChooserDemo;
 * @library /sanity/client/lib/SwingSet3/src
 * @modules java.desktop
 *          java.logging
+* @build org.jemmy2ext.JemmyExt
 * @build com.sun.swingset3.demos.colorchooser.ColorChooserDemo
 * @run testng ColorChooserDemoTest
 */

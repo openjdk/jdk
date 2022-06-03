@@ -25,8 +25,9 @@
 #ifndef SHARE_MEMORY_PADDED_INLINE_HPP
 #define SHARE_MEMORY_PADDED_INLINE_HPP
 
-#include "memory/allocation.inline.hpp"
 #include "memory/padded.hpp"
+
+#include "memory/allocation.inline.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"

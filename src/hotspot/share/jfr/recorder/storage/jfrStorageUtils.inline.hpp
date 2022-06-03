@@ -26,6 +26,7 @@
 #define SHARE_JFR_RECORDER_STORAGE_JFRSTORAGEUTILS_INLINE_HPP
 
 #include "jfr/recorder/storage/jfrStorageUtils.hpp"
+
 #include "runtime/atomic.hpp"
 #include "runtime/thread.inline.hpp"
 

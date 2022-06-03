@@ -39,6 +39,9 @@
   static int empty_entry(Method* method, intptr_t UNUSED, TRAPS);
   static int Reference_get_entry(Method* method, intptr_t UNUSED, TRAPS);
 
+  // Stack watermark machinery
+  static void stack_watermark_unwind_check(JavaThread* thread);
+
  public:
   // Main loop of normal_entry
   static void main_loop(int recurse, TRAPS);

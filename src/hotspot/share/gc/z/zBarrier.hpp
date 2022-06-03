@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 #ifndef SHARE_GC_Z_ZBARRIER_HPP
 #define SHARE_GC_Z_ZBARRIER_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "memory/iterator.hpp"
 #include "oops/oop.hpp"
 
@@ -33,6 +33,9 @@ typedef uintptr_t (*ZBarrierSlowPath)(uintptr_t);
 
 class ZBarrier : public AllStatic {
 private:
+  static const bool GCThread    = true;
+  static const bool AnyThread   = false;
+
   static const bool Follow      = true;
   static const bool DontFollow  = false;
 
@@ -55,7 +58,7 @@ private:
   static bool during_mark();
   static bool during_relocate();
   template <bool finalizable> static bool should_mark_through(uintptr_t addr);
-  template <bool follow, bool finalizable, bool publish> static uintptr_t mark(uintptr_t addr);
+  template <bool gc_thread, bool follow, bool finalizable, bool publish> static uintptr_t mark(uintptr_t addr);
   static uintptr_t remap(uintptr_t addr);
   static uintptr_t relocate(uintptr_t addr);
   static uintptr_t relocate_or_mark(uintptr_t addr);
@@ -69,6 +72,7 @@ private:
   static uintptr_t weak_load_barrier_on_weak_oop_slow_path(uintptr_t addr);
   static uintptr_t weak_load_barrier_on_phantom_oop_slow_path(uintptr_t addr);
 
+  static uintptr_t keep_alive_barrier_on_oop_slow_path(uintptr_t addr);
   static uintptr_t keep_alive_barrier_on_weak_oop_slow_path(uintptr_t addr);
   static uintptr_t keep_alive_barrier_on_phantom_oop_slow_path(uintptr_t addr);
 
@@ -93,10 +97,8 @@ public:
   static oop weak_load_barrier_on_oop_field(volatile oop* p);
   static oop weak_load_barrier_on_oop_field_preloaded(volatile oop* p, oop o);
   static oop weak_load_barrier_on_weak_oop(oop o);
-  static oop weak_load_barrier_on_weak_oop_field(volatile oop* p);
   static oop weak_load_barrier_on_weak_oop_field_preloaded(volatile oop* p, oop o);
   static oop weak_load_barrier_on_phantom_oop(oop o);
-  static oop weak_load_barrier_on_phantom_oop_field(volatile oop* p);
   static oop weak_load_barrier_on_phantom_oop_field_preloaded(volatile oop* p, oop o);
 
   // Is alive barrier
@@ -104,15 +106,14 @@ public:
   static bool is_alive_barrier_on_phantom_oop(oop o);
 
   // Keep alive barrier
+  static void keep_alive_barrier_on_oop(oop o);
   static void keep_alive_barrier_on_weak_oop_field(volatile oop* p);
   static void keep_alive_barrier_on_phantom_oop_field(volatile oop* p);
   static void keep_alive_barrier_on_phantom_root_oop_field(oop* p);
-  static void keep_alive_barrier_on_oop(oop o);
 
   // Mark barrier
   static void mark_barrier_on_oop_field(volatile oop* p, bool finalizable);
   static void mark_barrier_on_oop_array(volatile oop* p, size_t length, bool finalizable);
-  static void mark_barrier_on_invisible_root_oop_field(oop* p);
 
   // Narrow oop variants, never used.
   static oop  load_barrier_on_oop_field(volatile narrowOop* p);

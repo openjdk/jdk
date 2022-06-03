@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 6545058 6611182 8016209 8139986 8162746
+ * @bug 6545058 6611182 8016209 8139986 8162746 8278967
  * @summary validate and test -version, -fullversion, and internal, as well as
  *          sanity checks if a tool can be launched.
  * @modules jdk.compiler
@@ -54,7 +54,6 @@ public class VersionCheck extends TestHelper {
         "jaccessinspector-32",
         "jaccesswalker",
         "jaccesswalker-32",
-        "jaotc",
         "javaw",
         "javaws",
         "jcontrol",
@@ -62,7 +61,8 @@ public class VersionCheck extends TestHelper {
         "jmc.ini",
         "jweblauncher",
         "jpackage",
-        "ssvagent"
+        "ssvagent",
+        "jwebserver"
     };
 
     // tools that do not accept -version
@@ -73,7 +73,6 @@ public class VersionCheck extends TestHelper {
         "jaccessinspector-32",
         "jaccesswalker",
         "jaccesswalker-32",
-        "jaotc",
         "jar",
         "jarsigner",
         "java-rmi",
@@ -106,7 +105,6 @@ public class VersionCheck extends TestHelper {
         "klist",
         "ktab",
         "jpackage",
-        "rmid",
         "rmiregistry",
         "serialver",
         "servertool",
@@ -128,9 +126,12 @@ public class VersionCheck extends TestHelper {
     static String getVersion0(boolean allLines, String... argv) {
         TestHelper.TestResult tr = doExec(argv);
         StringBuilder out = new StringBuilder();
-        // remove the HotSpot line
+        // remove the HotSpot line and security manager deprecation warnings
         for (String x : tr.testOutput) {
-            if (allLines || !x.matches(".*Client.*VM.*|.*Server.*VM.*")) {
+            if (allLines || !x.matches(".*Client.*VM.*|" +
+                                       ".*Server.*VM.*|" +
+                                       "WARNING:.*terminally.*deprecated.*|" +
+                                       "WARNING:.*System::setSecurityManager.*")) {
                 out = out.append(x + "\n");
             }
         }

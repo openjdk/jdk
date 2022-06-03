@@ -28,8 +28,6 @@
 #import "java_awt_print_Pageable.h"
 #import "java_awt_print_PageFormat.h"
 
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
-
 #import "ThreadUtilities.h"
 #import "GeomUtilities.h"
 #import "JNIUtilities.h"
@@ -106,7 +104,7 @@ static jclass sjc_CPrinterJob = NULL;
     CGContextSaveGState(cgRef); //04/28/2004: state needs to be saved here due to addition of lazy state management
 
     (*env)->CallVoidMethod(env, fPrinterJob, jm_printToPathGraphics, fCurPeekGraphics, fPrinterJob,
-                           fCurPainter, fCurPageFormat, jPageIndex, context); // AWT_THREADING Safe (AWTRunLoop)
+                           fCurPainter, fCurPageFormat, jPageIndex, context);
     CHECK_EXCEPTION();
 
     CGContextRestoreGState(cgRef);
@@ -122,9 +120,9 @@ static jclass sjc_CPrinterJob = NULL;
     GET_CPRINTERJOB_CLASS_RETURN(nil);
     DECLARE_METHOD_RETURN(jm_getJobName, sjc_CPrinterJob, "getJobName", "()Ljava/lang/String;", nil);
 
-    jobject o = (*env)->CallObjectMethod(env, fPrinterJob, jm_getJobName); // AWT_THREADING Safe (known object)
+    jobject o = (*env)->CallObjectMethod(env, fPrinterJob, jm_getJobName);
     CHECK_EXCEPTION();
-    id result = JNFJavaToNSString(env, o);
+    id result = JavaStringToNSString(env, o);
     (*env)->DeleteLocalRef(env, o);
     return result;
 }
@@ -195,7 +193,7 @@ static jclass sjc_CPrinterJob = NULL;
     }
 
     jobjectArray objectArray = (*env)->CallObjectMethod(env, fPrinterJob,
-                                jm_getPageformatPrintablePeekgraphics, jPageNumber); // AWT_THREADING Safe (AWTRunLoopMode)
+                                jm_getPageformatPrintablePeekgraphics, jPageNumber);
     CHECK_EXCEPTION();
     if (objectArray != NULL) {
         // Get references to the return objects -> PageFormat, Printable, PeekGraphics
@@ -214,7 +212,7 @@ static jclass sjc_CPrinterJob = NULL;
 
         // Actually print and get the PageFormatArea
         jobject pageFormatArea = (*env)->CallObjectMethod(env, fPrinterJob, jm_printAndGetPageFormatArea, fCurPainter,
-                                    fCurPeekGraphics, fCurPageFormat, jPageNumber); // AWT_THREADING Safe (AWTRunLoopMode)
+                                    fCurPeekGraphics, fCurPageFormat, jPageNumber);
         CHECK_EXCEPTION();
         if (pageFormatArea != NULL) {
             NSPrintingOrientation currentOrientation =

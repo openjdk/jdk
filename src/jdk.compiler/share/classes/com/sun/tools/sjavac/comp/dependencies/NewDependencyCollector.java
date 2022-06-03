@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,8 +111,8 @@ public class NewDependencyCollector implements TaskListener {
 
     private Location getLocationOf(ClassSymbol cs) {
         JavaFileObject jfo = cs.outermostClass().classfile;
-        if (jfo instanceof JavaFileObjectWithLocation) {
-            return ((JavaFileObjectWithLocation<?>) jfo).getLocation();
+        if (jfo instanceof JavaFileObjectWithLocation<?> javaFileObjectWithLocation) {
+            return javaFileObjectWithLocation.getLocation();
         }
 
         // jfo is most likely on PLATFORM_CLASS_PATH.
@@ -177,14 +177,13 @@ public class NewDependencyCollector implements TaskListener {
     }
 
     private Set<ClassSymbol> allSupertypes(TypeSymbol t) {
-        if (t == null || !(t instanceof ClassSymbol)) {
+        if (t == null || !(t instanceof ClassSymbol classSymbol)) {
             return Collections.emptySet();
         }
         Set<ClassSymbol> result = new HashSet<>();
-        ClassSymbol cs = (ClassSymbol) t;
-        result.add(cs);
-        result.addAll(allSupertypes(cs.getSuperclass().tsym));
-        for (Type it : cs.getInterfaces()) {
+        result.add(classSymbol);
+        result.addAll(allSupertypes(classSymbol.getSuperclass().tsym));
+        for (Type it : classSymbol.getInterfaces()) {
             result.addAll(allSupertypes(it.tsym));
         }
         return result;

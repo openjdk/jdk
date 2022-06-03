@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
- Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@
   <xsl:text>
 # include "precompiled.hpp"
 # include "classfile/javaClasses.inline.hpp"
+# include "classfile/vmClasses.hpp"
 # include "memory/resourceArea.hpp"
 # include "utilities/macros.hpp"
 #if INCLUDE_JVMTI
@@ -47,6 +48,7 @@
 # include "prims/jvmtiRawMonitor.hpp"
 # include "prims/jvmtiUtil.hpp"
 # include "runtime/fieldDescriptor.inline.hpp"
+# include "runtime/jniHandles.hpp"
 # include "runtime/threadSMR.hpp"
 
 </xsl:text>
@@ -431,7 +433,9 @@ struct jvmtiInterface_1_ jvmti</xsl:text>
   <xsl:text>}</xsl:text>
   <xsl:value-of select="$space"/>
   <xsl:if test="count(@impl)=0 or not(contains(@impl,'innative'))">
-    <xsl:text>JavaThread* current_thread = this_thread->as_Java_thread();</xsl:text>
+    <xsl:text>JavaThread* current_thread = JavaThread::cast(this_thread);</xsl:text>
+    <xsl:value-of select="$space"/>
+    <xsl:text>MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, current_thread));</xsl:text>
     <xsl:value-of select="$space"/>
     <xsl:text>ThreadInVMfromNative __tiv(current_thread);</xsl:text>
     <xsl:value-of select="$space"/>
@@ -731,7 +735,7 @@ static jvmtiError JNICALL
 
 <xsl:template match="outptr|outbuf|allocfieldbuf|ptrtype|inptr|inbuf|vmbuf|allocbuf|agentbuf|allocallocbuf" mode="dochecks">
   <xsl:param name="name"/>
-  <xsl:if test="count(nullok)=0">
+  <xsl:if test="count(nullok)=0 and not(contains(@impl,'nonullcheck'))">
     <xsl:text>  if (</xsl:text>
     <xsl:value-of select="$name"/>
     <xsl:text> == NULL) {
@@ -848,7 +852,7 @@ static jvmtiError JNICALL
     </xsl:apply-templates>
     <xsl:text>
   }
-  if (!k_mirror->is_a(SystemDictionary::Class_klass())) {
+  if (!k_mirror->is_a(vmClasses::Class_klass())) {
 </xsl:text>
     <xsl:apply-templates select=".." mode="traceError">
       <xsl:with-param name="err">JVMTI_ERROR_INVALID_CLASS</xsl:with-param>

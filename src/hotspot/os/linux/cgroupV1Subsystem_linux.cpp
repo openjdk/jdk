@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,17 +136,37 @@ jlong CgroupV1Subsystem::memory_and_swap_limit_in_bytes() {
       const char* matchline = "hierarchical_memsw_limit";
       const char* format = "%s " JULONG_FORMAT;
       GET_CONTAINER_INFO_LINE(julong, _memory->controller(), "/memory.stat", matchline,
-                             "Hierarchical Memory and Swap Limit is : " JULONG_FORMAT, format, hier_memlimit)
-      if (hier_memlimit >= _unlimited_memory) {
+                             "Hierarchical Memory and Swap Limit is : " JULONG_FORMAT, format, hier_memswlimit)
+      if (hier_memswlimit >= _unlimited_memory) {
         log_trace(os, container)("Hierarchical Memory and Swap Limit is: Unlimited");
       } else {
-        return (jlong)hier_memlimit;
+        jlong swappiness = read_mem_swappiness();
+        if (swappiness == 0) {
+            const char* matchmemline = "hierarchical_memory_limit";
+            GET_CONTAINER_INFO_LINE(julong, _memory->controller(), "/memory.stat", matchmemline,
+                             "Hierarchical Memory Limit is : " JULONG_FORMAT, format, hier_memlimit)
+            log_trace(os, container)("Memory and Swap Limit has been reset to " JULONG_FORMAT " because swappiness is 0", hier_memlimit);
+            return (jlong)hier_memlimit;
+        }
+        return (jlong)hier_memswlimit;
       }
     }
     return (jlong)-1;
   } else {
+    jlong swappiness = read_mem_swappiness();
+    if (swappiness == 0) {
+      jlong memlimit = read_memory_limit_in_bytes();
+      log_trace(os, container)("Memory and Swap Limit has been reset to " JULONG_FORMAT " because swappiness is 0", memlimit);
+      return memlimit;
+    }
     return (jlong)memswlimit;
   }
+}
+
+jlong CgroupV1Subsystem::read_mem_swappiness() {
+  GET_CONTAINER_INFO(julong, _memory->controller(), "/memory.swappiness",
+                     "Swappiness is: " JULONG_FORMAT, JULONG_FORMAT, swappiness);
+  return swappiness;
 }
 
 jlong CgroupV1Subsystem::memory_soft_limit_in_bytes() {
@@ -240,4 +260,44 @@ int CgroupV1Subsystem::cpu_shares() {
   if (shares == 1024) return -1;
 
   return shares;
+}
+
+
+char* CgroupV1Subsystem::pids_max_val() {
+  GET_CONTAINER_INFO_CPTR(cptr, _pids, "/pids.max",
+                     "Maximum number of tasks is: %s", "%s %*d", pidsmax, 1024);
+  if (pidsmax == NULL) {
+    return NULL;
+  }
+  return os::strdup(pidsmax);
+}
+
+/* pids_max
+ *
+ * Return the maximum number of tasks available to the process
+ *
+ * return:
+ *    maximum number of tasks
+ *    -1 for unlimited
+ *    OSCONTAINER_ERROR for not supported
+ */
+jlong CgroupV1Subsystem::pids_max() {
+  if (_pids == NULL) return OSCONTAINER_ERROR;
+  char * pidsmax_str = pids_max_val();
+  return limit_from_str(pidsmax_str);
+}
+
+/* pids_current
+ *
+ * The number of tasks currently in the cgroup (and its descendants) of the process
+ *
+ * return:
+ *    current number of tasks
+ *    OSCONTAINER_ERROR for not supported
+ */
+jlong CgroupV1Subsystem::pids_current() {
+  if (_pids == NULL) return OSCONTAINER_ERROR;
+  GET_CONTAINER_INFO(jlong, _pids, "/pids.current",
+                     "Current number of tasks is: " JLONG_FORMAT, JLONG_FORMAT, pids_current);
+  return pids_current;
 }

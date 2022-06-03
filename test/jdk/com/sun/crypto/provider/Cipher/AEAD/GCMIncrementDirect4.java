@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.util.List;
 public class GCMIncrementDirect4 {
 
     public static void main(String args[]) throws Exception {
+        GCMBufferTest.initTest();
         new GCMBufferTest("AES/GCM/NoPadding",
             List.of(GCMBufferTest.dtype.DIRECT, GCMBufferTest.dtype.DIRECT,
                 GCMBufferTest.dtype.DIRECT)).incrementalSegments().dataSet(4).

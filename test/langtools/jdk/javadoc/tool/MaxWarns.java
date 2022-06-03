@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,7 @@ public class MaxWarns {
     String javadoc(File f) {
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
-        String[] args = { "-Xdoclint:none", "-d", "api", f.getPath() };
+        String[] args = { "-Xdoclint:none", "--no-platform-links", "-d", "api", f.getPath() };
         int rc = jdk.javadoc.internal.tool.Main.execute(args, pw);
         pw.flush();
         return sw.toString();
@@ -84,7 +84,7 @@ public class MaxWarns {
     void check(String out, int count) {
         System.err.println(out);
         Pattern warn = Pattern.compile("""
-            warning - @param argument "i[0-9]+" is not a parameter name""");
+            warning: @param argument "i[0-9]+" is not a parameter name""");
         Matcher m = warn.matcher(out);
         int n = 0;
         for (int start = 0; m.find(start); start = m.start() + 1) {

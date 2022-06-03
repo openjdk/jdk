@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 #include "jvm.h"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/resolutionErrors.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "interpreter/bootstrapInfo.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "logging/log.hpp"
@@ -65,7 +67,7 @@ bool BootstrapInfo::resolve_previously_linked_invokedynamic(CallInfo& result, TR
   if (!cpce->is_f1_null()) {
     methodHandle method(     THREAD, cpce->f1_as_method());
     Handle       appendix(   THREAD, cpce->appendix_if_resolved(_pool));
-    result.set_handle(method, appendix, THREAD);
+    result.set_handle(vmClasses::MethodHandle_klass(), method, appendix, THREAD);
     Exceptions::wrap_dynamic_exception(/* is_indy */ true, CHECK_false);
     return true;
   } else if (cpce->indy_resolution_failed()) {
@@ -183,7 +185,7 @@ void BootstrapInfo::resolve_args(TRAPS) {
 
   if (!use_BSCI) {
     // return {arg...}; resolution of arguments is done immediately, before JDK code is called
-    objArrayOop args_oop = oopFactory::new_objArray(SystemDictionary::Object_klass(), _argc, CHECK);
+    objArrayOop args_oop = oopFactory::new_objArray(vmClasses::Object_klass(), _argc, CHECK);
     objArrayHandle args(THREAD, args_oop);
     _pool->copy_bootstrap_arguments_at(_bss_index, 0, _argc, args, 0, true, Handle(), CHECK);
     oop arg_oop = ((_argc == 1) ? args->obj_at(0) : (oop)NULL);
@@ -219,7 +221,7 @@ bool BootstrapInfo::save_and_throw_indy_exc(TRAPS) {
 
 void BootstrapInfo::resolve_newly_linked_invokedynamic(CallInfo& result, TRAPS) {
   assert(is_resolved(), "");
-  result.set_handle(resolved_method(), resolved_appendix(), CHECK);
+  result.set_handle(vmClasses::MethodHandle_klass(), resolved_method(), resolved_appendix(), CHECK);
 }
 
 void BootstrapInfo::print_msg_on(outputStream* st, const char* msg) {

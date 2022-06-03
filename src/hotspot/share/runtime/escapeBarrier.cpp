@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -36,6 +36,7 @@
 #include "runtime/keepStackGCProcessed.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/registerMap.hpp"
+#include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/stackValue.hpp"
 #include "runtime/stackValueCollection.hpp"
 #include "runtime/threadSMR.hpp"
@@ -118,6 +119,11 @@ bool EscapeBarrier::deoptimize_objects_all_threads() {
   if (!barrier_active()) return true;
   ResourceMark rm(calling_thread());
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *jt = jtiwh.next(); ) {
+    oop vt_oop = jt->jvmti_vthread();
+    // Skip virtual threads
+    if (vt_oop != NULL && java_lang_VirtualThread::is_instance(vt_oop)) {
+      continue;
+    }
     if (jt->frames_to_pop_failed_realloc() > 0) {
       // The deoptee thread jt has frames with reallocation failures on top of its stack.
       // These frames are about to be removed. We must not interfere with that and signal failure.

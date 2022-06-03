@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,14 +39,22 @@ package java.security;
  * @author Li Gong
  * @author Roland Schemers
  * @since 1.2
+ * @deprecated This class is only useful in conjunction with
+ *       {@linkplain SecurityManager the Security Manager}, which is deprecated
+ *       and subject to removal in a future release. Consequently, this class
+ *       is also deprecated and subject to removal. There is no replacement for
+ *       the Security Manager or this class.
  */
 
+@Deprecated(since="17", forRemoval=true)
 public class AccessControlException extends SecurityException {
 
     @java.io.Serial
     private static final long serialVersionUID = 5138225684096988535L;
 
-    // the permission that caused the exception to be thrown.
+    /**
+     * The permission that caused the exception to be thrown.
+     */
     private Permission perm;
 
     /**

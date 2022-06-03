@@ -31,7 +31,6 @@
 #import "sun_lwawt_macosx_CDropTarget.h"
 #import "java_awt_dnd_DnDConstants.h"
 
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 #import <JavaRuntimeSupport/JavaRuntimeSupport.h>
 #include <objc/objc-runtime.h>
 

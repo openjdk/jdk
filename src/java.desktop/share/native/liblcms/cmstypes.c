@@ -1895,6 +1895,7 @@ cmsBool  Type_LUT8_Write(struct _cms_typehandler_struct* self, cmsIOHANDLER* io,
     mpe = NewLUT -> Elements;
     if (mpe ->Type == cmsSigMatrixElemType) {
 
+        if (mpe->InputChannels != 3 || mpe->OutputChannels != 3) return FALSE;
         MatMPE = (_cmsStageMatrixData*) mpe ->Data;
         mpe = mpe -> Next;
     }
@@ -1920,7 +1921,6 @@ cmsBool  Type_LUT8_Write(struct _cms_typehandler_struct* self, cmsIOHANDLER* io,
         return FALSE;
     }
 
-
     if (clut == NULL)
         clutPoints = 0;
     else
@@ -1935,14 +1935,12 @@ cmsBool  Type_LUT8_Write(struct _cms_typehandler_struct* self, cmsIOHANDLER* io,
 
     if (MatMPE != NULL) {
 
-                for (i = 0; i < n; i++)
+                for (i = 0; i < 9; i++)
                 {
                         if (!_cmsWrite15Fixed16Number(io, MatMPE->Double[i])) return FALSE;
                 }
     }
     else {
-
-                if (n != 9) return FALSE;
 
         if (!_cmsWrite15Fixed16Number(io, 1)) return FALSE;
         if (!_cmsWrite15Fixed16Number(io, 0)) return FALSE;
@@ -3029,6 +3027,9 @@ void *Type_ColorantTable_Read(struct _cms_typehandler_struct* self, cmsIOHANDLER
     }
 
     List = cmsAllocNamedColorList(self ->ContextID, Count, 0, "", "");
+    if (List == NULL)
+        return NULL;
+
     for (i=0; i < Count; i++) {
 
         if (io ->Read(io, Name, 32, 1) != 1) goto Error;

@@ -169,7 +169,7 @@ public class BoxLayout implements LayoutManager2, Serializable {
      *              {@code BoxLayout.X_AXIS, BoxLayout.Y_AXIS,
      *              BoxLayout.LINE_AXIS} or {@code BoxLayout.PAGE_AXIS}
      *
-     * @exception AWTError  if the value of {@code axis} is invalid
+     * @throws AWTError  if the value of {@code axis} is invalid
      */
     @ConstructorProperties({"target", "axis"})
     public BoxLayout(Container target, int axis) {
@@ -234,7 +234,7 @@ public class BoxLayout implements LayoutManager2, Serializable {
      *
      * @param target  the affected container
      *
-     * @exception AWTError  if the target isn't the container specified to the
+     * @throws AWTError  if the target isn't the container specified to the
      *                      BoxLayout constructor
      */
     public synchronized void invalidateLayout(Container target) {
@@ -280,7 +280,7 @@ public class BoxLayout implements LayoutManager2, Serializable {
      *
      * @param target  the container that needs to be laid out
      * @return the dimensions &gt;= 0 &amp;&amp; &lt;= Integer.MAX_VALUE
-     * @exception AWTError  if the target isn't the container specified to the
+     * @throws AWTError  if the target isn't the container specified to the
      *                      BoxLayout constructor
      * @see Container
      * @see #minimumLayoutSize
@@ -306,7 +306,7 @@ public class BoxLayout implements LayoutManager2, Serializable {
      *
      * @param target  the container that needs to be laid out
      * @return the dimensions &gt;= 0 &amp;&amp; &lt;= Integer.MAX_VALUE
-     * @exception AWTError  if the target isn't the container specified to the
+     * @throws AWTError  if the target isn't the container specified to the
      *                      BoxLayout constructor
      * @see #preferredLayoutSize
      * @see #maximumLayoutSize
@@ -331,7 +331,7 @@ public class BoxLayout implements LayoutManager2, Serializable {
      *
      * @param target  the container that needs to be laid out
      * @return the dimensions &gt;= 0 &amp;&amp; &lt;= Integer.MAX_VALUE
-     * @exception AWTError  if the target isn't the container specified to the
+     * @throws AWTError  if the target isn't the container specified to the
      *                      BoxLayout constructor
      * @see #preferredLayoutSize
      * @see #minimumLayoutSize
@@ -358,7 +358,7 @@ public class BoxLayout implements LayoutManager2, Serializable {
      *
      * @param target  the container
      * @return the alignment &gt;= 0.0f &amp;&amp; &lt;= 1.0f
-     * @exception AWTError  if the target isn't the container specified to the
+     * @throws AWTError  if the target isn't the container specified to the
      *                      BoxLayout constructor
      */
     public synchronized float getLayoutAlignmentX(Container target) {
@@ -375,7 +375,7 @@ public class BoxLayout implements LayoutManager2, Serializable {
      *
      * @param target  the container
      * @return the alignment &gt;= 0.0f &amp;&amp; &lt;= 1.0f
-     * @exception AWTError  if the target isn't the container specified to the
+     * @throws AWTError  if the target isn't the container specified to the
      *                      BoxLayout constructor
      */
     public synchronized float getLayoutAlignmentY(Container target) {
@@ -390,7 +390,7 @@ public class BoxLayout implements LayoutManager2, Serializable {
      *
      * @param target  the container to lay out
      *
-     * @exception AWTError  if the target isn't the container specified to the
+     * @throws AWTError  if the target isn't the container specified to the
      *                      BoxLayout constructor
      */
     public void layoutContainer(Container target) {

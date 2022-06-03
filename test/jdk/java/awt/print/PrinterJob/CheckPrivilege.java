@@ -27,6 +27,7 @@
  * @bug 4151151
  * @summary Confirm that low-level print code does doPrivilege.
  * @author Graham Hamilton
+ * @run main/othervm -Djava.security.manager=allow CheckPrivilege
  */
 
 import java.awt.print.*;

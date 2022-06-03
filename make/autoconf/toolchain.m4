@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ VALID_TOOLCHAINS_all="gcc clang xlc microsoft"
 
 # These toolchains are valid on different platforms
 VALID_TOOLCHAINS_linux="gcc clang"
-VALID_TOOLCHAINS_macosx="gcc clang"
+VALID_TOOLCHAINS_macosx="clang"
 VALID_TOOLCHAINS_aix="xlc"
 VALID_TOOLCHAINS_windows="microsoft"
 
@@ -51,7 +51,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 
 # Minimum supported versions, empty means unspecified
 TOOLCHAIN_MINIMUM_VERSION_clang="3.5"
-TOOLCHAIN_MINIMUM_VERSION_gcc="5.0"
+TOOLCHAIN_MINIMUM_VERSION_gcc="6.0"
 TOOLCHAIN_MINIMUM_VERSION_microsoft="19.10.0.0" # VS2017
 TOOLCHAIN_MINIMUM_VERSION_xlc=""
 
@@ -221,38 +221,18 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETERMINE_TOOLCHAIN_TYPE],
   AC_ARG_WITH(toolchain-type, [AS_HELP_STRING([--with-toolchain-type],
       [the toolchain type (or family) to use, use '--help' to show possible values @<:@platform dependent@:>@])])
 
+  # Linux x86_64 needs higher binutils after 8265783
+  # (this really is a dependency on as version, but we take ld as a check for a general binutils version)
+  if test "x$OPENJDK_TARGET_CPU" = "xx86_64"; then
+    TOOLCHAIN_MINIMUM_LD_VERSION_gcc="2.25"
+  fi
+
   # Use indirect variable referencing
   toolchain_var_name=VALID_TOOLCHAINS_$OPENJDK_BUILD_OS
   VALID_TOOLCHAINS=${!toolchain_var_name}
 
-  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-    if test -n "$XCODEBUILD"; then
-      # On Mac OS X, default toolchain to clang after Xcode 5
-      XCODE_VERSION_OUTPUT=`"$XCODEBUILD" -version 2>&1 | $HEAD -n 1`
-      $ECHO "$XCODE_VERSION_OUTPUT" | $GREP "Xcode " > /dev/null
-      if test $? -ne 0; then
-        AC_MSG_NOTICE([xcodebuild output: $XCODE_VERSION_OUTPUT])
-        AC_MSG_ERROR([Failed to determine Xcode version.])
-      fi
-      XCODE_MAJOR_VERSION=`$ECHO $XCODE_VERSION_OUTPUT | \
-          $SED -e 's/^Xcode \(@<:@1-9@:>@@<:@0-9.@:>@*\)/\1/' | \
-          $CUT -f 1 -d .`
-      AC_MSG_NOTICE([Xcode major version: $XCODE_MAJOR_VERSION])
-      if test $XCODE_MAJOR_VERSION -ge 5; then
-          DEFAULT_TOOLCHAIN="clang"
-      else
-          DEFAULT_TOOLCHAIN="gcc"
-      fi
-    else
-      # If Xcode is not installed, but the command line tools are
-      # then we can't run xcodebuild. On these systems we should
-      # default to clang
-      DEFAULT_TOOLCHAIN="clang"
-    fi
-  else
-    # First toolchain type in the list is the default
-    DEFAULT_TOOLCHAIN=${VALID_TOOLCHAINS%% *}
-  fi
+  # First toolchain type in the list is the default
+  DEFAULT_TOOLCHAIN=${VALID_TOOLCHAINS%% *}
 
   if test "x$with_toolchain_type" = xlist; then
     # List all toolchains
@@ -335,10 +315,19 @@ AC_DEFUN_ONCE([TOOLCHAIN_PRE_DETECTION],
   # autoconf magic only relies on PATH, so update it if tools dir is specified
   OLD_PATH="$PATH"
 
-  if test "x$XCODE_VERSION_OUTPUT" != x; then
-    # For Xcode, we set the Xcode version as TOOLCHAIN_VERSION
-    TOOLCHAIN_VERSION=`$ECHO $XCODE_VERSION_OUTPUT | $CUT -f 2 -d ' '`
-    TOOLCHAIN_DESCRIPTION="$TOOLCHAIN_DESCRIPTION from Xcode $TOOLCHAIN_VERSION"
+  if test "x$OPENJDK_BUILD_OS" = "xmacosx"; then
+    if test "x$XCODEBUILD" != x; then
+      XCODE_VERSION_OUTPUT=`"$XCODEBUILD" -version 2> /dev/null | $HEAD -n 1`
+      $ECHO "$XCODE_VERSION_OUTPUT" | $GREP "^Xcode " > /dev/null
+      if test $? -ne 0; then
+        AC_MSG_NOTICE([xcodebuild -version output: $XCODE_VERSION_OUTPUT])
+        AC_MSG_ERROR([Failed to determine Xcode version])
+      fi
+
+      # For Xcode, we set the Xcode version as TOOLCHAIN_VERSION
+      TOOLCHAIN_VERSION=`$ECHO $XCODE_VERSION_OUTPUT | $CUT -f 2 -d ' '`
+      TOOLCHAIN_DESCRIPTION="$TOOLCHAIN_DESCRIPTION from Xcode $TOOLCHAIN_VERSION"
+    fi
   fi
   AC_SUBST(TOOLCHAIN_VERSION)
 
@@ -664,18 +653,12 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
     UTIL_LOOKUP_TOOLCHAIN_PROGS(LD, link)
     TOOLCHAIN_VERIFY_LINK_BINARY(LD)
     LDCXX="$LD"
-    # jaotc being a windows program expects the linker to be supplied with exe suffix.but without
-    # fixpath
-    LD_JAOTC="${LD##$FIXPATH }"
   else
     # All other toolchains use the compiler to link.
     LD="$CC"
     LDCXX="$CXX"
-    # jaotc expects 'ld' as the linker rather than the compiler.
-    UTIL_LOOKUP_TOOLCHAIN_PROGS(LD_JAOTC, ld)
   fi
   AC_SUBST(LD)
-  AC_SUBST(LD_JAOTC)
   # FIXME: it should be CXXLD, according to standard (cf CXXCPP)
   AC_SUBST(LDCXX)
 
@@ -683,9 +666,10 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
   TOOLCHAIN_PREPARE_FOR_LD_VERSION_COMPARISONS
 
   if test "x$TOOLCHAIN_MINIMUM_LD_VERSION" != x; then
+    AC_MSG_NOTICE([comparing linker version to minimum version $TOOLCHAIN_MINIMUM_LD_VERSION])
     TOOLCHAIN_CHECK_LINKER_VERSION(VERSION: $TOOLCHAIN_MINIMUM_LD_VERSION,
         IF_OLDER_THAN: [
-          AC_MSG_WARN([You are using a linker older than $TOOLCHAIN_MINIMUM_LD_VERSION. This is not a supported configuration.])
+          AC_MSG_ERROR([You are using a linker older than $TOOLCHAIN_MINIMUM_LD_VERSION. This is not a supported configuration.])
         ]
     )
   fi
@@ -696,8 +680,13 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
   if test "x$TOOLCHAIN_TYPE" != xmicrosoft; then
     AS="$CC -c"
   else
-    # On windows, the assember is "ml.exe"
-    UTIL_LOOKUP_TOOLCHAIN_PROGS(AS, ml)
+    if test "x$OPENJDK_TARGET_CPU_BITS" = "x64"; then
+      # On 64 bit windows, the assembler is "ml64.exe"
+      UTIL_LOOKUP_TOOLCHAIN_PROGS(AS, ml64)
+    else
+      # otherwise, the assembler is "ml.exe"
+      UTIL_LOOKUP_TOOLCHAIN_PROGS(AS, ml)
+    fi
   fi
   AC_SUBST(AS)
 
@@ -723,6 +712,32 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
     UTIL_LOOKUP_PROGS(LIPO, lipo)
     UTIL_REQUIRE_PROGS(OTOOL, otool)
     UTIL_REQUIRE_PROGS(INSTALL_NAME_TOOL, install_name_tool)
+
+    UTIL_LOOKUP_TOOLCHAIN_PROGS(METAL, metal)
+    if test "x$METAL" = x; then
+      AC_MSG_CHECKING([if metal can be run using xcrun])
+      METAL="xcrun -sdk macosx metal"
+      test_metal=`$METAL --version 2>&1`
+      if test $? -ne 0; then
+        AC_MSG_RESULT([no])
+        AC_MSG_ERROR([XCode tool 'metal' neither found in path nor with xcrun])
+      else
+        AC_MSG_RESULT([yes, will be using '$METAL'])
+      fi
+    fi
+
+    UTIL_LOOKUP_TOOLCHAIN_PROGS(METALLIB, metallib)
+    if test "x$METALLIB" = x; then
+      AC_MSG_CHECKING([if metallib can be run using xcrun])
+      METALLIB="xcrun -sdk macosx metallib"
+      test_metallib=`$METALLIB --version 2>&1`
+      if test $? -ne 0; then
+        AC_MSG_RESULT([no])
+        AC_MSG_ERROR([XCode tool 'metallib' neither found in path nor with xcrun])
+      else
+        AC_MSG_RESULT([yes, will be using '$METALLIB'])
+      fi
+    fi
   fi
 
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
@@ -740,8 +755,6 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
     else
       UTIL_LOOKUP_TOOLCHAIN_PROGS(NM, nm)
     fi
-    GNM="$NM"
-    AC_SUBST(GNM)
   fi
 
   # objcopy is used for moving debug symbols to separate files when
@@ -851,9 +864,15 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
       UTIL_REQUIRE_PROGS(BUILD_CC, cl, [$VS_PATH])
       UTIL_REQUIRE_PROGS(BUILD_CXX, cl, [$VS_PATH])
 
-      # On windows, the assember is "ml.exe". We currently don't need this so
+      # On windows, the assembler is "ml.exe". We currently don't need this so
       # do not require.
-      UTIL_LOOKUP_PROGS(BUILD_AS, ml, [$VS_PATH])
+      if test "x$OPENJDK_BUILD_CPU_BITS" = "x64"; then
+        # On 64 bit windows, the assembler is "ml64.exe"
+        UTIL_LOOKUP_PROGS(BUILD_AS, ml64, [$VS_PATH])
+      else
+        # otherwise the assembler is "ml.exe"
+        UTIL_LOOKUP_PROGS(BUILD_AS, ml, [$VS_PATH])
+      fi
 
       # On windows, the ar tool is lib.exe (used to create static libraries).
       # We currently don't need this so do not require.
@@ -865,8 +884,8 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
       BUILD_LDCXX="$BUILD_LD"
     else
       if test "x$OPENJDK_BUILD_OS" = xmacosx; then
-        UTIL_REQUIRE_PROGS(BUILD_CC, clang cc gcc)
-        UTIL_REQUIRE_PROGS(BUILD_CXX, clang++ CC g++)
+        UTIL_REQUIRE_PROGS(BUILD_CC, clang)
+        UTIL_REQUIRE_PROGS(BUILD_CXX, clang++)
       else
         UTIL_REQUIRE_PROGS(BUILD_CC, cc gcc)
         UTIL_REQUIRE_PROGS(BUILD_CXX, CC g++)

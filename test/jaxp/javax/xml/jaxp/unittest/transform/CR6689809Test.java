@@ -37,7 +37,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 6689809
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true transform.CR6689809Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.CR6689809Test
  * @run testng/othervm transform.CR6689809Test
  * @summary Test Transformer can handle XPath predicates in xsl:key elements.
  */

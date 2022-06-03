@@ -28,6 +28,9 @@ package com.sun.org.apache.xml.internal.security.utils;
  * tolerant manner that works across different applications servers. Do not
  * touch this unless you're a grizzled classloading guru veteran who is going to
  * verify any change on 6 different application servers.
+ *
+ * This class and methods in this class are package private. The class is
+ * duplicated to multiple packages.
  */
 final class ClassLoaderUtils {
 

@@ -106,7 +106,7 @@ import com.sun.jndi.ldap.BerEncoder;
  * @see SortResponseControl
  * @author Vincent Ryan
  */
-final public class SortControl extends BasicControl {
+public final class SortControl extends BasicControl {
 
     /**
      * The server-side sort control's assigned object identifier

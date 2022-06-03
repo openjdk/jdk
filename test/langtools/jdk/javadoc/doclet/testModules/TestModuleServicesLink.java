@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8185151 8196200
+ * @bug 8185151 8196200 8261976
  * @summary test that navigation summary links are not linked when there are no dependencies
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -72,10 +72,10 @@ public class TestModuleServicesLink extends JavadocTester {
 
         checkOutput("m/module-summary.html", true,
                 """
-                    <li><a href="#module.description">Description</a>&nbsp;|&nbsp;</li>
+                    <li><a href="#module-description">Description</a>&nbsp;|&nbsp;</li>
                     <li>Modules&nbsp;|&nbsp;</li>
-                    <li><a href="#packages.summary">Packages</a>&nbsp;|&nbsp;</li>
-                    <li><a href="#services.summary">Services</a></li>""");
+                    <li><a href="#packages-summary">Packages</a>&nbsp;|&nbsp;</li>
+                    <li><a href="#services-summary">Services</a></li>""");
 
     }
 
@@ -97,10 +97,10 @@ public class TestModuleServicesLink extends JavadocTester {
 
         checkOutput("m/module-summary.html", true,
                 """
-                    <li><a href="#module.description">Description</a>&nbsp;|&nbsp;</li>
+                    <li><a href="#module-description">Description</a>&nbsp;|&nbsp;</li>
                     <li>Modules&nbsp;|&nbsp;</li>
-                    <li><a href="#packages.summary">Packages</a>&nbsp;|&nbsp;</li>
-                    <li><a href="#services.summary">Services</a></li>""");
+                    <li><a href="#packages-summary">Packages</a>&nbsp;|&nbsp;</li>
+                    <li><a href="#services-summary">Services</a></li>""");
 
     }
 
@@ -122,7 +122,7 @@ public class TestModuleServicesLink extends JavadocTester {
                 """
                     <li>Description&nbsp;|&nbsp;</li>
                     <li>Modules&nbsp;|&nbsp;</li>
-                    <li><a href="#packages.summary">Packages</a>&nbsp;|&nbsp;</li>
+                    <li><a href="#packages-summary">Packages</a>&nbsp;|&nbsp;</li>
                     <li>Services</li>""");
     }
 

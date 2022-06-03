@@ -31,7 +31,7 @@ import org.xml.sax.XMLReader;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true test.astro.SAX201Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow test.astro.SAX201Test
  * @run testng/othervm test.astro.SAX201Test
  * @summary verify SAX 2.0.1 allows to use null in setters
  */

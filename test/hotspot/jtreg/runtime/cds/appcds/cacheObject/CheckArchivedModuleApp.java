@@ -61,6 +61,7 @@ public class CheckArchivedModuleApp {
         checkModuleDescriptors(expectArchivedDescriptors);
         checkConfiguration(expectArchivedConfiguration);
         checkEmptyConfiguration(expectArchivedConfiguration);
+        checkEmptyLayer();
     }
 
     private static void checkModuleDescriptors(boolean expectArchivedDescriptors) {
@@ -137,6 +138,15 @@ public class CheckArchivedModuleApp {
                 throw new RuntimeException(
                     "FAILED. Boot layer configuration is archived.");
             }
+        }
+    }
+
+    private static void checkEmptyLayer() {
+        // ModuleLayer.EMPTY_FIELD returned by empty() method is singleton.
+        // Check that with CDS there is still a single instance of EMPTY_LAYER
+        // and boot() layer parent is THE empty layer.
+        if (ModuleLayer.empty() != ModuleLayer.boot().parents().get(0)) {
+            throw new RuntimeException("FAILED. Empty module layer is not singleton");
         }
     }
 }

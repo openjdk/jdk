@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,19 +91,19 @@ Node* BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) cons
   MemNode::MemOrd mo = access.mem_node_mo();
 
   Node* store;
+  BasicType bt = access.type();
   if (access.is_parse_access()) {
     C2ParseAccess& parse_access = static_cast<C2ParseAccess&>(access);
 
     GraphKit* kit = parse_access.kit();
-    if (access.type() == T_DOUBLE) {
-      Node* new_val = kit->dstore_rounding(val.node());
+    if (bt == T_DOUBLE) {
+      Node* new_val = kit->dprecision_rounding(val.node());
       val.set_node(new_val);
     }
 
-    store = kit->store_to_memory(kit->control(), access.addr().node(), val.node(), access.type(),
-                                     access.addr().type(), mo, requires_atomic_access, unaligned, mismatched, unsafe);
+    store = kit->store_to_memory(kit->control(), access.addr().node(), val.node(), bt,
+                                 access.addr().type(), mo, requires_atomic_access, unaligned, mismatched, unsafe);
   } else {
-    assert(!requires_atomic_access, "not yet supported");
     assert(access.is_opt_access(), "either parse or opt access");
     C2OptAccess& opt_access = static_cast<C2OptAccess&>(access);
     Node* ctl = opt_access.ctl();
@@ -113,7 +113,7 @@ Node* BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) cons
     int alias = gvn.C->get_alias_index(adr_type);
     Node* mem = mm->memory_at(alias);
 
-    StoreNode* st = StoreNode::make(gvn, ctl, mem, access.addr().node(), adr_type, val.node(), access.type(), mo);
+    StoreNode* st = StoreNode::make(gvn, ctl, mem, access.addr().node(), adr_type, val.node(), bt, mo, requires_atomic_access);
     if (unaligned) {
       st->set_unaligned_access();
     }
@@ -156,12 +156,11 @@ Node* BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) con
     Node* control = control_dependent ? kit->control() : NULL;
 
     if (immutable) {
-      assert(!requires_atomic_access, "can't ensure atomicity");
       Compile* C = Compile::current();
       Node* mem = kit->immutable_memory();
       load = LoadNode::make(kit->gvn(), control, mem, adr,
-                            adr_type, val_type, access.type(), mo, dep, unaligned,
-                            mismatched, unsafe, access.barrier_data());
+                            adr_type, val_type, access.type(), mo, dep, requires_atomic_access,
+                            unaligned, mismatched, unsafe, access.barrier_data());
       load = kit->gvn().transform(load);
     } else {
       load = kit->make_load(control, adr, val_type, access.type(), adr_type, mo,
@@ -169,15 +168,14 @@ Node* BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) con
                             access.barrier_data());
     }
   } else {
-    assert(!requires_atomic_access, "not yet supported");
     assert(access.is_opt_access(), "either parse or opt access");
     C2OptAccess& opt_access = static_cast<C2OptAccess&>(access);
     Node* control = control_dependent ? opt_access.ctl() : NULL;
     MergeMemNode* mm = opt_access.mem();
     PhaseGVN& gvn = opt_access.gvn();
     Node* mem = mm->memory_at(gvn.C->get_alias_index(adr_type));
-    load = LoadNode::make(gvn, control, mem, adr, adr_type, val_type, access.type(), mo,
-                          dep, unaligned, mismatched, unsafe, access.barrier_data());
+    load = LoadNode::make(gvn, control, mem, adr, adr_type, val_type, access.type(), mo, dep,
+                          requires_atomic_access, unaligned, mismatched, unsafe, access.barrier_data());
     load = gvn.transform(load);
   }
   access.set_raw_access(load);
@@ -374,7 +372,7 @@ void C2Access::fixup_decorators() {
       intptr_t offset = Type::OffsetBot;
       AddPNode::Ideal_base_and_offset(adr, &gvn(), offset);
       if (offset >= 0) {
-        int s = Klass::layout_helper_size_in_bytes(adr_type->isa_instptr()->klass()->layout_helper());
+        int s = Klass::layout_helper_size_in_bytes(adr_type->isa_instptr()->instance_klass()->layout_helper());
         if (offset < s) {
           // Guaranteed to be a valid access, no need to pin it
           _decorators ^= C2_CONTROL_DEPENDENT_LOAD;
@@ -388,9 +386,6 @@ void C2Access::fixup_decorators() {
 //--------------------------- atomic operations---------------------------------
 
 void BarrierSetC2::pin_atomic_op(C2AtomicParseAccess& access) const {
-  if (!access.needs_pinning()) {
-    return;
-  }
   // SCMemProjNodes represent the memory state of a LoadStore. Their
   // main role is to prevent LoadStore nodes from being optimized away
   // when their results aren't used.
@@ -700,7 +695,7 @@ void BarrierSetC2::clone(GraphKit* kit, Node* src_base, Node* dst_base, Node* si
   }
 }
 
-Node* BarrierSetC2::obj_allocate(PhaseMacroExpand* macro, Node* ctrl, Node* mem, Node* toobig_false, Node* size_in_bytes,
+Node* BarrierSetC2::obj_allocate(PhaseMacroExpand* macro, Node* mem, Node* toobig_false, Node* size_in_bytes,
                                  Node*& i_o, Node*& needgc_ctrl,
                                  Node*& fast_oop_ctrl, Node*& fast_oop_rawmem,
                                  intx prefetch_lines) const {
@@ -720,7 +715,7 @@ Node* BarrierSetC2::obj_allocate(PhaseMacroExpand* macro, Node* ctrl, Node* mem,
   //       this will require extensive changes to the loop optimization in order to
   //       prevent a degradation of the optimization.
   //       See comment in memnode.hpp, around line 227 in class LoadPNode.
-  Node *eden_end = macro->make_load(ctrl, mem, eden_end_adr, 0, TypeRawPtr::BOTTOM, T_ADDRESS);
+  Node *eden_end = macro->make_load(toobig_false, mem, eden_end_adr, 0, TypeRawPtr::BOTTOM, T_ADDRESS);
 
   // We need a Region for the loop-back contended case.
   enum { fall_in_path = 1, contended_loopback_path = 2 };
@@ -743,7 +738,7 @@ Node* BarrierSetC2::obj_allocate(PhaseMacroExpand* macro, Node* ctrl, Node* mem,
   // Load(-locked) the heap top.
   // See note above concerning the control input when using a TLAB
   Node *old_eden_top = UseTLAB
-    ? new LoadPNode      (ctrl, contended_phi_rawmem, eden_top_adr, TypeRawPtr::BOTTOM, TypeRawPtr::BOTTOM, MemNode::unordered)
+    ? new LoadPNode      (toobig_false, contended_phi_rawmem, eden_top_adr, TypeRawPtr::BOTTOM, TypeRawPtr::BOTTOM, MemNode::unordered)
     : new LoadPLockedNode(contended_region, contended_phi_rawmem, eden_top_adr, MemNode::acquire);
 
   macro->transform_later(old_eden_top);
@@ -852,3 +847,5 @@ void BarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac
 
   phase->igvn().replace_node(ac, call);
 }
+
+#undef XTOP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@
  *
  * @comment create attach030Agent00.jar in current directory
  * @build nsk.jvmti.AttachOnDemand.attach030.attach030Agent00
- * @run driver ClassFileInstaller nsk.jvmti.AttachOnDemand.attach030.attach030Agent00
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller nsk.jvmti.AttachOnDemand.attach030.attach030Agent00
  * @run driver ExecDriver --cmd
  *      ${compile.jdk}/bin/jar
  *      -cfm attach030Agent00.jar ${test.src}/attach030Agent00.mf

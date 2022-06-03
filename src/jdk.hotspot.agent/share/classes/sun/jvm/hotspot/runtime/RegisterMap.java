@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,7 +146,7 @@ public abstract class RegisterMap implements Cloneable {
       Assert.that(0 <= i && i < regCount, "sanity check");
       Assert.that(0 <= index && index < locationValidSize, "sanity check");
     }
-    if ((locationValid[index] & (1 << i % locationValidTypeSize)) != 0) {
+    if ((locationValid[index] & (1L << i % locationValidTypeSize)) != 0) {
       return location[i];
     } else {
       return getLocationPD(reg);
@@ -162,7 +162,7 @@ public abstract class RegisterMap implements Cloneable {
       Assert.that(updateMap, "updating map that does not need updating");
     }
     location[i]          = loc;
-    locationValid[index] |= (1 << (i % locationValidTypeSize));
+    locationValid[index] |= (1L << (i % locationValidTypeSize));
   }
 
   public boolean getIncludeArgumentOops() {

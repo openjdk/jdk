@@ -21,10 +21,7 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
- */
-/*
- * $Id: DOMSignatureMethod.java 1854026 2019-02-21 09:30:01Z coheigea $
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -35,6 +32,7 @@ import javax.xml.crypto.dsig.spec.SignatureMethodParameterSpec;
 import java.io.IOException;
 import java.security.*;
 import java.security.interfaces.DSAKey;
+import java.security.interfaces.ECPrivateKey;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.PSSParameterSpec;
@@ -51,6 +49,8 @@ import sun.security.util.KeyUtil;
  *
  */
 public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
+
+    private static final String DOM_SIGNATURE_PROVIDER = "org.jcp.xml.dsig.internal.dom.SignatureProvider";
 
     private static final com.sun.org.slf4j.internal.Logger LOG =
         com.sun.org.slf4j.internal.LoggerFactory.getLogger(DOMSignatureMethod.class);
@@ -188,6 +188,8 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
             return new SHA384withRSAandMGF1(smElem);
         } else if (alg.equals(RSA_SHA512_MGF1)) {
             return new SHA512withRSAandMGF1(smElem);
+        } else if (alg.equals(DOMRSAPSSSignatureMethod.RSA_PSS)) {
+            return new DOMRSAPSSSignatureMethod.RSAPSS(smElem);
         } else if (alg.equals(RSA_RIPEMD160_MGF1)) {
             return new RIPEMD160withRSAandMGF1(smElem);
         } else if (alg.equals(SignatureMethod.DSA_SHA1)) {
@@ -258,8 +260,7 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
         }
         checkKeySize(context, key);
         if (signature == null) {
-            Provider p = (Provider) context.getProperty
-                    ("org.jcp.xml.dsig.internal.dom.SignatureProvider");
+            Provider p = (Provider)context.getProperty(DOM_SIGNATURE_PROVIDER);
             try {
                 signature = getSignature(p);
             } catch (NoSuchAlgorithmException nsae) {
@@ -324,8 +325,7 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
         }
         checkKeySize(context, key);
         if (signature == null) {
-            Provider p = (Provider)context.getProperty
-                    ("org.jcp.xml.dsig.internal.dom.SignatureProvider");
+            Provider p = (Provider)context.getProperty(DOM_SIGNATURE_PROVIDER);
             try {
                 signature = getSignature(p);
             } catch (NoSuchAlgorithmException nsae) {
@@ -518,7 +518,12 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
             // If signature is in ASN.1 (i.e., if the fallback algorithm
             // was used), convert the signature to the P1363 format
             if (asn1) {
-                return SignatureECDSA.convertASN1toXMLDSIG(sig);
+                int rawLen = -1;
+                if (key instanceof ECPrivateKey) {
+                    ECPrivateKey ecKey = (ECPrivateKey)key;
+                    rawLen = (ecKey.getParams().getCurve().getField().getFieldSize() + 7) / 8;
+                }
+                return SignatureECDSA.convertASN1toXMLDSIG(sig, rawLen);
             } else {
                 return sig;
             }

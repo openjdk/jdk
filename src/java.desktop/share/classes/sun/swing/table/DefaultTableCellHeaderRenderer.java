@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -189,7 +189,7 @@ public class DefaultTableCellHeaderRenderer extends DefaultTableCellRenderer
     }
 
     @SuppressWarnings("serial") // JDK-implementation class
-    private class EmptyIcon implements Icon, Serializable {
+    private static class EmptyIcon implements Icon, Serializable {
         int width = 0;
         int height = 0;
         public void paintIcon(Component c, Graphics g, int x, int y) {}

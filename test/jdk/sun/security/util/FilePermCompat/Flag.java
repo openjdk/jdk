@@ -24,11 +24,11 @@
 /*
  * @test
  * @bug 8164705 8209901
- * @library /test/jdk/java/security/testlibrary
- * @modules java.base/jdk.internal.misc
+ * @library /test/lib
  * @summary check jdk.filepermission.canonicalize
  */
 
+import jdk.test.lib.process.Proc;
 import java.io.File;
 import java.io.FilePermission;
 import java.lang.*;

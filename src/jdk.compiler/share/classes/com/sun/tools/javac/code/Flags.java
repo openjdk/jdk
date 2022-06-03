@@ -264,7 +264,6 @@ public class Flags {
         LocalVarFlags                     = FINAL | PARAMETER,
         ReceiverParamFlags                = PARAMETER;
 
-    @SuppressWarnings("preview")
     public static Set<Modifier> asModifierSet(long flags) {
         Set<Modifier> modifiers = modifierSets.get(flags);
         if (modifiers == null) {
@@ -319,7 +318,7 @@ public class Flags {
         HAS_RESOURCE,
 
         //ClassSymbols:
-        /** Flag is set for nested classes that do not access instance members
+        /**TODO: Flag is set for nested classes that do not access instance members
          *  or `this' of an outer class and therefore don't need to be passed
          *  a this$n reference.  This value is currently set only for anonymous
          *  classes in superclass constructor calls.
@@ -390,6 +389,12 @@ public class Flags {
          * TypeSymbols only.
          */
         RECOVERABLE,
+
+        /**TODO:*/
+        VALUE_BASED,
+
+        /**TODO:*/
+        SUPER_OWNER_ATTRIBUTED,
 
         //ModuleSymbols:
         /**
@@ -488,6 +493,15 @@ public class Flags {
          * Flag that marks a multi-catch parameter.
          */
         UNION,
+
+        /**TODO: Flag is set for nested classes that do not access instance members
+         *  or `this' of an outer class and therefore don't need to be passed
+         *  a this$n reference.  This value is currently set only for anonymous
+         *  classes in superclass constructor calls.
+         *  todo: use this value for optimizing away this$n parameters in
+         *  other cases.
+         */
+        NOOUTERTHIS,
         ;
 
         final long mask;

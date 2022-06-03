@@ -42,12 +42,12 @@ import com.sun.jndi.ldap.pool.PooledConnectionFactory;
  * @author Rosanna Lee
  */
 final class LdapClientFactory implements PooledConnectionFactory {
-    final private String host;
-    final private int port;
-    final private String socketFactory;
-    final private int connTimeout;
-    final private int readTimeout;
-    final private OutputStream trace;
+    private final String host;
+    private final int port;
+    private final String socketFactory;
+    private final int connTimeout;
+    private final int readTimeout;
+    private final OutputStream trace;
 
     LdapClientFactory(String host, int port, String socketFactory,
         int connTimeout, int readTimeout, OutputStream trace) {
@@ -65,7 +65,23 @@ final class LdapClientFactory implements PooledConnectionFactory {
                 connTimeout, readTimeout, trace, pcb);
     }
 
+    public PooledConnection createPooledConnection(PoolCallback pcb, long timeout)
+        throws NamingException {
+        return new LdapClient(host, port, socketFactory,
+                guardedIntegerCast(timeout),
+                readTimeout, trace, pcb);
+    }
+
     public String toString() {
         return host + ":" + port;
+    }
+
+    private int guardedIntegerCast(long timeout) {
+        if (timeout < Integer.MIN_VALUE) {
+            return Integer.MIN_VALUE;
+        } else if (timeout > Integer.MAX_VALUE) {
+            return Integer.MAX_VALUE;
+        }
+        return (int) timeout;
     }
 }

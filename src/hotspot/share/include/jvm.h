@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,20 +56,6 @@ extern "C" {
  * namely the jio_xxxprintf functions, are included from jvm_io.h.
  */
 
-/*
- * Bump the version number when either of the following happens:
- *
- * 1. There is a change in JVM_* functions.
- *
- * 2. There is a change in the contract between VM and Java classes.
- *    For example, if the VM relies on a new private field in Thread
- *    class.
- */
-
-#define JVM_INTERFACE_VERSION 6
-
-JNIEXPORT jint JNICALL
-JVM_GetInterfaceVersion(void);
 
 /*************************************************************************
  PART 1: Functions for Native Libraries
@@ -165,7 +151,10 @@ JNIEXPORT jboolean JNICALL
 JVM_IsUseContainerSupport(void);
 
 JNIEXPORT void * JNICALL
-JVM_LoadLibrary(const char *name);
+JVM_LoadZipLibrary();
+
+JNIEXPORT void * JNICALL
+JVM_LoadLibrary(const char *name, jboolean throwException);
 
 JNIEXPORT void JNICALL
 JVM_UnloadLibrary(void * handle);
@@ -179,25 +168,31 @@ JVM_IsSupportedJNIVersion(jint version);
 JNIEXPORT jobjectArray JNICALL
 JVM_GetVmArguments(JNIEnv *env);
 
+JNIEXPORT jboolean JNICALL
+JVM_IsPreviewEnabled(void);
+
+JNIEXPORT jboolean JNICALL
+JVM_IsContinuationsSupported(void);
+
 JNIEXPORT void JNICALL
 JVM_InitializeFromArchive(JNIEnv* env, jclass cls);
 
 JNIEXPORT void JNICALL
 JVM_RegisterLambdaProxyClassForArchiving(JNIEnv* env, jclass caller,
-                                         jstring invokedName,
-                                         jobject invokedType,
-                                         jobject methodType,
-                                         jobject implMethodMember,
-                                         jobject instantiatedMethodType,
+                                         jstring interfaceMethodName,
+                                         jobject factoryType,
+                                         jobject interfaceMethodType,
+                                         jobject implementationMember,
+                                         jobject dynamicMethodType,
                                          jclass lambdaProxyClass);
 
 JNIEXPORT jclass JNICALL
 JVM_LookupLambdaProxyClassFromArchive(JNIEnv* env, jclass caller,
-                                      jstring invokedName,
-                                      jobject invokedType,
-                                      jobject methodType,
-                                      jobject implMethodMember,
-                                      jobject instantiatedMethodType);
+                                      jstring interfaceMethodName,
+                                      jobject factoryType,
+                                      jobject interfaceMethodType,
+                                      jobject implementationMember,
+                                      jobject dynamicMethodType);
 
 JNIEXPORT jboolean JNICALL
 JVM_IsCDSDumpingEnabled(JNIEnv* env);
@@ -214,6 +209,12 @@ JVM_GetRandomSeedForDumping();
 JNIEXPORT void JNICALL
 JVM_LogLambdaFormInvoker(JNIEnv* env, jstring line);
 
+JNIEXPORT void JNICALL
+JVM_DumpClassListToFile(JNIEnv* env, jstring fileName);
+
+JNIEXPORT void JNICALL
+JVM_DumpDynamicArchive(JNIEnv* env, jstring archiveName);
+
 /*
  * java.lang.Throwable
  */
@@ -224,7 +225,7 @@ JVM_FillInStackTrace(JNIEnv *env, jobject throwable);
  * java.lang.StackTraceElement
  */
 JNIEXPORT void JNICALL
-JVM_InitStackTraceElementArray(JNIEnv *env, jobjectArray elements, jobject throwable);
+JVM_InitStackTraceElementArray(JNIEnv *env, jobjectArray elements, jobject backtrace, jint depth);
 
 JNIEXPORT void JNICALL
 JVM_InitStackTraceElement(JNIEnv* env, jobject element, jobject stackFrameInfo);
@@ -248,13 +249,16 @@ enum {
 
 JNIEXPORT jobject JNICALL
 JVM_CallStackWalk(JNIEnv *env, jobject stackStream, jlong mode,
-                  jint skip_frames, jint frame_count, jint start_index,
-                  jobjectArray frames);
+                  jint skip_frames, jobject contScope, jobject cont,
+                  jint frame_count, jint start_index, jobjectArray frames);
 
 JNIEXPORT jint JNICALL
 JVM_MoreStackWalk(JNIEnv *env, jobject stackStream, jlong mode, jlong anchor,
                   jint frame_count, jint start_index,
                   jobjectArray frames);
+
+JNIEXPORT void JNICALL
+JVM_SetStackWalkContinuation(JNIEnv *env, jobject stackStream, jlong anchor, jobjectArray frames, jobject cont);
 
 /*
  * java.lang.Thread
@@ -284,13 +288,22 @@ JNIEXPORT void JNICALL
 JVM_Sleep(JNIEnv *env, jclass threadClass, jlong millis);
 
 JNIEXPORT jobject JNICALL
+JVM_CurrentCarrierThread(JNIEnv *env, jclass threadClass);
+
+JNIEXPORT jobject JNICALL
 JVM_CurrentThread(JNIEnv *env, jclass threadClass);
+
+JNIEXPORT void JNICALL
+JVM_SetCurrentThread(JNIEnv *env, jobject thisThread, jobject theThread);
 
 JNIEXPORT void JNICALL
 JVM_Interrupt(JNIEnv *env, jobject thread);
 
 JNIEXPORT jboolean JNICALL
 JVM_HoldsLock(JNIEnv *env, jclass threadClass, jobject obj);
+
+JNIEXPORT jobject JNICALL
+JVM_GetStackTrace(JNIEnv *env, jobject thread);
 
 JNIEXPORT void JNICALL
 JVM_DumpAllStacks(JNIEnv *env, jclass unused);
@@ -304,6 +317,21 @@ JVM_SetNativeThreadName(JNIEnv *env, jobject jthread, jstring name);
 /* getStackTrace() and getAllStackTraces() method */
 JNIEXPORT jobjectArray JNICALL
 JVM_DumpThreads(JNIEnv *env, jclass threadClass, jobjectArray threads);
+
+JNIEXPORT jobject JNICALL
+JVM_ExtentLocalCache(JNIEnv *env, jclass threadClass);
+
+JNIEXPORT void JNICALL
+JVM_SetExtentLocalCache(JNIEnv *env, jclass threadClass, jobject theCache);
+
+JNIEXPORT jlong JNICALL
+JVM_GetNextThreadIdOffset(JNIEnv *env, jclass threadClass);
+
+/*
+ * jdk.internal.vm.Continuation
+ */
+JNIEXPORT void JNICALL
+JVM_RegisterContinuationMethods(JNIEnv *env, jclass cls);
 
 /*
  * java.lang.SecurityManager
@@ -454,7 +482,7 @@ JVM_LookupDefineClass(JNIEnv *env, jclass lookup, const char *name, const jbyte 
                       jsize len, jobject pd, jboolean init, int flags, jobject classData);
 
 /*
- * Module support funcions
+ * Module support functions
  */
 
 /*
@@ -614,7 +642,7 @@ JVM_GetNestHost(JNIEnv *env, jclass current);
 JNIEXPORT jobjectArray JNICALL
 JVM_GetNestMembers(JNIEnv *env, jclass current);
 
-/* Records - since JDK 14 */
+/* Records - since JDK 16 */
 
 JNIEXPORT jboolean JNICALL
 JVM_IsRecord(JNIEnv *env, jclass cls);
@@ -622,7 +650,7 @@ JVM_IsRecord(JNIEnv *env, jclass cls);
 JNIEXPORT jobjectArray JNICALL
 JVM_GetRecordComponents(JNIEnv *env, jclass ofClass);
 
-/* Sealed types - since JDK 15 */
+/* Sealed classes - since JDK 17 */
 
 JNIEXPORT jobjectArray JNICALL
 JVM_GetPermittedSubclasses(JNIEnv *env, jclass current);
@@ -762,78 +790,13 @@ JNIEXPORT jboolean JNICALL
 JVM_SupportsCX8(void);
 
 /*
- * com.sun.dtrace.jsdt support
- */
-
-#define JVM_TRACING_DTRACE_VERSION 1
-
-/*
- * Structure to pass one probe description to JVM
- */
-typedef struct {
-    jmethodID method;
-    jstring   function;
-    jstring   name;
-    void*            reserved[4];     // for future use
-} JVM_DTraceProbe;
-
-/**
- * Encapsulates the stability ratings for a DTrace provider field
- */
-typedef struct {
-    jint nameStability;
-    jint dataStability;
-    jint dependencyClass;
-} JVM_DTraceInterfaceAttributes;
-
-/*
- * Structure to pass one provider description to JVM
- */
-typedef struct {
-    jstring                       name;
-    JVM_DTraceProbe*              probes;
-    jint                          probe_count;
-    JVM_DTraceInterfaceAttributes providerAttributes;
-    JVM_DTraceInterfaceAttributes moduleAttributes;
-    JVM_DTraceInterfaceAttributes functionAttributes;
-    JVM_DTraceInterfaceAttributes nameAttributes;
-    JVM_DTraceInterfaceAttributes argsAttributes;
-    void*                         reserved[4]; // for future use
-} JVM_DTraceProvider;
-
-/*
- * Get the version number the JVM was built with
- */
-JNIEXPORT jint JNICALL
-JVM_DTraceGetVersion(JNIEnv* env);
-
-/*
- * Register new probe with given signature, return global handle
- *
- * The version passed in is the version that the library code was
- * built with.
- */
-JNIEXPORT jlong JNICALL
-JVM_DTraceActivate(JNIEnv* env, jint version, jstring module_name,
-  jint providers_count, JVM_DTraceProvider* providers);
-
-/*
- * Check JSDT probe
- */
-JNIEXPORT jboolean JNICALL
-JVM_DTraceIsProbeEnabled(JNIEnv* env, jmethodID method);
-
-/*
- * Destroy custom DOF
+ * java.lang.ref.Finalizer
  */
 JNIEXPORT void JNICALL
-JVM_DTraceDispose(JNIEnv* env, jlong activation_handle);
+JVM_ReportFinalizationComplete(JNIEnv *env, jobject finalizee);
 
-/*
- * Check to see if DTrace is supported by OS
- */
 JNIEXPORT jboolean JNICALL
-JVM_DTraceIsSupported(JNIEnv* env);
+JVM_IsFinalizationEnabled(JNIEnv *env);
 
 /*************************************************************************
  PART 2: Support for the Verifier and Class File Format Checker
@@ -1180,6 +1143,21 @@ JVM_GetTemporaryDirectory(JNIEnv *env);
  */
 JNIEXPORT jobjectArray JNICALL
 JVM_GetEnclosingMethodInfo(JNIEnv* env, jclass ofClass);
+
+/*
+ * Virtual thread support.
+ */
+JNIEXPORT void JNICALL
+JVM_VirtualThreadMountBegin(JNIEnv* env, jobject vthread, jboolean first_mount);
+
+JNIEXPORT void JNICALL
+JVM_VirtualThreadMountEnd(JNIEnv* env, jobject vthread, jboolean first_mount);
+
+JNIEXPORT void JNICALL
+JVM_VirtualThreadUnmountBegin(JNIEnv* env, jobject vthread, jboolean last_unmount);
+
+JNIEXPORT void JNICALL
+JVM_VirtualThreadUnmountEnd(JNIEnv* env, jobject vthread, jboolean last_unmount);
 
 /*
  * This structure is used by the launcher to get the default thread

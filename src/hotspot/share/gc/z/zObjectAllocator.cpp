@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "gc/z/zHeuristics.hpp"
 #include "gc/z/zObjectAllocator.hpp"
 #include "gc/z/zPage.inline.hpp"
+#include "gc/z/zPageTable.inline.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zThread.inline.hpp"
 #include "gc/z/zValue.inline.hpp"
@@ -43,6 +44,8 @@ ZObjectAllocator::ZObjectAllocator() :
     _use_per_cpu_shared_small_pages(ZHeuristics::use_per_cpu_shared_small_pages()),
     _used(0),
     _undone(0),
+    _alloc_for_relocation(0),
+    _undo_alloc_for_relocation(0),
     _shared_medium_page(NULL),
     _shared_small_page(NULL) {}
 
@@ -52,6 +55,17 @@ ZPage** ZObjectAllocator::shared_small_page_addr() {
 
 ZPage* const* ZObjectAllocator::shared_small_page_addr() const {
   return _use_per_cpu_shared_small_pages ? _shared_small_page.addr() : _shared_small_page.addr(0);
+}
+
+void ZObjectAllocator::register_alloc_for_relocation(const ZPageTable* page_table, uintptr_t addr, size_t size) {
+  const ZPage* const page = page_table->get(addr);
+  const size_t aligned_size = align_up(size, page->object_alignment());
+  Atomic::add(_alloc_for_relocation.addr(), aligned_size);
+}
+
+void ZObjectAllocator::register_undo_alloc_for_relocation(const ZPage* page, size_t size) {
+  const size_t aligned_size = align_up(size, page->object_alignment());
+  Atomic::add(_undo_alloc_for_relocation.addr(), aligned_size);
 }
 
 ZPage* ZObjectAllocator::alloc_page(uint8_t type, size_t size, ZAllocationFlags flags) {
@@ -160,20 +174,28 @@ uintptr_t ZObjectAllocator::alloc_object(size_t size) {
   return alloc_object(size, flags);
 }
 
-uintptr_t ZObjectAllocator::alloc_object_non_blocking(size_t size) {
+uintptr_t ZObjectAllocator::alloc_object_for_relocation(const ZPageTable* page_table, size_t size) {
   ZAllocationFlags flags;
   flags.set_non_blocking();
-  return alloc_object(size, flags);
+
+  const uintptr_t addr = alloc_object(size, flags);
+  if (addr != 0) {
+    register_alloc_for_relocation(page_table, addr, size);
+  }
+
+  return addr;
 }
 
-void ZObjectAllocator::undo_alloc_object(ZPage* page, uintptr_t addr, size_t size) {
+void ZObjectAllocator::undo_alloc_object_for_relocation(ZPage* page, uintptr_t addr, size_t size) {
   const uint8_t type = page->type();
 
   if (type == ZPageTypeLarge) {
+    register_undo_alloc_for_relocation(page, size);
     undo_alloc_page(page);
     ZStatInc(ZCounterUndoObjectAllocationSucceeded);
   } else {
     if (page->undo_alloc_object_atomic(addr, size)) {
+      register_undo_alloc_for_relocation(page, size);
       ZStatInc(ZCounterUndoObjectAllocationSucceeded);
     } else {
       ZStatInc(ZCounterUndoObjectAllocationFailed);
@@ -209,12 +231,35 @@ size_t ZObjectAllocator::remaining() const {
   return 0;
 }
 
+size_t ZObjectAllocator::relocated() const {
+  size_t total_alloc = 0;
+  size_t total_undo_alloc = 0;
+
+  ZPerCPUConstIterator<size_t> iter_alloc(&_alloc_for_relocation);
+  for (const size_t* alloc; iter_alloc.next(&alloc);) {
+    total_alloc += Atomic::load(alloc);
+  }
+
+  ZPerCPUConstIterator<size_t> iter_undo_alloc(&_undo_alloc_for_relocation);
+  for (const size_t* undo_alloc; iter_undo_alloc.next(&undo_alloc);) {
+    total_undo_alloc += Atomic::load(undo_alloc);
+  }
+
+  assert(total_alloc >= total_undo_alloc, "Mismatch");
+
+  return total_alloc - total_undo_alloc;
+}
+
 void ZObjectAllocator::retire_pages() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
 
   // Reset used and undone bytes
   _used.set_all(0);
   _undone.set_all(0);
+
+  // Reset relocated bytes
+  _alloc_for_relocation.set_all(0);
+  _undo_alloc_for_relocation.set_all(0);
 
   // Reset allocation pages
   _shared_medium_page.set(NULL);

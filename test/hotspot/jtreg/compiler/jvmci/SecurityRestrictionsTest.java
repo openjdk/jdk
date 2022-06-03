@@ -36,14 +36,17 @@
  *      NO_SEC_MAN
  * @run main/othervm -XX:+UnlockExperimentalVMOptions
  *      -XX:+EnableJVMCI
+ *      -Djava.security.manager=allow
  *      compiler.jvmci.SecurityRestrictionsTest
  *      NO_PERM
  * @run main/othervm -XX:+UnlockExperimentalVMOptions
  *      -XX:+EnableJVMCI
+ *      -Djava.security.manager=allow
  *      compiler.jvmci.SecurityRestrictionsTest
  *      ALL_PERM
  * @run main/othervm -XX:+UnlockExperimentalVMOptions
  *      -XX:+EnableJVMCI -XX:-UseJVMCICompiler
+ *      -Djava.security.manager=allow
  *      compiler.jvmci.SecurityRestrictionsTest
  *      NO_JVMCI_ACCESS_PERM
  * @run main/othervm -XX:+UnlockExperimentalVMOptions

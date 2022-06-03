@@ -41,7 +41,7 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true transform.SecureProcessingTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.SecureProcessingTest
  * @run testng/othervm transform.SecureProcessingTest
  * @summary Test XSLT shall report TransformerException for unsafe xsl when FEATURE_SECURE_PROCESSING is true.
  */

@@ -42,7 +42,7 @@ import org.xml.sax.SAXException;
  * @test
  * @bug 5025825
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true parsers.Bug5025825
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow parsers.Bug5025825
  * @run testng/othervm parsers.Bug5025825
  * @summary Test if SAXParserFactory set a Schema object, when SAXParser sets "http://java.sun.com/xml/jaxp/properties/schemaSource" property
  * and/or "http://java.sun.com/xml/jaxp/properties/schemaLanguage" property, it shall throw SAXException.

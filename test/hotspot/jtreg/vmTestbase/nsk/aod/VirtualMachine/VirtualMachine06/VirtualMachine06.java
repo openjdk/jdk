@@ -46,7 +46,7 @@
  *        nsk.aod.VirtualMachine.VirtualMachine06.VM06Agent01
  *        nsk.aod.VirtualMachine.VirtualMachine06.VM06Agent02
  *        nsk.aod.VirtualMachine.VirtualMachine06.VM06Agent03
- * @run driver ClassFileInstaller
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller
  *      nsk.aod.VirtualMachine.VirtualMachine06.VM06Agent00
  *      nsk.aod.VirtualMachine.VirtualMachine06.VM06Agent01
  *      nsk.aod.VirtualMachine.VirtualMachine06.VM06Agent02

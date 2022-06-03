@@ -22,8 +22,7 @@
  */
 package com.sun.org.apache.xml.internal.security.algorithms;
 
-import java.security.Key;
-import java.security.SecureRandom;
+import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
 
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureException;
@@ -80,7 +79,7 @@ public abstract class SignatureAlgorithmSpi {
      * @param len
      * @throws XMLSignatureException
      */
-    protected abstract void engineUpdate(byte buf[], int offset, int len)
+    protected abstract void engineUpdate(byte[] buf, int offset, int len)
         throws XMLSignatureException;
 
     /**
@@ -160,7 +159,10 @@ public abstract class SignatureAlgorithmSpi {
      *
      * @param element
      */
-    protected void engineGetContextFromElement(Element element) {
+    protected void engineGetContextFromElement(Element element) throws XMLSignatureException {
+    }
+
+    protected void engineAddContextToElement(Element element) throws XMLSignatureException {
     }
 
     /**
@@ -172,6 +174,47 @@ public abstract class SignatureAlgorithmSpi {
     protected abstract void engineSetHMACOutputLength(int HMACOutputLength)
         throws XMLSignatureException;
 
-    public void reset() {
+    protected static void engineInitVerify(Key publicKey, Signature signatureAlgorithm) throws XMLSignatureException {
+        if (!(publicKey instanceof PublicKey)) {
+            String supplied = null;
+            if (publicKey != null) {
+                supplied = publicKey.getClass().getName();
+            }
+            String needed = PublicKey.class.getName();
+            Object[] exArgs = { supplied, needed };
+
+            throw new XMLSignatureException("algorithms.WrongKeyForThisOperation", exArgs);
+        }
+
+        try {
+            signatureAlgorithm.initVerify((PublicKey) publicKey);
+        } catch (InvalidKeyException ex) {
+            throw new XMLSignatureException(ex);
+        }
     }
+
+    protected static void engineInitSign(Key privateKey, SecureRandom secureRandom, Signature signatureAlgorithm)
+            throws XMLSignatureException {
+        if (!(privateKey instanceof PrivateKey)) {
+            String supplied = null;
+            if (privateKey != null) {
+                supplied = privateKey.getClass().getName();
+            }
+            String needed = PrivateKey.class.getName();
+            Object[] exArgs = { supplied, needed };
+
+            throw new XMLSignatureException("algorithms.WrongKeyForThisOperation", exArgs);
+        }
+
+        try {
+            if (secureRandom == null) {
+                signatureAlgorithm.initSign((PrivateKey) privateKey);
+            } else {
+                signatureAlgorithm.initSign((PrivateKey) privateKey, secureRandom);
+            }
+        } catch (InvalidKeyException ex) {
+            throw new XMLSignatureException(ex);
+        }
+    }
+
 }

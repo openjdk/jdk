@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "oops/instanceRefKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
 
@@ -36,7 +36,7 @@ void InstanceRefKlass::update_nonstatic_oop_maps(Klass* k) {
 
   // Check that we have the right class
   debug_only(static bool first_time = true);
-  assert(k == SystemDictionary::Reference_klass() && first_time,
+  assert(k == vmClasses::Reference_klass() && first_time,
          "Invalid update of maps");
   debug_only(first_time = false);
   assert(ik->nonstatic_oop_map_count() == 1, "just checking");
@@ -87,7 +87,6 @@ void InstanceRefKlass::oop_verify_on(oop obj, outputStream* st) {
   oop next = java_lang_ref_Reference::next(obj);
   if (next != NULL) {
     guarantee(oopDesc::is_oop(next), "next field should be an oop");
-    guarantee(next->is_instance(), "next field should be an instance");
-    guarantee(InstanceKlass::cast(next->klass())->is_reference_instance_klass(), "next field verify failed");
+    guarantee(next->is_instanceRef(), "next field verify failed");
   }
 }

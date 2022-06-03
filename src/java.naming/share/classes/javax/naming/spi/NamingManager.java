@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@ import java.security.PrivilegedAction;
 import java.util.*;
 
 import javax.naming.*;
+
+import com.sun.naming.internal.ObjectFactoriesFilter;
 import com.sun.naming.internal.VersionHelper;
 import com.sun.naming.internal.ResourceManager;
 import com.sun.naming.internal.FactoryEnumeration;
@@ -114,6 +116,7 @@ public class NamingManager {
         if (object_factory_builder != null)
             throw new IllegalStateException("ObjectFactoryBuilder already set");
 
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkSetFactory();
@@ -147,7 +150,11 @@ public class NamingManager {
 
         // Try to use current class loader
         try {
-             clas = helper.loadClass(factoryName);
+            clas = helper.loadClassWithoutInit(factoryName);
+            // Validate factory's class with the objects factory serial filter
+            if (!ObjectFactoriesFilter.canInstantiateObjectsFactory(clas)) {
+                return null;
+            }
         } catch (ClassNotFoundException e) {
             // ignore and continue
             // e.printStackTrace();
@@ -160,6 +167,11 @@ public class NamingManager {
                 (codebase = ref.getFactoryClassLocation()) != null) {
             try {
                 clas = helper.loadClass(factoryName, codebase);
+                // Validate factory's class with the objects factory serial filter
+                if (clas == null ||
+                    !ObjectFactoriesFilter.canInstantiateObjectsFactory(clas)) {
+                    return null;
+                }
             } catch (ClassNotFoundException e) {
             }
         }
@@ -675,6 +687,7 @@ public class NamingManager {
      * @see javax.naming.InitialContext
      * @see javax.naming.directory.InitialDirContext
      */
+    @SuppressWarnings("removal")
     public static Context getInitialContext(Hashtable<?,?> env)
         throws NamingException {
         ClassLoader loader;
@@ -781,6 +794,7 @@ public class NamingManager {
                 throw new IllegalStateException(
                     "InitialContextFactoryBuilder already set");
 
+            @SuppressWarnings("removal")
             SecurityManager security = System.getSecurityManager();
             if (security != null) {
                 security.checkSetFactory();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,14 +80,14 @@ public class tostring001a {
         long    l0 = (long)-1,   l1[] = {l0}, l2[][] = {l1};
         short   r0 = (short)-1,  r1[] = {r0}, r2[][] = {r1};
 
-        Boolean   Z0 = new Boolean(false),  Z1[] = {Z0}, Z2[][] = {Z1};
-        Byte B0 = new Byte((byte)1),        B1[] = {B0}, B2[][] = {B1};
-        Character C0 = new Character('z'),  C1[] = {C0}, C2[][] = {C1};
-        Double D0 = new Double((double)1),  D1[] = {D0}, D2[][] = {D1};
-        Float F0 = new Float((float)1),     F1[] = {F0}, F2[][] = {F1};
-        Integer I0 = new Integer(1),        I1[] = {I0}, I2[][] = {I1};
-        Long L0 = new Long((long)1),        L1[] = {L0}, L2[][] = {L1};
-        Short R0 = new Short((short)1),     R1[] = {R0}, R2[][] = {R1};
+        Boolean   Z0 = Boolean.valueOf(false),  Z1[] = {Z0}, Z2[][] = {Z1};
+        Byte B0 = Byte.valueOf((byte)1),        B1[] = {B0}, B2[][] = {B1};
+        Character C0 = Character.valueOf('z'),  C1[] = {C0}, C2[][] = {C1};
+        Double D0 = Double.valueOf((double)1),  D1[] = {D0}, D2[][] = {D1};
+        Float F0 = Float.valueOf((float)1),     F1[] = {F0}, F2[][] = {F1};
+        Integer I0 = Integer.valueOf(1),        I1[] = {I0}, I2[][] = {I1};
+        Long L0 = Long.valueOf((long)1),        L1[] = {L0}, L2[][] = {L1};
+        Short R0 = Short.valueOf((short)1),     R1[] = {R0}, R2[][] = {R1};
 
         String    s0 = "string", s1[] = {s0}, s2[][] = {s1};
         Object    o0 = new Object(), o1[] = {o0}, o2[][] = {o1};

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,9 @@ import sun.security.jca.GetInstance.Instance;
  * with two other parties, {@code doPhase} needs to be called twice,
  * the first time setting the {@code lastPhase} flag to
  * {@code false}, and the second time setting it to {@code true}.
- * There may be any number of parties involved in a key exchange.
+ * There may be any number of parties involved in a key exchange.  However,
+ * support for key exchanges with more than two parties is implementation
+ * specific or as specified by the standard key agreement algorithm.
  *
  * <p> Every implementation of the Java platform is required to support the
  * following standard {@code KeyAgreement} algorithm:
@@ -155,7 +157,7 @@ public class KeyAgreement {
      * {@code jdk.security.provider.preferred}
      * {@link Security#getProperty(String) Security} property to determine
      * the preferred provider order for the specified algorithm. This
-     * may be different than the order of providers returned by
+     * may be different from the order of providers returned by
      * {@link Security#getProviders() Security.getProviders()}.
      *
      * @param algorithm the standard name of the requested key agreement
@@ -184,7 +186,7 @@ public class KeyAgreement {
         Iterator<Service> t = services.iterator();
         while (t.hasNext()) {
             Service s = t.next();
-            if (JceSecurity.canUseProvider(s.getProvider()) == false) {
+            if (!JceSecurity.canUseProvider(s.getProvider())) {
                 continue;
             }
             return new KeyAgreement(s, t, algorithm);
@@ -317,12 +319,12 @@ public class KeyAgreement {
                 } else {
                     s = serviceIterator.next();
                 }
-                if (JceSecurity.canUseProvider(s.getProvider()) == false) {
+                if (!JceSecurity.canUseProvider(s.getProvider())) {
                     continue;
                 }
                 try {
                     Object obj = s.newInstance(null);
-                    if (obj instanceof KeyAgreementSpi == false) {
+                    if (!(obj instanceof KeyAgreementSpi)) {
                         continue;
                     }
                     spi = (KeyAgreementSpi)obj;
@@ -375,10 +377,10 @@ public class KeyAgreement {
                     s = serviceIterator.next();
                 }
                 // if provider says it does not support this key, ignore it
-                if (s.supportsParameter(key) == false) {
+                if (!s.supportsParameter(key)) {
                     continue;
                 }
-                if (JceSecurity.canUseProvider(s.getProvider()) == false) {
+                if (!JceSecurity.canUseProvider(s.getProvider())) {
                     continue;
                 }
                 try {
@@ -446,7 +448,7 @@ public class KeyAgreement {
      * has an incompatible algorithm type.
      */
     public final void init(Key key) throws InvalidKeyException {
-        init(key, JCAUtil.getSecureRandom());
+        init(key, JCAUtil.getDefSecureRandom());
     }
 
     /**
@@ -514,7 +516,7 @@ public class KeyAgreement {
     public final void init(Key key, AlgorithmParameterSpec params)
         throws InvalidKeyException, InvalidAlgorithmParameterException
     {
-        init(key, params, JCAUtil.getSecureRandom());
+        init(key, params, JCAUtil.getDefSecureRandom());
     }
 
     private String getProviderName() {
@@ -561,7 +563,7 @@ public class KeyAgreement {
      * @param key the key for this phase. For example, in the case of
      * Diffie-Hellman between 2 parties, this would be the other party's
      * Diffie-Hellman public key.
-     * @param lastPhase flag which indicates whether or not this is the last
+     * @param lastPhase flag which indicates whether this is the last
      * phase of this key agreement.
      *
      * @return the (intermediate) key resulting from this phase, or null

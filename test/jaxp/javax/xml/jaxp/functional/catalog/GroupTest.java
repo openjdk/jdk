@@ -39,7 +39,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8077931
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true catalog.GroupTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow catalog.GroupTest
  * @run testng/othervm catalog.GroupTest
  * @summary Get matched URIs from system, public and uri entries respectively,
  *          and some of the entries are enclosed by group entries.

@@ -30,7 +30,7 @@
  * @key randomness
  * @modules jdk.crypto.cryptoki
  * @run main/othervm Basic
- * @run main/othervm Basic sm
+ * @run main/othervm -Djava.security.manager=allow Basic sm
  */
 
 import java.security.NoSuchAlgorithmException;

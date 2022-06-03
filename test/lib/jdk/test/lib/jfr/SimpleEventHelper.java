@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ public class SimpleEventHelper {
         for (RecordedEvent event : getSimpleEvents(events)) {
             int id = Events.assertField(event, "id").getValue();
             System.out.printf("event.id=%d%n", id);
-            missingIds.remove(new Integer(id));
+            missingIds.remove(Integer.valueOf(id));
         }
         if (!missingIds.isEmpty()) {
             missingIds.forEach(id -> System.out.println("Missing MyEvent with id " + id));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.ResourceBundle;
 import java.util.jar.Attributes;
@@ -178,6 +179,11 @@ public class Arguments {
             setOptionValue("resource-dir", resourceDir);
         }),
 
+        DMG_CONTENT ("mac-dmg-content", OptionCategories.PROPERTY, () -> {
+            List<String> content = getArgumentList(popArg());
+            content.forEach(a -> setOptionValue("mac-dmg-content", a));
+        }),
+
         ARGUMENTS ("arguments", OptionCategories.PROPERTY, () -> {
             List<String> arguments = getArgumentList(popArg());
             setOptionValue("arguments", arguments);
@@ -198,9 +204,16 @@ public class Arguments {
 
         RELEASE ("linux-app-release", OptionCategories.PROPERTY),
 
+        ABOUT_URL ("about-url", OptionCategories.PROPERTY),
+
         JAVA_OPTIONS ("java-options", OptionCategories.PROPERTY, () -> {
             List<String> args = getArgumentList(popArg());
             args.forEach(a -> setOptionValue("java-options", a));
+        }),
+
+        APP_CONTENT ("app-content", OptionCategories.PROPERTY, () -> {
+            getArgumentList(popArg()).forEach(
+                    a -> setOptionValue("app-content", a));
         }),
 
         FILE_ASSOCIATIONS ("file-associations",
@@ -301,9 +314,19 @@ public class Arguments {
 
         MODULE_PATH ("module-path", "p", OptionCategories.MODULAR),
 
+        LAUNCHER_AS_SERVICE ("launcher-as-service", OptionCategories.PROPERTY, () -> {
+            setOptionValue("launcher-as-service", true);
+        }),
+
         MAC_SIGN ("mac-sign", "s", OptionCategories.PLATFORM_MAC, () -> {
             setOptionValue("mac-sign", true);
         }),
+
+        MAC_APP_STORE ("mac-app-store", OptionCategories.PLATFORM_MAC, () -> {
+            setOptionValue("mac-app-store", true);
+        }),
+
+        MAC_CATEGORY ("mac-app-category", OptionCategories.PLATFORM_MAC),
 
         MAC_BUNDLE_NAME ("mac-package-name", OptionCategories.PLATFORM_MAC),
 
@@ -319,6 +342,12 @@ public class Arguments {
         MAC_SIGNING_KEYCHAIN ("mac-signing-keychain",
                     OptionCategories.PLATFORM_MAC),
 
+        MAC_ENTITLEMENTS ("mac-entitlements", OptionCategories.PLATFORM_MAC),
+
+        WIN_HELP_URL ("win-help-url", OptionCategories.PLATFORM_WIN),
+
+        WIN_UPDATE_URL ("win-update-url", OptionCategories.PLATFORM_WIN),
+
         WIN_MENU_HINT ("win-menu", OptionCategories.PLATFORM_WIN, () -> {
             setOptionValue("win-menu", true);
         }),
@@ -328,6 +357,11 @@ public class Arguments {
         WIN_SHORTCUT_HINT ("win-shortcut",
                 OptionCategories.PLATFORM_WIN, () -> {
             setOptionValue("win-shortcut", true);
+        }),
+
+        WIN_SHORTCUT_PROMPT ("win-shortcut-prompt",
+                OptionCategories.PLATFORM_WIN, () -> {
+            setOptionValue("win-shortcut-prompt", true);
         }),
 
         WIN_PER_USER_INSTALLATION ("win-per-user-install",
@@ -600,6 +634,11 @@ public class Arguments {
                         CLIOptions.JLINK_OPTIONS.getIdWithPrefix());
             }
         }
+        if (allOptions.contains(CLIOptions.DMG_CONTENT)
+                && !("dmg".equals(type))) {
+            throw new PackagerException("ERR_InvalidTypeOption",
+                    CLIOptions.DMG_CONTENT.getIdWithPrefix(), ptype);
+        }
         if (hasMainJar && hasMainModule) {
             throw new PackagerException("ERR_BothMainJarAndModule");
         }
@@ -616,15 +655,13 @@ public class Arguments {
         for (jdk.jpackage.internal.Bundler bundler :
                 Bundlers.createBundlersInstance().getBundlers(bundleType)) {
             if (type == null) {
-                 if (bundler.isDefault()
-                         && bundler.supported(runtimeInstaller)) {
-                     return bundler;
-                 }
+                if (bundler.isDefault()) {
+                    return bundler;
+                }
             } else {
-                 if ((appImage || type.equalsIgnoreCase(bundler.getID()))
-                         && bundler.supported(runtimeInstaller)) {
-                     return bundler;
-                 }
+                if (appImage || type.equalsIgnoreCase(bundler.getID())) {
+                    return bundler;
+                }
             }
         }
         return null;
@@ -632,8 +669,6 @@ public class Arguments {
 
     private void generateBundle(Map<String,? super Object> params)
             throws PackagerException {
-
-        boolean bundleCreated = false;
 
         // the temp dir needs to be fetched from the params early,
         // to prevent each copy of the params (such as may be used for
@@ -646,9 +681,10 @@ public class Arguments {
         // determine what bundler to run
         jdk.jpackage.internal.Bundler bundler = getPlatformBundler();
 
-        if (bundler == null) {
-            throw new PackagerException("ERR_InvalidInstallerType",
-                      deployParams.getTargetFormat());
+        if (bundler == null || !bundler.supported(runtimeInstaller)) {
+            String type = Optional.ofNullable(bundler).map(Bundler::getID).orElseGet(
+                    () -> deployParams.getTargetFormat());
+            throw new PackagerException("ERR_InvalidInstallerType", type);
         }
 
         Map<String, ? super Object> localParams = new HashMap<>(params);

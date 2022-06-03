@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,6 +120,7 @@ public class LogStream extends PrintStream {
      */
     @Deprecated
     public static synchronized void setDefaultStream(PrintStream newDefault) {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
 
         if (sm != null) {
@@ -175,7 +176,7 @@ public class LogStream extends PrintStream {
             synchronized (this) {
                 synchronized (logOut) {
                     // construct prefix for log messages:
-                    buffer.setLength(0);;
+                    buffer.setLength(0);
                     buffer.append(              // date/time stamp...
                         (new Date()).toString());
                     buffer.append(':');

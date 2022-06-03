@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,9 @@
 #include "utilities/macros.hpp"
 
 #include <stddef.h>
+#include <stdint.h>
+
+class oopDesc;
 
 // ShowRegistersOnAssert support (for now Linux only)
 #if defined(LINUX) && !defined(ZERO)
@@ -106,7 +109,7 @@ do {                                                                            
 #define fatal(...)                                                                \
 do {                                                                              \
   TOUCH_ASSERT_POISON;                                                            \
-  report_fatal(__FILE__, __LINE__, __VA_ARGS__);                                  \
+  report_fatal(INTERNAL_ERROR, __FILE__, __LINE__, __VA_ARGS__);                  \
   BREAKPOINT;                                                                     \
 } while (0)
 
@@ -150,7 +153,8 @@ enum VMErrorType {
   INTERNAL_ERROR   = 0xe0000000,
   OOM_MALLOC_ERROR = 0xe0000001,
   OOM_MMAP_ERROR   = 0xe0000002,
-  OOM_MPROTECT_ERROR = 0xe0000003
+  OOM_MPROTECT_ERROR = 0xe0000003,
+  OOM_JAVA_HEAP_FATAL = 0xe0000004
 };
 
 // Set to suppress secondary error reporting.
@@ -163,7 +167,7 @@ void report_vm_error(const char* file, int line, const char* error_msg,
                      const char* detail_fmt, ...) ATTRIBUTE_PRINTF(4, 5);
 void report_vm_status_error(const char* file, int line, const char* error_msg,
                             int status, const char* detail);
-void report_fatal(const char* file, int line, const char* detail_fmt, ...) ATTRIBUTE_PRINTF(3, 4);
+void report_fatal(VMErrorType error_type, const char* file, int line, const char* detail_fmt, ...) ATTRIBUTE_PRINTF(4, 5);
 void report_vm_out_of_memory(const char* file, int line, size_t size, VMErrorType vm_err_type,
                              const char* detail_fmt, ...) ATTRIBUTE_PRINTF(5, 6);
 void report_should_not_call(const char* file, int line);
@@ -173,24 +177,13 @@ void report_untested(const char* file, int line, const char* message);
 
 void warning(const char* format, ...) ATTRIBUTE_PRINTF(1, 2);
 
-// Compile-time asserts.  Cond must be a compile-time constant expression that
-// is convertible to bool.  STATIC_ASSERT() can be used anywhere a declaration
-// may appear.
-//
-// Implementation Note: STATIC_ASSERT_FAILURE<true> provides a value member
-// rather than type member that could be used directly in the typedef, because
-// a type member would require conditional use of "typename", depending on
-// whether Cond is dependent or not.  The use of a value member leads to the
-// use of an array type.
-
-template<bool x> struct STATIC_ASSERT_FAILURE;
-template<> struct STATIC_ASSERT_FAILURE<true> { enum { value = 1 }; };
-
-#define STATIC_ASSERT(Cond) \
-  typedef char PASTE_TOKENS(STATIC_ASSERT_DUMMY_TYPE_, __LINE__)[ \
-    STATIC_ASSERT_FAILURE< (Cond) >::value ]
+#define STATIC_ASSERT(Cond) static_assert((Cond), #Cond)
 
 // out of memory reporting
 void report_java_out_of_memory(const char* message);
+
+// Returns true iff the address p is readable and *(intptr_t*)p != errvalue
+extern "C" bool dbg_is_safe(const void* p, intptr_t errvalue);
+extern "C" bool dbg_is_good_oop(oopDesc* o);
 
 #endif // SHARE_UTILITIES_DEBUG_HPP

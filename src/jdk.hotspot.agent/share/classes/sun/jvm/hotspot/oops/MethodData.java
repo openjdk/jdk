@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -234,8 +234,8 @@ public class MethodData extends Metadata implements MethodDataInterface<Klass,Me
   public void iterateFields(MetadataVisitor visitor) {
     super.iterateFields(visitor);
     visitor.doMetadata(method, true);
-      visitor.doCInt(size, true);
-    }
+    visitor.doCInt(size, true);
+  }
 
   int dataSize() {
     if (dataSize == null) {
@@ -331,7 +331,7 @@ public class MethodData extends Metadata implements MethodDataInterface<Klass,Me
     return new DataLayout(this, sizeInBytes());
   }
 
-  static public int extraNbCells(DataLayout dataLayout) {
+  public static int extraNbCells(DataLayout dataLayout) {
     int nbCells = 0;
     switch(dataLayout.tag()) {
     case DataLayout.bitDataTag:

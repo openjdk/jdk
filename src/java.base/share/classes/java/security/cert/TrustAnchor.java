@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,8 @@ import java.security.PublicKey;
 
 import javax.security.auth.x500.X500Principal;
 
+import sun.security.util.AnchorCertificates;
 import sun.security.x509.NameConstraintsExtension;
-import sun.security.x509.X500Name;
 
 /**
  * A trust anchor or most-trusted Certification Authority (CA).
@@ -68,6 +68,12 @@ public class TrustAnchor {
     private final X509Certificate trustedCert;
     private byte[] ncBytes;
     private NameConstraintsExtension nc;
+    private boolean jdkCA;
+    private boolean hasJdkCABeenChecked;
+
+    static {
+        CertPathHelperImpl.initialize();
+    }
 
     /**
      * Creates an instance of {@code TrustAnchor} with the specified
@@ -78,7 +84,7 @@ public class TrustAnchor {
      * The name constraints are specified as a byte array. This byte array
      * should contain the DER encoded form of the name constraints, as they
      * would appear in the NameConstraints structure defined in
-     * <a href="http://tools.ietf.org/html/rfc5280">RFC 5280</a>
+     * <a href="https://tools.ietf.org/html/rfc5280">RFC 5280</a>
      * and X.509. The ASN.1 definition of this structure appears below.
      *
      * <pre>{@code
@@ -279,10 +285,7 @@ public class TrustAnchor {
             try {
                 nc = new NameConstraintsExtension(Boolean.FALSE, bytes);
             } catch (IOException ioe) {
-                IllegalArgumentException iae =
-                    new IllegalArgumentException(ioe.getMessage());
-                iae.initCause(ioe);
-                throw iae;
+                throw new IllegalArgumentException(ioe.getMessage(), ioe);
             }
         }
     }
@@ -320,14 +323,27 @@ public class TrustAnchor {
         StringBuilder sb = new StringBuilder();
         sb.append("[\n");
         if (pubKey != null) {
-            sb.append("  Trusted CA Public Key: " + pubKey.toString() + "\n");
-            sb.append("  Trusted CA Issuer Name: "
-                + String.valueOf(caName) + "\n");
+            sb.append("  Trusted CA Public Key: " + pubKey + "\n");
+            sb.append("  Trusted CA Issuer Name: " + caName + "\n");
         } else {
-            sb.append("  Trusted CA cert: " + trustedCert.toString() + "\n");
+            sb.append("  Trusted CA cert: " + trustedCert + "\n");
         }
         if (nc != null)
-            sb.append("  Name Constraints: " + nc.toString() + "\n");
+            sb.append("  Name Constraints: " + nc + "\n");
         return sb.toString();
+    }
+
+    /**
+     * Returns true if anchor is a JDK CA (a root CA that is included by
+     * default in the cacerts keystore).
+     */
+    synchronized boolean isJdkCA() {
+        if (!hasJdkCABeenChecked) {
+            if (trustedCert != null) {
+                jdkCA = AnchorCertificates.contains(trustedCert);
+            }
+            hasJdkCABeenChecked = true;
+        }
+        return jdkCA;
     }
 }

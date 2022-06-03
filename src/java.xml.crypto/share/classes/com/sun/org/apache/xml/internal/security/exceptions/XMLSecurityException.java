@@ -38,7 +38,7 @@ import com.sun.org.apache.xml.internal.security.utils.I18n;
  * Usage in the Java source is:
  * <pre>
  * {
- *    Object exArgs[] = { Constants._TAG_TRANSFORMS, "BadElement" };
+ *    Object[] exArgs = { Constants._TAG_TRANSFORMS, "BadElement" };
  *
  *    throw new XMLSecurityException("xml.WrongElement", exArgs);
  * }
@@ -49,7 +49,7 @@ import com.sun.org.apache.xml.internal.security.utils.I18n;
  * try {
  *    ...
  * } catch (Exception oldEx) {
- *    Object exArgs[] = { Constants._TAG_TRANSFORMS, "BadElement" };
+ *    Object[] exArgs = { Constants._TAG_TRANSFORMS, "BadElement" };
  *
  *    throw new XMLSecurityException("xml.WrongElement", exArgs, oldEx);
  * }

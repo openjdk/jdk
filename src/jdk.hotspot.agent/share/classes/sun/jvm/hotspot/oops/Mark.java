@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,28 +49,21 @@ public class Mark extends VMObject {
 
     ageBits             = db.lookupLongConstant("markWord::age_bits").longValue();
     lockBits            = db.lookupLongConstant("markWord::lock_bits").longValue();
-    biasedLockBits      = db.lookupLongConstant("markWord::biased_lock_bits").longValue();
     maxHashBits         = db.lookupLongConstant("markWord::max_hash_bits").longValue();
     hashBits            = db.lookupLongConstant("markWord::hash_bits").longValue();
     lockShift           = db.lookupLongConstant("markWord::lock_shift").longValue();
-    biasedLockShift     = db.lookupLongConstant("markWord::biased_lock_shift").longValue();
     ageShift            = db.lookupLongConstant("markWord::age_shift").longValue();
     hashShift           = db.lookupLongConstant("markWord::hash_shift").longValue();
     lockMask            = db.lookupLongConstant("markWord::lock_mask").longValue();
     lockMaskInPlace     = db.lookupLongConstant("markWord::lock_mask_in_place").longValue();
-    biasedLockMask      = db.lookupLongConstant("markWord::biased_lock_mask").longValue();
-    biasedLockMaskInPlace  = db.lookupLongConstant("markWord::biased_lock_mask_in_place").longValue();
-    biasedLockBitInPlace  = db.lookupLongConstant("markWord::biased_lock_bit_in_place").longValue();
     ageMask             = db.lookupLongConstant("markWord::age_mask").longValue();
     ageMaskInPlace      = db.lookupLongConstant("markWord::age_mask_in_place").longValue();
     hashMask            = db.lookupLongConstant("markWord::hash_mask").longValue();
     hashMaskInPlace     = db.lookupLongConstant("markWord::hash_mask_in_place").longValue();
-    biasedLockAlignment  = db.lookupLongConstant("markWord::biased_lock_alignment").longValue();
     lockedValue         = db.lookupLongConstant("markWord::locked_value").longValue();
     unlockedValue       = db.lookupLongConstant("markWord::unlocked_value").longValue();
     monitorValue        = db.lookupLongConstant("markWord::monitor_value").longValue();
     markedValue         = db.lookupLongConstant("markWord::marked_value").longValue();
-    biasedLockPattern = db.lookupLongConstant("markWord::biased_lock_pattern").longValue();
     noHash              = db.lookupLongConstant("markWord::no_hash").longValue();
     noHashInPlace       = db.lookupLongConstant("markWord::no_hash_in_place").longValue();
     noLockInPlace       = db.lookupLongConstant("markWord::no_lock_in_place").longValue();
@@ -83,31 +76,24 @@ public class Mark extends VMObject {
   // Constants -- read from VM
   private static long ageBits;
   private static long lockBits;
-  private static long biasedLockBits;
   private static long maxHashBits;
   private static long hashBits;
 
   private static long lockShift;
-  private static long biasedLockShift;
   private static long ageShift;
   private static long hashShift;
 
   private static long lockMask;
   private static long lockMaskInPlace;
-  private static long biasedLockMask;
-  private static long biasedLockMaskInPlace;
-  private static long biasedLockBitInPlace;
   private static long ageMask;
   private static long ageMaskInPlace;
   private static long hashMask;
   private static long hashMaskInPlace;
-  private static long biasedLockAlignment;
 
   private static long lockedValue;
   private static long unlockedValue;
   private static long monitorValue;
   private static long markedValue;
-  private static long biasedLockPattern;
 
   private static long noHash;
 
@@ -133,34 +119,12 @@ public class Mark extends VMObject {
     return addr.getAddressAt(markField.getOffset());
   }
 
-  // Biased locking accessors
-  // These must be checked by all code which calls into the
-  // ObjectSynchoronizer and other code. The biasing is not understood
-  // by the lower-level CAS-based locking code, although the runtime
-  // fixes up biased locks to be compatible with it when a bias is
-  // revoked.
-  public boolean hasBiasPattern() {
-    return (Bits.maskBitsLong(value(), biasedLockMaskInPlace) == biasedLockPattern);
-  }
-
-  public JavaThread biasedLocker() {
-    Threads threads = VM.getVM().getThreads();
-    Address addr = valueAsAddress().andWithMask(~(biasedLockMaskInPlace & ageMaskInPlace));
-    return threads.createJavaThreadWrapper(addr);
-  }
-
-  // Indicates that the mark gas the bias bit set but that it has not
-  // yet been biased toward a particular thread
-  public boolean isBiasedAnonymously() {
-    return hasBiasPattern() && (biasedLocker() == null);
-  }
-
   // lock accessors (note that these assume lock_shift == 0)
   public boolean isLocked() {
     return (Bits.maskBitsLong(value(), lockMaskInPlace) != unlockedValue);
   }
   public boolean isUnlocked() {
-    return (Bits.maskBitsLong(value(), biasedLockMaskInPlace) == unlockedValue);
+    return (Bits.maskBitsLong(value(), lockMaskInPlace) == unlockedValue);
   }
   public boolean isMarked() {
     return (Bits.maskBitsLong(value(), lockMaskInPlace) == markedValue);

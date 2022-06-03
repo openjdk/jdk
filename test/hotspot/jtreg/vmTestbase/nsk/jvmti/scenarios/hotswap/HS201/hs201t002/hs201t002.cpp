@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,16 +45,18 @@ static jlong timeout = 0;
 #define PATH_TO_NEW_BYTECODE "pathToNewByteCode"
 
 static jint testStep;
-static int redefineNumber;
-static jint newClassSize;
-static unsigned char* newClassBytes;
 static jthread testedThread;
 static jclass testClass;
-char chbuffer[255];
 
-const char* getThreadName(JNIEnv* jni_env, jthread thread);
+// callbackException (isCatch == false) and callbackExceptionCatch (isCatch == true) handler
+void handleException(bool isCatch,
+    jvmtiEnv* jvmti_env, JNIEnv* jni_env, jthread thread,
+    jmethodID method, jlocation location,
+    jobject exception);
+
+const char* getThreadName(jvmtiEnv* jvmti_env, JNIEnv* jni_env, jthread thread);
 const char* getClassName(jvmtiEnv *jvmti_env, JNIEnv* jni_env, jobject object);
-int readNewBytecode(jvmtiEnv* jvmti);
+int readNewBytecode(jvmtiEnv* jvmti, jint *newClassSize, unsigned char* *newClassBytes);
 int getLocalVariableValue(jvmtiEnv *jvmti_env, jthread thread, jmethodID method);
 
 /* ============================================================================= */
@@ -99,17 +101,19 @@ void disableEvent(jvmtiEnv *jvmti_env, jvmtiEvent event, jthread thread) {
 void redefineClass(jvmtiEnv *jvmti_env, jclass klass) {
 
     jvmtiClassDefinition classDef;
-
     char *className;
+    jint newClassSize;
+    unsigned char* newClassBytes;
 
     if (!NSK_JVMTI_VERIFY(jvmti_env->GetClassSignature(klass, &className, NULL))) {
         nsk_jvmti_setFailStatus();
         return;
     }
 
-    if (!NSK_VERIFY(readNewBytecode(jvmti_env))) {
+    if (!NSK_VERIFY(readNewBytecode(jvmti_env, &newClassSize, &newClassBytes))) {
         NSK_COMPLAIN0("TEST FAILED: new bytecode could not be read\n");
         nsk_jvmti_setFailStatus();
+        jvmti_env->Deallocate((unsigned char*)className);
         return;
     }
 
@@ -121,10 +125,12 @@ void redefineClass(jvmtiEnv *jvmti_env, jclass klass) {
     if (!NSK_JVMTI_VERIFY(jvmti_env->RedefineClasses(1, &classDef))) {
         NSK_COMPLAIN1("TEST FAILED: while redefining class %s\n", className);
         nsk_jvmti_setFailStatus();
-        return;
     }
 
     if (!NSK_JVMTI_VERIFY(jvmti_env->Deallocate((unsigned char*)className))) {
+        nsk_jvmti_setFailStatus();
+    }
+    if (!NSK_JVMTI_VERIFY(jvmti_env->Deallocate(newClassBytes))) {
         nsk_jvmti_setFailStatus();
     }
 
@@ -136,7 +142,6 @@ void redefineClass(jvmtiEnv *jvmti_env, jclass klass) {
 static void JNICALL
 agentProc(jvmtiEnv* jvmti, JNIEnv* agentJNI, void* arg) {
 
-    redefineNumber = 1;
     jni = agentJNI;
 
     NSK_DISPLAY0("Waiting for debuggee to become ready\n");
@@ -144,7 +149,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* agentJNI, void* arg) {
         return;
 
     testStep = 1;
-    NSK_DISPLAY0("\n\n>>>> Debugge started, waiting for class loading \n");
+    NSK_DISPLAY0(">>>> Debugge started, waiting for class loading \n");
     if (!nsk_jvmti_resumeSync())
         return;
 
@@ -183,27 +188,20 @@ callbackClassLoad(jvmtiEnv *jvmti_env, JNIEnv* jni_env, jthread thread,
                         jclass klass) {
 
     char *className;
-    char *generic;
 
-    if (!NSK_JVMTI_VERIFY(jvmti_env->GetClassSignature(klass, &className, &generic))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetClassSignature(klass, &className, NULL))) {
         nsk_jvmti_setFailStatus();
         return;
     }
 
     if (strcmp(className, EXPECTED_CLASS_SIGN) == 0) {
-        NSK_DISPLAY1("\n\n>>>> Class loaded: %s", className);
-        NSK_DISPLAY0(", activating breakpoint\n");
+        NSK_DISPLAY1(">>>> Class loaded: %s, activating breakpoint\n", className);
         setBreakPoint(jvmti_env, jni_env, klass);
     }
 
     if (!NSK_JVMTI_VERIFY(jvmti_env->Deallocate((unsigned char*)className))) {
         nsk_jvmti_setFailStatus();
     }
-
-    if (generic != NULL)
-        if (!NSK_JVMTI_VERIFY(jvmti_env->Deallocate((unsigned char*)generic))) {
-            nsk_jvmti_setFailStatus();
-        }
 }
 
 /* ============================================================================= */
@@ -216,7 +214,7 @@ JNIEXPORT void JNICALL
 callbackBreakpoint(jvmtiEnv *jvmti_env, JNIEnv* jni_env, jthread thread,
                          jmethodID method, jlocation location) {
 
-    NSK_DISPLAY0("\n\n>>>>Breakpoint fired, enabling SINGLE_STEP\n");
+    NSK_DISPLAY0(">>>>Breakpoint fired, enabling SINGLE_STEP\n");
     enableEvent(jvmti_env, JVMTI_EVENT_SINGLE_STEP, thread);
 }
 
@@ -266,7 +264,7 @@ callbackSingleStep(jvmtiEnv *jvmti_env, JNIEnv* jni_env, jthread thread,
 
             case 2:
 
-                NSK_DISPLAY1("\n\n>>>> Checking if redefined method is not obsolete\n", testStep);
+                NSK_DISPLAY1(">>>> Checking if redefined method is not obsolete\n", testStep);
 
                 if (!NSK_JVMTI_VERIFY(jvmti->IsMethodObsolete(method, &is_obsolete))) {
                     NSK_COMPLAIN0("TEST FAILED: unable to check method to be obsolete\n");
@@ -283,7 +281,7 @@ callbackSingleStep(jvmtiEnv *jvmti_env, JNIEnv* jni_env, jthread thread,
 
             case 3:
 
-                NSK_DISPLAY1("\n\n>>>> Popping the currently executing frame\n", testStep);
+                NSK_DISPLAY1(">>>> Popping the currently executing frame\n", testStep);
                 testStep++;
                 setCurrentStep(jni_env, testStep);
 
@@ -292,7 +290,7 @@ callbackSingleStep(jvmtiEnv *jvmti_env, JNIEnv* jni_env, jthread thread,
             case 5:
 
                 if (value < 10) {
-                    NSK_DISPLAY1("\n\n>>>> Disabling single step\n", testStep);
+                    NSK_DISPLAY1(">>>> Disabling single step\n", testStep);
                     disableEvent(jvmti_env, JVMTI_EVENT_SINGLE_STEP, thread);
                     setCurrentStep(jni_env, testStep);
                 }
@@ -302,7 +300,7 @@ callbackSingleStep(jvmtiEnv *jvmti_env, JNIEnv* jni_env, jthread thread,
         }
 
         if (!NSK_JVMTI_VERIFY(jvmti_env->Deallocate((unsigned char*) declaringClassName))) {
-            NSK_COMPLAIN0("TEST FAILED: unable to deallocate memory pointed to method name\n\n");
+            NSK_COMPLAIN0("TEST FAILED: unable to deallocate memory pointed to declaringClassName\n\n");
         }
 
     }
@@ -324,24 +322,7 @@ callbackException(jvmtiEnv *jvmti_env, JNIEnv* jni_env, jthread thread,
                         jmethodID method, jlocation location, jobject exception,
                         jmethodID catch_method, jlocation catch_location) {
 
-    const char *className;
-
-    className = getClassName(jvmti_env, jni_env, exception);
-
-    if (strcmp(EXPECTED_CLASS_SIGN, className) == 0) {
-        jclass klass;
-
-        NSK_DISPLAY2("\n\n>>>> Exception %s in thread - %s\n",
-                        className, getThreadName(jni_env, thread));
-
-        testStep++;
-        if (!NSK_JNI_VERIFY(jni_env, (klass = jni_env->GetObjectClass(exception)) != NULL)) {
-            nsk_jvmti_setFailStatus();
-            return;
-        }
-
-        redefineClass(jvmti_env, klass);
-    }
+    handleException(false, jvmti_env, jni_env, thread, method, location, exception);
 }
 
 /* ============================================================================= */
@@ -355,15 +336,27 @@ callbackExceptionCatch(jvmtiEnv *jvmti_env, JNIEnv* jni_env, jthread thread,
                         jmethodID method, jlocation location,
                         jobject exception) {
 
-    const char *className;
+    handleException(true, jvmti_env, jni_env, thread, method, location, exception);
+}
 
-    className = getClassName(jvmti_env, jni_env, exception);
+/* ============================================================================= */
 
-    if (strcmp(EXPECTED_CLASS_SIGN, className) == 0) {
+void handleException(bool isCatch,
+                     jvmtiEnv* jvmti_env, JNIEnv* jni_env, jthread thread,
+                     jmethodID method, jlocation location,
+                     jobject exception) {
+    const char* className = getClassName(jvmti_env, jni_env, exception);
+
+    if (className != NULL && strcmp(EXPECTED_CLASS_SIGN, className) == 0) {
         jclass klass;
 
-        NSK_DISPLAY2("\n\n>>>> Caught exception %s in thread - %s\n",
-                        className, getThreadName(jni_env, thread));
+        const char* threadName = getThreadName(jvmti_env, jni_env, thread);
+        NSK_DISPLAY3(">>>> %s %s in thread - %s\n", isCatch ? "Caught exception" : "Exception",
+            className, threadName != NULL ? threadName : "NULL");
+        jvmti->Deallocate((unsigned char*)className);
+        if (threadName != NULL) {
+            jvmti->Deallocate((unsigned char*)threadName);
+        }
 
         testStep++;
         if (!NSK_JNI_VERIFY(jni_env, (klass = jni_env->GetObjectClass(exception)) != NULL)) {
@@ -373,11 +366,11 @@ callbackExceptionCatch(jvmtiEnv *jvmti_env, JNIEnv* jni_env, jthread thread,
 
         redefineClass(jvmti_env, klass);
     }
+
 }
 
-/* ============================================================================= */
 
-int readNewBytecode(jvmtiEnv* jvmti) {
+int readNewBytecode(jvmtiEnv* jvmti, jint *newClassSize, unsigned char* *newClassBytes) {
 
     char filename[256];
     FILE *bytecode;
@@ -403,17 +396,19 @@ int readNewBytecode(jvmtiEnv* jvmti) {
     }
 
     fseek(bytecode, 0, SEEK_END);
-    newClassSize = ftell(bytecode);
+    *newClassSize = ftell(bytecode);
     rewind(bytecode);
 
-    if (!NSK_JVMTI_VERIFY(jvmti->Allocate(newClassSize, &newClassBytes))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->Allocate(*newClassSize, newClassBytes))) {
         NSK_COMPLAIN0("buffer couldn't be allocated\n");
         return NSK_FALSE;
     }
-    read_bytes = (jint) fread(newClassBytes, 1, newClassSize, bytecode);
+    read_bytes = (jint) fread(*newClassBytes, 1, *newClassSize, bytecode);
     fclose(bytecode);
-    if (read_bytes != newClassSize) {
+    if (read_bytes != *newClassSize) {
         NSK_COMPLAIN0("TEST FAILED: error reading file\n");
+        jvmti->Deallocate(*newClassBytes);
+        *newClassBytes = NULL;
         return NSK_FALSE;
     }
 
@@ -422,34 +417,41 @@ int readNewBytecode(jvmtiEnv* jvmti) {
 
 /* ============================================================================= */
 
-const char* getThreadName(JNIEnv* jni_env, jthread thread) {
+const char* getThreadName(jvmtiEnv* jvmti_env, JNIEnv* jni_env, jthread thread) {
     jmethodID methodID;
     jclass klass;
     jstring jthreadName;
+    jsize jthreadNameLen;
+    unsigned char *result = NULL;
     const char *threadName;
-
-    strcpy(chbuffer, "");
 
     if (!NSK_JNI_VERIFY(jni_env, (klass = jni_env->GetObjectClass(thread)) != NULL)) {
         nsk_jvmti_setFailStatus();
-        return chbuffer;
+        return NULL;
     }
 
     if (!NSK_JNI_VERIFY(jni_env, (methodID =
             jni_env->GetMethodID(klass, "getName", "()Ljava/lang/String;")) != NULL)) {
         nsk_jvmti_setFailStatus();
-        return chbuffer;
+        return NULL;
     }
 
     jthreadName = (jstring) jni_env->CallObjectMethod(thread, methodID);
 
+    jthreadNameLen = jni_env->GetStringUTFLength(jthreadName);
+
+    if (!NSK_JVMTI_VERIFY(jvmti_env->Allocate(jthreadNameLen + 1, &result))) {
+        NSK_COMPLAIN0("buffer couldn't be allocated\n");
+        return NULL;
+    }
+
     threadName = jni_env->GetStringUTFChars(jthreadName, 0);
 
-    strcpy(chbuffer, threadName);
+    memcpy(result, threadName, jthreadNameLen + 1);
 
     jni_env->ReleaseStringUTFChars(jthreadName, threadName);
 
-    return chbuffer;
+    return (char*)result;
 }
 
 /* ============================================================================= */
@@ -457,33 +459,19 @@ const char* getThreadName(JNIEnv* jni_env, jthread thread) {
 const char* getClassName(jvmtiEnv *jvmti_env, JNIEnv* jni_env, jobject object) {
 
     char *className;
-    char *generic;
     jclass klass;
-
-    strcpy(chbuffer, "");
 
     if (!NSK_JNI_VERIFY(jni_env, (klass = jni_env->GetObjectClass(object)) != NULL)) {
         nsk_jvmti_setFailStatus();
-        return chbuffer;
+        return NULL;
     }
 
-    if (!NSK_JVMTI_VERIFY(jvmti_env->GetClassSignature(klass, &className, &generic))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetClassSignature(klass, &className, NULL))) {
         nsk_jvmti_setFailStatus();
-        return chbuffer;
+        return NULL;
     }
 
-    strcpy(chbuffer, className);
-
-    if (!NSK_JVMTI_VERIFY(jvmti_env->Deallocate((unsigned char*)className))) {
-        nsk_jvmti_setFailStatus();
-    }
-
-    if (generic != NULL)
-        if (!NSK_JVMTI_VERIFY(jvmti_env->Deallocate((unsigned char*)generic))) {
-            nsk_jvmti_setFailStatus();
-        }
-
-    return chbuffer;
+    return className;
 }
 
 /* ============================================================================= */
@@ -546,6 +534,10 @@ Java_nsk_jvmti_scenarios_hotswap_HS201_hs201t002_setThread(JNIEnv *env,
     if (!NSK_JNI_VERIFY(env, (testedThread = env->NewGlobalRef(thread)) != NULL))
         nsk_jvmti_setFailStatus();
 
+    enableEvent(jvmti, JVMTI_EVENT_CLASS_LOAD, testedThread);
+    enableEvent(jvmti, JVMTI_EVENT_BREAKPOINT, testedThread);
+    enableEvent(jvmti, JVMTI_EVENT_EXCEPTION, testedThread);
+    enableEvent(jvmti, JVMTI_EVENT_EXCEPTION_CATCH, testedThread);
 }
 
 /* ============================================================================= */
@@ -664,11 +656,6 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     }
 
     NSK_DISPLAY0("Enable events\n");
-
-    enableEvent(jvmti, JVMTI_EVENT_CLASS_LOAD, testedThread);
-    enableEvent(jvmti, JVMTI_EVENT_BREAKPOINT, testedThread);
-    enableEvent(jvmti, JVMTI_EVENT_EXCEPTION, testedThread);
-    enableEvent(jvmti, JVMTI_EVENT_EXCEPTION_CATCH, testedThread);
 
     if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
         return JNI_ERR;

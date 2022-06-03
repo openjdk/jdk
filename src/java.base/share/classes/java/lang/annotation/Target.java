@@ -28,16 +28,16 @@ package java.lang.annotation;
 /**
  * Indicates the contexts in which an annotation interface is applicable. The
  * declaration contexts and type contexts in which an annotation interface may
- * be applicable are specified in JLS 9.6.4.1, and denoted in source code by
+ * be applicable are specified in JLS {@jls 9.6.4.1}, and denoted in source code by
  * enum constants of {@link ElementType java.lang.annotation.ElementType}.
  *
  * <p>If an {@code @Target} meta-annotation is not present on an annotation
  * interface {@code T}, then an annotation of type {@code T} may be written as
- * a modifier for any declaration except a type parameter declaration.
+ * a modifier for any declaration.
  *
  * <p>If an {@code @Target} meta-annotation is present, the compiler will enforce
  * the usage restrictions indicated by {@code ElementType}
- * enum constants, in line with JLS 9.7.4.
+ * enum constants, in line with JLS {@jls 9.7.4}.
  *
  * <p>For example, this {@code @Target} meta-annotation indicates that the
  * declared interface is itself a meta-annotation interface.  It can only be

@@ -9,13 +9,13 @@
 # should be taken to handle test failures of intermittent or
 # randomness tests.
 
-keys=intermittent randomness
+keys=intermittent randomness needs-src needs-src-jdk_javadoc
 
 # Group definitions
 groups=TEST.groups
 
 # Minimum jtreg version
-requiredVersion=5.1 b1
+requiredVersion=6.1+1
 
 # Use new module options
 useNewOptions=true

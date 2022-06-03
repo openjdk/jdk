@@ -31,6 +31,7 @@
 @interface ButtonAccessibility : CommonComponentAccessibility <NSAccessibilityButton> {
 
 };
-- (nullable NSString *)accessibilityLabel;
+- (NSAccessibilityRole _Nonnull)accessibilityRole;
+- (NSString * _Nullable)accessibilityLabel;
 - (BOOL)accessibilityPerformPress;
 @end

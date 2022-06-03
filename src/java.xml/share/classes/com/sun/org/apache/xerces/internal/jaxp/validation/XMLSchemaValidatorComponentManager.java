@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -48,6 +48,8 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLComponent;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLComponentManager;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLConfigurationException;
 import javax.xml.catalog.CatalogFeatures;
+import jdk.xml.internal.JdkConstants;
+import jdk.xml.internal.JdkProperty;
 import jdk.xml.internal.JdkXmlUtils;
 import org.w3c.dom.ls.LSResourceResolver;
 import org.xml.sax.ErrorHandler;
@@ -56,6 +58,7 @@ import org.xml.sax.ErrorHandler;
  * <p>An implementation of XMLComponentManager for a schema validator.</p>
  *
  * @author Michael Glavassevich, IBM
+ * @LastModified: May 2021
  */
 final class XMLSchemaValidatorComponentManager extends ParserConfigurationSettings implements
         XMLComponentManager {
@@ -138,7 +141,7 @@ final class XMLSchemaValidatorComponentManager extends ParserConfigurationSettin
 
     /** Property identifier: security property manager. */
     private static final String XML_SECURITY_PROPERTY_MANAGER =
-            Constants.XML_SECURITY_PROPERTY_MANAGER;
+            JdkConstants.XML_SECURITY_PROPERTY_MANAGER;
 
     /** Property identifier: symbol table. */
     private static final String SYMBOL_TABLE =
@@ -228,6 +231,7 @@ final class XMLSchemaValidatorComponentManager extends ParserConfigurationSettin
     private Locale fLocale = null;
 
     /** Constructs a component manager suitable for Xerces' schema validator. */
+    @SuppressWarnings("removal")
     public XMLSchemaValidatorComponentManager(XSGrammarPoolContainer grammarContainer) {
         // setup components
         fEntityManager = new XMLEntityManager();
@@ -265,7 +269,7 @@ final class XMLSchemaValidatorComponentManager extends ParserConfigurationSettin
                 SCHEMA_ELEMENT_DEFAULT,
                 SCHEMA_AUGMENT_PSVI,
                 XMLConstants.USE_CATALOG,
-                JdkXmlUtils.OVERRIDE_PARSER
+                JdkConstants.OVERRIDE_PARSER
         };
         addRecognizedFeatures(recognizedFeatures);
         fFeatures.put(DISALLOW_DOCTYPE_DECL_FEATURE, Boolean.FALSE);
@@ -273,7 +277,7 @@ final class XMLSchemaValidatorComponentManager extends ParserConfigurationSettin
         fFeatures.put(SCHEMA_ELEMENT_DEFAULT, Boolean.FALSE);
         fFeatures.put(SCHEMA_AUGMENT_PSVI, Boolean.TRUE);
         fFeatures.put(XMLConstants.USE_CATALOG, grammarContainer.getFeature(XMLConstants.USE_CATALOG));
-        fFeatures.put(JdkXmlUtils.OVERRIDE_PARSER, grammarContainer.getFeature(JdkXmlUtils.OVERRIDE_PARSER));
+        fFeatures.put(JdkConstants.OVERRIDE_PARSER, grammarContainer.getFeature(JdkConstants.OVERRIDE_PARSER));
 
         addRecognizedParamsAndSetDefaults(fEntityManager, grammarContainer);
         addRecognizedParamsAndSetDefaults(fErrorReporter, grammarContainer);
@@ -307,7 +311,7 @@ final class XMLSchemaValidatorComponentManager extends ParserConfigurationSettin
 
         //pass on properties set on SchemaFactory
         fSecurityPropertyMgr = (XMLSecurityPropertyManager)
-                grammarContainer.getProperty(Constants.XML_SECURITY_PROPERTY_MANAGER);
+                grammarContainer.getProperty(JdkConstants.XML_SECURITY_PROPERTY_MANAGER);
         setProperty(XML_SECURITY_PROPERTY_MANAGER, fSecurityPropertyMgr);
 
         //initialize Catalog properties
@@ -315,8 +319,8 @@ final class XMLSchemaValidatorComponentManager extends ParserConfigurationSettin
             setProperty(f.getPropertyName(), grammarContainer.getProperty(f.getPropertyName()));
         }
 
-        setProperty(JdkXmlUtils.CDATA_CHUNK_SIZE,
-                grammarContainer.getProperty(JdkXmlUtils.CDATA_CHUNK_SIZE));
+        setProperty(JdkConstants.CDATA_CHUNK_SIZE,
+                grammarContainer.getProperty(JdkConstants.CDATA_CHUNK_SIZE));
     }
 
     /**
@@ -379,9 +383,9 @@ final class XMLSchemaValidatorComponentManager extends ParserConfigurationSettin
 
             if (value) {
                 fSecurityPropertyMgr.setValue(XMLSecurityPropertyManager.Property.ACCESS_EXTERNAL_DTD,
-                        XMLSecurityPropertyManager.State.FSP, Constants.EXTERNAL_ACCESS_DEFAULT_FSP);
+                        XMLSecurityPropertyManager.State.FSP, JdkConstants.EXTERNAL_ACCESS_DEFAULT_FSP);
                 fSecurityPropertyMgr.setValue(XMLSecurityPropertyManager.Property.ACCESS_EXTERNAL_SCHEMA,
-                        XMLSecurityPropertyManager.State.FSP, Constants.EXTERNAL_ACCESS_DEFAULT_FSP);
+                        XMLSecurityPropertyManager.State.FSP, JdkConstants.EXTERNAL_ACCESS_DEFAULT_FSP);
                 setProperty(XML_SECURITY_PROPERTY_MANAGER, fSecurityPropertyMgr);
             }
 
@@ -456,7 +460,7 @@ final class XMLSchemaValidatorComponentManager extends ParserConfigurationSettin
         }
         //check if the property is managed by security manager
         if (fInitSecurityManager == null ||
-                !fInitSecurityManager.setLimit(propertyId, XMLSecurityManager.State.APIPROPERTY, value)) {
+                !fInitSecurityManager.setLimit(propertyId, JdkProperty.State.APIPROPERTY, value)) {
             //check if the property is managed by security property manager
             if (fSecurityPropertyMgr == null ||
                     !fSecurityPropertyMgr.setValue(propertyId, XMLSecurityPropertyManager.State.APIPROPERTY, value)) {

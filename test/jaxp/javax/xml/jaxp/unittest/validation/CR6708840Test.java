@@ -47,7 +47,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 6708840
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.CR6708840Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.CR6708840Test
  * @run testng/othervm validation.CR6708840Test
  * @summary Test Validator can process StAXSource.
  */

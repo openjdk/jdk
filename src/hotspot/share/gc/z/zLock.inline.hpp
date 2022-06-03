@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZLOCK_INLINE_HPP
 
 #include "gc/z/zLock.hpp"
+
 #include "runtime/atomic.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/thread.hpp"

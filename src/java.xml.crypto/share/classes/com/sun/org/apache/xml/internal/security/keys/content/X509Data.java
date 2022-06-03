@@ -71,7 +71,7 @@ public class X509Data extends SignatureElementProxy implements KeyInfoContent {
         }
         if (sibling == null || sibling.getNodeType() != Node.ELEMENT_NODE) {
             /* No Elements found */
-            Object exArgs[] = { "Elements", Constants._TAG_X509DATA };
+            Object[] exArgs = { "Elements", Constants._TAG_X509DATA };
             throw new XMLSecurityException("xml.WrongContent", exArgs);
         }
     }

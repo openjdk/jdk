@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
 #include "ci/ciInstance.hpp"
 #include "ci/ciInstanceKlass.hpp"
 #include "ci/ciMemberName.hpp"
-#include "ci/ciNativeEntryPoint.hpp"
 #include "ci/ciMethod.hpp"
 #include "ci/ciMethodData.hpp"
 #include "ci/ciMethodHandle.hpp"
@@ -43,13 +42,14 @@
 #include "ci/ciTypeArrayKlass.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
-#include "classfile/systemDictionary.hpp"
+#include "classfile/vmClasses.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/signature.hpp"
 #include "utilities/macros.hpp"
 
 // ciObjectFactory
@@ -153,8 +153,8 @@ void ciObjectFactory::init_shared_objects() {
   init_ident_of(ciEnv::_null_object_instance);
 
 #define VM_CLASS_DEFN(name, ignore_s)                              \
-  if (SystemDictionary::name##_is_loaded()) \
-    ciEnv::_##name = get_metadata(SystemDictionary::name())->as_instance_klass();
+  if (vmClasses::name##_is_loaded()) \
+    ciEnv::_##name = get_metadata(vmClasses::name())->as_instance_klass();
 
   VM_CLASSES_DO(VM_CLASS_DEFN)
 #undef VM_CLASS_DEFN
@@ -343,8 +343,6 @@ ciObject* ciObjectFactory::create_new_object(oop o) {
       return new (arena()) ciCallSite(h_i);
     else if (java_lang_invoke_MemberName::is_instance(o))
       return new (arena()) ciMemberName(h_i);
-    else if (jdk_internal_invoke_NativeEntryPoint::is_instance(o))
-      return new (arena()) ciNativeEntryPoint(h_i);
     else if (java_lang_invoke_MethodHandle::is_instance(o))
       return new (arena()) ciMethodHandle(h_i);
     else if (java_lang_invoke_MethodType::is_instance(o))
@@ -377,6 +375,7 @@ ciMetadata* ciObjectFactory::create_new_metadata(Metadata* o) {
   if (o->is_klass()) {
     Klass* k = (Klass*)o;
     if (k->is_instance_klass()) {
+      assert(!ReplayCompiles || ciReplay::no_replay_state() || !ciReplay::is_klass_unresolved((InstanceKlass*)k), "must be whitelisted for replay compilation");
       return new (arena()) ciInstanceKlass(k);
     } else if (k->is_objArray_klass()) {
       return new (arena()) ciObjArrayKlass(k);
@@ -553,7 +552,7 @@ ciInstance* ciObjectFactory::get_unloaded_instance(ciInstanceKlass* instance_kla
 // Get a ciInstance representing an unresolved klass mirror.
 //
 // Currently, this ignores the parameters and returns a unique unloaded instance.
-ciInstance* ciObjectFactory::get_unloaded_klass_mirror(ciKlass*  type) {
+ciInstance* ciObjectFactory::get_unloaded_klass_mirror(ciKlass* type) {
   assert(ciEnv::_Class_klass != NULL, "");
   return get_unloaded_instance(ciEnv::_Class_klass->as_instance_klass());
 }
@@ -568,7 +567,7 @@ ciInstance* ciObjectFactory::get_unloaded_method_handle_constant(ciKlass*  holde
                                                                  ciSymbol* name,
                                                                  ciSymbol* signature,
                                                                  int       ref_kind) {
-  if (ciEnv::_MethodHandle_klass == NULL)  return NULL;
+  assert(ciEnv::_MethodHandle_klass != NULL, "");
   return get_unloaded_instance(ciEnv::_MethodHandle_klass->as_instance_klass());
 }
 
@@ -579,12 +578,12 @@ ciInstance* ciObjectFactory::get_unloaded_method_handle_constant(ciKlass*  holde
 //
 // Currently, this ignores the parameters and returns a unique unloaded instance.
 ciInstance* ciObjectFactory::get_unloaded_method_type_constant(ciSymbol* signature) {
-  if (ciEnv::_MethodType_klass == NULL)  return NULL;
+  assert(ciEnv::_MethodType_klass != NULL, "");
   return get_unloaded_instance(ciEnv::_MethodType_klass->as_instance_klass());
 }
 
 ciInstance* ciObjectFactory::get_unloaded_object_constant() {
-  if (ciEnv::_Object_klass == NULL)  return NULL;
+  assert(ciEnv::_Object_klass != NULL, "");
   return get_unloaded_instance(ciEnv::_Object_klass->as_instance_klass());
 }
 

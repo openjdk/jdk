@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import javax.annotation.processing.*;
 import javax.lang.model.*;
 import javax.lang.model.element.*;
 import javax.tools.*;
-import javax.tools.Diagnostic.Kind;
 import javax.tools.JavaCompiler.CompilationTask;
 
 public class TestGetResource2 {
@@ -128,14 +127,14 @@ public class TestGetResource2 {
                 FileObject resource = filer.getResource(StandardLocation.SOURCE_PATH, "resources", "file.txt");
                 try {
                     resource.openInputStream().close();
-                    messager.printMessage(Kind.NOTE, "found: " + resource.toUri());
+                    messager.printNote("found: " + resource.toUri());
                     return true;
                 } catch (IOException x) {
-                    messager.printMessage(Kind.ERROR, "could not read: " + resource.toUri());
+                    messager.printError("could not read: " + resource.toUri());
                     x.printStackTrace();
                 }
             } catch (IOException x) {
-                messager.printMessage(Kind.ERROR, "did not find resource");
+                messager.printError("did not find resource");
                 x.printStackTrace();
             }
 

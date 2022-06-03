@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ class ClassLoaderDataGraph : public AllStatic {
   // Walking classes through the ClassLoaderDataGraph include array classes.  It also includes
   // classes that are allocated but not loaded, classes that have errors, and scratch classes
   // for redefinition.  These classes are removed during the next class unloading.
-  // Walking the ClassLoaderDataGraph also includes hidden and unsafe anonymous classes.
+  // Walking the ClassLoaderDataGraph also includes hidden classes.
   static void classes_do(KlassClosure* klass_closure);
   static void classes_do(void f(Klass* const));
   static void methods_do(void f(Method*));
@@ -95,13 +95,6 @@ class ClassLoaderDataGraph : public AllStatic {
   static void safepoint_and_clean_metaspaces();
   // Called from VMOperation
   static void walk_metadata_and_clean_metaspaces();
-
-  // dictionary do
-  // Iterate over all klasses in dictionary, but
-  // just the classes from defining class loaders.
-  static void dictionary_classes_do(void f(InstanceKlass*));
-  // Added for initialize_itable_for_klass to handle exceptions.
-  static void dictionary_classes_do(void f(InstanceKlass*, TRAPS), TRAPS);
 
   // VM_CounterDecay iteration support
   static InstanceKlass* try_get_next_class();

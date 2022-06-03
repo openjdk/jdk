@@ -25,6 +25,7 @@
  * @test
  * @bug 6501431
  * @summary Tests encoding of JMenuItem with accelerator property
+ * @run main/othervm -Djava.security.manager=allow Test6501431
  * @author Sergey Malenkov
  */
 

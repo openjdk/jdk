@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 4937672 5100706 6252456
- * @run main/manual SecurityDialogTest
+ * @run main/othervm/manual -Djava.security.manager=allow SecurityDialogTest
  */
 
 import java.awt.* ;

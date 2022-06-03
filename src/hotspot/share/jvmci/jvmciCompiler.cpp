@@ -22,6 +22,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/vmClasses.hpp"
 #include "compiler/compileBroker.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -56,7 +57,7 @@ JVMCICompiler* JVMCICompiler::instance(bool require_non_null, TRAPS) {
 
 // Initialization
 void JVMCICompiler::initialize() {
-  assert(!CompilerConfig::is_c1_or_interpreter_only_no_aot_or_jvmci(), "JVMCI is launched, it's not c1/interpreter only mode");
+  assert(!CompilerConfig::is_c1_or_interpreter_only_no_jvmci(), "JVMCI is launched, it's not c1/interpreter only mode");
   if (!UseCompiler || !EnableJVMCI || !UseJVMCICompiler || !should_perform_init()) {
     return;
   }
@@ -65,7 +66,6 @@ void JVMCICompiler::initialize() {
 }
 
 void JVMCICompiler::bootstrap(TRAPS) {
-  assert(THREAD->is_Java_thread(), "must be");
   if (Arguments::mode() == Arguments::_int) {
     // Nothing to do in -Xint mode
     return;
@@ -78,7 +78,7 @@ void JVMCICompiler::bootstrap(TRAPS) {
   }
   jlong start = os::javaTimeNanos();
 
-  Array<Method*>* objectMethods = SystemDictionary::Object_klass()->methods();
+  Array<Method*>* objectMethods = vmClasses::Object_klass()->methods();
   // Initialize compile queue with a selected set of methods.
   int len = objectMethods->length();
   for (int i = 0; i < len; i++) {
@@ -96,7 +96,7 @@ void JVMCICompiler::bootstrap(TRAPS) {
   do {
     // Loop until there is something in the queue.
     do {
-      THREAD->as_Java_thread()->sleep(100);
+      THREAD->sleep(100);
       qsize = CompileBroker::queue_size(CompLevel_full_optimization);
     } while (!_bootstrap_compilation_request_handled && first_round && qsize == 0);
     first_round = false;
@@ -151,6 +151,36 @@ bool JVMCICompiler::force_comp_at_level_simple(const methodHandle& method) {
 // Compilation entry point for methods
 void JVMCICompiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, bool install_code, DirectiveSet* directive) {
   ShouldNotReachHere();
+}
+
+void JVMCICompiler::stopping_compiler_thread(CompilerThread* current) {
+  if (UseJVMCINativeLibrary) {
+    JVMCIRuntime* runtime = JVMCI::compiler_runtime(current, false);
+    if (runtime != nullptr) {
+      MutexUnlocker unlock(CompileThread_lock);
+      runtime->detach_thread(current, "stopping idle compiler thread");
+    }
+  }
+}
+
+void JVMCICompiler::on_empty_queue(CompileQueue* queue, CompilerThread* thread) {
+  if (UseJVMCINativeLibrary) {
+    int delay = JVMCICompilerIdleDelay;
+    JVMCIRuntime* runtime = JVMCI::compiler_runtime(thread, false);
+    // Don't detach JVMCI compiler threads from their JVMCI
+    // runtime during the VM startup grace period
+    if (runtime != nullptr && delay > 0 && tty->time_stamp().milliseconds() > DEFAULT_COMPILER_IDLE_DELAY) {
+      bool timeout = MethodCompileQueue_lock->wait(delay);
+      // Unlock as detaching or repacking can result in a JNI call to shutdown a JavaVM
+      // and locks cannot be held when making a VM to native transition.
+      MutexUnlocker unlock(MethodCompileQueue_lock);
+      if (timeout) {
+        runtime->detach_thread(thread, "releasing idle compiler thread");
+      } else {
+        runtime->repack(thread);
+      }
+    }
+  }
 }
 
 // Print CompileBroker compilation timers

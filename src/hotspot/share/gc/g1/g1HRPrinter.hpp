@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@
 #include "logging/log.hpp"
 
 #define SKIP_RETIRED_FULL_REGIONS 1
+
+class FreeRegionList;
 
 class G1HRPrinter {
 
@@ -85,6 +87,8 @@ public:
       print("CLEANUP", hr);
     }
   }
+
+  void cleanup(FreeRegionList* free_list);
 
   void post_compaction(HeapRegion* hr) {
     if (is_active()) {

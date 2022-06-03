@@ -25,3 +25,24 @@
 #include "precompiled.hpp"
 #include "runtime/os.hpp"
 #include "runtime/vm_version.hpp"
+
+#ifdef __APPLE__
+
+#include <sys/types.h>
+#include <sys/sysctl.h>
+
+bool VM_Version::is_cpu_emulated() {
+  int ret = 0;
+  size_t size = sizeof(ret);
+  // Is this process being ran in Rosetta (i.e. emulation) mode on macOS?
+  if (sysctlbyname("sysctl.proc_translated", &ret, &size, NULL, 0) == -1) {
+    // errno == ENOENT is a valid response, but anything else is a real error
+    if (errno != ENOENT) {
+      warning("unable to lookup sysctl.proc_translated");
+    }
+  }
+  return (ret==1);
+}
+
+#endif
+

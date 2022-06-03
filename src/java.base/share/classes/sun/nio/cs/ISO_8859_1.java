@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,9 @@ import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 import java.util.Objects;
 
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
+import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 public class ISO_8859_1
@@ -64,6 +67,8 @@ public class ISO_8859_1
 
     private static class Decoder extends CharsetDecoder {
 
+        private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+
         private Decoder(Charset cs) {
             super(cs, 1.0f, 1.0f);
         }
@@ -72,29 +77,25 @@ public class ISO_8859_1
                                             CharBuffer dst)
         {
             byte[] sa = src.array();
-            int sp = src.arrayOffset() + src.position();
-            int sl = src.arrayOffset() + src.limit();
-            assert (sp <= sl);
-            sp = (sp <= sl ? sp : sl);
-            char[] da = dst.array();
-            int dp = dst.arrayOffset() + dst.position();
-            int dl = dst.arrayOffset() + dst.limit();
-            assert (dp <= dl);
-            dp = (dp <= dl ? dp : dl);
+            int soff = src.arrayOffset();
+            int sp = soff + src.position();
+            int sl = soff + src.limit();
 
-            try {
-                while (sp < sl) {
-                    byte b = sa[sp];
-                    if (dp >= dl)
-                        return CoderResult.OVERFLOW;
-                    da[dp++] = (char)(b & 0xff);
-                    sp++;
-                }
-                return CoderResult.UNDERFLOW;
-            } finally {
-                src.position(sp - src.arrayOffset());
-                dst.position(dp - dst.arrayOffset());
+            char[] da = dst.array();
+            int doff = dst.arrayOffset();
+            int dp = doff + dst.position();
+            int dl = doff + dst.limit();
+
+            int decodeLen = Math.min(sl - sp, dl - dp);
+            JLA.inflateBytesToChars(sa, sp, da, dp, decodeLen);
+            sp += decodeLen;
+            dp += decodeLen;
+            src.position(sp - soff);
+            dst.position(dp - doff);
+            if (sl - sp > dl - dp) {
+                return CoderResult.OVERFLOW;
             }
+            return CoderResult.UNDERFLOW;
         }
 
         private CoderResult decodeBufferLoop(ByteBuffer src,
@@ -169,24 +170,11 @@ public class ISO_8859_1
                                                 byte[] da, int dp, int len) {
             Objects.requireNonNull(sa);
             Objects.requireNonNull(da);
+            Preconditions.checkIndex(sp, sa.length, Preconditions.AIOOBE_FORMATTER);
+            Preconditions.checkIndex(dp, da.length, Preconditions.AIOOBE_FORMATTER);
 
-            if (sp < 0 || sp >= sa.length) {
-                throw new ArrayIndexOutOfBoundsException(sp);
-            }
-
-            if (dp < 0 || dp >= da.length) {
-                throw new ArrayIndexOutOfBoundsException(dp);
-            }
-
-            int endIndexSP = sp + len - 1;
-            if (endIndexSP < 0 || endIndexSP >= sa.length) {
-                throw new ArrayIndexOutOfBoundsException(endIndexSP);
-            }
-
-            int endIndexDP = dp + len - 1;
-            if (endIndexDP < 0 || endIndexDP >= da.length) {
-                throw new ArrayIndexOutOfBoundsException(endIndexDP);
-            }
+            Preconditions.checkIndex(sp + len - 1, sa.length, Preconditions.AIOOBE_FORMATTER);
+            Preconditions.checkIndex(dp + len - 1, da.length, Preconditions.AIOOBE_FORMATTER);
         }
 
         private CoderResult encodeArrayLoop(CharBuffer src,

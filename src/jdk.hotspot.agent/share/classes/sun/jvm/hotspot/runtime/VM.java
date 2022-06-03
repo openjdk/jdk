@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,8 +89,6 @@ public class VM {
   private FileMapInfo  fileMapInfo;
   private Bytes        bytes;
 
-  /** Flag indicating if AOT is enabled in the build */
-  private boolean      hasAOT;
   /** Flag indicating if JVMTI support is included in the build */
   private boolean      isJvmtiSupported;
   /** Flags indicating whether we are attached to a core, C1, or C2 build */
@@ -100,6 +98,7 @@ public class VM {
   private boolean      isLP64;
   private int          bytesPerLong;
   private int          bytesPerWord;
+  private int          logBytesPerWord;
   private int          objectAlignmentInBytes;
   private int          minObjAlignmentInBytes;
   private int          logMinObjAlignmentInBytes;
@@ -360,26 +359,26 @@ public class VM {
      if (System.getProperty("sun.jvm.hotspot.runtime.VM.disableVersionCheck") == null) {
         // read sa build version.
         String versionProp = "sun.jvm.hotspot.runtime.VM.saBuildVersion";
-        String saVersion = saProps.getProperty(versionProp);
-        if (saVersion == null)
+        String versionPropVal = saProps.getProperty(versionProp);
+        if (versionPropVal == null) {
            throw new RuntimeException("Missing property " + versionProp);
+        }
 
-        // Strip nonproduct VM version substring (note: saVersion doesn't have it).
-        String vmVersion = vmRelease.replaceAll("(-fastdebug)|(-debug)|(-jvmg)|(-optimized)|(-profiled)","");
+        var saVersion = Runtime.Version.parse(versionPropVal);
+        var vmVersion = Runtime.Version.parse(vmRelease);
 
         if (saVersion.equals(vmVersion)) {
            // Exact match
            return;
         }
-        if (saVersion.indexOf('-') == saVersion.lastIndexOf('-') &&
-            vmVersion.indexOf('-') == vmVersion.lastIndexOf('-')) {
+        if (!saVersion.equalsIgnoreOptional(vmVersion)) {
            // Throw exception if different release versions:
-           // <major>.<minor>-b<n>
-           throw new VMVersionMismatchException(saVersion, vmRelease);
+           // <version>+<build>
+           throw new VMVersionMismatchException(saVersion, vmVersion);
         } else {
            // Otherwise print warning to allow mismatch not release versions
            // during development.
-           System.err.println("WARNING: Hotspot VM version " + vmRelease +
+           System.err.println("WARNING: Hotspot VM version " + vmVersion +
                               " does not match with SA version " + saVersion +
                               "." + " You may see unexpected results. ");
         }
@@ -446,16 +445,6 @@ public class VM {
 
     invocationEntryBCI = db.lookupIntConstant("InvocationEntryBci").intValue();
 
-    // We infer AOT if _method @ methodCounters is declared.
-    {
-      Type type = db.lookupType("MethodCounters");
-      if (type.getField("_method", false, false) == null) {
-        hasAOT = false;
-      } else {
-        hasAOT = true;
-      }
-    }
-
     // We infer the presence of JVMTI from the presence of the InstanceKlass::_breakpoints field.
     {
       Type type = db.lookupType("InstanceKlass");
@@ -489,6 +478,7 @@ public class VM {
     }
     bytesPerLong = db.lookupIntConstant("BytesPerLong").intValue();
     bytesPerWord = db.lookupIntConstant("BytesPerWord").intValue();
+    logBytesPerWord = db.lookupIntConstant("LogBytesPerWord").intValue();
     heapWordSize = db.lookupIntConstant("HeapWordSize").intValue();
     Flags_DEFAULT = db.lookupIntConstant("JVMFlagOrigin::DEFAULT").intValue();
     Flags_COMMAND_LINE = db.lookupIntConstant("JVMFlagOrigin::COMMAND_LINE").intValue();
@@ -662,7 +652,7 @@ public class VM {
   }
 
   // Convenience function for conversions
-  static public long getAddressValue(Address addr) {
+  public static long getAddressValue(Address addr) {
     return VM.getVM().getDebugger().getAddressValue(addr);
   }
 
@@ -698,6 +688,10 @@ public class VM {
 
   public int getBytesPerWord() {
     return bytesPerWord;
+  }
+
+  public int getLogBytesPerWord() {
+    return logBytesPerWord;
   }
 
   /** Get minimum object alignment in bytes. */
@@ -841,11 +835,6 @@ public class VM {
     return isBigEndian;
   }
 
-  /** Returns true if AOT is enabled, false otherwise */
-  public boolean hasAOT() {
-    return hasAOT;
-  }
-
   /** Returns true if JVMTI is supported, false otherwise */
   public boolean isJvmtiSupported() {
     return isJvmtiSupported;
@@ -954,9 +943,13 @@ public class VM {
 
   public boolean isSharingEnabled() {
     if (sharingEnabled == null) {
-      Flag flag = getCommandLineFlag("UseSharedSpaces");
-      sharingEnabled = (flag == null)? Boolean.FALSE :
-          (flag.getBool()? Boolean.TRUE: Boolean.FALSE);
+        Address address = VM.getVM().getDebugger().lookup(null, "UseSharedSpaces");
+        if (address == null && getOS().equals("win32")) {
+            // On Win32 symbols are prefixed with the dll name. So look for
+            // UseSharedSpaces as a symbol in jvm.dll.
+            address = VM.getVM().getDebugger().lookup(null, "jvm!UseSharedSpaces");
+        }
+        sharingEnabled = address.getJBooleanAt(0);
     }
     return sharingEnabled.booleanValue();
   }

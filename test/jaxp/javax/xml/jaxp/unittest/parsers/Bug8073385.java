@@ -44,7 +44,7 @@ import org.xml.sax.SAXException;
  * @test
  * @bug 8073385
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true parsers.Bug8073385
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow parsers.Bug8073385
  * @run testng/othervm parsers.Bug8073385
  * @summary test that invalid XML character exception string contains
  *     information about character value, element and attribute names

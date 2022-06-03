@@ -25,6 +25,7 @@
  * @test
  * @bug 4916852
  * @summary Tests Component encoding (background, foreground and font)
+ * @run main/othervm -Djava.security.manager=allow java_awt_Component
  * @author Sergey Malenkov
  */
 

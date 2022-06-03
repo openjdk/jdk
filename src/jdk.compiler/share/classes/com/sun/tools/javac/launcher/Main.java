@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,8 +64,6 @@ import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.NoSuchElementException;
 import java.util.ResourceBundle;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.NestingKind;
@@ -121,7 +119,7 @@ public class Main {
      * arguments to the main method of the first class found in the file.
      *
      * <p>If any problem occurs before executing the main class, it will
-     * be reported to the standard error stream, and the the JVM will be
+     * be reported to the standard error stream, and the JVM will be
      * terminated by calling {@code System.exit} with a non-zero return code.
      *
      * @param args the arguments
@@ -129,13 +127,15 @@ public class Main {
      */
     public static void main(String... args) throws Throwable {
         try {
-            new Main(System.err).run(VM.getRuntimeArguments(), args);
+            new Main(System.err)
+                    .checkSecurityManager()
+                    .run(VM.getRuntimeArguments(), args);
         } catch (Fault f) {
             System.err.println(f.getMessage());
             System.exit(1);
         } catch (InvocationTargetException e) {
             // leave VM to handle the stacktrace, in the standard manner
-            throw e.getTargetException();
+            throw e.getCause();
         }
     }
 
@@ -160,6 +160,19 @@ public class Main {
      */
     public Main(PrintWriter out) {
         this.out = out;
+    }
+
+    /**
+     * Checks if a security manager is present and throws an exception if so.
+     * @return this object
+     * @throws Fault if a security manager is present
+     */
+    @SuppressWarnings("removal")
+    private Main checkSecurityManager() throws Fault {
+        if (System.getSecurityManager() != null) {
+            throw new Fault(Errors.SecurityManager);
+        }
+        return this;
     }
 
     /**
@@ -342,13 +355,19 @@ public class Main {
                     }
                     break;
                 default:
+                    if (opt.startsWith("-agentlib:jdwp=") || opt.startsWith("-Xrunjdwp:")) {
+                        javacOpts.add("-g");
+                    }
                     // ignore all other runtime args
             }
         }
 
         // add implicit options
         javacOpts.add("-proc:none");
-
+        javacOpts.add("-Xdiags:verbose");
+        javacOpts.add("-Xlint:deprecation");
+        javacOpts.add("-Xlint:unchecked");
+        javacOpts.add("-Xlint:-options");
         return javacOpts;
     }
 
@@ -422,7 +441,7 @@ public class Main {
         } catch (InvocationTargetException e) {
             // remove stack frames for source launcher
             int invocationFrames = e.getStackTrace().length;
-            Throwable target = e.getTargetException();
+            Throwable target = e.getCause();
             StackTraceElement[] targetTrace = target.getStackTrace();
             target.setStackTrace(Arrays.copyOfRange(targetTrace, 0, targetTrace.length - invocationFrames));
             throw e;

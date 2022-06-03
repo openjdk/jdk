@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shenandoah/shenandoahConcurrentRoots.hpp"
 #include "gc/shenandoah/heuristics/shenandoahAdaptiveHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahAggressiveHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahCompactHeuristics.hpp"
@@ -35,7 +34,12 @@
 #include "runtime/java.hpp"
 
 void ShenandoahIUMode::initialize_flags() const {
-  if (ShenandoahConcurrentRoots::can_do_concurrent_class_unloading()) {
+  if (FLAG_IS_CMDLINE(ClassUnloadingWithConcurrentMark) && ClassUnloading) {
+    log_warning(gc)("Shenandoah I-U mode sets -XX:-ClassUnloadingWithConcurrentMark; see JDK-8261341 for details");
+  }
+  FLAG_SET_DEFAULT(ClassUnloadingWithConcurrentMark, false);
+
+  if (ClassUnloading) {
     FLAG_SET_DEFAULT(ShenandoahSuspendibleWorkers, true);
     FLAG_SET_DEFAULT(VerifyBeforeExit, false);
   }
@@ -56,22 +60,23 @@ void ShenandoahIUMode::initialize_flags() const {
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahIUBarrier);
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahCASBarrier);
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahCloneBarrier);
+  SHENANDOAH_CHECK_FLAG_SET(ShenandoahNMethodBarrier);
+  SHENANDOAH_CHECK_FLAG_SET(ShenandoahStackWatermarkBarrier);
 }
 
 ShenandoahHeuristics* ShenandoahIUMode::initialize_heuristics() const {
-  if (ShenandoahGCHeuristics != NULL) {
-    if (strcmp(ShenandoahGCHeuristics, "aggressive") == 0) {
-      return new ShenandoahAggressiveHeuristics();
-    } else if (strcmp(ShenandoahGCHeuristics, "static") == 0) {
-      return new ShenandoahStaticHeuristics();
-    } else if (strcmp(ShenandoahGCHeuristics, "adaptive") == 0) {
-      return new ShenandoahAdaptiveHeuristics();
-    } else if (strcmp(ShenandoahGCHeuristics, "compact") == 0) {
-      return new ShenandoahCompactHeuristics();
-    } else {
-      vm_exit_during_initialization("Unknown -XX:ShenandoahGCHeuristics option");
-    }
+  if (ShenandoahGCHeuristics == NULL) {
+    vm_exit_during_initialization("Unknown -XX:ShenandoahGCHeuristics option (null)");
   }
-  ShouldNotReachHere();
+  if (strcmp(ShenandoahGCHeuristics, "aggressive") == 0) {
+    return new ShenandoahAggressiveHeuristics();
+  } else if (strcmp(ShenandoahGCHeuristics, "static") == 0) {
+    return new ShenandoahStaticHeuristics();
+  } else if (strcmp(ShenandoahGCHeuristics, "adaptive") == 0) {
+    return new ShenandoahAdaptiveHeuristics();
+  } else if (strcmp(ShenandoahGCHeuristics, "compact") == 0) {
+    return new ShenandoahCompactHeuristics();
+  }
+  vm_exit_during_initialization("Unknown -XX:ShenandoahGCHeuristics option");
   return NULL;
 }

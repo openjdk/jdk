@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,18 +69,17 @@ public interface SSLSessionContext {
      *
      * @throws NullPointerException if <code>sessionId</code> is null.
      */
-    public SSLSession getSession(byte[] sessionId);
+    SSLSession getSession(byte[] sessionId);
 
     /**
      * Returns an Enumeration of all known session id's grouped under this
      * <code>SSLSessionContext</code>.
      * <p>Session contexts may not contain all sessions. For example,
      * stateless sessions are not stored in the session context.
-     * <p>
      *
      * @return an enumeration of all the Session id's
      */
-    public Enumeration<byte[]> getIds();
+    Enumeration<byte[]> getIds();
 
     /**
      * Sets the timeout limit for <code>SSLSession</code> objects grouped
@@ -107,8 +106,7 @@ public interface SSLSessionContext {
      *
      * @see #getSessionTimeout
      */
-    public void setSessionTimeout(int seconds)
-                 throws IllegalArgumentException;
+    void setSessionTimeout(int seconds);
 
     /**
      * Returns the timeout limit of <code>SSLSession</code> objects grouped
@@ -132,7 +130,7 @@ public interface SSLSessionContext {
      *
      * @see #setSessionTimeout
      */
-    public int getSessionTimeout();
+    int getSessionTimeout();
 
     /**
      * Sets the size of the cache used for storing <code>SSLSession</code>
@@ -151,8 +149,7 @@ public interface SSLSessionContext {
      *
      * @see #getSessionCacheSize
      */
-    public void setSessionCacheSize(int size)
-                 throws IllegalArgumentException;
+    void setSessionCacheSize(int size);
 
     /**
      * Returns the size of the cache used for storing <code>SSLSession</code>
@@ -168,5 +165,5 @@ public interface SSLSessionContext {
      *
      * @see #setSessionCacheSize
      */
-    public int getSessionCacheSize();
+    int getSessionCacheSize();
 }

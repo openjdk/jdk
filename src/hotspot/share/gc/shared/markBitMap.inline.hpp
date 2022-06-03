@@ -25,8 +25,9 @@
 #ifndef SHARE_GC_SHARED_MARKBITMAP_INLINE_HPP
 #define SHARE_GC_SHARED_MARKBITMAP_INLINE_HPP
 
-#include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/markBitMap.hpp"
+
+#include "gc/shared/collectedHeap.hpp"
 #include "memory/memRegion.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"

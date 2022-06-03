@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,12 +46,6 @@ public final class NTLMException extends GeneralSecurityException {
     public static final int NO_DOMAIN_INFO = 2;
 
     /**
-     * If the domain provided by the client does not match the one received
-     * from server.
-     */
-    //public final static int DOMAIN_UNMATCH = 3;
-
-    /**
      * If the client name is not found on server's user database.
      */
     public static final int USER_UNKNOWN = 3;
@@ -77,7 +71,7 @@ public final class NTLMException extends GeneralSecurityException {
      * Constructs an NTLMException object.
      * @param errorCode the error code, which can be retrieved by
      * the {@link #errorCode() } method.
-     * @param msg the string message, which can be retrived by
+     * @param msg the string message, which can be retrieved by
      * the {@link Exception#getMessage() } method.
      */
     public NTLMException(int errorCode, String msg) {

@@ -25,8 +25,9 @@
 #ifndef SHARE_CODE_VMREG_INLINE_HPP
 #define SHARE_CODE_VMREG_INLINE_HPP
 
-#include "asm/register.hpp"
 #include "code/vmreg.hpp"
+
+#include "asm/register.hpp"
 #include CPU_HEADER_INLINE(vmreg)
 
 #endif // SHARE_CODE_VMREG_INLINE_HPP

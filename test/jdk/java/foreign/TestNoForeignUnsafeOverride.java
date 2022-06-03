@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,23 +21,14 @@
  * questions.
  */
 
-/*
- * @test
- * @run testng TestNoForeignUnsafeOverride
- */
+package org.openjdk.foreigntest;
 
-import jdk.incubator.foreign.MemoryAddress;
+import java.lang.foreign.*;
 
-import jdk.incubator.foreign.MemorySegment;
-import org.testng.annotations.Test;
-
-public class TestNoForeignUnsafeOverride {
-    static {
-        System.setProperty("foreign.restricted", "permit");
-    }
-
-    @Test(expectedExceptions = IllegalAccessError.class)
-    public void testUnsafeAccess() {
-        MemorySegment.ofNativeRestricted();
-    }
+public class PanamaMain {
+   public static void main(String[] args) {
+       System.out.println("Trying to get Linker");
+       Linker.nativeLinker();
+       System.out.println("Got Linker");
+   }
 }

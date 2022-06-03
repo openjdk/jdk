@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@
 #include <stdexcept>
 #include <new>
 #include <map>
-#include <memory>
 
 #include "ErrorHandling.h"
 #include "Toolbox.h"
@@ -44,20 +43,6 @@
 namespace msi {
 
 void closeMSIHANDLE(MSIHANDLE h);
-
-struct MsiHandleDeleter {
-    typedef MSIHANDLE pointer;
-
-    void operator()(MSIHANDLE h) {
-        closeMSIHANDLE(h);
-    }
-};
-
-} // namespace msi
-
-typedef std::unique_ptr<MSIHANDLE, msi::MsiHandleDeleter> UniqueMSIHANDLE;
-
-namespace msi {
 
 tstring getProductInfo(const Guid& productCode, const tstring& prop);
 

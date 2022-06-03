@@ -36,7 +36,6 @@
 
 volatile jint GCLocker::_jni_lock_count = 0;
 volatile bool GCLocker::_needs_gc       = false;
-volatile bool GCLocker::_doing_gc       = false;
 unsigned int GCLocker::_total_collections = 0;
 
 #ifdef ASSERT
@@ -127,12 +126,16 @@ bool GCLocker::should_discard(GCCause::Cause cause, uint total_collections) {
 void GCLocker::jni_lock(JavaThread* thread) {
   assert(!thread->in_critical(), "shouldn't currently be in a critical region");
   MonitorLocker ml(JNICritical_lock);
-  // Block entering threads if we know at least one thread is in a
-  // JNI critical region and we need a GC.
-  // We check that at least one thread is in a critical region before
-  // blocking because blocked threads are woken up by a thread exiting
-  // a JNI critical region.
-  while (is_active_and_needs_gc() || _doing_gc) {
+  // Block entering threads if there's a pending GC request.
+  while (needs_gc()) {
+    // There's at least one thread that has not left the critical region (CR)
+    // completely. When that last thread (no new threads can enter CR due to the
+    // blocking) exits CR, it calls `jni_unlock`, which sets `_needs_gc`
+    // to false and wakes up all blocked threads.
+    // We would like to assert #threads in CR to be > 0, `_jni_lock_count > 0`
+    // in the code, but it's too strong; it's possible that the last thread
+    // has called `jni_unlock`, but not yet finished the call, e.g. initiating
+    // a GCCause::_gc_locker GC.
     ml.wait();
   }
   thread->enter_critical();
@@ -154,7 +157,6 @@ void GCLocker::jni_unlock(JavaThread* thread) {
     // must not be a safepoint between the lock becoming inactive and
     // getting the count, else there may be unnecessary GCLocker GCs.
     _total_collections = Universe::heap()->total_collections();
-    _doing_gc = true;
     GCLockerTracer::report_gc_locker();
     {
       // Must give up the lock while at a safepoint
@@ -162,7 +164,6 @@ void GCLocker::jni_unlock(JavaThread* thread) {
       log_debug_jni("Performing GC after exiting critical section.");
       Universe::heap()->collect(GCCause::_gc_locker);
     }
-    _doing_gc = false;
     _needs_gc = false;
     JNICritical_lock->notify_all();
   }

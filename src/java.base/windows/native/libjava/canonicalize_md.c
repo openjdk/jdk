@@ -372,11 +372,7 @@ finish:
     return ret;
 }
 
-/* The appropriate location of getPrefixed() is io_util_md.c, but it is
-   also used in a non-OpenJDK context within Oracle. There, canonicalize_md.c
-   is already pulled in and compiled, so to avoid more complicated solutions
-   we keep this method here.
- */
+/* The appropriate location of getPrefixed() is io_util_md.c */
 
 /* copy \\?\ or \\?\UNC\ to the front of path */
 JNIEXPORT WCHAR*

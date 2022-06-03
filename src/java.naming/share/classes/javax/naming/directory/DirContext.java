@@ -259,7 +259,7 @@ public interface DirContext extends Context {
      * @see ModificationItem
      * @see #modifyAttributes
      */
-    public final static int ADD_ATTRIBUTE = 1;
+    public static final int ADD_ATTRIBUTE = 1;
 
     /**
      * This constant specifies to replace an attribute with specified values.
@@ -278,7 +278,7 @@ public interface DirContext extends Context {
      * @see ModificationItem
      * @see #modifyAttributes
      */
-    public final static int REPLACE_ATTRIBUTE = 2;
+    public static final int REPLACE_ATTRIBUTE = 2;
 
     /**
      * This constant specifies to delete
@@ -299,7 +299,7 @@ public interface DirContext extends Context {
      * @see ModificationItem
      * @see #modifyAttributes
      */
-    public final static int REMOVE_ATTRIBUTE = 3;
+    public static final int REMOVE_ATTRIBUTE = 3;
 
     /**
      * Modifies the attributes associated with a named object.

@@ -27,10 +27,11 @@
  * @summary  testing jdk.krb5.rcache.useMD5. This action is put in a separate
  *           test so that ReplayCacheTestProc.java can be launched with special
  *           test.* system properties easily.
- * @library ../../../../java/security/testlibrary/ /test/lib
+ * @library /test/lib
  * @build jdk.test.lib.Platform
  * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
  * @run main/othervm/timeout=300 -Djdk.krb5.rcache.useMD5=true
  *           -Djdk.net.hosts.file=TestHosts
- *           -Dtest.service=host ReplayCacheTestProc
+ *           -Dtest.service=host
+ *           -Dtest.libs=J ReplayCacheTestProc
  */

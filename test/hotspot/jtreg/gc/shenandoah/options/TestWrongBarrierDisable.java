@@ -22,7 +22,7 @@
  *
  */
 
-/* @test TestWrongBarrierDisable
+/* @test
  * @summary Test that disabling wrong barriers fails early
  * @requires vm.gc.Shenandoah
  * @library /test/lib
@@ -42,12 +42,16 @@ public class TestWrongBarrierDisable {
                 "ShenandoahSATBBarrier",
                 "ShenandoahCASBarrier",
                 "ShenandoahCloneBarrier",
+                "ShenandoahNMethodBarrier",
+                "ShenandoahStackWatermarkBarrier",
         };
         String[] iu = {
                 "ShenandoahLoadRefBarrier",
                 "ShenandoahIUBarrier",
                 "ShenandoahCASBarrier",
                 "ShenandoahCloneBarrier",
+                "ShenandoahNMethodBarrier",
+                "ShenandoahStackWatermarkBarrier",
         };
 
         shouldFailAll("-XX:ShenandoahGCHeuristics=adaptive",   concurrent);

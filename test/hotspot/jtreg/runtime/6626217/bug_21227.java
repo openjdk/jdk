@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,9 @@
  * @summary Loader-constraint table allows arrays instead of only the base-classes
  * @library /test/lib
  * @compile bug_21227.java from_loader2.java
- * @run driver ClassFileInstaller from_loader2
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller from_loader2
  * @compile impl2/many_loader.java
- * @run driver ClassFileInstaller many_loader
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller many_loader
  * @compile many_loader.java
  * @run main/othervm -Xverify -Xint bug_21227
  */

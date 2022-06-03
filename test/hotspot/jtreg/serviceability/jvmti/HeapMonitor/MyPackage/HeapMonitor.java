@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018, 2019, Google and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,7 +164,15 @@ public class HeapMonitor {
     enableSamplingEvents();
     setSamplingInterval(0);
 
-    // Loop around an allocation loop and wait until the tlabs have settled.
+    // Trigger GC then loop around an allocation loop and wait until Object Sampling
+    // is enabled for every later allocation. It takes two steps:
+    // 1. Consume current TLAB, whose size can vary with heap/GC configuration
+    // 2. Consume initial ThreadHeapSampler::_bytes_until_sample, which is around 512KB
+    //
+    // Step1 trigger GC to consume current TLAB
+    System.gc();
+    // Step2 loop allocation consumes "bytes until sample", each iteration allocates
+    // about 1600KB, so 10 iterations will definitly consume initial "bytes until sample"
     final int maxTries = 10;
     int[][][] result = new int[maxTries][][];
     for (int i = 0; i < maxTries; i++) {
@@ -198,10 +206,11 @@ public class HeapMonitor {
     if (enableSampling) {
       enableSamplingEvents();
     }
-
+    // Use System.gc() to consume TLAB and trigger sampling as described above in sampleEverything
+    System.gc();
     List<Frame> frameList = allocate();
     frameList.add(new Frame("allocateAndCheckFrames", "(ZZ)[LMyPackage/Frame;", "HeapMonitor.java",
-          202));
+          211));
     Frame[] frames = frameList.toArray(new Frame[0]);
 
     boolean foundLive = obtainedEvents(frames);

@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +25,6 @@
 
 #include <objc/objc-runtime.h>
 #import <Foundation/Foundation.h>
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
-#import <JavaRuntimeSupport/JavaRuntimeSupport.h>
 
 #include <jni.h>
 
@@ -44,14 +43,10 @@
 #import <sys/ptrace.h>
 #include "libproc_impl.h"
 
-#define UNSUPPORTED_ARCH "Unsupported architecture!"
-
-#if defined(x86_64) && !defined(amd64)
-#define amd64 1
-#endif
-
-#if amd64
+#if defined(amd64)
 #include "sun_jvm_hotspot_debugger_amd64_AMD64ThreadContext.h"
+#elif defined(aarch64)
+#include "sun_jvm_hotspot_debugger_aarch64_AARCH64ThreadContext.h"
 #else
 #error UNSUPPORTED_ARCH
 #endif
@@ -164,20 +159,20 @@ static struct ps_prochandle* get_proc_handle(JNIEnv* env, jobject this_obj) {
   return (struct ps_prochandle*)(intptr_t)ptr;
 }
 
-#if defined(__i386__)
-    #define hsdb_thread_state_t     x86_thread_state32_t
-    #define hsdb_float_state_t      x86_float_state32_t
-    #define HSDB_THREAD_STATE       x86_THREAD_STATE32
-    #define HSDB_FLOAT_STATE        x86_FLOAT_STATE32
-    #define HSDB_THREAD_STATE_COUNT x86_THREAD_STATE32_COUNT
-    #define HSDB_FLOAT_STATE_COUNT  x86_FLOAT_STATE32_COUNT
-#elif defined(__x86_64__)
+#if defined(amd64)
     #define hsdb_thread_state_t     x86_thread_state64_t
     #define hsdb_float_state_t      x86_float_state64_t
     #define HSDB_THREAD_STATE       x86_THREAD_STATE64
     #define HSDB_FLOAT_STATE        x86_FLOAT_STATE64
     #define HSDB_THREAD_STATE_COUNT x86_THREAD_STATE64_COUNT
     #define HSDB_FLOAT_STATE_COUNT  x86_FLOAT_STATE64_COUNT
+#elif defined(aarch64)
+    #define hsdb_thread_state_t     arm_thread_state64_t
+    #define hsdb_float_state_t      arm_neon_state64_t
+    #define HSDB_THREAD_STATE       ARM_THREAD_STATE64
+    #define HSDB_FLOAT_STATE        ARM_NEON_STATE64
+    #define HSDB_THREAD_STATE_COUNT ARM_THREAD_STATE64_COUNT
+    #define HSDB_FLOAT_STATE_COUNT  ARM_NEON_STATE64_COUNT
 #else
     #error UNSUPPORTED_ARCH
 #endif
@@ -260,6 +255,39 @@ jlong lookupByNameIncore(
   return addr;
 }
 
+/* Create a pool and initiate a try block to catch any exception */
+#define JNI_COCOA_ENTER(env) \
+ NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init]; \
+ @try {
+
+/* Don't allow NSExceptions to escape to Java.
+ * If there is a Java exception that has been thrown that should escape.
+ * And ensure we drain the auto-release pool.
+ */
+#define JNI_COCOA_EXIT(env) \
+ } \
+ @catch (NSException *e) { \
+     NSLog(@"%@", [e callStackSymbols]); \
+ } \
+ @finally { \
+    [pool drain]; \
+ };
+
+static NSString* JavaStringToNSString(JNIEnv *env, jstring jstr) {
+
+    if (jstr == NULL) {
+        return NULL;
+    }
+    jsize len = (*env)->GetStringLength(env, jstr);
+    const jchar *chars = (*env)->GetStringChars(env, jstr, NULL);
+    if (chars == NULL) {
+        return NULL;
+    }
+    NSString *result = [NSString stringWithCharacters:(UniChar *)chars length:len];
+    (*env)->ReleaseStringChars(env, jstr, chars);
+    return result;
+}
+
 /*
  * Class:     sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal
  * Method:    lookupByName0
@@ -277,8 +305,9 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_lookupByName0(
 
   jlong address = 0;
 
-JNF_COCOA_ENTER(env);
-  NSString *symbolNameString = JNFJavaToNSString(env, symbolName);
+  JNI_COCOA_ENTER(env);
+
+  NSString *symbolNameString = JavaStringToNSString(env, symbolName);
 
   print_debug("lookupInProcess called for %s\n", [symbolNameString UTF8String]);
 
@@ -289,7 +318,7 @@ JNF_COCOA_ENTER(env);
   }
 
   print_debug("address of symbol %s = %llx\n", [symbolNameString UTF8String], address);
-JNF_COCOA_EXIT(env);
+  JNI_COCOA_EXIT(env);
 
   return address;
 }
@@ -462,11 +491,21 @@ bool fill_java_threads(JNIEnv* env, jobject this_obj, struct ps_prochandle* ph) 
       lwpid_t  uid = cinfos[j];
       uint64_t beg = cinfos[j + 1];
       uint64_t end = cinfos[j + 2];
+#if defined(amd64)
       if ((regs.r_rsp < end && regs.r_rsp >= beg) ||
           (regs.r_rbp < end && regs.r_rbp >= beg)) {
         set_lwp_id(ph, i, uid);
         break;
       }
+#elif defined(aarch64)
+      if ((regs.r_sp < end && regs.r_sp >= beg) ||
+          (regs.r_fp < end && regs.r_fp >= beg)) {
+        set_lwp_id(ph, i, uid);
+        break;
+      }
+#else
+#error UNSUPPORTED_ARCH
+#endif
     }
   }
   (*env)->ReleaseLongArrayElements(env, thrinfos, (jlong*)cinfos, 0);
@@ -498,13 +537,21 @@ jlongArray getThreadIntegerRegisterSetFromCore(JNIEnv *env, jobject this_obj, lo
 
 #undef NPRGREG
 #undef REG_INDEX
-#if amd64
+#if defined(amd64)
 #define NPRGREG sun_jvm_hotspot_debugger_amd64_AMD64ThreadContext_NPRGREG
 #define REG_INDEX(reg) sun_jvm_hotspot_debugger_amd64_AMD64ThreadContext_##reg
+#elif defined(aarch64)
+#define NPRGREG sun_jvm_hotspot_debugger_aarch64_AARCH64ThreadContext_NPRGREG
+#define REG_INDEX(reg) sun_jvm_hotspot_debugger_aarch64_AARCH64ThreadContext_##reg
+#else
+#error UNSUPPORTED_ARCH
+#endif
 
   array = (*env)->NewLongArray(env, NPRGREG);
   CHECK_EXCEPTION_(0);
   regs = (*env)->GetLongArrayElements(env, array, &isCopy);
+
+#if defined(amd64)
 
   regs[REG_INDEX(R15)] = gregs.r_r15;
   regs[REG_INDEX(R14)] = gregs.r_r14;
@@ -534,8 +581,47 @@ jlongArray getThreadIntegerRegisterSetFromCore(JNIEnv *env, jobject this_obj, lo
   regs[REG_INDEX(TRAPNO)] = gregs.r_trapno;
   regs[REG_INDEX(RFL)]    = gregs.r_rflags;
 
+#elif defined(aarch64)
+
+  regs[REG_INDEX(R0)] = gregs.r_r0;
+  regs[REG_INDEX(R1)] = gregs.r_r1;
+  regs[REG_INDEX(R2)] = gregs.r_r2;
+  regs[REG_INDEX(R3)] = gregs.r_r3;
+  regs[REG_INDEX(R4)] = gregs.r_r4;
+  regs[REG_INDEX(R5)] = gregs.r_r5;
+  regs[REG_INDEX(R6)] = gregs.r_r6;
+  regs[REG_INDEX(R7)] = gregs.r_r7;
+  regs[REG_INDEX(R8)] = gregs.r_r8;
+  regs[REG_INDEX(R9)] = gregs.r_r9;
+  regs[REG_INDEX(R10)] = gregs.r_r10;
+  regs[REG_INDEX(R11)] = gregs.r_r11;
+  regs[REG_INDEX(R12)] = gregs.r_r12;
+  regs[REG_INDEX(R13)] = gregs.r_r13;
+  regs[REG_INDEX(R14)] = gregs.r_r14;
+  regs[REG_INDEX(R15)] = gregs.r_r15;
+  regs[REG_INDEX(R16)] = gregs.r_r16;
+  regs[REG_INDEX(R17)] = gregs.r_r17;
+  regs[REG_INDEX(R18)] = gregs.r_r18;
+  regs[REG_INDEX(R19)] = gregs.r_r19;
+  regs[REG_INDEX(R20)] = gregs.r_r20;
+  regs[REG_INDEX(R21)] = gregs.r_r21;
+  regs[REG_INDEX(R22)] = gregs.r_r22;
+  regs[REG_INDEX(R23)] = gregs.r_r23;
+  regs[REG_INDEX(R24)] = gregs.r_r24;
+  regs[REG_INDEX(R25)] = gregs.r_r25;
+  regs[REG_INDEX(R26)] = gregs.r_r26;
+  regs[REG_INDEX(R27)] = gregs.r_r27;
+  regs[REG_INDEX(R28)] = gregs.r_r28;
+  regs[REG_INDEX(FP)] = gregs.r_fp;
+  regs[REG_INDEX(LR)] = gregs.r_lr;
+  regs[REG_INDEX(SP)] = gregs.r_sp;
+  regs[REG_INDEX(PC)] = gregs.r_pc;
+
+#else
+#error UNSUPPORTED_ARCH
+#endif
+
   (*env)->ReleaseLongArrayElements(env, array, regs, JNI_COMMIT);
-#endif /* amd64 */
   return array;
 }
 
@@ -630,16 +716,22 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_getThreadIntegerRegisterSet0(
     return NULL;
   }
 
-#if amd64
+#undef NPRGREG
+#if defined(amd64)
 #define NPRGREG sun_jvm_hotspot_debugger_amd64_AMD64ThreadContext_NPRGREG
-#undef REG_INDEX
-#define REG_INDEX(reg) sun_jvm_hotspot_debugger_amd64_AMD64ThreadContext_##reg
+#elif defined(aarch64)
+#define NPRGREG sun_jvm_hotspot_debugger_aarch64_AARCH64ThreadContext_NPRGREG
+#else
+#error UNSUPPORTED_ARCH
+#endif
 
   // 64 bit
   print_debug("Getting threads for a 64-bit process\n");
   registerArray = (*env)->NewLongArray(env, NPRGREG);
   CHECK_EXCEPTION_(0);
   primitiveArray = (*env)->GetLongArrayElements(env, registerArray, NULL);
+
+#if defined(amd64)
 
   primitiveArray[REG_INDEX(R15)] = state.__r15;
   primitiveArray[REG_INDEX(R14)] = state.__r14;
@@ -669,14 +761,50 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_getThreadIntegerRegisterSet0(
   primitiveArray[REG_INDEX(DS)] = 0;
   primitiveArray[REG_INDEX(FSBASE)] = 0;
   primitiveArray[REG_INDEX(GSBASE)] = 0;
-  print_debug("set registers\n");
 
-  (*env)->ReleaseLongArrayElements(env, registerArray, primitiveArray, 0);
+#elif defined(aarch64)
+
+  primitiveArray[REG_INDEX(R0)] = state.__x[0];
+  primitiveArray[REG_INDEX(R1)] = state.__x[1];
+  primitiveArray[REG_INDEX(R2)] = state.__x[2];
+  primitiveArray[REG_INDEX(R3)] = state.__x[3];
+  primitiveArray[REG_INDEX(R4)] = state.__x[4];
+  primitiveArray[REG_INDEX(R5)] = state.__x[5];
+  primitiveArray[REG_INDEX(R6)] = state.__x[6];
+  primitiveArray[REG_INDEX(R7)] = state.__x[7];
+  primitiveArray[REG_INDEX(R8)] = state.__x[8];
+  primitiveArray[REG_INDEX(R9)] = state.__x[9];
+  primitiveArray[REG_INDEX(R10)] = state.__x[10];
+  primitiveArray[REG_INDEX(R11)] = state.__x[11];
+  primitiveArray[REG_INDEX(R12)] = state.__x[12];
+  primitiveArray[REG_INDEX(R13)] = state.__x[13];
+  primitiveArray[REG_INDEX(R14)] = state.__x[14];
+  primitiveArray[REG_INDEX(R15)] = state.__x[15];
+  primitiveArray[REG_INDEX(R16)] = state.__x[16];
+  primitiveArray[REG_INDEX(R17)] = state.__x[17];
+  primitiveArray[REG_INDEX(R18)] = state.__x[18];
+  primitiveArray[REG_INDEX(R19)] = state.__x[19];
+  primitiveArray[REG_INDEX(R20)] = state.__x[20];
+  primitiveArray[REG_INDEX(R21)] = state.__x[21];
+  primitiveArray[REG_INDEX(R22)] = state.__x[22];
+  primitiveArray[REG_INDEX(R23)] = state.__x[23];
+  primitiveArray[REG_INDEX(R24)] = state.__x[24];
+  primitiveArray[REG_INDEX(R25)] = state.__x[25];
+  primitiveArray[REG_INDEX(R26)] = state.__x[26];
+  primitiveArray[REG_INDEX(R27)] = state.__x[27];
+  primitiveArray[REG_INDEX(R28)] = state.__x[28];
+  primitiveArray[REG_INDEX(FP)] = state.__fp;
+  primitiveArray[REG_INDEX(LR)] = state.__lr;
+  primitiveArray[REG_INDEX(SP)] = state.__sp;
+  primitiveArray[REG_INDEX(PC)] = state.__pc;
 
 #else
 #error UNSUPPORTED_ARCH
-#endif /* amd64 */
+#endif
 
+  print_debug("set registers\n");
+
+  (*env)->ReleaseLongArrayElements(env, registerArray, primitiveArray, 0);
   return registerArray;
 }
 
@@ -721,6 +849,9 @@ static bool ptrace_attach(pid_t pid) {
   return true;
 }
 
+#define GOT_HOTSPOT_TRAP (KERN_SUCCESS + 1)
+#define GOT_UNKNOWN_EXC  (KERN_SUCCESS + 2)
+
 kern_return_t catch_mach_exception_raise(
   mach_port_t exception_port, mach_port_t thread_port, mach_port_t task_port,
   exception_type_t exception_type, mach_exception_data_t codes,
@@ -729,6 +860,13 @@ kern_return_t catch_mach_exception_raise(
   print_debug("catch_mach_exception_raise: Exception port = %d thread_port = %d "
               "task port %d exc type = %d num_codes %d\n",
               exception_port, thread_port, task_port, exception_type, num_codes);
+
+  // Uncommon traps in the JVM can result in a "crash". We just ignore them.
+  // Returning a result other than KERN_SUCCESS means it will be passed on to the
+  // next handler, which should be in the JVM so it can do the right thing with it.
+  if (exception_type == EXC_BAD_INSTRUCTION || exception_type == EXC_BAD_ACCESS) {
+    return GOT_HOTSPOT_TRAP;
+  }
 
   // This message should denote a Unix soft signal, with
   // 1. the exception type = EXC_SOFTWARE
@@ -739,9 +877,9 @@ kern_return_t catch_mach_exception_raise(
         codes[num_codes -1] == SIGSTOP)) {
     print_error("catch_mach_exception_raise: Message doesn't denote a Unix "
                 "soft signal. exception_type = %d, codes[0] = %d, "
-                "codes[num_codes -1] = %d, num_codes = %d\n",
+                "codes[num_codes -1] = 0x%llx, num_codes = %d\n",
                 exception_type, codes[0], codes[num_codes - 1], num_codes);
-    return MACH_RCV_INVALID_TYPE;
+    return GOT_UNKNOWN_EXC;
   }
   return KERN_SUCCESS;
 }
@@ -764,8 +902,12 @@ kern_return_t catch_mach_exception_raise_state_identity(
   return MACH_RCV_INVALID_TYPE;
 }
 
+#define WAIT_SUCCESS 0
+#define WAIT_RETRY   1
+#define WAIT_FAILURE 2
+
 // wait to receive an exception message
-static bool wait_for_exception() {
+static int wait_for_exception() {
   kern_return_t result;
 
   result = mach_msg(&exc_msg.header,
@@ -779,17 +921,21 @@ static bool wait_for_exception() {
   if (result != MACH_MSG_SUCCESS) {
     print_error("attach: wait_for_exception: mach_msg() failed: '%s' (%d)\n",
                 mach_error_string(result), result);
-    return false;
+    return WAIT_FAILURE;
   }
 
-  if (mach_exc_server(&exc_msg.header, &rep_msg.header) == false ||
-      rep_msg.ret_code != KERN_SUCCESS) {
-    print_error("attach: wait_for_exception: mach_exc_server failure\n");
-    if (rep_msg.ret_code != KERN_SUCCESS) {
-      print_error("catch_mach_exception_raise() failed '%s' (%d)\n",
-                  mach_error_string(rep_msg.ret_code), rep_msg.ret_code);
-    }
-    return false;
+  if (!mach_exc_server(&exc_msg.header, &rep_msg.header)) {
+    print_error("attach: wait_for_exception: mach_exc_server failed\n");
+    return WAIT_FAILURE;
+  }
+  if (rep_msg.ret_code == GOT_UNKNOWN_EXC) {
+    print_error("attach: wait_for_exception: catch_mach_exception_raise() got unknown exception type\n");
+    return WAIT_FAILURE;
+  }
+  if (rep_msg.ret_code == GOT_HOTSPOT_TRAP) {
+    // hotspot uncommon trap. Just retry.
+    print_debug("attach: wait_for_exception: retrying\n");
+    return WAIT_RETRY;
   }
 
   print_debug("reply msg from mach_exc_server: (msg->{bits = %#x, size = %u, "
@@ -798,7 +944,7 @@ static bool wait_for_exception() {
               rep_msg.header.msgh_remote_port, rep_msg.header.msgh_local_port,
               rep_msg.header.msgh_reserved, rep_msg.header.msgh_id);
 
-  return true;
+  return WAIT_SUCCESS;
 }
 
 /*
@@ -812,7 +958,7 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_attach0__I(
 {
   print_debug("attach0 called for jpid=%d\n", (int)jpid);
 
-JNF_COCOA_ENTER(env);
+  JNI_COCOA_ENTER(env);
 
   kern_return_t result;
   task_t gTask = 0;
@@ -892,7 +1038,14 @@ JNF_COCOA_ENTER(env);
     THROW_NEW_DEBUGGER_EXCEPTION("Can't ptrace attach to the process");
   }
 
-  if (wait_for_exception() != true) {
+  int retry_count = 0;
+  int wait_result;
+  do {
+    wait_result = wait_for_exception();
+  } while (wait_result == WAIT_RETRY && retry_count++ < 5);
+
+  if (wait_result != WAIT_SUCCESS) {
+    print_error("attach: wait_for_exception() failed. Retried %d times\n", retry_count);
     mach_port_deallocate(mach_task_self(), gTask);
     mach_port_deallocate(mach_task_self(), tgt_exception_port);
     THROW_NEW_DEBUGGER_EXCEPTION(
@@ -926,34 +1079,37 @@ JNF_COCOA_ENTER(env);
     THROW_NEW_DEBUGGER_EXCEPTION("Can't attach symbolicator to the process");
   }
 
-JNF_COCOA_EXIT(env);
+  JNI_COCOA_EXIT(env);
 }
 
 /** For core file,
     called from Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_attach0__Ljava_lang_String_2Ljava_lang_String_2 */
 static void fillLoadObjects(JNIEnv* env, jobject this_obj, struct ps_prochandle* ph) {
   int n = 0, i = 0;
+  jobject loadObjectList;
+
+  loadObjectList = (*env)->GetObjectField(env, this_obj, loadObjectList_ID);
+  CHECK_EXCEPTION;
 
   // add load objects
   n = get_num_libs(ph);
   for (i = 0; i < n; i++) {
-     uintptr_t base;
+     uintptr_t base, memsz;
      const char* name;
      jobject loadObject;
-     jobject loadObjectList;
      jstring nameString;
 
-     base = get_lib_base(ph, i);
+     get_lib_addr_range(ph, i, &base, &memsz);
      name = get_lib_name(ph, i);
      nameString = (*env)->NewStringUTF(env, name);
      CHECK_EXCEPTION;
      loadObject = (*env)->CallObjectMethod(env, this_obj, createLoadObject_ID,
-                                            nameString, (jlong)0, (jlong)base);
-     CHECK_EXCEPTION;
-     loadObjectList = (*env)->GetObjectField(env, this_obj, loadObjectList_ID);
+                                            nameString, (jlong)memsz, (jlong)base);
      CHECK_EXCEPTION;
      (*env)->CallBooleanMethod(env, loadObjectList, listAdd_ID, loadObject);
      CHECK_EXCEPTION;
+     (*env)->DeleteLocalRef(env, nameString);
+     (*env)->DeleteLocalRef(env, loadObject);
   }
 }
 
@@ -1020,7 +1176,8 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_detach0(
      Prelease(ph);
      return;
   }
-JNF_COCOA_ENTER(env);
+
+  JNI_COCOA_ENTER(env);
 
   task_t gTask = getTask(env, this_obj);
   kern_return_t k_res = 0;
@@ -1071,5 +1228,5 @@ JNF_COCOA_ENTER(env);
 
   detach_cleanup(gTask, env, this_obj, false);
 
-JNF_COCOA_EXIT(env);
+  JNI_COCOA_EXIT(env);
 }

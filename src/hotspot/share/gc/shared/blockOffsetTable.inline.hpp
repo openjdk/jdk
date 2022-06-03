@@ -26,6 +26,7 @@
 #define SHARE_GC_SHARED_BLOCKOFFSETTABLE_INLINE_HPP
 
 #include "gc/shared/blockOffsetTable.hpp"
+
 #include "gc/shared/space.hpp"
 #include "runtime/safepoint.hpp"
 
@@ -49,14 +50,14 @@ inline size_t BlockOffsetSharedArray::index_for(const void* p) const {
          pc <  (char*)_reserved.end(),
          "p not in range.");
   size_t delta = pointer_delta(pc, _reserved.start(), sizeof(char));
-  size_t result = delta >> BOTConstants::LogN;
+  size_t result = delta >> BOTConstants::log_card_size();
   assert(result < _vs.committed_size(), "bad index from address");
   return result;
 }
 
 inline HeapWord* BlockOffsetSharedArray::address_for_index(size_t index) const {
   assert(index < _vs.committed_size(), "bad index");
-  HeapWord* result = _reserved.start() + (index << BOTConstants::LogN_words);
+  HeapWord* result = _reserved.start() + (index << BOTConstants::log_card_size_in_words());
   assert(result >= _reserved.start() && result < _reserved.end(),
          "bad address from index");
   return result;
@@ -65,9 +66,7 @@ inline HeapWord* BlockOffsetSharedArray::address_for_index(size_t index) const {
 inline void BlockOffsetSharedArray::check_reducing_assertion(bool reducing) {
     assert(reducing || !SafepointSynchronize::is_at_safepoint() || init_to_zero() ||
            Thread::current()->is_VM_thread() ||
-           Thread::current()->is_ConcurrentGC_thread() ||
-           ((!Thread::current()->is_ConcurrentGC_thread()) &&
-            ParGCRareEvent_lock->owned_by_self()), "Crack");
+           Thread::current()->is_ConcurrentGC_thread(), "Crack");
 }
 
 #endif // SHARE_GC_SHARED_BLOCKOFFSETTABLE_INLINE_HPP
