@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -40,15 +40,15 @@
 
 package j2dbench;
 
+import java.awt.AlphaComposite;
 import java.awt.Canvas;
-import java.awt.Image;
+import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.Dimension;
-import java.awt.AlphaComposite;
-import java.awt.Color;
+import java.awt.Image;
 import java.awt.Toolkit;
-import java.util.Hashtable;
+import java.util.LinkedHashMap;
 
 import j2dbench.tests.GraphicsTests;
 
@@ -105,12 +105,12 @@ public class TestEnvironment implements Node.Visitor {
     Image srcImage;
     boolean stopped;
     ResultSet results;
-    Hashtable modifiers;
+    LinkedHashMap modifiers;
     Timer timer;
 
     public TestEnvironment() {
         results = new ResultSet();
-        modifiers = new Hashtable();
+        modifiers = new LinkedHashMap();
         timer = Timer.getImpl();
     }
 
@@ -246,8 +246,8 @@ public class TestEnvironment implements Node.Visitor {
         modifiers.remove(o);
     }
 
-    public Hashtable getModifiers() {
-        return (Hashtable) modifiers.clone();
+    public LinkedHashMap getModifiers() {
+        return (LinkedHashMap) modifiers.clone();
     }
 
     public void record(Result result) {
