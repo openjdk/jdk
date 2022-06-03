@@ -255,7 +255,7 @@ class Lexer
             // check operator symbol
             String s = pat.substring(startSubstring, i);
             if (Token.contains(s)) {
-                incrementCount(c);
+                incrementCount();
             }
             addToTokenQueue(s);
           }
@@ -342,7 +342,7 @@ class Lexer
         else if (Token.LBRACK == c)
         {
           nesting++;
-          incrementCount(c);
+          incrementCount();
           isAxis = false;
         }
         else if ((Token.LPAREN == c))
@@ -350,24 +350,24 @@ class Lexer
           nesting++;
           if (isLiteral) {
               if (!isAxis) {
-                  incrementCount(c);
+                  incrementCount();
               }
           } else {
               m_grpCount++;
-              incrementCount(c);
+              incrementCount();
           }
           isAxis = false;
         }
 
         if ((Token.GT == c || Token.LT == c || Token.EQ == c || Token.EM == c)) {
             if (Token.EQ != peekNext(pat, i)) {
-                incrementCount(c);
+                incrementCount();
             }
         }
         else if (Token.SLASH == c) {
             isAxis = false;
             if (Token.SLASH != peekNext(pat, i)) {
-                incrementCount(c);
+                incrementCount();
             }
         }
         // '(' and '[' already counted above; ':' is examined in case below
@@ -375,7 +375,7 @@ class Lexer
         else if ((Token.LPAREN != c) && (Token.LBRACK != c) && (Token.RPAREN != c)
                 && (Token.RBRACK != c) && (Token.COLON != c) && (Token.COMMA != c)) {
             if (Token.STAR != c || !isAxis) {
-                incrementCount(c);
+                incrementCount();
             }
             isAxis = false;
         }
@@ -413,7 +413,7 @@ class Lexer
       default :
         isLiteral = true;
         if (!isNum && Token.DOT == c && Token.DOT != peekNext(pat, i)) {
-            incrementCount(c);
+            incrementCount();
         }
         if (-1 == startSubstring)
         {
@@ -469,7 +469,7 @@ class Lexer
     m_processor.m_queueMark = 0;
   }
 
-  private void incrementCount(char c) {
+  private void incrementCount() {
       m_opCount++;
       isLiteral = false;
   }
