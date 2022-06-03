@@ -352,7 +352,9 @@ void Handshake::execute(HandshakeClosure* hs_cl, JavaThread* target) {
 
 void Handshake::execute(HandshakeClosure* hs_cl, ThreadsListHandle* tlh, JavaThread* target) {
   JavaThread* self = JavaThread::current();
-  assert(self != target, "don't attempt to Handshake yourself");
+  if (self == target) {
+    hs_cl->do_thread(self);
+  }
 
   HandshakeOperation op(hs_cl, target, Thread::current());
 
