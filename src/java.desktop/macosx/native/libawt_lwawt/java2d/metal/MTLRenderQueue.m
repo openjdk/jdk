@@ -80,7 +80,9 @@ void MTLRenderQueue_CheckPreviousOp(jint op) {
     if (mtlc != NULL) {
         [mtlc.encoderManager endEncoder];
 
-        if (op == MTL_OP_RESET_PAINT || op == MTL_OP_SYNC || op == MTL_OP_SHAPE_CLIP_SPANS) {
+        if (op == MTL_OP_RESET_PAINT || op == MTL_OP_SYNC || op == MTL_OP_SHAPE_CLIP_SPANS ||
+            mtlPreviousOp == MTL_OP_MASK_OP)
+        {
             MTLCommandBufferWrapper *cbwrapper = [mtlc pullCommandBufferWrapper];
             id <MTLCommandBuffer> commandbuf = [cbwrapper getCommandBuffer];
             [commandbuf addCompletedHandler:^(id <MTLCommandBuffer> commandbuf) {
