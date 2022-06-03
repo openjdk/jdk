@@ -2991,7 +2991,6 @@ class StubGenerator: public StubCodeGenerator {
   static RuntimeStub* generate_jfr_write_checkpoint() {
     CodeBuffer code("jfr_write_checkpoint", 512, 64);
     MacroAssembler* masm = new MacroAssembler(&code);
-    MacroAssembler* _masm = masm;
 
     int framesize = 0; // FIXME: Really?
 
@@ -3015,7 +3014,6 @@ class StubGenerator: public StubCodeGenerator {
 
     __ bind(L_null_jobject);
 
-    __ mov(R0, 0);
     __ ret();
 
     OopMapSet* oop_maps = new OopMapSet();
