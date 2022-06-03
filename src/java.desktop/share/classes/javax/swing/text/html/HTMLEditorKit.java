@@ -1120,7 +1120,6 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
          * @param pos a position
          */
         public void handleComment(char[] data, int pos) {
-            System.out.println("HTMLEditorKit");
         }
 
         /**
