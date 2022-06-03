@@ -98,20 +98,20 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
     @Override
     public Content getAllBlockTagOutput(Element holder, TagletWriter writer) {
         Utils utils = writer.configuration().utils;
-        ExecutableElement execHolder = (ExecutableElement) holder;
+        var executable = (ExecutableElement) holder;
         ExecutableType instantiatedType = utils.asInstantiatedMethodType(
-                writer.getCurrentPageElement(), (ExecutableElement) holder);
+                writer.getCurrentPageElement(), executable);
         List<? extends TypeMirror> thrownTypes = instantiatedType.getThrownTypes();
         Map<String, TypeMirror> typeSubstitutions = getSubstitutedThrownTypes(
                 writer.configuration().utils.typeUtils,
-                ((ExecutableElement) holder).getThrownTypes(),
+                executable.getThrownTypes(),
                 thrownTypes);
         Map<List<? extends ThrowsTree>, ExecutableElement> tagsMap = new LinkedHashMap<>();
-        tagsMap.put(utils.getThrowsTrees(execHolder), execHolder);
+        tagsMap.put(utils.getThrowsTrees(executable), executable);
         Content result = writer.getOutputInstance();
         Set<String> alreadyDocumented = new HashSet<>();
         result.add(throwsTagsOutput(tagsMap, writer, alreadyDocumented, typeSubstitutions, true));
-        result.add(inheritThrowsDocumentation(holder, thrownTypes, alreadyDocumented, typeSubstitutions, writer));
+        result.add(inheritThrowsDocumentation(executable, thrownTypes, alreadyDocumented, typeSubstitutions, writer));
         result.add(linkToUndocumentedDeclaredExceptions(thrownTypes, alreadyDocumented, writer));
         return result;
     }
@@ -191,7 +191,7 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
      * Inherit throws documentation for exceptions that were declared but not
      * documented.
      */
-    private Content inheritThrowsDocumentation(Element holder,
+    private Content inheritThrowsDocumentation(ExecutableElement holder,
                                                List<? extends TypeMirror> declaredExceptionTypes,
                                                Set<String> alreadyDocumented,
                                                Map<String, TypeMirror> typeSubstitutions,
@@ -221,6 +221,8 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
             }
             result.add(throwsTagsOutput(declaredExceptionTags, writer, alreadyDocumented,
                     typeSubstitutions, false));
+        } else if (!utils.isConstructor(holder)) {
+            throw new Error();
         }
         return result;
     }
