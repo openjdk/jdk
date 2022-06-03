@@ -25,15 +25,15 @@
 
 package javax.swing.text.html.parser;
 
+import java.io.CharArrayReader;
+import java.io.IOException;
+import java.io.InterruptedIOException;
+import java.io.Reader;
+import java.util.Vector;
+
+import javax.swing.text.ChangedCharSetException;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.html.HTML;
-import javax.swing.text.ChangedCharSetException;
-import java.io.*;
-import java.util.Hashtable;
-import java.util.Properties;
-import java.util.Vector;
-import java.util.Enumeration;
-import java.net.URL;
 
 /**
  * A simple DTD-driven HTML parser. The parser reads an
@@ -68,6 +68,9 @@ import java.net.URL;
  * encountered, all whitespace will be ignored until a non whitespace
  * character is encountered. This appears to give behavior closer to
  * the popular browsers.
+ * <p>
+ * Unsupported tags, such as script tags, will be handled by HiddenTagView. The
+ * tags and its contents will be displayed as editable JTextFields and JTextAreas.
  *
  * @see DTD
  * @see TagElement

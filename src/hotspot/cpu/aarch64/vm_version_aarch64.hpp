@@ -107,7 +107,7 @@ public:
     decl(AES,           aes,           3)     \
     decl(PMULL,         pmull,         4)     \
     decl(SHA1,          sha1,          5)     \
-    decl(SHA2,          sha2,          6)     \
+    decl(SHA2,          sha256,        6)     \
     decl(CRC32,         crc32,         7)     \
     decl(LSE,           lse,           8)     \
     decl(DCPOP,         dcpop,         16)    \

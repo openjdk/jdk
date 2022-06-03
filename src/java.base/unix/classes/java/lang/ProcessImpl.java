@@ -35,12 +35,15 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
@@ -70,6 +73,9 @@ final class ProcessImpl extends Process {
     private final ProcessHandleImpl processHandle;
     private int exitcode;
     private boolean hasExited;
+
+    private final ReentrantLock lock = new ReentrantLock();
+    private final Condition condition = lock.newCondition();
 
     private /* final */ OutputStream stdin;
     private /* final */ InputStream  stdout;
@@ -146,7 +152,7 @@ final class ProcessImpl extends Process {
     private static byte[] toCString(String s) {
         if (s == null)
             return null;
-        byte[] bytes = s.getBytes();
+        byte[] bytes = s.getBytes(StaticProperty.jnuCharset());
         byte[] result = new byte[bytes.length + 1];
         System.arraycopy(bytes, 0,
                          result, 0,
@@ -170,7 +176,7 @@ final class ProcessImpl extends Process {
         byte[][] args = new byte[cmdarray.length-1][];
         int size = args.length; // For added NUL bytes
         for (int i = 0; i < args.length; i++) {
-            args[i] = cmdarray[i+1].getBytes();
+            args[i] = cmdarray[i+1].getBytes(StaticProperty.jnuCharset());
             size += args[i].length;
         }
         byte[] argBlock = new byte[size];
@@ -360,10 +366,13 @@ final class ProcessImpl extends Process {
                          new ProcessPipeInputStream(fds[2]);
 
                 ProcessHandleImpl.completion(pid, true).handle((exitcode, throwable) -> {
-                    synchronized (this) {
+                    lock.lock();
+                    try {
                         this.exitcode = (exitcode == null) ? -1 : exitcode.intValue();
                         this.hasExited = true;
-                        this.notifyAll();
+                        condition.signalAll();
+                    } finally {
+                        lock.unlock();
                     }
 
                     if (stdout instanceof ProcessPipeInputStream)
@@ -393,10 +402,13 @@ final class ProcessImpl extends Process {
                          new DeferredCloseProcessPipeInputStream(fds[2]);
 
                 ProcessHandleImpl.completion(pid, true).handle((exitcode, throwable) -> {
-                    synchronized (this) {
+                    lock.lock();
+                    try {
                         this.exitcode = (exitcode == null) ? -1 : exitcode.intValue();
                         this.hasExited = true;
-                        this.notifyAll();
+                        condition.signalAll();
+                    } finally {
+                        lock.unlock();
                     }
 
                     if (stdout instanceof DeferredCloseProcessPipeInputStream)
@@ -428,37 +440,43 @@ final class ProcessImpl extends Process {
         return stderr;
     }
 
-    public synchronized int waitFor() throws InterruptedException {
-        while (!hasExited) {
-            wait();
+    public int waitFor() throws InterruptedException {
+        lock.lock();
+        try {
+            while (!hasExited) {
+                condition.await();
+            }
+            return exitcode;
+        } finally {
+            lock.unlock();
         }
-        return exitcode;
     }
 
-    @Override
-    public synchronized boolean waitFor(long timeout, TimeUnit unit)
+    public boolean waitFor(long timeout, TimeUnit unit)
         throws InterruptedException
     {
-        long remainingNanos = unit.toNanos(timeout);    // throw NPE before other conditions
-        if (hasExited) return true;
-        if (timeout <= 0) return false;
-
-        long deadline = System.nanoTime() + remainingNanos;
-        do {
-            TimeUnit.NANOSECONDS.timedWait(this, remainingNanos);
-            if (hasExited) {
-                return true;
+        lock.lock();
+        try {
+            long remainingNanos = unit.toNanos(timeout);    // throw NPE before other conditions
+            while (remainingNanos > 0 && !hasExited) {
+                remainingNanos = condition.awaitNanos(remainingNanos);
             }
-            remainingNanos = deadline - System.nanoTime();
-        } while (remainingNanos > 0);
-        return hasExited;
+            return hasExited;
+        } finally {
+            lock.unlock();
+        }
     }
 
-    public synchronized int exitValue() {
-        if (!hasExited) {
-            throw new IllegalThreadStateException("process hasn't exited");
+    public int exitValue() {
+        lock.lock();
+        try {
+            if (!hasExited) {
+                throw new IllegalThreadStateException("process hasn't exited");
+            }
+            return exitcode;
+        } finally {
+            lock.unlock();
         }
-        return exitcode;
     }
 
     private void destroy(boolean force) {
@@ -472,9 +490,12 @@ final class ProcessImpl extends Process {
                 // there is an unavoidable race condition here, but the window
                 // is very small, and OSes try hard to not recycle pids too
                 // soon, so this is quite safe.
-                synchronized (this) {
+                lock.lock();
+                try {
                     if (!hasExited)
                         processHandle.destroyProcess(force);
+                } finally {
+                    lock.unlock();
                 }
                 try { stdin.close();  } catch (IOException ignored) {}
                 try { stdout.close(); } catch (IOException ignored) {}
@@ -538,8 +559,13 @@ final class ProcessImpl extends Process {
     }
 
     @Override
-    public synchronized boolean isAlive() {
-        return !hasExited;
+    public boolean isAlive() {
+        lock.lock();
+        try {
+            return !hasExited;
+        } finally {
+            lock.unlock();
+        }
     }
 
     /**

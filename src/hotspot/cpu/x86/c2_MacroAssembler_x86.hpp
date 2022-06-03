@@ -119,8 +119,8 @@ public:
   void evgather(BasicType typ, XMMRegister dst, KRegister mask, Register base, XMMRegister idx, int vector_len);
   void evscatter(BasicType typ, Register base, XMMRegister idx, KRegister mask, XMMRegister src, int vector_len);
 
-  void evmovdqu(BasicType type, KRegister kmask, XMMRegister dst, Address src, int vector_len);
-  void evmovdqu(BasicType type, KRegister kmask, Address dst, XMMRegister src, int vector_len);
+  void evmovdqu(BasicType type, KRegister kmask, XMMRegister dst, Address src, bool merge, int vector_len);
+  void evmovdqu(BasicType type, KRegister kmask, Address dst, XMMRegister src, bool merge, int vector_len);
 
   // extract
   void extract(BasicType typ, Register dst, XMMRegister src, int idx);
@@ -131,6 +131,13 @@ public:
   // vector test
   void vectortest(int bt, int vlen, XMMRegister src1, XMMRegister src2,
                   XMMRegister vtmp1 = xnoreg, XMMRegister vtmp2 = xnoreg, KRegister mask = knoreg);
+
+ // Covert B2X
+ void vconvert_b2x(BasicType to_elem_bt, XMMRegister dst, XMMRegister src, int vlen_enc);
+#ifdef _LP64
+ void vpbroadcast(BasicType elem_bt, XMMRegister dst, Register src, int vlen_enc);
+#endif
+ void vpadd(BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2, int vlen_enc);
 
   // blend
   void evpcmp(BasicType typ, KRegister kdmask, KRegister ksmask, XMMRegister src1, AddressLiteral adr, int comparison, int vector_len, Register scratch = rscratch1);
@@ -340,6 +347,12 @@ public:
   void evpternlog(XMMRegister dst, int func, KRegister mask, XMMRegister src2, Address src3,
                   bool merge, BasicType bt, int vlen_enc);
 
+  void vector_signum_avx(int opcode, XMMRegister dst, XMMRegister src, XMMRegister zero, XMMRegister one,
+                         XMMRegister xtmp1, int vec_enc);
+
+  void vector_signum_evex(int opcode, XMMRegister dst, XMMRegister src, XMMRegister zero, XMMRegister one,
+                          KRegister ktmp1, int vec_enc);
+
   void udivI(Register rax, Register divisor, Register rdx);
   void umodI(Register rax, Register divisor, Register rdx);
   void udivmodI(Register rax, Register divisor, Register rdx, Register tmp);
@@ -349,6 +362,7 @@ public:
   void umodL(Register rax, Register divisor, Register rdx);
   void udivmodL(Register rax, Register divisor, Register rdx, Register tmp);
   #endif
+
   void vector_popcount_int(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
                            XMMRegister xtmp2, XMMRegister xtmp3, Register rtmp,
                            int vec_enc);

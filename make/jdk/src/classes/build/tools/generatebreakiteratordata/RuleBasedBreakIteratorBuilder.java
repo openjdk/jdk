@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1273,7 +1273,7 @@ class RuleBasedBreakIteratorBuilder {
         for (int i = 0; i < decisionPointList.size(); i++) {
             int rowNum = decisionPointList.elementAt(i).intValue();
             state = tempStateTable.elementAt(rowNum);
-            state[numCategories] |= END_STATE_FLAG;
+            state[numCategories] |= (short) END_STATE_FLAG;
             if (sawEarlyBreak) {
                 state[numCategories] |= LOOKAHEAD_STATE_FLAG;
             }
@@ -1580,7 +1580,7 @@ class RuleBasedBreakIteratorBuilder {
                 }
 
                 // clear out the backfill part of the flag word
-                state[numCategories] &= ALL_FLAGS;
+                state[numCategories] &= (short) ALL_FLAGS;
 
                 // then fill all zero cells in the current state with values
                 // from the corresponding cells of the fromState

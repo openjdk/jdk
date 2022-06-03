@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,7 @@ import com.sun.jdi.request.EventRequest;
  *     <UL>
  *     <LI>{@link ModificationWatchpointEvent}
  *     </UL>
- * <LI>Only with other ExceptionEvents for the same exception occurrance:
+ * <LI>Only with other ExceptionEvents for the same exception occurrence:
  *     <UL>
  *     <LI>{@link ExceptionEvent}
  *     </UL>

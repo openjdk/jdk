@@ -401,7 +401,7 @@ void HeapRegion::verify_code_roots(VerifyOption vo, bool* failures) const {
     // We're not verifying code roots.
     return;
   }
-  if (vo == VerifyOption_G1UseFullMarking) {
+  if (vo == VerifyOption::G1UseFullMarking) {
     // Marking verification during a full GC is performed after class
     // unloading, code cache unloading, etc so the code roots
     // attached to each heap region are in an inconsistent state. They won't
@@ -477,9 +477,8 @@ protected:
   bool _failures;
   int _n_failures;
   VerifyOption _vo;
+
 public:
-  // _vo == UsePrevMarking -> use "prev" marking information,
-  // _vo == UseFullMarking -> use "next" marking bitmap but no TAMS.
   G1VerificationClosure(G1CollectedHeap* g1h, VerifyOption vo) :
     _g1h(g1h), _ct(g1h->card_table()),
     _containing_obj(NULL), _failures(false), _n_failures(0), _vo(vo) {
@@ -525,8 +524,7 @@ public:
       oop obj = CompressedOops::decode_not_null(heap_oop);
       bool failed = false;
       if (!_g1h->is_in(obj) || _g1h->is_obj_dead_cond(obj, _vo)) {
-        MutexLocker x(ParGCRareEvent_lock,
-          Mutex::_no_safepoint_check_flag);
+        MutexLocker x(ParGCRareEvent_lock, Mutex::_no_safepoint_check_flag);
 
         if (!_failures) {
           log.error("----------");
@@ -597,8 +595,7 @@ public:
                 cv_field == dirty :
                 cv_obj == dirty || cv_field == dirty));
         if (is_bad) {
-          MutexLocker x(ParGCRareEvent_lock,
-            Mutex::_no_safepoint_check_flag);
+          MutexLocker x(ParGCRareEvent_lock, Mutex::_no_safepoint_check_flag);
 
           if (!_failures) {
             log.error("----------");
@@ -767,7 +764,7 @@ void HeapRegion::verify_rem_set(VerifyOption vo, bool* failures) const {
 
 void HeapRegion::verify_rem_set() const {
   bool failures = false;
-  verify_rem_set(VerifyOption_G1UsePrevMarking, &failures);
+  verify_rem_set(VerifyOption::G1UsePrevMarking, &failures);
   guarantee(!failures, "HeapRegion RemSet verification failed");
 }
 

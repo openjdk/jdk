@@ -25,14 +25,13 @@
 
 package javax.swing.text.html.parser;
 
-import javax.swing.text.SimpleAttributeSet;
-import javax.swing.text.html.HTMLEditorKit;
-import javax.swing.text.html.HTML;
-import javax.swing.text.ChangedCharSetException;
+import java.io.IOException;
+import java.io.Reader;
 
-import java.util.*;
-import java.io.*;
-import java.net.*;
+import javax.swing.text.ChangedCharSetException;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.html.HTML;
+import javax.swing.text.html.HTMLEditorKit;
 
 /**
  * A Parser for HTML Documents (actually, you can specify a DTD, but
