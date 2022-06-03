@@ -187,7 +187,7 @@ public class TestDocLintDocletMessages extends JavadocTester {
         javadoc(allOptions.toArray(String[]::new));
         checkExit(expect.exit);
 
-        checkOutput(Output.OUT, true,expect.message);
+        checkOutput(Output.OUT, true, expect.message);
 
         // allow that the "other" result might be the same as the main result
         if (!doNotExpect.message.equals(expect.message)) {
