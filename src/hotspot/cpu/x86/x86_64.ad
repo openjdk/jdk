@@ -10759,15 +10759,15 @@ instruct xorL_mem_imm(memory dst, immL32 src, rFlagsReg cr)
 instruct convI2B(rRegI dst, rRegI src, rFlagsReg cr)
 %{
   match(Set dst (Conv2B src));
-  effect(TEMP dst, KILL cr);
+  effect(KILL cr);
 
-  format %{ "xorl    $dst, $dst\t# ci2b\n\t"
-            "testl   $src, $src\n\t"
-            "setnz   $dst" %}
+  format %{ "testl   $src, $src\t# ci2b\n\t"
+            "setnz   $dst\n\t"
+            "movzbl  $dst, $dst" %}
   ins_encode %{
-    __ xorl($dst$$Register, $dst$$Register);
     __ testl($src$$Register, $src$$Register);
     __ set_byte_if_not_zero($dst$$Register);
+    __ movzbl($dst$$Register, $dst$$Register);
   %}
   ins_pipe(pipe_slow); // XXX
 %}
@@ -10776,15 +10776,15 @@ instruct convI2B(rRegI dst, rRegI src, rFlagsReg cr)
 instruct convP2B(rRegI dst, rRegP src, rFlagsReg cr)
 %{
   match(Set dst (Conv2B src));
-  effect(TEMP dst, KILL cr);
+  effect(KILL cr);
 
-  format %{ "xorl    $dst, $dst\t# cp2b\n\t"
-            "testq   $src, $src\n\t"
-            "setnz   $dst" %}
+  format %{ "testq   $src, $src\t# cp2b\n\t"
+            "setnz   $dst\n\t"
+            "movzbl  $dst, $dst" %}
   ins_encode %{
-    __ xorl($dst$$Register, $dst$$Register);
     __ testq($src$$Register, $src$$Register);
     __ set_byte_if_not_zero($dst$$Register);
+    __ movzbl($dst$$Register, $dst$$Register);
   %}
   ins_pipe(pipe_slow); // XXX
 %}
