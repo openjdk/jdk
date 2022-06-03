@@ -139,12 +139,11 @@ inline bool HeapRegion::is_obj_dead(const oop obj, HeapWord* const pb) const {
   return obj_is_scrubbed(obj);
 }
 
-inline bool HeapRegion::is_obj_dead_size_below_pb(const oop obj, HeapWord* const pb, size_t& block_size) const {
+inline bool HeapRegion::is_obj_dead_size_in_unparsable(const oop obj, HeapWord* const pb, G1CMBitMap* bitmap, size_t& block_size) const {
   assert(is_in_reserved(obj), "Object " PTR_FORMAT " must be in region", p2i(obj));
   assert(!is_closed_archive(), "never walk CA regions for cross-references");
   assert(obj_in_unparsable_area(obj, pb), "must be");
 
-  G1CMBitMap* bitmap = G1CollectedHeap::heap()->concurrent_mark()->mark_bitmap();
   bool is_live = bitmap->is_marked(obj);
   if (is_live) {
     block_size = obj->size();
@@ -385,8 +384,8 @@ inline HeapWord* HeapRegion::oops_on_memregion_iterate_in_unparsable(MemRegion m
   //
   HeapWord* cur = block_start(start, pb);
 
+  G1CMBitMap* bitmap = G1CollectedHeap::heap()->concurrent_mark()->mark_bitmap();
   if (!in_gc_pause) {
-    G1CMBitMap* bitmap = G1CollectedHeap::heap()->concurrent_mark()->mark_bitmap();
     cur = bitmap->get_next_marked_addr(cur, end);
     // We might not have found a live object in the range to process. Return in that case.
     if (cur == end) {
@@ -399,7 +398,7 @@ inline HeapWord* HeapRegion::oops_on_memregion_iterate_in_unparsable(MemRegion m
     assert(oopDesc::is_oop(obj, true), "Not an oop at " PTR_FORMAT, p2i(cur));
 
     size_t block_size;
-    bool is_dead = is_obj_dead_size_below_pb(obj, pb, block_size);
+    bool is_dead = is_obj_dead_size_in_unparsable(obj, pb, bitmap, block_size);
     bool is_precise = false;
 
     cur += block_size;

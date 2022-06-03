@@ -185,7 +185,9 @@ public:
   // Returns whether the given object is dead based on the given parsable_bottom (pb).
   // For an object to be considered dead it must be below pb and scrubbed.
   bool is_obj_dead(oop obj, HeapWord* pb) const;
-  bool is_obj_dead_size_below_pb(oop obj, HeapWord* pb, size_t& block_size) const;
+  // Same as is_obj_dead(), but only for obj's in the unparsable area and also
+  // returning the block size.
+  bool is_obj_dead_size_in_unparsable(oop obj, HeapWord* pb, G1CMBitMap* bitmap, size_t& block_size) const;
 
   // Returns the object size for all valid block starts. If parsable_bottom (pb)
   // is given, calculates the block size based on that parsable_bottom, not the
