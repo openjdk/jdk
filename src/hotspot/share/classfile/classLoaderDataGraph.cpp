@@ -338,8 +338,8 @@ public:
       cld = cld->next();
     }
     if (cld != NULL) {
-      // Keep cld that is being returned alive.
       if (keep_alive) {
+        // Keep cld that is being returned alive.
         Handle(_thread, cld->holder());
       }
       _next = cld->next();

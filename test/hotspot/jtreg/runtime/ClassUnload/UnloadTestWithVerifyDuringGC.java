@@ -90,5 +90,9 @@ public class UnloadTestWithVerifyDuringGC {
         triggerUnloadingWithConcurrentMark();
 
         ClassUnloadCommon.failIf(wb.isClassAlive(className), "should have been unloaded");
-    }
+
+        int unloadedRefcount = wb.getSymbolRefcount(loaderName);
+        System.out.println("Refcount of symbol " + loaderName + " is " + unloadedRefcount);
+        ClassUnloadCommon.failIf(unloadedRefcount != (loadedRefcount - 1), "Refcount must be decremented");
+   }
 }
