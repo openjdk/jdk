@@ -36,6 +36,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.ExecutableType;
@@ -196,34 +197,38 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
                                                Set<String> alreadyDocumented,
                                                Map<String, TypeMirror> typeSubstitutions,
                                                TagletWriter writer) {
-        Utils utils = writer.configuration().utils;
         Content result = writer.getOutputInstance();
-        if (utils.isMethod(holder)) {
-            Map<List<? extends ThrowsTree>, ExecutableElement> declaredExceptionTags = new LinkedHashMap<>();
-            for (TypeMirror declaredExceptionType : declaredExceptionTypes) {
-                Input input = new DocFinder.Input(utils, holder, this,
-                        utils.getTypeName(declaredExceptionType, false));
-                DocFinder.Output inheritedDoc = DocFinder.search(writer.configuration(), input);
-                if (inheritedDoc.tagList.isEmpty()) {
-                    String typeName = utils.getTypeName(declaredExceptionType, true);
-                    input = new DocFinder.Input(utils, holder, this, typeName);
-                    inheritedDoc = DocFinder.search(writer.configuration(), input);
-                }
-                if (!inheritedDoc.tagList.isEmpty()) {
-                    if (inheritedDoc.holder == null) {
-                        inheritedDoc.holder = holder;
-                    }
-                    List<? extends ThrowsTree> inheritedTags = inheritedDoc.tagList.stream()
-                            .map(t -> (ThrowsTree) t)
-                            .toList();
-                    declaredExceptionTags.put(inheritedTags, (ExecutableElement) inheritedDoc.holder);
-                }
-            }
-            result.add(throwsTagsOutput(declaredExceptionTags, writer, alreadyDocumented,
-                    typeSubstitutions, false));
-        } else if (!utils.isConstructor(holder)) {
-            throw new Error();
+        if (holder.getKind() != ElementKind.METHOD) {
+            // (Optimization.)
+            // Of all executable elements, only methods and constructors are documented.
+            // Of these two, only methods inherit documentation.
+            // Don't waste time on constructors.
+            assert holder.getKind() == ElementKind.CONSTRUCTOR : holder.getKind();
+            return result;
         }
+        Utils utils = writer.configuration().utils;
+        Map<List<? extends ThrowsTree>, ExecutableElement> declaredExceptionTags = new LinkedHashMap<>();
+        for (TypeMirror declaredExceptionType : declaredExceptionTypes) {
+            Input input = new DocFinder.Input(utils, holder, this,
+                    utils.getTypeName(declaredExceptionType, false));
+            DocFinder.Output inheritedDoc = DocFinder.search(writer.configuration(), input);
+            if (inheritedDoc.tagList.isEmpty()) {
+                String typeName = utils.getTypeName(declaredExceptionType, true);
+                input = new DocFinder.Input(utils, holder, this, typeName);
+                inheritedDoc = DocFinder.search(writer.configuration(), input);
+            }
+            if (!inheritedDoc.tagList.isEmpty()) {
+                if (inheritedDoc.holder == null) {
+                    inheritedDoc.holder = holder;
+                }
+                List<? extends ThrowsTree> inheritedTags = inheritedDoc.tagList.stream()
+                        .map(t -> (ThrowsTree) t)
+                        .toList();
+                declaredExceptionTags.put(inheritedTags, (ExecutableElement) inheritedDoc.holder);
+            }
+        }
+        result.add(throwsTagsOutput(declaredExceptionTags, writer, alreadyDocumented,
+                typeSubstitutions, false));
         return result;
     }
 
