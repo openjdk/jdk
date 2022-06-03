@@ -48,17 +48,6 @@ import java.util.concurrent.TimeUnit;
 @Fork(3)
 public class LookupAcquire {
 
-    /*
-       This test assesses acquiring lookup object only
-     */
-
-    public static MethodHandles.Lookup cached;
-
-    @Setup
-    public void setup() {
-        cached = MethodHandles.lookup();
-    }
-
     @Benchmark
     public MethodHandles.Lookup testPublicLookup() throws Exception {
         return MethodHandles.publicLookup();
