@@ -55,6 +55,7 @@
 #include "memory/universe.hpp"
 #include "prims/jvmtiTagMap.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/continuation.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/vmOperations.hpp"
@@ -1100,6 +1101,12 @@ void ZGenerationOld::mark_start() {
 
   // Update statistics
   stat_heap()->at_mark_start(_page_allocator->stats(this));
+
+  // Tell the sweeper that we start a marking cycle.
+  // Unlike other GCs, the color switch implicitly changes the nmethods
+  // to be armed, and the thread-local disarm values are lazily updated
+  // when JavaThreads wake up from safepoints.
+  Continuations::on_gc_marking_cycle_start();
 }
 
 void ZGenerationOld::mark_roots() {
@@ -1138,6 +1145,11 @@ bool ZGenerationOld::mark_end() {
 
   // Notify JVMTI that some tagmap entry objects may have died.
   JvmtiTagMap::set_needs_cleaning();
+
+  // Tell the sweeper that we finished a marking cycle.
+  // Unlike other GCs, we do not arm the nmethods
+  // when marking terminates.
+  Continuations::on_gc_marking_cycle_finish();
 
   return true;
 }
