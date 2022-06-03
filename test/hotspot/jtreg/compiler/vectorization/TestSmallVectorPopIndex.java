@@ -26,22 +26,22 @@
 * @bug 8287517
 * @summary Test bug fix for JDK-8287517 related to fuzzer test failure in x86_64
 * @requires vm.compiler2.enabled
-* @run main/othervm -Xcomp -XX:CompileOnly=compiler/vectorization/cr8287517.test -XX:MaxVectorSize=8 compiler.vectorization.cr8287517
+* @run main/othervm -Xcomp -XX:CompileOnly=compiler/vectorization/TestSmallVectorPopIndex.test -XX:MaxVectorSize=8 compiler.vectorization.TestSmallVectorPopIndex
 */
 
 package compiler.vectorization;
 
-public class cr8287517 {
+public class TestSmallVectorPopIndex {
     private static final int count = 1000;
 
     private static float[] f;
 
     public static void main(String args[]) {
-        cr8287517 t = new cr8287517();
+        TestSmallVectorPopIndex t = new TestSmallVectorPopIndex();
         t.test();
     }
 
-    public cr8287517() {
+    public TestSmallVectorPopIndex() {
         f = new float[count];
     }
 
