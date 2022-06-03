@@ -159,12 +159,14 @@ public class EtchedBorder extends AbstractBorder
         if (g instanceof Graphics2D) {
             Graphics2D g2d = (Graphics2D) g;
             at = g2d.getTransform();
-            g2d.setTransform(new AffineTransform());
             oldStk = g2d.getStroke();
-            stkWidth = (int) Math.floor(Math.min(at.getScaleX(), at.getScaleY()));
-            g2d.setStroke(new BasicStroke((float) stkWidth));
-            RenderingHints rend =
-                    new RenderingHints(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
+            if((at.getType() & AffineTransform.TYPE_MASK_SCALE) != 0) {
+                g2d.setTransform(new AffineTransform());
+                stkWidth = (int) Math.floor(Math.min(at.getScaleX(), at.getScaleY()));
+                g2d.setStroke(new BasicStroke((float) stkWidth));
+                RenderingHints rend =
+                        new RenderingHints(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
+            }
         }
 
         int w = (int) Math.floor(at.getScaleX()*width-1);
