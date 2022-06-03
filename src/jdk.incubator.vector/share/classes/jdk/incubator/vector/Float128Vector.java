@@ -24,7 +24,7 @@
  */
 package jdk.incubator.vector;
 
-import java.nio.ByteBuffer;
+import java.lang.foreign.MemorySegment;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntUnaryOperator;
@@ -463,6 +463,22 @@ final class Float128Vector extends FloatVector {
 
     @Override
     @ForceInline
+    public Float128Vector compress(VectorMask<Float> m) {
+        return (Float128Vector)
+            super.compressTemplate(Float128Mask.class,
+                                   (Float128Mask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Float128Vector expand(VectorMask<Float> m) {
+        return (Float128Vector)
+            super.expandTemplate(Float128Mask.class,
+                                   (Float128Mask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
     public Float128Vector selectFrom(Vector<Float> v) {
         return (Float128Vector)
             super.selectFromTemplate((Float128Vector) v);  // specialize
@@ -641,6 +657,15 @@ final class Float128Vector extends FloatVector {
         public Float128Mask not() {
             return xor(maskAll(true));
         }
+
+        @Override
+        @ForceInline
+        public Float128Mask compress() {
+            return (Float128Mask)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
+                Float128Vector.class, Float128Mask.class, ETYPE, VLENGTH, null, this,
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
+        }
+
 
         // Binary operations
 
@@ -834,29 +859,15 @@ final class Float128Vector extends FloatVector {
     @ForceInline
     @Override
     final
-    FloatVector fromByteArray0(byte[] a, int offset) {
-        return super.fromByteArray0Template(a, offset);  // specialize
+    FloatVector fromMemorySegment0(MemorySegment ms, long offset) {
+        return super.fromMemorySegment0Template(ms, offset);  // specialize
     }
 
     @ForceInline
     @Override
     final
-    FloatVector fromByteArray0(byte[] a, int offset, VectorMask<Float> m) {
-        return super.fromByteArray0Template(Float128Mask.class, a, offset, (Float128Mask) m);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    FloatVector fromByteBuffer0(ByteBuffer bb, int offset) {
-        return super.fromByteBuffer0Template(bb, offset);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    FloatVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Float> m) {
-        return super.fromByteBuffer0Template(Float128Mask.class, bb, offset, (Float128Mask) m);  // specialize
+    FloatVector fromMemorySegment0(MemorySegment ms, long offset, VectorMask<Float> m) {
+        return super.fromMemorySegment0Template(Float128Mask.class, ms, offset, (Float128Mask) m);  // specialize
     }
 
     @ForceInline
@@ -884,22 +895,8 @@ final class Float128Vector extends FloatVector {
     @ForceInline
     @Override
     final
-    void intoByteArray0(byte[] a, int offset) {
-        super.intoByteArray0Template(a, offset);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    void intoByteArray0(byte[] a, int offset, VectorMask<Float> m) {
-        super.intoByteArray0Template(Float128Mask.class, a, offset, (Float128Mask) m);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    void intoByteBuffer0(ByteBuffer bb, int offset, VectorMask<Float> m) {
-        super.intoByteBuffer0Template(Float128Mask.class, bb, offset, (Float128Mask) m);
+    void intoMemorySegment0(MemorySegment ms, long offset, VectorMask<Float> m) {
+        super.intoMemorySegment0Template(Float128Mask.class, ms, offset, (Float128Mask) m);
     }
 
 
@@ -908,3 +905,4 @@ final class Float128Vector extends FloatVector {
     // ================================================
 
 }
+

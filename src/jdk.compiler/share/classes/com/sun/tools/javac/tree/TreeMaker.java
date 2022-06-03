@@ -500,6 +500,13 @@ public class TreeMaker implements JCTree.Factory {
         return tree;
     }
 
+    public JCRecordPattern RecordPattern(JCExpression deconstructor, List<JCPattern> nested,
+                                         JCVariableDecl var) {
+        JCRecordPattern tree = new JCRecordPattern(deconstructor, nested, var);
+        tree.pos = pos;
+        return tree;
+    }
+
     public JCArrayAccess Indexed(JCExpression indexed, JCExpression index) {
         JCArrayAccess tree = new JCArrayAccess(indexed, index);
         tree.pos = pos;
@@ -1046,8 +1053,8 @@ public class TreeMaker implements JCTree.Factory {
         return VarDef(new VarSymbol(PARAMETER, name, argtype, owner), null);
     }
 
-    /** Create a a list of value parameter trees x0, ..., xn from a list of
-     *  their types and an their owner.
+    /** Create a list of value parameter trees x0, ..., xn from a list of
+     *  their types and their owner.
      */
     public List<JCVariableDecl> Params(List<Type> argtypes, Symbol owner) {
         ListBuffer<JCVariableDecl> params = new ListBuffer<>();

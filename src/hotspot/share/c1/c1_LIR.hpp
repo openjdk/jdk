@@ -198,14 +198,14 @@ class LIR_Const: public LIR_OprPtr {
 class LIR_Opr {
  public:
   // value structure:
-  //     data       opr-type opr-kind
-  // +--------------+-------+-------+
-  // [max...........|7 6 5 4|3 2 1 0]
-  //                               ^
-  //                         is_pointer bit
+  //          data        other-non-data opr-type opr-kind
+  // +-------------------+--------------+-------+-----+
+  // [max...............................|6 5 4 3|2 1 0]
+  //                                                 ^
+  //                                           is_pointer bit
   //
   // lowest bit cleared, means it is a structure pointer
-  // we need  4 bits to represent types
+  // we need 4 bits to represent types
 
  private:
   friend class LIR_OprFact;
@@ -236,13 +236,13 @@ class LIR_Opr {
     , is_xmm_bits    = 1
     , last_use_bits  = 1
     , is_fpu_stack_offset_bits = 1        // used in assertion checking on x86 for FPU stack slot allocation
-    , non_data_bits  = pointer_bits + kind_bits + type_bits + size_bits + destroys_bits + virtual_bits
+    , non_data_bits  = kind_bits + type_bits + size_bits + destroys_bits + virtual_bits
                        + is_xmm_bits + last_use_bits + is_fpu_stack_offset_bits
     , data_bits      = BitsPerInt - non_data_bits
     , reg_bits       = data_bits / 2      // for two registers in one value encoding
   };
 
-  enum OprShift {
+  enum OprShift : uintptr_t {
       kind_shift     = 0
     , type_shift     = kind_shift     + kind_bits
     , size_shift     = type_shift     + type_bits
@@ -275,7 +275,7 @@ class LIR_Opr {
     , no_type_mask   = (int)(~(type_mask | last_use_mask | is_fpu_stack_offset_mask))
   };
 
-  uintptr_t data() const                         { return value() >> data_shift; }
+  uint32_t data() const                          { return (uint32_t)value() >> data_shift; }
   int lo_reg_half() const                        { return data() & lower_reg_mask; }
   int hi_reg_half() const                        { return (data() >> reg_bits) & lower_reg_mask; }
   OprKind kind_field() const                     { return (OprKind)(value() & kind_mask); }
@@ -299,7 +299,9 @@ class LIR_Opr {
 
   enum {
     vreg_base = ConcreteRegisterImpl::number_of_registers,
-    vreg_max = (1 << data_bits) - 1
+    data_max = (1 << data_bits) - 1,      // max unsigned value for data bit field
+    vreg_limit =  10000,                  // choose a reasonable limit,
+    vreg_max = MIN2(vreg_limit, data_max) // and make sure if fits in the bit field
   };
 
   static inline LIR_Opr illegalOpr();
@@ -755,7 +757,6 @@ class LIR_OprFact: public AllStatic {
     res->validate_type();
     assert(res->vreg_number() == index, "conversion check");
     assert(index >= LIR_Opr::vreg_base, "must start at vreg_base");
-    assert(index <= (max_jint >> LIR_Opr::data_shift), "index is too big");
 
     // old-style calculation; check if old and new method are equal
     LIR_Opr::OprType t = as_OprType(type);
@@ -834,7 +835,7 @@ class LIR_OprFact: public AllStatic {
 
 #ifdef ASSERT
     assert(index >= 0, "index must be positive");
-    assert(index <= (max_jint >> LIR_Opr::data_shift), "index is too big");
+    assert(index == (int)res->data(), "conversion check");
 
     LIR_Opr old_res = (LIR_Opr)(intptr_t)((index << LIR_Opr::data_shift) |
                                           LIR_Opr::stack_value           |

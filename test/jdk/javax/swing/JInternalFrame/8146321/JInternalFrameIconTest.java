@@ -268,14 +268,12 @@ public class JInternalFrameIconTest {
                     int red2 = (color2 >> 16) & 0x000000FF;
                     int green2 = (color2 >> 8) & 0x000000FF;
                     int blue2 = (color2) & 0x000000FF;
-                    if (red1 != red2 || green1 != green2 || blue1 != blue2) {
-                        ++mismatchCounter;
-                        if ((Math.abs(red1 - red2) > colorTolerance)
-                                || (Math.abs(green1 - green2) > colorTolerance)
-                                || (Math.abs(blue1 - blue2) > colorTolerance)) {
+                    if ((Math.abs(red1 - red2) > colorTolerance)
+                            || (Math.abs(green1 - green2) > colorTolerance)
+                            || (Math.abs(blue1 - blue2) > colorTolerance)) {
 
-                            flag = false;
-                        }
+                        ++mismatchCounter;
+                        flag = false;
                     }
                 }
             }

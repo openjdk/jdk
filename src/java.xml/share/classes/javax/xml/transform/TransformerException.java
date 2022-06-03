@@ -278,7 +278,7 @@ public class TransformerException extends Exception {
     }
 
     /**
-     * Print the the trace of methods from where the error
+     * Print the trace of methods from where the error
      * originated.  This will trace all nested exception
      * objects, as well as this object.
      */
@@ -288,7 +288,7 @@ public class TransformerException extends Exception {
     }
 
     /**
-     * Print the the trace of methods from where the error
+     * Print the trace of methods from where the error
      * originated.  This will trace all nested exception
      * objects, as well as this object.
      * @param s The stream where the dump will be sent to.
@@ -299,7 +299,7 @@ public class TransformerException extends Exception {
     }
 
     /**
-     * Print the the trace of methods from where the error
+     * Print the trace of methods from where the error
      * originated.  This will trace all nested exception
      * objects, as well as this object.
      * @param s The writer where the dump will be sent to.

@@ -46,6 +46,7 @@
 
 #include <errno.h>
 #include <spawn.h>
+#include <unistd.h>
 
 struct NSAppArgs {
     int argc;
@@ -722,6 +723,20 @@ static void* ThreadJavaMain(void* args) {
     return (void*)(intptr_t)JavaMain(args);
 }
 
+static size_t adjustStackSize(size_t stack_size) {
+    long page_size = getpagesize();
+    if (stack_size % page_size == 0) {
+        return stack_size;
+    } else {
+        long pages = stack_size / page_size;
+        // Ensure we don't go over limit
+        if (stack_size <= SIZE_MAX - page_size) {
+            pages++;
+        }
+        return page_size * pages;
+    }
+}
+
 /*
  * Block current thread and continue execution in a new thread.
  */
@@ -734,7 +749,7 @@ CallJavaMainInNewThread(jlong stack_size, void* args) {
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
     if (stack_size > 0) {
-        pthread_attr_setstacksize(&attr, stack_size);
+        pthread_attr_setstacksize(&attr, adjustStackSize(stack_size));
     }
     pthread_attr_setguardsize(&attr, 0); // no pthread guard page on java threads
 

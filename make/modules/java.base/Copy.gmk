@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -233,7 +233,7 @@ $(eval $(call SetupCopyLegalFiles, COPY_LEGAL, \
 TARGETS += $(COPY_LEGAL)
 
 ################################################################################
-# Optionally copy libffi.so.? into the the image
+# Optionally copy libffi.so.? into the image
 
 ifeq ($(ENABLE_LIBFFI_BUNDLING), true)
   $(eval $(call SetupCopyFiles, COPY_LIBFFI, \
@@ -247,7 +247,7 @@ ifeq ($(ENABLE_LIBFFI_BUNDLING), true)
 endif
 
 ################################################################################
-# Optionally copy hsdis into the the image
+# Optionally copy hsdis into the image
 
 ifeq ($(ENABLE_HSDIS_BUNDLING), true)
   HSDIS_NAME := hsdis-$(OPENJDK_TARGET_CPU_LEGACY_LIB)$(SHARED_LIBRARY_SUFFIX)
