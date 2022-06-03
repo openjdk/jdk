@@ -78,9 +78,9 @@ void launchApp() {
         JP_CATCH_ALL;
 
         if (!homeDir.empty()) {
-            appLauncher.addCfgFileLookupDir(FileUtils::mkpath() 
+            appLauncher.addCfgFileLookupDir(FileUtils::mkpath()
                     << homeDir << ".local" << ownerPackage.name());
-            appLauncher.addCfgFileLookupDir(FileUtils::mkpath() 
+            appLauncher.addCfgFileLookupDir(FileUtils::mkpath()
                     << homeDir << "." + ownerPackage.name());
         }
     }

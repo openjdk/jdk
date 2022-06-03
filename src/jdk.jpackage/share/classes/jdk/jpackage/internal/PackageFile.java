@@ -43,7 +43,7 @@ public final class PackageFile {
                 .appDirectory()
                 .resolve(FILENAME);
     }
-    
+
     PackageFile(String packageName) {
         Objects.requireNonNull(packageName);
         this.packageName = packageName;
