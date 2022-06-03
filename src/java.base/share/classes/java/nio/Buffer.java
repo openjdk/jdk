@@ -768,14 +768,7 @@ public abstract sealed class Buffer
     }
 
     final void checkState() {
-        MemorySessionImpl.State state = state();
-        if (state != null) {
-            try {
-                state.checkValidState();
-            } catch (ScopedMemoryAccess.ScopedAccessError e) {
-                throw new IllegalStateException("This segment is already closed");
-            }
-        }
+        MemorySessionImpl.checkValidState(segment.session());
     }
 
     static {

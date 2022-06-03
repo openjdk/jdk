@@ -32,10 +32,10 @@ import java.lang.ref.Cleaner;
 import jdk.internal.vm.annotation.ForceInline;
 
 /**
- * A confined session, which features an owner thread. The liveness check features an additional
- * confinement check - that is, calling any operation on this session from a thread other than the
- * owner thread will result in an exception. Because of this restriction, checking the liveness bit
- * can be performed in plain mode.
+ * A confined session state, which features an owner thread. Because of this restriction, acquire and release
+ * can be implemented cheaply, with a plain field update. Closing the state is also cheap (since the liveness
+ * bit cannot be updated concurrently from other threads). Some extra complexity is required to support release
+ * operations triggered by threads other than the owner thread, which we support.
  */
 public final class ConfinedSessionState extends MemorySessionImpl.State {
 

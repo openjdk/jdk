@@ -58,13 +58,13 @@ import jdk.internal.vm.vector.VectorSupport;
  * a memory region while another thread is releasing it.
  * <p>
  * This class provides tools to manage races when multiple threads are accessing and/or releasing the same memory
- * region concurrently. More specifically, when a thread wants to release a memory region, it should call the
- * {@link MemorySessionImpl.State#close()} method. This method initiates thread-local handshakes with all the other VM threads,
- * which are then stopped one by one. If any thread is found accessing a resource associated to the very memory state
- * being closed, the handshake fails, and the state cannot be closed.
+ * session concurrently. More specifically, when a thread wants to close a memory session, it should call the
+ * {@link ScopedMemoryAccess#closeScope(MemorySessionImpl.State)} method. This method initiates thread-local handshakes
+ * with all the other VM threads, which are then stopped one by one. If any thread is found accessing a resource associated
+ * to the very memory session being closed, the handshake fails, and the session will not be closed.
  * <p>
  * This synchronization strategy relies on the idea that accessing memory is atomic with respect to checking the
- * validity of the state associated with that memory region - that is, a thread that wants to perform memory access will be
+ * validity of the session associated with that memory region - that is, a thread that wants to perform memory access will be
  * suspended either <em>before</em> a liveness check or <em>after</em> the memory access. To ensure this atomicity,
  * all methods in this class are marked with the special {@link Scoped} annotation, which is recognized by the VM,
  * and used during the thread-local handshake to detect (and stop) threads performing potentially problematic memory access

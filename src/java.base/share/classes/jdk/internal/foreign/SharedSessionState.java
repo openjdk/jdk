@@ -35,9 +35,9 @@ import jdk.internal.ref.CleanerFactory;
 import jdk.internal.vm.annotation.ForceInline;
 
 /**
- * A shared session, which can be shared across multiple threads. Closing a shared session has to ensure that
- * (i) only one thread can successfully close a session (e.g. in a close vs. close race) and that
- * (ii) no other thread is accessing the memory associated with this session while the segment is being
+ * A shared session state, which can be manipulated by multiple threads. Closing a shared state has to ensure that
+ * (i) only one thread can successfully close the state (e.g. in a close vs. close race) and that
+ * (ii) no other thread is accessing the memory associated with this state while the state is being
  * closed. To ensure the former condition, a CAS is performed on the liveness bit. Ensuring the latter
  * is trickier, and require a complex synchronization protocol (see {@link jdk.internal.misc.ScopedMemoryAccess}).
  * Since it is the responsibility of the closing thread to make sure that no concurrent access is possible,
@@ -169,11 +169,6 @@ public class SharedSessionState extends MemorySessionImpl.State {
         @Override
         public void release() {
             Reference.reachabilityFence(this);
-        }
-
-        @ForceInline
-        public void checkValidState() {
-            // do nothing
         }
     }
 

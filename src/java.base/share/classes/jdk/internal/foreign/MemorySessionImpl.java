@@ -32,6 +32,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.lang.ref.Cleaner;
 import java.lang.ref.Reference;
+import java.nio.ByteBuffer;
 import java.util.Objects;
 
 import jdk.internal.misc.ScopedMemoryAccess;
@@ -39,16 +40,13 @@ import jdk.internal.vm.annotation.ForceInline;
 
 /**
  * This class manages the temporal bounds associated with a memory segment as well
- * as thread confinement. A session has a liveness bit, which is updated when the session is closed
- * (this operation is triggered by {@link MemorySession#close()}). This bit is consulted prior
- * to memory access (see {@link #checkValidState()}).
- * There are two kinds of memory session: confined memory session and shared memory session.
- * A confined memory session has an associated owner thread that confines some operations to
- * associated owner thread such as {@link #close()} or {@link #checkValidState()}.
- * Shared sessions do not feature an owner thread - meaning their operations can be called, in a racy
- * manner, by multiple threads. To guarantee temporal safety in the presence of concurrent thread,
- * shared sessions use a more sophisticated synchronization mechanism, which guarantees that no concurrent
- * access is possible when a session is being closed (see {@link jdk.internal.misc.ScopedMemoryAccess}).
+ * as thread confinement. A session is associated with a {@link State#state liveness bit},
+ * which is updated when the session is closed (this operation is triggered by {@link MemorySession#close()}).
+ * This bit is consulted prior to memory access (see {@link State#checkValidState()}).
+ * <p>
+ * Since the API allows the creation of non-closeable session views, the implementation of this class encapsulates
+ * the state of a memory session into a separate class, namely {@link State}. This allows to create views that are
+ * backed by the very same state.
  */
 public non-sealed class MemorySessionImpl implements MemorySession, SegmentAllocator {
 
@@ -115,7 +113,19 @@ public non-sealed class MemorySessionImpl implements MemorySession, SegmentAlloc
         };
     }
 
-    @ForceInline
+    @Override
+    public final boolean equals(Object obj) {
+        return obj instanceof MemorySessionImpl sessionImpl &&
+                sessionImpl.state == state;
+    }
+
+    @Override
+    public final int hashCode() {
+        return state.hashCode();
+    }
+
+    // helper functions
+
     public static void checkValidState(MemorySession session) {
         ((MemorySessionImpl)session).state.checkValidStateWrapException();
     }
@@ -129,17 +139,7 @@ public non-sealed class MemorySessionImpl implements MemorySession, SegmentAlloc
         }
     }
 
-    @Override
-    public final boolean equals(Object obj) {
-        return obj instanceof MemorySessionImpl sessionImpl &&
-                sessionImpl.state == state;
-    }
-
-    @Override
-    public final int hashCode() {
-        return state.hashCode();
-    }
-
+    /** The global memory session */
     public final static MemorySessionImpl GLOBAL = new MemorySessionImpl(new SharedSessionState.OfImplicit()) {
 
         @Override
@@ -153,6 +153,8 @@ public non-sealed class MemorySessionImpl implements MemorySession, SegmentAlloc
             return false;
         }
     };
+
+    // session factories
 
     public final static MemorySessionImpl heapSession(Object o) {
         return createImplicit(o);
@@ -177,6 +179,20 @@ public non-sealed class MemorySessionImpl implements MemorySession, SegmentAlloc
         };
     }
 
+    /**
+     * This class is used to model the state of a memory session. It contains a {@link State#state liveness bit},
+     * which can also be used to implement reference counting. There are two three main kinds of session states:
+     * {@linkplain ConfinedSessionState confined state}, {@link SharedSessionState shared state} and
+     * {@link SharedSessionState.OfImplicit implicit state}, each of which is implemented in its own subclass.
+     * Different kinds of session state implementations feature different performance characteristics: for instance
+     * closing a confined session state is much cheaper than closing a shared session state.
+     * <p>
+     * Memory session state support reference counting: the state can be acquired and released; when the state
+     * is in the acquired state, it cannot be closed until it is released. This is useful to make sure that
+     * memory sessions cannot be closed prematurely, e.g. while a native function call is executing,
+     * or while the segment is manipulated by some asynchronous IO operation, like
+     * {@link java.nio.channels.AsynchronousSocketChannel#read(ByteBuffer)}.
+     */
     public abstract static class State {
 
         static final int OPEN = 0;
@@ -209,12 +225,6 @@ public non-sealed class MemorySessionImpl implements MemorySession, SegmentAlloc
                     null;
         }
 
-        /**
-         * Closes this session, executing any cleanup action (where provided).
-         *
-         * @throws IllegalStateException if this session is already closed or if this is
-         *                               a confined session and this method is called outside of the owner thread.
-         */
         public final void close() {
             try {
                 justClose();
@@ -248,8 +258,16 @@ public non-sealed class MemorySessionImpl implements MemorySession, SegmentAlloc
             return owner;
         }
 
+        /*
+         * This is the liveness check used by classes such as ScopedMemoryAccess. To allow for better inlining,
+         * this method is kept monomorphic. Note that we cannot create exceptions while executing this method,
+         * as doing so will end up creating a deep stack trace; this interferes with the algorithm we use
+         * to make sure that no other thread is accessing a shared memory session while the session is closed.
+         * Note also that this routine performs only plain access checks: this is by design, see comments
+         * in ScopedMemoryAccess.
+         */
         @ForceInline
-        public void checkValidState() {
+        public final void checkValidState() {
             if (owner != null && owner != Thread.currentThread()) {
                 throw WRONG_THREAD;
             } else if (state < OPEN) {
@@ -260,6 +278,8 @@ public non-sealed class MemorySessionImpl implements MemorySession, SegmentAlloc
         public abstract void acquire();
 
         public abstract void release();
+
+        // helper functions to centralize error handling
 
         static IllegalStateException tooManyAcquires() {
             return new IllegalStateException("Session acquire limit exceeded");
@@ -282,7 +302,7 @@ public non-sealed class MemorySessionImpl implements MemorySession, SegmentAlloc
         static final ScopedMemoryAccess.ScopedAccessError WRONG_THREAD = new ScopedMemoryAccess.ScopedAccessError(State::wrongThread);
 
         /**
-         * A list of all cleanup actions associated with a memory session. Cleanup actions are modelled as instances
+         * A list of all cleanup actions associated with a memory session state. Cleanup actions are modelled as instances
          * of the {@link ResourceCleanup} class, and, together, form a linked list. Depending on whether a session
          * is shared or confined, different implementations of this class will be used, see {@link ConfinedSessionState.ConfinedList}
          * and {@link SharedSessionState.SharedList}.
@@ -307,6 +327,11 @@ public non-sealed class MemorySessionImpl implements MemorySession, SegmentAlloc
             }
         }
 
+        /**
+         * This class is used to model a resource that can be managed by a memory session. It features
+         * a method that can be used to cleanup the resource (this method is typically called when
+         * the memory session is closed).
+         */
         public abstract static class ResourceCleanup implements Runnable {
             ResourceCleanup next;
 
