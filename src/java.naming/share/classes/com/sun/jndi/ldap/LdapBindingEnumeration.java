@@ -58,6 +58,7 @@ final class LdapBindingEnumeration
         try {
             Object obj = null;
             String atom = getAtom(dn);
+            LdapCtx homeCtx = getHomeCtx();
 
             if (attrs.get(Obj.JAVA_ATTRIBUTES[Obj.CLASSNAME]) != null) {
                 // serialized object or object reference
@@ -70,15 +71,15 @@ final class LdapBindingEnumeration
             }
             if (obj == null) {
                 // DirContext object
-                obj = new LdapCtx(homeCtx(), dn);
+                obj = new LdapCtx(homeCtx, dn);
             }
 
             CompositeName cn = new CompositeName();
             cn.add(atom);
 
             try {
-                obj = DirectoryManager.getObjectInstance(obj, cn, homeCtx(),
-                    homeCtx().envprops, attrs);
+                obj = DirectoryManager.getObjectInstance(obj, cn, homeCtx,
+                    homeCtx.envprops, attrs);
 
             } catch (NamingException e) {
                 throw e;
@@ -94,7 +95,7 @@ final class LdapBindingEnumeration
             Binding binding;
             if (respCtls != null) {
                 binding = new BindingWithControls(cn.toString(), obj,
-                                     homeCtx().convertControls(respCtls));
+                                     homeCtx.convertControls(respCtls));
             } else {
                 binding = new Binding(cn.toString(), obj);
             }

@@ -47,6 +47,7 @@ final class LdapNamingEnumeration
     protected NameClassPair createItem(String dn, Attributes attrs,
             Vector<Control> respCtls) throws NamingException {
         try {
+            LdapCtx homeCtx = getHomeCtx();
             Attribute attr;
             String className = null;
 
@@ -63,7 +64,7 @@ final class LdapNamingEnumeration
             if (respCtls != null) {
                 ncp = new NameClassPairWithControls(
                         cn.toString(), className,
-                        homeCtx().convertControls(respCtls));
+                        homeCtx.convertControls(respCtls));
             } else {
                 ncp = new NameClassPair(cn.toString(), className);
             }
