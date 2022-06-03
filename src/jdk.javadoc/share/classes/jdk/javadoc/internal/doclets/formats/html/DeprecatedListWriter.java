@@ -84,7 +84,8 @@ public class DeprecatedListWriter extends SummaryListWriter<DeprecatedAPIListBui
             Content tabs = HtmlTree.DIV(HtmlStyle.checkboxes, contents.getContent(
                     "doclet.Deprecated_API_Checkbox_Label"));
             for (int i = 0; i < releases.size(); i++) {
-                tabs.add(getReleaseCheckbox(releases.get(i), i));
+                // Table column ids are 1-based
+                tabs.add(getReleaseCheckbox(releases.get(i), i + 1));
             }
             content.add(tabs);
         }
@@ -100,8 +101,7 @@ public class DeprecatedListWriter extends SummaryListWriter<DeprecatedAPIListBui
                 ? contents.getContent("doclet.Deprecated_API_Checkbox_Other_Releases")
                 : Text.of(name);
         HtmlId htmlId = HtmlId.of("release-" + index);
-        // Table column ids are 1-based
-        String releaseId = isOtherReleases ? "" : Integer.toString(index + 1);
+        String releaseId = isOtherReleases ? "" : Integer.toString(index);
         return HtmlTree.LABEL(htmlId.name(),
                         HtmlTree.INPUT("checkbox", htmlId)
                                 .put(HtmlAttr.CHECKED, "")
