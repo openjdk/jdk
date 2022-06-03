@@ -367,13 +367,9 @@ void JvmtiEventControllerPrivate::enter_interp_only_mode(JvmtiThreadState *state
     return;  // EnterInterpOnlyModeClosure will be executed right after mount.
   }
   EnterInterpOnlyModeClosure hs;
-  if (target->is_handshake_safe_for(current)) {
-    hs.do_thread(target);
-  } else {
-    assert(state->get_thread() != NULL, "sanity check");
-    Handshake::execute(&hs, target);
-    guarantee(hs.completed(), "Handshake failed: Target thread is not alive?");
-  }
+  assert(state->get_thread() != NULL, "sanity check");
+  Handshake::execute(&hs, target);
+  guarantee(hs.completed(), "Handshake failed: Target thread is not alive?");
 }
 
 
