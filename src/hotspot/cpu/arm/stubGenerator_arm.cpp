@@ -3009,13 +3009,16 @@ class StubGenerator: public StubCodeGenerator {
     __ mov(c_rarg0, Rthread);
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::write_checkpoint), c_rarg0);
     __ reset_last_Java_frame(Rtemp);
-    Label null_jobject;
-    __ cbz(R0, null_jobject);
-    DecoratorSet decorators = ACCESS_READ | IN_NATIVE;
+
+    // R0 is jobject handle result, unpack and process it through a barrier.
+    Label L_null_jobject;
+    __ cbz(R0, L_null_jobject);
+
     BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-    // need to check if tmp regs are actually used
-    bs->load_at(masm, decorators, T_OBJECT, R0, Address(R0, 0), Rtemp, R1, R2);
-    __ bind(null_jobject);
+    bs->load_at(masm, ACCESS_READ | IN_NATIVE, T_OBJECT, R0, Address(R0, 0), Rtemp, R1, R2);
+
+    __ bind(L_null_jobject);
+
     __ raw_pop(R1, R2, LR);
     __ ret();
 
