@@ -46,6 +46,7 @@ import java.util.concurrent.ThreadFactory;
  * @summary Verifies that when the VM event is sent, sampled events are also collected.
  * @requires vm.jvmti
  * @requires !vm.graal.enabled
+ * @requires vm.continuations
  * @build Frame HeapMonitor
  * @compile --enable-preview -source ${jdk.version} HeapMonitorVMEventsTest.java
  * @run main/othervm/native --enable-preview
