@@ -83,11 +83,6 @@ public class JFileChooserAccessibleDescriptionTest {
             SwingUtilities.invokeAndWait(() -> description =
                 jFileChooser.getAccessibleContext().getAccessibleDescription());
 
-            robot.keyPress(KeyEvent.VK_ALT);
-            robot.keyPress(KeyEvent.VK_C);
-            robot.keyRelease(KeyEvent.VK_C);
-            robot.keyRelease(KeyEvent.VK_ALT);
-
             if (description != null) {
                 System.out.println(
                     "Accessibility Description " + "for JFileChooser is Set");
