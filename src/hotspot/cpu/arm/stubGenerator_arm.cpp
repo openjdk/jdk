@@ -2989,21 +2989,46 @@ class StubGenerator: public StubCodeGenerator {
   // It returns a jobject handle to the event writer.
   // The handle is dereferenced and the return value is the event writer oop.
   static RuntimeStub* generate_jfr_write_checkpoint() {
-    int insts_size = 512;
-    int locs_size = 64;
-    CodeBuffer code("jfr_write_checkpoint", insts_size, locs_size);
-    OopMapSet* oop_maps = new OopMapSet();
+    CodeBuffer code("jfr_write_checkpoint", 512, 64);
     MacroAssembler* masm = new MacroAssembler(&code);
     MacroAssembler* _masm = masm;
 
-    address start = __ pc();
-    __ unimplemented();
-    int frame_complete = __ pc() - start;
+    int framesize = 0; // FIXME: Really?
 
-    RuntimeStub* stub = // codeBlob framesize is in words (not VMRegImpl::slot_size)
-      RuntimeStub::new_runtime_stub("jfr_write_checkpoint", &code, frame_complete,
-                                    0,
-                                    oop_maps, false);
+    address start = __ pc();
+    // FIXME: No frame setup?
+    address the_pc = __ pc();
+
+    int frame_complete = the_pc - start;
+
+    __ set_last_Java_frame(SP, FP, false, Rtemp);
+    __ mov(c_rarg0, Rthread);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::write_checkpoint), c_rarg0);
+    __ reset_last_Java_frame(Rtemp);
+
+    // R0 is jobject handle result, unpack and process it through a barrier.
+    Label L_null_jobject;
+    __ cmp(R0, 0);
+    __ b(L_null_jobject, eq);
+
+    // FIXME: Call barrier here.
+
+    __ bind(L_null_jobject);
+
+    __ mov(R0, 0);
+    __ ret();
+
+    OopMapSet* oop_maps = new OopMapSet();
+    OopMap* map = new OopMap(framesize, 1);
+    oop_maps->add_gc_map(frame_complete, map);
+
+    RuntimeStub* stub =
+      RuntimeStub::new_runtime_stub(code.name(),
+                                    &code,
+                                    frame_complete,
+                                    (framesize >> (LogBytesPerWord - LogBytesPerInt)),
+                                    oop_maps,
+                                    false);
     return stub;
   }
 
