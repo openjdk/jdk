@@ -102,13 +102,15 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
       return _cm->has_aborted();
     }
 
-    // Checks the top at rebuild start value for the given region. If the value
-    // is NULL the region has either:
+    // Returns whether the top at rebuild start value for the given region indicates
+    // that there is some rebuild or scrubbing work.
+    //
+    // Based on the results of G1RemSetTrackingPolicy::needs_scan_for_rebuild(),
+    // the value may be changed to nullptr during rebuilding if the region has either:
     //  - been allocated after rebuild start, or
     //  - been eagerly reclaimed by a young collection (only humongous)
-    // In these cases we do not need to scan through the given region.
     bool should_rebuild_or_scrub(HeapRegion* hr) const {
-      return _cm->top_at_rebuild_start(hr->hrm_index()) != NULL;
+      return _cm->top_at_rebuild_start(hr->hrm_index()) != nullptr;
     }
 
     // Helper used by both humongous objects and when chunking an object larger than the
@@ -195,8 +197,6 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
           return true;
         }
       }
-
-      hr->note_end_of_scrubbing();
       return false;
     }
 
@@ -229,6 +229,9 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
         return true;
       }
 
+      // Scrubbing completed for this region - notify that we are done with it, resetting
+      // pb to bottom.
+      hr->note_end_of_scrubbing();
       // Assert that the size of marked objects from the marking matches
       // the size of the objects which we scanned to rebuild remembered sets.
       assert_marked_words(hr);
@@ -305,10 +308,10 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
 
       bool mark_aborted;
       if (hr->needs_scrubbing()) {
-        // Old and open archive regions need to have their dead objects scrubbed
-        // to make sure the region is parsable using object sizes.
+        // This is a region with potentially unparsable (dead) objects.
         mark_aborted = scan_and_scrub_region(hr, pb);
-      } else if (hr->is_humongous()) {
+      } else {
+        assert(hr->is_humongous(), "must be, but %u is %s", hr->hrm_index(), hr->get_short_type_str());
         // No need to scrub humongous, but we should scan it to rebuild remsets.
         mark_aborted = scan_humongous_region(hr, pb);
       }
