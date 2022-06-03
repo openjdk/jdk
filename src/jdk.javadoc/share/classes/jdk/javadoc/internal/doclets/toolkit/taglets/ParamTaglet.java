@@ -105,7 +105,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
     }
 
     /**
-     * Given a list of parameters, returns a name-position map.
+     * Given a list of parameter elements, returns a name-position map.
      * @param params the list of parameters from a type or an executable member
      * @return a name-position map
      */
@@ -143,13 +143,15 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
     }
 
     /**
-     * Returns a {@code Content} representation of a list of {@code ParamTree}.
+     * Returns a {@code Content} representation of a list of {@code ParamTree}
+     * of the specified kind.
      *
-     * <p> This method correlates {@code ParamTree} with {@code Element} by
-     * name. Once it's done, a particular {@code ParamTree} is addressed by the
-     * position (index) of the correlated {@code Element} in the list of formal
-     * parameter elements. This is needed for documentation inheritance as
-     * an inherited parameter may be named differently. </p>
+     * <p> This method correlates a {@code ParamTree} with a parameter
+     * {@code Element} by name. Once it's done, a particular {@code ParamTree}
+     * is addressed by the position (index) of the correlated {@code Element}
+     * in the list of parameter elements. This is needed for documentation
+     * inheritance because the corresponding parameters in the inheritance
+     * hierarchy may be named differently.
      *
      * <p> This method warns about {@code @param} tags that do not map to
      * parameter elements and param tags that are duplicated. </p>
@@ -158,16 +160,16 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
      */
     private Content convertParams(Element e,
                                   ParamKind kind,
-                                  List<? extends ParamTree> paramTags,
-                                  List<? extends Element> formalParameters,
+                                  List<? extends ParamTree> tags,
+                                  List<? extends Element> parameters,
                                   TagletWriter writer) {
         Map<String, ParamTree> tagOfPosition = new HashMap<>();
         Messages messages = writer.configuration().getMessages();
         CommentHelper ch = writer.configuration().utils.getCommentHelper(e);
-        if (!paramTags.isEmpty()) {
-            Map<String, String> positionOfName = mapNameToPosition(writer.configuration().utils, formalParameters);
-            for (ParamTree dt : paramTags) {
-                String name = ch.getParameterName(dt);
+        if (!tags.isEmpty()) {
+            Map<String, String> positionOfName = mapNameToPosition(writer.configuration().utils, parameters);
+            for (ParamTree tag : tags) {
+                String name = ch.getParameterName(tag);
                 String paramName = kind == ParamKind.TYPE_PARAMETER ? "<" + name + ">" : name;
                 if (!positionOfName.containsKey(name)) {
                     String key = switch (kind) {
@@ -175,7 +177,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
                         case TYPE_PARAMETER -> "doclet.TypeParameters_warn";
                         case RECORD_COMPONENT -> "doclet.RecordComponents_warn";
                     };
-                    messages.warning(ch.getDocTreePath(dt), key, paramName);
+                    messages.warning(ch.getDocTreePath(tag), key, paramName);
                 }
                 String position = positionOfName.get(name);
                 if (position != null) {
@@ -185,9 +187,9 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
                             case TYPE_PARAMETER -> "doclet.TypeParameters_dup_warn";
                             case RECORD_COMPONENT -> "doclet.RecordComponents_dup_warn";
                         };
-                        messages.warning(ch.getDocTreePath(dt), key, paramName);
+                        messages.warning(ch.getDocTreePath(tag), key, paramName);
                     } else {
-                        tagOfPosition.put(position, dt);
+                        tagOfPosition.put(position, tag);
                     }
                 }
             }
@@ -195,23 +197,23 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
         // Document declared parameters for which tag documentation is available
         // (either directly or inherited) in order of their declaration.
         Content result = writer.getOutputInstance();
-        for (int i = 0; i < formalParameters.size(); i++) {
-            ParamTree dt = tagOfPosition.get(Integer.toString(i));
-            if (dt != null) {
-                result.add(convertParam(e, kind, writer, dt,
-                        ch.getParameterName(dt), result.isEmpty()));
+        for (int i = 0; i < parameters.size(); i++) {
+            ParamTree tag = tagOfPosition.get(Integer.toString(i));
+            if (tag != null) {
+                result.add(convertParam(e, kind, writer, tag,
+                        ch.getParameterName(tag), result.isEmpty()));
             } else if (writer.configuration().utils.isMethod(e)) {
                 result.add(getInheritedTagletOutput(kind, e, writer,
-                        formalParameters.get(i), i, result.isEmpty()));
+                        parameters.get(i), i, result.isEmpty()));
             }
         }
-        if (paramTags.size() > tagOfPosition.size()) {
+        if (tags.size() > tagOfPosition.size()) {
             // Generate documentation for remaining tags that do not match a declared parameter.
             // These are erroneous but we generate them anyway.
-            for (ParamTree dt : paramTags) {
-                if (!tagOfPosition.containsValue(dt)) {
-                    result.add(convertParam(e, kind, writer, dt,
-                            ch.getParameterName(dt), result.isEmpty()));
+            for (ParamTree tag : tags) {
+                if (!tagOfPosition.containsValue(tag)) {
+                    result.add(convertParam(e, kind, writer, tag,
+                            ch.getParameterName(tag), result.isEmpty()));
                 }
             }
         }

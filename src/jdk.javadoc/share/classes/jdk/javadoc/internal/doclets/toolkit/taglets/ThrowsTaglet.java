@@ -88,7 +88,7 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
                 output.inlineTags = ch.getBody(output.holderTag);
                 output.tagList.add(tag);
             } else if (target != null && candidate != null &&
-                    utils.isTypeElement(candidate) && utils.isTypeElement(target) && // FIXME: can they be anything else other than type elements?
+                    utils.isTypeElement(candidate) && utils.isTypeElement(target) &&
                     utils.isSubclassOf((TypeElement) candidate, (TypeElement) target)) {
                 output.tagList.add(tag);
             }
@@ -161,9 +161,9 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
         for (Entry<List<? extends ThrowsTree>, ExecutableElement> entry : throwsTags.entrySet()) {
             Element e = entry.getValue();
             CommentHelper ch = utils.getCommentHelper(e);
-            for (ThrowsTree dt : entry.getKey()) {
-                Element te = ch.getException(dt);
-                String excName = ch.getExceptionName(dt).toString();
+            for (ThrowsTree tag : entry.getKey()) {
+                Element te = ch.getException(tag);
+                String excName = ch.getExceptionName(tag).toString();
                 TypeMirror substituteType = typeSubstitutions.get(excName);
                 if ((!allowDuplicates) &&
                         (alreadyDocumented.contains(excName) ||
@@ -174,7 +174,7 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
                 if (alreadyDocumented.isEmpty()) {
                     result.add(writer.getThrowsHeader());
                 }
-                result.add(writer.throwsTagOutput(e, dt, substituteType));
+                result.add(writer.throwsTagOutput(e, tag, substituteType));
                 if (substituteType != null) {
                     alreadyDocumented.add(substituteType.toString());
                 } else {
@@ -216,7 +216,7 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
                     List<? extends ThrowsTree> inheritedTags = inheritedDoc.tagList.stream()
                             .map(t -> (ThrowsTree) t)
                             .toList();
-                    ExecutableElement r = declaredExceptionTags.put(inheritedTags, (ExecutableElement) inheritedDoc.holder);
+                    declaredExceptionTags.put(inheritedTags, (ExecutableElement) inheritedDoc.holder);
                 }
             }
             result.add(throwsTagsOutput(declaredExceptionTags, writer, alreadyDocumented,
