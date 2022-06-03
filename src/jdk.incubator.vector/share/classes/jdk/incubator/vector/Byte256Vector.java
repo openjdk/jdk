@@ -24,7 +24,7 @@
  */
 package jdk.incubator.vector;
 
-import java.nio.ByteBuffer;
+import java.lang.foreign.MemorySegment;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntUnaryOperator;
@@ -476,6 +476,22 @@ final class Byte256Vector extends ByteVector {
 
     @Override
     @ForceInline
+    public Byte256Vector compress(VectorMask<Byte> m) {
+        return (Byte256Vector)
+            super.compressTemplate(Byte256Mask.class,
+                                   (Byte256Mask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Byte256Vector expand(VectorMask<Byte> m) {
+        return (Byte256Vector)
+            super.expandTemplate(Byte256Mask.class,
+                                   (Byte256Mask) m);  // specialize
+    }
+
+    @Override
+    @ForceInline
     public Byte256Vector selectFrom(Vector<Byte> v) {
         return (Byte256Vector)
             super.selectFromTemplate((Byte256Vector) v);  // specialize
@@ -709,6 +725,15 @@ final class Byte256Vector extends ByteVector {
             return xor(maskAll(true));
         }
 
+        @Override
+        @ForceInline
+        public Byte256Mask compress() {
+            return (Byte256Mask)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
+                Byte256Vector.class, Byte256Mask.class, ETYPE, VLENGTH, null, this,
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
+        }
+
+
         // Binary operations
 
         @Override
@@ -908,29 +933,15 @@ final class Byte256Vector extends ByteVector {
     @ForceInline
     @Override
     final
-    ByteVector fromByteArray0(byte[] a, int offset) {
-        return super.fromByteArray0Template(a, offset);  // specialize
+    ByteVector fromMemorySegment0(MemorySegment ms, long offset) {
+        return super.fromMemorySegment0Template(ms, offset);  // specialize
     }
 
     @ForceInline
     @Override
     final
-    ByteVector fromByteArray0(byte[] a, int offset, VectorMask<Byte> m) {
-        return super.fromByteArray0Template(Byte256Mask.class, a, offset, (Byte256Mask) m);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    ByteVector fromByteBuffer0(ByteBuffer bb, int offset) {
-        return super.fromByteBuffer0Template(bb, offset);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    ByteVector fromByteBuffer0(ByteBuffer bb, int offset, VectorMask<Byte> m) {
-        return super.fromByteBuffer0Template(Byte256Mask.class, bb, offset, (Byte256Mask) m);  // specialize
+    ByteVector fromMemorySegment0(MemorySegment ms, long offset, VectorMask<Byte> m) {
+        return super.fromMemorySegment0Template(Byte256Mask.class, ms, offset, (Byte256Mask) m);  // specialize
     }
 
     @ForceInline
@@ -958,22 +969,8 @@ final class Byte256Vector extends ByteVector {
     @ForceInline
     @Override
     final
-    void intoByteArray0(byte[] a, int offset) {
-        super.intoByteArray0Template(a, offset);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    void intoByteArray0(byte[] a, int offset, VectorMask<Byte> m) {
-        super.intoByteArray0Template(Byte256Mask.class, a, offset, (Byte256Mask) m);  // specialize
-    }
-
-    @ForceInline
-    @Override
-    final
-    void intoByteBuffer0(ByteBuffer bb, int offset, VectorMask<Byte> m) {
-        super.intoByteBuffer0Template(Byte256Mask.class, bb, offset, (Byte256Mask) m);
+    void intoMemorySegment0(MemorySegment ms, long offset, VectorMask<Byte> m) {
+        super.intoMemorySegment0Template(Byte256Mask.class, ms, offset, (Byte256Mask) m);
     }
 
 
@@ -982,3 +979,4 @@ final class Byte256Vector extends ByteVector {
     // ================================================
 
 }
+

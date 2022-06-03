@@ -35,6 +35,7 @@
  *     Fixed according to 4669812 bug.
  *     Ported from JVMDI.
  *
+ * @requires vm.continuations
  * @library /test/lib
  * @compile fieldacc01a.jasm
  * @compile --enable-preview -source ${jdk.version} fieldacc01.java

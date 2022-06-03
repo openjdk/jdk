@@ -548,8 +548,7 @@ CPP := @CPP@
 # The linker can be gcc or ld on unix systems, or link.exe on windows systems.
 LD := @LD@
 
-# Xcode SDK path
-SDKROOT:=@SDKROOT@
+SYSROOT := @SYSROOT@
 
 # LDFLAGS used to link the jdk native libraries (C-code)
 LDFLAGS_JDKLIB:=@LDFLAGS_JDKLIB@
@@ -776,7 +775,6 @@ SETFILE:=@SETFILE@
 XATTR:=@XATTR@
 JT_HOME:=@JT_HOME@
 JIB_HOME:=@JIB_HOME@
-XCODEBUILD=@XCODEBUILD@
 DTRACE := @DTRACE@
 FIXPATH := @FIXPATH@
 FIXPATH_BASE := @FIXPATH_BASE@
