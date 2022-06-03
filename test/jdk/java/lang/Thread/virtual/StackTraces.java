@@ -25,6 +25,7 @@
  * @test
  * @summary Test stack traces in exceptions and stack frames waslked by the StackWalker
  *     API do not include the carrier stack frames
+ * @requires vm.continuations
  * @modules java.management
  * @library /test/lib
  * @compile --enable-preview -source ${jdk.version} StackTraces.java

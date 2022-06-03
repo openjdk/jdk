@@ -221,7 +221,7 @@ public class Extern {
 
     /**
      * Check whether links to platform documentation are configured. If not then configure
-     * links using the the documentation URL defined in {@code linkPlatformProperties} or the
+     * links using the documentation URL defined in {@code linkPlatformProperties} or the
      * default documentation URL if that parameter is {@code null}.
      *
      * @param linkPlatformProperties path or URL to properties file containing

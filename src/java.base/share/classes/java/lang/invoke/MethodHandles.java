@@ -6760,7 +6760,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
     private static List<Class<?>> buildCommonSuffix(List<MethodHandle> init, List<MethodHandle> step, List<MethodHandle> pred, List<MethodHandle> fini, int cpSize) {
         final List<Class<?>> longest1 = longestParameterList(Stream.of(step, pred, fini).flatMap(List::stream), cpSize);
         final List<Class<?>> longest2 = longestParameterList(init.stream(), 0);
-        return longestParameterList(Arrays.asList(longest1, longest2));
+        return longestParameterList(List.of(longest1, longest2));
     }
 
     private static void loopChecks1b(List<MethodHandle> init, List<Class<?>> commonSuffix) {
@@ -7617,7 +7617,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
                 // special case; if the iterator handle is null and the body handle
                 // only declares V and T then the external parameter list consists
                 // of Iterable
-                externalParamList = Arrays.asList(Iterable.class);
+                externalParamList = List.of(Iterable.class);
                 iterableType = Iterable.class;
             } else {
                 // special case; if the iterator handle is null and the external

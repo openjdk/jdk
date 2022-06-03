@@ -87,8 +87,8 @@ define SetupBuildLauncherBody
     $1_MAIN_MODULE := $(MODULE)
   endif
 
-  $1_JAVA_ARGS += -ms8m
   ifneq ($$($1_MAIN_CLASS), )
+    $1_JAVA_ARGS += -ms8m
     $1_LAUNCHER_CLASS := -m $$($1_MAIN_MODULE)/$$($1_MAIN_CLASS)
   endif
 
@@ -97,9 +97,12 @@ define SetupBuildLauncherBody
       $$(addprefix -J, $$($1_EXTRA_JAVA_ARGS)), "$$a"$(COMMA) )) }'
     $1_CFLAGS += -DEXTRA_JAVA_ARGS=$$($1_EXTRA_JAVA_ARGS_STR)
   endif
-  $1_JAVA_ARGS_STR := '{ $$(strip $$(foreach a, \
-      $$(addprefix -J, $$($1_JAVA_ARGS)) $$($1_LAUNCHER_CLASS), "$$a"$(COMMA) )) }'
-  $1_CFLAGS += -DJAVA_ARGS=$$($1_JAVA_ARGS_STR)
+
+  ifneq ($$($1_JAVA_ARGS), )
+    $1_JAVA_ARGS_STR := '{ $$(strip $$(foreach a, \
+        $$(addprefix -J, $$($1_JAVA_ARGS)) $$($1_LAUNCHER_CLASS), "$$a"$(COMMA) )) }'
+    $1_CFLAGS += -DJAVA_ARGS=$$($1_JAVA_ARGS_STR)
+  endif
 
   ifeq ($(call isTargetOs, macosx), true)
     ifeq ($$($1_MACOSX_PRIVILEGED), true)
