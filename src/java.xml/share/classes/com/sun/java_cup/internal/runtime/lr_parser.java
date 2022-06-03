@@ -137,7 +137,7 @@ import java.util.Stack;
  * @see     com.sun.java_cup.internal.runtime.virtual_parse_stack
  * @author  Frank Flannery
  *
- * @LastModified: Jan 2022
+ * @LastModified: June 2022
  */
 
 public abstract class lr_parser {
@@ -149,6 +149,7 @@ public abstract class lr_parser {
     private int grpCount = 0;
     private int opCount = 0;
     private int totalOpCount = 0;
+    private int lastSym;
 
   /*-----------------------------------------------------------*/
   /*--- Constructor(s) ----------------------------------------*/
@@ -377,13 +378,17 @@ public abstract class lr_parser {
           opCount++; // function
           isLiteral = false;
       } else if (contains(sym.OPERATORS, s.sym)) {
-          opCount++;
+          // axis nodetest is counted as one step, so not counted if last=DCOLON
+          if (lastSym != sym.DCOLON) {
+              opCount++;
+          }
           isLiteral = false;
       }
 
       if (s.sym == sym.Literal || s.sym == sym.QNAME) {
           isLiteral = true;
       }
+      lastSym = s.sym;
 
     return s;
   }
