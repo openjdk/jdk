@@ -33,7 +33,7 @@
 class PackageFile {
 public:
     static PackageFile loadFromAppDir(const tstring& appDirPath);
-    
+
     tstring getPackageName() const {
         return packageName;
     }

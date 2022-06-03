@@ -111,7 +111,7 @@ public class PerUserCfgTest {
             } else if (PackageType.WINDOWS.contains(type)) {
                 final Path appData = getDirFromEnvVariable("APPDATA");
                 final Path localAppData = getDirFromEnvVariable("LOCALAPPDATA");
-                
+
                 if (appData == null || localAppData == null) {
                     TKit.trace(String.format(
                             "Not running per-user configuration tests because some of the environment varibles are not set. "
