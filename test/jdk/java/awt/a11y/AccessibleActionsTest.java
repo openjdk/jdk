@@ -97,7 +97,8 @@ public class AccessibleActionsTest extends AccessibleComponentTest {
   private void createEditableTextArea() {
     AccessibleComponentTest.INSTRUCTIONS = "INSTRUCTIONS:\n"
             + "Check a11y show context menu in editable JTextArea.\n\n"
-            + "Turn screen reader on and press Tab to move to the text area and vo+shif+m.\n\n"
+            + "Turn screen reader on and press Tab to move to the text area\n"
+            + "Perform the VO action \"Open a shortcut menu\" (VO+Shift+m)\n\n"
             + "If the menu appears  tab further and press PASS, otherwise press FAIL.";
 
     JTextArea textArea = new MyTextArea("some text to edit");
