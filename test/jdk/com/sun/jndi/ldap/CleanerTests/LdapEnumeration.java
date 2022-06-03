@@ -24,9 +24,8 @@
 /*
  * @test
  * @bug 8283660
- * @summary Verify the AbstractLdapNamingEnumeration Cleaner doesn't keep the
- *          enumeration reachable
- * @modules java.naming/com.sun.jndi.ldap
+ * @summary Verify the AbstractLdapNamingEnumeration Cleaner performs cleanup correctly
+ * @modules java.naming/com.sun.jndi.ldap:+open
  * @library /test/lib ../lib/ /javax/naming/module/src/test/test/
  * @build LDAPServer LDAPTestUtils
  * @run main/othervm LdapEnumeration
@@ -41,6 +40,7 @@ import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
+import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -49,6 +49,7 @@ import java.util.Hashtable;
 import java.util.WeakHashMap;
 
 import jdk.test.lib.net.URIBuilder;
+import jdk.test.lib.util.ForceGC;
 
 /*
  * This test is a copy of com/sun/jndi/ldap/blits/AddTests/AddNewEntry.java,
@@ -132,21 +133,42 @@ public class LdapEnumeration {
                 throw new RuntimeException("Unexpected results class: " + results.getClass());
             }
 
+            // fetch enumCount from homeCtx, from EnumCtx, from results
+            Object enumCtx = getField(results.getClass().getSuperclass(), "enumCtx", results);
+            Object homeCtx = getField(enumCtx.getClass(), "homeCtx", enumCtx);
+            int enumCountBefore = (Integer) getField(homeCtx.getClass(), "enumCount", homeCtx);
+
             whm.put(results, null);
             results = null;
-            // Run GC to run the Cleaner and collect 'results'
-            for (int i = 0; i < 100; i++) {
-                System.gc();
-                Thread.sleep(1);
-            }
+
             // If the Cleaner holds a reference to 'results', it won't be cleared from the map
-            if (whm.size() > 0) {
+            ForceGC gc = new ForceGC();
+            if (!gc.await(() -> whm.size() == 0)) {
                 throw new RuntimeException("NamingEnumeration is still strongly reachable");
             }
 
+            // The enum count should have been decremented
+            int enumCountAfter = (Integer) getField(homeCtx.getClass(), "enumCount", homeCtx);
+            int expected = enumCountBefore - 1;
+            if (enumCountAfter != expected) {
+                throw new RuntimeException("enumCount was not decremented. Expected: " +
+                        expected + ", Got:" + enumCountAfter);
+            }
         } finally {
             LDAPTestUtils.cleanupSubcontext(ctx, entryDN);
             LDAPTestUtils.cleanup(ctx);
+        }
+    }
+    /**
+     * Get an object from a named field.
+     */
+    static Object getField(Class<?> clazz, String fieldName, Object instance) {
+        try {
+            Field field = clazz.getDeclaredField(fieldName);
+            field.setAccessible(true);
+            return field.get(instance);
+        } catch (NoSuchFieldException | IllegalAccessException ex) {
+            throw new RuntimeException("field unknown or not accessible", ex);
         }
     }
 }
