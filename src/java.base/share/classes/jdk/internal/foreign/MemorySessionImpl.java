@@ -245,7 +245,7 @@ public non-sealed class MemorySessionImpl implements MemorySession, SegmentAlloc
         public abstract Thread ownerThread();
 
         @ForceInline
-        public final void checkValidState() {
+        public void checkValidState() {
             if (ownerThread() != null && ownerThread() != Thread.currentThread()) {
                 throw WRONG_THREAD;
             } else if (state < OPEN) {

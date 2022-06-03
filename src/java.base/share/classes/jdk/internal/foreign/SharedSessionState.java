@@ -175,6 +175,11 @@ public class SharedSessionState extends MemorySessionImpl.State {
         public void release() {
             Reference.reachabilityFence(this);
         }
+
+        @ForceInline
+        public void checkValidState() {
+            // do nothing
+        }
     }
 
 }
