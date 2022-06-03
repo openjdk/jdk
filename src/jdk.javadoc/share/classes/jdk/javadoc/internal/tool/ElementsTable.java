@@ -806,7 +806,7 @@ public class ElementsTable {
     /**
      * Returns an aggregated list of java file objects from the items
      * specified on the command line. The packages specified should not
-     * recurse, however sub-packages should recurse into the sub directories.
+     * recurse, however subpackages should recurse into the subdirectories.
      * @return a list of java file objects
      * @throws IOException if an error occurs
      */
