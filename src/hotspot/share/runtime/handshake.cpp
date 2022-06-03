@@ -353,7 +353,7 @@ void Handshake::execute(HandshakeClosure* hs_cl, JavaThread* target) {
 void Handshake::execute(HandshakeClosure* hs_cl, ThreadsListHandle* tlh, JavaThread* target) {
   JavaThread* self = JavaThread::current();
   if (target->is_handshake_safe_for(self)) {
-    hs_cl->do_thread(self);
+    hs_cl->do_thread(target);
     return;
   }
 
