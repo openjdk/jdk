@@ -768,7 +768,9 @@ public abstract sealed class Buffer
     }
 
     final void checkState() {
-        MemorySessionImpl.checkValidState(segment.session());
+        if (segment != null) {
+            MemorySessionImpl.checkValidState(segment.session());
+        }
     }
 
     static {
