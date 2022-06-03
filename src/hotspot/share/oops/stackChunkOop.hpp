@@ -59,6 +59,9 @@ private:
   static const uint8_t FLAG_GC_MODE = 1 << 3; // Once true it and FLAG_HAS_INTERPRETED_FRAMES can't change
   static const uint8_t FLAG_HAS_BITMAP = 1 << 4; // Can only be true if FLAG_GC_MODE is true
 
+  // TODO: Abstract out of here?
+  void color_stack_pointers();
+
   bool try_acquire_relativization();
   void release_relativization();
 
@@ -71,6 +74,8 @@ public:
   inline bool is_parent_null() const;
   template<typename P>
   inline void set_parent_raw(oop value);
+  template<DecoratorSet decorators>
+  inline void set_parent_access(oop value);
 
   inline int stack_size() const;
 
@@ -92,10 +97,11 @@ public:
   inline void set_max_thawing_size(int value);
 
   inline oop cont() const;
-  template<typename P> inline oop cont() const;
   inline void set_cont(oop value);
   template<typename P>
   inline void set_cont_raw(oop value);
+  template<DecoratorSet decorators>
+  inline void set_cont_access(oop value);
 
   inline int bottom() const;
 
@@ -150,6 +156,7 @@ public:
   void relativize_derived_pointers_concurrently();
   void transform();
 
+  inline void* gc_data() const;
   inline BitMapView bitmap() const;
   inline BitMap::idx_t bit_index_for(intptr_t* p) const;
   inline intptr_t* address_for_bit(BitMap::idx_t index) const;

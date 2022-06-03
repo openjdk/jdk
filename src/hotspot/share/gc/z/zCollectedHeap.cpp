@@ -40,6 +40,7 @@
 #include "gc/z/zNMethod.hpp"
 #include "gc/z/zObjArrayAllocator.hpp"
 #include "gc/z/zServiceability.hpp"
+#include "gc/z/zStackChunkGCData.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zUtils.inline.hpp"
 #include "memory/classLoaderMetaspace.hpp"
@@ -133,9 +134,7 @@ bool ZCollectedHeap::is_in(const void* p) const {
 }
 
 bool ZCollectedHeap::requires_barriers(stackChunkOop obj) const {
-  // FIXME: Implement loom for generational ZGC
-  Unimplemented();
-
+  // TODO: Move to other file maybe?
   zpointer* cont_addr = obj->field_addr<zpointer>(jdk_internal_vm_StackChunk::cont_offset());
 
   if (!_heap.is_allocating(to_zaddress(obj))) {
@@ -144,7 +143,7 @@ bool ZCollectedHeap::requires_barriers(stackChunkOop obj) const {
     return true;
   }
 
-  if (!ZPointer::is_store_good_or_null(*cont_addr)) {
+  if (ZStackChunkGCData::color(obj) != ZPointerStoreGoodMask) {
     // If a chunk is allocated after a GC started, but before relocate start
     // we can have an allocating chunk that isn't deeply good. That means that
     // the contained oops might be bad and require GC barriers.

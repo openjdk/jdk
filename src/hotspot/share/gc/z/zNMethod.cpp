@@ -378,22 +378,16 @@ public:
     ZLocker<ZReentrantLock> locker(ZNMethod::lock_for_nmethod(nm));
 
     if (ZNMethod::is_armed(nm)) {
-      if (Continuations::enabled()) {
-        // FIXME: Fix loom support
-        Unimplemented();
-        // Loom needs to know about visited nmethods. Arm the nmethods to get
-        // mark_as_maybe_on_continuation() callbacks when they are used again.
-        ZNMethod::arm(nm, 0);
-      } else {
+      if (!Continuations::enabled()) {
         // Heal barriers
         ZNMethod::nmethod_patch_barriers(nm);
-
-        ZUncoloredRootProcessNoKeepaliveOopClosure cl(ZNMethod::color(nm));
-        ZNMethod::nmethod_oops_do_inner(nm, &cl);
-
-        // Disarm
-        ZNMethod::disarm(nm);
       }
+
+      ZUncoloredRootProcessNoKeepaliveOopClosure cl(ZNMethod::color(nm));
+      ZNMethod::nmethod_oops_do_inner(nm, &cl);
+
+      // Disarm
+      ZNMethod::disarm(nm);
     }
 
     // Clear compiled ICs and exception caches

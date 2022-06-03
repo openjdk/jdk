@@ -63,6 +63,9 @@
 #include "utilities/debug.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
+#if INCLUDE_ZGC
+#include "gc/z/zStackChunkGCData.inline.hpp"
+#endif
 
 /*
  * This file contains the implementation of continuation freezing (yield) and thawing (run).
@@ -1276,22 +1279,32 @@ stackChunkOop Freeze<ConfigT>::allocate_chunk(size_t stack_size) {
   assert(chunk->flags() == 0, "");
   assert(chunk->is_gc_mode() == false, "");
 
-  // fields are uninitialized
-  chunk->set_parent_raw<typename ConfigT::OopT>(_cont.last_nonempty_chunk());
-  chunk->set_cont_raw<typename ConfigT::OopT>(_cont.continuation());
+
+  if (UseZGC) {
+    // fields are uninitialized
+    chunk->set_parent_access<IS_DEST_UNINITIALIZED>(_cont.last_nonempty_chunk());
+    chunk->set_cont_access<IS_DEST_UNINITIALIZED>(_cont.continuation());
+    ZStackChunkGCData::initialize(chunk);
+    assert(!chunk->requires_barriers(), "ZGC always allocates in the young generation");
+    _barriers = false;
+  } else {
+    // ...
+    chunk->set_parent_raw<typename ConfigT::OopT>(_cont.last_nonempty_chunk());
+    chunk->set_cont_raw<typename ConfigT::OopT>(_cont.continuation());
+    if (fast_oop != nullptr) {
+      assert(!chunk->requires_barriers(), "Unfamiliar GC requires barriers on TLAB allocation");
+    } else {
+      assert(!UseShenandoahGC || !chunk->requires_barriers(), "Allocated ShenandoahGC object requires barriers");
+      _barriers = !UseShenandoahGC && chunk->requires_barriers();
+
+      if (_barriers) {
+        log_develop_trace(continuations)("allocation requires barriers");
+      }
+    }
+  }
 
   assert(chunk->parent() == nullptr || chunk->parent()->is_stackChunk(), "");
 
-  if (fast_oop != nullptr) {
-    assert(!chunk->requires_barriers(), "Unfamiliar GC requires barriers on TLAB allocation");
-  } else {
-    assert(!UseZGC || !UseShenandoahGC || !chunk->requires_barriers(), "Allocated ZGC/ShenandoahGC object requires barriers");
-    _barriers = !UseZGC && !UseShenandoahGC && chunk->requires_barriers();
-
-    if (_barriers) {
-      log_develop_trace(continuations)("allocation requires barriers");
-    }
-  }
   return chunk;
 }
 

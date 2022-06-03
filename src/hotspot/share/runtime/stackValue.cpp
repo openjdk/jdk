@@ -43,19 +43,14 @@ class SmallRegisterMap;
 
 
 template <typename OopT>
-static oop read_oop_local(OopT* p, bool in_heap) {
-  if (in_heap) {
-    // We can't do a native access directly from p because load barriers
-    // may self-heal. If that happens on a base pointer for compressed oops,
-    // then there will be a crash later on. Only the stack watermark API is
-    // allowed to heal oops, because it heals derived pointers before their
-    // corresponding base pointers.
-    oop obj = RawAccess<>::oop_load(p);
-    return NativeAccess<>::oop_load(&obj);
+static oop read_oop_local(OopT* p, stackChunkOop chunk) {
+  if (chunk != NULL && chunk->is_gc_mode()) {
+    // In a frozen heap stack
+    return HeapAccess<>::oop_load(p);
+  } else {
+    // In stack - either a real stack or a heap stack that doesn't need barriers; just use normal raw access
+    return RawAccess<>::oop_load(p);
   }
-
-  // In stack, just use normal raw access
-  return RawAccess<>::oop_load(p);
 }
 
 template StackValue* StackValue::create_stack_value(const frame* fr, const RegisterMap* reg_map, ScopeValue* sv);
@@ -71,6 +66,10 @@ template StackValue* StackValue::create_stack_value(ScopeValue*, address, const 
 
 template<typename RegisterMapT>
 StackValue* StackValue::create_stack_value(ScopeValue* sv, address value_addr, const RegisterMapT* reg_map) {
+  stackChunkOop chunk = reg_map->stack_chunk()();
+  if (chunk != NULL && chunk->requires_barriers()) {
+    chunk->relativize_derived_pointers_concurrently();
+  }
   if (sv->is_location()) {
     // Stack or register value
     Location loc = ((LocationValue *)sv)->location();
@@ -134,7 +133,7 @@ StackValue* StackValue::create_stack_value(ScopeValue* sv, address value_addr, c
         value.noop = *(narrowOop*) value_addr;
       }
       // Decode narrowoop
-      oop val = read_oop_local(&value.noop, reg_map->in_cont());
+      oop val = read_oop_local(&value.noop, chunk);
       Handle h(Thread::current(), val); // Wrap a handle around the oop
       return new StackValue(h);
     }
@@ -155,7 +154,7 @@ StackValue* StackValue::create_stack_value(ScopeValue* sv, address value_addr, c
          val = (oop)NULL;
       }
 #endif
-      val = read_oop_local(&val, reg_map->in_cont());
+      val = read_oop_local(&val, chunk);
       assert(oopDesc::is_oop_or_null(val), "bad oop found at " INTPTR_FORMAT " in_cont: %d compressed: %d",
         p2i(value_addr), reg_map->in_cont(), reg_map->in_cont() && reg_map->stack_chunk()->has_bitmap() && UseCompressedOops);
       Handle h(Thread::current(), val); // Wrap a handle around the oop
