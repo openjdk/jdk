@@ -382,10 +382,12 @@ public class WinMsiBundler  extends AbstractBundler {
                     .runtimeDirectory()
                     .resolve(Path.of("bin", "java.exe"));
         } else {
-            installerIcon = ApplicationLayout.windowsAppImage()
-                    .resolveAt(appDir)
-                    .launchersDirectory()
+            var appLayout = ApplicationLayout.windowsAppImage().resolveAt(appDir);
+
+            installerIcon = appLayout.launchersDirectory()
                     .resolve(appName + ".exe");
+
+            new PackageFile(appName).save(appLayout);
         }
         installerIcon = installerIcon.toAbsolutePath();
 
