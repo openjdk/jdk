@@ -593,6 +593,7 @@ public abstract class lr_parser {
       isLiteral = false;
       grpCount = 0;
       opCount = 0;
+      lastSym = -1;
 
       /* get the first token */
       cur_token = scan();

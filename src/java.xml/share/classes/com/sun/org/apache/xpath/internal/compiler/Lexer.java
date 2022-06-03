@@ -348,13 +348,13 @@ class Lexer
         else if ((Token.LPAREN == c))
         {
           nesting++;
-          if (!isLiteral) {
-              m_grpCount++;
-              incrementCount(c);
-          } else {
+          if (isLiteral) {
               if (!isAxis) {
                   incrementCount(c);
               }
+          } else {
+              m_grpCount++;
+              incrementCount(c);
           }
           isAxis = false;
         }
@@ -374,11 +374,7 @@ class Lexer
         // ',' is part of a function
         else if ((Token.LPAREN != c) && (Token.LBRACK != c) && (Token.RPAREN != c)
                 && (Token.RBRACK != c) && (Token.COLON != c) && (Token.COMMA != c)) {
-            if (Token.STAR == c) {
-                if (!isAxis) {
-                    incrementCount(c);
-                }
-            } else {
+            if (Token.STAR != c || !isAxis) {
                 incrementCount(c);
             }
             isAxis = false;
