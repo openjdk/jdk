@@ -41,11 +41,11 @@ import jdk.jpackage.test.TKit;
  * @build jdk.jpackage.test.*
  * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile PredefinedAppImageErrorTest.java
- * 
+ *
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=jdk.jpackage.tests.PredefinedAppImageErrorTest
  *  --jpt-before-run=jdk.jpackage.test.JPackageCommand.useExecutableByDefault
- * 
+ *
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=jdk.jpackage.tests.PredefinedAppImageErrorTest
  *  --jpt-before-run=jdk.jpackage.test.JPackageCommand.useToolProviderByDefault
