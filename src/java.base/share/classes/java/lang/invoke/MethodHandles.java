@@ -5104,7 +5104,7 @@ assert((int)twice.invokeExact(21) == 42);
      */
     public static  MethodHandle empty(MethodType type) {
         Objects.requireNonNull(type);
-        return dropArguments(zero(type.returnType()), 0, type.ptypes(), true);
+        return dropArgumentsTrusted(zero(type.returnType()), 0, type.ptypes());
     }
 
     private static final MethodHandle[] IDENTITY_MHS = new MethodHandle[Wrapper.COUNT];
@@ -5263,13 +5263,10 @@ assertEquals("yz", (String) d0.invokeExact(123, "x", "y", "z"));
      *                  or if the new method handle's type would have too many parameters
      */
     public static MethodHandle dropArguments(MethodHandle target, int pos, List<Class<?>> valueTypes) {
-        return dropArguments(target, pos, valueTypes.toArray(new Class<?>[0]), false);
+        return dropArgumentsTrusted(target, pos, valueTypes.toArray(new Class<?>[0]).clone());
     }
 
-    static MethodHandle dropArguments(MethodHandle target, int pos, Class<?>[] valueTypes, boolean trusted) {
-        if (!trusted) {
-            valueTypes = valueTypes.clone();
-        }
+    static MethodHandle dropArgumentsTrusted(MethodHandle target, int pos, Class<?>[] valueTypes) {
         MethodType oldType = target.type();  // get NPE
         int dropped = dropArgumentChecks(oldType, pos, valueTypes);
         MethodType newType = oldType.insertParameterTypes(pos, valueTypes);
@@ -5343,15 +5340,15 @@ assertEquals("xz", (String) d12.invokeExact("x", 12, true, "z"));
      *                  <a href="MethodHandle.html#maxarity">too many parameters</a>
      */
     public static MethodHandle dropArguments(MethodHandle target, int pos, Class<?>... valueTypes) {
-        return dropArguments(target, pos, valueTypes, false);
+        return dropArgumentsTrusted(target, pos, valueTypes.clone());
     }
 
     /* Convenience overloads for trusting internal low-arity call-sites */
     static MethodHandle dropArguments(MethodHandle target, int pos, Class<?> valueType1) {
-        return dropArguments(target, pos, new Class<?>[] { valueType1 }, true);
+        return dropArgumentsTrusted(target, pos, new Class<?>[] { valueType1 });
     }
     static MethodHandle dropArguments(MethodHandle target, int pos, Class<?> valueType1, Class<?> valueType2) {
-        return dropArguments(target, pos, new Class<?>[] { valueType1, valueType2 }, true);
+        return dropArgumentsTrusted(target, pos, new Class<?>[] { valueType1, valueType2 });
     }
 
     // private version which allows caller some freedom with error handling
@@ -5391,11 +5388,11 @@ assertEquals("xz", (String) d12.invokeExact("x", 12, true, "z"));
         // target: ( S*[skip],        M*[match]  )
         MethodHandle adapter = target;
         if (add > 0) {
-            adapter = dropArguments(adapter, skip+ match, addTypes, true);
+            adapter = dropArgumentsTrusted(adapter, skip+ match, addTypes);
         }
         // adapter: (S*[skip],        M*[match], A*[add] )
         if (pos > 0) {
-            adapter = dropArguments(adapter, skip, Arrays.copyOfRange(newTypes, 0, pos), true);
+            adapter = dropArgumentsTrusted(adapter, skip, Arrays.copyOfRange(newTypes, 0, pos));
         }
         // adapter: (S*[skip], P*[pos], M*[match], A*[add] )
         return adapter;

@@ -523,7 +523,7 @@ public final class StringConcatFactory {
         // assembled bottom-up, which makes the code arguably hard to read.
 
         // Drop all remaining parameter types, leave only helper arguments:
-        MethodHandle mh = MethodHandles.dropArguments(newString(), 2, ptypes, true);
+        MethodHandle mh = MethodHandles.dropArgumentsTrusted(newString(), 2, ptypes);
 
         long initialLengthCoder = INITIAL_CODER;
 
