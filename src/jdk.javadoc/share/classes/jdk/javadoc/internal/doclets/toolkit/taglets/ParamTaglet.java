@@ -86,7 +86,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
         }
         ExecutableElement ee = (ExecutableElement) input.element;
         CommentHelper ch = utils.getCommentHelper(ee);
-        List<? extends ParamTree> tags = input.isTypeVariableParamTag
+        List<ParamTree> tags = input.isTypeVariableParamTag
                 ? utils.getTypeParamTrees(ee)
                 : utils.getParamTrees(ee);
         List<? extends Element> parameters = input.isTypeVariableParamTag
@@ -160,7 +160,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
      */
     private Content convertParams(Element e,
                                   ParamKind kind,
-                                  List<? extends ParamTree> tags,
+                                  List<ParamTree> tags,
                                   List<? extends Element> parameters,
                                   TagletWriter writer) {
         Map<String, ParamTree> tagOfPosition = new HashMap<>();
