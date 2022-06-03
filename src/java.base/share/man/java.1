@@ -5374,9 +5374,9 @@ Therefore, you can omit the \f[CB]<static_archive>\f[R] by saying only:
 .PP
 \f[CB]\-XX:SharedArchiveFile=<dynamic_archive>\f[R]
 .RE
-.SS Creating CDS Archives
+.SS Manually Creating CDS Archives
 .PP
-CDS archives can be created with several methods:
+CDS archives can be created manually with several methods:
 .IP \[bu] 2
 \f[CB]\-Xshare:dump\f[R]
 .IP \[bu] 2
@@ -5438,7 +5438,7 @@ The output of this command should contain the following text:
 \f[CB][info][class,load]\ test.Hello\ source:\ shared\ objects\ file\f[R]
 .RE
 .RE
-.SS Creating a Dynamic CDS Archive File with \-XX:SharedArchiveFile
+.SS Creating a Dynamic CDS Archive File with \-XX:ArchiveClassesAtExit
 .PP
 Advantages of dynamic CDS archives are:
 .IP \[bu] 2
@@ -5533,6 +5533,37 @@ application start\-up script with the same technique:
 .PP
 \f[CB]env\ JAVA_TOOL_OPTIONS=\-XX:+RecordDynamicDumpInfo\ bash\ app_start.sh\f[R]
 .RE
+.SS Using Dynamic CDS Archive File with \-XX:+AutoCreateSharedArchive
+.PP
+\f[CB]\-XX:+AutoCreateSharedArchive\f[R] is a more convenient way of
+creating/using CDS archives.
+Unlike the methods of manual CDS archive creation described in the
+previous section, with \f[CB]\-XX:+AutoCreateSharedArchive\f[R], it\[aq]s
+no longer necessary to have a separate trial run.
+Instead, you can always run the application with the same command\-line
+and enjoy the benefits of CDS automatically.
+.RS
+.PP
+\f[CB]java\ \-XX:+AutoCreateSharedArchive\ \-XX:SharedArchiveFile=hello.jsa\ \-cp\ hello.jar\ Hello\f[R]
+.RE
+.IP \[bu] 2
+If the specified archive file exists and is created by the same version
+of the JDK, the JVM will load this file as a dynamic archive.
+.IP \[bu] 2
+Otherwise the JVM will not load the specified archive.
+Instead, it will automatically create (or update) the archive file at
+exit.
+As a result, the next time you run the same command again, the archive
+will be available and ready to be used.
+.PP
+The contents of the CDS archive file are specific to each version of the
+JDK.
+Therefore, if you upgrade to a newer JDK,
+\f[CB]\-XX:+AutoCreateSharedArchive\f[R] will automatically recreate the
+archive.
+.PP
+To use this option, the specified CDS archive must be created by JDK 19
+or above.
 .SS Restrictions on Class Path and Module Path
 .IP \[bu] 2
 Neither the class path (\f[CB]\-classpath\f[R] and
