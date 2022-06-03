@@ -53,8 +53,8 @@ import jdk.test.lib.util.ForceGC;
 
 /*
  * This test is a copy of com/sun/jndi/ldap/blits/AddTests/AddNewEntry.java,
- * altered to confirm that the NamingEnumeration<SearchResult> is not prevented
- * from being collected by the Cleaner code in AbstractLdapNamingEnumeration.
+ * altered to confirm correct operation of the NamingEnumeration<SearchResult>
+ * cleaning action.
  */
 public class LdapEnumeration {
     static WeakHashMap whm = new WeakHashMap();
