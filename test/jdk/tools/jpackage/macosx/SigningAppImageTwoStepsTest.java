@@ -25,6 +25,7 @@ import java.nio.file.Path;
 
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.TKit;
+import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.AdditionalLauncher;
@@ -66,7 +67,7 @@ public class SigningAppImageTwoStepsTest {
     public void test(boolean signAppImage) throws Exception {
         SigningCheck.checkCertificates();
 
-        Path appimageOutput = TKit.workDir().resolve("appimage");
+        Path appimageOutput = TKit.createTempDirectory("appimage");
 
         // Generate app image. Signed or unsigned based on test
         // parameter. We should able to sign predfined app images
@@ -90,17 +91,12 @@ public class SigningAppImageTwoStepsTest {
         verifySignature(appImageCmd, signAppImage);
 
         // Sign app image
-        JPackageCommand cmd = JPackageCommand.helloAppImage()
-                .addArguments("--app-image", appImageCmd.outputBundle().toAbsolutePath())
-                .addArguments("--mac-sign")
-                .addArguments("--mac-signing-key-user-name", SigningBase.DEV_NAME)
-                .addArguments("--mac-signing-keychain", SigningBase.KEYCHAIN)
-                .removeArgumentWithValue("--input")
-                .removeArgumentWithValue("--dest")
-                .removeArgumentWithValue("--name")
-                .removeArgumentWithValue("--main-jar")
-                .removeArgumentWithValue("--main-class")
-                .noCleanupBeforeExec(true);
+        JPackageCommand cmd = new JPackageCommand();
+        cmd.setPackageType(PackageType.IMAGE)
+            .addArguments("--app-image", appImageCmd.outputBundle().toAbsolutePath())
+            .addArguments("--mac-sign")
+            .addArguments("--mac-signing-key-user-name", SigningBase.DEV_NAME)
+            .addArguments("--mac-signing-keychain", SigningBase.KEYCHAIN);
         cmd.execute();
 
         // Should be signed app image

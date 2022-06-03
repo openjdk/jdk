@@ -71,7 +71,6 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         suppressOutput = cmd.suppressOutput;
         ignoreDefaultRuntime = cmd.ignoreDefaultRuntime;
         ignoreDefaultVerbose = cmd.ignoreDefaultVerbose;
-        noCleanupBeforeExec = cmd.noCleanupBeforeExec;
         immutable = cmd.immutable;
         prerequisiteActions = new Actions(cmd.prerequisiteActions);
         verifyActions = new Actions(cmd.verifyActions);
@@ -664,12 +663,6 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         return this;
     }
 
-    public JPackageCommand noCleanupBeforeExec(boolean v) {
-        verifyMutable();
-        noCleanupBeforeExec = v;
-        return this;
-    }
-
     public boolean isWithToolProvider() {
         return Optional.ofNullable(withToolProvider).orElse(
                 defaultWithToolProvider);
@@ -709,7 +702,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
     public Executor.Result execute(int expectedExitCode) {
         executePrerequisiteActions();
 
-        if (!noCleanupBeforeExec) {
+        if (hasArgument("--dest")) {
             if (isImagePackageType()) {
                 TKit.deleteDirectoryContentsRecursive(outputDir());
             } else if (ThrowingSupplier.toSupplier(() -> TKit.deleteIfExists(
@@ -998,7 +991,6 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
     private boolean suppressOutput;
     private boolean ignoreDefaultRuntime;
     private boolean ignoreDefaultVerbose;
-    private boolean noCleanupBeforeExec;
     private boolean immutable;
     private final Actions prerequisiteActions;
     private final Actions verifyActions;

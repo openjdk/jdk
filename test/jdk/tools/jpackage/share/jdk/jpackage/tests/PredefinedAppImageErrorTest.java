@@ -41,18 +41,11 @@ import jdk.jpackage.test.TKit;
  * @build jdk.jpackage.test.*
  * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile PredefinedAppImageErrorTest.java
+ * 
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=jdk.jpackage.tests.PredefinedAppImageErrorTest
  *  --jpt-before-run=jdk.jpackage.test.JPackageCommand.useExecutableByDefault
- */
-
-/*
- * @test
- * @summary Test jpackage output for erroneous input with --type "app-image" and --app-image
- * @library ../../../../helpers
- * @build jdk.jpackage.test.*
- * @modules jdk.jpackage/jdk.jpackage.internal
- * @compile PredefinedAppImageErrorTest.java
+ * 
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=jdk.jpackage.tests.PredefinedAppImageErrorTest
  *  --jpt-before-run=jdk.jpackage.test.JPackageCommand.useToolProviderByDefault
@@ -91,10 +84,11 @@ public final class PredefinedAppImageErrorTest {
         this.expectedError = expectedError;
 
         cmd = JPackageCommand.helloAppImage(javaAppDesc)
-                .saveConsoleOutput(true).dumpOutput(true).noCleanupBeforeExec(true);
+                .saveConsoleOutput(true).dumpOutput(true);
         if (jpackageArgs != null) {
             cmd.addArguments(jpackageArgs);
-        } if (removeArgs != null) {
+        }
+        if (removeArgs != null) {
             for (String arg : removeArgs) {
                 cmd.removeArgumentWithValue(arg);
             }
@@ -112,8 +106,7 @@ public final class PredefinedAppImageErrorTest {
 
     private void getDummyAppImage(JPackageCommand cmd) throws IOException {
         Path dummyAppFolder
-            = TKit.workDir().resolve("DummyAppImage").toAbsolutePath();
-        Files.createDirectory(dummyAppFolder);
+            = TKit.createTempDirectory("DummyAppImage").toAbsolutePath();
 
         Path dummyAppFile
             = dummyAppFolder.resolve("DummyAppFile").toAbsolutePath();
