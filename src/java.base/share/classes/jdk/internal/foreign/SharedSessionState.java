@@ -48,7 +48,7 @@ public class SharedSessionState extends MemorySessionImpl.State {
     private static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
 
     public SharedSessionState(Cleaner cleaner) {
-        super(new SharedList(), cleaner);
+        super(null, new SharedList(), cleaner);
     }
 
     @Override
@@ -92,11 +92,6 @@ public class SharedSessionState extends MemorySessionImpl.State {
         if (!success) {
             throw alreadyAcquired(1);
         }
-    }
-
-    @Override
-    public Thread ownerThread() {
-        return null;
     }
 
     @Override

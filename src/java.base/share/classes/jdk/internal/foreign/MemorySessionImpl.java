@@ -184,6 +184,7 @@ public non-sealed class MemorySessionImpl implements MemorySession, SegmentAlloc
         static final int CLOSED = -2;
 
         int state = OPEN;
+        final Thread owner;
 
         static final VarHandle STATE;
 
@@ -200,8 +201,9 @@ public non-sealed class MemorySessionImpl implements MemorySession, SegmentAlloc
         final Cleaner.Cleanable cleanable;
         final ResourceList resourceList;
 
-        State(ResourceList resourceList, Cleaner cleaner) {
+        State(Thread owner, ResourceList resourceList, Cleaner cleaner) {
             this.resourceList = resourceList;
+            this.owner = owner;
             cleanable = cleaner != null ?
                     cleaner.register(this, resourceList) :
                     null;
@@ -242,11 +244,13 @@ public non-sealed class MemorySessionImpl implements MemorySession, SegmentAlloc
 
         public abstract boolean isAlive();
 
-        public abstract Thread ownerThread();
+        public final Thread ownerThread() {
+            return owner;
+        }
 
         @ForceInline
         public void checkValidState() {
-            if (ownerThread() != null && ownerThread() != Thread.currentThread()) {
+            if (owner != null && owner != Thread.currentThread()) {
                 throw WRONG_THREAD;
             } else if (state < OPEN) {
                 throw ALREADY_CLOSED;

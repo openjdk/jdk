@@ -40,7 +40,6 @@ import jdk.internal.vm.annotation.ForceInline;
 public final class ConfinedSessionState extends MemorySessionImpl.State {
 
     private int asyncReleaseCount = 0;
-    private final Thread owner;
 
     static final VarHandle ASYNC_RELEASE_COUNT;
 
@@ -53,18 +52,12 @@ public final class ConfinedSessionState extends MemorySessionImpl.State {
     }
 
     public ConfinedSessionState(Thread owner, Cleaner cleaner) {
-        super(new ConfinedList(), cleaner);
-        this.owner = owner;
+        super(owner, new ConfinedList(), cleaner);
     }
 
     @Override
     public boolean isAlive() {
         return state != CLOSED;
-    }
-
-    @Override
-    public Thread ownerThread() {
-        return owner;
     }
 
     @Override
