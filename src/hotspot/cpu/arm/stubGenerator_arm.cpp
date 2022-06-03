@@ -2989,31 +2989,34 @@ class StubGenerator: public StubCodeGenerator {
   // It returns a jobject handle to the event writer.
   // The handle is dereferenced and the return value is the event writer oop.
   static RuntimeStub* generate_jfr_write_checkpoint() {
+    enum layout {
+      r1_off,
+      r2_off,
+      return_off,
+      framesize // inclusive of return address
+    };
+
     CodeBuffer code("jfr_write_checkpoint", 512, 64);
     MacroAssembler* masm = new MacroAssembler(&code);
 
-    int framesize = 0; // FIXME: Really?
-
     address start = __ pc();
-    // FIXME: No frame setup?
+    __ raw_push(R1, R2, LR);
     address the_pc = __ pc();
 
     int frame_complete = the_pc - start;
 
-    __ set_last_Java_frame(SP, FP, false, Rtemp);
+    __ set_last_Java_frame(SP, FP, true, Rtemp);
     __ mov(c_rarg0, Rthread);
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::write_checkpoint), c_rarg0);
     __ reset_last_Java_frame(Rtemp);
-
-    // R0 is jobject handle result, unpack and process it through a barrier.
-    Label L_null_jobject;
-    __ cmp(R0, 0);
-    __ b(L_null_jobject, eq);
-
-    // FIXME: Call barrier here.
-
-    __ bind(L_null_jobject);
-
+    Label null_jobject;
+    __ cbz(R0, null_jobject);
+    DecoratorSet decorators = ACCESS_READ | IN_NATIVE;
+    BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+    // need to check if tmp regs are actually used
+    bs->load_at(masm, decorators, T_OBJECT, R0, Address(R0, 0), Rtemp, R1, R2);
+    __ bind(null_jobject);
+    __ raw_pop(R1, R2, LR);
     __ ret();
 
     OopMapSet* oop_maps = new OopMapSet();
