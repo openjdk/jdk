@@ -53,6 +53,7 @@ public class ServerCompilerScheduler implements Scheduler {
         public static final String WARNING_NOT_MARKED_WITH_BLOCK_START = "Region not marked with is_block_start";
         public static final String WARNING_CFG_AND_INPUT_TO_PHI = "CFG node is a phi input";
         public static final String WARNING_PHI_NON_DOMINATING_INPUTS = "Phi input that does not dominate the phi's input block";
+        public static final String WARNING_CONTROL_UNREACHABLE_CFG = "Control-unreachable CFG node";
 
         public InputNode inputNode;
         public Set<Node> succs = new HashSet<>();
@@ -183,8 +184,10 @@ public class ServerCompilerScheduler implements Scheduler {
                 } else if (controlSuccs.get(n).size() == 1) {
                     // One successor: end the block if it is a block start node.
                     Node s = controlSuccs.get(n).iterator().next();
-                    if (s.isBlockStart) {
-                        // Block start: end the block.
+                    if (s.isBlockStart || isDummy(n)) {
+                        // Block start or n is a dummy node: end the block. The
+                        // second condition handles ill-formed graphs where join
+                        // Region nodes are not marked as block starts.
                         blockTerminators.add(n);
                         stack.push(s);
                         break;
@@ -327,20 +330,6 @@ public class ServerCompilerScheduler implements Scheduler {
             schedulePinned();
             buildDominators();
             scheduleLatest();
-
-            InputBlock noBlock = null;
-            for (InputNode n : graph.getNodes()) {
-                if (graph.getBlock(n) == null) {
-                    if (noBlock == null) {
-                        noBlock = graph.addArtificialBlock();
-                        blocks.add(noBlock);
-                    }
-
-                    graph.setBlock(n, noBlock);
-                }
-                assert graph.getBlock(n) != null;
-            }
-
             scheduleLocal();
             check();
             reportWarnings();
@@ -632,6 +621,12 @@ public class ServerCompilerScheduler implements Scheduler {
                     block = controlSuccs.get(ctrlIn).get(0).block;
                 }
             }
+            if (block == null) {
+                // This can happen for blockless CFG nodes that are not
+                // control-reachable from the root even after connecting orphans
+                // and widows (e.g. in disconnected control cycles).
+                continue;
+            }
             n.block = block;
             block.addNode(n.inputNode.getId());
         }
@@ -708,6 +703,10 @@ public class ServerCompilerScheduler implements Scheduler {
 
     private static boolean isControl(Node n) {
         return n.inputNode.getProperties().get("category").equals("control");
+    }
+
+    private static boolean isDummy(Node n) {
+        return n.inputNode == null;
     }
 
     // Whether b1 dominates b2. Used only for checking the schedule.
@@ -889,6 +888,9 @@ public class ServerCompilerScheduler implements Scheduler {
             // Check that region nodes are well-formed.
             if (isRegion(n) && !n.isBlockStart) {
                 n.addWarning(Node.WARNING_NOT_MARKED_WITH_BLOCK_START);
+            }
+            if (n.isCFG && n.block == null) {
+                n.addWarning(Node.WARNING_CONTROL_UNREACHABLE_CFG);
             }
             if (!isPhi(n)) {
                 continue;

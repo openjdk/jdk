@@ -24,6 +24,7 @@
 /**
  * @test
  * @summary Basic test of debugging option to trace pinned threads
+ * @requires vm.continuations
  * @compile --enable-preview -source ${jdk.version} TracePinnedThreads.java
  * @run main/othervm --enable-preview -Djdk.tracePinnedThreads=full TracePinnedThreads
  * @run main/othervm --enable-preview -Djdk.tracePinnedThreads=short TracePinnedThreads

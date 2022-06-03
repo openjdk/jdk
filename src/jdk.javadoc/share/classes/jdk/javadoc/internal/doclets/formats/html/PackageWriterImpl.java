@@ -272,9 +272,6 @@ public class PackageWriterImpl extends HtmlDocletWriter
         }
         if (!table.isEmpty()) {
             target.add(HtmlTree.LI(table));
-            if (table.needsScript()) {
-                getMainBodyScript().append(table.getScript());
-            }
         }
     }
 
