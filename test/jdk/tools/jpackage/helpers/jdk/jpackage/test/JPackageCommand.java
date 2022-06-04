@@ -702,13 +702,15 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
     public Executor.Result execute(int expectedExitCode) {
         executePrerequisiteActions();
 
-        if (isImagePackageType()) {
-            TKit.deleteDirectoryContentsRecursive(outputDir());
-        } else if (ThrowingSupplier.toSupplier(() -> TKit.deleteIfExists(
-                outputBundle())).get()) {
-            TKit.trace(
-                    String.format("Deleted [%s] file before running jpackage",
-                            outputBundle()));
+        if (hasArgument("--dest")) {
+            if (isImagePackageType()) {
+                TKit.deleteDirectoryContentsRecursive(outputDir());
+            } else if (ThrowingSupplier.toSupplier(() -> TKit.deleteIfExists(
+                    outputBundle())).get()) {
+                TKit.trace(
+                        String.format("Deleted [%s] file before running jpackage",
+                                outputBundle()));
+            }
         }
 
         Path resourceDir = getArgumentValue("--resource-dir", () -> null, Path::of);

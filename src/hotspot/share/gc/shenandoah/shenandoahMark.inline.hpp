@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2015, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "gc/shenandoah/shenandoahMark.hpp"
 
+#include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
@@ -69,6 +70,12 @@ void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveD
   if (task->is_not_chunked()) {
     if (obj->is_instance()) {
       // Case 1: Normal oop, process as usual.
+      if (ContinuationGCSupport::relativize_stack_chunk(obj)) {
+          // Loom doesn't support mixing of weak marking and strong marking of
+          // stack chunks.
+          cl->set_weak(false);
+      }
+
       obj->oop_iterate(cl);
       dedup_string<STRING_DEDUP>(obj, req);
     } else if (obj->is_objArray()) {

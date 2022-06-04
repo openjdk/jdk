@@ -614,8 +614,11 @@ static jobject sAccessibilityClass = NULL;
                 [fActions setObject:action forKey:NSAccessibilityPickAction];
                 [fActionSelectors addObject:[sActionSelectors objectForKey:NSAccessibilityPickAction]];
             } else {
-                [fActions setObject:action forKey:[sActions objectForKey:[action getDescription]]];
-                [fActionSelectors addObject:[sActionSelectors objectForKey:[sActions objectForKey:[action getDescription]]]];
+                NSString *nsActionName = [sActions objectForKey:[action getDescription]];
+                if (nsActionName != nil) {
+                    [fActions setObject:action forKey:nsActionName];
+                    [fActionSelectors addObject:[sActionSelectors objectForKey:nsActionName]];
+                }
             }
             [action release];
         }

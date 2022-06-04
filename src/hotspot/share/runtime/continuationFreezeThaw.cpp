@@ -1199,7 +1199,6 @@ NOINLINE void FreezeBase::finish_freeze(const frame& f, const frame& top) {
     // old chunks are all in GC mode.
     assert(!UseG1GC, "G1 can not deal with allocating outside of eden");
     assert(!UseZGC, "ZGC can not deal with allocating chunks visible to marking");
-    assert(!UseShenandoahGC, "Shenandoah can not deal with allocating chunks visible to marking");
     ContinuationGCSupport::transform_stack_chunk(_cont.tail());
     // For objects in the old generation we must maintain the remembered set
     _cont.tail()->do_barriers<stackChunkOopDesc::BarrierType::Store>();
@@ -1281,6 +1280,11 @@ stackChunkOop Freeze<ConfigT>::allocate_chunk(size_t stack_size) {
   chunk->set_cont_raw<typename ConfigT::OopT>(_cont.continuation());
 
   assert(chunk->parent() == nullptr || chunk->parent()->is_stackChunk(), "");
+
+  // Shenandoah: even continuation is good, it does not mean it is deeply good.
+  if (UseShenandoahGC && chunk->requires_barriers()) {
+    fast_oop = nullptr;
+  }
 
   if (fast_oop != nullptr) {
     assert(!chunk->requires_barriers(), "Unfamiliar GC requires barriers on TLAB allocation");

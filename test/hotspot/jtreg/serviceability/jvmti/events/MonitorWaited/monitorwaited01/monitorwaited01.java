@@ -43,6 +43,7 @@ import java.io.PrintStream;
  *     - change signature of agentProc function
  *       and save JNIEnv pointer now passed as argument.
  *
+ * @requires vm.continuations
  * @library /test/lib
  * @compile --enable-preview -source ${jdk.version} monitorwaited01.java
  * @run main/othervm/native --enable-preview -agentlib:monitorwaited01 monitorwaited01 platform

@@ -1,4 +1,4 @@
-Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
 DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
 This code is free software; you can redistribute it and/or modify it
@@ -67,9 +67,9 @@ of a test harness.
 The total amount of needed memory is approximately
 numberOfThreads * (sizeOfArray * sizeOfArray) * (multiplier / 2) bytes
 
-The default is about 10 Megs needed, not couting garbage collection
+The default is about 10 Megs needed, not counting garbage collection
 overhead.  Garbage collection doubles the memory requirements for
-programs that run out of heap space, so the the true default size
+programs that run out of heap space, so the true default size
 is 20 Megs.
 
 

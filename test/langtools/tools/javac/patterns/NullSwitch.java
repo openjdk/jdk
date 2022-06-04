@@ -66,6 +66,28 @@ public class NullSwitch {
         assertEquals(0, matchingSwitch13(""));
         assertEquals(1, matchingSwitch13(0.0));
         assertEquals(2, matchingSwitch13(null));
+
+        // record classes and null
+        assertEquals(1, matchingSwitch14(new R(null)));
+        assertEquals(2, matchingSwitch15(new R(null)));
+    }
+
+    class Super {}
+    class Sub extends Super {}
+    record R(Super s) {}
+
+    private int matchingSwitch14(R r) {
+        return switch(r) {
+            case R(Super s) -> 1;
+            default -> 2;
+        };
+    }
+
+    private int matchingSwitch15(R r) {
+        return switch(r) {
+            case R(Sub s) -> 1;
+            default -> 2;
+        };
     }
 
     private int matchingSwitch1(Object obj) {
