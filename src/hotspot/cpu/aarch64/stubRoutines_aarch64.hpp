@@ -72,7 +72,7 @@ class aarch64 {
 
   static address _spin_wait;
 
-  static address _chacha20_counter_addmask;
+  static address _chacha20_constants;
 
   static bool _completed;
 
@@ -186,8 +186,8 @@ class aarch64 {
     return _spin_wait;
   }
 
-  static address chacha20_counter_addmask() {
-      return _chacha20_counter_addmask;
+  static address chacha20_constdata() {
+      return _chacha20_constants;
   }
 
   static bool complete() {

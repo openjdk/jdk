@@ -4080,7 +4080,8 @@ class StubGenerator: public StubCodeGenerator {
 
     // Load the index register for the 8-bit left rotation.  This
     // constant data begins 16 bytes into the constant data segment.
-    __ lea(tmpAddr, ExternalAddress((address) StubRoutines::aarch64::chacha20_counter_addmask()));
+    __ lea(tmpAddr, ExternalAddress(
+                StubRoutines::aarch64::chacha20_constdata()));
     __ ldrq(lrot8Tbl, Address(tmpAddr, 16));
 
     // Create an add mask to increment the SIMD register that
@@ -4202,13 +4203,18 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  /* Create add mask for 4-block counter increment */
-  address cc20_ctr_addmask() {
+  // Generate constant data for use with the ChaCha20 block function.
+  // The constant data is broken into two 128-bit segments to be loaded
+  // onto FloatRegisters.  The first 128 bits are a counter add overlay
+  // that adds +0/+1/+2/+3 to the vector holding replicated state[12].
+  // The second 128-bits is a table constant used for 8-bit left rotations.
+  address cc20_gen_constdata() {
     __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", "chacha20_ctradd_mask");
+    StubCodeMark mark(this, "StubRoutines", "cc20_gen_constdata");
     address start = __ pc();
     __ emit_data64(0x0000000100000000, relocInfo::none);
     __ emit_data64(0x0000000300000002, relocInfo::none);
+
     __ emit_data64(0x0605040702010003, relocInfo::none);
     __ emit_data64(0x0E0D0C0F0A09080B, relocInfo::none);
     return start;
@@ -4219,14 +4225,15 @@ class StubGenerator: public StubCodeGenerator {
   // (e.g. all four blocks' worth of state[0] in one register, etc.)
   //
   // state (int[16]) = c_rarg0
-  // keystream (byte[256]) = c_rarg1
+  // keystream (byte[1024]) = c_rarg1
   // return - number of bytes of keystream (always 256)
-  address generate_chacha20Block_block() {
+  address generate_chacha20Block_blockpar() {
     __ align(CodeEntryAlignment);
      StubCodeMark mark(this, "StubRoutines", "chacha20Block");
     address start = __ pc();
     __ enter();
 
+    int i, j;
     Label L_twoRounds;
     const Register state = c_rarg0;
     const Register keystream = c_rarg1;
@@ -4237,55 +4244,61 @@ class StubGenerator: public StubCodeGenerator {
     const FloatRegister stateSecond = v1;
     const FloatRegister stateThird = v2;
     const FloatRegister stateFourth = v3;
-    const FloatRegister wkState0 = v4;
-    const FloatRegister wkState1 = v5;
-    const FloatRegister wkState2 = v6;
-    const FloatRegister wkState3 = v7;
-    const FloatRegister wkState4 = v16;
-    const FloatRegister wkState5 = v17;
-    const FloatRegister wkState6 = v18;
-    const FloatRegister wkState7 = v19;
-    const FloatRegister wkState8 = v20;
-    const FloatRegister wkState9 = v21;
-    const FloatRegister wkState10 = v22;
-    const FloatRegister wkState11 = v23;
-    const FloatRegister wkState12 = v24;
-    const FloatRegister wkState13 = v25;
-    const FloatRegister wkState14 = v26;
-    const FloatRegister wkState15 = v27;
     const FloatRegister origCtrState = v28;
     const FloatRegister scratch = v29;
     const FloatRegister lrot8Tbl = v30;
 
-    // Load from memory and interlace across 16 SIMD registers
-    __ mov(tmpAddr, state);
-    __ ld4r(wkState0, wkState1, wkState2, wkState3, __ T4S, __ post(tmpAddr, 16));
-    __ ld4r(wkState4, wkState5, wkState6, wkState7, __ T4S, __ post(tmpAddr, 16));
-    __ ld4r(wkState8, wkState9, wkState10, wkState11, __ T4S, __ post(tmpAddr, 16));
-    __ ld4r(wkState12, wkState13, wkState14, wkState15, __ T4S, __ post(tmpAddr, 16));
+    // Organize SIMD registers in an array that facilitates
+    // putting repetitive opcodes into loop structures.  It is
+    // important that each grouping of 4 registers is monotonically
+    // increasing to support the requirements of multi-register
+    // instructions (e.g. ld4r, st4, etc.)
+    const FloatRegister workSt[16] = {
+         v4,  v5,  v6,  v7, v16, v17, v18, v19,
+        v20, v21, v22, v23, v24, v25, v26, v27
+    };
 
-    // Pull in constant data.  The first 16 bytes are the add mask
+    // Load from memory and interlace across 16 SIMD registers,
+    // With each word from memory being broadcast to all lanes of
+    // each successive SIMD register.
+    //      Addr(0) -> All lanes in workSt[i]
+    //      Addr(4) -> All lanes workSt[i + 1], etc.
+    __ mov(tmpAddr, state);
+    for (i = 0; i < 16; i += 4) {
+        __ ld4r(workSt[i], workSt[i + 1], workSt[i + 2], workSt[i + 3],
+                __ T4S, __ post(tmpAddr, 16));
+    }
+
+    // Pull in constant data.  The first 16 bytes are the add overlay
     // which is applied to the vector holding the counter (state[12]).
     // The second 16 bytes is the index register for the 8-bit left
     // rotation tbl instruction.
-    __ lea(tmpAddr, ExternalAddress((address) StubRoutines::aarch64::chacha20_counter_addmask()));
-    //__ ld1(origCtrState, __ T16B, Address(tmpAddr));
+    __ lea(tmpAddr, ExternalAddress(
+                StubRoutines::aarch64::chacha20_constdata()));
     __ ldpq(origCtrState, lrot8Tbl, Address(tmpAddr));
-    __ addv(wkState12, __ T4S, wkState12, origCtrState);
+    __ addv(workSt[12], __ T4S, workSt[12], origCtrState);
 
-    // Set up the 10 iteration loop
+    // Set up the 10 iteration loop and perform all 8 quarter round ops
     __ mov(loopCtr, 10);
     __ BIND(L_twoRounds);
 
-    __ cc20_quarter_round(wkState0, wkState4, wkState8, wkState12, scratch, lrot8Tbl);
-    __ cc20_quarter_round(wkState1, wkState5, wkState9, wkState13, scratch, lrot8Tbl);
-    __ cc20_quarter_round(wkState2, wkState6, wkState10, wkState14, scratch, lrot8Tbl);
-    __ cc20_quarter_round(wkState3, wkState7, wkState11, wkState15, scratch, lrot8Tbl);
+    __ cc20_quarter_round(workSt[0], workSt[4], workSt[8], workSt[12],
+            scratch, lrot8Tbl);
+    __ cc20_quarter_round(workSt[1], workSt[5], workSt[9], workSt[13],
+            scratch, lrot8Tbl);
+    __ cc20_quarter_round(workSt[2], workSt[6], workSt[10], workSt[14],
+            scratch, lrot8Tbl);
+    __ cc20_quarter_round(workSt[3], workSt[7], workSt[11], workSt[15],
+            scratch, lrot8Tbl);
 
-    __ cc20_quarter_round(wkState0, wkState5, wkState10, wkState15, scratch, lrot8Tbl);
-    __ cc20_quarter_round(wkState1, wkState6, wkState11, wkState12, scratch, lrot8Tbl);
-    __ cc20_quarter_round(wkState2, wkState7, wkState8, wkState13, scratch, lrot8Tbl);
-    __ cc20_quarter_round(wkState3, wkState4, wkState9, wkState14, scratch, lrot8Tbl);
+    __ cc20_quarter_round(workSt[0], workSt[5], workSt[10], workSt[15],
+            scratch, lrot8Tbl);
+    __ cc20_quarter_round(workSt[1], workSt[6], workSt[11], workSt[12],
+            scratch, lrot8Tbl);
+    __ cc20_quarter_round(workSt[2], workSt[7], workSt[8], workSt[13],
+            scratch, lrot8Tbl);
+    __ cc20_quarter_round(workSt[3], workSt[4], workSt[9], workSt[14],
+            scratch, lrot8Tbl);
 
     // Decrement and iterate
     __ subs(loopCtr, loopCtr, 1);
@@ -4293,48 +4306,30 @@ class StubGenerator: public StubCodeGenerator {
     __ br(Assembler::NE, L_twoRounds);
 
     __ mov(tmpAddr, state);
-    __ ld4r(stateFirst, stateSecond, stateThird, stateFourth, __ T4S, __ post(tmpAddr, 16));
-    __ addv(wkState0, __ T4S, wkState0, stateFirst);
-    __ addv(wkState1, __ T4S, wkState1, stateSecond);
-    __ addv(wkState2, __ T4S, wkState2, stateThird);
-    __ addv(wkState3, __ T4S, wkState3, stateFourth);
 
-    __ ld4r(stateFirst, stateSecond, stateThird, stateFourth, __ T4S, __ post(tmpAddr, 16));
-    __ addv(wkState4, __ T4S, wkState4, stateFirst);
-    __ addv(wkState5, __ T4S, wkState5, stateSecond);
-    __ addv(wkState6, __ T4S, wkState6, stateThird);
-    __ addv(wkState7, __ T4S, wkState7, stateFourth);
+    // Add the starting state back to the post-loop keystream
+    // state.  We read/interlace the state array from memory into
+    // 4 registers similar to what we did in the beginning.  Then
+    // add the counter overlay onto workSt[12] at the end.
+    for (i = 0; i < 16; i += 4) {
+        __ ld4r(stateFirst, stateSecond, stateThird, stateFourth,
+                __ T4S, __ post(tmpAddr, 16));
+        __ addv(workSt[i], __ T4S, workSt[i], stateFirst);
+        __ addv(workSt[i + 1], __ T4S, workSt[i + 1], stateSecond);
+        __ addv(workSt[i + 2], __ T4S, workSt[i + 2], stateThird);
+        __ addv(workSt[i + 3], __ T4S, workSt[i + 3], stateFourth);
+    }
+    __ addv(workSt[12], __ T4S, workSt[12], origCtrState);    // Add ctr mask
 
-    __ ld4r(stateFirst, stateSecond, stateThird, stateFourth, __ T4S, __ post(tmpAddr, 16));
-    __ addv(wkState8, __ T4S, wkState8, stateFirst);
-    __ addv(wkState9, __ T4S, wkState9, stateSecond);
-    __ addv(wkState10, __ T4S, wkState10, stateThird);
-    __ addv(wkState11, __ T4S, wkState11, stateFourth);
-
-    __ ld4r(stateFirst, stateSecond, stateThird, stateFourth, __ T4S, __ post(tmpAddr, 16));
-    __ addv(wkState12, __ T4S, wkState12, stateFirst);
-    __ addv(wkState12, __ T4S, wkState12, origCtrState);    // Add ctr mask
-    __ addv(wkState13, __ T4S, wkState13, stateSecond);
-    __ addv(wkState14, __ T4S, wkState14, stateThird);
-    __ addv(wkState15, __ T4S, wkState15, stateFourth);
-
-    // Write to Keystream
-    __ st4(wkState0, wkState1, wkState2, wkState3, __ S, 0, __ post(keystream, 16));
-    __ st4(wkState4, wkState5, wkState6, wkState7, __ S, 0, __ post(keystream, 16));
-    __ st4(wkState8, wkState9, wkState10, wkState11, __ S, 0, __ post(keystream, 16));
-    __ st4(wkState12, wkState13, wkState14, wkState15, __ S, 0, __ post(keystream, 16));
-    __ st4(wkState0, wkState1, wkState2, wkState3, __ S, 1, __ post(keystream, 16));
-    __ st4(wkState4, wkState5, wkState6, wkState7, __ S, 1, __ post(keystream, 16));
-    __ st4(wkState8, wkState9, wkState10, wkState11, __ S, 1, __ post(keystream, 16));
-    __ st4(wkState12, wkState13, wkState14, wkState15, __ S, 1, __ post(keystream, 16));
-    __ st4(wkState0, wkState1, wkState2, wkState3, __ S, 2, __ post(keystream, 16));
-    __ st4(wkState4, wkState5, wkState6, wkState7, __ S, 2, __ post(keystream, 16));
-    __ st4(wkState8, wkState9, wkState10, wkState11, __ S, 2, __ post(keystream, 16));
-    __ st4(wkState12, wkState13, wkState14, wkState15, __ S, 2, __ post(keystream, 16));
-    __ st4(wkState0, wkState1, wkState2, wkState3, __ S, 3, __ post(keystream, 16));
-    __ st4(wkState4, wkState5, wkState6, wkState7, __ S, 3, __ post(keystream, 16));
-    __ st4(wkState8, wkState9, wkState10, wkState11, __ S, 3, __ post(keystream, 16));
-    __ st4(wkState12, wkState13, wkState14, wkState15, __ S, 3, __ post(keystream, 16));
+    // Write to key stream, storing the same element out of workSt[0..15]
+    // to consecutive 4-byte offsets in the key stream buffer, then repeating
+    // for the next element position.
+    for (i = 0; i < 4; i++) {
+        for (j = 0; j < 16; j += 4) {
+            __ st4(workSt[j], workSt[j + 1], workSt[j + 2], workSt[j + 3],
+                    __ S, i, __ post(keystream, 16));
+        }
+    }
 
     __ mov(r0, 256);             // Return length of output keystream
     __ leave();
@@ -7849,11 +7844,11 @@ class StubGenerator: public StubCodeGenerator {
 #endif // COMPILER2
 
     if (UseChaCha20Intrinsics) {
-        StubRoutines::aarch64::_chacha20_counter_addmask = cc20_ctr_addmask();
+        StubRoutines::aarch64::_chacha20_constants = cc20_gen_constdata();
 #if 0
         StubRoutines::_chacha20Block = generate_chacha20Block_qr();
 #else
-        StubRoutines::_chacha20Block = generate_chacha20Block_block();
+        StubRoutines::_chacha20Block = generate_chacha20Block_blockpar();
 #endif
     }
 
