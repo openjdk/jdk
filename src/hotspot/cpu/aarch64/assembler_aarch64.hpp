@@ -2512,6 +2512,9 @@ public:
     ld_st(Vt, T, index, a, op1, op2, 4);                                \
   }
 
+  INSN1(st1, 0b001101000, 0b0000);
+  INSN2(st2, 0b001101001, 0b0000);
+  INSN3(st3, 0b001101000, 0b0010);
   INSN4(st4, 0b001101001, 0b0010);
 
 #undef INSN1
