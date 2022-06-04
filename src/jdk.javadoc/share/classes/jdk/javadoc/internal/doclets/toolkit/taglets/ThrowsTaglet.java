@@ -209,12 +209,12 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
         Utils utils = writer.configuration().utils;
         Map<List<ThrowsTree>, ExecutableElement> declaredExceptionTags = new LinkedHashMap<>();
         for (TypeMirror declaredExceptionType : declaredExceptionTypes) {
-            Input input = new DocFinder.Input(utils, holder, this,
+            var input = new DocFinder.Input(utils, holder, this,
                     utils.getTypeName(declaredExceptionType, false));
             DocFinder.Output inheritedDoc = DocFinder.search(writer.configuration(), input);
             if (inheritedDoc.tagList.isEmpty()) {
-                String typeName = utils.getTypeName(declaredExceptionType, true);
-                input = new DocFinder.Input(utils, holder, this, typeName);
+                input = new DocFinder.Input(utils, holder, this,
+                        utils.getTypeName(declaredExceptionType, true));
                 inheritedDoc = DocFinder.search(writer.configuration(), input);
             }
             if (!inheritedDoc.tagList.isEmpty()) {
