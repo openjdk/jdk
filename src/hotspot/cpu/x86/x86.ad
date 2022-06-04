@@ -1886,7 +1886,7 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
           (is_subword_type(bt) || bt == T_LONG)) {
         return false;
       }
-      if (is_integral_type(bt) && !VM_Version::supports_avx512dq()) {
+      if ((bt == T_LONG) && !VM_Version::supports_avx512dq()) {
         return false;
       }
       break;
