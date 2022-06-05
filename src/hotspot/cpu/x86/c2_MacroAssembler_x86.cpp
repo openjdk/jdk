@@ -1501,7 +1501,7 @@ void C2_MacroAssembler::load_vector(XMMRegister dst, AddressLiteral src, int vle
 
 void C2_MacroAssembler::load_iota_indices(XMMRegister dst, Register scratch, int vlen_in_bytes) {
   ExternalAddress addr(StubRoutines::x86::vector_iota_indices());
-  if (vlen_in_bytes == 4) {
+  if (vlen_in_bytes <= 4) {
     movdl(dst, addr);
   } else if (vlen_in_bytes == 8) {
     movq(dst, addr);
@@ -5316,3 +5316,4 @@ void C2_MacroAssembler::udivmodL(Register rax, Register divisor, Register rdx, R
   bind(done);
 }
 #endif
+

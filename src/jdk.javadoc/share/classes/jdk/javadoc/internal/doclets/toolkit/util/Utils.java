@@ -1102,9 +1102,9 @@ public class Utils {
     }
 
     /**
-     * Given a class, return the closest visible super class.
+     * Given a class, return the closest visible superclass.
      * @param type the TypeMirror to be interrogated
-     * @return  the closest visible super class.  Return null if it cannot
+     * @return  the closest visible superclass.  Return null if it cannot
      *          be found.
      */
     public TypeMirror getFirstVisibleSuperClass(TypeMirror type) {
@@ -1113,10 +1113,10 @@ public class Utils {
 
 
     /**
-     * Given a class, return the closest visible super class.
+     * Given a class, return the closest visible superclass.
      *
      * @param te the TypeElement to be interrogated
-     * @return the closest visible super class.  Return null if it cannot
+     * @return the closest visible superclass.  Return null if it cannot
      *         be found.
      */
     public TypeMirror getFirstVisibleSuperClass(TypeElement te) {

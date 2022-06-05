@@ -158,7 +158,11 @@ class Thread: public ThreadShadow {
   }
 
   static ByteSize nmethod_disarmed_offset() {
-    return byte_offset_of(Thread, _nmethod_disarm_value);
+    ByteSize offset = byte_offset_of(Thread, _nmethod_disarm_value);
+    // At least on x86_64, nmethod entry barrier encodes disarmed value offset
+    // in instruction as disp8 immed
+    assert(in_bytes(offset) < 128, "Offset >= 128");
+    return offset;
   }
 
  private:
