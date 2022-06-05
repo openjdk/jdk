@@ -27,17 +27,17 @@
 #include "unittest.hpp"
 
 TEST_VM(opto, compress_expand_bits) {
-  ASSERT_EQ(CompressBitsNode::compress_bits(-4L, -1L, 64), -4L);
-  ASSERT_EQ(CompressBitsNode::compress_bits(-4L, -1L, 32), (-4L & 0xFFFFFFFFL));
-  ASSERT_EQ(CompressBitsNode::compress_bits(2147483647L, -65535L, 64), 65535L);
-  ASSERT_EQ(CompressBitsNode::compress_bits(2147483647L, -65535L, 32), 65535L);
-  ASSERT_EQ(CompressBitsNode::compress_bits(-2147483648L, -65535L, 64), 562949953355776L);
-  ASSERT_EQ(CompressBitsNode::compress_bits(-2147483648L, -65535L, 32), 65536L);
-  ASSERT_EQ(ExpandBitsNode::expand_bits(-4L, -1L, 64), -4L);
-  ASSERT_EQ(ExpandBitsNode::expand_bits(-4L, -1L, 32), (-4L & 0xFFFFFFFFL));
-  ASSERT_EQ(ExpandBitsNode::expand_bits(2147483647L, -65535L, 64), 70368744112129L);
-  ASSERT_EQ(ExpandBitsNode::expand_bits(2147483647L, -65535L, 32), (-65535L & 0xFFFFFFFFL));
-  ASSERT_EQ(ExpandBitsNode::expand_bits(-2147483648L, -65535L, 64), -70368744177664L);
-  ASSERT_EQ(ExpandBitsNode::expand_bits(-2147483648L, -65535L, 32), 0L);
+  ASSERT_EQ(CompressBitsNode::compress_bits(-4LL, -1LL, 64), -4LL);
+  ASSERT_EQ(CompressBitsNode::compress_bits(-4LL, -1LL, 32), (-4LL & 0xFFFFFFFFLL));
+  ASSERT_EQ(CompressBitsNode::compress_bits(2147483647LL, -65535LL, 64), 65535LL);
+  ASSERT_EQ(CompressBitsNode::compress_bits(2147483647LL, -65535LL, 32), 65535LL);
+  ASSERT_EQ(CompressBitsNode::compress_bits(-2147483648LL, -65535LL, 64), 562949953355776LL);
+  ASSERT_EQ(CompressBitsNode::compress_bits(-2147483648LL, -65535LL, 32), 65536LL);
+  ASSERT_EQ(ExpandBitsNode::expand_bits(-4LL, -1LL, 64), -4LL);
+  ASSERT_EQ(ExpandBitsNode::expand_bits(-4LL, -1LL, 32), (-4LL & 0xFFFFFFFFLL));
+  ASSERT_EQ(ExpandBitsNode::expand_bits(2147483647LL, -65535LL, 64), 70368744112129LL);
+  ASSERT_EQ(ExpandBitsNode::expand_bits(2147483647LL, -65535LL, 32), (-65535LL & 0xFFFFFFFFLL));
+  ASSERT_EQ(ExpandBitsNode::expand_bits(-2147483648LL, -65535LL, 64), -70368744177664LL);
+  ASSERT_EQ(ExpandBitsNode::expand_bits(-2147483648LL, -65535LL, 32), 0LL);
 }
 
