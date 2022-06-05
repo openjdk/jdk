@@ -1852,6 +1852,7 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
       if (size_in_bits > 256 && !VM_Version::supports_avx512bw()) {
         return false;
       }
+      break;
     case Op_VectorCastB2X:
     case Op_VectorCastS2X:
     case Op_VectorCastI2X:

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,8 @@ public class RotateBenchmark {
 
   @Param({"20"})
   public int SHIFT;
+
+  static final int CONSHIFT = 20;
 
   public long [] larr;
   public int  [] iarr;
@@ -83,5 +85,24 @@ public class RotateBenchmark {
     for (int i = 0; i < TESTSIZE; i++)
        lres[i] = Long.rotateRight(larr[i], SHIFT);
   }
-
+  @Benchmark
+  public void testRotateLeftConI() {
+    for (int i = 0; i < TESTSIZE; i++)
+      ires[i] = Integer.rotateLeft(iarr[i], CONSHIFT);
+  }
+  @Benchmark
+  public void testRotateRightConI() {
+    for (int i = 0; i < TESTSIZE; i++)
+      ires[i] = Integer.rotateRight(iarr[i], CONSHIFT);
+  }
+  @Benchmark
+  public void testRotateLeftConL() {
+    for (int i = 0; i < TESTSIZE; i++)
+      lres[i] = Long.rotateLeft(larr[i], CONSHIFT);
+  }
+  @Benchmark
+  public void testRotateRightConL() {
+    for (int i = 0; i < TESTSIZE; i++)
+      lres[i] = Long.rotateRight(larr[i], CONSHIFT);
+  }
 }

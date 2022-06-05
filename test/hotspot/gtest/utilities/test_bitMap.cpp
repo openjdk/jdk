@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,7 @@ class BitMapTest {
     EXPECT_TRUE(map.is_same(map2)) << "With init_size " << init_size;
   }
 
-#ifndef PRODUCT
+#ifdef ASSERT
 
   static void testPrintOn(BitMap::idx_t size) {
     ResourceMark rm;
@@ -165,7 +165,7 @@ TEST_VM(BitMap, reinitialize) {
   BitMapTest::testReinitialize(BitMapTest::BITMAP_SIZE);
 }
 
-#ifndef PRODUCT
+#ifdef ASSERT
 
 TEST_VM(BitMap, print_on) {
   BitMapTest::testPrintOn(0);

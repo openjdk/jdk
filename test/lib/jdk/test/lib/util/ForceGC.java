@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,23 +32,21 @@ import java.util.function.BooleanSupplier;
  * Utility class to invoke System.gc()
  */
 public class ForceGC {
-    private final static Cleaner cleaner = Cleaner.create();
-
-    private final CountDownLatch cleanerInvoked;
+    private final CountDownLatch cleanerInvoked = new CountDownLatch(1);
+    private final Cleaner cleaner = Cleaner.create();
     private Object o;
 
     public ForceGC() {
         this.o = new Object();
-        this.cleanerInvoked = new CountDownLatch(1);
-        cleaner.register(o, cleanerInvoked::countDown);
+        cleaner.register(o, () -> cleanerInvoked.countDown());
     }
 
-    private void doIt(int iter) {
+    private void doit(int iter) {
         try {
-            for (int i = 0; i < 100; i++) {
+            for (int i = 0; i < 10; i++) {
                 System.gc();
-                System.out.println("doIt() iter: " + iter + ", gc " + i);
-                if (cleanerInvoked.await(100L, TimeUnit.MILLISECONDS)) {
+                System.out.println("doit() iter: " + iter + ", gc " + i);
+                if (cleanerInvoked.await(1L, TimeUnit.SECONDS)) {
                     return;
                 }
             }
@@ -64,23 +62,18 @@ public class ForceGC {
      * @param s boolean supplier
      * @return true if the {@code BooleanSupplier} returns true and false if
      *         the predefined waiting time elapsed before the count reaches zero.
+     * @throws InterruptedException if the current thread is interrupted while waiting
      */
     public boolean await(BooleanSupplier s) {
         o = null; // Keep reference to Object until now, to ensure the Cleaner
                   // doesn't count down the latch before await() is called.
-        for (int i = 0; i < 1000; i++) {
-            if (s.getAsBoolean()) {
-                return true;
-            }
-
-            doIt(i);
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
+        for (int i = 0; i < 10; i++) {
+            if (s.getAsBoolean()) return true;
+            doit(i);
+            try { Thread.sleep(1000); } catch (InterruptedException e) {
                 throw new AssertionError("unexpected interrupted sleep", e);
             }
         }
-
         return false;
     }
 }

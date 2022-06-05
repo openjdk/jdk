@@ -177,7 +177,9 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
                         case TYPE_PARAMETER -> "doclet.TypeParameters_warn";
                         case RECORD_COMPONENT -> "doclet.RecordComponents_warn";
                     };
-                    messages.warning(ch.getDocTreePath(tag), key, paramName);
+                    if (!writer.configuration().isDocLintReferenceGroupEnabled()) {
+                        messages.warning(ch.getDocTreePath(tag), key, paramName);
+                    }
                 }
                 String position = positionOfName.get(name);
                 if (position != null) {
@@ -187,7 +189,9 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
                             case TYPE_PARAMETER -> "doclet.TypeParameters_dup_warn";
                             case RECORD_COMPONENT -> "doclet.RecordComponents_dup_warn";
                         };
-                        messages.warning(ch.getDocTreePath(tag), key, paramName);
+                        if (!writer.configuration().isDocLintReferenceGroupEnabled()) {
+                            messages.warning(ch.getDocTreePath(tag), key, paramName);
+                        }
                     } else {
                         tagOfPosition.put(position, tag);
                     }
