@@ -735,7 +735,7 @@ class Compile : public Phase {
   void remove_from_post_loop_opts_igvn(Node* n);
   void process_for_post_loop_opts_igvn(PhaseIterGVN& igvn);
 
-  void remove_unstable_if_trap(CallStaticJavaNode* trap);
+  bool remove_unstable_if_trap(CallStaticJavaNode* trap);
   void remove_useless_unstable_if_traps(Unique_Node_List &useful);
   void preprocess_unstable_if_traps();
   void process_for_unstable_if_traps(PhaseIterGVN& igvn);

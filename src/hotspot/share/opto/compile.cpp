@@ -1877,20 +1877,29 @@ void Compile::remove_useless_unstable_if_traps(Unique_Node_List& useful) {
     }
   }
 }
-
-// remove unstable_if trap of unc from candicates. It is either dead or fold-compares case.
+//
+// Remove unstable_if trap of unc from candicates. It is either dead or fold-compares case.
+// Return true if succeed or not found.
+//
+// In rare cases, the found traps have been processed. It is too late to delete. return false
+// and ask fold-compares to yield.
 //
 // 'fold-compares' may use the uncommon_trap of the dominating IfNode to cover the fused
 // IfNode. This breaks the unstable_if trap invariant: control takes the unstable path
 // when deoptimization does happen.
-void Compile::remove_unstable_if_trap(CallStaticJavaNode* unc) {
+//
+bool Compile::remove_unstable_if_trap(CallStaticJavaNode* unc) {
   for (int i = 0; i < _unstable_if_traps.length(); ++i) {
     UnstableIfTrap* trap = _unstable_if_traps.at(i);
     if (trap->uncommon_trap() == unc) {
+      if (trap->modified()) {
+        return false;
+      }
       _unstable_if_traps.delete_at(i);
       break;
     }
   }
+  return true;
 }
 
 #ifndef PRODUCT
@@ -1914,12 +1923,12 @@ void Compile::preprocess_unstable_if_traps() {
 // Re-calculate unstable_if traps with the liveness of next_bci, which points to the unlikely path.
 // It needs to be done after igvn because fold-compares may fuse uncommon_traps and before renumbering.
 void Compile::process_for_unstable_if_traps(PhaseIterGVN& igvn) {
-  while (_unstable_if_traps.length() > 0) {
-    UnstableIfTrap* trap = _unstable_if_traps.pop();
+  for (int i = 0; i < _unstable_if_traps.length(); ++i) {
+    UnstableIfTrap* trap = _unstable_if_traps.at(i);
     CallStaticJavaNode* unc = trap->uncommon_trap();
     int next_bci = trap->next_bci();
 
-    if (next_bci != -1) {
+    if (next_bci != -1 && !trap->modified()) {
       assert(!_dead_node_list.test(unc->_idx), "changing a dead node!");
       JVMState* jvms = unc->jvms();
       ciMethod* method = jvms->method();
@@ -1940,7 +1949,7 @@ void Compile::process_for_unstable_if_traps(PhaseIterGVN& igvn) {
       ResourceMark rm;
       const MethodLivenessResult& live_locals = method->liveness_at_bci(next_bci);
       assert(live_locals.is_valid(), "broken liveness info");
-
+      bool changed = false;
       int len = (int)live_locals.size();
       for (int i = 0; i < len; i++) {
         Node* local = unc->local(jvms, i);
@@ -1956,7 +1965,11 @@ void Compile::process_for_unstable_if_traps(PhaseIterGVN& igvn) {
           }
 #endif
           igvn.replace_input_of(unc, idx, top());
+          changed = true;
         }
+      }
+      if (changed) {
+        trap->set_modified();
       }
     }
   }

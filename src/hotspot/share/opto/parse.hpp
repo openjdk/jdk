@@ -610,10 +610,11 @@ class UnstableIfTrap {
   CallStaticJavaNode* const _unc;
   // Parse::_blocks outlive Parse object itself.
   // They are reclaimed by ResourceMark in CompileBroker::invoke_compiler_on_method().
-  Parse::Block* const _path; // The pruned path.
+  Parse::Block* const _path; // the pruned path
+  bool _modified;            // modified locals based on next_bci()
 
 public:
-  UnstableIfTrap(CallStaticJavaNode* call, Parse::Block* path): _unc(call), _path(path) {
+  UnstableIfTrap(CallStaticJavaNode* call, Parse::Block* path): _unc(call), _path(path), _modified(false) {
     assert(_unc != NULL && Deoptimization::trap_request_reason(_unc->uncommon_trap_request()) == Deoptimization::Reason_unstable_if,
           "invalid uncommon_trap call!");
   }
@@ -622,6 +623,14 @@ public:
   // when deoptimization does happen.
   int next_bci() const {
     return _path == nullptr ? -1 : _path->start();
+  }
+
+  bool modified() const {
+    return _modified;
+  }
+
+  void set_modified() {
+    _modified = true;
   }
 
   Parse::Block* path() const {
