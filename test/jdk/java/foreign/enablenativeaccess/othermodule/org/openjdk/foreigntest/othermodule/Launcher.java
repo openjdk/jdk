@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,12 @@ import java.util.Arrays;
 
 import org.openjdk.foreigntest.PanamaMainDirect;
 
-// Called with 1 arguments: 
+// Called with 1 argument:
 // * a boolean if Module.enableNativeAccess() should be called
-// This class then calls the main method of the target class.
+// This class then calls the main method of PanamaMainDirect.
 public class Launcher {
-    public static void main(String[] args) throws Throwable {;
-        if (Boolean.parseBoolean(args[0]) {
+    public static void main(String[] args) throws Throwable {
+        if (Boolean.parseBoolean(args[0])) {
             PanamaMainDirect.class.getModule().enableNativeAccess();
         }
         PanamaMainDirect.main(args);

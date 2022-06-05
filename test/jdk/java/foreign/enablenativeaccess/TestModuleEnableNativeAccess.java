@@ -121,7 +121,7 @@ public class TestModuleEnableNativeAccess {
     static Result failWithWarning(String expectedOutput) {
         return new Result(false).expect(expectedOutput).expect("WARNING");
     }
-    
+
     static Result fail() {
         return new Result(false);
     }
@@ -131,15 +131,16 @@ public class TestModuleEnableNativeAccess {
         return new Object[][] {
                 { "enable_direct", false, new String[]{"--enable-native-access=panama_module"} },
                 { "enable_indirect", true, new String[]{"--enable-native-access=othermodule"} },
-                { "enable_direct_plus", true, new String[]{"--enable-native-access=othermodule,panama_module"} },
+                { "enable_direct_plus", true, new String[]{"--enable-native-access=othermodule,panama_module"} }
         };
     }
 
-    @DataProvider(name = "succeedCases")
+    @DataProvider(name = "failCases")
     public Object[][] failCases() {
         return new Object[][] {
                 { "not_enabled", false, new String[]{"--enable-native-access=java.base"} },
                 { "launcher_not_enabled", true, new String[]{"--enable-native-access=panama_module"} },
+                { "not_delegated", false, new String[]{"--enable-native-access=othermodule"} }
         };
     }
 
@@ -166,7 +167,7 @@ public class TestModuleEnableNativeAccess {
     OutputAnalyzer run(String action, Result expectedResult, boolean doEnableNativeAccess, String[] vmopts)
             throws Exception
     {
-        String[][] opts = {
+        String[][] optsArray = {
             vmopts,
             {
                 "-Djava.library.path=" + System.getProperty("java.library.path"),
@@ -175,8 +176,8 @@ public class TestModuleEnableNativeAccess {
                 "-m", LAUNCHER,
                 String.valueOf(doEnableNativeAccess)
             }
-        }
-        String[] opts = Stream.of(opts).flatMap(Stream::of).toArray(String[]::new);
+        };
+        String[] opts = Stream.of(optsArray).flatMap(Stream::of).toArray(String[]::new);
         OutputAnalyzer outputAnalyzer = ProcessTools
                 .executeTestJava(opts)
                 .outputTo(System.out)
@@ -189,10 +190,10 @@ public class TestModuleEnableNativeAccess {
     public void testSucceed(String action, boolean doEnableNativeAccess, String[] vmopts) throws Exception {
         run(action, successNoWarning(), doEnableNativeAccess, vmopts);
     }
-    
+
     @Test(dataProvider = "failCases")
     public void testFail(String action, boolean doEnableNativeAccess, String[] vmopts) throws Exception {
-        run(action, fail(), doEnableNativeAccess, vmopts)
+        run(action, fail(), doEnableNativeAccess, vmopts);
     }
 
     private int count(Iterable<String> lines, CharSequence cs) {
