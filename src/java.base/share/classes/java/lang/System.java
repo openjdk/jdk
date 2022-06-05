@@ -2432,9 +2432,6 @@ public final class System {
             public void addEnableNativeAccessAllUnnamed() {
                 Module.implAddEnableNativeAccessAllUnnamed();
             }
-            public boolean isEnableNativeAccess(Module m) {
-                return m.implIsEnableNativeAccess();
-            }
             public ServicesCatalog getServicesCatalog(ModuleLayer layer) {
                 return layer.getServicesCatalog();
             }

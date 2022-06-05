@@ -53,6 +53,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jdk.internal.loader.BuiltinClassLoader;
+import jdk.internal.javac.PreviewFeature;
 import jdk.internal.loader.BootLoader;
 import jdk.internal.loader.ClassLoaders;
 import jdk.internal.misc.CDS;
@@ -268,13 +269,35 @@ public final class Module implements AnnotatedElement {
         ALL_UNNAMED_MODULE.enableNativeAccess = true;
     }
 
-    /**
-     * Returns true if module m can access restricted methods.
+    /***
+     * Enables <a href="foreign/package-summary.html#restricted">native access</a>
+     * for this module if the caller module already has native access.
+     * <p>
+     * This method is <a href="foreign/package-summary.html#restricted"><em>restricted</em></a>.
+     * Restricted methods are unsafe, and, if used incorrectly, their use might crash
+     * the JVM or, worse, silently result in memory corruption. Thus, clients should refrain from depending on
+     * restricted methods, and use safe and supported functionalities, where possible.
+     *
+     * @throws IllegalCallerException If the caller module doesn't have native access.
      */
-    boolean implIsEnableNativeAccess() {
-        return isNamed() ?
-                enableNativeAccess :
-                ALL_UNNAMED_MODULE.enableNativeAccess;
+    @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
+    @CallerSensitive
+    public void enableNativeAccess() {
+        Reflection.ensureNativeAccess(Reflection.getCallerClass(), Module.class,
+                "enableNativeAccess");
+        implAddEnableNativeAccess();
+    }
+
+    /***
+     * Returns {@code true} if this module can access
+     * <a href="foreign/package-summary.html#restricted"><em>restricted</em></a> methods.
+     *
+     * @return {@code true} if this module can access <em>restricted</em> methods.
+     */
+    @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
+    public boolean isNativeAccessEnabled() {
+        return enableNativeAccess ||
+                (!isNamed() && ALL_UNNAMED_MODULE.enableNativeAccess);
     }
 
     // --
