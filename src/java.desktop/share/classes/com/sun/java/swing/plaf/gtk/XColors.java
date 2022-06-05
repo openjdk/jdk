@@ -28,7 +28,7 @@ package com.sun.java.swing.plaf.gtk;
 import javax.swing.plaf.ColorUIResource;
 
 /**
- * Utility class to convert color names to colors.
+ * Utility class to convert color names to a color object.
  */
 class XColors {
 
@@ -36,8 +36,7 @@ class XColors {
     private XColors() {}
 
     /**
-     * Converts a color name to the appropriate {@link ColorUIResource}
-     * with the correct RGB values.
+     * Converts a color name to a {@link ColorUIResource}.
      *
      * @param name name of the color
      * @return null, or a {@link java.awt.Color Color} object
