@@ -679,9 +679,10 @@ public final class Double extends Number
      *        ")[pP][+-]?" + Digits + "))" +
      *       "[fFdD]?))" +
      *       "[\\x00-\\x20]*");// Optional trailing "whitespace"
-     *
-     *  if (Pattern.matches(fpRegex, myString)) // @link substring="Pattern.matches" target ="java.util.regex.Pattern#matches"
+     *  // @link region substring="Pattern.matches" target ="java.util.regex.Pattern#matches"
+     *  if (Pattern.matches(fpRegex, myString))
      *      Double.valueOf(myString); // Will not throw NumberFormatException
+     * // @end
      *  else {
      *      // Perform suitable alternative action
      *  }
