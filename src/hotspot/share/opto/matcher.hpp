@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -330,6 +330,8 @@ public:
   static const bool match_rule_supported_vector(int opcode, int vlen, BasicType bt);
 
   static const bool match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt);
+
+  static const bool vector_needs_partial_operations(Node* node, const TypeVect* vt);
 
   static const RegMask* predicate_reg_mask(void);
   static const TypeVectMask* predicate_reg_type(const Type* elemTy, int length);

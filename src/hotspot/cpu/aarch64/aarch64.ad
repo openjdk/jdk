@@ -2488,6 +2488,11 @@ const bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, Bas
          masked_op_sve_supported(opcode, vlen, bt);
 }
 
+const bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
+  // Only SVE has partial vector operations
+  return (UseSVE > 0) && partial_op_sve_needed(node, vt);
+}
+
 const RegMask* Matcher::predicate_reg_mask(void) {
   return &_PR_REG_mask;
 }
