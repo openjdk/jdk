@@ -7324,9 +7324,7 @@ instruct castFtoI_reg_evex(vec dst, vec src, vec xtmp1, vec xtmp2, kReg ktmp1, k
 instruct castFtoX_reg_evex(vec dst, vec src, vec xtmp1, vec xtmp2, kReg ktmp1, kReg ktmp2, rRegP scratch, rFlagsReg cr) %{
   // F2X conversion for integral non T_INT target using AVX512 instructions
   // Platforms that dont support avx512vl can only support 64 byte vectors
-  predicate((VM_Version::supports_avx512vl() ||
-             Matcher::vector_length_in_bytes(n) == 64) &&
-            is_integral_type(Matcher::vector_element_basic_type(n)) &&
+  predicate(is_integral_type(Matcher::vector_element_basic_type(n)) &&
             Matcher::vector_element_basic_type(n) != T_INT);
   match(Set dst (VectorCastF2X src));
   effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP ktmp1, TEMP ktmp2, TEMP scratch, KILL cr);
