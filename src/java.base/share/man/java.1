@@ -5376,7 +5376,7 @@ Therefore, you can omit the \f[CB]<static_archive>\f[R] by saying only:
 .RE
 .SS Manually Creating CDS Archives
 .PP
-CDS archives can be created manually with several methods:
+CDS archives can be created manually using several methods:
 .IP \[bu] 2
 \f[CB]\-Xshare:dump\f[R]
 .IP \[bu] 2
@@ -5533,7 +5533,7 @@ application start\-up script with the same technique:
 .PP
 \f[CB]env\ JAVA_TOOL_OPTIONS=\-XX:+RecordDynamicDumpInfo\ bash\ app_start.sh\f[R]
 .RE
-.SS Using Dynamic CDS Archive File with \-XX:+AutoCreateSharedArchive
+.SS Creating Dynamic CDS Archive File with \-XX:+AutoCreateSharedArchive
 .PP
 \f[CB]\-XX:+AutoCreateSharedArchive\f[R] is a more convenient way of
 creating/using CDS archives.
@@ -5546,24 +5546,33 @@ and enjoy the benefits of CDS automatically.
 .PP
 \f[CB]java\ \-XX:+AutoCreateSharedArchive\ \-XX:SharedArchiveFile=hello.jsa\ \-cp\ hello.jar\ Hello\f[R]
 .RE
-.IP \[bu] 2
-If the specified archive file exists and is created by the same version
-of the JDK, the JVM will load this file as a dynamic archive.
-.IP \[bu] 2
-Otherwise the JVM will not load the specified archive.
-Instead, it will automatically create (or update) the archive file at
-exit.
-As a result, the next time you run the same command again, the archive
-will be available and ready to be used.
 .PP
-The contents of the CDS archive file are specific to each version of the
-JDK.
-Therefore, if you upgrade to a newer JDK,
+If the specified archive file does not exist, it will be automatically
+created at VM exit.
+.PP
+If the specified archive file exists, then the behavior depends on the
+version of the JDK that created this archive:
+.IP \[bu] 2
+If the archive was created by a JDK prior to version 19, it will be
+ignored and will not be loaded.
+Nor will it be updated.
+.IP \[bu] 2
+If the archive was created by the same version of the JDK as the current
+JVM, it will be loaded as a dynamic archive.
+The archive will not be updated at VM exit.
+.IP \[bu] 2
+In all other cases, the JVM will not load the archive, but will update
+the archive at exit.
+Thus, the archive will be ready to be loaded the next time the JVM is
+launched with the same command line.
+.PP
+Note that the contents of the CDS archive file are specific to each
+build of the JDK.
+Therefore, if you switch to a different JDK build,
 \f[CB]\-XX:+AutoCreateSharedArchive\f[R] will automatically recreate the
-archive.
-.PP
-To use this option, the specified CDS archive must be created by JDK 19
-or above.
+archive to match the JDK.
+If you intend to use this feature with an existing archive, you should
+make sure that the archive is created by at least version 19 of the JDK.
 .SS Restrictions on Class Path and Module Path
 .IP \[bu] 2
 Neither the class path (\f[CB]\-classpath\f[R] and
