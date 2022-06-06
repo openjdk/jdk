@@ -1862,7 +1862,7 @@ void Compile::process_for_post_loop_opts_igvn(PhaseIterGVN& igvn) {
   }
 }
 
-void Compile::record_unstable_if(UnstableIfTrap* trap) {
+void Compile::record_unstable_if_trap(UnstableIfTrap* trap) {
   if (AggressiveLivenessForUnstableIf) {
     _unstable_if_traps.append(trap);
   }
@@ -1905,10 +1905,8 @@ bool Compile::remove_unstable_if_trap(CallStaticJavaNode* unc) {
 #ifndef PRODUCT
 uint trivial_unstable_if_traps          = 0;
 uint unstable_if_traps_all              = 0;
-#endif
 
 void Compile::preprocess_unstable_if_traps() {
-#ifndef PRODUCT
   Atomic::add(&unstable_if_traps_all, (uint)_unstable_if_traps.length());
 
   for (int i = 0; i < _unstable_if_traps.length(); i++) {
@@ -1917,8 +1915,8 @@ void Compile::preprocess_unstable_if_traps() {
       Atomic::inc(&trivial_unstable_if_traps);
     }
   }
-#endif
 }
+#endif
 
 // Re-calculate unstable_if traps with the liveness of next_bci, which points to the unlikely path.
 // It needs to be done after igvn because fold-compares may fuse uncommon_traps and before renumbering.
@@ -1949,15 +1947,16 @@ void Compile::process_for_unstable_if_traps(PhaseIterGVN& igvn) {
       ResourceMark rm;
       const MethodLivenessResult& live_locals = method->liveness_at_bci(next_bci);
       assert(live_locals.is_valid(), "broken liveness info");
-      bool changed = false;
+      bool modified = false;
       int len = (int)live_locals.size();
+
       for (int i = 0; i < len; i++) {
         Node* local = unc->local(jvms, i);
         // kill local using the liveness of next_bci.
         // give up when the local looks like an operand to secure reexecution.
         if (!live_locals.at(i) && !local->is_top() && local != lhs && local!= rhs) {
           uint idx = jvms->locoff() + i;
-#ifndef PRODUCT
+#ifdef ASSERT
           if (Verbose) {
             tty->print("[unstable_if] kill local#%d: ", idx);
             local->dump();
@@ -1965,10 +1964,10 @@ void Compile::process_for_unstable_if_traps(PhaseIterGVN& igvn) {
           }
 #endif
           igvn.replace_input_of(unc, idx, top());
-          changed = true;
+          modified = true;
         }
       }
-      if (changed) {
+      if (modified) {
         trap->set_modified();
       }
     }

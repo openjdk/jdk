@@ -735,9 +735,10 @@ class Compile : public Phase {
   void remove_from_post_loop_opts_igvn(Node* n);
   void process_for_post_loop_opts_igvn(PhaseIterGVN& igvn);
 
-  bool remove_unstable_if_trap(CallStaticJavaNode* trap);
+  void record_unstable_if_trap(UnstableIfTrap* trap);
+  bool remove_unstable_if_trap(CallStaticJavaNode* unc);
   void remove_useless_unstable_if_traps(Unique_Node_List &useful);
-  void preprocess_unstable_if_traps();
+  void preprocess_unstable_if_traps() PRODUCT_RETURN;
   void process_for_unstable_if_traps(PhaseIterGVN& igvn);
 
   void sort_macro_nodes();
@@ -808,7 +809,6 @@ class Compile : public Phase {
   void         reset_dead_node_list()      { _dead_node_list.reset();
                                              _dead_node_count = 0;
                                            }
-  void         record_unstable_if(UnstableIfTrap* trap);
   uint          live_nodes() const         {
     int  val = _unique - _dead_node_count;
     assert (val >= 0, "number of tracked dead nodes %d more than created nodes %d", _unique, _dead_node_count);

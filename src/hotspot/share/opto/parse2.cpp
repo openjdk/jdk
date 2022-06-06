@@ -1592,7 +1592,7 @@ void Parse::adjust_map_after_if(BoolTest::mask btest, Node* c, float prob,
                   (is_fallthrough ? "taken always" : "taken never"));
 
     if (call != nullptr) {
-      C->record_unstable_if(new UnstableIfTrap(call->as_CallStaticJava(), path));
+      C->record_unstable_if_trap(new UnstableIfTrap(call->as_CallStaticJava(), path));
     }
     return;
   }
