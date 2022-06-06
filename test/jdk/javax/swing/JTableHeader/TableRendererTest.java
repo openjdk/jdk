@@ -32,6 +32,7 @@
 
 import java.awt.Component;
 import java.awt.Robot;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.swing.UIManager;
 import javax.swing.SwingUtilities;
@@ -44,10 +45,9 @@ import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellRenderer;
 
 public class TableRendererTest{
-    static Boolean PassFailStatus = true;
     static JFrame frame = null;
-    private static JScrollPane jScrollPane = null;
-    private static JTable table = null;
+    private static final AtomicReference<Throwable> exception =
+            new AtomicReference<>();
 
     public static void main(String[] args) throws Exception {
         UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
@@ -55,32 +55,29 @@ public class TableRendererTest{
         Robot robot = new Robot();
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
-                try {
-                    Thread.currentThread().setUncaughtExceptionHandler(new ExceptionCheck());
-                    initialize();
-                    //Adding the Test Frame to handle dispose
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+                Thread.currentThread().setUncaughtExceptionHandler(
+                        new ExceptionCheck());
+                initialize();
             }
         });
 
         robot.delay(2000);
         robot.waitForIdle();
 
-        if (!PassFailStatus) {
-            frame.dispose();
-            throw new RuntimeException("Test Case Failed. NPE raised!");
+        SwingUtilities.invokeAndWait(frame::dispose);
+
+        if (exception.get() != null) {
+            throw new RuntimeException("Test Case Failed. NPE raised!",
+                    exception.get());
         }
         System.out.println("Test Pass!");
-        frame.dispose();
     }
 
     static void initialize() {
         frame = new JFrame();
         frame.setTitle("JFrame");
-        table = new JTable(new MyModel());
-        jScrollPane = new JScrollPane();
+        JTable table = new JTable(new MyModel());
+        JScrollPane jScrollPane = new JScrollPane();
         jScrollPane.setBounds(new java.awt.Rectangle(0,0,350,618));
         jScrollPane.setViewportView(table);
 
@@ -100,8 +97,8 @@ public class TableRendererTest{
     static class ExceptionCheck implements Thread.UncaughtExceptionHandler {
         public void uncaughtException(Thread t, Throwable e)
         {
-            PassFailStatus = false;
-            System.out.println("Uncaught Exception Handled : " + e);
+            exception.set(e);
+            System.err.println("Uncaught Exception Handled : " + e);
         }
     }
 
@@ -124,8 +121,11 @@ public class TableRendererTest{
 
         private final TableCellRenderer render;
 
-        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-            return render.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+        public Component getTableCellRendererComponent(JTable table,
+                                                       Object value, boolean isSelected,
+                                                       boolean hasFocus, int row, int column) {
+            return render.getTableCellRendererComponent(
+                    table, value, isSelected, hasFocus, row, column);
         }
     }
 }
