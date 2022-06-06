@@ -280,8 +280,8 @@ public class ClassTree {
 
     /**
      * For the interface passed get the interfaces which it extends, and then
-     * put this interface in the sub-interface set of those interfaces. Do it
-     * recursively. If an interface doesn't have super-interface just attach
+     * put this interface in the subinterface set of those interfaces. Do it
+     * recursively. If an interface doesn't have superinterface just attach
      * that interface in the set of all the baseInterfaces.
      *
      * @param typeElement Interface under consideration.
@@ -305,18 +305,18 @@ public class ClassTree {
     }
 
     /**
-     * Return the sub-class set for the class passed.
+     * Return the subclass set for the class passed.
      *
-     * @param typeElement class whose sub-class set is required.
+     * @param typeElement class whose subclass set is required.
      */
     public SortedSet<TypeElement> subClasses(TypeElement typeElement) {
         return hierarchies.get(HierarchyKind.CLASSES).subtypes(typeElement);
     }
 
     /**
-     * Return the sub-interface set for the interface passed.
+     * Return the subinterface set for the interface passed.
      *
-     * @param typeElement interface whose sub-interface set is required.
+     * @param typeElement interface whose subinterface set is required.
      */
     public SortedSet<TypeElement> subInterfaces(TypeElement typeElement) {
         return hierarchies.get(HierarchyKind.INTERFACES).subtypes(typeElement);

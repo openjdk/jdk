@@ -525,12 +525,12 @@ void MacroAssembler::sha256_AVX2_one_round_compute(
     addl(reg_old_h, reg_y2);   // reg_h = k + w + reg_h + S0 + S1 + CH = t1 + S0; --
   }
   movl(reg_y2, reg_f);         // reg_y2 = reg_f                                ; CH
-  rorxd(reg_y0, reg_e, 25);    // reg_y0 = reg_e >> 25   ; S1A
-  rorxd(reg_y1, reg_e, 11);    // reg_y1 = reg_e >> 11    ; S1B
+  rorxl(reg_y0, reg_e, 25);    // reg_y0 = reg_e >> 25   ; S1A
+  rorxl(reg_y1, reg_e, 11);    // reg_y1 = reg_e >> 11    ; S1B
   xorl(reg_y2, reg_g);         // reg_y2 = reg_f^reg_g                              ; CH
 
   xorl(reg_y0, reg_y1);        // reg_y0 = (reg_e>>25) ^ (reg_h>>11)  ; S1
-  rorxd(reg_y1, reg_e, 6);     // reg_y1 = (reg_e >> 6)    ; S1
+  rorxl(reg_y1, reg_e, 6);     // reg_y1 = (reg_e >> 6)    ; S1
   andl(reg_y2, reg_e);         // reg_y2 = (reg_f^reg_g)&reg_e                          ; CH
 
   if (iter%4 > 0) {
@@ -538,13 +538,13 @@ void MacroAssembler::sha256_AVX2_one_round_compute(
   }
 
   xorl(reg_y0, reg_y1);       // reg_y0 = (reg_e>>25) ^ (reg_e>>11) ^ (reg_e>>6) ; S1
-  rorxd(reg_T1, reg_a, 13);   // reg_T1 = reg_a >> 13    ; S0B
+  rorxl(reg_T1, reg_a, 13);   // reg_T1 = reg_a >> 13    ; S0B
   xorl(reg_y2, reg_g);        // reg_y2 = CH = ((reg_f^reg_g)&reg_e)^reg_g                 ; CH
-  rorxd(reg_y1, reg_a, 22);   // reg_y1 = reg_a >> 22    ; S0A
+  rorxl(reg_y1, reg_a, 22);   // reg_y1 = reg_a >> 22    ; S0A
   movl(reg_y3, reg_a);        // reg_y3 = reg_a                                ; MAJA
 
   xorl(reg_y1, reg_T1);       // reg_y1 = (reg_a>>22) ^ (reg_a>>13)  ; S0
-  rorxd(reg_T1, reg_a, 2);    // reg_T1 = (reg_a >> 2)    ; S0
+  rorxl(reg_T1, reg_a, 2);    // reg_T1 = (reg_a >> 2)    ; S0
   addl(reg_h, Address(rsp, rdx, Address::times_1, 4*iter)); // reg_h = k + w + reg_h ; --
   orl(reg_y3, reg_c);         // reg_y3 = reg_a|reg_c                              ; MAJA
 
@@ -598,27 +598,27 @@ void MacroAssembler::sha256_AVX2_one_round_and_sched(
         int iter)
 {
   movl(rcx, reg_a);           // rcx = reg_a               ; MAJA
-  rorxd(r13, reg_e, 25);      // r13 = reg_e >> 25    ; S1A
-  rorxd(r14, reg_e, 11);      //  r14 = reg_e >> 11    ; S1B
+  rorxl(r13, reg_e, 25);      // r13 = reg_e >> 25    ; S1A
+  rorxl(r14, reg_e, 11);      //  r14 = reg_e >> 11    ; S1B
   addl(reg_h, Address(rsp, rdx, Address::times_1, 4*iter));
   orl(rcx, reg_c);            // rcx = reg_a|reg_c          ; MAJA
 
   movl(r15, reg_f);           // r15 = reg_f               ; CH
-  rorxd(r12, reg_a, 13);      // r12 = reg_a >> 13      ; S0B
+  rorxl(r12, reg_a, 13);      // r12 = reg_a >> 13      ; S0B
   xorl(r13, r14);             // r13 = (reg_e>>25) ^ (reg_e>>11)  ; S1
   xorl(r15, reg_g);           // r15 = reg_f^reg_g         ; CH
 
-  rorxd(r14, reg_e, 6);       // r14 = (reg_e >> 6)    ; S1
+  rorxl(r14, reg_e, 6);       // r14 = (reg_e >> 6)    ; S1
   andl(r15, reg_e);           // r15 = (reg_f^reg_g)&reg_e ; CH
 
   xorl(r13, r14);             // r13 = (reg_e>>25) ^ (reg_e>>11) ^ (reg_e>>6) ; S1
-  rorxd(r14, reg_a, 22);      // r14 = reg_a >> 22    ; S0A
+  rorxl(r14, reg_a, 22);      // r14 = reg_a >> 22    ; S0A
   addl(reg_d, reg_h);         // reg_d = k + w + reg_h + reg_d                     ; --
 
   andl(rcx, reg_b);          // rcx = (reg_a|reg_c)&reg_b                          ; MAJA
   xorl(r14, r12);            // r14 = (reg_a>>22) ^ (reg_a>>13)  ; S0
 
-  rorxd(r12, reg_a, 2);      // r12 = (reg_a >> 2)    ; S0
+  rorxl(r12, reg_a, 2);      // r12 = (reg_a >> 2)    ; S0
   xorl(r15, reg_g);          // r15 = CH = ((reg_f^reg_g)&reg_e)^reg_g                 ; CH
 
   xorl(r14, r12);            // r14 = (reg_a>>22) ^ (reg_a>>13) ^ (reg_a>>2) ; S0

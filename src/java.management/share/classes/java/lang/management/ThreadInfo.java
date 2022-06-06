@@ -29,6 +29,7 @@ import javax.management.openmbean.ArrayType;
 import javax.management.openmbean.CompositeData;
 import sun.management.ManagementFactoryHelper;
 import sun.management.ThreadInfoCompositeData;
+import sun.management.Util;
 import static java.lang.Thread.State.*;
 
 /**
@@ -93,6 +94,7 @@ import static java.lang.Thread.State.*;
  */
 
 public class ThreadInfo {
+    private boolean      virtual;   // accessed by ThreadImpl
     private String       threadName;
     private long         threadId;
     private long         blockedTime;
@@ -224,6 +226,7 @@ public class ThreadInfo {
                             StackTraceElement[] stackTrace,
                             MonitorInfo[] lockedMonitors,
                             LockInfo[] lockedSynchronizers) {
+        this.virtual = Util.isVirtual(t);
         this.threadId = t.threadId();
         this.threadName = t.getName();
         this.threadState = ManagementFactoryHelper.toThreadState(state);
