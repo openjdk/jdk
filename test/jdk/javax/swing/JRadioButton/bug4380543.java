@@ -46,16 +46,16 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
 public class bug4380543 {
-    static testFrame testObj;
+    static TestFrame testObj;
     static String instructions
             = """
             INSTRUCTIONS:
-               1. Check if the Left insets(margins) is set visually
+               1. Check if the Left inset(margin) is set visually
                   similar to other three sides around Radio Button
                    and CheckBox (insets set to 20 on all 4 sides).
-               2. Rendering depends on OS and its Supported Look and Feel.
-                  Verify only with those L&F where Margin is Visible.
-               3. If Left insets(margins) appear Empty, press Fail,
+               2. Rendering depends on OS and supported Look and Feels.
+                  Verify only with those L&F where margins are visible.
+               3. If Left inset(margin) appear too small, press Fail,
                   else press Pass.
             """;
     static PassFailJFrame passFailJFrame;
@@ -66,10 +66,10 @@ public class bug4380543 {
             public void run() {
                 try {
                     passFailJFrame = new PassFailJFrame(instructions);
-                    testObj = new testFrame();
+                    testObj = new TestFrame();
                     //Adding the Test Frame to handle dispose
-                    PassFailJFrame.addTestFrame(testObj);
-                    PassFailJFrame.positionTestFrame(testObj, PassFailJFrame.Position.HORIZONTAL);
+                    passFailJFrame.addTestFrame(testObj);
+                    passFailJFrame.positionTestFrame(testObj, PassFailJFrame.Position.HORIZONTAL);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -79,8 +79,8 @@ public class bug4380543 {
     }
 }
 
-class testFrame extends JFrame implements ActionListener {
-    public testFrame() {
+class TestFrame extends JFrame implements ActionListener {
+    public TestFrame() {
         initComponents();
     }
 
