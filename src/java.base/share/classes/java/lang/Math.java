@@ -765,10 +765,6 @@ public final class Math {
      * equal to the value of {@code Integer.MAX_VALUE}, the result is
      * equal to the value of {@code Integer.MAX_VALUE}.</ul>
      *
-     * @apiNote
-     * This method corresponds to the convertTowardPositive operation
-     * defined in IEEE 754.
-     *
      * @param   a   a floating-point value to be rounded to an integer.
      * @return  the value of the argument rounded to the nearest
      *          {@code int} value.
@@ -817,10 +813,6 @@ public final class Math {
      * <li>If the argument is positive infinity or any value greater than or
      * equal to the value of {@code Long.MAX_VALUE}, the result is
      * equal to the value of {@code Long.MAX_VALUE}.</ul>
-     *
-     * @apiNote
-     * This method corresponds to the convertTowardPositive operation
-     * defined in IEEE 754.
      *
      * @param   a   a floating-point value to be rounded to a
      *          {@code long}.
