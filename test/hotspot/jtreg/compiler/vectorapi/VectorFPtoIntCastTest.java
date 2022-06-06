@@ -27,7 +27,7 @@
 * @summary Test float/double to integral cast
 * @modules jdk.incubator.vector
 * @requires vm.compiler2.enabled
-* @requires (os.simpleArch == "x64" & vm.cpu.features ~= ".*avx512dq.*") 
+* @requires (os.simpleArch == "x64" & vm.cpu.features ~= ".*avx512dq.*")
 * @library /test/lib /
 * @run driver compiler.vectorapi.VectorFPtoIntCastTest
 */
