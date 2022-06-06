@@ -165,13 +165,14 @@ public class PerUserCfgTest {
         Path targetCfgFile = outputCfgFileDir.resolve(cmd.appLauncherCfgPath(
                 null).getFileName());
         TKit.assertPathExists(targetCfgFile, false);
-        try {
-            Files.createDirectories(targetCfgFile.getParent());
+        try (var dirCleaner = TKit.createDirectories(targetCfgFile.getParent())) {
             Files.copy(srcCfgFile, targetCfgFile);
-            TKit.traceFileContents(targetCfgFile, "cfg file");
-            action.accept(cmd);
-        } finally {
-            Files.deleteIfExists(targetCfgFile);
+            try {
+                TKit.traceFileContents(targetCfgFile, "cfg file");
+                action.accept(cmd);
+            } finally {
+                Files.deleteIfExists(targetCfgFile);
+            }
         }
     }
 
