@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ public class StreamMonitor implements Runnable {
 
     boolean matches(String str) {
       for (int i = 0; i < triggerStrings.length; i++) {
-        if (str.indexOf(triggerStrings[i]) == -1) {
+        if (!str.contains(triggerStrings[i])) {
           return false;
         }
       }
@@ -198,7 +198,7 @@ public class StreamMonitor implements Runnable {
 
             // Check wait string
             if ((waitString != null) &&
-                (str.indexOf(waitString) != -1)) {
+                str.contains(waitString)) {
               waitStringSeen = true;
               notifyAll();
             }

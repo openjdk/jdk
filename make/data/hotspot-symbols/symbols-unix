@@ -155,6 +155,7 @@ JVM_IsFinalizationEnabled
 JVM_IsHiddenClass
 JVM_IsInterface
 JVM_IsPreviewEnabled
+JVM_IsContinuationsSupported
 JVM_IsPrimitiveClass
 JVM_IsRecord
 JVM_IsSameClassPackage

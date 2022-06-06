@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2019, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,8 +60,13 @@ bool ShenandoahBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
     return false;
   }
 
-  // Heal oops and disarm
+  // Heal oops
   ShenandoahNMethod::heal_nmethod(nm);
+
+  // CodeCache sweeper support
+  nm->mark_as_maybe_on_continuation();
+
+  // Disarm
   ShenandoahNMethod::disarm_nmethod(nm);
   return true;
 }

@@ -274,7 +274,9 @@ class LibraryCallKit : public GraphKit {
   bool inline_unsafe_fence(vmIntrinsics::ID id);
   bool inline_onspinwait();
   bool inline_fp_conversions(vmIntrinsics::ID id);
+  bool inline_fp_range_check(vmIntrinsics::ID id);
   bool inline_number_methods(vmIntrinsics::ID id);
+  bool inline_bitshuffle_methods(vmIntrinsics::ID id);
   bool inline_divmod_methods(vmIntrinsics::ID id);
   bool inline_reference_get();
   bool inline_reference_refersTo0(bool is_phantom);
@@ -344,6 +346,8 @@ class LibraryCallKit : public GraphKit {
   bool inline_vector_convert();
   bool inline_vector_extract();
   bool inline_vector_insert();
+  bool inline_vector_compress_expand();
+
   Node* gen_call_to_svml(int vector_api_op_id, BasicType bt, int num_elem, Node* opd1, Node* opd2);
 
   enum VectorMaskUseType {
