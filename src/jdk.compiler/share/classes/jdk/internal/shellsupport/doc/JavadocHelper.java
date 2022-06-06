@@ -672,7 +672,7 @@ public abstract class JavadocHelper implements AutoCloseable {
         //where:
             private String elementSignature(Element el) {
                 switch (el.getKind()) {
-                    case ANNOTATION_TYPE: case CLASS: case ENUM: case INTERFACE:
+                    case ANNOTATION_TYPE: case CLASS: case ENUM: case INTERFACE: case RECORD:
                         return ((TypeElement) el).getQualifiedName().toString();
                     case FIELD:
                         return elementSignature(el.getEnclosingElement()) + "." + el.getSimpleName() + ":" + el.asType();
