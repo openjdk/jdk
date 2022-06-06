@@ -97,7 +97,7 @@ public final class BaseLocale {
     private final String region;
     private final String variant;
 
-    private int hash;
+    private @Stable int hash;
 
     /**
      * Boolean for the old ISO language code compatibility.

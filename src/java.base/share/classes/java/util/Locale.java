@@ -50,6 +50,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.spi.LocaleNameProvider;
 import java.util.stream.Collectors;
 
+import jdk.internal.vm.annotation.Stable;
+
 import sun.security.action.GetPropertyAction;
 import sun.util.locale.BaseLocale;
 import sun.util.locale.InternalLocaleBuilder;
@@ -2260,7 +2262,7 @@ public final class Locale implements Cloneable, Serializable {
     /**
      * Calculated hashcode
      */
-    private transient int hashCodeValue;
+    private transient @Stable int hashCodeValue;
 
     private static volatile Locale defaultLocale = initDefault();
     private static volatile Locale defaultDisplayLocale;
@@ -3113,7 +3115,7 @@ public final class Locale implements Cloneable, Serializable {
         private final String range;
         private final double weight;
 
-        private int hash;
+        private @Stable int hash;
 
         /**
          * Constructs a {@code LanguageRange} using the given {@code range}.
