@@ -613,13 +613,13 @@ public interface Tree {
 
         /**
          * Used for instances of {@link WildcardTree} representing
-         * an extends bounded wildcard type argument.
+         * an upper-bounded wildcard type argument.
          */
         EXTENDS_WILDCARD(WildcardTree.class),
 
         /**
          * Used for instances of {@link WildcardTree} representing
-         * a super bounded wildcard type argument.
+         * a lower-bounded wildcard type argument.
          */
         SUPER_WILDCARD(WildcardTree.class),
 

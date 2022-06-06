@@ -2624,7 +2624,7 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
     pushed_registers += x15;
   }
 
-  if (super_klass != x10 || UseCompressedOops) {
+  if (super_klass != x10) {
     if (!IS_A_TEMP(x10)) {
       pushed_registers += x10;
     }

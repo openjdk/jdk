@@ -4606,7 +4606,7 @@ public class Check {
                         return ; // Don't try to recover
                     }
                 }
-                // Non-Serializable super class
+                // Non-Serializable superclass
                 try {
                     ClassSymbol supertype = ((ClassSymbol)(((DeclaredType)superClass).asElement()));
                     for(var sym : supertype.getEnclosedElements()) {
