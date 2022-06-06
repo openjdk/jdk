@@ -55,6 +55,50 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
     private LdapReferralException refEx = null;
     private NamingException errEx = null;
 
+    /* This class maintains the pieces of state that need to be cleaned up (or
+     * are needed for cleanup). It gets registered with Cleaner to perform cleanup.
+     * Because the state is mutable, synchronization is used to ensure that changes
+     * made on the program thread are seen by the cleanup thread.
+     */
+    private static class EnumCtx implements Runnable {
+        // *ONLY* update these variables using the setter methods below
+        private LdapCtx homeCtx;
+        private LdapResult res;
+        private LdapClient enumClnt;
+
+        private EnumCtx(LdapCtx homeCtx, LdapResult answer, LdapClient client) {
+            this.homeCtx = homeCtx;
+            this.res = answer;
+            this.enumClnt = client;
+        }
+
+        // Synchronization provides memory visibility between threads, but isn't
+        // needed to prevent race conditions. The reachabilityFences prevent the
+        // cleaner thread from running and accessing the EnumCtx while a program is
+        // still using it. Thus, only the setters are synchronized.
+        private synchronized void setRes(LdapResult newRes) { this.res = newRes; }
+        private synchronized void setHomeCtx(LdapCtx newCtx) { this.homeCtx = newCtx; }
+        private synchronized void setEnumClnt(LdapClient newClnt) { this.enumClnt = newClnt; }
+
+        LdapResult getRes() { return this.res; }
+        LdapCtx getHomeCtx() { return this.homeCtx; }
+        LdapClient getEnumClnt() { return this.enumClnt; }
+
+        @Override
+        public synchronized void run() {
+            if (enumClnt != null) {
+                if (homeCtx != null) {
+                    enumClnt.clearSearchReply(res, homeCtx.reqCtls);
+                }
+                enumClnt = null;
+            }
+            if (homeCtx != null) {
+                homeCtx.decEnumCount();
+                homeCtx = null;
+            }
+        }
+    }
+
     private final EnumCtx enumCtx;
     private final Cleanable cleanable;
 
@@ -104,7 +148,7 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
 
             this.enumCtx = new EnumCtx(homeCtx, answer, homeCtx.clnt);
             // Ensures that context won't get closed from underneath us
-            homeCtx.incEnumCount();
+            this.enumCtx.homeCtx.incEnumCount();
             this.cleanable = LDAP_CLEANER.register(this, enumCtx);
     }
 
@@ -421,50 +465,5 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
     @Override
     public final void close() {
         cleanup();
-    }
-}
-
-/* This class maintains the pieces of state that need to be cleaned up (or
- * are needed for cleanup). It gets registered with Cleaner to perform cleanup.
- * Because the state is mutable, synchronization is used to ensure that changes
- * made on the program thread are seen by the cleanup thread.
- * It is a top-level (not nested) class to prevent access to private members,
- * enforcing use of the setters.
- */
-class EnumCtx implements Runnable {
-    private LdapCtx homeCtx;
-    private LdapResult res;
-    private LdapClient enumClnt;
-
-    EnumCtx(LdapCtx homeCtx, LdapResult answer, LdapClient client) {
-        this.homeCtx = homeCtx;
-        this.res = answer;
-        this.enumClnt = client;
-    }
-
-    // Synchronization provides memory visibility between threads, but isn't
-    // needed to prevent race conditions. The reachabilityFences prevent the
-    // cleaner thread from running and accessing the EnumCtx while a program is
-    // still using it. Thus, only the setters are synchronized.
-    synchronized void setRes(LdapResult newRes) { this.res = newRes; }
-    synchronized void setHomeCtx(LdapCtx newCtx) { this.homeCtx = newCtx; }
-    synchronized void setEnumClnt(LdapClient newClnt) { this.enumClnt = newClnt; }
-
-    LdapResult getRes() { return this.res; }
-    LdapCtx getHomeCtx() { return this.homeCtx; }
-    LdapClient getEnumClnt() { return this.enumClnt; }
-
-    @Override
-    public synchronized void run() {
-        if (enumClnt != null) {
-            if (homeCtx != null) {
-                enumClnt.clearSearchReply(res, homeCtx.reqCtls);
-            }
-            enumClnt = null;
-        }
-        if (homeCtx != null) {
-            homeCtx.decEnumCount();
-            homeCtx = null;
-        }
     }
 }
