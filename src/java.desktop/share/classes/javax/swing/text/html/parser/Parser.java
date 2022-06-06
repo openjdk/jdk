@@ -69,8 +69,10 @@ import javax.swing.text.html.HTML;
  * character is encountered. This appears to give behavior closer to
  * the popular browsers.
  * <p>
- * Unsupported tags, such as script tags, will be handled by HiddenTagView. The
- * tags and its contents will be displayed as editable JTextFields and JTextAreas.
+ * If a tag is not fully supported, such as script tags, the editor will create
+ * and display editable text fields in place of the tags. The contents within
+ * the tags will be handled by the editor as regular text.
+ *
  *
  * @see DTD
  * @see TagElement
