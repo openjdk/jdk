@@ -325,7 +325,8 @@ public:
   // should generate this one.
   static const bool match_rule_supported(int opcode);
 
-  // Identify extra cases that we might want to vectorize automatically.
+  // Identify extra cases that we might want to vectorize automatically
+  // And exclude cases which are not profitable to auto-vectorize.
   static const bool match_rule_supported_vectorization(int opcode, int vlen, BasicType bt);
 
   // identify extra cases that we might want to provide match rules for

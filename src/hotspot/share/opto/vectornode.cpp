@@ -260,6 +260,9 @@ int VectorNode::opcode(int sopc, BasicType bt) {
     return Op_SignumVD;
 
   default:
+    assert(!VectorNode::is_convert_opcode(sopc),
+           "Convert node %s should be processed by VectorCastNode::opcode()",
+           NodeClassNames[sopc]);
     return 0; // Unimplemented
   }
 }

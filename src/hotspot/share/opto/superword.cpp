@@ -364,8 +364,10 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
         break;
       }
 
-      // Map the maximal common vector
-      if (VectorNode::implemented(n->Opcode(), cur_max_vector, bt)) {
+      // Map the maximal common vector except conversion nodes, because we can't get
+      // the precise basic type for conversion nodes in the stage of early analysis.
+      if (!VectorNode::is_convert_opcode(n->Opcode()) &&
+          VectorNode::implemented(n->Opcode(), cur_max_vector, bt)) {
         if (cur_max_vector < max_vector && !flag_small_bt) {
           max_vector = cur_max_vector;
         } else if (cur_max_vector > max_vector && UseSubwordForMaxVector) {
@@ -996,7 +998,7 @@ int SuperWord::get_vw_bytes_special(MemNode* s) {
   }
 
   // Check for special case where there is a type conversion between different data size.
-  int vectsize = max_vector_size_in_ud_chain(s);
+  int vectsize = max_vector_size_in_def_use_chain(s);
   if (vectsize < Matcher::max_vector_size(btype)) {
     vw = MIN2(vectsize * type2aelembytes(btype), vw);
   }
@@ -1434,6 +1436,16 @@ void SuperWord::extend_packlist() {
   }
 }
 
+//------------------------------adjust_alignment_for_type_conversion---------------------------------
+// Adjust the target alignment if conversion between different data size exists in def-use nodes.
+int SuperWord::adjust_alignment_for_type_conversion(Node* s, Node* t, int align) {
+  if (longer_type_for_conversion(s) != T_ILLEGAL ||
+      longer_type_for_conversion(t) != T_ILLEGAL) {
+    align = align / data_size(s) * data_size(t);
+  }
+  return align;
+}
+
 //------------------------------follow_use_defs---------------------------
 // Extend the packset by visiting operand definitions of nodes in pack p
 bool SuperWord::follow_use_defs(Node_List* p) {
@@ -1455,10 +1467,7 @@ bool SuperWord::follow_use_defs(Node_List* p) {
     Node* t2 = s2->in(j);
     if (!in_bb(t1) || !in_bb(t2))
       continue;
-    if (longer_type_for_conversion(s1) != T_ILLEGAL ||
-        longer_type_for_conversion(t1) != T_ILLEGAL) {
-      align = align / data_size(s1) * data_size(t1);
-    }
+    align = adjust_alignment_for_type_conversion(s1, t1, align);
     if (stmts_can_pack(t1, t2, align)) {
       if (est_savings(t1, t2) >= 0) {
         Node_List* pair = new Node_List();
@@ -1503,10 +1512,7 @@ bool SuperWord::follow_def_uses(Node_List* p) {
       if (!opnd_positions_match(s1, t1, s2, t2))
         continue;
       int adjusted_align = alignment(s1);
-      if (longer_type_for_conversion(s1) != T_ILLEGAL ||
-          longer_type_for_conversion(t1) != T_ILLEGAL) {
-        adjusted_align = adjusted_align / data_size(s1) * data_size(t1);
-      }
+      adjusted_align = adjust_alignment_for_type_conversion(s1, t1, adjusted_align);
       if (stmts_can_pack(t1, t2, adjusted_align)) {
         int my_savings = est_savings(t1, t2);
         if (my_savings > savings) {
@@ -1706,7 +1712,7 @@ void SuperWord::combine_packs() {
   for (int i = 0; i < _packset.length(); i++) {
     Node_List* p1 = _packset.at(i);
     if (p1 != NULL) {
-      uint max_vlen = max_vector_size_in_ud_chain(p1->at(0)); // Max elements in vector
+      uint max_vlen = max_vector_size_in_def_use_chain(p1->at(0)); // Max elements in vector
       assert(is_power_of_2(max_vlen), "sanity");
       uint psize = p1->size();
       if (!is_power_of_2(psize)) {
@@ -3423,7 +3429,7 @@ BasicType SuperWord::longer_type_for_conversion(Node* n) {
   return T_ILLEGAL;
 }
 
-int SuperWord::max_vector_size_in_ud_chain(Node* n) {
+int SuperWord::max_vector_size_in_def_use_chain(Node* n) {
   BasicType bt = velt_basic_type(n);
   BasicType vt = bt;
 
