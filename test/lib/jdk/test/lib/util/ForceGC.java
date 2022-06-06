@@ -41,32 +41,47 @@ public class ForceGC {
      *     if did not complete after 10 Seconds
      */
     public static boolean wait(BooleanSupplier booleanSupplier) {
+        return wait(booleanSupplier, 10000L);
+    }
+
+    /**
+     * Causes the current thread to wait until the {@code booleanSupplier}
+     * returns true, or the specified waiting time {@code timeout} elapses.
+     *
+     * @param booleanSupplier boolean supplier
+     * @param timeout the timeout milliseconds while waiting for the boolean
+     *        supplier to be true.
+     * @return true if the {@code booleanSupplier} returns true, or false
+     *     if did not complete after {@code timeout) milliseconds.
+     */
+    public static boolean wait(BooleanSupplier booleanSupplier,
+            long timeout) {
         ReferenceQueue<Object> queue = new ReferenceQueue<>();
         Object obj = new Object();
         PhantomReference<Object> ref = new PhantomReference<>(obj, queue);
         obj = null;
         Reference.reachabilityFence(obj);
         Reference.reachabilityFence(ref);
-        System.gc();
 
-        for (int retries = 10; retries > 0; retries--) {
+        for (int retries = (int)(timeout / 100); retries > 0; retries--) {
             if (booleanSupplier.getAsBoolean()) {
                 return true;
             }
+
+            System.gc();
 
             try {
                 // The remove() will always block for the specified milliseconds
                 // if the reference has already been removed from the queue.
                 // But it is fine.  For most cases, the 1st GC is sufficient
                 // to trigger and complete the cleanup.
-                queue.remove(1000L);
+                queue.remove(100L);
             } catch (InterruptedException ie) {
                 // ignore, the loop will try again
             }
-            System.gc();
         }
 
-        return false;
+        return booleanSupplier.getAsBoolean();
     }
 }
 
