@@ -980,12 +980,15 @@ JNIEXPORT jlong JNICALL Java_sun_awt_shell_Win32ShellFolder2_extractIcon
         UINT uFlags = getDefaultIcon ? GIL_DEFAULTICON : GIL_FORSHELL | GIL_ASYNC;
         hres = pIcon->GetIconLocation(uFlags, szBuf, MAX_PATH, &index, &flags);
         if (SUCCEEDED(hres)) {
+            UINT iconSize;
             HICON hIconSmall;
             if (size < 24) {
-                size = 16;
+                iconSize = (size << 16) + 32;
+            } else {
+                iconSize = (16 << 16) + size;
             }
-            hres = pIcon->Extract(szBuf, index, &hIcon, &hIconSmall, size);
-            if (size == 16) {
+            hres = pIcon->Extract(szBuf, index, &hIcon, &hIconSmall, iconSize);
+            if (size < 24) {
                 fn_DestroyIcon((HICON)hIcon);
                 hIcon = hIconSmall;
             } else {

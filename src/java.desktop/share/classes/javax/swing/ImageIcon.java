@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,16 +27,13 @@ package javax.swing;
 
 import java.awt.Component;
 import java.awt.Graphics;
-import java.awt.Graphics2D;
 import java.awt.IllegalComponentStateException;
 import java.awt.Image;
 import java.awt.MediaTracker;
-import java.awt.RenderingHints;
 import java.awt.Toolkit;
 import java.awt.image.ColorModel;
 import java.awt.image.ImageObserver;
 import java.awt.image.MemoryImageSource;
-import java.awt.image.MultiResolutionImage;
 import java.awt.image.PixelGrabber;
 import java.beans.BeanProperty;
 import java.beans.ConstructorProperties;
@@ -445,28 +442,10 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      * @param y the Y coordinate of the icon's top-left corner
      */
     public synchronized void paintIcon(Component c, Graphics g, int x, int y) {
-        boolean iconDrawn = false;
-        ImageObserver observer = imageObserver != null ? imageObserver : c;
-        if (image instanceof MultiResolutionImage) {
-            if (g instanceof Graphics2D) {
-                int scaledWidth = (int) (width * ((Graphics2D)g).getTransform().getScaleX());
-                int scaledHeight = (int) (height * ((Graphics2D)g).getTransform().getScaleY());
-                Image variant = ((MultiResolutionImage) image).getResolutionVariant(scaledWidth,
-                        scaledHeight);
-                if (variant.getHeight(observer) != scaledHeight ||
-                        variant.getWidth(observer) != scaledWidth) {
-                    Graphics2D g2d = (Graphics2D) g.create(x, y, width, height);
-                    g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
-                            RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-                    g2d.drawImage(image, 0, 0, observer);
-                    g2d.dispose();
-                    iconDrawn = true;
-                }
-            }
-        }
-
-        if (!iconDrawn){
-            g.drawImage(image, x, y, observer);
+        if(imageObserver == null) {
+           g.drawImage(image, x, y, c);
+        } else {
+           g.drawImage(image, x, y, imageObserver);
         }
     }
 
