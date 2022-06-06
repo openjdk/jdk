@@ -846,7 +846,7 @@ public final class String
         int len = val.length >> coder;  // assume LATIN1=0/UTF16=1;
         int en = scale(len, ce.maxBytesPerChar());
         // fastpath with ArrayEncoder implies `doReplace`.
-        if (ce instanceof ArrayEncoder ae && doReplace) {
+        if (doReplace && ce instanceof ArrayEncoder ae) {
             // fastpath for ascii compatible
             if (coder == LATIN1 &&
                     ae.isASCIICompatible() &&
