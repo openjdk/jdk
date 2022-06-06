@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ public class ForceGC {
      * @param timeout the timeout milliseconds while waiting for the boolean
      *        supplier to be true.
      * @return true if the {@code booleanSupplier} returns true, or false
-     *     if did not complete after {@code timeout) milliseconds.
+     *     if did not complete after {@code timeout} milliseconds.
      */
     public static boolean wait(BooleanSupplier booleanSupplier,
             long timeout) {

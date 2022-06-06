@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,6 +114,9 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                     params -> {
                         if (isRuntimeInstaller(params)) {
                             return null;
+                        } else if (hasPredefinedAppImage(params)) {
+                            return AppImageFile.extractMainClass(
+                                    getPredefinedAppImage(params));
                         }
                         return LAUNCHER_DATA.fetchFrom(params).qualifiedClassName();
                     },
@@ -522,6 +525,25 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                     null : Boolean.valueOf(s)
         );
 
+    static final StandardBundlerParam<Boolean> APP_STORE =
+            new StandardBundlerParam<>(
+            Arguments.CLIOptions.MAC_APP_STORE.getId(),
+            Boolean.class,
+            params -> {
+                if (hasPredefinedAppImage(params)) {
+                    try {
+                        return AppImageFile.load(getPredefinedAppImage(params))
+                                .isAppStore();
+                    } catch (IOException ex) {
+                        return false;
+                    }
+                }
+                return false;
+            },
+            // valueOf(null) is false, we actually do want null in some cases
+            (s, p) -> (s == null || "null".equalsIgnoreCase(s)) ?
+                    null : Boolean.valueOf(s)
+        );
 
     static boolean isRuntimeInstaller(Map<String, ? super Object> params) {
         if (params.containsKey(MODULE.getID()) ||
@@ -532,6 +554,10 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
         // runtime installer requires --runtime-image, if this is false
         // here then we should have thrown error validating args.
         return params.containsKey(PREDEFINED_RUNTIME_IMAGE.getID());
+    }
+
+    static boolean hasPredefinedAppImage(Map<String, ? super Object> params) {
+        return params.containsKey(PREDEFINED_APP_IMAGE.getID());
     }
 
     static Path getPredefinedAppImage(Map<String, ? super Object> params) {

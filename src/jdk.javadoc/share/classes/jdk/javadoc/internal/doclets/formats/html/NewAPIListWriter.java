@@ -79,7 +79,7 @@ public class NewAPIListWriter extends SummaryListWriter<NewAPIBuilder> {
     @Override
     protected void addExtraSection(NewAPIBuilder list, Content content) {
         List<String> releases = configuration.newAPIPageBuilder.releases;
-        if (!releases.isEmpty()) {
+        if (releases.size() > 1) {
             Content tabs = HtmlTree.DIV(HtmlStyle.checkboxes,
                     contents.getContent("doclet.New_API_Checkbox_Label"));
             for (int i = 0; i < releases.size(); i++) {
@@ -98,12 +98,12 @@ public class NewAPIListWriter extends SummaryListWriter<NewAPIBuilder> {
 
     @Override
     protected void addTableTabs(Table table, String headingKey) {
+        table.setGridStyle(HtmlStyle.threeColumnReleaseSummary);
         List<String> releases = configuration.newAPIPageBuilder.releases;
-        if (!releases.isEmpty()) {
+        if (releases.size() > 1) {
             table.setDefaultTab(getTableCaption(headingKey))
                     .setAlwaysShowDefaultTab(true)
-                    .setRenderTabs(false)
-                    .setGridStyle(HtmlStyle.threeColumnReleaseSummary);
+                    .setRenderTabs(false);
             for (String release : releases) {
                 table.addTab(
                         releases.size() == 1
