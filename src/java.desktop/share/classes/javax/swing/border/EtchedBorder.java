@@ -156,24 +156,38 @@ public class EtchedBorder extends AbstractBorder
         AffineTransform at = new AffineTransform();
         Stroke oldStk = new BasicStroke();
         int stkWidth = 1;
+        boolean resetTransform = false;
         if (g instanceof Graphics2D) {
             Graphics2D g2d = (Graphics2D) g;
             at = g2d.getTransform();
             oldStk = g2d.getStroke();
-            if((at.getType() & AffineTransform.TYPE_MASK_SCALE) != 0) {
+            // if m01 or m10 is non-zero, then there is a rotation or shear
+            // skip resetting the transform
+            resetTransform = (at.getShearX() == 0) && (at.getShearY() == 0);
+            if(resetTransform) {
                 g2d.setTransform(new AffineTransform());
                 stkWidth = (int) Math.floor(Math.min(at.getScaleX(), at.getScaleY()));
                 g2d.setStroke(new BasicStroke((float) stkWidth));
-                RenderingHints rend =
-                        new RenderingHints(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
             }
+            RenderingHints rend =
+                    new RenderingHints(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
         }
 
-        int w = (int) Math.floor(at.getScaleX()*width-1);
-        int h = (int) Math.floor(at.getScaleY()*height-1);
-
-        int xtranslation = (int) Math.ceil(at.getScaleX()*x+at.getTranslateX());
-        int ytranslation = (int) Math.ceil(at.getScaleY()*y+at.getTranslateY());
+        int w;
+        int h;
+        int xtranslation;
+        int ytranslation;
+        if(resetTransform) {
+            w = (int) Math.floor(at.getScaleX() * width - 1);
+            h = (int) Math.floor(at.getScaleY() * height - 1);
+            xtranslation = (int) Math.ceil(at.getScaleX()*x+at.getTranslateX());
+            ytranslation = (int) Math.ceil(at.getScaleY()*y+at.getTranslateY());
+        } else {
+            w = width;
+            h = height;
+            xtranslation = x;
+            ytranslation = y;
+        }
 
         g.translate(xtranslation, ytranslation);
 
