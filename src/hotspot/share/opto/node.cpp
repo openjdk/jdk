@@ -1216,6 +1216,9 @@ bool Node::has_special_unique_user() const {
   } else if (is_If() && (n->is_IfFalse() || n->is_IfTrue())) {
     // See IfProjNode::Identity()
     return true;
+  } else if ((is_IfFalse() || is_IfTrue()) && n->is_If()) {
+    // see IfNode::fold_compares
+    return true;
   } else {
     return false;
   }
