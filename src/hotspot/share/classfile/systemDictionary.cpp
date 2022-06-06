@@ -2045,9 +2045,7 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
   }
 
   assert(spe != NULL && spe->method() != NULL, "");
-  assert(Arguments::is_interpreter_only() || (spe->method()->has_compiled_code() &&
-         spe->method()->code()->code_begin() == spe->method()->from_compiled_entry()),
-         "MH intrinsic invariant");
+  assert(Arguments::is_interpreter_only() || spe->method()->has_compiled_code(), "MH intrinsic invariant");
   return spe->method();
 }
 

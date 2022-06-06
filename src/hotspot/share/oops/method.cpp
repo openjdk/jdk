@@ -1299,9 +1299,8 @@ bool Method::check_code() const {
     CompiledMethod* cm = blob->as_compiled_method();
     return (cm->method() == nullptr) || (cm->method() == this && !cm->is_osr_method());
   } else {
-    assert(blob->is_mh_intrinsic(), "must be MH intrinsic");
     MethodHandleIntrinsicBlob* mhi = blob->as_mh_intrinsic();
-    return (mhi->method() == nullptr) || (mhi->method() == this);
+    return mhi->method() == this;
   }
 }
 

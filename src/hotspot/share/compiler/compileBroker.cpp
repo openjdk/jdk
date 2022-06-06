@@ -1343,7 +1343,7 @@ void CompileBroker::compile_method_base(const methodHandle& method,
   }
 }
 
-CodeBlob* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
+nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
                                        int comp_level,
                                        const methodHandle& hot_method, int hot_count,
                                        CompileTask::CompileReason compile_reason,
@@ -1358,12 +1358,12 @@ CodeBlob* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
 
   DirectiveSet* directive = DirectivesStack::getMatchingDirective(method, comp);
   // CompileBroker::compile_method can trap and can have pending async exception.
-  CodeBlob* nm = CompileBroker::compile_method(method, osr_bci, comp_level, hot_method, hot_count, compile_reason, directive, THREAD);
+  nmethod* nm = CompileBroker::compile_method(method, osr_bci, comp_level, hot_method, hot_count, compile_reason, directive, THREAD);
   DirectivesStack::release(directive);
   return nm;
 }
 
-CodeBlob* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
+nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
                                          int comp_level,
                                          const methodHandle& hot_method, int hot_count,
                                          CompileTask::CompileReason compile_reason,
@@ -1375,6 +1375,7 @@ CodeBlob* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   assert(osr_bci == InvocationEntryBci || (0 <= osr_bci && osr_bci < method->code_size()), "bci out of range");
   assert(!method->is_abstract() && (osr_bci == InvocationEntryBci || !method->is_native()), "cannot compile abstract/native methods");
   assert(!method->method_holder()->is_not_initialized(), "method holder must be initialized");
+  assert(!method->is_method_handle_intrinsic(), "cannot compile MH intrinsic");
   // return quickly if possible
 
   // lock, make sure that the compilation
@@ -1393,9 +1394,9 @@ CodeBlob* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   if (osr_bci == InvocationEntryBci) {
     // standard compilation
     CodeBlob* method_code = method->code();
-    if (method_code != NULL && (method_code->is_nmethod() || method_code->is_mh_intrinsic())) {
+    if (method_code != NULL && method_code->is_nmethod()) {
       if (compilation_is_complete(method, osr_bci, comp_level)) {
-        return method_code;
+        return method_code->as_nmethod();
       }
     }
     if (method->is_not_compilable(comp_level)) {
@@ -1424,7 +1425,7 @@ CodeBlob* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   //
   // Note: A native method implies non-osr compilation which is
   //       checked with an assertion at the entry of this method.
-  if (method->is_native() && !method->is_method_handle_intrinsic()) {
+  if (method->is_native()) {
     address adr = NativeLookup::lookup(method, THREAD);
     if (HAS_PENDING_EXCEPTION) {
       // In case of an exception looking up the method, we just forget
@@ -1449,7 +1450,7 @@ CodeBlob* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
 
   // do the compilation
   if (method->is_native()) {
-    if (!PreferInterpreterNativeStubs || method->is_method_handle_intrinsic()) {
+    if (!PreferInterpreterNativeStubs) {
 #if defined(X86) && !defined(ZERO)
       // The following native methods:
       //
@@ -1496,7 +1497,8 @@ CodeBlob* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   // return requested nmethod
   // We accept a higher level osr method
   if (osr_bci == InvocationEntryBci) {
-    return method->code();
+    CodeBlob* method_code = method->code();
+    return (method_code == nullptr) ? nullptr : method_code->as_nmethod();
   }
   return method->lookup_osr_nmethod_for(osr_bci, comp_level, false);
 }

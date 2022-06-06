@@ -1460,7 +1460,7 @@ bool nmethod::make_not_entrant_or_zombie(int state) {
     // The caller can be calling the method statically or through an inline
     // cache call.
     if (!is_osr_method() && !is_not_entrant()) {
-      NativeJump::patch_verified_entry(entry_point(), verified_entry_point(),
+      NativeJump::patch_verified_entry(verified_entry_point(),
                   SharedRuntime::get_handle_wrong_method_stub());
     }
 
@@ -2493,7 +2493,7 @@ void nmethod::verify() {
     return;
 
   // Make sure all the entry points are correctly aligned for patching.
-  NativeJump::check_verified_entry_alignment(entry_point(), verified_entry_point());
+  NativeJump::check_verified_entry_alignment(verified_entry_point());
 
   // assert(oopDesc::is_oop(method()), "must be valid");
 

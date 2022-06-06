@@ -1120,9 +1120,6 @@ CodeBlob* SharedRuntime::generate_method_handle_intrinsic_wrapper(MacroAssembler
                                                                   BasicType ret_type) {
   assert(method->is_method_handle_intrinsic(), "must be MethodHandle intrinsic");
 
-  vmIntrinsics::ID iid = method->intrinsic_id();
-  intptr_t start = (intptr_t)__ pc();
-
   // First instruction must be a nop as it may need to be patched on deoptimisation
   __ nop();
   gen_special_dispatch(masm,

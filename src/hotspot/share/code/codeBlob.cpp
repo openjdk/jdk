@@ -339,13 +339,11 @@ void* MethodHandleIntrinsicBlob::operator new(size_t s, int size) throw() {
 
 MethodHandleIntrinsicBlob* MethodHandleIntrinsicBlob::create(const methodHandle& method,
   CodeBuffer *code_buffer) {
-  code_buffer->finalize_oop_references(method);
 
   MethodHandleIntrinsicBlob* mhi = NULL;
+  int mhi_size = CodeBlob::allocation_size(code_buffer, sizeof(MethodHandleIntrinsicBlob));
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    int mhi_size = CodeBlob::allocation_size(code_buffer, sizeof(MethodHandleIntrinsicBlob));
-
     mhi = new (mhi_size) MethodHandleIntrinsicBlob(method(), mhi_size, code_buffer);
   }
 
@@ -357,13 +355,7 @@ MethodHandleIntrinsicBlob* MethodHandleIntrinsicBlob::create(const methodHandle&
 
 void MethodHandleIntrinsicBlob::verify() {
   // Make sure all the entry points are correctly aligned for patching.
-  NativeJump::check_verified_entry_alignment(code_begin(), code_begin());
-
-  ResourceMark rm;
-
-  if (!CodeCache::contains((void*)this)) {
-    fatal("MethodHandleIntrinsicBlob at " INTPTR_FORMAT " not in zone", p2i(this));
-  }
+  NativeJump::check_verified_entry_alignment(code_begin());
 }
 
 void* VtableBlob::operator new(size_t s, unsigned size) throw() {

@@ -1299,12 +1299,9 @@ CodeBlob *SharedRuntime::generate_method_handle_intrinsic_wrapper(MacroAssembler
   assert(method->is_method_handle_intrinsic(), "must be MethodHandle intrinsic");
 
   int total_in_args = method->size_of_parameters();
-  vmIntrinsics::ID iid = method->intrinsic_id();
-  intptr_t start = (intptr_t) __ pc();
 
   gen_special_dispatch(masm, total_in_args,
                        method->intrinsic_id(), in_sig_bt, in_regs);
-
   __ flush();
 
   return MethodHandleIntrinsicBlob::create(method, masm->code());

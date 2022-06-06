@@ -1154,8 +1154,6 @@ CodeBlob* SharedRuntime::generate_method_handle_intrinsic_wrapper(MacroAssembler
                                                                   BasicType ret_type) {
   assert(method->is_method_handle_intrinsic(), "should be MH method");
   assert(method->is_native(), "should be native method");
-  vmIntrinsics::ID iid = method->intrinsic_id();
-  intptr_t start = (intptr_t)__ pc();
 
   // First instruction must be a nop as it may need to be patched on deoptimisation
   __ nop();
@@ -1163,9 +1161,7 @@ CodeBlob* SharedRuntime::generate_method_handle_intrinsic_wrapper(MacroAssembler
                        method,
                        in_sig_bt,
                        in_regs);
-  int frame_complete = ((intptr_t)__ pc()) - start;  // not complete, period
   __ flush();
-  int stack_slots = SharedRuntime::out_preserve_stack_slots();  // no out slots at all, actually
   return MethodHandleIntrinsicBlob::create(method, masm->code());
 }
 
