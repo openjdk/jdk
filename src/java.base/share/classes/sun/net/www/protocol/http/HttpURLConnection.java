@@ -630,7 +630,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             final int requestLineIndex = requests.getKey(requestLine);
             if (requestLineIndex != 0) {
                 // we expect the request line to be at index 0. we set it here
-                // if we don't fine the request line at that index.
+                // if we don't find the request line at that index.
                 checkURLFile();
                 requests.prepend(requestLine, null);
             }
