@@ -640,7 +640,7 @@ public final class Double extends Number
      * a {@code NumberFormatException} be thrown, the regular
      * expression below can be used to screen the input string:
      *
-     *  {@snippet lang="java" :
+     * {@snippet lang="java" :
      *  final String Digits     = "(\\p{Digit}+)";
      *  final String HexDigits  = "(\\p{XDigit}+)";
      *  // an exponent is 'e' or 'E' followed by an optionally
@@ -680,7 +680,7 @@ public final class Double extends Number
      *       "[fFdD]?))" +
      *       "[\\x00-\\x20]*");// Optional trailing "whitespace"
      *
-     *  if (Pattern.matches(fpRegex, myString))
+     *  if (Pattern.matches(fpRegex, myString)) // @link substring="Pattern.matches" target ="java.util.regex.Pattern#matches"
      *      Double.valueOf(myString); // Will not throw NumberFormatException
      *  else {
      *      // Perform suitable alternative action
