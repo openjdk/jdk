@@ -1081,18 +1081,18 @@ public final class Locale implements Cloneable, Serializable {
     private static Locale initDefault(Locale.Category category) {
         Properties props = GetPropertyAction.privilegedGetProperties();
 
-        Locale defaultLocale = Locale.defaultLocale;
+        Locale locale = Locale.defaultLocale;
         return getInstance(
             props.getProperty(category.languageKey,
-                    defaultLocale.getLanguage()),
+                    locale.getLanguage()),
             props.getProperty(category.scriptKey,
-                    defaultLocale.getScript()),
+                    locale.getScript()),
             props.getProperty(category.countryKey,
-                    defaultLocale.getCountry()),
+                    locale.getCountry()),
             props.getProperty(category.variantKey,
-                    defaultLocale.getVariant()),
+                    locale.getVariant()),
             getDefaultExtensions(props.getProperty(category.extensionsKey, ""))
-                .orElse(defaultLocale.getLocaleExtensions()));
+                .orElse(locale.getLocaleExtensions()));
     }
 
     private static Optional<LocaleExtensions> getDefaultExtensions(String extensionsProp) {
@@ -1268,12 +1268,12 @@ public final class Locale implements Cloneable, Serializable {
      * @return An array of ISO 639 two-letter language codes.
      */
     public static String[] getISOLanguages() {
-        String[] isoLanguages = Locale.isoLanguages;
-        if (isoLanguages == null) {
-            Locale.isoLanguages = isoLanguages = getISO2Table(LocaleISOData.isoLanguageTable);
+        String[] languages = Locale.isoLanguages;
+        if (languages == null) {
+            Locale.isoLanguages = languages = getISO2Table(LocaleISOData.isoLanguageTable);
         }
-        String[] result = new String[isoLanguages.length];
-        System.arraycopy(isoLanguages, 0, result, 0, isoLanguages.length);
+        String[] result = new String[languages.length];
+        System.arraycopy(languages, 0, result, 0, languages.length);
         return result;
     }
 
@@ -1612,9 +1612,9 @@ public final class Locale implements Cloneable, Serializable {
      * @since 1.7
      */
     public String toLanguageTag() {
-        String languageTag = this.languageTag;
-        if (languageTag != null) {
-            return languageTag;
+        String lTag = this.languageTag;
+        if (lTag != null) {
+            return lTag;
         }
 
         LanguageTag tag = LanguageTag.parseLocale(baseLocale, localeExtensions);
