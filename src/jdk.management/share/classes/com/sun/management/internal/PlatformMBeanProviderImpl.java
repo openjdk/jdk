@@ -26,6 +26,7 @@ package com.sun.management.internal;
 
 import com.sun.management.DiagnosticCommandMBean;
 import com.sun.management.HotSpotDiagnosticMXBean;
+import com.sun.management.MemoryMXBean;
 import com.sun.management.ThreadMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryManagerMXBean;
@@ -121,6 +122,45 @@ public final class PlatformMBeanProviderImpl extends PlatformMBeanProvider {
                 }
 
                 return map;
+            }
+        });
+
+        /**
+         * Memory system of the Java virtual machine.
+         */
+        initMBeanList.add(new PlatformComponent<java.lang.management.MemoryMXBean>() {
+            private final Set<String> memoryMXBeanInterfaceNames
+                    = Collections.unmodifiableSet(
+                            Stream.of("java.lang.management.MemoryMXBean",
+                                    "com.sun.management.MemoryMXBean")
+                            .collect(Collectors.toSet()));
+            private MemoryMXBean memoryMBean = null;
+
+            @Override
+            public Set<Class<? extends java.lang.management.MemoryMXBean>> mbeanInterfaces() {
+                return Stream.of(java.lang.management.MemoryMXBean.class,
+                        com.sun.management.MemoryMXBean.class)
+                        .collect(Collectors.toSet());
+            }
+
+            @Override
+            public Set<String> mbeanInterfaceNames() {
+                return memoryMXBeanInterfaceNames;
+            }
+
+            @Override
+            public String getObjectNamePattern() {
+                return ManagementFactory.MEMORY_MXBEAN_NAME;
+            }
+
+            @Override
+            public synchronized Map<String, java.lang.management.MemoryMXBean> nameToMBeanMap() {
+                if (memoryMBean == null) {
+                    memoryMBean = new HotSpotMemoryImpl(ManagementFactoryHelper.getVMManagement());
+                }
+                return Collections.singletonMap(
+                        ManagementFactory.MEMORY_MXBEAN_NAME,
+                        memoryMBean);
             }
         });
 

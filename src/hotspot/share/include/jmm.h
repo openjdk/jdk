@@ -249,6 +249,8 @@ typedef struct jmmInterface_1_ {
                                                   jlongArray sizeArray);
 
   jobject      (JNICALL *GetMemoryUsage)         (JNIEnv* env, jboolean heap);
+  jobject      (JNICALL *GetLiveHeapUsage)       (JNIEnv* env);
+  jlong        (JNICALL *GetLiveObjectCount)       (JNIEnv* env);
 
   jlong        (JNICALL *GetLongAttribute)       (JNIEnv *env, jobject obj, jmmLongAttribute att);
   jboolean     (JNICALL *GetBoolAttribute)       (JNIEnv *env, jmmBoolAttribute att);

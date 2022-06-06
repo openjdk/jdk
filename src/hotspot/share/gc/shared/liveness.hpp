@@ -56,6 +56,9 @@ class LivenessEstimatorThread : public  ConcurrentGCThread {
 
   virtual const char* type_name() const override;
 
+  static size_t get_live_heap_usage() { return live_heap_usage; }
+  static size_t get_live_object_count() { return live_object_count; }
+  
  private:
   bool estimation_begin();
   void estimation_end(bool completed);
@@ -86,6 +89,12 @@ class LivenessEstimatorThread : public  ConcurrentGCThread {
   size_t _actual_object_size_words;
   EstimationErrorTracker _object_count_error;
   EstimationErrorTracker _object_size_error;
+
+  static void set_live_heap_usage(size_t usage) { live_heap_usage = usage; }
+  static void set_live_object_count(size_t count) { live_object_count = count; }
+
+  static size_t live_heap_usage;
+  static size_t live_object_count;
 };
 
 

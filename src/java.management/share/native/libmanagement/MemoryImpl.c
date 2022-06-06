@@ -46,3 +46,13 @@ JNIEXPORT jobject JNICALL Java_sun_management_MemoryImpl_getMemoryUsage0
   (JNIEnv *env, jobject dummy, jboolean heap) {
     return jmm_interface->GetMemoryUsage(env, heap);
 }
+
+JNIEXPORT jobject JNICALL Java_sun_management_MemoryImpl_getLiveHeapUsage0
+(JNIEnv *env, jobject dummy) {
+    return jmm_interface->GetLiveHeapUsage(env);
+}
+
+JNIEXPORT jlong JNICALL Java_sun_management_MemoryImpl_getLiveObjectCount0
+(JNIEnv *env, jobject dummy) {
+    return jmm_interface->GetLiveObjectCount(env);
+}

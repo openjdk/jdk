@@ -16,6 +16,8 @@
 #include "services/memTracker.hpp"
 #include "utilities/ticks.hpp"
 
+size_t LivenessEstimatorThread::live_heap_usage = 0;
+size_t LivenessEstimatorThread::live_object_count = 0;
 
 class VM_LivenessRootScan : public VM_Operation {
  public:
@@ -329,6 +331,9 @@ void LivenessEstimatorThread::stop_service() {
 
 template<typename EventT>
 void LivenessEstimatorThread::send_live_set_estimate(size_t count, size_t size_bytes) {
+  LivenessEstimatorThread::set_live_heap_usage(size_bytes);
+  LivenessEstimatorThread::set_live_object_count(count);
+  
   EventT evt;
   if (evt.should_commit()) {
     log_info(gc, estimator)("Sending JFR event: %d", evt.id());

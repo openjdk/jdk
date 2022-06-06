@@ -43,7 +43,7 @@ import javax.management.openmbean.CompositeData;
  * ManagementFactory.getMemoryMXBean() returns an instance
  * of this class.
  */
-class MemoryImpl extends NotificationEmitterSupport
+public class MemoryImpl extends NotificationEmitterSupport
                  implements MemoryMXBean {
 
     private final VMManagement jvm;
@@ -54,7 +54,7 @@ class MemoryImpl extends NotificationEmitterSupport
     /**
      * Constructor of MemoryImpl class
      */
-    MemoryImpl(VMManagement vm) {
+    protected MemoryImpl(VMManagement vm) {
         this.jvm = vm;
     }
 
@@ -86,6 +86,14 @@ class MemoryImpl extends NotificationEmitterSupport
         setVerboseGC(value);
     }
 
+    public MemoryUsage getLiveHeapUsage() {
+        return getLiveHeapUsage0();
+    }
+
+    public long getLiveObjectCount() {
+        return getLiveObjectCount0();
+    }
+
     // The current Hotspot implementation does not support
     // dynamically add or remove memory pools & managers.
     static synchronized MemoryPoolMXBean[] getMemoryPools() {
@@ -104,6 +112,8 @@ class MemoryImpl extends NotificationEmitterSupport
     private static native MemoryManagerMXBean[] getMemoryManagers0();
     private native MemoryUsage getMemoryUsage0(boolean heap);
     private native void setVerboseGC(boolean value);
+    private native MemoryUsage getLiveHeapUsage0();
+    private native long getLiveObjectCount0();
 
     private static final String notifName =
         "javax.management.Notification";

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "classfile/vmClasses.hpp"
 #include "compiler/compileBroker.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/liveness.hpp"
 #include "jmm.h"
 #include "memory/allocation.inline.hpp"
 #include "memory/iterator.hpp"
@@ -784,6 +785,26 @@ JVM_ENTRY(jobject, jmm_GetMemoryUsage(JNIEnv* env, jboolean heap))
 
   Handle obj = MemoryService::create_MemoryUsage_obj(usage, CHECK_NULL);
   return JNIHandles::make_local(THREAD, obj());
+JVM_END
+
+JVM_ENTRY(jobject, jmm_GetLiveHeapUsage(JNIEnv* env))
+  ResourceMark rm(THREAD);
+
+  MemoryUsage heap_usage = Universe::heap()->memory_usage();
+
+  size_t total_init = heap_usage.init_size();
+  size_t total_used = LivenessEstimatorThread::get_live_heap_usage();
+  size_t total_committed = heap_usage.committed();
+  size_t total_max = heap_usage.max_size();
+
+  MemoryUsage live_memory_usage = MemoryUsage(total_init, total_used, total_committed, total_max);
+
+  Handle obj = MemoryService::create_MemoryUsage_obj(live_memory_usage, CHECK_NULL);
+  return JNIHandles::make_local(THREAD, obj());
+JVM_END
+
+JVM_ENTRY(jlong, jmm_GetLiveObjectCount(JNIEnv* env))
+  return LivenessEstimatorThread::get_live_object_count();
 JVM_END
 
 // Returns the boolean value of a given attribute.
@@ -2238,6 +2259,8 @@ const struct jmmInterface_1_ jmm_interface = {
   jmm_GetOneThreadAllocatedMemory,
   jmm_GetThreadAllocatedMemory,
   jmm_GetMemoryUsage,
+  jmm_GetLiveHeapUsage,
+  jmm_GetLiveObjectCount,
   jmm_GetLongAttribute,
   jmm_GetBoolAttribute,
   jmm_SetBoolAttribute,
