@@ -1272,8 +1272,6 @@ static void check_continuation_enter_argument(VMReg actual_vmreg,
 }
 
 static void gen_continuation_enter(MacroAssembler* masm,
-                                 const methodHandle& method,
-                                 const BasicType* sig_bt,
                                  const VMRegPair* regs,
                                  int& exception_offset,
                                  OopMapSet* oop_maps,
@@ -1309,6 +1307,8 @@ static void gen_continuation_enter(MacroAssembler* masm,
 
   // Frame is now completed as far as size and linkage.
   frame_complete = __ pc() - start;
+
+  __ verify_oop(reg_cont_obj);
 
   fill_continuation_entry(masm, reg_cont_obj, reg_is_virtual);
 
@@ -1477,8 +1477,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     int stack_slots = 0;
     OopMapSet* oop_maps =  new OopMapSet();
     gen_continuation_enter(masm,
-                         method,
-                         in_sig_bt,
                          in_regs,
                          exception_offset,
                          oop_maps,
