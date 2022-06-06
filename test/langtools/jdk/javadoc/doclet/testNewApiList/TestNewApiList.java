@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8263468 8269401 8268422
+ * @bug      8263468 8269401 8268422 8287524
  * @summary  New page for "recent" new API
  * @library  ../../lib
  * @modules  jdk.javadoc/jdk.javadoc.internal.tool
@@ -476,10 +476,10 @@ public class TestNewApiList extends JavadocTester {
                 <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Element</div>
                 <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Deprecated in</div>
                 <div class="table-header col-last">Description</div>
-                <div class="col-summary-item-name even-row-color for-removal for-removal-tab6"><a hr\
+                <div class="col-summary-item-name even-row-color for-removal for-removal-tab1"><a hr\
                 ef="mdl/pkg/TestAnnotation.html#required()">pkg.TestAnnotation.required()</a></div>
-                <div class="col-second even-row-color for-removal for-removal-tab6">5</div>
-                <div class="col-last even-row-color for-removal for-removal-tab6"></div>
+                <div class="col-second even-row-color for-removal for-removal-tab1">3.2</div>
+                <div class="col-last even-row-color for-removal for-removal-tab1"></div>
                 </div>""",
             """
                 <div id="method">
@@ -491,10 +491,10 @@ public class TestNewApiList extends JavadocTester {
                 <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Method</div>
                 <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Deprecated in</div>
                 <div class="table-header col-last">Description</div>
-                <div class="col-summary-item-name even-row-color method method-tab6"><a href="mdl/pk\
+                <div class="col-summary-item-name even-row-color method method-tab1"><a href="mdl/pk\
                 g/TestAnnotation.html#required()">pkg.TestAnnotation.required()</a></div>
-                <div class="col-second even-row-color method method-tab6">5</div>
-                <div class="col-last even-row-color method method-tab6"></div>
+                <div class="col-second even-row-color method method-tab1">3.2</div>
+                <div class="col-last even-row-color method method-tab1"></div>
                 </div>""",
             """
                 <div id="constructor">
@@ -506,10 +506,10 @@ public class TestNewApiList extends JavadocTester {
                 <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Constructor</div>
                 <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Deprecated in</div>
                 <div class="table-header col-last">Description</div>
-                <div class="col-summary-item-name even-row-color constructor constructor-tab6"><a hr\
-                ef="mdl/pkg/TestClass.html#%3Cinit%3E()">pkg.TestClass()</a></div>
-                <div class="col-second even-row-color constructor constructor-tab6">5</div>
-                <div class="col-last even-row-color constructor constructor-tab6"></div>
+                <div class="col-summary-item-name even-row-color constructor"><a href="mdl/pkg/TestC\
+                lass.html#%3Cinit%3E()">pkg.TestClass()</a></div>
+                <div class="col-second even-row-color constructor">6</div>
+                <div class="col-last even-row-color constructor"></div>
                 </div>""",
             """
                 <div id="enum-constant">
@@ -521,10 +521,10 @@ public class TestNewApiList extends JavadocTester {
                 <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Enum Constant</div>
                 <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Deprecated in</div>
                 <div class="table-header col-last">Description</div>
-                <div class="col-summary-item-name even-row-color enum-constant enum-constant-tab6"><\
+                <div class="col-summary-item-name even-row-color enum-constant enum-constant-tab2"><\
                 a href="mdl/pkg/TestEnum.html#DEPRECATED">pkg.TestEnum.DEPRECATED</a></div>
-                <div class="col-second even-row-color enum-constant enum-constant-tab6">5</div>
-                <div class="col-last even-row-color enum-constant enum-constant-tab6"></div>
+                <div class="col-second even-row-color enum-constant enum-constant-tab2">5</div>
+                <div class="col-last even-row-color enum-constant enum-constant-tab2"></div>
                 </div>""",
             """
                 <div id="annotation-interface-member">
@@ -537,9 +537,9 @@ public class TestNewApiList extends JavadocTester {
                 <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Deprecated in</div>
                 <div class="table-header col-last">Description</div>
                 <div class="col-summary-item-name even-row-color annotation-interface-member annotat\
-                ion-interface-member-tab6"><a href="mdl/pkg/TestAnnotation.html#required()">pkg.TestAnnotation.required()</a></div>
-                <div class="col-second even-row-color annotation-interface-member annotation-interface-member-tab6">5</div>
-                <div class="col-last even-row-color annotation-interface-member annotation-interface-member-tab6"></div>
+                ion-interface-member-tab1"><a href="mdl/pkg/TestAnnotation.html#required()">pkg.TestAnnotation.required()</a></div>
+                <div class="col-second even-row-color annotation-interface-member annotation-interface-member-tab1">3.2</div>
+                <div class="col-last even-row-color annotation-interface-member annotation-interface-member-tab1"></div>
                 </div>""");
     }
 
@@ -553,53 +553,46 @@ public class TestNewApiList extends JavadocTester {
                 <li><a href="#constructor">Constructors</a></li>
                 </ul>
                 </div>
-                <div class="checkboxes">Show API added in:<label for="release-1">""");
+                <ul class="block-list">""");
     }
 
     private void checkSingleReleaseNewElements() {
         checkOutput("new-list.html", true,
                 """
-                <div class="table-tabs" role="tablist" aria-orientation="horizontal">
                 <div class="caption"><span>New Methods</span></div>
-                </div>
-                <div id="method.tabpanel" role="tabpanel">
-                <div class="summary-table three-column-release-summary" aria-labelledby="method-tab0">
+                <div class="summary-table three-column-release-summary">
                 <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Method</div>
                 <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Added in</div>
                 <div class="table-header col-last">Description</div>
-                <div class="col-summary-item-name even-row-color method method-tab1"><a href="mdl/pk\
-                g/TestClass.html#overloadedMethod(java.lang.String)">pkg.TestClass.overloadedMethod<\
-                wbr>(String)</a></div>
-                <div class="col-second even-row-color method method-tab1">5</div>
-                <div class="col-last even-row-color method method-tab1">
+                <div class="col-summary-item-name even-row-color"><a href="mdl/pkg/TestClass.html#ov\
+                erloadedMethod(java.lang.String)">pkg.TestClass.overloadedMethod<wbr>(String)</a></div>
+                <div class="col-second even-row-color">5</div>
+                <div class="col-last even-row-color">
                 <div class="block">TestClass overloaded method.</div>
                 </div>
-                <div class="col-summary-item-name odd-row-color method method-tab1"><a href="mdl/pkg\
-                /TestRecord.html#x()">pkg.TestRecord.x()</a></div>
-                <div class="col-second odd-row-color method method-tab1">5</div>
-                <div class="col-last odd-row-color method method-tab1">
+                <div class="col-summary-item-name odd-row-color"><a href="mdl/pkg/TestRecord.html#x(\
+                )">pkg.TestRecord.x()</a></div>
+                <div class="col-second odd-row-color">5</div>
+                <div class="col-last odd-row-color">
                 <div class="block">Test record getter.</div>
                 </div>""",
             """
                 <div id="constructor">
-                <div class="table-tabs" role="tablist" aria-orientation="horizontal">
                 <div class="caption"><span>New Constructors</span></div>
-                </div>
-                <div id="constructor.tabpanel" role="tabpanel">
-                <div class="summary-table three-column-release-summary" aria-labelledby="constructor-tab0">
+                <div class="summary-table three-column-release-summary">
                 <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Constructor</div>
                 <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Added in</div>
                 <div class="table-header col-last">Description</div>
-                <div class="col-summary-item-name even-row-color constructor constructor-tab1"><a hr\
-                ef="mdl/pkg/TestError.html#%3Cinit%3E()">pkg.TestError()</a></div>
-                <div class="col-second even-row-color constructor constructor-tab1">5</div>
-                <div class="col-last even-row-color constructor constructor-tab1">
+                <div class="col-summary-item-name even-row-color"><a href="mdl/pkg/TestError.html#%3\
+                Cinit%3E()">pkg.TestError()</a></div>
+                <div class="col-second even-row-color">5</div>
+                <div class="col-last even-row-color">
                 <div class="block">Test error constructor.</div>
                 </div>
-                <div class="col-summary-item-name odd-row-color constructor constructor-tab1"><a hre\
-                f="mdl/pkg/TestException.html#%3Cinit%3E()">pkg.TestException()</a></div>
-                <div class="col-second odd-row-color constructor constructor-tab1">5</div>
-                <div class="col-last odd-row-color constructor constructor-tab1">
+                <div class="col-summary-item-name odd-row-color"><a href="mdl/pkg/TestException.html\
+                #%3Cinit%3E()">pkg.TestException()</a></div>
+                <div class="col-second odd-row-color">5</div>
+                <div class="col-last odd-row-color">
                 <div class="block">Exception constructor.</div>
                 </div>""");
     }
@@ -628,10 +621,10 @@ public class TestNewApiList extends JavadocTester {
                 <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Element</div>
                 <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Deprecated in</div>
                 <div class="table-header col-last">Description</div>
-                <div class="col-summary-item-name even-row-color for-removal for-removal-tab1"><a hr\
-                ef="mdl/pkg/TestAnnotation.html#required()">pkg.TestAnnotation.required()</a></div>
-                <div class="col-second even-row-color for-removal for-removal-tab1">5</div>
-                <div class="col-last even-row-color for-removal for-removal-tab1"></div>
+                <div class="col-summary-item-name even-row-color for-removal"><a href="mdl/pkg/TestA\
+                nnotation.html#required()">pkg.TestAnnotation.required()</a></div>
+                <div class="col-second even-row-color for-removal">3.2</div>
+                <div class="col-last even-row-color for-removal"></div>
                 </div>""",
             """
                 <div id="method">
@@ -643,10 +636,10 @@ public class TestNewApiList extends JavadocTester {
                 <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Method</div>
                 <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Deprecated in</div>
                 <div class="table-header col-last">Description</div>
-                <div class="col-summary-item-name even-row-color method method-tab1"><a href="mdl/pk\
-                g/TestAnnotation.html#required()">pkg.TestAnnotation.required()</a></div>
-                <div class="col-second even-row-color method method-tab1">5</div>
-                <div class="col-last even-row-color method method-tab1"></div>
+                <div class="col-summary-item-name even-row-color method"><a href="mdl/pkg/TestAnnota\
+                tion.html#required()">pkg.TestAnnotation.required()</a></div>
+                <div class="col-second even-row-color method">3.2</div>
+                <div class="col-last even-row-color method"></div>
                 </div>""",
             """
                 <div id="constructor">
@@ -658,10 +651,10 @@ public class TestNewApiList extends JavadocTester {
                 <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Constructor</div>
                 <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Deprecated in</div>
                 <div class="table-header col-last">Description</div>
-                <div class="col-summary-item-name even-row-color constructor constructor-tab1"><a hr\
-                ef="mdl/pkg/TestClass.html#%3Cinit%3E()">pkg.TestClass()</a></div>
-                <div class="col-second even-row-color constructor constructor-tab1">5</div>
-                <div class="col-last even-row-color constructor constructor-tab1"></div>
+                <div class="col-summary-item-name even-row-color constructor"><a href="mdl/pkg/TestC\
+                lass.html#%3Cinit%3E()">pkg.TestClass()</a></div>
+                <div class="col-second even-row-color constructor">6</div>
+                <div class="col-last even-row-color constructor"></div>
                 </div>""");
     }
 
@@ -786,22 +779,19 @@ public class TestNewApiList extends JavadocTester {
                 <li><a href="#constructor">Constructors</a></li>
                 </ul>
                 </div>
-                <div class="checkboxes">Show API deprecated in:<label for="release-1">
+                <ul class="block-list">
                 """,
             """
                 <div id="constructor">
-                <div class="table-tabs" role="tablist" aria-orientation="horizontal">
                 <div class="caption"><span>Deprecated Constructors</span></div>
-                </div>
-                <div id="constructor.tabpanel" role="tabpanel">
-                <div class="summary-table three-column-release-summary" aria-labelledby="constructor-tab0">
+                <div class="summary-table three-column-release-summary">
                 <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Constructor</div>
                 <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Deprecated in</div>
                 <div class="table-header col-last">Description</div>
-                <div class="col-summary-item-name even-row-color constructor constructor-tab4"><a hr\
-                ef="pkg/TestClass.html#%3Cinit%3E()">pkg.TestClass()</a></div>
-                <div class="col-second even-row-color constructor constructor-tab4">5</div>
-                <div class="col-last even-row-color constructor constructor-tab4"></div>
+                <div class="col-summary-item-name even-row-color"><a href="pkg/TestClass.html#%3Cini\
+                t%3E()">pkg.TestClass()</a></div>
+                <div class="col-second even-row-color">5</div>
+                <div class="col-last even-row-color"></div>
                 </div>""");
     }
 }
