@@ -52,7 +52,7 @@ public class bug4380543 {
             INSTRUCTIONS:
                1. Check if the Left inset(margin) is set visually
                   similar to other three sides around Radio Button
-                   and CheckBox (insets set to 20 on all 4 sides).
+                  and CheckBox (insets set to 20 on all 4 sides).
                2. Rendering depends on OS and supported Look and Feels.
                   Verify only with those L&F where margins are visible.
                3. If Left inset(margin) appear too small, press Fail,
