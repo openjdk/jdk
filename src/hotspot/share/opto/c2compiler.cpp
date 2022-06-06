@@ -243,6 +243,14 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_bitCount_l:
     if (!Matcher::match_rule_supported(Op_PopCountL)) return false;
     break;
+  case vmIntrinsics::_compress_i:
+  case vmIntrinsics::_compress_l:
+    if (!Matcher::match_rule_supported(Op_CompressBits)) return false;
+    break;
+  case vmIntrinsics::_expand_i:
+  case vmIntrinsics::_expand_l:
+    if (!Matcher::match_rule_supported(Op_ExpandBits)) return false;
+    break;
   case vmIntrinsics::_numberOfLeadingZeros_i:
     if (!Matcher::match_rule_supported(Op_CountLeadingZerosI)) return false;
     break;
@@ -517,6 +525,12 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
     break;
   case vmIntrinsics::_fsignum:
     if (!Matcher::match_rule_supported(Op_SignumF)) return false;
+    break;
+  case vmIntrinsics::_floatIsInfinite:
+    if (!Matcher::match_rule_supported(Op_IsInfiniteF)) return false;
+    break;
+  case vmIntrinsics::_doubleIsInfinite:
+    if (!Matcher::match_rule_supported(Op_IsInfiniteD)) return false;
     break;
   case vmIntrinsics::_hashCode:
   case vmIntrinsics::_identityHashCode:

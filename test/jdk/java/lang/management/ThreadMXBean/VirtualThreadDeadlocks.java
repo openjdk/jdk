@@ -26,10 +26,21 @@
  * @bug 8284161 8287103
  * @summary Test ThredMXBean.findMonitorDeadlockedThreads with cycles of
  *   platform and virtual threads in deadlock
- * @compile --enable-preview -source ${jdk.version} VirtualThreadDeadlocks.java
- * @run main/othervm --enable-preview VirtualThreadDeadlocks PP
- * @run main/othervm --enable-preview VirtualThreadDeadlocks PV
- * @run main/othervm --enable-preview VirtualThreadDeadlocks VV
+ * @enablePreview
+ * @modules java.management
+ * @run main/othervm VirtualThreadDeadlocks PP
+ * @run main/othervm VirtualThreadDeadlocks PV
+ * @run main/othervm VirtualThreadDeadlocks VV
+ */
+
+/**
+ * @test
+ * @requires vm.continuations
+ * @enablePreview
+ * @modules java.management
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations VirtualThreadDeadlocks PP
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations VirtualThreadDeadlocks PV
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations VirtualThreadDeadlocks VV
  */
 
 import java.lang.management.ManagementFactory;

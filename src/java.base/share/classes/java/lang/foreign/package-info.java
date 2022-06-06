@@ -106,15 +106,16 @@
  * we can use the following code:
  *
  * {@snippet lang=java :
- * var linker = Linker.nativeLinker();
+ * Linker linker = Linker.nativeLinker();
+ * SymbolLookup stdlib = linker.defaultLookup();
  * MethodHandle strlen = linker.downcallHandle(
- *     linker.lookup("strlen").get(),
+ *     stdlib.lookup("strlen").get(),
  *     FunctionDescriptor.of(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS)
  * );
  *
- * try (var session = MemorySession.openConfined()) {
- *     var cString = MemorySegment.allocateNative(5 + 1, session);
- *     cString.setUtf8String("Hello");
+ * try (MemorySession session = MemorySession.openConfined()) {
+ *     MemorySegment cString = MemorySegment.allocateNative(5 + 1, session);
+ *     cString.setUtf8String(0, "Hello");
  *     long len = (long)strlen.invoke(cString); // 5
  * }
  * }

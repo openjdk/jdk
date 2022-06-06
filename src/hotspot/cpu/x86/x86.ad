@@ -1462,6 +1462,12 @@ const bool Matcher::match_rule_supported(int opcode) {
         return false;
       }
       break;
+    case Op_IsInfiniteF:
+    case Op_IsInfiniteD:
+      if (!VM_Version::supports_avx512dq()) {
+        return false;
+      }
+      break;
     case Op_SqrtVD:
     case Op_SqrtVF:
     case Op_VectorMaskCmp:
@@ -1630,6 +1636,16 @@ const bool Matcher::match_rule_supported(int opcode) {
       }
       break;
 #endif // !LP64
+    case Op_CompressBits:
+      if (!VM_Version::supports_bmi2() || (!is_LP64 && UseSSE < 2)) {
+        return false;
+      }
+      break;
+    case Op_ExpandBits:
+      if (!VM_Version::supports_bmi2() || (!is_LP64 && (UseSSE < 2 || !VM_Version::supports_bmi1()))) {
+        return false;
+      }
+      break;
     case Op_SignumF:
       if (UseSSE < 1) {
         return false;
@@ -1846,6 +1862,7 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
       if (size_in_bits > 256 && !VM_Version::supports_avx512bw()) {
         return false;
       }
+      break;
     case Op_VectorCastB2X:
     case Op_VectorCastS2X:
     case Op_VectorCastI2X:
@@ -6241,7 +6258,50 @@ instruct copySignD_imm(regD dst, regD src, regD tmp1, rRegL tmp2, immD zero) %{
   %}
   ins_pipe( pipe_slow );
 %}
+
 #endif // _LP64
+
+//----------------------------- CompressBits/ExpandBits ------------------------
+
+instruct compressBitsI_reg(rRegI dst, rRegI src, rRegI mask) %{
+  predicate(n->bottom_type()->isa_int());
+  match(Set dst (CompressBits src mask));
+  format %{ "pextl  $dst, $src, $mask\t! parallel bit extract" %}
+  ins_encode %{
+    __ pextl($dst$$Register, $src$$Register, $mask$$Register);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct expandBitsI_reg(rRegI dst, rRegI src, rRegI mask) %{
+  predicate(n->bottom_type()->isa_int());
+  match(Set dst (ExpandBits src mask));
+  format %{ "pdepl  $dst, $src, $mask\t! parallel bit deposit" %}
+  ins_encode %{
+    __ pdepl($dst$$Register, $src$$Register, $mask$$Register);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct compressBitsI_mem(rRegI dst, rRegI src, memory mask) %{
+  predicate(n->bottom_type()->isa_int());
+  match(Set dst (CompressBits src (LoadI mask)));
+  format %{ "pextl  $dst, $src, $mask\t! parallel bit extract" %}
+  ins_encode %{
+    __ pextl($dst$$Register, $src$$Register, $mask$$Address);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct expandBitsI_mem(rRegI dst, rRegI src, memory mask) %{
+  predicate(n->bottom_type()->isa_int());
+  match(Set dst (ExpandBits src (LoadI mask)));
+  format %{ "pdepl  $dst, $src, $mask\t! parallel bit deposit" %}
+  ins_encode %{
+    __ pdepl($dst$$Register, $src$$Register, $mask$$Address);
+  %}
+  ins_pipe( pipe_slow );
+%}
 
 // --------------------------------- Sqrt --------------------------------------
 
@@ -10136,3 +10196,29 @@ instruct castVVLeg(legVec dst)
   ins_cost(0);
   ins_pipe(empty);
 %}
+
+instruct FloatClassCheck_reg_reg_vfpclass(rRegI dst, regF src, kReg ktmp, rFlagsReg cr)
+%{
+  match(Set dst (IsInfiniteF src));
+  effect(TEMP ktmp, KILL cr);
+  format %{ "float_class_check $dst, $src" %}
+  ins_encode %{
+    __ vfpclassss($ktmp$$KRegister, $src$$XMMRegister, 0x18);
+    __ kmovbl($dst$$Register, $ktmp$$KRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct DoubleClassCheck_reg_reg_vfpclass(rRegI dst, regD src, kReg ktmp, rFlagsReg cr)
+%{
+  match(Set dst (IsInfiniteD src));
+  effect(TEMP ktmp, KILL cr);
+  format %{ "double_class_check $dst, $src" %}
+  ins_encode %{
+    __ vfpclasssd($ktmp$$KRegister, $src$$XMMRegister, 0x18);
+    __ kmovbl($dst$$Register, $ktmp$$KRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+
