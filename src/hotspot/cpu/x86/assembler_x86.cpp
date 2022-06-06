@@ -2166,22 +2166,6 @@ void Assembler::evpmovdb(XMMRegister dst, XMMRegister src, int vector_len) {
   emit_int16(0x31, (0xC0 | encode));
 }
 
-void Assembler::evpmovsdw(XMMRegister dst, XMMRegister src, int vector_len) {
-  assert(UseAVX > 2, "");
-  InstructionAttr attributes(vector_len, /* rex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
-  attributes.set_is_evex_instruction();
-  int encode = vex_prefix_and_encode(src->encoding(), 0, dst->encoding(), VEX_SIMD_F3, VEX_OPCODE_0F_38, &attributes);
-  emit_int16(0x23, (0xC0 | encode));
-}
-
-void Assembler::evpmovsdb(XMMRegister dst, XMMRegister src, int vector_len) {
-  assert(UseAVX > 2, "");
-  InstructionAttr attributes(vector_len, /* rex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
-  attributes.set_is_evex_instruction();
-  int encode = vex_prefix_and_encode(src->encoding(), 0, dst->encoding(), VEX_SIMD_F3, VEX_OPCODE_0F_38, &attributes);
-  emit_int16(0x21, (0xC0 | encode));
-}
-
 void Assembler::evpmovqd(XMMRegister dst, XMMRegister src, int vector_len) {
   assert(UseAVX > 2, "");
   InstructionAttr attributes(vector_len, /* rex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
@@ -2212,22 +2196,6 @@ void Assembler::evpmovsqd(XMMRegister dst, XMMRegister src, int vector_len) {
   attributes.set_is_evex_instruction();
   int encode = vex_prefix_and_encode(src->encoding(), 0, dst->encoding(), VEX_SIMD_F3, VEX_OPCODE_0F_38, &attributes);
   emit_int16(0x25, (0xC0 | encode));
-}
-
-void Assembler::evpmovsqb(XMMRegister dst, XMMRegister src, int vector_len) {
-  assert(UseAVX > 2, "");
-  InstructionAttr attributes(vector_len, /* rex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
-  attributes.set_is_evex_instruction();
-  int encode = vex_prefix_and_encode(src->encoding(), 0, dst->encoding(), VEX_SIMD_F3, VEX_OPCODE_0F_38, &attributes);
-  emit_int16(0x22, (0xC0 | encode));
-}
-
-void Assembler::evpmovsqw(XMMRegister dst, XMMRegister src, int vector_len) {
-  assert(UseAVX > 2, "");
-  InstructionAttr attributes(vector_len, /* rex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
-  attributes.set_is_evex_instruction();
-  int encode = vex_prefix_and_encode(src->encoding(), 0, dst->encoding(), VEX_SIMD_F3, VEX_OPCODE_0F_38, &attributes);
-  emit_int16(0x24, (0xC0 | encode));
 }
 
 void Assembler::decl(Address dst) {

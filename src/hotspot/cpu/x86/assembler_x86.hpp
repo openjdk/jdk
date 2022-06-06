@@ -1191,11 +1191,7 @@ private:
   void evpmovqw(XMMRegister dst, XMMRegister src, int vector_len);
 
   // Evex casts with signed saturation
-  void evpmovsdw(XMMRegister dst, XMMRegister src, int vector_len);
-  void evpmovsdb(XMMRegister dst, XMMRegister src, int vector_len);
   void evpmovsqd(XMMRegister dst, XMMRegister src, int vector_len);
-  void evpmovsqb(XMMRegister dst, XMMRegister src, int vector_len);
-  void evpmovsqw(XMMRegister dst, XMMRegister src, int vector_len);
 
   //Abs of packed Integer values
   void pabsb(XMMRegister dst, XMMRegister src);
