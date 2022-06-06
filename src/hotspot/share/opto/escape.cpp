@@ -546,10 +546,11 @@ bool ConnectionGraph::should_reduce_this_phi(Node* n) const {
   //        -   - Load
   //        - Safepoint
   //        - uncommon_trap
+  //        - DecodeN
   for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
     Node* use = n->fast_out(i);
 
-    if (!use->is_AddP() && !use->is_CallStaticJava() && use->Opcode() != Op_SafePoint) {
+    if (!use->is_AddP() && !use->is_CallStaticJava() && use->Opcode() != Op_SafePoint && !use->is_DecodeN()) {
       NOT_PRODUCT(if (Verbose) tty->print_cr("Will NOT try to reduce Phi %d. Has Allocate but cannot scalar replace it. One of the uses is: %d %s", n->_idx, use->_idx, use->Name());)
       return false;
     }
@@ -571,6 +572,26 @@ bool ConnectionGraph::should_reduce_this_phi(Node* n) const {
         if (!use_use->is_Load()) {
           NOT_PRODUCT(if (Verbose) tty->print_cr("Will NOT try to reduce Phi %d. AddP use is not a Load. %d %s", n->_idx, use_use->_idx, use_use->Name());)
           return false;
+        }
+      }
+    }
+
+    if (use->is_DecodeN()) {
+      for (DUIterator_Fast jmax, j = use->fast_outs(jmax); j < jmax; j++) {
+        Node* use_use = use->fast_out(j);
+
+        if (!use_use->is_AddP()) {
+          NOT_PRODUCT(if (Verbose) tty->print_cr("Will NOT try to reduce Phi %d. DecodeN use is not a Load. %d %s", n->_idx, use_use->_idx, use_use->Name());)
+          return false;
+        }
+
+        for (DUIterator_Fast kmax, k = use_use->fast_outs(kmax); k < kmax; k++) {
+          Node* use_use_use = use_use->fast_out(k);
+
+          if (!use_use_use->is_Load()) {
+            NOT_PRODUCT(if (Verbose) tty->print_cr("Will NOT try to reduce Phi %d. DecodeN.AddP use is not a Load. %d %s", n->_idx, use_use_use->_idx, use_use_use->Name());)
+            return false;
+          }
         }
       }
     }

@@ -1643,7 +1643,7 @@ ReducedAllocationMergeNode::ReducedAllocationMergeNode(Compile* C, PhaseIterGVN*
     }
   }
 
-  _klass = ram_t->isa_oopptr()->exact_klass();
+  _klass = ram_t->make_oopptr()->exact_klass();
 
   // Now let's try to find a memory Phi coming from same region
   Node* reg = phi->region();
@@ -1666,51 +1666,66 @@ ReducedAllocationMergeNode::ReducedAllocationMergeNode(Compile* C, PhaseIterGVN*
   C->add_macro_node(this);
 }
 
-bool ReducedAllocationMergeNode::register_use(Node* n) {
-  if (n->is_AddP()) {
-    jlong field = n->in(AddPNode::Offset)->find_long_con(-1);
+bool ReducedAllocationMergeNode::register_addp(Node* n) {
+  jlong field = n->in(AddPNode::Offset)->find_long_con(-1);
 
-    assert(field != -1, "Didn't find constant for AddP.");
+  assert(field != -1, "Didn't find constant for AddP.");
 
-    if ((*_fields_and_values)[(void*)field] == NULL) {
-      _fields_and_values->Insert((void*)field, (void*)new Node_Array(Compile::current()->node_arena(), _num_orig_inputs));
-    }
+  if ((*_fields_and_values)[(void*)field] == NULL) {
+    _fields_and_values->Insert((void*)field, (void*)new Node_Array(Compile::current()->node_arena(), _num_orig_inputs));
+  }
 
-    // If we didn't find memory edges to use so far then try to
-    // figure out which Memory edge subsequent Loads of this field use
-    if (_memories_indexes_start == -1) {
-      for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
-        Node* addp_use = n->fast_out(i);
+  // If we didn't find memory edges to use so far then try to
+  // figure out which Memory edge subsequent Loads of this field use
+  if (_memories_indexes_start == -1) {
+    for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+      Node* addp_use = n->fast_out(i);
 
-        if (addp_use->is_Load()) {
-          Node* load_mem = addp_use->in(LoadNode::Memory);
+      if (addp_use->is_Load()) {
+        Node* load_mem = addp_use->in(LoadNode::Memory);
 
-          // Safe the index where we are storing the memory edge
-          _memories_indexes_start = req();
+        // Save the index where we are storing the memory edge
+        _memories_indexes_start = req();
 
-          if (load_mem->is_Phi()) {
-            for (uint j=1; j<_num_orig_inputs; j++) {
-              add_req(load_mem->in(j));
-            }
+        if (load_mem->is_Phi()) {
+          for (uint j=1; j<_num_orig_inputs; j++) {
+            add_req(load_mem->in(j));
           }
-          else {
-            for (uint j=1; j<_num_orig_inputs; j++) {
-              add_req(load_mem);
-            }
-          }
-
-          break;
         }
         else {
-          assert(false, "User of AddP in RAM is not a Load.");
+          for (uint j=1; j<_num_orig_inputs; j++) {
+            add_req(load_mem);
+          }
         }
+
+        break;
+      }
+      else {
+        assert(false, "User of AddP in RAM is not a Load.");
       }
     }
+  }
 
-    return true;
+  return true;
+}
+
+bool ReducedAllocationMergeNode::register_use(Node* n) {
+  if (n->is_AddP()) {
+    return register_addp(n);
   }
   else if (n->Opcode() == Op_SafePoint || (n->is_CallStaticJava() && n->as_CallStaticJava()->is_uncommon_trap())) {
     _needs_all_fields = true;
+    return true;
+  }
+  else if (n->is_DecodeN()) {
+    for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+      Node* dec_use = n->fast_out(i);
+
+      if (register_addp(dec_use) == false) {
+        return false;
+      }
+    }
+
     return true;
   }
   else {

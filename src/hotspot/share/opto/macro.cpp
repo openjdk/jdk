@@ -1365,6 +1365,39 @@ bool PhaseMacroExpand::eliminate_reduced_allocation_merge(ReducedAllocationMerge
 
       --i; --imax;
     }
+    else if (use->is_DecodeN()) {
+      for (DUIterator_Fast jmax, j = use->fast_outs(jmax); j < jmax; j++) {
+        Node* addp = use->fast_out(j);
+
+        jlong field = addp->in(AddPNode::Offset)->find_long_con(-1);
+
+        assert(field != -1, "Didn't find constant offset for AddP.");
+
+        Node* phi = ram->value_phi_for_field(field, &_igvn);
+        _igvn._worklist.push(phi);
+
+        for (DUIterator_Fast jmax, j = addp->fast_outs(jmax); j < jmax; j++) {
+          Node* addp_use = addp->fast_out(j);
+
+          if (addp_use->is_Load()) {
+            Node* load = addp_use; // just for readability
+
+            for (DUIterator_Last kmin, k = load->last_outs(kmin); k >= kmin; --k) {
+              Node* load_use = load->last_out(k);
+
+              _igvn.hash_delete(load_use);
+              load_use->replace_edge(load, phi, &_igvn);
+              _igvn.hash_insert(load_use);
+              _igvn._worklist.push(load_use);
+            }
+          }
+          else {
+            assert(false, "Unexpected use of AddP.");
+            return false;
+          }
+        }
+      }
+    }
     else {
       assert(false, "Unknown use of RAM. %d:%s", use->_idx, use->Name());
       return false;

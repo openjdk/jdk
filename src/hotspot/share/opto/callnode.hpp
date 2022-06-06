@@ -1045,6 +1045,7 @@ public:
     return _needs_all_fields || ((*_fields_and_values)[(void*)field] != NULL);
   }
 
+  bool register_addp(Node* n);
   bool register_use(Node* n);
 
   Node* memory_for(jlong field, Node* base) const ;
