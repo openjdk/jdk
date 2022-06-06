@@ -639,7 +639,7 @@ class MacroAssembler: public Assembler {
   void get_polling_page(Register dest, relocInfo::relocType rtype);
   address read_polling_page(Register r, int32_t offset, relocInfo::relocType rtype);
 
-  address trampoline_call(Address entry, CodeBuffer* cbuf = NULL);
+  address trampoline_call(Address entry, MacroAssembler* masm = NULL);
   address ic_call(address entry, jint method_index = 0);
 
   void add_memory_int64(const Address dst, int64_t imm);

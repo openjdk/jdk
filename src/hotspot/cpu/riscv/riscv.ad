@@ -991,8 +991,8 @@ class HandlerImpl {
 
  public:
 
-  static int emit_exception_handler(CodeBuffer &cbuf);
-  static int emit_deopt_handler(CodeBuffer& cbuf);
+  static int emit_exception_handler(C2_MacroAssembler &masm);
+  static int emit_deopt_handler(C2_MacroAssembler &masm);
 
   static uint size_exception_handler() {
     return MacroAssembler::far_branch_size();
@@ -1222,8 +1222,8 @@ void MachBreakpointNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
 }
 #endif
 
-void MachBreakpointNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
-  Assembler::CompressibleRegion cr(masm);
+void MachBreakpointNode::emit(C2_MacroAssembler &masm, PhaseRegAlloc *ra_) const {
+  Assembler::CompressibleRegion cr(&masm);
   __ ebreak();
 }
 
@@ -1239,8 +1239,8 @@ uint MachBreakpointNode::size(PhaseRegAlloc *ra_) const {
   }
 #endif
 
-  void MachNopNode::emit(CodeBuffer &cbuf, PhaseRegAlloc*) const {
-    Assembler::CompressibleRegion cr(masm); // nops shall be 2-byte under RVC for alignment purposes.
+  void MachNopNode::emit(C2_MacroAssembler &masm, PhaseRegAlloc*) const {
+    Assembler::CompressibleRegion cr(&masm); // nops shall be 2-byte under RVC for alignment purposes.
     for (int i = 0; i < _count; i++) {
       __ nop();
     }
@@ -1262,7 +1262,7 @@ void MachConstantBaseNode::postalloc_expand(GrowableArray <Node *> *nodes, Phase
   ShouldNotReachHere();
 }
 
-void MachConstantBaseNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const {
+void MachConstantBaseNode::emit(C2_MacroAssembler& masm, PhaseRegAlloc* ra_) const {
   // Empty encoding
 }
 
@@ -1306,7 +1306,7 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
 }
 #endif
 
-void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
+void MachPrologNode::emit(C2_MacroAssembler &masm, PhaseRegAlloc *ra_) const {
   assert_cond(ra_ != NULL);
   Compile* C = ra_->C;
 
@@ -1339,14 +1339,14 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 
   if (C->stub_function() == NULL) {
     BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-    bs->nmethod_entry_barrier(masm);
+    bs->nmethod_entry_barrier(&masm);
   }
 
   if (VerifyStackAtCalls) {
     Unimplemented();
   }
 
-  C->output()->set_frame_complete(cbuf.insts_size());
+  C->output()->set_frame_complete(masm.offset());
 
   if (C->has_mach_constant_base_node()) {
     // NOTE: We set the table base offset here because users might be
@@ -1397,7 +1397,7 @@ void MachEpilogNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
 }
 #endif
 
-void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
+void MachEpilogNode::emit(C2_MacroAssembler &masm, PhaseRegAlloc *ra_) const {
   assert_cond(ra_ != NULL);
   Compile* C = ra_->C;
   assert_cond(C != NULL);
@@ -1471,7 +1471,7 @@ static enum RC rc_class(OptoReg::Name reg) {
   return rc_stack;
 }
 
-uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, bool do_size, outputStream *st) const {
+uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *ra_, bool do_size, outputStream *st) const {
   assert_cond(ra_ != NULL);
   Compile* C = ra_->C;
 
@@ -1505,90 +1505,90 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
 
   if (bottom_type()->isa_vect() != NULL) {
     uint ireg = ideal_reg();
-    if (ireg == Op_VecA && cbuf) {
+    if (ireg == Op_VecA && masm) {
       Assembler::CompressibleRegion cr(masm);
       int vector_reg_size_in_bytes = Matcher::scalable_vector_reg_size(T_BYTE);
       if (src_lo_rc == rc_stack && dst_lo_rc == rc_stack) {
         // stack to stack
-        __ spill_copy_vector_stack_to_stack(src_offset, dst_offset,
+        masm->spill_copy_vector_stack_to_stack(src_offset, dst_offset,
                                             vector_reg_size_in_bytes);
       } else if (src_lo_rc == rc_vector && dst_lo_rc == rc_stack) {
         // vpr to stack
-        __ spill(as_VectorRegister(Matcher::_regEncode[src_lo]), ra_->reg2offset(dst_lo));
+        masm->spill(as_VectorRegister(Matcher::_regEncode[src_lo]), ra_->reg2offset(dst_lo));
       } else if (src_lo_rc == rc_stack && dst_lo_rc == rc_vector) {
         // stack to vpr
-        __ unspill(as_VectorRegister(Matcher::_regEncode[dst_lo]), ra_->reg2offset(src_lo));
+        masm->unspill(as_VectorRegister(Matcher::_regEncode[dst_lo]), ra_->reg2offset(src_lo));
       } else if (src_lo_rc == rc_vector && dst_lo_rc == rc_vector) {
         // vpr to vpr
-        __ vmv1r_v(as_VectorRegister(Matcher::_regEncode[dst_lo]), as_VectorRegister(Matcher::_regEncode[src_lo]));
+        masm->vmv1r_v(as_VectorRegister(Matcher::_regEncode[dst_lo]), as_VectorRegister(Matcher::_regEncode[src_lo]));
       } else {
         ShouldNotReachHere();
       }
     }
-  } else if (cbuf != NULL) {
+  } else if (masm != NULL) {
     Assembler::CompressibleRegion cr(masm);
     switch (src_lo_rc) {
       case rc_int:
         if (dst_lo_rc == rc_int) {  // gpr --> gpr copy
           if (!is64 && this->ideal_reg() != Op_RegI) { // zero extended for narrow oop or klass
-            __ zero_extend(as_Register(Matcher::_regEncode[dst_lo]), as_Register(Matcher::_regEncode[src_lo]), 32);
+            masm->zero_extend(as_Register(Matcher::_regEncode[dst_lo]), as_Register(Matcher::_regEncode[src_lo]), 32);
           } else {
-            __ mv(as_Register(Matcher::_regEncode[dst_lo]), as_Register(Matcher::_regEncode[src_lo]));
+            masm->mv(as_Register(Matcher::_regEncode[dst_lo]), as_Register(Matcher::_regEncode[src_lo]));
           }
         } else if (dst_lo_rc == rc_float) { // gpr --> fpr copy
           if (is64) {
-            __ fmv_d_x(as_FloatRegister(Matcher::_regEncode[dst_lo]),
+            masm->fmv_d_x(as_FloatRegister(Matcher::_regEncode[dst_lo]),
                        as_Register(Matcher::_regEncode[src_lo]));
           } else {
-            __ fmv_w_x(as_FloatRegister(Matcher::_regEncode[dst_lo]),
+            masm->fmv_w_x(as_FloatRegister(Matcher::_regEncode[dst_lo]),
                        as_Register(Matcher::_regEncode[src_lo]));
           }
         } else {                    // gpr --> stack spill
           assert(dst_lo_rc == rc_stack, "spill to bad register class");
-          __ spill(as_Register(Matcher::_regEncode[src_lo]), is64, dst_offset);
+          masm->spill(as_Register(Matcher::_regEncode[src_lo]), is64, dst_offset);
         }
         break;
       case rc_float:
         if (dst_lo_rc == rc_int) {  // fpr --> gpr copy
           if (is64) {
-            __ fmv_x_d(as_Register(Matcher::_regEncode[dst_lo]),
+            masm->fmv_x_d(as_Register(Matcher::_regEncode[dst_lo]),
                        as_FloatRegister(Matcher::_regEncode[src_lo]));
           } else {
-            __ fmv_x_w(as_Register(Matcher::_regEncode[dst_lo]),
+            masm->fmv_x_w(as_Register(Matcher::_regEncode[dst_lo]),
                        as_FloatRegister(Matcher::_regEncode[src_lo]));
           }
         } else if (dst_lo_rc == rc_float) { // fpr --> fpr copy
           if (is64) {
-            __ fmv_d(as_FloatRegister(Matcher::_regEncode[dst_lo]),
+            masm->fmv_d(as_FloatRegister(Matcher::_regEncode[dst_lo]),
                      as_FloatRegister(Matcher::_regEncode[src_lo]));
           } else {
-            __ fmv_s(as_FloatRegister(Matcher::_regEncode[dst_lo]),
+            masm->fmv_s(as_FloatRegister(Matcher::_regEncode[dst_lo]),
                      as_FloatRegister(Matcher::_regEncode[src_lo]));
           }
         } else {                    // fpr --> stack spill
           assert(dst_lo_rc == rc_stack, "spill to bad register class");
-          __ spill(as_FloatRegister(Matcher::_regEncode[src_lo]),
+          masm->spill(as_FloatRegister(Matcher::_regEncode[src_lo]),
                    is64, dst_offset);
         }
         break;
       case rc_stack:
         if (dst_lo_rc == rc_int) {  // stack --> gpr load
           if (this->ideal_reg() == Op_RegI) {
-            __ unspill(as_Register(Matcher::_regEncode[dst_lo]), is64, src_offset);
+            masm->unspill(as_Register(Matcher::_regEncode[dst_lo]), is64, src_offset);
           } else { // // zero extended for narrow oop or klass
-            __ unspillu(as_Register(Matcher::_regEncode[dst_lo]), is64, src_offset);
+            masm->unspillu(as_Register(Matcher::_regEncode[dst_lo]), is64, src_offset);
           }
         } else if (dst_lo_rc == rc_float) { // stack --> fpr load
-          __ unspill(as_FloatRegister(Matcher::_regEncode[dst_lo]),
+          masm->unspill(as_FloatRegister(Matcher::_regEncode[dst_lo]),
                      is64, src_offset);
         } else {                    // stack --> stack copy
           assert(dst_lo_rc == rc_stack, "spill to bad register class");
           if (this->ideal_reg() == Op_RegI) {
-            __ unspill(t0, is64, src_offset);
+            masm->unspill(t0, is64, src_offset);
           } else { // zero extended for narrow oop or klass
-            __ unspillu(t0, is64, src_offset);
+            masm->unspillu(t0, is64, src_offset);
           }
-          __ spill(t0, is64, dst_offset);
+          masm->spill(t0, is64, dst_offset);
         }
         break;
       default:
@@ -1634,8 +1634,8 @@ void MachSpillCopyNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
 }
 #endif
 
-void MachSpillCopyNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
-  implementation(&cbuf, ra_, false, NULL);
+void MachSpillCopyNode::emit(C2_MacroAssembler &masm, PhaseRegAlloc *ra_) const {
+  implementation(&masm, ra_, false, NULL);
 }
 
 uint MachSpillCopyNode::size(PhaseRegAlloc *ra_) const {
@@ -1654,7 +1654,7 @@ void BoxLockNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
 }
 #endif
 
-void BoxLockNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
+void BoxLockNode::emit(C2_MacroAssembler &masm, PhaseRegAlloc *ra_) const {
   assert_cond(ra_ != NULL);
   int offset = ra_->reg2offset(in_RegMask(0).find_first_elem());
   int reg    = ra_->get_encode(this);
@@ -1701,7 +1701,7 @@ void MachUEPNode::format(PhaseRegAlloc* ra_, outputStream* st) const
 }
 #endif
 
-void MachUEPNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
+void MachUEPNode::emit(C2_MacroAssembler& masm, PhaseRegAlloc* ra_) const
 {
   Label skip;
   __ cmp_klass(j_rarg0, t1, t0, skip);
@@ -1720,7 +1720,7 @@ uint MachUEPNode::size(PhaseRegAlloc* ra_) const
 //=============================================================================
 
 // Emit exception handler code.
-int HandlerImpl::emit_exception_handler(CodeBuffer& cbuf)
+int HandlerImpl::emit_exception_handler(C2_MacroAssembler& masm)
 {
   // la_patchable t0, #exception_blob_entry_point
   // jr (offset)t0
@@ -1741,7 +1741,7 @@ int HandlerImpl::emit_exception_handler(CodeBuffer& cbuf)
 }
 
 // Emit deopt handler code.
-int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf)
+int HandlerImpl::emit_deopt_handler(C2_MacroAssembler& masm)
 {
   // Note that the code buffer's insts_mark is always relative to insts.
   // That's why we must use the macroassembler to generate a handler.
@@ -2060,7 +2060,7 @@ encode %{
   // BEGIN Non-volatile memory access
 
   enc_class riscv_enc_li_imm(iRegIorL dst, immIorL src) %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     int64_t con = (int64_t)$src$$constant;
     Register dst_reg = as_Register($dst$$reg);
     __ li(dst_reg, con);
@@ -2085,7 +2085,7 @@ encode %{
   %}
 
   enc_class riscv_enc_mov_p1(iRegP dst) %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     Register dst_reg = as_Register($dst$$reg);
     __ li(dst_reg, 1);
   %}
@@ -2213,23 +2213,23 @@ encode %{
     assert_cond(addr != NULL);
     if (!_method) {
       // A call to a runtime wrapper, e.g. new, new_typeArray_Java, uncommon_trap.
-      call = __ trampoline_call(Address(addr, relocInfo::runtime_call_type), &cbuf);
+      call = __ trampoline_call(Address(addr, relocInfo::runtime_call_type), &masm);
       if (call == NULL) {
         ciEnv::current()->record_failure("CodeCache is full");
         return;
       }
     } else {
-      int method_index = resolved_method_index(cbuf);
+      int method_index = resolved_method_index(masm);
       RelocationHolder rspec = _optimized_virtual ? opt_virtual_call_Relocation::spec(method_index)
                                                   : static_call_Relocation::spec(method_index);
-      call = __ trampoline_call(Address(addr, rspec), &cbuf);
+      call = __ trampoline_call(Address(addr, rspec), &masm);
       if (call == NULL) {
         ciEnv::current()->record_failure("CodeCache is full");
         return;
       }
 
       // Emit stub for static call
-      address stub = CompiledStaticCall::emit_to_interp_stub(cbuf);
+      address stub = CompiledStaticCall::emit_to_interp_stub(masm);
       if (stub == NULL) {
         ciEnv::current()->record_failure("CodeCache is full");
         return;
@@ -2238,7 +2238,7 @@ encode %{
   %}
 
   enc_class riscv_enc_java_dynamic_call(method meth) %{
-    int method_index = resolved_method_index(cbuf);
+    int method_index = resolved_method_index(masm);
     address call = __ ic_call((address)$meth$$method, method_index);
     if (call == NULL) {
       ciEnv::current()->record_failure("CodeCache is full");
@@ -2472,13 +2472,13 @@ encode %{
   %}
 
   enc_class riscv_enc_tail_call(iRegP jump_target) %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     Register target_reg = as_Register($jump_target$$reg);
     __ jr(target_reg);
   %}
 
   enc_class riscv_enc_tail_jmp(iRegP jump_target) %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     Register target_reg = as_Register($jump_target$$reg);
     // exception oop should be in x10
     // ret addr has been popped into ra
@@ -2492,7 +2492,7 @@ encode %{
   %}
 
   enc_class riscv_enc_ret() %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     __ ret();
   %}
 
@@ -4477,7 +4477,7 @@ instruct loadI(iRegINoSp dst, memory mem)
   format %{ "lw  $dst, $mem\t# int, #@loadI" %}
 
   ins_encode %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     __ lw(as_Register($dst$$reg), Address(as_Register($mem$$base), $mem$$disp));
   %}
 
@@ -4493,7 +4493,7 @@ instruct loadI2L(iRegLNoSp dst, memory mem)
   format %{ "lw  $dst, $mem\t# int, #@loadI2L" %}
 
   ins_encode %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     __ lw(as_Register($dst$$reg), Address(as_Register($mem$$base), $mem$$disp));
   %}
 
@@ -4524,7 +4524,7 @@ instruct loadL(iRegLNoSp dst, memory mem)
   format %{ "ld  $dst, $mem\t# int, #@loadL" %}
 
   ins_encode %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     __ ld(as_Register($dst$$reg), Address(as_Register($mem$$base), $mem$$disp));
   %}
 
@@ -4556,7 +4556,7 @@ instruct loadP(iRegPNoSp dst, memory mem)
   format %{ "ld  $dst, $mem\t# ptr, #@loadP" %}
 
   ins_encode %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     __ ld(as_Register($dst$$reg), Address(as_Register($mem$$base), $mem$$disp));
   %}
 
@@ -4587,7 +4587,7 @@ instruct loadKlass(iRegPNoSp dst, memory mem)
   format %{ "ld  $dst, $mem\t# class, #@loadKlass" %}
 
   ins_encode %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     __ ld(as_Register($dst$$reg), Address(as_Register($mem$$base), $mem$$disp));
   %}
 
@@ -4633,7 +4633,7 @@ instruct loadD(fRegD dst, memory mem)
   format %{ "fld  $dst, $mem\t# double, #@loadD" %}
 
   ins_encode %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     __ fld(as_FloatRegister($dst$$reg), Address(as_Register($mem$$base), $mem$$disp));
   %}
 
@@ -4918,7 +4918,7 @@ instruct storeI(iRegIorL2I src, memory mem)
   format %{ "sw  $src, $mem\t# int, #@storeI" %}
 
   ins_encode %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     __ sw(as_Register($src$$reg), Address(as_Register($mem$$base), $mem$$disp));
   %}
 
@@ -4948,7 +4948,7 @@ instruct storeL(iRegL src, memory mem)
   format %{ "sd  $src, $mem\t# long, #@storeL" %}
 
   ins_encode %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     __ sd(as_Register($src$$reg), Address(as_Register($mem$$base), $mem$$disp));
   %}
 
@@ -4979,7 +4979,7 @@ instruct storeP(iRegP src, memory mem)
   format %{ "sd  $src, $mem\t# ptr, #@storeP" %}
 
   ins_encode %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     __ sd(as_Register($src$$reg), Address(as_Register($mem$$base), $mem$$disp));
   %}
 
@@ -5010,7 +5010,7 @@ instruct storeN(iRegN src, memory mem)
   format %{ "sw  $src, $mem\t# compressed ptr, #@storeN" %}
 
   ins_encode %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     __ sw(as_Register($src$$reg), Address(as_Register($mem$$base), $mem$$disp));
   %}
 
@@ -5055,7 +5055,7 @@ instruct storeD(fRegD src, memory mem)
   format %{ "fsd  $src, $mem\t# double, #@storeD" %}
 
   ins_encode %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     __ fsd(as_FloatRegister($src$$reg), Address(as_Register($mem$$base), $mem$$disp));
   %}
 
@@ -5071,7 +5071,7 @@ instruct storeNKlass(iRegN src, memory mem)
   format %{ "sw  $src, $mem\t# compressed klass ptr, #@storeNKlass" %}
 
   ins_encode %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     __ sw(as_Register($src$$reg), Address(as_Register($mem$$base), $mem$$disp));
   %}
 
@@ -6367,7 +6367,7 @@ instruct addI_reg_reg(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
   format %{ "addw  $dst, $src1, $src2\t#@addI_reg_reg" %}
 
   ins_encode %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     __ addw(as_Register($dst$$reg),
             as_Register($src1$$reg),
             as_Register($src2$$reg));
@@ -6383,7 +6383,7 @@ instruct addI_reg_imm(iRegINoSp dst, iRegIorL2I src1, immIAdd src2) %{
   format %{ "addiw  $dst, $src1, $src2\t#@addI_reg_imm" %}
 
   ins_encode %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     int32_t con = (int32_t)$src2$$constant;
     __ addiw(as_Register($dst$$reg),
              as_Register($src1$$reg),
@@ -6400,7 +6400,7 @@ instruct addI_reg_imm_l2i(iRegINoSp dst, iRegL src1, immIAdd src2) %{
   format %{ "addiw  $dst, $src1, $src2\t#@addI_reg_imm_l2i" %}
 
   ins_encode %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     __ addiw(as_Register($dst$$reg),
              as_Register($src1$$reg),
              $src2$$constant);
@@ -6417,7 +6417,7 @@ instruct addP_reg_reg(iRegPNoSp dst, iRegP src1, iRegL src2) %{
   format %{ "add $dst, $src1, $src2\t# ptr, #@addP_reg_reg" %}
 
   ins_encode %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     __ add(as_Register($dst$$reg),
            as_Register($src1$$reg),
            as_Register($src2$$reg));
@@ -6433,7 +6433,7 @@ instruct lShiftL_regI_immGE32(iRegLNoSp dst, iRegI src, uimmI6_ge32 scale) %{
   format %{ "slli  $dst, $src, $scale & 63\t#@lShiftL_regI_immGE32" %}
 
   ins_encode %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     __ slli(as_Register($dst$$reg), as_Register($src$$reg), $scale$$constant & 63);
   %}
 
@@ -6449,7 +6449,7 @@ instruct addP_reg_imm(iRegPNoSp dst, iRegP src1, immLAdd src2) %{
   format %{ "addi  $dst, $src1, $src2\t# ptr, #@addP_reg_imm" %}
 
   ins_encode %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     // src2 is imm, so actually call the addi
     __ add(as_Register($dst$$reg),
            as_Register($src1$$reg),
@@ -6466,7 +6466,7 @@ instruct addL_reg_reg(iRegLNoSp dst, iRegL src1, iRegL src2) %{
   format %{ "add  $dst, $src1, $src2\t#@addL_reg_reg" %}
 
   ins_encode %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     __ add(as_Register($dst$$reg),
            as_Register($src1$$reg),
            as_Register($src2$$reg));
@@ -6482,7 +6482,7 @@ instruct addL_reg_imm(iRegLNoSp dst, iRegL src1, immLAdd src2) %{
   format %{ "addi  $dst, $src1, $src2\t#@addL_reg_imm" %}
 
   ins_encode %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     // src2 is imm, so actually call the addi
     __ add(as_Register($dst$$reg),
            as_Register($src1$$reg),
@@ -6500,7 +6500,7 @@ instruct subI_reg_reg(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
   format %{ "subw  $dst, $src1, $src2\t#@subI_reg_reg" %}
 
   ins_encode %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     __ subw(as_Register($dst$$reg),
             as_Register($src1$$reg),
             as_Register($src2$$reg));
@@ -6517,7 +6517,7 @@ instruct subI_reg_imm(iRegINoSp dst, iRegIorL2I src1, immISub src2) %{
   format %{ "addiw  $dst, $src1, -$src2\t#@subI_reg_imm" %}
 
   ins_encode %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     // src2 is imm, so actually call the addiw
     __ subw(as_Register($dst$$reg),
             as_Register($src1$$reg),
@@ -6534,7 +6534,7 @@ instruct subL_reg_reg(iRegLNoSp dst, iRegL src1, iRegL src2) %{
   format %{ "sub  $dst, $src1, $src2\t#@subL_reg_reg" %}
 
   ins_encode %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     __ sub(as_Register($dst$$reg),
            as_Register($src1$$reg),
            as_Register($src2$$reg));
@@ -6550,7 +6550,7 @@ instruct subL_reg_imm(iRegLNoSp dst, iRegL src1, immLSub src2) %{
   format %{ "addi  $dst, $src1, -$src2\t#@subL_reg_imm" %}
 
   ins_encode %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     // src2 is imm, so actually call the addi
     __ sub(as_Register($dst$$reg),
            as_Register($src1$$reg),
@@ -6680,7 +6680,7 @@ instruct signExtractL(iRegLNoSp dst, iRegL src1, immI_63 div1, immI_63 div2) %{
   format %{ "srli $dst, $src1, $div1\t# long signExtract, #@signExtractL" %}
 
   ins_encode %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     __ srli(as_Register($dst$$reg), as_Register($src1$$reg), 63);
   %}
   ins_pipe(ialu_reg_shift);
@@ -6836,7 +6836,7 @@ instruct lShiftL_reg_imm(iRegLNoSp dst, iRegL src1, immI src2) %{
   format %{ "slli  $dst, $src1, ($src2 & 0x3f)\t#@lShiftL_reg_imm" %}
 
   ins_encode %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     // the shift amount is encoded in the lower
     // 6 bits of the I-immediate field for RV64I
     __ slli(as_Register($dst$$reg),
@@ -6872,7 +6872,7 @@ instruct urShiftL_reg_imm(iRegLNoSp dst, iRegL src1, immI src2) %{
   format %{ "srli  $dst, $src1, ($src2 & 0x3f)\t#@urShiftL_reg_imm" %}
 
   ins_encode %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     // the shift amount is encoded in the lower
     // 6 bits of the I-immediate field for RV64I
     __ srli(as_Register($dst$$reg),
@@ -6891,7 +6891,7 @@ instruct urShiftP_reg_imm(iRegLNoSp dst, iRegP src1, immI src2) %{
   format %{ "srli  $dst, p2x($src1), ($src2 & 0x3f)\t#@urShiftP_reg_imm" %}
 
   ins_encode %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     // the shift amount is encoded in the lower
     // 6 bits of the I-immediate field for RV64I
     __ srli(as_Register($dst$$reg),
@@ -6927,7 +6927,7 @@ instruct rShiftL_reg_imm(iRegLNoSp dst, iRegL src1, immI src2) %{
   format %{ "srai  $dst, $src1, ($src2 & 0x3f)\t#@rShiftL_reg_imm" %}
 
   ins_encode %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     // the shift amount is encoded in the lower
     // 6 bits of the I-immediate field for RV64I
     __ srai(as_Register($dst$$reg),
@@ -7429,7 +7429,7 @@ instruct andI_reg_reg(iRegINoSp dst, iRegI src1, iRegI src2) %{
 
   ins_cost(ALU_COST);
   ins_encode %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     __ andr(as_Register($dst$$reg),
             as_Register($src1$$reg),
             as_Register($src2$$reg));
@@ -7446,7 +7446,7 @@ instruct andI_reg_imm(iRegINoSp dst, iRegI src1, immIAdd src2) %{
 
   ins_cost(ALU_COST);
   ins_encode %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     __ andi(as_Register($dst$$reg),
             as_Register($src1$$reg),
             (int32_t)($src2$$constant));
@@ -7463,7 +7463,7 @@ instruct orI_reg_reg(iRegINoSp dst, iRegI src1, iRegI src2) %{
 
   ins_cost(ALU_COST);
   ins_encode %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     __ orr(as_Register($dst$$reg),
            as_Register($src1$$reg),
            as_Register($src2$$reg));
@@ -7496,7 +7496,7 @@ instruct xorI_reg_reg(iRegINoSp dst, iRegI src1, iRegI src2) %{
 
   ins_cost(ALU_COST);
   ins_encode %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     __ xorr(as_Register($dst$$reg),
             as_Register($src1$$reg),
             as_Register($src2$$reg));
@@ -7529,7 +7529,7 @@ instruct andL_reg_reg(iRegLNoSp dst, iRegL src1, iRegL src2) %{
 
   ins_cost(ALU_COST);
   ins_encode %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     __ andr(as_Register($dst$$reg),
             as_Register($src1$$reg),
             as_Register($src2$$reg));
@@ -7546,7 +7546,7 @@ instruct andL_reg_imm(iRegLNoSp dst, iRegL src1, immLAdd src2) %{
 
   ins_cost(ALU_COST);
   ins_encode %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     __ andi(as_Register($dst$$reg),
             as_Register($src1$$reg),
             (int32_t)($src2$$constant));
@@ -7563,7 +7563,7 @@ instruct orL_reg_reg(iRegLNoSp dst, iRegL src1, iRegL src2) %{
 
   ins_cost(ALU_COST);
   ins_encode %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     __ orr(as_Register($dst$$reg),
            as_Register($src1$$reg),
            as_Register($src2$$reg));
@@ -7596,7 +7596,7 @@ instruct xorL_reg_reg(iRegLNoSp dst, iRegL src1, iRegL src2) %{
 
   ins_cost(ALU_COST);
   ins_encode %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     __ xorr(as_Register($dst$$reg),
             as_Register($src1$$reg),
             as_Register($src2$$reg));
@@ -7798,7 +7798,7 @@ instruct castX2P(iRegPNoSp dst, iRegL src) %{
   format %{ "mv  $dst, $src\t# long -> ptr, #@castX2P" %}
 
   ins_encode %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     if ($dst$$reg != $src$$reg) {
       __ mv(as_Register($dst$$reg), as_Register($src$$reg));
     }
@@ -7814,7 +7814,7 @@ instruct castP2X(iRegLNoSp dst, iRegP src) %{
   format %{ "mv  $dst, $src\t# ptr -> long, #@castP2X" %}
 
   ins_encode %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     if ($dst$$reg != $src$$reg) {
       __ mv(as_Register($dst$$reg), as_Register($src$$reg));
     }
@@ -7969,7 +7969,7 @@ instruct convI2UL_reg_reg(iRegLNoSp dst, iRegIorL2I src, immL_32bits mask)
   format %{ "zero_extend $dst, $src, 32\t# i2ul, #@convI2UL_reg_reg" %}
 
   ins_encode %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     __ zero_extend(as_Register($dst$$reg), as_Register($src$$reg), 32);
   %}
 
@@ -8124,7 +8124,7 @@ instruct convP2I(iRegINoSp dst, iRegP src) %{
   format %{ "zero_extend $dst, $src, 32\t# ptr -> int, #@convP2I" %}
 
   ins_encode %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     __ zero_extend($dst$$Register, $src$$Register, 32);
   %}
 
@@ -8142,7 +8142,7 @@ instruct convN2I(iRegINoSp dst, iRegN src)
   format %{ "mv  $dst, $src\t# compressed ptr -> int, #@convN2I" %}
 
   ins_encode %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     __ mv($dst$$Register, $src$$Register);
   %}
 
@@ -8239,7 +8239,7 @@ instruct MoveF2I_stack_reg(iRegINoSp dst, stackSlotF src) %{
   format %{ "lw  $dst, $src\t#@MoveF2I_stack_reg" %}
 
   ins_encode %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     __ lw(as_Register($dst$$reg), Address(sp, $src$$disp));
   %}
 
@@ -8276,7 +8276,7 @@ instruct MoveD2L_stack_reg(iRegLNoSp dst, stackSlotD src) %{
   format %{ "ld  $dst, $src\t#@MoveD2L_stack_reg" %}
 
   ins_encode %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     __ ld(as_Register($dst$$reg), Address(sp, $src$$disp));
   %}
 
@@ -8295,7 +8295,7 @@ instruct MoveL2D_stack_reg(fRegD dst, stackSlotL src) %{
   format %{ "fld  $dst, $src\t#@MoveL2D_stack_reg" %}
 
   ins_encode %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     __ fld(as_FloatRegister($dst$$reg), Address(sp, $src$$disp));
   %}
 
@@ -8332,7 +8332,7 @@ instruct MoveI2F_reg_stack(stackSlotF dst, iRegI src) %{
   format %{ "sw  $src, $dst\t#@MoveI2F_reg_stack" %}
 
   ins_encode %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     __ sw(as_Register($src$$reg), Address(sp, $dst$$disp));
   %}
 
@@ -8351,7 +8351,7 @@ instruct MoveD2L_reg_stack(stackSlotL dst, fRegD src) %{
   format %{ "fsd  $dst, $src\t#@MoveD2L_reg_stack" %}
 
   ins_encode %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     __ fsd(as_FloatRegister($src$$reg), Address(sp, $dst$$disp));
   %}
 
@@ -8370,7 +8370,7 @@ instruct MoveL2D_reg_stack(stackSlotD dst, iRegL src) %{
   format %{ "sd  $src, $dst\t#@MoveL2D_reg_stack" %}
 
   ins_encode %{
-    Assembler::CompressibleRegion cr(masm);
+    Assembler::CompressibleRegion cr(&masm);
     __ sd(as_Register($src$$reg), Address(sp, $dst$$disp));
   %}
 

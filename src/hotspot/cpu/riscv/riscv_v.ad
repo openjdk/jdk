@@ -106,7 +106,7 @@ instruct loadV(vReg dst, vmemA mem) %{
   format %{ "vle $dst, $mem\t#@loadV" %}
   ins_encode %{
     VectorRegister dst_reg = as_VectorRegister($dst$$reg);
-    loadStore(C2_MacroAssembler(&cbuf), false, dst_reg,
+    loadStore(masm, false, dst_reg,
               Matcher::vector_element_basic_type(this), as_Register($mem$$base));
   %}
   ins_pipe(pipe_slow);
@@ -118,7 +118,7 @@ instruct storeV(vReg src, vmemA mem) %{
   format %{ "vse $src, $mem\t#@storeV" %}
   ins_encode %{
     VectorRegister src_reg = as_VectorRegister($src$$reg);
-    loadStore(C2_MacroAssembler(&cbuf), true, src_reg,
+    loadStore(masm, true, src_reg,
               Matcher::vector_element_basic_type(this, $src), as_Register($mem$$base));
   %}
   ins_pipe(pipe_slow);
