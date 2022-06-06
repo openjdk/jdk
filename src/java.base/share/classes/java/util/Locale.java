@@ -681,7 +681,7 @@ public final class Locale implements Cloneable, Serializable {
         /**
          * Map to hold country codes for each ISO3166 part.
          */
-        private static Map<IsoCountryCode, Set<String>> iso3166CodesMap = new ConcurrentHashMap<>();
+        private static final Map<IsoCountryCode, Set<String>> iso3166CodesMap = new ConcurrentHashMap<>();
 
         /**
          * This method is called from Locale class to retrieve country code set
@@ -1079,6 +1079,7 @@ public final class Locale implements Cloneable, Serializable {
     private static Locale initDefault(Locale.Category category) {
         Properties props = GetPropertyAction.privilegedGetProperties();
 
+        Locale defaultLocale = Locale.defaultLocale;
         return getInstance(
             props.getProperty(category.languageKey,
                     defaultLocale.getLanguage()),
@@ -1265,8 +1266,9 @@ public final class Locale implements Cloneable, Serializable {
      * @return An array of ISO 639 two-letter language codes.
      */
     public static String[] getISOLanguages() {
+        String[] isoLanguages = Locale.isoLanguages;
         if (isoLanguages == null) {
-            isoLanguages = getISO2Table(LocaleISOData.isoLanguageTable);
+            Locale.isoLanguages = isoLanguages = getISO2Table(LocaleISOData.isoLanguageTable);
         }
         String[] result = new String[isoLanguages.length];
         System.arraycopy(isoLanguages, 0, result, 0, isoLanguages.length);
@@ -1608,6 +1610,7 @@ public final class Locale implements Cloneable, Serializable {
      * @since 1.7
      */
     public String toLanguageTag() {
+        String languageTag = this.languageTag;
         if (languageTag != null) {
             return languageTag;
         }
@@ -1657,11 +1660,11 @@ public final class Locale implements Cloneable, Serializable {
 
         String langTag = buf.toString();
         synchronized (this) {
-            if (languageTag == null) {
-                languageTag = langTag;
+            if (this.languageTag == null) {
+                this.languageTag = langTag;
             }
         }
-        return languageTag;
+        return langTag;
     }
 
     /**
@@ -2257,7 +2260,7 @@ public final class Locale implements Cloneable, Serializable {
     /**
      * Calculated hashcode
      */
-    private transient volatile int hashCodeValue;
+    private transient int hashCodeValue;
 
     private static volatile Locale defaultLocale = initDefault();
     private static volatile Locale defaultDisplayLocale;
@@ -3110,7 +3113,7 @@ public final class Locale implements Cloneable, Serializable {
         private final String range;
         private final double weight;
 
-        private volatile int hash;
+        private int hash;
 
         /**
          * Constructs a {@code LanguageRange} using the given {@code range}.
