@@ -184,7 +184,7 @@ public class HelpWriter extends HtmlDocletWriter {
 
         // Search
         if (options.createIndex()) {
-            section = newHelpSection(getContent("doclet.help.search.head"), subTOC, HtmlIds.HELP_SEARCH);
+            section = newHelpSection(getContent("doclet.help.search.head"), PageMode.SEARCH, subTOC);
             var searchIntro = HtmlTree.P(getContent("doclet.help.search.intro"));
             var searchExamples = HtmlTree.UL(HtmlStyle.helpSectionList);
             for (String[] example : SEARCH_EXAMPLES) {

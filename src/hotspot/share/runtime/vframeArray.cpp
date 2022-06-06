@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -486,6 +486,7 @@ int vframeArrayElement::on_stack_size(int callee_parameters,
 
 
 intptr_t* vframeArray::unextended_sp() const {
+  assert(owner_thread()->is_in_usable_stack((address) _original.unextended_sp()), INTPTR_FORMAT, p2i(_original.unextended_sp()));
   return _original.unextended_sp();
 }
 
@@ -533,14 +534,14 @@ void vframeArray::fill_in(JavaThread* thread,
       // in frame_amd64.cpp and the values of the phantom high half registers
       // in amd64.ad.
       //      if (VMReg::Name(i) < SharedInfo::stack0 && is_even(i)) {
-        intptr_t* src = (intptr_t*) reg_map->location(VMRegImpl::as_VMReg(i));
+        intptr_t* src = (intptr_t*) reg_map->location(VMRegImpl::as_VMReg(i), _caller.sp());
         _callee_registers[i] = src != NULL ? *src : NULL_WORD;
         //      } else {
         //      jint* src = (jint*) reg_map->location(VMReg::Name(i));
         //      _callee_registers[i] = src != NULL ? *src : NULL_WORD;
         //      }
 #else
-      jint* src = (jint*) reg_map->location(VMRegImpl::as_VMReg(i));
+      jint* src = (jint*) reg_map->location(VMRegImpl::as_VMReg(i), _caller.sp());
       _callee_registers[i] = src != NULL ? *src : NULL_WORD;
 #endif
       if (src == NULL) {

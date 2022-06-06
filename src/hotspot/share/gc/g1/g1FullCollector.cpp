@@ -44,6 +44,7 @@
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/workerPolicy.hpp"
 #include "logging/log.hpp"
+#include "runtime/continuation.hpp"
 #include "runtime/handles.inline.hpp"
 #include "utilities/debug.hpp"
 
@@ -187,6 +188,8 @@ void G1FullCollector::prepare_collection() {
 }
 
 void G1FullCollector::collect() {
+  G1CollectedHeap::start_codecache_marking_cycle_if_inactive();
+
   phase1_mark_live_objects();
   verify_after_marking();
 
@@ -198,6 +201,9 @@ void G1FullCollector::collect() {
   phase3_adjust_pointers();
 
   phase4_do_compaction();
+
+  Continuations::on_gc_marking_cycle_finish();
+  Continuations::arm_all_nmethods();
 }
 
 void G1FullCollector::complete_collection() {
@@ -414,5 +420,5 @@ void G1FullCollector::verify_after_marking() {
   // (including hash values) are restored to the appropriate
   // objects.
   GCTraceTime(Info, gc, verify) tm("Verifying During GC (full)");
-  _heap->verify(VerifyOption_G1UseFullMarking);
+  _heap->verify(VerifyOption::G1UseFullMarking);
 }
