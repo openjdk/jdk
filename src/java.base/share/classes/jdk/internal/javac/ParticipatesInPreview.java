@@ -22,17 +22,18 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.internal.javac;
 
-import jdk.internal.javac.ParticipatesInPreview;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * Defines non-final APIs for concurrent programming.
- * {@Incubating}
- *
- * @moduleGraph
+ * Indicates, when declared on a module declaration, that the module participates
+ * in preview features and therefore does not need to be compiled with "--enable-preview".
  */
-@ParticipatesInPreview
-module jdk.incubator.concurrent {
-    exports jdk.incubator.concurrent;
+@Target(ElementType.MODULE)
+@Retention(RetentionPolicy.CLASS)
+public @interface ParticipatesInPreview {
 }
-
