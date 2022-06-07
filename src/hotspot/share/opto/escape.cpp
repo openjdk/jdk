@@ -504,9 +504,15 @@ bool ConnectionGraph::is_read_only(Node* ctrl, Node* base) const {
   return true;
 }
 
-bool ConnectionGraph::should_reduce_this_phi(const Node* n) const {
-  if (!is_ideal_node_in_graph(n->_idx)) return false;
-  if (ptnode_adr(n->_idx)->escape_state() != PointsToNode::EscapeState::NoEscape) return false;
+bool ConnectionGraph::should_reduce_this_phi(const Node* phi) const {
+  if (!is_ideal_node_in_graph(phi->_idx)) return false;
+  if (ptnode_adr(phi->_idx)->escape_state() != PointsToNode::EscapeState::NoEscape) return false;
+
+  const Type* phi_t  = _igvn->type(phi);
+
+  if (phi_t == NULL || phi_t->make_oopptr() == NULL || !phi_t->make_oopptr()->klass_is_exact()) {
+    return false;
+  }
 
   // Validate inputs:
   //    Check whether this Phi node actually point to Allocate nodes
@@ -514,36 +520,28 @@ bool ConnectionGraph::should_reduce_this_phi(const Node* n) const {
   //    checks that there is no write to any of the inputs after the
   //    merge occurs.
   Node* prev_klass = NULL;
-  for (uint in_idx=1; in_idx<n->req(); in_idx++) {
-    Node* input = n->in(in_idx);
-    const Type* in_t  = _igvn->type(input);
+  for (uint in_idx=1; in_idx<phi->req(); in_idx++) {
+    Node* input = phi->in(in_idx);
 
     // Check if input is NoEscape
     PointsToNode* input_ptn = ptnode_adr(input->_idx);
     if (input_ptn == NULL || input_ptn->escape_state() != PointsToNode::EscapeState::NoEscape) {
-      NOT_PRODUCT(if (Verbose) tty->print_cr("The %dth input escape.", in_idx);)
-      return false;
-    }
-
-    if (in_t == NULL || in_t->make_oopptr() == NULL || !in_t->make_oopptr()->klass_is_exact()) {
-      NOT_PRODUCT(if (Verbose) tty->print_cr("Input to Phi is not exact.");)
-      NOT_PRODUCT(if (Verbose) { in_t->dump(); tty->cr(); })
       return false;
     }
 
     Node* klass = come_from_allocate(input);
 
     if (klass == NULL) {
-      NOT_PRODUCT(if (Verbose) tty->print_cr("Will NOT try to reduce Phi %d. The %dth input does not come from an Allocate.", n->_idx, in_idx);)
+      NOT_PRODUCT(if (Verbose) tty->print_cr("Will NOT try to reduce Phi %d. The %dth input does not come from an Allocate.", phi->_idx, in_idx);)
       return false;
     }
-    else if (!is_read_only(n->in(0), input)) {
-      NOT_PRODUCT(if (Verbose) tty->print_cr("Will NOT try to reduce Phi %d. The %dth input has a store after the merge.", n->_idx, in_idx);)
+    else if (!is_read_only(phi->in(0), input)) {
+      NOT_PRODUCT(if (Verbose) tty->print_cr("Will NOT try to reduce Phi %d. The %dth input has a store after the merge.", phi->_idx, in_idx);)
       return false;
     }
     else {
       if (prev_klass != NULL && prev_klass != klass) {
-        NOT_PRODUCT(if (Verbose) tty->print_cr("Will NOT try to reduce Phi %d. The input Allocate klass nodes don't match.", n->_idx);)
+        NOT_PRODUCT(if (Verbose) tty->print_cr("Will NOT try to reduce Phi %d. The input Allocate klass nodes don't match.", phi->_idx);)
         return false;
       }
       prev_klass = klass;
@@ -560,22 +558,22 @@ bool ConnectionGraph::should_reduce_this_phi(const Node* n) const {
   //           - Safepoint
   //           - uncommon_trap
   //           - DecodeN
-  for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
-    Node* use = n->fast_out(i);
+  for (DUIterator_Fast imax, i = phi->fast_outs(imax); i < imax; i++) {
+    Node* use = phi->fast_out(i);
 
     if (!use->is_AddP() && !use->is_CallStaticJava() && use->Opcode() != Op_SafePoint && !use->is_DecodeN()) {
-      NOT_PRODUCT(if (Verbose) tty->print_cr("Will NOT try to reduce Phi %d. Has Allocate but cannot scalar replace it. One of the uses is: %d %s", n->_idx, use->_idx, use->Name());)
+      NOT_PRODUCT(if (Verbose) tty->print_cr("Will NOT try to reduce Phi %d. Has Allocate but cannot scalar replace it. One of the uses is: %d %s", phi->_idx, use->_idx, use->Name());)
       return false;
     }
 
     if (use->is_CallStaticJava() && !use->as_CallStaticJava()->is_uncommon_trap()) {
-      NOT_PRODUCT(if (Verbose) tty->print_cr("Will NOT try to reduce Phi %d. Has Allocate but cannot scalar replace it. CallStaticJava is not a trap.", n->_idx);)
+      NOT_PRODUCT(if (Verbose) tty->print_cr("Will NOT try to reduce Phi %d. Has Allocate but cannot scalar replace it. CallStaticJava is not a trap.", phi->_idx);)
       return false;
     }
 
     if (use->is_AddP()) {
       if (use->in(AddPNode::Offset)->find_long_con(-1) == -1) {
-        NOT_PRODUCT(if (Verbose) tty->print_cr("Will NOT try to reduce Phi %d. Did not find constant input for %d : AddP.", n->_idx, use->_idx);)
+        NOT_PRODUCT(if (Verbose) tty->print_cr("Will NOT try to reduce Phi %d. Did not find constant input for %d : AddP.", phi->_idx, use->_idx);)
         return false;
       }
 
@@ -583,7 +581,7 @@ bool ConnectionGraph::should_reduce_this_phi(const Node* n) const {
         Node* use_use = use->fast_out(j);
 
         if (!use_use->is_Load()) {
-          NOT_PRODUCT(if (Verbose) tty->print_cr("Will NOT try to reduce Phi %d. AddP use is not a Load. %d %s", n->_idx, use_use->_idx, use_use->Name());)
+          NOT_PRODUCT(if (Verbose) tty->print_cr("Will NOT try to reduce Phi %d. AddP use is not a Load. %d %s", phi->_idx, use_use->_idx, use_use->Name());)
           return false;
         }
       }
@@ -594,7 +592,7 @@ bool ConnectionGraph::should_reduce_this_phi(const Node* n) const {
         Node* use_use = use->fast_out(j);
 
         if (!use_use->is_AddP()) {
-          NOT_PRODUCT(if (Verbose) tty->print_cr("Will NOT try to reduce Phi %d. DecodeN use is not a Load. %d %s", n->_idx, use_use->_idx, use_use->Name());)
+          NOT_PRODUCT(if (Verbose) tty->print_cr("Will NOT try to reduce Phi %d. DecodeN use is not a Load. %d %s", phi->_idx, use_use->_idx, use_use->Name());)
           return false;
         }
 
@@ -602,7 +600,7 @@ bool ConnectionGraph::should_reduce_this_phi(const Node* n) const {
           Node* use_use_use = use_use->fast_out(k);
 
           if (!use_use_use->is_Load()) {
-            NOT_PRODUCT(if (Verbose) tty->print_cr("Will NOT try to reduce Phi %d. DecodeN.AddP use is not a Load. %d %s", n->_idx, use_use_use->_idx, use_use_use->Name());)
+            NOT_PRODUCT(if (Verbose) tty->print_cr("Will NOT try to reduce Phi %d. DecodeN.AddP use is not a Load. %d %s", phi->_idx, use_use_use->_idx, use_use_use->Name());)
             return false;
           }
         }
@@ -610,7 +608,7 @@ bool ConnectionGraph::should_reduce_this_phi(const Node* n) const {
     }
   }
 
-  NOT_PRODUCT(if (Verbose) tty->print_cr("Will try to reduce Phi %d.", n->_idx);)
+  NOT_PRODUCT(if (Verbose) tty->print_cr("Will try to reduce Phi %d.", phi->_idx);)
   return true;
 }
 

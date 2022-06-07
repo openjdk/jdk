@@ -547,6 +547,7 @@ class Compile : public Phase {
   /** Do escape analysis. */
   bool              do_escape_analysis() const  { return _options._do_escape_analysis; }
   bool              do_iterative_escape_analysis() const  { return _options._do_iterative_escape_analysis; }
+  bool              do_reduce_allocation_merges() const  { return _options._do_reduce_allocation_merges; }
   /** Do boxing elimination. */
   bool              eliminate_boxing() const    { return _options._eliminate_boxing; }
   /** Do aggressive boxing elimination. */

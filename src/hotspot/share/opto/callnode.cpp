@@ -1625,26 +1625,21 @@ ReducedAllocationMergeNode::ReducedAllocationMergeNode(Compile* C, PhaseIterGVN*
   init_class_id(Class_ReducedAllocationMerge);
   init_flags(Flag_is_macro);
 
+  const Type* ram_t       = igvn->type(phi);
+
   _num_orig_inputs        = phi->req();
   _needs_all_fields       = false;
   _in_copy                = new Node_Array(Thread::current()->resource_area(), phi->req());
   _memories_indexes_start = -1;
   _fields_and_values      = new (C->comp_arena()) Dict(cmpkey, hashkey);
-  const Type* ram_t       = Type::TOP;
+  _klass                  = ram_t->make_oopptr()->exact_klass();
 
   for (uint i=0; i<phi->req(); i++) {
     init_req(i, phi->in(i));
     _in_copy->map(i, this->_in[i]);
-
-    if (i > 0) {
-      const Type* in_t = igvn->type(phi->in(i));
-      ram_t = ram_t->meet(in_t);
-    }
   }
 
-  _klass = ram_t->make_oopptr()->exact_klass();
-
-  // Now let's try to find a memory Phi coming from same region
+  // Try to find a memory Phi coming from same region
   Node* reg = phi->region();
   for (DUIterator_Fast imax, i = reg->fast_outs(imax); i < imax; i++) {
     Node* n = reg->fast_out(i);

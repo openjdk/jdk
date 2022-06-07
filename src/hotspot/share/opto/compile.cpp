@@ -2206,7 +2206,7 @@ void Compile::Optimize() {
       if (failing())  return;
     }
 
-    if (ReduceAllocationMerges) {
+    if (do_reduce_allocation_merges() && ReduceAllocationMerges) {
       ConnectionGraph::do_analysis(this, &igvn, /*only_analysis=*/true);
       if (failing())  return;
       igvn.optimize();
