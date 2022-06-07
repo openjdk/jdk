@@ -1200,53 +1200,6 @@ bool PhaseMacroExpand::eliminate_boxing_node(CallStaticJavaNode *boxing) {
   return true;
 }
 
-#ifndef PRODUCT
-void dump_ir(Compile* _compile, const char* title) {
-
-
-
-
-
-
-
-
-    return ;
-
-
-
-
-
-
-
-
-    ttyLocker ttyl;  // keep the following output all in one block
-
-    _compile->method()->print_short_name();
-    tty->cr();
-    tty->cr();
-
-    tty->print_cr("%s", title);
-
-    Unique_Node_List ideal_nodes; // Used by CG construction and types splitting.
-    ideal_nodes.map(_compile->live_nodes(), NULL);  // preallocate space
-    ideal_nodes.push(_compile->root());
-
-    for( uint next = 0; next < ideal_nodes.size(); ++next ) {
-      Node* n = ideal_nodes.at(next);
-
-      n->dump();
-
-      for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
-        Node* m = n->fast_out(i);   // Get user
-        ideal_nodes.push(m);
-      }
-    }
-
-    tty->cr(); tty->cr(); tty->cr(); tty->cr();
-}
-#endif
-
-
 bool PhaseMacroExpand::eliminate_reduced_allocation_merge(ReducedAllocationMergeNode *ram) {
   for (DUIterator_Fast imax, i = ram->fast_outs(imax); i < imax; i++) {
     Node* use = ram->fast_out(i);
@@ -1402,8 +1355,6 @@ bool PhaseMacroExpand::eliminate_reduced_allocation_merge(ReducedAllocationMerge
       assert(false, "Unknown use of RAM. %d:%s", use->_idx, use->Name());
       return false;
     }
-
-    NOT_PRODUCT(dump_ir(C, "After eliminating one RAM use.");)
   }
 
   return true;
@@ -2667,8 +2618,6 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
     }
   }
 
-  NOT_PRODUCT(dump_ir(C, "before removing any allocate.");)
-
   // Next, attempt to eliminate allocations
   _has_locks = false;
   progress = true;
@@ -2682,9 +2631,6 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
       case Node::Class_Allocate:
       case Node::Class_AllocateArray:
         success = eliminate_allocate_node(n->as_Allocate());
-        if (success) {
-          NOT_PRODUCT(dump_ir(C, "After eliminate allocate");)
-        }
         break;
       case Node::Class_CallStaticJava:
         success = eliminate_boxing_node(n->as_CallStaticJava());
@@ -2717,8 +2663,6 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
       progress = progress || success;
     }
   }
-
-  NOT_PRODUCT(dump_ir(C, "after removing all allocates / before removing any RAM.");)
 
   // Next, try to eliminate reduced allocation merges
   for (int i = C->macro_count(); i > 0; i--) {
