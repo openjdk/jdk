@@ -284,6 +284,11 @@ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-These terms are identical to those of the MIT License, also called the X License or the X11 License, which is a simple, permissive non-copyleft free software license. It is deemed compatible with virtually all types of licenses, commercial or otherwise. In particular, the Free Software Foundation has declared it compatible with GNU GPL. It is also known to be approved by the Apache Software Foundation as compatible with Apache Software License.
+These terms are identical to those of the MIT License, also called the X License
+or the X11 License, which is a simple, permissive non-copyleft free software license.
+It is deemed compatible with virtually all types of licenses, commercial or otherwise.
+In particular, the Free Software Foundation has declared it compatible with GNU GPL.
+It is also known to be approved by the Apache Software Foundation as compatible with
+Apache Software License.
 
 </pre>
