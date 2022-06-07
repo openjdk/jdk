@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,18 +91,15 @@ function sortTable(header, columnIndex, columns) {
         var ka = makeComparable(a[columnIndex].textContent);
         var kb = makeComparable(b[columnIndex].textContent);
         if (ka < kb)
-            return -1;
+            return descending ? 1 : -1;
         if (ka > kb)
-            return 1;
+            return descending ? -1 : 1;
         return 0;
     };
     var sorted = rows.sort(comparator);
-    if (descending) {
-        sorted = sorted.reverse();
-    }
     var visible = 0;
     sorted.forEach(function(row) {
-        if (row[0].style.display === '') {
+        if (row[0].style.display !== 'none') {
             var isEvenRow = visible++ % 2 === 0;
         }
         row.forEach(function(cell) {
@@ -118,11 +115,17 @@ function toggleGlobal(checkbox, selected, columns) {
     var display = checkbox.checked ? '' : 'none';
     document.querySelectorAll("div.table-tabs").forEach(function(t) {
         var id = t.parentElement.getAttribute("id");
-        selectedClass = id + "-tab" + selected;
+        var selectedClass = id + "-tab" + selected;
+        // if selected is empty string it selects all uncategorized entries
+        var selectUncategorized = !Boolean(selected);
         var visible = 0;
         document.querySelectorAll('div.' + id)
             .forEach(function(elem) {
-                if (elem.classList.contains(selectedClass)) {
+                if (selectUncategorized) {
+                    if (elem.className.indexOf(selectedClass) === -1) {
+                        elem.style.display = display;
+                    }
+                } else if (elem.classList.contains(selectedClass)) {
                     elem.style.display = display;
                 }
                 if (elem.style.display === '') {
@@ -260,9 +263,4 @@ document.addEventListener("DOMContentLoaded", function(e) {
     if (!location.hash) {
         history.replaceState(contentDiv.scrollTop, document.title);
     }
-    document.querySelectorAll('input[type="checkbox"]').forEach(
-        function(c, i) {
-            c.disabled = false;
-            toggleGlobal(c, String(i + 1), 3)
-        });
 });

@@ -766,7 +766,6 @@ jdk/jfr/jvm/TestWaste.java                                      8282427 generic-
 # jdk_jpackage
 
 ############################################################################
-
 # Client manual tests
 
 java/awt/event/MouseEvent/SpuriousExitEnter/SpuriousExitEnter_1.java 7131438,8022539 generic-all

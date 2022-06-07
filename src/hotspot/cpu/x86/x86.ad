@@ -1636,6 +1636,16 @@ const bool Matcher::match_rule_supported(int opcode) {
       }
       break;
 #endif // !LP64
+    case Op_CompressBits:
+      if (!VM_Version::supports_bmi2() || (!is_LP64 && UseSSE < 2)) {
+        return false;
+      }
+      break;
+    case Op_ExpandBits:
+      if (!VM_Version::supports_bmi2() || (!is_LP64 && (UseSSE < 2 || !VM_Version::supports_bmi1()))) {
+        return false;
+      }
+      break;
     case Op_SignumF:
       if (UseSSE < 1) {
         return false;
@@ -6248,7 +6258,50 @@ instruct copySignD_imm(regD dst, regD src, regD tmp1, rRegL tmp2, immD zero) %{
   %}
   ins_pipe( pipe_slow );
 %}
+
 #endif // _LP64
+
+//----------------------------- CompressBits/ExpandBits ------------------------
+
+instruct compressBitsI_reg(rRegI dst, rRegI src, rRegI mask) %{
+  predicate(n->bottom_type()->isa_int());
+  match(Set dst (CompressBits src mask));
+  format %{ "pextl  $dst, $src, $mask\t! parallel bit extract" %}
+  ins_encode %{
+    __ pextl($dst$$Register, $src$$Register, $mask$$Register);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct expandBitsI_reg(rRegI dst, rRegI src, rRegI mask) %{
+  predicate(n->bottom_type()->isa_int());
+  match(Set dst (ExpandBits src mask));
+  format %{ "pdepl  $dst, $src, $mask\t! parallel bit deposit" %}
+  ins_encode %{
+    __ pdepl($dst$$Register, $src$$Register, $mask$$Register);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct compressBitsI_mem(rRegI dst, rRegI src, memory mask) %{
+  predicate(n->bottom_type()->isa_int());
+  match(Set dst (CompressBits src (LoadI mask)));
+  format %{ "pextl  $dst, $src, $mask\t! parallel bit extract" %}
+  ins_encode %{
+    __ pextl($dst$$Register, $src$$Register, $mask$$Address);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct expandBitsI_mem(rRegI dst, rRegI src, memory mask) %{
+  predicate(n->bottom_type()->isa_int());
+  match(Set dst (ExpandBits src (LoadI mask)));
+  format %{ "pdepl  $dst, $src, $mask\t! parallel bit deposit" %}
+  ins_encode %{
+    __ pdepl($dst$$Register, $src$$Register, $mask$$Address);
+  %}
+  ins_pipe( pipe_slow );
+%}
 
 // --------------------------------- Sqrt --------------------------------------
 

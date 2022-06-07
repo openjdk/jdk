@@ -640,7 +640,7 @@ public final class Double extends Number
      * a {@code NumberFormatException} be thrown, the regular
      * expression below can be used to screen the input string:
      *
-     * <pre>{@code
+     * {@snippet lang="java" :
      *  final String Digits     = "(\\p{Digit}+)";
      *  final String HexDigits  = "(\\p{XDigit}+)";
      *  // an exponent is 'e' or 'E' followed by an optionally
@@ -679,13 +679,14 @@ public final class Double extends Number
      *        ")[pP][+-]?" + Digits + "))" +
      *       "[fFdD]?))" +
      *       "[\\x00-\\x20]*");// Optional trailing "whitespace"
-     *
+     *  // @link region substring="Pattern.matches" target ="java.util.regex.Pattern#matches"
      *  if (Pattern.matches(fpRegex, myString))
      *      Double.valueOf(myString); // Will not throw NumberFormatException
+     * // @end
      *  else {
      *      // Perform suitable alternative action
      *  }
-     * }</pre>
+     * }
      *
      * @param      s   the string to be parsed.
      * @return     a {@code Double} object holding the value
@@ -1099,13 +1100,13 @@ public final class Double extends Number
      * <p>In all other cases, let <i>s</i>, <i>e</i>, and <i>m</i> be three
      * values that can be computed from the argument:
      *
-     * <blockquote><pre>{@code
+     * {@snippet lang="java" :
      * int s = ((bits >> 63) == 0) ? 1 : -1;
      * int e = (int)((bits >> 52) & 0x7ffL);
      * long m = (e == 0) ?
      *                 (bits & 0xfffffffffffffL) << 1 :
      *                 (bits & 0xfffffffffffffL) | 0x10000000000000L;
-     * }</pre></blockquote>
+     * }
      *
      * Then the floating-point result equals the value of the mathematical
      * expression <i>s</i>&middot;<i>m</i>&middot;2<sup><i>e</i>-1075</sup>.
