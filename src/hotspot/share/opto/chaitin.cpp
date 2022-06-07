@@ -655,7 +655,7 @@ void PhaseChaitin::Register_Allocate() {
     _trip_cnt = 0;
 #ifdef ASSERT
     if (UseNewCode3 ) {
-      tty->print_cr("XXX region = %d - %d %d", region, sizeof(LRG), offset_of(LRG, _mask));
+      tty->print_cr("XXX region = %d - %zd %zd", region, sizeof(LRG), offset_of(LRG, _mask));
       for (uint i = 0; i < _cfg.number_of_blocks(); ++i) {
         Block* block = _cfg.get_block(i);
         block->dump();
@@ -897,7 +897,7 @@ void PhaseChaitin::Register_Allocate() {
       C->method()->print_short_name(&ss);
       bool dump = /*!strcmp(ss.as_string(), " com.sun.crypto.provider.AESCrypt::<clinit>") ||*/ UseNewCode2 || UseNewCode3;
       if (dump) {
-        tty->print_cr("XXXXX after region = %d - %d/%d", region, offset_of(LRG, _mask), sizeof(LRG));
+        tty->print_cr("XXXXX after region = %d - %zd/%zd", region, offset_of(LRG, _mask), sizeof(LRG));
       }
 #endif
       for (uint i = 0; i < _cfg.number_of_blocks(); ++i) {
@@ -910,7 +910,7 @@ void PhaseChaitin::Register_Allocate() {
         for (uint i = 0; i < block->number_of_nodes(); i++) {
           Node* n = block->get_node(i);
           LRG &lrg = lrgs(_lrg_map.live_range_id(n));
-          if (lrg.alive() && lrg._region >= region) {
+          if (lrg.alive() && lrg._region >= (uint)region) {
             if (lrg.mask().is_UP()) {
               _was_up_in_prev_region.set(n->_idx);
             }
@@ -955,7 +955,7 @@ void PhaseChaitin::Register_Allocate() {
           // Remove coalesced copy from CFG
           if (copyidx) {
             uint copylidx = _lrg_map.find(n->in(copyidx));
-            if (defidx != copylidx && deflrg._region >= region && lrgs(copylidx)._region >= region && deflrg.reg() == lrgs(copylidx).reg()) {
+            if (defidx != copylidx && deflrg._region >= (uint)region && lrgs(copylidx)._region >= (uint)region && deflrg.reg() == lrgs(copylidx).reg()) {
               if (defidx < copylidx) {
                 Union(n, n->in(copyidx));
               } else {
