@@ -85,23 +85,30 @@ public class DeprecatedListWriter extends SummaryListWriter<DeprecatedAPIListBui
             Content tabs = HtmlTree.DIV(HtmlStyle.checkboxes, contents.getContent(
                     "doclet.Deprecated_API_Checkbox_Label"));
             for (int i = 0; i < releases.size(); i++) {
-                String release = releases.get(i);
-                String releaseIndex = release.isEmpty() ? "" : Integer.toString(i + 1);
-                Content releaseLabel = release.isEmpty()
-                        ? contents.getContent("doclet.Deprecated_API_Checkbox_Other_Releases")
-                        : Text.of(release);
-                HtmlId htmlId = HtmlId.of("release-" + releaseIndex);
-                tabs.add(new HtmlTree(TagName.WBR)).add(HtmlTree.LABEL(htmlId.name(),
-                                HtmlTree.INPUT("checkbox", htmlId)
-                                        .put(HtmlAttr.CHECKED, "")
-                                        .put(HtmlAttr.ONCLICK,
-                                                "toggleGlobal(this, '" + releaseIndex + "', 3)"))
-                        .add(HtmlTree.SPAN(releaseLabel)));
+                // Table column ids are 1-based
+                tabs.add(new HtmlTree(TagName.WBR)).add(getReleaseCheckbox(releases.get(i), i + 1));
             }
             content.add(tabs);
         }
         addSummaryAPI(list.getForRemoval(), HtmlIds.FOR_REMOVAL,
                 TERMINALLY_DEPRECATED_KEY, "doclet.Element", content);
+    }
+
+    private Content getReleaseCheckbox(String name, int index) {
+        // Empty string represents other/uncategorized releases. Since we can't make any assumptions
+        // about release names this is arguably the safest way to avoid naming collisions.
+        boolean isOtherReleases = name.isEmpty();
+        Content releaseLabel = isOtherReleases
+                ? contents.getContent("doclet.Deprecated_API_Checkbox_Other_Releases")
+                : Text.of(name);
+        HtmlId htmlId = HtmlId.of("release-" + index);
+        String releaseId = isOtherReleases ? "" : Integer.toString(index);
+        return HtmlTree.LABEL(htmlId.name(),
+                        HtmlTree.INPUT("checkbox", htmlId)
+                                .put(HtmlAttr.CHECKED, "")
+                                .put(HtmlAttr.ONCLICK,
+                                        "toggleGlobal(this, '" + releaseId + "', 3)"))
+                .add(HtmlTree.SPAN(releaseLabel));
     }
 
     @Override

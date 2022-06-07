@@ -38,6 +38,7 @@ import java.io.PrintStream;
  *     Fixed according to 4669812 bug.
  *     Ported from JVMDI.
  *
+ * @requires vm.continuations
  * @library /test/lib
  * @compile fieldmod01a.jasm
  * @compile --enable-preview -source ${jdk.version} fieldmod01.java

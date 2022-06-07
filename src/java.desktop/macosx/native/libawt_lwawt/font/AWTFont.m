@@ -379,6 +379,9 @@ JNI_COCOA_ENTER(env);
     CTFontRef ctfont = (CTFontRef)nsFont;
     CFArrayRef tagsArray =
         CTFontCopyAvailableTables(ctfont, kCTFontTableOptionNoOptions);
+    if (tagsArray == NULL) {
+        return NULL;
+    }
     CFIndex numTags = CFArrayGetCount(tagsArray);
     for (i=0; i<numTags; i++) {
         if (tag ==
