@@ -45,6 +45,9 @@ public class MissingResourceCauseTest {
 
     private static void callGetBundle(String baseName, Locale locale,
                                       Class<? extends Throwable> expectedCause) {
+        if (baseName.equals("UnreadableRB") && System.getProperty("os.name").startsWith("Windows")) {
+            return;
+        }
         ResourceBundle rb;
         try {
             rb = ResourceBundle.getBundle(baseName, locale);
