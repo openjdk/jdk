@@ -44,8 +44,6 @@
  *         2. reference.get() returns null.
  *         3. queue.poll() returns the reference that was created.
  *         4. queue.poll() again returns null.
- *         5. If the checked type is class (Referent), then it must be finalized,
- *            since the reference is already enqueued.
  *     The test extends ThreadedGCTest and implements GarbageProducerAware and
  *     MemoryStrategyAware interfaces. The corresponding javadoc documentation
  *     for additional test configuration.
@@ -88,7 +86,6 @@ public class phantom001 extends ThreadedGCTest {
     class Test implements Runnable {
 
         int iteration;
-        private volatile boolean finalized;
 
         private String addMessageContext(String message) {
             return "T:" + Thread.currentThread().getId() +
@@ -174,24 +171,6 @@ public class phantom001 extends ThreadedGCTest {
                     type = "class";
             }
 
-            // If referent is finalizable, provoke GCs and wait for finalization.
-            if (type.equals("class")) {
-                progress("Waiting for finalization: " + type);
-                for (int checks = 0; !finalized && !shouldTerminate(); ++checks) {
-                    // There are scenarios where one WB.fillGC() isn't enough,
-                    // but 10 iterations really ought to be sufficient.
-                    if (checks > 10) {
-                        fail("Waiting for finalization: " + type);
-                        return;
-                    }
-                    WhiteBox.getWhiteBox().fullGC();
-                    // Give some time for finalizer to run.
-                    try {
-                        Thread.sleep(checks * 100);
-                    } catch (InterruptedException e) {}
-                }
-            }
-
             // Provoke GCs and wait for reference to be enqueued.
             progress("Waiting for enqueue: " + type);
             Reference polled = queue.poll();
@@ -232,15 +211,6 @@ public class phantom001 extends ThreadedGCTest {
         }
 
         class Referent {
-
-            //We need discard this flag to make second and following checks with type.equals("class") useful
-            public Referent() {
-                finalized = false;
-            }
-
-            protected void finalize() {
-                finalized = true;
-            }
         }
     }
 
