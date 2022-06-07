@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,20 +153,20 @@ public class TestInvalidDebugInfo extends CodeInstallerTest {
     @Test(expected = JVMCIError.class)
     public void testUnexpectedTypeInCPURegister() {
         Register reg = getRegister(arch.getPlatformKind(JavaKind.Int), 0);
-        test(new JavaValue[]{reg.asValue()}, new JavaKind[]{JavaKind.Illegal}, 1, 0, 0);
+        test(new JavaValue[]{reg.asValue()}, new JavaKind[]{JavaKind.Void}, 1, 0, 0);
     }
 
     @Test(expected = JVMCIError.class)
     public void testUnexpectedTypeInFloatRegister() {
         Register reg = getRegister(arch.getPlatformKind(JavaKind.Float), 0);
-        test(new JavaValue[]{reg.asValue()}, new JavaKind[]{JavaKind.Illegal}, 1, 0, 0);
+        test(new JavaValue[]{reg.asValue()}, new JavaKind[]{JavaKind.Void}, 1, 0, 0);
     }
 
     @Test(expected = JVMCIError.class)
     public void testUnexpectedTypeOnStack() {
         ValueKind<?> kind = new TestValueKind(codeCache.getTarget().arch, JavaKind.Int);
         StackSlot value = StackSlot.get(kind, 8, false);
-        test(new JavaValue[]{value}, new JavaKind[]{JavaKind.Illegal}, 1, 0, 0);
+        test(new JavaValue[]{value}, new JavaKind[]{JavaKind.Void}, 1, 0, 0);
     }
 
     @Test(expected = JVMCIError.class)

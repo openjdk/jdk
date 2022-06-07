@@ -24,14 +24,14 @@
 /**
  * @test
  * @summary Stress test Thread.sleep
- * @requires vm.debug != true
+ * @requires vm.debug != true & vm.continuations
  * @compile --enable-preview -source ${jdk.version} SleepALot.java
  * @run main/othervm --enable-preview SleepALot
  */
 
 /**
  * @test
- * @requires vm.debug == true
+ * @requires vm.debug == true & vm.continuations
  * @compile --enable-preview -source ${jdk.version} SleepALot.java
  * @run main/othervm/timeout=300 --enable-preview SleepALot 200000
  */
