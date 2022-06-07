@@ -750,7 +750,7 @@ JVM_ENTRY(jobject, jmm_GetMemoryUsage(JNIEnv* env, jboolean heap))
 
     for (int i = 0; i < MemoryService::num_memory_pools(); i++) {
       MemoryPool* pool = MemoryService::get_memory_pool(i);
-      if (pool->is_codeheap() || pool->is_metaspace()) {
+      if (pool->is_non_heap()) {
         MemoryUsage u = pool->get_memory_usage();
         total_used += u.used();
         total_committed += u.committed();
