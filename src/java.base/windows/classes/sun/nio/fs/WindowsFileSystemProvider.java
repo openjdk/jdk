@@ -374,25 +374,22 @@ class WindowsFileSystemProvider
             }
         }
 
-        if (!w && !x) {
+        // check file exists only
+        if (!(r || w || x)) {
+            file.checkRead();
             try {
-                // special-case read access to avoid needing to determine
-                // effective access to file
-                checkReadAccess(file);
+                WindowsFileAttributes.get(file, true);
                 return;
-            } catch (IOException ioe) {
-                if (!r) {
-                    // Modes not specified: existence check only.
-                    // Assume file exists if attributes can be read.
-                    try {
-                        WindowsFileAttributes.get(file, true);
-                        return;
-                    } catch (WindowsException e) {
-                        ioe.addSuppressed(e);
-                    }
-                }
-                throw ioe;
+            } catch (WindowsException exc) {
+                exc.rethrowAsIOException(file);
             }
+        }
+
+        // special-case read access to avoid needing to determine effective
+        // access to file
+        if (!w && !x) {
+            checkReadAccess(file);
+            return;
         }
 
         int mask = 0;
