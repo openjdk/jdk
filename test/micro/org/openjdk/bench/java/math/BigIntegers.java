@@ -193,6 +193,9 @@ public class BigIntegers {
     }
 
     @State(Scope.Thread)
+    @Warmup(iterations = 5, time = 1)
+    @Measurement(iterations = 5, time = 1)
+    @Fork(value = 3)
     public static class SmallShifts {
 
         @Param({"32", "64", "128", "192", "256"})
