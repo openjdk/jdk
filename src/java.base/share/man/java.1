@@ -5547,27 +5547,23 @@ and enjoy the benefits of CDS automatically.
 \f[CB]java\ \-XX:+AutoCreateSharedArchive\ \-XX:SharedArchiveFile=hello.jsa\ \-cp\ hello.jar\ Hello\f[R]
 .RE
 .PP
-If the specified archive file does not exist, it will be automatically
-created at VM exit.
+If the specified archive file exists and was created by the same version
+of the JDK, then it will be loaded as a dynamic archive; otherwise it is
+ignored at VM startup.
 .PP
-If the specified archive file exists, then the behavior depends on the
-version of the JDK that created this archive:
-.IP \[bu] 2
-If the archive was created by a JDK prior to version 19, it will be
-ignored and will not be loaded.
-Nor will it be updated.
-.IP \[bu] 2
-If the archive was created by the same version of the JDK as the current
-JVM, it will be loaded as a dynamic archive.
-The archive will not be updated at VM exit.
-.IP \[bu] 2
-In all other cases, the JVM will not load the archive, but will update
-the archive at exit.
-Thus, the archive will be ready to be loaded the next time the JVM is
-launched with the same command line.
+At VM exit, if the specified archive file does not exist, it will be
+created.
+If it exists but was created with a different (but post JDK 19) version
+of the JDK, then it will be replaced.
+In both cases the archive will be ready to be loaded the next time the
+JVM is launched with the same command line.
 .PP
-Note that the contents of the CDS archive file are specific to each
-build of the JDK.
+If the specified archive file exists but was created by a JDK version
+prior to JDK 19, then it will be ignored: neither loaded at startup, nor
+replaced at exit.
+.PP
+Developers should note that the contents of the CDS archive file are
+specific to each build of the JDK.
 Therefore, if you switch to a different JDK build,
 \f[CB]\-XX:+AutoCreateSharedArchive\f[R] will automatically recreate the
 archive to match the JDK.
