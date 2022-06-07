@@ -634,7 +634,10 @@ void ClassVerifier::verify_class(TRAPS) {
 
   for (int index = 0; index < num_methods; index++) {
     // Check for recursive re-verification before each method.
-    if (was_recursively_verified())  return;
+    if (was_recursively_verified()) {
+      set_method_signatures_table(NULL); // clear stack allocated pointer.
+      return;
+    }
 
     Method* m = methods->at(index);
     if (m->is_native() || m->is_abstract() || m->is_overpass()) {
@@ -651,6 +654,7 @@ void ClassVerifier::verify_class(TRAPS) {
     log_info(class, init)("Recursive verification detected for: %s",
                         _klass->external_name());
   }
+  set_method_signatures_table(NULL); // clear stack allocated pointer.
 }
 
 // Translate the signature entries into verification types and save them in
