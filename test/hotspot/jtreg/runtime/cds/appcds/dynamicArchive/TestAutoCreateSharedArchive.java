@@ -152,7 +152,7 @@ public class TestAutoCreateSharedArchive extends DynamicArchiveTestBase {
     }
 
     private static String hex(int version) {
-        return String.format("0x%x", version); 
+        return String.format("0x%x", version);
     }
 
     private static void testAutoCreateSharedArchive() throws Exception {

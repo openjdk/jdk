@@ -98,7 +98,7 @@ public class SharedArchiveConsistency {
     }
 
     private static String hex(int version) {
-        return String.format("0x%x", version); 
+        return String.format("0x%x", version);
     }
 
     // dump with hello.jsa, then
