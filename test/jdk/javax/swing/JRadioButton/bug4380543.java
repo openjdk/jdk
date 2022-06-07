@@ -51,11 +51,11 @@ public class bug4380543 {
             = """
             INSTRUCTIONS:
                1. Check if the Left inset(margin) is set visually
-                  similar to other three sides around Radio Button
+                  similar to other three sides around the Radio Button
                   and CheckBox (insets set to 20 on all 4 sides).
                2. Rendering depends on OS and supported Look and Feels.
                   Verify only with those L&F where margins are visible.
-               3. If Left inset(margin) appears too small, press Fail,
+               3. If the Left inset(margin) appears too small, press Fail,
                   else press Pass.
             """;
     static PassFailJFrame passFailJFrame;
@@ -91,13 +91,13 @@ class TestFrame extends JFrame implements ActionListener {
 
         JRadioButton rb  = new JRadioButton("JRadioButton");
         rb.setMargin(new Insets(20, 20, 20, 20));
-        rb.setBackground(Color.green);
+        rb.setBackground(Color.GREEN);
         rb.setAlignmentX(0.5f);
         buttonsPanel.add(rb);
 
         JCheckBox cb  = new JCheckBox("JCheckBox");
         cb.setMargin(new Insets(20, 20, 20, 20));
-        cb.setBackground(Color.yellow);
+        cb.setBackground(Color.YELLOW);
         cb.setAlignmentX(0.5f);
         buttonsPanel.add(cb);
 
