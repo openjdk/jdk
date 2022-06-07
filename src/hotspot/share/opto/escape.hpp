@@ -581,10 +581,31 @@ private:
   // Compute the escape information
   bool compute_escape(bool only_analysis);
 
+  // -------------------------------------------
   // Methods related to Reduce Allocation Merges
+
+  // Returns true if there is a Store node dominated by
+  // 'merge_phi_region' for which the associated AddP uses
+  // 'base' as Base.
   bool is_read_only(Node* merge_phi_region, Node* base) const;
+
+  // Returns non-null if the node producing the initial value
+  // for 'n' is an AllocateNode.
   Node* come_from_allocate(const Node* n) const;
+
+  // Performs several checks to see if the Phi pointed by 'n'
+  // can be reduced into a ReducedAllocationMergeNode. The
+  // checks curently implemented are:
+  //  - The phi node should be NoEscape
+  //  - The Phi region must not dominate any store to any of the Phi inputs
+  //  - All inputs to the Phi node should come from an allocate node
+  //  - All inputs should be NoEscape
+  //  - The only uses of the Phi should be:
+  //    - AddP->Load
+  //    - SafePointNode or uncommon traps
+  //    - DecodeN->AddP->Loads
   bool can_reduce_this_phi(const Node* n) const;
+
   bool reduce_this_phi(PhiNode* n);
 
   void set_not_scalar_replaceable(PointsToNode* ptn NOT_PRODUCT(COMMA const char* reason)) const {
@@ -614,6 +635,9 @@ public:
   // Perform escape analysis
   static void do_analysis(Compile *C, PhaseIterGVN *igvn, bool only_analysis = false);
 
+  // Perform simplification of allocation merges by reducing Phi
+  // nodes that merge scalar replaceable object allocations into
+  // a ReduceAllocationMergeNode.
   void reduce_allocation_merges();
 
   bool not_global_escape(Node *n);

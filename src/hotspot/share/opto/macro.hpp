@@ -100,10 +100,24 @@ private:
 
   bool eliminate_boxing_node(CallStaticJavaNode *boxing);
   bool eliminate_allocate_node(AllocateNode *alloc);
-  bool eliminate_reduced_allocation_merge(ReducedAllocationMergeNode *ram);
   bool can_eliminate_allocation(AllocateNode *alloc, GrowableArray <SafePointNode *>& safepoints, GrowableArray <ReducedAllocationMergeNode *>& rams);
-  bool scalar_replacement(AllocateNode *alloc, GrowableArray <SafePointNode *>& safepoints_done, GrowableArray <ReducedAllocationMergeNode *>& rams);
   void process_users_of_allocation(CallNode *alloc);
+
+  // Effectivelly performs scalar replacement by replacing the uses of 'alloc' in
+  // the nodes in 'safepoints' and 'rams' by a SafePointScalarObjectNode.
+  bool scalar_replacement(AllocateNode *alloc, GrowableArray <SafePointNode *>& safepoints_done, GrowableArray <ReducedAllocationMergeNode *>& rams);
+
+  // This should be called only after all scalar replaceable Allocate nodes
+  // have been scalar replaced. Therefore the nodes producing values for the
+  // fields accessed by users of the RAM have already been registered.
+  //
+  // The method will iterate over the users of 'ram' and replace the nodes
+  // that use the _value_ of field 'x' by a value Phi merging nodes that
+  // produce value for field 'x' in different control branches. Safepoints
+  // and traps are special since they require they have a reference to the
+  // 'ram' itself. For those cases we create an SafePointScalarObjectNode,
+  // similar to what is done to regular scalar replacement.
+  bool eliminate_reduced_allocation_merge(ReducedAllocationMergeNode *ram);
 
   void eliminate_gc_barrier(Node *p2x);
   void mark_eliminated_box(Node* box, Node* obj);

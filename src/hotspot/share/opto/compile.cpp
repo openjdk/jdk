@@ -2206,6 +2206,7 @@ void Compile::Optimize() {
       if (failing())  return;
     }
 
+    // TODO: Perform reduce_allocation_merges as part of 'compute_escape'
     if (do_reduce_allocation_merges() && ReduceAllocationMerges) {
       ConnectionGraph::do_analysis(this, &igvn, /*only_analysis=*/true);
       if (failing())  return;

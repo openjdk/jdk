@@ -1011,8 +1011,23 @@ public:
   }
 };
 
-// This node is used during EA/SR to simplify allocation merges.
+// This node is used during SR to simplify allocation merges.
 // It's in this file just because it's closely related to allocation.
+//
+// Before elimination of macro nodes start, some Phi nodes that merge
+// object allocations are replaced by a ReducedAllocationMergeNode (aka RAM).
+// The users (mostly fields) of the merged allocation are _registered_ in
+// the RAM node. During allocation node removal (macro node expansion /
+// scalar replacement), if an allocation is used by a RAM node, the
+// nodes producing value for fields registered in the
+// RAM, are also registered in the RAM node (in association with
+// corresponding allocation base).
+// After the inputs to the RAM node are scalar replaced the RAM node
+// itself is scalar replaced. This consist basically in replacing the
+// use(s) of the merged allocation field(s) value by a new Phi node
+// merging the value produced in the different inputs to the RAM node.
+// In some cases a reference to the whole merged object is needed and
+// we handle that by creating an SafePointScalarObjectNode.
 class ReducedAllocationMergeNode : public TypeNode {
 private:
   ciKlass* _klass;                  // Which Klass is the merge for

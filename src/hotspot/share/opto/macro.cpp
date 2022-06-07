@@ -1201,22 +1201,28 @@ bool PhaseMacroExpand::eliminate_boxing_node(CallStaticJavaNode *boxing) {
 }
 
 bool PhaseMacroExpand::eliminate_reduced_allocation_merge(ReducedAllocationMergeNode *ram) {
+  ciKlass* klass             = ram->klass();
+  ciInstanceKlass* iklass    = klass->as_instance_klass();
+  int nfields                = iklass->nof_nonstatic_fields();
+  const TypeOopPtr* res_type = _igvn.type(ram)->isa_oopptr();
+
   for (DUIterator_Fast imax, i = ram->fast_outs(imax); i < imax; i++) {
     Node* use = ram->fast_out(i);
 
-    ciKlass* klass = ram->klass();
-    ciInstanceKlass* iklass = klass->as_instance_klass();
-    int nfields = iklass->nof_nonstatic_fields();
-    const TypeOopPtr* res_type = _igvn.type(ram)->isa_oopptr();
-
     if (use->is_AddP()) {
       Node* addp = use; // just for readability
-      jlong field = addp->in(AddPNode::Offset)->find_long_con(-1);
+      jlong offset = addp->in(AddPNode::Offset)->find_long_con(-1);
 
-      assert(field != -1, "Didn't find constant offset for AddP.");
+      assert(offset != -1, "Didn't find constant offset for AddP.");
 
-      Node* phi = ram->value_phi_for_field(field, &_igvn);
-      _igvn._worklist.push(phi);
+      Node* value_phi = ram->value_phi_for_field(offset, &_igvn);
+      
+      if (value_phi == NULL) {
+        assert(false, "At RAM node %d can't find value of Field: %ld", ram->_idx, offset);
+        return false;
+      }
+      
+      _igvn._worklist.push(value_phi);
 
       for (DUIterator_Fast jmax, j = addp->fast_outs(jmax); j < jmax; j++) {
         Node* addp_use = addp->fast_out(j);
@@ -1228,7 +1234,7 @@ bool PhaseMacroExpand::eliminate_reduced_allocation_merge(ReducedAllocationMerge
             Node* load_use = load->last_out(k);
 
             _igvn.hash_delete(load_use);
-            load_use->replace_edge(load, phi, &_igvn);
+            load_use->replace_edge(load, value_phi, &_igvn);
             _igvn.hash_insert(load_use);
             _igvn._worklist.push(load_use);
           }
@@ -1289,7 +1295,7 @@ bool PhaseMacroExpand::eliminate_reduced_allocation_merge(ReducedAllocationMerge
         Node* field_val = ram->value_phi_for_field(offset, &_igvn);
 
         if (field_val == NULL) {
-          assert(false, "At RAM node %d can't find value of Field: ", sfpt->_idx);
+          assert(false, "At RAM node %d can't find value of Field: %ld", sfpt->_idx, offset);
           return false;
         }
 
@@ -1322,12 +1328,18 @@ bool PhaseMacroExpand::eliminate_reduced_allocation_merge(ReducedAllocationMerge
       for (DUIterator_Fast jmax, j = use->fast_outs(jmax); j < jmax; j++) {
         Node* addp = use->fast_out(j);
 
-        jlong field = addp->in(AddPNode::Offset)->find_long_con(-1);
+        jlong offset = addp->in(AddPNode::Offset)->find_long_con(-1);
 
-        assert(field != -1, "Didn't find constant offset for AddP.");
+        assert(offset != -1, "Didn't find constant offset for AddP.");
 
-        Node* phi = ram->value_phi_for_field(field, &_igvn);
-        _igvn._worklist.push(phi);
+        Node* value_phi = ram->value_phi_for_field(offset, &_igvn);
+
+        if (value_phi == NULL) {
+          assert(false, "At RAM node %d can't find value of Field: %ld", ram->_idx, offset);
+          return false;
+        }
+
+        _igvn._worklist.push(value_phi);
 
         for (DUIterator_Fast jmax, j = addp->fast_outs(jmax); j < jmax; j++) {
           Node* addp_use = addp->fast_out(j);
@@ -1339,7 +1351,7 @@ bool PhaseMacroExpand::eliminate_reduced_allocation_merge(ReducedAllocationMerge
               Node* load_use = load->last_out(k);
 
               _igvn.hash_delete(load_use);
-              load_use->replace_edge(load, phi, &_igvn);
+              load_use->replace_edge(load, value_phi, &_igvn);
               _igvn.hash_insert(load_use);
               _igvn._worklist.push(load_use);
             }

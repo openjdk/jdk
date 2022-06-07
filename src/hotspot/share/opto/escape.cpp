@@ -523,6 +523,9 @@ bool ConnectionGraph::can_reduce_this_phi(const Node* phi) const {
   //    of the same Klass and that they can be scalar replaced. Also
   //    checks that there is no write to any of the inputs after the
   //    merge occurs.
+  //
+  // TODO:
+  //    - Do not require all inputs to be allocate.
   Node* prev_klass = NULL;
   for (uint in_idx=1; in_idx<phi->req(); in_idx++) {
     Node* input = phi->in(in_idx);
@@ -562,6 +565,8 @@ bool ConnectionGraph::can_reduce_this_phi(const Node* phi) const {
   //           - Safepoint
   //           - uncommon_trap
   //           - DecodeN
+  //
+  // TODO: add support for other kind of users.
   for (DUIterator_Fast imax, i = phi->fast_outs(imax); i < imax; i++) {
     Node* use = phi->fast_out(i);
 

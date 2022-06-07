@@ -1785,7 +1785,10 @@ Node* ReducedAllocationMergeNode::value_phi_for_field(jlong field, PhaseIterGVN*
   const Type *t      = Type::TOP;
 
   for (uint i=1; i<_num_orig_inputs; i++) {
-    assert(values->at(i) != NULL, "shouldn't be null at this point");
+    if (values->at(i) == NULL) {
+      assert(values->at(i) != NULL, "shouldn't be null at this point");
+      return NULL;
+    }
     phi->set_req(i, values->at(i));
     const Type* input_type = igvn->type(values->at(i));
     t = t->meet_speculative(input_type);
