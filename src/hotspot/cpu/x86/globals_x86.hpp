@@ -77,6 +77,12 @@ define_pd_global(intx, StackRedPages, DEFAULT_STACK_RED_PAGES);
 define_pd_global(intx, StackShadowPages, DEFAULT_STACK_SHADOW_PAGES);
 define_pd_global(intx, StackReservedPages, DEFAULT_STACK_RESERVED_PAGES);
 
+#ifdef _LP64
+define_pd_global(bool, VMContinuations, true);
+#else
+define_pd_global(bool, VMContinuations, false);
+#endif
+
 define_pd_global(bool, RewriteBytecodes,     true);
 define_pd_global(bool, RewriteFrequentPairs, true);
 

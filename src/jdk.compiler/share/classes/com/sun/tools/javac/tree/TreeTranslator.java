@@ -470,6 +470,13 @@ public class TreeTranslator extends JCTree.Visitor {
         result = tree;
     }
 
+    @Override
+    public void visitRecordPattern(JCRecordPattern tree) {
+        tree.deconstructor = translate(tree.deconstructor);
+        tree.nested = translate(tree.nested);
+        result = tree;
+    }
+
     public void visitTree(JCTree tree) {
         throw new AssertionError(tree);
     }

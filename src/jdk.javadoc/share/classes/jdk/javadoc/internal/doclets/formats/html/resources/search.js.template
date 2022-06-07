@@ -31,6 +31,8 @@ const messages = {
     loading: "##REPLACE:doclet.search.loading##",
     searching: "##REPLACE:doclet.search.searching##",
     redirecting: "##REPLACE:doclet.search.redirecting##",
+    copyUrl: "##REPLACE:doclet.Copy_url_to_clipboard##",
+    urlCopied: "##REPLACE:doclet.Copied_url_to_clipboard##"
 }
 const categories = {
     modules: "##REPLACE:doclet.search.modules##",
@@ -412,6 +414,16 @@ $(function() {
     $("ul.sub-nav-list-small li a").click(collapse);
     $("input#search-input").focus(collapse);
     $("main").click(collapse);
+    $("section[id] > :header, :header[id], :header:has(a[id])").hover(
+        function () {
+            $(this).append($("<button class='copy copy-header' onclick='copyUrl(this)'> " +
+                "<img src='" + pathtoroot + "copy.svg' alt='" + messages.copyUrl + "'> " +
+                "<span data-copied='" + messages.urlCopied + "'></span></button>"));
+        },
+        function () {
+            $(this).find("button:last").remove();
+        }
+    );
     $(window).on("orientationchange", collapse).on("resize", function(e) {
         if (expanded && windowWidth !== window.innerWidth) collapse();
     });

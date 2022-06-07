@@ -136,7 +136,7 @@ public class TestSharedAccess {
 
                     setInt(s2.asSlice(4), -42);
                     fail();
-                } catch (IllegalStateException ex) {
+                } catch (WrongThreadException ex) {
                     assertTrue(ex.getMessage().contains("owning thread"));
                 }
             });

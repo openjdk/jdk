@@ -83,7 +83,7 @@ public class framecnt01 {
         Thread.sleep(100);
 
         // this is too fragile, implementation can change at any time.
-        checkFrames(vThread1, false, 15);
+        checkFrames(vThread1, false, 14);
         LockSupport.unpark(vThread1);
         vThread1.join();
 
