@@ -3465,8 +3465,6 @@ void *Type_ProfileSequenceId_Read(struct _cms_typehandler_struct* self, cmsIOHAN
         return NULL;
     }
 
-    cmsUNUSED_PARAMETER(SizeOfTag);
-
     // Success
     *nItems = 1;
     return OutSeq;
