@@ -235,8 +235,8 @@ void ZLoadBarrierStubC2::emit_code(MacroAssembler& masm) {
   ZBarrierSet::assembler()->generate_c2_load_barrier_stub(&masm, static_cast<ZLoadBarrierStubC2*>(this));
 }
 
-ZStoreBarrierStubC2* ZStoreBarrierStubC2::create(const MachNode* node, Address ref_addr, Register new_zaddress, Register new_zpointer, bool is_atomic) {
-  ZStoreBarrierStubC2* const stub = new (Compile::current()->comp_arena()) ZStoreBarrierStubC2(node, ref_addr, new_zaddress, new_zpointer, is_atomic);
+ZStoreBarrierStubC2* ZStoreBarrierStubC2::create(const MachNode* node, Address ref_addr, Register new_zaddress, Register new_zpointer, bool is_native, bool is_atomic) {
+  ZStoreBarrierStubC2* const stub = new (Compile::current()->comp_arena()) ZStoreBarrierStubC2(node, ref_addr, new_zaddress, new_zpointer, is_native, is_atomic);
   if (!Compile::current()->output()->in_scratch_emit_size()) {
     barrier_set_state()->stubs()->append(stub);
   }
@@ -244,11 +244,12 @@ ZStoreBarrierStubC2* ZStoreBarrierStubC2::create(const MachNode* node, Address r
   return stub;
 }
 
-ZStoreBarrierStubC2::ZStoreBarrierStubC2(const MachNode* node, Address ref_addr, Register new_zaddress, Register new_zpointer, bool is_atomic) :
+ZStoreBarrierStubC2::ZStoreBarrierStubC2(const MachNode* node, Address ref_addr, Register new_zaddress, Register new_zpointer, bool is_native, bool is_atomic) :
     ZBarrierStubC2(node),
     _ref_addr(ref_addr),
     _new_zaddress(new_zaddress),
     _new_zpointer(new_zpointer),
+    _is_native(is_native),
     _is_atomic(is_atomic) {
 }
 
@@ -262,6 +263,10 @@ Register ZStoreBarrierStubC2::new_zaddress() const {
 
 Register ZStoreBarrierStubC2::new_zpointer() const {
   return _new_zpointer;
+}
+
+bool ZStoreBarrierStubC2::is_native() const {
+  return _is_native;
 }
 
 bool ZStoreBarrierStubC2::is_atomic() const {
@@ -336,6 +341,10 @@ static void set_barrier_data(C2Access& access) {
     barrier_data |= ZBarrierWeak;
   } else {
     barrier_data |= ZBarrierStrong;
+  }
+
+  if (access.decorators() & IN_NATIVE) {
+    barrier_data |= ZBarrierNative;
   }
 
   if (access.decorators() & AS_NO_KEEPALIVE) {

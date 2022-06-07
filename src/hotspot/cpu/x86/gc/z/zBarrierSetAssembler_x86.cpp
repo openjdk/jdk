@@ -471,6 +471,7 @@ static void store_barrier_buffer_add(MacroAssembler* masm,
 void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
                                                 Address ref_addr,
                                                 Register tmp,
+                                                bool is_native,
                                                 bool is_atomic,
                                                 Label& medium_path_continuation,
                                                 Label& slow_path,
@@ -479,7 +480,11 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
 
   // The reason to end up in the medium path is that the pre-value was not 'good'.
 
-  if (is_atomic) {
+  if (is_native) {
+    __ jmp(slow_path);
+    __ bind(slow_path_continuation);
+    __ jmp(medium_path_continuation);
+  } else if (is_atomic) {
     // Atomic accesses can get to the medium fast path because the value was a
     // raw NULL value. If it was not NULL, then there is no doubt we need to take a slow path.
     __ cmpptr(ref_addr, 0);
@@ -556,7 +561,14 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
       store_barrier_fast(masm, dst, src, tmp1, false, false, medium, medium_continuation);
       __ jmp(done);
       __ bind(medium);
-      store_barrier_medium(masm, dst, tmp1, false, medium_continuation, slow, slow_continuation);
+      store_barrier_medium(masm,
+                           dst,
+                           tmp1,
+                           false /* is_native */,
+                           false /* is_atomic */,
+                           medium_continuation,
+                           slow,
+                           slow_continuation);
 
       __ bind(slow);
       {
@@ -994,6 +1006,7 @@ void ZBarrierSetAssembler::generate_c1_store_barrier_stub(LIR_Assembler* ce,
   store_barrier_medium(ce->masm(),
                        ce->as_Address(stub->ref_addr()->as_address_ptr()),
                        rscratch1,
+                       false /* is_native */,
                        stub->is_atomic(),
                        *stub->continuation(),
                        slow,
@@ -1431,6 +1444,7 @@ void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, 
   store_barrier_medium(masm,
                        stub->ref_addr(),
                        stub->new_zpointer(),
+                       stub->is_native(),
                        stub->is_atomic(),
                        *stub->continuation(),
                        slow,
@@ -1442,7 +1456,9 @@ void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, 
     ZSaveLiveRegisters save_live_registers(masm, stub);
     __ lea(c_rarg0, stub->ref_addr());
 
-    if (stub->is_atomic()) {
+    if (stub->is_native()) {
+      __ call(RuntimeAddress(ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing_addr()));
+    } else if (stub->is_atomic()) {
       __ call(RuntimeAddress(ZBarrierSetRuntime::store_barrier_on_oop_field_with_healing_addr()));
     } else {
       __ call(RuntimeAddress(ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing_addr()));

@@ -33,7 +33,8 @@ const uint8_t ZBarrierStrong             = 1;
 const uint8_t ZBarrierWeak               = 2;
 const uint8_t ZBarrierPhantom            = 4;
 const uint8_t ZBarrierNoKeepalive        = 8;
-const uint8_t ZBarrierElided             = 16;
+const uint8_t ZBarrierNative             = 16;
+const uint8_t ZBarrierElided             = 32;
 
 class Block;
 class MachNode;
@@ -80,16 +81,18 @@ private:
   const Address  _ref_addr;
   const Register _new_zaddress;
   const Register _new_zpointer;
-  bool           _is_atomic;
+  const bool     _is_native;
+  const bool     _is_atomic;
 
-  ZStoreBarrierStubC2(const MachNode* node, Address ref_addr, Register new_zaddress, Register new_zpointer, bool is_atomic);
+  ZStoreBarrierStubC2(const MachNode* node, Address ref_addr, Register new_zaddress, Register new_zpointer, bool is_native, bool is_atomic);
 
 public:
-  static ZStoreBarrierStubC2* create(const MachNode* node, Address ref_addr, Register new_zaddress, Register new_zpointer, bool is_atomic);
+  static ZStoreBarrierStubC2* create(const MachNode* node, Address ref_addr, Register new_zaddress, Register new_zpointer, bool is_native, bool is_atomic);
 
   Address ref_addr() const;
   Register new_zaddress() const;
   Register new_zpointer() const;
+  bool is_native() const;
   bool is_atomic() const;
 
   virtual Register result() const;

@@ -169,6 +169,7 @@ public:
   void store_barrier_medium(MacroAssembler* masm,
                             Address ref_addr,
                             Register tmp,
+                            bool is_native,
                             bool is_atomic,
                             Label& medium_path_continuation,
                             Label& slow_path,
