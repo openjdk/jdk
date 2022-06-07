@@ -87,7 +87,7 @@ public class NewAPIListWriter extends SummaryListWriter<NewAPIBuilder> {
                 int releaseIndex = i + 1;
                 String release = releases.get(i);
                 HtmlId htmlId = HtmlId.of("release-" + releaseIndex);
-                tabs.add(new HtmlTree(TagName.WBR)).add(HtmlTree.LABEL(htmlId.name(),
+                tabs.add(Text.of(" ")).add(HtmlTree.LABEL(htmlId.name(),
                                 HtmlTree.INPUT("checkbox", htmlId)
                                         .put(HtmlAttr.CHECKED, "")
                                         .put(HtmlAttr.ONCLICK,
