@@ -34,6 +34,7 @@
 
 // ----------------------------------------------------------------------------
 
+#define __ masm.
 address CompiledStaticCall::emit_to_interp_stub(MacroAssembler &masm, address mark) {
   // Stub is fixed up when the corresponding call is converted from
   // calling compiled code to calling interpreted code.
@@ -41,26 +42,27 @@ address CompiledStaticCall::emit_to_interp_stub(MacroAssembler &masm, address ma
   // jmp -5 # to self
 
   if (mark == NULL) {
-    mark = masm.inst_mark();  // Get mark within main instrs section.
+    mark = __ inst_mark();  // Get mark within main instrs section.
   }
 
-  address base = masm.start_a_stub(to_interp_stub_size());
+  address base = __ start_a_stub(to_interp_stub_size());
   if (base == NULL) {
     return NULL;  // CodeBuffer::expand failed.
   }
   // Static stub relocation stores the instruction address of the call.
-  masm.relocate(static_stub_Relocation::spec(mark), Assembler::imm_operand);
+  __ relocate(static_stub_Relocation::spec(mark), Assembler::imm_operand);
   // Static stub relocation also tags the Method* in the code-stream.
-  masm.mov_metadata(rbx, (Metadata*) NULL);  // Method is zapped till fixup time.
+  __ mov_metadata(rbx, (Metadata*) NULL);  // Method is zapped till fixup time.
   // This is recognized as unresolved by relocs/nativeinst/ic code.
-  masm.jump(RuntimeAddress(masm.pc()));
+  __ jump(RuntimeAddress(__ pc()));
 
-  assert(masm.pc() - base <= to_interp_stub_size(), "wrong stub size");
+  assert(__ pc() - base <= to_interp_stub_size(), "wrong stub size");
 
   // Update current stubs pointer and restore insts_end.
-  masm.end_a_stub();
+  __ end_a_stub();
   return base;
 }
+#undef __
 
 int CompiledStaticCall::to_interp_stub_size() {
   return NOT_LP64(10)    // movl; jmp

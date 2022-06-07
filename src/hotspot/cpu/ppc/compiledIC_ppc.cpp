@@ -83,7 +83,7 @@ address CompiledStaticCall::emit_to_interp_stub(MacroAssembler &masm, address ma
 #ifdef COMPILER2
   if (mark == NULL) {
     // Get the mark within main instrs section which is set to the address of the call.
-    mark = masm.inst_mark();
+    mark = __ inst_mark();
   }
 
   // Start the stub.

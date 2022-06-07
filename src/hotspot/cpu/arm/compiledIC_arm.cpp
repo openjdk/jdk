@@ -43,7 +43,7 @@ address CompiledStaticCall::emit_to_interp_stub(MacroAssembler &masm, address ma
   // b -1
 
   if (mark == NULL) {
-    mark = masm.inst_mark();  // get mark within main instrs section
+    mark = __ inst_mark();  // get mark within main instrs section
   }
 
   address base = __ start_a_stub(to_interp_stub_size());
