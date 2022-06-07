@@ -363,7 +363,7 @@ public class ScopedMemoryAccess {
     <V extends VectorSupport.Vector<E>, E, S extends VectorSupport.VectorSpecies<E>,
      M extends VectorSupport.VectorMask<E>>
     V loadFromMemorySegmentMasked(Class<? extends V> vmClass, Class<M> maskClass, Class<E> e,
-                                  int length, AbstractMemorySegmentImpl msp, long offset, M m, S s,
+                                  int length, AbstractMemorySegmentImpl msp, long offset, M m, S s, int offsetInRange,
                                   VectorSupport.LoadVectorMaskedOperation<AbstractMemorySegmentImpl, V, S, M> defaultImpl) {
         // @@@ Smarter alignment checking if accessing heap segment backing non-byte[] array
         if (msp.maxAlignMask() > 1) {
@@ -375,7 +375,7 @@ public class ScopedMemoryAccess {
                     msp.sessionImpl(),
                     vmClass, maskClass, e, length,
                     msp, offset, m,
-                    s,
+                    s, offsetInRange,
                     defaultImpl);
         } catch (ScopedAccessError ex) {
             throw new IllegalStateException("This segment is already closed");
@@ -390,13 +390,13 @@ public class ScopedMemoryAccess {
     V loadFromMemorySegmentMaskedScopedInternal(MemorySessionImpl session, Class<? extends V> vmClass,
                                                 Class<M> maskClass, Class<E> e, int length,
                                                 AbstractMemorySegmentImpl msp, long offset, M m,
-                                                S s,
+                                                S s, int offsetInRange,
                                                 VectorSupport.LoadVectorMaskedOperation<AbstractMemorySegmentImpl, V, S, M> defaultImpl) {
         try {
             session.checkValidState();
 
             return VectorSupport.loadMasked(vmClass, maskClass, e, length,
-                    msp.unsafeGetBase(), msp.unsafeGetOffset() + offset, m,
+                    msp.unsafeGetBase(), msp.unsafeGetOffset() + offset, m, offsetInRange,
                     msp, offset, s,
                     defaultImpl);
         } finally {

@@ -76,7 +76,7 @@ public class SharedArchiveConsistency {
         return newArchiveName;
     }
 
-    public static void testAndCheck(String[] execArgs) throws Exception {
+    public static void testAndCheck(String[] execArgs, String... expectedMessages) throws Exception {
         OutputAnalyzer output = shareAuto ? TestCommon.execAuto(execArgs) : TestCommon.execCommon(execArgs);
         String stdtxt = output.getOutput();
         System.out.println("Note: this test may fail in very rare occasions due to CRC32 checksum collision");
@@ -87,6 +87,9 @@ public class SharedArchiveConsistency {
             // have the same checksum as recoreded in the header)
             output.shouldNotContain("A fatal error has been detected by the Java Runtime Environment");
           }
+        }
+        for (int i = 0; i < expectedMessages.length; i++) {
+            output.shouldContain(expectedMessages[i]);
         }
         for (String message : matchMessages) {
             if (stdtxt.contains(message)) {
@@ -236,10 +239,16 @@ public class SharedArchiveConsistency {
         testAndCheck(verifyExecArgs);
 
         // delete bytes in data section forward
-        System.out.println("\n6. Delete bytes at beginning of data section, should fail\n");
+        System.out.println("\n6a. Delete bytes at beginning of data section, should fail\n");
         String deleteBytes = startNewArchive("delete-bytes");
         CDSArchiveUtils.deleteBytesAtRandomPositionAfterHeader(orgJsaFile, deleteBytes, 4096 /*bytes*/);
         testAndCheck(verifyExecArgs);
+
+        // delete bytes at the end
+        System.out.println("\n6b. Delete bytes at the end, should fail\n");
+        deleteBytes = startNewArchive("delete-bytes-end");
+        CDSArchiveUtils.deleteBytesAtTheEnd(orgJsaFile, deleteBytes);
+        testAndCheck(verifyExecArgs, "The shared archive file has been truncated.");
 
         // modify contents in random area
         System.out.println("\n7. modify Content in random areas, should fail\n");

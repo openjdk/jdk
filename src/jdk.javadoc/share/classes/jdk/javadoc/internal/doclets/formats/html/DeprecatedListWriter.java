@@ -85,7 +85,7 @@ public class DeprecatedListWriter extends SummaryListWriter<DeprecatedAPIListBui
                     "doclet.Deprecated_API_Checkbox_Label"));
             for (int i = 0; i < releases.size(); i++) {
                 // Table column ids are 1-based
-                tabs.add(getReleaseCheckbox(releases.get(i), i + 1));
+                tabs.add(Text.of(" ")).add(getReleaseCheckbox(releases.get(i), i + 1));
             }
             content.add(tabs);
         }
