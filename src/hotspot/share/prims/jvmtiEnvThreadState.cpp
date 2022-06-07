@@ -396,7 +396,6 @@ void JvmtiEnvThreadState::reset_current_location(jvmtiEvent event_type, bool ena
       // The java thread stack may not be walkable for a running thread
       // so get current location with direct handshake.
       GetCurrentLocationClosure op;
-      Thread *current = Thread::current();
       Handshake::execute(&op, thread);
       guarantee(op.completed(), "Handshake failed. Target thread is not alive?");
       op.get_current_location(&method_id, &bci);
