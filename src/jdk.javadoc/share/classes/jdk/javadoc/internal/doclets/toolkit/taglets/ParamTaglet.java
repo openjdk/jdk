@@ -84,6 +84,9 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
                 }
             }
         }
+        if (input.tagId == null)
+            return;
+        int position = Integer.parseInt(input.tagId);
         ExecutableElement ee = (ExecutableElement) input.element;
         CommentHelper ch = utils.getCommentHelper(ee);
         List<ParamTree> tags = input.isTypeVariableParamTag
@@ -92,10 +95,10 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
         List<? extends Element> parameters = input.isTypeVariableParamTag
                 ? ee.getTypeParameters()
                 : ee.getParameters();
-        Map<String, String> positionOfName = mapNameToPosition(utils, parameters);
+        Map<String, Integer> positionOfName = mapNameToPosition(utils, parameters);
         for (ParamTree tag : tags) {
             String paramName = ch.getParameterName(tag);
-            if (positionOfName.containsKey(paramName) && positionOfName.get(paramName).equals(input.tagId)) {
+            if (positionOfName.containsKey(paramName) && positionOfName.get(paramName).equals(position)) {
                 output.holder = input.element;
                 output.holderTag = tag;
                 output.inlineTags = ch.getBody(tag);
@@ -109,14 +112,14 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
      * @param params the list of parameters from a type or an executable member
      * @return a name-position map
      */
-    private static Map<String, String> mapNameToPosition(Utils utils, List<? extends Element> params) {
-        Map<String, String> result = new HashMap<>();
+    private static Map<String, Integer> mapNameToPosition(Utils utils, List<? extends Element> params) {
+        Map<String, Integer> result = new HashMap<>();
         int position = 0;
         for (Element e : params) {
             String name = utils.isTypeParameterElement(e)
                     ? utils.getTypeName(e.asType(), false)
                     : utils.getSimpleName(e);
-            result.put(name, Integer.toString(position));
+            result.put(name, position);
             position++;
         }
         return result;
@@ -163,11 +166,11 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
                                   List<ParamTree> tags,
                                   List<? extends Element> parameters,
                                   TagletWriter writer) {
-        Map<String, ParamTree> tagOfPosition = new HashMap<>();
+        Map<Integer, ParamTree> tagOfPosition = new HashMap<>();
         Messages messages = writer.configuration().getMessages();
         CommentHelper ch = writer.configuration().utils.getCommentHelper(e);
         if (!tags.isEmpty()) {
-            Map<String, String> positionOfName = mapNameToPosition(writer.configuration().utils, parameters);
+            Map<String, Integer> positionOfName = mapNameToPosition(writer.configuration().utils, parameters);
             for (ParamTree tag : tags) {
                 String name = ch.getParameterName(tag);
                 String paramName = kind == ParamKind.TYPE_PARAMETER ? "<" + name + ">" : name;
@@ -181,7 +184,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
                         messages.warning(ch.getDocTreePath(tag), key, paramName);
                     }
                 }
-                String position = positionOfName.get(name);
+                Integer position = positionOfName.get(name);
                 if (position != null) {
                     if (tagOfPosition.containsKey(position)) {
                         String key = switch (kind) {
@@ -202,7 +205,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
         // (either directly or inherited) in order of their declaration.
         Content result = writer.getOutputInstance();
         for (int i = 0; i < parameters.size(); i++) {
-            ParamTree tag = tagOfPosition.get(Integer.toString(i));
+            ParamTree tag = tagOfPosition.get(i);
             if (tag != null) {
                 result.add(convertParam(e, kind, writer, tag,
                         ch.getParameterName(tag), result.isEmpty()));
