@@ -371,7 +371,7 @@ void CastIINode::dump_spec(outputStream* st) const {
 }
 #endif
 
-Node *CastLLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+Node* CastLLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node* progress = ConstraintCastNode::Ideal(phase, can_reshape);
   if (progress != NULL) {
     return progress;
