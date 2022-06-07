@@ -354,7 +354,7 @@ public class TransPatterns extends TreeTranslator {
                                              types.erasure(component.type),
                                              List.nil(),
                                              syms.methodClass);
-            MethodSymbol proxy = new MethodSymbol(Flags.STATIC | Flags.SYNTHETIC,
+            MethodSymbol proxy = new MethodSymbol(Flags.PRIVATE | Flags.STATIC | Flags.SYNTHETIC,
                                                   names.fromString("$proxy$" + component.name),
                                                   type,
                                                   currentClass);

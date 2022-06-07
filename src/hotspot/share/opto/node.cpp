@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1215,6 +1215,9 @@ bool Node::has_special_unique_user() const {
     return n->Opcode() == op && n->in(2) == this;
   } else if (is_If() && (n->is_IfFalse() || n->is_IfTrue())) {
     // See IfProjNode::Identity()
+    return true;
+  } else if ((is_IfFalse() || is_IfTrue()) && n->is_If()) {
+    // See IfNode::fold_compares
     return true;
   } else {
     return false;
