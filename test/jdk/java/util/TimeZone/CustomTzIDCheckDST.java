@@ -32,11 +32,10 @@
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import java.time.Month;
+import java.util.SimpleTimeZone;
 import java.time.DayOfWeek;
 import java.time.ZonedDateTime;
 import java.time.temporal.TemporalAdjusters;
-import java.time.ZoneId;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 public class CustomTzIDCheckDST {
@@ -57,19 +56,14 @@ public class CustomTzIDCheckDST {
      * Sunday and October's last Sunday.
      */
     private static void runTZTest() {
-        Calendar calendar = Calendar.getInstance();
-        Date time = calendar.getTime();
-        // Add 1 since getMonth() starts from 0.
-        int month = time.getMonth() + 1;
-        ZonedDateTime date = ZonedDateTime.ofInstant(time.toInstant(), ZoneId.systemDefault());
-        if ((month > Month.MARCH.getValue() && month < Month.OCTOBER.getValue()) ||
-                (month == Month.MARCH.getValue() && date.isAfter(getLastSundayOfMonth(date))) ||
-                (month == Month.OCTOBER.getValue() && date.isBefore(getLastSundayOfMonth(date)))) {
+        Date time = new Date();
+        if (new SimpleTimeZone(3600000, "MEZ-1MESZ", Calendar.MARCH, -1, Calendar.SUNDAY, 0,
+                Calendar.OCTOBER, -1, Calendar.SUNDAY, 0).inDaylightTime(time)) {
             // We are in Daylight savings period.
-            if (time.toString().endsWith("GMT+02:00 " + Integer.toString(calendar.getTime().getYear() + 1900)))
+            if (time.toString().endsWith("GMT+02:00 " + Integer.toString(time.getYear() + 1900)))
                 return;
         } else {
-            if (time.toString().endsWith("GMT+01:00 " + Integer.toString(calendar.getTime().getYear() + 1900)))
+            if (time.toString().endsWith("GMT+01:00 " + Integer.toString(time.getYear() + 1900)))
                 return;
         }
 
