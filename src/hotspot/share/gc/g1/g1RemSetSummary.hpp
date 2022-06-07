@@ -34,8 +34,6 @@ class G1RemSet;
 // A G1RemSetSummary manages statistical information about the G1RemSet
 
 class G1RemSetSummary {
-  G1CardSetCoarsenStats _coarsenings;
-
   size_t _num_vtimes;
   double* _rs_threads_vtimes;
 

@@ -711,7 +711,7 @@ public:
 
   void verify_tlab();
 
-  Condition negate_condition(Condition cond);
+  static Condition negate_condition(Condition cond);
 
   // Instructions that use AddressLiteral operands. These instruction can handle 32bit/64bit
   // operands. In general the names are modified to avoid hiding the instruction in Assembler
@@ -1347,6 +1347,11 @@ public:
 
   using Assembler::vbroadcastsd;
   void vbroadcastsd(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = rscratch1);
+  void vpbroadcastq(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = rscratch1);
+  void vpbroadcastq(XMMRegister dst, XMMRegister src, int vector_len) { Assembler::vpbroadcastq(dst, src, vector_len); }
+  void vpbroadcastq(XMMRegister dst, Address src, int vector_len) { Assembler::vpbroadcastq(dst, src, vector_len); }
+
+
 
   void vpcmpeqb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
 

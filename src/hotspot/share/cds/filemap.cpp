@@ -1370,12 +1370,10 @@ bool FileMapInfo::init_from_file(int fd) {
 
   _file_offset = header()->header_size(); // accounts for the size of _base_archive_name
 
-  if (is_static()) {
-    // just checking the last region is sufficient since the archive is written
-    // in sequential order
-    size_t len = os::lseek(fd, 0, SEEK_END);
-    FileMapRegion* si = space_at(MetaspaceShared::last_valid_region);
-    // The last space might be empty
+  size_t len = os::lseek(fd, 0, SEEK_END);
+
+  for (int i = 0; i <= MetaspaceShared::last_valid_region; i++) {
+    FileMapRegion* si = space_at(i);
     if (si->file_offset() > len || len - si->file_offset() < si->used()) {
       fail_continue("The shared archive file has been truncated.");
       return false;

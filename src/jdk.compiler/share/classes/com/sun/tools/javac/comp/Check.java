@@ -3600,7 +3600,7 @@ public class Check {
     }
 
     void checkPreview(DiagnosticPosition pos, Symbol other, Symbol s) {
-        if ((s.flags() & PREVIEW_API) != 0 && s.packge().modle != other.packge().modle) {
+        if ((s.flags() & PREVIEW_API) != 0 && !preview.participatesInPreview(other, s)) {
             if ((s.flags() & PREVIEW_REFLECTIVE) == 0) {
                 if (!preview.isEnabled()) {
                     log.error(pos, Errors.IsPreview(s));
@@ -4606,7 +4606,7 @@ public class Check {
                         return ; // Don't try to recover
                     }
                 }
-                // Non-Serializable super class
+                // Non-Serializable superclass
                 try {
                     ClassSymbol supertype = ((ClassSymbol)(((DeclaredType)superClass).asElement()));
                     for(var sym : supertype.getEnclosedElements()) {

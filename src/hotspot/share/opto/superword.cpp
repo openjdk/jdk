@@ -2013,6 +2013,13 @@ bool SuperWord::implemented(Node_List* p) {
         retValue = ReductionNode::implemented(opc, size, arith_type->basic_type());
       }
     } else {
+      // Vector unsigned right shift for signed subword types behaves differently
+      // from Java Spec. But when the shift amount is a constant not greater than
+      // the number of sign extended bits, the unsigned right shift can be
+      // vectorized to a signed right shift.
+      if (VectorNode::can_transform_shift_op(p0, velt_basic_type(p0))) {
+        opc = Op_RShiftI;
+      }
       retValue = VectorNode::implemented(opc, size, velt_basic_type(p0));
     }
     if (!retValue) {
@@ -2577,6 +2584,13 @@ bool SuperWord::output() {
             vlen_in_bytes = in2->as_Vector()->length_in_bytes();
           }
         } else {
+          // Vector unsigned right shift for signed subword types behaves differently
+          // from Java Spec. But when the shift amount is a constant not greater than
+          // the number of sign extended bits, the unsigned right shift can be
+          // vectorized to a signed right shift.
+          if (VectorNode::can_transform_shift_op(n, velt_basic_type(n))) {
+            opc = Op_RShiftI;
+          }
           vn = VectorNode::make(opc, in1, in2, vlen, velt_basic_type(n));
           vlen_in_bytes = vn->as_Vector()->length_in_bytes();
         }
@@ -2585,7 +2599,9 @@ bool SuperWord::output() {
                  opc == Op_AbsI || opc == Op_AbsL ||
                  opc == Op_NegF || opc == Op_NegD ||
                  opc == Op_RoundF || opc == Op_RoundD ||
-                 opc == Op_PopCountI || opc == Op_PopCountL) {
+                 opc == Op_PopCountI || opc == Op_PopCountL ||
+                 opc == Op_CountLeadingZerosI || opc == Op_CountLeadingZerosL ||
+                 opc == Op_CountTrailingZerosI || opc == Op_CountTrailingZerosL) {
         assert(n->req() == 2, "only one input expected");
         Node* in = vector_opd(p, 1);
         vn = VectorNode::make(opc, in, NULL, vlen, velt_basic_type(n));
@@ -3092,9 +3108,9 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) {
     return true;
   }
 
-  if (VectorNode::is_vpopcnt_long(use)) {
-    // VPOPCNT_LONG takes long and produces int - hence the special checks
-    // on alignment and size.
+  if (VectorNode::is_type_transition_long_to_int(use)) {
+    // PopCountL/CountLeadingZerosL/CountTrailingZerosL takes long and produces
+    // int - hence the special checks on alignment and size.
     if (u_pk->size() != d_pk->size()) {
       return false;
     }
