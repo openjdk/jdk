@@ -42,7 +42,7 @@ public class TestRemoveMemBarPrecEdge {
     }
 
     public static void test() {
-        // currentThread() is intrisified and C2 emits a special AddP node with a base that is top.
+        // currentThread() is intrinsified and C2 emits a special AddP node with a base that is top.
         Thread t = Thread.currentThread();
         // getName() returns the volatile _name field. The method is inlined and we just emit a LoadN + DecodeN which
         // is a precedence edge input into both MemBarAcquire nodes below for the volatile field _name.
