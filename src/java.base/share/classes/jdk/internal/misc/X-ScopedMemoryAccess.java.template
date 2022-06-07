@@ -370,7 +370,7 @@ public class ScopedMemoryAccess {
     <V extends VectorSupport.Vector<E>, E, S extends VectorSupport.VectorSpecies<E>,
      M extends VectorSupport.VectorMask<E>>
     V loadFromMemorySegmentMasked(Class<? extends V> vmClass, Class<M> maskClass, Class<E> e,
-                                  int length, AbstractMemorySegmentImpl msp, long offset, M m, S s,
+                                  int length, AbstractMemorySegmentImpl msp, long offset, M m, S s, int offsetInRange,
                                   VectorSupport.LoadVectorMaskedOperation<AbstractMemorySegmentImpl, V, S, M> defaultImpl) {
         // @@@ Smarter alignment checking if accessing heap segment backing non-byte[] array
         if (msp.maxAlignMask() > 1) {
@@ -382,7 +382,7 @@ public class ScopedMemoryAccess {
                     msp.session().state(),
                     vmClass, maskClass, e, length,
                     msp, offset, m,
-                    s,
+                    s, offsetInRange,
                     defaultImpl);
         } catch (ScopedAccessError ex) {
             throw ex.newRuntimeException();
@@ -397,13 +397,13 @@ public class ScopedMemoryAccess {
     V loadFromMemorySegmentMaskedScopedInternal(MemorySessionImpl.State state, Class<? extends V> vmClass,
                                                 Class<M> maskClass, Class<E> e, int length,
                                                 AbstractMemorySegmentImpl msp, long offset, M m,
-                                                S s,
+                                                S s, int offsetInRange,
                                                 VectorSupport.LoadVectorMaskedOperation<AbstractMemorySegmentImpl, V, S, M> defaultImpl) {
         try {
             state.checkValidState();
 
             return VectorSupport.loadMasked(vmClass, maskClass, e, length,
-                    msp.base(), msp.min() + offset, m,
+                    msp.base(), msp.min() + offset, m, offsetInRange,
                     msp, offset, s,
                     defaultImpl);
         } finally {

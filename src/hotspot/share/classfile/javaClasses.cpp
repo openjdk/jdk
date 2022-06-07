@@ -2233,8 +2233,8 @@ oop java_lang_VirtualThread::continuation(oop vthread) {
   return cont;
 }
 
-u2 java_lang_VirtualThread::state(oop vthread) {
-  return vthread->short_field_acquire(_state_offset);
+int java_lang_VirtualThread::state(oop vthread) {
+  return vthread->int_field_acquire(_state_offset);
 }
 
 JavaThreadStatus java_lang_VirtualThread::map_state_to_thread_status(int state) {
