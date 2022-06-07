@@ -25,7 +25,7 @@
  * @test
  * @bug 8286451
  * @summary C2: assert(nb == 1) failed: only when the head is not shared
- * @run main/othervm TestSharedLoopHead
+ * @run main/othervm -XX:-BackgroundCompilation TestSharedLoopHead
  */
 
 public class TestSharedLoopHead {
