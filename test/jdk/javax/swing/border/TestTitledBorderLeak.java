@@ -24,7 +24,6 @@
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 
-import javax.swing.UIManager;
 import javax.swing.border.TitledBorder;
 
 /**
@@ -38,24 +37,11 @@ import javax.swing.border.TitledBorder;
 public final class TestTitledBorderLeak {
 
     public static void main(String[] args) throws Exception {
-        int ul = UIManager.getPropertyChangeListeners().length;
-        int dl = UIManager.getDefaults().getPropertyChangeListeners().length;
-
         Reference<TitledBorder> border = getTitleBorder();
         int attempt = 0;
         while (border.get() != null) {
             Util.generateOOME();
             System.out.println("Not freed, attempt: " + attempt++);
-        }
-        check(ul, UIManager.getPropertyChangeListeners().length);
-        check(dl, UIManager.getDefaults().getPropertyChangeListeners().length);
-    }
-
-    private static void check(int expected, int actual) {
-        if (expected != actual) {
-            System.err.println("Expected: " + expected);
-            System.err.println("Actual: " + actual);
-            throw new RuntimeException("Wrong number of listeners");
         }
     }
 
