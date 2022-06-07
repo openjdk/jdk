@@ -99,6 +99,9 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
 
     // returns direct lookup result of keyTypes using algorithm
     static long getKeyType(String algorithm) {
+        if ("ChaCha20-Poly1305".equals(algorithm)) {
+            algorithm = "ChaCha20";
+        }
         Long l = keyTypes.get(algorithm);
         if (l == null) {
             algorithm = algorithm.toUpperCase(Locale.ENGLISH);
