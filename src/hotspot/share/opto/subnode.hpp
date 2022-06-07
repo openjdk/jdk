@@ -212,6 +212,18 @@ public:
   virtual const Type* sub(const Type*, const Type*) const;
 };
 
+//------------------------------CmpU3Node--------------------------------------
+// Compare 2 unsigned values, returning integer value (-1, 0 or 1).
+class CmpU3Node : public CmpUNode {
+public:
+  CmpU3Node( Node *in1, Node *in2 ) : CmpUNode(in1,in2) {
+    // Since it is not consumed by Bools, it is not really a Cmp.
+    init_class_id(Class_Sub);
+  }
+  virtual int Opcode() const;
+  virtual uint ideal_reg() const { return Op_RegI; }
+};
+
 //------------------------------CmpL3Node--------------------------------------
 // Compare 2 long values, returning integer value (-1, 0 or 1).
 class CmpL3Node : public CmpLNode {
@@ -220,7 +232,19 @@ public:
     // Since it is not consumed by Bools, it is not really a Cmp.
     init_class_id(Class_Sub);
   }
-  virtual int    Opcode() const;
+  virtual int Opcode() const;
+  virtual uint ideal_reg() const { return Op_RegI; }
+};
+
+//------------------------------CmpUL3Node-------------------------------------
+// Compare 2 unsigned long values, returning integer value (-1, 0 or 1).
+class CmpUL3Node : public CmpULNode {
+public:
+  CmpUL3Node( Node *in1, Node *in2 ) : CmpULNode(in1,in2) {
+    // Since it is not consumed by Bools, it is not really a Cmp.
+    init_class_id(Class_Sub);
+  }
+  virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
