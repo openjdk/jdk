@@ -1666,6 +1666,7 @@ Node* find_node_by_idx(Node* start, uint idx, bool traverse_output, bool only_ct
 
 // check if str matches the star_pattern
 // eg. str "_abc____def__" would match pattern "abc*def"
+// the matching is case insensitive
 bool is_star_match(const char* star_pattern, const char* str) {
   const int N = 1000;
   char pattern[N]; // copy pattern into this to ensure null termination
@@ -1683,8 +1684,8 @@ bool is_star_match(const char* star_pattern, const char* str) {
       buf[r_part_len] = '\0'; // end of string
       r_part = &buf[0]; // cast array to char*
     }
-    // find this section in s
-    const char* s_match = strstr(s, r_part);
+    // find this section in s, case insensitive
+    const char* s_match = strcasestr(s, r_part);
     if (s_match == nullptr) {
       return false; // r_part did not match - abort
     }
@@ -1737,6 +1738,7 @@ Node* find_node_by_dump(Node* start, const char* pattern) {
 
 // call from debugger: find node with name pattern in new/current graph
 // name can contain "*" in match pattern to match any characters
+// the matching is case insensitive
 Node* find_node_by_name(const char* name) {
   Node* root =  Compile::current()->root();
   return find_node_by_name(root, name);
@@ -1744,6 +1746,7 @@ Node* find_node_by_name(const char* name) {
 
 // call from debugger: find node with name pattern in old graph
 // name can contain "*" in match pattern to match any characters
+// the matching is case insensitive
 Node* find_old_node_by_name(const char* name) {
   Node* root =  old_root();
   return find_node_by_name(root, name);
@@ -1751,6 +1754,7 @@ Node* find_old_node_by_name(const char* name) {
 
 // call from debugger: find node with dump pattern in new/current graph
 // can contain "*" in match pattern to match any characters
+// the matching is case insensitive
 Node* find_node_by_dump(const char* pattern) {
   Node* root =  Compile::current()->root();
   return find_node_by_dump(root, pattern);
@@ -1758,6 +1762,7 @@ Node* find_node_by_dump(const char* pattern) {
 
 // call from debugger: find node with name pattern in old graph
 // can contain "*" in match pattern to match any characters
+// the matching is case insensitive
 Node* find_old_node_by_dump(const char* pattern) {
   Node* root =  old_root();
   return find_node_by_dump(root, pattern);
