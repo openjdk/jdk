@@ -428,15 +428,14 @@ ifeq ($(TEST), )
   $(error Cannot continue)
 endif
 
-define ParseTestSelection
-  $(strip $(or \
-    $(call ParseCustomTestSelection, $1) \
-    $(call ParseGtestTestSelection, $1) \
-    $(call ParseMicroTestSelection, $1) \
-    $(call ParseJtregTestSelection, $1) \
-    $(call ParseSpecialTestSelection, $1) \
-  ))
-endef
+ParseTestSelection = \
+    $(strip $(or \
+      $(call ParseCustomTestSelection, $1) \
+      $(call ParseGtestTestSelection, $1) \
+      $(call ParseMicroTestSelection, $1) \
+      $(call ParseJtregTestSelection, $1) \
+      $(call ParseSpecialTestSelection, $1) \
+    ))
 
 # Now intelligently convert the test selection given by the user in TEST
 # into a list of fully qualified test descriptors of the tests to run.
