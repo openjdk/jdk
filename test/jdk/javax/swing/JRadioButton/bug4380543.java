@@ -55,7 +55,7 @@ public class bug4380543 {
                   and CheckBox (insets set to 20 on all 4 sides).
                2. Rendering depends on OS and supported Look and Feels.
                   Verify only with those L&F where margins are visible.
-               3. If Left inset(margin) appear too small, press Fail,
+               3. If Left inset(margin) appears too small, press Fail,
                   else press Pass.
             """;
     static PassFailJFrame passFailJFrame;
@@ -68,8 +68,8 @@ public class bug4380543 {
                     passFailJFrame = new PassFailJFrame(instructions);
                     testObj = new TestFrame();
                     //Adding the Test Frame to handle dispose
-                    passFailJFrame.addTestFrame(testObj);
-                    passFailJFrame.positionTestFrame(testObj, PassFailJFrame.Position.HORIZONTAL);
+                    PassFailJFrame.addTestFrame(testObj);
+                    PassFailJFrame.positionTestFrame(testObj, PassFailJFrame.Position.HORIZONTAL);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
