@@ -1977,7 +1977,7 @@ void PrintBFS::print() {
 void PrintBFS::print_options_help(bool print_examples) {
   tty->print("Usage: node->dump_bfs(int max_distance, Node* target, char* options)\n");
   tty->print("\n");
-  tty->print("Usecases:\n");
+  tty->print("Use cases:\n");
   tty->print("  BFS traversal: no target required\n");
   tty->print("  shortest path: set target\n");
   tty->print("  all paths: set target and put 'A' in options\n");
@@ -2016,8 +2016,8 @@ void PrintBFS::print_options_help(bool print_examples) {
   tty->print("\n");
   tty->print("output columns:\n");
   tty->print("  d:     BFS distance to this/start\n");
-  tty->print("  adp:   all paths distance (d_start + d_target)\n");
-  tty->print("  block: block block in which the node has been scheduled [head(), _idom->head(), _dom_depth]\n");
+  tty->print("  apd:   all paths distance (d_start + d_target)\n");
+  tty->print("  block: block in which the node has been scheduled [head(), _idom->head(), _dom_depth]\n");
   tty->print("  old:   old IR node - before matching\n");
   tty->print("  dump:  node->dump()\n");
   tty->print("\n");
@@ -2039,19 +2039,19 @@ void PrintBFS::print_options_help(bool print_examples) {
     tty->print("    traverse all nodes (cdmox), use colors (#)\n");
     tty->print("    display old nodes and blocks, if they exist\n");
     tty->print("    useful call to start with\n");
-    tty->print("  find_node(102)->dump_bfs(10,0,\"dCDMOX-\")\n");
+    tty->print("  find_node(102)->dump_bfs(10, 0, \"dCDMOX-\")\n");
     tty->print("    find non-data dependencies of a data node\n");
-    tty->print("    follow data node outputs until find another category\n");
+    tty->print("    follow data node outputs until we find another category\n");
     tty->print("    node as the boundary\n");
     tty->print("  x->dump_bfs(10, y, 0)\n");
     tty->print("    find shortest path from x to y, along any edge or node\n");
     tty->print("    will not find a path if it is longer than 10\n");
     tty->print("    useful to find how x and y are related\n");
-    tty->print("  find_node(741)->dump_bfs(20,find_node(746),\"c+\")\n");
-    tty->print("    find shortest control path  between two nodes\n");
-    tty->print("  find_node(741)->dump_bfs(8,find_node(746),\"cdmxo+A\")\n");
+    tty->print("  find_node(741)->dump_bfs(20, find_node(746), \"c+\")\n");
+    tty->print("    find shortest control path between two nodes\n");
+    tty->print("  find_node(741)->dump_bfs(8, find_node(746), \"cdmxo+A\")\n");
     tty->print("    find all paths (A) between two nodes of length at most 8\n");
-    tty->print("  find_node(741)->dump_bfs(7,find_node(741),\"c+A\")\n");
+    tty->print("  find_node(741)->dump_bfs(7, find_node(741), \"c+A\")\n");
     tty->print("    find all control loops for this node\n");
   }
 }
