@@ -224,7 +224,7 @@ public:
     assert(_pnum != Ideal_Loop, "should not be used from PhaseIdealLoop");
     assert(n != NULL, "must not be null");
     const Type* t = _types.fast_lookup(n->_idx);
-    assert(t != NULL, "must set type before get");
+    assert(t != NULL, "must set before get");
     return t;
   }
   // Get a previously recorded type for the node n,
@@ -547,7 +547,6 @@ public:
     _table.check_no_speculative_types();
   }
 
-  // Checks if Node 'd' dominates node 'n'
   bool is_dominator(Node *d, Node *n) { return is_dominator_helper(d, n, false); }
   bool no_dependent_zero_check(Node* n) const;
 

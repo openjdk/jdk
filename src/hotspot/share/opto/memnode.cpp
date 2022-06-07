@@ -295,8 +295,8 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
   if (ctl && ctl->is_top())  return NodeSentinel;
   Node *address = in(MemNode::Address);
   // Don't try to optimize loads under RAM
-  if (address != NULL && address->is_AddP() &&
-    address->in(AddPNode::Base) != NULL && address->in(AddPNode::Base)->is_ReducedAllocationMerge()) {
+  if (address != NULL && address->is_AddP() && address->in(AddPNode::Base) != NULL &&
+      address->in(AddPNode::Base)->is_ReducedAllocationMerge()) {
     return NodeSentinel;
   }
 
