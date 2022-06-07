@@ -342,7 +342,7 @@ public class TestFramework {
     }
 
     /**
-     * Try to load the Whitebox class with a user directory custom class loader. If the user has already built the
+     * Try to load the Whitebox class from the user directory with a custom class loader. If the user has already built the
      * Whitebox, we can load it. Otherwise, the framework needs to install it.
      *
      * @return true if the framework needs to install the Whitebox
