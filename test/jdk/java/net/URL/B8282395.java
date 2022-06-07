@@ -23,23 +23,35 @@
 /* @test
  * @summary URL.openConnection can throw IOOBE
  * @bug 8282395
- * @modules java.base/sun.net.www
  */
 
+import java.net.MalformedURLException;
+import java.net.Proxy;
+import java.net.URL;
 
-import sun.net.www.*;
-
-public class ParseUtil_8282395 {
+public class B8282395 {
     public static void main(String[] args) throws Exception {
-        test("%", "%");
-        test("%25%s%1G", "%%s%1G");
-    }
-
-    private static void test(String data, String expect) throws Exception {
-        String result = ParseUtil.decode(data);
-        if (!result.equals(expect)) {
-            throw new RuntimeException("Decode does not match. expect: " +
-                expect + ", actual: " + result);
+        boolean res = false;
+        URL url = new URL("ftp://.:%@");
+        try {
+            // Will throw IndexOutOfBoundsException if not fixed
+            url.openConnection();
+        } catch (MalformedURLException e) {
+            res = true;
+        }
+        if (!res) {
+            throw new RuntimeException("MalformedURLException should be thrown");
+        }
+        res = false;
+        try {
+            // Will throw IndexOutOfBoundsException if not fixed
+            url.openConnection(Proxy.NO_PROXY);
+        } catch (MalformedURLException e) {
+            res = true;
+        }
+        if (!res) {
+            throw new RuntimeException("MalformedURLException should be thrown");
         }
     }
+
 }

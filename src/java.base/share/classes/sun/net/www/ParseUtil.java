@@ -187,7 +187,7 @@ public final class ParseUtil {
         char c = s.charAt(0);
         for (int i = 0; i < n;) {
             assert c == s.charAt(i);
-            if (!isEscaped(s, i)) {
+            if (c != '%') {
                 sb.append(c);
                 if (++i >= n)
                     break;
@@ -200,14 +200,14 @@ public final class ParseUtil {
                 assert (n - i >= 2);
                 try {
                     bb.put(unescape(s, i));
-                } catch (NumberFormatException e) {
-                    throw new IllegalArgumentException();
+                } catch (NumberFormatException | IndexOutOfBoundsException e) {
+                    throw new IllegalArgumentException("Malformed escape pair: " + s);
                 }
                 i += 3;
                 if (i >= n)
                     break;
                 c = s.charAt(i);
-                if (!isEscaped(s, i))
+                if (c != '%')
                     break;
             }
             bb.flip();
