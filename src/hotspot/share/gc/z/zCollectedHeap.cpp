@@ -214,6 +214,7 @@ void ZCollectedHeap::collect(GCCause::Cause cause) {
   case GCCause::_jvmti_force_gc:
   case GCCause::_metadata_GC_threshold:
   case GCCause::_metadata_GC_clear_soft_refs:
+  case GCCause::_codecache_GC_threshold:
     // Start Major GC
     _driver_major->collect(request);
     break;

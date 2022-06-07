@@ -715,10 +715,6 @@ public:
     }
 
     if (_bs_nm->is_armed(nm)) {
-      // NOTE: Not for young marking
-      // Heal barriers
-      // ZNMethod::nmethod_patch_barriers(nm);
-
       const uintptr_t prev_color = ZNMethod::color(nm);
 
       // Heal oops
@@ -733,7 +729,7 @@ public:
       const zpointer new_disarm_value_ptr = ZAddress::color(zaddress::null, ZPointerLoadGoodMask | ZPointerMarkedYoung | old_marked | ZPointerRemembered);
 
       // Check if disarming for young mark, completely disarms the nmethod entry barrier
-      const bool complete_disarm = ZPointer::is_mark_good(new_disarm_value_ptr);
+      const bool complete_disarm = ZPointer::is_store_good(new_disarm_value_ptr);
 
       if (complete_disarm) {
         // We are about to completely disarm the nmethod, must take responsibility to patch all barriers before disarming

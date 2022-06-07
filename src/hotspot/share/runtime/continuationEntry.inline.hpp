@@ -28,12 +28,15 @@
 #include "runtime/continuationEntry.hpp"
 
 #include "oops/access.hpp"
+#include "gc/z/zHeap.inline.hpp"
 
 #include CPU_HEADER_INLINE(continuationEntry)
 
 inline oop ContinuationEntry::cont_oop() const {
-  oop snapshot = _cont;
-  return NativeAccess<>::oop_load(&snapshot);
+  if (UseZGC) {
+    assert(!ZHeap::heap()->is_in((uintptr_t)(void*)&_cont), "Should not be in the heap");
+  }
+  return RawAccess<>::oop_load(&_cont);
 }
 
 

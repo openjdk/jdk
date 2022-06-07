@@ -243,6 +243,7 @@ static bool should_clear_soft_references(GCCause::Cause cause) {
   case GCCause::_z_allocation_rate:
   case GCCause::_z_proactive:
   case GCCause::_metadata_GC_threshold:
+  case GCCause::_codecache_GC_threshold:
     break;
 
   default:
@@ -277,6 +278,7 @@ static bool should_preclean_young(GCCause::Cause cause) {
   case GCCause::_z_allocation_rate:
   case GCCause::_z_proactive:
   case GCCause::_metadata_GC_threshold:
+  case GCCause::_codecache_GC_threshold:
     break;
 
   default:

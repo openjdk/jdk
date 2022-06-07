@@ -378,16 +378,25 @@ public:
     ZLocker<ZReentrantLock> locker(ZNMethod::lock_for_nmethod(nm));
 
     if (ZNMethod::is_armed(nm)) {
-      if (!Continuations::enabled()) {
-        // Heal barriers
-        ZNMethod::nmethod_patch_barriers(nm);
-      }
+      const uintptr_t prev_color = ZNMethod::color(nm);
+      assert(prev_color != ZPointerStoreGoodMask, "Potentially non-monotonic transition");
 
-      ZUncoloredRootProcessNoKeepaliveOopClosure cl(ZNMethod::color(nm));
+      // Heal oops and potentially mark young objects if there is a concurrent young collection.
+      ZUncoloredRootProcessOopClosure cl(prev_color);
       ZNMethod::nmethod_oops_do_inner(nm, &cl);
 
-      // Disarm
-      ZNMethod::disarm(nm);
+      // Disarm for marking and relocation, but leave the remset bits so this isn't store good.
+      // This makes sure the mutator still takes a slow path to fill in the nmethod epoch for
+      // the sweeper, to track continuations, if they exist in the system.
+      const zpointer new_disarm_value_ptr = ZAddress::color(zaddress::null, ZPointerMarkGoodMask | ZPointerRememberedMask);
+
+      // The new disarm value is mark good, and hence never store good. Therefore, this operation
+      // never completely disarms the nmethod. Therefore, we don't need to patch barriers yet
+      // via ZNMethod::nmethod_patch_barriers.
+      ZNMethod::arm(nm, (int)untype(new_disarm_value_ptr));
+
+      log_trace(gc, nmethod)("nmethod: " PTR_FORMAT " visited by unlinking [" PTR_FORMAT " -> " PTR_FORMAT "]", p2i(nm), prev_color, untype(new_disarm_value_ptr));
+      assert(ZNMethod::is_armed(nm), "Must be considered armed");
     }
 
     // Clear compiled ICs and exception caches
