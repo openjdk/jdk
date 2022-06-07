@@ -148,8 +148,8 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
 
             this.enumCtx = new EnumCtx(homeCtx, answer, homeCtx.clnt);
             // Ensures that context won't get closed from underneath us
-            this.enumCtx.homeCtx.incEnumCount();
-            this.cleanable = LDAP_CLEANER.register(this, enumCtx);
+            this.enumCtx.getHomeCtx().incEnumCount();
+            this.cleanable = LDAP_CLEANER.register(this, this.enumCtx);
     }
 
     @Override
