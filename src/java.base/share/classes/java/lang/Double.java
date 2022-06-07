@@ -739,6 +739,10 @@ public final class Double extends Number
      * Returns {@code true} if the specified number is a
      * Not-a-Number (NaN) value, {@code false} otherwise.
      *
+     * @apiNote
+     * This method corresponds to the isNaN operation defined in IEEE
+     * 754.
+     *
      * @param   v   the value to be tested.
      * @return  {@code true} if the value of the argument is NaN;
      *          {@code false} otherwise.
@@ -750,6 +754,10 @@ public final class Double extends Number
     /**
      * Returns {@code true} if the specified number is infinitely
      * large in magnitude, {@code false} otherwise.
+     *
+     * @apiNote
+     * This method corresponds to the isInfinite operation defined in
+     * IEEE 754.
      *
      * @param   v   the value to be tested.
      * @return  {@code true} if the value of the argument is positive
@@ -764,6 +772,10 @@ public final class Double extends Number
      * Returns {@code true} if the argument is a finite floating-point
      * value; returns {@code false} otherwise (for NaN and infinity
      * arguments).
+     *
+     * @apiNote
+     * This method corresponds to the isFinite operation defined in
+     * IEEE 754.
      *
      * @param d the {@code double} value to be tested
      * @return {@code true} if the argument is a finite
@@ -907,6 +919,10 @@ public final class Double extends Number
     /**
      * Returns the value of this {@code Double} as a {@code float}
      * after a narrowing primitive conversion.
+     *
+     * @apiNote
+     * This method corresponds to the convertFormat operation defined
+     * in IEEE 754.
      *
      * @return  the {@code double} value represented by this object
      *          converted to type {@code float}
@@ -1217,6 +1233,9 @@ public final class Double extends Number
     /**
      * Adds two {@code double} values together as per the + operator.
      *
+     * @apiNote This method corresponds to the addition operation
+     * defined in IEEE 754.
+     *
      * @param a the first operand
      * @param b the second operand
      * @return the sum of {@code a} and {@code b}
@@ -1232,6 +1251,10 @@ public final class Double extends Number
      * Returns the greater of two {@code double} values
      * as if by calling {@link Math#max(double, double) Math.max}.
      *
+     * @apiNote
+     * This method corresponds to the maximum operation defined in
+     * IEEE 754.
+     *
      * @param a the first operand
      * @param b the second operand
      * @return the greater of {@code a} and {@code b}
@@ -1245,6 +1268,10 @@ public final class Double extends Number
     /**
      * Returns the smaller of two {@code double} values
      * as if by calling {@link Math#min(double, double) Math.min}.
+     *
+     * @apiNote
+     * This method corresponds to the minimum operation defined in
+     * IEEE 754.
      *
      * @param a the first operand
      * @param b the second operand

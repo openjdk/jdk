@@ -3584,12 +3584,11 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                                    VectorMask<$Boxtype$> m) {
         $Type$Species vsp = ($Type$Species) species;
         if (VectorIntrinsics.indexInRange(offset, vsp.length(), a.length)) {
-            return vsp.dummyVector().fromArray0(a, offset, m);
+            return vsp.dummyVector().fromArray0(a, offset, m, OFFSET_IN_RANGE);
         }
 
-        // FIXME: optimize
         checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
-        return vsp.vOp(m, i -> a[offset + i]);
+        return vsp.dummyVector().fromArray0(a, offset, m, OFFSET_OUT_OF_RANGE);
     }
 
     /**
@@ -3805,12 +3804,11 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                                        VectorMask<$Boxtype$> m) {
         $Type$Species vsp = ($Type$Species) species;
         if (VectorIntrinsics.indexInRange(offset, vsp.length(), a.length)) {
-            return vsp.dummyVector().fromCharArray0(a, offset, m);
+            return vsp.dummyVector().fromCharArray0(a, offset, m, OFFSET_IN_RANGE);
         }
 
-        // FIXME: optimize
         checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
-        return vsp.vOp(m, i -> (short) a[offset + i]);
+        return vsp.dummyVector().fromCharArray0(a, offset, m, OFFSET_OUT_OF_RANGE);
     }
 
     /**
@@ -3965,12 +3963,11 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         $Type$Species vsp = ($Type$Species) species;
         if (VectorIntrinsics.indexInRange(offset, vsp.length(), a.length)) {
             $abstractvectortype$ zero = vsp.zero();
-            return vsp.dummyVector().fromBooleanArray0(a, offset, m);
+            return vsp.dummyVector().fromBooleanArray0(a, offset, m, OFFSET_IN_RANGE);
         }
 
-        // FIXME: optimize
         checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
-        return vsp.vOp(m, i -> (byte) (a[offset + i] ? 1 : 0));
+        return vsp.dummyVector().fromBooleanArray0(a, offset, m, OFFSET_OUT_OF_RANGE);
     }
 
     /**
@@ -4162,12 +4159,11 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                                            VectorMask<$Boxtype$> m) {
         $Type$Species vsp = ($Type$Species) species;
         if (VectorIntrinsics.indexInRange(offset, vsp.vectorByteSize(), ms.byteSize())) {
-            return vsp.dummyVector().fromMemorySegment0(ms, offset, m).maybeSwap(bo);
+            return vsp.dummyVector().fromMemorySegment0(ms, offset, m, OFFSET_IN_RANGE).maybeSwap(bo);
         }
 
-        // FIXME: optimize
         checkMaskFromIndexSize(offset, vsp, m, $sizeInBytes$, ms.byteSize());
-        return vsp.ldLongOp(ms, offset, m, $abstractvectortype$::memorySegmentGet);
+        return vsp.dummyVector().fromMemorySegment0(ms, offset, m, OFFSET_OUT_OF_RANGE).maybeSwap(bo);
     }
 
     // Memory store operations
@@ -4793,16 +4789,16 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
 
     /*package-private*/
     abstract
-    $abstractvectortype$ fromArray0($type$[] a, int offset, VectorMask<$Boxtype$> m);
+    $abstractvectortype$ fromArray0($type$[] a, int offset, VectorMask<$Boxtype$> m, int offsetInRange);
     @ForceInline
     final
     <M extends VectorMask<$Boxtype$>>
-    $abstractvectortype$ fromArray0Template(Class<M> maskClass, $type$[] a, int offset, M m) {
+    $abstractvectortype$ fromArray0Template(Class<M> maskClass, $type$[] a, int offset, M m, int offsetInRange) {
         m.check(species());
         $Type$Species vsp = vspecies();
         return VectorSupport.loadMasked(
             vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
-            a, arrayAddress(a, offset), m,
+            a, arrayAddress(a, offset), m, offsetInRange,
             a, offset, vsp,
             (arr, off, s, vm) -> s.ldOp(arr, (int) off, vm,
                                         (arr_, off_, i) -> arr_[off_ + i]));
@@ -4887,16 +4883,16 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
 
     /*package-private*/
     abstract
-    $abstractvectortype$ fromCharArray0(char[] a, int offset, VectorMask<$Boxtype$> m);
+    $abstractvectortype$ fromCharArray0(char[] a, int offset, VectorMask<$Boxtype$> m, int offsetInRange);
     @ForceInline
     final
     <M extends VectorMask<$Boxtype$>>
-    $abstractvectortype$ fromCharArray0Template(Class<M> maskClass, char[] a, int offset, M m) {
+    $abstractvectortype$ fromCharArray0Template(Class<M> maskClass, char[] a, int offset, M m, int offsetInRange) {
         m.check(species());
         $Type$Species vsp = vspecies();
         return VectorSupport.loadMasked(
                 vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
-                a, charArrayAddress(a, offset), m,
+                a, charArrayAddress(a, offset), m, offsetInRange,
                 a, offset, vsp,
                 (arr, off, s, vm) -> s.ldOp(arr, (int) off, vm,
                                             (arr_, off_, i) -> (short) arr_[off_ + i]));
@@ -4921,16 +4917,16 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
 
     /*package-private*/
     abstract
-    $abstractvectortype$ fromBooleanArray0(boolean[] a, int offset, VectorMask<$Boxtype$> m);
+    $abstractvectortype$ fromBooleanArray0(boolean[] a, int offset, VectorMask<$Boxtype$> m, int offsetInRange);
     @ForceInline
     final
     <M extends VectorMask<$Boxtype$>>
-    $abstractvectortype$ fromBooleanArray0Template(Class<M> maskClass, boolean[] a, int offset, M m) {
+    $abstractvectortype$ fromBooleanArray0Template(Class<M> maskClass, boolean[] a, int offset, M m, int offsetInRange) {
         m.check(species());
         $Type$Species vsp = vspecies();
         return VectorSupport.loadMasked(
             vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
-            a, booleanArrayAddress(a, offset), m,
+            a, booleanArrayAddress(a, offset), m, offsetInRange,
             a, offset, vsp,
             (arr, off, s, vm) -> s.ldOp(arr, (int) off, vm,
                                         (arr_, off_, i) -> (byte) (arr_[off_ + i] ? 1 : 0)));
@@ -4952,16 +4948,16 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     }
 
     abstract
-    $abstractvectortype$ fromMemorySegment0(MemorySegment ms, long offset, VectorMask<$Boxtype$> m);
+    $abstractvectortype$ fromMemorySegment0(MemorySegment ms, long offset, VectorMask<$Boxtype$> m, int offsetInRange);
     @ForceInline
     final
     <M extends VectorMask<$Boxtype$>>
-    $abstractvectortype$ fromMemorySegment0Template(Class<M> maskClass, MemorySegment ms, long offset, M m) {
+    $abstractvectortype$ fromMemorySegment0Template(Class<M> maskClass, MemorySegment ms, long offset, M m, int offsetInRange) {
         $Type$Species vsp = vspecies();
         m.check(vsp);
         return ScopedMemoryAccess.loadFromMemorySegmentMasked(
                 vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
-                (AbstractMemorySegmentImpl) ms, offset, m, vsp,
+                (AbstractMemorySegmentImpl) ms, offset, m, vsp, offsetInRange,
                 (msp, off, s, vm) -> {
                     return s.ldLongOp((MemorySegment) msp, off, vm, $abstractvectortype$::memorySegmentGet);
                 });
