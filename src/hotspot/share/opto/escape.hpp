@@ -580,9 +580,11 @@ private:
 
   // Compute the escape information
   bool compute_escape(bool only_analysis);
-  bool is_read_only(Node* ctrl, Node* base) const;
+
+  // Methods related to Reduce Allocation Merges
+  bool is_read_only(Node* merge_phi_region, Node* base) const;
   Node* come_from_allocate(const Node* n) const;
-  bool should_reduce_this_phi(const Node* n) const;
+  bool can_reduce_this_phi(const Node* n) const;
   bool reduce_this_phi(PhiNode* n);
 
   void set_not_scalar_replaceable(PointsToNode* ptn NOT_PRODUCT(COMMA const char* reason)) const {
@@ -649,7 +651,6 @@ public:
 
 #ifndef PRODUCT
   void dump(GrowableArray<PointsToNode*>& ptnodes_worklist);
-  void dump_ir(const char* title);
 #endif
 };
 

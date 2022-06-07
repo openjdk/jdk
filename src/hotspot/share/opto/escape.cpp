@@ -410,7 +410,7 @@ void ConnectionGraph::reduce_allocation_merges() {
         Node* candidate_phi = candidate_region->fast_out(i);
 
         // Performs several checks to see if we can/should reduce this Phi
-        if (candidate_phi->is_Phi() && should_reduce_this_phi(candidate_phi)) {
+        if (candidate_phi->is_Phi() && can_reduce_this_phi(candidate_phi)) {
           target_phis.push(candidate_phi);
         }
       }
@@ -469,7 +469,7 @@ Node* ConnectionGraph::come_from_allocate(const Node* n) const {
   return NULL;
 }
 
-bool ConnectionGraph::is_read_only(Node* ctrl, Node* base) const {
+bool ConnectionGraph::is_read_only(Node* merge_phi_region, Node* base) const {
   Unique_Node_List worklist;
   worklist.push(base);
 
@@ -482,6 +482,10 @@ bool ConnectionGraph::is_read_only(Node* ctrl, Node* base) const {
       switch (m->Opcode()) {
         case Op_CastPP:
         case Op_CheckCastPP:
+        case Op_EncodeP:
+        case Op_EncodePKlass:
+        case Op_DecodeN:
+        case Op_DecodeNKlass:
           worklist.push(m);
           break;
       }
@@ -492,7 +496,7 @@ bool ConnectionGraph::is_read_only(Node* ctrl, Node* base) const {
 
           if (child->is_Store()) {
             assert(child->in(0) != NULL || m->in(0) != NULL, "No control for store or AddP.");
-            if (_igvn->is_dominator(ctrl, child->in(0) != NULL ? child->in(0) : m->in(0))) {
+            if (_igvn->is_dominator(merge_phi_region, child->in(0) != NULL ? child->in(0) : m->in(0))) {
               return false;
             }
           }
@@ -504,7 +508,7 @@ bool ConnectionGraph::is_read_only(Node* ctrl, Node* base) const {
   return true;
 }
 
-bool ConnectionGraph::should_reduce_this_phi(const Node* phi) const {
+bool ConnectionGraph::can_reduce_this_phi(const Node* phi) const {
   if (!is_ideal_node_in_graph(phi->_idx)) return false;
   if (ptnode_adr(phi->_idx)->escape_state() != PointsToNode::EscapeState::NoEscape) return false;
 
@@ -1923,7 +1927,7 @@ int ConnectionGraph::find_field_value(FieldNode* field) {
   for (BaseIterator i(field); i.has_next(); i.next()) {
     PointsToNode* base = i.get();
     if (base->is_JavaObject()) {
-      // Skip Allocate's & ReducedAllocationmerge fields which will be processed later.
+      // Skip Allocate's & ReducedAllocationMerge fields which will be processed later.
       if (base->ideal_node()->is_Allocate() || base->ideal_node()->is_ReducedAllocationMerge()) {
         return 0;
       }
@@ -4096,45 +4100,6 @@ const char* ConnectionGraph::trace_merged_message(PointsToNode* other) const {
     return nullptr;
   }
 }
-
-void ConnectionGraph::dump_ir(const char* title) {
-    ttyLocker ttyl;  // keep the following output all in one block
-
-    _compile->method()->print_short_name();
-    tty->cr();
-    tty->cr();
-
-    tty->print_cr("%s", title);
-
-    Unique_Node_List ideal_nodes; // Used by CG construction and types splitting.
-    ideal_nodes.map(_compile->live_nodes(), NULL);  // preallocate space
-    ideal_nodes.push(_compile->root());
-
-    for( uint next = 0; next < ideal_nodes.size(); ++next ) {
-      Node* n = ideal_nodes.at(next);
-
-      n->dump();
-
-      const Type* tt = _igvn->type_or_null(n);
-      if (tt != NULL) {
-        const TypeOopPtr *node_t = tt->isa_oopptr();
-        if (node_t != NULL) {
-          int alias_idx = _compile->get_alias_index(node_t);
-          bool instance = _igvn->type(n)->isa_instptr() != NULL;
-          bool array = _igvn->type(n)->isa_aryptr() != NULL;
-          tty->print_cr("#\t\t -> OOP-PTR(instance=%c, array=%c) instance_id: %d, alias_idx: %d", instance ? 'Y' : 'N', array ? 'Y' : 'N', node_t->instance_id(), alias_idx);
-        }
-      }
-
-      for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
-        Node* m = n->fast_out(i);   // Get user
-        ideal_nodes.push(m);
-      }
-    }
-
-    tty->cr(); tty->cr(); tty->cr(); tty->cr();
-}
-
 #endif
 
 void ConnectionGraph::record_for_optimizer(Node *n) {
