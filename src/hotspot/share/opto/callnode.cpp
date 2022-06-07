@@ -1630,8 +1630,7 @@ ReducedAllocationMergeNode::ReducedAllocationMergeNode(Compile* C, PhaseIterGVN*
   _in_copy                = new Node_Array(Thread::current()->resource_area(), phi->req());
   _memories_indexes_start = -1;
   _fields_and_values      = new (C->comp_arena()) Dict(cmpkey, hashkey);
-
-  const Type* ram_t = Type::TOP;
+  const Type* ram_t       = Type::TOP;
 
   for (uint i=0; i<phi->req(); i++) {
     init_req(i, phi->in(i));
@@ -1639,7 +1638,7 @@ ReducedAllocationMergeNode::ReducedAllocationMergeNode(Compile* C, PhaseIterGVN*
 
     if (i > 0) {
       const Type* in_t = igvn->type(phi->in(i));
-      ram_t = ram_t->meet_speculative(in_t);
+      ram_t = ram_t->meet(in_t);
     }
   }
 

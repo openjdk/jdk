@@ -410,7 +410,7 @@ void ConnectionGraph::reduce_allocation_merges() {
         Node* candidate_phi = candidate_region->fast_out(i);
 
         // Performs several checks to see if we can/should reduce this Phi
-        if (should_reduce_this_phi(candidate_phi)) {
+        if (candidate_phi->is_Phi() && should_reduce_this_phi(candidate_phi)) {
           target_phis.push(candidate_phi);
         }
       }
@@ -430,7 +430,7 @@ void ConnectionGraph::reduce_allocation_merges() {
   _igvn->set_delay_transform(prev_delay_transform);
 }
 
-Node* ConnectionGraph::come_from_allocate(Node* n) const {
+Node* ConnectionGraph::come_from_allocate(const Node* n) const {
   while (true) {
     switch (n->Opcode()) {
       case Op_CastPP:
@@ -504,19 +504,33 @@ bool ConnectionGraph::is_read_only(Node* ctrl, Node* base) const {
   return true;
 }
 
-bool ConnectionGraph::should_reduce_this_phi(Node* n) const {
-  if (!n->is_Phi())                     return false;
+bool ConnectionGraph::should_reduce_this_phi(const Node* n) const {
   if (!is_ideal_node_in_graph(n->_idx)) return false;
+  if (ptnode_adr(n->_idx)->escape_state() != PointsToNode::EscapeState::NoEscape) return false;
 
-  PointsToNode* ptn = ptnode_adr(n->_idx);
-
-  if (ptn == NULL)                                                return false;
-  if (ptn->escape_state() != PointsToNode::EscapeState::NoEscape) return false;
-
-  // Check whether this Phi node actually point to Allocate nodes
+  // Validate inputs:
+  //    Check whether this Phi node actually point to Allocate nodes
+  //    of the same Klass and that they can be scalar replaced. Also
+  //    checks that there is no write to any of the inputs after the
+  //    merge occurs.
   Node* prev_klass = NULL;
   for (uint in_idx=1; in_idx<n->req(); in_idx++) {
     Node* input = n->in(in_idx);
+    const Type* in_t  = _igvn->type(input);
+
+    // Check if input is NoEscape
+    PointsToNode* input_ptn = ptnode_adr(input->_idx);
+    if (input_ptn == NULL || input_ptn->escape_state() != PointsToNode::EscapeState::NoEscape) {
+      NOT_PRODUCT(if (Verbose) tty->print_cr("The %dth input escape.", in_idx);)
+      return false;
+    }
+
+    if (in_t == NULL || in_t->make_oopptr() == NULL || !in_t->make_oopptr()->klass_is_exact()) {
+      NOT_PRODUCT(if (Verbose) tty->print_cr("Input to Phi is not exact.");)
+      NOT_PRODUCT(if (Verbose) { in_t->dump(); tty->cr(); })
+      return false;
+    }
+
     Node* klass = come_from_allocate(input);
 
     if (klass == NULL) {
@@ -530,23 +544,22 @@ bool ConnectionGraph::should_reduce_this_phi(Node* n) const {
     else {
       if (prev_klass != NULL && prev_klass != klass) {
         NOT_PRODUCT(if (Verbose) tty->print_cr("Will NOT try to reduce Phi %d. The input Allocate klass nodes don't match.", n->_idx);)
-        NOT_PRODUCT(if (Verbose) prev_klass->dump();)
-        NOT_PRODUCT(if (Verbose) klass->dump();)
         return false;
       }
       prev_klass = klass;
     }
   }
 
-  // Check if we can in fact later replace the uses of the
-  // current Phi by Phi's of individual fields.
-  // Conditions checked:
-  //    - The only consumers of the Phi are:
-  //        - AddP (with constant offset)
-  //        -   - Load
-  //        - Safepoint
-  //        - uncommon_trap
-  //        - DecodeN
+  // Validate outputs:
+  //    Check if we can in fact later replace the uses of the
+  //    current Phi by Phi's of individual fields.
+  //    Conditions checked:
+  //       - The only consumers of the Phi are:
+  //           - AddP (with constant offset)
+  //           -   - Load
+  //           - Safepoint
+  //           - uncommon_trap
+  //           - DecodeN
   for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
     Node* use = n->fast_out(i);
 
