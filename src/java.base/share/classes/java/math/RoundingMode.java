@@ -45,14 +45,14 @@ package java.math;
  * {@linkplain MathContext#getPrecision() precision} being used in the
  * computation. Assuming the mathematical result is within the
  * exponent range of {@code BigDecimal}, the mathematical result will
- * be exactly representable in the result precision or will fall between
- * two adjacent representable values. In the case of falling between two
- * representable values, the rounding policy determines which of those
- * two bracketing values is the result. For in-range real numbers, for
- * a given set of representable values, a rounding policy maps a
- * continuous segment of real number line to a single representable
- * value where the real number numerically equal to a representable
- * value is mapped to that value.
+ * be exactly representable in the result precision or will fall
+ * between two adjacent representable values. In the case of falling
+ * between two representable values, the rounding policy determines
+ * which of those two bracketing values is the result. For in-range
+ * real numbers, for a given set of representable values, a rounding
+ * policy maps a continuous segment of the real number line to a
+ * single representable value where the real number numerically equal
+ * to a representable value is mapped to that value.
  *
  * <p>Each rounding mode description includes a table listing how
  * different two-digit decimal values would round to a one digit
