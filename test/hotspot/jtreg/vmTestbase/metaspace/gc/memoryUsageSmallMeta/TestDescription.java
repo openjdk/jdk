@@ -35,6 +35,5 @@
  *      -XX:MinMetaspaceFreeRatio=70
  *      -XX:MaxMetaspaceFreeRatio=90
  *      metaspace.gc.MemoryUsageTest
- *      -pool:metaspace
  */
 

@@ -168,12 +168,4 @@ class MetaspacePool : public MemoryPool {
   bool is_metaspace() override { return true; }
 };
 
-class CompressedKlassSpacePool : public MemoryPool {
- public:
-  CompressedKlassSpacePool();
-  MemoryUsage get_memory_usage();
-  size_t used_in_bytes();
-  bool is_compressed_klass_space() override { return true; }
-};
-
 #endif // SHARE_SERVICES_MEMORYPOOL_HPP
