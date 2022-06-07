@@ -100,6 +100,10 @@ public class SharedArchiveConsistency {
         TestCommon.checkExec(output);
     }
 
+    private static String hex(int version) {
+        return String.format("0x%x", version);
+    }
+
     // dump with hello.jsa, then
     // read the jsa file
     //   1) run normal
@@ -192,7 +196,7 @@ public class SharedArchiveConsistency {
         copiedJsa = CDSArchiveUtils.copyArchiveFile(orgJsaFile, modVersion);
         CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetVersion(), version);
         output = shareAuto ? TestCommon.execAuto(execArgs) : TestCommon.execCommon(execArgs);
-        output.shouldContain("The shared archive file version " + version + " does not match the required version " + currentCDSArchiveVersion);
+        output.shouldContain("The shared archive file version " + hex(version) + " does not match the required version " + hex(currentCDSArchiveVersion));
         if (shareAuto) {
             output.shouldContain(HELLO_WORLD);
         }
@@ -203,7 +207,7 @@ public class SharedArchiveConsistency {
         version = genericHeaderMinVersion - 1;
         CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetVersion(), version);
         output = shareAuto ? TestCommon.execAuto(execArgs) : TestCommon.execCommon(execArgs);
-        output.shouldContain("Cannot handle shared archive file version " + version + ". Must be at least " + genericHeaderMinVersion);
+        output.shouldContain("Cannot handle shared archive file version " + hex(version) + ". Must be at least " + hex(genericHeaderMinVersion));
         output.shouldNotContain("Checksum verification failed");
         if (shareAuto) {
             output.shouldContain(HELLO_WORLD);
