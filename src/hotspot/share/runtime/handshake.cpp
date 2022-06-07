@@ -354,7 +354,7 @@ void Handshake::execute(HandshakeClosure* hs_cl, ThreadsListHandle* tlh, JavaThr
   guarantee(target != nullptr, "must be");
 
   JavaThread* current = JavaThread::current();
-  if (target->is_handshake_safe_for(current)) {
+  if (target == current) {
     hs_cl->do_thread(target);
     return;
   }
