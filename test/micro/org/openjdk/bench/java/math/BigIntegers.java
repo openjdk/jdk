@@ -192,6 +192,8 @@ public class BigIntegers {
         }
     }
 
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @State(Scope.Thread)
     @Warmup(iterations = 5, time = 1)
     @Measurement(iterations = 5, time = 1)
