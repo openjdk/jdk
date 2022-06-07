@@ -200,7 +200,7 @@ public class BigIntegers {
     @Fork(value = 3)
     public static class SmallShifts {
 
-        @Param({"32", "64", "128", "192", "256"})
+        @Param({"32", "128", "256"})
         private int maxNumbits;
 
         /*
@@ -211,8 +211,6 @@ public class BigIntegers {
         @Setup
         public void setup() {
             Random r = new Random(1123);
-            int numbits = r.nextInt(16384);
-
             for (int i = 0; i < TESTSIZE; i++) {
                 int value = Math.abs(r.nextInt());
                 smallShiftArray[i] = new BigInteger(Math.max(maxNumbits - value % 32, 0), r);
@@ -222,26 +220,22 @@ public class BigIntegers {
         /** Invokes the shiftLeft method of small BigInteger with different values. */
         @Benchmark
         @OperationsPerInvocation(TESTSIZE)
-        public void testSmallLeftShift(Blackhole bh) {
+        public void testLeftShift(Blackhole bh) {
             Random rand = new Random();
             int shift = rand.nextInt(30) + 1;
-            BigInteger tmp = null;
             for (BigInteger s : smallShiftArray) {
-                tmp = s.shiftLeft(shift);
-                bh.consume(tmp);
+                bh.consume(s.shiftLeft(shift));
             }
         }
 
         /** Invokes the shiftRight method of small BigInteger with different values. */
         @Benchmark
         @OperationsPerInvocation(TESTSIZE)
-        public void testSmallRightShift(Blackhole bh) {
+        public void testRightShift(Blackhole bh) {
             Random rand = new Random();
             int shift = rand.nextInt(30) + 1;
-            BigInteger tmp = null;
             for (BigInteger s : smallShiftArray) {
-                tmp = s.shiftRight(shift);
-                bh.consume(tmp);
+                bh.consume(s.shiftRight(shift));
             }
         }
     }
