@@ -192,6 +192,7 @@ public class BigIntegers {
         }
     }
 
+    @State(Scope.Thread)
     public static class SmallShifts {
 
         @Param({"32", "64", "128", "192", "256"})
