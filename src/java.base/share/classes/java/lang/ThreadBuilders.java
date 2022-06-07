@@ -30,9 +30,12 @@ import java.lang.Thread.Builder.OfVirtual;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadFactory;
+import jdk.internal.misc.Unsafe;
+import jdk.internal.vm.ContinuationSupport;
 
 /**
  * Defines static methods to create platform and virtual thread builders.
@@ -133,6 +136,9 @@ class ThreadBuilders {
         private int priority;
         private long stackSize;
 
+        PlatformThreadBuilder() {
+        }
+
         @Override
         String nextThreadName() {
             String name = super.nextThreadName();
@@ -203,12 +209,22 @@ class ThreadBuilders {
      */
     static final class VirtualThreadBuilder
             extends BaseThreadBuilder<OfVirtual> implements OfVirtual {
-        private Executor scheduler;  // set by tests
+        private Executor scheduler;
+
+        VirtualThreadBuilder() {
+        }
+
+        // invoked by tests
+        VirtualThreadBuilder(Executor scheduler) {
+            if (!ContinuationSupport.isSupported())
+                throw new UnsupportedOperationException();
+            this.scheduler = Objects.requireNonNull(scheduler);
+        }
 
         @Override
         public Thread unstarted(Runnable task) {
             Objects.requireNonNull(task);
-            var thread = new VirtualThread(scheduler, nextThreadName(), characteristics(), task);
+            var thread = newVirtualThread(scheduler, nextThreadName(), characteristics(), task);
             UncaughtExceptionHandler uhe = uncaughtExceptionHandler();
             if (uhe != null)
                 thread.uncaughtExceptionHandler(uhe);
@@ -349,11 +365,82 @@ class ThreadBuilders {
         public Thread newThread(Runnable task) {
             Objects.requireNonNull(task);
             String name = nextThreadName();
-            Thread thread = new VirtualThread(scheduler, name, characteristics(), task);
+            Thread thread = newVirtualThread(scheduler, name, characteristics(), task);
             UncaughtExceptionHandler uhe = uncaughtExceptionHandler();
             if (uhe != null)
                 thread.uncaughtExceptionHandler(uhe);
             return thread;
+        }
+    }
+
+    /**
+     * Creates a new virtual thread to run the given task.
+     */
+    static Thread newVirtualThread(Executor scheduler,
+                                   String name,
+                                   int characteristics,
+                                   Runnable task) {
+        if (ContinuationSupport.isSupported()) {
+            return new VirtualThread(scheduler, name, characteristics, task);
+        } else {
+            if (scheduler != null)
+                throw new UnsupportedOperationException();
+            return new BoundVirtualThread(name, characteristics, task);
+        }
+    }
+
+    /**
+     * A "virtual thread" that is backed by a platform thread. This implementation
+     * is intended for platforms that don't have the underlying VM support for
+     * continuations. It can also be used for testing.
+     */
+    static final class BoundVirtualThread extends BaseVirtualThread {
+        private static final Unsafe U = Unsafe.getUnsafe();
+        private final Runnable task;
+        private boolean runInvoked;
+
+        BoundVirtualThread(String name, int characteristics, Runnable task) {
+            super(name, characteristics, true);
+            this.task = task;
+        }
+
+        @Override
+        public void run() {
+            // run is specified to do nothing when Thread is a virtual thread
+            if (Thread.currentThread() == this && !runInvoked) {
+                runInvoked = true;
+                task.run();
+            }
+        }
+
+        @Override
+        void park() {
+            U.park(false, 0L);
+        }
+
+        @Override
+        void parkNanos(long nanos) {
+            U.park(false, nanos);
+        }
+
+        @Override
+        void unpark() {
+            U.unpark(this);
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder("VirtualThread[#");
+            sb.append(threadId());
+            String name = getName();
+            if (!name.isEmpty()) {
+                sb.append(",");
+                sb.append(name);
+            }
+            sb.append("]/");
+            String stateAsString = threadState().toString();
+            sb.append(stateAsString.toLowerCase(Locale.ROOT));
+            return sb.toString();
         }
     }
 }

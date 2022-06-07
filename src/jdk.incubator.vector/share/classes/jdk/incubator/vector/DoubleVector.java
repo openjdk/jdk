@@ -2805,7 +2805,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
                                    double[] a, int offset,
                                    VectorMask<Double> m) {
         DoubleSpecies vsp = (DoubleSpecies) species;
-        if (offset >= 0 && offset <= (a.length - species.length())) {
+        if (VectorIntrinsics.indexInRange(offset, vsp.length(), a.length)) {
             return vsp.dummyVector().fromArray0(a, offset, m, /* offsetInRange */ 1);
         }
 
@@ -3037,7 +3037,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
                                            ByteOrder bo,
                                            VectorMask<Double> m) {
         DoubleSpecies vsp = (DoubleSpecies) species;
-        if (offset >= 0 && offset <= (ms.byteSize() - species.vectorByteSize())) {
+        if (VectorIntrinsics.indexInRange(offset, vsp.vectorByteSize(), ms.byteSize())) {
             return vsp.dummyVector().fromMemorySegment0(ms, offset, m, /* offsetInRange */ 1).maybeSwap(bo);
         }
 
@@ -3108,7 +3108,9 @@ public abstract class DoubleVector extends AbstractVector<Double> {
             intoArray(a, offset);
         } else {
             DoubleSpecies vsp = vspecies();
-            checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+            if (!VectorIntrinsics.indexInRange(offset, vsp.length(), a.length)) {
+                checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+            }
             intoArray0(a, offset, m);
         }
     }
@@ -3264,7 +3266,9 @@ public abstract class DoubleVector extends AbstractVector<Double> {
                 throw new UnsupportedOperationException("Attempt to write a read-only segment");
             }
             DoubleSpecies vsp = vspecies();
-            checkMaskFromIndexSize(offset, vsp, m, 8, ms.byteSize());
+            if (!VectorIntrinsics.indexInRange(offset, vsp.vectorByteSize(), ms.byteSize())) {
+                checkMaskFromIndexSize(offset, vsp, m, 8, ms.byteSize());
+            }
             maybeSwap(bo).intoMemorySegment0(ms, offset, m);
         }
     }

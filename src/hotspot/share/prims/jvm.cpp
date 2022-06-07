@@ -3487,10 +3487,13 @@ JVM_LEAF(jboolean, JVM_IsSupportedJNIVersion(jint version))
 JVM_END
 
 
-JVM_LEAF(jboolean, JVM_IsPreviewEnabled(JNIEnv *env))
+JVM_LEAF(jboolean, JVM_IsPreviewEnabled(void))
   return Arguments::enable_preview() ? JNI_TRUE : JNI_FALSE;
 JVM_END
 
+JVM_LEAF(jboolean, JVM_IsContinuationsSupported(void))
+  return VMContinuations ? JNI_TRUE : JNI_FALSE;
+JVM_END
 
 // String support ///////////////////////////////////////////////////////////////////////////
 

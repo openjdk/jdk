@@ -3009,7 +3009,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
                                    short[] a, int offset,
                                    VectorMask<Short> m) {
         ShortSpecies vsp = (ShortSpecies) species;
-        if (offset >= 0 && offset <= (a.length - species.length())) {
+        if (VectorIntrinsics.indexInRange(offset, vsp.length(), a.length)) {
             return vsp.dummyVector().fromArray0(a, offset, m, /* offsetInRange */ 1);
         }
 
@@ -3157,7 +3157,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
                                        char[] a, int offset,
                                        VectorMask<Short> m) {
         ShortSpecies vsp = (ShortSpecies) species;
-        if (offset >= 0 && offset <= (a.length - species.length())) {
+        if (VectorIntrinsics.indexInRange(offset, vsp.length(), a.length)) {
             return vsp.dummyVector().fromCharArray0(a, offset, m, /* offsetInRange */ 1);
         }
 
@@ -3349,7 +3349,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
                                            ByteOrder bo,
                                            VectorMask<Short> m) {
         ShortSpecies vsp = (ShortSpecies) species;
-        if (offset >= 0 && offset <= (ms.byteSize() - species.vectorByteSize())) {
+        if (VectorIntrinsics.indexInRange(offset, vsp.vectorByteSize(), ms.byteSize())) {
             return vsp.dummyVector().fromMemorySegment0(ms, offset, m, /* offsetInRange */ 1).maybeSwap(bo);
         }
 
@@ -3420,7 +3420,9 @@ public abstract class ShortVector extends AbstractVector<Short> {
             intoArray(a, offset);
         } else {
             ShortSpecies vsp = vspecies();
-            checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+            if (!VectorIntrinsics.indexInRange(offset, vsp.length(), a.length)) {
+                checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+            }
             intoArray0(a, offset, m);
         }
     }
@@ -3567,7 +3569,9 @@ public abstract class ShortVector extends AbstractVector<Short> {
             intoCharArray(a, offset);
         } else {
             ShortSpecies vsp = vspecies();
-            checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+            if (!VectorIntrinsics.indexInRange(offset, vsp.length(), a.length)) {
+                checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+            }
             intoCharArray0(a, offset, m);
         }
     }
@@ -3692,7 +3696,9 @@ public abstract class ShortVector extends AbstractVector<Short> {
                 throw new UnsupportedOperationException("Attempt to write a read-only segment");
             }
             ShortSpecies vsp = vspecies();
-            checkMaskFromIndexSize(offset, vsp, m, 2, ms.byteSize());
+            if (!VectorIntrinsics.indexInRange(offset, vsp.vectorByteSize(), ms.byteSize())) {
+                checkMaskFromIndexSize(offset, vsp, m, 2, ms.byteSize());
+            }
             maybeSwap(bo).intoMemorySegment0(ms, offset, m);
         }
     }
