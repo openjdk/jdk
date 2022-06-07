@@ -354,45 +354,47 @@ ExpandJtregPath = \
 TestID = \
     $(subst .java,,$(subst .java,,$(suffix $(notdir $1))))
 
+# The test selector starting with a hash (#testid) will be stripped by all
+# evals in ParseJtregTestSelectionInner and will be reinserted by calling
+# TestID (if it is present).
+ParseJtregTestSelection = \
+    $(call IfAppend, $(call ParseJtregTestSelectionInner, $1), $(call TestID, $1))
+
 # Helper function to determine if a test specification is a Jtreg test
 #
 # It is a Jtreg test if it optionally begins with jtreg:, and then is either
 # an unspecified group name (possibly prefixed by :), or a group in a
 # specified test root, or a path to a test or test directory,
 # either absolute or relative to any of the TEST_BASEDIRS or test roots.
-define ParseJtregTestSelection
-  $(call IfAppend, \
-    $(eval TEST_NAME := $(strip $(patsubst jtreg:%, %, $1))) \
-    $(if $(or $(findstring :, $(TEST_NAME)), $(findstring /, $(TEST_NAME))), , \
-      $(eval TEST_NAME := :$(TEST_NAME)) \
-    ) \
-    $(if $(findstring :, $(TEST_NAME)), \
-      $(if $(filter :%, $(TEST_NAME)), \
-        $(eval TEST_GROUP := $(patsubst :%, %, $(TEST_NAME))) \
-        $(eval TEST_ROOTS := $(foreach test_root, $(JTREG_TESTROOTS), \
-            $(call CleanupJtregPath, $(test_root)))) \
-      , \
-        $(eval TEST_PATH := $(word 1, $(subst :, $(SPACE), $(TEST_NAME)))) \
-        $(eval TEST_GROUP := $(word 2, $(subst :, $(SPACE), $(TEST_NAME)))) \
-        $(eval TEST_ROOTS := $(call ExpandJtregRoot, $(TEST_PATH))) \
-      ) \
-      $(foreach test_root, $(TEST_ROOTS), \
-        $(if $(filter /%, $(test_root)), \
-          jtreg:$(test_root):$(TEST_GROUP) \
-        , \
-          $(if $(filter $(TEST_GROUP), $($(JTREG_TOPDIR)/$(test_root)_JTREG_TEST_GROUPS)), \
-            jtreg:$(test_root):$(TEST_GROUP) \
-          ) \
-        ) \
-      ) \
+define ParseJtregTestSelectionInner
+  $(eval TEST_NAME := $(strip $(patsubst jtreg:%, %, $1))) \
+  $(if $(or $(findstring :, $(TEST_NAME)), $(findstring /, $(TEST_NAME))), , \
+    $(eval TEST_NAME := :$(TEST_NAME)) \
+  ) \
+  $(if $(findstring :, $(TEST_NAME)), \
+    $(if $(filter :%, $(TEST_NAME)), \
+      $(eval TEST_GROUP := $(patsubst :%, %, $(TEST_NAME))) \
+      $(eval TEST_ROOTS := $(foreach test_root, $(JTREG_TESTROOTS), \
+          $(call CleanupJtregPath, $(test_root)))) \
     , \
-      $(eval TEST_PATHS := $(call ExpandJtregPath, $(TEST_NAME))) \
-      $(foreach test_path, $(TEST_PATHS), \
-        jtreg:$(test_path) \
+      $(eval TEST_PATH := $(word 1, $(subst :, $(SPACE), $(TEST_NAME)))) \
+      $(eval TEST_GROUP := $(word 2, $(subst :, $(SPACE), $(TEST_NAME)))) \
+      $(eval TEST_ROOTS := $(call ExpandJtregRoot, $(TEST_PATH))) \
+    ) \
+    $(foreach test_root, $(TEST_ROOTS), \
+      $(if $(filter /%, $(test_root)), \
+        jtreg:$(test_root):$(TEST_GROUP) \
+      , \
+        $(if $(filter $(TEST_GROUP), $($(JTREG_TOPDIR)/$(test_root)_JTREG_TEST_GROUPS)), \
+          jtreg:$(test_root):$(TEST_GROUP) \
+        ) \
       ) \
     ) \
   , \
-    $(call TestID, $1) \
+    $(eval TEST_PATHS := $(call ExpandJtregPath, $(TEST_NAME))) \
+    $(foreach test_path, $(TEST_PATHS), \
+      jtreg:$(test_path) \
+    ) \
   )
 endef
 
