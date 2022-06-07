@@ -45,6 +45,7 @@ public class TestEACheckCastPP {
 
     private static void test_helper2(I i, boolean flag) {
         if (flag) {
+            // branch never taken when called from test()
             A a = (A)i;
             C c = new C();
             c.a = a;
