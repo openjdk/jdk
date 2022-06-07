@@ -30,7 +30,7 @@
 jimage="${TESTJAVA+${TESTJAVA}/bin/}jimage${EXE_SUFFIX}"
 
 case `uname -s` in
-  Windows*|CYGWIN*)
+  Windows*|CYGWIN*|MSYS*|MINGW*)
     WindowsOnly() { "$@"; }
     UnixOnly() { :; }
     PS=";" ;;
