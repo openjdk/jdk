@@ -138,7 +138,7 @@ class ThreadInVMForHandshake : public ThreadStateTransition {
       _original_state(thread->thread_state()) {
 
     if (thread->has_last_Java_frame()) {
-      thread->frame_anchor()->make_walkable(thread);
+      thread->frame_anchor()->make_walkable();
     }
 
     thread->set_thread_state(_thread_in_vm);
@@ -209,7 +209,7 @@ class ThreadInVMfromNative : public ThreadStateTransition {
     // we call known native code using this wrapper holding locks.
     _thread->check_possible_safepoint();
     // Once we are in native vm expects stack to be walkable
-    _thread->frame_anchor()->make_walkable(_thread);
+    _thread->frame_anchor()->make_walkable();
     OrderAccess::storestore(); // Keep thread_state change and make_walkable() separate.
     _thread->set_thread_state(_thread_in_native);
   }
@@ -222,7 +222,7 @@ class ThreadToNativeFromVM : public ThreadStateTransition {
     // We are leaving the VM at this point and going directly to native code.
     // Block, if we are in the middle of a safepoint synchronization.
     assert(!thread->owns_locks(), "must release all locks when leaving VM");
-    thread->frame_anchor()->make_walkable(thread);
+    thread->frame_anchor()->make_walkable();
     trans(_thread_in_vm, _thread_in_native);
     // Check for pending. async. exceptions or suspends.
     if (_thread->has_special_runtime_exit_condition()) _thread->handle_special_runtime_exit_condition(false);
@@ -250,7 +250,7 @@ class ThreadBlockInVMPreprocess : public ThreadStateTransition {
     assert(thread->thread_state() == _thread_in_vm, "coming from wrong thread state");
     thread->check_possible_safepoint();
     // Once we are blocked vm expects stack to be walkable
-    thread->frame_anchor()->make_walkable(thread);
+    thread->frame_anchor()->make_walkable();
     OrderAccess::storestore(); // Keep thread_state change and make_walkable() separate.
     thread->set_thread_state(_thread_blocked);
   }

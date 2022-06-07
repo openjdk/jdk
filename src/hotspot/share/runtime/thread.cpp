@@ -1701,7 +1701,7 @@ void JavaThread::check_and_handle_async_exceptions() {
 void JavaThread::handle_special_runtime_exit_condition(bool check_asyncs) {
 
   if (is_obj_deopt_suspend()) {
-    frame_anchor()->make_walkable(this);
+    frame_anchor()->make_walkable();
     wait_for_object_deoptimization();
   }
 

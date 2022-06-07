@@ -705,7 +705,7 @@ void SafepointSynchronize::block(JavaThread *thread) {
   }
 
   JavaThreadState state = thread->thread_state();
-  thread->frame_anchor()->make_walkable(thread);
+  thread->frame_anchor()->make_walkable();
 
   uint64_t safepoint_id = SafepointSynchronize::safepoint_counter();
   // Check that we have a valid thread_state at this point

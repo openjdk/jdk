@@ -169,7 +169,7 @@ public:
     thread->set_active_handles(new_handles);
 #endif
     assert(thread == JavaThread::current(), "thread must be current!");
-    thread->frame_anchor()->make_walkable(thread);
+    thread->frame_anchor()->make_walkable();
   };
 
   ~JvmtiEventMark() {
