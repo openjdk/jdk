@@ -32,6 +32,7 @@ import java.util.Random;
 /*
  * @test
  * @bug 8286197
+ * @key randomness
  * @summary C2: Optimize MemorySegment shape in int loop
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
