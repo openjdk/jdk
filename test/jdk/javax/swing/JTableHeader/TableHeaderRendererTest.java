@@ -20,100 +20,76 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/* @test
-   @bug 6429812
-   @key headful
-   @requires (os.family == "windows")
-   @library /java/awt/regtesthelpers
-   @build PassFailJFrame
-   @summary Test to check if table is printed without NPE
-   @run main TableRendererTest
-*/
 
 import java.awt.Component;
-import java.awt.Robot;
-import java.util.concurrent.atomic.AtomicReference;
+import java.awt.Dimension;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
 
-import javax.swing.UIManager;
-import javax.swing.SwingUtilities;
-import javax.swing.JFrame;
 import javax.swing.JTable;
-import javax.swing.JScrollPane;
-
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellRenderer;
 
-public class TableRendererTest{
-    static JFrame frame = null;
-    private static final AtomicReference<Throwable> exception =
-            new AtomicReference<>();
+/*
+ * @test
+ * @bug 6429812
+ * @requires (os.family == "windows")
+ * @summary Test to check if table is printed without NPE
+ * @run main TableHeaderRendererTest
+ */
 
+public class TableHeaderRendererTest {
     public static void main(String[] args) throws Exception {
         UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
 
-        Robot robot = new Robot();
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
-                Thread.currentThread().setUncaughtExceptionHandler(
-                        new ExceptionCheck());
-                initialize();
-            }
-        });
+        // initialize should not throw NullPointerException
+        SwingUtilities.invokeAndWait(TableHeaderRendererTest::initialize);
 
-        robot.delay(2000);
-        robot.waitForIdle();
-
-        SwingUtilities.invokeAndWait(frame::dispose);
-
-        if (exception.get() != null) {
-            throw new RuntimeException("Test Case Failed. NPE raised!",
-                    exception.get());
-        }
-        System.out.println("Test Pass!");
+        System.out.println("Test Passed");
     }
 
+    //Initialize the table and paint it to Buffered Image
     static void initialize() {
-        frame = new JFrame();
-        frame.setTitle("JFrame");
-        JTable table = new JTable(new MyModel());
-        JScrollPane jScrollPane = new JScrollPane();
-        jScrollPane.setBounds(new java.awt.Rectangle(0,0,350,618));
-        jScrollPane.setViewportView(table);
+        JTable table = new JTable(new SampleTableModel());
 
-        JTableHeader header = table.getTableHeader();
-        TableCellRenderer render = new DecoratedHeaderRenderer(header.getDefaultRenderer());
-        header.setDefaultRenderer(render);
-
-        frame.getContentPane().add(jScrollPane,null);
-        frame.setSize(363, 658);
-        frame.setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
+        final JTableHeader header = table.getTableHeader();
+        TableCellRenderer renderer = new DecoratedHeaderRenderer(header.getDefaultRenderer());
+        header.setDefaultRenderer(renderer);
 
         table.updateUI();
 
-        frame.setVisible(true);
-    }
-
-    static class ExceptionCheck implements Thread.UncaughtExceptionHandler {
-        public void uncaughtException(Thread t, Throwable e)
-        {
-            exception.set(e);
-            System.err.println("Uncaught Exception Handled : " + e);
+        Dimension size = header.getPreferredSize();
+        header.setSize(size);
+        BufferedImage img = new BufferedImage(size.width, size.height,
+                BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = img.createGraphics();
+        try {
+            header.paint(g2d);
+        } finally {
+            g2d.dispose();
         }
     }
 
-    static class MyModel extends AbstractTableModel {
+    //Table Model data
+    static class SampleTableModel extends AbstractTableModel {
+        @Override
         public int getRowCount() {
             return 10;
         }
+        @Override
         public int getColumnCount() {
             return 10;
         }
+        @Override
         public Object getValueAt(int rowIndex, int columnIndex) {
             return ""+rowIndex + " X " + columnIndex;
         }
     }
 
+    //Table header renderer
     static class DecoratedHeaderRenderer implements TableCellRenderer {
         public DecoratedHeaderRenderer(TableCellRenderer render) {
             this.render = render;
@@ -121,6 +97,7 @@ public class TableRendererTest{
 
         private final TableCellRenderer render;
 
+        @Override
         public Component getTableCellRendererComponent(JTable table,
                                                        Object value, boolean isSelected,
                                                        boolean hasFocus, int row, int column) {
