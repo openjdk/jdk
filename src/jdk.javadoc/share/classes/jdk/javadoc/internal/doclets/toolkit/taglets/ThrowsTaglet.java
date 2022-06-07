@@ -50,12 +50,11 @@ import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
-import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Input;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
- * A taglet that processes {@link ThrowsTree}, which represents tags like
- * {@code @throws} and {@code @exception}.
+ * A taglet that processes {@link ThrowsTree}, which represents
+ * {@code @throws} and {@code @exception} tags.
  */
 public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
 
