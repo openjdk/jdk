@@ -31,7 +31,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.LinkedHashSet;
 import java.util.function.ToIntFunction;
-import java.util.stream.Stream;
 
 import javax.tools.JavaFileManager;
 import javax.tools.FileObject;
@@ -1014,9 +1013,12 @@ public class ClassWriter extends ClassFile {
             endAttr(alenIdx);
             acount++;
         }
-        if (target.hasMethodParameters() && requiresMethodParametersAttr(m)) {
-            if (!m.isLambdaMethod()) // Per JDK-8138729, do not emit parameters table for lambda bodies.
-                acount += writeMethodParametersAttr(m, options.isSet(PARAMETERS) || (m.isConstructor() && (m.flags_field & RECORD) != 0));
+        if (target.hasMethodParameters()) {
+            if (!m.isLambdaMethod()) { // Per JDK-8138729, do not emit parameters table for lambda bodies.
+                boolean requiresParamNames = requiresParamNames(m);
+                if (requiresParamNames || requiresParamFlags(m))
+                    acount += writeMethodParametersAttr(m, requiresParamNames);
+            }
         }
         acount += writeMemberAttrs(m, false);
         if (!m.isLambdaMethod())
@@ -1025,13 +1027,20 @@ public class ClassWriter extends ClassFile {
         endAttrs(acountIdx, acount);
     }
 
-    private boolean requiresMethodParametersAttr(MethodSymbol m) {
-        if (options.isSet(PARAMETERS)) {
+    private boolean requiresParamNames(MethodSymbol m) {
+        if (options.isSet(PARAMETERS))
             return true;
-        }
-        if (m.isConstructor() && (m.flags_field & RECORD) != 0) {
+        if (m.isConstructor() && (m.flags_field & RECORD) != 0)
             return true;
-        }
+        if (m.owner.isEnum()
+            && m.isStatic()
+            && m.name == names.valueOf
+            && (m.params != null && m.params.tail.isEmpty() && (m.params.head.flags_field & MANDATED) != 0))
+            return true;
+        return false;
+    }
+
+    private boolean requiresParamFlags(MethodSymbol m) {
         if (!m.extraParams.isEmpty()) {
             return m.extraParams.stream().anyMatch(p -> (p.flags_field & MANDATED) != 0);
         }
