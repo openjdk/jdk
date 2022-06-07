@@ -38,6 +38,7 @@ import java.io.*;
  *     SetBreakpoint().
  * COMMENTS
  *
+ * @requires vm.continuations
  * @library /test/lib
  *
  * @comment make sure breakpoint01 is compiled with full debug info

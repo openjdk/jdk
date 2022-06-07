@@ -38,12 +38,14 @@
  *     4504077 java: dbx should not hold on to a frameid after thread suspension
  *     Ported from JVMDI.
  *
+ * @requires vm.continuations
  * @library /test/lib
  * @compile --enable-preview -source ${jdk.version} framepop02.java
  * @run main/othervm/native --enable-preview -agentlib:framepop02 framepop02 platform
  */
 /*
  * @test
+ * @requires vm.continuations
  * @library /test/lib
  * @compile --enable-preview -source ${jdk.version} framepop02.java
  * @run main/othervm/native --enable-preview -agentlib:framepop02 framepop02 virtual
