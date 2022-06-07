@@ -178,7 +178,7 @@ class GNUStyleOptions {
                 void process(Main jartool, String opt, String arg) throws BadArgs {
                     ModuleResolution mres = ModuleResolution.empty();
                     if (jartool.moduleResolution.doNotResolveByDefault()) {
-                        mres.withDoNotResolveByDefault();
+                        mres = mres.withDoNotResolveByDefault();
                     }
                     if (arg.equals("deprecated")) {
                         jartool.moduleResolution = mres.withDeprecated();
