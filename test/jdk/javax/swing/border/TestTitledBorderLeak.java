@@ -42,7 +42,6 @@ public final class TestTitledBorderLeak {
         int dl = UIManager.getDefaults().getPropertyChangeListeners().length;
 
         Reference<TitledBorder> border = getTitleBorder();
-        Thread.sleep(3000);
         int attempt = 0;
         while (border.get() != null) {
             Util.generateOOME();
