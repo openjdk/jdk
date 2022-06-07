@@ -71,8 +71,6 @@ public:
   inline stackChunkOop parent() const;
   inline void set_parent(stackChunkOop value);
   template<typename P>
-  inline bool is_parent_null() const;
-  template<typename P>
   inline void set_parent_raw(oop value);
   template<DecoratorSet decorators>
   inline void set_parent_access(oop value);
