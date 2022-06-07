@@ -364,8 +364,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
             }
 
             if (((JComboBox)c).getBorder() instanceof EmptyBorder) {
-                if (arrowButton != null) {
-                    d.height += 4;
+               d.height += 4;
             } else {
                 if (arrowButton != null) {
                     Insets margin = arrowButton.getMargin();
