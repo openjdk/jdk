@@ -160,16 +160,28 @@ class AppImageBundler extends AbstractBundler {
             Path outputDirectory) throws PackagerException, IOException,
             ConfigException {
 
-        Path rootDirectory = createRoot(params, outputDirectory);
+        boolean hasAppImage =
+                PREDEFINED_APP_IMAGE.fetchFrom(params) != null;
+        boolean hasRuntimeImage =
+                PREDEFINED_RUNTIME_IMAGE.fetchFrom(params) != null;
+
+        Path rootDirectory = hasAppImage ?
+                PREDEFINED_APP_IMAGE.fetchFrom(params) :
+                createRoot(params, outputDirectory);
+
         AbstractAppImageBuilder appBuilder = appImageSupplier.apply(rootDirectory);
-        if (PREDEFINED_RUNTIME_IMAGE.fetchFrom(params) == null ) {
-            JLinkBundlerHelper.execute(params,
-                    appBuilder.getAppLayout().runtimeHomeDirectory());
-        } else {
-            StandardBundlerParam.copyPredefinedRuntimeImage(
-                    params, appBuilder.getAppLayout());
+        if (!hasAppImage) {
+            if (!hasRuntimeImage) {
+                JLinkBundlerHelper.execute(params,
+                        appBuilder.getAppLayout().runtimeHomeDirectory());
+            } else {
+                StandardBundlerParam.copyPredefinedRuntimeImage(
+                        params, appBuilder.getAppLayout());
+            }
         }
+
         appBuilder.prepareApplicationFiles(params);
+
         return rootDirectory;
     }
 

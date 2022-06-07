@@ -39,6 +39,7 @@ import java.io.PrintStream;
  * COMMENTS
  *     Ported from JVMDI.
  *
+ * @requires vm.continuations
  * @library /test/lib
  * @compile exception01a.jasm
  * @compile --enable-preview -source ${jdk.version} exception01.java
