@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -908,7 +908,7 @@ class MacroAssembler: public Assembler {
   void _verify_klass_ptr(Register reg, const char * msg, const char * file, int line) {}
 
   // Convenience method returning function entry. For the ELFv1 case
-  // creates function descriptor at the current address and returs
+  // creates function descriptor at the current address and returns
   // the pointer to it. For the ELFv2 case returns the current address.
   inline address function_entry();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,8 +83,8 @@ public class Bug8167273 {
     public static void testEraName() {
         Set<Locale> allLocales = Set.of(Locale.getAvailableLocales());
         Set<Locale> JpThlocales = Set.of(
-                new Locale("th", "TH"), Locale.forLanguageTag("th-Thai-TH"),
-                new Locale("ja", "JP", "JP"), new Locale("th", "TH", "TH")
+                Locale.of("th", "TH"), Locale.forLanguageTag("th-Thai-TH"),
+                Locale.of("ja", "JP", "JP"), Locale.of("th", "TH", "TH")
         );
         Set<Locale> allLocs = new HashSet<>(allLocales);
         // Removing Japanese and Thai Locales to check  Gregorian Calendar Locales

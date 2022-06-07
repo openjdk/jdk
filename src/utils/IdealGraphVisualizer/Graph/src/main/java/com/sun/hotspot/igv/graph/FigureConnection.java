@@ -149,11 +149,6 @@ public class FigureConnection implements Connection {
     }
 
     @Override
-    public boolean isAlwaysVisible() {
-        return false;
-    }
-
-    @Override
     public boolean hasSlots() {
         return true;
     }

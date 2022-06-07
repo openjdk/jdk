@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -1141,21 +1141,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE, d MMMM, y G</pattern>
+							<datetimeSkeleton>GyMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>d MMMM, y G</pattern>
+							<datetimeSkeleton>GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>d MMM, y G</pattern>
+							<datetimeSkeleton>GyMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>d/M/y GGGGG</pattern>
+							<datetimeSkeleton>GGGGGyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -1589,21 +1593,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE, d MMMM, y</pattern>
+							<datetimeSkeleton>yMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>d MMMM, y</pattern>
+							<datetimeSkeleton>yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>d MMM, y</pattern>
+							<datetimeSkeleton>yMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>d/M/yy</pattern>
+							<datetimeSkeleton>yyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -1611,21 +1619,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<timeFormatLength type="full">
 						<timeFormat>
 							<pattern>h:mm:ss a zzzz</pattern>
+							<datetimeSkeleton>ahmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
 							<pattern>h:mm:ss a z</pattern>
+							<datetimeSkeleton>ahmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
 							<pattern>h:mm:ss a</pattern>
+							<datetimeSkeleton>ahmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
 							<pattern>h:mm a</pattern>
+							<datetimeSkeleton>ahmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
@@ -5262,7 +5274,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">𑄎𑄧𑄢𑄴𑄎𑄨𑄠𑄚𑄴 𑄣𑄢𑄨</displayName>
 				<symbol>GEL</symbol>
 				<symbol alt="narrow">₾</symbol>
-				<symbol alt="variant">₾</symbol>
 			</currency>
 			<currency type="GHC">
 				<displayName>𑄊𑄚 𑄥𑄬𑄓𑄨 (𑄷𑄿𑄽𑄿-𑄸𑄶𑄶𑄽)</displayName>

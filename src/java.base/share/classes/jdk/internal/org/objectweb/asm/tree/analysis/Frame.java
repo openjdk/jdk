@@ -325,7 +325,7 @@ public class Frame<V extends Value> {
         V value2;
         V value3;
         V value4;
-        int var;
+        int varIndex;
 
         switch (insn.getOpcode()) {
             case Opcodes.NOP:
@@ -363,15 +363,15 @@ public class Frame<V extends Value> {
             case Opcodes.DSTORE:
             case Opcodes.ASTORE:
                 value1 = interpreter.copyOperation(insn, pop());
-                var = ((VarInsnNode) insn).var;
-                setLocal(var, value1);
+                varIndex = ((VarInsnNode) insn).var;
+                setLocal(varIndex, value1);
                 if (value1.getSize() == 2) {
-                    setLocal(var + 1, interpreter.newEmptyValue(var + 1));
+                    setLocal(varIndex + 1, interpreter.newEmptyValue(varIndex + 1));
                 }
-                if (var > 0) {
-                    Value local = getLocal(var - 1);
+                if (varIndex > 0) {
+                    Value local = getLocal(varIndex - 1);
                     if (local != null && local.getSize() == 2) {
-                        setLocal(var - 1, interpreter.newEmptyValue(var - 1));
+                        setLocal(varIndex - 1, interpreter.newEmptyValue(varIndex - 1));
                     }
                 }
                 break;
@@ -559,8 +559,8 @@ public class Frame<V extends Value> {
                 push(interpreter.unaryOperation(insn, pop()));
                 break;
             case Opcodes.IINC:
-                var = ((IincInsnNode) insn).var;
-                setLocal(var, interpreter.unaryOperation(insn, getLocal(var)));
+                varIndex = ((IincInsnNode) insn).var;
+                setLocal(varIndex, interpreter.unaryOperation(insn, getLocal(varIndex)));
                 break;
             case Opcodes.I2L:
             case Opcodes.I2F:

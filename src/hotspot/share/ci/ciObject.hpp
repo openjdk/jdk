@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,10 +159,6 @@ public:
   ciTypeArray* as_type_array() {
     assert(is_type_array(), "bad cast");
     return (ciTypeArray*)this;
-  }
-  ciNativeEntryPoint* as_native_entry_point() {
-    assert(is_native_entry_point(), "bad cast");
-    return (ciNativeEntryPoint*)this;
   }
 
   // Print debugging output about this ciObject.

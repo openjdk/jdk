@@ -43,6 +43,7 @@ enum KlassKind {
   InstanceRefKlassKind,
   InstanceMirrorKlassKind,
   InstanceClassLoaderKlassKind,
+  InstanceStackChunkKlassKind,
   TypeArrayKlassKind,
   ObjArrayKlassKind
 };
@@ -617,13 +618,14 @@ protected:
  public:
   #endif
 
-  bool is_instance_klass()              const { return assert_same_query(_kind <= InstanceClassLoaderKlassKind, is_instance_klass_slow()); }
+  bool is_instance_klass()              const { return assert_same_query(_kind <= InstanceStackChunkKlassKind, is_instance_klass_slow()); }
   // Other is anything that is not one of the more specialized kinds of InstanceKlass.
   bool is_other_instance_klass()        const { return _kind == InstanceKlassKind; }
   bool is_reference_instance_klass()    const { return _kind == InstanceRefKlassKind; }
   bool is_mirror_instance_klass()       const { return _kind == InstanceMirrorKlassKind; }
   bool is_class_loader_instance_klass() const { return _kind == InstanceClassLoaderKlassKind; }
   bool is_array_klass()                 const { return assert_same_query( _kind >= TypeArrayKlassKind, is_array_klass_slow()); }
+  bool is_stack_chunk_instance_klass()  const { return _kind == InstanceStackChunkKlassKind; }
   bool is_objArray_klass()              const { return assert_same_query( _kind == ObjArrayKlassKind,  is_objArray_klass_slow()); }
   bool is_typeArray_klass()             const { return assert_same_query( _kind == TypeArrayKlassKind, is_typeArray_klass_slow()); }
   #undef assert_same_query

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,11 +158,11 @@ public class JTreeTable extends JTable {
     }
 
     /**
-     * This is overriden to invoke supers implementation, and then,
+     * This is overridden to invoke supers implementation, and then,
      * if the receiver is editing a Tree column, the editors bounds is
      * reset. The reason we have to do this is because JTable doesn't
      * think the table is being edited, as <code>getEditingRow</code> returns
-     * -1, and therefore doesn't automaticly resize the editor for us.
+     * -1, and therefore doesn't automatically resize the editor for us.
      */
     public void sizeColumnsToFit(int resizingColumn) {
         super.sizeColumnsToFit(resizingColumn);
@@ -194,7 +194,7 @@ public class JTreeTable extends JTable {
     }
 
     /**
-     * Overriden to invoke repaint for the particular location if
+     * Overridden to invoke repaint for the particular location if
      * the column contains the tree. This is done as the tree editor does
      * not fill the bounds of the cell, we need the renderer to paint
      * the tree in the background, and then draw the editor over it.
@@ -353,7 +353,7 @@ public class JTreeTable extends JTable {
      * to perform the actual editing.
      * <p>To support editing of the tree column we can not make the tree
      * editable. The reason this doesn't work is that you can not use
-     * the same component for editing and renderering. The table may have
+     * the same component for editing and rendering. The table may have
      * the need to paint cells, while a cell is being edited. If the same
      * component were used for the rendering and editing the component would
      * be moved around, and the contents would change. When editing, this
@@ -381,7 +381,7 @@ public class JTreeTable extends JTable {
      * an instance of DefaultTreeCellRenderer. If you need custom
      * TreeCellRenderers, that don't descend from DefaultTreeCellRenderer,
      * and you want to support editing in JTreeTable, you will have
-     * to do something similiar.
+     * to do something similar.
      */
     public class TreeTableCellEditor extends DefaultCellEditor {
         public TreeTableCellEditor() {
@@ -389,9 +389,9 @@ public class JTreeTable extends JTable {
         }
 
         /**
-         * Overriden to determine an offset that tree would place the
+         * Overridden to determine an offset that tree would place the
          * editor at. The offset is determined from the
-         * <code>getRowBounds</code> JTree method, and additionaly
+         * <code>getRowBounds</code> JTree method, and additionally
          * from the icon DefaultTreeCellRenderer will use.
          * <p>The offset is then set on the TreeTableTextField component
          * created in the constructor, and returned.
@@ -428,7 +428,7 @@ public class JTreeTable extends JTable {
         }
 
         /**
-         * This is overriden to forward the event to the tree. This will
+         * This is overridden to forward the event to the tree. This will
          * return true if the click count >= 3, or the event is null.
          */
         public boolean isCellEditable(EventObject e) {

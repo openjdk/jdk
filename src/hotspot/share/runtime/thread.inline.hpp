@@ -28,12 +28,14 @@
 
 #include "runtime/thread.hpp"
 
-#include "classfile/vmClasses.hpp"
+#include "classfile/javaClasses.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "memory/universe.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/continuation.hpp"
+#include "runtime/continuationEntry.inline.hpp"
 #include "runtime/nonJavaThread.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/safepoint.hpp"
@@ -125,6 +127,15 @@ inline void JavaThread::set_obj_deopt_flag() {
 inline void JavaThread::clear_obj_deopt_flag() {
   clear_suspend_flag(_obj_deopt);
 }
+
+#if INCLUDE_JVMTI
+inline void JavaThread::set_carrier_thread_suspended() {
+  _carrier_thread_suspended = true;
+}
+inline void JavaThread::clear_carrier_thread_suspended() {
+  _carrier_thread_suspended = false;
+}
+#endif
 
 class AsyncExceptionHandshake : public AsyncHandshakeClosure {
   OopHandle _exception;
@@ -221,6 +232,18 @@ void JavaThread::set_safepoint_state(ThreadSafepointState *state) {
 
 bool JavaThread::is_at_poll_safepoint() {
   return _safepoint_state->is_at_poll_safepoint();
+}
+
+bool JavaThread::is_vthread_mounted() const {
+  return vthread_continuation() != nullptr;
+}
+
+const ContinuationEntry* JavaThread::vthread_continuation() const {
+  for (ContinuationEntry* c = last_continuation(); c != nullptr; c = c->parent()) {
+    if (c->is_virtual_thread())
+      return c;
+  }
+  return nullptr;
 }
 
 void JavaThread::enter_critical() {

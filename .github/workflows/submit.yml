@@ -10,7 +10,7 @@ on:
       platforms:
         description: "Platform(s) to execute on"
         required: true
-        default: "Linux additional (hotspot only), Linux x64, Linux x86, Windows aarch64, Windows x64, macOS x64"
+        default: "Linux additional (hotspot only), Linux x64, Linux x86, Windows aarch64, Windows x64, macOS x64, macOS aarch64"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -56,7 +56,7 @@ jobs:
         if: steps.check_submit.outputs.should_run != 'false'
 
       - name: Checkout the source
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           path: jdk
         if: steps.check_submit.outputs.should_run != 'false'
@@ -78,7 +78,10 @@ jobs:
           FEATURE=${{ fromJson(steps.check_deps.outputs.dependencies).DEFAULT_VERSION_FEATURE }}
           INTERIM=${{ fromJson(steps.check_deps.outputs.dependencies).DEFAULT_VERSION_INTERIM }}
           UPDATE=${{ fromJson(steps.check_deps.outputs.dependencies).DEFAULT_VERSION_UPDATE }}
-          if [ "x${UPDATE}" != "x0" ]; then
+          PATCH=${{ fromJson(steps.check_deps.outputs.dependencies).DEFAULT_VERSION_PATCH }}
+          if [ "x${PATCH}" != "x0" ]; then
+             V=${FEATURE}.${INTERIM}.${UPDATE}.${PATCH}
+          elif [ "x${UPDATE}" != "x0" ]; then
              V=${FEATURE}.${INTERIM}.${UPDATE}
           elif [ "x${INTERIM}" != "x0" ]; then
              V={FEATURE}.${INTERIM}
@@ -94,14 +97,14 @@ jobs:
 
       - name: Check if a jtreg image is present in the cache
         id: jtreg
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/jtreg/
           key: jtreg-${{ env.JTREG_REF }}-v1
         if: steps.check_submit.outputs.should_run != 'false'
 
       - name: Checkout the jtreg source
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: "openjdk/jtreg"
           ref: ${{ env.JTREG_REF }}
@@ -119,7 +122,7 @@ jobs:
         if: steps.check_submit.outputs.should_run != 'false' && steps.jtreg.outputs.cache-hit != 'true'
 
       - name: Store jtreg for use by later steps
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: transient_jtreg_${{ steps.check_bundle_id.outputs.bundle_id }}
           path: ~/jtreg/
@@ -151,13 +154,13 @@ jobs:
 
     steps:
       - name: Checkout the source
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           path: jdk
 
       - name: Restore boot JDK from cache
         id: bootjdk
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/bootjdk/${{ env.BOOT_JDK_VERSION }}
           key: bootjdk-${{ runner.os }}-${{ env.BOOT_JDK_VERSION }}-${{ env.BOOT_JDK_SHA256 }}-v1
@@ -173,21 +176,21 @@ jobs:
 
       - name: Restore jtreg artifact
         id: jtreg_restore
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jtreg/
         continue-on-error: true
 
       - name: Restore jtreg artifact (retry)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jtreg/
         if: steps.jtreg_restore.outcome == 'failure'
 
       - name: Checkout gtest sources
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: "google/googletest"
           ref: "release-${{ fromJson(needs.prerequisites.outputs.dependencies).GTEST_VERSION }}"
@@ -218,7 +221,7 @@ jobs:
         working-directory: jdk
 
       - name: Persist test bundles
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: transient_jdk-linux-x64${{ matrix.artifact }}_${{ needs.prerequisites.outputs.bundle_id }}
           path: |
@@ -279,11 +282,11 @@ jobs:
 
     steps:
       - name: Checkout the source
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Restore boot JDK from cache
         id: bootjdk
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/bootjdk/${{ env.BOOT_JDK_VERSION }}
           key: bootjdk-${{ runner.os }}-${{ env.BOOT_JDK_VERSION }}-${{ env.BOOT_JDK_SHA256 }}-v1
@@ -299,14 +302,14 @@ jobs:
 
       - name: Restore jtreg artifact
         id: jtreg_restore
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jtreg/
         continue-on-error: true
 
       - name: Restore jtreg artifact (retry)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jtreg/
@@ -314,14 +317,14 @@ jobs:
 
       - name: Restore build artifacts
         id: build_restore
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jdk-linux-x64${{ matrix.artifact }}_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jdk-linux-x64${{ matrix.artifact }}
         continue-on-error: true
 
       - name: Restore build artifacts (retry)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jdk-linux-x64${{ matrix.artifact }}_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jdk-linux-x64${{ matrix.artifact }}
@@ -343,6 +346,7 @@ jobs:
           echo "imageroot=`dirname ${imageroot}`" >> $GITHUB_ENV
 
       - name: Run tests
+        id: run_tests
         run: >
           JDK_IMAGE_DIR=${{ env.imageroot }}
           TEST_IMAGE_DIR=${HOME}/jdk-linux-x64${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal_linux-x64_bin-tests${{ matrix.artifact }}
@@ -357,14 +361,102 @@ jobs:
           JTREG_KEYWORDS="!headful"
           JTREG="JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash"
 
-      - name: Check that all tests executed successfully
-        if: always()
-        run: >
-          if ! grep --include=test-summary.txt -lqr build/*/test-results -e "TEST SUCCESS" ; then
-            cat build/*/test-results/*/text/newfailures.txt ;
-            cat build/*/test-results/*/text/other_errors.txt ;
-            exit 1 ;
+      - name: Generate test failure summary
+        run: |
+          #
+          test_suite_name=$(cat build/run-test-prebuilt/test-support/test-last-ids.txt)
+          results_dir=build/run-test-prebuilt/test-results/$test_suite_name/text
+
+          failures=$(sed -e 's!\(.*\)\.java!\1!' -e '/^#/d' $results_dir/newfailures.txt || true)
+          errors=$(sed -e 's!\(.*\)\.java!\1!' -e '/^#/d' $results_dir/other_errors.txt || true)
+          failure_count=$(echo $failures | wc -w || true)
+          error_count=$(echo $errors | wc -w || true)
+
+          if [[ "$failures" = "" && "$errors" = "" ]]; then
+            # If we have nothing to report, exit this step now
+            exit 0
           fi
+
+          echo "::error:: Test run reported $failure_count test failure(s) and $error_count error(s). See summary for details."
+
+          echo "### :boom: Test failures summary" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "$failures" != "" ]]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "These tests reported failure:" >> $GITHUB_STEP_SUMMARY
+            for test in $failures; do
+              anchor="$(echo "$test" | tr [A-Z/] [a-z_])"
+              echo "* [$test](#user-content-$anchor)"
+            done >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [[ "$errors" != "" ]]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "These tests reported errors:"  >> $GITHUB_STEP_SUMMARY
+            for test in $errors; do
+              anchor="$(echo "$test" | tr [A-Z/] [a-z_])"
+              echo "* [$test](#user-content-$anchor)"
+            done >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Collect failed test output
+        run: |
+          #
+          # This is a separate step, since if the markdown from a step gets bigger than
+          # 1024 kB it is skipped, but then the summary above is still generated
+          test_suite_name=$(cat build/run-test-prebuilt/test-support/test-last-ids.txt)
+          results_dir=build/run-test-prebuilt/test-results/$test_suite_name/text
+          report_dir=build/run-test-prebuilt/test-support/$test_suite_name
+
+          failures=$(sed -e 's!\(.*\)\.java!\1!' -e '/^#/d' $results_dir/newfailures.txt || true)
+          errors=$(sed -e 's!\(.*\)\.java!\1!' -e '/^#/d' $results_dir/other_errors.txt || true)
+
+          if [[ "$failures" = "" && "$errors" = "" ]]; then
+            # If we have nothing to report, exit this step now
+            exit 0
+          fi
+
+          echo "### Test output for failed tests" >> $GITHUB_STEP_SUMMARY
+          for test in $failures $errors; do
+            anchor="$(echo "$test" | tr [A-Z/] [a-z_])"
+            base_path="$(echo "$test" | tr '#' '_')"
+            report_file="$report_dir/$base_path.jtr"
+            hs_err_files="$report_dir/$base_path/hs_err*.log"
+            echo "####  <a id="$anchor">$test"
+
+            echo "<details><summary>View test results</summary>"
+            echo ""
+            echo '```'
+            if [[ -f "$report_file" ]]; then
+              cat "$report_file"
+            else
+              echo "Error: Result file $report_file not found"
+            fi
+            echo '```'
+            echo "</details>"
+            echo ""
+
+            if [[ "$hs_err_files" != "" ]]; then
+              echo "<details><summary>View HotSpot error log</summary>"
+              echo ""
+              for hs_err in $hs_err_files; do
+                echo '```'
+                echo "$hs_err:"
+                echo ""
+                cat "$hs_err"
+                echo '```'
+              done
+
+              echo "</details>"
+              echo ""
+            fi
+
+          done >> $GITHUB_STEP_SUMMARY
+
+          echo ":arrow_right: To see the entire test log, click the job in the list to the left"  >> $GITHUB_STEP_SUMMARY
+
+          # This will abort the entire job in GHA, which is what we want
+          exit 1
 
       - name: Create suitable test log artifact name
         if: always()
@@ -393,14 +485,14 @@ jobs:
 
       - name: Persist test results
         if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           path: ~/linux-x64${{ matrix.artifact }}_testresults_${{ env.logsuffix }}.zip
         continue-on-error: true
 
       - name: Persist test outputs
         if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           path: ~/linux-x64${{ matrix.artifact }}_testsupport_${{ env.logsuffix }}.zip
         continue-on-error: true
@@ -461,13 +553,13 @@ jobs:
 
     steps:
       - name: Checkout the source
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           path: jdk
 
       - name: Restore boot JDK from cache
         id: bootjdk
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/bootjdk/${{ env.BOOT_JDK_VERSION }}
           key: bootjdk-${{ runner.os }}-${{ env.BOOT_JDK_VERSION }}-${{ env.BOOT_JDK_SHA256 }}-v1
@@ -483,14 +575,14 @@ jobs:
 
       - name: Restore build JDK
         id: build_restore
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jdk-linux-x64_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jdk-linux-x64
         continue-on-error: true
 
       - name: Restore build JDK (retry)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jdk-linux-x64_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jdk-linux-x64
@@ -521,7 +613,7 @@ jobs:
 
       - name: Cache sysroot
         id: cache-sysroot
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/sysroot-${{ matrix.debian-arch }}/
           key: sysroot-${{ matrix.debian-arch }}-${{ hashFiles('jdk/.github/workflows/submit.yml') }}
@@ -608,13 +700,13 @@ jobs:
 
     steps:
       - name: Checkout the source
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           path: jdk
 
       - name: Restore boot JDK from cache
         id: bootjdk
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/bootjdk/${{ env.BOOT_JDK_VERSION }}
           key: bootjdk-${{ runner.os }}-${{ env.BOOT_JDK_VERSION }}-${{ env.BOOT_JDK_SHA256 }}-v1
@@ -630,21 +722,21 @@ jobs:
 
       - name: Restore jtreg artifact
         id: jtreg_restore
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jtreg/
         continue-on-error: true
 
       - name: Restore jtreg artifact (retry)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jtreg/
         if: steps.jtreg_restore.outcome == 'failure'
 
       - name: Checkout gtest sources
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: "google/googletest"
           ref: "release-${{ fromJson(needs.prerequisites.outputs.dependencies).GTEST_VERSION }}"
@@ -682,7 +774,7 @@ jobs:
         working-directory: jdk
 
       - name: Persist test bundles
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: transient_jdk-linux-x86${{ matrix.artifact }}_${{ needs.prerequisites.outputs.bundle_id }}
           path: |
@@ -744,11 +836,11 @@ jobs:
 
     steps:
       - name: Checkout the source
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Restore boot JDK from cache
         id: bootjdk
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/bootjdk/${{ env.BOOT_JDK_VERSION }}
           key: bootjdk-${{ runner.os }}-${{ env.BOOT_JDK_VERSION }}-${{ env.BOOT_JDK_SHA256 }}-v1
@@ -764,14 +856,14 @@ jobs:
 
       - name: Restore jtreg artifact
         id: jtreg_restore
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jtreg/
         continue-on-error: true
 
       - name: Restore jtreg artifact (retry)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jtreg/
@@ -779,14 +871,14 @@ jobs:
 
       - name: Restore build artifacts
         id: build_restore
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jdk-linux-x86${{ matrix.artifact }}_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jdk-linux-x86${{ matrix.artifact }}
         continue-on-error: true
 
       - name: Restore build artifacts (retry)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jdk-linux-x86${{ matrix.artifact }}_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jdk-linux-x86${{ matrix.artifact }}
@@ -808,6 +900,7 @@ jobs:
           echo "imageroot=`dirname ${imageroot}`" >> $GITHUB_ENV
 
       - name: Run tests
+        id: run_tests
         run: >
           JDK_IMAGE_DIR=${{ env.imageroot }}
           TEST_IMAGE_DIR=${HOME}/jdk-linux-x86${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal_linux-x86_bin-tests${{ matrix.artifact }}
@@ -822,14 +915,102 @@ jobs:
           JTREG_KEYWORDS="!headful"
           JTREG="JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash"
 
-      - name: Check that all tests executed successfully
-        if: always()
-        run: >
-          if ! grep --include=test-summary.txt -lqr build/*/test-results -e "TEST SUCCESS" ; then
-            cat build/*/test-results/*/text/newfailures.txt ;
-            cat build/*/test-results/*/text/other_errors.txt ;
-            exit 1 ;
+      - name: Generate test failure summary
+        run: |
+          #
+          test_suite_name=$(cat build/run-test-prebuilt/test-support/test-last-ids.txt)
+          results_dir=build/run-test-prebuilt/test-results/$test_suite_name/text
+
+          failures=$(sed -e 's!\(.*\)\.java!\1!' -e '/^#/d' $results_dir/newfailures.txt || true)
+          errors=$(sed -e 's!\(.*\)\.java!\1!' -e '/^#/d' $results_dir/other_errors.txt || true)
+          failure_count=$(echo $failures | wc -w || true)
+          error_count=$(echo $errors | wc -w || true)
+
+          if [[ "$failures" = "" && "$errors" = "" ]]; then
+            # If we have nothing to report, exit this step now
+            exit 0
           fi
+
+          echo "::error:: Test run reported $failure_count test failure(s) and $error_count error(s). See summary for details."
+
+          echo "### :boom: Test failures summary" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "$failures" != "" ]]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "These tests reported failure:" >> $GITHUB_STEP_SUMMARY
+            for test in $failures; do
+              anchor="$(echo "$test" | tr [A-Z/] [a-z_])"
+              echo "* [$test](#user-content-$anchor)"
+            done >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [[ "$errors" != "" ]]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "These tests reported errors:"  >> $GITHUB_STEP_SUMMARY
+            for test in $errors; do
+              anchor="$(echo "$test" | tr [A-Z/] [a-z_])"
+              echo "* [$test](#user-content-$anchor)"
+            done >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Collect failed test output
+        run: |
+          #
+          # This is a separate step, since if the markdown from a step gets bigger than
+          # 1024 kB it is skipped, but then the summary above is still generated
+          test_suite_name=$(cat build/run-test-prebuilt/test-support/test-last-ids.txt)
+          results_dir=build/run-test-prebuilt/test-results/$test_suite_name/text
+          report_dir=build/run-test-prebuilt/test-support/$test_suite_name
+
+          failures=$(sed -e 's!\(.*\)\.java!\1!' -e '/^#/d' $results_dir/newfailures.txt || true)
+          errors=$(sed -e 's!\(.*\)\.java!\1!' -e '/^#/d' $results_dir/other_errors.txt || true)
+
+          if [[ "$failures" = "" && "$errors" = "" ]]; then
+            # If we have nothing to report, exit this step now
+            exit 0
+          fi
+
+          echo "### Test output for failed tests" >> $GITHUB_STEP_SUMMARY
+          for test in $failures $errors; do
+            anchor="$(echo "$test" | tr [A-Z/] [a-z_])"
+            base_path="$(echo "$test" | tr '#' '_')"
+            report_file="$report_dir/$base_path.jtr"
+            hs_err_files="$report_dir/$base_path/hs_err*.log"
+            echo "####  <a id="$anchor">$test"
+
+            echo "<details><summary>View test results</summary>"
+            echo ""
+            echo '```'
+            if [[ -f "$report_file" ]]; then
+              cat "$report_file"
+            else
+              echo "Error: Result file $report_file not found"
+            fi
+            echo '```'
+            echo "</details>"
+            echo ""
+
+            if [[ "$hs_err_files" != "" ]]; then
+              echo "<details><summary>View HotSpot error log</summary>"
+              echo ""
+              for hs_err in $hs_err_files; do
+                echo '```'
+                echo "$hs_err:"
+                echo ""
+                cat "$hs_err"
+                echo '```'
+              done
+
+              echo "</details>"
+              echo ""
+            fi
+
+          done >> $GITHUB_STEP_SUMMARY
+
+          echo ":arrow_right: To see the entire test log, click the job in the list to the left"  >> $GITHUB_STEP_SUMMARY
+
+          # This will abort the entire job in GHA, which is what we want
+          exit 1
 
       - name: Create suitable test log artifact name
         if: always()
@@ -858,14 +1039,14 @@ jobs:
 
       - name: Persist test results
         if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           path: ~/linux-x86${{ matrix.artifact }}_testresults_${{ env.logsuffix }}.zip
         continue-on-error: true
 
       - name: Persist test outputs
         if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           path: ~/linux-x86${{ matrix.artifact }}_testsupport_${{ env.logsuffix }}.zip
         continue-on-error: true
@@ -896,7 +1077,7 @@ jobs:
     steps:
       - name: Restore cygwin installer from cache
         id: cygwin-installer
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/cygwin/setup-x86_64.exe
           key: cygwin-installer
@@ -909,23 +1090,23 @@ jobs:
 
       - name: Restore cygwin packages from cache
         id: cygwin
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/cygwin/packages
           key: cygwin-packages-${{ runner.os }}-v1
 
       - name: Install cygwin
         run: |
-          Start-Process -FilePath "$HOME\cygwin\setup-x86_64.exe" -ArgumentList "--quiet-mode --packages cygwin=3.2.0-1,autoconf,make,zip,unzip --root $HOME\cygwin\cygwin64 --local-package-dir $HOME\cygwin\packages --site http://mirrors.kernel.org/sourceware/cygwin --no-desktop --no-shortcuts --no-startmenu --no-admin" -Wait -NoNewWindow
+          Start-Process -FilePath "$HOME\cygwin\setup-x86_64.exe" -ArgumentList "--quiet-mode --packages cygwin=3.3.5-1,autoconf,make,zip,unzip --root $HOME\cygwin\cygwin64 --local-package-dir $HOME\cygwin\packages --site http://mirrors.kernel.org/sourceware/cygwin --no-desktop --no-shortcuts --no-startmenu --no-admin" -Wait -NoNewWindow
 
       - name: Checkout the source
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           path: jdk
 
       - name: Restore boot JDK from cache
         id: bootjdk
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/bootjdk/${{ env.BOOT_JDK_VERSION }}
           key: bootjdk-${{ runner.os }}-${{ env.BOOT_JDK_VERSION }}-${{ env.BOOT_JDK_SHA256 }}-v1
@@ -995,7 +1176,7 @@ jobs:
     steps:
       - name: Restore cygwin installer from cache
         id: cygwin-installer
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/cygwin/setup-x86_64.exe
           key: cygwin-installer
@@ -1008,23 +1189,23 @@ jobs:
 
       - name: Restore cygwin packages from cache
         id: cygwin
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/cygwin/packages
           key: cygwin-packages-${{ runner.os }}-v1
 
       - name: Install cygwin
         run: |
-          Start-Process -FilePath "$HOME\cygwin\setup-x86_64.exe" -ArgumentList "--quiet-mode --packages cygwin=3.2.0-1,autoconf,make,zip,unzip --root $HOME\cygwin\cygwin64 --local-package-dir $HOME\cygwin\packages --site http://mirrors.kernel.org/sourceware/cygwin --no-desktop --no-shortcuts --no-startmenu --no-admin" -Wait -NoNewWindow
+          Start-Process -FilePath "$HOME\cygwin\setup-x86_64.exe" -ArgumentList "--quiet-mode --packages cygwin=3.3.5-1,autoconf,make,zip,unzip --root $HOME\cygwin\cygwin64 --local-package-dir $HOME\cygwin\packages --site http://mirrors.kernel.org/sourceware/cygwin --no-desktop --no-shortcuts --no-startmenu --no-admin" -Wait -NoNewWindow
 
       - name: Checkout the source
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           path: jdk
 
       - name: Restore boot JDK from cache
         id: bootjdk
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/bootjdk/${{ env.BOOT_JDK_VERSION }}
           key: bootjdk-${{ runner.os }}-${{ env.BOOT_JDK_VERSION }}-${{ env.BOOT_JDK_SHA256 }}-v1
@@ -1040,7 +1221,7 @@ jobs:
         if: steps.bootjdk.outputs.cache-hit != 'true'
 
       - name: Checkout gtest sources
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: "google/googletest"
           ref: "release-${{ fromJson(needs.prerequisites.outputs.dependencies).GTEST_VERSION }}"
@@ -1048,14 +1229,14 @@ jobs:
 
       - name: Restore jtreg artifact
         id: jtreg_restore
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jtreg/
         continue-on-error: true
 
       - name: Restore jtreg artifact (retry)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jtreg/
@@ -1094,7 +1275,7 @@ jobs:
         working-directory: jdk
 
       - name: Persist test bundles
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: transient_jdk-windows-x64${{ matrix.artifact }}_${{ needs.prerequisites.outputs.bundle_id }}
           path: |
@@ -1156,11 +1337,11 @@ jobs:
 
     steps:
       - name: Checkout the source
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Restore boot JDK from cache
         id: bootjdk
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/bootjdk/${{ env.BOOT_JDK_VERSION }}
           key: bootjdk-${{ runner.os }}-${{ env.BOOT_JDK_VERSION }}-${{ env.BOOT_JDK_SHA256 }}-v1
@@ -1177,7 +1358,7 @@ jobs:
 
       - name: Restore cygwin installer from cache
         id: cygwin-installer
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/cygwin/setup-x86_64.exe
           key: cygwin-installer
@@ -1190,25 +1371,25 @@ jobs:
 
       - name: Restore cygwin packages from cache
         id: cygwin
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/cygwin/packages
           key: cygwin-packages-${{ runner.os }}-v1
 
       - name: Install cygwin
         run: |
-          Start-Process -FilePath "$HOME\cygwin\setup-x86_64.exe" -ArgumentList "--quiet-mode --packages cygwin=3.2.0-1,autoconf,make,zip,unzip --root $HOME\cygwin\cygwin64 --local-package-dir $HOME\cygwin\packages --site http://mirrors.kernel.org/sourceware/cygwin --no-desktop --no-shortcuts --no-startmenu --no-admin" -Wait -NoNewWindow
+          Start-Process -FilePath "$HOME\cygwin\setup-x86_64.exe" -ArgumentList "--quiet-mode --packages cygwin=3.3.5-1,autoconf,make,zip,unzip --root $HOME\cygwin\cygwin64 --local-package-dir $HOME\cygwin\packages --site http://mirrors.kernel.org/sourceware/cygwin --no-desktop --no-shortcuts --no-startmenu --no-admin" -Wait -NoNewWindow
 
       - name: Restore jtreg artifact
         id: jtreg_restore
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jtreg/
         continue-on-error: true
 
       - name: Restore jtreg artifact (retry)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jtreg/
@@ -1216,14 +1397,14 @@ jobs:
 
       - name: Restore build artifacts
         id: build_restore
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jdk-windows-x64${{ matrix.artifact }}_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jdk-windows-x64${{ matrix.artifact }}
         continue-on-error: true
 
       - name: Restore build artifacts (retry)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jdk-windows-x64${{ matrix.artifact }}_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jdk-windows-x64${{ matrix.artifact }}
@@ -1248,6 +1429,7 @@ jobs:
         run: echo ("imageroot=" + (Get-ChildItem -Path $HOME/jdk-windows-x64${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal_windows-x64_bin${{ matrix.artifact }} -Filter release -Recurse -ErrorAction SilentlyContinue -Force).DirectoryName) | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
 
       - name: Run tests
+        id: run_tests
         run: >
           $env:Path = "$HOME\cygwin\cygwin64\bin;$HOME\cygwin\cygwin64\bin;$env:Path" ;
           $env:Path = $env:Path -split ";" -match "C:\\Windows|PowerShell|cygwin" -join ";" ;
@@ -1266,7 +1448,7 @@ jobs:
           JTREG="JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash"
 
       - name: Check that all tests executed successfully
-        if: always()
+        if: steps.run_tests.outcome != 'skipped'
         run: >
           if ((Get-ChildItem -Path build\*\test-results\test-summary.txt -Recurse | Select-String -Pattern "TEST SUCCESS" ).Count -eq 0) {
             Get-Content -Path build\*\test-results\*\*\newfailures.txt ;
@@ -1303,14 +1485,14 @@ jobs:
 
       - name: Persist test results
         if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           path: ~/windows-x64${{ matrix.artifact }}_testresults_${{ env.logsuffix }}.zip
         continue-on-error: true
 
       - name: Persist test outputs
         if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           path: ~/windows-x64${{ matrix.artifact }}_testsupport_${{ env.logsuffix }}.zip
         continue-on-error: true
@@ -1342,13 +1524,13 @@ jobs:
 
     steps:
       - name: Checkout the source
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           path: jdk
 
       - name: Restore boot JDK from cache
         id: bootjdk
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/bootjdk/${{ env.BOOT_JDK_VERSION }}
           key: bootjdk-${{ runner.os }}-${{ env.BOOT_JDK_VERSION }}-${{ env.BOOT_JDK_SHA256 }}-v1
@@ -1364,21 +1546,21 @@ jobs:
 
       - name: Restore jtreg artifact
         id: jtreg_restore
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jtreg/
         continue-on-error: true
 
       - name: Restore jtreg artifact (retry)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jtreg/
         if: steps.jtreg_restore.outcome == 'failure'
 
       - name: Checkout gtest sources
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: "google/googletest"
           ref: "release-${{ fromJson(needs.prerequisites.outputs.dependencies).GTEST_VERSION }}"
@@ -1409,7 +1591,7 @@ jobs:
         working-directory: jdk
 
       - name: Persist test bundles
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: transient_jdk-macos-x64${{ matrix.artifact }}_${{ needs.prerequisites.outputs.bundle_id }}
           path: |
@@ -1443,13 +1625,13 @@ jobs:
 
     steps:
       - name: Checkout the source
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           path: jdk
 
       - name: Restore boot JDK from cache
         id: bootjdk
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/bootjdk/${{ env.BOOT_JDK_VERSION }}
           key: bootjdk-${{ runner.os }}-${{ env.BOOT_JDK_VERSION }}-${{ env.BOOT_JDK_SHA256 }}-v1
@@ -1465,21 +1647,21 @@ jobs:
 
       - name: Restore jtreg artifact
         id: jtreg_restore
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jtreg/
         continue-on-error: true
 
       - name: Restore jtreg artifact (retry)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jtreg/
         if: steps.jtreg_restore.outcome == 'failure'
 
       - name: Checkout gtest sources
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: "google/googletest"
           ref: "release-${{ fromJson(needs.prerequisites.outputs.dependencies).GTEST_VERSION }}"
@@ -1511,7 +1693,7 @@ jobs:
         working-directory: jdk
 
       - name: Persist test bundles
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: transient_jdk-macos-aarch64${{ matrix.artifact }}_${{ needs.prerequisites.outputs.bundle_id }}
           path: |
@@ -1573,11 +1755,11 @@ jobs:
 
     steps:
       - name: Checkout the source
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Restore boot JDK from cache
         id: bootjdk
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/bootjdk/${{ env.BOOT_JDK_VERSION }}
           key: bootjdk-${{ runner.os }}-${{ env.BOOT_JDK_VERSION }}-${{ env.BOOT_JDK_SHA256 }}-v1
@@ -1593,14 +1775,14 @@ jobs:
 
       - name: Restore jtreg artifact
         id: jtreg_restore
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jtreg/
         continue-on-error: true
 
       - name: Restore jtreg artifact (retry)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jtreg_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jtreg/
@@ -1608,14 +1790,14 @@ jobs:
 
       - name: Restore build artifacts
         id: build_restore
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jdk-macos-x64${{ matrix.artifact }}_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jdk-macos-x64${{ matrix.artifact }}
         continue-on-error: true
 
       - name: Restore build artifacts (retry)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: transient_jdk-macos-x64${{ matrix.artifact }}_${{ needs.prerequisites.outputs.bundle_id }}
           path: ~/jdk-macos-x64${{ matrix.artifact }}
@@ -1643,6 +1825,7 @@ jobs:
           echo "imageroot=`dirname ${imageroot}`" >> $GITHUB_ENV
 
       - name: Run tests
+        id: run_tests
         run: >
           JDK_IMAGE_DIR=${{ env.imageroot }}
           TEST_IMAGE_DIR=${HOME}/jdk-macos-x64${{ matrix.artifact }}/jdk-${{ env.JDK_VERSION }}-internal_macos-x64_bin-tests${{ matrix.artifact }}
@@ -1657,14 +1840,102 @@ jobs:
           JTREG_KEYWORDS="!headful"
           JTREG="JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash"
 
-      - name: Check that all tests executed successfully
-        if: always()
-        run: >
-          if ! grep --include=test-summary.txt -lqr build/*/test-results -e "TEST SUCCESS" ; then
-            cat build/*/test-results/*/text/newfailures.txt ;
-            cat build/*/test-results/*/text/other_errors.txt ;
-            exit 1 ;
+      - name: Generate test failure summary
+        run: |
+          #
+          test_suite_name=$(cat build/run-test-prebuilt/test-support/test-last-ids.txt)
+          results_dir=build/run-test-prebuilt/test-results/$test_suite_name/text
+
+          failures=$(sed -e 's!\(.*\)\.java!\1!' -e '/^#/d' $results_dir/newfailures.txt || true)
+          errors=$(sed -e 's!\(.*\)\.java!\1!' -e '/^#/d' $results_dir/other_errors.txt || true)
+          failure_count=$(echo $failures | wc -w || true)
+          error_count=$(echo $errors | wc -w || true)
+
+          if [[ "$failures" = "" && "$errors" = "" ]]; then
+            # If we have nothing to report, exit this step now
+            exit 0
           fi
+
+          echo "::error:: Test run reported $failure_count test failure(s) and $error_count error(s). See summary for details."
+
+          echo "### :boom: Test failures summary" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "$failures" != "" ]]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "These tests reported failure:" >> $GITHUB_STEP_SUMMARY
+            for test in $failures; do
+              anchor="$(echo "$test" | tr [A-Z/] [a-z_])"
+              echo "* [$test](#user-content-$anchor)"
+            done >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [[ "$errors" != "" ]]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "These tests reported errors:"  >> $GITHUB_STEP_SUMMARY
+            for test in $errors; do
+              anchor="$(echo "$test" | tr [A-Z/] [a-z_])"
+              echo "* [$test](#user-content-$anchor)"
+            done >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Collect failed test output
+        run: |
+          #
+          # This is a separate step, since if the markdown from a step gets bigger than
+          # 1024 kB it is skipped, but then the summary above is still generated
+          test_suite_name=$(cat build/run-test-prebuilt/test-support/test-last-ids.txt)
+          results_dir=build/run-test-prebuilt/test-results/$test_suite_name/text
+          report_dir=build/run-test-prebuilt/test-support/$test_suite_name
+
+          failures=$(sed -e 's!\(.*\)\.java!\1!' -e '/^#/d' $results_dir/newfailures.txt || true)
+          errors=$(sed -e 's!\(.*\)\.java!\1!' -e '/^#/d' $results_dir/other_errors.txt || true)
+
+          if [[ "$failures" = "" && "$errors" = "" ]]; then
+            # If we have nothing to report, exit this step now
+            exit 0
+          fi
+
+          echo "### Test output for failed tests" >> $GITHUB_STEP_SUMMARY
+          for test in $failures $errors; do
+            anchor="$(echo "$test" | tr [A-Z/] [a-z_])"
+            base_path="$(echo "$test" | tr '#' '_')"
+            report_file="$report_dir/$base_path.jtr"
+            hs_err_files="$report_dir/$base_path/hs_err*.log"
+            echo "####  <a id="$anchor">$test"
+
+            echo "<details><summary>View test results</summary>"
+            echo ""
+            echo '```'
+            if [[ -f "$report_file" ]]; then
+              cat "$report_file"
+            else
+              echo "Error: Result file $report_file not found"
+            fi
+            echo '```'
+            echo "</details>"
+            echo ""
+
+            if [[ "$hs_err_files" != "" ]]; then
+              echo "<details><summary>View HotSpot error log</summary>"
+              echo ""
+              for hs_err in $hs_err_files; do
+                echo '```'
+                echo "$hs_err:"
+                echo ""
+                cat "$hs_err"
+                echo '```'
+              done
+
+              echo "</details>"
+              echo ""
+            fi
+
+          done >> $GITHUB_STEP_SUMMARY
+
+          echo ":arrow_right: To see the entire test log, click the job in the list to the left"  >> $GITHUB_STEP_SUMMARY
+
+          # This will abort the entire job in GHA, which is what we want
+          exit 1
 
       - name: Create suitable test log artifact name
         if: always()
@@ -1693,14 +1964,14 @@ jobs:
 
       - name: Persist test results
         if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           path: ~/macos-x64${{ matrix.artifact }}_testresults_${{ env.logsuffix }}.zip
         continue-on-error: true
 
       - name: Persist test outputs
         if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           path: ~/macos-x64${{ matrix.artifact }}_testsupport_${{ env.logsuffix }}.zip
         continue-on-error: true
@@ -1723,7 +1994,7 @@ jobs:
     steps:
       - name: Determine current artifacts endpoint
         id: actions_runtime
-        uses: actions/github-script@v3
+        uses: actions/github-script@v6
         with:
           script: "return { url: process.env['ACTIONS_RUNTIME_URL'], token: process.env['ACTIONS_RUNTIME_TOKEN'] }"
 
@@ -1746,7 +2017,7 @@ jobs:
           done
 
       - name: Fetch remaining artifacts (test results)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           path: test-results
 
@@ -1763,7 +2034,7 @@ jobs:
           done
 
       - name: Upload a combined test results artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: test-results_${{ needs.prerequisites.outputs.bundle_id }}
           path: test-results

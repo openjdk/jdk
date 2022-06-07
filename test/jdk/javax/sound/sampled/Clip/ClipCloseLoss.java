@@ -33,6 +33,7 @@ import javax.sound.sampled.Mixer;
 
 /**
  * @test
+ * @key sound
  * @bug 4946913 8178403
  * @summary DirectClip doesn't kill the thread correctly, sometimes
  * @run main/othervm ClipCloseLoss

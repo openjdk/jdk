@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -431,7 +431,7 @@ public class BytecodeName {
         return true;
     }
     private static String quoteDisplay(String s) {
-        // TO DO:  Replace wierd characters in s by C-style escapes.
+        // TO DO:  Replace weird characters in s by C-style escapes.
         return "'"+s.replaceAll("['\\\\]", "\\\\$0")+"'";
     }
 

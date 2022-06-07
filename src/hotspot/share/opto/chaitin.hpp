@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -260,10 +260,10 @@ public:
   PhaseIFG( Arena *arena );
   void init( uint maxlrg );
 
-  // Add edge between a and b.  Returns true if actually addded.
+  // Add edge between a and b.  Returns true if actually added.
   int add_edge( uint a, uint b );
 
-  // Test for edge existance
+  // Test for edge existence
   int test_edge( uint a, uint b ) const;
 
   // Square-up matrix for faster Union

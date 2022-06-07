@@ -44,7 +44,7 @@ class Thread;
 class GlobalCounter : public AllStatic {
  private:
   // Since do not know what we will end up next to in BSS, we make sure the
-  // counter is on a seperate cacheline.
+  // counter is on a separate cacheline.
   struct PaddedCounter {
     DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, 0);
     volatile uintx _counter;

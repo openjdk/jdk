@@ -104,7 +104,7 @@ class methodHandle;
 // When adding an intrinsic for a method, please make sure to appropriately
 // annotate the method in the source code. The list below contains all
 // library intrinsics followed by bytecode intrinsics. Please also make sure to
-// add the declaration of the intrinsic to the approriate section of the list.
+// add the declaration of the intrinsic to the appropriate section of the list.
 #define VM_INTRINSICS_DO(do_intrinsic, do_class, do_name, do_signature, do_alias)                                       \
   /* (1) Library intrinsics                                                                        */                   \
   do_intrinsic(_hashCode,                 java_lang_Object,       hashCode_name, void_int_signature,             F_RN)  \
@@ -216,6 +216,12 @@ class methodHandle;
   do_intrinsic(_longBitsToDouble,         java_lang_Double,       longBitsToDouble_name,    long_double_signature, F_SN)\
    do_name(     longBitsToDouble_name,                           "longBitsToDouble")                                    \
                                                                                                                         \
+  do_intrinsic(_divideUnsigned_i,         java_lang_Integer,      divideUnsigned_name,     int2_int_signature,   F_S)   \
+  do_intrinsic(_remainderUnsigned_i,      java_lang_Integer,      remainderUnsigned_name,  int2_int_signature,   F_S)   \
+    do_name(    divideUnsigned_name,                                   "divideUnsigned")                                \
+  do_intrinsic(_divideUnsigned_l,         java_lang_Long,         divideUnsigned_name,     long2_long_signature, F_S)   \
+  do_intrinsic(_remainderUnsigned_l,      java_lang_Long,         remainderUnsigned_name,  long2_long_signature, F_S)   \
+    do_name(    remainderUnsigned_name,                                "remainderUnsigned")                             \
   do_intrinsic(_numberOfLeadingZeros_i,   java_lang_Integer,      numberOfLeadingZeros_name,int_int_signature,   F_S)   \
   do_intrinsic(_numberOfLeadingZeros_l,   java_lang_Long,         numberOfLeadingZeros_name,long_int_signature,  F_S)   \
                                                                                                                         \
@@ -247,9 +253,20 @@ class methodHandle;
   do_intrinsic(_arraycopy,                java_lang_System,       arraycopy_name, arraycopy_signature,           F_SN)  \
    do_name(     arraycopy_name,                                  "arraycopy")                                           \
    do_signature(arraycopy_signature,                             "(Ljava/lang/Object;ILjava/lang/Object;II)V")          \
+                                                                                                                        \
+  do_intrinsic(_currentCarrierThread,     java_lang_Thread,       currentCarrierThread_name, currentThread_signature, F_SN) \
+   do_name(     currentCarrierThread_name,                       "currentCarrierThread")                                \
   do_intrinsic(_currentThread,            java_lang_Thread,       currentThread_name, currentThread_signature,   F_SN)  \
    do_name(     currentThread_name,                              "currentThread")                                       \
    do_signature(currentThread_signature,                         "()Ljava/lang/Thread;")                                \
+  do_intrinsic(_extentLocalCache,          java_lang_Thread,       extentLocalCache_name, extentLocalCache_signature, F_SN) \
+   do_name(     extentLocalCache_name,                            "extentLocalCache")                                     \
+   do_signature(extentLocalCache_signature,                       "()[Ljava/lang/Object;")                               \
+  do_intrinsic(_setExtentLocalCache,       java_lang_Thread,       setExtentLocalCache_name, setExtentLocalCache_signature, F_SN) \
+   do_name(     setExtentLocalCache_name,                         "setExtentLocalCache")                                  \
+   do_signature(setExtentLocalCache_signature,                    "([Ljava/lang/Object;)V")                              \
+  do_intrinsic(_setCurrentThread,         java_lang_Thread,       setCurrentThread_name, thread_void_signature,   F_RN) \
+   do_name(     setCurrentThread_name,                           "setCurrentThread")                                    \
                                                                                                                         \
   /* reflective intrinsics, for java/lang/Class, etc. */                                                                \
   do_intrinsic(_isAssignableFrom,         java_lang_Class,        isAssignableFrom_name, class_boolean_signature, F_RN) \
@@ -506,6 +523,17 @@ class methodHandle;
   do_intrinsic(_updateBytesAdler32,       java_util_zip_Adler32,  updateBytes_C_name,  updateBytes_signature,  F_SN)    \
   do_intrinsic(_updateByteBufferAdler32,  java_util_zip_Adler32,  updateByteBuffer_A_name,  updateByteBuffer_signature,  F_SN) \
    do_name(     updateByteBuffer_A_name,                          "updateByteBuffer")                                   \
+                                                                                                                        \
+  /* jdk/internal/vm/Continuation */                                                                                    \
+  do_class(jdk_internal_vm_Continuation, "jdk/internal/vm/Continuation")                                                \
+  do_intrinsic(_Continuation_enter,        jdk_internal_vm_Continuation, enter_name,        continuationEnter_signature, F_S) \
+   do_signature(continuationEnter_signature,                      "(Ljdk/internal/vm/Continuation;Z)V")                 \
+  do_intrinsic(_Continuation_enterSpecial, jdk_internal_vm_Continuation, enterSpecial_name, continuationEnterSpecial_signature, F_SN) \
+   do_signature(continuationEnterSpecial_signature,               "(Ljdk/internal/vm/Continuation;ZZ)V")                \
+  do_signature(continuationGetStacks_signature,                   "(III)V")                                             \
+  do_alias(continuationOnPinned_signature,      int_void_signature)                                                     \
+  do_intrinsic(_Continuation_doYield,      jdk_internal_vm_Continuation, doYield_name,      continuationDoYield_signature, F_S) \
+   do_alias(    continuationDoYield_signature,     void_int_signature)                                                  \
                                                                                                                         \
   /* support for UnsafeConstants */                                                                                     \
   do_class(jdk_internal_misc_UnsafeConstants,      "jdk/internal/misc/UnsafeConstants")                                 \
@@ -907,7 +935,7 @@ class methodHandle;
                                      "Ljava/lang/Object;"                                                                                      \
                                      "J"                                                                                                       \
                                      "Ljava/lang/Object;"                                                                                      \
-                                     "I"                                                                                                       \
+                                     "J"                                                                                                       \
                                      "Ljdk/internal/vm/vector/VectorSupport$VectorSpecies;"                                                    \
                                      "Ljdk/internal/vm/vector/VectorSupport$LoadOperation;)"                                                   \
                                      "Ljdk/internal/vm/vector/VectorSupport$VectorPayload;")                                                   \
@@ -922,7 +950,7 @@ class methodHandle;
                                             "J"                                                                                                \
                                             "Ljdk/internal/vm/vector/VectorSupport$VectorMask;"                                                \
                                             "Ljava/lang/Object;"                                                                               \
-                                            "I"                                                                                                \
+                                            "J"                                                                                                \
                                             "Ljdk/internal/vm/vector/VectorSupport$VectorSpecies;"                                             \
                                             "Ljdk/internal/vm/vector/VectorSupport$LoadVectorMaskedOperation;)"                                \
                                             "Ljdk/internal/vm/vector/VectorSupport$Vector;")                                                   \
@@ -934,8 +962,10 @@ class methodHandle;
                                       "I"                                                                                                      \
                                       "Ljava/lang/Object;"                                                                                     \
                                       "J"                                                                                                      \
-                                      "Ljdk/internal/vm/vector/VectorSupport$Vector;"                                                          \
-                                      "Ljava/lang/Object;ILjdk/internal/vm/vector/VectorSupport$StoreVectorOperation;)"                        \
+                                      "Ljdk/internal/vm/vector/VectorSupport$VectorPayload;"                                                   \
+                                      "Ljava/lang/Object;"                                                                                     \
+                                      "J"                                                                                                      \
+                                      "Ljdk/internal/vm/vector/VectorSupport$StoreVectorOperation;)"                                           \
                                       "V")                                                                                                     \
    do_name(vector_store_op_name,     "store")                                                                                                  \
                                                                                                                                                \
@@ -949,7 +979,7 @@ class methodHandle;
                                              "Ljdk/internal/vm/vector/VectorSupport$Vector;"                                                   \
                                              "Ljdk/internal/vm/vector/VectorSupport$VectorMask;"                                               \
                                              "Ljava/lang/Object;"                                                                              \
-                                             "I"                                                                                               \
+                                             "J"                                                                                               \
                                              "Ljdk/internal/vm/vector/VectorSupport$StoreVectorMaskedOperation;)"                              \
                                              "V")                                                                                              \
    do_name(vector_store_masked_op_name,     "storeMasked")                                                                                     \
@@ -1109,6 +1139,17 @@ class methodHandle;
                                         "J")                                                                                                   \
     do_name(vector_mask_oper_name, "maskReductionCoerced")                                                                                     \
                                                                                                                                                \
+  do_intrinsic(_VectorCompressExpand, jdk_internal_vm_vector_VectorSupport, vector_compress_expand_op_name, vector_compress_expand_op_sig, F_S)\
+   do_signature(vector_compress_expand_op_sig, "(I"                                                                                            \
+                                      "Ljava/lang/Class;"                                                                                      \
+                                      "Ljava/lang/Class;"                                                                                      \
+                                      "Ljava/lang/Class;"                                                                                      \
+                                      "I"                                                                                                      \
+                                      "Ljdk/internal/vm/vector/VectorSupport$Vector;"                                                          \
+                                      "Ljdk/internal/vm/vector/VectorSupport$VectorMask;"                                                      \
+                                      "Ljdk/internal/vm/vector/VectorSupport$CompressExpandOperation;)"                                        \
+                                      "Ljdk/internal/vm/vector/VectorSupport$VectorPayload;")                                                  \
+   do_name(vector_compress_expand_op_name,     "compressExpandOp")                                                                             \
    /* (2) Bytecode intrinsics                                                                        */                        \
                                                                                                                                \
   do_intrinsic(_park,                     jdk_internal_misc_Unsafe,     park_name, park_signature,                     F_RN)   \
@@ -1217,7 +1258,7 @@ enum class vmIntrinsicID : int {
                    __IGNORE_CLASS, __IGNORE_NAME, __IGNORE_SIGNATURE, __IGNORE_ALIAS)
 
   ID_LIMIT,
-  LAST_COMPILER_INLINE = _VectorMaskOp,
+  LAST_COMPILER_INLINE = _VectorCompressExpand,
   FIRST_MH_SIG_POLY    = _invokeGeneric,
   FIRST_MH_STATIC      = _linkToVirtual,
   LAST_MH_SIG_POLY     = _linkToNative,
