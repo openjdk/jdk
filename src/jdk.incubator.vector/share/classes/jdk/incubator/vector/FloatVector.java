@@ -2829,7 +2829,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
                                    float[] a, int offset,
                                    VectorMask<Float> m) {
         FloatSpecies vsp = (FloatSpecies) species;
-        if (offset >= 0 && offset <= (a.length - species.length())) {
+        if (VectorIntrinsics.indexInRange(offset, vsp.length(), a.length)) {
             return vsp.dummyVector().fromArray0(a, offset, m);
         }
 
@@ -3044,7 +3044,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
                                            ByteOrder bo,
                                            VectorMask<Float> m) {
         FloatSpecies vsp = (FloatSpecies) species;
-        if (offset >= 0 && offset <= (ms.byteSize() - species.vectorByteSize())) {
+        if (VectorIntrinsics.indexInRange(offset, vsp.vectorByteSize(), ms.byteSize())) {
             return vsp.dummyVector().fromMemorySegment0(ms, offset, m).maybeSwap(bo);
         }
 
@@ -3116,7 +3116,9 @@ public abstract class FloatVector extends AbstractVector<Float> {
             intoArray(a, offset);
         } else {
             FloatSpecies vsp = vspecies();
-            checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+            if (!VectorIntrinsics.indexInRange(offset, vsp.length(), a.length)) {
+                checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+            }
             intoArray0(a, offset, m);
         }
     }
@@ -3253,7 +3255,9 @@ public abstract class FloatVector extends AbstractVector<Float> {
                 throw new UnsupportedOperationException("Attempt to write a read-only segment");
             }
             FloatSpecies vsp = vspecies();
-            checkMaskFromIndexSize(offset, vsp, m, 4, ms.byteSize());
+            if (!VectorIntrinsics.indexInRange(offset, vsp.vectorByteSize(), ms.byteSize())) {
+                checkMaskFromIndexSize(offset, vsp, m, 4, ms.byteSize());
+            }
             maybeSwap(bo).intoMemorySegment0(ms, offset, m);
         }
     }

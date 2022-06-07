@@ -2847,7 +2847,7 @@ public abstract class LongVector extends AbstractVector<Long> {
                                    long[] a, int offset,
                                    VectorMask<Long> m) {
         LongSpecies vsp = (LongSpecies) species;
-        if (offset >= 0 && offset <= (a.length - species.length())) {
+        if (VectorIntrinsics.indexInRange(offset, vsp.length(), a.length)) {
             return vsp.dummyVector().fromArray0(a, offset, m);
         }
 
@@ -3080,7 +3080,7 @@ public abstract class LongVector extends AbstractVector<Long> {
                                            ByteOrder bo,
                                            VectorMask<Long> m) {
         LongSpecies vsp = (LongSpecies) species;
-        if (offset >= 0 && offset <= (ms.byteSize() - species.vectorByteSize())) {
+        if (VectorIntrinsics.indexInRange(offset, vsp.vectorByteSize(), ms.byteSize())) {
             return vsp.dummyVector().fromMemorySegment0(ms, offset, m).maybeSwap(bo);
         }
 
@@ -3152,7 +3152,9 @@ public abstract class LongVector extends AbstractVector<Long> {
             intoArray(a, offset);
         } else {
             LongSpecies vsp = vspecies();
-            checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+            if (!VectorIntrinsics.indexInRange(offset, vsp.length(), a.length)) {
+                checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+            }
             intoArray0(a, offset, m);
         }
     }
@@ -3308,7 +3310,9 @@ public abstract class LongVector extends AbstractVector<Long> {
                 throw new UnsupportedOperationException("Attempt to write a read-only segment");
             }
             LongSpecies vsp = vspecies();
-            checkMaskFromIndexSize(offset, vsp, m, 8, ms.byteSize());
+            if (!VectorIntrinsics.indexInRange(offset, vsp.vectorByteSize(), ms.byteSize())) {
+                checkMaskFromIndexSize(offset, vsp, m, 8, ms.byteSize());
+            }
             maybeSwap(bo).intoMemorySegment0(ms, offset, m);
         }
     }
