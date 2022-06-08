@@ -777,13 +777,13 @@ public class Utils {
     }
 
     /**
-     * Returns all the implemented super-interfaces of a given type,
-     * in the case of classes, include all the super-interfaces of
-     * the supertype. The super-interfaces are collected before the
-     * super-interfaces of the supertype.
+     * Returns all the implemented superinterfaces of a given type,
+     * in the case of classes, include all the superinterfaces of
+     * the supertype. The superinterfaces are collected before the
+     * superinterfaces of the supertype.
      *
-     * @param  te the type element to get the super-interfaces for.
-     * @return the list of super-interfaces.
+     * @param  te the type element to get the superinterfaces for.
+     * @return the list of superinterfaces.
      */
     public Set<TypeMirror> getAllInterfaces(TypeElement te) {
         Set<TypeMirror> results = new LinkedHashSet<>();
@@ -1102,9 +1102,9 @@ public class Utils {
     }
 
     /**
-     * Given a class, return the closest visible super class.
+     * Given a class, return the closest visible superclass.
      * @param type the TypeMirror to be interrogated
-     * @return  the closest visible super class.  Return null if it cannot
+     * @return  the closest visible superclass.  Return null if it cannot
      *          be found.
      */
     public TypeMirror getFirstVisibleSuperClass(TypeMirror type) {
@@ -1113,10 +1113,10 @@ public class Utils {
 
 
     /**
-     * Given a class, return the closest visible super class.
+     * Given a class, return the closest visible superclass.
      *
      * @param te the TypeElement to be interrogated
-     * @return the closest visible super class.  Return null if it cannot
+     * @return the closest visible superclass.  Return null if it cannot
      *         be found.
      */
     public TypeMirror getFirstVisibleSuperClass(TypeElement te) {
@@ -2810,7 +2810,7 @@ public class Utils {
     }
 
     /**
-     * An element can have flags that place it into some sub-categories, like
+     * An element can have flags that place it into some subcategories, like
      * being a preview or a deprecated element.
      */
     public enum ElementFlag {

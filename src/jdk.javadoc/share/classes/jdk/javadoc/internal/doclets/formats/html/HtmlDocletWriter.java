@@ -1054,10 +1054,12 @@ public class HtmlDocletWriter {
                             (labelContent.isEmpty() ? text : labelContent));
                 } else {
                     // No cross link found so print warning
-                    messages.warning(ch.getDocTreePath(see),
-                            "doclet.see.class_or_package_not_found",
-                            "@" + tagName,
-                            seeText);
+                    if (!configuration.isDocLintReferenceGroupEnabled()) {
+                        messages.warning(ch.getDocTreePath(see),
+                                "doclet.see.class_or_package_not_found",
+                                "@" + tagName,
+                                seeText);
+                    }
                     return invalidTagOutput(resources.getText("doclet.tag.invalid", tagName),
                             Optional.of(labelContent.isEmpty() ? text: labelContent));
                 }
@@ -1107,9 +1109,11 @@ public class HtmlDocletWriter {
                         ch.getDocTreePath(see), "doclet.see.class_or_package_not_accessible",
                         tagName, utils.getFullyQualifiedName(containing));
                 } else {
-                    messages.warning(
-                        ch.getDocTreePath(see), "doclet.see.class_or_package_not_found",
-                        tagName, seeText);
+                    if (!configuration.isDocLintReferenceGroupEnabled()) {
+                        messages.warning(
+                                ch.getDocTreePath(see), "doclet.see.class_or_package_not_found",
+                                tagName, seeText);
+                    }
                 }
             }
             if (configuration.currentTypeElement != containing) {
@@ -1599,7 +1603,9 @@ public class HtmlDocletWriter {
                         Matcher m = Pattern.compile("(?i)\\{@([a-z]+).*").matcher(body);
                         String tagName = m.matches() ? m.group(1) : null;
                         if (tagName == null) {
-                            messages.warning(dtp, "doclet.tag.invalid_input", body);
+                            if (!configuration.isDocLintSyntaxGroupEnabled()) {
+                                messages.warning(dtp, "doclet.tag.invalid_input", body);
+                            }
                             result.add(invalidTagOutput(resources.getText("doclet.tag.invalid_input", body),
                                     Optional.empty()));
                         } else {

@@ -398,6 +398,10 @@ public final class Math {
      * Otherwise, the result is the {@code double} value closest to
      * the true mathematical square root of the argument value.
      *
+     * @apiNote
+     * This method corresponds to the squareRoot operation defined in
+     * IEEE 754.
+     *
      * @param   a   a value.
      * @return  the positive square root of {@code a}.
      *          If the argument is NaN or less than zero, the result is NaN.
@@ -481,6 +485,9 @@ public final class Math {
      * that the value of {@code Math.ceil(x)} is exactly the
      * value of {@code -Math.floor(-x)}.
      *
+     * @apiNote
+     * This method corresponds to the roundToIntegralTowardPositive
+     * operation defined in IEEE 754.
      *
      * @param   a   a value.
      * @return  the smallest (closest to negative infinity)
@@ -502,6 +509,10 @@ public final class Math {
      * positive zero or negative zero, then the result is the same as
      * the argument.</ul>
      *
+     * @apiNote
+     * This method corresponds to the roundToIntegralTowardNegative
+     * operation defined in IEEE 754.
+     *
      * @param   a   a value.
      * @return  the largest (closest to positive infinity)
      *          floating-point value that less than or equal to the argument
@@ -522,6 +533,10 @@ public final class Math {
      * integer, then the result is the same as the argument.
      * <li>If the argument is NaN or an infinity or positive zero or negative
      * zero, then the result is the same as the argument.</ul>
+     *
+     * @apiNote
+     * This method corresponds to the roundToIntegralTiesToEven
+     * operation defined in IEEE 754.
      *
      * @param   a   a {@code double} value.
      * @return  the closest floating-point value to {@code a} that is
@@ -2033,6 +2048,10 @@ public final class Math {
      * argument is positive zero and the other negative zero, the
      * result is positive zero.
      *
+     * @apiNote
+     * This method corresponds to the maximum operation defined in
+     * IEEE 754.
+     *
      * @param   a   an argument.
      * @param   b   another argument.
      * @return  the larger of {@code a} and {@code b}.
@@ -2059,6 +2078,10 @@ public final class Math {
      * negative zero to be strictly smaller than positive zero. If one
      * argument is positive zero and the other negative zero, the
      * result is positive zero.
+     *
+     * @apiNote
+     * This method corresponds to the maximum operation defined in
+     * IEEE 754.
      *
      * @param   a   an argument.
      * @param   b   another argument.
@@ -2116,6 +2139,10 @@ public final class Math {
      * one argument is positive zero and the other is negative zero,
      * the result is negative zero.
      *
+     * @apiNote
+     * This method corresponds to the minimum operation defined in
+     * IEEE 754.
+     *
      * @param   a   an argument.
      * @param   b   another argument.
      * @return  the smaller of {@code a} and {@code b}.
@@ -2142,6 +2169,10 @@ public final class Math {
      * negative zero to be strictly smaller than positive zero. If one
      * argument is positive zero and the other is negative zero, the
      * result is negative zero.
+     *
+     * @apiNote
+     * This method corresponds to the minimum operation defined in
+     * IEEE 754.
      *
      * @param   a   an argument.
      * @param   b   another argument.
@@ -2198,7 +2229,7 @@ public final class Math {
      * equivalent to ({@code a * b}) however.
      *
      * @apiNote This method corresponds to the fusedMultiplyAdd
-     * operation defined in IEEE 754-2008.
+     * operation defined in IEEE 754.
      *
      * @param a a value
      * @param b a value
@@ -2312,7 +2343,7 @@ public final class Math {
      * equivalent to ({@code a * b}) however.
      *
      * @apiNote This method corresponds to the fusedMultiplyAdd
-     * operation defined in IEEE 754-2008.
+     * operation defined in IEEE 754.
      *
      * @param a a value
      * @param b a value
@@ -2692,6 +2723,10 @@ public final class Math {
      * permitted to treat some NaN arguments as positive and other NaN
      * arguments as negative to allow greater performance.
      *
+     * @apiNote
+     * This method corresponds to the copySign operation defined in
+     * IEEE 754.
+     *
      * @param magnitude  the parameter providing the magnitude of the result
      * @param sign   the parameter providing the sign of the result
      * @return a value with the magnitude of {@code magnitude}
@@ -2716,6 +2751,10 @@ public final class Math {
      * permitted to treat some NaN arguments as positive and other NaN
      * arguments as negative to allow greater performance.
      *
+     * @apiNote
+     * This method corresponds to the copySign operation defined in
+     * IEEE 754.
+     *
      * @param magnitude  the parameter providing the magnitude of the result
      * @param sign   the parameter providing the sign of the result
      * @return a value with the magnitude of {@code magnitude}
@@ -2739,8 +2778,12 @@ public final class Math {
      * <li>If the argument is NaN or infinite, then the result is
      * {@link Float#MAX_EXPONENT} + 1.
      * <li>If the argument is zero or subnormal, then the result is
-     * {@link Float#MIN_EXPONENT} -1.
+     * {@link Float#MIN_EXPONENT} - 1.
      * </ul>
+     * @apiNote
+     * This method is analogous to the logB operation defined in IEEE
+     * 754, but returns a different value on subnormal arguments.
+     *
      * @param f a {@code float} value
      * @return the unbiased exponent of the argument
      * @since 1.6
@@ -2763,8 +2806,12 @@ public final class Math {
      * <li>If the argument is NaN or infinite, then the result is
      * {@link Double#MAX_EXPONENT} + 1.
      * <li>If the argument is zero or subnormal, then the result is
-     * {@link Double#MIN_EXPONENT} -1.
+     * {@link Double#MIN_EXPONENT} - 1.
      * </ul>
+     * @apiNote
+     * This method is analogous to the logB operation defined in IEEE
+     * 754, but returns a different value on subnormal arguments.
+     *
      * @param d a {@code double} value
      * @return the unbiased exponent of the argument
      * @since 1.6
@@ -2968,6 +3015,9 @@ public final class Math {
      *
      * </ul>
      *
+     * @apiNote This method corresponds to the nextUp
+     * operation defined in IEEE 754.
+     *
      * @param d starting floating-point value
      * @return The adjacent floating-point value closer to positive
      * infinity.
@@ -3003,6 +3053,9 @@ public final class Math {
      * {@link Float#MIN_VALUE}
      *
      * </ul>
+     *
+     * @apiNote This method corresponds to the nextUp
+     * operation defined in IEEE 754.
      *
      * @param f starting floating-point value
      * @return The adjacent floating-point value closer to positive
@@ -3040,6 +3093,9 @@ public final class Math {
      *
      * </ul>
      *
+     * @apiNote This method corresponds to the nextDown
+     * operation defined in IEEE 754.
+     *
      * @param d  starting floating-point value
      * @return The adjacent floating-point value closer to negative
      * infinity.
@@ -3076,6 +3132,9 @@ public final class Math {
      * {@code -Float.MIN_VALUE}
      *
      * </ul>
+     *
+     * @apiNote This method corresponds to the nextDown
+     * operation defined in IEEE 754.
      *
      * @param f  starting floating-point value
      * @return The adjacent floating-point value closer to negative
@@ -3115,6 +3174,9 @@ public final class Math {
      * <li> If the first argument is zero, then a zero of the same
      * sign is returned.
      * </ul>
+     *
+     * @apiNote This method corresponds to the scaleB operation
+     * defined in IEEE 754.
      *
      * @param d number to be scaled by a power of two.
      * @param scaleFactor power of 2 used to scale {@code d}
@@ -3199,6 +3261,9 @@ public final class Math {
      * <li> If the first argument is zero, then a zero of the same
      * sign is returned.
      * </ul>
+     *
+     * @apiNote This method corresponds to the scaleB operation
+     * defined in IEEE 754.
      *
      * @param f number to be scaled by a power of two.
      * @param scaleFactor power of 2 used to scale {@code f}
