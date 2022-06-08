@@ -186,7 +186,7 @@ public class ScaledEtchedBorderTest {
             childPanel.add(Box.createRigidArea(SIZE), BorderLayout.CENTER);
 
             contentPanel.add(childPanel);
-            if(childSize == null) {
+            if (childSize == null) {
                 childSize = childPanel.getPreferredSize();
             }
             childPanel.setBounds(0, childSize.height * i, childSize.width, childSize.height);
