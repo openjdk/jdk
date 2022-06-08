@@ -169,8 +169,6 @@ public class EtchedBorder extends AbstractBorder
                 stkWidth = (int) Math.floor(Math.min(at.getScaleX(), at.getScaleY()));
                 g2d.setStroke(new BasicStroke((float) stkWidth));
             }
-            RenderingHints rend =
-                    new RenderingHints(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
         }
 
         int w;
@@ -201,7 +199,7 @@ public class EtchedBorder extends AbstractBorder
         g.translate(-xtranslation, -ytranslation);
 
         // Set the transform we removed earlier
-        if (g instanceof Graphics2D) {
+        if (resetTransform) {
             Graphics2D g2d = (Graphics2D) g;
             g2d.setTransform(at);
             g2d.setStroke(oldStk);
