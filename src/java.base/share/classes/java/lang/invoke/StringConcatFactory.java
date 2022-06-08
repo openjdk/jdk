@@ -509,7 +509,7 @@ public final class StringConcatFactory {
         // assembled bottom-up, which makes the code arguably hard to read.
 
         // Drop all remaining parameter types, leave only helper arguments:
-        MethodHandle mh = MethodHandles.dropArguments(newString(), 2, ptypes);
+        MethodHandle mh = MethodHandles.dropArgumentsTrusted(newString(), 2, ptypes);
 
         // Calculate the initialLengthCoder value by looking at all constant values and summing up
         // their lengths and adjusting the encoded coder bit if needed
