@@ -794,7 +794,7 @@ public:
     starti;                                                             \
     f(opcode, 31, 29), f(0b100101, 28, 23), f(shift/16, 22, 21),        \
       f(imm, 20, 5);                                                    \
-    rf(Rd, 0);                                                          \
+    zrf(Rd, 0);                                                          \
   }
 
   INSN(movnw, 0b000);

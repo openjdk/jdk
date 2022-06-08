@@ -166,13 +166,3 @@ vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manyDiff_b/TestDescription.java 
 vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manySame_b/TestDescription.java 8013267 generic-all
 
 vmTestbase/nsk/jdwp/ThreadReference/ForceEarlyReturn/forceEarlyReturn001/forceEarlyReturn001.java 7199837 generic-all
-
-# Loom is not implemented on x86_32 yet
-
-compiler/codecache/stress/UnexpectedDeoptimizationAllTest.java                      8286642 generic-i586
-compiler/codecache/stress/UnexpectedDeoptimizationTest.java                         8286642 generic-i586
-runtime/cds/appcds/redefineClass/RedefineRunningMethods_Shared.java                 8286642 generic-i586
-runtime/jni/IsVirtualThread/IsVirtualThread.java                                    8286642 generic-i586
-runtime/vthread/JNIMonitor/JNIMonitor.java                                          8286642 generic-i586
-runtime/vthread/RedefineClass.java                                                  8286642 generic-i586
-runtime/vthread/TestObjectAllocationSampleEvent.java                                8286642 generic-i586
