@@ -838,8 +838,8 @@ final class LongMaxVector extends LongVector {
     @ForceInline
     @Override
     final
-    LongVector fromArray0(long[] a, int offset, VectorMask<Long> m) {
-        return super.fromArray0Template(LongMaxMask.class, a, offset, (LongMaxMask) m);  // specialize
+    LongVector fromArray0(long[] a, int offset, VectorMask<Long> m, int offsetInRange) {
+        return super.fromArray0Template(LongMaxMask.class, a, offset, (LongMaxMask) m, offsetInRange);  // specialize
     }
 
     @ForceInline
@@ -861,8 +861,8 @@ final class LongMaxVector extends LongVector {
     @ForceInline
     @Override
     final
-    LongVector fromMemorySegment0(MemorySegment ms, long offset, VectorMask<Long> m) {
-        return super.fromMemorySegment0Template(LongMaxMask.class, ms, offset, (LongMaxMask) m);  // specialize
+    LongVector fromMemorySegment0(MemorySegment ms, long offset, VectorMask<Long> m, int offsetInRange) {
+        return super.fromMemorySegment0Template(LongMaxMask.class, ms, offset, (LongMaxMask) m, offsetInRange);  // specialize
     }
 
     @ForceInline
