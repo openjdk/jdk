@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,26 +21,33 @@
  * questions.
  */
 
-package ir_framework.tests;
+/*
+ * @test
+ * @bug 8286625
+ * @key stress
+ * @summary C2 fails with assert(!n->is_Store() && !n->is_LoadStore()) failed: no node with a side effect
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-BackgroundCompilation -XX:+StressIGVN -XX:StressSeed=4232417824 TestOverUnrolling2
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-BackgroundCompilation -XX:+StressIGVN TestOverUnrolling2
+ */
 
-import compiler.lib.ir_framework.Scenario;
-import compiler.lib.ir_framework.driver.irmatching.IRMatcher;
-import jdk.test.lib.Asserts;
-
-import java.util.Arrays;
-
-public class Utils {
-    public static void shouldHaveThrownException(String output) {
-        // Do not throw an exception if we hit a safepoint while printing which could possibly let the IR matching fail.
-        // This happens very rarely. If there is a problem with the test, then we will catch that on the next test invocation.
-        if (!output.contains(IRMatcher.SAFEPOINT_WHILE_PRINTING_MESSAGE)) {
-            Asserts.fail("Should have thrown exception");
+public class TestOverUnrolling2 {
+   public static void main(String[] args) {
+        final byte[] large = new byte[1000];
+        final byte[] src = new byte[16];
+        for (int i = 0; i < 20_000; i++) {
+            test_helper(large, large);
+            test(src);
         }
+   }
+
+    private static void test(byte[] src) {
+        byte[] array = new byte[16];
+        test_helper(src, array);
     }
 
-    public static void throwIfNoSafepointPrinting(String output, RuntimeException e) {
-        if (!output.contains(IRMatcher.SAFEPOINT_WHILE_PRINTING_MESSAGE)) {
-            throw e;
+    private static void test_helper(byte[] src, byte[] array) {
+        for (int i = 0; i < src.length; i++) {
+            array[array.length - 1 - i] = src[i];
         }
     }
 }

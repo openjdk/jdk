@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,26 +21,53 @@
  * questions.
  */
 
-package ir_framework.tests;
+/**
+ * @test
+ * @bug 8287700
+ * @summary C2 Crash running eclipse benchmark from Dacapo
+ *
+ * @run main/othervm -XX:-BackgroundCompilation TestEACheckCastPP
+ *
+ */
 
-import compiler.lib.ir_framework.Scenario;
-import compiler.lib.ir_framework.driver.irmatching.IRMatcher;
-import jdk.test.lib.Asserts;
-
-import java.util.Arrays;
-
-public class Utils {
-    public static void shouldHaveThrownException(String output) {
-        // Do not throw an exception if we hit a safepoint while printing which could possibly let the IR matching fail.
-        // This happens very rarely. If there is a problem with the test, then we will catch that on the next test invocation.
-        if (!output.contains(IRMatcher.SAFEPOINT_WHILE_PRINTING_MESSAGE)) {
-            Asserts.fail("Should have thrown exception");
+public class TestEACheckCastPP {
+    public static void main(String[] args) {
+        for (int i = 0; i < 20_000; i++) {
+            test(false);
+            test_helper2(new A(), true);
         }
     }
 
-    public static void throwIfNoSafepointPrinting(String output, RuntimeException e) {
-        if (!output.contains(IRMatcher.SAFEPOINT_WHILE_PRINTING_MESSAGE)) {
-            throw e;
+    private static void test(boolean flag) {
+        I i = test_helper();
+        test_helper2(i, flag);
+    }
+
+    private static void test_helper2(I i, boolean flag) {
+        if (flag) {
+            // branch never taken when called from test()
+            A a = (A)i;
+            C c = new C();
+            c.a = a;
         }
+    }
+
+    private static I test_helper() {
+        B b = new B();
+        return b;
+    }
+
+    interface I {
+
+    }
+
+    private static class A implements I {
+
+    }
+    private static class B extends A {
+    }
+
+    private static class C {
+        public A a;
     }
 }
