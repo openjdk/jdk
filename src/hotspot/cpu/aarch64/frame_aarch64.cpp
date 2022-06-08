@@ -607,10 +607,19 @@ void frame::describe_pd(FrameValues& values, int frame_no) {
   }
 
   if (is_java_frame() || Continuation::is_continuation_enterSpecial(*this)) {
-    address ret_pc = *(address*)(real_fp() - return_addr_offset);
-    values.describe(frame_no, real_fp() - return_addr_offset,
+    intptr_t* ret_pc_loc;
+    intptr_t* fp_loc;
+    if (is_interpreted_frame()) {
+      ret_pc_loc = fp() + return_addr_offset;
+      fp_loc = fp();
+    } else {
+      ret_pc_loc = real_fp() - return_addr_offset;
+      fp_loc = real_fp() - sender_sp_offset;
+    }
+    address ret_pc = *(address*)ret_pc_loc;
+    values.describe(frame_no, ret_pc_loc,
       Continuation::is_return_barrier_entry(ret_pc) ? "return address (return barrier)" : "return address");
-    values.describe(-1, real_fp() - sender_sp_offset, "saved fp", 2); // "unowned" as value belongs to sender
+    values.describe(-1, fp_loc, "saved fp", 0); // "unowned" as value belongs to sender
   }
 }
 #endif
