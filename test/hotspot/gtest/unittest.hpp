@@ -97,7 +97,7 @@ extern void gtest_exit_from_child_vm(int num);
       }                                                             \
     }                                                               \
     fprintf(stderr, "OKIDOKI");                                     \
-    gtest_exit_from_child_vm(0);                                               \
+    gtest_exit_from_child_vm(0);                                    \
   }                                                                 \
                                                                     \
   TEST(category, CONCAT(name, _other_vm)) {                         \
@@ -115,7 +115,7 @@ extern void gtest_exit_from_child_vm(int num);
   static void child_ ## category ## _ ## name ## _() {              \
     ::testing::GTEST_FLAG(throw_on_failure) = true;                 \
     test_ ## category ## _ ## name ## _();                          \
-    gtest_exit_from_child_vm(0);                                               \
+    gtest_exit_from_child_vm(0);                                    \
   }                                                                 \
                                                                     \
   TEST(category, CONCAT(name, _vm_assert)) {                        \
@@ -137,7 +137,7 @@ extern void gtest_exit_from_child_vm(int num);
   static void child_ ## category ## _ ## name ## _() {              \
     ::testing::GTEST_FLAG(throw_on_failure) = true;                 \
     test_ ## category ## _ ## name ## _();                          \
-    gtest_exit_from_child_vm(0);                                               \
+    gtest_exit_from_child_vm(0);                                    \
   }                                                                 \
                                                                     \
   TEST(category, CONCAT(name, _vm_assert)) {                        \
@@ -158,13 +158,13 @@ extern void gtest_exit_from_child_vm(int num);
   static void child_ ## category ## _ ## name ## _() {              \
     ::testing::GTEST_FLAG(throw_on_failure) = true;                 \
     test_ ## category ## _ ## name ## _();                          \
-    gtest_exit_from_child_vm(0);                                               \
+    gtest_exit_from_child_vm(0);                                    \
   }                                                                 \
                                                                     \
   TEST(category, CONCAT(name, _vm_assert)) {                        \
     ASSERT_EXIT(child_ ## category ## _ ## name ## _(),             \
                 ::testing::ExitedWithCode(1),                       \
-                msg);                            \
+                msg);                                               \
   }                                                                 \
                                                                     \
   void test_ ## category ## _ ## name ## _()
