@@ -280,13 +280,14 @@ static bool stack_overflow_check(JavaThread* thread, int size, address sp) {
   return true;
 }
 
-#ifdef ASSERT
+// TODO: Should we remove reliance on this?
 static oop get_continuation(JavaThread* thread) {
   assert(thread != nullptr, "");
   assert(thread->threadObj() != nullptr, "");
   return java_lang_Thread::continuation(thread->threadObj());
 }
 
+#ifdef ASSERT
 inline void clear_anchor(JavaThread* thread) {
   thread->frame_anchor()->clear();
 }
