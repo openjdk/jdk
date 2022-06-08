@@ -385,9 +385,8 @@ public final class Class<T> implements java.io.Serializable,
     @CallerSensitiveAdapter
     private static Class<?> forName(String className, Class<?> caller)
             throws ClassNotFoundException {
-        ClassLoader loader = (caller == null) ?
-                ClassLoader.getSystemClassLoader() :
-                ClassLoader.getClassLoader(caller);
+        ClassLoader loader = (caller == null) ? ClassLoader.getSystemClassLoader()
+                                              : ClassLoader.getClassLoader(caller);
         return forName0(className, true, loader, caller);
     }
 
