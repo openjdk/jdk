@@ -41,23 +41,24 @@
 #include "logging/log.hpp"
 #include "logging/logLevel.hpp"
 #include "logging/logMessage.hpp"
+#include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/constantPool.hpp"
+#include "oops/fieldStreams.inline.hpp"
 #include "oops/method.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/fieldStreams.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "oops/verifyOopClosure.hpp"
 #include "prims/jvmtiDeferredUpdates.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
-#include "prims/vectorSupport.hpp"
 #include "prims/methodHandles.hpp"
+#include "prims/vectorSupport.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
@@ -1837,13 +1838,24 @@ static void post_deoptimization_event(CompiledMethod* nm,
 
 #endif // INCLUDE_JFR
 
-void Deoptimization::print_ul(CompiledMethod* nm, intptr_t pc, frame& fr, const char* name_sig,
-                              int trap_bci, int osr_bci, const char* reason_name,
-                              const char* reason_action) {
-  log_debug(deoptimization)(
-      "cid=%d %s pc=" INTPTR_FORMAT " relative_pc=" INTPTR_FORMAT " level=%d %s @ %d %d %s -> %s",
-      nm->compile_id(), (nm->is_osr_method() ? "%" : ""), pc, fr.pc() - nm->code_begin(),
-      nm->comp_level(), name_sig, trap_bci, osr_bci, reason_name, reason_action);
+void Deoptimization::print_ul(CompiledMethod* nm, intptr_t pc, frame& fr, int trap_bci, int osr_bci,
+                              const char* reason_name, const char* reason_action) {
+  LogTarget(Debug, deoptimization) lt;
+  bool is_osr = nm->is_osr_method();
+  if(lt.is_enabled()) {
+    LogStream ls(lt);
+    ls.print("cid=%d %s pc=" INTPTR_FORMAT " relative_pc=" INTPTR_FORMAT " level=%d",
+             nm->compile_id(), (is_osr ? "%" : ""), pc, fr.pc() - nm->code_begin(), nm->comp_level());
+    nm->method()->print_short_name(&ls);
+    ls.print(" @ ");
+    ls.print("%d ", trap_bci);
+    if(is_osr) {
+      ls.print("%d ", osr_bci);
+    }
+    ls.print("%s ", reason_name);
+    ls.print("%s", reason_action);
+    ls.cr();
+  }
 }
 
 JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint trap_request)) {
@@ -1949,7 +1961,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
       intptr_t pc = p2i(fr.pc());
 
       JFR_ONLY(post_deoptimization_event(nm, tm, trap_bci, trap_bc, reason, action);)
-      print_ul(nm, pc, fr, name_sig, trap_bci, osr_bci, reason_name, reason_action);
+      print_ul(nm, pc, fr, trap_bci, osr_bci, reason_name, reason_action);
       Events::log_deopt_message(current, "Uncommon trap: reason=%s action=%s pc=" INTPTR_FORMAT " method=%s @ %d %s",
                                 reason_name, reason_action, pc,
                                 name_sig, trap_bci, nm->compiler_name());
