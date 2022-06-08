@@ -1602,10 +1602,12 @@ Node* old_root() {
   return nullptr;
 }
 
-// Worklist, nodes are added only once
-class Worklist {
+// UniqueMixedNodeList
+// unique: nodes are added only once
+// mixed: allow new and old nodes
+class UniqueMixedNodeList {
 public:
-  Worklist() : _visited_set(cmpkey, hashkey) {}
+  UniqueMixedNodeList() : _visited_set(cmpkey, hashkey) {}
   void add(Node* node) {
     if (not_a_node(node)) {
       return; // Gracefully handle NULL, -1, 0xabababab, etc.
@@ -1615,11 +1617,11 @@ public:
       _worklist.push(node);
     }
   }
-  Node* next() {
-    if (_index < _worklist.size()) {
-      return _worklist[_index++];
-    }
-    return nullptr;
+  Node* operator[] (uint i) const {
+    return _worklist[i];
+  }
+  size_t size() {
+    return _worklist.size();
   }
 private:
   uint _index = 0;
@@ -1630,9 +1632,10 @@ private:
 // BFS traverse all reachable nodes from start, call callback on them
 template <typename Callback>
 void visit_nodes(Node* start, Callback callback, bool traverse_output, bool only_ctrl) {
-  Worklist worklist;
+  UniqueMixedNodeList worklist;
   worklist.add(start);
-  for (Node* n = worklist.next(); n != nullptr; n = worklist.next()) {
+  for (uint i = 0; i < worklist.size(); i++) {
+    Node* n = worklist[i];
     callback(n);
     for (uint i = 0; i < n->len(); i++) {
       if (!only_ctrl || n->is_Region() || (n->Opcode() == Op_Root) || (i == TypeFunc::Control)) {
@@ -1664,6 +1667,30 @@ Node* find_node_by_idx(Node* start, uint idx, bool traverse_output, bool only_ct
   return result;
 }
 
+// find needle in haystack, case insensitive
+// custom implementation of strcasestr, as it is not available on windows
+const char* strstr_nocase(const char* haystack, const char* needle) {
+  if (needle[0] == '\0') {
+    return haystack; // empty needle matches with anything
+  }
+  for (size_t i = 0; haystack[i] != '\0'; i++) {
+    bool matches = true;
+    for (size_t j = 0; needle[j] != '\0'; j++) {
+      if (haystack[i + j] == '\0') {
+        return nullptr; // hit end of haystack, abort
+      }
+      if (tolower(haystack[i + j]) != tolower(needle[j])) {
+        matches = false;
+        break; // abort, try next i
+      }
+    }
+    if (matches) {
+      return &haystack[i]; // all j were ok for this i
+    }
+  }
+  return nullptr; // no i was a match
+}
+
 // check if str matches the star_pattern
 // eg. str "_abc____def__" would match pattern "abc*def"
 // the matching is case insensitive
@@ -1674,7 +1701,7 @@ bool is_star_match(const char* star_pattern, const char* str) {
   char buf[N]; // copy parts of pattern into this
   const char* s = str;
   const char* r = &pattern[0]; // cast array to char*
-  while(strlen(r) > 0) {
+  while (strlen(r) > 0) {
     // find next section in pattern
     const char* r_end = strstr(r, "*");
     const char* r_part = r;
@@ -1685,13 +1712,13 @@ bool is_star_match(const char* star_pattern, const char* str) {
       r_part = &buf[0]; // cast array to char*
     }
     // find this section in s, case insensitive
-    const char* s_match = strcasestr(s, r_part);
+    const char* s_match = strstr_nocase(s, r_part);
     if (s_match == nullptr) {
       return false; // r_part did not match - abort
     }
     size_t match_len = strlen(r_part);
     s = s_match + match_len; // advance to match position plus part length
-    r += match_len + 1; // advance by part length and "*"
+    r += match_len + (r_end == nullptr ? 0 : 1); // advance by part length and "*"
   }
   return true; // all parts of pattern matched
 }
@@ -1740,7 +1767,7 @@ Node* find_node_by_dump(Node* start, const char* pattern) {
 // name can contain "*" in match pattern to match any characters
 // the matching is case insensitive
 Node* find_node_by_name(const char* name) {
-  Node* root =  Compile::current()->root();
+  Node* root = Compile::current()->root();
   return find_node_by_name(root, name);
 }
 
@@ -1748,7 +1775,7 @@ Node* find_node_by_name(const char* name) {
 // name can contain "*" in match pattern to match any characters
 // the matching is case insensitive
 Node* find_old_node_by_name(const char* name) {
-  Node* root =  old_root();
+  Node* root = old_root();
   return find_node_by_name(root, name);
 }
 
@@ -1756,7 +1783,7 @@ Node* find_old_node_by_name(const char* name) {
 // can contain "*" in match pattern to match any characters
 // the matching is case insensitive
 Node* find_node_by_dump(const char* pattern) {
-  Node* root =  Compile::current()->root();
+  Node* root = Compile::current()->root();
   return find_node_by_dump(root, pattern);
 }
 
@@ -1764,7 +1791,7 @@ Node* find_node_by_dump(const char* pattern) {
 // can contain "*" in match pattern to match any characters
 // the matching is case insensitive
 Node* find_old_node_by_dump(const char* pattern) {
-  Node* root =  old_root();
+  Node* root = old_root();
   return find_node_by_dump(root, pattern);
 }
 
