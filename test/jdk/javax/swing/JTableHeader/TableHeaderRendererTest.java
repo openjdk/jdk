@@ -29,6 +29,8 @@ import java.awt.image.BufferedImage;
 import javax.swing.JTable;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
+
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellRenderer;
@@ -36,18 +38,22 @@ import javax.swing.table.TableCellRenderer;
 /*
  * @test
  * @bug 6429812
- * @requires (os.family == "windows")
  * @summary Test to check if table is printed without NPE
  * @run main TableHeaderRendererTest
  */
 
 public class TableHeaderRendererTest {
+    static String LnFName = null;
     public static void main(String[] args) throws Exception {
-        UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
 
-        // initialize should not throw NullPointerException
-        SwingUtilities.invokeAndWait(TableHeaderRendererTest::initialize);
-
+        UIManager.LookAndFeelInfo[] lookAndFeel = UIManager.getInstalledLookAndFeels();
+        for (UIManager.LookAndFeelInfo look : lookAndFeel) {
+            // initialize should not throw NullPointerException
+            LnFName = look.getName();
+            System.out.println(LnFName+ " LookAndFeel Set");
+            setLookAndFeel(look.getClassName());
+            SwingUtilities.invokeAndWait(TableHeaderRendererTest::initialize);
+        }
         System.out.println("Test Passed");
     }
 
@@ -103,6 +109,16 @@ public class TableHeaderRendererTest {
                                                        boolean hasFocus, int row, int column) {
             return render.getTableCellRendererComponent(
                     table, value, isSelected, hasFocus, row, column);
+        }
+    }
+    private static void setLookAndFeel(String laf) {
+        try {
+            UIManager.setLookAndFeel(laf);
+        } catch (UnsupportedLookAndFeelException ignored) {
+            System.out.println("Unsupported L&F: " + laf);
+        } catch (ClassNotFoundException | InstantiationException
+                | IllegalAccessException e) {
+            throw new RuntimeException(e);
         }
     }
 }
