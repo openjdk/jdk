@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * Copyright (c) 2022, IBM Corp.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -109,8 +109,8 @@ typedef struct { /* global cpu information AIX 5.3 < TL10 */
   u_longlong_t syswrite;                /* number of write system calls executed */
   u_longlong_t sysfork;                 /* number of forks system calls executed */
   u_longlong_t sysexec;                 /* number of execs system calls executed */
-  u_longlong_t readch;                  /* number of characters tranferred with read system call */
-  u_longlong_t writech;                 /* number of characters tranferred with write system call */
+  u_longlong_t readch;                  /* number of characters transferred with read system call */
+  u_longlong_t writech;                 /* number of characters transferred with write system call */
   u_longlong_t devintrs;                /* number of device interrupts */
   u_longlong_t softintrs;               /* number of software interrupts */
   time_t lbolt;                         /* number of ticks since last reboot */
@@ -188,8 +188,8 @@ typedef struct { /* global cpu information AIX 6.1|5.3 > TL09 */
   u_longlong_t syswrite;                /* number of write system calls executed */
   u_longlong_t sysfork;                 /* number of forks system calls executed */
   u_longlong_t sysexec;                 /* number of execs system calls executed */
-  u_longlong_t readch;                  /* number of characters tranferred with read system call */
-  u_longlong_t writech;                 /* number of characters tranferred with write system call */
+  u_longlong_t readch;                  /* number of characters transferred with read system call */
+  u_longlong_t writech;                 /* number of characters transferred with write system call */
   u_longlong_t devintrs;                /* number of device interrupts */
   u_longlong_t softintrs;               /* number of software interrupts */
   time_t lbolt;                         /* number of ticks since last reboot */
@@ -272,8 +272,8 @@ typedef struct { /* global cpu information AIX 7.1 */
   u_longlong_t syswrite;                /* number of write system calls executed */
   u_longlong_t sysfork;                 /* number of forks system calls executed */
   u_longlong_t sysexec;                 /* number of execs system calls executed */
-  u_longlong_t readch;                  /* number of characters tranferred with read system call */
-  u_longlong_t writech;                 /* number of characters tranferred with write system call */
+  u_longlong_t readch;                  /* number of characters transferred with read system call */
+  u_longlong_t writech;                 /* number of characters transferred with write system call */
   u_longlong_t devintrs;                /* number of device interrupts */
   u_longlong_t softintrs;               /* number of software interrupts */
   time_t lbolt;                         /* number of ticks since last reboot */
@@ -360,8 +360,8 @@ typedef struct { /* global cpu information AIX 7.2  / 6.1 TL6 (see oslevel -r) *
   u_longlong_t syswrite;    /* number of write system calls executed */
   u_longlong_t sysfork;     /* number of forks system calls executed */
   u_longlong_t sysexec;     /* number of execs system calls executed */
-  u_longlong_t readch;      /* number of characters tranferred with read system call */
-  u_longlong_t writech;     /* number of characters tranferred with write system call */
+  u_longlong_t readch;      /* number of characters transferred with read system call */
+  u_longlong_t writech;     /* number of characters transferred with write system call */
   u_longlong_t devintrs;    /* number of device interrupts */
   u_longlong_t softintrs;   /* number of software interrupts */
   time_t lbolt;             /* number of ticks since last reboot */
@@ -571,7 +571,7 @@ typedef struct { /* partition total information AIX 5.3 < TL6 */
   int group_id;                         /* identifier of the LPAR group this partition is a member of */
   int pool_id;                          /* identifier of the shared pool of physical processors this partition is a member of */
   int online_cpus;                      /* number of virtual CPUs currently online on the partition */
-  int max_cpus;                         /* maximum number of virtual CPUs this parition can ever have */
+  int max_cpus;                         /* maximum number of virtual CPUs this partition can ever have */
   int min_cpus;                         /* minimum number of virtual CPUs this partition must have */
   u_longlong_t online_memory;           /* amount of memory currently online */
   u_longlong_t max_memory;              /* maximum amount of memory this partition can ever have */
@@ -595,7 +595,7 @@ typedef struct { /* partition total information AIX 5.3 < TL6 */
   u_longlong_t invol_virt_cswitch;      /* number involuntary virtual CPU context switches */
   u_longlong_t vol_virt_cswitch;        /* number voluntary virtual CPU context switches */
   u_longlong_t timebase_last;           /* most recently cpu time base */
-  u_longlong_t reserved_pages;          /* Currenlty number of 16GB pages. Cannot participate in DR operations */
+  u_longlong_t reserved_pages;          /* Currently number of 16GB pages. Cannot participate in DR operations */
   u_longlong_t reserved_pagesize;       /* Currently 16GB pagesize Cannot participate in DR operations */
 } perfstat_partition_total_t_53_5;
 
@@ -606,7 +606,7 @@ typedef struct { /* partition total information AIX 5.3 < TL10 */
   int group_id;                         /* identifier of the LPAR group this partition is a member of */
   int pool_id;                          /* identifier of the shared pool of physical processors this partition is a member of */
   int online_cpus;                      /* number of virtual CPUs currently online on the partition */
-  int max_cpus;                         /* maximum number of virtual CPUs this parition can ever have */
+  int max_cpus;                         /* maximum number of virtual CPUs this partition can ever have */
   int min_cpus;                         /* minimum number of virtual CPUs this partition must have */
   u_longlong_t online_memory;           /* amount of memory currently online */
   u_longlong_t max_memory;              /* maximum amount of memory this partition can ever have */
@@ -630,7 +630,7 @@ typedef struct { /* partition total information AIX 5.3 < TL10 */
   u_longlong_t invol_virt_cswitch;      /* number involuntary virtual CPU context switches */
   u_longlong_t vol_virt_cswitch;        /* number voluntary virtual CPU context switches */
   u_longlong_t timebase_last;           /* most recently cpu time base */
-  u_longlong_t reserved_pages;          /* Currenlty number of 16GB pages. Cannot participate in DR operations */
+  u_longlong_t reserved_pages;          /* Currently number of 16GB pages. Cannot participate in DR operations */
   u_longlong_t reserved_pagesize;       /* Currently 16GB pagesize Cannot participate in DR operations */
   u_longlong_t idle_donated_purr;       /* number of idle cycles donated by a dedicated partition enabled for donation */
   u_longlong_t idle_donated_spurr;      /* number of idle spurr cycles donated by a dedicated partition enabled for donation */
@@ -665,7 +665,7 @@ typedef struct { /* partition total information AIX 6.1|5.3 > TL09 */
   int group_id;                         /* identifier of the LPAR group this partition is a member of */
   int pool_id;                          /* identifier of the shared pool of physical processors this partition is a member of */
   int online_cpus;                      /* number of virtual CPUs currently online on the partition */
-  int max_cpus;                         /* maximum number of virtual CPUs this parition can ever have */
+  int max_cpus;                         /* maximum number of virtual CPUs this partition can ever have */
   int min_cpus;                         /* minimum number of virtual CPUs this partition must have */
   u_longlong_t online_memory;           /* amount of memory currently online */
   u_longlong_t max_memory;              /* maximum amount of memory this partition can ever have */
@@ -689,7 +689,7 @@ typedef struct { /* partition total information AIX 6.1|5.3 > TL09 */
   u_longlong_t invol_virt_cswitch;      /* number involuntary virtual CPU context switches */
   u_longlong_t vol_virt_cswitch;        /* number voluntary virtual CPU context switches */
   u_longlong_t timebase_last;           /* most recently cpu time base */
-  u_longlong_t reserved_pages;          /* Currenlty number of 16GB pages. Cannot participate in DR operations */
+  u_longlong_t reserved_pages;          /* Currently number of 16GB pages. Cannot participate in DR operations */
   u_longlong_t reserved_pagesize;       /* Currently 16GB pagesize Cannot participate in DR operations */
   u_longlong_t idle_donated_purr;       /* number of idle cycles donated by a dedicated partition enabled for donation */
   u_longlong_t idle_donated_spurr;      /* number of idle spurr cycles donated by a dedicated partition enabled for donation */
@@ -731,7 +731,7 @@ typedef struct { /* partition total information AIX 7.1 */
   int group_id;                         /* identifier of the LPAR group this partition is a member of */
   int pool_id;                          /* identifier of the shared pool of physical processors this partition is a member of */
   int online_cpus;                      /* number of virtual CPUs currently online on the partition */
-  int max_cpus;                         /* maximum number of virtual CPUs this parition can ever have */
+  int max_cpus;                         /* maximum number of virtual CPUs this partition can ever have */
   int min_cpus;                         /* minimum number of virtual CPUs this partition must have */
   u_longlong_t online_memory;           /* amount of memory currently online */
   u_longlong_t max_memory;              /* maximum amount of memory this partition can ever have */
@@ -755,7 +755,7 @@ typedef struct { /* partition total information AIX 7.1 */
   u_longlong_t invol_virt_cswitch;      /* number involuntary virtual CPU context switches */
   u_longlong_t vol_virt_cswitch;        /* number voluntary virtual CPU context switches */
   u_longlong_t timebase_last;           /* most recently cpu time base */
-  u_longlong_t reserved_pages;          /* Currenlty number of 16GB pages. Cannot participate in DR operations */
+  u_longlong_t reserved_pages;          /* Currently number of 16GB pages. Cannot participate in DR operations */
   u_longlong_t reserved_pagesize;       /* Currently 16GB pagesize Cannot participate in DR operations */
   u_longlong_t idle_donated_purr;       /* number of idle cycles donated by a dedicated partition enabled for donation */
   u_longlong_t idle_donated_spurr;      /* number of idle spurr cycles donated by a dedicated partition enabled for donation */
@@ -810,7 +810,7 @@ typedef struct { /* partition total information AIX 7.1 >= TL1*/
         int group_id;                         /* identifier of the LPAR group this partition is a member of */
         int pool_id;                          /* identifier of the shared pool of physical processors this partition is a member of */
         int online_cpus;                      /* number of virtual CPUs currently online on the partition */
-        int max_cpus;                         /* maximum number of virtual CPUs this parition can ever have */
+        int max_cpus;                         /* maximum number of virtual CPUs this partition can ever have */
         int min_cpus;                         /* minimum number of virtual CPUs this partition must have */
         u_longlong_t online_memory;           /* amount of memory currently online */
         u_longlong_t max_memory;              /* maximum amount of memory this partition can ever have */
@@ -834,7 +834,7 @@ typedef struct { /* partition total information AIX 7.1 >= TL1*/
         u_longlong_t invol_virt_cswitch;      /* number involuntary virtual CPU context switches */
         u_longlong_t vol_virt_cswitch;        /* number voluntary virtual CPU context switches */
         u_longlong_t timebase_last;           /* most recently cpu time base */
-        u_longlong_t reserved_pages;          /* Currenlty number of 16GB pages. Cannot participate in DR operations */
+        u_longlong_t reserved_pages;          /* Currently number of 16GB pages. Cannot participate in DR operations */
         u_longlong_t reserved_pagesize;       /* Currently 16GB pagesize Cannot participate in DR operations */
         u_longlong_t idle_donated_purr;       /* number of idle cycles donated by a dedicated partition enabled for donation */
         u_longlong_t idle_donated_spurr;      /* number of idle spurr cycles donated by a dedicated partition enabled for donation */
@@ -1034,7 +1034,7 @@ public:
 
   ////////////////////////////////////////////////////////////////
   // The convenience functions get_partitioninfo(), get_cpuinfo(), get_wparinfo() return
-  // information about partition, cpu and wpars, respectivly. They can be used without
+  // information about partition, cpu and wpars, respectively. They can be used without
   // regard for which OS release we are on. On older AIX release, some output structure
   // members will be 0.
 

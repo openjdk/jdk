@@ -420,7 +420,7 @@ class GraphKit : public Phase {
 
   // Use the type profile to narrow an object type.
   Node* maybe_cast_profiled_receiver(Node* not_null_obj,
-                                     ciKlass* require_klass,
+                                     const TypeKlassPtr* require_klass,
                                      ciKlass* spec,
                                      bool safe_for_replace);
 
@@ -589,7 +589,7 @@ class GraphKit : public Phase {
   // Perform decorated accesses
 
   Node* access_store_at(Node* obj,   // containing obj
-                        Node* adr,   // actual adress to store val at
+                        Node* adr,   // actual address to store val at
                         const TypePtr* adr_type,
                         Node* val,
                         const Type* val_type,
@@ -597,13 +597,13 @@ class GraphKit : public Phase {
                         DecoratorSet decorators);
 
   Node* access_load_at(Node* obj,   // containing obj
-                       Node* adr,   // actual adress to load val at
+                       Node* adr,   // actual address to load val at
                        const TypePtr* adr_type,
                        const Type* val_type,
                        BasicType bt,
                        DecoratorSet decorators);
 
-  Node* access_load(Node* adr,   // actual adress to load val at
+  Node* access_load(Node* adr,   // actual address to load val at
                     const Type* val_type,
                     BasicType bt,
                     DecoratorSet decorators);
@@ -799,8 +799,6 @@ class GraphKit : public Phase {
 
   Node* sign_extend_byte(Node* in);
   Node* sign_extend_short(Node* in);
-
-  Node* make_native_call(address call_addr, const TypeFunc* call_type, uint nargs, ciNativeEntryPoint* nep);
 
   enum {  // flag values for make_runtime_call
     RC_NO_FP = 1,               // CallLeafNoFPNode

@@ -126,6 +126,12 @@ AC_DEFUN([PLATFORM_EXTRACT_VARS_FROM_CPU],
       VAR_CPU_BITS=64
       VAR_CPU_ENDIAN=little
       ;;
+    riscv32)
+      VAR_CPU=riscv32
+      VAR_CPU_ARCH=riscv
+      VAR_CPU_BITS=32
+      VAR_CPU_ENDIAN=little
+      ;;
     riscv64)
       VAR_CPU=riscv64
       VAR_CPU_ARCH=riscv
@@ -212,7 +218,7 @@ AC_DEFUN([PLATFORM_EXTRACT_VARS_FROM_OS],
       VAR_OS=windows
       VAR_OS_ENV=windows.wsl
       ;;
-    *msys*)
+    *msys* | *mingw*)
       VAR_OS=windows
       VAR_OS_ENV=windows.msys2
       ;;
@@ -378,7 +384,7 @@ AC_DEFUN([PLATFORM_EXTRACT_TARGET_AND_BUILD],
   fi
 ])
 
-# Check if a reduced build (32-bit on 64-bit platforms) is requested, and modify behaviour
+# Check if a reduced build (32-bit on 64-bit platforms) is requested, and modify behavior
 # accordingly. Must be done after setting up build and target system, but before
 # doing anything else with these values.
 AC_DEFUN([PLATFORM_SETUP_TARGET_CPU_BITS],
@@ -561,6 +567,8 @@ AC_DEFUN([PLATFORM_SETUP_LEGACY_VARS_HELPER],
     HOTSPOT_$1_CPU_DEFINE=PPC64
   elif test "x$OPENJDK_$1_CPU" = xppc64le; then
     HOTSPOT_$1_CPU_DEFINE=PPC64
+  elif test "x$OPENJDK_$1_CPU" = xriscv32; then
+    HOTSPOT_$1_CPU_DEFINE=RISCV32
   elif test "x$OPENJDK_$1_CPU" = xriscv64; then
     HOTSPOT_$1_CPU_DEFINE=RISCV64
 
@@ -648,9 +656,6 @@ AC_DEFUN_ONCE([PLATFORM_SETUP_OPENJDK_BUILD_AND_TARGET],
   PLATFORM_SET_MODULE_TARGET_OS_VALUES
   PLATFORM_SET_RELEASE_FILE_OS_VALUES
   PLATFORM_SETUP_LEGACY_VARS
-
-  # Deprecated in JDK 15
-  UTIL_DEPRECATED_ARG_ENABLE(deprecated-ports)
 ])
 
 AC_DEFUN_ONCE([PLATFORM_SETUP_OPENJDK_BUILD_OS_VERSION],

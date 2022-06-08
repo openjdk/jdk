@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 package nsk.jvmti.GetThreadInfo;
 
 import java.io.PrintStream;
+import java.util.concurrent.ThreadFactory;
 
 public class thrinfo001 {
 
@@ -74,7 +75,32 @@ public class thrinfo001 {
             t_b.join();
         } catch (InterruptedException e) {}
         checkInfo(t_b, t_b.getThreadGroup(), 2);
+
+
+        Thread t_c = virtualThreadFactory().newThread(new thrinfo001c());
+        t_c.setName("vthread");
+
+        checkInfo(t_c, t_c.getThreadGroup(), 3);
+        t_c.start();
+        try {
+            t_c.join();
+        } catch (InterruptedException e) {}
+        checkInfo(t_c, t_c.getThreadGroup(), 3);
+
         return getRes();
+    }
+
+    private static ThreadFactory virtualThreadFactory() {
+        try {
+            Object builder = Thread.class.getMethod("ofVirtual").invoke(null);
+            Class<?> clazz = Class.forName("java.lang.Thread$Builder");
+            java.lang.reflect.Method factory = clazz.getMethod("factory");
+            return (ThreadFactory) factory.invoke(builder);
+        } catch (RuntimeException | Error e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }
 
@@ -93,5 +119,12 @@ class thrinfo001b extends Thread {
     public void run() {
         Thread currThr = Thread.currentThread();
         thrinfo001.checkInfo(currThr, currThr.getThreadGroup(), 2);
+    }
+}
+
+class thrinfo001c implements Runnable {
+    public void run() {
+        Thread currThr = Thread.currentThread();
+        thrinfo001.checkInfo(currThr, currThr.getThreadGroup(), 3);
     }
 }

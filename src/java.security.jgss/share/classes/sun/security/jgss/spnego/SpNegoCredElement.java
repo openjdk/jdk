@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import sun.security.jgss.spi.GSSCredentialSpi;
  */
 public class SpNegoCredElement implements GSSCredentialSpi {
 
-    private GSSCredentialSpi cred = null;
+    private final GSSCredentialSpi cred;
 
     public SpNegoCredElement(GSSCredentialSpi cred) throws GSSException {
         this.cred = cred;

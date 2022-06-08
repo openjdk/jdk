@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -499,50 +499,56 @@ public class Lower extends TreeTranslator {
 
         // generate the field initializer for the map
         void translate() {
-            make.at(pos.getStartPosition());
-            JCClassDecl owner = classDef((ClassSymbol)mapVar.owner);
+            boolean prevAllowProtectedAccess = attrEnv.info.allowProtectedAccess;
+            try {
+                make.at(pos.getStartPosition());
+                attrEnv.info.allowProtectedAccess = true;
+                JCClassDecl owner = classDef((ClassSymbol)mapVar.owner);
 
-            // synthetic static final int[] $SwitchMap$Color = new int[Color.values().length];
-            MethodSymbol valuesMethod = lookupMethod(pos,
-                                                     names.values,
-                                                     forEnum.type,
-                                                     List.nil());
-            JCExpression size = make // Color.values().length
-                .Select(make.App(make.QualIdent(valuesMethod)),
-                        syms.lengthVar);
-            JCExpression mapVarInit = make
-                .NewArray(make.Type(syms.intType), List.of(size), null)
-                .setType(new ArrayType(syms.intType, syms.arrayClass));
+                // synthetic static final int[] $SwitchMap$Color = new int[Color.values().length];
+                MethodSymbol valuesMethod = lookupMethod(pos,
+                                                         names.values,
+                                                         forEnum.type,
+                                                         List.nil());
+                JCExpression size = make // Color.values().length
+                    .Select(make.App(make.QualIdent(valuesMethod)),
+                            syms.lengthVar);
+                JCExpression mapVarInit = make
+                    .NewArray(make.Type(syms.intType), List.of(size), null)
+                    .setType(new ArrayType(syms.intType, syms.arrayClass));
 
-            // try { $SwitchMap$Color[red.ordinal()] = 1; } catch (java.lang.NoSuchFieldError ex) {}
-            ListBuffer<JCStatement> stmts = new ListBuffer<>();
-            Symbol ordinalMethod = lookupMethod(pos,
-                                                names.ordinal,
-                                                forEnum.type,
-                                                List.nil());
-            List<JCCatch> catcher = List.<JCCatch>nil()
-                .prepend(make.Catch(make.VarDef(new VarSymbol(PARAMETER, names.ex,
-                                                              syms.noSuchFieldErrorType,
-                                                              syms.noSymbol),
-                                                null),
-                                    make.Block(0, List.nil())));
-            for (Map.Entry<VarSymbol,Integer> e : values.entrySet()) {
-                VarSymbol enumerator = e.getKey();
-                Integer mappedValue = e.getValue();
-                JCExpression assign = make
-                    .Assign(make.Indexed(mapVar,
-                                         make.App(make.Select(make.QualIdent(enumerator),
-                                                              ordinalMethod))),
-                            make.Literal(mappedValue))
-                    .setType(syms.intType);
-                JCStatement exec = make.Exec(assign);
-                JCStatement _try = make.Try(make.Block(0, List.of(exec)), catcher, null);
-                stmts.append(_try);
+                // try { $SwitchMap$Color[red.ordinal()] = 1; } catch (java.lang.NoSuchFieldError ex) {}
+                ListBuffer<JCStatement> stmts = new ListBuffer<>();
+                Symbol ordinalMethod = lookupMethod(pos,
+                                                    names.ordinal,
+                                                    forEnum.type,
+                                                    List.nil());
+                List<JCCatch> catcher = List.<JCCatch>nil()
+                    .prepend(make.Catch(make.VarDef(new VarSymbol(PARAMETER, names.ex,
+                                                                  syms.noSuchFieldErrorType,
+                                                                  syms.noSymbol),
+                                                    null),
+                                        make.Block(0, List.nil())));
+                for (Map.Entry<VarSymbol,Integer> e : values.entrySet()) {
+                    VarSymbol enumerator = e.getKey();
+                    Integer mappedValue = e.getValue();
+                    JCExpression assign = make
+                        .Assign(make.Indexed(mapVar,
+                                             make.App(make.Select(make.QualIdent(enumerator),
+                                                                  ordinalMethod))),
+                                make.Literal(mappedValue))
+                        .setType(syms.intType);
+                    JCStatement exec = make.Exec(assign);
+                    JCStatement _try = make.Try(make.Block(0, List.of(exec)), catcher, null);
+                    stmts.append(_try);
+                }
+
+                owner.defs = owner.defs
+                    .prepend(make.Block(STATIC, stmts.toList()))
+                    .prepend(make.VarDef(mapVar, mapVarInit));
+            } finally {
+                attrEnv.info.allowProtectedAccess = prevAllowProtectedAccess;
             }
-
-            owner.defs = owner.defs
-                .prepend(make.Block(STATIC, stmts.toList()))
-                .prepend(make.VarDef(mapVar, mapVarInit));
         }
     }
 
@@ -1587,7 +1593,7 @@ public class Lower extends TreeTranslator {
      * }
      *
      * @param tree  The try statement to inspect.
-     * @return A a desugared try-with-resources tree, or the original
+     * @return a desugared try-with-resources tree, or the original
      * try block if there are no resources to manage.
      */
     JCTree makeTwrTry(JCTry tree) {
@@ -3615,20 +3621,26 @@ public class Lower extends TreeTranslator {
     }
 
     public void visitSwitch(JCSwitch tree) {
-        List<JCCase> cases = tree.patternSwitch ? addDefaultIfNeeded(tree.cases) : tree.cases;
+        boolean matchException = tree.patternSwitch && !tree.wasEnumSelector;
+        List<JCCase> cases = tree.patternSwitch ? addDefaultIfNeeded(matchException, tree.cases)
+                                                : tree.cases;
         handleSwitch(tree, tree.selector, cases);
     }
 
     @Override
     public void visitSwitchExpression(JCSwitchExpression tree) {
-        List<JCCase> cases = addDefaultIfNeeded(tree.cases);
+        boolean matchException = tree.patternSwitch && !tree.wasEnumSelector;
+        List<JCCase> cases = addDefaultIfNeeded(matchException, tree.cases);
         handleSwitch(tree, tree.selector, cases);
     }
 
-    private List<JCCase> addDefaultIfNeeded(List<JCCase> cases) {
+    private List<JCCase> addDefaultIfNeeded(boolean matchException, List<JCCase> cases) {
         if (cases.stream().flatMap(c -> c.labels.stream()).noneMatch(p -> p.hasTag(Tag.DEFAULTCASELABEL))) {
-            JCThrow thr = make.Throw(makeNewClass(syms.incompatibleClassChangeErrorType,
-                                                  List.nil()));
+            Type exception = matchException ? syms.matchExceptionType
+                                            : syms.incompatibleClassChangeErrorType;
+            List<JCExpression> params = matchException ? List.of(makeNull(), makeNull())
+                                                       : List.nil();
+            JCThrow thr = make.Throw(makeNewClass(exception, params));
             JCCase c = make.Case(JCCase.STATEMENT, List.of(make.DefaultCaseLabel()), List.of(thr), null);
             cases = cases.prepend(c);
         }
@@ -3716,7 +3728,7 @@ public class Lower extends TreeTranslator {
                                             List.nil());
         JCExpression newSelector;
 
-        if (cases.stream().anyMatch(c -> TreeInfo.isNull(c.labels.head))) {
+        if (cases.stream().anyMatch(c -> TreeInfo.isNullCaseLabel(c.labels.head))) {
             //for enum switches with case null, do:
             //switch ($selector != null ? $mapVar[$selector.ordinal()] : -1) {...}
             //replacing case null with case -1:
@@ -3742,15 +3754,15 @@ public class Lower extends TreeTranslator {
         }
         ListBuffer<JCCase> newCases = new ListBuffer<>();
         for (JCCase c : cases) {
-            if (c.labels.head.isExpression()) {
+            if (c.labels.head.hasTag(CONSTANTCASELABEL)) {
                 JCExpression pat;
-                if (TreeInfo.isNull(c.labels.head)) {
+                if (TreeInfo.isNullCaseLabel(c.labels.head)) {
                     pat = makeLit(syms.intType, -1);
                 } else {
-                    VarSymbol label = (VarSymbol)TreeInfo.symbol((JCExpression) c.labels.head);
+                    VarSymbol label = (VarSymbol)TreeInfo.symbol(((JCConstantCaseLabel) c.labels.head).expr);
                     pat = map.forConstant(label);
                 }
-                newCases.append(make.Case(JCCase.STATEMENT, List.of(pat), c.stats, null));
+                newCases.append(make.Case(JCCase.STATEMENT, List.of(make.ConstantCaseLabel(pat)), c.stats, null));
             } else {
                 newCases.append(c);
             }
@@ -3830,12 +3842,12 @@ public class Lower extends TreeTranslator {
             int nullCaseLabel = -1;
 
             for(JCCase oneCase : caseList) {
-                if (oneCase.labels.head.isExpression()) {
-                    if (TreeInfo.isNull(oneCase.labels.head)) {
+                if (oneCase.labels.head.hasTag(CONSTANTCASELABEL)) {
+                    if (TreeInfo.isNullCaseLabel(oneCase.labels.head)) {
                         nullCase = oneCase;
                         nullCaseLabel = casePosition;
                     } else {
-                        JCExpression expression = (JCExpression) oneCase.labels.head;
+                        JCExpression expression = ((JCConstantCaseLabel) oneCase.labels.head).expr;
                         String labelExpr = (String) expression.type.constValue();
                         Integer mapping = caseLabelToPosition.put(labelExpr, casePosition);
                         Assert.checkNull(mapping);
@@ -3920,7 +3932,10 @@ public class Lower extends TreeTranslator {
                 breakStmt.target = switch1;
                 lb.append(elsepart).append(breakStmt);
 
-                caseBuffer.append(make.Case(JCCase.STATEMENT, List.of(make.Literal(hashCode)), lb.toList(), null));
+                caseBuffer.append(make.Case(JCCase.STATEMENT,
+                                            List.of(make.ConstantCaseLabel(make.Literal(hashCode))),
+                                            lb.toList(),
+                                            null));
             }
 
             switch1.cases = caseBuffer.toList();
@@ -3939,18 +3954,21 @@ public class Lower extends TreeTranslator {
 
             ListBuffer<JCCase> lb = new ListBuffer<>();
             for(JCCase oneCase : caseList ) {
-                boolean isDefault = !oneCase.labels.head.isExpression();
-                JCCaseLabel caseExpr;
+                boolean isDefault = !oneCase.labels.head.hasTag(CONSTANTCASELABEL);
+                JCExpression caseExpr;
                 if (isDefault)
                     caseExpr = null;
                 else if (oneCase == nullCase) {
                     caseExpr = make.Literal(nullCaseLabel);
                 } else {
-                    caseExpr = make.Literal(caseLabelToPosition.get((String)TreeInfo.skipParens((JCExpression) oneCase.labels.head).
-                                                                    type.constValue()));
+                    JCExpression expression = ((JCConstantCaseLabel) oneCase.labels.head).expr;
+                    String name = (String) TreeInfo.skipParens(expression)
+                                                   .type.constValue();
+                    caseExpr = make.Literal(caseLabelToPosition.get(name));
                 }
 
-                lb.append(make.Case(JCCase.STATEMENT, caseExpr == null ? List.of(make.DefaultCaseLabel()) : List.of(caseExpr),
+                lb.append(make.Case(JCCase.STATEMENT, caseExpr == null ? List.of(make.DefaultCaseLabel())
+                                                                       : List.of(make.ConstantCaseLabel(caseExpr)),
                                     oneCase.stats, null));
             }
 
@@ -3987,7 +4005,7 @@ public class Lower extends TreeTranslator {
     private JCTree visitBoxedPrimitiveSwitch(JCTree tree, JCExpression selector, List<JCCase> cases) {
         JCExpression newSelector;
 
-        if (cases.stream().anyMatch(c -> TreeInfo.isNull(c.labels.head))) {
+        if (cases.stream().anyMatch(c -> TreeInfo.isNullCaseLabel(c.labels.head))) {
             //a switch over a boxed primitive, with a null case. Pick two constants that are
             //not used by any branch in the case (c1 and c2), close to other constants that are
             //used in the switch. Then do:
@@ -3997,10 +4015,10 @@ public class Lower extends TreeTranslator {
             JCCase nullCase = null;
 
             for (JCCase c : cases) {
-                if (TreeInfo.isNull(c.labels.head)) {
+                if (TreeInfo.isNullCaseLabel(c.labels.head)) {
                     nullCase = c;
                 } else if (!c.labels.head.hasTag(DEFAULTCASELABEL)) {
-                    constants.add((int) c.labels.head.type.constValue());
+                    constants.add((int) ((JCConstantCaseLabel) c.labels.head).expr.type.constValue());
                 }
             }
 
@@ -4011,7 +4029,7 @@ public class Lower extends TreeTranslator {
             while (constants.contains(nullValue)) nullValue++;
 
             constants.add(nullValue);
-            nullCase.labels.head = makeLit(syms.intType, nullValue);
+            nullCase.labels.head = make.ConstantCaseLabel(makeLit(syms.intType, nullValue));
 
             int replacementValue = nullValue;
 

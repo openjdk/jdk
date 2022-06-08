@@ -1569,10 +1569,10 @@ encode %{
 //         Region 6-7 is determined per call site.
 // Note 2: If the calling convention leaves holes in the incoming argument
 //         area, those holes are owned by SELF.  Holes in the outgoing area
-//         are owned by the CALLEE.  Holes should not be nessecary in the
+//         are owned by the CALLEE.  Holes should not be necessary in the
 //         incoming area, as the Java calling convention is completely under
 //         the control of the AD file.  Doubles can be sorted and packed to
-//         avoid holes.  Holes in the outgoing arguments may be nessecary for
+//         avoid holes.  Holes in the outgoing arguments may be necessary for
 //         varargs C calling conventions.
 // Note 3: Region 0-3 is even aligned, with pad2 as needed.  Region 3-5 is
 //         even aligned with pad0 as needed.
@@ -2776,7 +2776,7 @@ pipe_class ialu_reg_reg_2_dep(iRegL dst, iRegL src1, iRegL src2, flagsReg cr) %{
     IALU  : R(2);
 %}
 
-// Integer ALU reg-imm operaion
+// Integer ALU reg-imm operation
 pipe_class ialu_reg_imm(iRegI dst, iRegI src1) %{
     single_instruction;
     dst   : E(write);
@@ -9063,7 +9063,7 @@ instruct CallLeafDirect(method meth) %{
   effect(USE meth);
   ins_cost(CALL_COST);
   format %{ "CALL,runtime leaf" %}
-  // TODO: ned save_last_PC here?
+  // TODO: need save_last_PC here?
   ins_encode( Java_To_Runtime( meth ),
               call_epilog );
   ins_pipe(simple_call);
@@ -9075,7 +9075,7 @@ instruct CallLeafNoFPDirect(method meth) %{
   effect(USE meth);
   ins_cost(CALL_COST);
   format %{ "CALL,runtime leaf nofp" %}
-  // TODO: ned save_last_PC here?
+  // TODO: need save_last_PC here?
   ins_encode( Java_To_Runtime( meth ),
               call_epilog );
   ins_pipe(simple_call);
@@ -11798,7 +11798,7 @@ instruct vxorX(vecX dst, vecX src1, vecX src2) %{
 //
 // // Change (inc mov) to lea
 // peephole %{
-//   // increment preceeded by register-register move
+//   // increment preceded by register-register move
 //   peepmatch ( incI_eReg movI );
 //   // require that the destination register of the increment
 //   // match the destination register of the move

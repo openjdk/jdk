@@ -1946,7 +1946,7 @@ instruct vstring_compareLU(iRegP_R11 str1, iRegI_R12 cnt1, iRegP_R13 str2, iRegI
 
 // fast byte[] to char[] inflation
 instruct vstring_inflate(Universe dummy, iRegP_R10 src, iRegP_R11 dst, iRegI_R12 len,
-                         vReg_V1 v1, vReg_V2 v2, vReg_V3 v3, iRegL tmp)
+                         vReg_V1 v1, vReg_V2 v2, vReg_V3 v3, iRegLNoSp tmp)
 %{
   predicate(UseRVV);
   match(Set dummy (StrInflatedCopy src (Binary dst len)));
@@ -1961,7 +1961,7 @@ instruct vstring_inflate(Universe dummy, iRegP_R10 src, iRegP_R11 dst, iRegI_R12
 
 // encode char[] to byte[] in ISO_8859_1
 instruct vencode_iso_array(iRegP_R12 src, iRegP_R11 dst, iRegI_R13 len, iRegI_R10 result,
-                           vReg_V1 v1, vReg_V2 v2, vReg_V3 v3, iRegL tmp)
+                           vReg_V1 v1, vReg_V2 v2, vReg_V3 v3, iRegLNoSp tmp)
 %{
   predicate(UseRVV);
   match(Set result (EncodeISOArray src (Binary dst len)));
@@ -1978,7 +1978,7 @@ instruct vencode_iso_array(iRegP_R12 src, iRegP_R11 dst, iRegI_R13 len, iRegI_R1
 
 // fast char[] to byte[] compression
 instruct vstring_compress(iRegP_R12 src, iRegP_R11 dst, iRegI_R13 len, iRegI_R10 result,
-                          vReg_V1 v1, vReg_V2 v2, vReg_V3 v3, iRegL tmp)
+                          vReg_V1 v1, vReg_V2 v2, vReg_V3 v3, iRegLNoSp tmp)
 %{
   predicate(UseRVV);
   match(Set result (StrCompressedCopy src (Binary dst len)));
@@ -1994,7 +1994,7 @@ instruct vstring_compress(iRegP_R12 src, iRegP_R11 dst, iRegI_R13 len, iRegI_R10
 %}
 
 instruct vcount_positives(iRegP_R11 ary, iRegI_R12 len, iRegI_R10 result,
-                          vReg_V1 v1, vReg_V2 v2, vReg_V3 v3, iRegL tmp)
+                          vReg_V1 v1, vReg_V2 v2, vReg_V3 v3, iRegLNoSp tmp)
 %{
   predicate(UseRVV);
   match(Set result (CountPositives ary len));
