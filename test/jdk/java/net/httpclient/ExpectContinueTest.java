@@ -28,7 +28,7 @@
  * @summary Tests that when the httpclient sends a 100 Expect Continue header and receives
  *          a response code of 417 Expectation Failed, that the client does not hang
  *          indefinitely and closes the connection.
- * @bug
+ * @bug 8286171
  * @modules java.base/sun.net.www.http
  *          java.net.http/jdk.internal.net.http.common
  *          java.net.http/jdk.internal.net.http.frame
