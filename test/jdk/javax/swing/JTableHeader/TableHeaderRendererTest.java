@@ -28,11 +28,11 @@ import java.awt.image.BufferedImage;
 
 import javax.swing.JTable;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellRenderer;
-import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
 
 /*
  * @test
