@@ -85,6 +85,8 @@ source %{
       case Op_VectorReinterpret:
       case Op_VectorStoreMask:
       case Op_VectorTest:
+      case Op_PopCountVI:
+      case Op_PopCountVL:
         return false;
       default:
         return UseRVV;
@@ -779,18 +781,6 @@ instruct vnegD(vReg dst, vReg src) %{
   ins_encode %{
     __ vsetvli(t0, x0, Assembler::e64);
     __ vfneg_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-// popcount vector
-
-instruct vpopcountI(iRegINoSp dst, vReg src) %{
-  match(Set dst (PopCountVI src));
-  format %{ "vpopc.m $dst, $src\t#@vpopcountI" %}
-  ins_encode %{
-    __ vsetvli(t0, x0, Assembler::e32);
-    __ vpopc_m(as_Register($dst$$reg), as_VectorRegister($src$$reg));
   %}
   ins_pipe(pipe_slow);
 %}
