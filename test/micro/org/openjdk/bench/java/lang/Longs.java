@@ -49,6 +49,7 @@ public class Longs {
     @Param("500")
     private int size;
 
+    private long bound;
     private String[] strings;
     private long[] longArraySmall;
     private long[] longArrayBig;
@@ -56,6 +57,7 @@ public class Longs {
     @Setup
     public void setup() {
         var random = ThreadLocalRandom.current();
+        bound = 20000L;
         strings = new String[size];
         longArraySmall = new long[size];
         longArrayBig = new long[size];
@@ -139,6 +141,15 @@ public class Longs {
     public void shiftLeft(Blackhole bh) {
         for (int i = 0; i < size; i++) {
             bh.consume(longArrayBig[i] << longArraySmall[i]);
+        }
+    }
+
+    @Benchmark
+    public void compareUnsigned(Blackhole bh) {
+        // This pattern is seen in checkFromIndexSize
+        for (int i = 0; i < size; i++) {
+            int r = (Long.compareUnsigned(longArraySmall[i], bound - 16) < 0) ? 1 : 0;
+            bh.consume(r);
         }
     }
 }
