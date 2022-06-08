@@ -51,7 +51,7 @@ void CgroupV1Controller::set_subsystem_path(char *cgroup_path) {
         _path = os::strdup(ss.base());
       } else {
         char *p = strstr(cgroup_path, _root);
-        if (p != NULL && p == cgroup_path) {
+        if (p != NULL && p == _root) {
           if (strlen(cgroup_path) > strlen(_root)) {
             ss.print_raw(_mount_point);
             const char* cg_path_sub = cgroup_path + strlen(_root);

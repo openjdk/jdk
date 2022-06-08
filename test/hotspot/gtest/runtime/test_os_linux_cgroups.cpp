@@ -49,16 +49,9 @@ TEST(os_linux_cgroup, set_cgroupv1_subsystem_path) {
     "/user.slice/user-1000.slice/user@1000.service", // cgroup_path
     "/sys/fs/cgroup/mem"                             // expected_path
   };
-  TestCase substring_match = {
-    "/sys/fs/cgroup/memory",                           // mount_path
-    "/user.slice/user-1000.slice",                     // root_path
-    "/user.slice/user-1000.slice/user@1001.service",   // cgroup_path
-    "/sys/fs/cgroup/memory/user@1001.service"          // expected_path
-  };
-  int length = 3;
+  int length = 2;
   TestCase* testCases[] = { &host,
-                            &container_engine,
-                            &substring_match };
+                            &container_engine };
   for (int i = 0; i < length; i++) {
     CgroupV1Controller* ctrl = new CgroupV1Controller( (char*)testCases[i]->root_path,
                                                        (char*)testCases[i]->mount_path);
