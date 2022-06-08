@@ -78,7 +78,7 @@ public:
   void done() {
     allow_safepoint(); // must be done first
     _continuation = nullptr;
-    _tail = (stackChunkOop)badOop;
+    *reinterpret_cast<intptr_t*>(&_tail) = badHeapOopVal;
   }
 
   class SafepointOp : public StackObj {
