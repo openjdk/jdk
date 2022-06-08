@@ -76,7 +76,7 @@ public class ForceGC {
                 return true;
             }
 
-            doIt(i);
+            doit(i);
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {

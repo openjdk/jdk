@@ -119,17 +119,17 @@ public class TestNewApiList extends JavadocTester {
                 <li><a href="#annotation-interface-member">Annotation Interface Elements</a></li>
                 </ul>
                 </div>
-                <div class="checkboxes">Show API added in:<label for="release-1">
+                <div class="checkboxes">Show API added in: <label for="release-1">
                 <input type="checkbox" id="release-1" disabled checked onclick="toggleGlobal(this, '1', 3)">
-                <span>0.9</span></label><label for="release-2">
+                <span>0.9</span></label> <label for="release-2">
                 <input type="checkbox" id="release-2" disabled checked onclick="toggleGlobal(this, '2', 3)">
-                <span>v1.0</span></label><label for="release-3">
+                <span>v1.0</span></label> <label for="release-3">
                 <input type="checkbox" id="release-3" disabled checked onclick="toggleGlobal(this, '3', 3)">
-                <span>1.2</span></label><label for="release-4">
+                <span>1.2</span></label> <label for="release-4">
                 <input type="checkbox" id="release-4" disabled checked onclick="toggleGlobal(this, '4', 3)">
-                <span>2.0b</span></label><label for="release-5">
+                <span>2.0b</span></label> <label for="release-5">
                 <input type="checkbox" id="release-5" disabled checked onclick="toggleGlobal(this, '5', 3)">
-                <span>3.2</span></label><label for="release-6">
+                <span>3.2</span></label> <label for="release-6">
                 <input type="checkbox" id="release-6" disabled checked onclick="toggleGlobal(this, '6', 3)">
                 <span>5</span></label></div>""");
     }
@@ -610,7 +610,7 @@ public class TestNewApiList extends JavadocTester {
                 <li><a href="#annotation-interface-member">Annotation Interface Elements</a></li>
                 </ul>
                 </div>
-                <div class="checkboxes">Show API deprecated in:<label for="release-1">""",
+                <div class="checkboxes">Show API deprecated in: <label for="release-1">""",
             """
                 <div id="for-removal">
                 <div class="table-tabs" role="tablist" aria-orientation="horizontal">
@@ -670,15 +670,15 @@ public class TestNewApiList extends JavadocTester {
                 <li><a href="#constructor">Constructors</a></li>
                 </ul>
                 </div>
-                <div class="checkboxes">Show API added in:<label for="release-1">
+                <div class="checkboxes">Show API added in: <label for="release-1">
                 <input type="checkbox" id="release-1" disabled checked onclick="toggleGlobal(this, '1', 3)">
-                <span>1.2</span></label><label for="release-2">
+                <span>1.2</span></label> <label for="release-2">
                 <input type="checkbox" id="release-2" disabled checked onclick="toggleGlobal(this, '2', 3)">
-                <span>2.0b</span></label><label for="release-3">
+                <span>2.0b</span></label> <label for="release-3">
                 <input type="checkbox" id="release-3" disabled checked onclick="toggleGlobal(this, '3', 3)">
-                <span>3.2</span></label><label for="release-4">
+                <span>3.2</span></label> <label for="release-4">
                 <input type="checkbox" id="release-4" disabled checked onclick="toggleGlobal(this, '4', 3)">
-                <span>5</span></label><label for="release-5">
+                <span>5</span></label> <label for="release-5">
                 <input type="checkbox" id="release-5" disabled checked onclick="toggleGlobal(this, '5', 3)">
                 <span>6</span></label></div>""");
     }
