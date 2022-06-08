@@ -1933,19 +1933,19 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
     { // Log Deoptimization event for JFR, UL and event system
       Method* tm = trap_method();
       char* name_sig = tm->name_and_sig_as_C_string();
-      const char* reason_name = Deoptimization::trap_reason_name(reason);
-      const char* reason_action = Deoptimization::trap_action_name(action);
+      const char* reason_name = trap_reason_name(reason);
+      const char* reason_action = trap_action_name(action);
       JFR_ONLY(post_deoptimization_event(nm, tm, trap_bci, trap_bc, reason, action);)
-      log_debug(deoptimization)("cid: %d osr: %s level: %d %s @ %d %s -> %s",
+      log_debug(deoptimization)("cid=%d %s pc=" INTPTR_FORMAT " relative_pc=" INTPTR_FORMAT " level=%d %s @ %d %s -> %s",
                                 nm->compile_id(),
-                                (nm->is_osr_method() ? "true" : "false"),
+                                (nm->is_osr_method() ? "osr" : ""),
+                                p2i(fr.pc()),
+                                fr.pc() - nm->code_begin(),
                                 nm->comp_level(),
                                 name_sig,
                                 trap_bci,
                                 reason_name,
                                 reason_action);
-
-      // Log a message
       Events::log_deopt_message(current, "Uncommon trap: reason=%s action=%s pc=" INTPTR_FORMAT " method=%s @ %d %s",
                                 reason_name, reason_action, p2i(fr.pc()),
                                 name_sig, trap_bci, nm->compiler_name());
