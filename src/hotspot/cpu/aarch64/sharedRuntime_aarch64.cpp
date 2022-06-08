@@ -1050,7 +1050,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
 
   __ rt_call(CAST_FROM_FN_PTR(address, StubRoutines::cont_thaw()));
   oop_maps->add_gc_map(__ pc() - start, map->deep_copy());
-  ContinuationEntry::return_pc_offset = __ pc() - start;
+  ContinuationEntry::_return_pc_offset = __ pc() - start;
   __ post_call_nop();
 
   __ bind(exit);
@@ -1195,7 +1195,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                                               in_ByteSize(-1),
                                               oop_maps,
                                               exception_offset);
-    ContinuationEntry::set_enter_nmethod(nm);
+    ContinuationEntry::set_enter_code(nm);
     return nm;
   }
 
@@ -1978,7 +1978,7 @@ void SharedRuntime::generate_deopt_blob() {
 
   // -------------
   // This code enters when returning to a de-optimized nmethod.  A return
-  // address has been pushed on the the stack, and return values are in
+  // address has been pushed on the stack, and return values are in
   // registers.
   // If we are doing a normal deopt then we were called from the patched
   // nmethod from the point we returned to the nmethod. So the return
@@ -2729,7 +2729,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
   __ str(r0, Address(sp, reg_save.rscratch1_offset_in_bytes()));
   reg_save.restore_live_registers(masm);
 
-  // We are back the the original state on entry and ready to go.
+  // We are back to the original state on entry and ready to go.
 
   __ br(rscratch1);
 
@@ -2892,4 +2892,3 @@ void OptoRuntime::generate_exception_blob() {
 }
 
 #endif // COMPILER2
-

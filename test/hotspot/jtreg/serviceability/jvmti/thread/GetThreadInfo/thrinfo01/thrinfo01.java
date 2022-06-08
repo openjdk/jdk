@@ -41,6 +41,7 @@
  *     Fixed according to the 4480280 bug.
  *     Ported from JVMDI.
  *
+ * @requires vm.continuations
  * @library /test/lib
  * @compile --enable-preview -source ${jdk.version} thrinfo01.java
  * @run main/othervm/native --enable-preview -agentlib:thrinfo01 thrinfo01

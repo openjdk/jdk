@@ -141,6 +141,7 @@ public class IRNode {
     public static final String MEMBAR_STORESTORE = START + "MemBarStoreStore" + MID + END;
     public static final String SAFEPOINT = START + "SafePoint" + MID + END;
 
+    public static final String CMOVEI = START + "CMoveI" + MID + END;
     public static final String ABS_I = START + "AbsI" + MID + END;
     public static final String ABS_L = START + "AbsL" + MID + END;
     public static final String ABS_F = START + "AbsF" + MID + END;
@@ -156,6 +157,8 @@ public class IRNode {
     public static final String RSHIFT = START + "RShift(I|L)" + MID + END;
     public static final String RSHIFT_I = START + "RShiftI" + MID + END;
     public static final String RSHIFT_L = START + "RShiftL" + MID + END;
+    public static final String RSHIFT_VB = START + "RShiftVB" + MID + END;
+    public static final String RSHIFT_VS = START + "RShiftVS" + MID + END;
     public static final String URSHIFT = START + "URShift(B|S|I|L)" + MID + END;
     public static final String URSHIFT_I = START + "URShiftI" + MID + END;
     public static final String URSHIFT_L = START + "URShiftL" + MID + END;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,7 +121,7 @@ public final class SHA extends DigestBase {
     private static final int round4_kt = 0xca62c1d6;
 
     /**
-     * Compute a the hash for the current block.
+     * Compute the hash for the current block.
      *
      * This is in the same vein as Peter Gutmann's algorithm listed in
      * the back of Applied Cryptography, Compact implementation of

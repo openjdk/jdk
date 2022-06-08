@@ -33,6 +33,7 @@ import javax.sound.sampled.Mixer;
 
 /**
  * @test
+ * @key sound
  * @bug 4385928
  * @summary Verify that an endpoint -1 in Clip does not throw an exception
  */

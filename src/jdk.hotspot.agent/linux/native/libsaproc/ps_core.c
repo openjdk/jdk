@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -454,7 +454,7 @@ static bool read_interp_segments(struct ps_prochandle* ph) {
   return true;
 }
 
-// process segments of a a.out
+// process segments of an a.out
 // returns base address of executable.
 static uintptr_t read_exec_segments(struct ps_prochandle* ph, ELF_EHDR* exec_ehdr) {
   int i = 0;
