@@ -2934,6 +2934,8 @@ void MacroAssembler::dec_held_monitor_count() {
 }
 
 void MacroAssembler::reset_held_monitor_count() {
+  if (!Continuations::enabled()) return;
+
 #ifndef _LP64
   Register thread = rax;
   push(thread);
