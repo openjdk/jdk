@@ -33,33 +33,34 @@ outputs:
 runs:
   using: composite
   steps:
-    - name: 'Get URL configuration'
-      id: url
+    - name: 'Get JTReg version configuration'
+      id: version
       uses: ./.github/actions/config
       with:
-        var: JTREG_URL
-
-    - name: 'Get SHA256 configuration'
-      id: sha256
-      uses: ./.github/actions/config
-      with:
-        var: JTREG_SHA256
+        var: JTREG_VERSION
 
     - name: 'Check cache for JTReg'
       id: get-cached-jtreg
       uses: actions/cache@v3
       with:
-        path: jtreg/installed/jtreg
-        key: jtreg-${{ steps.sha256.outputs.value }}
+        path: jtreg/installed
+        key: jtreg-${{ steps.version.outputs.value }}
 
-    - name: 'Download JTReg'
-      id: download-jtreg
+    - name: 'Checkout the JTReg source'
+      uses: actions/checkout@v3
+      with:
+        repository: openjdk/jtreg
+        ref: jtreg-${{ steps.version.outputs.value }}
+        path: jtreg/src
+      if: steps.get-cached-jtreg.outputs.cache-hit != 'true'
+
+    - name: 'Build JTReg'
       run: |
-        # Download JTReg, verify checksum and unpack
-        mkdir -p jtreg/installed
-        wget --progress=dot:mega -O jtreg/jtreg.tar.gz '${{ steps.url.outputs.value }}'
-        echo '${{ steps.sha256.outputs.value }} jtreg/jtreg.tar.gz' | sha256sum -c >/dev/null -
-        tar -xf jtreg/jtreg.tar.gz -C jtreg/installed
+        # Build JTReg and move files to the proper locations
+        bash make/build.sh --jdk "$JAVA_HOME_8_X64"
+        mkdir ../installed
+        mv build/images/jtreg/* ../installed
+      working-directory: jtreg/src
       shell: bash
       if: steps.get-cached-jtreg.outputs.cache-hit != 'true'
 
@@ -67,5 +68,5 @@ runs:
       id: path-name
       run: |
         # Export the path
-        echo '::set-output name=path::jtreg/installed/jtreg'
+        echo '::set-output name=path::jtreg/installed'
       shell: bash
