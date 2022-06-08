@@ -1032,11 +1032,6 @@ public class ClassWriter extends ClassFile {
             return true;
         if (m.isConstructor() && (m.flags_field & RECORD) != 0)
             return true;
-        if (m.owner.isEnum()
-            && m.isStatic()
-            && m.name == names.valueOf
-            && (m.params != null && m.params.tail.isEmpty() && (m.params.head.flags_field & MANDATED) != 0))
-            return true;
         return false;
     }
 
