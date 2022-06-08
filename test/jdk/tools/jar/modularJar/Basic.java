@@ -960,7 +960,7 @@ public class Basic {
     }
 
     /**
-     * Validate that you can update a jar only specifying --warn-if-resolved
+     * Validate that you can create a jar only specifying --warn-if-resolved
      * @throws IOException
      */
     @Test(dataProvider = "resolutionNames")
@@ -987,7 +987,7 @@ public class Basic {
     }
 
     /**
-     * Validate that you can update a jar only specifying --do-not-resolve-by-default
+     * Validate that you can create a jar only specifying --do-not-resolve-by-default
      * @throws IOException
      */
     @Test
@@ -1014,7 +1014,7 @@ public class Basic {
     }
 
     /**
-     * Validate that you can update a jar specifying --warn-if-resolved and --do-not-resolve-by-default
+     * Validate that you can create a jar specifying --warn-if-resolved and --do-not-resolve-by-default
      * @throws IOException
      */
     @Test(dataProvider = "resolutionNames")
@@ -1043,7 +1043,7 @@ public class Basic {
     }
 
     /**
-     * Validate that you can update a jar specifying --do-not-resolve-by-default and --warn-if-resolved
+     * Validate that you can create a jar specifying --do-not-resolve-by-default and --warn-if-resolved
      * @throws IOException
      */
     @Test(dataProvider = "resolutionNames")
