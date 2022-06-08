@@ -38,23 +38,24 @@ import javax.swing.table.TableCellRenderer;
 /*
  * @test
  * @bug 6429812
- * @summary Test to check if table is printed without NPE
+ * @summary Test to check if table header is painted without NPE
  * @run main TableHeaderRendererTest
  */
 
 public class TableHeaderRendererTest {
-    static String LnFName = null;
     public static void main(String[] args) throws Exception {
+        SwingUtilities.invokeAndWait(TableHeaderRendererTest::runTest);
+        System.out.println("Test Passed");
+    }
 
+    private static void runTest() {
         UIManager.LookAndFeelInfo[] lookAndFeel = UIManager.getInstalledLookAndFeels();
         for (UIManager.LookAndFeelInfo look : lookAndFeel) {
-            // initialize should not throw NullPointerException
-            LnFName = look.getName();
-            System.out.println(LnFName+ " LookAndFeel Set");
+            System.out.println(look.getName() + " LookAndFeel Set");
             setLookAndFeel(look.getClassName());
-            SwingUtilities.invokeAndWait(TableHeaderRendererTest::initialize);
+            // initialize should not throw NullPointerException
+            initialize();
         }
-        System.out.println("Test Passed");
     }
 
     //Initialize the table and paint it to Buffered Image
@@ -111,6 +112,7 @@ public class TableHeaderRendererTest {
                     table, value, isSelected, hasFocus, row, column);
         }
     }
+
     private static void setLookAndFeel(String laf) {
         try {
             UIManager.setLookAndFeel(laf);
