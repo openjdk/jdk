@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,32 +21,33 @@
  * questions.
  */
 
-import java.lang.ref.Reference;
-import java.lang.ref.WeakReference;
-
-import javax.swing.border.TitledBorder;
-
-/**
+/*
  * @test
- * @bug 8204963
- * @summary Verifies TitledBorder's memory leak
- * @library /javax/swing/regtesthelpers
- * @build Util
- * @run main/timeout=60/othervm -mx32m TestTitledBorderLeak
+ * @bug 8286625
+ * @key stress
+ * @summary C2 fails with assert(!n->is_Store() && !n->is_LoadStore()) failed: no node with a side effect
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-BackgroundCompilation -XX:+StressIGVN -XX:StressSeed=4232417824 TestOverUnrolling2
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-BackgroundCompilation -XX:+StressIGVN TestOverUnrolling2
  */
-public final class TestTitledBorderLeak {
 
-    public static void main(String[] args) throws Exception {
-        Reference<TitledBorder> border = getTitleBorder();
-        int attempt = 0;
-        while (border.get() != null) {
-            Util.generateOOME();
-            System.out.println("Not freed, attempt: " + attempt++);
+public class TestOverUnrolling2 {
+   public static void main(String[] args) {
+        final byte[] large = new byte[1000];
+        final byte[] src = new byte[16];
+        for (int i = 0; i < 20_000; i++) {
+            test_helper(large, large);
+            test(src);
         }
+   }
+
+    private static void test(byte[] src) {
+        byte[] array = new byte[16];
+        test_helper(src, array);
     }
 
-    private static Reference<TitledBorder> getTitleBorder() {
-        TitledBorder tb = new TitledBorder("");
-        return new WeakReference<>(tb);
+    private static void test_helper(byte[] src, byte[] array) {
+        for (int i = 0; i < src.length; i++) {
+            array[array.length - 1 - i] = src[i];
+        }
     }
 }

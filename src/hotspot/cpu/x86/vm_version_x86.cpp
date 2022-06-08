@@ -1295,6 +1295,27 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(MaxVectorSize, max_vector_size);
   }
 
+#if defined(COMPILER2)
+  if (FLAG_IS_DEFAULT(SuperWordMaxVectorSize)) {
+    if (FLAG_IS_DEFAULT(UseAVX) && UseAVX > 2 &&
+        is_intel_skylake() && _stepping >= 5) {
+      // Limit auto vectorization to 256 bit (32 byte) by default on Cascade Lake
+      FLAG_SET_DEFAULT(SuperWordMaxVectorSize, MIN2(MaxVectorSize, (intx)32));
+    } else {
+      FLAG_SET_DEFAULT(SuperWordMaxVectorSize, MaxVectorSize);
+    }
+  } else {
+    if (SuperWordMaxVectorSize > MaxVectorSize) {
+      warning("SuperWordMaxVectorSize cannot be greater than MaxVectorSize %i", (int) MaxVectorSize);
+      FLAG_SET_DEFAULT(SuperWordMaxVectorSize, MaxVectorSize);
+    }
+    if (!is_power_of_2(SuperWordMaxVectorSize)) {
+      warning("SuperWordMaxVectorSize must be a power of 2, setting to MaxVectorSize: %i", (int) MaxVectorSize);
+      FLAG_SET_DEFAULT(SuperWordMaxVectorSize, MaxVectorSize);
+    }
+  }
+#endif
+
 #if defined(COMPILER2) && defined(ASSERT)
   if (MaxVectorSize > 0) {
     if (supports_avx() && PrintMiscellaneous && Verbose && TraceNewVectors) {

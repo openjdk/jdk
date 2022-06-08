@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,32 +21,53 @@
  * questions.
  */
 
-import java.lang.ref.Reference;
-import java.lang.ref.WeakReference;
-
-import javax.swing.border.TitledBorder;
-
 /**
  * @test
- * @bug 8204963
- * @summary Verifies TitledBorder's memory leak
- * @library /javax/swing/regtesthelpers
- * @build Util
- * @run main/timeout=60/othervm -mx32m TestTitledBorderLeak
+ * @bug 8287700
+ * @summary C2 Crash running eclipse benchmark from Dacapo
+ *
+ * @run main/othervm -XX:-BackgroundCompilation TestEACheckCastPP
+ *
  */
-public final class TestTitledBorderLeak {
 
-    public static void main(String[] args) throws Exception {
-        Reference<TitledBorder> border = getTitleBorder();
-        int attempt = 0;
-        while (border.get() != null) {
-            Util.generateOOME();
-            System.out.println("Not freed, attempt: " + attempt++);
+public class TestEACheckCastPP {
+    public static void main(String[] args) {
+        for (int i = 0; i < 20_000; i++) {
+            test(false);
+            test_helper2(new A(), true);
         }
     }
 
-    private static Reference<TitledBorder> getTitleBorder() {
-        TitledBorder tb = new TitledBorder("");
-        return new WeakReference<>(tb);
+    private static void test(boolean flag) {
+        I i = test_helper();
+        test_helper2(i, flag);
+    }
+
+    private static void test_helper2(I i, boolean flag) {
+        if (flag) {
+            // branch never taken when called from test()
+            A a = (A)i;
+            C c = new C();
+            c.a = a;
+        }
+    }
+
+    private static I test_helper() {
+        B b = new B();
+        return b;
+    }
+
+    interface I {
+
+    }
+
+    private static class A implements I {
+
+    }
+    private static class B extends A {
+    }
+
+    private static class C {
+        public A a;
     }
 }
