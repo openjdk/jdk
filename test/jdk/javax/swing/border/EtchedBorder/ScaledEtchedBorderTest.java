@@ -172,14 +172,12 @@ public class ScaledEtchedBorderTest {
 
     private static void createGUI(boolean show) {
         // Render content panel
-        JPanel contentPanel;
-        contentPanel = new JPanel();
+        JPanel contentPanel = new JPanel();
         contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
 
         Dimension childSize = null;
         for (int i = 0; i < 4; i++) {
-            JPanel childPanel;
-            childPanel = new JPanel(new BorderLayout());
+            JPanel childPanel = new JPanel(new BorderLayout());
             childPanel.setBorder(BorderFactory.createCompoundBorder(
                     BorderFactory.createEmptyBorder(0, i, 4, 4),
                     BorderFactory.createEtchedBorder(highlight, shadow)));
@@ -214,8 +212,7 @@ public class ScaledEtchedBorderTest {
         }
 
         if (show) {
-            JFrame frame;
-            frame = new JFrame("Swing Test");
+            JFrame frame = new JFrame("Swing Test");
             frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
             frame.getContentPane().add(contentPanel, BorderLayout.CENTER);
             frame.pack();
