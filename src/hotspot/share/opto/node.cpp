@@ -1698,7 +1698,7 @@ bool Node::add_to_worklist(Node* n, Node_List* worklist, Arena* old_arena, Vecto
 
 class PrintBFS {
 public:
-  PrintBFS(Node* start, const int max_distance, Node* target, char const* options)
+  PrintBFS(Node* start, const int max_distance, Node* target, const char* options)
   : _start(start), _max_distance(max_distance), _target(target), _options(options),
     _dcc(this), _info_uid(cmpkey, hashkey) {}
 
@@ -1718,7 +1718,7 @@ private:
   Node* _start;
   const int _max_distance;
   Node* _target;
-  char const* _options;
+  const char* _options;
 
   // options
   bool _traverse_inputs = false;
@@ -1767,7 +1767,8 @@ private:
   // node info
   static Node* old_node(Node* n); // mach node -> prior IR node
   static void print_node_idx(Node* n); // to tty
-  static void print_node_block(Node* n); // to tty: head idx, _idom, _dom_depth
+  static void print_block_id(Block* b); // to tty
+  static void print_node_block(Node* n); // to tty: _pre_order, head idx, _idom, _dom_depth
 
   // traversal data structures
   Node_List _worklist; // BFS queue
@@ -2015,9 +2016,12 @@ void PrintBFS::print_options_help(bool print_examples) {
   tty->print("on the boundary additionally display nodes allowed in boundary types\n");
   tty->print("\n");
   tty->print("output columns:\n");
-  tty->print("  d:     BFS distance to this/start\n");
+  tty->print("  dist:  BFS distance to this/start\n");
   tty->print("  apd:   all paths distance (d_start + d_target)\n");
-  tty->print("  block: block in which the node has been scheduled [head(), _idom->head(), _dom_depth]\n");
+  tty->print("  block: block identifier, based on _pre_order\n");
+  tty->print("  head:  first node in block\n");
+  tty->print("  idom:  head node of idom block\n");
+  tty->print("  depth: depth of block (_dom_depth)\n");
   tty->print("  old:   old IR node - before matching\n");
   tty->print("  dump:  node->dump()\n");
   tty->print("\n");
@@ -2227,23 +2231,32 @@ void PrintBFS::print_node_idx(Node* n) {
   tty->print("%6s", buf);
 }
 
+void PrintBFS::print_block_id(Block* b) {
+  Compile* C = Compile::current();
+  char buf[30];
+  sprintf(buf, "B%d", b->_pre_order);
+  tty->print("%7s", buf);
+}
+
 void PrintBFS::print_node_block(Node* n) {
   Compile* C = Compile::current();
   Block* b = C->node_arena()->contains(n)
              ? C->cfg()->get_block_for_node(n)
              : nullptr; // guard against old nodes
   if (b == nullptr) {
-    tty->print("     _");
-    tty->print("     _");
-    tty->print("   _");
+    tty->print("      _"); // Block
+    tty->print("     _");  // head
+    tty->print("     _");  // idom
+    tty->print("      _"); // depth
   } else {
+    print_block_id(b);
     print_node_idx(b->head());
     if (b->_idom) {
       print_node_idx(b->_idom->head());
     } else {
-      tty->print("     _");
+      tty->print("     _"); // idom
     }
-    tty->print("%4d", b->_dom_depth);
+    tty->print("%6d ", b->_dom_depth);
   }
 }
 
@@ -2270,12 +2283,12 @@ void PrintBFS::maybe_traverse(Node* src, Node* dst) {
 }
 
 void PrintBFS::print_header() const {
-  tty->print("   d");                         // distance
+  tty->print("dist");                         // distance
   if (_all_paths) {
     tty->print(" apd");                       // all paths distance
   }
   if (_print_blocks) {
-    tty->print(" [head  idom  d]");           // block
+    tty->print(" [block  head  idom depth]"); // block
   }
   if (_print_old) {
     tty->print("   old");                     // old node
@@ -2307,9 +2320,14 @@ void PrintBFS::print_node(Node* n) {
 // Designed to be more readable, and provide additional info
 // To find all options, run:
 //   find_node(0)->dump_bfs(0,0,"H")
-void Node::dump_bfs(const int max_distance, Node* target, char const* options) {
+void Node::dump_bfs(const int max_distance, Node* target, const char* options) {
   PrintBFS bfs(this, max_distance, target, options);
   bfs.run();
+}
+
+// Call this from debugger, with default arguments
+void Node::dump_bfs(const int max_distance) {
+  dump_bfs(max_distance, nullptr, nullptr);
 }
 
 // log10 rounded down
