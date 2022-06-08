@@ -4272,6 +4272,28 @@ void C2_MacroAssembler::vector_castF2L_evex(XMMRegister dst, XMMRegister src, XM
   vector_cast_float_to_long_special_cases_evex(dst, src, xtmp1, xtmp2, ktmp1, ktmp2, scratch, double_sign_flip, vec_enc);
 }
 
+void C2_MacroAssembler::vector_castD2X_evex(BasicType to_elem_bt, XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                                            XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2,
+                                            AddressLiteral double_sign_flip, Register scratch, int vec_enc) {
+  vector_castD2L_evex(dst, src, xtmp1, xtmp2, ktmp1, ktmp2, double_sign_flip, scratch, vec_enc);
+  if (to_elem_bt != T_LONG) {
+    switch(to_elem_bt) {
+      case T_INT:
+        evpmovsqd(dst, dst, vec_enc);
+        break;
+      case T_SHORT:
+        evpmovsqd(dst, dst, vec_enc);
+        evpmovdw(dst, dst, vec_enc);
+        break;
+      case T_BYTE:
+        evpmovsqd(dst, dst, vec_enc);
+        evpmovdb(dst, dst, vec_enc);
+        break;
+      default: assert(false, "%s", type2name(to_elem_bt));
+    }
+  }
+}
+
 #ifdef _LP64
 void C2_MacroAssembler::vector_round_double_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
                                                  KRegister ktmp1, KRegister ktmp2, AddressLiteral double_sign_flip,

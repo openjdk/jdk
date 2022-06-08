@@ -41,8 +41,6 @@ import java.util.Random;
 
 public class VectorFPtoIntCastTest {
     private static final int COUNT = 16;
-    private static final VectorSpecies<Float> fspec512 = FloatVector.SPECIES_512;
-    private static final VectorSpecies<Double> dspec512 = DoubleVector.SPECIES_512;
     private static final VectorSpecies<Long> lspec512 = LongVector.SPECIES_512;
     private static final VectorSpecies<Integer> ispec512 = IntVector.SPECIES_512;
     private static final VectorSpecies<Integer> ispec256 = IntVector.SPECIES_256;

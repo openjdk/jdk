@@ -55,42 +55,42 @@ public class VectorFPtoIntCastOperations {
     }
 
     @Benchmark
-    public IntVector microFloat2Int() {
-        return (IntVector)fvec512.convertShape(VectorOperators.F2I, IntVector.SPECIES_512, 0);
+    public Vector microFloat2Int() {
+        return fvec512.convertShape(VectorOperators.F2I, IntVector.SPECIES_512, 0);
     }
 
     @Benchmark
-    public LongVector microFloat2Long() {
-        return (LongVector)fvec256.convertShape(VectorOperators.F2L, LongVector.SPECIES_512, 0);
+    public Vector microFloat2Long() {
+        return fvec256.convertShape(VectorOperators.F2L, LongVector.SPECIES_512, 0);
     }
 
     @Benchmark
-    public ShortVector microFloat2Short() {
-        return (ShortVector)fvec512.convertShape(VectorOperators.F2S, ShortVector.SPECIES_256, 0);
+    public Vector microFloat2Short() {
+        return fvec512.convertShape(VectorOperators.F2S, ShortVector.SPECIES_256, 0);
     }
 
     @Benchmark
-    public ByteVector microFloat2Byte() {
-        return (ByteVector)fvec512.convertShape(VectorOperators.F2B, ByteVector.SPECIES_128, 0);
+    public Vector microFloat2Byte() {
+        return fvec512.convertShape(VectorOperators.F2B, ByteVector.SPECIES_128, 0);
     }
 
     @Benchmark
-    public IntVector microDouble2Int() {
-        return (IntVector)dvec512.convertShape(VectorOperators.D2I, IntVector.SPECIES_256, 0);
+    public Vector microDouble2Int() {
+        return dvec512.convertShape(VectorOperators.D2I, IntVector.SPECIES_256, 0);
     }
 
     @Benchmark
-    public LongVector microDouble2Long() {
-        return (LongVector)dvec512.convertShape(VectorOperators.D2L, LongVector.SPECIES_512, 0);
+    public Vector microDouble2Long() {
+        return dvec512.convertShape(VectorOperators.D2L, LongVector.SPECIES_512, 0);
     }
 
     @Benchmark
-    public ShortVector microDouble2Short() {
-        return (ShortVector)dvec512.convertShape(VectorOperators.D2S, ShortVector.SPECIES_128, 0);
+    public Vector microDouble2Short() {
+        return dvec512.convertShape(VectorOperators.D2S, ShortVector.SPECIES_128, 0);
     }
 
     @Benchmark
-    public ByteVector microDouble2Byte() {
-        return (ByteVector)dvec512.convertShape(VectorOperators.D2B, ByteVector.SPECIES_64, 0);
+    public Vector microDouble2Byte() {
+        return dvec512.convertShape(VectorOperators.D2B, ByteVector.SPECIES_64, 0);
     }
 }
