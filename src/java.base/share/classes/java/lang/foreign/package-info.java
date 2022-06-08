@@ -185,7 +185,7 @@
  * FunctionDescriptor intCompareDescriptor = FunctionDescriptor.of(ValueLayout.JAVA_INT, ValueLayout.ADDRESS, ValueLayout.ADDRESS);
  * MethodHandle intCompareHandle = MethodHandles.lookup().findStatic(IntComparator.class,
  *                                                 "intCompare",
- *                                                 CLinker.upcallType(comparFunction));
+ *                                                 Linker.upcallType(comparFunction));
  * }
  *
  * As before, we need to create a {@link java.lang.foreign.FunctionDescriptor} instance, this time describing the signature
@@ -198,7 +198,7 @@
  *
  * {@snippet lang=java :
  * MemorySession session = ...
- * Addressable comparFunc = CLinker.nativeLinker().upcallStub(
+ * Addressable comparFunc = Linker.nativeLinker().upcallStub(
  *     intCompareHandle, intCompareDescriptor, session);
  * );
  * }
