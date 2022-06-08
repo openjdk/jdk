@@ -27,20 +27,19 @@
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @summary Tests if HTML script tags are unsupported
- * @run main/manual HtmlTagParserTest
+ * @run main/manual HtmlScriptTagParserTest
  */
 
 import java.awt.Dimension;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.nio.file.Path;
 
 import javax.swing.JEditorPane;
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 
-public class HtmlTagParserTest {
+public class HtmlScriptTagParserTest {
     private static String instructionsText = "Pass if you can see the " +
             "script tag and its contents as text in editable JTextFields and " +
             "JTextAreas in the frame. Fail if this is not shown.";
@@ -53,7 +52,6 @@ public class HtmlTagParserTest {
 
     private static JFrame frame;
     private static JEditorPane jep;
-    private static Path testDir;
 
     public static void createAndShowGUI() throws InterruptedException,
             InvocationTargetException {
