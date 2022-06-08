@@ -2170,13 +2170,10 @@ void ThawBase::finish_thaw(frame& f) {
   }
   assert(chunk->is_empty() == (chunk->max_thawing_size() == 0), "");
 
-#ifdef _LP64
   if ((intptr_t)f.sp() % frame::frame_alignment != 0) {
     assert(f.is_interpreted_frame(), "");
     f.set_sp(f.sp() - 1);
   }
-#endif
-
   push_return_frame(f);
   chunk->fix_thawed_frame(f, SmallRegisterMap::instance); // can only fix caller after push_return_frame (due to callee saved regs)
 
@@ -2242,9 +2239,7 @@ static inline intptr_t* thaw_internal(JavaThread* thread, const Continuation::th
 
   Thaw<ConfigT> thw(thread, cont);
   intptr_t* const sp = thw.thaw(kind);
-#ifdef _LP64
   assert(is_aligned(sp, frame::frame_alignment), "");
-#endif
 
   // All the frames have been thawed so we know they don't hold any monitors
   thread->reset_held_monitor_count();
