@@ -301,6 +301,12 @@ class Stream<T> extends ExchangeImpl<T> {
         return endStream;
     }
 
+    @Override
+    void expectContinueFailed(int rcode) {
+        // TODO: add comment
+        requestSent();
+    }
+
     // This method is called by Http2Connection::decrementStreamCount in order
     // to make sure that the stream count is decremented only once for
     // a given stream.
