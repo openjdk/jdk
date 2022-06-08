@@ -480,7 +480,9 @@ public final class StringConcatFactory {
         // The filtered argument type list is used all over in the combinators below.
 
         Class<?>[] ptypes = mt.erase().parameterArray();
-        MethodHandle[] filters = null;
+        MethodHandle[] objFilters = null;
+        MethodHandle[] floatFilters = null;
+        MethodHandle[] doubleFilters = null;
         for (int i = 0; i < ptypes.length; i++) {
             Class<?> cl = ptypes[i];
             MethodHandle filter = null;
@@ -489,17 +491,22 @@ public final class StringConcatFactory {
                 // and prependers for char, boolean
                 ptypes[i] = int.class;
             } else if (cl == Object.class) {
-                filter = objectStringifier();
-            } else if (cl == float.class) {
-                filter = floatStringifier();
-            } else if (cl == double.class) {
-                filter = doubleStringifier();
-            }
-            if (filter != null) {
-                if (filters == null) {
-                    filters = new MethodHandle[ptypes.length];
+                if (objFilters == null) {
+                    objFilters = new MethodHandle[ptypes.length];
                 }
-                filters[i] = filter;
+                objFilters[i] = objectStringifier();
+                ptypes[i] = String.class;
+            } else if (cl == float.class) {
+                if (floatFilters == null) {
+                    floatFilters = new MethodHandle[ptypes.length];
+                }
+                floatFilters[i] = floatStringifier();
+                ptypes[i] = String.class;
+            } else if (cl == double.class) {
+                if (doubleFilters == null) {
+                    doubleFilters = new MethodHandle[ptypes.length];
+                }
+                doubleFilters[i] = doubleStringifier();
                 ptypes[i] = String.class;
             }
         }
@@ -567,8 +574,14 @@ public final class StringConcatFactory {
         // The method handle shape here is (<args>).
 
         // Apply filters, converting the arguments:
-        if (filters != null) {
-            mh = MethodHandles.filterArguments(mh, 0, filters);
+        if (objFilters != null) {
+            mh = MethodHandles.filterArguments(mh, 0, objFilters);
+        }
+        if (floatFilters != null) {
+            mh = MethodHandles.filterArguments(mh, 0, floatFilters);
+        }
+        if (doubleFilters != null) {
+            mh = MethodHandles.filterArguments(mh, 0, doubleFilters);
         }
 
         return mh;
