@@ -61,7 +61,7 @@ public class DatagramSocketSendReceive {
     private DatagramSocket[] dsa;
     private DatagramPacket[] pkts;
 
-    @Param({"128", "2048", "32768"})
+    @Param({"128", "32768"})
     public int size;
 
     @Param({"4"})

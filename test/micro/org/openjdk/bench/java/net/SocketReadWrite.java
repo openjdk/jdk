@@ -54,10 +54,16 @@ import java.util.concurrent.TimeUnit;
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.SECONDS)
 @State(Scope.Thread)
-@Warmup(iterations = 5, time = 1)
-@Measurement(iterations = 5, time = 1)
+@Warmup(iterations = 10, time = 1)
+@Measurement(iterations = 5, time = 2)
 @Fork(value = 3)
 public class SocketReadWrite {
+
+    @Param({"1", "8192", "128000"})
+    public int size;
+
+    @Param({"false", "true"})
+    public boolean timeout;
 
     static final InetAddress address = InetAddress.getLoopbackAddress();
     public static final int TIMEOUT = 10000;
@@ -178,12 +184,6 @@ public class SocketReadWrite {
     }
 
     EchoServer server;
-
-    @Param({"1", "1024", "8192", "64000", "128000"})
-    public int size;
-
-    @Param({"false", "true"})
-    public boolean timeout;
 
     Socket s;
     InputStream in;

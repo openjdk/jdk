@@ -61,7 +61,7 @@ public class DatagramChannelSendReceive {
             connectedReadChannel, multipleReceiveChannel, multipleSendChannel;
     private DatagramChannel[] dca;
 
-    @Param({"128", "2048", "32768"})
+    @Param({"128", "32768"})
     public int size;
     @Param({"4"})
     public int channelCount;
