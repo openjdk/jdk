@@ -32,10 +32,10 @@ import compiler.lib.ir_framework.driver.irmatching.IRViolationException;
  * @requires vm.cpu.features ~= ".*avx512f.*"
  * @requires os.arch=="amd64" | os.arch=="x86_64"
  * @library /test/lib /
- * @run driver ir_framework.examples.TargetFeatureCheckExample
+ * @run driver ir_framework.examples.TestCPUFeatureCheck
  */
 
-public class TargetFeatureCheckExample {
+public class TestCPUFeatureCheck {
     private static int a[] = new int[1000];
     private static int b[] = new int[1000];
     private static int res[] = new int[1000];
@@ -56,27 +56,27 @@ public class TargetFeatureCheckExample {
     }
 
     @Test
-    @IR(counts = {"AddVI", "> 0"}, applyIfTargetFeatureAnd = {"avx512bw", "false"})
+    @IR(counts = {IRNode.ADD_VI, "> 0"}, applyIfCPUFeature = {"avx512bw", "false"})
     public static void test1() {
-        for ( int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 1000; i++) {
             res[i] = a[i] + b[i];
         }
     }
 
     // IR rule is enforced if all the feature conditions holds good
     @Test
-    @IR(counts = {"AddVI", "> 0"}, applyIfTargetFeatureAnd = {"avx512bw", "false", "avx512f", "true"})
+    @IR(counts = {IRNode.ADD_VI, "> 0"}, applyIfCPUFeatureAnd = {"avx512bw", "false", "avx512f", "true"})
     public static void test2() {
-        for ( int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 1000; i++) {
             res[i] = a[i] + b[i];
         }
     }
 
     // IR rule is enforced if any of the feature condition holds good
     @Test
-    @IR(counts = {"AddVI",  "> 0"}, applyIfTargetFeatureOr = {"avx512bw", "true", "avx512f", "true"})
+    @IR(counts = {IRNode.ADD_VI,  "> 0"}, applyIfCPUFeatureOr = {"avx512bw", "true", "avx512f", "true"})
     public static void test3() {
-        for ( int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 1000; i++) {
             res[i] = a[i] + b[i];
         }
     }
