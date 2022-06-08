@@ -4346,7 +4346,7 @@ void C2_MacroAssembler::vector_long_to_maskvec(XMMRegister dst, Register src, Re
   int index = 0;
   int vindex = 0;
   mov64(rtmp1, 0x0101010101010101L);
-  pdep(rtmp1, src, rtmp1);
+  pdepq(rtmp1, src, rtmp1);
   if (mask_len > 8) {
     movq(rtmp2, src);
     vpxor(xtmp, xtmp, xtmp, vec_enc);
@@ -4363,7 +4363,7 @@ void C2_MacroAssembler::vector_long_to_maskvec(XMMRegister dst, Register src, Re
     }
     mov64(rtmp1, 0x0101010101010101L);
     shrq(rtmp2, 8);
-    pdep(rtmp1, rtmp2, rtmp1);
+    pdepq(rtmp1, rtmp2, rtmp1);
     pinsrq(xtmp, rtmp1, index % 2);
     vindex = index / 2;
     if (vindex) {
@@ -4504,7 +4504,7 @@ void C2_MacroAssembler::vector_mask_compress(KRegister dst, KRegister src, Regis
   kmov(rtmp1, src);
   andq(rtmp1, (0xFFFFFFFFFFFFFFFFUL >> (64 - mask_len)));
   mov64(rtmp2, -1L);
-  pext(rtmp2, rtmp2, rtmp1);
+  pextq(rtmp2, rtmp2, rtmp1);
   kmov(dst, rtmp2);
 }
 

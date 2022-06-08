@@ -468,6 +468,7 @@ java/awt/Window/GetScreenLocation/GetScreenLocationTest.java 8225787 linux-x64
 java/awt/Dialog/MakeWindowAlwaysOnTop/MakeWindowAlwaysOnTop.java 8266243 macosx-aarch64
 java/awt/dnd/BadSerializationTest/BadSerializationTest.java 8277817 linux-x64,windows-x64
 java/awt/GraphicsDevice/CheckDisplayModes.java 8266242 macosx-aarch64
+java/awt/GraphicsDevice/DisplayModes/UnknownRefrshRateTest.java 8286436 macosx-aarch64
 
 ############################################################################
 
@@ -494,7 +495,7 @@ java/lang/invoke/LFCaching/LFMultiThreadCachingTest.java        8151492 generic-
 java/lang/invoke/LFCaching/LFGarbageCollectedTest.java          8078602 generic-all
 java/lang/invoke/lambda/LambdaFileEncodingSerialization.java    8249079 linux-x64
 java/lang/invoke/RicochetTest.java                              8251969 generic-all
-jni/nullCaller/NullCallerTest.java                              8287745 generic-all
+java/lang/CompressExpandTest.java                               8287851 generic-all
 
 ############################################################################
 
@@ -672,7 +673,6 @@ javax/swing/JPopupMenu/4870644/bug4870644.java 8194130 macosx-all,linux-all
 javax/swing/dnd/8139050/NativeErrorsInTableDnD.java 8202765  macosx-all,linux-all
 javax/swing/Popup/TaskbarPositionTest.java 8065097 macosx-all,linux-all
 javax/swing/JEditorPane/6917744/bug6917744.java 8213124 macosx-all
-javax/swing/JMenuItem/ActionListenerCalledTwice/ActionListenerCalledTwiceTest.java 8273573 macosx-all
 
 # Several tests which fail on some hidpi systems/macosx12-aarch64 system
 java/awt/Window/8159168/SetShapeTest.java 8274106 macosx-aarch64
@@ -766,7 +766,6 @@ jdk/jfr/jvm/TestWaste.java                                      8282427 generic-
 # jdk_jpackage
 
 ############################################################################
-
 # Client manual tests
 
 java/awt/event/MouseEvent/SpuriousExitEnter/SpuriousExitEnter_1.java 7131438,8022539 generic-all
