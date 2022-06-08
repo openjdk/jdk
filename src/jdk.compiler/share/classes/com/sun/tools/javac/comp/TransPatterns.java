@@ -83,12 +83,14 @@ import com.sun.tools.javac.tree.JCTree.JCCaseLabel;
 import com.sun.tools.javac.tree.JCTree.JCClassDecl;
 import com.sun.tools.javac.tree.JCTree.JCContinue;
 import com.sun.tools.javac.tree.JCTree.JCDoWhileLoop;
+import com.sun.tools.javac.tree.JCTree.JCConstantCaseLabel;
 import com.sun.tools.javac.tree.JCTree.JCFieldAccess;
 import com.sun.tools.javac.tree.JCTree.JCLambda;
 import com.sun.tools.javac.tree.JCTree.JCMethodInvocation;
 import com.sun.tools.javac.tree.JCTree.JCNewClass;
 import com.sun.tools.javac.tree.JCTree.JCParenthesizedPattern;
 import com.sun.tools.javac.tree.JCTree.JCPattern;
+import com.sun.tools.javac.tree.JCTree.JCPatternCaseLabel;
 import com.sun.tools.javac.tree.JCTree.JCRecordPattern;
 import com.sun.tools.javac.tree.JCTree.JCStatement;
 import com.sun.tools.javac.tree.JCTree.JCSwitchExpression;
@@ -352,7 +354,7 @@ public class TransPatterns extends TreeTranslator {
                                              types.erasure(component.type),
                                              List.nil(),
                                              syms.methodClass);
-            MethodSymbol proxy = new MethodSymbol(Flags.STATIC | Flags.SYNTHETIC,
+            MethodSymbol proxy = new MethodSymbol(Flags.PRIVATE | Flags.STATIC | Flags.SYNTHETIC,
                                                   names.fromString("$proxy$" + component.name),
                                                   type,
                                                   currentClass);
@@ -458,8 +460,7 @@ public class TransPatterns extends TreeTranslator {
                     currentMethodSym);
             boolean hasNullCase = cases.stream()
                                        .flatMap(c -> c.labels.stream())
-                                       .anyMatch(p -> p.isExpression() &&
-                                                      TreeInfo.isNull((JCExpression) p));
+                                       .anyMatch(p -> TreeInfo.isNullCaseLabel(p));
 
             JCCase lastCase = cases.last();
 
@@ -519,21 +520,21 @@ public class TransPatterns extends TreeTranslator {
             for (var c : cases) {
                 List<JCCaseLabel> clearedPatterns = c.labels;
                 boolean hasJoinedNull =
-                        c.labels.size() > 1 && c.labels.stream().anyMatch(l -> l.isNullPattern());
+                        c.labels.size() > 1 && c.labels.stream().anyMatch(l -> TreeInfo.isNullCaseLabel(l));
                 if (hasJoinedNull) {
                     clearedPatterns = c.labels.stream()
-                                              .filter(l -> !l.isNullPattern())
+                                              .filter(l -> !TreeInfo.isNullCaseLabel(l))
                                               .collect(List.collector());
                 }
-                if (clearedPatterns.size() == 1 && clearedPatterns.head.isPattern() && !previousCompletesNormally) {
-                    JCCaseLabel p = clearedPatterns.head;
+                if (clearedPatterns.size() == 1 && clearedPatterns.head.hasTag(Tag.PATTERNCASELABEL) && !previousCompletesNormally) {
+                    JCPatternCaseLabel label = (JCPatternCaseLabel) clearedPatterns.head;
                     bindingContext = new BasicBindingContext();
                     VarSymbol prevCurrentValue = currentValue;
                     try {
                         currentValue = temp;
-                        JCExpression test = (JCExpression) this.<JCTree>translate(p);
-                        if (((JCPattern) p).guard != null) {
-                            test = makeBinary(Tag.AND, test, translate(((JCPattern) p).guard));
+                        JCExpression test = (JCExpression) this.<JCTree>translate(label.pat);
+                        if (label.guard != null) {
+                            test = makeBinary(Tag.AND, test, translate(label.guard));
                         }
                         c.stats = translate(c.stats);
                         JCContinue continueSwitch = make.at(clearedPatterns.head.pos()).Continue(null);
@@ -558,19 +559,19 @@ public class TransPatterns extends TreeTranslator {
                         translatedLabels.add(p);
                         hasDefault = true;
                     } else if (hasUnconditionalPattern && !hasDefault &&
-                               c == lastCase && p.isPattern()) {
+                               c == lastCase && p.hasTag(Tag.PATTERNCASELABEL)) {
                         //If the switch has unconditional pattern,
                         //the last case will contain it.
                         //Convert the unconditional pattern to default:
                         translatedLabels.add(make.DefaultCaseLabel());
                     } else {
                         int value;
-                        if (p.isNullPattern()) {
+                        if (TreeInfo.isNullCaseLabel(p)) {
                             value = -1;
                         } else {
                             value = i++;
                         }
-                        translatedLabels.add(make.Literal(value));
+                        translatedLabels.add(make.ConstantCaseLabel(make.Literal(value)));
                     }
                 }
                 c.labels = translatedLabels.toList();
@@ -633,23 +634,24 @@ public class TransPatterns extends TreeTranslator {
     }
 
     private LoadableConstant toLoadableConstant(JCCaseLabel l, Type selector) {
-        if (l.isPattern()) {
-            Type principalType = principalType(l);
+        if (l.hasTag(Tag.PATTERNCASELABEL)) {
+            Type principalType = principalType(((JCPatternCaseLabel) l).pat);
             if (types.isSubtype(selector, principalType)) {
                 return (LoadableConstant) selector;
             } else {
                 return (LoadableConstant) principalType;
             }
-        } else if (l.isExpression() && !TreeInfo.isNull((JCExpression) l)) {
-            if ((l.type.tsym.flags_field & Flags.ENUM) != 0) {
-                return LoadableConstant.String(((JCIdent) l).name.toString());
+        } else if (l.hasTag(Tag.CONSTANTCASELABEL)&& !TreeInfo.isNullCaseLabel(l)) {
+            JCExpression expr = ((JCConstantCaseLabel) l).expr;
+            if ((expr.type.tsym.flags_field & Flags.ENUM) != 0) {
+                return LoadableConstant.String(((JCIdent) expr).name.toString());
             } else {
-                Assert.checkNonNull(l.type.constValue());
+                Assert.checkNonNull(expr.type.constValue());
 
-                return switch (l.type.getTag()) {
+                return switch (expr.type.getTag()) {
                     case BYTE, CHAR,
-                         SHORT, INT -> LoadableConstant.Int((Integer) l.type.constValue());
-                    case CLASS -> LoadableConstant.String((String) l.type.constValue());
+                         SHORT, INT -> LoadableConstant.Int((Integer) expr.type.constValue());
+                    case CLASS -> LoadableConstant.String((String) expr.type.constValue());
                     default -> throw new AssertionError();
                 };
             }
