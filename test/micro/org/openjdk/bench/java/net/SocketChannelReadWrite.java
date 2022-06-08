@@ -40,6 +40,9 @@ import org.openjdk.jmh.annotations.*;
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
+@Warmup(iterations = 5, time = 1)
+@Measurement(iterations = 5, time = 1)
+@Fork(value = 3)
 public class SocketChannelReadWrite {
 
     private ServerSocketChannel ssc;
