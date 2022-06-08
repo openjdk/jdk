@@ -40,7 +40,7 @@
 #include "gc/z/zNMethod.hpp"
 #include "gc/z/zObjArrayAllocator.hpp"
 #include "gc/z/zServiceability.hpp"
-#include "gc/z/zStackChunkGCData.hpp"
+#include "gc/z/zStackChunkGCData.inline.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zUtils.inline.hpp"
 #include "memory/classLoaderMetaspace.hpp"
