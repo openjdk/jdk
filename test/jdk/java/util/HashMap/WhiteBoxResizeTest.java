@@ -397,16 +397,11 @@ public class WhiteBoxResizeTest {
 
         @Override
         public void init() {
-            if (content != null) {
-                content.put("", "");
-            }
+            content.put("", "");
         }
 
         @Override
         public int capacity() {
-            if (content == null) {
-                return -1;
-            }
             return table(content).length;
         }
     }
@@ -421,20 +416,12 @@ public class WhiteBoxResizeTest {
 
         @Override
         public void init() {
-            if (content != null) {
-                content.add("");
-            }
+            content.add("");
         }
 
         @Override
         public int capacity() {
-            if (content == null) {
-                return -1;
-            }
             HashMap<?, ?> hashMap = (HashMap<?, ?>) HS_MAP.get(content);
-            if (hashMap == null) {
-                return -1;
-            }
             return table(hashMap).length;
         }
     }
