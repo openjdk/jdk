@@ -32,9 +32,9 @@ import javax.lang.model.type.*;
  * Represents a method, constructor, or initializer (static or
  * instance) of a class or interface, including annotation interface
  * elements.
- * Annotation interface elements are methods restricted to have none
- * of formal parameters, type parameters, or a {@code throws} clause,
- * among other restrictions; see JLS {@jls 9.6.1} for details
+ * Annotation interface elements are methods restricted to have no
+ * formal parameters, no type parameters, and no {@code throws}
+ * clause, among other restrictions; see JLS {@jls 9.6.1} for details
  *
  * @see ExecutableType
  * @since 1.6

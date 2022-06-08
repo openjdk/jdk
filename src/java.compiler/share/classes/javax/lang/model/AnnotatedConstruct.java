@@ -75,7 +75,7 @@ import javax.lang.model.type.*;
  * type of a record component can be also propagated to mandated
  * members. Propagation of the annotations to mandated members is
  * governed by rules given in the <cite>The Java Language
- * Specification</cite>.
+ * Specification</cite> (JLS {@jls 8.10.1}).
  *
  * If there are multiple annotations of type <i>AI</i> present on
  * <i>C</i>, then if <i>AI</i> is repeatable annotation interface, an
