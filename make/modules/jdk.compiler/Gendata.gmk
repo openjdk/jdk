@@ -63,6 +63,11 @@ $(eval $(call SetupJavaCompilation, COMPILE_CREATE_SYMBOLS, \
         $(COMPILECREATESYMBOLS_ADD_EXPORTS), \
 ))
 
+ifndef SOURCE_DATE_EPOCH
+    SOURCE_DATE_EPOCH := $(shell $(DATE) +"%s")
+endif
+
+
 $(SUPPORT_OUTPUTDIR)/symbols/ct.sym: \
     $(COMPILE_CREATE_SYMBOLS) \
     $(wildcard $(MODULE_SRC)/share/data/symbols/*) \
