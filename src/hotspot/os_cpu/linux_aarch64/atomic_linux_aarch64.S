@@ -19,7 +19,10 @@
 // or visit www.oracle.com if you need additional information or have any
 // questions.
 
+
+
         .text
+
         .globl aarch64_atomic_fetch_add_8_default_impl
         .align 5
 aarch64_atomic_fetch_add_8_default_impl:
