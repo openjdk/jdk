@@ -24,8 +24,6 @@
 import java.io.*;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
-import java.lang.module.ModuleReader;
-import java.lang.module.ModuleReference;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -42,7 +40,6 @@ import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import jdk.internal.module.ModuleInfo;
 import jdk.internal.module.ModuleReferenceImpl;
 import jdk.internal.module.ModuleResolution;
 import jdk.test.lib.util.FileUtils;
@@ -953,9 +950,10 @@ public class Basic {
     @DataProvider(name = "resolutionNames")
     public Object[][] resolutionNames() {
         return new Object[][] {
-            {"incubating", (Predicate<ModuleResolution>)ModuleResolution::hasIncubatingWarning},
-            {"deprecated", (Predicate<ModuleResolution>)ModuleResolution::hasDeprecatedWarning},
-            {"deprecated-for-removal", (Predicate<ModuleResolution>)ModuleResolution::hasDeprecatedForRemovalWarning}
+            {"incubating", (Predicate<ModuleResolution>) ModuleResolution::hasIncubatingWarning},
+            {"deprecated", (Predicate<ModuleResolution>) ModuleResolution::hasDeprecatedWarning},
+            {"deprecated-for-removal",
+                (Predicate<ModuleResolution>) ModuleResolution::hasDeprecatedForRemovalWarning}
         };
     }
 
@@ -964,8 +962,9 @@ public class Basic {
      * @throws IOException
      */
     @Test(dataProvider = "resolutionNames")
-    public void updateFooModuleResolutionWarnIfResolved(String resolutionName, Predicate<ModuleResolution> hasWarning) throws IOException {
-        Path mp = Paths.get("updateFooModuleResolutionWarnIfResolved-" + resolutionName);
+    public void shouldAddWarnIfResolved(String resolutionName,
+                                        Predicate<ModuleResolution> hasWarning) throws IOException {
+        Path mp = Paths.get("moduleWarnIfResolved-" + resolutionName);
         createTestDir(mp);
         Path modClasses = MODULE_CLASSES.resolve(FOO.moduleName);
         Path modularJar = mp.resolve(FOO.moduleName + ".jar");
@@ -978,7 +977,8 @@ public class Basic {
             "-C", modClasses.toString(), ".")
             .assertSuccess();
 
-        ModuleReferenceImpl moduleReference = ModuleFinder.of(modularJar).find(FOO.moduleName)
+        ModuleReferenceImpl moduleReference = ModuleFinder.of(modularJar)
+            .find(FOO.moduleName)
             .map(ModuleReferenceImpl.class::cast)
             .orElseThrow();
         ModuleResolution moduleResolution = moduleReference.moduleResolution();
@@ -991,8 +991,8 @@ public class Basic {
      * @throws IOException
      */
     @Test
-    public void updateFooModuleResolutionWarnIfResolved() throws IOException {
-        Path mp = Paths.get("updateFooModuleResolutionDoNotResolveByDefault");
+    public void shouldAddDoNotResolveByDefault() throws IOException {
+        Path mp = Paths.get("moduleDoNotResolveByDefault");
         createTestDir(mp);
         Path modClasses = MODULE_CLASSES.resolve(FOO.moduleName);
         Path modularJar = mp.resolve(FOO.moduleName + ".jar");
@@ -1005,7 +1005,8 @@ public class Basic {
             "-C", modClasses.toString(), ".")
             .assertSuccess();
 
-        ModuleReferenceImpl moduleReference = ModuleFinder.of(modularJar).find(FOO.moduleName)
+        ModuleReferenceImpl moduleReference = ModuleFinder.of(modularJar)
+            .find(FOO.moduleName)
             .map(ModuleReferenceImpl.class::cast)
             .orElseThrow();
         ModuleResolution moduleResolution = moduleReference.moduleResolution();
@@ -1014,12 +1015,14 @@ public class Basic {
     }
 
     /**
-     * Validate that you can create a jar specifying --warn-if-resolved and --do-not-resolve-by-default
+     * Validate that you can create a jar specifying --warn-if-resolved and
+     * --do-not-resolve-by-default
      * @throws IOException
      */
     @Test(dataProvider = "resolutionNames")
-    public void updateFooModuleResolutionWarnIfResolvedAndDoNotResolveByDefault(String resolutionName, Predicate<ModuleResolution> hasWarning) throws IOException {
-        Path mp = Paths.get("updateFooModuleResolutionWarnThenNotResolve-" + resolutionName);
+    public void shouldAddWarnIfResolvedAndDoNotResolveByDefault(String resolutionName,
+                                        Predicate<ModuleResolution> hasWarning) throws IOException {
+        Path mp = Paths.get("moduleResolutionWarnThenNotResolve-" + resolutionName);
         createTestDir(mp);
         Path modClasses = MODULE_CLASSES.resolve(FOO.moduleName);
         Path modularJar = mp.resolve(FOO.moduleName + ".jar");
@@ -1033,7 +1036,8 @@ public class Basic {
             "-C", modClasses.toString(), ".")
             .assertSuccess();
 
-        ModuleReferenceImpl moduleReference = ModuleFinder.of(modularJar).find(FOO.moduleName)
+        ModuleReferenceImpl moduleReference = ModuleFinder.of(modularJar)
+            .find(FOO.moduleName)
             .map(ModuleReferenceImpl.class::cast)
             .orElseThrow();
         ModuleResolution moduleResolution = moduleReference.moduleResolution();
@@ -1043,12 +1047,14 @@ public class Basic {
     }
 
     /**
-     * Validate that you can create a jar specifying --do-not-resolve-by-default and --warn-if-resolved
+     * Validate that you can create a jar specifying --do-not-resolve-by-default and
+     * --warn-if-resolved
      * @throws IOException
      */
     @Test(dataProvider = "resolutionNames")
-    public void updateFooModuleResolutionDoNotResolveByDefaultAndWarnIfResolved(String resolutionName, Predicate<ModuleResolution> hasWarning) throws IOException {
-        Path mp = Paths.get("updateFooModuleResolutionNotResolveThenWarn-" + resolutionName);
+    public void shouldAddResolutionDoNotResolveByDefaultAndWarnIfResolved(String resolutionName,
+                                        Predicate<ModuleResolution> hasWarning) throws IOException {
+        Path mp = Paths.get("moduleResolutionNotResolveThenWarn-" + resolutionName);
         createTestDir(mp);
         Path modClasses = MODULE_CLASSES.resolve(FOO.moduleName);
         Path modularJar = mp.resolve(FOO.moduleName + ".jar");
@@ -1062,7 +1068,8 @@ public class Basic {
             "-C", modClasses.toString(), ".")
             .assertSuccess();
 
-        ModuleReferenceImpl moduleReference = ModuleFinder.of(modularJar).find(FOO.moduleName)
+        ModuleReferenceImpl moduleReference = ModuleFinder.of(modularJar)
+            .find(FOO.moduleName)
             .map(ModuleReferenceImpl.class::cast)
             .orElseThrow();
         ModuleResolution moduleResolution = moduleReference.moduleResolution();
