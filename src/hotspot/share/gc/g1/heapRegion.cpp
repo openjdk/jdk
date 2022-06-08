@@ -277,17 +277,17 @@ void HeapRegion::note_self_forwarding_removal_start(bool during_concurrent_start
   // parsable after the self-forwarding point removal, and update _marked_bytes
   // at the end.
   _marked_bytes = 0;
+  _garbage_bytes = 0;
 
   if (during_concurrent_start) {
-    // During concurrent start, we'll also explicitly mark all objects
-    // we find to be self-forwarded in the marking bitmap. So all
-    // objects need to be below TAMS.
+    // Self-forwarding marks all objects. Adjust TAMS so that these marks are
+    // below it.
     _top_at_mark_start = top();
-  } else if (during_conc_mark) {
-    // During concurrent mark, all objects in the CSet (including
-    // the ones we find to be self-forwarded) are implicitly live.
-    // So all objects need to be above TAMS.
-    _top_at_mark_start = bottom();
+  } else {
+    // Outside of the mixed phase all regions that had an evacuation failure must
+    // be young regions, and their TAMS is always bottom. Similarly, before the
+    // start of the mixed phase, we scrubbed and reset TAMS to bottom.
+    assert(_top_at_mark_start == bottom(), "must be");
   }
 }
 
@@ -295,6 +295,7 @@ void HeapRegion::note_self_forwarding_removal_end(size_t marked_bytes) {
   assert(marked_bytes <= used(),
          "marked: " SIZE_FORMAT " used: " SIZE_FORMAT, marked_bytes, used());
   _marked_bytes = marked_bytes;
+  _garbage_bytes = used() - marked_bytes;
 }
 
 // Code roots support

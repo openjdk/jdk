@@ -1026,7 +1026,7 @@ void G1CollectedHeap::verify_before_full_collection(bool explicit_gc) {
     return;
   }
   _verifier->verify_region_sets_optional();
-  _verifier->verify_before_gc(G1HeapVerifier::G1VerifyFull);
+  //_verifier->verify_before_gc(G1HeapVerifier::G1VerifyFull);
   _verifier->check_bitmaps("Full GC Start");
 }
 

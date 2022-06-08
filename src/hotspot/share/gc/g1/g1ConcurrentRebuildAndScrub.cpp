@@ -229,8 +229,8 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
       assert(should_rebuild_or_scrub(hr), "must be");
 
       reset_marked_words();
-      log_debug(gc, marking)("Scrub and rebuild region: " HR_FORMAT " pb: " PTR_FORMAT,
-                             HR_FORMAT_PARAMS(hr), p2i(pb));
+      log_trace(gc, marking)("Scrub and rebuild region: " HR_FORMAT " pb: " PTR_FORMAT " TARS: " PTR_FORMAT,
+                             HR_FORMAT_PARAMS(hr), p2i(pb), p2i(_cm->top_at_rebuild_start(hr->hrm_index())));
 
       if (scan_and_scrub_to_pb(hr, hr->bottom(), pb)) {
         log_trace(gc, marking)("Scan and scrub aborted for region: %u", hr->hrm_index());
@@ -271,8 +271,8 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
              "Humongous object not live");
 
       reset_marked_words();
-      log_debug(gc, marking)("Rebuild for humongous region: " HR_FORMAT " pb: " PTR_FORMAT " TARS: " PTR_FORMAT,
-                             HR_FORMAT_PARAMS(hr), p2i(pb), p2i(_cm->top_at_rebuild_start(hr->hrm_index())));
+      log_trace(gc, marking)("Rebuild for humongous region: " HR_FORMAT " pb: " PTR_FORMAT " TARS: " PTR_FORMAT,
+                              HR_FORMAT_PARAMS(hr), p2i(pb), p2i(_cm->top_at_rebuild_start(hr->hrm_index())));
 
       // Scan the humongous object in chunks from bottom to top to rebuild remembered sets.
       HeapWord* humongous_end = hr->humongous_start_region()->bottom() + humongous->size();

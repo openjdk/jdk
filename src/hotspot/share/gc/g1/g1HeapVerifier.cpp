@@ -72,6 +72,7 @@ public:
         LogStream ls(log.error());
         obj->print_on(&ls);
         _failures = true;
+        ShouldNotReachHere();
       }
     }
   }
@@ -225,7 +226,7 @@ public:
 
       o->oop_iterate(&isLive);
       if (_hr->obj_in_unparsable_area(o, _hr->parsable_bottom())) {
-        size_t obj_size = o->size();    // Make sure we don't overflow
+        size_t obj_size = o->size();
         _live_bytes += (obj_size * HeapWordSize);
       }
     }
@@ -399,9 +400,9 @@ public:
       } else if (!r->is_starts_humongous()) {
         VerifyObjsInRegionClosure not_dead_yet_cl(r, _vo);
         r->object_iterate(&not_dead_yet_cl);
-        if (r->max_live_bytes() < not_dead_yet_cl.live_bytes()) {
+        if (r->live_bytes() < not_dead_yet_cl.live_bytes()) {
           log_error(gc, verify)(HR_FORMAT " max_live_bytes %zu < calculated %zu",
-                                HR_FORMAT_PARAMS(r), r->max_live_bytes(), not_dead_yet_cl.live_bytes());
+                                HR_FORMAT_PARAMS(r), r->live_bytes(), not_dead_yet_cl.live_bytes());
           _failures = true;
         }
       }

@@ -60,7 +60,7 @@ inline bool G1CMIsAliveClosure::do_object_b(oop obj) {
   }
 
   // All objects that are marked are live.
-  return _g1h->is_marked_next(obj);
+  return _g1h->is_marked(obj);
 }
 
 inline bool G1CMSubjectToDiscoveryClosure::do_object_b(oop obj) {

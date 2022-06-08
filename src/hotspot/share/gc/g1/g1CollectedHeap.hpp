@@ -1234,7 +1234,7 @@ public:
   bool check_young_list_empty();
 #endif
 
-  bool is_marked_next(oop obj) const;
+  bool is_marked(oop obj) const;
 
   // Determine if an object is dead, given the object and also
   // the region to which the object belongs.

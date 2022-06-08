@@ -916,7 +916,7 @@ double G1Policy::predict_base_elapsed_time_ms(size_t pending_cards) const {
 size_t G1Policy::predict_bytes_to_copy(HeapRegion* hr) const {
   size_t bytes_to_copy;
   if (!hr->is_young()) {
-    bytes_to_copy = hr->max_live_bytes();
+    bytes_to_copy = hr->live_bytes();
   } else {
     bytes_to_copy = (size_t) (hr->used() * hr->surv_rate_prediction(_predictor));
   }

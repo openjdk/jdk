@@ -155,8 +155,6 @@ public:
   //  The elements of the array are initialized to zero.
   G1BlockOffsetTablePart(G1BlockOffsetTable* array, HeapRegion* hr);
 
-  void update();
-
   void verify() const;
 
   // Returns the address of the start of the block containing "addr", or

@@ -98,7 +98,7 @@ static inline bool requires_marking(const void* entry, G1CollectedHeap* g1h) {
 }
 
 static inline bool discard_entry(const void* entry, G1CollectedHeap* g1h) {
-  return !requires_marking(entry, g1h) || g1h->is_marked_next(cast_to_oop(entry));
+  return !requires_marking(entry, g1h) || g1h->is_marked(cast_to_oop(entry));
 }
 
 // Workaround for not yet having std::bind.

@@ -1102,7 +1102,7 @@ class G1UpdateRemSetTrackingBeforeRebuildTask : public WorkerTask {
     // note end of marking.
     void distribute_marked_bytes(HeapRegion* hr, size_t marked_words) {
       uint const region_idx = hr->hrm_index();
-      size_t const obj_size_in_words = (size_t)cast_to_oop(hr->bottom())->size();
+      size_t const obj_size_in_words = cast_to_oop(hr->bottom())->size();
       uint const num_regions_in_humongous = (uint)G1CollectedHeap::humongous_obj_size_in_regions(obj_size_in_words);
 
       // "Distributing" zero words means that we only note end of marking for these
@@ -1235,7 +1235,6 @@ void G1ConcurrentMark::remark() {
       flush_all_task_caches();
     }
 
-    _g1h->collector_state()->set_clearing_bitmap(true);
     {
       GCTraceTime(Debug, gc, phases) debug("Update Remembered Set Tracking Before Rebuild", _gc_timer_cm);
 
@@ -1327,7 +1326,7 @@ class G1ReclaimEmptyRegionsTask : public WorkerTask {
     const uint humongous_regions_removed() { return _humongous_regions_removed; }
 
     bool do_heap_region(HeapRegion *hr) {
-      if (hr->used() > 0 && hr->max_live_bytes() == 0 && !hr->is_young() && !hr->is_closed_archive()) {
+      if (hr->used() > 0 && hr->live_bytes() == 0 && !hr->is_young() && !hr->is_closed_archive()) {
         log_trace(gc)("Reclaimed empty old gen region %u (%s) bot " PTR_FORMAT,
                       hr->hrm_index(), hr->get_short_type_str(), p2i(hr->bottom()));
         _freed_bytes += hr->used();
@@ -1437,6 +1436,7 @@ void G1ConcurrentMark::cleanup() {
 
   verify_during_pause(G1HeapVerifier::G1VerifyCleanup, VerifyOption::G1UseConcMarking, "Cleanup after");
 
+  _g1h->collector_state()->set_clearing_bitmap(true);
   // We need to make this be a "collection" so any collection pause that
   // races with it goes around and waits for Cleanup to finish.
   _g1h->increment_total_collections();
@@ -1773,7 +1773,8 @@ class G1RemarkThreadsClosure : public ThreadClosure {
         // * Weakly reachable otherwise
         // Some objects reachable from nmethods, such as the class loader (or klass_holder) of the receiver should be
         // live by the SATB invariant but other oops recorded in nmethods may behave differently.
-        JavaThread::cast(thread)->nmethods_do(&_code_cl);
+        //JavaThread::cast(thread)->nmethods_do(&_code_cl);
+        JavaThread::cast(thread)->oops_do_frames(&_cm_cl, &_code_cl);
       }
     }
   }
@@ -2012,7 +2013,7 @@ void G1ConcurrentMark::concurrent_cycle_abort() {
   // Clear all marks in the next bitmap for this full gc as it has been used by the
   // marking that is interrupted by this full gc.
   {
-    GCTraceTime(Debug, gc) debug("Clear Next Bitmap");
+    GCTraceTime(Debug, gc) debug("Clear Bitmap");
     clear_bitmap(_g1h->workers());
   }
 

@@ -169,11 +169,10 @@ public:
 };
 
 void G1FullCollector::prepare_collection() {
-  _heap->verify_before_full_collection(scope()->is_explicit_gc());
-
   _heap->policy()->record_full_collection_start();
 
   _heap->abort_concurrent_cycle();
+  _heap->verify_before_full_collection(scope()->is_explicit_gc());
 
   _heap->gc_prologue(true);
   _heap->retire_tlabs();

@@ -144,6 +144,8 @@ private:
   // This version synchronizes with other calls to par_allocate_impl().
   inline HeapWord* par_allocate_impl(size_t min_word_size, size_t desired_word_size, size_t* actual_word_size);
 
+  static bool obj_is_filler(oop obj);
+
 public:
   HeapWord* block_start(const void* addr, HeapWord* const pb);
 
@@ -180,14 +182,9 @@ public:
   // All allocated blocks are occupied by objects in a HeapRegion.
   bool block_is_obj(const HeapWord* p, HeapWord* pb) const;
 
-  bool obj_is_scrubbed(oop obj) const;
-
   // Returns whether the given object is dead based on the given parsable_bottom (pb).
   // For an object to be considered dead it must be below pb and scrubbed.
   bool is_obj_dead(oop obj, HeapWord* pb) const;
-  // Same as is_obj_dead(), but only for obj's in the unparsable area and also
-  // returning the block size.
-  bool is_obj_dead_size_in_unparsable(oop obj, HeapWord* pb, G1CMBitMap* bitmap, size_t& block_size) const;
 
   // Returns the object size for all valid block starts. If parsable_bottom (pb)
   // is given, calculates the block size based on that parsable_bottom, not the
@@ -200,9 +197,9 @@ public:
   template<typename ApplyToMarkedClosure>
   inline void apply_to_marked_objects(G1CMBitMap* bitmap, ApplyToMarkedClosure* closure);
 
-  void update_bot() {
-    _bot_part.update();
-  }
+  // Update the BOT for the entire region - assumes that all objects are parsable
+  // and contiguous for this region.
+  void update_bot();
 
 private:
   // The remembered set for this region.
@@ -340,8 +337,9 @@ public:
 
   // The number of bytes marked live in the region in the last marking phase.
   size_t marked_bytes() const { return _marked_bytes; }
+  // An upper bound on the number of live bytes in the region.
   size_t live_bytes() const {
-    return byte_size(bottom(), top()) - garbage_bytes();
+    return used() - garbage_bytes();
   }
 
   // A lower bound on the amount of garbage bytes in the region.
@@ -356,9 +354,6 @@ public:
     assert(known_live_bytes <= capacity(), "sanity");
     return capacity() - known_live_bytes;
   }
-
-  // An upper bound on the number of live bytes in the region.
-  size_t max_live_bytes() const { return used() - garbage_bytes(); }
 
   // Get the start of the unmarked area in this region.
   HeapWord* top_at_mark_start() const { return _top_at_mark_start; }
