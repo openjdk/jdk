@@ -176,6 +176,10 @@ frame Continuation::top_frame(const frame& callee, RegisterMap* map) {
   assert(map != nullptr, "");
   ContinuationEntry* ce = get_continuation_entry_for_sp(map->thread(), callee.sp());
   assert(ce != nullptr, "");
+
+  // Needed to update ContinuationEntry oops.
+  ce->flush_stack_processing(JavaThread::current());
+
   oop continuation = ce->cont_oop();
   ContinuationWrapper cont(continuation);
   return continuation_top_frame(cont, map);

@@ -29,14 +29,33 @@
 
 #include "oops/access.hpp"
 #include "gc/z/zHeap.inline.hpp"
+#include "runtime/stackWatermarkSet.inline.hpp"
 
 #include CPU_HEADER_INLINE(continuationEntry)
+
+inline bool is_stack_watermark_processed(JavaThread* thread, const void* addr) {
+  StackWatermark* sw = StackWatermarkSet::get(thread, StackWatermarkKind::gc);
+  assert(sw != nullptr, "Wrong GC");
+
+  if (!sw->processing_started()) {
+    return false;
+  }
+
+  uintptr_t watermark = sw->watermark();
+  if (watermark == 0) {
+    // completed
+    return true;
+  }
+
+  return uintptr_t(addr) <= watermark;
+}
 
 inline oop ContinuationEntry::cont_oop() const {
   if (UseZGC) {
     assert(!ZHeap::heap()->is_in((uintptr_t)(void*)&_cont), "Should not be in the heap");
+    assert(is_stack_watermark_processed(JavaThread::current(), &_cont), "Not processed");
   }
-  return RawAccess<>::oop_load(&_cont);
+  return RawAccess<>::oop_load((oop*)&_cont);
 }
 
 

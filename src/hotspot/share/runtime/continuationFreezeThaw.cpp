@@ -1404,6 +1404,9 @@ static inline int freeze_internal(JavaThread* current, intptr_t* const sp) {
 
   ContinuationEntry* entry = current->last_continuation();
 
+  // Make sure oops in entry are accessible
+  entry->flush_stack_processing(JavaThread::current());
+
   oop oopCont = entry->cont_oop();
   assert(oopCont == current->last_continuation()->cont_oop(), "");
   assert(ContinuationEntry::assert_entry_frame_laid_out(current), "");
@@ -1529,8 +1532,11 @@ static inline int prepare_thaw_internal(JavaThread* thread, bool return_barrier)
 
   ContinuationEntry* ce = thread->last_continuation();
   assert(ce != nullptr, "");
-  oop continuation = ce->cont_oop();
-  assert(continuation == get_continuation(thread), "");
+
+  // FIXME: Workaround since we don't have a last java frame and can't ce->flush_stack_processing.
+  //oop continuation = ce->cont_oop();
+  //assert(continuation == get_continuation(thread), "");
+  oop continuation = get_continuation(thread);
   verify_continuation(continuation);
 
   stackChunkOop chunk = jdk_internal_vm_Continuation::tail(continuation);
@@ -2229,13 +2235,15 @@ static inline intptr_t* thaw_internal(JavaThread* thread, const Continuation::th
 
   ContinuationEntry* entry = thread->last_continuation();
   assert(entry != nullptr, "");
-  oop oopCont = entry->cont_oop();
 
-  assert(!jdk_internal_vm_Continuation::done(oopCont), "");
-  assert(oopCont == get_continuation(thread), "");
+  // FIXME: Workaround since we don't have a last java frame and can't ce->flush_stack_processing.
+  //oop oopCont = entry->cont_oop();
+  oop oopCont = get_continuation(thread);
   verify_continuation(oopCont);
 
-  assert(entry->is_virtual_thread() == (entry->scope() == java_lang_VirtualThread::vthread_scope()), "");
+  assert(!jdk_internal_vm_Continuation::done(oopCont), "");
+
+  assert(entry->is_virtual_thread() == (Continuation::continuation_scope(oopCont) == java_lang_VirtualThread::vthread_scope()), "");
 
   ContinuationWrapper cont(thread, oopCont);
   log_develop_debug(continuations)("THAW #" INTPTR_FORMAT " " INTPTR_FORMAT, cont.hash(), p2i((oopDesc*)oopCont));

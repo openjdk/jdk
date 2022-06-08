@@ -80,7 +80,8 @@ inline void vframeStreamCommon::next() {
     if (Continuation::is_continuation_enterSpecial(_frame)) {
       assert(!_reg_map.in_cont(), "");
       assert(_cont_entry != NULL, "");
-      assert(_cont_entry->cont_oop() != NULL, "_cont: " INTPTR_FORMAT, p2i(_cont_entry));
+      // Reading oops are only safe if process_frames() is true, and we fix the oops.
+      assert(!_reg_map.process_frames() || _cont_entry->cont_oop() != NULL, "_cont: " INTPTR_FORMAT, p2i(_cont_entry));
       is_enterSpecial_frame = true;
 
       // TODO: handle ShowCarrierFrames
