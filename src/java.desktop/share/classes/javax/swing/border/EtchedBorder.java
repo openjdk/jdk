@@ -164,7 +164,7 @@ public class EtchedBorder extends AbstractBorder
             // if m01 or m10 is non-zero, then there is a rotation or shear
             // skip resetting the transform
             resetTransform = (at.getShearX() == 0) && (at.getShearY() == 0);
-            if(resetTransform) {
+            if (resetTransform) {
                 g2d.setTransform(new AffineTransform());
                 stkWidth = (int) Math.floor(Math.min(at.getScaleX(), at.getScaleY()));
                 g2d.setStroke(new BasicStroke((float) stkWidth));
@@ -177,7 +177,7 @@ public class EtchedBorder extends AbstractBorder
         int h;
         int xtranslation;
         int ytranslation;
-        if(resetTransform) {
+        if (resetTransform) {
             w = (int) Math.floor(at.getScaleX() * width - 1);
             h = (int) Math.floor(at.getScaleY() * height - 1);
             xtranslation = (int) Math.ceil(at.getScaleX()*x+at.getTranslateX());

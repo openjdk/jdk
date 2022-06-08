@@ -36,8 +36,6 @@ import javax.swing.BoxLayout;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
 
 /*
  * @test
@@ -173,16 +171,14 @@ public class ScaledEtchedBorderTest {
     }
 
     private static void createGUI(boolean show) {
-        JFrame frame;
-        JPanel contentPanel;
-        JPanel childPanel;
-
         // Render content panel
+        JPanel contentPanel;
         contentPanel = new JPanel();
         contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
 
         Dimension childSize = null;
         for (int i = 0; i < 4; i++) {
+            JPanel childPanel;
             childPanel = new JPanel(new BorderLayout());
             childPanel.setBorder(BorderFactory.createCompoundBorder(
                     BorderFactory.createEmptyBorder(0, i, 4, 4),
@@ -190,7 +186,9 @@ public class ScaledEtchedBorderTest {
             childPanel.add(Box.createRigidArea(SIZE), BorderLayout.CENTER);
 
             contentPanel.add(childPanel);
-            childSize = childPanel.getPreferredSize();
+            if(childSize == null) {
+                childSize = childPanel.getPreferredSize();
+            }
             childPanel.setBounds(0, childSize.height * i, childSize.width, childSize.height);
         }
 
@@ -216,6 +214,7 @@ public class ScaledEtchedBorderTest {
         }
 
         if (show) {
+            JFrame frame;
             frame = new JFrame("Swing Test");
             frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
             frame.getContentPane().add(contentPanel, BorderLayout.CENTER);
