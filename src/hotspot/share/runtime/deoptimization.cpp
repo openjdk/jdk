@@ -1837,6 +1837,15 @@ static void post_deoptimization_event(CompiledMethod* nm,
 
 #endif // INCLUDE_JFR
 
+void Deoptimization::print_ul(CompiledMethod* nm, intptr_t pc, frame& fr, const char* name_sig,
+                              int trap_bci, int osr_bci, const char* reason_name,
+                              const char* reason_action) {
+  log_debug(deoptimization)(
+      "cid=%d %s pc=" INTPTR_FORMAT " relative_pc=" INTPTR_FORMAT " level=%d %s @ %d %d %s -> %s",
+      nm->compile_id(), (nm->is_osr_method() ? "%" : ""), pc, fr.pc() - nm->code_begin(),
+      nm->comp_level(), name_sig, trap_bci, osr_bci, reason_name, reason_action);
+}
+
 JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint trap_request)) {
   HandleMark hm(current);
 
@@ -1931,23 +1940,18 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
       get_method_data(current, profiled_method, create_if_missing);
 
     { // Log Deoptimization event for JFR, UL and event system
+      bool is_osr = nm->is_osr_method();
+      int osr_bci = is_osr ? nm->osr_entry_bci() : -1;
       Method* tm = trap_method();
       char* name_sig = tm->name_and_sig_as_C_string();
       const char* reason_name = trap_reason_name(reason);
       const char* reason_action = trap_action_name(action);
+      intptr_t pc = p2i(fr.pc());
+
       JFR_ONLY(post_deoptimization_event(nm, tm, trap_bci, trap_bc, reason, action);)
-      log_debug(deoptimization)("cid=%d %s pc=" INTPTR_FORMAT " relative_pc=" INTPTR_FORMAT " level=%d %s @ %d %s -> %s",
-                                nm->compile_id(),
-                                (nm->is_osr_method() ? "osr" : ""),
-                                p2i(fr.pc()),
-                                fr.pc() - nm->code_begin(),
-                                nm->comp_level(),
-                                name_sig,
-                                trap_bci,
-                                reason_name,
-                                reason_action);
+      print_ul(nm, pc, fr, name_sig, trap_bci, osr_bci, reason_name, reason_action);
       Events::log_deopt_message(current, "Uncommon trap: reason=%s action=%s pc=" INTPTR_FORMAT " method=%s @ %d %s",
-                                reason_name, reason_action, p2i(fr.pc()),
+                                reason_name, reason_action, pc,
                                 name_sig, trap_bci, nm->compiler_name());
     }
 

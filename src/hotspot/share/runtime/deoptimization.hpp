@@ -44,7 +44,8 @@ class Deoptimization : AllStatic {
   friend class VMStructs;
   friend class EscapeBarrier;
 
- public:
+
+public:
   // What condition caused the deoptimization?
   // Note: Keep this enum in sync. with Deoptimization::_trap_reason_name.
   enum DeoptReason {
@@ -164,6 +165,11 @@ class Deoptimization : AllStatic {
 #endif
 
   private:
+
+  static void print_ul(CompiledMethod* nm, intptr_t pc, frame& fr, const char* name_sig,
+                       int trap_bci, int osr_bci, const char* reason_name,
+                       const char* reason_action);
+
   // Does the actual work for deoptimizing a single frame
   static void deoptimize_single_frame(JavaThread* thread, frame fr, DeoptReason reason);
 
