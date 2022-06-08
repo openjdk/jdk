@@ -783,18 +783,6 @@ instruct vnegD(vReg dst, vReg src) %{
   ins_pipe(pipe_slow);
 %}
 
-// popcount vector
-
-instruct vpopcountI(iRegINoSp dst, vReg src) %{
-  match(Set dst (PopCountVI src));
-  format %{ "vpopc.m $dst, $src\t#@vpopcountI" %}
-  ins_encode %{
-    __ vsetvli(t0, x0, Assembler::e32);
-    __ vpopc_m(as_Register($dst$$reg), as_VectorRegister($src$$reg));
-  %}
-  ins_pipe(pipe_slow);
-%}
-
 // vector add reduction
 
 instruct reduce_addB(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
