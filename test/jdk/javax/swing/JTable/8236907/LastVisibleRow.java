@@ -59,9 +59,7 @@ public class LastVisibleRow {
         Point clkPoint;
         try {
             testRobot = new Robot();
-
             SwingUtilities.invokeAndWait(new Runnable() {
-
                 public void run() {
                     createAndShowGUI();
                 }
@@ -75,6 +73,7 @@ public class LastVisibleRow {
             mouseEvents(clkPoint);
             testRobot.waitForIdle();
             clearSelect();
+            testRobot.delay(1000);
             testRobot.waitForIdle();
             BufferedImage bufferedImageAfter = testRobot.createScreenCapture(getCaptureRect());
 
@@ -90,13 +89,7 @@ public class LastVisibleRow {
         }
     }
 
-    /*
-     *
-     * Get clickable screen point for particular row and column of a table
-     * param row   Row Number
-     * param column    Column Number
-     * return Point
-     */
+    // Get clickable screen point for particular row and column of a table
     private static Point getCellClickPoint(final int row, final int column) {
         Point result;
 
@@ -133,12 +126,8 @@ public class LastVisibleRow {
 
     }
 
-    /*
-     *
-     * mouseEvents for last row click
-     */
-
-    private static void mouseEvents(Point clkPnt)  {
+    // mouseEvents for last row click
+    private static void mouseEvents(Point clkPnt) {
         testRobot.mouseMove(clkPnt.x, clkPnt.y);
         testRobot.delay(50);
         testRobot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
@@ -146,13 +135,8 @@ public class LastVisibleRow {
         testRobot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         testRobot.delay(50);
     }
-    /*
-     *
-     * getMousePosition Actions for last row click
-     * returns Point
-     * throws Exception
-     */
 
+    // getMousePosition Actions for last row click
     private static Point getMousePosition() throws Exception {
         final Point[] clickPoint = new Point[1];
         SwingUtilities.invokeAndWait(new Runnable() {
@@ -164,12 +148,7 @@ public class LastVisibleRow {
         return clickPoint[0];
     }
 
-    /*
-     *
-     * Clears the selected table row
-     * throws Exception
-     */
-
+    // Clears the selected table row
     private static void clearSelect() throws Exception {
         SwingUtilities.invokeAndWait(new Runnable() {
             @Override
@@ -180,12 +159,7 @@ public class LastVisibleRow {
         });
     }
 
-    /*
-     * getCaptureRect Method - To Compute the Rectangle for
-     * Screen Capturing the Last Row for comparison
-     * return Rectangle
-     */
-
+    // getCaptureRect Method - To Compute the Rectangle Area of last row
     private static Rectangle getCaptureRect() throws InterruptedException, InvocationTargetException {
         final Rectangle[] captureRect = new Rectangle[1];
         SwingUtilities.invokeAndWait(new Runnable() {
@@ -195,19 +169,13 @@ public class LastVisibleRow {
                 Point point = new Point(cellRect.x, cellRect.y);
                 SwingUtilities.convertPointToScreen(point, table);
 
-                captureRect[0] = new Rectangle(point.x, point.y, table.getColumnCount() * cellRect.width, cellRect.height);
+                captureRect[0] = new Rectangle(point.x+5, point.y+2, table.getColumnCount() * cellRect.width - 10, cellRect.height-2);
             }
         });
         return captureRect[0];
     }
 
-    /*
-     * Compare method - to compare two images.
-     * param bufferedImage1    Buffered Image Before click
-     * param bufferedImage2    Buffered Image After click
-     * return Boolean
-     */
-
+    // Compare method - to compare two images.
     static Boolean compare(BufferedImage bufferedImage1, BufferedImage bufferedImage2) {
         if (bufferedImage1.getWidth() == bufferedImage2.getWidth()
                 && bufferedImage1.getHeight() == bufferedImage2.getHeight()) {
