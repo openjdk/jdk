@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ public interface Plugin {
      * <li>MODULEINFO_TRANSFORMER: Transform only module-info.class</li>
      * <li>SORTER: Sort resources within the resource container.</li>
      * <li>METAINFO_ADDER: Added meta info (like release, copyright etc.)</li>
-     * <li>COMPRESSOR: Compress resource within the resouce containers.</li>
+     * <li>COMPRESSOR: Compress resource within the resource containers.</li>
      * <li>VERIFIER: Does some image verification.</li>
      * <li>PROCESSOR: Does some post processing on image.</li>
      * <li>PACKAGER: Final processing</li>

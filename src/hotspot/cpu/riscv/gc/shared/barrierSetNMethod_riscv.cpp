@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020, 2021, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/frame.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/registerMap.hpp"
 #include "runtime/thread.hpp"
@@ -72,7 +73,7 @@ static const struct CheckInsn barrierInsn[] = {
   { 0x000fffff, 0x00028293, "addi   t0, t0, imm1    "},
   { 0xffffffff, 0x00b29293, "slli   t0, t0, 11      "},
   { 0x000fffff, 0x00028293, "addi   t0, t0, imm2    "},
-  { 0xffffffff, 0x00529293, "slli   t0, t0, 5       "},
+  { 0xffffffff, 0x00629293, "slli   t0, t0, 6       "},
   { 0x000fffff, 0x000280e7, "jalr   ra, imm3(t0)    "},
   { 0x00000fff, 0x0000006f, "j      skip            "}
   /* guard: */
@@ -159,6 +160,10 @@ void BarrierSetNMethod::disarm(nmethod* nm) {
   NativeNMethodBarrier* barrier = native_nmethod_barrier(nm);
 
   barrier->set_value(disarmed_value());
+}
+
+void BarrierSetNMethod::arm(nmethod* nm, int arm_value) {
+  Unimplemented();
 }
 
 bool BarrierSetNMethod::is_armed(nmethod* nm) {

@@ -517,7 +517,7 @@ final class ZipPath implements Path {
         return resolved;
     }
 
-    // removes redundant slashs, replace "\" to zip separator "/"
+    // removes redundant slashes, replace "\" to zip separator "/"
     // and check for invalid characters
     private byte[] normalize(byte[] path) {
         int len = path.length;

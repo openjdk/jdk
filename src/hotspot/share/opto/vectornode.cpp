@@ -162,11 +162,22 @@ int VectorNode::opcode(int sopc, BasicType bt) {
   case Op_RoundD:
     return (bt == T_LONG ? Op_RoundVD : 0);
   case Op_PopCountI:
-    // Unimplemented for subword types since bit count changes
-    // depending on size of lane (and sign bit).
-    return (bt == T_INT ? Op_PopCountVI : 0);
+    return Op_PopCountVI;
   case Op_PopCountL:
     return Op_PopCountVL;
+  case Op_ReverseI:
+  case Op_ReverseL:
+    return (is_integral_type(bt) ? Op_ReverseV : 0);
+  case Op_ReverseBytesS:
+  case Op_ReverseBytesI:
+  case Op_ReverseBytesL:
+    return (is_integral_type(bt) ? Op_ReverseBytesV : 0);
+  case Op_CompressBits:
+    // Not implemented. Returning 0 temporarily
+    return 0;
+  case Op_ExpandBits:
+    // Not implemented. Returning 0 temporarily
+    return 0;
   case Op_LShiftI:
     switch (bt) {
     case T_BOOLEAN:
@@ -245,6 +256,16 @@ int VectorNode::opcode(int sopc, BasicType bt) {
     return Op_VectorCastF2X;
   case Op_ConvD2L:
     return Op_VectorCastD2X;
+  case Op_CountLeadingZerosI:
+  case Op_CountLeadingZerosL:
+    return Op_CountLeadingZerosV;
+  case Op_CountTrailingZerosI:
+  case Op_CountTrailingZerosL:
+    return Op_CountTrailingZerosV;
+  case Op_SignumF:
+    return Op_SignumVF;
+  case Op_SignumD:
+    return Op_SignumVD;
 
   default:
     return 0; // Unimplemented
@@ -273,12 +294,17 @@ int VectorNode::replicate_opcode(BasicType bt) {
   }
 }
 
+bool VectorNode::vector_size_supported(BasicType bt, uint vlen) {
+  return (Matcher::vector_size_supported(bt, vlen) &&
+          (vlen * type2aelembytes(bt) <= (uint)SuperWordMaxVectorSize));
+}
+
 // Also used to check if the code generator
 // supports the vector operation.
 bool VectorNode::implemented(int opc, uint vlen, BasicType bt) {
   if (is_java_primitive(bt) &&
       (vlen > 1) && is_power_of_2(vlen) &&
-      Matcher::vector_size_supported(bt, vlen)) {
+      vector_size_supported(bt, vlen)) {
     int vopc = VectorNode::opcode(opc, bt);
     // For rotate operation we will do a lazy de-generation into
     // OrV/LShiftV/URShiftV pattern if the target does not support
@@ -313,15 +339,16 @@ bool VectorNode::is_muladds2i(Node* n) {
   return false;
 }
 
-bool VectorNode::is_vpopcnt_long(Node* n) {
-  if (n->Opcode() == Op_PopCountL) {
-    return true;
+bool VectorNode::is_type_transition_long_to_int(Node* n) {
+  switch(n->Opcode()) {
+    case Op_PopCountL:
+    case Op_CountLeadingZerosL:
+    case Op_CountTrailingZerosL:
+       return true;
+    default:
+       return false;
   }
-  return false;
 }
-
-
-
 
 bool VectorNode::is_roundopD(Node* n) {
   if (n->Opcode() == Op_RoundDoubleMode) {
@@ -358,7 +385,6 @@ bool VectorNode::is_vector_rotate_supported(int vopc, uint vlen, BasicType bt) {
              Matcher::match_rule_supported_vector(Op_LShiftVL,  vlen, bt) &&
              Matcher::match_rule_supported_vector(Op_URShiftVL, vlen, bt);
     default:
-      assert(false, "not supported: %s", type2name(bt));
       return false;
   }
 }
@@ -395,6 +421,11 @@ bool VectorNode::is_vector_integral_negate_supported(int opc, uint vlen, BasicTy
   return false;
 }
 
+bool VectorNode::is_populate_index_supported(BasicType bt) {
+  int vlen = Matcher::max_vector_size(bt);
+  return Matcher::match_rule_supported_vector(Op_PopulateIndex, vlen, bt);
+}
+
 bool VectorNode::is_shift_opcode(int opc) {
   switch (opc) {
   case Op_LShiftI:
@@ -409,6 +440,24 @@ bool VectorNode::is_shift_opcode(int opc) {
   default:
     return false;
   }
+}
+
+bool VectorNode::can_transform_shift_op(Node* n, BasicType bt) {
+  if (n->Opcode() != Op_URShiftI) {
+    return false;
+  }
+  Node* in2 = n->in(2);
+  if (!in2->is_Con()) {
+    return false;
+  }
+  jint cnt = in2->get_int();
+  // Only when shift amount is not greater than number of sign extended
+  // bits (16 for short and 24 for byte), unsigned shift right on signed
+  // subword types can be vectorized as vector signed shift.
+  if ((bt == T_BYTE && cnt <= 24) || (bt == T_SHORT && cnt <= 16)) {
+    return true;
+  }
+  return false;
 }
 
 bool VectorNode::is_shift(Node* n) {
@@ -586,6 +635,9 @@ VectorNode* VectorNode::make(int vopc, Node* n1, Node* n2, const TypeVect* vt, b
   case Op_NegVF: return new NegVFNode(n1, vt);
   case Op_NegVD: return new NegVDNode(n1, vt);
 
+  case Op_ReverseV: return new ReverseVNode(n1, vt);
+  case Op_ReverseBytesV: return new ReverseBytesVNode(n1, vt);
+
   case Op_SqrtVF: return new SqrtVFNode(n1, vt);
   case Op_SqrtVD: return new SqrtVDNode(n1, vt);
 
@@ -619,6 +671,12 @@ VectorNode* VectorNode::make(int vopc, Node* n1, Node* n2, const TypeVect* vt, b
   case Op_RoundDoubleModeV: return new RoundDoubleModeVNode(n1, n2, vt);
 
   case Op_MulAddVS2VI: return new MulAddVS2VINode(n1, n2, vt);
+
+  case Op_ExpandV: return new ExpandVNode(n1, n2, vt);
+  case Op_CompressV: return new CompressVNode(n1, n2, vt);
+  case Op_CompressM: assert(n1 == NULL, ""); return new CompressMNode(n2, vt);
+  case Op_CountLeadingZerosV: return new CountLeadingZerosVNode(n1, vt);
+  case Op_CountTrailingZerosV: return new CountTrailingZerosVNode(n1, vt);
   default:
     fatal("Missed vector creation for '%s'", NodeClassNames[vopc]);
     return NULL;
@@ -641,6 +699,8 @@ VectorNode* VectorNode::make(int vopc, Node* n1, Node* n2, Node* n3, const TypeV
   switch (vopc) {
   case Op_FmaVD: return new FmaVDNode(n1, n2, n3, vt);
   case Op_FmaVF: return new FmaVFNode(n1, n2, n3, vt);
+  case Op_SignumVD: return new SignumVDNode(n1, n2, n3, vt);
+  case Op_SignumVF: return new SignumVFNode(n1, n2, n3, vt);
   default:
     fatal("Missed vector creation for '%s'", NodeClassNames[vopc]);
     return NULL;
@@ -1264,7 +1324,7 @@ Node* ReductionNode::make_reduction_input(PhaseGVN& gvn, int opc, BasicType bt) 
 bool ReductionNode::implemented(int opc, uint vlen, BasicType bt) {
   if (is_java_primitive(bt) &&
       (vlen > 1) && is_power_of_2(vlen) &&
-      Matcher::vector_size_supported(bt, vlen)) {
+      VectorNode::vector_size_supported(bt, vlen)) {
     int vopc = ReductionNode::opcode(opc, bt);
     return vopc != opc && Matcher::match_rule_supported_vector(vopc, vlen, bt);
   }
@@ -1427,7 +1487,7 @@ Node* VectorUnboxNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       // Handled by VectorUnboxNode::Identity()
     } else {
       VectorBoxNode* vbox = static_cast<VectorBoxNode*>(n);
-      ciKlass* vbox_klass = vbox->box_type()->klass();
+      ciKlass* vbox_klass = vbox->box_type()->instance_klass();
       const TypeVect* in_vt = vbox->vec_type();
       const TypeVect* out_vt = type()->is_vect();
 
@@ -1656,6 +1716,38 @@ Node* NegVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     }
   }
   return NULL;
+}
+
+Node* ReverseBytesVNode::Identity(PhaseGVN* phase) {
+  if (is_predicated_using_blend()) {
+    return this;
+  }
+  // ReverseBytesV (ReverseBytesV X , MASK) , MASK =>  X
+  if (in(1)->Opcode() == Op_ReverseBytesV) {
+    if (is_predicated_vector() && in(1)->is_predicated_vector() && in(2) == in(1)->in(2)) {
+      return in(1)->in(1);
+    } else {
+      // ReverseBytesV (ReverseBytesV X) =>  X
+      return in(1)->in(1);
+    }
+  }
+  return this;
+}
+
+Node* ReverseVNode::Identity(PhaseGVN* phase) {
+  if (is_predicated_using_blend()) {
+    return this;
+  }
+  // ReverseV (ReverseV X , MASK) , MASK =>  X
+  if (in(1)->Opcode() == Op_ReverseV) {
+    if (is_predicated_vector() && in(1)->is_predicated_vector() && in(2) == in(1)->in(2)) {
+      return in(1)->in(1);
+    } else {
+      // ReverseV (ReverseV X) =>  X
+      return in(1)->in(1);
+    }
+  }
+  return this;
 }
 
 #ifndef PRODUCT

@@ -68,8 +68,8 @@ class PackageEntry;
  *
  */
 class JfrTraceIdLoadBarrier : AllStatic {
-  friend class Jfr;
   friend class JfrCheckpointManager;
+  friend class JfrIntrinsicSupport;
   friend class JfrStackTrace;
   friend class JfrThreadSampler;
  private:

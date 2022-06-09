@@ -140,6 +140,9 @@ class Argument {
     // shows that xlC places all float args after argument 8 on the stack AND
     // in a register. This is not documented, but we follow this convention, too.
     n_regs_not_on_stack_c = 8,
+
+    n_int_register_parameters_j = 8,
+    n_float_register_parameters_j = 13
   };
   // creation
   Argument(int number) : _number(number) {}
@@ -729,7 +732,10 @@ class Assembler : public AbstractAssembler {
     VSRAB_OPCODE   = (4u  << OPCODE_SHIFT |  772u     ),
     VSRAW_OPCODE   = (4u  << OPCODE_SHIFT |  900u     ),
     VSRAH_OPCODE   = (4u  << OPCODE_SHIFT |  836u     ),
+    VPOPCNTB_OPCODE= (4u  << OPCODE_SHIFT | 1795u     ),
+    VPOPCNTH_OPCODE= (4u  << OPCODE_SHIFT | 1859u     ),
     VPOPCNTW_OPCODE= (4u  << OPCODE_SHIFT | 1923u     ),
+    VPOPCNTD_OPCODE= (4u  << OPCODE_SHIFT | 1987u     ),
 
     // Vector Floating-Point
     // not implemented yet
@@ -2339,7 +2345,10 @@ class Assembler : public AbstractAssembler {
   inline void vsrab(    VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vsraw(    VectorRegister d, VectorRegister a, VectorRegister b);
   inline void vsrah(    VectorRegister d, VectorRegister a, VectorRegister b);
+  inline void vpopcntb( VectorRegister d, VectorRegister b);
+  inline void vpopcnth( VectorRegister d, VectorRegister b);
   inline void vpopcntw( VectorRegister d, VectorRegister b);
+  inline void vpopcntd( VectorRegister d, VectorRegister b);
   // Vector Floating-Point not implemented yet
   inline void mtvscr(   VectorRegister b);
   inline void mfvscr(   VectorRegister d);

@@ -768,9 +768,12 @@ public class HttpClient extends NetworkClient {
             closeServer();
             cachedHttpClient = false;
             if (!failedOnce && requests != null) {
+                Thread thread = Thread.currentThread();
+                boolean doNotRetry = thread.isVirtual() && thread.isInterrupted();
                 failedOnce = true;
                 if (getRequestMethod().equals("CONNECT")
                     || streaming
+                    || doNotRetry
                     || (httpuc.getRequestMethod().equals("POST")
                         && !retryPostProp)) {
                     // do not retry the request

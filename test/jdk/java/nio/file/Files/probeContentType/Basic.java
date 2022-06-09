@@ -22,15 +22,17 @@
  */
 
 /* @test
- * @bug 4313887 8129632 8129633 8162624 8146215 8162745 8273655 8274171
+ * @bug 4313887 8129632 8129633 8162624 8146215 8162745 8273655 8274171 8287237
  * @summary Unit test for probeContentType method
  * @library ../..
  * @build Basic SimpleFileTypeDetector
  * @run main/othervm Basic
  */
 
-import java.io.*;
-import java.nio.file.*;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -79,10 +81,10 @@ public class Basic {
         if (!expected.equals(actual)) {
             if (IS_UNIX) {
                 Path userMimeTypes =
-                    Paths.get(System.getProperty("user.home"), ".mime.types");
+                    Path.of(System.getProperty("user.home"), ".mime.types");
                 checkMimeTypesFile(userMimeTypes);
 
-                Path etcMimeTypes = Paths.get("/etc/mime.types");
+                Path etcMimeTypes = Path.of("/etc/mime.types");
                 checkMimeTypesFile(etcMimeTypes);
             }
 
@@ -187,6 +189,15 @@ public class Basic {
                 new ExType("7z", List.of("application/x-7z-compressed")),
         };
         failures += checkContentTypes(exTypes);
+
+        // Verify type is found when the extension is in a fragment component
+        Path pathWithFragement = Path.of("SomePathWith#aFragement.png");
+        String contentType = Files.probeContentType(pathWithFragement);
+        if (contentType == null || !contentType.equals("image/png")) {
+            System.err.printf("For %s expected \"png\" but got %s%n",
+                pathWithFragement, contentType);
+            failures++;
+        }
 
         if (failures > 0) {
             throw new RuntimeException("Test failed!");

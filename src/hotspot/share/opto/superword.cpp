@@ -199,6 +199,16 @@ bool SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
   return success;
 }
 
+//------------------------------max vector size------------------------------
+int SuperWord::max_vector_size(BasicType bt) {
+  int max_vector = Matcher::max_vector_size(bt);
+  int sw_max_vector_limit = SuperWordMaxVectorSize / type2aelembytes(bt);
+  if (max_vector > sw_max_vector_limit) {
+    max_vector = sw_max_vector_limit;
+  }
+  return max_vector;
+}
+
 //------------------------------early unrolling analysis------------------------------
 void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
   bool is_slp = true;
@@ -217,7 +227,7 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
     ignored_loop_nodes[i] = -1;
   }
 
-  int max_vector = Matcher::max_vector_size(T_BYTE);
+  int max_vector = max_vector_size(T_BYTE);
 
   // Process the loop, some/all of the stack entries will not be in order, ergo
   // need to preprocess the ignored initial state before we process the loop
@@ -352,7 +362,7 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
 
       if (is_java_primitive(bt) == false) continue;
 
-      int cur_max_vector = Matcher::max_vector_size(bt);
+      int cur_max_vector = max_vector_size(bt);
 
       // If a max vector exists which is not larger than _local_loop_unroll_factor
       // stop looking, we already have the max vector to map to.
@@ -991,7 +1001,7 @@ int SuperWord::get_vw_bytes_special(MemNode* s) {
       }
     }
     if (should_combine_adjacent) {
-      vw = MIN2(Matcher::max_vector_size(btype)*type2aelembytes(btype), vw * 2);
+      vw = MIN2(max_vector_size(btype)*type2aelembytes(btype), vw * 2);
     }
   }
 
@@ -1312,7 +1322,16 @@ bool SuperWord::have_similar_inputs(Node* s1, Node* s2) {
   // assert(independent(s1, s2) == true, "check independent");
   if (s1->req() > 1 && !s1->is_Store() && !s1->is_Load()) {
     for (uint i = 1; i < s1->req(); i++) {
-      if (s1->in(i)->Opcode() != s2->in(i)->Opcode()) return false;
+      Node* s1_in = s1->in(i);
+      Node* s2_in = s2->in(i);
+      if (s1_in->is_Phi() && s2_in->is_Add() && s2_in->in(1) == s1_in) {
+        // Special handling for expressions with loop iv, like "b[i] = a[i] * i".
+        // In this case, one node has an input from the tripcount iv and another
+        // node has an input from iv plus an offset.
+        if (!s1_in->as_Phi()->is_tripcount(T_INT)) return false;
+      } else {
+        if (s1_in->Opcode() != s2_in->Opcode()) return false;
+      }
     }
   }
   return true;
@@ -1680,7 +1699,7 @@ void SuperWord::combine_packs() {
     Node_List* p1 = _packset.at(i);
     if (p1 != NULL) {
       BasicType bt = velt_basic_type(p1->at(0));
-      uint max_vlen = Matcher::max_vector_size(bt); // Max elements in vector
+      uint max_vlen = max_vector_size(bt); // Max elements in vector
       assert(is_power_of_2(max_vlen), "sanity");
       uint psize = p1->size();
       if (!is_power_of_2(psize)) {
@@ -2004,6 +2023,13 @@ bool SuperWord::implemented(Node_List* p) {
         retValue = ReductionNode::implemented(opc, size, arith_type->basic_type());
       }
     } else {
+      // Vector unsigned right shift for signed subword types behaves differently
+      // from Java Spec. But when the shift amount is a constant not greater than
+      // the number of sign extended bits, the unsigned right shift can be
+      // vectorized to a signed right shift.
+      if (VectorNode::can_transform_shift_op(p0, velt_basic_type(p0))) {
+        opc = Op_RShiftI;
+      }
       retValue = VectorNode::implemented(opc, size, velt_basic_type(p0));
     }
     if (!retValue) {
@@ -2388,6 +2414,11 @@ bool SuperWord::output() {
     return false;
   }
 
+  // Check that the loop to be vectorized does not have inconsistent reduction
+  // information, which would likely lead to a miscompilation.
+  assert(!lpt()->has_reduction_nodes() || cl->is_reduction_loop(),
+         "non-reduction loop contains reduction nodes");
+
 #ifndef PRODUCT
   if (TraceLoopOpts) {
     tty->print("SuperWord::output    ");
@@ -2516,6 +2547,13 @@ bool SuperWord::output() {
         Node* in2 = vector_opd(p, 2);
         vn = VectorNode::make(opc, in1, in2, vlen, velt_basic_type(n));
         vlen_in_bytes = vn->as_Vector()->length_in_bytes();
+      } else if (opc == Op_SignumF || opc == Op_SignumD) {
+        assert(n->req() == 4, "four inputs expected");
+        Node* in = vector_opd(p, 1);
+        Node* zero = vector_opd(p, 2);
+        Node* one = vector_opd(p, 3);
+        vn = VectorNode::make(opc, in, zero, one, vlen, velt_basic_type(n));
+        vlen_in_bytes = vn->as_Vector()->length_in_bytes();
       } else if (n->req() == 3 && !is_cmov_pack(p)) {
         // Promote operands to vector
         Node* in1 = NULL;
@@ -2556,6 +2594,13 @@ bool SuperWord::output() {
             vlen_in_bytes = in2->as_Vector()->length_in_bytes();
           }
         } else {
+          // Vector unsigned right shift for signed subword types behaves differently
+          // from Java Spec. But when the shift amount is a constant not greater than
+          // the number of sign extended bits, the unsigned right shift can be
+          // vectorized to a signed right shift.
+          if (VectorNode::can_transform_shift_op(n, velt_basic_type(n))) {
+            opc = Op_RShiftI;
+          }
           vn = VectorNode::make(opc, in1, in2, vlen, velt_basic_type(n));
           vlen_in_bytes = vn->as_Vector()->length_in_bytes();
         }
@@ -2564,7 +2609,9 @@ bool SuperWord::output() {
                  opc == Op_AbsI || opc == Op_AbsL ||
                  opc == Op_NegF || opc == Op_NegD ||
                  opc == Op_RoundF || opc == Op_RoundD ||
-                 opc == Op_PopCountI || opc == Op_PopCountL) {
+                 opc == Op_PopCountI || opc == Op_PopCountL ||
+                 opc == Op_CountLeadingZerosI || opc == Op_CountLeadingZerosL ||
+                 opc == Op_CountTrailingZerosI || opc == Op_CountTrailingZerosL) {
         assert(n->req() == 2, "only one input expected");
         Node* in = vector_opd(p, 1);
         vn = VectorNode::make(opc, in, NULL, vlen, velt_basic_type(n));
@@ -2831,13 +2878,38 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
   uint vlen = p->size();
   Node* opd = p0->in(opd_idx);
   CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
+  bool have_same_inputs = same_inputs(p, opd_idx);
 
   if (cl->is_rce_post_loop()) {
     // override vlen with the main loops vector length
+    assert(p->size() == 1, "Packs in post loop should have only one node");
     vlen = cl->slp_max_unroll();
   }
 
-  if (same_inputs(p, opd_idx)) {
+  // Insert index population operation to create a vector of increasing
+  // indices starting from the iv value. In some special unrolled loops
+  // (see JDK-8286125), we need scalar replications of the iv value if
+  // all inputs are the same iv, so we do a same inputs check here. But
+  // in post loops, "have_same_inputs" is always true because all packs
+  // are singleton. That's why a pack size check is also required.
+  if (opd == iv() && (!have_same_inputs || p->size() == 1)) {
+    BasicType p0_bt = velt_basic_type(p0);
+    BasicType iv_bt = is_subword_type(p0_bt) ? p0_bt : T_INT;
+    assert(VectorNode::is_populate_index_supported(iv_bt), "Should support");
+    const TypeVect* vt = TypeVect::make(iv_bt, vlen);
+    Node* vn = new PopulateIndexNode(iv(), _igvn.intcon(1), vt);
+#ifdef ASSERT
+    if (TraceNewVectors) {
+      tty->print("new Vector node: ");
+      vn->dump();
+    }
+#endif
+    _igvn.register_new_node_with_optimizer(vn);
+    _phase->set_ctrl(vn, _phase->get_ctrl(opd));
+    return vn;
+  }
+
+  if (have_same_inputs) {
     if (opd->is_Vector() || opd->is_LoadVector()) {
       assert(((opd_idx != 2) || !VectorNode::is_shift(p0)), "shift's count can't be vector");
       if (opd_idx == 2 && VectorNode::is_shift(p0)) {
@@ -2847,7 +2919,6 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
       return opd; // input is matching vector
     }
     if ((opd_idx == 2) && VectorNode::is_shift(p0)) {
-      Compile* C = _phase->C;
       Node* cnt = opd;
       // Vector instructions do not mask shift count, do it here.
       juint mask = (p0->bottom_type() == TypeInt::INT) ? (BitsPerInt - 1) : (BitsPerLong - 1);
@@ -3008,10 +3079,25 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) {
   Node* def = use->in(u_idx);
   Node_List* d_pk = my_pack(def);
   if (d_pk == NULL) {
-    // check for scalar promotion
     Node* n = u_pk->at(0)->in(u_idx);
-    for (uint i = 1; i < u_pk->size(); i++) {
-      if (u_pk->at(i)->in(u_idx) != n) return false;
+    if (n == iv()) {
+      // check for index population
+      BasicType bt = velt_basic_type(use);
+      if (!VectorNode::is_populate_index_supported(bt)) return false;
+      for (uint i = 1; i < u_pk->size(); i++) {
+        // We can create a vector filled with iv indices if all other nodes
+        // in use pack have inputs of iv plus node index.
+        Node* use_in = u_pk->at(i)->in(u_idx);
+        if (!use_in->is_Add() || use_in->in(1) != n) return false;
+        const TypeInt* offset_t = use_in->in(2)->bottom_type()->is_int();
+        if (offset_t == NULL || !offset_t->is_con() ||
+            offset_t->get_con() != (jint) i) return false;
+      }
+    } else {
+      // check for scalar promotion
+      for (uint i = 1; i < u_pk->size(); i++) {
+        if (u_pk->at(i)->in(u_idx) != n) return false;
+      }
     }
     return true;
   }
@@ -3032,9 +3118,9 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) {
     return true;
   }
 
-  if (VectorNode::is_vpopcnt_long(use)) {
-    // VPOPCNT_LONG takes long and produces int - hence the special checks
-    // on alignment and size.
+  if (VectorNode::is_type_transition_long_to_int(use)) {
+    // PopCountL/CountLeadingZerosL/CountTrailingZerosL takes long and produces
+    // int - hence the special checks on alignment and size.
     if (u_pk->size() != d_pk->size()) {
       return false;
     }
@@ -3950,7 +4036,7 @@ bool SWPointer::scaled_iv_plus_offset(Node* n) {
       NOT_PRODUCT(_tracer.scaled_iv_plus_offset_5(n);)
       return true;
     }
-  } else if (opc == Op_SubI) {
+  } else if (opc == Op_SubI || opc == Op_SubL) {
     if (offset_plus_k(n->in(2), true) && scaled_iv_plus_offset(n->in(1))) {
       NOT_PRODUCT(_tracer.scaled_iv_plus_offset_6(n);)
       return true;
@@ -4269,7 +4355,7 @@ void SWPointer::Tracer::scaled_iv_plus_offset_5(Node* n) {
 
 void SWPointer::Tracer::scaled_iv_plus_offset_6(Node* n) {
   if(_slp->is_trace_alignment()) {
-    print_depth(); tty->print_cr(" %d SWPointer::scaled_iv_plus_offset: Op_SubI PASSED", n->_idx);
+    print_depth(); tty->print_cr(" %d SWPointer::scaled_iv_plus_offset: Op_%s PASSED", n->_idx, n->Name());
     print_depth(); tty->print("  \\  %d SWPointer::scaled_iv_plus_offset: in(1) is scaled_iv: ", n->in(1)->_idx); n->in(1)->dump();
     print_depth(); tty->print("  \\ %d SWPointer::scaled_iv_plus_offset: in(2) is offset_plus_k: ", n->in(2)->_idx); n->in(2)->dump();
   }
@@ -4277,7 +4363,7 @@ void SWPointer::Tracer::scaled_iv_plus_offset_6(Node* n) {
 
 void SWPointer::Tracer::scaled_iv_plus_offset_7(Node* n) {
   if(_slp->is_trace_alignment()) {
-    print_depth(); tty->print_cr(" %d SWPointer::scaled_iv_plus_offset: Op_SubI PASSED", n->_idx);
+    print_depth(); tty->print_cr(" %d SWPointer::scaled_iv_plus_offset: Op_%s PASSED", n->_idx, n->Name());
     print_depth(); tty->print("  \\ %d SWPointer::scaled_iv_plus_offset: in(2) is scaled_iv: ", n->in(2)->_idx); n->in(2)->dump();
     print_depth(); tty->print("  \\ %d SWPointer::scaled_iv_plus_offset: in(1) is offset_plus_k: ", n->in(1)->_idx); n->in(1)->dump();
   }

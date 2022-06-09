@@ -124,9 +124,9 @@ Node* Parse::array_addressing(BasicType type, int vals, const Type*& elemtype) {
     const Type* el = elemtype->make_ptr();
     if (el && el->isa_instptr()) {
       const TypeInstPtr* toop = el->is_instptr();
-      if (toop->klass()->as_instance_klass()->unique_concrete_subklass()) {
+      if (toop->instance_klass()->unique_concrete_subklass()) {
         // If we load from "AbstractClass[]" we must see "ConcreteSubClass".
-        const Type* subklass = Type::get_const_type(toop->klass());
+        const Type* subklass = Type::get_const_type(toop->instance_klass());
         elemtype = subklass->join_speculative(el);
       }
     }
@@ -143,13 +143,14 @@ Node* Parse::array_addressing(BasicType type, int vals, const Type*& elemtype) {
     if (C->log() != NULL)   C->log()->elem("observe that='!need_range_check'");
   }
 
-  ciKlass * arytype_klass = arytype->klass();
-  if ((arytype_klass != NULL) && (!arytype_klass->is_loaded())) {
+  if (!arytype->is_loaded()) {
     // Only fails for some -Xcomp runs
     // The class is unloaded.  We have to run this bytecode in the interpreter.
+    ciKlass* klass = arytype->unloaded_klass();
+
     uncommon_trap(Deoptimization::Reason_unloaded,
                   Deoptimization::Action_reinterpret,
-                  arytype->klass(), "!loaded array");
+                  klass, "!loaded array");
     return top();
   }
 
@@ -1802,7 +1803,7 @@ Node* Parse::optimize_cmp_with_klass(Node* c) {
 
 //------------------------------do_one_bytecode--------------------------------
 // Parse this bytecode, and alter the Parsers JVM->Node mapping
-void Parse::do_one_bytecode_common() {
+void Parse::do_one_bytecode() {
   Node *a, *b, *c, *d;          // Handy temps
   BoolTest::mask btest;
   int i;
@@ -2750,4 +2751,16 @@ void Parse::do_one_bytecode_common() {
     tty->print("\nUnhandled bytecode %s\n", Bytecodes::name(bc()) );
     ShouldNotReachHere();
   }
+
+#ifndef PRODUCT
+  if (C->should_print_igv(1)) {
+    IdealGraphPrinter* printer = C->igv_printer();
+    char buffer[256];
+    jio_snprintf(buffer, sizeof(buffer), "Bytecode %d: %s", bci(), Bytecodes::name(bc()));
+    bool old = printer->traverse_outs();
+    printer->set_traverse_outs(true);
+    printer->print_method(buffer, 4);
+    printer->set_traverse_outs(old);
+  }
+#endif
 }

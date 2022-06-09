@@ -308,6 +308,12 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
   return entry_point;
 }
 
+void MethodHandles::jump_to_native_invoker(MacroAssembler* _masm, Register nep_reg, Register temp_target) {
+  BLOCK_COMMENT("jump_to_native_invoker {");
+  __ stop("Should not reach here");
+  BLOCK_COMMENT("} jump_to_native_invoker");
+}
+
 void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
                                                     vmIntrinsics::ID iid,
                                                     Register receiver_reg,
@@ -325,12 +331,12 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
     ? MacroAssembler::PRESERVATION_FRAME_LR_GP_FP_REGS
     : MacroAssembler::PRESERVATION_FRAME_LR;
 
-  if (iid == vmIntrinsics::_invokeBasic || iid == vmIntrinsics::_linkToNative) {
-    if (iid == vmIntrinsics::_linkToNative) {
-      assert(for_compiler_entry, "only compiler entry is supported");
-    }
+  if (iid == vmIntrinsics::_invokeBasic) {
     // indirect through MH.form.vmentry.vmtarget
     jump_to_lambda_form(_masm, receiver_reg, R19_method, temp1, temp2, for_compiler_entry);
+  } else if (iid == vmIntrinsics::_linkToNative) {
+    assert(for_compiler_entry, "only compiler entry is supported");
+    jump_to_native_invoker(_masm, member_reg, temp1);
   } else {
     // The method is a member invoker used by direct method handles.
     if (VerifyMethodHandles) {

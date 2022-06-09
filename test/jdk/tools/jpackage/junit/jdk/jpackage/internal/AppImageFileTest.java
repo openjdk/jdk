@@ -45,6 +45,7 @@ public class AppImageFileTest {
     public void testIdentity() throws IOException {
         Map<String, Object> params = new LinkedHashMap<>();
         params.put(Arguments.CLIOptions.NAME.getId(), "Foo");
+        params.put(Arguments.CLIOptions.APPCLASS.getId(), "TestClass");
         params.put(Arguments.CLIOptions.VERSION.getId(), "2.3");
         params.put(Arguments.CLIOptions.DESCRIPTION.getId(), "Duck is the King");
         AppImageFile aif = create(params);
@@ -66,6 +67,7 @@ public class AppImageFileTest {
 
         params = new LinkedHashMap<>();
         params.put(Arguments.CLIOptions.NAME.getId(), "foo");
+        params.put(Arguments.CLIOptions.APPCLASS.getId(), "TestClass");
         params.put(Arguments.CLIOptions.VERSION.getId(), "");
         create(params);
     }
@@ -81,6 +83,11 @@ public class AppImageFileTest {
                 "</jpackage-state>"));
         assertInvalid(createFromXml(
                 JPACKAGE_STATE_OPEN,
+                    "<main-launcher>Foo</main-launcher>",
+                    "<main-class></main-class>",
+                "</jpackage-state>"));
+        assertInvalid(createFromXml(
+                JPACKAGE_STATE_OPEN,
                     "<launcher>A</launcher>",
                     "<launcher>B</launcher>",
                 "</jpackage-state>"));
@@ -91,17 +98,20 @@ public class AppImageFileTest {
         Assert.assertEquals("Foo", (createFromXml(
                 JPACKAGE_STATE_OPEN,
                     "<main-launcher>Foo</main-launcher>",
+                    "<main-class>main.Class</main-class>",
                 "</jpackage-state>")).getLauncherName());
 
         Assert.assertEquals("Boo", (createFromXml(
                 JPACKAGE_STATE_OPEN,
                     "<main-launcher>Boo</main-launcher>",
                     "<main-launcher>Bar</main-launcher>",
+                    "<main-class>main.Class</main-class>",
                 "</jpackage-state>")).getLauncherName());
 
         var file = createFromXml(
                 JPACKAGE_STATE_OPEN,
                     "<main-launcher>Foo</main-launcher>",
+                    "<main-class>main.Class</main-class>",
                     "<launcher></launcher>",
                 "</jpackage-state>");
         Assert.assertEquals("Foo", file.getLauncherName());
@@ -113,10 +123,46 @@ public class AppImageFileTest {
     public void testMainLauncherName() throws IOException {
         Map<String, Object> params = new LinkedHashMap<>();
         params.put("name", "Foo");
+        params.put("main-class", "main.Class");
         params.put("description", "Duck App Description");
         AppImageFile aif = create(params);
 
         Assert.assertEquals("Foo", aif.getLauncherName());
+    }
+
+    @Test
+    public void testMainClass() throws IOException {
+        Map<String, Object> params = new LinkedHashMap<>();
+        params.put("name", "Foo");
+        params.put("main-class", "main.Class");
+        params.put("description", "Duck App Description");
+        AppImageFile aif = create(params);
+
+        Assert.assertEquals("main.Class", aif.getMainClass());
+    }
+
+    @Test
+    public void testMacSign() throws IOException {
+        Map<String, Object> params = new LinkedHashMap<>();
+        params.put("name", "Foo");
+        params.put("main-class", "main.Class");
+        params.put("description", "Duck App Description");
+        params.put("mac-sign", Boolean.TRUE);
+        AppImageFile aif = create(params);
+
+        Assert.assertTrue(aif.isSigned());
+    }
+
+    @Test
+    public void testMacAppStore() throws IOException {
+        Map<String, Object> params = new LinkedHashMap<>();
+        params.put("name", "Foo");
+        params.put("main-class", "main.Class");
+        params.put("description", "Duck App Description");
+        params.put("mac-app-store", Boolean.TRUE);
+        AppImageFile aif = create(params);
+
+        Assert.assertTrue(aif.isAppStore());
     }
 
     @Test
@@ -133,6 +179,7 @@ public class AppImageFileTest {
         launchersAsMap.add(addLauncher3Params);
 
         params.put("name", "Duke App");
+        params.put("main-class", "main.Class");
         params.put("description", "Duke App Description");
         params.put("add-launcher", launchersAsMap);
         AppImageFile aif = create(params);
@@ -145,7 +192,6 @@ public class AppImageFileTest {
 
         Assert.assertTrue(names.contains("Launcher2Name"));
         Assert.assertTrue(names.contains("Launcher3Name"));
-
     }
 
     private AppImageFile create(Map<String, Object> params) throws IOException {

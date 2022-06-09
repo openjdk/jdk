@@ -137,7 +137,7 @@ import java.util.Stack;
  * @see     com.sun.java_cup.internal.runtime.virtual_parse_stack
  * @author  Frank Flannery
  *
- * @LastModified: Jan 2022
+ * @LastModified: June 2022
  */
 
 public abstract class lr_parser {
@@ -149,6 +149,7 @@ public abstract class lr_parser {
     private int grpCount = 0;
     private int opCount = 0;
     private int totalOpCount = 0;
+    private int lastSym;
 
   /*-----------------------------------------------------------*/
   /*--- Constructor(s) ----------------------------------------*/
@@ -363,7 +364,7 @@ public abstract class lr_parser {
    *  Once end of file has been reached, all subsequent calls to scan
    *  should return an EOF Symbol (which is Symbol number 0).  By default
    *  this method returns getScanner().next_token(); this implementation
-   *  can be overriden by the generated parser using the code declared in
+   *  can be overridden by the generated parser using the code declared in
    *  the "scan with" clause.  Do not recycle objects; every call to
    *  scan() should return a fresh object.
    */
@@ -377,13 +378,17 @@ public abstract class lr_parser {
           opCount++; // function
           isLiteral = false;
       } else if (contains(sym.OPERATORS, s.sym)) {
-          opCount++;
+          // axis nodetest is counted as one step, so not counted if last=DCOLON
+          if (lastSym != sym.DCOLON) {
+              opCount++;
+          }
           isLiteral = false;
       }
 
       if (s.sym == sym.Literal || s.sym == sym.QNAME) {
           isLiteral = true;
       }
+      lastSym = s.sym;
 
     return s;
   }
@@ -588,6 +593,7 @@ public abstract class lr_parser {
       isLiteral = false;
       grpCount = 0;
       opCount = 0;
+      lastSym = -1;
 
       /* get the first token */
       cur_token = scan();
@@ -910,7 +916,7 @@ public abstract class lr_parser {
    *  the stored Symbols without error, then the recovery is considered a
    *  success.  Once a successful recovery point is determined, we do an
    *  actual parse over the stored input -- modifying the real parse
-   *  configuration and executing all actions.  Finally, we return the the
+   *  configuration and executing all actions.  Finally, we return the
    *  normal parser to continue with the overall parse.
    *
    * @param debug should we produce debugging messages as we parse.

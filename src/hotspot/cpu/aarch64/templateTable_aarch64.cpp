@@ -3862,6 +3862,9 @@ void TemplateTable::monitorenter()
   __ str(r0, Address(c_rarg1, BasicObjectLock::obj_offset_in_bytes()));
   __ lock_object(c_rarg1);
 
+  // The object is stored so counter should be increased even if stackoverflow is generated
+  __ inc_held_monitor_count(rthread);
+
   // check to make sure this monitor doesn't cause stack overflow after locking
   __ save_bcp();  // in case of exception
   __ generate_stack_overflow_check(0);
@@ -3920,6 +3923,7 @@ void TemplateTable::monitorexit()
   __ bind(found);
   __ push_ptr(r0); // make sure object is on stack (contract with oopMaps)
   __ unlock_object(c_rarg1);
+  __ dec_held_monitor_count(rthread);
   __ pop_ptr(r0); // discard object
 }
 
