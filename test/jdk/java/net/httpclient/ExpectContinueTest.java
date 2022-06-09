@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,18 +36,20 @@
  *          jdk.httpserver
  * @library /test/lib http2/server
  * @compile HttpServerAdapters.java
- * @run testng/othervm/timeout=10  ExpectContinueTest
+ * @run testng/othervm ExpectContinueTest
  */
 
 
 import com.sun.net.httpserver.HttpServer;
 
+import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import javax.net.ServerSocketFactory;
 import java.io.BufferedReader;
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -70,9 +72,9 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class ExpectContinueTest implements HttpServerAdapters {
 
-    HttpServerAdapters.HttpTestServer httpTestServer;    // HTTP/1.1
-    HttpServerAdapters.HttpTestServer http2TestServer;   // HTTP/2
+    HttpTestServer http1TestServer; // HTTP/1.1
     Http1HangServer http1HangServer;
+    HttpTestServer http2TestServer; // HTTP/2
 
     URI getUri;
     URI postUri;
@@ -81,16 +83,18 @@ public class ExpectContinueTest implements HttpServerAdapters {
     URI h2postUri;
     URI h2hangUri;
 
+    static final String EXPECTATION_FAILED_417 = "417 Expectation Failed";
+
     @BeforeTest
     public void setup() throws Exception {
         InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
         InetSocketAddress saHang = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
 
-        httpTestServer = HttpServerAdapters.HttpTestServer.of(HttpServer.create(sa, 0));
-        httpTestServer.addHandler(new GetHandler(), "/http1/get");
-        httpTestServer.addHandler(new PostHandler(), "/http1/post");
-        getUri = URI.create("http://" + httpTestServer.serverAuthority() + "/http1/get");
-        postUri = URI.create("http://" + httpTestServer.serverAuthority() + "/http1/post");
+        http1TestServer = HttpTestServer.of(HttpServer.create(sa, 0));
+        http1TestServer.addHandler(new GetHandler(), "/http1/get");
+        http1TestServer.addHandler(new PostHandler(), "/http1/post");
+        getUri = URI.create("http://" + http1TestServer.serverAuthority() + "/http1/get");
+        postUri = URI.create("http://" + http1TestServer.serverAuthority() + "/http1/post");
 
         // Due to limitations of the above Http1 Server, a manual approach is taken to test the hanging with the
         // httpclient using Http1 so that the correct response header can be returned for the test case
@@ -98,7 +102,7 @@ public class ExpectContinueTest implements HttpServerAdapters {
         hangUri = URI.create("http://" + http1HangServer.ia.getCanonicalHostName() + ":" + http1HangServer.port + "/http1/hang");
 
 
-        http2TestServer = HttpServerAdapters.HttpTestServer.of(
+        http2TestServer = HttpTestServer.of(
                 new Http2TestServer("localhost", false, 0));
         http2TestServer.addHandler(new GetHandler(), "/http2/get");
         http2TestServer.addHandler(new PostHandler(), "/http2/post");
@@ -107,9 +111,16 @@ public class ExpectContinueTest implements HttpServerAdapters {
         h2postUri = URI.create("http://" + http2TestServer.serverAuthority() + "/http2/post");
         h2hangUri = URI.create("http://" + http2TestServer.serverAuthority() + "/http2/hang");
 
-        httpTestServer.start();
+        http1TestServer.start();
         http1HangServer.start();
         http2TestServer.start();
+    }
+
+    @AfterTest
+    public void teardown() throws IOException {
+        http1TestServer.stop();
+        http1HangServer.close();
+        http2TestServer.stop();
     }
 
     static class GetHandler implements HttpTestHandler {
@@ -137,7 +148,6 @@ public class ExpectContinueTest implements HttpServerAdapters {
             try (InputStream is = exchange.getRequestBody();
                 OutputStream os = exchange.getResponseBody()) {
                 is.readAllBytes();
-                byte[] bytes = "200 OK".getBytes(UTF_8);
                 exchange.sendResponseHeaders(200, 0);
             }
         }
@@ -150,19 +160,20 @@ public class ExpectContinueTest implements HttpServerAdapters {
             //Send 417 Headers, tell client to not send body
             try (InputStream is = exchange.getRequestBody();
                  OutputStream os = exchange.getResponseBody()) {
-                byte[] bytes = "417 Expectation Failed".getBytes();
+                byte[] bytes = EXPECTATION_FAILED_417.getBytes();
                 exchange.sendResponseHeaders(417, bytes.length);
                 os.write(bytes);
             }
         }
     }
 
-    static class Http1HangServer extends Thread {
+    static class Http1HangServer extends Thread implements Closeable {
 
         final ServerSocket ss;
         final InetAddress ia;
         final int port;
         volatile boolean closed = false;
+        volatile Socket client;
 
         Http1HangServer(InetSocketAddress sa) throws IOException {
             ss = ServerSocketFactory.getDefault()
@@ -173,13 +184,13 @@ public class ExpectContinueTest implements HttpServerAdapters {
 
         @Override
         public void run() {
-            byte[] bytes = "417 Expectation Failed".getBytes();
+            byte[] bytes = EXPECTATION_FAILED_417.getBytes();
 
             while (!closed) {
                 try {
                     // Not using try with resources here as we expect the client to close resources when
                     // 417 is received
-                    Socket client = ss.accept();
+                    client = ss.accept();
                     InputStream is = client.getInputStream();
                     OutputStream os = client.getOutputStream();
 
@@ -202,7 +213,7 @@ public class ExpectContinueTest implements HttpServerAdapters {
 
                     boolean validRequest = method.equals("POST") && path.equals("/http1/hang")
                                         && version.equals("HTTP/1.1");
-                    // If correct request, send 417 reply. Otherwise wait for correct one
+                    // If correct request, send 417 reply. Otherwise, wait for correct one
                     if (validRequest) {
                         closed = true;
                         response.append("HTTP/1.1 417 Expectation Failed\r\n")
@@ -214,12 +225,20 @@ public class ExpectContinueTest implements HttpServerAdapters {
 
                         os.write(bytes);
                         os.flush();
+                    } else {
+                        client.close();
                     }
                 } catch (IOException e) {
                     closed = true;
                     e.printStackTrace();
                 }
             }
+        }
+
+        @Override
+        public void close() throws IOException {
+            if (client != null) client.close();
+            if (ss != null) ss.close();
         }
     }
 

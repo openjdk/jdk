@@ -303,7 +303,8 @@ class Stream<T> extends ExchangeImpl<T> {
 
     @Override
     void expectContinueFailed(int rcode) {
-        // TODO: add comment
+        // Have to mark request as sent, due to no request body being sent
+        // in the event of a 417 Expectation Failed
         requestSent();
     }
 

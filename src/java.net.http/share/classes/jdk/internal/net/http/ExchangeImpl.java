@@ -252,6 +252,6 @@ abstract class ExchangeImpl<T> {
     void upgraded() { }
 
     // Called when server returns non 100 response to
-    // and Expect-Continue
+    // an Expect-Continue
     void expectContinueFailed(int rcode) { }
 }
