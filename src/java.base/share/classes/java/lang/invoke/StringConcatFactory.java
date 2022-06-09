@@ -485,12 +485,17 @@ public final class StringConcatFactory {
         MethodHandle[] doubleFilters = null;
         for (int i = 0; i < ptypes.length; i++) {
             Class<?> cl = ptypes[i];
-            MethodHandle filter = null;
+            // Use int as the logical type for subword integral types
+            // (byte and short). char and boolean require special
+            // handling so don't change the logical type of those
             if (cl == byte.class || cl == short.class) {
-                // use int for subword integral types; still need special mixers
-                // and prependers for char, boolean
                 ptypes[i] = int.class;
-            } else if (cl == Object.class) {
+            }
+            // Object, float and double will be eagerly transformed
+            // into a (non-null) String as a first step after invocation.
+            // Set up to use String as the logical type for such arguments
+            // internally.
+            else if (cl == Object.class) {
                 if (objFilters == null) {
                     objFilters = new MethodHandle[ptypes.length];
                 }
