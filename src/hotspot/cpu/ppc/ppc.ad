@@ -14114,7 +14114,7 @@ instruct vpopcnt_reg(vecX dst, vecX src) %{
       case T_INT:
         __ vpopcntw($dst$$VectorSRegister->to_vr(), $src$$VectorSRegister->to_vr());
         break;
-      case T_DOUBLE:
+      case T_LONG:
         __ vpopcntd($dst$$VectorSRegister->to_vr(), $src$$VectorSRegister->to_vr());
         break;
       default:
