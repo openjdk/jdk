@@ -83,11 +83,6 @@ public class AppImageFileTest {
                 "</jpackage-state>"));
         assertInvalid(createFromXml(
                 JPACKAGE_STATE_OPEN,
-                    "<main-launcher>Foo</main-launcher>",
-                    "<main-class></main-class>",
-                "</jpackage-state>"));
-        assertInvalid(createFromXml(
-                JPACKAGE_STATE_OPEN,
                     "<launcher>A</launcher>",
                     "<launcher>B</launcher>",
                 "</jpackage-state>"));
@@ -142,6 +137,21 @@ public class AppImageFileTest {
     }
 
     @Test
+    public void testMissingMainClass() throws IOException {
+        AppImageFile aif = createFromXml(
+            JPACKAGE_STATE_OPEN,
+                "<main-launcher>Foo</main-launcher>",
+                "<description>Duck App Description</description>",
+            "</jpackage-state>");
+
+        try {
+            aif.getMainClass();
+        } catch (RuntimeException ex) {
+            Assert.assertTrue(ex.getMessage().contains("main-class"));
+        }
+    }
+
+    @Test
     public void testMacSign() throws IOException {
         Map<String, Object> params = new LinkedHashMap<>();
         params.put("name", "Foo");
@@ -163,6 +173,22 @@ public class AppImageFileTest {
         AppImageFile aif = create(params);
 
         Assert.assertTrue(aif.isAppStore());
+    }
+
+    @Test
+    public void testMissingMacAppStore() throws IOException {
+        AppImageFile aif = createFromXml(
+            JPACKAGE_STATE_OPEN,
+                "<main-launcher>Foo</main-launcher>",
+                "<main-class>main.Class</main-class>",
+                "<description>Duck App Description</description>",
+            "</jpackage-state>");
+
+        try {
+            aif.getMainClass();
+        } catch (RuntimeException ex) {
+            Assert.assertTrue(ex.getMessage().contains("app-store"));
+        }
     }
 
     @Test

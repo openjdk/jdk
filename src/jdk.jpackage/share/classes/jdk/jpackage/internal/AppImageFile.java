@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -62,10 +63,10 @@ public final class AppImageFile {
     private final String creatorVersion;
     private final String creatorPlatform;
     private final String launcherName;
-    private final String mainClass;
+    private final Optional<String> mainClass;
     private final List<LauncherInfo> addLauncherInfos;
     private final boolean signed;
-    private final boolean appStore;
+    private final Optional<String> appStore;
 
     private static final String FILENAME = ".jpackage.xml";
 
@@ -82,12 +83,12 @@ public final class AppImageFile {
             List<LauncherInfo> launcherInfos, String creatorVersion,
             String creatorPlatform, String signedStr, String appStoreStr) {
         this.launcherName = launcherName;
-        this.mainClass = mainClass;
+        this.mainClass = Optional.ofNullable(mainClass);
         this.addLauncherInfos = launcherInfos;
         this.creatorVersion = creatorVersion;
         this.creatorPlatform = creatorPlatform;
         this.signed = "true".equals(signedStr);
-        this.appStore = "true".equals(appStoreStr);
+        this.appStore = Optional.ofNullable(appStoreStr);
     }
 
     /**
@@ -110,7 +111,13 @@ public final class AppImageFile {
      * Returns main class name. Never returns null or empty value.
      */
     String getMainClass() {
-        return mainClass;
+        if (mainClass.isPresent()) {
+            return mainClass.get();
+        } else {
+            throw new RuntimeException(MessageFormat.format(
+                I18N.getString("ERR_MissingAppImageElement"),
+                "main-class"));
+        }
     }
 
     boolean isSigned() {
@@ -118,7 +125,13 @@ public final class AppImageFile {
     }
 
     boolean isAppStore() {
-        return appStore;
+        if (appStore.isPresent()) {
+            return "true".equals(appStore.get());
+        } else {
+            throw new RuntimeException(MessageFormat.format(
+                I18N.getString("ERR_MissingAppImageElement"),
+                "app-store"));
+        }
     }
 
     void verifyCompatible() throws ConfigException {
@@ -204,10 +217,6 @@ public final class AppImageFile {
 
             String mainClass = xpathQueryNullable(xPath,
                     "/jpackage-state/main-class/text()", doc);
-            if (mainClass == null) {
-                // No main class, this is fatal.
-                return new AppImageFile();
-            }
 
             List<LauncherInfo> launcherInfos = new ArrayList<>();
 
@@ -233,7 +242,7 @@ public final class AppImageFile {
 
             AppImageFile file = new AppImageFile(mainLauncher, mainClass,
                     launcherInfos, version, platform, signedStr, appStoreStr);
-            if (!file.isValid()) {
+            if (!file.isValid(appImageDir)) {
                 file = new AppImageFile();
             }
             return file;
@@ -339,7 +348,7 @@ public final class AppImageFile {
         return PLATFORM_LABELS.get(Platform.getPlatform());
     }
 
-    private boolean isValid() {
+    private boolean isValid(Path appImageDir) {
         if (launcherName == null || launcherName.length() == 0) {
             return false;
         }
@@ -351,6 +360,10 @@ public final class AppImageFile {
         }
 
         if (!Objects.equals(getVersion(), creatorVersion)) {
+            Log.info(MessageFormat.format(I18N.getString(
+                        "warning.unexpected-version-jpackage-xml"),
+                             appImageDir.toAbsolutePath().toString(),
+                             getVersion(), creatorVersion));
             return false;
         }
 
