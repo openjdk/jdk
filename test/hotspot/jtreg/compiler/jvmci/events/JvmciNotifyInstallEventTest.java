@@ -116,7 +116,7 @@ public class JvmciNotifyInstallEventTest extends JVMCIServiceLocator implements 
         }
         HotSpotResolvedJavaMethod method = CTVMUtilities
                 .getResolvedMethod(SimpleClass.class, testMethod);
-        int dataSectionAlignment = 8;
+        int dataSectionAlignment = 8; // CodeBuffer::SECT_CONSTS code section alignment
         HotSpotCompiledCode compiledCode = new HotSpotCompiledNmethod(METHOD_NAME,
                 new byte[0], 0, new Site[0], new Assumption[0],
                 new ResolvedJavaMethod[]{method}, new Comment[0], new byte[0],

@@ -85,6 +85,7 @@ public class TestInvalidCompilationResult extends CodeInstallerTest {
         }
     }
 
+    // DataSectionAlignment value matches the alignment of the CodeBuffer::SECT_CONSTS code section
     static final int validDataSectionAlignment = 8;
 
     @Test(expected = JVMCIError.class)
