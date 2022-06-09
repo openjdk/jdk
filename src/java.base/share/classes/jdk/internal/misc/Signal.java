@@ -174,8 +174,7 @@ public final class Signal {
         }
         signals.put(sig.number, sig);
         synchronized (handlers) {
-            Signal.Handler oldHandler = handlers.get(sig);
-            handlers.remove(sig);
+            Signal.Handler oldHandler = handlers.remove(sig);
             if (newH == 2) {
                 handlers.put(sig, handler);
             }
