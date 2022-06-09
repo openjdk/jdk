@@ -23,7 +23,6 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
-#include "classfile/javaClasses.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
@@ -31,6 +30,7 @@
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zAllocator.inline.hpp"
 #include "gc/z/zCollectedHeap.hpp"
+#include "gc/z/zContinuation.inline.hpp"
 #include "gc/z/zDirector.hpp"
 #include "gc/z/zDriver.hpp"
 #include "gc/z/zGeneration.inline.hpp"
@@ -134,25 +134,7 @@ bool ZCollectedHeap::is_in(const void* p) const {
 }
 
 bool ZCollectedHeap::requires_barriers(stackChunkOop obj) const {
-  // TODO: Move to other file maybe?
-  zpointer* cont_addr = obj->field_addr<zpointer>(jdk_internal_vm_StackChunk::cont_offset());
-
-  if (!_heap.is_allocating(to_zaddress(obj))) {
-    // An object that isn't allocating, is visible from GC tracing. Such
-    // stack chunks require barriers.
-    return true;
-  }
-
-  if (ZStackChunkGCData::color(obj) != ZPointerStoreGoodMask) {
-    // If a chunk is allocated after a GC started, but before relocate start
-    // we can have an allocating chunk that isn't deeply good. That means that
-    // the contained oops might be bad and require GC barriers.
-    return true;
-  }
-
-  // The chunk is allocating and its pointers are good. This chunk needs no
-  // GC barriers
-  return false;
+  return ZContinuation::requires_barriers(&_heap, obj);
 }
 
 uint32_t ZCollectedHeap::hash_oop(oop obj) const {
