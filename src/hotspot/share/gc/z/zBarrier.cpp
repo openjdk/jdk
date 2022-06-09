@@ -66,6 +66,8 @@ static void keep_alive_young(zaddress addr) {
 }
 
 zaddress ZBarrier::blocking_keep_alive_on_weak_slow_path(zaddress addr) {
+  assert(ZResurrection::is_blocked(), "Only called while blocking");
+
   if (is_null(addr)) {
     return zaddress::null;
   }
@@ -84,6 +86,8 @@ zaddress ZBarrier::blocking_keep_alive_on_weak_slow_path(zaddress addr) {
 }
 
 zaddress ZBarrier::blocking_keep_alive_on_phantom_slow_path(zaddress addr) {
+  assert(ZResurrection::is_blocked(), "Only called while blocking");
+
   if (is_null(addr)) {
     return zaddress::null;
   }
@@ -102,6 +106,8 @@ zaddress ZBarrier::blocking_keep_alive_on_phantom_slow_path(zaddress addr) {
 }
 
 zaddress ZBarrier::blocking_load_barrier_on_weak_slow_path(zaddress addr) {
+  assert(ZResurrection::is_blocked(), "Only called while blocking");
+
   if (is_null(addr)) {
     return zaddress::null;
   }
@@ -122,6 +128,8 @@ zaddress ZBarrier::blocking_load_barrier_on_weak_slow_path(zaddress addr) {
 }
 
 zaddress ZBarrier::blocking_load_barrier_on_phantom_slow_path(zaddress addr) {
+  assert(ZResurrection::is_blocked(), "Only called while blocking");
+
   if (is_null(addr)) {
     return zaddress::null;
   }

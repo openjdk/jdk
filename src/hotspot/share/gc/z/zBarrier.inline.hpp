@@ -576,22 +576,18 @@ inline zaddress ZBarrier::no_keep_alive_load_barrier_on_phantom_oop_field_preloa
 }
 
 inline zaddress ZBarrier::blocking_keep_alive_load_barrier_on_weak_oop_field_preloaded(volatile zpointer* p, zpointer o) {
-  assert(ZResurrection::is_blocked(), "Only called while blocking");
   return barrier(is_mark_good_fast_path, blocking_keep_alive_on_weak_slow_path, color_mark_good, p, o);
 }
 
 inline zaddress ZBarrier::blocking_keep_alive_load_barrier_on_phantom_oop_field_preloaded(volatile zpointer* p, zpointer o) {
-  assert(ZResurrection::is_blocked(), "Only called while blocking");
   return barrier(is_mark_good_fast_path, blocking_keep_alive_on_phantom_slow_path, color_mark_good, p, o);
 }
 
 inline zaddress ZBarrier::blocking_load_barrier_on_weak_oop_field_preloaded(volatile zpointer* p, zpointer o) {
-  assert(ZResurrection::is_blocked(), "Only called while blocking");
   return barrier(is_mark_good_fast_path, blocking_load_barrier_on_weak_slow_path, color_mark_good, p, o);
 }
 
 inline zaddress ZBarrier::blocking_load_barrier_on_phantom_oop_field_preloaded(volatile zpointer* p, zpointer o) {
-  assert(ZResurrection::is_blocked(), "Only called while blocking");
   return barrier(is_mark_good_fast_path, blocking_load_barrier_on_phantom_slow_path, color_mark_good, p, o);
 }
 
