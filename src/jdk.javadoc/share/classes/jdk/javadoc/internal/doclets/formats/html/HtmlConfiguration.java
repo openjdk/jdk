@@ -404,16 +404,6 @@ public class HtmlConfiguration extends BaseConfiguration {
     }
 
     @Override
-    public boolean showMessage(DocTreePath path, String key) {
-        return (path == null || !haveDocLint());
-    }
-
-    @Override
-    public boolean showMessage(Element e, String key) {
-        return (e == null || !haveDocLint());
-    }
-
-    @Override
     protected boolean finishOptionSettings0() throws DocletException {
         if (options.docEncoding() == null) {
             if (options.charset() == null) {

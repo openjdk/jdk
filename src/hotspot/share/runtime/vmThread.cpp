@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -382,10 +382,10 @@ void VMThread::wait_until_executed(VM_Operation* op) {
 
 static void self_destruct_if_needed() {
   // Support for self destruction
-  if ((SelfDestructTimer != 0) && !VMError::is_error_reported() &&
-      (os::elapsedTime() > (double)SelfDestructTimer * 60.0)) {
+  if ((SelfDestructTimer != 0.0) && !VMError::is_error_reported() &&
+      (os::elapsedTime() > SelfDestructTimer * 60.0)) {
     tty->print_cr("VM self-destructed");
-    exit(-1);
+    os::exit(-1);
   }
 }
 

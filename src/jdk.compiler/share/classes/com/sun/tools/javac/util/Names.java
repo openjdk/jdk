@@ -124,6 +124,7 @@ public class Names {
     // module names
     public final Name java_base;
     public final Name jdk_unsupported;
+    public final Name jdk_incubator_vector;
 
     // attribute names
     public final Name Annotation;
@@ -305,6 +306,7 @@ public class Names {
         // module names
         java_base = fromString("java.base");
         jdk_unsupported = fromString("jdk.unsupported");
+        jdk_incubator_vector = fromString("jdk.incubator.vector");
 
         // attribute names
         Annotation = fromString("Annotation");

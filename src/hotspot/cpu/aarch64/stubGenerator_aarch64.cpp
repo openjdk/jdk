@@ -6760,11 +6760,11 @@ class StubGenerator: public StubCodeGenerator {
       __ leave();
       __ mov(r3, lr);
       __ br(r1); // the exception handler
+    } else {
+      // We're "returning" into the topmost thawed frame; see Thaw::push_return_frame
+      __ leave();
+      __ ret(lr);
     }
-
-    // We're "returning" into the topmost thawed frame; see Thaw::push_return_frame
-    __ leave();
-    __ ret(lr);
 
     return start;
   }
@@ -8080,7 +8080,7 @@ OopMap* continuation_enter_setup(MacroAssembler* masm, int& stack_slots) {
 //          c_rarg3 -- isVirtualThread
 void fill_continuation_entry(MacroAssembler* masm) {
 #ifdef ASSERT
-  __ movw(rscratch1, 0x1234);
+  __ movw(rscratch1, ContinuationEntry::cookie_value());
   __ strw(rscratch1, Address(sp, ContinuationEntry::cookie_offset()));
 #endif
 

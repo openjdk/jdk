@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,7 @@ DISABLED_WARNINGS_clang := tautological-compare \
 DISABLED_WARNINGS_xlc := tautological-compare shift-negative-value
 
 DISABLED_WARNINGS_microsoft := 4100 4127 4146 4201 4244 4291 4351 \
-    4511 4512 4514 4624 4996
+    4511 4512 4514 4624
 
 ################################################################################
 # Platform specific setup

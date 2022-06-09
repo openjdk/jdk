@@ -2468,6 +2468,9 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
       break;
     case Op_LoadVectorGather:
     case Op_StoreVectorScatter:
+    case Op_CompressV:
+    case Op_CompressM:
+    case Op_ExpandV:
       return false;
     default:
       break;
@@ -2787,10 +2790,6 @@ bool Matcher::pd_clone_address_expressions(AddPNode* m, Matcher::MStack& mstack,
     mstack.push(m->in(AddPNode::Base), Pre_Visit);
     return true;
   }
-  return false;
-}
-
-bool Parse::do_one_bytecode_targeted() {
   return false;
 }
 
@@ -8662,7 +8661,6 @@ instruct countTrailingZerosL(iRegINoSp dst, iRegL src) %{
 //
 
 instruct popCountI(iRegINoSp dst, iRegIorL2I src, vRegF tmp) %{
-  predicate(UsePopCountInstruction);
   match(Set dst (PopCountI src));
   effect(TEMP tmp);
   ins_cost(INSN_COST * 13);
@@ -8684,7 +8682,6 @@ instruct popCountI(iRegINoSp dst, iRegIorL2I src, vRegF tmp) %{
 %}
 
 instruct popCountI_mem(iRegINoSp dst, memory4 mem, vRegF tmp) %{
-  predicate(UsePopCountInstruction);
   match(Set dst (PopCountI (LoadI mem)));
   effect(TEMP tmp);
   ins_cost(INSN_COST * 13);
@@ -8707,7 +8704,6 @@ instruct popCountI_mem(iRegINoSp dst, memory4 mem, vRegF tmp) %{
 
 // Note: Long.bitCount(long) returns an int.
 instruct popCountL(iRegINoSp dst, iRegL src, vRegD tmp) %{
-  predicate(UsePopCountInstruction);
   match(Set dst (PopCountL src));
   effect(TEMP tmp);
   ins_cost(INSN_COST * 13);
@@ -8727,7 +8723,6 @@ instruct popCountL(iRegINoSp dst, iRegL src, vRegD tmp) %{
 %}
 
 instruct popCountL_mem(iRegINoSp dst, memory8 mem, vRegD tmp) %{
-  predicate(UsePopCountInstruction);
   match(Set dst (PopCountL (LoadL mem)));
   effect(TEMP tmp);
   ins_cost(INSN_COST * 13);
@@ -11136,10 +11131,26 @@ instruct mulHiL_rReg(iRegLNoSp dst, iRegL src1, iRegL src2, rFlagsReg cr)
   match(Set dst (MulHiL src1 src2));
 
   ins_cost(INSN_COST * 7);
-  format %{ "smulh   $dst, $src1, $src2, \t# mulhi" %}
+  format %{ "smulh   $dst, $src1, $src2\t# mulhi" %}
 
   ins_encode %{
     __ smulh(as_Register($dst$$reg),
+             as_Register($src1$$reg),
+             as_Register($src2$$reg));
+  %}
+
+  ins_pipe(lmul_reg_reg);
+%}
+
+instruct umulHiL_rReg(iRegLNoSp dst, iRegL src1, iRegL src2, rFlagsReg cr)
+%{
+  match(Set dst (UMulHiL src1 src2));
+
+  ins_cost(INSN_COST * 7);
+  format %{ "umulh   $dst, $src1, $src2\t# umulhi" %}
+
+  ins_encode %{
+    __ umulh(as_Register($dst$$reg),
              as_Register($src1$$reg),
              as_Register($src2$$reg));
   %}
@@ -15493,10 +15504,10 @@ instruct overflowAddL_reg_imm(rFlagsReg cr, iRegL op1, immLAddSub op2)
 %{
   match(Set cr (OverflowAddL op1 op2));
 
-  format %{ "cmn   $op1, $op2\t# overflow check long" %}
+  format %{ "adds  zr, $op1, $op2\t# overflow check long" %}
   ins_cost(INSN_COST);
   ins_encode %{
-    __ cmn($op1$$Register, $op2$$constant);
+    __ adds(zr, $op1$$Register, $op2$$constant);
   %}
 
   ins_pipe(icmp_reg_imm);

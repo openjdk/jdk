@@ -153,8 +153,8 @@ class RegisterSaver {
   };
 
  public:
-  static OopMap* save_live_registers(MacroAssembler* masm, int additional_frame_words, int* total_frame_words, bool save_vectors);
-  static void restore_live_registers(MacroAssembler* masm, bool restore_vectors = false);
+  static OopMap* save_live_registers(MacroAssembler* masm, int additional_frame_words, int* total_frame_words, bool save_wide_vectors);
+  static void restore_live_registers(MacroAssembler* masm, bool restore_wide_vectors = false);
 
   // Offsets into the register save area
   // Used by deoptimization when it is managing result register
@@ -175,16 +175,16 @@ class RegisterSaver {
 // "0" is assigned for rax. Thus we need to ignore -Wnonnull.
 PRAGMA_DIAG_PUSH
 PRAGMA_NONNULL_IGNORED
-OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_frame_words, int* total_frame_words, bool save_vectors) {
+OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_frame_words, int* total_frame_words, bool save_wide_vectors) {
   int off = 0;
   int num_xmm_regs = XMMRegisterImpl::available_xmm_registers();
 #if COMPILER2_OR_JVMCI
-  if (save_vectors && UseAVX == 0) {
-    save_vectors = false; // vectors larger than 16 byte long are supported only with AVX
+  if (save_wide_vectors && UseAVX == 0) {
+    save_wide_vectors = false; // vectors larger than 16 byte long are supported only with AVX
   }
-  assert(!save_vectors || MaxVectorSize <= 64, "Only up to 64 byte long vectors are supported");
+  assert(!save_wide_vectors || MaxVectorSize <= 64, "Only up to 64 byte long vectors are supported");
 #else
-  save_vectors = false; // vectors are generated only by C2 and JVMCI
+  save_wide_vectors = false; // vectors are generated only by C2 and JVMCI
 #endif
 
   // Always make the frame size 16-byte aligned, both vector and non vector stacks are always allocated
@@ -205,7 +205,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
   __ push_CPU_state(); // Push a multiple of 16 bytes
 
   // push cpu state handles this on EVEX enabled targets
-  if (save_vectors) {
+  if (save_wide_vectors) {
     // Save upper half of YMM registers(0..15)
     int base_addr = XSAVE_AREA_YMM_BEGIN;
     for (int n = 0; n < 16; n++) {
@@ -234,11 +234,12 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
     }
   } else {
     if (VM_Version::supports_evex()) {
-      // Save upper bank of ZMM registers(16..31) for double/float usage
+      // Save upper bank of XMM registers(16..31) for scalar or 16-byte vector usage
       int base_addr = XSAVE_AREA_UPPERBANK;
       off = 0;
+      int vector_len = VM_Version::supports_avx512vl() ?  Assembler::AVX_128bit : Assembler::AVX_512bit;
       for (int n = 16; n < num_xmm_regs; n++) {
-        __ movsd(Address(rsp, base_addr+(off++*64)), as_XMMRegister(n));
+        __ evmovdqul(Address(rsp, base_addr+(off++*64)), as_XMMRegister(n), vector_len);
       }
 #if COMPILER2_OR_JVMCI
       base_addr = XSAVE_AREA_OPMASK_BEGIN;
@@ -302,7 +303,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
   }
 
 #if COMPILER2_OR_JVMCI
-  if (save_vectors) {
+  if (save_wide_vectors) {
     // Save upper half of YMM registers(0..15)
     off = ymm0_off;
     delta = ymm1_off - ymm0_off;
@@ -366,7 +367,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
 }
 PRAGMA_DIAG_POP
 
-void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_vectors) {
+void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_wide_vectors) {
   int num_xmm_regs = XMMRegisterImpl::available_xmm_registers();
   if (frame::arg_reg_save_area_bytes != 0) {
     // Pop arg register save area
@@ -374,18 +375,18 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_ve
   }
 
 #if COMPILER2_OR_JVMCI
-  if (restore_vectors) {
+  if (restore_wide_vectors) {
     assert(UseAVX > 0, "Vectors larger than 16 byte long are supported only with AVX");
     assert(MaxVectorSize <= 64, "Only up to 64 byte long vectors are supported");
   }
 #else
-  assert(!restore_vectors, "vectors are generated only by C2");
+  assert(!restore_wide_vectors, "vectors are generated only by C2");
 #endif
 
   __ vzeroupper();
 
   // On EVEX enabled targets everything is handled in pop fpu state
-  if (restore_vectors) {
+  if (restore_wide_vectors) {
     // Restore upper half of YMM registers (0..15)
     int base_addr = XSAVE_AREA_YMM_BEGIN;
     for (int n = 0; n < 16; n++) {
@@ -414,11 +415,12 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_ve
     }
   } else {
     if (VM_Version::supports_evex()) {
-      // Restore upper bank of ZMM registers(16..31) for double/float usage
+      // Restore upper bank of XMM registers(16..31) for scalar or 16-byte vector usage
       int base_addr = XSAVE_AREA_UPPERBANK;
       int off = 0;
+      int vector_len = VM_Version::supports_avx512vl() ?  Assembler::AVX_128bit : Assembler::AVX_512bit;
       for (int n = 16; n < num_xmm_regs; n++) {
-        __ movsd(as_XMMRegister(n), Address(rsp, base_addr+(off++*64)));
+        __ evmovdqul(as_XMMRegister(n), Address(rsp, base_addr+(off++*64)), vector_len);
       }
 #if COMPILER2_OR_JVMCI
       base_addr = XSAVE_AREA_OPMASK_BEGIN;
@@ -939,7 +941,7 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
     }
   }
 
-  __ push_cont_fastpath(r15_thread); // Set JavaThread::_cont_fastpath to the sp of the oldest interpreted frame we know about
+  __ push_cont_fastpath(); // Set JavaThread::_cont_fastpath to the sp of the oldest interpreted frame we know about
 
   // 6243940 We might end up in handle_wrong_method if
   // the callee is deoptimized as we race thru here. If that
@@ -1257,99 +1259,129 @@ static void verify_oop_args(MacroAssembler* masm,
 
 // defined in stubGenerator_x86_64.cpp
 OopMap* continuation_enter_setup(MacroAssembler* masm, int& stack_slots);
-void fill_continuation_entry(MacroAssembler* masm);
+void fill_continuation_entry(MacroAssembler* masm, Register reg_cont_obj, Register reg_flags);
 void continuation_enter_cleanup(MacroAssembler* masm);
 
-// enterSpecial(Continuation c, boolean isContinue, boolean isVirtualThread)
-// On entry: c_rarg1 -- the continuation object
-//           c_rarg2 -- isContinue
-//           c_rarg3 -- isVirtualThread
+static void check_continuation_enter_argument(VMReg actual_vmreg,
+                                              Register expected_reg,
+                                              const char* name) {
+  assert(!actual_vmreg->is_stack(), "%s cannot be on stack", name);
+  assert(actual_vmreg->as_Register() == expected_reg,
+         "%s is in unexpected register: %s instead of %s",
+         name, actual_vmreg->as_Register()->name(), expected_reg->name());
+}
+
 static void gen_continuation_enter(MacroAssembler* masm,
-                                 const methodHandle& method,
-                                 const BasicType* sig_bt,
                                  const VMRegPair* regs,
                                  int& exception_offset,
-                                 OopMapSet*oop_maps,
+                                 OopMapSet* oop_maps,
                                  int& frame_complete,
                                  int& stack_slots) {
-  //verify_oop_args(masm, method, sig_bt, regs);
-  AddressLiteral resolve(SharedRuntime::get_resolve_static_call_stub(),
-                         relocInfo::static_call_type);
 
-  stack_slots = 2; // will be overwritten
+  // enterSpecial(Continuation c, boolean isContinue, boolean isVirtualThread)
+  int pos_cont_obj   = 0;
+  int pos_is_cont    = 1;
+  int pos_is_virtual = 2;
+
+  // The platform-specific calling convention may present the arguments in various registers.
+  // To simplify the rest of the code, we expect the arguments to reside at these known
+  // registers, and we additionally check the placement here in case calling convention ever
+  // changes.
+  Register reg_cont_obj   = c_rarg1;
+  Register reg_is_cont    = c_rarg2;
+  Register reg_is_virtual = c_rarg3;
+
+  check_continuation_enter_argument(regs[pos_cont_obj].first(),   reg_cont_obj,   "Continuation object");
+  check_continuation_enter_argument(regs[pos_is_cont].first(),    reg_is_cont,    "isContinue");
+  check_continuation_enter_argument(regs[pos_is_virtual].first(), reg_is_virtual, "isVirtualThread");
+
+  // Utility methods kill rax, make sure there are no collisions
+  assert_different_registers(rax, reg_cont_obj, reg_is_cont, reg_is_virtual);
+
   address start = __ pc();
-
-  Label call_thaw, exit;
 
   __ enter();
 
-  //BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  //bs->nmethod_entry_barrier(masm);
-  OopMap* map = continuation_enter_setup(masm, stack_slots);  // kills rax
+  stack_slots = 2; // will be adjusted in setup
+  OopMap* map = continuation_enter_setup(masm, stack_slots);
 
   // Frame is now completed as far as size and linkage.
-  frame_complete =__ pc() - start;
-  // if isContinue == 0
-  //   _enterSP = sp
-  // end
+  frame_complete = __ pc() - start;
 
-  fill_continuation_entry(masm); // kills rax
+  __ verify_oop(reg_cont_obj);
 
-  __ cmpl(c_rarg2, 0);
-  __ jcc(Assembler::notEqual, call_thaw);
+  fill_continuation_entry(masm, reg_cont_obj, reg_is_virtual);
 
-  int up = align_up((intptr_t) __ pc() + 1, 4) - (intptr_t) (__ pc() + 1);
-  if (up > 0) {
-    __ nop(up);
+  Label L_thaw, L_exit;
+
+  // If continuation, call to thaw. Otherwise, resolve the call and exit.
+  __ testptr(reg_is_cont, reg_is_cont);
+  __ jccb(Assembler::notZero, L_thaw);
+
+  // --- Resolve path
+
+  // Make sure the call is patchable
+  __ align(BytesPerWord, __ offset() + NativeCall::displacement_offset);
+
+  // Emit stub for static call
+  CodeBuffer* cbuf = masm->code_section()->outer();
+  address stub = CompiledStaticCall::emit_to_interp_stub(*cbuf, __ pc());
+  if (stub == nullptr) {
+    fatal("CodeCache is full at gen_continuation_enter");
   }
 
-  address mark = __ pc();
+  // Call the resolve stub
+  AddressLiteral resolve(SharedRuntime::get_resolve_static_call_stub(),
+                         relocInfo::static_call_type);
   __ call(resolve);
+
   oop_maps->add_gc_map(__ pc() - start, map);
   __ post_call_nop();
 
-  __ jmp(exit);
+  __ jmpb(L_exit);
 
-  __ bind(call_thaw);
+  // --- Thawing path
 
-  __ movptr(rbx, (intptr_t) StubRoutines::cont_thaw());
-  __ call(rbx);
+  __ bind(L_thaw);
+
+  __ call(RuntimeAddress(StubRoutines::cont_thaw()));
+
+  ContinuationEntry::_return_pc_offset = __ pc() - start;
   oop_maps->add_gc_map(__ pc() - start, map->deep_copy());
-  ContinuationEntry::return_pc_offset = __ pc() - start;
   __ post_call_nop();
 
-  __ bind(exit);
+  // --- Normal exit (resolve/thawing)
+
+  __ bind(L_exit);
+
   continuation_enter_cleanup(masm);
   __ pop(rbp);
   __ ret(0);
 
-  /// exception handling
+  // --- Exception handling path
 
   exception_offset = __ pc() - start;
 
   continuation_enter_cleanup(masm);
   __ pop(rbp);
 
-  __ movptr(rbx, rax); // save the exception
-  __ movptr(c_rarg0, Address(rsp, 0));
+  __ movptr(c_rarg0, r15_thread);
+  __ movptr(c_rarg1, Address(rsp, 0)); // return address
 
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address,
-        SharedRuntime::exception_handler_for_return_address),
-      r15_thread, c_rarg0);
-  __ mov(rdi, rax);
-  __ movptr(rax, rbx);
-  __ mov(rbx, rdi);
-  __ pop(rdx);
+  // rax still holds the original exception oop, save it before the call
+  __ push(rax);
 
-  // continue at exception handler (return address removed)
-  // rax: exception
-  // rbx: exception handler
-  // rdx: throwing pc
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), 2);
+  __ movptr(rbx, rax);
+
+  // Continue at exception handler:
+  //   rax: exception oop
+  //   rbx: exception handler
+  //   rdx: exception pc
+  __ pop(rax);
   __ verify_oop(rax);
+  __ pop(rdx);
   __ jmp(rbx);
-
-  CodeBuffer* cbuf = masm->code_section()->outer();
-  address stub = CompiledStaticCall::emit_to_interp_stub(*cbuf, mark);
 }
 
 static void gen_special_dispatch(MacroAssembler* masm,
@@ -1445,8 +1477,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     int stack_slots = 0;
     OopMapSet* oop_maps =  new OopMapSet();
     gen_continuation_enter(masm,
-                         method,
-                         in_sig_bt,
                          in_regs,
                          exception_offset,
                          oop_maps,
@@ -1463,7 +1493,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                                               in_ByteSize(-1),
                                               oop_maps,
                                               exception_offset);
-    ContinuationEntry::set_enter_nmethod(nm);
+    ContinuationEntry::set_enter_code(nm);
     return nm;
   }
 
@@ -1813,7 +1843,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   }
 
   // Change state to native (we save the return address in the thread, since it might not
-  // be pushed on the stack when we do a a stack traversal). It is enough that the pc()
+  // be pushed on the stack when we do a stack traversal). It is enough that the pc()
   // points into the right code segment. It does not have to be the correct return pc.
   // We use the same pc/oopMap repeatedly when we call out
 
@@ -2251,7 +2281,7 @@ void SharedRuntime::generate_deopt_blob() {
 
   // -------------
   // This code enters when returning to a de-optimized nmethod.  A return
-  // address has been pushed on the the stack, and return values are in
+  // address has been pushed on the stack, and return values are in
   // registers.
   // If we are doing a normal deopt then we were called from the patched
   // nmethod from the point we returned to the nmethod. So the return
@@ -2285,7 +2315,7 @@ void SharedRuntime::generate_deopt_blob() {
   // Prolog for non exception case!
 
   // Save everything in sight.
-  map = RegisterSaver::save_live_registers(masm, 0, &frame_size_in_words, /*save_vectors*/ true);
+  map = RegisterSaver::save_live_registers(masm, 0, &frame_size_in_words, /*save_wide_vectors*/ true);
 
   // Normal deoptimization.  Save exec mode for unpack_frames.
   __ movl(r14, Deoptimization::Unpack_deopt); // callee-saved
@@ -2303,7 +2333,7 @@ void SharedRuntime::generate_deopt_blob() {
   // return address is the pc describes what bci to do re-execute at
 
   // No need to update map as each call to save_live_registers will produce identical oopmap
-  (void) RegisterSaver::save_live_registers(masm, 0, &frame_size_in_words, /*save_vectors*/ true);
+  (void) RegisterSaver::save_live_registers(masm, 0, &frame_size_in_words, /*save_wide_vectors*/ true);
 
   __ movl(r14, Deoptimization::Unpack_reexecute); // callee-saved
   __ jmp(cont);
@@ -2322,7 +2352,7 @@ void SharedRuntime::generate_deopt_blob() {
     uncommon_trap_offset = __ pc() - start;
 
     // Save everything in sight.
-    RegisterSaver::save_live_registers(masm, 0, &frame_size_in_words, /*save_vectors*/ true);
+    RegisterSaver::save_live_registers(masm, 0, &frame_size_in_words, /*save_wide_vectors*/ true);
     // fetch_unroll_info needs to call last_java_frame()
     __ set_last_Java_frame(noreg, noreg, NULL);
 
@@ -2369,7 +2399,7 @@ void SharedRuntime::generate_deopt_blob() {
   __ push(0);
 
   // Save everything in sight.
-  map = RegisterSaver::save_live_registers(masm, 0, &frame_size_in_words, /*save_vectors*/ true);
+  map = RegisterSaver::save_live_registers(masm, 0, &frame_size_in_words, /*save_wide_vectors*/ true);
 
   // Now it is safe to overwrite any register
 
@@ -2800,7 +2830,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   address call_pc = NULL;
   int frame_size_in_words;
   bool cause_return = (poll_type == POLL_AT_RETURN);
-  bool save_vectors = (poll_type == POLL_AT_VECTOR_LOOP);
+  bool save_wide_vectors = (poll_type == POLL_AT_VECTOR_LOOP);
 
   if (UseRTMLocking) {
     // Abort RTM transaction before calling runtime
@@ -2815,7 +2845,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   }
 
   // Save registers, fpu state, and flags
-  map = RegisterSaver::save_live_registers(masm, 0, &frame_size_in_words, save_vectors);
+  map = RegisterSaver::save_live_registers(masm, 0, &frame_size_in_words, save_wide_vectors);
 
   // The following is basically a call_VM.  However, we need the precise
   // address of the call in order to generate an oopmap. Hence, we do all the
@@ -2854,7 +2884,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
 
   // Exception pending
 
-  RegisterSaver::restore_live_registers(masm, save_vectors);
+  RegisterSaver::restore_live_registers(masm, save_wide_vectors);
 
   __ jump(RuntimeAddress(StubRoutines::forward_exception_entry()));
 
@@ -2927,7 +2957,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
 
   __ bind(no_adjust);
   // Normal exit, restore registers and exit.
-  RegisterSaver::restore_live_registers(masm, save_vectors);
+  RegisterSaver::restore_live_registers(masm, save_wide_vectors);
   __ ret(0);
 
 #ifdef ASSERT
@@ -2967,7 +2997,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
   int start = __ offset();
 
   // No need to save vector registers since they are caller-saved anyway.
-  map = RegisterSaver::save_live_registers(masm, 0, &frame_size_in_words, /*save_vectors*/ false);
+  map = RegisterSaver::save_live_registers(masm, 0, &frame_size_in_words, /*save_wide_vectors*/ false);
 
   int frame_complete = __ offset();
 
@@ -3001,7 +3031,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
 
   RegisterSaver::restore_live_registers(masm);
 
-  // We are back the the original state on entry and ready to go.
+  // We are back to the original state on entry and ready to go.
 
   __ jmp(rax);
 
