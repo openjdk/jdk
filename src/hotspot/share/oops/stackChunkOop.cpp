@@ -36,8 +36,7 @@
 #include "runtime/smallRegisterMap.inline.hpp"
 #include "runtime/stackChunkFrameStream.inline.hpp"
 #if INCLUDE_ZGC
-#include "gc/z/zAddress.inline.hpp"
-#include "gc/z/zStackChunkGCData.inline.hpp"
+#include "gc/z/zContinuation.inline.hpp"
 #endif
 
 frame stackChunkOopDesc::top_frame(RegisterMap* map) {
@@ -190,42 +189,6 @@ public:
   }
 };
 
-// TODO: Abstract out of here!
-class ZColorStackOopClosure : public OopClosure {
-private:
-  uint64_t _color;
-
-public:
-  ZColorStackOopClosure(uint64_t color)
-    : _color(color) {}
-
-  virtual void do_oop(oop* p) {
-    // Convert zaddress to zpointer
-    zaddress_unsafe* p_zaddress_unsafe = (zaddress_unsafe*)p;
-    zpointer* p_zpointer = (zpointer*)p;
-    *p_zpointer = ZAddress::color(*p_zaddress_unsafe, _color);
-
-  }
-  virtual void do_oop(narrowOop* p) {
-    ShouldNotReachHere();
-  }
-};
-
-class ZColorStackFrameClosure {
-  uint64_t _color;
-
-public:
-  ZColorStackFrameClosure(uint64_t color)
-    : _color(color) {}
-
-  template <ChunkFrames frame_kind, typename RegisterMapT>
-  bool do_frame(const StackChunkFrameStream<frame_kind>& f, const RegisterMapT* map) {
-    ZColorStackOopClosure oop_cl(_color);
-    f.iterate_oops(&oop_cl, map);
-    return true;
-  }
-};
-
 bool stackChunkOopDesc::try_acquire_relativization() {
   for (;;) {
     // We use an acquiring load when reading the flags to ensure that if we leave this
@@ -289,11 +252,6 @@ void stackChunkOopDesc::release_relativization() {
   }
 }
 
-void stackChunkOopDesc::color_stack_pointers() {
-  ZColorStackFrameClosure frame_cl(ZStackChunkGCData::color(this));
-  iterate_stack(&frame_cl);
-}
-
 void stackChunkOopDesc::relativize_derived_pointers_concurrently() {
   if (!try_acquire_relativization()) {
     // Already relativized
@@ -305,7 +263,7 @@ void stackChunkOopDesc::relativize_derived_pointers_concurrently() {
   iterate_stack(&frame_cl);
 
   if (UseZGC) {
-    color_stack_pointers();
+    ZContinuation::color_stack_pointers(this);
   }
 
   release_relativization();

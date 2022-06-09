@@ -59,9 +59,6 @@ private:
   static const uint8_t FLAG_GC_MODE = 1 << 3; // Once true it and FLAG_HAS_INTERPRETED_FRAMES can't change
   static const uint8_t FLAG_HAS_BITMAP = 1 << 4; // Can only be true if FLAG_GC_MODE is true
 
-  // TODO: Abstract out of here?
-  void color_stack_pointers();
-
   bool try_acquire_relativization();
   void release_relativization();
 

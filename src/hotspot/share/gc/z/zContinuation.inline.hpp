@@ -25,13 +25,15 @@
 #define SHARE_GC_Z_ZCONTINUATION_INLINE_HPP
 
 #include "classfile/javaClasses.hpp"
-#include "gc/z/zAddress.hpp"
+#include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zContinuation.hpp"
 #include "gc/z/zHeap.inline.hpp"
-#include "gc/z/zStackChunkGCData.hpp"
+#include "gc/z/zStackChunkGCData.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/stackChunkOop.inline.hpp"
+#include "runtime/stackChunkFrameStream.inline.hpp"
 
-bool ZContinuation::requires_barriers(const ZHeap* heap, stackChunkOop chunk) {
+inline bool ZContinuation::requires_barriers(const ZHeap* heap, stackChunkOop chunk) {
   zpointer* cont_addr = chunk->field_addr<zpointer>(jdk_internal_vm_StackChunk::cont_offset());
 
   if (!heap->is_allocating(to_zaddress(chunk))) {
@@ -50,6 +52,46 @@ bool ZContinuation::requires_barriers(const ZHeap* heap, stackChunkOop chunk) {
   // The chunk is allocating and its pointers are good. This chunk needs no
   // GC barriers
   return false;
+}
+
+class ZColorStackOopClosure : public OopClosure {
+private:
+  uint64_t _color;
+
+public:
+  ZColorStackOopClosure(uint64_t color)
+    : _color(color) {}
+
+  virtual void do_oop(oop* p) {
+    // Convert zaddress to zpointer
+    zaddress_unsafe* p_zaddress_unsafe = (zaddress_unsafe*)p;
+    zpointer* p_zpointer = (zpointer*)p;
+    *p_zpointer = ZAddress::color(*p_zaddress_unsafe, _color);
+
+  }
+  virtual void do_oop(narrowOop* p) {
+    ShouldNotReachHere();
+  }
+};
+
+class ZColorStackFrameClosure {
+  uint64_t _color;
+
+public:
+  ZColorStackFrameClosure(uint64_t color)
+    : _color(color) {}
+
+  template <ChunkFrames frame_kind, typename RegisterMapT>
+  bool do_frame(const StackChunkFrameStream<frame_kind>& f, const RegisterMapT* map) {
+    ZColorStackOopClosure oop_cl(_color);
+    f.iterate_oops(&oop_cl, map);
+    return true;
+  }
+};
+
+inline void ZContinuation::color_stack_pointers(stackChunkOop chunk) {
+  ZColorStackFrameClosure frame_cl(ZStackChunkGCData::color(chunk));
+  chunk->iterate_stack(&frame_cl);
 }
 
 #endif // SHARE_GC_Z_ZCONTINUATION_INLINE_HPP
