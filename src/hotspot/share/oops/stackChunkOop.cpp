@@ -262,9 +262,11 @@ void stackChunkOopDesc::relativize_derived_pointers_concurrently() {
   FrameToDerivedPointerClosure<decltype(derived_cl)> frame_cl(&derived_cl);
   iterate_stack(&frame_cl);
 
+#if INCLUDE_ZGC
   if (UseZGC) {
     ZContinuation::color_stack_pointers(this);
   }
+#endif
 
   release_relativization();
 }
@@ -410,17 +412,6 @@ public:
   void do_oop(narrowOop* p) override {}
 };
 
-class ZUncolorOopsOopClosure : public OopClosure {
-public:
-  void do_oop(oop* p) override {
-    zpointer ptr = *(volatile zpointer*)p;
-    zaddress addr = ZPointer::uncolor(ptr);
-    *(volatile zaddress*)p = addr;
-  }
-
-  void do_oop(narrowOop* p) override {}
-};
-
 template <typename RegisterMapT>
 void stackChunkOopDesc::fix_thawed_frame(const frame& f, const RegisterMapT* map) {
   if (!(is_gc_mode() || requires_barriers())) {
@@ -437,16 +428,11 @@ void stackChunkOopDesc::fix_thawed_frame(const frame& f, const RegisterMapT* map
     }
   }
 
-  // TODO: Abstractions?
+#if INCLUDE_ZGC
   if (UseZGC) {
-    ZUncolorOopsOopClosure oop_closure;
-    if (f.is_interpreted_frame()) {
-      f.oops_interpreted_do(&oop_closure, nullptr);
-    } else {
-      OopMapDo<ZUncolorOopsOopClosure, DerivedOopClosure, SkipNullValue> visitor(&oop_closure, nullptr);
-      visitor.oops_do(&f, map, f.oop_map());
-    }
+    ZContinuation::uncolor_stack_pointers(f, map);
   }
+#endif
 
   if (f.is_compiled_frame() && f.oop_map()->has_derived_oops()) {
     DerivedPointersSupport::DerelativizeClosure derived_closure;

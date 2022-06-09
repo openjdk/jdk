@@ -25,12 +25,14 @@
 #define SHARE_GC_Z_ZCONTINUATION_INLINE_HPP
 
 #include "classfile/javaClasses.hpp"
+#include "compiler/oopMap.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zContinuation.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zStackChunkGCData.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/stackChunkOop.inline.hpp"
+#include "runtime/frame.inline.hpp"
 #include "runtime/stackChunkFrameStream.inline.hpp"
 
 inline bool ZContinuation::requires_barriers(const ZHeap* heap, stackChunkOop chunk) {
@@ -74,6 +76,17 @@ public:
   }
 };
 
+class ZUncolorStackOopClosure : public OopClosure {
+public:
+  void do_oop(oop* p) override {
+    zpointer ptr = *(volatile zpointer*)p;
+    zaddress addr = ZPointer::uncolor(ptr);
+    *(volatile zaddress*)p = addr;
+  }
+
+  void do_oop(narrowOop* p) override {}
+};
+
 class ZColorStackFrameClosure {
   uint64_t _color;
 
@@ -92,6 +105,17 @@ public:
 inline void ZContinuation::color_stack_pointers(stackChunkOop chunk) {
   ZColorStackFrameClosure frame_cl(ZStackChunkGCData::color(chunk));
   chunk->iterate_stack(&frame_cl);
+}
+
+template <typename RegisterMapT>
+inline void ZContinuation::uncolor_stack_pointers(const frame& f, const RegisterMapT* map) {
+  ZUncolorStackOopClosure oop_closure;
+  if (f.is_interpreted_frame()) {
+    f.oops_interpreted_do(&oop_closure, nullptr);
+  } else {
+    OopMapDo<ZUncolorStackOopClosure, DerivedOopClosure, SkipNullValue> visitor(&oop_closure, nullptr);
+    visitor.oops_do(&f, map, f.oop_map());
+  }
 }
 
 #endif // SHARE_GC_Z_ZCONTINUATION_INLINE_HPP

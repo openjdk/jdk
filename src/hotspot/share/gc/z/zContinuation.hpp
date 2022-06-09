@@ -32,7 +32,10 @@ class ZHeap;
 class ZContinuation : public AllStatic {
 public:
   static bool requires_barriers(const ZHeap* heap, stackChunkOop chunk);
+
   static void color_stack_pointers(stackChunkOop chunk);
+  template <typename RegisterMapT>
+  static void uncolor_stack_pointers(const frame& f, const RegisterMapT* map);
 };
 
 #endif // SHARE_GC_Z_ZCONTINUATION_HPP
