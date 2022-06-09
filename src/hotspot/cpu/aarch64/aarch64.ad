@@ -11356,7 +11356,7 @@ instruct modI(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
 
   ins_cost(INSN_COST * 22);
   format %{ "sdivw  rscratch1, $src1, $src2\n\t"
-            "msubw($dst, rscratch1, $src2, $src1" %}
+            "msubw  $dst, rscratch1, $src2, $src1" %}
 
   ins_encode(aarch64_enc_modw(dst, src1, src2));
   ins_pipe(idiv_reg_reg);
@@ -11369,7 +11369,7 @@ instruct modL(iRegLNoSp dst, iRegL src1, iRegL src2) %{
 
   ins_cost(INSN_COST * 38);
   format %{ "sdiv   rscratch1, $src1, $src2\n"
-            "msub($dst, rscratch1, $src2, $src1" %}
+            "msub   $dst, rscratch1, $src2, $src1" %}
 
   ins_encode(aarch64_enc_mod(dst, src1, src2));
   ins_pipe(ldiv_reg_reg);
@@ -11412,7 +11412,7 @@ instruct UmodI_reg_reg(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
 
   ins_cost(INSN_COST * 22);
   format %{ "udivw  rscratch1, $src1, $src2\n\t"
-            "msubw($dst, rscratch1, $src2, $src1" %}
+            "msubw  $dst, rscratch1, $src2, $src1" %}
 
   ins_encode %{
     __ udivw(rscratch1, $src1$$Register, $src2$$Register);
@@ -11429,7 +11429,7 @@ instruct UModL_reg_reg(iRegLNoSp dst, iRegL src1, iRegL src2) %{
 
   ins_cost(INSN_COST * 38);
   format %{ "udiv   rscratch1, $src1, $src2\n"
-            "msub($dst, rscratch1, $src2, $src1" %}
+            "msub   $dst, rscratch1, $src2, $src1" %}
 
   ins_encode %{
     __ udiv(rscratch1, $src1$$Register, $src2$$Register);
