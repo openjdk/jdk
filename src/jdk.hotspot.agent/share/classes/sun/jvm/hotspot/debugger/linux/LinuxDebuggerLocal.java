@@ -582,7 +582,7 @@ public class LinuxDebuggerLocal extends DebuggerBase implements LinuxDebugger {
     /** From the LinuxDebugger interface */
     public long getAddressValue(Address addr) {
       if (addr == null) return 0;
-      return ((LinuxAddress) addr).getValue();
+      return ((LinuxAddress) addr).asLongValue();
     }
 
     /** From the LinuxDebugger interface */

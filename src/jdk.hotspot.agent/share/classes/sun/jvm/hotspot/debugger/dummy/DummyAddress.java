@@ -279,10 +279,6 @@ class DummyAddress implements Address {
   // Internals only below this point
   //
 
-  long getValue() {
-    return addr;
-  }
-
   private static void check(boolean arg, String failMessage) {
     if (!arg) {
       System.err.println(failMessage + ": FAILED");

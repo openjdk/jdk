@@ -412,7 +412,7 @@ public class WindbgDebuggerLocal extends DebuggerBase implements WindbgDebugger 
   /** From the Debugger interface */
   public long getAddressValue(Address addr) {
     if (addr == null) return 0;
-    return ((WindbgAddress) addr).getValue();
+    return ((WindbgAddress) addr).asLongValue();
   }
 
   /** From the WindbgDebugger interface */
@@ -473,7 +473,7 @@ public class WindbgDebuggerLocal extends DebuggerBase implements WindbgDebugger 
     if (dll != null) {
       WindbgAddress addr = (WindbgAddress) dll.lookupSymbol(symbol);
       if (addr != null) {
-        return addr.getValue();
+        return addr.asLongValue();
       }
     }
     return 0L;
