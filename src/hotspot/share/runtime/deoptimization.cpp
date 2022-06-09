@@ -1844,17 +1844,17 @@ void Deoptimization::print_ul(CompiledMethod* nm, intptr_t pc, frame& fr, int tr
   bool is_osr = nm->is_osr_method();
   if (lt.is_enabled()) {
     LogStream ls(lt);
-    ls.print("cid=%d %s pc=" INTPTR_FORMAT " relative_pc=" INTPTR_FORMAT " level=%d",
-             nm->compile_id(), (is_osr ? "%" : ""), pc, fr.pc() - nm->code_begin(),
-             nm->comp_level());
+    ls.print("cid=%d%s level=%d",
+             nm->compile_id(), (is_osr ? " osr" : ""), nm->comp_level());
     nm->method()->print_short_name(&ls);
-    ls.print(" @ ");
-    ls.print("%d ", trap_bci);
+    ls.print(" trap_bci=%d ", trap_bci);
     if (is_osr) {
-      ls.print("%d ", nm->osr_entry_bci());
+      ls.print("osr_bci=%d ", nm->osr_entry_bci());
     }
     ls.print("%s ", reason_name);
-    ls.print("%s", reason_action);
+    ls.print("%s ", reason_action);
+    ls.print("pc=" INTPTR_FORMAT " relative_pc=" INTPTR_FORMAT,
+             pc, fr.pc() - nm->code_begin());
     ls.cr();
   }
 }
