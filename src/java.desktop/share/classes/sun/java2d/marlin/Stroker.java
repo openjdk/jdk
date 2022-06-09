@@ -567,7 +567,7 @@ final class Stroker implements DPathConsumer2D, MarlinConst {
 
         double dx = x1 - cx0;
         double dy = y1 - cy0;
-        if (dx == 0.0d && dy == 0.0d) {
+        if (dx == 0.0d && dy == 0.0d && prev == DRAWING_OP_TO) {
             return;
         }
         computeOffset(dx, dy, lineWidth2, offset0);

@@ -28,6 +28,8 @@
 
 import java.awt.*;
 import java.io.*;
+import java.util.List;
+import java.util.ArrayList;
 import java.awt.geom.*;
 import javax.imageio.*;
 import java.awt.image.*;
@@ -39,36 +41,48 @@ import java.awt.image.*;
 public class JoinMiterRedundantLineSegmentsTest {
 
     public static void main(String[] args) throws Exception {
+        System.out.println("This test defines a series of shapes with optional shape data. The optional data (which is enclosed in brackets) should not make a difference in how the shape is rendered. This test renders the shape data with and without the bracketed segments and tests to see if those renderings are identical.");
 
-        boolean failed = false;
-
-        // we'll run several scenarios just to be safe:
-
+        List<Test> tests = createTests();
+        int sampleCtr = 1;
         boolean[] booleans = new boolean[] {false, true};
-        for (boolean strokeHint_pure : booleans) {
-            for (boolean createStrokedShape : booleans) {
-                for (boolean closePath : booleans) {
+        boolean failed = false;
+        String header = null;
+        for (Test test : tests) {
+            header = null;
 
-                    BufferedImage expected = null;
-                    BufferedImage actual = null;
-                    try {
-                        expected = createImage(false, strokeHint_pure, createStrokedShape, closePath);
-                        actual = createImage(true, strokeHint_pure, createStrokedShape, closePath);
-                        assertEquals(expected, actual);
-                    } catch (RuntimeException e) {
-                        String id = strokeHint_pure+"-"+createStrokedShape+"-"+closePath;
-                        if (expected != null) {
-                            File file = new File("JoinMiterTest2-" + id + "-expected.png");
-                            System.err.println("Failure: "+file.getAbsolutePath());
-                            ImageIO.write(expected, "png", file);
+            for (Object strokeHint : new Object[] { RenderingHints.VALUE_STROKE_PURE, RenderingHints.VALUE_STROKE_NORMALIZE } ) {
+                for (boolean createStrokedShape : booleans) {
+                    for (boolean closePath : booleans) {
+                        try {
+                            test.run(strokeHint, createStrokedShape, closePath);
+                        } catch(TestException e) {
+                            failed = true;
+
+                            if (header == null) {
+                                System.out.println();
+
+                                header = "#############################\n";
+                                header += "## " + test.name + "\n";
+                                header += "## " + test.description + "\n";
+                                header += "## " + test.shapeString + "\n";
+                                header += "#############################";
+                                System.out.println(header);
+                            }
+
+                            System.out.println();
+                            System.out.println("# sample index = " + (sampleCtr));
+                            System.out.println("strokeHint = " + strokeHint);
+                            System.out.println("createStrokedShape = " + createStrokedShape);
+                            System.out.println("closePath = " + closePath);
+                            System.out.println("FAILED");
+                            e.printStackTrace(System.out);
+                            BufferedImage bi = e.getImage();
+                            File file = new File("failure-"+sampleCtr+".png");
+                            ImageIO.write(bi, "png", file);
                         }
-                        if (actual != null) {
-                            File file = new File("JoinMiterTest2-" + id + "-actual.png");
-                            System.err.println("Failure: "+file.getAbsolutePath());
-                            ImageIO.write(actual, "png", file);
-                        }
-                        e.printStackTrace();
-                        failed = true;
+
+                        sampleCtr++;
                     }
                 }
             }
@@ -78,128 +92,168 @@ public class JoinMiterRedundantLineSegmentsTest {
             System.exit(1);
     }
 
-    /**
-     * @param addRedundantPoints add PathIterator segments that result in redundant SEG_LINETO instructions. When true
-     *                           this may also include quadratic and cubic segments that should degenerate into lines.
-     * @param useHintPure if true we render the stroke using RenderingHints.VALUE_STROKE_PURE
-     * @param createStrokedShape if true we use graphics.fill(BasicStroke#createStrokedShape(path)). If false
-     *                           we use graphics.draw(path)
-     * @param closePath if true we close subpaths (once we make sure they return to their starting location)
-     * @return an image we compare against to determine if this test passes or fails.
-     * @throws Exception
-     */
-    private static BufferedImage createImage(boolean addRedundantPoints, boolean useHintPure, boolean createStrokedShape, boolean closePath) throws Exception {
-        BufferedImage bi = new BufferedImage(500, 500, BufferedImage.TYPE_INT_RGB);
-        Graphics2D g = (Graphics2D) bi.getGraphics();
-        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, useHintPure ? RenderingHints.VALUE_STROKE_PURE : RenderingHints.VALUE_STROKE_NORMALIZE);
+    private static List<Test> createTests() {
+        List<Test> tests = new ArrayList<>();
 
-        g.setBackground(Color.white);
-        g.clearRect(0, 0, bi.getWidth(), bi.getHeight());
+        tests.add(new Test("jdk-8264999",
+                "m 24.954517 159 l 21.097446 157.5 [l 21.097446 157.5] l 17.61364 162 [l 17.61364 162] l 13.756569 163.5 [l 13.756569 163.5] l 11.890244 160.5",
+                "This is the original shape reported in https://bugs.openjdk.org/browse/JDK-8264999"));
 
-        AffineTransform at = g.getTransform();
+        tests.add(new Test("2x and 3x redundant lines",
+                "m 24.954517 159 l 21.097446 157.5 [l 21.097446 157.5 l 21.097446 157.5] l 17.61364 162 [l 17.61364 162 l 17.61364 162 l 17.61364 162] l 13.756569 163.5 [l 13.756569 163.5 l 13.756569 163.5 l 13.756569 163.5] l 11.890244 160.5",
+                "This is a derivative of JDK-8264999 that includes two or three redundant lines (instead of just one)."));
 
-        g.transform(AffineTransform.getTranslateInstance(0, -1400));
-        g.transform(AffineTransform.getScaleInstance(10, 10));
+        tests.add(new Test("cubic curve with redundant line",
+                "m 17 100 c 7 130 27 130 17 100 [l 17 100]",
+                "This creates a simple cubic curve (a teardrop shape) with one redundant line at the end."));
 
-        GeneralPath path1 = new GeneralPath();
-        path1.moveTo(24.954517, 159);
+//        tests.add(new Test("empty line",
+//                "m 19 180 [l 19 180]",
+//                "This creates an empty shape with a lineTo the starting point."));
 
-        path1.lineTo(21.097446, 157.5);
-        if (addRedundantPoints)
-            path1.lineTo(21.097446, 157.5);
+        tests.add(new Test("degenerate cubic curve",
+                "m 19 180 l 20 181 [c 20 181 20 181 20 181]",
+                "This creates a degenerate cubic curve after the last end point."));
 
-        path1.lineTo(17.61364, 162);
-        if (addRedundantPoints) {
-            path1.lineTo(17.61364, 162);
-            path1.lineTo(17.61364, 162);
-        }
+        tests.add(new Test("degenerate quadratic curve",
+                "m 19 180 l 20 181 [q 20 181 20 181]",
+                "This creates a degenerate quadratic curve after the last end point."));
 
-        path1.lineTo(13.756569, 163.5);
-        if (addRedundantPoints) {
-            path1.lineTo(13.756569, 163.5);
-            path1.lineTo(13.756569, 163.5);
-            path1.lineTo(13.756569, 163.5);
-        }
+//        tests.add(new Test("empty degenerate cubic curve",
+//                "m 19 180 [c 19 180 19 180 19 180]",
+//                "This creates an empty degenerate cubic curve that is effectively a line to the starting point."));
 
-        path1.lineTo(11.890244, 160.5);
-        if (addRedundantPoints)
-            path1.lineTo(11.890244, 160.5);
+//        tests.add(new Test("empty degenerate quadratic curve",
+//                "m 19 180 [q 19 180 19 180]",
+//                "This creates an empty degenerate quadratic curve that is effectively a line to the starting point."));
 
-        if (closePath) {
-            path1.lineTo(24.954517, 159);
-            path1.closePath();
-        }
+//        tests.add(new Test("moveTo then close",
+//                "m 19 180 [z]",
+//                "This moves to a starting position and then optionally closes the path."));
 
-        draw(g, Color.red, path1, createStrokedShape);
+        tests.add(new Test("lineTo after close",
+                "m 19 180 z [l 19 180]",
+                "This tests a lineTo after a close (without a moveTo)"));
 
-        // normal cubics don't suffer the same problem; I just wanted visual confirmation so I threw this in:
+        return tests;
+    }
+}
 
-        Path2D path2 = new Path2D.Double();
-        path2.moveTo(17, 150);
-        path2.curveTo(17-10, 150-20, 17+10, 150-20, 17, 150);
+class TestException extends Exception {
+    BufferedImage bi;
 
-        if (closePath)
-            path2.closePath();
+    public TestException(Throwable t, BufferedImage bi) {
+        super(t);
+        this.bi = bi;
+    }
 
-        draw(g, Color.green, path2, createStrokedShape);
-
-        path2.transform(AffineTransform.getRotateInstance(1, 20, 140));
-
-        draw(g, Color.cyan, path2, createStrokedShape);
-
-        // test degenerate cubics
-
-        Path2D path3 = new Path2D.Double();
-        path3.moveTo(19, 180);
-        if (addRedundantPoints)
-            path3.curveTo(19, 180, 19, 180, 19, 180);
-
-        if (closePath)
-            path3.closePath();
-
-        draw(g, Color.pink, path3, createStrokedShape);
-
-        // add a cubic that ends by pointing northeast, then see if any redundant
-        // segments (lines or higher degenerating segments) change the miter:
-        Path2D path4 = new Path2D.Double();
-        path4.moveTo(22, 175);
-        path4.curveTo(15,175,25,155,30,150);
-        if (addRedundantPoints) {
-            path4.lineTo(30, 150);
-            path4.quadTo(30, 150,30, 150);
-            path4.curveTo(30, 150,30, 150,30, 150);
-        }
-
-        if (closePath)
-            path4.closePath();
-
-        draw(g, Color.blue, path4, createStrokedShape);
-
-        // and test degenerate quadratics
-
-        Path2D path5 = new Path2D.Double();
-        path5.moveTo(22, 170);
-        if (addRedundantPoints)
-            path5.quadTo(22, 170, 22, 170);
-
-        if (closePath)
-            path5.closePath();
-
-        draw(g, Color.green, path5, createStrokedShape);
-
+    public BufferedImage getImage() {
         return bi;
     }
+}
 
-    private static void draw(Graphics2D g, Color color, Shape shape, boolean createStrokedShape) {
-        g.setColor(color);
-        if (createStrokedShape) {
-            g.fill(g.getStroke().createStrokedShape(shape));
+class Test {
+    Path2D path_expected, path_actual;
+    String name, description, shapeString;
+
+    /**
+     * @param name a short name of this test
+     * @param shape shape data, including optional phrases in brackets. The shape should render the same
+     *              whether the data in brackets is included or not.
+     * @param description a sentence describing this test
+     */
+    public Test(String name, String shape, String description) {
+        // make sure the test contains optional path data. Because if it doesn't: this test
+        // is meaningless because nothing will change.
+        if (!shape.contains("["))
+            throw new IllegalArgumentException("The shape must contain optional path data.");
+
+        this.shapeString = shape;
+        this.name = name;
+        this.description = description;
+        path_expected = parse(shape, false);
+        path_actual = parse(shape, true);
+    }
+
+    @Override
+    public String toString() {
+        return name;
+    }
+
+    private String stripBracketPhrases(String str) {
+        StringBuffer sb = new StringBuffer();
+        int ctr = 0;
+        for (int a = 0; a < str.length(); a++) {
+            char ch = str.charAt(a);
+            if (ch == '[') {
+                ctr++;
+            } else if (ch == ']') {
+                ctr--;
+            } else if (ctr == 0) {
+                sb.append(ch);
+            }
+        }
+        return sb.toString();
+    }
+
+    private Path2D.Double parse(String str, boolean includeBrackets) {
+        if (includeBrackets) {
+            str = str.replace('[', ' ');
+            str = str.replace(']', ' ');
         } else {
-            g.draw(shape);
+            str = stripBracketPhrases(str);
+        }
+        Path2D.Double path = new Path2D.Double();
+        String[] terms = str.split(" ");
+        int a = 0;
+        while (a < terms.length) {
+            if ("m".equals(terms[a])) {
+                path.moveTo(Double.parseDouble(terms[a + 1]), Double.parseDouble(terms[a + 2]));
+                a += 3;
+            } else if ("l".equals(terms[a])) {
+                path.lineTo( Double.parseDouble(terms[a+1]), Double.parseDouble(terms[a+2]) );
+                a += 3;
+            } else if ("q".equals(terms[a])) {
+                path.quadTo( Double.parseDouble(terms[a+1]), Double.parseDouble(terms[a+2]),
+                        Double.parseDouble(terms[a+3]), Double.parseDouble(terms[a+4]) );
+                a += 5;
+            } else if ("c".equals(terms[a])) {
+                path.curveTo( Double.parseDouble(terms[a+1]), Double.parseDouble(terms[a+2]),
+                        Double.parseDouble(terms[a+3]), Double.parseDouble(terms[a+4]),
+                        Double.parseDouble(terms[a+5]), Double.parseDouble(terms[a+6]) );
+                a += 7;
+            } else if ("z".equals(terms[a])) {
+                path.closePath();
+                a += 1;
+            } else if(terms[a].trim().isEmpty()) {
+                a += 1;
+            } else {
+                throw new RuntimeException("\""+terms[a]+"\" in \""+str+"\"");
+            }
+        }
+        return path;
+    }
+
+    public void run(Object strokeRenderingHint, boolean createStrokedShape, boolean closePath) throws Exception {
+        BufferedImage bi_expected = new BufferedImage(400, 400, BufferedImage.TYPE_INT_ARGB);
+        BufferedImage bi_actual = new BufferedImage(400, 400, BufferedImage.TYPE_INT_ARGB);
+
+        paint(path_expected, bi_expected, Color.black, strokeRenderingHint, createStrokedShape, closePath);
+        paint(path_actual, bi_actual, Color.black, strokeRenderingHint, createStrokedShape, closePath);
+
+        try {
+            assertEquals(bi_expected, bi_actual);
+        } catch(Exception e) {
+            BufferedImage composite = new BufferedImage(400, 400, BufferedImage.TYPE_INT_ARGB);
+            paint(path_expected, composite, Color.blue, strokeRenderingHint, createStrokedShape, closePath);
+            paint(path_actual, composite, new Color(255,0,0,100), strokeRenderingHint, createStrokedShape, closePath);
+            throw new TestException(e, composite);
         }
     }
 
+    /**
+     * Throw an exception if two images are not equal.
+     */
     private static void assertEquals(BufferedImage bi1, BufferedImage bi2) {
         int w = bi1.getWidth();
         int h = bi1.getHeight();
@@ -213,5 +267,49 @@ public class JoinMiterRedundantLineSegmentsTest {
                     throw new RuntimeException("failure at ("+x+", "+y+"): 0x"+Integer.toHexString(row1[x])+" != 0x"+Integer.toHexString(row2[x]));
             }
         }
+    }
+
+    /**
+     * Create a transform that maps from one rectangle to another.
+     */
+    private AffineTransform createTransform(Rectangle2D oldRect,Rectangle2D newRect) {
+        double scaleX = newRect.getWidth() / oldRect.getWidth();
+        double scaleY = newRect.getHeight() / oldRect.getHeight();
+
+        double translateX = -oldRect.getX() * scaleX + newRect.getX();
+        double translateY = -oldRect.getY() * scaleY + newRect.getY();
+        return new AffineTransform(scaleX, 0, 0, scaleY, translateX, translateY);
+    }
+
+    /**
+     * Paint a path to an image.
+     */
+    private void paint(Path2D path, BufferedImage dst, Color color, Object strokeRenderingHint,
+                       boolean createStrokedShape, boolean closePath) {
+        Rectangle2D pathBounds = path.getBounds2D();
+        pathBounds.setFrame(pathBounds.getX() - 10,
+                pathBounds.getY() - 10,
+                pathBounds.getWidth() + 20,
+                pathBounds.getHeight() + 20);
+        Rectangle imageBounds = new Rectangle(0, 0, dst.getWidth(), dst.getHeight());
+
+        Path2D p = new Path2D.Double();
+        p.append(path, false);
+        if (closePath)
+            p.closePath();
+
+        Graphics2D g = dst.createGraphics();
+        g.transform(createTransform(pathBounds, imageBounds));
+        g.setColor(color);
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, strokeRenderingHint);
+        Stroke stroke = new BasicStroke(3);
+        if (createStrokedShape) {
+            g.fill( stroke.createStrokedShape(p) );
+        } else {
+            g.setStroke(stroke);
+            g.draw(p);
+        }
+        g.dispose();
     }
 }
