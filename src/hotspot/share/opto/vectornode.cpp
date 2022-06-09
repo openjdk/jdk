@@ -310,7 +310,7 @@ bool VectorNode::implemented(int opc, uint vlen, BasicType bt) {
     if (VectorNode::is_vector_integral_negate(vopc)) {
       return is_vector_integral_negate_supported(vopc, vlen, bt, false);
     }
-    return vopc > 0 && Matcher::match_rule_supported_vectorization(vopc, vlen, bt);
+    return vopc > 0 && Matcher::match_rule_supported_superword(vopc, vlen, bt);
   }
   return false;
 }
@@ -1256,9 +1256,9 @@ int VectorCastNode::opcode(BasicType bt, bool is_signed) {
 bool VectorCastNode::implemented(int opc, uint vlen, BasicType src_type, BasicType dst_type) {
   if (is_java_primitive(dst_type) &&
       (vlen > 1) && is_power_of_2(vlen) &&
-      Matcher::vector_size_supported(dst_type, vlen)) {
+      VectorNode::vector_size_supported(dst_type, vlen)) {
     int vopc = VectorCastNode::opcode(src_type);
-    return vopc > 0 && Matcher::match_rule_supported_vectorization(vopc, vlen, dst_type);
+    return vopc > 0 && Matcher::match_rule_supported_superword(vopc, vlen, dst_type);
   }
   return false;
 }
@@ -1352,7 +1352,7 @@ bool ReductionNode::implemented(int opc, uint vlen, BasicType bt) {
       (vlen > 1) && is_power_of_2(vlen) &&
       VectorNode::vector_size_supported(bt, vlen)) {
     int vopc = ReductionNode::opcode(opc, bt);
-    return vopc != opc && Matcher::match_rule_supported_vectorization(vopc, vlen, bt);
+    return vopc != opc && Matcher::match_rule_supported_superword(vopc, vlen, bt);
   }
   return false;
 }

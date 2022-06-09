@@ -1009,7 +1009,7 @@ int SuperWord::get_vw_bytes_special(MemNode* s) {
 
   // Check for special case where there is a type conversion between different data size.
   int vectsize = max_vector_size_in_def_use_chain(s);
-  if (vectsize < Matcher::max_vector_size(btype)) {
+  if (vectsize < max_vector_size(btype)) {
     vw = MIN2(vectsize * type2aelembytes(btype), vw);
   }
 
@@ -1202,8 +1202,8 @@ bool SuperWord::stmts_can_pack(Node* s1, Node* s2, int align) {
   if(!is_java_primitive(bt1) || !is_java_primitive(bt2))
     return false;
   BasicType longer_bt = longer_type_for_conversion(s1);
-  if (Matcher::max_vector_size(bt1) < 2 ||
-      (longer_bt != T_ILLEGAL && Matcher::max_vector_size(longer_bt) < 2)) {
+  if (max_vector_size(bt1) < 2 ||
+      (longer_bt != T_ILLEGAL && max_vector_size(longer_bt) < 2)) {
     return false; // No vectors for this type
   }
 
@@ -3461,10 +3461,10 @@ int SuperWord::max_vector_size_in_def_use_chain(Node* n) {
     vt = (newt == T_ILLEGAL) ? vt : newt;
   }
 
-  int max = Matcher::max_vector_size(vt);
+  int max = max_vector_size(vt);
   // If now there is no vectors for the longest type, the nodes with the longest
   // type in the def-use chain are not packed in SuperWord::stmts_can_pack.
-  return max < 2 ? Matcher::max_vector_size(bt) : max;
+  return max < 2 ? max_vector_size(bt) : max;
 }
 
 //-------------------------compute_vector_element_type-----------------------
