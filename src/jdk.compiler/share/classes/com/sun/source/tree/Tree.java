@@ -245,6 +245,22 @@ public interface Tree {
         DEFAULT_CASE_LABEL(DefaultCaseLabelTree.class),
 
         /**
+         * Used for instances of {@link ConstantCaseLabelTree}.
+         *
+         * @since 19
+         */
+        @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
+        CONSTANT_CASE_LABEL(ConstantCaseLabelTree.class),
+
+        /**
+         * Used for instances of {@link PatternCaseLabelTree}.
+         *
+         * @since 19
+         */
+        @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
+        PATTERN_CASE_LABEL(PatternCaseLabelTree.class),
+
+        /**
          * Used for instances of {@link DeconstructionPatternTree}.
          *
          * @since 19

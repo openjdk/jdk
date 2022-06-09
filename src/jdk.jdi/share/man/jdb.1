@@ -224,9 +224,10 @@ Runs the application in the Java HotSpot VM client.
 .RS
 .RE
 .TP
-.B \f[CB]\-trackvthreads\f[R]
-Track virtual threads as they are created.
-See \f[B]Working with virtual threads\f[R] below.
+.B \f[CB]\-trackallthreads\f[R]
+Track all threads as they are created, including virtual threads.
+See \f[B]Working With Virtual Threads\f[R] below.
+Virtual threads are a preview feature of the Java platform.
 .RS
 .RE
 .TP
@@ -279,13 +280,17 @@ Other options are supported to provide alternate mechanisms for
 connecting the debugger to the JVM that it\[aq]s to debug.
 .SH WORKING WITH VIRTUAL THREADS
 .PP
+Virtual threads are a preview feature of the Java platform.
+Preview features may be removed in a future release, or upgraded to
+permanent features of the Java platform.
+.PP
 Often virtual theads are created in such large numbers and frequency
 that they can overwhelm a debugger.
 For this reason by default JDB does not keep track of virtual threads as
 they are created.
 It will only keep track of virtual threads that an event has arrived on,
 such as a breakpoint event.
-The \f[CB]\-trackvthreads\f[R] option can be used to make JDB track all
+The \f[CB]\-trackallthreads\f[R] option can be used to make JDB track all
 virtual threads as they are created.
 .PP
 When JDB first connects, it requests a list of all known threads from
@@ -293,12 +298,13 @@ the Debug Agent.
 By default the debug agent does not return any virtual threads in this
 list, once again because the list could be so large that it overwhelms
 the debugger.
-The Debug Agent has an \f[CB]enumeratevthreads\f[R] option that can be
+The Debug Agent has an \f[CB]includevirtualthreads\f[R] option that can be
 enabled to change this behavior so all known virtual threads will be
 included in the list.
-The JDB \f[CB]\-trackvthreads\f[R] option will cause JDB to automatically
-enable the Debug Agent\[aq]s \f[CB]enumeratevthreads\f[R] option when JDB
-launches an application to debug.
+The JDB \f[CB]\-trackallthreads\f[R] option will cause JDB to
+automatically enable the Debug Agent\[aq]s
+\f[CB]includevirtualthreads\f[R] option when JDB launches an application
+to debug.
 However, keep in mind that the Debug Agent may not know about any
 virtual threads that were created before JDB attached to the debugged
 application.
