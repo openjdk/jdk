@@ -357,6 +357,11 @@ public final class Class<T> implements java.io.Serializable,
      * A call to {@code forName("X")} causes the class named
      * {@code X} to be initialized.
      *
+     * <p>
+     * In cases where this method is called from a context where there is no
+     * caller frame on the stack (e.g. when called directly from a JNI
+     * attached thread), the system class loader is used.
+     *
      * @param      className   the fully qualified name of the desired class.
      * @return     the {@code Class} object for the class with the
      *             specified name.
@@ -380,7 +385,9 @@ public final class Class<T> implements java.io.Serializable,
     @CallerSensitiveAdapter
     private static Class<?> forName(String className, Class<?> caller)
             throws ClassNotFoundException {
-        return forName0(className, true, ClassLoader.getClassLoader(caller), caller);
+        ClassLoader loader = (caller == null) ? ClassLoader.getSystemClassLoader()
+                                              : ClassLoader.getClassLoader(caller);
+        return forName0(className, true, loader, caller);
     }
 
     /**
@@ -3125,7 +3132,7 @@ public final class Class<T> implements java.io.Serializable,
         }
         // check package access on the proxy interfaces
         if (checkProxyInterfaces && Proxy.isProxyClass(this)) {
-            ReflectUtil.checkProxyPackageAccess(ccl, this.getInterfaces());
+            ReflectUtil.checkProxyPackageAccess(ccl, this.getInterfaces(/* cloneArray */ false));
         }
     }
 
@@ -3373,7 +3380,7 @@ public final class Class<T> implements java.io.Serializable,
         addAll(fields, privateGetDeclaredFields(true));
 
         // Direct superinterfaces, recursively
-        for (Class<?> si : getInterfaces()) {
+        for (Class<?> si : getInterfaces(/* cloneArray */ false)) {
             addAll(fields, si.privateGetPublicFields());
         }
 

@@ -1185,11 +1185,6 @@ int MachCallRuntimeNode::ret_addr_offset() {
   }
 }
 
-int MachCallNativeNode::ret_addr_offset() {
-  Unimplemented();
-  return -1;
-}
-
 //
 // Compute padding required for nodes which need alignment
 //
@@ -2042,10 +2037,6 @@ bool Matcher::pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
 // into registers?
 bool Matcher::pd_clone_address_expressions(AddPNode* m, Matcher::MStack& mstack, VectorSet& address_visited) {
   return clone_base_plus_offset_address(m, mstack, address_visited);
-}
-
-bool Parse::do_one_bytecode_targeted() {
-  return false;
 }
 
 %}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,9 +35,9 @@
 import com.sun.source.tree.CaseLabelTree;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
-import com.sun.source.tree.ExpressionTree;
+import com.sun.source.tree.ConstantCaseLabelTree;
 import com.sun.source.tree.MethodTree;
-import com.sun.source.tree.PatternTree;
+import com.sun.source.tree.PatternCaseLabelTree;
 import com.sun.source.tree.SwitchTree;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.parser.JavacParser;
@@ -53,7 +53,7 @@ public class DisambiguatePatterns {
         DisambiguatePatterns test = new DisambiguatePatterns();
         test.disambiguationTest("String s",
                                  ExpressionType.PATTERN);
-        test.disambiguationTest("String s && s.isEmpty()",
+        test.disambiguationTest("String s when s.isEmpty()",
                                  ExpressionType.PATTERN);
         test.disambiguationTest("(String s)",
                                  ExpressionType.PATTERN);
@@ -139,8 +139,8 @@ public class DisambiguatePatterns {
         SwitchTree st = (SwitchTree) method.getBody().getStatements().get(0);
         CaseLabelTree label = st.getCases().get(0).getLabels().get(0);
         ExpressionType actualType = switch (label) {
-            case ExpressionTree et -> ExpressionType.EXPRESSION;
-            case PatternTree pt -> ExpressionType.PATTERN;
+            case ConstantCaseLabelTree et -> ExpressionType.EXPRESSION;
+            case PatternCaseLabelTree pt -> ExpressionType.PATTERN;
             default -> throw new AssertionError("Unexpected result: " + result);
         };
         if (expectedType != actualType) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -728,7 +728,7 @@ void MutableNUMASpace::initialize(MemRegion mr,
 }
 
 // Set the top of the whole space.
-// Mark the the holes in chunks below the top() as invalid.
+// Mark the holes in chunks below the top() as invalid.
 void MutableNUMASpace::set_top(HeapWord* value) {
   bool found_top = false;
   for (int i = 0; i < lgrp_spaces()->length();) {

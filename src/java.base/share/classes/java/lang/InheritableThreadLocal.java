@@ -24,7 +24,6 @@
  */
 
 package java.lang;
-import java.lang.ref.*;
 
 /**
  * This class extends {@code ThreadLocal} to provide inheritance of values
@@ -49,6 +48,7 @@ import java.lang.ref.*;
  * @author  Josh Bloch and Doug Lea
  * @see     ThreadLocal
  * @since   1.2
+ * @see Thread.Builder#inheritInheritableThreadLocals(boolean)
  */
 
 public class InheritableThreadLocal<T> extends ThreadLocal<T> {
@@ -78,8 +78,9 @@ public class InheritableThreadLocal<T> extends ThreadLocal<T> {
      *
      * @param t the current thread
      */
+    @Override
     ThreadLocalMap getMap(Thread t) {
-       return t.inheritableThreadLocals;
+        return t.inheritableThreadLocals;
     }
 
     /**
@@ -88,6 +89,7 @@ public class InheritableThreadLocal<T> extends ThreadLocal<T> {
      * @param t the current thread
      * @param firstValue value for the initial entry of the table.
      */
+    @Override
     void createMap(Thread t, T firstValue) {
         t.inheritableThreadLocals = new ThreadLocalMap(this, firstValue);
     }

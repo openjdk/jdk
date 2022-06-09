@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -50,8 +50,8 @@ else ifneq ($(and $(GIT), $(wildcard $(TOPDIR)/.git)), )
   USE_SCM := true
   SCM_DIR := .git
   ID_COMMAND := $(PRINTF) "git:%s%s\n" \
-      "$$(git log -n1 --format=%H | cut -c1-12)" \
-      "$$(if test -n "$$(git status --porcelain)"; then printf '+'; fi)"
+      "$$($(GIT) log -n1 --format=%H | cut -c1-12)" \
+      "$$(if test -n "$$($(GIT) status --porcelain)"; then printf '+'; fi)"
 endif
 
 ifeq ($(USE_SCM), true)

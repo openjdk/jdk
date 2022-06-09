@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,7 +184,7 @@ public final class InternalLocaleBuilder {
                     ukeywords.clear();
                 }
             } else {
-                if (extensions != null && extensions.containsKey(key)) {
+                if (extensions != null) {
                     extensions.remove(key);
                 }
             }
@@ -313,7 +313,7 @@ public final class InternalLocaleBuilder {
         clearExtensions();
 
         if (!LocaleUtils.isEmpty(bcpExtensions)) {
-            Set<CaseInsensitiveChar> done = new HashSet<>(bcpExtensions.size());
+            Set<CaseInsensitiveChar> done = HashSet.newHashSet(bcpExtensions.size());
             for (String bcpExt : bcpExtensions) {
                 CaseInsensitiveChar key = new CaseInsensitiveChar(bcpExt);
                 // ignore duplicates

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -498,14 +498,6 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
     }
 
     @DefinedBy(Api.COMPILER_TREE)
-    public JCTree visitGuardedPattern(GuardedPatternTree node, P p) {
-        JCGuardPattern t = (JCGuardPattern) node;
-        JCPattern patt = copy(t.patt, p);
-        JCExpression expr = copy(t.expr, p);
-        return M.at(t.pos).GuardPattern(patt, expr);
-    }
-
-    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitParenthesizedPattern(ParenthesizedPatternTree node, P p) {
         JCParenthesizedPattern t = (JCParenthesizedPattern) node;
         JCPattern pattern = copy(t.pattern, p);
@@ -516,6 +508,30 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
     public JCTree visitDefaultCaseLabel(DefaultCaseLabelTree node, P p) {
         JCDefaultCaseLabel t = (JCDefaultCaseLabel) node;
         return M.at(t.pos).DefaultCaseLabel();
+    }
+
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public JCTree visitConstantCaseLabel(ConstantCaseLabelTree node, P p) {
+        JCConstantCaseLabel t = (JCConstantCaseLabel) node;
+        JCExpression expr = copy(t.expr, p);
+        return M.at(t.pos).ConstantCaseLabel(expr);
+    }
+
+    @Override
+    public JCTree visitPatternCaseLabel(PatternCaseLabelTree node, P p) {
+        JCPatternCaseLabel t = (JCPatternCaseLabel) node;
+        JCPattern pat = copy(t.pat, p);
+        JCExpression guard = copy(t.guard, p);
+        return M.at(t.pos).PatternCaseLabel(pat, guard);
+    }
+
+    @DefinedBy(Api.COMPILER_TREE)
+    public JCTree visitDeconstructionPattern(DeconstructionPatternTree node, P p) {
+        JCRecordPattern t = (JCRecordPattern) node;
+        JCExpression deconstructor = copy(t.deconstructor, p);
+        List<JCPattern> nested = copy(t.nested, p);
+        JCVariableDecl var = copy(t.var, p);
+        return M.at(t.pos).RecordPattern(deconstructor, nested, var);
     }
 
     @DefinedBy(Api.COMPILER_TREE)

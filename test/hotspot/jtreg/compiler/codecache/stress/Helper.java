@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,10 @@ import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ThreadFactory;
 
 public final class Helper {
+    public static final boolean VIRTUAL_THREAD = Boolean.getBoolean("helperVirtualThread");
     public static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
 
     private static final long THRESHOLD = WHITE_BOX.getIntxVMFlag("CompileThreshold");
@@ -55,9 +57,34 @@ public final class Helper {
     }
 
     public static void startInfiniteLoopThread(Runnable action, long millis) {
-        Thread t = new Thread(new InfiniteLoop(action, millis));
-        t.setDaemon(true);
-        t.start();
+        startInfiniteLoopThread(threadFactory(VIRTUAL_THREAD), action, millis);
+    }
+
+    public static void startInfiniteLoopThread(ThreadFactory threadFactory, Runnable action, long millis) {
+        threadFactory.newThread(new InfiniteLoop(action, millis)).start();
+    }
+
+    public static ThreadFactory threadFactory(boolean virtual) {
+        // After virtual thread Preview:
+        // return (virtual ? Thread.ofVirtual() : Thread.ofPlatform().daemon()).factory();
+        if (virtual) {
+            return virtualThreadFactory();
+        } else {
+            return runnable -> {
+                Thread t = new Thread(runnable);
+                t.setDaemon(true);
+                return t;
+            };
+        }
+    }
+
+    private static ThreadFactory virtualThreadFactory() {
+        try {
+            return (ThreadFactory)Class.forName("java.lang.Thread$Builder").getMethod("factory")
+                .invoke(Thread.class.getMethod("ofVirtual").invoke(null));
+        } catch (ReflectiveOperationException ex) {
+            throw new AssertionError(ex);
+        }
     }
 
     public static int callMethod(Callable<Integer> callable, int expected) {

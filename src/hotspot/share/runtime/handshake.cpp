@@ -502,6 +502,16 @@ bool HandshakeState::has_async_exception_operation(bool ThreadDeath_only) {
   }
 }
 
+void HandshakeState::clean_async_exception_operation() {
+  while (has_async_exception_operation(/* ThreadDeath_only */ false)) {
+    MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
+    HandshakeOperation* op;
+    op = _queue.peek(async_exception_filter);
+    remove_op(op);
+    delete op;
+  }
+}
+
 bool HandshakeState::have_non_self_executable_operation() {
   assert(_handshakee != Thread::current(), "Must not be called by self");
   assert(_lock.owned_by_self(), "Lock must be held");
@@ -733,6 +743,7 @@ public:
 };
 
 bool HandshakeState::suspend() {
+  JVMTI_ONLY(assert(!_handshakee->is_in_VTMS_transition(), "no suspend allowed in VTMS transition");)
   JavaThread* self = JavaThread::current();
   if (_handshakee == self) {
     // If target is the current thread we can bypass the handshake machinery

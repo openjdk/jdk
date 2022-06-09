@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -24,15 +24,16 @@
 
 /*
  * @test
+ * @enablePreview
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestArrays
  */
 
-import jdk.incubator.foreign.MemoryAddress;
-import jdk.incubator.foreign.MemoryLayout;
-import jdk.incubator.foreign.MemoryLayout.PathElement;
-import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.ResourceScope;
-import jdk.incubator.foreign.SequenceLayout;
+import java.lang.foreign.MemoryAddress;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemoryLayout.PathElement;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.MemorySession;
+import java.lang.foreign.SequenceLayout;
 
 import java.lang.invoke.VarHandle;
 import java.util.function.BiConsumer;
@@ -42,13 +43,13 @@ import java.util.function.Function;
 
 import org.testng.annotations.*;
 
-import static jdk.incubator.foreign.ValueLayout.JAVA_BYTE;
-import static jdk.incubator.foreign.ValueLayout.JAVA_CHAR;
-import static jdk.incubator.foreign.ValueLayout.JAVA_DOUBLE;
-import static jdk.incubator.foreign.ValueLayout.JAVA_FLOAT;
-import static jdk.incubator.foreign.ValueLayout.JAVA_INT;
-import static jdk.incubator.foreign.ValueLayout.JAVA_LONG;
-import static jdk.incubator.foreign.ValueLayout.JAVA_SHORT;
+import static java.lang.foreign.ValueLayout.JAVA_BYTE;
+import static java.lang.foreign.ValueLayout.JAVA_CHAR;
+import static java.lang.foreign.ValueLayout.JAVA_DOUBLE;
+import static java.lang.foreign.ValueLayout.JAVA_FLOAT;
+import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
+import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 import static org.testng.Assert.*;
 
 public class TestArrays {
@@ -90,13 +91,13 @@ public class TestArrays {
     static VarHandle doubleHandle = doubles.varHandle(PathElement.sequenceElement());
 
     static void initBytes(MemorySegment base, SequenceLayout seq, BiConsumer<MemorySegment, Long> handleSetter) {
-        for (long i = 0; i < seq.elementCount().getAsLong() ; i++) {
+        for (long i = 0; i < seq.elementCount() ; i++) {
             handleSetter.accept(base, i);
         }
     }
 
     static void checkBytes(MemorySegment base, SequenceLayout layout, Function<MemorySegment, Object> arrayFactory, BiFunction<MemorySegment, Long, Object> handleGetter) {
-        int nelems = (int)layout.elementCount().getAsLong();
+        int nelems = (int)layout.elementCount();
         Object arr = arrayFactory.apply(base);
         for (int i = 0; i < nelems; i++) {
             Object found = handleGetter.apply(base, (long) i);
@@ -107,7 +108,7 @@ public class TestArrays {
 
     @Test(dataProvider = "arrays")
     public void testArrays(Consumer<MemorySegment> init, Consumer<MemorySegment> checker, MemoryLayout layout) {
-        MemorySegment segment = MemorySegment.allocateNative(layout, ResourceScope.newImplicitScope());
+        MemorySegment segment = MemorySegment.allocateNative(layout, MemorySession.openImplicit());
         init.accept(segment);
         assertFalse(segment.isReadOnly());
         checker.accept(segment);
@@ -118,7 +119,7 @@ public class TestArrays {
     public void testTooBigForArray(MemoryLayout layout, Function<MemorySegment, Object> arrayFactory) {
         MemoryLayout seq = MemoryLayout.sequenceLayout((Integer.MAX_VALUE * layout.byteSize()) + 1, layout);
         //do not really allocate here, as it's way too much memory
-        MemorySegment segment = MemorySegment.ofAddress(MemoryAddress.NULL, seq.byteSize(), ResourceScope.globalScope());
+        MemorySegment segment = MemorySegment.ofAddress(MemoryAddress.NULL, seq.byteSize(), MemorySession.global());
         arrayFactory.apply(segment);
     }
 
@@ -126,8 +127,8 @@ public class TestArrays {
             expectedExceptions = IllegalStateException.class)
     public void testBadSize(MemoryLayout layout, Function<MemorySegment, Object> arrayFactory) {
         if (layout.byteSize() == 1) throw new IllegalStateException(); //make it fail
-        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            MemorySegment segment = MemorySegment.allocateNative(layout.byteSize() + 1, layout.byteSize(), scope);
+        try (MemorySession session = MemorySession.openConfined()) {
+            MemorySegment segment = MemorySegment.allocateNative(layout.byteSize() + 1, layout.byteSize(), session);
             arrayFactory.apply(segment);
         }
     }
@@ -135,8 +136,8 @@ public class TestArrays {
     @Test(dataProvider = "elemLayouts",
             expectedExceptions = IllegalStateException.class)
     public void testArrayFromClosedSegment(MemoryLayout layout, Function<MemorySegment, Object> arrayFactory) {
-        MemorySegment segment = MemorySegment.allocateNative(layout, ResourceScope.newConfinedScope());
-        segment.scope().close();
+        MemorySegment segment = MemorySegment.allocateNative(layout, MemorySession.openConfined());
+        segment.session().close();
         arrayFactory.apply(segment);
     }
 

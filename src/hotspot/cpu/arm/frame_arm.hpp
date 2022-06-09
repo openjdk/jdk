@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,11 @@
     interpreter_frame_monitor_block_bottom_offset    = interpreter_frame_initial_sp_offset,
 
     // Entry frames
-    entry_frame_call_wrapper_offset                  =  0
+    entry_frame_call_wrapper_offset                  =  0,
+    metadata_words                                   = sender_sp_offset,
+    frame_alignment                                  = 16,
+    // size, in words, of maximum shift in frame position due to alignment
+    align_wiggle                                     =  1
   };
 
   intptr_t ptr_at(int offset) const {
@@ -90,6 +94,8 @@
   }
 #endif
 
+  const ImmutableOopMap* get_oop_map() const;
+
  public:
   // Constructors
 
@@ -99,7 +105,7 @@
 
   frame(intptr_t* sp, intptr_t* fp);
 
-  void init(intptr_t* sp, intptr_t* fp, address pc);
+  void init(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc);
 
   // accessors for the instance variables
   // Note: not necessarily the real 'frame pointer' (see real_fp)
@@ -109,6 +115,9 @@
 
   // expression stack tos if we are nested in a java call
   intptr_t* interpreter_frame_last_sp() const;
+
+  template <typename RegisterMapT>
+  static void update_map_with_saved_link(RegisterMapT* map, intptr_t** link_addr);
 
   // deoptimization support
   void interpreter_frame_set_last_sp(intptr_t* sp);

@@ -544,3 +544,45 @@ address NativeCall::trampoline_jump(CodeBuffer &cbuf, address dest) {
 
   return stub;
 }
+
+void NativePostCallNop::make_deopt() {
+  NativeDeoptInstruction::insert(addr_at(0));
+}
+
+#ifdef ASSERT
+static bool is_movk_to_zr(uint32_t insn) {
+  return ((insn & 0xffe0001f) == 0xf280001f);
+}
+#endif
+
+void NativePostCallNop::patch(jint diff) {
+#ifdef ASSERT
+  assert(diff != 0, "must be");
+  uint32_t insn1 = uint_at(4);
+  uint32_t insn2 = uint_at(8);
+  assert (is_movk_to_zr(insn1) && is_movk_to_zr(insn2), "must be");
+#endif
+
+  uint32_t lo = diff & 0xffff;
+  uint32_t hi = (uint32_t)diff >> 16;
+  Instruction_aarch64::patch(addr_at(4), 20, 5, lo);
+  Instruction_aarch64::patch(addr_at(8), 20, 5, hi);
+}
+
+void NativeDeoptInstruction::verify() {
+}
+
+// Inserts an undefined instruction at a given pc
+void NativeDeoptInstruction::insert(address code_pos) {
+  // 1 1 0 1 | 0 1 0 0 | 1 0 1 imm16 0 0 0 0 1
+  // d       | 4       | a      | de | 0 | 0 |
+  // 0xd4, 0x20, 0x00, 0x00
+  uint32_t insn = 0xd4ade001;
+  uint32_t *pos = (uint32_t *) code_pos;
+  *pos = insn;
+  /**code_pos = 0xd4;
+  *(code_pos+1) = 0x60;
+  *(code_pos+2) = 0x00;
+  *(code_pos+3) = 0x00;*/
+  ICache::invalidate_range(code_pos, 4);
+}

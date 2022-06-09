@@ -22,8 +22,7 @@
  *
  */
 
-// Must be at least Windows Vista or Server 2008 to use InitOnceExecuteOnce
-#define _WIN32_WINNT 0x0600
+// API level must be at least Windows Vista or Server 2008 to use InitOnceExecuteOnce
 
 // no precompiled headers
 #include "jvm.h"
@@ -102,6 +101,7 @@
 #include <psapi.h>
 #include <mmsystem.h>
 #include <winsock2.h>
+#include <versionhelpers.h>
 
 // for timer info max values which include all bits
 #define ALL_64_BITS CONST64(-1)
@@ -1507,7 +1507,7 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
 
   void * result = LoadLibrary(name);
   if (result != NULL) {
-    Events::log(NULL, "Loaded shared library %s", name);
+    Events::log_dll_message(NULL, "Loaded shared library %s", name);
     // Recalculate pdb search path if a DLL was loaded successfully.
     SymbolEngine::recalc_search_path();
     log_info(os)("shared library load of %s was successful", name);
@@ -1518,7 +1518,7 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   // It may or may not be overwritten below (in the for loop and just above)
   lasterror(ebuf, (size_t) ebuflen);
   ebuf[ebuflen - 1] = '\0';
-  Events::log(NULL, "Loading shared library %s failed, error code %lu", name, errcode);
+  Events::log_dll_message(NULL, "Loading shared library %s failed, error code %lu", name, errcode);
   log_info(os)("shared library load of %s failed, error code %lu", name, errcode);
 
   if (errcode == ERROR_MOD_NOT_FOUND) {
@@ -1686,7 +1686,7 @@ void os::get_summary_os_info(char* buf, size_t buflen) {
 int os::vsnprintf(char* buf, size_t len, const char* fmt, va_list args) {
 #if _MSC_VER >= 1900
   // Starting with Visual Studio 2015, vsnprint is C99 compliant.
-  int result = ::vsnprintf(buf, len, fmt, args);
+  ALLOW_C_FUNCTION(::vsnprintf, int result = ::vsnprintf(buf, len, fmt, args);)
   // If an encoding error occurred (result < 0) then it's not clear
   // whether the buffer is NUL terminated, so ensure it is.
   if ((result < 0) && (len > 0)) {
@@ -1759,21 +1759,11 @@ void os::print_os_info(outputStream* st) {
 }
 
 void os::win32::print_windows_version(outputStream* st) {
-  OSVERSIONINFOEX osvi;
   VS_FIXEDFILEINFO *file_info;
   TCHAR kernel32_path[MAX_PATH];
   UINT len, ret;
 
-  // Use the GetVersionEx information to see if we're on a server or
-  // workstation edition of Windows. Starting with Windows 8.1 we can't
-  // trust the OS version information returned by this API.
-  ZeroMemory(&osvi, sizeof(OSVERSIONINFOEX));
-  osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
-  if (!GetVersionEx((OSVERSIONINFO *)&osvi)) {
-    st->print_cr("Call to GetVersionEx failed");
-    return;
-  }
-  bool is_workstation = (osvi.wProductType == VER_NT_WORKSTATION);
+  bool is_workstation = !IsWindowsServer();
 
   // Get the full path to \Windows\System32\kernel32.dll and use that for
   // determining what version of Windows we're running on.
@@ -2719,6 +2709,26 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
       if (result==EXCEPTION_CONTINUE_EXECUTION) return result;
     }
 #endif
+
+    if (in_java && (exception_code == EXCEPTION_ILLEGAL_INSTRUCTION || exception_code == EXCEPTION_ILLEGAL_INSTRUCTION_2)) {
+      // Check for UD trap caused by NOP patching.
+      // If it is, patch return address to be deopt handler.
+      if (NativeDeoptInstruction::is_deopt_at(pc)) {
+        CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
+        if (cb != NULL && cb->is_compiled()) {
+          CompiledMethod* cm = cb->as_compiled_method();
+          frame fr = os::fetch_frame_from_context((void*)exceptionInfo->ContextRecord);
+          address deopt = cm->is_method_handle_return(pc) ?
+            cm->deopt_mh_handler_begin() :
+            cm->deopt_handler_begin();
+          assert(cm->insts_contains_inclusive(pc), "");
+          cm->set_original_pc(&fr, pc);
+          // Set pc to handler
+          exceptionInfo->ContextRecord->PC_NAME = (DWORD64)deopt;
+          return EXCEPTION_CONTINUE_EXECUTION;
+        }
+      }
+    }
   }
 
 #if !defined(USE_VECTORED_EXCEPTION_HANDLING)
@@ -3896,21 +3906,7 @@ void os::win32::initialize_system_info() {
     FLAG_SET_DEFAULT(MaxRAM, MIN2(MaxRAM, (uint64_t) ms.ullTotalVirtual));
   }
 
-  OSVERSIONINFOEX oi;
-  oi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
-  GetVersionEx((OSVERSIONINFO*)&oi);
-  switch (oi.dwPlatformId) {
-  case VER_PLATFORM_WIN32_NT:
-    {
-      int os_vers = oi.dwMajorVersion * 1000 + oi.dwMinorVersion;
-      if (oi.wProductType == VER_NT_DOMAIN_CONTROLLER ||
-          oi.wProductType == VER_NT_SERVER) {
-        _is_windows_server = true;
-      }
-    }
-    break;
-  default: fatal("Unknown platform");
-  }
+  _is_windows_server = IsWindowsServer();
 
   initialize_performance_counter();
 }
@@ -4143,9 +4139,9 @@ int os::win32::exit_process_or_thread(Ept what, int exit_code) {
   if (what == EPT_THREAD) {
     _endthreadex((unsigned)exit_code);
   } else if (what == EPT_PROCESS) {
-    ::exit(exit_code);
+    ALLOW_C_FUNCTION(::exit, ::exit(exit_code);)
   } else { // EPT_PROCESS_DIE
-    ::_exit(exit_code);
+    ALLOW_C_FUNCTION(::_exit, ::_exit(exit_code);)
   }
 
   // Should not reach here

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -529,7 +529,7 @@ UNSAFE_ENTRY(jobject, Unsafe_StaticFieldBase0(JNIEnv *env, jobject unsafe, jobje
   assert(field != NULL, "field must not be NULL");
 
   // Note:  In this VM implementation, a field address is always a short
-  // offset from the base of a a klass metaobject.  Thus, the full dynamic
+  // offset from the base of a klass metaobject.  Thus, the full dynamic
   // range of the return type is never used.  However, some implementations
   // might put the static field inside an array shared by many classes,
   // or even at a fixed address, in which case the address could be quite

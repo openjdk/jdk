@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package java.net;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.nio.channels.ServerSocketChannel;
 import java.util.Objects;
 import java.util.Set;
@@ -481,7 +482,6 @@ public class ServerSocket implements java.io.Closeable {
      * @see SecurityManager#checkConnect
      * @since 1.4
      */
-
     public SocketAddress getLocalSocketAddress() {
         if (!isBound())
             return null;
@@ -492,7 +492,23 @@ public class ServerSocket implements java.io.Closeable {
      * Listens for a connection to be made to this socket and accepts
      * it. The method blocks until a connection is made.
      *
-     * <p>A new Socket {@code s} is created and, if there
+     * <p> This method is {@linkplain Thread#interrupt() interruptible} in the
+     * following circumstances:
+     * <ol>
+     *   <li> The socket is {@linkplain ServerSocketChannel#socket() associated}
+     *        with a {@link ServerSocketChannel ServerSocketChannel}. In that
+     *        case, interrupting a thread accepting a connection will close the
+     *        underlying channel and cause this method to throw {@link
+     *        java.nio.channels.ClosedByInterruptException} with the interrupt
+     *        status set.
+     *   <li> The socket uses the system-default socket implementation and a
+     *        {@linkplain Thread#isVirtual() virtual thread} is accepting a
+     *        connection. In that case, interrupting the virtual thread will
+     *        cause it to wakeup and close the socket. This method will then throw
+     *        {@code SocketException} with the interrupt status set.
+     * </ol>
+     *
+     * <p> A new Socket {@code s} is created and, if there
      * is a security manager,
      * the security manager's {@code checkAccept} method is called
      * with {@code s.getInetAddress().getHostAddress()} and
@@ -670,7 +686,18 @@ public class ServerSocket implements java.io.Closeable {
         assert !(si instanceof DelegatingSocketImpl);
 
         // accept a connection
-        impl.accept(si);
+        try {
+            impl.accept(si);
+        } catch (SocketTimeoutException e) {
+            throw e;
+        } catch (InterruptedIOException e) {
+            Thread thread = Thread.currentThread();
+            if (thread.isVirtual() && thread.isInterrupted()) {
+                close();
+                throw new SocketException("Closed by interrupt");
+            }
+            throw e;
+        }
 
         // check permission, close SocketImpl/connection if denied
         @SuppressWarnings("removal")

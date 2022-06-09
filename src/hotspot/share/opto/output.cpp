@@ -816,7 +816,7 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
 
     ObjectValue* sv = sv_for_node_id(objs, spobj->_idx);
     if (sv == NULL) {
-      ciKlass* cik = t->is_oopptr()->klass();
+      ciKlass* cik = t->is_oopptr()->exact_klass();
       assert(cik->is_instance_klass() ||
              cik->is_array_klass(), "Not supported allocation.");
       sv = new ObjectValue(spobj->_idx,
@@ -860,7 +860,7 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
       array->append(new ConstantIntValue((jint)0));
       array->append(new_loc_value( C->regalloc(), regnum, Location::lng ));
     } else if ( t->base() == Type::RawPtr ) {
-      // jsr/ret return address which must be restored into a the full
+      // jsr/ret return address which must be restored into the full
       // width 64-bit stack slot.
       array->append(new_loc_value( C->regalloc(), regnum, Location::lng ));
     }
@@ -996,7 +996,6 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
 
   int safepoint_pc_offset = current_offset;
   bool is_method_handle_invoke = false;
-  bool is_opt_native = false;
   bool return_oop = false;
   bool has_ea_local_in_scope = sfn->_has_ea_local_in_scope;
   bool arg_escape = false;
@@ -1015,8 +1014,6 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
         is_method_handle_invoke = true;
       }
       arg_escape = mcall->as_MachCallJava()->_arg_escape;
-    } else if (mcall->is_MachCallNative()) {
-      is_opt_native = true;
     }
 
     // Check if a call returns an object.
@@ -1089,7 +1086,7 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
         scval = PhaseOutput::sv_for_node_id(objs, spobj->_idx);
         if (scval == NULL) {
           const Type *t = spobj->bottom_type();
-          ciKlass* cik = t->is_oopptr()->klass();
+          ciKlass* cik = t->is_oopptr()->exact_klass();
           assert(cik->is_instance_klass() ||
                  cik->is_array_klass(), "Not supported allocation.");
           ObjectValue* sv = new ObjectValue(spobj->_idx,
@@ -1145,7 +1142,6 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
       jvms->should_reexecute(),
       rethrow_exception,
       is_method_handle_invoke,
-      is_opt_native,
       return_oop,
       has_ea_local_in_scope,
       arg_escape,
@@ -3362,8 +3358,9 @@ void PhaseOutput::install_code(ciMethod*         target,
                                      compiler,
                                      has_unsafe_access,
                                      SharedRuntime::is_wide_vector(C->max_vector_size()),
-                                     C->rtm_state(),
-                                     C->native_invokers());
+                                     C->has_monitors(),
+                                     0,
+                                     C->rtm_state());
 
     if (C->log() != NULL) { // Print code cache state into compiler log
       C->log()->code_cache_state();
