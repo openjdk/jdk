@@ -254,6 +254,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   ClassLoaderMetaspace* metaspace_non_null();
 
   inline oop class_loader() const;
+  inline oop class_loader_no_keepalive() const;
 
   // Returns true if this class loader data is for a loader going away.
   // Note that this is only safe after the GC has computed if the CLD is
