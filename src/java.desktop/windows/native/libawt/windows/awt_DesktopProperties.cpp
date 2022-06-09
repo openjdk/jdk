@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@
 
 #include "math.h"
 
-#if defined(_MSC_VER) && _MSC_VER >= 1800
+#if defined(_MSC_VER)
 #  define ROUND_TO_INT(num)    ((int) round(num))
 #else
 #  define ROUND_TO_INT(num)    ((int) floor((num) + 0.5))
@@ -286,7 +286,7 @@ void AwtDesktopProperties::GetNonClientParameters() {
     // when running on XP. However this can't be referenced at compile time
     // with the older SDK, so there use 'lfMessageFont' plus its size.
     if (!IS_WINVISTA) {
-#if defined(_MSC_VER) && (_MSC_VER >= 1600)
+#if defined(_MSC_VER)
         ncmetrics.cbSize = offsetof(NONCLIENTMETRICS, iPaddedBorderWidth);
 #else
         ncmetrics.cbSize = offsetof(NONCLIENTMETRICS,lfMessageFont) + sizeof(LOGFONT);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 
 #include <uxtheme.h>
 
-#if defined(_MSC_VER) && _MSC_VER >= 1800
+#if defined(_MSC_VER)
 #  define ROUND_TO_INT(num)    ((int) round(num))
 #else
 #  define ROUND_TO_INT(num)    ((int) floor((num) + 0.5))

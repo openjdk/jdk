@@ -489,7 +489,7 @@ int get_legal_text(FileBuff &fbuf, char **legal_text)
 }
 
 // VS2005 has its own definition, identical to this one.
-#if !defined(_WIN32) || defined(_WIN64) || _MSC_VER < 1400
+#if !defined(_WIN32) || defined(_WIN64)
 void *operator new( size_t size, int, const char *, int ) throw() {
   return ::operator new( size );
 }
