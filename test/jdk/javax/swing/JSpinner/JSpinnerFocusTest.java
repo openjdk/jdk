@@ -70,10 +70,10 @@ public class JSpinnerFocusTest {
             robot.setAutoDelay(400);
 
             SwingUtilities.invokeAndWait(() -> createGUI());
-            
+
             robot.waitForIdle();
             runTest();
-            
+
             robot.waitForIdle();
             SwingUtilities.invokeAndWait(() -> {
                 jTextFieldFocusStatus = ((DefaultEditor) jSpinner.getEditor())
