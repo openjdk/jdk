@@ -573,7 +573,21 @@ void ShenandoahFreeSet::rebuild() {
   }
 
   // Evac reserve: reserve trailing space for evacuations
-  size_t to_reserve = (_heap->max_capacity() / 100) * ShenandoahEvacReserve;
+  if (!_heap->mode()->is_generational()) {
+    size_t to_reserve = (_heap->max_capacity() / 100) * ShenandoahEvacReserve;
+    reserve_regions(to_reserve);
+  } else {
+    size_t young_reserve = (_heap->young_generation()->max_capacity() / 100) * ShenandoahEvacReserve;
+    size_t old_reserve = (_heap->old_generation()->max_capacity() / 100) * ShenandoahOldEvacReserve;
+    size_t to_reserve = young_reserve + old_reserve;
+    reserve_regions(to_reserve);
+  }
+
+  recompute_bounds();
+  assert_bounds();
+}
+
+void ShenandoahFreeSet::reserve_regions(size_t to_reserve) {
   size_t reserved = 0;
 
   for (size_t idx = _heap->num_regions() - 1; idx > 0; idx--) {
@@ -589,9 +603,6 @@ void ShenandoahFreeSet::rebuild() {
       log_debug(gc)("  Shifting region " SIZE_FORMAT " from mutator_free to collector_free", idx);
     }
   }
-
-  recompute_bounds();
-  assert_bounds();
 }
 
 void ShenandoahFreeSet::log_status() {

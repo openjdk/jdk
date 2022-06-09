@@ -105,6 +105,8 @@ public:
   double external_fragmentation();
 
   void print_on(outputStream* out) const;
+
+  void reserve_regions(size_t to_reserve);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHFREESET_HPP
