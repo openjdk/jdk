@@ -276,7 +276,7 @@ public interface Path
      *          extension of this path, or is {@link Optional#empty empty}
      *          if the extension is not found
      *
-     * @since 19
+     * @since 20
      */
     default Optional<String> getExtension() {
         Path fileName = getFileName();
@@ -317,7 +317,7 @@ public interface Path
      *          or is {@link Optional#empty empty} if this path either does not
      *          have an extension or its extension is not among those given
      *
-     * @since 19
+     * @since 20
      */
     default Optional<String> hasExtension(String ext, String... extensions) {
         Objects.requireNonNull(ext);
@@ -362,7 +362,7 @@ public interface Path
      * @throws IllegalArgumentException if the provided extension contains a
      *         leading or trailing dot ('.')
      *
-     * @since 19
+     * @since 20
      */
     default Path replaceExtension(String extension) {
         Objects.requireNonNull(extension, "extension");
