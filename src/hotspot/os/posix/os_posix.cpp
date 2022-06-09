@@ -54,6 +54,9 @@
 #include <dlfcn.h>
 #include <grp.h>
 #include <locale.h>
+#ifdef LINUX
+#include <link.h>
+#endif
 #include <netdb.h>
 #include <pwd.h>
 #include <pthread.h>
@@ -706,7 +709,26 @@ void* os::dll_lookup(void* handle, const char* name) {
 }
 
 void os::dll_unload(void *lib) {
-  ::dlclose(lib);
+#if defined(LINUX)
+  struct link_map *lmap;
+  int res_dli = ::dlinfo(lib, RTLD_DI_LINKMAP, &lmap);
+  const char* l_path = "<none>";
+  if (res_dli == 0) {
+    l_path = lmap->l_name;
+  }
+#else
+  const char* l_path = "<not available>";
+#endif
+
+  int res = ::dlclose(lib);
+
+  if (res == 0) {
+    Events::log_dll_message(NULL, "Unloaded shared library %s [" INTPTR_FORMAT "]", l_path, p2i(lib));
+    log_info(os)("Unloaded shared library \"%s\" [" INTPTR_FORMAT "]", l_path, p2i(lib));
+  } else {
+    Events::log_dll_message(NULL, "Attempt to unload shared library %s [" INTPTR_FORMAT "] failed", l_path, p2i(lib));
+    log_info(os)("Attempt to unload shared library \"%s\" [" INTPTR_FORMAT "] failed", l_path, p2i(lib));
+  }
 }
 
 jlong os::lseek(int fd, jlong offset, int whence) {
