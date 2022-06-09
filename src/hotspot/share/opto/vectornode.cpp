@@ -150,21 +150,9 @@ int VectorNode::opcode(int sopc, BasicType bt) {
   case Op_RoundDoubleMode:
     return (bt == T_DOUBLE ? Op_RoundDoubleModeV : 0);
   case Op_RotateLeft:
-    switch (bt) {
-    case T_INT:
-    case T_LONG: return Op_RotateLeftV;
-    default:     return 0; // RotateLeftV for byte, short values produces incorrect Java result.
-                           // Because java code should convert a byte, short value into int value,
-                           // and then do RotateI.
-    }
+    return (is_integral_type(bt) ? Op_RotateLeftV : 0);
   case Op_RotateRight:
-    switch (bt) {
-    case T_INT:
-    case T_LONG: return Op_RotateRightV;
-    default:     return 0; // RotateRightV for byte, short values produces incorrect Java result.
-                           // Because java code should convert a byte, short value into int value,
-                           // and then do RotateI.
-    }
+    return (is_integral_type(bt) ? Op_RotateRightV : 0);
   case Op_SqrtF:
     return (bt == T_FLOAT ? Op_SqrtVF : 0);
   case Op_SqrtD:
@@ -374,7 +362,6 @@ bool VectorNode::is_vector_rotate_supported(int vopc, uint vlen, BasicType bt) {
              Matcher::match_rule_supported_vector(Op_LShiftVL,  vlen, bt) &&
              Matcher::match_rule_supported_vector(Op_URShiftVL, vlen, bt);
     default:
-      assert(false, "not supported: %s", type2name(bt));
       return false;
   }
 }
