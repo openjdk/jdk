@@ -2803,7 +2803,7 @@ bool G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_
 
 G1HeapPrinterMark::G1HeapPrinterMark(G1CollectedHeap* g1h) : _g1h(g1h), _heap_transition(g1h) {
   // This summary needs to be printed before incrementing total collections.
-  _g1h->rem_set()->print_periodic_summary_info("Before GC RS summary", _g1h->total_collections());
+  _g1h->rem_set()->print_periodic_summary_info("Before GC RS summary", _g1h->total_collections(), true);
   _g1h->print_heap_before_gc();
   _g1h->print_heap_regions();
 }
@@ -2812,7 +2812,7 @@ G1HeapPrinterMark::~G1HeapPrinterMark() {
   _g1h->policy()->print_age_table();
   _g1h->rem_set()->print_coarsen_stats();
   // We are at the end of the GC. Total collections has already been increased.
-  _g1h->rem_set()->print_periodic_summary_info("After GC RS summary", _g1h->total_collections() - 1);
+  _g1h->rem_set()->print_periodic_summary_info("After GC RS summary", _g1h->total_collections() - 1, false);
 
   _heap_transition.print();
   _g1h->print_heap_regions();
