@@ -69,6 +69,7 @@ import java.util.StringTokenizer;
 import java.util.concurrent.CompletableFuture;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.testng.Assert.assertEquals;
 
 public class ExpectContinueTest implements HttpServerAdapters {
 
@@ -141,8 +142,11 @@ public class ExpectContinueTest implements HttpServerAdapters {
 
         @Override
         public void handle(HttpTestExchange exchange) throws IOException {
-            // Send 100 Headers, tell client that we're ready for body
-            exchange.sendResponseHeaders(100, 0);
+            // Http1 server has already sent 100 response at this point but not Http2 server
+            if (exchange.getExchangeVersion().equals(HttpClient.Version.HTTP_2)) {
+                // Send 100 Headers, tell client that we're ready for body
+                exchange.sendResponseHeaders(100, 0);
+            }
 
             // Read body from client and acknowledge with 200
             try (InputStream is = exchange.getRequestBody();
@@ -274,16 +278,19 @@ public class ExpectContinueTest implements HttpServerAdapters {
         HttpResponse<String> resp = cf.join();
         System.err.println("Response Headers: " + resp.headers());
         System.err.println("Response Status Code: " + resp.statusCode());
+        assertEquals(resp.statusCode(), 200);
 
         cf = client.sendAsync(postRequest, HttpResponse.BodyHandlers.ofString());
         resp = cf.join();
         System.err.println("Response Headers: " + resp.headers());
         System.err.println("Response Status Code: " + resp.statusCode());
+        assertEquals(resp.statusCode(), 200);
 
         cf = client.sendAsync(hangRequest, HttpResponse.BodyHandlers.ofString());
         resp = cf.join();
         System.err.println("Response Headers: " + resp.headers());
         System.err.println("Response Status Code: " + resp.statusCode());
+        assertEquals(resp.statusCode(), 417);
     }
 
 }

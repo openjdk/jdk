@@ -421,7 +421,7 @@ class Http1Response<T> {
         }
     }
 
-    public void closeWhenFinished() {
+    protected void closeWhenFinished() {
         closeWhenFinished = true;
     }
 
