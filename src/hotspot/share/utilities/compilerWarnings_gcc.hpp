@@ -63,7 +63,7 @@
 
 #endif // clang/gcc version check
 
-#if (__GNUC__ >= 9) || (__clang_major__ >= 14)
+#if (__GNUC__ >= 9) || (defined(__clang_major__) && (__clang_major__ >= 14))
 
 // Use "warning" attribute to detect uses of "forbidden" functions.
 //
