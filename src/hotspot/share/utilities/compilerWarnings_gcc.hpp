@@ -50,6 +50,12 @@
 #define PRAGMA_STRINGOP_TRUNCATION_IGNORED PRAGMA_DISABLE_GCC_WARNING("-Wstringop-truncation")
 #endif
 
+// Disable -Wstringop-overflow which is introduced in GCC 7.
+// https://gcc.gnu.org/gcc-7/changes.html
+#if !defined(__clang_major__) && (__GNUC__ >= 7)
+#define PRAGMA_STRINGOP_OVERFLOW_IGNORED PRAGMA_DISABLE_GCC_WARNING("-Wstringop-overflow")
+#endif
+
 #define PRAGMA_NONNULL_IGNORED \
   PRAGMA_DISABLE_GCC_WARNING("-Wnonnull")
 
