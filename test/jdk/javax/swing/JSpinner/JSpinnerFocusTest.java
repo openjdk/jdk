@@ -46,6 +46,7 @@ public class JSpinnerFocusTest {
     JFrame jFrame;
     JButton jButton;
     JSpinner jSpinner;
+    Robot robot;
 
     volatile Rectangle bounds;
     volatile boolean jTextFieldFocusStatus = false;
@@ -65,10 +66,15 @@ public class JSpinnerFocusTest {
 
     public void doTest() throws Exception {
         try {
+            robot = new Robot();
+            robot.setAutoDelay(400);
+
             SwingUtilities.invokeAndWait(() -> createGUI());
-            Thread.sleep(1000);
+            
+            robot.waitForIdle();
             runTest();
-            Thread.sleep(1000);
+            
+            robot.waitForIdle();
             SwingUtilities.invokeAndWait(() -> {
                 jTextFieldFocusStatus = ((DefaultEditor) jSpinner.getEditor())
                     .getTextField().isFocusOwner();
@@ -88,8 +94,6 @@ public class JSpinnerFocusTest {
     }
 
     private void runTest() throws Exception {
-        Robot robot = new Robot();
-        robot.setAutoDelay(300);
         SwingUtilities.invokeAndWait(() -> {
             bounds = new Rectangle(jSpinner.getLocationOnScreen(),
                 jSpinner.getSize());
@@ -98,11 +102,14 @@ public class JSpinnerFocusTest {
         // Move cursor to place it in the spinner editor
         robot.mouseMove(bounds.x + bounds.width / 2,
             bounds.y + bounds.height / 2);
+
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+
         // Move cursor to click spinner up arrow button
         robot.mouseMove(bounds.x + bounds.width - 2,
             bounds.y + bounds.height / 4);
+
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
     }
@@ -112,4 +119,3 @@ public class JSpinnerFocusTest {
         System.out.println("Test Passed");
     }
 }
-
