@@ -146,7 +146,7 @@ public class IREncodingPrinter {
         }
 
         if (irAnno.applyIfCPUFeatureAnd().length != 0) {
-            boolean check = hasAllRequiredCPUFeature(irAnno.applyIfCPUFeatureAnd(), "applyIfCPUFeatureAnd");
+            boolean check = hasAllRequiredCPUFeature(irAnno.applyIfCPUFeatureAnd());
             if (!check) {
                 TestFrameworkSocket.write("Disabling IR matching for " + m + ": All feature constraints not met.",
                                      "[IREncodingPrinter]", true);
@@ -155,7 +155,7 @@ public class IREncodingPrinter {
         }
 
         if (irAnno.applyIfCPUFeatureOr().length != 0) {
-            boolean check = hasAnyRequiredCPUFeature(irAnno.applyIfCPUFeatureOr(), "applyIfCPUFeatureOr");
+            boolean check = hasAnyRequiredCPUFeature(irAnno.applyIfCPUFeatureOr());
             if (!check) {
                 TestFrameworkSocket.write("Disabling IR matching for " + m + ": None of the feature constraint met.",
                                      "[IREncodingPrinter]", true);
@@ -239,7 +239,7 @@ public class IREncodingPrinter {
         return returnValue;
     }
 
-    private boolean hasAllRequiredCPUFeature(String[] andRules, String ruleType) {
+    private boolean hasAllRequiredCPUFeature(String[] andRules) {
         boolean returnValue = true;
         for (int i = 0; i < andRules.length; i++) {
             String feature = andRules[i].trim();
@@ -250,7 +250,7 @@ public class IREncodingPrinter {
         return returnValue;
     }
 
-    private boolean hasAnyRequiredCPUFeature(String[] orRules, String ruleType) {
+    private boolean hasAnyRequiredCPUFeature(String[] orRules) {
         boolean returnValue = false;
         for (int i = 0; i < orRules.length; i++) {
             String feature = orRules[i].trim();
@@ -299,7 +299,7 @@ public class IREncodingPrinter {
         // Perform the feature check if UseKNLSetting flag is set to off or if
         // feature is supported by KNL target.
         if (isKNLFlagEnabled == null ||
-             (isKNLFlagEnabled.booleanValue() && (!knlFeatureSet.contains(feature.toUpperCase()) || falseValue))) {
+             (isKNLFlagEnabled && (!knlFeatureSet.contains(feature.toUpperCase()) || falseValue))) {
             return (trueValue && cpuFeatures.contains(feature)) || (falseValue && !cpuFeatures.contains(feature));
         }
         return false;

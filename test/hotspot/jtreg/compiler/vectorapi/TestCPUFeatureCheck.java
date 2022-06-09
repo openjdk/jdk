@@ -21,7 +21,7 @@
  * questions.
  */
 
-package ir_framework.examples;
+package compiler.vectorapi;
 
 import compiler.lib.ir_framework.*;
 import compiler.lib.ir_framework.driver.irmatching.IRViolationException;
@@ -32,7 +32,7 @@ import compiler.lib.ir_framework.driver.irmatching.IRViolationException;
  * @requires vm.cpu.features ~= ".*avx512f.*"
  * @requires os.arch=="amd64" | os.arch=="x86_64"
  * @library /test/lib /
- * @run driver ir_framework.examples.TestCPUFeatureCheck
+ * @run driver compiler.vectorapi.TestCPUFeatureCheck
  */
 
 public class TestCPUFeatureCheck {
