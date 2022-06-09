@@ -89,6 +89,6 @@
   __VA_ARGS__                                           \
   PRAGMA_DIAG_POP
 
-#endif // gcc9+ or clang14+
+#endif // gcc10+ or clang14+
 
 #endif // SHARE_UTILITIES_COMPILERWARNINGS_GCC_HPP
