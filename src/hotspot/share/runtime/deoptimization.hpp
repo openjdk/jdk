@@ -164,12 +164,12 @@ public:
   static oop get_cached_box(AutoBoxObjectValue* bv, frame* fr, RegisterMap* reg_map, TRAPS);
 #endif
 
-  private:
-    static void print_ul(CompiledMethod* nm, intptr_t pc, frame& fr, int trap_bci,
-                         const char* reason_name, const char* reason_action);
+private:
+  static void print_ul(CompiledMethod* nm, intptr_t pc, frame& fr, int trap_bci,
+                       const char* reason_name, const char* reason_action);
 
-    // Does the actual work for deoptimizing a single frame
-    static void deoptimize_single_frame(JavaThread* thread, frame fr, DeoptReason reason);
+  // Does the actual work for deoptimizing a single frame
+  static void deoptimize_single_frame(JavaThread* thread, frame fr, DeoptReason reason);
 
 #if COMPILER2_OR_JVMCI
   // Deoptimize objects, that is reallocate and relock them, just before they
