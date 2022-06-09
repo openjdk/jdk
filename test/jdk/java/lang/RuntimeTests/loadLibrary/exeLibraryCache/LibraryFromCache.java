@@ -48,6 +48,7 @@ public class LibraryFromCache {
             return;
         }
 
+        System.out.println("os.version = " + System.getProperty("os.version"));
         System.loadLibrary(libname);
     }
 
