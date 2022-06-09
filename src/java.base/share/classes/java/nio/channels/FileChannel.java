@@ -997,8 +997,7 @@ public abstract class FileChannel
      *           of mapped memory associated with the returned mapped memory
      *           segment is unspecified and should not be relied upon.
      *
-     * @implSpec The {@code map(MapMode, long, long, MemorySession)} method of
-     *           {@code FileChannel} always throws an
+     * @implSpec The default implementation of this method throws
      *           {@code UnsupportedOperationException}.
      *
      * @param   mode
