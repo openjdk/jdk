@@ -665,7 +665,7 @@ JVMCI::CodeInstallResult CodeInstaller::initialize_buffer(CodeBuffer& buffer, bo
 
   assert((CodeBuffer::SECT_INSTS == CodeBuffer::SECT_STUBS - 1) &&
          (CodeBuffer::SECT_CONSTS == CodeBuffer::SECT_INSTS - 1), "sections order: consts, insts, stubs");
-  // buffer content: [contants + code_align] + [code + stubs_align] + [stubs]
+  // buffer content: [constants + code_align] + [code + stubs_align] + [stubs]
   int total_size = align_up(_constants_size, CodeSection::alignment(CodeBuffer::SECT_INSTS)) +
                    align_up(_code_size, CodeSection::alignment(CodeBuffer::SECT_STUBS)) +
                    stubs_size;
