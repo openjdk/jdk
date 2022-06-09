@@ -145,7 +145,7 @@ public class RandomSupport {
      * @throws IllegalArgumentException if {@code bound} fails to be positive and finite
      */
     public static void checkBound(float bound) {
-        if (!(bound > 0.0 && bound < Float.POSITIVE_INFINITY)) {
+        if (!(0.0f < bound && bound < Float.POSITIVE_INFINITY)) {
             throw new IllegalArgumentException(BAD_FLOATING_BOUND);
         }
     }
@@ -158,7 +158,7 @@ public class RandomSupport {
      * @throws IllegalArgumentException if {@code bound} fails to be positive and finite
      */
     public static void checkBound(double bound) {
-        if (!(bound > 0.0 && bound < Double.POSITIVE_INFINITY)) {
+        if (!(0.0 < bound && bound < Double.POSITIVE_INFINITY)) {
             throw new IllegalArgumentException(BAD_FLOATING_BOUND);
         }
     }
@@ -195,11 +195,13 @@ public class RandomSupport {
      * @param origin the least value (inclusive) in the range
      * @param bound  the upper bound (exclusive) of the range
      *
-     * @throws IllegalArgumentException if {@code origin} is not finite, {@code bound} is not finite,
-     *                                  or {@code bound - origin} is not finite
+     * @throws IllegalArgumentException if {@code origin} is not finite,
+     *          or {@code bound} is not finite, or {@code origin}
+     *          is greater than or equal to {@code bound}
      */
     public static void checkRange(float origin, float bound) {
-        if (!(origin < bound && (bound - origin) < Float.POSITIVE_INFINITY)) {
+        if (!(Float.NEGATIVE_INFINITY < origin && origin < bound &&
+                bound < Float.POSITIVE_INFINITY)) {
             throw new IllegalArgumentException(BAD_RANGE);
         }
     }
@@ -210,11 +212,13 @@ public class RandomSupport {
      * @param origin the least value (inclusive) in the range
      * @param bound  the upper bound (exclusive) of the range
      *
-     * @throws IllegalArgumentException if {@code origin} is not finite, {@code bound} is not finite,
-     *                                  or {@code bound - origin} is not finite
+     * @throws IllegalArgumentException if {@code origin} is not finite,
+     *          or {@code bound} is not finite, or {@code origin}
+     *          is greater than or equal to {@code bound}
      */
     public static void checkRange(double origin, double bound) {
-        if (!(origin < bound && (bound - origin) < Double.POSITIVE_INFINITY)) {
+        if (!(Double.NEGATIVE_INFINITY < origin && origin < bound &&
+                bound < Double.POSITIVE_INFINITY)) {
             throw new IllegalArgumentException(BAD_RANGE);
         }
     }
@@ -343,8 +347,8 @@ public class RandomSupport {
      * This is the form of {@link RandomGenerator#nextLong() nextLong}() used by
      * a {@link LongStream} {@link Spliterator} and by the public method
      * {@link RandomGenerator#nextLong(long, long) nextLong}(origin, bound). If
-     * {@code origin} is greater than {@code bound}, then this method simply
-     * calls the unbounded version of
+     * {@code origin} is greater than or equal to {@code bound},
+     * then this method simply calls the unbounded version of
      * {@link RandomGenerator#nextLong() nextLong}(), choosing pseudorandomly
      * from among all 2<sup>64</sup> possible {@code long} values}, and
      * otherwise uses one or more calls to
@@ -508,8 +512,8 @@ public class RandomSupport {
      * This is the form of {@link RandomGenerator#nextInt() nextInt}() used by
      * an {@link IntStream} {@link Spliterator} and by the public method
      * {@link RandomGenerator#nextInt(int, int) nextInt}(origin, bound). If
-     * {@code origin} is greater than {@code bound}, then this method simply
-     * calls the unbounded version of
+     * {@code origin} is greater than or equal to {@code bound},
+     * then this method simply calls the unbounded version of
      * {@link RandomGenerator#nextInt() nextInt}(), choosing pseudorandomly
      * from among all 2<sup>64</sup> possible {@code int} values}, and otherwise
      * uses one or more calls to {@link RandomGenerator#nextInt() nextInt}() to
@@ -604,8 +608,8 @@ public class RandomSupport {
      * used by a {@link DoubleStream} {@link Spliterator} and by the public
      * method
      * {@link RandomGenerator#nextDouble(double, double) nextDouble}(origin, bound).
-     * If {@code origin} is greater than {@code bound}, then this method simply
-     * calls the unbounded version of
+     * {@code origin} is greater than or equal to {@code bound},
+     * then this method simply calls the unbounded version of
      * {@link RandomGenerator#nextDouble() nextDouble}(), and otherwise scales
      * and translates the result of a call to
      * {@link RandomGenerator#nextDouble() nextDouble}() so that it lies between
@@ -643,9 +647,15 @@ public class RandomSupport {
     public static double boundedNextDouble(RandomGenerator rng, double origin, double bound) {
         double r = rng.nextDouble();
         if (origin < bound) {
-            r = r * (bound - origin) + origin;
+            if (bound - origin < Double.POSITIVE_INFINITY) {
+                r = r * (bound - origin) + origin;
+            } else {
+                /* avoids overflow at the cost of 3 more multiplications */
+                double halfOrigin = 0.5 * origin;
+                r = (r * (0.5 * bound - halfOrigin) + halfOrigin) * 2.0;
+            }
             if (r >= bound)  // may need to correct a rounding problem
-                r = Math.nextAfter(bound, origin);
+                r = Math.nextDown(bound);
         }
         return r;
     }
@@ -686,8 +696,8 @@ public class RandomSupport {
      * by a {@link Stream<Float>} {@link Spliterator} (if there were any) and by
      * the public method
      * {@link RandomGenerator#nextFloat(float, float) nextFloat}(origin, bound).
-     * If {@code origin} is greater than {@code bound}, then this method simply
-     * calls the unbounded version of
+     * {@code origin} is greater than or equal to {@code bound},
+     * then this method simply calls the unbounded version of
      * {@link RandomGenerator#nextFloat() nextFloat}(), and otherwise scales and
      * translates the result of a call to
      * {@link RandomGenerator#nextFloat() nextFloat}() so that it lies between
@@ -715,9 +725,15 @@ public class RandomSupport {
     public static float boundedNextFloat(RandomGenerator rng, float origin, float bound) {
         float r = rng.nextFloat();
         if (origin < bound) {
-            r = r * (bound - origin) + origin;
+            if (bound - origin < Float.POSITIVE_INFINITY) {
+                r = r * (bound - origin) + origin;
+            } else {
+                /* avoids overflow at the cost of 3 more multiplications */
+                float halfOrigin = 0.5f * origin;
+                r = (r * (0.5f * bound - halfOrigin) + halfOrigin) * 2.0f;
+            }
             if (r >= bound) // may need to correct a rounding problem
-                r = Float.intBitsToFloat(Float.floatToIntBits(bound) - 1);
+                r = Math.nextDown(r);
         }
         return r;
     }
@@ -749,7 +765,7 @@ public class RandomSupport {
         float r = rng.nextFloat();
         r = r * bound;
         if (r >= bound) // may need to correct a rounding problem
-            r = Float.intBitsToFloat(Float.floatToIntBits(bound) - 1);
+            r = Math.nextDown(r);
         return r;
     }
 

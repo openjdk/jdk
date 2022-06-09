@@ -88,6 +88,7 @@ class VectorNode : public TypeNode {
 
   static int  opcode(int opc, BasicType bt);
   static int replicate_opcode(BasicType bt);
+  static bool vector_size_supported(BasicType bt, uint vlen);
   static bool implemented(int opc, uint vlen, BasicType bt);
   static bool is_shift(Node* n);
   static bool is_vshift_cnt(Node* n);

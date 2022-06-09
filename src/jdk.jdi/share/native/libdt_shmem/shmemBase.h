@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,11 +49,15 @@ jint shmemBase_receivePacket(SharedMemoryConnection *, jdwpPacket *packet);
 jint shmemBase_name(SharedMemoryTransport *, char **name);
 jint shmemBase_getlasterror(char *msg, jint size);
 
+#ifndef SHMEM_BUILD_TIME
+#define SHMEM_BUILD_TIME __DATE__
+#endif
+
 #ifdef DEBUG
 #define SHMEM_ASSERT(expression)  \
 do {                            \
     if (!(expression)) {                \
-        exitTransportWithError("assertion failed", __FILE__, __DATE__, __LINE__); \
+        exitTransportWithError("assertion failed", __FILE__, SHMEM_BUILD_TIME, __LINE__); \
     } \
 } while (0)
 #else
@@ -63,7 +67,7 @@ do {                            \
 #define SHMEM_GUARANTEE(expression) \
 do {                            \
     if (!(expression)) {                \
-        exitTransportWithError("assertion failed", __FILE__, __DATE__, __LINE__); \
+        exitTransportWithError("assertion failed", __FILE__, SHMEM_BUILD_TIME, __LINE__); \
     } \
 } while (0)
 
