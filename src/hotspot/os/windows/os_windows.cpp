@@ -1245,7 +1245,7 @@ void  os::dll_unload(void *lib) {
     log_info(os)("Unloaded dll \"%s\" [" INTPTR_FORMAT "]", name, p2i(lib));
   } else {
     const DWORD errcode = ::GetLastError();
-    Events::log_dll_message(NULL, "Attempt to unload dll %s [" INTPTR_FORMAT "] failed (error code %d)", name, p2i(lib), errcode);
+    Events::log_dll_message(NULL, "Attempt to unload dll \"%s\" [" INTPTR_FORMAT "] failed (error code %d)", name, p2i(lib), errcode);
     log_info(os)("Attempt to unload dll \"%s\" [" INTPTR_FORMAT "] failed (error code %d)", name, p2i(lib), errcode);
   }
 }

@@ -1786,6 +1786,16 @@ void * os::Linux::dll_load_in_vmthread(const char *filename, char *ebuf,
   return result;
 }
 
+const char* os::Linux::dll_path(void* lib) {
+  struct link_map *lmap;
+  int res_dli = ::dlinfo(lib, RTLD_DI_LINKMAP, &lmap);
+  const char* l_path = "<none>";
+  if (res_dli == 0) {
+    l_path = lmap->l_name;
+  }
+  return l_path;
+}
+
 static bool _print_ascii_file(const char* filename, outputStream* st, const char* hdr = NULL) {
   int fd = ::open(filename, O_RDONLY);
   if (fd == -1) {
