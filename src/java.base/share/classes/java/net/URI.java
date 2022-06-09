@@ -2133,7 +2133,7 @@ public final class URI
         } else {
             StringBuilder sb = new StringBuilder(base.length() + cn);
             // 5.2 (6a)
-            if (i >= 0) {
+            if (i >= 0 || !absolute) {
                 sb.append(base, 0, i + 1);
             } else {
                 sb.append("/");

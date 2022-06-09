@@ -1685,6 +1685,11 @@ public class Test {
             URI resolvedURI = baseURI.resolve(relativeURI);
 
             eq(new URI("http://example.com/test"), resolvedURI);
+
+            baseURI = new URI("relativeBase");
+            resolvedURI = baseURI.resolve(relativeURI);
+
+            eq(new URI("test"), resolvedURI);
         } catch (URISyntaxException e) {
             throw new AssertionError("shouldn't ever happen", e);
         }
