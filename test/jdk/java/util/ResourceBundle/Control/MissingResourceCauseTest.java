@@ -34,7 +34,9 @@ public class MissingResourceCauseTest {
         callGetBundle("PrivateConstructorRB", IllegalAccessException.class);
         callGetBundle("AbstractRB", InstantiationException.class);
         callGetBundle("BadStaticInitRB", ExceptionInInitializerError.class);
-        callGetBundle("UnreadableRB", IOException.class);
+        if (!System.getProperty("os.name").toLowerCase().startsWith("win")) {
+            callGetBundle("UnreadableRB", IOException.class);
+        }
         callGetBundle("NoNoArgConstructorRB", InstantiationException.class);
     }
 
@@ -45,9 +47,6 @@ public class MissingResourceCauseTest {
 
     private static void callGetBundle(String baseName, Locale locale,
                                       Class<? extends Throwable> expectedCause) {
-        if (baseName.equals("UnreadableRB") && System.getProperty("os.name").startsWith("Windows")) {
-            return;
-        }
         ResourceBundle rb;
         try {
             rb = ResourceBundle.getBundle(baseName, locale);
