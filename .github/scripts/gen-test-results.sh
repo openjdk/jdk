@@ -30,8 +30,8 @@ test_suite_name=$(cat build/run-test-prebuilt/test-support/test-last-ids.txt)
 results_dir=build/run-test-prebuilt/test-results/$test_suite_name/text
 report_dir=build/run-test-prebuilt/test-support/$test_suite_name
 
-failures=$(sed -e 's/\(.*\)\.\(java\|sh\)/\1/' -e '/^#/d' $results_dir/newfailures.txt 2> /dev/null || true)
-errors=$(sed -e 's/\(.*\)\.\(java\|sh\)/\1/' -e '/^#/d' $results_dir/other_errors.txt 2> /dev/null || true)
+failures=$(sed -E -e 's/(.*)\.(java|sh)/\1/' -e '/^#/d' $results_dir/newfailures.txt 2> /dev/null || true)
+errors=$(sed -E -e 's/(.*)\.(java|sh)/\1/' -e '/^#/d' $results_dir/other_errors.txt 2> /dev/null || true)
 
 if [[ "$failures" = "" && "$errors" = "" ]]; then
   # If we have nothing to report, exit this step now

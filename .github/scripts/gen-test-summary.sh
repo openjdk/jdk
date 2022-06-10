@@ -34,8 +34,8 @@ if [[ ! -f build/run-test-prebuilt/make-support/exit-with-error ]]; then
   exit
 fi
 
-failures=$(sed -e 's/\(.*\)\.\(java\|sh\)/\1/' -e '/^#/d' $results_dir/newfailures.txt 2> /dev/null || true)
-errors=$(sed -e 's/\(.*\)\.\(java\|sh\)/\1/' -e '/^#/d' $results_dir/other_errors.txt 2> /dev/null || true)
+failures=$(sed -E -e 's/(.*)\.(java|sh)/\1/' -e '/^#/d' $results_dir/newfailures.txt 2> /dev/null || true)
+errors=$(sed -E -e 's/(.*)\.(java|sh)/\1/' -e '/^#/d' $results_dir/other_errors.txt 2> /dev/null || true)
 failure_count=$(echo $failures | wc -w || true)
 error_count=$(echo $errors | wc -w || true)
 
