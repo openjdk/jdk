@@ -467,8 +467,7 @@ void frame::update_map_with_saved_link(RegisterMapT* map, intptr_t** link_addr) 
   // The interpreter and compiler(s) always save FP in a known
   // location on entry. C2-compiled code uses FP as an allocatable
   // callee-saved register. We must record where that location is so
-  // that if FP was live on callout from c2 we can find the saved copy
-  // no matter what it called.
+  // that if FP was live on callout from c2 we can find the saved copy.
 
   map->set_location(rfp->as_VMReg(), (address) link_addr);
   // this is weird "H" ought to be at a higher address however the
