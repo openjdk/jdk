@@ -24,7 +24,7 @@
  /*
  * @test
  * @bug 6299163
- * @summary Test to compare java.security.CodeSource 
+ * @summary Test to compare java.security.CodeSource
  *          Instructions to re-create the used certs file.
  *          - Generate a self-signed certificate with basicConstraints=CA:TRUE
  *          - Copy the generated certificate 2 times into a newly created certs file.
