@@ -268,7 +268,7 @@ public abstract class Signature extends SignatureSpi {
             throw new NoSuchAlgorithmException
                 (algorithm + " Signature not available");
         }
-        // try services until we find a Spi or a working Signature subclass
+        // try services until we find an Spi or a working Signature subclass
         NoSuchAlgorithmException failure;
         do {
             Service s = t.next();
