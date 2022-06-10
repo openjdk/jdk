@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
  */
 
 #include "awt.h"
-
 #include <jlong.h>
+#include <windows.h>
 
 #include "awt_Component.h"
 #include "awt_Container.h"
@@ -1396,6 +1396,15 @@ BOOL AwtWindow::UpdateInsets(jobject insets)
     RECT inside;
     int extraBottomInsets = 0;
 
+    OSVERSIONINFOEX info;
+    ZeroMemory(&info, sizeof(OSVERSIONINFOEX));
+    info.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
+    GetVersionEx((LPOSVERSIONINFO) &info);
+
+    // add extra padded border only when Win OS version is 6+
+    int extraPaddedBorderInsets = info.dwMajorVersion >= 6 ?
+     ::GetSystemMetrics(SM_CXPADDEDBORDER) : 0;
+
     ::GetClientRect(GetHWnd(), &inside);
     ::GetWindowRect(GetHWnd(), &outside);
 
@@ -1419,17 +1428,17 @@ BOOL AwtWindow::UpdateInsets(jobject insets)
             LONG style = GetStyle();
             if (style & WS_THICKFRAME) {
                 m_insets.left = m_insets.right =
-                    ::GetSystemMetrics(SM_CXSIZEFRAME);
+                    ::GetSystemMetrics(SM_CXSIZEFRAME) +
+                     extraPaddedBorderInsets;
                 m_insets.top = m_insets.bottom =
-                    ::GetSystemMetrics(SM_CYSIZEFRAME);
+                    ::GetSystemMetrics(SM_CYSIZEFRAME) +
+                     extraPaddedBorderInsets;
             } else {
                 m_insets.left = m_insets.right =
                     ::GetSystemMetrics(SM_CXDLGFRAME);
                 m_insets.top = m_insets.bottom =
                     ::GetSystemMetrics(SM_CYDLGFRAME);
             }
-
-
             /* Add in title. */
             m_insets.top += ::GetSystemMetrics(SM_CYCAPTION);
         }
