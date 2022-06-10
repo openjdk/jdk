@@ -122,14 +122,14 @@ public:
     return sp;
   }
 
-  inline oop cont_oop() const;
+  inline oop cont_oop(const JavaThread* thread) const;
 
-  oop scope()     const { return Continuation::continuation_scope(cont_oop()); }
+  oop scope(const JavaThread* thread)     const { return Continuation::continuation_scope(cont_oop(thread)); }
 
   bool is_virtual_thread() const { return _flags != 0; }
 
-  static oop cont_oop_or_null(const ContinuationEntry* ce) {
-    return ce == nullptr ? nullptr : ce->cont_oop();
+  static oop cont_oop_or_null(const ContinuationEntry* ce, const JavaThread* thread) {
+    return ce == nullptr ? nullptr : ce->cont_oop(thread);
   }
 
 #ifndef PRODUCT

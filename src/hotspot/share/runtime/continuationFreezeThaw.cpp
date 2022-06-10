@@ -1406,17 +1406,17 @@ static inline int freeze_internal(JavaThread* current, intptr_t* const sp) {
   ContinuationEntry* entry = current->last_continuation();
 
   // Make sure oops in entry are accessible
-  entry->flush_stack_processing(JavaThread::current());
+  entry->flush_stack_processing(current);
 
-  oop oopCont = entry->cont_oop();
-  assert(oopCont == current->last_continuation()->cont_oop(), "");
+  oop oopCont = entry->cont_oop(current);
+  assert(oopCont == current->last_continuation()->cont_oop(current), "");
   assert(ContinuationEntry::assert_entry_frame_laid_out(current), "");
 
   verify_continuation(oopCont);
   ContinuationWrapper cont(current, oopCont);
   log_develop_debug(continuations)("FREEZE #" INTPTR_FORMAT " " INTPTR_FORMAT, cont.hash(), p2i((oopDesc*)oopCont));
 
-  assert(entry->is_virtual_thread() == (entry->scope() == java_lang_VirtualThread::vthread_scope()), "");
+  assert(entry->is_virtual_thread() == (entry->scope(current) == java_lang_VirtualThread::vthread_scope()), "");
 
   assert(monitors_on_stack(current) == (current->held_monitor_count() > 0), "");
 
@@ -1496,7 +1496,7 @@ static freeze_result is_pinned0(JavaThread* thread, oop cont_scope, bool safepoi
 
     f = f.sender(&map);
     if (!Continuation::is_frame_in_continuation(entry, f)) {
-      oop scope = jdk_internal_vm_Continuation::scope(entry->cont_oop());
+      oop scope = jdk_internal_vm_Continuation::scope(entry->cont_oop(thread));
       if (scope == cont_scope) {
         break;
       }

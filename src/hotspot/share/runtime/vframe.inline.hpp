@@ -40,7 +40,7 @@ inline oop vframeStreamCommon::continuation() const {
   if (_reg_map.cont() != NULL) {
     return _reg_map.cont();
   } else if (_cont_entry != NULL) {
-    return _cont_entry->cont_oop();
+    return _cont_entry->cont_oop(_reg_map.thread());
   } else {
     return NULL;
   }
@@ -81,12 +81,12 @@ inline void vframeStreamCommon::next() {
       assert(!_reg_map.in_cont(), "");
       assert(_cont_entry != NULL, "");
       // Reading oops are only safe if process_frames() is true, and we fix the oops.
-      assert(!_reg_map.process_frames() || _cont_entry->cont_oop() != NULL, "_cont: " INTPTR_FORMAT, p2i(_cont_entry));
+      assert(!_reg_map.process_frames() || _cont_entry->cont_oop(_reg_map.thread()) != NULL, "_cont: " INTPTR_FORMAT, p2i(_cont_entry));
       is_enterSpecial_frame = true;
 
       // TODO: handle ShowCarrierFrames
       if (_cont_entry->is_virtual_thread() ||
-          (_continuation_scope.not_null() && _cont_entry->scope() == _continuation_scope())) {
+          (_continuation_scope.not_null() && _cont_entry->scope(_reg_map.thread()) == _continuation_scope())) {
         _mode = at_end_mode;
         break;
       }

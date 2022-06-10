@@ -59,7 +59,7 @@ static jlong java_tid(JavaThread* thread) {
 const ContinuationEntry* Continuation::last_continuation(const JavaThread* thread, oop cont_scope) {
   // guarantee (thread->has_last_Java_frame(), "");
   for (ContinuationEntry* entry = thread->last_continuation(); entry != nullptr; entry = entry->parent()) {
-    if (cont_scope == jdk_internal_vm_Continuation::scope(entry->cont_oop())) {
+    if (cont_scope == jdk_internal_vm_Continuation::scope(entry->cont_oop(thread))) {
       return entry;
     }
   }
@@ -72,7 +72,7 @@ ContinuationEntry* Continuation::get_continuation_entry_for_continuation(JavaThr
   }
 
   for (ContinuationEntry* entry = thread->last_continuation(); entry != nullptr; entry = entry->parent()) {
-    if (continuation == entry->cont_oop()) {
+    if (continuation == entry->cont_oop(thread)) {
       return entry;
     }
   }
@@ -178,9 +178,9 @@ frame Continuation::top_frame(const frame& callee, RegisterMap* map) {
   assert(ce != nullptr, "");
 
   // Needed to update ContinuationEntry oops.
-  ce->flush_stack_processing(JavaThread::current());
+  ce->flush_stack_processing(map->thread());
 
-  oop continuation = ce->cont_oop();
+  oop continuation = ce->cont_oop(map->thread());
   ContinuationWrapper cont(continuation);
   return continuation_top_frame(cont, map);
 }
@@ -253,7 +253,7 @@ bool Continuation::is_scope_bottom(oop cont_scope, const frame& f, const Registe
     if (ce == nullptr) {
       return false;
     }
-    continuation = ce->cont_oop();
+    continuation = ce->cont_oop(map->thread());
   }
   if (continuation == nullptr) {
     return false;

@@ -33,8 +33,8 @@
 
 #include CPU_HEADER_INLINE(continuationEntry)
 
-inline bool is_stack_watermark_processed(JavaThread* thread, const void* addr) {
-  StackWatermark* sw = StackWatermarkSet::get(thread, StackWatermarkKind::gc);
+inline bool is_stack_watermark_processed(const JavaThread* thread, const void* addr) {
+  StackWatermark* sw = StackWatermarkSet::get(const_cast<JavaThread*>(thread), StackWatermarkKind::gc);
   assert(sw != nullptr, "Wrong GC");
 
   if (!sw->processing_started()) {
@@ -50,10 +50,10 @@ inline bool is_stack_watermark_processed(JavaThread* thread, const void* addr) {
   return uintptr_t(addr) <= watermark;
 }
 
-inline oop ContinuationEntry::cont_oop() const {
+inline oop ContinuationEntry::cont_oop(const JavaThread* thread) const {
   if (UseZGC) {
     assert(!ZHeap::heap()->is_in((uintptr_t)(void*)&_cont), "Should not be in the heap");
-    assert(is_stack_watermark_processed(JavaThread::current(), &_cont), "Not processed");
+    assert(is_stack_watermark_processed(thread != nullptr ? thread : JavaThread::current(), &_cont), "Not processed");
   }
   return RawAccess<>::oop_load((oop*)&_cont);
 }
