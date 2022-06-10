@@ -153,8 +153,8 @@ public class EtchedBorder extends AbstractBorder
     public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
         // We remove any initial transforms to prevent rounding errors
         // when drawing in non-integer scales
-        AffineTransform at = new AffineTransform();
-        Stroke oldStk = new BasicStroke();
+        AffineTransform at;
+        Stroke oldStk;
         int stkWidth = 1;
         boolean resetTransform = false;
         if (g instanceof Graphics2D) {
