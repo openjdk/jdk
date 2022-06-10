@@ -36,7 +36,6 @@ import java.awt.Color;
 import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.image.BufferedImage;
-import java.awt.image.MultiResolutionImage;
 import java.io.File;
 
 import javax.imageio.ImageIO;
