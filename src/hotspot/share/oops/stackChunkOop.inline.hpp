@@ -82,10 +82,10 @@ inline void stackChunkOopDesc::set_max_thawing_size(int value)  {
   jdk_internal_vm_StackChunk::set_maxThawingSize(this, (jint)value);
 }
 
-inline oop stackChunkOopDesc::cont() const              { return jdk_internal_vm_StackChunk::cont(as_oop()); }
-inline void stackChunkOopDesc::set_cont(oop value)      { jdk_internal_vm_StackChunk::set_cont(this, value); }
+inline oop stackChunkOopDesc::cont() const                { return jdk_internal_vm_StackChunk::cont(as_oop()); }
+inline void stackChunkOopDesc::set_cont(oop value)        { jdk_internal_vm_StackChunk::set_cont(this, value); }
 template<typename P>
-inline void stackChunkOopDesc::set_cont_raw(oop value)  { jdk_internal_vm_StackChunk::set_cont_raw<P>(this, value); }
+inline void stackChunkOopDesc::set_cont_raw(oop value)    { jdk_internal_vm_StackChunk::set_cont_raw<P>(this, value); }
 template<DecoratorSet decorators>
 inline void stackChunkOopDesc::set_cont_access(oop value) { jdk_internal_vm_StackChunk::set_cont_access<decorators>(this, value); }
 
