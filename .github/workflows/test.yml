@@ -39,7 +39,7 @@ on:
         type: string
 
 env:
-  # These are needed to make the msys bash work properly
+  # These are needed to make the MSYS2 bash work properly
   MSYS2_PATH_TYPE: minimal
   CHERE_INVOKING: 1
 
@@ -103,8 +103,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: 'Get MSYS2'
-        id: msys
-        uses: ./.github/actions/get-msys
+        uses: ./.github/actions/get-msys2
         if: runner.os == 'Windows'
 
       - name: 'Get the BootJDK'

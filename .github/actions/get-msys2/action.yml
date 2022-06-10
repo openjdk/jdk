@@ -23,22 +23,22 @@
 # questions.
 #
 
-name: 'Get msys'
+name: 'Get MSYS2'
 description: 'Download MSYS2 and prepare a Windows host'
 
 runs:
   using: composite
   steps:
-    - name: 'Install msys2'
+    - name: 'Install MSYS2'
       uses: msys2/setup-msys2@v2
       with:
         install: 'autoconf tar unzip zip make'
         path-type: minimal
-        location: msys
+        location: msys2
 
       # We can't run bash until this is completed, so stick with pwsh
-    - name: 'Set msys path'
+    - name: 'Set MSYS2 path'
       run: |
-        # Prepend msys/msys64/usr/bin to the PATH
-        echo "$env:GITHUB_WORKSPACE/msys/msys64/usr/bin" >> $env:GITHUB_PATH
+        # Prepend msys2/msys64/usr/bin to the PATH
+        echo "$env:GITHUB_WORKSPACE/msys2/msys64/usr/bin" >> $env:GITHUB_PATH
       shell: pwsh
