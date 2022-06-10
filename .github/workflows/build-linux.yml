@@ -48,9 +48,6 @@ on:
       apt-architecture:
         required: false
         type: string
-      apt-add-architecture:
-        required: false
-        type: string
       apt-extra-packages:
         required: false
         type: string
@@ -87,14 +84,24 @@ jobs:
         id: gtest
         uses: ./.github/actions/get-gtest
 
+      - name: 'Set architecture'
+        id: arch
+        run: |
+          # Set a proper suffix for packages if using a different architecture
+          if [[ '${{ inputs.apt-architecture }}' != '' ]]; then
+            echo '::set-output name=suffix:::${{ inputs.apt-architecture }}'
+          fi
+
       # Upgrading apt to solve libc6 installation bugs, see JDK-8260460.
       - name: 'Install toolchain and dependencies'
         run: |
           # Install dependencies using apt-get
-          ${{ inputs.apt-add-architecture }}
+          if [[ '${{ inputs.apt-architecture }}' != '' ]]; then
+            sudo dpkg --add-architecture ${{ inputs.apt-architecture }}
+          fi
           sudo apt-get update
           sudo apt-get install --only-upgrade apt
-          sudo apt-get install gcc-${{ inputs.apt-gcc-version }} g++-${{ inputs.apt-gcc-version }} libxrandr-dev${{ inputs.apt-architecture }} libxtst-dev${{ inputs.apt-architecture }} libcups2-dev${{ inputs.apt-architecture }} libasound2-dev${{ inputs.apt-architecture }} ${{ inputs.apt-extra-packages }}
+          sudo apt-get install gcc-${{ inputs.apt-gcc-version }} g++-${{ inputs.apt-gcc-version }} libxrandr-dev${{ steps.arch.outputs.suffix }} libxtst-dev${{ steps.arch.outputs.suffix }} libcups2-dev${{ steps.arch.outputs.suffix }} libasound2-dev${{ steps.arch.outputs.suffix }} ${{ inputs.apt-extra-packages }}
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 100 --slave /usr/bin/g++ g++ /usr/bin/g++-10
 
       - name: 'Configure'

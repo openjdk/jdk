@@ -134,8 +134,7 @@ jobs:
     with:
       platform: linux-x86
       apt-gcc-version: '10-multilib'
-      apt-architecture: ':i386'
-      apt-add-architecture: 'sudo dpkg --add-architecture i386'
+      apt-architecture: 'i386'
       # Some multilib libraries do not have proper inter-dependencies, so we have to
       # install their dependencies manually.
       apt-extra-packages: 'libfreetype6-dev:i386 libtiff-dev:i386 libcupsimage2-dev:i386'

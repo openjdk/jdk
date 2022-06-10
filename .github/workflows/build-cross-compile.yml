@@ -97,8 +97,7 @@ jobs:
               g++-${{ inputs.gcc-major-version }}=${{ inputs.apt-gcc-version }} \
               gcc-${{ inputs.gcc-major-version }}-${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}}=${{ inputs.apt-gcc-version }}${{ inputs.apt-gcc-cross-suffix }} \
               g++-${{ inputs.gcc-major-version }}-${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}}=${{ inputs.apt-gcc-version }}${{ inputs.apt-gcc-cross-suffix }} \
-              libxrandr-dev${{ inputs.apt-architecture }} libxtst-dev${{ inputs.apt-architecture }} \
-              libcups2-dev${{ inputs.apt-architecture }} libasound2-dev${{ inputs.apt-architecture }}
+              libxrandr-dev libxtst-dev libcups2-dev libasound2-dev
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ inputs.gcc-major-version }} 100 --slave /usr/bin/g++ g++ /usr/bin/g++-${{ inputs.gcc-major-version }}
 
       - name: 'Check cache for sysroot'
