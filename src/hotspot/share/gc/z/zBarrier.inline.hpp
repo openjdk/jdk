@@ -576,19 +576,31 @@ inline zaddress ZBarrier::no_keep_alive_load_barrier_on_phantom_oop_field_preloa
 }
 
 inline zaddress ZBarrier::blocking_keep_alive_load_barrier_on_weak_oop_field_preloaded(volatile zpointer* p, zpointer o) {
-  return barrier(is_mark_good_fast_path, blocking_keep_alive_on_weak_slow_path, color_mark_good, p, o);
+  auto slow_path = [=](zaddress addr) -> zaddress {
+    return ZBarrier::blocking_keep_alive_on_weak_slow_path(p, addr);
+  };
+  return barrier(is_mark_good_fast_path, slow_path, color_mark_good, p, o);
 }
 
 inline zaddress ZBarrier::blocking_keep_alive_load_barrier_on_phantom_oop_field_preloaded(volatile zpointer* p, zpointer o) {
-  return barrier(is_mark_good_fast_path, blocking_keep_alive_on_phantom_slow_path, color_mark_good, p, o);
+  auto slow_path = [=](zaddress addr) -> zaddress {
+    return ZBarrier::blocking_keep_alive_on_phantom_slow_path(p, addr);
+  };
+  return barrier(is_mark_good_fast_path, slow_path, color_mark_good, p, o);
 }
 
 inline zaddress ZBarrier::blocking_load_barrier_on_weak_oop_field_preloaded(volatile zpointer* p, zpointer o) {
-  return barrier(is_mark_good_fast_path, blocking_load_barrier_on_weak_slow_path, color_mark_good, p, o);
+  auto slow_path = [=](zaddress addr) -> zaddress {
+    return ZBarrier::blocking_load_barrier_on_weak_slow_path(p, addr);
+  };
+  return barrier(is_mark_good_fast_path, slow_path, color_mark_good, p, o);
 }
 
 inline zaddress ZBarrier::blocking_load_barrier_on_phantom_oop_field_preloaded(volatile zpointer* p, zpointer o) {
-  return barrier(is_mark_good_fast_path, blocking_load_barrier_on_phantom_slow_path, color_mark_good, p, o);
+  auto slow_path = [=](zaddress addr) -> zaddress {
+    return ZBarrier::blocking_load_barrier_on_phantom_slow_path(p, addr);
+  };
+  return barrier(is_mark_good_fast_path, slow_path, color_mark_good, p, o);
 }
 
 //
@@ -598,13 +610,19 @@ inline zaddress ZBarrier::blocking_load_barrier_on_phantom_oop_field_preloaded(v
 inline bool ZBarrier::clean_barrier_on_weak_oop_field(volatile zpointer* p) {
   assert(ZResurrection::is_blocked(), "This operation is only valid when resurrection is blocked");
   const zpointer o = load_atomic(p);
-  return is_null(barrier(is_mark_good_fast_path, blocking_load_barrier_on_weak_slow_path, color_mark_good, p, o, true /* allow_null */));
+  auto slow_path = [=](zaddress addr) -> zaddress {
+    return ZBarrier::blocking_load_barrier_on_weak_slow_path(p, addr);
+  };
+  return is_null(barrier(is_mark_good_fast_path, slow_path, color_mark_good, p, o, true /* allow_null */));
 }
 
 inline bool ZBarrier::clean_barrier_on_phantom_oop_field(volatile zpointer* p) {
   assert(ZResurrection::is_blocked(), "This operation is only valid when resurrection is blocked");
   const zpointer o = load_atomic(p);
-  return is_null(barrier(is_mark_good_fast_path, blocking_load_barrier_on_phantom_slow_path, color_mark_good, p, o, true /* allow_null */));
+  auto slow_path = [=](zaddress addr) -> zaddress {
+    return ZBarrier::blocking_load_barrier_on_phantom_slow_path(p, addr);
+  };
+  return is_null(barrier(is_mark_good_fast_path, slow_path, color_mark_good, p, o, true /* allow_null */));
 }
 
 inline bool ZBarrier::clean_barrier_on_final_oop_field(volatile zpointer* p) {
@@ -614,11 +632,13 @@ inline bool ZBarrier::clean_barrier_on_final_oop_field(volatile zpointer* p) {
   // it should just be healed (as if it was a phantom oop) and this function should
   // return true if the object pointer to by the referent is not strongly reachable.
   const zpointer o = load_atomic(p);
-
-  const zaddress addr = barrier(is_mark_good_fast_path, blocking_load_barrier_on_phantom_slow_path, color_mark_good, p, o);
+  auto slow_path = [=](zaddress addr) -> zaddress {
+    return ZBarrier::blocking_load_barrier_on_phantom_slow_path(p, addr);
+  };
+  const zaddress addr = barrier(is_mark_good_fast_path, slow_path, color_mark_good, p, o);
   assert(!is_null(addr), "Should be finalizable marked");
 
-  return is_null(blocking_load_barrier_on_weak_slow_path(addr));
+  return is_null(blocking_load_barrier_on_weak_slow_path(p, addr));
 }
 
 //

@@ -65,8 +65,21 @@ static void keep_alive_young(zaddress addr) {
   }
 }
 
-zaddress ZBarrier::blocking_keep_alive_on_weak_slow_path(zaddress addr) {
-  assert(ZResurrection::is_blocked(), "Only called while blocking");
+static void verify_blocked_nonstrong_slow_path(volatile zpointer* p) {
+  // We want to verify that the resurrection block window is not unstable when performing
+  // load barriers on non-strong oop locations. It's worth noting that there is no reference
+  // processor in the young generation, and hence all oop locations in the young generation
+  // are treated as strong references.
+  // Other locations are subject to these constraints. The constraints are there to catch
+  // scenarios when a mutator may miss that a referent has actually died, due to races
+  // with the old generation reference processor.
+  assert(ZResurrection::is_blocked() ||
+         (ZHeap::heap()->is_in(uintptr_t(p)) && ZHeap::heap()->is_young(p)),
+         "Only called while blocking for non-strong references");
+}
+
+zaddress ZBarrier::blocking_keep_alive_on_weak_slow_path(volatile zpointer* p, zaddress addr) {
+  verify_blocked_nonstrong_slow_path(p);
 
   if (is_null(addr)) {
     return zaddress::null;
@@ -85,8 +98,8 @@ zaddress ZBarrier::blocking_keep_alive_on_weak_slow_path(zaddress addr) {
   return addr;
 }
 
-zaddress ZBarrier::blocking_keep_alive_on_phantom_slow_path(zaddress addr) {
-  assert(ZResurrection::is_blocked(), "Only called while blocking");
+zaddress ZBarrier::blocking_keep_alive_on_phantom_slow_path(volatile zpointer* p, zaddress addr) {
+  verify_blocked_nonstrong_slow_path(p);
 
   if (is_null(addr)) {
     return zaddress::null;
@@ -105,8 +118,8 @@ zaddress ZBarrier::blocking_keep_alive_on_phantom_slow_path(zaddress addr) {
   return addr;
 }
 
-zaddress ZBarrier::blocking_load_barrier_on_weak_slow_path(zaddress addr) {
-  assert(ZResurrection::is_blocked(), "Only called while blocking");
+zaddress ZBarrier::blocking_load_barrier_on_weak_slow_path(volatile zpointer* p, zaddress addr) {
+  verify_blocked_nonstrong_slow_path(p);
 
   if (is_null(addr)) {
     return zaddress::null;
@@ -127,8 +140,8 @@ zaddress ZBarrier::blocking_load_barrier_on_weak_slow_path(zaddress addr) {
   return addr;
 }
 
-zaddress ZBarrier::blocking_load_barrier_on_phantom_slow_path(zaddress addr) {
-  assert(ZResurrection::is_blocked(), "Only called while blocking");
+zaddress ZBarrier::blocking_load_barrier_on_phantom_slow_path(volatile zpointer* p, zaddress addr) {
+  verify_blocked_nonstrong_slow_path(p);
 
   if (is_null(addr)) {
     return zaddress::null;

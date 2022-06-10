@@ -95,10 +95,10 @@ private:
   static bool is_finalizable_good_fast_path(zpointer ptr);
 
   // Slow paths
-  static zaddress blocking_keep_alive_on_weak_slow_path(zaddress addr);
-  static zaddress blocking_keep_alive_on_phantom_slow_path(zaddress addr);
-  static zaddress blocking_load_barrier_on_weak_slow_path(zaddress addr);
-  static zaddress blocking_load_barrier_on_phantom_slow_path(zaddress addr);
+  static zaddress blocking_keep_alive_on_weak_slow_path(volatile zpointer* p, zaddress addr);
+  static zaddress blocking_keep_alive_on_phantom_slow_path(volatile zpointer* p, zaddress addr);
+  static zaddress blocking_load_barrier_on_weak_slow_path(volatile zpointer* p, zaddress addr);
+  static zaddress blocking_load_barrier_on_phantom_slow_path(volatile zpointer* p, zaddress addr);
 
   static zaddress verify_old_object_live_slow_path(zaddress addr);
 
