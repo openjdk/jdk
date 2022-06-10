@@ -90,7 +90,7 @@ void CompileTask::free(CompileTask* task) {
 void CompileTask::initialize(int compile_id,
                              const methodHandle& method,
                              int osr_bci,
-                             int comp_level,
+                             CompLevel comp_level,
                              const methodHandle& hot_method,
                              int hot_count,
                              CompileTask::CompileReason compile_reason,
@@ -235,7 +235,7 @@ void CompileTask::print_tty() {
 
 // ------------------------------------------------------------------
 // CompileTask::print_impl
-void CompileTask::print_impl(outputStream* st, Method* method, int compile_id, int comp_level,
+void CompileTask::print_impl(outputStream* st, Method* method, int compile_id, CompLevel comp_level,
                              bool is_osr_method, int osr_bci, bool is_blocking,
                              const char* msg, bool short_form, bool cr,
                              jlong time_queued, jlong time_started) {

@@ -74,7 +74,7 @@ int CompilationPolicy::compiler_count(CompLevel comp_level) {
 // Returns true if m must be compiled before executing it
 // This is intended to force compiles for methods (usually for
 // debugging) that would otherwise be interpreted for some reason.
-bool CompilationPolicy::must_be_compiled(const methodHandle& m, int comp_level) {
+bool CompilationPolicy::must_be_compiled(const methodHandle& m, CompLevel comp_level) {
   // Don't allow Xcomp to cause compiles in replay mode
   if (ReplayCompiles) return false;
 
@@ -123,7 +123,7 @@ static inline CompLevel adjust_level_for_compilability_query(CompLevel comp_leve
 }
 
 // Returns true if m is allowed to be compiled
-bool CompilationPolicy::can_be_compiled(const methodHandle& m, int comp_level) {
+bool CompilationPolicy::can_be_compiled(const methodHandle& m, CompLevel comp_level) {
   // allow any levels for WhiteBox
   assert(WhiteBoxAPI || comp_level == CompLevel_any || is_compile(comp_level), "illegal compilation level");
 
@@ -147,7 +147,7 @@ bool CompilationPolicy::can_be_compiled(const methodHandle& m, int comp_level) {
 }
 
 // Returns true if m is allowed to be osr compiled
-bool CompilationPolicy::can_be_osr_compiled(const methodHandle& m, int comp_level) {
+bool CompilationPolicy::can_be_osr_compiled(const methodHandle& m, CompLevel comp_level) {
   bool result = false;
   comp_level = adjust_level_for_compilability_query((CompLevel) comp_level);
   if (comp_level == CompLevel_any || is_compile(comp_level)) {

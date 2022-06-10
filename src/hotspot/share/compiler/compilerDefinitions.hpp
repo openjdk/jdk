@@ -31,7 +31,7 @@
 #include "runtime/globals.hpp"
 
 // The (closed set) of concrete compiler classes.
-enum CompilerType {
+enum CompilerType : u1 {
   compiler_none,
   compiler_c1,
   compiler_c2,
@@ -54,7 +54,7 @@ enum MethodCompilation {
 };
 
 // Enumeration to distinguish tiers of compilation
-enum CompLevel {
+enum CompLevel : s1 {
   CompLevel_any               = -1,        // Used for querying the state
   CompLevel_all               = -1,        // Used for changing the state
   CompLevel_none              = 0,         // Interpreter

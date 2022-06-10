@@ -86,7 +86,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
   // Compilation state for a blocking JVMCI compilation
   JVMCICompileState* _blocking_jvmci_compile_state;
 #endif
-  int          _comp_level;
+  CompLevel    _comp_level;
   int          _num_inlined_bytecodes;
   nmethodLocker* _code_handle;  // holder of eventual result
   CompileTask* _next, *_prev;
@@ -108,7 +108,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
     _lock = new Monitor(Mutex::safepoint-1, "CompileTask_lock");
   }
 
-  void initialize(int compile_id, const methodHandle& method, int osr_bci, int comp_level,
+  void initialize(int compile_id, const methodHandle& method, int osr_bci, CompLevel comp_level,
                   const methodHandle& hot_method, int hot_count,
                   CompileTask::CompileReason compile_reason, bool is_blocking);
 
@@ -164,8 +164,8 @@ class CompileTask : public CHeapObj<mtCompiler> {
   void         mark_success()                    { _is_success = true; }
   void         mark_started(jlong time)          { _time_started = time; }
 
-  int          comp_level()                      { return _comp_level;}
-  void         set_comp_level(int comp_level)    { _comp_level = comp_level;}
+  CompLevel    comp_level()                      { return _comp_level;}
+  void         set_comp_level(CompLevel comp_level)  { _comp_level = comp_level; }
 
   AbstractCompiler* compiler();
   CompileTask*      select_for_compilation();
@@ -186,7 +186,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
   void         mark_on_stack();
 
 private:
-  static void  print_impl(outputStream* st, Method* method, int compile_id, int comp_level,
+  static void  print_impl(outputStream* st, Method* method, int compile_id, CompLevel comp_level,
                                       bool is_osr_method = false, int osr_bci = -1, bool is_blocking = false,
                                       const char* msg = NULL, bool short_form = false, bool cr = true,
                                       jlong time_queued = 0, jlong time_started = 0);

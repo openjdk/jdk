@@ -824,7 +824,7 @@ static bool is_excluded_for_compiler(AbstractCompiler* comp, methodHandle& mh) {
   return false;
 }
 
-static bool can_be_compiled_at_level(methodHandle& mh, jboolean is_osr, int level) {
+static bool can_be_compiled_at_level(methodHandle& mh, jboolean is_osr, CompLevel level) {
   if (is_osr) {
     return CompilationPolicy::can_be_osr_compiled(mh, level);
   } else {
@@ -860,12 +860,12 @@ WB_ENTRY(jboolean, WB_IsMethodCompilable(JNIEnv* env, jobject o, jobject method,
       // C2 only has ExcludeOption set: Check if compilable with C1.
       return can_be_compiled_at_level(mh, is_osr, CompLevel_simple);
     }
-  } else if (comp_level > CompLevel_none && is_excluded_for_compiler(CompileBroker::compiler((int)comp_level), mh)) {
+  } else if (comp_level > CompLevel_none && is_excluded_for_compiler(CompileBroker::compiler((CompLevel)comp_level), mh)) {
     // Compilation of 'method' excluded by compiler used for 'comp_level'.
     return false;
   }
 
-  return can_be_compiled_at_level(mh, is_osr, (int)comp_level);
+  return can_be_compiled_at_level(mh, is_osr, (CompLevel)comp_level);
 WB_END
 
 WB_ENTRY(jboolean, WB_IsMethodQueuedForCompilation(JNIEnv* env, jobject o, jobject method))
@@ -886,7 +886,7 @@ WB_ENTRY(jboolean, WB_IsIntrinsicAvailable(JNIEnv* env, jobject o, jobject metho
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(method_id));
 
   DirectiveSet* directive;
-  AbstractCompiler* comp = CompileBroker::compiler((int)compLevel);
+  AbstractCompiler* comp = CompileBroker::compiler((CompLevel)compLevel);
   assert(comp != NULL, "compiler not available");
   if (compilation_context != NULL) {
     compilation_context_id = reflected_method_to_jmid(thread, env, compilation_context);
@@ -915,9 +915,9 @@ WB_ENTRY(void, WB_MakeMethodNotCompilable(JNIEnv* env, jobject o, jobject method
   CHECK_JNI_EXCEPTION(env);
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
   if (is_osr) {
-    mh->set_not_osr_compilable("WhiteBox", comp_level);
+    mh->set_not_osr_compilable("WhiteBox", (CompLevel)comp_level);
   } else {
-    mh->set_not_compilable("WhiteBox", comp_level);
+    mh->set_not_compilable("WhiteBox", (CompLevel)comp_level);
   }
 WB_END
 
@@ -1009,7 +1009,7 @@ WB_ENTRY(jint, WB_GetCompileQueueSize(JNIEnv* env, jobject o, jint comp_level))
     return CompileBroker::queue_size(CompLevel_full_optimization) /* C2 */ +
         CompileBroker::queue_size(CompLevel_full_profile) /* C1 */;
   } else {
-    return CompileBroker::queue_size(comp_level);
+    return CompileBroker::queue_size((CompLevel)comp_level);
   }
 WB_END
 
@@ -1034,7 +1034,7 @@ bool WhiteBox::validate_cgroup(const char* proc_cgroups,
 }
 #endif
 
-bool WhiteBox::compile_method(Method* method, int comp_level, int bci, JavaThread* THREAD) {
+bool WhiteBox::compile_method(Method* method, CompLevel comp_level, int bci, JavaThread* THREAD) {
   // Screen for unavailable/bad comp level or null method
   AbstractCompiler* comp = CompileBroker::compiler(comp_level);
   if (method == NULL) {
@@ -1084,7 +1084,7 @@ bool WhiteBox::compile_method(Method* method, int comp_level, int bci, JavaThrea
 WB_ENTRY(jboolean, WB_EnqueueMethodForCompilation(JNIEnv* env, jobject o, jobject method, jint comp_level, jint bci))
   jmethodID jmid = reflected_method_to_jmid(thread, env, method);
   CHECK_JNI_EXCEPTION_(env, JNI_FALSE);
-  return WhiteBox::compile_method(Method::checked_resolve_jmethod_id(jmid), comp_level, bci, THREAD);
+  return WhiteBox::compile_method(Method::checked_resolve_jmethod_id(jmid), (CompLevel)comp_level, bci, THREAD);
 WB_END
 
 WB_ENTRY(jboolean, WB_EnqueueInitializerForCompilation(JNIEnv* env, jobject o, jclass klass, jint comp_level))
@@ -1093,7 +1093,7 @@ WB_ENTRY(jboolean, WB_EnqueueInitializerForCompilation(JNIEnv* env, jobject o, j
   if (clinit == NULL || clinit->method_holder()->is_not_initialized()) {
     return false;
   }
-  return WhiteBox::compile_method(clinit, comp_level, InvocationEntryBci, THREAD);
+  return WhiteBox::compile_method(clinit, (CompLevel)comp_level, InvocationEntryBci, THREAD);
 WB_END
 
 WB_ENTRY(jboolean, WB_ShouldPrintAssembly(JNIEnv* env, jobject o, jobject method, jint comp_level))
@@ -1101,7 +1101,7 @@ WB_ENTRY(jboolean, WB_ShouldPrintAssembly(JNIEnv* env, jobject o, jobject method
   CHECK_JNI_EXCEPTION_(env, JNI_FALSE);
 
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
-  DirectiveSet* directive = DirectivesStack::getMatchingDirective(mh, CompileBroker::compiler(comp_level));
+  DirectiveSet* directive = DirectivesStack::getMatchingDirective(mh, CompileBroker::compiler((CompLevel)comp_level));
   bool result = directive->PrintAssemblyOption;
   DirectivesStack::release(directive);
 

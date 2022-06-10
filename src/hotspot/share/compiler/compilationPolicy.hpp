@@ -235,7 +235,7 @@ class CompilationPolicy : AllStatic {
   static jlong start_time()           { return _start_time; }
 
   // m must be compiled before executing it
-  static bool must_be_compiled(const methodHandle& m, int comp_level = CompLevel_any);
+  static bool must_be_compiled(const methodHandle& m, CompLevel comp_level = CompLevel_any);
 public:
   static int min_invocations() { return Tier4MinInvocationThreshold; }
   static int c1_count() { return _c1_count; }
@@ -247,9 +247,9 @@ public:
   static void compile_if_required(const methodHandle& m, TRAPS);
 
   // m is allowed to be compiled
-  static bool can_be_compiled(const methodHandle& m, int comp_level = CompLevel_any);
+  static bool can_be_compiled(const methodHandle& m, CompLevel comp_level = CompLevel_any);
   // m is allowed to be osr compiled
-  static bool can_be_osr_compiled(const methodHandle& m, int comp_level = CompLevel_any);
+  static bool can_be_osr_compiled(const methodHandle& m, CompLevel comp_level = CompLevel_any);
   static bool is_compilation_enabled();
 
   static void do_safepoint_work() { }

@@ -1041,7 +1041,7 @@ void Method::set_signature_handler(address handler) {
 }
 
 
-void Method::print_made_not_compilable(int comp_level, bool is_osr, bool report, const char* reason) {
+void Method::print_made_not_compilable(CompLevel comp_level, bool is_osr, bool report, const char* reason) {
   assert(reason != NULL, "must provide a reason");
   if (PrintCompilation && report) {
     ttyLocker ttyl;
@@ -1085,7 +1085,7 @@ bool Method::is_always_compilable() const {
   return false;
 }
 
-bool Method::is_not_compilable(int comp_level) const {
+bool Method::is_not_compilable(CompLevel comp_level) const {
   if (number_of_breakpoints() > 0)
     return true;
   if (is_always_compilable())
@@ -1100,7 +1100,7 @@ bool Method::is_not_compilable(int comp_level) const {
 }
 
 // call this when compiler finds that this method is not compilable
-void Method::set_not_compilable(const char* reason, int comp_level, bool report) {
+void Method::set_not_compilable(const char* reason, CompLevel comp_level, bool report) {
   if (is_always_compilable()) {
     // Don't mark a method which should be always compilable
     return;
@@ -1118,7 +1118,7 @@ void Method::set_not_compilable(const char* reason, int comp_level, bool report)
   assert(!CompilationPolicy::can_be_compiled(methodHandle(Thread::current(), this), comp_level), "sanity check");
 }
 
-bool Method::is_not_osr_compilable(int comp_level) const {
+bool Method::is_not_osr_compilable(CompLevel comp_level) const {
   if (is_not_compilable(comp_level))
     return true;
   if (comp_level == CompLevel_any)
@@ -1130,7 +1130,7 @@ bool Method::is_not_osr_compilable(int comp_level) const {
   return false;
 }
 
-void Method::set_not_osr_compilable(const char* reason, int comp_level, bool report) {
+void Method::set_not_osr_compilable(const char* reason, CompLevel comp_level, bool report) {
   print_made_not_compilable(comp_level, /*is_osr*/ true, report, reason);
   if (comp_level == CompLevel_all) {
     set_not_c1_osr_compilable();
@@ -1313,7 +1313,7 @@ void Method::set_code(const methodHandle& mh, CompiledMethod *code) {
   // which jumps to _from_compiled_entry.
   mh->_code = code;             // Assign before allowing compiled code to exec
 
-  int comp_level = code->comp_level();
+  CompLevel comp_level = code->comp_level();
   // In theory there could be a race here. In practice it is unlikely
   // and not worth worrying about.
   if (comp_level > mh->highest_comp_level()) {

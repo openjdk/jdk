@@ -665,7 +665,7 @@
   volatile_nonstatic_field(nmethod,            _lock_count,                                   jint)                                  \
   volatile_nonstatic_field(nmethod,            _stack_traversal_mark,                         int64_t)                               \
   nonstatic_field(nmethod,                     _compile_id,                                   int)                                   \
-  nonstatic_field(nmethod,                     _comp_level,                                   int)                                   \
+  nonstatic_field(nmethod,                     _comp_level,                                   CompLevel)                             \
                                                                                                                                      \
   unchecked_c2_static_field(Deoptimization,    _trap_reason_name,                             void*)                                 \
                                                                                                                                      \
@@ -1069,7 +1069,7 @@
                                                                                                                                      \
   nonstatic_field(CompileTask,                 _method,                                       Method*)                               \
   nonstatic_field(CompileTask,                 _osr_bci,                                      int)                                   \
-  nonstatic_field(CompileTask,                 _comp_level,                                   int)                                   \
+  nonstatic_field(CompileTask,                 _comp_level,                                   CompLevel)                             \
   nonstatic_field(CompileTask,                 _compile_id,                                   uint)                                  \
   nonstatic_field(CompileTask,                 _num_inlined_bytecodes,                        int)                                   \
   nonstatic_field(CompileTask,                 _next,                                         CompileTask*)                          \
@@ -1974,6 +1974,8 @@
   declare_integer_type(AccessFlags)  /* FIXME: wrong type (not integer) */\
   declare_toplevel_type(address)      /* FIXME: should this be an integer type? */\
   declare_integer_type(BasicType)   /* FIXME: wrong type (not integer) */ \
+                                                                          \
+  declare_unsigned_integer_type(CompLevel)                                \
   JVMTI_ONLY(declare_toplevel_type(BreakpointInfo))                       \
   JVMTI_ONLY(declare_toplevel_type(BreakpointInfo*))                      \
   declare_toplevel_type(CodeBlob*)                                        \

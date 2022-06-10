@@ -557,7 +557,7 @@ void CompileQueue::mark_on_stack() {
 }
 
 
-CompileQueue* CompileBroker::compile_queue(int comp_level) {
+CompileQueue* CompileBroker::compile_queue(CompLevel comp_level) {
   if (is_c2_compile(comp_level)) return _c2_compile_queue;
   if (is_c1_compile(comp_level)) return _c1_compile_queue;
   return NULL;
@@ -1163,7 +1163,7 @@ void CompileBroker::mark_on_stack() {
 // Request compilation of a method.
 void CompileBroker::compile_method_base(const methodHandle& method,
                                         int osr_bci,
-                                        int comp_level,
+                                        CompLevel comp_level,
                                         const methodHandle& hot_method,
                                         int hot_count,
                                         CompileTask::CompileReason compile_reason,
@@ -1345,7 +1345,7 @@ void CompileBroker::compile_method_base(const methodHandle& method,
 }
 
 nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
-                                       int comp_level,
+                                       CompLevel comp_level,
                                        const methodHandle& hot_method, int hot_count,
                                        CompileTask::CompileReason compile_reason,
                                        TRAPS) {
@@ -1365,7 +1365,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
 }
 
 nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
-                                         int comp_level,
+                                         CompLevel comp_level,
                                          const methodHandle& hot_method, int hot_count,
                                          CompileTask::CompileReason compile_reason,
                                          DirectiveSet* directive,
@@ -1514,7 +1514,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
 // See if compilation of this method is already complete.
 bool CompileBroker::compilation_is_complete(const methodHandle& method,
                                             int                 osr_bci,
-                                            int                 comp_level) {
+                                            CompLevel           comp_level) {
   bool is_osr = (osr_bci != standard_entry_bci);
   if (is_osr) {
     if (method->is_not_osr_compilable(comp_level)) {
@@ -1553,7 +1553,7 @@ bool CompileBroker::compilation_is_in_queue(const methodHandle& method) {
 // CompileBroker::compilation_is_prohibited
 //
 // See if this compilation is not allowed.
-bool CompileBroker::compilation_is_prohibited(const methodHandle& method, int osr_bci, int comp_level, bool excluded) {
+bool CompileBroker::compilation_is_prohibited(const methodHandle& method, int osr_bci, CompLevel comp_level, bool excluded) {
   bool is_native = method->is_native();
   // Some compilers may not support the compilation of natives.
   AbstractCompiler *comp = compiler(comp_level);
@@ -1642,7 +1642,7 @@ CompileTask* CompileBroker::create_compile_task(CompileQueue*       queue,
                                                 int                 compile_id,
                                                 const methodHandle& method,
                                                 int                 osr_bci,
-                                                int                 comp_level,
+                                                CompLevel           comp_level,
                                                 const methodHandle& hot_method,
                                                 int                 hot_count,
                                                 CompileTask::CompileReason compile_reason,
@@ -2189,7 +2189,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
   bool is_osr = (osr_bci != standard_entry_bci);
   bool should_log = (thread->log() != NULL);
   bool should_break = false;
-  const int task_level = task->comp_level();
+  const CompLevel task_level = task->comp_level();
   AbstractCompiler* comp = task->compiler();
 
   DirectiveSet* directive;
@@ -2511,7 +2511,7 @@ void CompileBroker::collect_statistics(CompilerThread* thread, elapsedTimer time
   methodHandle method (thread, task->method());
   uint compile_id = task->compile_id();
   bool is_osr = (task->osr_bci() != standard_entry_bci);
-  const int comp_level = task->comp_level();
+  const CompLevel comp_level = task->comp_level();
   nmethod* code = task->code();
   CompilerCounters* counters = thread->counters();
 
@@ -2635,7 +2635,7 @@ void CompileBroker::collect_statistics(CompilerThread* thread, elapsedTimer time
   if (UsePerfData) counters->set_current_method("");
 }
 
-const char* CompileBroker::compiler_name(int comp_level) {
+const char* CompileBroker::compiler_name(CompLevel comp_level) {
   AbstractCompiler *comp = CompileBroker::compiler(comp_level);
   if (comp == NULL) {
     return "no compiler";

@@ -255,7 +255,7 @@
   nonstatic_field(MethodData,                  _jvmci_ir_size,                                int)                                   \
                                                                                                                                      \
   nonstatic_field(nmethod,                     _verified_entry_point,                         address)                               \
-  nonstatic_field(nmethod,                     _comp_level,                                   int)                                   \
+  nonstatic_field(nmethod,                     _comp_level,                                   CompLevel)                             \
                                                                                                                                      \
   nonstatic_field(ObjArrayKlass,               _element_klass,                                Klass*)                                \
                                                                                                                                      \

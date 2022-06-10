@@ -238,13 +238,13 @@ class CompileBroker: AllStatic {
   static JavaThread* make_thread(ThreadType type, jobject thread_oop, CompileQueue* queue, AbstractCompiler* comp, JavaThread* THREAD);
   static void init_compiler_sweeper_threads();
   static void possibly_add_compiler_threads(JavaThread* THREAD);
-  static bool compilation_is_prohibited(const methodHandle& method, int osr_bci, int comp_level, bool excluded);
+  static bool compilation_is_prohibited(const methodHandle& method, int osr_bci, CompLevel comp_level, bool excluded);
 
   static CompileTask* create_compile_task(CompileQueue*       queue,
                                           int                 compile_id,
                                           const methodHandle& method,
                                           int                 osr_bci,
-                                          int                 comp_level,
+                                          CompLevel           comp_level,
                                           const methodHandle& hot_method,
                                           int                 hot_count,
                                           CompileTask::CompileReason compile_reason,
@@ -263,14 +263,14 @@ class CompileBroker: AllStatic {
 
   static void compile_method_base(const methodHandle& method,
                                   int osr_bci,
-                                  int comp_level,
+                                  CompLevel comp_level,
                                   const methodHandle& hot_method,
                                   int hot_count,
                                   CompileTask::CompileReason compile_reason,
                                   bool blocking,
                                   Thread* thread);
 
-  static CompileQueue* compile_queue(int comp_level);
+  static CompileQueue* compile_queue(CompLevel comp_level);
   static bool init_compiler_runtime();
   static void shutdown_compiler_runtime(AbstractCompiler* comp, CompilerThread* thread);
 
@@ -280,16 +280,16 @@ public:
     standard_entry_bci = InvocationEntryBci
   };
 
-  static AbstractCompiler* compiler(int comp_level) {
+  static AbstractCompiler* compiler(CompLevel comp_level) {
     if (is_c2_compile(comp_level)) return _compilers[1]; // C2
     if (is_c1_compile(comp_level)) return _compilers[0]; // C1
     return NULL;
   }
 
-  static bool compilation_is_complete(const methodHandle& method, int osr_bci, int comp_level);
+  static bool compilation_is_complete(const methodHandle& method, int osr_bci, CompLevel comp_level);
   static bool compilation_is_in_queue(const methodHandle& method);
   static void print_compile_queues(outputStream* st);
-  static int queue_size(int comp_level) {
+  static int queue_size(CompLevel comp_level) {
     CompileQueue *q = compile_queue(comp_level);
     return q != NULL ? q->size() : 0;
   }
@@ -298,7 +298,7 @@ public:
   static void init_compiler_thread_log();
   static nmethod* compile_method(const methodHandle& method,
                                  int osr_bci,
-                                 int comp_level,
+                                 CompLevel comp_level,
                                  const methodHandle& hot_method,
                                  int hot_count,
                                  CompileTask::CompileReason compile_reason,
@@ -306,7 +306,7 @@ public:
 
   static nmethod* compile_method(const methodHandle& method,
                                    int osr_bci,
-                                   int comp_level,
+                                   CompLevel comp_level,
                                    const methodHandle& hot_method,
                                    int hot_count,
                                    CompileTask::CompileReason compile_reason,
@@ -377,7 +377,7 @@ public:
   static void print_times(bool per_compiler = true, bool aggregate = true);
 
   // compiler name for debugging
-  static const char* compiler_name(int comp_level);
+  static const char* compiler_name(CompLevel comp_level);
 
   // Provide access to compiler thread Java objects
   static jobject compiler1_object(int idx) {

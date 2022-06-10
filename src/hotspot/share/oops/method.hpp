@@ -929,20 +929,20 @@ public:
   // Indicates whether compilation failed earlier for this method, or
   // whether it is not compilable for another reason like having a
   // breakpoint set in it.
-  bool  is_not_compilable(int comp_level = CompLevel_any) const;
-  void set_not_compilable(const char* reason, int comp_level = CompLevel_all, bool report = true);
-  void set_not_compilable_quietly(const char* reason, int comp_level = CompLevel_all) {
+  bool  is_not_compilable(CompLevel comp_level = CompLevel_any) const;
+  void set_not_compilable(const char* reason, CompLevel comp_level = CompLevel_all, bool report = true);
+  void set_not_compilable_quietly(const char* reason, CompLevel comp_level = CompLevel_all) {
     set_not_compilable(reason, comp_level, false);
   }
-  bool  is_not_osr_compilable(int comp_level = CompLevel_any) const;
-  void set_not_osr_compilable(const char* reason, int comp_level = CompLevel_all, bool report = true);
-  void set_not_osr_compilable_quietly(const char* reason, int comp_level = CompLevel_all) {
+  bool  is_not_osr_compilable(CompLevel comp_level = CompLevel_any) const;
+  void set_not_osr_compilable(const char* reason, CompLevel comp_level = CompLevel_all, bool report = true);
+  void set_not_osr_compilable_quietly(const char* reason, CompLevel comp_level = CompLevel_all) {
     set_not_osr_compilable(reason, comp_level, false);
   }
   bool is_always_compilable() const;
 
  private:
-  void print_made_not_compilable(int comp_level, bool is_osr, bool report, const char* reason);
+  void print_made_not_compilable(CompLevel comp_level, bool is_osr, bool report, const char* reason);
 
  public:
   MethodCounters* get_method_counters(Thread* current) {
