@@ -73,7 +73,7 @@ public class bug6796710 {
     private static JFrame frame;
 
     private static JPanel pnBottom;
-    private static final int COLORTOLERANCE = 5;
+    private static final int COLOR_TOLERANCE = 5;
 
     public static void main(String[] args) throws Exception {
         robot = new Robot();
@@ -158,9 +158,9 @@ public class bug6796710 {
                 int blue2 = bufCol1.getBlue();
                 int green2 = bufCol1.getGreen();
 
-                if ((Math.abs(red1 - red2) > COLORTOLERANCE) ||
-                    (Math.abs(green1 - green2) > COLORTOLERANCE) ||
-                    (Math.abs(blue1 - blue2) > COLORTOLERANCE)) {
+                if ((Math.abs(red1 - red2) > COLOR_TOLERANCE) ||
+                    (Math.abs(green1 - green2) > COLOR_TOLERANCE) ||
+                    (Math.abs(blue1 - blue2) > COLOR_TOLERANCE)) {
                         System.out.println("x "+ x + " y " + y +
                             " rgb1: " + bufCol0 +
                             " rgb2: " + bufCol1);
