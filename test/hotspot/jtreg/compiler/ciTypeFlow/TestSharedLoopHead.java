@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,32 +21,32 @@
  * questions.
  */
 
-import java.lang.ref.Reference;
-import java.lang.ref.WeakReference;
-
-import javax.swing.border.TitledBorder;
-
-/**
+/*
  * @test
- * @bug 8204963
- * @summary Verifies TitledBorder's memory leak
- * @library /javax/swing/regtesthelpers
- * @build Util
- * @run main/timeout=60/othervm -mx32m TestTitledBorderLeak
+ * @bug 8286451
+ * @summary C2: assert(nb == 1) failed: only when the head is not shared
+ * @run main/othervm -XX:-BackgroundCompilation TestSharedLoopHead
  */
-public final class TestTitledBorderLeak {
 
-    public static void main(String[] args) throws Exception {
-        Reference<TitledBorder> border = getTitleBorder();
-        int attempt = 0;
-        while (border.get() != null) {
-            Util.generateOOME();
-            System.out.println("Not freed, attempt: " + attempt++);
+public class TestSharedLoopHead {
+    public static void main(String[] args) {
+        for (int i = 0; i < 20_000; i++) {
+            test();
         }
     }
 
-    private static Reference<TitledBorder> getTitleBorder() {
-        TitledBorder tb = new TitledBorder("");
-        return new WeakReference<>(tb);
+    private static void test() {
+        int j = 0;
+        int i = 0;
+        do {
+            do {
+                i++;
+            } while (i < 2);
+            do {
+                i++;
+            } while (i < 2);
+            j++;
+            i = 0;
+        } while (j < 2);
     }
 }
