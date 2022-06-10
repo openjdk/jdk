@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4245809 8029795
+ * @bug 4245809 8029795 8285405
  * @summary Basic test for LinkedHashMap.  (Based on MapBash)
  */
 
