@@ -121,7 +121,7 @@ jobs:
           --resolve-deps
           buster
           sysroot
-          http://httpredir.debian.org/debian/
+          https://httpredir.debian.org/debian/
         if: steps.get-cached-sysroot.outputs.cache-hit != 'true'
 
       - name: 'Prepare sysroot'
