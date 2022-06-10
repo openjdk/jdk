@@ -161,7 +161,7 @@ public interface IntegerModuloP {
         //    this number must be non zero (modulo p).
         // 2. To flatten a 3D point to a 2D AffinePoint. This number
         //    might be zero (infinity). However, since the infinity
-        //    is represented as (0, 0) in 2D, it’s OK returning 0 as
+        //    is represented as (0, 0) in 2D, it's OK returning 0 as
         //    the inverse of 0, i.e. (1, 1, 0) == (1/0, 1/0) == (0, 0).
         return pow(getField().getSize().subtract(BigInteger.valueOf(2)));
     }
