@@ -137,7 +137,7 @@ public class IREncodingPrinter {
         }
 
         if (irAnno.applyIfCPUFeature().length != 0) {
-            boolean check = hasAllRequiredCPUFeature(irAnno.applyIfCPUFeature(), "applyIfCPUFeature");
+            boolean check = hasAllRequiredCPUFeature(irAnno.applyIfCPUFeature());
             if (!check) {
                 TestFrameworkSocket.write("Disabling IR matching for " + m + ": Feature constraint not met.",
                                      "[IREncodingPrinter]", true);
@@ -169,44 +169,45 @@ public class IREncodingPrinter {
     private void checkIRAnnotations(IR irAnno) {
         TestFormat.checkNoThrow(irAnno.counts().length != 0 || irAnno.failOn().length != 0,
                                 "Must specify either counts or failOn constraint" + failAt());
-        int applyRules = 0;
+        int flagConstraints = 0;
+        int cpuFeatureConstraints = 0;
         if (irAnno.applyIfAnd().length != 0) {
-            applyRules++;
+            flagConstraints++;
             TestFormat.checkNoThrow(irAnno.applyIfAnd().length > 2,
                                     "Use applyIf or applyIfNot or at least 2 conditions for applyIfAnd" + failAt());
         }
         if (irAnno.applyIfOr().length != 0) {
-            applyRules++;
+            flagConstraints++;
             TestFormat.checkNoThrow(irAnno.applyIfOr().length > 2,
                                     "Use applyIf or applyIfNot or at least 2 conditions for applyIfOr" + failAt());
         }
         if (irAnno.applyIf().length != 0) {
-            applyRules++;
+            flagConstraints++;
             TestFormat.checkNoThrow(irAnno.applyIf().length <= 2,
                                     "Use applyIfAnd or applyIfOr or only 1 condition for applyIf" + failAt());
         }
         if (irAnno.applyIfCPUFeature().length != 0) {
-            applyRules++;
-            TestFormat.checkNoThrow((irAnno.applyIfCPUFeature().length % 2) == 0,
-                                    "Argument count for applyIfCPUFeature should be multiple of two" + failAt());
+            cpuFeatureConstraints++;
+            TestFormat.checkNoThrow(irAnno.applyIfCPUFeature().length == 2,
+                                    "applyIfCPUFeature expects single CPU feature pair" + failAt());
         }
         if (irAnno.applyIfCPUFeatureAnd().length != 0) {
-            applyRules++;
-            TestFormat.checkNoThrow((irAnno.applyIfCPUFeatureAnd().length % 2) == 0,
-                                    "Argument count for applyIfCPUFeatureAnd should be multiple of two" + failAt());
+            cpuFeatureConstraints++;
+            TestFormat.checkNoThrow((irAnno.applyIfCPUFeatureAnd().length % 2) == 0 && irAnno.applyIfCPUFeatureAnd().length >= 2,
+                                    "applyIfCPUFeatureAnd expects more than one CPU feature pair" + failAt());
         }
         if (irAnno.applyIfCPUFeatureOr().length != 0) {
-            applyRules++;
-            TestFormat.checkNoThrow((irAnno.applyIfCPUFeatureOr().length % 2) == 0,
-                                    "Argument count for applyIfCPUFeatureOr should be multiple of two" + failAt());
+            cpuFeatureConstraints++;
+            TestFormat.checkNoThrow((irAnno.applyIfCPUFeatureOr().length % 2) == 0 && irAnno.applyIfCPUFeatureOr().length >= 2,
+                                    "applyIfCPUFeatureOr expects more than one CPU feature pair" + failAt());
         }
         if (irAnno.applyIfNot().length != 0) {
-            applyRules++;
+            flagConstraints++;
             TestFormat.checkNoThrow(irAnno.applyIfNot().length <= 2,
                                     "Use applyIfAnd or applyIfOr or only 1 condition for applyIfNot" + failAt());
         }
-        TestFormat.checkNoThrow(applyRules <= 1,
-                                "Can only specify one apply constraint " + failAt());
+        TestFormat.checkNoThrow(flagConstraints <= 1, "Can only specify one flag constraint" + failAt());
+        TestFormat.checkNoThrow(cpuFeatureConstraints <= 1, "Can only specify one CPU feature constraint" + failAt());
     }
 
     private boolean isDefaultRegexUnsupported(IR irAnno) {
