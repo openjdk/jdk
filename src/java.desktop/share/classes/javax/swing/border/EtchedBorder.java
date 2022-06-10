@@ -158,7 +158,7 @@ public class EtchedBorder extends AbstractBorder
         int stkWidth = 1;
         boolean resetTransform = false;
         if (g instanceof Graphics2D) {
-            Graphics2D g2dg = (Graphics2D) g;
+            Graphics2D g2d = (Graphics2D) g;
             at = g2d.getTransform();
             oldStk = g2d.getStroke();
             // if m01 or m10 is non-zero, then there is a rotation or shear
