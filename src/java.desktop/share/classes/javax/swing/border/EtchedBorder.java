@@ -153,12 +153,12 @@ public class EtchedBorder extends AbstractBorder
     public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
         // We remove any initial transforms to prevent rounding errors
         // when drawing in non-integer scales
-        AffineTransform at;
-        Stroke oldStk;
+        AffineTransform at = null;
+        Stroke oldStk = null;
         int stkWidth = 1;
         boolean resetTransform = false;
         if (g instanceof Graphics2D) {
-            Graphics2D g2d = (Graphics2D) g;
+            Graphics2D g2dg = (Graphics2D) g;
             at = g2d.getTransform();
             oldStk = g2d.getStroke();
             // if m01 or m10 is non-zero, then there is a rotation or shear
