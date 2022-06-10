@@ -3772,7 +3772,7 @@ void TemplateTable::athrow() {
 // [monitor entry]
 // [frame data   ] <--- monitor block bot
 // ...
-// [saved rbp    ] <--- rbp
+// [saved rfp    ] <--- rfp
 void TemplateTable::monitorenter()
 {
   transition(atos, vtos);
