@@ -444,7 +444,7 @@ inline frame frame::sender_for_compiled_frame(RegisterMap* map) const {
       assert(oop_map() == NULL || !oop_map()->has_any(OopMapValue::callee_saved_value), "callee-saved value in compiled frame");
     }
 
-    // Since the prolog does the save and restore of EBP there is no oopmap
+    // Since the prolog does the save and restore of FP there is no oopmap
     // for it so we must fill in its location as if there was an oopmap entry
     // since if our caller was compiled code there could be live jvm state in it.
     update_map_with_saved_link(map, saved_fp_addr);
@@ -464,13 +464,13 @@ inline frame frame::sender_for_compiled_frame(RegisterMap* map) const {
 
 template <typename RegisterMapT>
 void frame::update_map_with_saved_link(RegisterMapT* map, intptr_t** link_addr) {
-  // The interpreter and compiler(s) always save EBP/RBP in a known
+  // The interpreter and compiler(s) always save FP in a known
   // location on entry. We must record where that location is
-  // so this if EBP/RBP was live on callout from c2 we can find
+  // so this if FP was live on callout from c2 we can find
   // the saved copy no matter what it called.
 
-  // Since the interpreter always saves EBP/RBP if we record where it is then
-  // we don't have to always save EBP/RBP on entry and exit to c2 compiled
+  // Since the interpreter always saves FP, if we record where it is then
+  // we don't have to always save FP on entry and exit to c2 compiled
   // code, on entry will be enough.
   map->set_location(rfp->as_VMReg(), (address) link_addr);
   // this is weird "H" ought to be at a higher address however the
