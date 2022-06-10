@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,6 +156,13 @@ public interface IntegerModuloP {
      * @return the multiplicative inverse (1 / this)
      */
     default ImmutableIntegerModuloP multiplicativeInverse() {
+        // This method is used in 2 cases:
+        // 1. To calculate the inverse of a number in ECDSAOperations,
+        //    this number must be non zero (modulo p).
+        // 2. To flatten a 3D point to a 2D AffinePoint. This number
+        //    might be zero (infinity). However, since the infinity
+        //    is represented as (0, 0) in 2D, it’s OK returning 0 as
+        //    the inverse of 0, i.e. (1, 1, 0) == (1/0, 1/0) == (0, 0).
         return pow(getField().getSize().subtract(BigInteger.valueOf(2)));
     }
 
