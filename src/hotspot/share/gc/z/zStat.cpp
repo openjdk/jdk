@@ -1480,11 +1480,17 @@ void ZStatRelocation::print() {
     account_page_size(large_summary, _selector_stats.large(age));
 
     if (bytes != 0) {
-      // FIXME: Make pretty
-      FormatBuffer<> survivor("Survivor %d", i);
+      FormatBuffer<> age_str("");
+      if (age == ZPageAge::eden) {
+        age_str.append("Eden");
+      } else if (age == ZPageAge::old) {
+        age_str.append("Old");
+      } else {
+        age_str.append("Survivor %d", i);
+      }
 
       lt.print("%s", age_table()
-               .left(age == ZPageAge::eden ? "Eden" : (age == ZPageAge::old ? "Old" : survivor.buffer()))
+               .left("%s", age_str.buffer())
                .left(ZTABLE_ARGS(live))
                .left(ZTABLE_ARGS(bytes - live))
                .end());
