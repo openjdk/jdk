@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,7 @@ public class bug6796710 {
     private static JFrame frame;
 
     private static JPanel pnBottom;
+    private static final int COLORTOLERANCE = 5;
 
     public static void main(String[] args) throws Exception {
         robot = new Robot();
@@ -140,7 +141,6 @@ public class bug6796710 {
     public static boolean compareBufferedImages(BufferedImage bufferedImage0, BufferedImage bufferedImage1) {
         int width = bufferedImage0.getWidth();
         int height = bufferedImage0.getHeight();
-        int colorTolerance = 5;
 
         if (width != bufferedImage1.getWidth() || height != bufferedImage1.getHeight()) {
             return false;
@@ -159,12 +159,12 @@ public class bug6796710 {
                 int blue2 = bufCol1.getBlue();
                 int green2 = bufCol1.getGreen();
 
-                if ((Math.abs(red1 - red2) > colorTolerance) ||
-                    (Math.abs(green1 - green2) > colorTolerance) ||
-                    (Math.abs(blue1 - blue2) > colorTolerance)) {
+                if ((Math.abs(red1 - red2) > COLORTOLERANCE) ||
+                    (Math.abs(green1 - green2) > COLORTOLERANCE) ||
+                    (Math.abs(blue1 - blue2) > COLORTOLERANCE)) {
                         System.out.println("x "+ x + " y " + y +
-                            " rgb1: " + Integer.toHexString(bufferedImage0.getRGB(x, y)) +
-                            " rgb2: " + Integer.toHexString(bufferedImage1.getRGB(x, y)));
+                            " rgb1: " + bufCol0 +
+                            " rgb2: " + bufCol1);
                     return false;
                 }
             }
@@ -179,6 +179,5 @@ public class bug6796710 {
         Util.convertRectToScreen(rect, pnBottom.getParent());
 
         return robot.createScreenCapture(rect);
-
     }
 }
