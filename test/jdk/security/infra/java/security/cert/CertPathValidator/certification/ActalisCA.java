@@ -44,13 +44,12 @@
  */
 public class ActalisCA {
 
-    // Owner: CN=Actalis Organization Validated Server CA G3, O=Actalis S.p.A
-    // ., L=Ponte San Pietro, ST=Bergamo, C=IT
-    // Issuer: CN=Actalis Authentication Root CA, O=Actalis S.p.A
-    // ./03358520967, L=Milan, C=IT
+    // Owner: CN=Actalis Organization Validated Server CA G3, O=Actalis S.p.A.,
+    //        L=Ponte San Pietro, ST=Bergamo, C=IT
+    // Issuer: CN=Actalis Authentication Root CA, O=Actalis S.p.A ./03358520967,
+    //         L=Milan, C=IT
     // Serial number: 5c3b3f37adfc28fe0fcfd3abf83f8551
-    // Valid from: Mon Jul 06 00:20:55 PDT 2020 until: Sun Sep 22 04:22:02
-    // PDT 2030
+    // Valid from: Mon Jul 06 00:20:55 PDT 2020 until: Sun Sep 22 04:22:02 PDT 2030
     private static final String INT = "-----BEGIN CERTIFICATE-----\n" +
             "MIIHdTCCBV2gAwIBAgIQXDs/N638KP4Pz9Or+D+FUTANBgkqhkiG9w0BAQsFADBr\n" +
             "MQswCQYDVQQGEwJJVDEOMAwGA1UEBwwFTWlsYW4xIzAhBgNVBAoMGkFjdGFsaXMg\n" +
@@ -94,13 +93,12 @@ public class ActalisCA {
             "iC3Xi7rAlypmme+QFBw9F1J89ig3smV/HaN8tO0lfTpvm7Zvzd5TkMs=\n" +
             "-----END CERTIFICATE-----";
 
-    // Owner: CN=ssltest-active.actalis.it, O=Actalis S.p.A., L=Ponte San
-    // Pietro, ST=Bergamo, C=IT
-    // Issuer: CN=Actalis Organization Validated Server CA G3, O=Actalis S.p
-    // .A., L=Ponte San Pietro, ST=Bergamo, C=IT
+    // Owner: CN=ssltest-active.actalis.it, O=Actalis S.p.A., L=Ponte San Pietro,
+    //        ST=Bergamo, C=IT
+    // Issuer: CN=Actalis Organization Validated Server CA G3, O=Actalis S.p A.,
+    //         L=Ponte San Pietro, ST=Bergamo, C=IT
     // Serial number: 4a49e2afcd448af3b7f5f14e1cd5954
-    // Valid from: Tue Mar 08 08:00:57 PST 2022 until: Wed Mar 08 08:00:57
-    // PST 2023
+    // Valid from: Tue Mar 08 08:00:57 PST 2022 until: Wed Mar 08 08:00:57 PST 2023
     private static final String VALID = "-----BEGIN CERTIFICATE-----\n" +
             "MIIH0jCCBbqgAwIBAgIQBKSeKvzUSK87f18U4c1ZVDANBgkqhkiG9w0BAQsFADCB\n" +
             "iTELMAkGA1UEBhMCSVQxEDAOBgNVBAgMB0JlcmdhbW8xGTAXBgNVBAcMEFBvbnRl\n" +
@@ -146,13 +144,12 @@ public class ActalisCA {
             "rjhpn3C/NptVyZgT8bL4XT5ITrAjwPciBj0yxYzUkrLZO1wKQSQ=\n" +
             "-----END CERTIFICATE-----";
 
-    // Owner: CN=ssltest-revoked.actalis.it, O=Actalis S.p.A., L=Ponte San
-    // Pietro, ST=Bergamo, C=IT
-    // Issuer: CN=Actalis Organization Validated Server CA G3, O=Actalis S.p
-    // .A., L=Ponte San Pietro, ST=Bergamo, C=IT
+    // Owner: CN=ssltest-revoked.actalis.it, O=Actalis S.p.A., L=Ponte San Pietro,
+    //        ST=Bergamo, C=IT
+    // Issuer: CN=Actalis Organization Validated Server CA G3, O=Actalis S.p .A.,
+    //         L=Ponte San Pietro, ST=Bergamo, C=IT
     // Serial number: 3dbdba0fefe7c6bd978220de52ffe3b2
-    // Valid from: Fri Oct 08 02:23:49 PDT 2021 until: Sat Oct 08 02:23:49
-    // PDT 2022
+    // Valid from: Fri Oct 08 02:23:49 PDT 2021 until: Sat Oct 08 02:23:49 PDT 2022
     private static final String REVOKED = "-----BEGIN CERTIFICATE-----\n" +
             "MIIH1zCCBb+gAwIBAgIQPb26D+/nxr2XgiDeUv/jsjANBgkqhkiG9w0BAQsFADCB\n" +
             "iTELMAkGA1UEBhMCSVQxEDAOBgNVBAgMB0JlcmdhbW8xGTAXBgNVBAcMEFBvbnRl\n" +
