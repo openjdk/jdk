@@ -103,8 +103,7 @@ class AmazonCA_1 {
     // Owner: CN=good.sca1a.amazontrust.com
     // Issuer: CN=Amazon, OU=Server CA 1A, O=Amazon, C=US
     // Serial number: 75a5dd4b767bedc94a4239da65ed9dfef8218
-    // Valid from: Fri Dec 17 12:21:50 PST 2021 until: Tue Jan 17 12:21:50
-    // PST 2023
+    // Valid from: Fri Dec 17 12:21:50 PST 2021 until: Tue Jan 17 12:21:50 PST 2023
     private static final String VALID = "-----BEGIN CERTIFICATE-----\n" +
             "MIIEIDCCAwigAwIBAgITB1pd1LdnvtyUpCOdpl7Z3++CGDANBgkqhkiG9w0BAQsF\n" +
             "ADBGMQswCQYDVQQGEwJVUzEPMA0GA1UEChMGQW1hem9uMRUwEwYDVQQLEwxTZXJ2\n" +
@@ -134,8 +133,7 @@ class AmazonCA_1 {
     // Owner: CN=revoked.sca1a.amazontrust.com
     // Issuer: CN=Amazon, OU=Server CA 1A, O=Amazon, C=US
     // Serial number: 75a5de4434092b2cd6ed81eb5e6248e1e5f2a
-    // Valid from: Fri Dec 17 12:25:17 PST 2021 until: Tue Jan 17 12:25:17
-    // PST 2023
+    // Valid from: Fri Dec 17 12:25:17 PST 2021 until: Tue Jan 17 12:25:17 PST 2023
     private static final String REVOKED = "-----BEGIN CERTIFICATE-----\n" +
             "MIIEJjCCAw6gAwIBAgITB1pd5ENAkrLNbtgeteYkjh5fKjANBgkqhkiG9w0BAQsF\n" +
             "ADBGMQswCQYDVQQGEwJVUzEPMA0GA1UEChMGQW1hem9uMRUwEwYDVQQLEwxTZXJ2\n" +
@@ -228,8 +226,7 @@ class AmazonCA_2 {
     // Owner: CN=good.sca2a.amazontrust.com
     // Issuer: CN=Amazon, OU=Server CA 2A, O=Amazon, C=US
     // Serial number: 75a5dd7d82269ed466af69794f34050bdffa2
-    // Valid from: Fri Dec 17 12:22:32 PST 2021 until: Tue Jan 17 12:22:32
-    // PST 2023
+    // Valid from: Fri Dec 17 12:22:32 PST 2021 until: Tue Jan 17 12:22:32 PST 2023
     private static final String VALID = "-----BEGIN CERTIFICATE-----\n" +
             "MIIGIDCCBAigAwIBAgITB1pd19giae1GavaXlPNAUL3/ojANBgkqhkiG9w0BAQwF\n" +
             "ADBGMQswCQYDVQQGEwJVUzEPMA0GA1UEChMGQW1hem9uMRUwEwYDVQQLEwxTZXJ2\n" +
@@ -269,8 +266,7 @@ class AmazonCA_2 {
     // Owner: CN=revoked.sca2a.amazontrust.com
     // Issuer: CN=Amazon, OU=Server CA 2A, O=Amazon, C=US
     // Serial number: 75a5df2d3387cfe5fd4cad9ff00f8c882b98d
-    // Valid from: Fri Dec 17 12:28:31 PST 2021 until: Tue Jan 17 12:28:31
-    // PST 2023
+    // Valid from: Fri Dec 17 12:28:31 PST 2021 until: Tue Jan 17 12:28:31 PST 2023
     private static final String REVOKED = "-----BEGIN CERTIFICATE-----\n" +
             "MIIGJjCCBA6gAwIBAgITB1pd8tM4fP5f1MrZ/wD4yIK5jTANBgkqhkiG9w0BAQwF\n" +
             "ADBGMQswCQYDVQQGEwJVUzEPMA0GA1UEChMGQW1hem9uMRUwEwYDVQQLEwxTZXJ2\n" +
@@ -354,8 +350,7 @@ class AmazonCA_3 {
     // Owner: CN=good.sca3a.amazontrust.com
     // Issuer: CN=Amazon, OU=Server CA 3A, O=Amazon, C=US
     // Serial number: 75a5dd9ec12f37f4bbed4bada4b75164a642f
-    // Valid from: Fri Dec 17 12:23:00 PST 2021 until: Tue Jan 17 12:23:00
-    // PST 2023
+    // Valid from: Fri Dec 17 12:23:00 PST 2021 until: Tue Jan 17 12:23:00 PST 2023
     private static final String VALID = "-----BEGIN CERTIFICATE-----\n" +
             "MIIClDCCAjqgAwIBAgITB1pd2ewS839LvtS62kt1FkpkLzAKBggqhkjOPQQDAjBG\n" +
             "MQswCQYDVQQGEwJVUzEPMA0GA1UEChMGQW1hem9uMRUwEwYDVQQLEwxTZXJ2ZXIg\n" +
@@ -376,8 +371,7 @@ class AmazonCA_3 {
     // Owner: CN=revoked.sca3a.amazontrust.com
     // Issuer: CN=Amazon, OU=Server CA 3A, O=Amazon, C=US
     // Serial number: 75a5df9c88c0613777baba663000de147a26b
-    // Valid from: Fri Dec 17 12:30:04 PST 2021 until: Tue Jan 17 12:30:04
-    // PST 2023
+    // Valid from: Fri Dec 17 12:30:04 PST 2021 until: Tue Jan 17 12:30:04 PST 2023
     private static final String REVOKED = "-----BEGIN CERTIFICATE-----\n" +
             "MIICmzCCAkCgAwIBAgITB1pd+ciMBhN3e6umYwAN4UeiazAKBggqhkjOPQQDAjBG\n" +
             "MQswCQYDVQQGEwJVUzEPMA0GA1UEChMGQW1hem9uMRUwEwYDVQQLEwxTZXJ2ZXIg\n" +
@@ -443,8 +437,7 @@ class AmazonCA_4 {
     // Owner: CN=good.sca4a.amazontrust.com
     // Issuer: CN=Amazon, OU=Server CA 4A, O=Amazon, C=US
     // Serial number: 75a5ddc1a4ea5a18110454883269df9409bf5
-    // Valid from: Fri Dec 17 12:23:29 PST 2021 until: Tue Jan 17 12:23:29
-    // PST 2023
+    // Valid from: Fri Dec 17 12:23:29 PST 2021 until: Tue Jan 17 12:23:29 PST 2023
     private static final String VALID = "-----BEGIN CERTIFICATE-----\n" +
             "MIIC0TCCAlegAwIBAgITB1pd3BpOpaGBEEVIgyad+UCb9TAKBggqhkjOPQQDAzBG\n" +
             "MQswCQYDVQQGEwJVUzEPMA0GA1UEChMGQW1hem9uMRUwEwYDVQQLEwxTZXJ2ZXIg\n" +
@@ -467,8 +460,7 @@ class AmazonCA_4 {
     // Owner: CN=revoked.sca4a.amazontrust.com
     // Issuer: CN=Amazon, OU=Server CA 4A, O=Amazon, C=US
     // Serial number: 75a5e0442d0fed2b11850ed6746a2200bb4af
-    // Valid from: Fri Dec 17 12:32:23 PST 2021 until: Tue Jan 17 12:32:23
-    // PST 2023
+    // Valid from: Fri Dec 17 12:32:23 PST 2021 until: Tue Jan 17 12:32:23 PST 2023
     private static final String REVOKED = "-----BEGIN CERTIFICATE-----\n" +
             "MIIC1zCCAl2gAwIBAgITB1peBELQ/tKxGFDtZ0aiIAu0rzAKBggqhkjOPQQDAzBG\n" +
             "MQswCQYDVQQGEwJVUzEPMA0GA1UEChMGQW1hem9uMRUwEwYDVQQLEwxTZXJ2ZXIg\n" +
