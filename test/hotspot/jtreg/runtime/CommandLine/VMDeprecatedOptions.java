@@ -57,6 +57,7 @@ public class VMDeprecatedOptions {
             {"TLABStats",                 "false"},
             {"AllowRedefinitionToAddDeleteMethods", "true"},
 
+            { "FlightRecorder",           "false"},
             // deprecated alias flags (see also aliased_jvm_flags):
             {"DefaultMaxRAMFraction", "4"},
             {"CreateMinidumpOnCrash", "false"}
@@ -68,6 +69,10 @@ public class VMDeprecatedOptions {
     static String getDeprecationString(String optionName) {
         return "Option " + optionName
             + " was deprecated in version [\\S]+ and will likely be removed in a future release";
+    }
+
+    static String getUnrecognizedOptionMessage(String optionName) {
+        return "Unrecognized VM option '" + optionName + "'";
     }
 
     static void testDeprecated(String[][] optionInfo) throws Throwable {
@@ -84,6 +89,22 @@ public class VMDeprecatedOptions {
         output.shouldHaveExitValue(0);
         for (String[] deprecated : optionInfo) {
             String match = getDeprecationString(deprecated[0]);
+            output.shouldMatch(match);
+        }
+
+        // Verify ExtendedDTraceProbes option for jdk19
+        // if DTRACE_ENABLED is defined, Deprecated VM option
+        // if not, Unrecognized VM option
+        String dtraceOptionNames[] =  { "ExtendedDTraceProbes" };
+        String dtraceEexpectedValues[] = { "false" };
+        output = CommandLineOptionTest.startVMWithOptions(dtraceOptionNames, dTraceEexpectedValues);
+        try {
+            output.shouldHaveExitValue(0);
+            String match = getDeprecationString(dtraceOptionNames[0]);
+            output.shouldMatch(match);
+        }
+        catch (RuntimeException e) {
+            String match = getUnrecognizedOptionMessage(dtraceOptionNames[0]);
             output.shouldMatch(match);
         }
     }
