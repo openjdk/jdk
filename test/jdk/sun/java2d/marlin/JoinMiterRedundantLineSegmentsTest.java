@@ -119,14 +119,23 @@ public class JoinMiterRedundantLineSegmentsTest {
                 "m 19 180 l 20 181 [q 20 181 20 181]",
                 "This creates a degenerate quadratic curve after the last end point."));
 
-        // The following 3 tests are not essential for the resolution of JDK-8264999, but IMO they raise some
-        // interesting questions about what the expected behavior is. (My apologies if the expected behavior
-        // is specified somewhere: I'm not sure where that is?)
+        // This test reaches the line in Stroker.java where we detect a change of (+0, +0)
+        // and manually change the dx:
+        // dx = 1.0d;
+
+//        tests.add(new Test("Redundant lineTo after moveTo",
+//                "m 0 0 [l 0 0] l 10 10",
+//                "This creates a diagonal line that may include a redundant lineTo after the moveTo"));
+
+        // This test does NOT reach the same "dx = 1.0d" line. I'm not sure what the expected behavior here is.
 
 //        tests.add(new Test("lineTo after close",
-//                "m 19 180 z [l 19 180]",
+//                "m 0 0 z [l 10 10]",
 //                "This tests a lineTo after a close (but without a second moveTo)"));
-//
+
+        // The following 2 tests fail because the mitered stroke covers different ares.
+        // They might (?) be working as expected, and I just don't understand the expected behavior?
+
 //        tests.add(new Test("Diagonal line, optional lineTo back",
 //                "m 0 0 l 20 20 [l 0 0]",
 //                "This creates a diagonal line and optionally returns to the starting point."));
@@ -135,22 +144,21 @@ public class JoinMiterRedundantLineSegmentsTest {
 //                "m 0 0 l 20 20 l 0 0 [z]",
 //                "This creates a diagonal line, returns to the starting point, and optionally closes the path."));
 
-
         // We've decided the following commented-out tests are invalid. The current interpretation is:
         // "a moveTo statement without any additional information should NOT result in rendering anything"
 
 //        tests.add(new Test("empty line",
 //                "m 19 180 [l 19 180]",
 //                "This creates an empty shape with a lineTo the starting point."));
-
+//
 //        tests.add(new Test("empty degenerate cubic curve",
 //                "m 19 180 [c 19 180 19 180 19 180]",
 //                "This creates an empty degenerate cubic curve that is effectively a line to the starting point."));
-
+//
 //        tests.add(new Test("empty degenerate quadratic curve",
 //                "m 19 180 [q 19 180 19 180]",
 //                "This creates an empty degenerate quadratic curve that is effectively a line to the starting point."));
-
+//
 //        tests.add(new Test("moveTo then close",
 //                "m 19 180 [z]",
 //                "This moves to a starting position and then optionally closes the path."));
