@@ -947,8 +947,8 @@ public class Basic {
         }
     }
 
-    @DataProvider(name = "resolutionNames")
-    public Object[][] resolutionNames() {
+    @DataProvider(name = "resolutionWarnings")
+    public Object[][] resolutionWarnings() {
         return new Object[][] {
             {"incubating", (Predicate<ModuleResolution>) ModuleResolution::hasIncubatingWarning},
             {"deprecated", (Predicate<ModuleResolution>) ModuleResolution::hasDeprecatedWarning},
@@ -961,7 +961,7 @@ public class Basic {
      * Validate that you can create a jar only specifying --warn-if-resolved
      * @throws IOException
      */
-    @Test(dataProvider = "resolutionNames")
+    @Test(dataProvider = "resolutionWarnings")
     public void shouldAddWarnIfResolved(String resolutionName,
                                         Predicate<ModuleResolution> hasWarning) throws IOException {
         Path mp = Paths.get("moduleWarnIfResolved-" + resolutionName);
@@ -1019,7 +1019,7 @@ public class Basic {
      * --do-not-resolve-by-default
      * @throws IOException
      */
-    @Test(dataProvider = "resolutionNames")
+    @Test(dataProvider = "resolutionWarnings")
     public void shouldAddWarnIfResolvedAndDoNotResolveByDefault(String resolutionName,
                                         Predicate<ModuleResolution> hasWarning) throws IOException {
         Path mp = Paths.get("moduleResolutionWarnThenNotResolve-" + resolutionName);
@@ -1051,7 +1051,7 @@ public class Basic {
      * --warn-if-resolved
      * @throws IOException
      */
-    @Test(dataProvider = "resolutionNames")
+    @Test(dataProvider = "resolutionWarnings")
     public void shouldAddResolutionDoNotResolveByDefaultAndWarnIfResolved(String resolutionName,
                                         Predicate<ModuleResolution> hasWarning) throws IOException {
         Path mp = Paths.get("moduleResolutionNotResolveThenWarn-" + resolutionName);
