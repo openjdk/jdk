@@ -95,6 +95,10 @@ public class JoinMiterRedundantLineSegmentsTest {
     private static List<Test> createTests() {
         List<Test> tests = new ArrayList<>();
 
+        tests.add(new Test("Redundant diagonal line endpoint",
+                "m 0 0 l 10 10 [l 10 10]",
+                "This creates a diagonal line with a redundant endpoint; this is the core problem demonstrated in JDK-8264999."));
+
         tests.add(new Test("jdk-8264999",
                 "m 24.954517 159 l 21.097446 157.5 [l 21.097446 157.5] l 17.61364 162 [l 17.61364 162] l 13.756569 163.5 [l 13.756569 163.5] l 11.890244 160.5",
                 "This is the original shape reported in https://bugs.openjdk.org/browse/JDK-8264999"));
@@ -107,10 +111,6 @@ public class JoinMiterRedundantLineSegmentsTest {
                 "m 17 100 c 7 130 27 130 17 100 [l 17 100]",
                 "This creates a simple cubic curve (a teardrop shape) with one redundant line at the end."));
 
-//        tests.add(new Test("empty line",
-//                "m 19 180 [l 19 180]",
-//                "This creates an empty shape with a lineTo the starting point."));
-
         tests.add(new Test("degenerate cubic curve",
                 "m 19 180 l 20 181 [c 20 181 20 181 20 181]",
                 "This creates a degenerate cubic curve after the last end point."));
@@ -118,6 +118,30 @@ public class JoinMiterRedundantLineSegmentsTest {
         tests.add(new Test("degenerate quadratic curve",
                 "m 19 180 l 20 181 [q 20 181 20 181]",
                 "This creates a degenerate quadratic curve after the last end point."));
+
+        // The following 3 tests are not essential for the resolution of JDK-8264999, but IMO they raise some
+        // interesting questions about what the expected behavior is. (My apologies if the expected behavior
+        // is specified somewhere: I'm not sure where that is?)
+
+//        tests.add(new Test("lineTo after close",
+//                "m 19 180 z [l 19 180]",
+//                "This tests a lineTo after a close (but without a second moveTo)"));
+//
+//        tests.add(new Test("Diagonal line, optional lineTo back",
+//                "m 0 0 l 20 20 [l 0 0]",
+//                "This creates a diagonal line and optionally returns to the starting point."));
+//
+//        tests.add(new Test("Diagonal line, optional close",
+//                "m 0 0 l 20 20 l 0 0 [z]",
+//                "This creates a diagonal line, returns to the starting point, and optionally closes the path."));
+
+
+        // We've decided the following commented-out tests are invalid. The current interpretation is:
+        // "a moveTo statement without any additional information should NOT result in rendering anything"
+
+//        tests.add(new Test("empty line",
+//                "m 19 180 [l 19 180]",
+//                "This creates an empty shape with a lineTo the starting point."));
 
 //        tests.add(new Test("empty degenerate cubic curve",
 //                "m 19 180 [c 19 180 19 180 19 180]",
@@ -130,10 +154,6 @@ public class JoinMiterRedundantLineSegmentsTest {
 //        tests.add(new Test("moveTo then close",
 //                "m 19 180 [z]",
 //                "This moves to a starting position and then optionally closes the path."));
-
-        tests.add(new Test("lineTo after close",
-                "m 19 180 z [l 19 180]",
-                "This tests a lineTo after a close (without a moveTo)"));
 
         return tests;
     }
