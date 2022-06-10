@@ -82,7 +82,8 @@ static void z_store_barrier(MacroAssembler& _masm, const MachNode* node, Address
   if (node->barrier_data() == ZBarrierElided) {
     z_color(_masm, node, rnew_zpointer, rnew_zaddress, rnew_zpointer);
   } else {
-    ZStoreBarrierStubC2* const stub = ZStoreBarrierStubC2::create(node, ref_addr, rnew_zaddress, rnew_zpointer, is_atomic);
+    bool is_native = (node->barrier_data() & ZBarrierNative) != 0;
+    ZStoreBarrierStubC2* const stub = ZStoreBarrierStubC2::create(node, ref_addr, rnew_zaddress, rnew_zpointer, is_native, is_atomic);
     ZBarrierSetAssembler* bs_asm = ZBarrierSet::assembler();
     bs_asm->store_barrier_fast(&_masm, ref_addr, rnew_zaddress, rnew_zpointer, tmp, true /* in_nmethod */, is_atomic, *stub->entry(), *stub->continuation());
   }

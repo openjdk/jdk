@@ -7706,13 +7706,7 @@ address generate_avx_ghash_processBlocks() {
     __ reset_last_Java_frame(true);
 
     // rax is jobject handle result, unpack and process it through a barrier.
-    Label L_null_jobject;
-    __ testptr(rax, rax);
-    __ jcc(Assembler::zero, L_null_jobject);
-
     __ resolve_jobject(rax, r15_thread, c_rarg0);
-
-    __ bind(L_null_jobject);
 
     __ leave();
     __ ret(0);

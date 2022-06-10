@@ -310,6 +310,7 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
                                                 Register rtmp1,
                                                 Register rtmp2,
                                                 Register rtmp3,
+                                                bool is_native,
                                                 bool is_atomic,
                                                 Label& medium_path_continuation,
                                                 Label& slow_path,
@@ -318,7 +319,11 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
 
   // The reason to end up in the medium path is that the pre-value was not 'good'.
 
-  if (is_atomic) {
+  if (is_native) {
+    __ b(slow_path);
+    __ bind(slow_path_continuation);
+    __ b(medium_path_continuation);
+  } else if (is_atomic) {
     // Atomic accesses can get to the medium fast path because the value was a
     // raw NULL value. If it was not NULL, then there is no doubt we need to take a slow path.
     __ lea(rtmp2, ref_addr);
@@ -386,7 +391,16 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
     store_barrier_fast(masm, dst, val, tmp1, tmp2, false, false, medium, medium_continuation);
     __ b(done);
     __ bind(medium);
-    store_barrier_medium(masm, dst, tmp1, tmp2, noreg /* tmp3 */, false, medium_continuation, slow, slow_continuation);
+    store_barrier_medium(masm,
+                         dst,
+                         tmp1,
+                         tmp2,
+                         noreg /* tmp3 */,
+                         false /* is_native */,
+                         false /* is_atomic */,
+                         medium_continuation,
+                         slow,
+                         slow_continuation);
 
     __ bind(slow);
     {
@@ -427,9 +441,9 @@ private:
 
     __ enter(true /* strip_ret_addr */);
     if (_result != noreg) {
-      __ push(__ call_clobbered_registers() - RegSet::of(_result), sp);
+      __ push(__ call_clobbered_gp_registers() - RegSet::of(_result), sp);
     } else {
-      __ push(__ call_clobbered_registers(), sp);
+      __ push(__ call_clobbered_gp_registers(), sp);
     }
     int neonSize = wordSize * 2;
     __ sub(sp, sp, 4 * neonSize);
@@ -454,9 +468,9 @@ private:
       if (_result != r0) {
         __ mov(_result, r0);
       }
-      __ pop(__ call_clobbered_registers() - RegSet::of(_result), sp);
+      __ pop(__ call_clobbered_gp_registers() - RegSet::of(_result), sp);
     } else {
-      __ pop(__ call_clobbered_registers(), sp);
+      __ pop(__ call_clobbered_gp_registers(), sp);
     }
     __ leave();
   }
@@ -539,11 +553,11 @@ static void copy_load_barrier(MacroAssembler* masm,
 
   __ umov(tmp2, ref, Assembler::D, 0);
   copy_load_barrier(masm, tmp2, Address(src.base(), src.offset() + 0), tmp1);
-  __ mov(ref, Assembler::T2D, 0, tmp2);
+  __ mov(ref, __ D, 0, tmp2);
 
   __ umov(tmp2, ref, Assembler::D, 1);
   copy_load_barrier(masm, tmp2, Address(src.base(), src.offset() + 8), tmp1);
-  __ mov(ref, Assembler::T2D, 1, tmp2);
+  __ mov(ref, __ D, 1, tmp2);
 
   __ bind(done);
 }
@@ -1054,6 +1068,7 @@ void ZBarrierSetAssembler::generate_c1_store_barrier_stub(LIR_Assembler* ce,
                        rscratch2,
                        stub->new_zpointer()->as_register(),
                        rscratch1,
+                       false /* is_native */,
                        stub->is_atomic(),
                        *stub->continuation(),
                        slow,
@@ -1284,6 +1299,7 @@ void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, 
                        stub->new_zpointer(),
                        rscratch1,
                        rscratch2,
+                       stub->is_native(),
                        stub->is_atomic(),
                        *stub->continuation(),
                        slow,
@@ -1295,7 +1311,9 @@ void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, 
     ZSaveLiveRegisters save_live_registers(masm, stub);
     __ lea(c_rarg0, stub->ref_addr());
 
-    if (stub->is_atomic()) {
+    if (stub->is_native()) {
+      __ lea(rscratch1, RuntimeAddress(ZBarrierSetRuntime::store_barrier_on_native_oop_field_without_healing_addr()));
+    } else if (stub->is_atomic()) {
       __ lea(rscratch1, RuntimeAddress(ZBarrierSetRuntime::store_barrier_on_oop_field_with_healing_addr()));
     } else {
       __ lea(rscratch1, RuntimeAddress(ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing_addr()));

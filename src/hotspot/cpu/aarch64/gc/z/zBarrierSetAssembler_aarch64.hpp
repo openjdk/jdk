@@ -76,6 +76,7 @@ public:
                             Register rtmp1,
                             Register rtmp2,
                             Register rtmp3,
+                            bool is_native,
                             bool is_atomic,
                             Label& medium_path_continuation,
                             Label& slow_path,

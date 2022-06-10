@@ -1013,7 +1013,6 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
     }
 
     __ verify_oop(dest->as_register());
-    }
   }
 }
 
