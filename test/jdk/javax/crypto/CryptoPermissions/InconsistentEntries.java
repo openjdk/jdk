@@ -35,21 +35,23 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.Security;
 
-// This is a manual test to test a custom “default_local.policy" containing inconsistent entries
-// under a new subfolder "$JAVA_HOME/conf/security/policy“ directory.
-// This test fails when the policy directory “testlimited" or the policy “default_local.policy”
-// does not exist or is empty.
-// - Create a new subfolder “testlimited” under "$JAVA_HOME/conf/security/policy"
-// - Place the custom “default_local.policy" under “testlimited" directory
-// - default_local.policy contains:
-//   grant {
-//     permission javax.crypto.CryptoAllPermission;
-//     permission javax.crypto.CryptoPermission "DES", 64;
-//   };
-
 public class InconsistentEntries {
 
     public static void main(String[] args) throws Exception {
+        System.out.println("***********************************************************");
+        System.out.println("// This is a manual test to test a custom \"default_local.policy\" containing inconsistent entries");
+        System.out.println("// under a new subfolder \"$JAVA_HOME/conf/security/policy\" directory.");
+        System.out.println("// This test fails when the policy directory \"testlimited\" or the policy \"default_local.policy");
+        System.out.println("// does not exist or is empty.");
+        System.out.println("// - Create a new subfolder \"testlimited\" under \"$JAVA_HOME/conf/security/policy\"");
+        System.out.println("// - Place the custom \"default_local.policy\" under \"testlimited\" directory");
+        System.out.println("// - default_local.policy contains:");
+        System.out.println("//   grant {");
+        System.out.println("//       permission javax.crypto.CryptoAllPermission;");
+        System.out.println("//       permission javax.crypto.CryptoPermission \"DES\", 64;");
+        System.out.println("//   };");
+        System.out.println("***********************************************************");
+
         String JAVA_HOME = System.getProperty("java.home");
         String FS = System.getProperty("file.separator");
         Path testlimited = Path.of(JAVA_HOME + FS + "conf" + FS + "security" +
