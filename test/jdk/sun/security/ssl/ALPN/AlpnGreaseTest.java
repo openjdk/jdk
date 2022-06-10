@@ -83,7 +83,7 @@ public class AlpnGreaseTest implements SSLContextTemplate {
             new String(greaseBytes, StandardCharsets.ISO_8859_1);
 
     private static void findGreaseInClientHello(byte[] bytes) throws Exception {
-        for (int i = 0; i < bytes.length - greaseBytes.length; i++) {
+        for (int i = 0; i < bytes.length - greaseBytes.length + 1; i++) {
             if (Arrays.equals(bytes, i, i + greaseBytes.length,
                     greaseBytes, 0, greaseBytes.length)) {
                 System.out.println("Found greaseBytes in ClientHello at: " + i);
