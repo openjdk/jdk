@@ -165,7 +165,7 @@ public:
 #endif
 
 private:
-  static void print_ul(CompiledMethod* nm, intptr_t pc, frame& fr, int trap_bci,
+  static void print_ul(CompiledMethod* nm, Method* tm, intptr_t pc, frame& fr, int trap_bci,
                        const char* reason_name, const char* reason_action);
 
   // Does the actual work for deoptimizing a single frame

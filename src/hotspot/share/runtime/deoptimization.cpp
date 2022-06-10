@@ -1838,24 +1838,23 @@ static void post_deoptimization_event(CompiledMethod* nm,
 
 #endif // INCLUDE_JFR
 
-void Deoptimization::print_ul(CompiledMethod* nm, intptr_t pc, frame& fr, int trap_bci,
+void Deoptimization::print_ul(CompiledMethod* nm, Method* tm, intptr_t pc, frame& fr, int trap_bci,
                               const char* reason_name, const char* reason_action) {
   LogTarget(Debug, deoptimization) lt;
-  bool is_osr = nm->is_osr_method();
   if (lt.is_enabled()) {
     LogStream ls(lt);
+    bool is_osr = nm->is_osr_method();
     ls.print("cid=%d%s level=%d",
              nm->compile_id(), (is_osr ? " osr" : ""), nm->comp_level());
-    nm->method()->print_short_name(&ls);
+    ls.print("%s", tm->name_and_sig_as_C_string());
     ls.print(" trap_bci=%d ", trap_bci);
     if (is_osr) {
       ls.print("osr_bci=%d ", nm->osr_entry_bci());
     }
     ls.print("%s ", reason_name);
     ls.print("%s ", reason_action);
-    ls.print("pc=" INTPTR_FORMAT " relative_pc=" INTPTR_FORMAT,
+    ls.print_cr("pc=" INTPTR_FORMAT " relative_pc=" INTPTR_FORMAT,
              pc, fr.pc() - nm->code_begin());
-    ls.cr();
   }
 }
 
@@ -1959,7 +1958,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
       intptr_t pc = p2i(fr.pc());
 
       JFR_ONLY(post_deoptimization_event(nm, tm, trap_bci, trap_bc, reason, action);)
-      print_ul(nm, pc, fr, trap_bci, reason_name, reason_action);
+      print_ul(nm, tm, pc, fr, trap_bci, reason_name, reason_action);
       Events::log_deopt_message(current, "Uncommon trap: reason=%s action=%s pc=" INTPTR_FORMAT " method=%s @ %d %s",
                                 reason_name, reason_action, pc,
                                 tm->name_and_sig_as_C_string(), trap_bci, nm->compiler_name());
