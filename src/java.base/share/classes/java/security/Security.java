@@ -227,7 +227,6 @@ public final class Security {
      * properties file.
      */
     private static ProviderProperty getProviderProperty(String key) {
-        ProviderProperty entry = null;
 
         List<Provider> providers = Providers.getProviderList().providers();
         for (int i = 0; i < providers.size(); i++) {

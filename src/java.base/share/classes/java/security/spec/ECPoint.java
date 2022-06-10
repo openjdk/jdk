@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 package java.security.spec;
 
 import java.math.BigInteger;
-import java.util.Objects;
 
 /**
  * This immutable class represents a point on an elliptic curve (EC)
@@ -99,8 +98,8 @@ public class ECPoint {
         if (this == POINT_INFINITY) return false;
 
         return obj instanceof ECPoint other
-                && ((Objects.equals(x, other.x))
-                && (Objects.equals(y, other.y)));
+                && ((x.equals(other.x))
+                && (y.equals(other.y)));
     }
 
     /**
@@ -109,7 +108,6 @@ public class ECPoint {
      */
     public int hashCode() {
         if (this == POINT_INFINITY) return 0;
-        return Objects.requireNonNull(x).hashCode() << 5 +
-                Objects.requireNonNull(y).hashCode();
+        return x.hashCode() << 5 + y.hashCode();
     }
 }

@@ -471,12 +471,10 @@ public class ProtectionDomain {
                     sm.checkPermission(SecurityConstants.GET_POLICY_PERMISSION);
                     return true;
                 } catch (SecurityException se) {
-                    // fall through and return false
+                    return false;
                 }
             }
         }
-
-        return false;
     }
 
     private PermissionCollection mergePermissions() {
@@ -486,10 +484,8 @@ public class ProtectionDomain {
         @SuppressWarnings("removal")
         PermissionCollection perms =
             java.security.AccessController.doPrivileged
-            ((PrivilegedAction<PermissionCollection>) () -> {
-                Policy p = Policy.getPolicyNoCheck();
-                return p.getPermissions(ProtectionDomain.this);
-            });
+            ((PrivilegedAction<PermissionCollection>) () ->
+                Policy.getPolicyNoCheck().getPermissions(ProtectionDomain.this));
 
         Permissions mergedPerms = new Permissions();
         int swag = 32;

@@ -218,8 +218,7 @@ public class SecureClassLoader extends ClassLoader {
         // that no nameservice lookup is done on the hostname (String comparison
         // only), and the fragment is not considered.
         CodeSourceKey key = new CodeSourceKey(cs);
-        /* not used */
-        return pdcache.computeIfAbsent(key, key1 -> {
+        return pdcache.computeIfAbsent(key, unused -> {
             PermissionCollection perms
                     = SecureClassLoader.this.getPermissions(cs);
             ProtectionDomain pd = new ProtectionDomain(

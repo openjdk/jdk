@@ -1093,9 +1093,11 @@ public abstract class Provider extends Properties {
                 && this.type.equals(other.type)
                 && this.algorithm.equals(other.algorithm);
         }
+
+        // Don't change '==' to equals.
+        // This method tests for equality of pointers.
         boolean matches(String type, String algorithm) {
-            return (Objects.equals(this.type, type)) &&
-                (Objects.equals(this.originalAlgorithm, algorithm));
+            return (this.type == type) && (this.originalAlgorithm == algorithm);
         }
         public String toString() {
             return type + "." + algorithm;

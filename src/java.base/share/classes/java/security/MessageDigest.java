@@ -303,7 +303,7 @@ public abstract class MessageDigest extends MessageDigestSpi {
             return md;
         } else {
             return Delegate.of((MessageDigestSpi)objs[0], algorithm,
-            (Provider)objs[1]);
+                (Provider)objs[1]);
         }
     }
 
