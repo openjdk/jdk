@@ -58,12 +58,10 @@ public class QuoVadisCA {
 
 class RootCA1G3 {
 
-    // Owner: CN=DigiCert QuoVadis TLS ICA QV Root CA 1 G3, O="DigiCert,
-    // Inc", C=US
+    // Owner: CN=DigiCert QuoVadis TLS ICA QV Root CA 1 G3, O="DigiCert, Inc", C=US
     // Issuer: CN=QuoVadis Root CA 1 G3, O=QuoVadis Limited, C=BM
     // Serial number: 2837d5c3c2b57294becf99afe8bbdcd1bb0b20f1
-    // Valid from: Wed Jan 06 12:50:51 PST 2021 until: Sat Jan 04 12:50:51
-    // PST 2031
+    // Valid from: Wed Jan 06 12:50:51 PST 2021 until: Sat Jan 04 12:50:51 PST 2031
     private static final String INT = "-----BEGIN CERTIFICATE-----\n" +
             "MIIFgDCCA2igAwIBAgIUKDfVw8K1cpS+z5mv6Lvc0bsLIPEwDQYJKoZIhvcNAQEL\n" +
             "BQAwSDELMAkGA1UEBhMCQk0xGTAXBgNVBAoTEFF1b1ZhZGlzIExpbWl0ZWQxHjAc\n" +
@@ -97,13 +95,11 @@ class RootCA1G3 {
             "73bpxSkjPrYbmKo9mGEAMhW1ZxY=\n" +
             "-----END CERTIFICATE-----";
 
-    // Owner: CN=quovadis-root-ca-1-g3.chain-demos.digicert.com, O="DigiCert,
-    // Inc.", L=Lehi, ST=Utah, C=US
-    // Issuer: CN=DigiCert QuoVadis TLS ICA QV Root CA 1 G3, O="DigiCert,
-    // Inc", C=US
+    // Owner: CN=quovadis-root-ca-1-g3.chain-demos.digicert.com, O="DigiCert, Inc.",
+    //        L=Lehi, ST=Utah, C=US
+    // Issuer: CN=DigiCert QuoVadis TLS ICA QV Root CA 1 G3, O="DigiCert, Inc", C=US
     // Serial number: a94cc08600f5fe5d3f0659bfcfec6f0
-    // Valid from: Fri Mar 04 16:00:00 PST 2022 until: Wed Apr 05 16:59:59
-    // PDT 2023
+    // Valid from: Fri Mar 04 16:00:00 PST 2022 until: Wed Apr 05 16:59:59 PDT 2023
     private static final String VALID = "-----BEGIN CERTIFICATE-----\n" +
             "MIIG/DCCBeSgAwIBAgIQCpTMCGAPX+XT8GWb/P7G8DANBgkqhkiG9w0BAQsFADBZ\n" +
             "MQswCQYDVQQGEwJVUzEWMBQGA1UECgwNRGlnaUNlcnQsIEluYzEyMDAGA1UEAwwp\n" +
@@ -146,12 +142,10 @@ class RootCA1G3 {
             "-----END CERTIFICATE-----";
 
     // Owner: CN=quovadis-root-ca-1-g3-revoked.chain-demos.digicert.com,
-    // O="DigiCert, Inc.", L=Lehi, ST=Utah, C=US
-    // Issuer: CN=DigiCert QuoVadis TLS ICA QV Root CA 1 G3, O="DigiCert,
-    // Inc", C=US
+    //        O="DigiCert, Inc.", L=Lehi, ST=Utah, C=US
+    // Issuer: CN=DigiCert QuoVadis TLS ICA QV Root CA 1 G3, O="DigiCert, Inc", C=US
     // Serial number: e7eff4cdd14ebed1daa7bb7e07300ed
-    // Valid from: Fri Mar 04 16:00:00 PST 2022 until: Wed Apr 05 16:59:59
-    // PDT 2023
+    // Valid from: Fri Mar 04 16:00:00 PST 2022 until: Wed Apr 05 16:59:59 PDT 2023
     private static final String REVOKED = "-----BEGIN CERTIFICATE-----\n" +
             "MIIHDjCCBfagAwIBAgIQDn7/TN0U6+0dqnu34HMA7TANBgkqhkiG9w0BAQsFADBZ\n" +
             "MQswCQYDVQQGEwJVUzEWMBQGA1UECgwNRGlnaUNlcnQsIEluYzEyMDAGA1UEAwwp\n" +
@@ -211,8 +205,7 @@ class RootCA2G3 {
     // Owner: CN=DigiCert QV EV TLS ICA G1, O="DigiCert, Inc.", C=US
     // Issuer: CN=QuoVadis Root CA 2 G3, O=QuoVadis Limited, C=BM
     // Serial number: 65e9bcd53e791df22dffeb5ecc2bc7a5588d0883
-    // Valid from: Mon Mar 16 12:39:42 PDT 2020 until: Thu Mar 14 12:39:42
-    // PDT 2030
+    // Valid from: Mon Mar 16 12:39:42 PDT 2020 until: Thu Mar 14 12:39:42 PDT 2030
     private static final String INT = "-----BEGIN CERTIFICATE-----\n" +
             "MIIFbzCCA1egAwIBAgIUZem81T55HfIt/+tezCvHpViNCIMwDQYJKoZIhvcNAQEL\n" +
             "BQAwSDELMAkGA1UEBhMCQk0xGTAXBgNVBAoTEFF1b1ZhZGlzIExpbWl0ZWQxHjAc\n" +
@@ -247,13 +240,12 @@ class RootCA2G3 {
             "-----END CERTIFICATE-----";
 
     // Owner: CN=quovadis-root-ca-2-g3.chain-demos.digicert.com, O="DigiCert,
-    // Inc.", L=Lehi, ST=Utah, C=US, SERIALNUMBER=5299537-0142, OID.1.3.6.1.4
-    //  1.311.60.2.1.2=Utah, OID.1.3.6.1.4.1.311.60.2.1.3=US, OID.2.5.4
-    //  .15=Private Organization
+    //        Inc.", L=Lehi, ST=Utah, C=US, SERIALNUMBER=5299537-0142, OID.1.3.6.1.4
+    //        1.311.60.2.1.2=Utah, OID.1.3.6.1.4.1.311.60.2.1.3=US,
+    //        OID.2.5.4 .15=Private Organization
     // Issuer: CN=DigiCert QV EV TLS ICA G1, O="DigiCert, Inc.", C=US
     // Serial number: 9c5e9d5f169d3a59e64db208d3e849d
-    // Valid from: Wed Feb 02 16:00:00 PST 2022 until: Mon Mar 06 15:59:59
-    // PST 2023
+    // Valid from: Wed Feb 02 16:00:00 PST 2022 until: Mon Mar 06 15:59:59 PST 2023
     private static final String VALID = "-----BEGIN CERTIFICATE-----\n" +
             "MIIHNDCCBhygAwIBAgIQCcXp1fFp06WeZNsgjT6EnTANBgkqhkiG9w0BAQsFADBK\n" +
             "MQswCQYDVQQGEwJVUzEXMBUGA1UECgwORGlnaUNlcnQsIEluYy4xIjAgBgNVBAMM\n" +
@@ -297,13 +289,12 @@ class RootCA2G3 {
             "-----END CERTIFICATE-----";
 
     // Owner: CN=quovadis-root-ca-2-g3-revoked.chain-demos.digicert.com,
-    // O="DigiCert, Inc.", L=Lehi, ST=Utah, C=US, SERIALNUMBER=5299537-0142,
-    // OID.2.5.4.15=Private Organization, OID.1.3.6.1.4.1.311.60.2.1.2=Utah,
-    // OID.1.3.6.1.4.1.311.60.2.1.3=US
+    //           O="DigiCert, Inc.", L=Lehi, ST=Utah, C=US, SERIALNUMBER=5299537-0142,
+    //           OID.2.5.4.15=Private Organization, OID.1.3.6.1.4.1.311.60.2.1.2=Utah,
+    //           OID.1.3.6.1.4.1.311.60.2.1.3=US
     // Issuer: CN=DigiCert QV EV TLS ICA G1, O="DigiCert, Inc.", C=US
     // Serial number: 3f84605850df3ac98fcc15adec269f8
-    // Valid from: Sun Apr 17 17:00:00 PDT 2022 until: Fri May 19 16:59:59
-    // PDT 2023
+    // Valid from: Sun Apr 17 17:00:00 PDT 2022 until: Fri May 19 16:59:59 PDT 2023
     private static final String REVOKED = "-----BEGIN CERTIFICATE-----\n" +
             "MIIHQDCCBiigAwIBAgIQA/hGBYUN86yY/MFa3sJp+DANBgkqhkiG9w0BAQsFADBK\n" +
             "MQswCQYDVQQGEwJVUzEXMBUGA1UECgwORGlnaUNlcnQsIEluYy4xIjAgBgNVBAMM\n" +
@@ -361,12 +352,10 @@ class RootCA2G3 {
 
 class RootCA3G3 {
 
-    // Owner: CN=DigiCert QuoVadis TLS ICA QV Root CA 3 G3, O="DigiCert,
-    // Inc", C=US
+    // Owner: CN=DigiCert QuoVadis TLS ICA QV Root CA 3 G3, O="DigiCert, Inc", C=US
     // Issuer: CN=QuoVadis Root CA 3 G3, O=QuoVadis Limited, C=BM
     // Serial number: 427dd33a8ff51d8152e813c7dec93ba76312a7d8
-    // Valid from: Wed Jan 06 12:55:40 PST 2021 until: Sat Jan 04 12:55:40
-    // PST 2031
+    // Valid from: Wed Jan 06 12:55:40 PST 2021 until: Sat Jan 04 12:55:40 PST 2031
     private static final String INT = "-----BEGIN CERTIFICATE-----\n" +
             "MIIFgDCCA2igAwIBAgIUQn3TOo/1HYFS6BPH3sk7p2MSp9gwDQYJKoZIhvcNAQEL\n" +
             "BQAwSDELMAkGA1UEBhMCQk0xGTAXBgNVBAoTEFF1b1ZhZGlzIExpbWl0ZWQxHjAc\n" +
@@ -400,13 +389,11 @@ class RootCA3G3 {
             "l8Sd/Kpqwde/sJkoqwDcBSJygh0=\n" +
             "-----END CERTIFICATE-----";
 
-    // Owner: CN=quovadis-root-ca-3-g3.chain-demos.digicert.com, O="DigiCert,
-    // Inc.", L=Lehi, ST=Utah, C=US
-    // Issuer: CN=DigiCert QuoVadis TLS ICA QV Root CA 3 G3, O="DigiCert,
-    // Inc", C=US
+    // Owner: CN=quovadis-root-ca-3-g3.chain-demos.digicert.com, O="DigiCert, Inc.",
+    //        L=Lehi, ST=Utah, C=US
+    // Issuer: CN=DigiCert QuoVadis TLS ICA QV Root CA 3 G3, O="DigiCert, Inc", C=US
     // Serial number: f27ee3fad1d754ae78d7866da0a4f6f
-    // Valid from: Fri Mar 04 16:00:00 PST 2022 until: Wed Apr 05 16:59:59
-    // PDT 2023
+    // Valid from: Fri Mar 04 16:00:00 PST 2022 until: Wed Apr 05 16:59:59 PDT 2023
     private static final String VALID = "-----BEGIN CERTIFICATE-----\n" +
             "MIIG/jCCBeagAwIBAgIQDyfuP60ddUrnjXhm2gpPbzANBgkqhkiG9w0BAQsFADBZ\n" +
             "MQswCQYDVQQGEwJVUzEWMBQGA1UECgwNRGlnaUNlcnQsIEluYzEyMDAGA1UEAwwp\n" +
@@ -449,12 +436,10 @@ class RootCA3G3 {
             "-----END CERTIFICATE-----";
 
     // Owner: CN=quovadis-root-ca-3-g3-revoked.chain-demos.digicert.com,
-    // O="DigiCert, Inc.", L=Lehi, ST=Utah, C=US
-    // Issuer: CN=DigiCert QuoVadis TLS ICA QV Root CA 3 G3, O="DigiCert,
-    // Inc", C=US
+    //        O="DigiCert, Inc.", L=Lehi, ST=Utah, C=US
+    // Issuer: CN=DigiCert QuoVadis TLS ICA QV Root CA 3 G3, O="DigiCert, Inc", C=US
     // Serial number: aafa7cafda91796626f5fc8bcb38702
-    // Valid from: Fri Mar 04 16:00:00 PST 2022 until: Wed Apr 05 16:59:59
-    // PDT 2023
+    // Valid from: Fri Mar 04 16:00:00 PST 2022 until: Wed Apr 05 16:59:59 PDT 2023
     private static final String REVOKED = "-----BEGIN CERTIFICATE-----\n" +
             "MIIHDTCCBfWgAwIBAgIQCq+nyv2pF5Zib1/IvLOHAjANBgkqhkiG9w0BAQsFADBZ\n" +
             "MQswCQYDVQQGEwJVUzEWMBQGA1UECgwNRGlnaUNlcnQsIEluYzEyMDAGA1UEAwwp\n" +
