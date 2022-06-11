@@ -740,7 +740,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         }
         if (len > 10) // too many nonzero exponent digits
             throw new NumberFormatException("Too many nonzero exponent digits.");
-        // c now holds first digit of exponent
+        // c now holds the first digit of exponent
         for (;; len--) {
             int v;
             if (c >= '0' && c <= '9') {
