@@ -311,16 +311,14 @@ public class TagletManager {
         if (tagName == null || locations == null) {
             return;
         }
-        Taglet tag = allTaglets.get(tagName);
+        Taglet tag = allTaglets.remove(tagName);
         if (tag == null || header != null) {
-            allTaglets.remove(tagName);
             allTaglets.put(tagName, new SimpleTaglet(tagName, header, locations));
             if (Utils.toLowerCase(locations).indexOf('x') == -1) {
                 checkTagName(tagName);
             }
         } else {
             //Move to back
-            allTaglets.remove(tagName);
             allTaglets.put(tagName, tag);
         }
     }
