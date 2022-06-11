@@ -601,8 +601,6 @@ javax/net/ssl/DTLS/CipherSuite.java                             8202059 macosx-x
 
 sun/security/provider/KeyStore/DKSTest.sh                       8180266 windows-all
 
-security/infra/java/security/cert/CertPathValidator/certification/ActalisCA.java  8224768 generic-all
-
 sun/security/smartcardio/TestChannel.java                       8039280 generic-all
 sun/security/smartcardio/TestConnect.java                       8039280 generic-all
 sun/security/smartcardio/TestConnectAgain.java                  8039280 generic-all
