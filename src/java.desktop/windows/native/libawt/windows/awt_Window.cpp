@@ -1396,14 +1396,8 @@ BOOL AwtWindow::UpdateInsets(jobject insets)
     RECT inside;
     int extraBottomInsets = 0;
 
-    OSVERSIONINFOEX info;
-    ZeroMemory(&info, sizeof(OSVERSIONINFOEX));
-    info.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
-    GetVersionEx((LPOSVERSIONINFO) &info);
-
-    // add extra padded border only when Win OS version is 6+
-    int extraPaddedBorderInsets = info.dwMajorVersion >= 6 ?
-     ::GetSystemMetrics(SM_CXPADDEDBORDER) : 0;
+    // extra padded border for captioned windows
+    int extraPaddedBorderInsets = ::GetSystemMetrics(SM_CXPADDEDBORDER);
 
     ::GetClientRect(GetHWnd(), &inside);
     ::GetWindowRect(GetHWnd(), &outside);
@@ -1435,9 +1429,11 @@ BOOL AwtWindow::UpdateInsets(jobject insets)
                      extraPaddedBorderInsets;
             } else {
                 m_insets.left = m_insets.right =
-                    ::GetSystemMetrics(SM_CXDLGFRAME);
+                    ::GetSystemMetrics(SM_CXDLGFRAME) +
+                    extraPaddedBorderInsets;
                 m_insets.top = m_insets.bottom =
-                    ::GetSystemMetrics(SM_CYDLGFRAME);
+                    ::GetSystemMetrics(SM_CYDLGFRAME) +
+                    extraPaddedBorderInsets;
             }
             /* Add in title. */
             m_insets.top += ::GetSystemMetrics(SM_CYCAPTION);

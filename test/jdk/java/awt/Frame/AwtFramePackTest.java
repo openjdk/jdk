@@ -21,15 +21,6 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8265586
- * @key headful
- * @summary Tests the functionality of AWT frame.pack() on Windows.
- * @run main AwtFramePackTest
- * @requires (os.family == "windows")
- */
-
 import java.awt.AWTException;
 import java.awt.BorderLayout;
 import java.awt.Button;
@@ -38,12 +29,21 @@ import java.awt.Frame;
 import java.awt.Menu;
 import java.awt.MenuBar;
 import java.awt.Panel;
-import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import javax.imageio.ImageIO;
+
+/*
+ * @test
+ * @bug 8265586
+ * @key headful
+ * @requires (os.family == "windows")
+ * @summary Tests whether insets are calculated correctly on Windows
+ * for AWT Frame by checking the actual and expected/preferred frame sizes.
+ * @run main/othervm -Dsun.java2d.uiScale=1 AwtFramePackTest
+ */
 
 public class AwtFramePackTest {
 
@@ -54,7 +54,6 @@ public class AwtFramePackTest {
         try {
             robot = new Robot();
             robot.setAutoDelay(300);
-            robot.waitForIdle();
 
             frame = new Frame();
             frame.setLayout(new BorderLayout());
@@ -72,6 +71,9 @@ public class AwtFramePackTest {
             frame.pack();
             frame.setVisible(true);
 
+            robot.delay(500);
+            robot.waitForIdle();
+
             Dimension actualFrameSize = frame.getSize();
             Dimension expectedFrameSize = frame.getPreferredSize();
 
@@ -81,20 +83,17 @@ public class AwtFramePackTest {
                 saveScreenCapture();
                 throw new RuntimeException("Expected and Actual frame size" +
                         " are different. frame.pack() does not work!!");
-           }
+            }
         } finally {
             frame.dispose();
         }
     }
 
-    // debugging purpose, saves screen capture when test fails
+    // for debugging purpose, saves screen capture when test fails.
     private static void saveScreenCapture() {
-        robot.delay(500);
-        robot.waitForIdle();
-        BufferedImage image = robot.createScreenCapture(
-                new Rectangle(0, 0, 500, 500));
+        BufferedImage image = robot.createScreenCapture(frame.getBounds());
         try {
-            ImageIO.write(image, "png", new File("Frame"));
+            ImageIO.write(image,"png", new File("Frame.png"));
         } catch (IOException e) {
             e.printStackTrace();
         }
