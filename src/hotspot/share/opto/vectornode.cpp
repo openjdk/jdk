@@ -294,12 +294,17 @@ int VectorNode::replicate_opcode(BasicType bt) {
   }
 }
 
+bool VectorNode::vector_size_supported(BasicType bt, uint vlen) {
+  return (Matcher::vector_size_supported(bt, vlen) &&
+          (vlen * type2aelembytes(bt) <= (uint)SuperWordMaxVectorSize));
+}
+
 // Also used to check if the code generator
 // supports the vector operation.
 bool VectorNode::implemented(int opc, uint vlen, BasicType bt) {
   if (is_java_primitive(bt) &&
       (vlen > 1) && is_power_of_2(vlen) &&
-      Matcher::vector_size_supported(bt, vlen)) {
+      vector_size_supported(bt, vlen)) {
     int vopc = VectorNode::opcode(opc, bt);
     // For rotate operation we will do a lazy de-generation into
     // OrV/LShiftV/URShiftV pattern if the target does not support
@@ -380,7 +385,6 @@ bool VectorNode::is_vector_rotate_supported(int vopc, uint vlen, BasicType bt) {
              Matcher::match_rule_supported_vector(Op_LShiftVL,  vlen, bt) &&
              Matcher::match_rule_supported_vector(Op_URShiftVL, vlen, bt);
     default:
-      assert(false, "not supported: %s", type2name(bt));
       return false;
   }
 }
@@ -436,6 +440,24 @@ bool VectorNode::is_shift_opcode(int opc) {
   default:
     return false;
   }
+}
+
+bool VectorNode::can_transform_shift_op(Node* n, BasicType bt) {
+  if (n->Opcode() != Op_URShiftI) {
+    return false;
+  }
+  Node* in2 = n->in(2);
+  if (!in2->is_Con()) {
+    return false;
+  }
+  jint cnt = in2->get_int();
+  // Only when shift amount is not greater than number of sign extended
+  // bits (16 for short and 24 for byte), unsigned shift right on signed
+  // subword types can be vectorized as vector signed shift.
+  if ((bt == T_BYTE && cnt <= 24) || (bt == T_SHORT && cnt <= 16)) {
+    return true;
+  }
+  return false;
 }
 
 bool VectorNode::is_shift(Node* n) {
@@ -1302,7 +1324,7 @@ Node* ReductionNode::make_reduction_input(PhaseGVN& gvn, int opc, BasicType bt) 
 bool ReductionNode::implemented(int opc, uint vlen, BasicType bt) {
   if (is_java_primitive(bt) &&
       (vlen > 1) && is_power_of_2(vlen) &&
-      Matcher::vector_size_supported(bt, vlen)) {
+      VectorNode::vector_size_supported(bt, vlen)) {
     int vopc = ReductionNode::opcode(opc, bt);
     return vopc != opc && Matcher::match_rule_supported_vector(vopc, vlen, bt);
   }

@@ -3664,7 +3664,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
       n->set_req(MemBarNode::Precedent, top());
       while (wq.size() > 0) {
         Node* m = wq.pop();
-        if (m->outcnt() == 0) {
+        if (m->outcnt() == 0 && m != top()) {
           for (uint j = 0; j < m->req(); j++) {
             Node* in = m->in(j);
             if (in != NULL) {

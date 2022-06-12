@@ -27,7 +27,7 @@
 #
 #############################################################################
 
-compiler/c2/irTests/TestSkeletonPredicates.java 8286361 generic-all
+vmTestbase/nsk/jvmti/AttachOnDemand/attach022/TestDescription.java 8277573 generic-all
 
 vmTestbase/nsk/jvmti/SetFieldAccessWatch/setfldw001/TestDescription.java 8205957 generic-all
 

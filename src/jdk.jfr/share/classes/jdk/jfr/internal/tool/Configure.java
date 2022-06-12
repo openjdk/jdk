@@ -228,7 +228,6 @@ final class Configure extends Command {
         } catch (IOException ioe) {
             throw new UserDataException("i/o error: " + ioe.getMessage());
         } catch (ParseException pe) {
-            pe.printStackTrace();
             throw new UserDataException("parsing error: " + pe.getMessage());
         }
     }
