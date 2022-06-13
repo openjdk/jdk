@@ -88,7 +88,10 @@ public class CgroupSubsystemFactory {
         } catch (UncheckedIOException e) {
             return null;
         }
+        return create(optResult);
+    }
 
+    public static CgroupMetrics create(Optional<CgroupTypeResult> optResult) {
         if (optResult.isEmpty()) {
             return null;
         }
