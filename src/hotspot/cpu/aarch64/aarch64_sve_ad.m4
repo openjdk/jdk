@@ -3042,9 +3042,10 @@ instruct vmask_tolong(iRegLNoSp dst, pReg src, vReg vtmp1, vReg vtmp2) %{
 // hardware vector register width.
 
 define(`MASKALL_IMM', `
-instruct vmaskAll_imm$1(pRegGov dst, imm$1 src) %{
+instruct vmaskAll_imm$1(pRegGov dst, imm$1 src, rFlagsReg cr) %{
   predicate(UseSVE > 0);
   match(Set dst (MaskAll src));
+  effect(KILL cr);
   ins_cost(SVE_COST);
   format %{ "sve_ptrue/sve_pfalse $dst\t# mask all (sve) ($2)" %}
   ins_encode %{
@@ -3053,12 +3054,11 @@ instruct vmaskAll_imm$1(pRegGov dst, imm$1 src) %{
       __ sve_pfalse(as_PRegister($dst$$reg));
     } else {
       assert(con == -1, "invalid constant value for mask");
-      assert(Matcher::vector_length_in_bytes(this) == MaxVectorSize, "invalid vector length");
       BasicType bt = Matcher::vector_element_basic_type(this);
-      __ sve_ptrue(as_PRegister($dst$$reg), __ elemType_to_regVariant(bt));
+      __ sve_gen_mask_imm(as_PRegister($dst$$reg), bt, Matcher::vector_length(this));
     }
   %}
-  ins_pipe(pipe_slow);
+  ins_pipe(pipe_class_default);
 %}')dnl
 dnl
 define(`MASKALL', `

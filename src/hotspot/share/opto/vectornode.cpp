@@ -831,7 +831,8 @@ Node* VectorNode::try_to_gen_masked_vector(PhaseGVN* gvn, Node* node, const Type
 
   // Predicated vectors do not need to add another mask input
   if (node->is_predicated_vector() || !Matcher::has_predicated_vectors() ||
-      !Matcher::match_rule_supported_vector_masked(vopc, vlen, bt)) {
+      !Matcher::match_rule_supported_vector_masked(vopc, vlen, bt) ||
+      !Matcher::match_rule_supported_vector(Op_VectorMaskGen, vlen, bt)) {
     return NULL;
   }
 
@@ -948,7 +949,7 @@ LoadVectorNode* LoadVectorNode::make(int opc, Node* ctl, Node* mem,
 }
 
 Node* LoadVectorNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  const TypeVect* vt = as_LoadVector()->vect_type();
+  const TypeVect* vt = vect_type();
   if (Matcher::vector_needs_partial_operations(this, vt)) {
     return VectorNode::try_to_gen_masked_vector(phase, this, vt);
   }
@@ -962,7 +963,7 @@ StoreVectorNode* StoreVectorNode::make(int opc, Node* ctl, Node* mem, Node* adr,
 }
 
 Node* StoreVectorNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  const TypeVect* vt = as_StoreVector()->vect_type();
+  const TypeVect* vt = vect_type();
   if (Matcher::vector_needs_partial_operations(this, vt)) {
     return VectorNode::try_to_gen_masked_vector(phase, this, vt);
   }
@@ -985,7 +986,7 @@ Node* LoadVectorMaskedNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       }
     }
   }
-  return LoadNode::Ideal(phase, can_reshape);
+  return LoadVectorNode::Ideal(phase, can_reshape);
 }
 
 Node* StoreVectorMaskedNode::Ideal(PhaseGVN* phase, bool can_reshape) {
@@ -1005,7 +1006,7 @@ Node* StoreVectorMaskedNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       }
     }
   }
-  return StoreNode::Ideal(phase, can_reshape);
+  return StoreVectorNode::Ideal(phase, can_reshape);
 }
 
 int ExtractNode::opcode(BasicType bt) {
@@ -1813,18 +1814,6 @@ Node* ReverseVNode::Identity(PhaseGVN* phase) {
     }
   }
   return this;
-}
-
-Node* MaskAllNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  // Transform (MaskAll m1 (VectorMaskGen len)) ==> (VectorMaskGen len)
-  // if the vector length in bytes is lower than the MaxVectorSize.
-  if (is_con_M1(in(1)) && length_in_bytes() < MaxVectorSize) {
-    uint vlen = vect_type()->length();
-    BasicType bt = vect_type()->element_basic_type();
-    Node* length = phase->transform(new ConvI2LNode(phase->makecon(TypeInt::make(vlen))));
-    return VectorMaskGenNode::make(length, bt, vlen);
-  }
-  return VectorNode::Ideal(phase, can_reshape);
 }
 
 #ifndef PRODUCT

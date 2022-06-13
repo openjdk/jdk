@@ -1072,7 +1072,6 @@ class MaskAllNode : public VectorNode {
  public:
   MaskAllNode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {}
   virtual int Opcode() const;
-  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
 //--------------------------- Vector mask logical and --------------------------------
