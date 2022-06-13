@@ -22,10 +22,12 @@
  *
  */
 
+#include "jvm_io.h"
 #include "precompiled.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/stringUtils.hpp"
 
+#include <ctype.h>
 #include <string.h>
 
 int StringUtils::replace_no_expand(char* string, const char* from, const char* to) {
