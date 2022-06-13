@@ -51,11 +51,6 @@
 typedef __int32 LONG_PTR;
 #endif // __int3264
 
-#if defined(_MSC_VER)
-#  define ROUND_TO_INT(num)    ((int) round(num))
-#else
-#  define ROUND_TO_INT(num)    ((int) floor((num) + 0.5))
-#endif
 // Used for Swing's Menu/Tooltip animation Support
 const int UNSPECIFIED = 0;
 const int TOOLTIP = 1;
@@ -3654,7 +3649,7 @@ int getSystemMetricValue(int msgType) {
     }
     if(dpi != 0 && dpi != 96) {
         float invScaleX = 96.0f / dpi;
-        value = (int) ROUND_TO_INT(value * invScaleX);
+        value = (int) round(value * invScaleX);
     }
     return value;
 }
