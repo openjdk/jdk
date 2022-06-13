@@ -48,7 +48,7 @@ public class TestPushAddThruCast {
     final static long llength = RANDOM.nextInt(Integer.MAX_VALUE);
     static int i;
     static long l;
-    
+
     @Test
     @IR(counts = { IRNode.CAST_II, "1" })
     public static int test1() {
