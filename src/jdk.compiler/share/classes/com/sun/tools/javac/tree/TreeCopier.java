@@ -494,26 +494,35 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
     public JCTree visitBindingPattern(BindingPatternTree node, P p) {
         JCBindingPattern t = (JCBindingPattern) node;
         JCVariableDecl var = copy(t.var, p);
-        JCExpression guard = copy(t.guard, p);
-        JCPattern pat = M.at(t.pos).BindingPattern(var);
-        pat.guard = guard;
-        return pat;
+        return M.at(t.pos).BindingPattern(var);
     }
 
     @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitParenthesizedPattern(ParenthesizedPatternTree node, P p) {
         JCParenthesizedPattern t = (JCParenthesizedPattern) node;
         JCPattern pattern = copy(t.pattern, p);
-        JCExpression guard = copy(t.guard, p);
-        JCPattern pat = M.at(t.pos).ParenthesizedPattern(pattern);
-        pat.guard = guard;
-        return pat;
+        return M.at(t.pos).ParenthesizedPattern(pattern);
     }
 
     @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitDefaultCaseLabel(DefaultCaseLabelTree node, P p) {
         JCDefaultCaseLabel t = (JCDefaultCaseLabel) node;
         return M.at(t.pos).DefaultCaseLabel();
+    }
+
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public JCTree visitConstantCaseLabel(ConstantCaseLabelTree node, P p) {
+        JCConstantCaseLabel t = (JCConstantCaseLabel) node;
+        JCExpression expr = copy(t.expr, p);
+        return M.at(t.pos).ConstantCaseLabel(expr);
+    }
+
+    @Override
+    public JCTree visitPatternCaseLabel(PatternCaseLabelTree node, P p) {
+        JCPatternCaseLabel t = (JCPatternCaseLabel) node;
+        JCPattern pat = copy(t.pat, p);
+        JCExpression guard = copy(t.guard, p);
+        return M.at(t.pos).PatternCaseLabel(pat, guard);
     }
 
     @DefinedBy(Api.COMPILER_TREE)

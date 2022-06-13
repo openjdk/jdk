@@ -852,4 +852,14 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
     String dbgString() {
         return "Http1Exchange";
     }
+
+    @Override
+    void expectContinueFailed(int rcode) {
+        var response = this.response;
+        if (response != null) {
+            // Sets a flag which closes the connection locally when
+            // onFinished() is called
+            response.closeWhenFinished();
+        }
+    }
 }
