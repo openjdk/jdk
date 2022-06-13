@@ -25,7 +25,6 @@
 
 #include "awt.h"
 #include <jlong.h>
-#include <windows.h>
 
 #include "awt_Component.h"
 #include "awt_Container.h"
@@ -1422,18 +1421,14 @@ BOOL AwtWindow::UpdateInsets(jobject insets)
             LONG style = GetStyle();
             if (style & WS_THICKFRAME) {
                 m_insets.left = m_insets.right =
-                    ::GetSystemMetrics(SM_CXSIZEFRAME) +
-                     extraPaddedBorderInsets;
+                    ::GetSystemMetrics(SM_CXSIZEFRAME) + extraPaddedBorderInsets;
                 m_insets.top = m_insets.bottom =
-                    ::GetSystemMetrics(SM_CYSIZEFRAME) +
-                     extraPaddedBorderInsets;
+                    ::GetSystemMetrics(SM_CYSIZEFRAME) + extraPaddedBorderInsets;
             } else {
                 m_insets.left = m_insets.right =
-                    ::GetSystemMetrics(SM_CXDLGFRAME) +
-                    extraPaddedBorderInsets;
+                    ::GetSystemMetrics(SM_CXDLGFRAME) + extraPaddedBorderInsets;
                 m_insets.top = m_insets.bottom =
-                    ::GetSystemMetrics(SM_CYDLGFRAME) +
-                    extraPaddedBorderInsets;
+                    ::GetSystemMetrics(SM_CYDLGFRAME) + extraPaddedBorderInsets;
             }
             /* Add in title. */
             m_insets.top += ::GetSystemMetrics(SM_CYCAPTION);
