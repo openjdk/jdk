@@ -162,11 +162,11 @@ public enum AccessFlag {
     VOLATILE(Modifier.VOLATILE, true, Set.of(Location.FIELD)),
 
     /**
-     * The access flag {@code ACC_BRIDGE} with a mask value of {@code
-     * 0x0040}.
+     * The access flag {@code ACC_BRIDGE} with a mask value of
+     * <code>{@value "0x%04x" Modifier#BRIDGE}</code>
      * @see Method#isBridge()
      */
-    BRIDGE(0x0000_0040, false, Set.of(Location.METHOD)),
+    BRIDGE(Modifier.BRIDGE, false, Set.of(Location.METHOD)),
 
     /**
      * The access flag {@code ACC_TRANSIENT}, corresponding to the
@@ -176,11 +176,11 @@ public enum AccessFlag {
     TRANSIENT(Modifier.TRANSIENT, true, Set.of(Location.FIELD)),
 
     /**
-     * The access flag {@code ACC_VARARGS} with a mask value of {@code
-     * 0x0080}.
+     * The access flag {@code ACC_VARARGS} with a mask value of
+     <code>{@value "0x%04x" Modifier#VARARGS}</code>.
      * @see Executable#isVarArgs()
      */
-    VARARGS(0x0000_0080, false, Set.of(Location.METHOD)),
+    VARARGS(Modifier.VARARGS, false, Set.of(Location.METHOD)),
 
     /**
      * The access flag {@code ACC_NATIVE}, corresponding to the source
@@ -214,12 +214,12 @@ public enum AccessFlag {
 
     /**
      * The access flag {@code ACC_SYNTHETIC} with a mask value of
-     * {@code 0x1000}.
+     * <code>{@value "0x%04x" Modifier#SYNTHETIC}</code>.
      * @see Class#isSynthetic()
      * @see Executable#isSynthetic()
      * @see java.lang.module.ModuleDescriptor.Modifier#SYNTHETIC
      */
-    SYNTHETIC(0x0000_1000, false,
+    SYNTHETIC(Modifier.SYNTHETIC, false,
               Set.of(Location.CLASS, Location.FIELD, Location.METHOD,
                      Location.INNER_CLASS, Location.METHOD_PARAMETER,
                      Location.MODULE, Location.MODULE_REQUIRES,
@@ -227,25 +227,25 @@ public enum AccessFlag {
 
     /**
      * The access flag {@code ACC_ANNOTATION} with a mask value of
-     * {@code 0x2000}.
+     * <code>{@value "0x%04x" Modifier#ANNOTATION}</code>.
      * @see Class#isAnnotation()
      */
-    ANNOTATION(0x0000_2000, false,
+    ANNOTATION(Modifier.ANNOTATION, false,
                Set.of(Location.CLASS, Location.INNER_CLASS)),
 
     /**
-     * The access flag {@code ACC_ENUM} with a mask value of {@code
-     * 0x4000}.
+     * The access flag {@code ACC_ENUM} with a mask value of
+     * <code>{@value "0x%04x" Modifier#ENUM}</code>.
      * @see Class#isEnum()
      */
-    ENUM(0x0000_4000, false,
+    ENUM(Modifier.ENUM, false,
          Set.of(Location.CLASS, Location.FIELD, Location.INNER_CLASS)),
 
     /**
      * The access flag {@code ACC_MANDATED} with a mask value of
-     * {@code 0x8000}.
+     * <code>{@value "0x%04x" Modifier#MANDATED}</code>.
      */
-    MANDATED(0x0000_8000, false,
+    MANDATED(Modifier.MANDATED, false,
              Set.of(Location.METHOD_PARAMETER,
                     Location.MODULE, Location.MODULE_REQUIRES,
                     Location.MODULE_EXPORTS, Location.MODULE_OPENS)),
