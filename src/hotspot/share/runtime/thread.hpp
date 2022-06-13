@@ -692,6 +692,7 @@ class JavaThread: public Thread {
   friend class ThreadsSMRSupport; // to access _threadObj for exiting_threads_oops_do
   friend class HandshakeState;
  private:
+  bool           _in_asgct;                      // Is set when this JavaThread is handling ASGCT call
   bool           _on_thread_list;                // Is set when this JavaThread is added to the Threads list
   OopHandle      _threadObj;                     // The Java level thread object
 
@@ -1589,6 +1590,10 @@ public:
   static OopStorage* thread_oop_storage();
 
   static void verify_cross_modify_fence_failure(JavaThread *thread) PRODUCT_RETURN;
+
+  // AsyncGetCallTrace support
+  inline bool in_asgct(void) {return _in_asgct;}
+  inline void set_in_asgct(bool value) {_in_asgct = value;}
 };
 
 // Inline implementation of JavaThread::current
