@@ -282,3 +282,50 @@ jobs:
       platform: windows-x64
       bootjdk-platform: windows-x64
       runs-on: windows-2019
+
+  # Remove bundles so they are not misconstrued as binary distributions from the JDK project
+  remove-bundles:
+    name: 'Remove bundle artifacts'
+    runs-on: ubuntu-20.04
+    if: always()
+    needs:
+      - build-linux-x64
+      - build-linux-x86
+      - build-linux-x64-hs-nopch
+      - build-linux-x64-hs-zero
+      - build-linux-x64-hs-minimal
+      - build-linux-x64-hs-optimized
+      - build-linux-cross-compile
+      - build-macos-x64
+      - build-macos-aarch64
+      - build-windows-x64
+      - build-windows-aarch64
+      - test-linux-x64
+      - test-linux-x86
+      - test-macos-x64
+      - test-windows-x64
+
+    steps:
+        # Hack to get hold of the api environment variables that are only defined for actions
+      - name: 'Get API configuration'
+        id: api
+        uses: actions/github-script@v6
+        with:
+          script: 'return { url: process.env["ACTIONS_RUNTIME_URL"], token: process.env["ACTIONS_RUNTIME_TOKEN"] }'
+
+      - name: 'Remove bundle artifacts'
+        run: |
+          # Find and remove all bundle artifacts
+          ALL_ARTIFACT_URLS="$(curl -s \
+              -H 'Accept: application/json;api-version=6.0-preview' \
+              -H 'Authorization: Bearer ${{ fromJson(steps.api.outputs.result).token }}' \
+              '${{ fromJson(steps.api.outputs.result).url }}_apis/pipelines/workflows/${{ github.run_id }}/artifacts?api-version=6.0-preview')"
+          BUNDLE_ARTIFACT_URLS="$(echo "$ALL_ARTIFACT_URLS" | jq -r -c '.value | map(select(.name|startswith("bundles-"))) | .[].url')"
+          for url in $BUNDLE_ARTIFACT_URLS; do
+            echo "Removing $url"
+            curl -s \
+                -H 'Accept: application/json;api-version=6.0-preview' \
+                -H 'Authorization: Bearer ${{ fromJson(steps.api.outputs.result).token }}' \
+                -X DELETE "$url" \
+            || echo "Failed to remove bundle"
+          done
