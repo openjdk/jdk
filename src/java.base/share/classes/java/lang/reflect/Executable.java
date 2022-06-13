@@ -429,6 +429,9 @@ public abstract sealed class Executable extends AccessibleObject
                 verifyParameters(tmp);
             }
 
+            // writing to volatile field acts as a releasing store
+            // and this must be strictly after assignment
+            // of hasRealParameterData
             parameters = tmp;
         }
 
@@ -438,6 +441,8 @@ public abstract sealed class Executable extends AccessibleObject
     boolean hasRealParameterData() {
         // If this somehow gets called before parameters gets
         // initialized, force it into existence.
+        // This is an acquiring read and must be strictly
+        // before assignment of hasRealParameterData
         if (parameters == null) {
             privateGetParameters();
         }
