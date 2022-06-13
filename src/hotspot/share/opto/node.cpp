@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@
 #include "utilities/copy.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include "utilities/stringUtils.hpp"
 
 class RegMask;
 // #include "phase.hpp"
@@ -1608,6 +1609,7 @@ Node* old_root() {
 class UniqueMixedNodeList {
 public:
   UniqueMixedNodeList() : _visited_set(cmpkey, hashkey) {}
+
   void add(Node* node) {
     if (not_a_node(node)) {
       return; // Gracefully handle NULL, -1, 0xabababab, etc.
@@ -1617,14 +1619,16 @@ public:
       _worklist.push(node);
     }
   }
+
   Node* operator[] (uint i) const {
     return _worklist[i];
   }
+
   size_t size() {
     return _worklist.size();
   }
+
 private:
-  uint _index = 0;
   Dict _visited_set;
   Node_List _worklist;
 };
@@ -1667,62 +1671,6 @@ Node* find_node_by_idx(Node* start, uint idx, bool traverse_output, bool only_ct
   return result;
 }
 
-// find needle in haystack, case insensitive
-// custom implementation of strcasestr, as it is not available on windows
-const char* strstr_nocase(const char* haystack, const char* needle) {
-  if (needle[0] == '\0') {
-    return haystack; // empty needle matches with anything
-  }
-  for (size_t i = 0; haystack[i] != '\0'; i++) {
-    bool matches = true;
-    for (size_t j = 0; needle[j] != '\0'; j++) {
-      if (haystack[i + j] == '\0') {
-        return nullptr; // hit end of haystack, abort
-      }
-      if (tolower(haystack[i + j]) != tolower(needle[j])) {
-        matches = false;
-        break; // abort, try next i
-      }
-    }
-    if (matches) {
-      return &haystack[i]; // all j were ok for this i
-    }
-  }
-  return nullptr; // no i was a match
-}
-
-// check if str matches the star_pattern
-// eg. str "_abc____def__" would match pattern "abc*def"
-// the matching is case insensitive
-bool is_star_match(const char* star_pattern, const char* str) {
-  const int N = 1000;
-  char pattern[N]; // copy pattern into this to ensure null termination
-  jio_snprintf(pattern, N, "%s", star_pattern);// ensures null termination
-  char buf[N]; // copy parts of pattern into this
-  const char* s = str;
-  const char* r = &pattern[0]; // cast array to char*
-  while (strlen(r) > 0) {
-    // find next section in pattern
-    const char* r_end = strstr(r, "*");
-    const char* r_part = r;
-    if (r_end != nullptr) { // copy part into buffer
-      size_t r_part_len = r_end-r;
-      strncpy(buf, r, r_part_len);
-      buf[r_part_len] = '\0'; // end of string
-      r_part = &buf[0]; // cast array to char*
-    }
-    // find this section in s, case insensitive
-    const char* s_match = strstr_nocase(s, r_part);
-    if (s_match == nullptr) {
-      return false; // r_part did not match - abort
-    }
-    size_t match_len = strlen(r_part);
-    s = s_match + match_len; // advance to match position plus part length
-    r += match_len + (r_end == nullptr ? 0 : 1); // advance by part length and "*"
-  }
-  return true; // all parts of pattern matched
-}
-
 int node_idx_cmp(Node** n1, Node** n2) {
   return (*n1)->_idx - (*n2)->_idx;
 }
@@ -1731,7 +1679,7 @@ Node* find_node_by_name(Node* start, const char* name) {
   Node* result = nullptr;
   GrowableArray<Node*> ns;
   auto callback = [&] (Node* n) {
-    if (is_star_match(name, n->Name())) {
+    if (StringUtils::is_star_match(name, n->Name())) {
       ns.push(n);
       result = n;
     }
@@ -1750,7 +1698,7 @@ Node* find_node_by_dump(Node* start, const char* pattern) {
   auto callback = [&] (Node* n) {
     stringStream stream;
     n->dump("", false, &stream);
-    if (is_star_match(pattern, stream.base())) {
+    if (StringUtils::is_star_match(pattern, stream.base())) {
       ns.push(n);
       result = n;
     }
