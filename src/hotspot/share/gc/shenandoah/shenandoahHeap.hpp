@@ -304,6 +304,8 @@ public:
   void set_concurrent_strong_root_in_progress(bool cond);
   void set_concurrent_weak_root_in_progress(bool cond);
 
+  virtual bool is_concurrent_gc_active() override;
+
   inline bool is_stable() const;
   inline bool is_idle() const;
   inline bool is_concurrent_mark_in_progress() const;

@@ -45,6 +45,10 @@ bool ConcurrentGCBreakpoints::_is_stopped = false;
 // True if the collector is idle.
 bool ConcurrentGCBreakpoints::_is_idle = true;
 
+bool ConcurrentGCBreakpoints::is_idle() {
+  return _is_idle;
+}
+
 void ConcurrentGCBreakpoints::reset_request_state() {
   _run_to = NULL;
   _want_idle = false;

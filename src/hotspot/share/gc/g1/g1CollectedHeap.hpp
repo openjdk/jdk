@@ -771,6 +771,8 @@ public:
   // Start a concurrent cycle.
   void start_concurrent_cycle(bool concurrent_operation_is_full_mark);
 
+  virtual bool is_concurrent_gc_active() override;
+
   void prepare_tlabs_for_mutator();
 
   void retire_tlabs();

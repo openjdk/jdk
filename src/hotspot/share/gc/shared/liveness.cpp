@@ -5,6 +5,7 @@
 #include "gc/shared/oopStorageSet.inline.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
+#include "gc/shared/markBitMap.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -109,9 +110,9 @@ void LivenessEstimatorThread::run_service() {
     // Start with a wait because there is nothing interesting in the heap yet.
     MonitorLocker locker(&_lock,Monitor::SafepointCheckFlag::_no_safepoint_check_flag);
     bool timeout = locker.wait(ConcLivenessEstimateSeconds * MILLIUNITS);
-    log_info(gc, estimator)("Starting, scheduled: %s", BOOL_TO_STR(timeout));
 
-    if (!is_concurrent_gc_active() && estimation_begin()) {
+    if (timeout && !is_concurrent_gc_active() && estimation_begin()) {
+      log_info(gc, estimator)("Starting, scheduled: %s", BOOL_TO_STR(timeout));
       bool completed = estimate_liveness();
       log_info(gc, estimator)("Completed: %s", BOOL_TO_STR(completed));
       estimation_end(completed);
@@ -287,7 +288,13 @@ void LivenessEstimatorThread::do_roots() {
 }
 
 void LivenessEstimatorThread::do_oop(oop obj) {
-  if (!_mark_bit_map.is_marked(obj)) {
+  oop is_marked_obj = obj;
+
+  if (Universe::heap()->kind() == Universe::heap()->Name::Z) {
+    is_marked_obj = ZOop::from_address(ZAddress::offset(ZOop::to_address(obj)));
+  }
+
+  if (!_mark_bit_map.is_marked(is_marked_obj)) {
     if (_mark_stack.is_full()) {
       log_warning(gc, estimator)("Mark stack is full");
     } else {
@@ -319,6 +326,11 @@ bool LivenessEstimatorThread::check_yield_and_continue(SuspendibleThreadSetJoine
     return false;
   }
 
+  if (Universe::heap()->is_concurrent_gc_active()) {
+    log_info(gc,estimator)("Concurrent GC is running.");
+    return false;
+  }
+
   return !should_terminate();
 }
 
@@ -346,9 +358,8 @@ void LivenessEstimatorThread::send_live_set_estimate(size_t count, size_t size_b
 }
 
 bool LivenessEstimatorThread::is_concurrent_gc_active() {
-  // TODO: Implement this. Maybe add a virtual function to CollectedHeap?
   // We don't want to run the estimate if concurrent gc threads are working.
-  return false;
+  return Universe::heap()->is_concurrent_gc_active();
 }
 
 const char* LivenessEstimatorThread::type_name() const {

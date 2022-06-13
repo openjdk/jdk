@@ -544,6 +544,10 @@ void ShenandoahHeap::reset_mark_bitmap() {
   _workers->run_task(&task);
 }
 
+bool ShenandoahHeap::is_concurrent_gc_active() {
+  return !is_stable();
+}
+
 void ShenandoahHeap::print_on(outputStream* st) const {
   st->print_cr("Shenandoah Heap");
   st->print_cr(" " SIZE_FORMAT "%s max, " SIZE_FORMAT "%s soft max, " SIZE_FORMAT "%s committed, " SIZE_FORMAT "%s used",

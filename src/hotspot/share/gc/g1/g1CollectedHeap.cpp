@@ -1965,6 +1965,13 @@ void G1CollectedHeap::collect(GCCause::Cause cause) {
   try_collect(cause, collection_counters(this));
 }
 
+bool G1CollectedHeap::is_concurrent_gc_active() {
+  if (_cm_thread == nullptr) {
+    return false;
+  }
+  return _cm_thread->in_progress();
+}
+
 // Return true if (x < y) with allowance for wraparound.
 static bool gc_counter_less_than(uint x, uint y) {
   return (x - y) > (UINT_MAX/2);

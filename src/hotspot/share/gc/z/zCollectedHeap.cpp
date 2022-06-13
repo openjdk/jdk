@@ -43,6 +43,7 @@
 #include "oops/stackChunkOop.hpp"
 #include "runtime/continuationJavaClasses.hpp"
 #include "utilities/align.hpp"
+#include "gc/shared/concurrentGCBreakpoints.hpp"
 
 ZCollectedHeap* ZCollectedHeap::heap() {
   return named_heap<ZCollectedHeap>(CollectedHeap::Z);
@@ -340,4 +341,8 @@ bool ZCollectedHeap::is_oop(oop object) const {
 
 bool ZCollectedHeap::supports_concurrent_gc_breakpoints() const {
   return true;
+}
+
+bool ZCollectedHeap::is_concurrent_gc_active() {
+  return !ConcurrentGCBreakpoints::is_idle();
 }

@@ -6,9 +6,30 @@
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/markBitMap.hpp"
 #include "runtime/task.hpp"
+#include "gc/z/zOop.hpp"
+#include "gc/z/zAddress.hpp"
 
 typedef Stack<oop, mtTracing> EstimatorStack;
 class SuspendibleThreadSetJoiner;
+
+class LivenessMarkBitMap : public MarkBitMap {
+  public:
+    // ZGC uses pointers that hold metadata about the object
+    // check_mark calls Heap::is_in which requires an unmasked pointer
+    // set_bit requires a masked pointer
+    // Because of this we must override this method
+    void mark(oop obj) {
+      HeapWord* addr = cast_from_oop<HeapWord*>(obj);
+      check_mark(addr);
+
+      if (Universe::heap()->kind() == Universe::heap()->Name::Z) {
+        obj = ZOop::from_address(ZAddress::offset(ZOop::to_address(obj)));
+        addr = cast_from_oop<HeapWord*>(obj);
+      }
+
+      return _bm.set_bit(addr_to_offset(addr));
+    }
+};
 
 class EstimationErrorTracker {
  public:
@@ -44,13 +65,6 @@ class LivenessEstimatorThread : public  ConcurrentGCThread {
  public:
   LivenessEstimatorThread();
 
-  // TODO: For simplicity, this should:
-  //  1. Take a safepoint and scan the roots
-  //  2. Finish heap walk concurrently computing liveness count
-  //  3. Expose results (log them, emit JFR event)
-  //
-  // TODO: Would be nice to also not interfere with other concurrent mark activity
-  // from GC, but this will require GC specific integrations.
   virtual void run_service() override;
   virtual void stop_service() override;
 
@@ -75,7 +89,7 @@ class LivenessEstimatorThread : public  ConcurrentGCThread {
   void send_live_set_estimate(size_t count, size_t size_bytes);
 
   Monitor _lock;
-  MarkBitMap _mark_bit_map;
+  LivenessMarkBitMap _mark_bit_map;
   MemRegion _mark_bit_map_region;
   EstimatorStack _mark_stack;
 

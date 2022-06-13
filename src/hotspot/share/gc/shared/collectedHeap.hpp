@@ -391,6 +391,8 @@ class CollectedHeap : public CHeapObj<mtGC> {
   // collector -- dld).
   bool is_gc_active() const { return _is_gc_active; }
 
+  virtual bool is_concurrent_gc_active() { return false; }
+
   // Total number of GC collections (started)
   unsigned int total_collections() const { return _total_collections; }
   unsigned int total_full_collections() const { return _total_full_collections;}
