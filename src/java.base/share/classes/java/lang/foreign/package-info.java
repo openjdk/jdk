@@ -106,15 +106,16 @@
  * we can use the following code:
  *
  * {@snippet lang=java :
- * var linker = Linker.nativeLinker();
+ * Linker linker = Linker.nativeLinker();
+ * SymbolLookup stdlib = linker.defaultLookup();
  * MethodHandle strlen = linker.downcallHandle(
- *     linker.lookup("strlen").get(),
+ *     stdlib.lookup("strlen").get(),
  *     FunctionDescriptor.of(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS)
  * );
  *
- * try (var session = MemorySession.openConfined()) {
- *     var cString = MemorySegment.allocateNative(5 + 1, session);
- *     cString.setUtf8String("Hello");
+ * try (MemorySession session = MemorySession.openConfined()) {
+ *     MemorySegment cString = MemorySegment.allocateNative(5 + 1, session);
+ *     cString.setUtf8String(0, "Hello");
  *     long len = (long)strlen.invoke(cString); // 5
  * }
  * }
@@ -185,7 +186,7 @@
  * FunctionDescriptor intCompareDescriptor = FunctionDescriptor.of(ValueLayout.JAVA_INT, ValueLayout.ADDRESS, ValueLayout.ADDRESS);
  * MethodHandle intCompareHandle = MethodHandles.lookup().findStatic(IntComparator.class,
  *                                                 "intCompare",
- *                                                 CLinker.upcallType(comparFunction));
+ *                                                 Linker.upcallType(comparFunction));
  * }
  *
  * As before, we need to create a {@link java.lang.foreign.FunctionDescriptor} instance, this time describing the signature
@@ -198,7 +199,7 @@
  *
  * {@snippet lang=java :
  * MemorySession session = ...
- * Addressable comparFunc = CLinker.nativeLinker().upcallStub(
+ * Addressable comparFunc = Linker.nativeLinker().upcallStub(
  *     intCompareHandle, intCompareDescriptor, session);
  * );
  * }

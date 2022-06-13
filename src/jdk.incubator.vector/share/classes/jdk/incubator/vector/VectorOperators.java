@@ -452,6 +452,26 @@ public abstract class VectorOperators {
     public static final Unary ABS = unary("ABS", "abs", VectorSupport.VECTOR_OP_ABS, VO_ALL);
     /** Produce {@code -a}. */
     public static final Unary NEG = unary("NEG", "-a", VectorSupport.VECTOR_OP_NEG, VO_ALL|VO_SPECIAL);
+    /** Produce {@code bitCount(a)}
+     * @since 19
+     */
+    public static final Unary BIT_COUNT = unary("BIT_COUNT", "bitCount", VectorSupport.VECTOR_OP_BIT_COUNT, VO_NOFP);
+    /** Produce {@code numberOfTrailingZeros(a)}
+     * @since 19
+     */
+    public static final Unary TRAILING_ZEROS_COUNT = unary("TRAILING_ZEROS_COUNT", "numberOfTrailingZeros", VectorSupport.VECTOR_OP_TZ_COUNT, VO_NOFP);
+    /** Produce {@code numberOfLeadingZeros(a)}
+     * @since 19
+     */
+    public static final Unary LEADING_ZEROS_COUNT = unary("LEADING_ZEROS_COUNT", "numberOfLeadingZeros", VectorSupport.VECTOR_OP_LZ_COUNT, VO_NOFP);
+    /** Produce {@code reverse(a)}
+     * @since 19
+     */
+    public static final Unary REVERSE = unary("REVERSE", "reverse", VectorSupport.VECTOR_OP_REVERSE, VO_NOFP);
+    /** Produce {@code reverseBytes(a)}
+     * @since 19
+     */
+    public static final Unary REVERSE_BYTES = unary("REVERSE_BYTES", "reverseBytes", VectorSupport.VECTOR_OP_REVERSE_BYTES, VO_NOFP);
 
     /** Produce {@code sin(a)}.  Floating only.
      *  Not guaranteed to be semi-monotonic. See section "Operations on floating point vectors" above
@@ -556,6 +576,14 @@ public abstract class VectorOperators {
     public static final /*bitwise*/ Binary ROL = binary("ROL", "rotateLeft", VectorSupport.VECTOR_OP_LROTATE, VO_SHIFT);
     /** Produce {@code rotateRight(a,n)}.  Integral only. */
     public static final /*bitwise*/ Binary ROR = binary("ROR", "rotateRight", VectorSupport.VECTOR_OP_RROTATE, VO_SHIFT);
+    /** Produce {@code compress(a,n)}. Integral, {@code int} and {@code long}, only.
+     * @since 19
+     */
+    public static final /*bitwise*/ Binary COMPRESS_BITS = binary("COMPRESS_BITS", "compressBits", VectorSupport.VECTOR_OP_COMPRESS_BITS, VO_NOFP);
+    /** Produce {@code expand(a,n)}. Integral, {@code int} and {@code long}, only.
+     * @since 19
+     */
+    public static final /*bitwise*/ Binary EXPAND_BITS = binary("EXPAND_BITS", "expandBits", VectorSupport.VECTOR_OP_EXPAND_BITS, VO_NOFP);
 
     /** Produce {@code atan2(a,b)}. See  Floating only.
      *  Not guaranteed to be semi-monotonic. See section "Operations on floating point vectors" above

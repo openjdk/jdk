@@ -230,6 +230,9 @@ class Events : AllStatic {
   // Deoptization related messages
   static StringEventLog* _deopt_messages;
 
+  // dynamic lib related messages
+  static StringEventLog* _dll_messages;
+
   // Redefinition related messages
   static StringEventLog* _redefinitions;
 
@@ -266,6 +269,8 @@ class Events : AllStatic {
   static void log_class_loading(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
 
   static void log_deopt_message(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
+
+  static void log_dll_message(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
 
   // Register default loggers
   static void init();
@@ -333,6 +338,15 @@ inline void Events::log_deopt_message(Thread* thread, const char* format, ...) {
     va_list ap;
     va_start(ap, format);
     _deopt_messages->logv(thread, format, ap);
+    va_end(ap);
+  }
+}
+
+inline void Events::log_dll_message(Thread* thread, const char* format, ...) {
+  if (LogEvents && _dll_messages != NULL) {
+    va_list ap;
+    va_start(ap, format);
+    _dll_messages->logv(thread, format, ap);
     va_end(ap);
   }
 }

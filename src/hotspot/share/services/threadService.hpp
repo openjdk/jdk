@@ -78,6 +78,9 @@ private:
 
   static void decrement_thread_counts(JavaThread* jt, bool daemon);
 
+  // test if the JavaThread is a virtual thread or has a mounted virtual thread
+  static bool is_virtual_or_carrier_thread(JavaThread* jt);
+
 public:
   static void init();
   static void add_thread(JavaThread* thread, bool daemon);

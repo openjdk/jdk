@@ -516,6 +516,9 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_doubleToLongBits:
   case vmIntrinsics::_longBitsToDouble:         return inline_fp_conversions(intrinsic_id());
 
+  case vmIntrinsics::_floatIsInfinite:
+  case vmIntrinsics::_doubleIsInfinite:         return inline_fp_range_check(intrinsic_id());
+
   case vmIntrinsics::_numberOfLeadingZeros_i:
   case vmIntrinsics::_numberOfLeadingZeros_l:
   case vmIntrinsics::_numberOfTrailingZeros_i:
@@ -526,6 +529,11 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_reverseBytes_l:
   case vmIntrinsics::_reverseBytes_s:
   case vmIntrinsics::_reverseBytes_c:           return inline_number_methods(intrinsic_id());
+
+  case vmIntrinsics::_compress_i:
+  case vmIntrinsics::_compress_l:
+  case vmIntrinsics::_expand_i:
+  case vmIntrinsics::_expand_l:                 return inline_bitshuffle_methods(intrinsic_id());
 
   case vmIntrinsics::_divideUnsigned_i:
   case vmIntrinsics::_divideUnsigned_l:
@@ -700,6 +708,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_vector_insert();
   case vmIntrinsics::_VectorExtract:
     return inline_vector_extract();
+  case vmIntrinsics::_VectorCompressExpand:
+    return inline_vector_compress_expand();
 
   case vmIntrinsics::_getObjectSize:
     return inline_getObjectSize();
@@ -2214,6 +2224,24 @@ bool LibraryCallKit::inline_number_methods(vmIntrinsics::ID id) {
   case vmIntrinsics::_reverseBytes_i:           n = new ReverseBytesINode( 0,   arg);  break;
   case vmIntrinsics::_reverseBytes_l:           n = new ReverseBytesLNode( 0,   arg);  break;
   default:  fatal_unexpected_iid(id);  break;
+  }
+  set_result(_gvn.transform(n));
+  return true;
+}
+
+//--------------------------inline_bitshuffle_methods-----------------------------
+// inline int Integer.compress(int, int)
+// inline int Integer.expand(int, int)
+// inline long Long.compress(long, long)
+// inline long Long.expand(long, long)
+bool LibraryCallKit::inline_bitshuffle_methods(vmIntrinsics::ID id) {
+  Node* n = NULL;
+  switch (id) {
+    case vmIntrinsics::_compress_i:  n = new CompressBitsNode(argument(0), argument(1), TypeInt::INT); break;
+    case vmIntrinsics::_expand_i:    n = new ExpandBitsNode(argument(0),  argument(1), TypeInt::INT); break;
+    case vmIntrinsics::_compress_l:  n = new CompressBitsNode(argument(0), argument(2), TypeLong::LONG); break;
+    case vmIntrinsics::_expand_l:    n = new ExpandBitsNode(argument(0), argument(2), TypeLong::LONG); break;
+    default:  fatal_unexpected_iid(id);  break;
   }
   set_result(_gvn.transform(n));
   return true;
@@ -4632,6 +4660,25 @@ bool LibraryCallKit::inline_fp_conversions(vmIntrinsics::ID id) {
     break;
   }
 
+  default:
+    fatal_unexpected_iid(id);
+    break;
+  }
+  set_result(_gvn.transform(result));
+  return true;
+}
+
+bool LibraryCallKit::inline_fp_range_check(vmIntrinsics::ID id) {
+  Node* arg = argument(0);
+  Node* result = NULL;
+
+  switch (id) {
+  case vmIntrinsics::_floatIsInfinite:
+    result = new IsInfiniteFNode(arg);
+    break;
+  case vmIntrinsics::_doubleIsInfinite:
+    result = new IsInfiniteDNode(arg);
+    break;
   default:
     fatal_unexpected_iid(id);
     break;
