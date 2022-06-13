@@ -124,6 +124,7 @@ public class Preview {
      * Returns true if {@code s} is deemed to participate in the preview of {@code previewSymbol}, and
      * therefore no warnings or errors will be produced.
      *
+     * @parem syms the symbol table
      * @param s the symbol depending on the preview symbol
      * @param previewSymbol the preview symbol marked with @Preview
      * @return true if {@code s} is participating in the preview of {@code previewSymbol}
