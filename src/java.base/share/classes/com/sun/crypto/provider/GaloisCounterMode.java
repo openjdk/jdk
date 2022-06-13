@@ -1011,6 +1011,7 @@ abstract class GaloisCounterMode extends CipherSpi {
 
             dst.flip();
             originalDst.put(dst);
+            dst.clear().put(new byte[dst.capacity()]);
             originalDst = null;
         }
 

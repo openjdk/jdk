@@ -28,6 +28,7 @@ package javax.crypto;
 import java.nio.ByteBuffer;
 import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
+import java.util.Arrays;
 
 /**
  * This class defines the <i>Service Provider Interface</i> (<b>SPI</b>)
@@ -785,6 +786,7 @@ public abstract class CipherSpi {
                 }
                 if (useTempOut) {
                     output.put(outArray, outOfs, total);
+                    Arrays.fill(outArray, (byte)0);
                 } else {
                     // adjust output position manually
                     output.position(outPos + total);
@@ -798,6 +800,7 @@ public abstract class CipherSpi {
                 if (outArray != null && outArray.length != 0) {
                     output.put(outArray);
                     total = outArray.length;
+                    Arrays.fill(outArray, (byte)0);
                 }
             }
             // adjust input position manually
@@ -809,23 +812,28 @@ public abstract class CipherSpi {
             int outOfs = 0;
 
             byte[] tempIn = new byte[getTempArraySize(inLen)];
-            do {
-                int chunk = Math.min(inLen, tempIn.length);
-                if (chunk > 0) {
-                    input.get(tempIn, 0, chunk);
+            try {
+                do {
+                    int chunk = Math.min(inLen, tempIn.length);
+                    if (chunk > 0) {
+                        input.get(tempIn, 0, chunk);
+                    }
+                    int n;
+                    if (isUpdate || (inLen > chunk)) {
+                        n = engineUpdate(tempIn, 0, chunk, tempOut, outOfs);
+                    } else {
+                        n = engineDoFinal(tempIn, 0, chunk, tempOut, outOfs);
+                    }
+                    outOfs += n;
+                    total += n;
+                    inLen -= chunk;
+                } while (inLen > 0);
+                if (total > 0) {
+                    output.put(tempOut, 0, total);
                 }
-                int n;
-                if (isUpdate || (inLen > chunk)) {
-                    n = engineUpdate(tempIn, 0, chunk, tempOut, outOfs);
-                } else {
-                    n = engineDoFinal(tempIn, 0, chunk, tempOut, outOfs);
-                }
-                outOfs += n;
-                total += n;
-                inLen -= chunk;
-            } while (inLen > 0);
-            if (total > 0) {
-                output.put(tempOut, 0, total);
+            } finally {
+                Arrays.fill(tempOut, (byte) 0);
+                Arrays.fill(tempIn, (byte) 0);
             }
         }
 

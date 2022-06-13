@@ -228,15 +228,19 @@ final class GCTR extends CounterMode implements GCM {
         len = src.remaining() - (src.remaining() % blockSize);
         int processed = len;
         byte[] in = new byte[Math.min(MAX_LEN, len)];
-        while (processed > MAX_LEN) {
-            src.get(in, 0, MAX_LEN);
-            encrypt(in, 0, MAX_LEN, in, 0);
-            dst.put(in, 0, MAX_LEN);
-            processed -= MAX_LEN;
+        try {
+            while (processed > MAX_LEN) {
+                src.get(in, 0, MAX_LEN);
+                encrypt(in, 0, MAX_LEN, in, 0);
+                dst.put(in, 0, MAX_LEN);
+                processed -= MAX_LEN;
+            }
+            src.get(in, 0, processed);
+            encrypt(in, 0, processed, in, 0);
+            dst.put(in, 0, processed);
+        } finally {
+            Arrays.fill(in, (byte)0);
         }
-        src.get(in, 0, processed);
-        encrypt(in, 0, processed, in, 0);
-        dst.put(in, 0, processed);
         return len;
     }
 
