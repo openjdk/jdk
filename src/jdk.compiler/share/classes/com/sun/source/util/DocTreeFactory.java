@@ -424,6 +424,19 @@ public interface DocTreeFactory {
     ValueTree newValueTree(ReferenceTree ref);
 
     /**
+     * Creates a new {@code ValueTree} object, to represent a {@code {@value }} tag.
+     * @param format a format string for the value
+     * @param ref a reference to the value
+     * @return a {@code ValueTree} object
+     *
+     * @implSpec This implementation calls {@link #newValueTree(ReferenceTree) newValueTree(ref)}.
+     * @since 19
+     */
+    default ValueTree newValueTree(TextTree format, ReferenceTree ref) {
+        return newValueTree(ref);
+    }
+
+    /**
      * Creates a new {@code VersionTree} object, to represent a {@code {@version }} tag.
      * @param text the content of the tag
      * @return a {@code VersionTree} object

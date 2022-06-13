@@ -711,6 +711,7 @@ public class DocCommentTester {
             public Void visitValue(ValueTree node, Void p) {
                 header(node);
                 indent(+1);
+                print("format", node.getFormat());
                 print("reference", node.getReference());
                 indent(-1);
                 indent();

@@ -44,6 +44,7 @@ import java.io.*;
  *     must be received.
  * COMMENTS
  *
+ * @requires vm.continuations
  * @library /test/lib
  * @compile --enable-preview -source ${jdk.version} singlestep01.java
  * @run main/othervm/native --enable-preview -agentlib:singlestep01 singlestep01

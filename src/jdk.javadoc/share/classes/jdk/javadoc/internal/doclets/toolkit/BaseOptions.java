@@ -307,7 +307,7 @@ public abstract class BaseOptions {
     /**
      * Value for command-line option {@code --override-methods summary}
      * or {@code --override-methods detail}.
-     * Specifies whether those methods that override a super-type's method
+     * Specifies whether those methods that override a supertype's method
      * with no changes to the API contract should be summarized in the
      * footnote section.
      */
@@ -1085,7 +1085,7 @@ public abstract class BaseOptions {
     /**
      * Value for command-line option {@code --override-methods summary}
      * or {@code --override-methods detail}.
-     * Specifies whether those methods that override a super-type's method
+     * Specifies whether those methods that override a supertype's method
      * with no changes to the API contract should be summarized in the
      * footnote section.
      */

@@ -655,7 +655,9 @@ public class DocTreeScanner<R,P> implements DocTreeVisitor<R,P> {
      */
     @Override
     public R visitValue(ValueTree node, P p) {
-        return scan(node.getReference(), p);
+        R r = scan(node.getFormat(), p);
+        r = scanAndReduce(node.getReference(), p, r);
+        return r;
     }
 
     /**

@@ -646,6 +646,10 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
         try {
             print("{");
             printTagName(node);
+            if (node.getFormat() != null) {
+                print(" ");
+                print(node.getFormat());
+            }
             if (node.getReference() != null) {
                 print(" ");
                 print(node.getReference());

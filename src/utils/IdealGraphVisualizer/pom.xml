@@ -106,7 +106,6 @@
         <module>Bytecodes</module>
         <module>ServerCompiler</module>
         <module>FilterWindow</module>
-        <module>Graal</module>
         <module>View</module>
     </modules>
     <properties>

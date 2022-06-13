@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -247,7 +247,7 @@ public class SjavacImpl implements Sjavac {
                                 true,
                                 false);
                 javac_state.now().flattenPackagesSourcesAndArtifacts(modules);
-                // Recheck the the source files and their timestamps again.
+                // Recheck the source files and their timestamps again.
                 javac_state.checkSourceStatus(true);
 
                 // Now do a safety check that the list of source files is identical

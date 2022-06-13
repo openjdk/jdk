@@ -1192,6 +1192,7 @@ public class DPrinter {
         }
 
         public Void visitValue(ValueTree node, Void p) {
+            printDocTree("format", node.getFormat());
             printDocTree("value", node.getReference());
             return visitInlineTag(node, null);
         }

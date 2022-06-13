@@ -603,9 +603,6 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         }
 
         li.add(table);
-        if (table.needsScript()) {
-            mainBodyScript.append(table.getScript());
-        }
     }
 
     private boolean isExported(Element e) {
