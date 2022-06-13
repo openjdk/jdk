@@ -45,14 +45,10 @@ void VM_Version::initialize() {
   }
   FLAG_SET_DEFAULT(AllocatePrefetchDistance, 0);
 
-  // If lock diagnostics is needed, always call to runtime (only supported for debug VMs)
+  // Disable lock diagnostics for Zero
   if (DiagnoseSyncOnValueBasedClasses != 0) {
-#ifdef ASSERT
-    FLAG_SET_DEFAULT(UseHeavyMonitors, true);
-#else
-    warning("Lock diagnostics is not available for a Zero product VM");
+    warning("Lock diagnostics is not available for a Zero VM");
     FLAG_SET_DEFAULT(DiagnoseSyncOnValueBasedClasses, 0);
-#endif
   }
 
   if (UseAESIntrinsics) {

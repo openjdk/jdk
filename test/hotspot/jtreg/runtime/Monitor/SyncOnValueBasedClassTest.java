@@ -31,7 +31,7 @@ import java.util.stream.*;
  * @bug 8242263
  * @summary Exercise DiagnoseSyncOnValueBasedClasses diagnostic flag
  * @requires vm.flagless
- * @requires vm.debug == true | vm.flavor != "zero"
+ * @requires vm.flavor != "zero"
  * @library /test/lib
  * @run driver/timeout=180000 SyncOnValueBasedClassTest
  */
