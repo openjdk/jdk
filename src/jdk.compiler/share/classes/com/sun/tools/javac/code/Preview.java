@@ -83,7 +83,6 @@ public class Preview {
     private final Lint lint;
     private final Log log;
     private final Source source;
-    private final Symtab syms;
 
     private static final Context.Key<Preview> previewKey = new Context.Key<>();
 
@@ -103,7 +102,6 @@ public class Preview {
         log = Log.instance(context);
         lint = Lint.instance(context);
         source = Source.instance(context);
-        syms = Symtab.instance(context);
         this.previewHandler =
                 new MandatoryWarningHandler(log, source, lint.isEnabled(LintCategory.PREVIEW), true, "preview", LintCategory.PREVIEW);
         forcePreview = options.isSet("forcePreview");
@@ -130,7 +128,7 @@ public class Preview {
      * @param previewSymbol the preview symbol marked with @Preview
      * @return true if {@code s} is participating in the preview of {@code previewSymbol}
      */
-    public boolean participatesInPreview(Symbol s, Symbol previewSymbol) {
+    public boolean participatesInPreview(Symtab syms, Symbol s, Symbol previewSymbol) {
         // All symbols in the same module as the preview symbol participate in the preview API
         if (previewSymbol.packge().modle == s.packge().modle) {
             return true;
