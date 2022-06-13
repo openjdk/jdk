@@ -167,7 +167,13 @@ void ShenandoahFullGC::op_full(GCCause::Cause cause) {
   do_it(cause);
 
   metrics.snap_after();
-
+  if (heap->mode()->is_generational()) {
+    size_t old_available = heap->old_generation()->available();
+    size_t young_available = heap->young_generation()->available();
+    log_info(gc, ergo)("At end of Full GC, old_available: " SIZE_FORMAT "%s, young_available: " SIZE_FORMAT "%s",
+                       byte_size_in_proper_unit(old_available), proper_unit_for_byte_size(old_available),
+                       byte_size_in_proper_unit(young_available), proper_unit_for_byte_size(young_available));
+  }
   if (metrics.is_good_progress()) {
     ShenandoahHeap::heap()->notify_gc_progress();
   } else {
@@ -182,18 +188,18 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
   // Since we may arrive here from degenerated GC failure of either young or old, establish generation as GLOBAL.
   heap->set_gc_generation(heap->global_generation());
 
-  // There will be no concurrent allocations during full GC so reset these coordination variables.
-  heap->young_generation()->unadjust_available();
-  heap->old_generation()->unadjust_available();
-  // No need to old_gen->increase_used().  That was done when plabs were allocated, accounting for both old evacs and promotions.
-
-  heap->set_alloc_supplement_reserve(0);
-  heap->set_young_evac_reserve(0);
-  heap->set_old_evac_reserve(0);
-  heap->reset_old_evac_expended();
-  heap->set_promotion_reserve(0);
-
   if (heap->mode()->is_generational()) {
+    // There will be no concurrent allocations during full GC so reset these coordination variables.
+    heap->young_generation()->unadjust_available();
+    heap->old_generation()->unadjust_available();
+    // No need to old_gen->increase_used().  That was done when plabs were allocated, accounting for both old evacs and promotions.
+
+    heap->set_alloc_supplement_reserve(0);
+    heap->set_young_evac_reserve(0);
+    heap->set_old_evac_reserve(0);
+    heap->reset_old_evac_expended();
+    heap->set_promotion_reserve(0);
+
     // Full GC supersedes any marking or coalescing in old generation.
     heap->cancel_old_gc();
   }
@@ -514,7 +520,7 @@ public:
 
     bool promote_object = false;
     if ((_from_affiliation == ShenandoahRegionAffiliation::YOUNG_GENERATION) &&
-        (from_region_age + object_age > InitialTenuringThreshold)) {
+        (from_region_age + object_age >= InitialTenuringThreshold)) {
       if ((_old_to_region != nullptr) && (_old_compact_point + obj_size > _old_to_region->end())) {
         finish_old_region();
         _old_to_region = nullptr;
@@ -823,10 +829,12 @@ private:
 public:
   ShenandoahEnsureHeapActiveClosure() : _heap(ShenandoahHeap::heap()) {}
   void heap_region_do(ShenandoahHeapRegion* r) {
+    bool is_generational = _heap->mode()->is_generational();
     if (r->is_trash()) {
       r->recycle();
     }
     if (r->is_cset()) {
+      // Leave afffiliation unchanged.
       r->make_regular_bypass();
     }
     if (r->is_empty_uncommitted()) {
@@ -1246,6 +1254,7 @@ public:
 
   void heap_region_do(ShenandoahHeapRegion* r) {
     assert (!r->is_cset(), "cset regions should have been demoted already");
+    bool is_generational = _heap->mode()->is_generational();
 
     // Need to reset the complete-top-at-mark-start pointer here because
     // the complete marking bitmap is no longer valid. This ensures
@@ -1260,6 +1269,10 @@ public:
 
     // Make empty regions that have been allocated into regular
     if (r->is_empty() && live > 0) {
+      if (!is_generational) {
+        r->make_young_maybe();
+      }
+      // else, generational mode compaction has already established affiliation.
       r->make_regular_bypass();
     }
 
@@ -1275,7 +1288,7 @@ public:
     }
 
     // Update final usage for generations
-    if (_heap->mode()->is_generational() && live != 0) {
+    if (is_generational && live != 0) {
       if (r->is_young()) {
         _heap->young_generation()->increase_used(live);
       } else if (r->is_old()) {
@@ -1334,6 +1347,7 @@ void ShenandoahFullGC::compact_humongous_objects() {
         ShenandoahRegionAffiliation original_affiliation = r->affiliation();
         for (size_t c = old_start; c <= old_end; c++) {
           ShenandoahHeapRegion* r = heap->get_region(c);
+          // Leave humongous region affiliation unchanged.
           r->make_regular_bypass();
           r->set_top(r->bottom());
         }
