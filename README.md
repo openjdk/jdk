@@ -3,7 +3,7 @@
 Provide an API for parsing, generating, and transforming Java class files. This will initially serve as an internal replacement for ASM in the JDK, to be later opened as a public API.
 
 See [JEP ???](https://bugs.openjdk.java.net/browse/JDK-8280389)
-or [online API documentation](https://htmlpreview.github.io/?https://raw.githubusercontent.com/openjdk/jdk-sandbox/classfile-api-javadoc-branch/doc/classfile-api/javadoc/Classfile_20Processing_20API/)
+or [online API documentation](https://htmlpreview.github.io/?https://raw.githubusercontent.com/asotona/jdk-sandbox/classfile-api-javadoc-branch/doc/classfile-api/javadoc/jdk/classfile/package-summary.html)
 for more information about Classfile Processing API.
 
 See <https://openjdk.java.net/> for more information about
