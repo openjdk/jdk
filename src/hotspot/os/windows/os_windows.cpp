@@ -1238,7 +1238,7 @@ const char* os::dll_file_extension() { return ".dll"; }
 void  os::dll_unload(void *lib) {
   char name[MAX_PATH];
   if (::GetModuleFileName((HMODULE)lib, name, sizeof(name)) == 0) {
-    name[0] = '\0';
+    snprintf(name, MAX_PATH, "<not available>");
   }
   if (::FreeLibrary((HMODULE)lib)) {
     Events::log_dll_message(NULL, "Unloaded dll \"%s\" [" INTPTR_FORMAT "]", name, p2i(lib));

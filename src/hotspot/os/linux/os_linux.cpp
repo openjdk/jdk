@@ -1788,7 +1788,7 @@ void * os::Linux::dll_load_in_vmthread(const char *filename, char *ebuf,
 
 const char* os::Linux::dll_path(void* lib) {
   struct link_map *lmap;
-  const char* l_path = "<not available>";
+  const char* l_path = NULL;
   if (lib != NULL) {
     int res_dli = ::dlinfo(lib, RTLD_DI_LINKMAP, &lmap);
     if (res_dli == 0) {

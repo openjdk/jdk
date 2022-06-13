@@ -708,6 +708,7 @@ void* os::dll_lookup(void* handle, const char* name) {
 void os::dll_unload(void *lib) {
   const char* l_path = LINUX_ONLY(os::Linux::dll_path(lib))
                        NOT_LINUX("<not available>");
+  if (l_path == NULL) l_path = "<not available>";
   int res = ::dlclose(lib);
 
   if (res == 0) {
