@@ -164,7 +164,7 @@ public class ModuleDescriptor
              * The dependence is mandatory in the static phase, during compilation,
              * but is optional in the dynamic phase, during execution.
              */
-            STATIC(AccessFlag.STATIC.mask()),
+            STATIC(AccessFlag.STATIC_PHASE.mask()),
 
             /**
              * The dependence was not explicitly or implicitly declared in the
