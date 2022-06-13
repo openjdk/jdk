@@ -81,7 +81,7 @@ public enum AccessFlag {
     /**
      * The access flag {@code ACC_PUBLIC}, corresponding to the source
      * modifier {@link Modifier#PUBLIC public} with a mask value of
-     * {@code 0x0001}.
+     * <code>{@value "0x%04x" Modifier#PUBLIC}</code>.
      */
     PUBLIC(Modifier.PUBLIC, true,
            Set.of(Location.CLASS, Location.FIELD, Location.METHOD,
@@ -90,7 +90,7 @@ public enum AccessFlag {
     /**
      * The access flag {@code ACC_PRIVATE}, corresponding to the
      * source modifier {@link Modifier#PRIVATE private} with a mask
-     * value of {@code 0x0002}.
+     * value of <code>{@value "0x%04x" Modifier#PRIVATE}</code>.
      */
     PRIVATE(Modifier.PRIVATE, true,
             Set.of(Location.FIELD, Location.METHOD, Location.INNER_CLASS)),
@@ -98,7 +98,7 @@ public enum AccessFlag {
     /**
      * The access flag {@code ACC_PROTECTED}, corresponding to the
      * source modifier {@link Modifier#PROTECTED protected} with a mask
-     * value of {@code 0x0004}.
+     * value of <code>{@value "0x%04x" Modifier#PROTECTED}</code>.
      */
     PROTECTED(Modifier.PROTECTED, true,
               Set.of(Location.FIELD, Location.METHOD, Location.INNER_CLASS)),
@@ -106,7 +106,7 @@ public enum AccessFlag {
     /**
      * The access flag {@code ACC_STATIC}, corresponding to the source
      * modifier {@link Modifier#STATIC static} with a mask value of
-     * {@code 0x0008}.
+     * <code>{@value "0x%04x" Modifier#STATIC}</code>.
      */
     STATIC(Modifier.STATIC, true,
            Set.of(Location.FIELD, Location.METHOD, Location.INNER_CLASS)),
@@ -114,7 +114,7 @@ public enum AccessFlag {
     /**
      * The access flag {@code ACC_FINAL}, corresponding to the source
      * modifier {@link Modifier#FINAL final} with a mask
-     * value of {@code 0x0010}.
+     * value of <code>{@value "0x%04x" Modifier#FINAL}</code>.
      */
     FINAL(Modifier.FINAL, true,
           Set.of(Location.CLASS, Location.FIELD, Location.METHOD,
@@ -143,7 +143,7 @@ public enum AccessFlag {
     /**
      * The access flag {@code ACC_SYNCHRONIZED}, corresponding to the
      * source modifier {@link Modifier#SYNCHRONIZED synchronized} with
-     * a mask value of {@code 0x0020}.
+     * a mask value of <code>{@value "0x%04x" Modifier#SYNCHRONIZED}</code>.
      */
     SYNCHRONIZED(Modifier.SYNCHRONIZED, true, Set.of(Location.METHOD)),
 
@@ -157,7 +157,7 @@ public enum AccessFlag {
      /**
       * The access flag {@code ACC_VOLATILE}, corresponding to the
       * source modifier {@link Modifier#VOLATILE volatile} with a mask
-      * value of {@code 0x0040}.
+      * value of <code>{@value "0x%04x" Modifier#VOLATILE}</code>.
       */
     VOLATILE(Modifier.VOLATILE, true, Set.of(Location.FIELD)),
 
@@ -171,7 +171,7 @@ public enum AccessFlag {
     /**
      * The access flag {@code ACC_TRANSIENT}, corresponding to the
      * source modifier {@link Modifier#TRANSIENT transient} with a
-     * mask value of {@code 0x0080}.
+     * mask value of <code>{@value "0x%04x" Modifier#TRANSIENT}</code>.
      */
     TRANSIENT(Modifier.TRANSIENT, true, Set.of(Location.FIELD)),
 
@@ -184,8 +184,8 @@ public enum AccessFlag {
 
     /**
      * The access flag {@code ACC_NATIVE}, corresponding to the source
-     * modifier {@link Modifier#NATIVE native} with a mask value of {@code
-     * 0x0100}.
+     * modifier {@link Modifier#NATIVE native} with a mask value of
+     * <code>{@value "0x%04x" Modifier#NATIVE}</code>.
      */
     NATIVE(Modifier.NATIVE, true, Set.of(Location.METHOD)),
 
@@ -200,7 +200,7 @@ public enum AccessFlag {
     /**
      * The access flag {@code ACC_ABSTRACT}, corresponding to the
      * source modifier {@link Modifier#ABSTRACT abstract} with a mask
-     * value of {@code 0x0400}.
+     * value of <code>{@value "0x%04x" Modifier#ABSTRACT}</code>.
      */
     ABSTRACT(Modifier.ABSTRACT, true,
              Set.of(Location.CLASS, Location.METHOD, Location.INNER_CLASS)),
@@ -208,7 +208,7 @@ public enum AccessFlag {
     /**
      * The access flag {@code ACC_STRICT}, corresponding to the source
      * modifier {@link Modifier#STRICT strictfp} with a mask value of
-     * {@code 0x0800}.
+     * <code>{@value "0x%04x" Modifier#STRICT}</code>.
      */
     STRICT(Modifier.STRICT, true, Set.of(Location.METHOD)),
 
