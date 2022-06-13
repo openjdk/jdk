@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -444,7 +444,7 @@ public abstract sealed class Executable extends AccessibleObject
         return hasRealParameterData;
     }
 
-    private transient volatile boolean hasRealParameterData;
+    private transient boolean hasRealParameterData;
     private transient volatile Parameter[] parameters;
 
     private native Parameter[] getParameters0();
