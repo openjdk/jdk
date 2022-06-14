@@ -393,7 +393,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 #endif
 
-    __ pop_cont_fastpath(r15_thread);
+    __ pop_cont_fastpath();
 
     // restore regs belonging to calling function
 #ifdef _WIN64
@@ -8338,7 +8338,7 @@ void fill_continuation_entry(MacroAssembler* masm, Register reg_cont_obj, Regist
   __ movl(Address(rsp, ContinuationEntry::parent_held_monitor_count_offset()), rax);
 
   __ movptr(Address(r15_thread, JavaThread::cont_fastpath_offset()), 0);
-  __ reset_held_monitor_count(r15_thread);
+  __ reset_held_monitor_count();
 }
 
 //---------------------------- continuation_enter_cleanup ---------------------------

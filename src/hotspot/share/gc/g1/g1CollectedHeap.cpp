@@ -1342,7 +1342,7 @@ void G1CollectedHeap::shrink_helper(size_t shrink_bytes) {
     log_debug(gc, heap)("Uncommittable regions after shrink: %u", num_regions_removed);
     policy()->record_new_heap_size(num_regions());
   } else {
-    log_debug(gc, ergo, heap)("Did not expand the heap (heap shrinking operation failed)");
+    log_debug(gc, ergo, heap)("Did not shrink the heap (heap shrinking operation failed)");
   }
 }
 

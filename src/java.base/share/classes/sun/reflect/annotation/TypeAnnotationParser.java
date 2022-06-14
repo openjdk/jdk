@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,8 +127,7 @@ public final class TypeAnnotationParser {
         // has no annotations and the annotations to parameter mapping
         // should be offset by 1.
         boolean offset = false;
-        if (decl instanceof Constructor) {
-            Constructor<?> ctor = (Constructor<?>) decl;
+        if (decl instanceof Constructor<?> ctor) {
             Class<?> declaringClass = ctor.getDeclaringClass();
             if (!declaringClass.isEnum() &&
                 (declaringClass.isMemberClass() &&
@@ -226,11 +225,11 @@ public final class TypeAnnotationParser {
             int typeVarIndex) {
         AnnotatedElement decl;
         TypeAnnotationTarget predicate;
-        if (genericDecl instanceof Class) {
-            decl = (Class<?>)genericDecl;
+        if (genericDecl instanceof Class<?> classDecl) {
+            decl = classDecl;
             predicate = TypeAnnotationTarget.CLASS_TYPE_PARAMETER;
-        } else if (genericDecl instanceof Executable) {
-            decl = (Executable)genericDecl;
+        } else if (genericDecl instanceof Executable execDecl) {
+            decl = execDecl;
             predicate = TypeAnnotationTarget.METHOD_TYPE_PARAMETER;
         } else {
             throw new AssertionError("Unknown GenericDeclaration " + genericDecl + "\nthis should not happen.");
@@ -279,13 +278,11 @@ public final class TypeAnnotationParser {
             // if applicable.
             if (bounds.length > 0) {
                 Type b0 = bounds[0];
-                if (b0 instanceof Class<?>) {
-                    Class<?> c = (Class<?>) b0;
+                if (b0 instanceof Class<?> c) {
                     if (c.isInterface()) {
                         startIndex = 1;
                     }
-                } else if (b0 instanceof ParameterizedType) {
-                    ParameterizedType p = (ParameterizedType) b0;
+                } else if (b0 instanceof ParameterizedType p) {
                     Class<?> c = (Class<?>) p.getRawType();
                     if (c.isInterface()) {
                         startIndex = 1;
@@ -316,9 +313,9 @@ public final class TypeAnnotationParser {
     private static <D extends GenericDeclaration> List<TypeAnnotation> fetchBounds(D decl) {
         AnnotatedElement boundsDecl;
         TypeAnnotationTarget target;
-        if (decl instanceof Class) {
+        if (decl instanceof Class<?> classDecl) {
             target = TypeAnnotationTarget.CLASS_TYPE_PARAMETER_BOUND;
-            boundsDecl = (Class)decl;
+            boundsDecl = classDecl;
         } else {
             target = TypeAnnotationTarget.METHOD_TYPE_PARAMETER_BOUND;
             boundsDecl = (Executable)decl;
@@ -337,12 +334,12 @@ public final class TypeAnnotationParser {
         Class<?> container;
         byte[] rawBytes;
         JavaLangAccess javaLangAccess = SharedSecrets.getJavaLangAccess();
-        if (decl instanceof Class) {
-            container = (Class<?>)decl;
+        if (decl instanceof Class<?> classDecl) {
+            container = classDecl;
             rawBytes = javaLangAccess.getRawClassTypeAnnotations(container);
-        } else if (decl instanceof Executable) {
-            container = ((Executable)decl).getDeclaringClass();
-            rawBytes = javaLangAccess.getRawExecutableTypeAnnotations((Executable)decl);
+        } else if (decl instanceof Executable execDecl) {
+            container = execDecl.getDeclaringClass();
+            rawBytes = javaLangAccess.getRawExecutableTypeAnnotations(execDecl);
         } else {
             // Should not reach here. Assert?
             return EMPTY_TYPE_ANNOTATION_ARRAY;
