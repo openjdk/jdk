@@ -410,13 +410,14 @@ div.table-tabs > button.table-tab {
     grid-template-columns: minmax(400px, max-content) minmax(400px, auto);
 }
 div.checkboxes {
-    line-height: 18px;
+    line-height: 2em;
 }
 div.checkboxes > span {
     margin-left: 10px;
 }
 div.checkboxes > label {
     margin-left: 8px;
+    white-space: nowrap;
 }
 div.checkboxes > label > input {
     margin: 0 2px;
@@ -428,6 +429,10 @@ div.checkboxes > label > input {
 .three-column-summary {
     display: grid;
     grid-template-columns: minmax(15%, max-content) minmax(20%, max-content) minmax(20%, auto);
+}
+.three-column-release-summary {
+    display: grid;
+    grid-template-columns: minmax(40%, max-content) minmax(10%, max-content) minmax(40%, auto);
 }
 .four-column-summary {
     display: grid;
@@ -448,13 +453,14 @@ div.checkboxes > label > input {
         display: grid;
         grid-template-columns: minmax(10%, max-content) minmax(25%, auto);
     }
-    .three-column-summary .col-last {
+    .three-column-release-summary {
+        display: grid;
+        grid-template-columns: minmax(70%, max-content) minmax(30%, max-content)
+    }
+    .three-column-summary .col-last,
+    .three-column-release-summary .col-last{
         grid-column-end: span 2;
     }
-}
-.three-column-release-summary {
-    display: grid;
-    grid-template-columns: minmax(40%, max-content) minmax(10%, max-content) minmax(40%, auto);
 }
 @media screen and (max-width: 600px) {
     .two-column-summary {
@@ -465,6 +471,8 @@ div.checkboxes > label > input {
 .summary-table > div, .details-table > div {
     text-align:left;
     padding: 8px 3px 3px 7px;
+    overflow-x: auto;
+    scrollbar-width: thin;
 }
 .col-first, .col-second, .col-last, .col-constructor-name, .col-summary-item-name {
     vertical-align:top;
