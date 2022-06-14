@@ -1,0 +1,205 @@
+#
+# Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+name: 'Run tests'
+
+on:
+  workflow_call:
+    inputs:
+      platform:
+        required: true
+        type: string
+      bootjdk-platform:
+        required: true
+        type: string
+      runs-on:
+        required: true
+        type: string
+
+env:
+  # These are needed to make the MSYS2 bash work properly
+  MSYS2_PATH_TYPE: minimal
+  CHERE_INVOKING: 1
+
+jobs:
+  test:
+    name: test
+    runs-on: ${{ inputs.runs-on }}
+    defaults:
+      run:
+        shell: bash
+
+    strategy:
+      fail-fast: false
+      matrix:
+        test-name:
+          - 'jdk/tier1 part 1'
+          - 'jdk/tier1 part 2'
+          - 'jdk/tier1 part 3'
+          - 'langtools/tier1'
+          - 'hs/tier1 common'
+          - 'hs/tier1 compiler'
+          - 'hs/tier1 gc'
+          - 'hs/tier1 runtime'
+          - 'hs/tier1 serviceability'
+
+        include:
+          - test-name: 'jdk/tier1 part 1'
+            test-suite: 'test/jdk/:tier1_part1'
+
+          - test-name: 'jdk/tier1 part 2'
+            test-suite: 'test/jdk/:tier1_part2'
+
+          - test-name: 'jdk/tier1 part 3'
+            test-suite: 'test/jdk/:tier1_part3'
+
+          - test-name: 'langtools/tier1'
+            test-suite: 'test/langtools/:tier1'
+
+          - test-name: 'hs/tier1 common'
+            test-suite: 'test/hotspot/jtreg/:tier1_common'
+            debug-suffix: -debug
+
+          - test-name: 'hs/tier1 compiler'
+            test-suite: 'test/hotspot/jtreg/:tier1_compiler'
+            debug-suffix: -debug
+
+          - test-name: 'hs/tier1 gc'
+            test-suite: 'test/hotspot/jtreg/:tier1_gc'
+            debug-suffix: -debug
+
+          - test-name: 'hs/tier1 runtime'
+            test-suite: 'test/hotspot/jtreg/:tier1_runtime'
+            debug-suffix: -debug
+
+          - test-name: 'hs/tier1 serviceability'
+            test-suite: 'test/hotspot/jtreg/:tier1_serviceability'
+            debug-suffix: -debug
+
+    steps:
+      - name: 'Checkout the JDK source'
+        uses: actions/checkout@v3
+
+      - name: 'Get MSYS2'
+        uses: ./.github/actions/get-msys2
+        if: runner.os == 'Windows'
+
+      - name: 'Get the BootJDK'
+        id: bootjdk
+        uses: ./.github/actions/get-bootjdk
+        with:
+          platform: ${{ inputs.bootjdk-platform }}
+
+      - name: 'Get JTReg'
+        id: jtreg
+        uses: ./.github/actions/get-jtreg
+
+      - name: 'Get bundles'
+        id: bundles
+        uses: ./.github/actions/get-bundles
+        with:
+          platform: ${{ inputs.platform }}
+          debug-suffix: ${{ matrix.debug-suffix }}
+
+      - name: 'Install dependencies'
+        run: |
+          # On macOS we need to install some dependencies for testing
+          brew install make
+          sudo xcode-select --switch /Applications/Xcode_11.3.1.app/Contents/Developer
+          # This will make GNU make available as 'make' and not only as 'gmake'
+          echo '/usr/local/opt/make/libexec/gnubin' >> $GITHUB_PATH
+        if: runner.os == 'macOS'
+
+      - name: 'Set PATH'
+        id: path
+        run: |
+          # We need a minimal PATH on Windows
+          # Set PATH to "", so just GITHUB_PATH is included
+          if [[ '${{ runner.os }}' == 'Windows' ]]; then
+            echo "::set-output name=value::"
+          else
+            echo "::set-output name=value::$PATH"
+          fi
+
+      - name: 'Run tests'
+        id: run-tests
+        run: >
+          make test-prebuilt
+          TEST='${{ matrix.test-suite }}'
+          BOOT_JDK=${{ steps.bootjdk.outputs.path }}
+          JT_HOME=${{ steps.jtreg.outputs.path }}
+          JDK_IMAGE_DIR=${{ steps.bundles.outputs.jdk-path }}
+          SYMBOLS_IMAGE_DIR=${{ steps.bundles.outputs.symbols-path }}
+          TEST_IMAGE_DIR=${{ steps.bundles.outputs.tests-path }}
+          JTREG='JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash;VERBOSE=fail,error,time;KEYWORDS=!headful'
+          && bash ./.github/scripts/gen-test-summary.sh "$GITHUB_STEP_SUMMARY"
+        env:
+          PATH: ${{ steps.path.outputs.value }}
+
+        # This is a separate step, since if the markdown from a step gets bigger than
+        # 1024 kB it is skipped, but then the short summary above is still generated
+      - name: 'Generate test report'
+        run: bash ./.github/scripts/gen-test-results.sh "$GITHUB_STEP_SUMMARY"
+        if: always()
+
+      - name: 'Package test results'
+        id: package
+        run: |
+          # Package test-results and relevant parts of test-support
+          mkdir results
+
+          if [[ -d build/run-test-prebuilt/test-results ]]; then
+            cd build/run-test-prebuilt/test-results/
+            zip -r -9 "$GITHUB_WORKSPACE/results/test-results.zip" .
+            cd $GITHUB_WORKSPACE
+          else
+            echo '::warning ::Missing test-results directory'
+          fi
+
+          if [[ -d build/run-test-prebuilt/test-support ]]; then
+            cd build/run-test-prebuilt/test-support/
+            zip -r -9 "$GITHUB_WORKSPACE/results/test-support.zip" . -i *.jtr -i */hs_err*.log -i */replay*.log
+            cd $GITHUB_WORKSPACE
+          else
+            echo '::warning ::Missing test-support directory'
+          fi
+
+          artifact_name="results-${{ inputs.platform }}-$(echo ${{ matrix.test-name }} | tr '/ ' '__')"
+          echo "::set-output name=artifact-name::$artifact_name"
+        if: always()
+
+      - name: 'Upload test results'
+        uses: actions/upload-artifact@v3
+        with:
+          path: results
+          name: ${{ steps.package.outputs.artifact-name }}
+        if: always()
+
+        # This is the best way I found to abort the job with an error message
+      - name: 'Notify about test failures'
+        uses: actions/github-script@v6
+        with:
+          script: core.setFailed('${{ steps.run-tests.outputs.error-message }}')
+        if: steps.run-tests.outputs.failure == 'true'
