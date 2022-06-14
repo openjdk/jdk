@@ -80,8 +80,10 @@ public class LastVisibleRow {
             testRobot.delay(1000);
 
             if (!compare(bufferedImageBefore, bufferedImageAfter)) {
-                ImageIO.write(bufferedImageBefore, "png", new File("bufferedImageBefore.png"));
-                ImageIO.write(bufferedImageAfter, "png", new File("bufferedImageAfter.png"));
+                ImageIO.write(bufferedImageBefore, "png",
+                        new File("bufferedImageBefore.png"));
+                ImageIO.write(bufferedImageAfter, "png",
+                        new File("bufferedImageAfter.png"));
                 throw new RuntimeException("Test Case Failed!!, Last Row not Visible!!!");
             }
         } finally {
@@ -91,15 +93,12 @@ public class LastVisibleRow {
 
     // Get clickable screen point for particular row and column of a table
     private static Point getCellClickPoint(final int row, final int column) {
-        Point result;
-
         Rectangle rect = table.getCellRect(row, column, false);
-        Point point = new Point(rect.x + rect.width / 2,
+        Point clickPoint = new Point(rect.x + rect.width / 2,
                 rect.y + rect.height / 2);
-        SwingUtilities.convertPointToScreen(point, table);
-        result = point;
+        SwingUtilities.convertPointToScreen(clickPoint, table);
 
-        return result;
+        return clickPoint;
     }
 
     private static void createAndShowGUI() {
@@ -112,7 +111,10 @@ public class LastVisibleRow {
         centerPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         JPanel tablePaneContainer = new JPanel(new BorderLayout());
         JPanel tablePane = new JPanel(new BorderLayout());
-        table = new JTable(new Object[][]{{"row_1_col_1", "row_1_col_2", "row_1_col_3"}, {"row_2_col_1", "row_2_col_2", "row_2_col_3"}, {"row_3_col_1", "row_3_col_2", "row_3_col_3"}, {"row_4_col_1", "row_4_col_2", "row_4_col_3"}}, new String[]{"Col1", "Col2", "Col3"});
+        table = new JTable(new Object[][]{{"row_1_col_1", "row_1_col_2", "row_1_col_3"},
+                {"row_2_col_1", "row_2_col_2", "row_2_col_3"}, {"row_3_col_1", "row_3_col_2",
+                "row_3_col_3"}, {"row_4_col_1", "row_4_col_2", "row_4_col_3"}},
+                new String[]{"Col1", "Col2", "Col3"});
         table.setPreferredSize(new Dimension(0, (table.getRowHeight() * 3)));
 
         tablePane.add(table.getTableHeader(), BorderLayout.NORTH);
@@ -123,7 +125,6 @@ public class LastVisibleRow {
         frame.setSize(400, 120);
         frame.setVisible(true);
         frame.setLocationRelativeTo(null);
-
     }
 
     // mouseEvents for last row click
@@ -169,7 +170,9 @@ public class LastVisibleRow {
                 Point point = new Point(cellRect.x, cellRect.y);
                 SwingUtilities.convertPointToScreen(point, table);
 
-                captureRect[0] = new Rectangle(point.x+5, point.y+2, table.getColumnCount() * cellRect.width - 10, cellRect.height-2);
+                captureRect[0] = new Rectangle(point.x+5, point.y+2,
+                        table.getColumnCount() * cellRect.width - 10,
+                        cellRect.height-2);
             }
         });
         return captureRect[0];
