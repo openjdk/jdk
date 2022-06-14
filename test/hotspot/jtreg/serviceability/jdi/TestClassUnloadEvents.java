@@ -103,11 +103,10 @@ public class TestClassUnloadEvents {
         ClassUnloadRequest classUnloadRequest = vm.eventRequestManager().createClassUnloadRequest();
         classUnloadRequest.addClassFilter(CLASS_NAME_PREFIX + "*");
         classUnloadRequest.enable();
-        vm.resume();
 
         EventSet eventSet = null;
-        boolean exit = false;
-        while ((eventSet = vm.eventQueue().remove()) != null && !exit) {
+        boolean exited = false;
+        while (!exited && (eventSet = vm.eventQueue().remove()) != null) {
             for (Event event : eventSet) {
                 if (event instanceof ClassUnloadEvent) {
                     String className = ((ClassUnloadEvent)event).className();
@@ -117,7 +116,7 @@ public class TestClassUnloadEvents {
                 }
 
                 if (event instanceof VMDeathEvent) {
-                    exit = true;
+                    exited = true;
                     break;
                 }
             }
