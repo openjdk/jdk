@@ -1232,7 +1232,17 @@ public class TypeEnter implements Completer {
             // fields can't be varargs, lets remove the flag
             List<JCVariableDecl> recordFields = TreeInfo.recordFields(tree);
             for (JCVariableDecl field: recordFields) {
-                field.mods.flags &= ~Flags.VARARGS;
+                RecordComponent rec = tree.sym.getRecordComponent(field.sym);
+                TreeCopier<JCTree> tc = new TreeCopier<JCTree>(make.at(field.pos));
+                List<JCAnnotation> originalAnnos = rec.getOriginalAnnos().isEmpty() ?
+                        rec.getOriginalAnnos() :
+                        tc.copy(rec.getOriginalAnnos());
+                if (originalAnnos.length() != field.mods.annotations.length()) {
+                    field.mods = make.Modifiers(field.mods.flags & ~Flags.VARARGS, originalAnnos);
+                    annotate.annotateLater(originalAnnos, env, field.sym, field.pos());
+                } else {
+                    field.mods.flags &= ~Flags.VARARGS;
+                }
                 field.sym.flags_field &= ~Flags.VARARGS;
             }
             // now lets add the accessors
