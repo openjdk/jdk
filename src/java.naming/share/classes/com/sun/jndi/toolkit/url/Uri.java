@@ -356,7 +356,7 @@ public class Uri {
                     }
                     if (q != null) {
                         throw new MalformedURLException("invalid trailing characters in authority: ?" + q);
-                    } user info.
+                    }
                     if (f != null) {
                         throw new MalformedURLException("invalid trailing characters in authority: #" + f);
                     }
