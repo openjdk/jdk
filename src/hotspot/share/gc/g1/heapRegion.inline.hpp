@@ -242,16 +242,15 @@ inline HeapWord* HeapRegion::allocate(size_t min_word_size,
 }
 
 inline void HeapRegion::update_bot() {
-  HeapWord* next_addr = _hr->bottom();
-  HeapWord* const limit = _hr->top();
+  HeapWord* next_addr = bottom();
 
   HeapWord* prev_addr;
-  while (next_addr < limit) {
+  while (next_addr < top()) {
     prev_addr = next_addr;
     next_addr  = prev_addr + cast_to_oop(prev_addr)->size();
-    update_for_block(prev_addr, next_addr);
+    update_bot_for_block(prev_addr, next_addr);
   }
-  assert(next_addr == limit, "Should stop the scan at the limit.");
+  assert(next_addr == top(), "Should stop the scan at the limit.");
 }
 
 inline void HeapRegion::update_bot_for_obj(HeapWord* obj_start, size_t obj_size) {
@@ -274,6 +273,10 @@ inline HeapWord* HeapRegion::parsable_bottom() const {
 
 inline HeapWord* HeapRegion::parsable_bottom_acquire() const {
   return Atomic::load_acquire(&_parsable_bottom);
+}
+
+inline void HeapRegion::reset_parsable_bottom() {
+  Atomic::release_store(&_parsable_bottom, bottom());
 }
 
 inline void HeapRegion::note_start_of_marking() {
@@ -301,7 +304,7 @@ inline void HeapRegion::note_end_of_marking(size_t marked_bytes) {
 }
 
 inline void HeapRegion::note_end_of_scrubbing() {
-  Atomic::release_store(&_parsable_bottom, _bottom);
+  reset_parsable_bottom();
 }
 
 inline bool HeapRegion::in_collection_set() const {

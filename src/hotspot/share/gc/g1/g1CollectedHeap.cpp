@@ -985,7 +985,7 @@ void G1CollectedHeap::print_heap_after_full_collection() {
   }
 }
 
-void G1CollectedHeap::abort_concurrent_cycle() {
+bool G1CollectedHeap::abort_concurrent_cycle() {
   // If we start the compaction before the CM threads finish
   // scanning the root regions we might trip them over as we'll
   // be moving objects / updating references. So let's wait until
@@ -1002,7 +1002,7 @@ void G1CollectedHeap::abort_concurrent_cycle() {
 
   // Abandon current iterations of concurrent marking and concurrent
   // refinement, if any are in progress.
-  concurrent_mark()->concurrent_cycle_abort();
+  return concurrent_mark()->concurrent_cycle_abort();
 }
 
 void G1CollectedHeap::prepare_heap_for_full_collection() {
@@ -1026,7 +1026,7 @@ void G1CollectedHeap::verify_before_full_collection(bool explicit_gc) {
     return;
   }
   _verifier->verify_region_sets_optional();
-  //_verifier->verify_before_gc(G1HeapVerifier::G1VerifyFull);
+  _verifier->verify_before_gc(G1HeapVerifier::G1VerifyFull);
   _verifier->check_bitmaps("Full GC Start");
 }
 
@@ -2408,7 +2408,7 @@ bool G1CollectedHeap::is_obj_dead_cond(const oop obj,
   switch (vo) {
     case VerifyOption::G1UseConcMarking: return is_obj_dead(obj, hr);
     case VerifyOption::G1UseFullMarking: return is_obj_dead_full(obj, hr);
-    default:                            ShouldNotReachHere();
+    default:                             ShouldNotReachHere();
   }
   return false; // keep some compilers happy
 }
@@ -2418,7 +2418,7 @@ bool G1CollectedHeap::is_obj_dead_cond(const oop obj,
   switch (vo) {
     case VerifyOption::G1UseConcMarking: return is_obj_dead(obj);
     case VerifyOption::G1UseFullMarking: return is_obj_dead_full(obj);
-    default:                            ShouldNotReachHere();
+    default:                             ShouldNotReachHere();
   }
   return false; // keep some compilers happy
 }

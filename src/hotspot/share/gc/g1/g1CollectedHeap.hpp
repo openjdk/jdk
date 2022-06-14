@@ -508,7 +508,7 @@ private:
                                       bool* succeeded);
   // Internal helpers used during full GC to split it up to
   // increase readability.
-  void abort_concurrent_cycle();
+  bool abort_concurrent_cycle();
   void verify_before_full_collection(bool explicit_gc);
   void prepare_heap_for_full_collection();
   void prepare_heap_for_mutators();

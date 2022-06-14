@@ -35,7 +35,10 @@ enum class VerifyOption : uint {
   G1UseConcMarking = Default,
   // Use mark bitmap information from full gc marking. This does not
   // use (or need) TAMS.
-  G1UseFullMarking = G1UseConcMarking + 1
+  G1UseFullMarking = G1UseConcMarking + 1,
+  // Do not use mark bitmap for liveness at all as it may be invalid; assumes
+  // that all objects are parsable.
+  G1UseNoBitmap = G1UseConcMarking + 2
 };
 
 #endif // SHARE_GC_SHARED_VERIFYOPTION_HPP

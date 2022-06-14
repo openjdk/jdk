@@ -362,6 +362,7 @@ public:
   // safepoint the _acquire method must be used.
   HeapWord* parsable_bottom() const;
   HeapWord* parsable_bottom_acquire() const;
+  void reset_parsable_bottom();
 
   // Note the start or end of marking. This tells the heap region
   // that the collector is about to start or has finished (concurrently)

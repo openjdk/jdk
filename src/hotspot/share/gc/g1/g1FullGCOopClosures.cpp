@@ -93,7 +93,6 @@ template <class T> void G1VerifyOopClosure::do_oop_work(T* p) {
       yy.flush();
       _failures = true;
       failed = true;
-      ShouldNotReachHere();
     }
   }
 }
