@@ -61,12 +61,25 @@ import static java.util.Map.entry;
  * #TRANSIENT transient} field but a {@linkplain #VARARGS variable
  * arity (varargs)} method.
  *
- * <p>The access flag constants are ordered by non-decreasing mask
+ * @implSpec
+ * The access flag constants are ordered by non-decreasing mask
  * value; that is the mask value of a constant is greater than or
  * equal to the mask value of an immediate neighbor to its (syntactic)
  * left. If new constants are added, this property will be
  * maintained. That implies new constants will not necessarily be
  * added at the end of the existing list.
+ *
+ * @apiNote
+ * The JVM class file format has a new version defined for each new
+ * {@linkplain Runtime.Version#feature() feature release}. A new class
+ * file version may define new access flags or retire old ones. {@code
+ * AccessFlag} is intended to model the set of access flags across
+ * class file format versions. The range of versions an access flag is
+ * recognized is not explicitly indicated in this API. See the current
+ * <cite>The Java Virtual Machine Specification</cite> for
+ * details. Unless otherwise indicated, access flags can be assumed to
+ * be recognized in the {@linkplain Runtime#version() current
+ * version}.
  *
  * @see java.lang.reflect.Modifier
  * @see java.lang.module.ModuleDescriptor.Modifier
@@ -123,6 +136,10 @@ public enum AccessFlag {
     /**
      * The access flag {@code ACC_SUPER} with a mask value of {@code
      * 0x0020}.
+     *
+     * @apiNote
+     * In Java SE 8 and above, the JVM treats the {@code ACC_SUPER}
+     * flag as set in every class file (JVMS {@jvms 4.1}).
      */
     SUPER(0x0000_0020, false, Set.of(Location.CLASS)),
 
@@ -209,6 +226,11 @@ public enum AccessFlag {
      * The access flag {@code ACC_STRICT}, corresponding to the source
      * modifier {@link Modifier#STRICT strictfp} with a mask value of
      * <code>{@value "0x%04x" Modifier#STRICT}</code>.
+     *
+     * @apiNote
+     * The {@code ACC_STRICT} access flag is defined for class file
+     * major versions 46 through 60, inclusive (JVMS {@jvms 4.6}),
+     * corresponding to Java SE 1.2 through 16.
      */
     STRICT(Modifier.STRICT, true, Set.of(Location.METHOD)),
 
