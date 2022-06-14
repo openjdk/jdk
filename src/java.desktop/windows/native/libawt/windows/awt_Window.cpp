@@ -24,7 +24,6 @@
  */
 
 #include "awt.h"
-
 #include <jlong.h>
 
 #include "awt_Component.h"
@@ -1391,6 +1390,9 @@ BOOL AwtWindow::UpdateInsets(jobject insets)
     RECT inside;
     int extraBottomInsets = 0;
 
+    // extra padded border for captioned windows
+    int extraPaddedBorderInsets = ::GetSystemMetrics(SM_CXPADDEDBORDER);
+
     ::GetClientRect(GetHWnd(), &inside);
     ::GetWindowRect(GetHWnd(), &outside);
 
@@ -1414,17 +1416,15 @@ BOOL AwtWindow::UpdateInsets(jobject insets)
             LONG style = GetStyle();
             if (style & WS_THICKFRAME) {
                 m_insets.left = m_insets.right =
-                    ::GetSystemMetrics(SM_CXSIZEFRAME);
+                    ::GetSystemMetrics(SM_CXSIZEFRAME) + extraPaddedBorderInsets;
                 m_insets.top = m_insets.bottom =
-                    ::GetSystemMetrics(SM_CYSIZEFRAME);
+                    ::GetSystemMetrics(SM_CYSIZEFRAME) + extraPaddedBorderInsets;
             } else {
                 m_insets.left = m_insets.right =
-                    ::GetSystemMetrics(SM_CXDLGFRAME);
+                    ::GetSystemMetrics(SM_CXDLGFRAME) + extraPaddedBorderInsets;
                 m_insets.top = m_insets.bottom =
-                    ::GetSystemMetrics(SM_CYDLGFRAME);
+                    ::GetSystemMetrics(SM_CYDLGFRAME) + extraPaddedBorderInsets;
             }
-
-
             /* Add in title. */
             m_insets.top += ::GetSystemMetrics(SM_CYCAPTION);
         }
