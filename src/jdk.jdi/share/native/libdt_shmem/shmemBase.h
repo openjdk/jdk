@@ -28,7 +28,7 @@
 #define JAVASOFT_SHMEMBASE_H
 
 void exitTransportWithError(char *msg, char *fileName,
-                            char *date, int lineNumber);
+                            int lineNumber);
 
 typedef struct SharedMemoryConnection SharedMemoryConnection;
 typedef struct SharedMemoryTransport SharedMemoryTransport;

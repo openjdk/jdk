@@ -43,7 +43,7 @@ static HANDLE memHandle = NULL;
 #define sysAssert(expression) {         \
     if (!(expression)) {                \
             exitTransportWithError \
-            ("\"%s\", line %d: assertion failure\n", \
+            ("assertion failed", \
              __FILE__, __LINE__); \
     }                                   \
 }
