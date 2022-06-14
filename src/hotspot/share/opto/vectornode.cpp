@@ -887,6 +887,8 @@ Node* VectorNode::try_to_gen_masked_vector(PhaseGVN* gvn, Node* node, const Type
                                             node->as_StoreVector()->adr_type(),
                                             node->in(3), node->in(4), mask);
   default:
+    // Add the mask as an additional input to the original vector node by default.
+    // This is used for almost all the vector nodes.
     node->add_req(mask);
     node->add_flag(Node::Flag_is_predicated_vector);
     return node;
