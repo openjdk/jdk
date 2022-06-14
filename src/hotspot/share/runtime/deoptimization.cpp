@@ -1838,7 +1838,7 @@ static void post_deoptimization_event(CompiledMethod* nm,
 
 #endif // INCLUDE_JFR
 
-void log_deopt(CompiledMethod* nm, Method* tm, intptr_t pc, frame& fr, int trap_bci,
+static void log_deopt(CompiledMethod* nm, Method* tm, intptr_t pc, frame& fr, int trap_bci,
                               const char* reason_name, const char* reason_action) {
   LogTarget(Debug, deoptimization) lt;
   if (lt.is_enabled()) {
