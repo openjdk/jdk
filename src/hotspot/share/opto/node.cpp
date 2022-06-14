@@ -2002,10 +2002,6 @@ void PrintBFS::select_shortest_path() {
   }
 }
 
-int node_idx_cmp(Node** n1, Node** n2) {
-  return (*n1)->_idx - (*n2)->_idx;
-}
-
 // go through worklist in desired order, put the marked ones in print list
 void PrintBFS::sort() {
   if (_traverse_inputs && !_traverse_outputs) {
