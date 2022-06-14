@@ -1223,7 +1223,7 @@ bool PhaseMacroExpand::eliminate_reduced_allocation_merge(ReducedAllocationMerge
       Node* value_phi = ram->value_phi_for_field(offset, &_igvn);
       
       if (value_phi == NULL) {
-        assert(false, "At RAM node %d can't find value of Field: %ld", ram->_idx, offset);
+        assert(false, "At RAM node %d can't find value for a field.", ram->_idx);
         return false;
       }
       
@@ -1270,7 +1270,7 @@ bool PhaseMacroExpand::eliminate_reduced_allocation_merge(ReducedAllocationMerge
       // Scan object's fields adding an input to the safepoint for each field.
       for (int j = 0; j < nfields; j++) {
         ciField* field = iklass->nonstatic_field_at(j);
-        intptr_t offset = field->offset();
+        jlong offset = field->offset();
         ciType* elem_type = field->type();
         BasicType basic_elem_type = field->layout_type();
         const Type *field_type;
@@ -1300,7 +1300,7 @@ bool PhaseMacroExpand::eliminate_reduced_allocation_merge(ReducedAllocationMerge
         Node* field_val = ram->value_phi_for_field(offset, &_igvn);
 
         if (field_val == NULL) {
-          assert(false, "At RAM node %d can't find value of Field: %ld", sfpt->_idx, offset);
+          assert(false, "At RAM node %d can't find value for a field.", sfpt->_idx);
           return false;
         }
 
@@ -1340,7 +1340,7 @@ bool PhaseMacroExpand::eliminate_reduced_allocation_merge(ReducedAllocationMerge
         Node* value_phi = ram->value_phi_for_field(offset, &_igvn);
 
         if (value_phi == NULL) {
-          assert(false, "At RAM node %d can't find value of Field: %ld", ram->_idx, offset);
+          assert(false, "At RAM node %d can't find value for a field.", ram->_idx);
           return false;
         }
 
