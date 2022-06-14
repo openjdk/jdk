@@ -25,12 +25,11 @@
 
 package java.lang.reflect;
 
-import java.lang.annotation.*;
+import java.lang.annotation.Annotation;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 import java.util.StringJoiner;
-import java.util.stream.Stream;
 import java.util.stream.Collectors;
 
 import jdk.internal.access.SharedSecrets;
@@ -342,7 +341,7 @@ public abstract sealed class Executable extends AccessibleObject
                 // synthetic/mandated, thus, no way to match up the
                 // indexes.
                 return genericParamTypes.length == nonGenericParamTypes.length ?
-                    genericParamTypes : nonGenericParamTypes;
+                    genericParamTypes : getParameterTypes();
             }
         }
     }
