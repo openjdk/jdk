@@ -127,7 +127,7 @@ public class ModuleDescriptor
          */
         MANDATED(AccessFlag.MANDATED.mask());
 
-        private int mask;
+        private final int mask;
         private Modifier(int mask) {
             this.mask = mask;
         }
@@ -177,7 +177,7 @@ public class ModuleDescriptor
              * declaration.
              */
             MANDATED(AccessFlag.MANDATED.mask());
-            private int mask;
+            private final int mask;
             private Modifier(int mask) {
                 this.mask = mask;
             }
@@ -408,7 +408,7 @@ public class ModuleDescriptor
              */
             MANDATED(AccessFlag.MANDATED.mask());
 
-            private int mask;
+            private final int mask;
             private Modifier(int mask) {
                 this.mask = mask;
             }
@@ -630,7 +630,7 @@ public class ModuleDescriptor
              * module declaration.
              */
             MANDATED(AccessFlag.MANDATED.mask());
-            private int mask;
+            private final int mask;
             private Modifier(int mask) {
                 this.mask = mask;
             }
