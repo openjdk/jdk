@@ -1602,40 +1602,10 @@ Node* old_root() {
   return nullptr;
 }
 
-// UniqueMixedNodeList
-// unique: nodes are added only once
-// mixed: allow new and old nodes
-class UniqueMixedNodeList {
-public:
-  UniqueMixedNodeList() : _visited_set(cmpkey, hashkey) {}
-
-  void add(Node* node) {
-    if (not_a_node(node)) {
-      return; // Gracefully handle NULL, -1, 0xabababab, etc.
-    }
-    if (_visited_set[node] == nullptr) {
-      _visited_set.Insert(node, node);
-      _worklist.push(node);
-    }
-  }
-
-  Node* operator[] (uint i) const {
-    return _worklist[i];
-  }
-
-  size_t size() {
-    return _worklist.size();
-  }
-
-private:
-  Dict _visited_set;
-  Node_List _worklist;
-};
-
 // BFS traverse all reachable nodes from start, call callback on them
 template <typename Callback>
 void visit_nodes(Node* start, Callback callback, bool traverse_output, bool only_ctrl) {
-  UniqueMixedNodeList worklist;
+  Unique_Mixed_Node_List worklist;
   worklist.add(start);
   for (uint i = 0; i < worklist.size(); i++) {
     Node* n = worklist[i];
@@ -1656,6 +1626,7 @@ void visit_nodes(Node* start, Callback callback, bool traverse_output, bool only
 
 // BFS traverse from start, return node with idx
 Node* find_node_by_idx(Node* start, uint idx, bool traverse_output, bool only_ctrl) {
+  ResourceMark rm;
   Node* result = nullptr;
   auto callback = [&] (Node* n) {
     if (n->_idx == idx) {
@@ -1675,6 +1646,7 @@ int node_idx_cmp(Node** n1, Node** n2) {
 }
 
 Node* find_node_by_name(Node* start, const char* name) {
+  ResourceMark rm;
   Node* result = nullptr;
   GrowableArray<Node*> ns;
   auto callback = [&] (Node* n) {
@@ -1692,6 +1664,7 @@ Node* find_node_by_name(Node* start, const char* name) {
 }
 
 Node* find_node_by_dump(Node* start, const char* pattern) {
+  ResourceMark rm;
   Node* result = nullptr;
   GrowableArray<Node*> ns;
   auto callback = [&] (Node* n) {
