@@ -621,7 +621,6 @@ event_callback(JNIEnv *env, EventInfo *evinfo)
     struct bag *unloadedSignatures = NULL;
 
     /* We also need to simulate the class unload events. */
-
     debugMonitorEnter(handlerLock);
 
     /* Analyze which class unloads occurred */
