@@ -131,7 +131,7 @@ public class TestClassUnloadEvents {
         e.printStackTrace();
     }
     if (unloadedSampleClasses.size() != NUM_CLASSES) {
-        throw new RuntimeException("Wrong number of class unload events");
+        throw new RuntimeException("Wrong number of class unload events: expected " + NUM_CLASSES + " got " + unloadedSampleClasses.size());
     }
   }
 
