@@ -25,7 +25,7 @@
  * RecordCompilationTests
  *
  * @test
- * @bug 8250629 8252307 8247352 8241151 8246774 8259025
+ * @bug 8250629 8252307 8247352 8241151 8246774 8259025 8288130
  * @summary Negative compilation tests, and positive compilation (smoke) tests for records
  * @library /lib/combo /tools/lib /tools/javac/lib
  * @modules
@@ -177,6 +177,23 @@ public class RecordCompilationTests extends CompilationTestCase {
         assertOK("@Deprecated record R(int x, int y) { }");
         assertOK("record R(@Deprecated int x, int y) { }");
         assertOK("record R<T>(T x, T y) { }");
+        assertOK(
+                """
+                record R<T>(T x) {
+                    public T x() {
+                        return this.x;
+                    }
+                }
+                """);
+        assertOK(
+                """
+                import java.util.List;
+                record R<T>(List<T> x) {
+                    public List<T> x() {
+                        return this.x;
+                    }
+                }
+                """);
     }
 
     public void testGoodMemberDeclarations() {
