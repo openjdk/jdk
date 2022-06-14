@@ -44,8 +44,7 @@ class Deoptimization : AllStatic {
   friend class VMStructs;
   friend class EscapeBarrier;
 
-
-public:
+ public:
   // What condition caused the deoptimization?
   // Note: Keep this enum in sync. with Deoptimization::_trap_reason_name.
   enum DeoptReason {
@@ -164,7 +163,7 @@ public:
   static oop get_cached_box(AutoBoxObjectValue* bv, frame* fr, RegisterMap* reg_map, TRAPS);
 #endif
 
-private:
+  private:
   // Does the actual work for deoptimizing a single frame
   static void deoptimize_single_frame(JavaThread* thread, frame fr, DeoptReason reason);
 
