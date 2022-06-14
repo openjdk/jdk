@@ -103,10 +103,6 @@ public class TestClassUnloadEvents {
         ClassUnloadRequest classUnloadRequest = vm.eventRequestManager().createClassUnloadRequest();
         classUnloadRequest.addClassFilter(CLASS_NAME_PREFIX + "*");
         classUnloadRequest.enable();
-
-        ClassPrepareRequest classPrepareRequest = vm.eventRequestManager().createClassPrepareRequest();
-        classPrepareRequest.addClassFilter(TestClassUnloadEvents.class.getName());
-        classPrepareRequest.enable();
         vm.resume();
 
         EventSet eventSet = null;
