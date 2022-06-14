@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ public class ForceGC {
 
     private final CountDownLatch cleanerInvoked;
     private Object o;
+    private int gcCount = 0;
 
     public ForceGC() {
         this.o = new Object();
@@ -43,11 +44,11 @@ public class ForceGC {
         cleaner.register(o, cleanerInvoked::countDown);
     }
 
-    private void doIt(int iter) {
+    private void doit(int iter) {
         try {
-            for (int i = 0; i < 100; i++) {
+            for (int i = 0; i < 10; i++) {
                 System.gc();
-                System.out.println("doIt() iter: " + iter + ", gc " + i);
+                gcCount++;
                 if (cleanerInvoked.await(100L, TimeUnit.MILLISECONDS)) {
                     return;
                 }
@@ -64,23 +65,26 @@ public class ForceGC {
      * @param s boolean supplier
      * @return true if the {@code BooleanSupplier} returns true and false if
      *         the predefined waiting time elapsed before the count reaches zero.
+     * @throws InterruptedException if the current thread is interrupted while waiting
      */
     public boolean await(BooleanSupplier s) {
         o = null; // Keep reference to Object until now, to ensure the Cleaner
                   // doesn't count down the latch before await() is called.
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 10; i++) {
             if (s.getAsBoolean()) {
+                System.out.println("ForceGC condition met after System.gc() " + gcCount + " times");
                 return true;
             }
 
-            doIt(i);
+            doit(i);
             try {
-                Thread.sleep(10);
+                Thread.sleep(100);
             } catch (InterruptedException e) {
                 throw new AssertionError("unexpected interrupted sleep", e);
             }
         }
 
+        System.out.println("ForceGC condition not met after System.gc() " + gcCount + " times");
         return false;
     }
 }

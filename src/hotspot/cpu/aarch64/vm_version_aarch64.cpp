@@ -425,9 +425,10 @@ void VM_Version::initialize() {
     _rop_protection = false;
   } else if (strcmp(UseBranchProtection, "standard") == 0) {
     _rop_protection = false;
-    // Enable PAC if this code has been built with branch-protection and the CPU/OS supports it.
+    // Enable PAC if this code has been built with branch-protection, the CPU/OS
+    // supports it, and incompatible preview features aren't enabled.
 #ifdef __ARM_FEATURE_PAC_DEFAULT
-    if (VM_Version::supports_paca()) {
+    if (VM_Version::supports_paca() && !Arguments::enable_preview()) {
       _rop_protection = true;
     }
 #endif
@@ -437,6 +438,10 @@ void VM_Version::initialize() {
     if (!VM_Version::supports_paca()) {
       warning("ROP-protection specified, but not supported on this CPU.");
       // Disable PAC to prevent illegal instruction crashes.
+      _rop_protection = false;
+    } else if (Arguments::enable_preview()) {
+      // Not currently compatible with continuation freeze/thaw.
+      warning("PAC-RET is incompatible with virtual threads preview feature.");
       _rop_protection = false;
     }
 #else

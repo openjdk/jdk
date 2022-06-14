@@ -24,6 +24,7 @@
 /**
  * @test
  * @summary Verifies setting a breakpoint in Continuation.yield() followed by single stepping
+ * @requires vm.continuations
  * @compile ContYieldBreakPointTest.java
  * @modules java.base/jdk.internal.vm
  * @run main/othervm/native --enable-preview -agentlib:ContYieldBreakPointTest ContYieldBreakPointTest
