@@ -405,9 +405,7 @@ define SetupCompileNativeFileBody
     $1_COMPILE_OPTIONS := $$($1_FLAGS) $(CC_OUT_OPTION)$$($1_OBJ) $$($1_SRC_FILE)
     # For reproducible builds with gcc ensure random symbol generation is seeded deterministically
     ifeq ($(TOOLCHAIN_TYPE), gcc)
-       ifeq ($$(ENABLE_REPRODUCIBLE_BUILD), true)
-         $1_COMPILE_OPTIONS += -frandom-seed="$$($1_FILENAME)"
-       endif
+      $1_COMPILE_OPTIONS += -frandom-seed="$$($1_FILENAME)"
     endif
 
     $$($1_OBJ_JSON): $$($1_OBJ_DEPS)

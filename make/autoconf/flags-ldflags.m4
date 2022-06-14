@@ -128,10 +128,8 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
     fi
   fi
 
-  if test "x$ENABLE_REPRODUCIBLE_BUILD" = "xtrue"; then
-    if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-      REPRODUCIBLE_LDFLAGS="-experimental:deterministic"
-    fi
+  if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+    REPRODUCIBLE_LDFLAGS="-experimental:deterministic"
   fi
 
   if test "x$ALLOW_ABSOLUTE_PATHS_IN_OUTPUT" = "xfalse"; then

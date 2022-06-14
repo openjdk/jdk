@@ -39,16 +39,12 @@
 
 static HANDLE memHandle = NULL;
 
-#ifndef SHMEM_BUILD_TIME
-#define SHMEM_BUILD_TIME __DATE__
-#endif
-
 #ifdef DEBUG
 #define sysAssert(expression) {         \
     if (!(expression)) {                \
             exitTransportWithError \
             ("\"%s\", line %d: assertion failure\n", \
-             __FILE__, SHMEM_BUILD_TIME, __LINE__); \
+             __FILE__, __LINE__); \
     }                                   \
 }
 #else
