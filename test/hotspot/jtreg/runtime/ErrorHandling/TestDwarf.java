@@ -28,7 +28,7 @@
  * @summary Test DWARF parser with various crashes if debug symbols are available. If the libjvm debug symbols are not
  *          in the same directory as the libjvm.so file, in a subdirectory called .debug, or in the path specified
  *          by the environment variable _JVM_DWARF_PATH, then no verification of the hs_err_file is done for libjvm.so.
- * @requires vm.flagless & vm.compMode != "Xint" & os.family == "linux" & !vm.graal.enabled & vm.gc.G1
+ * @requires vm.debug == true & vm.flagless & vm.compMode != "Xint" & os.family == "linux" & !vm.graal.enabled & vm.gc.G1
  * @modules java.base/jdk.internal.misc
  * @run main/native/othervm -Xbootclasspath/a:. -XX:-CreateCoredumpOnCrash TestDwarf
  */
@@ -98,12 +98,9 @@ public class TestDwarf {
     // Crash the VM in different ways in order to verify that DWARF parsing is able to print the source information
     // in the hs_err_files for each VM and C stack frame.
     private static void test() throws Exception {
-        if (Platform.isDebugBuild()) {
-            // Used flags not available in product builds
-            runAndCheck(new Flags("-Xcomp", "-XX:CICrashAt=1", "--version"));
-            runAndCheck(new Flags("-Xmx100M", "-XX:ErrorHandlerTest=15", "-XX:TestCrashInErrorHandler=14", "--version"));
-            runAndCheck(new Flags("-XX:+CrashGCForDumpingJavaThread", "--version"));
-        }
+        runAndCheck(new Flags("-Xcomp", "-XX:CICrashAt=1", "--version"));
+        runAndCheck(new Flags("-Xmx100M", "-XX:ErrorHandlerTest=15", "-XX:TestCrashInErrorHandler=14", "--version"));
+        runAndCheck(new Flags("-XX:+CrashGCForDumpingJavaThread", "--version"));
         runAndCheck(new Flags("-Xmx10m", "-XX:+CrashOnOutOfMemoryError", TestDwarf.class.getCanonicalName(), "outOfMemory"));
         // Use -XX:-TieredCompilation as C1 is currently not aborting the VM (JDK-8264899).
         runAndCheck(new Flags(TestDwarf.class.getCanonicalName(), "unsafeAccess"));
