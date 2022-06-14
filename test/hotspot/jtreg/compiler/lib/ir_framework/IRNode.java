@@ -181,7 +181,10 @@ public class IRNode {
     public static final String CON_L = START + "ConL" + MID + END;
     public static final String CONV_I2L = START + "ConvI2L" + MID + END;
     public static final String CONV_L2I = START + "ConvL2I" + MID + END;
+    public static final String CAST_II = START + "CastII" + MID + END;
+    public static final String CAST_LL = START + "CastLL" + MID + END;
     public static final String POPCOUNT_L = START + "PopCountL" + MID + END;
+    public static final String PHI = START + "Phi" + MID + END;
 
     public static final String VECTOR_CAST_B2X = START + "VectorCastB2X" + MID + END;
     public static final String VECTOR_CAST_S2X = START + "VectorCastS2X" + MID + END;

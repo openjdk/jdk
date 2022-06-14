@@ -31,6 +31,9 @@ import java.util.Random;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
+@Warmup(iterations = 5, time = 1)
+@Measurement(iterations = 5, time = 1)
+@Fork(value = 2)
 public class VectorSignum {
     @Param({"256", "512", "1024", "2048"})
     private static int SIZE;
@@ -48,7 +51,7 @@ public class VectorSignum {
         floats = new float[SIZE];
         res_doubles = new double[SIZE];
         res_floats = new float[SIZE];
-        for (int i=0; i<SIZE; i++) {
+        for (int i = 0; i < SIZE; i++) {
             floats[i] = r.nextFloat();
             doubles[i] = r.nextDouble();
         }
@@ -56,14 +59,14 @@ public class VectorSignum {
 
     @Benchmark
     public void floatSignum() {
-        for(int i = 0; i < SIZE; i++) {
+        for (int i = 0; i < SIZE; i++) {
             res_floats[i] = Math.signum(floats[i]);
         }
     }
 
     @Benchmark
     public void doubleSignum() {
-        for(int i = 0; i < SIZE; i++) {
+        for (int i = 0; i < SIZE; i++) {
             res_doubles[i] = Math.signum(doubles[i]);
         }
     }
