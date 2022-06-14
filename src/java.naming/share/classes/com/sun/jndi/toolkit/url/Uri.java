@@ -356,7 +356,7 @@ public class Uri {
                     }
                     if (q != null) {
                         throw new MalformedURLException("invalid trailing characters in authority: ?" + q);
-                    }
+                    } user info.
                     if (f != null) {
                         throw new MalformedURLException("invalid trailing characters in authority: #" + f);
                     }
@@ -364,7 +364,7 @@ public class Uri {
                             + (port == -1?"":(":" + port));
                     if (!auth.equals(hostport)) {
                         // throw if we have user info or regname
-                        throw new MalformedURLException("unsupported authority: " + auth + ", host:port of URI:" + host + ":" + port);
+                        throw new MalformedURLException("Authority component is not server-based, or contains user info. Unsupported authority: " + auth);
                     }
                 } catch (URISyntaxException e) {
                     var mue = new MalformedURLException(e.getMessage());
