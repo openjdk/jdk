@@ -165,9 +165,6 @@ public:
 #endif
 
 private:
-  static void print_ul(CompiledMethod* nm, Method* tm, intptr_t pc, frame& fr, int trap_bci,
-                       const char* reason_name, const char* reason_action);
-
   // Does the actual work for deoptimizing a single frame
   static void deoptimize_single_frame(JavaThread* thread, frame fr, DeoptReason reason);
 
