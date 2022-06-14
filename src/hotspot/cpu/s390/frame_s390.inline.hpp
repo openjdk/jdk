@@ -155,6 +155,10 @@ inline intptr_t* frame::link() const {
   return (intptr_t*) callers_abi()->callers_sp;
 }
 
+inline intptr_t* frame::link_or_null() const {
+  return link();
+}
+
 inline intptr_t** frame::interpreter_frame_locals_addr() const {
   return (intptr_t**) &(ijava_state()->locals);
 }
