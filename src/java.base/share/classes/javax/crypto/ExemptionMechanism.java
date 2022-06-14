@@ -71,7 +71,7 @@ public class ExemptionMechanism {
     private Key keyStored = null;
 
     /**
-     * Creates a ExemptionMechanism object.
+     * Creates an <code>ExemptionMechanism</code> object.
      *
      * @param exmechSpi the delegate
      * @param provider the provider
@@ -104,11 +104,12 @@ public class ExemptionMechanism {
      * Returns an <code>ExemptionMechanism</code> object that implements the
      * specified exemption mechanism algorithm.
      *
-     * <p> This method traverses the list of registered security Providers,
-     * starting with the most preferred Provider.
-     * A new ExemptionMechanism object encapsulating the
-     * ExemptionMechanismSpi implementation from the first
-     * Provider that supports the specified algorithm is returned.
+     * <p> This method traverses the list of registered security
+     * <code>Provider</code> objects,
+     * starting with the most preferred <code>Provider</code>.
+     * A new <code>ExemptionMechanism</code> object encapsulating the
+     * <code>ExemptionMechanismSpi</code> implementation from the first
+     * <code>Provider</code> that supports the specified algorithm is returned.
      *
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
@@ -153,9 +154,9 @@ public class ExemptionMechanism {
      * Returns an <code>ExemptionMechanism</code> object that implements the
      * specified exemption mechanism algorithm.
      *
-     * <p> A new ExemptionMechanism object encapsulating the
-     * ExemptionMechanismSpi implementation from the specified provider
-     * is returned.  The specified provider must be registered
+     * <p> A new <code>ExemptionMechanism</code> object encapsulating the
+     * <code>ExemptionMechanismSpi</code> implementation from the specified
+     * provider is returned. The specified provider must be registered
      * in the security provider list.
      *
      * <p> Note that the list of registered providers may be retrieved via
@@ -200,9 +201,10 @@ public class ExemptionMechanism {
      * Returns an <code>ExemptionMechanism</code> object that implements the
      * specified exemption mechanism algorithm.
      *
-     * <p> A new ExemptionMechanism object encapsulating the
-     * ExemptionMechanismSpi implementation from the specified Provider
-     * object is returned.  Note that the specified Provider object
+     * <p> A new <code>ExemptionMechanism</code> object encapsulating the
+     * <code>ExemptionMechanismSpi</code> implementation from the specified
+     * <code>Provider</code> object is returned.  Note that the specified
+     * <code>Provider</code> object
      * does not have to be registered in the provider list.
      *
      * @param algorithm the standard name of the requested exemption mechanism.

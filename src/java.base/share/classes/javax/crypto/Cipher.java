@@ -52,7 +52,7 @@ import sun.security.util.KnownOIDs;
  * encryption and decryption. It forms the core of the Java Cryptographic
  * Extension (JCE) framework.
  *
- * <p>In order to create a {code Cipher} object, the application calls the
+ * <p>In order to create a {@code Cipher} object, the application calls the
  * cipher's {@code getInstance} method, and passes the name of the
  * requested <i>transformation</i> to it. Optionally, the name of a provider
  * may be specified.
@@ -258,14 +258,14 @@ public class Cipher {
     private final Object lock;
 
     /**
-     * Creates a {code Cipher} object.
+     * Creates a {@code Cipher} object.
      *
      * @param cipherSpi the delegate
      * @param provider the provider
      * @param transformation the transformation
      * @throws NullPointerException if {@code provider} is {@code null}
      * @throws IllegalArgumentException if the supplied arguments
-     *         are deemed invalid for constructing the {code Cipher} object
+     *         are deemed invalid for constructing the {@code Cipher} object
      */
     protected Cipher(CipherSpi cipherSpi,
                      Provider provider,

@@ -40,7 +40,7 @@ import java.util.Arrays;
  * This class enables a programmer to create an object and protect its
  * confidentiality with a cryptographic algorithm.
  *
- * <p> Given any Serializable object, one can create a SealedObject
+ * <p> Given any Serializable object, one can create a <code>SealedObject</code>
  * that encapsulates the original object, in serialized
  * format (i.e., a "deep copy"), and seals (encrypts) its serialized contents,
  * using a cryptographic algorithm such as AES, to protect its
@@ -48,9 +48,9 @@ import java.util.Arrays;
  * the corresponding algorithm using the correct decryption key) and
  * de-serialized, yielding the original object.
  *
- * <p> Note that the Cipher object must be fully initialized with the
- * correct algorithm, key, padding scheme, etc., before being applied
- * to a SealedObject.
+ * <p> Note that the <code>Cipher</code> object must be fully initialized with
+ * the correct algorithm, key, padding scheme, etc., before being applied
+ * to a <code>SealedObject</code>.
  *
  * <p> The original object that was sealed can be recovered in two different
  * ways:
@@ -119,7 +119,7 @@ public class SealedObject implements Serializable {
     private String paramsAlg = null;
 
     /**
-     * The cryptographic parameters used by the sealing Cipher,
+     * The cryptographic parameters used by the sealing <code>Cipher</code>,
      * encoded in the default format.
      * <p>
      * That is, <code>cipher.getParameters().getEncoded()</code>.
@@ -129,10 +129,11 @@ public class SealedObject implements Serializable {
     protected byte[] encodedParams = null;
 
     /**
-     * Constructs a SealedObject from any Serializable object.
+     * Constructs a <code>SealedObject</code> from any Serializable object.
      *
      * <p>The given object is serialized, and its serialized contents are
-     * encrypted using the given Cipher, which must be fully initialized.
+     * encrypted using the given <code>Cipher</code>, which must be fully
+     * initialized.
      *
      * <p>Any algorithm parameters that may be used in the encryption
      * operation are stored inside the new <code>SealedObject</code>.
@@ -190,9 +191,10 @@ public class SealedObject implements Serializable {
     }
 
     /**
-     * Constructs a SealedObject object from the passed-in SealedObject.
+     * Constructs a <code>SealedObject</code> object from the passed-in
+     * SealedObject.
      *
-     * @param so a SealedObject object
+     * @param so a <code>SealedObject</code> object
      * @exception NullPointerException if the given sealed object is null.
      */
     protected SealedObject(SealedObject so) {
@@ -221,10 +223,12 @@ public class SealedObject implements Serializable {
      * <p>This method creates a cipher for the algorithm that had been used in
      * the sealing operation.
      * If the default provider package provides an implementation of that
-     * algorithm, an instance of Cipher containing that implementation is used.
+     * algorithm, an instance of <code>Cipher</code> containing that
+     * implementation is used.
      * If the algorithm is not available in the default package, other
      * packages are searched.
-     * The Cipher object is initialized for decryption, using the given
+     * The <code>Cipher</code> object is initialized for decryption,
+     * using the given
      * <code>key</code> and the parameters (if any) that had been used in the
      * sealing operation.
      *
@@ -267,9 +271,10 @@ public class SealedObject implements Serializable {
     /**
      * Retrieves the original (encapsulated) object.
      *
-     * <p>The encapsulated object is unsealed (using the given Cipher,
-     * assuming that the Cipher is already properly initialized) and
-     * de-serialized, before it is returned.
+     * <p>The encapsulated object is unsealed (using the given
+     * <code>Cipher</code>,
+     * assuming that the <code>Cipher</code> is already properly initialized)
+     * and de-serialized, before it is returned.
      *
      * @param c the cipher used to unseal the object
      *
@@ -301,7 +306,8 @@ public class SealedObject implements Serializable {
      * <p>This method creates a cipher for the algorithm that had been used in
      * the sealing operation, using an implementation of that algorithm from
      * the given <code>provider</code>.
-     * The Cipher object is initialized for decryption, using the given
+     * The <code>Cipher</code> object is initialized for decryption,
+     * using the given
      * <code>key</code> and the parameters (if any) that had been used in the
      * sealing operation.
      *
@@ -412,7 +418,7 @@ public class SealedObject implements Serializable {
     }
 
     /**
-     * Restores the state of the SealedObject from a stream.
+     * Restores the state of the <code>SealedObject</code> from a stream.
      *
      * @param s the object input stream.
      * @throws IOException if an I/O error occurs

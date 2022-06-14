@@ -51,7 +51,7 @@ final class ProviderVerifier {
     private CryptoPermissions appPerms = null;
 
     /**
-     * Creates a ProviderVerifier object to verify the given URL.
+     * Creates a <code>ProviderVerifier</code> object to verify the given URL.
      *
      * @param jarURL the JAR file to be verified.
      * @param savePerms if true, save the permissions allowed by the
@@ -62,7 +62,7 @@ final class ProviderVerifier {
     }
 
     /**
-     * Creates a ProviderVerifier object to verify the given URL.
+     * Creates a <code>ProviderVerifier</code> object to verify the given URL.
      *
      * @param jarURL the JAR file to be verified
      * @param provider the corresponding provider.
@@ -165,8 +165,9 @@ final class ProviderVerifier {
      * Returns the permissions which are bundled with the JAR file,
      * aka the "cryptoperms" file.
      *
-     * NOTE: if this ProviderVerifier instance is constructed with "savePerms"
-     * equal to false, then this method would always return null.
+     * NOTE: if this <code>ProviderVerifier</code> instance is constructed
+     * with "savePerms" equal to false, then this method would always
+     * return null.
      */
     CryptoPermissions getPermissions() {
         return appPerms;

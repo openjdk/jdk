@@ -28,36 +28,38 @@ package javax.crypto;
 import java.io.*;
 
 /**
- * A CipherOutputStream is composed of an OutputStream and a Cipher so
- * that write() methods first process the data before writing them out
- * to the underlying OutputStream.  The cipher must be fully
- * initialized before being used by a CipherOutputStream.
+ * A <code>CipherOutputStream</code> is composed of an <code>OutputStream</code>
+ * and a <code>Cipher</code> so that write() methods first process the data
+ * before writing them out to the underlying <code>OutputStream</code>.
+ * The cipher must be fully initialized before being used by a
+ * <code>CipherOutputStream</code>.
  *
  * <p> For example, if the cipher is initialized for encryption, the
- * CipherOutputStream will attempt to encrypt data before writing out the
- * encrypted data.
+ * <code>CipherOutputStream</code> will attempt to encrypt data before
+ * writing out the encrypted data.
  *
  * <p> This class adheres strictly to the semantics, especially the
  * failure semantics, of its ancestor classes
- * java.io.OutputStream and java.io.FilterOutputStream.  This class
- * has exactly those methods specified in its ancestor classes, and
+ * <code>java.io.OutputStream</code> and
+ * <code>java.io.FilterOutputStream</code>.
+ * This class has exactly those methods specified in its ancestor classes, and
  * overrides them all.  Moreover, this class catches all exceptions
  * that are not thrown by its ancestor classes. In particular, this
- * class catches BadPaddingException and other exceptions thrown by
+ * class catches <code>BadPaddingException</code> and other exceptions thrown by
  * failed integrity checks during decryption. These exceptions are not
  * re-thrown, so the client will not be informed that integrity checks
  * failed. Because of this behavior, this class may not be suitable
  * for use with decryption in an authenticated mode of operation (e.g. GCM)
  * if the application requires explicit notification when authentication
- * fails. Such an application can use the Cipher API directly as an
- * alternative to using this class.
+ * fails. Such an application can use the <code>Cipher</code> API directly as
+ * an alternative to using this class.
  *
  * <p> It is crucial for a programmer using this class not to use
  * methods that are not defined or overridden in this class (such as a
  * new method or constructor that is later added to one of the super
  * classes), because the design and implementation of those methods
  * are unlikely to have considered security impact with regard to
- * CipherOutputStream.
+ * <code>CipherOutputStream</code>.
  *
  * @author  Li Gong
  * @see     java.io.OutputStream
@@ -100,14 +102,14 @@ public class CipherOutputStream extends FilterOutputStream {
 
     /**
      *
-     * Constructs a CipherOutputStream from an OutputStream and a
-     * Cipher.
+     * Constructs a <code>CipherOutputStream</code> from an
+     * <code>OutputStream</code> and a <code>Cipher</code>.
      * <br>Note: if the specified output stream or cipher is
-     * null, a NullPointerException may be thrown later when
+     * null, a <code>NullPointerException</code> may be thrown later when
      * they are used.
      *
-     * @param os  the OutputStream object
-     * @param c   an initialized Cipher object
+     * @param os  the <code>OutputStream</code> object
+     * @param c   an initialized <code>Cipher</code> object
      */
     public CipherOutputStream(OutputStream os, Cipher c) {
         super(os);
@@ -116,13 +118,14 @@ public class CipherOutputStream extends FilterOutputStream {
     }
 
     /**
-     * Constructs a CipherOutputStream from an OutputStream without
-     * specifying a Cipher. This has the effect of constructing a
-     * CipherOutputStream using a NullCipher.
+     * Constructs a <code>CipherOutputStream</code> from an
+     * <code>OutputStream</code> without specifying a <code>Cipher</code>.
+     * This has the effect of constructing a <code>CipherOutputStream</code>
+     * using a <code>NullCipher</code>.
      * <br>Note: if the specified output stream is null, a
-     * NullPointerException may be thrown later when it is used.
+     * <code>NullPointerException</code> may be thrown later when it is used.
      *
-     * @param os  the OutputStream object
+     * @param os  the <code>OutputStream</code> object
      */
     protected CipherOutputStream(OutputStream os) {
         super(os);

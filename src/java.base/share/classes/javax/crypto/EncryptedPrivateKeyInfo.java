@@ -116,7 +116,7 @@ public class EncryptedPrivateKeyInfo {
      * <p>Note: This constructor will use null as the value of the
      * algorithm parameters. If the encryption algorithm has
      * parameters whose value is not null, a different constructor,
-     * e.g. EncryptedPrivateKeyInfo(AlgorithmParameters, byte[]),
+     * e.g. <code>EncryptedPrivateKeyInfo(AlgorithmParameters, byte[])</code>,
      * should be used.
      *
      * @param algName encryption algorithm name. See the
@@ -229,17 +229,17 @@ public class EncryptedPrivateKeyInfo {
     }
 
     /**
-     * Extract the enclosed PKCS8EncodedKeySpec object from the
+     * Extract the enclosed <code>PKCS8EncodedKeySpec</code> object from the
      * encrypted data and return it.
      * <br>Note: In order to successfully retrieve the enclosed
-     * PKCS8EncodedKeySpec object, <code>cipher</code> needs
+     * <code>PKCS8EncodedKeySpec</code> object, <code>cipher</code> needs
      * to be initialized to either Cipher.DECRYPT_MODE or
      * Cipher.UNWRAP_MODE, with the same key and parameters used
      * for generating the encrypted data.
      *
      * @param cipher the initialized cipher object which will be
      * used for decrypting the encrypted data.
-     * @return the PKCS8EncodedKeySpec object.
+     * @return the <code>PKCS8EncodedKeySpec</code> object.
      * @exception NullPointerException if <code>cipher</code>
      * is null.
      * @exception InvalidKeySpecException if the given cipher is
@@ -287,10 +287,10 @@ public class EncryptedPrivateKeyInfo {
     }
 
     /**
-     * Extract the enclosed PKCS8EncodedKeySpec object from the
+     * Extract the enclosed <code>PKCS8EncodedKeySpec</code> object from the
      * encrypted data and return it.
      * @param decryptKey key used for decrypting the encrypted data.
-     * @return the PKCS8EncodedKeySpec object.
+     * @return the <code>PKCS8EncodedKeySpec</code> object.
      * @exception NullPointerException if <code>decryptKey</code>
      * is null.
      * @exception NoSuchAlgorithmException if cannot find appropriate
@@ -310,12 +310,12 @@ public class EncryptedPrivateKeyInfo {
     }
 
     /**
-     * Extract the enclosed PKCS8EncodedKeySpec object from the
+     * Extract the enclosed <code>PKCS8EncodedKeySpec</code> object from the
      * encrypted data and return it.
      * @param decryptKey key used for decrypting the encrypted data.
      * @param providerName the name of provider whose Cipher
      * implementation will be used.
-     * @return the PKCS8EncodedKeySpec object.
+     * @return the <code>PKCS8EncodedKeySpec</code> object.
      * @exception NullPointerException if <code>decryptKey</code>
      * or <code>providerName</code> is null.
      * @exception NoSuchProviderException if no provider
@@ -346,12 +346,12 @@ public class EncryptedPrivateKeyInfo {
     }
 
     /**
-     * Extract the enclosed PKCS8EncodedKeySpec object from the
+     * Extract the enclosed <code>PKCS8EncodedKeySpec</code> object from the
      * encrypted data and return it.
      * @param decryptKey key used for decrypting the encrypted data.
      * @param provider the name of provider whose Cipher implementation
      * will be used.
-     * @return the PKCS8EncodedKeySpec object.
+     * @return the <code>PKCS8EncodedKeySpec</code> object.
      * @exception NullPointerException if <code>decryptKey</code>
      * or <code>provider</code> is null.
      * @exception NoSuchAlgorithmException if cannot find appropriate

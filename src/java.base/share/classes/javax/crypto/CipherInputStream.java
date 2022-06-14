@@ -30,38 +30,40 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * A CipherInputStream is composed of an InputStream and a Cipher so
- * that read() methods return data that are read in from the
- * underlying InputStream but have been additionally processed by the
- * Cipher.  The Cipher must be fully initialized before being used by
- * a CipherInputStream.
+ * A <code>CipherInputStream</code> is composed of an <code>InputStream</code>
+ * and a <code>Cipher</code> so that read() methods return data that are
+ * read in from the underlying <code>InputStream</code> but have been
+ * additionally processed by the <code>Cipher</code>.  The <code>Cipher</code>
+ * must be fully initialized before being used by a
+ * <code>CipherInputStream</code>.
  *
- * <p> For example, if the Cipher is initialized for decryption, the
- * CipherInputStream will attempt to read in data and decrypt them,
- * before returning the decrypted data.
+ * <p> For example, if the <code>Cipher</code> is initialized for decryption,
+ * the <code>CipherInputStream</code> will attempt to read in data and decrypt
+ * them, before returning the decrypted data.
  *
  * <p> This class adheres strictly to the semantics, especially the
  * failure semantics, of its ancestor classes
- * java.io.FilterInputStream and java.io.InputStream.  This class has
- * exactly those methods specified in its ancestor classes, and
+ * <code>java.io.FilterInputStream</code> and <code>java.io.InputStream</code>.
+ * This class has exactly those methods specified in its ancestor classes, and
  * overrides them all.  Moreover, this class catches all exceptions
  * that are not thrown by its ancestor classes.  In particular, the
  * <code>skip</code> method skips, and the <code>available</code>
- * method counts only data that have been processed by the encapsulated Cipher.
- * This class may catch BadPaddingException and other exceptions thrown by
- * failed integrity checks during decryption. These exceptions are not
+ * method counts only data that have been processed by the encapsulated
+ * <code>Cipher</code>.
+ * This class may catch <code>BadPaddingException</code> and other exceptions
+ * thrown by failed integrity checks during decryption. These exceptions are not
  * re-thrown, so the client may not be informed that integrity checks
  * failed. Because of this behavior, this class may not be suitable
  * for use with decryption in an authenticated mode of operation (e.g. GCM).
- * Applications that require authenticated encryption can use the Cipher API
- * directly as an alternative to using this class.
+ * Applications that require authenticated encryption can use the
+ * <code>Cipher</code> API directly as an alternative to using this class.
  *
  * <p> It is crucial for a programmer using this class not to use
  * methods that are not defined or overridden in this class (such as a
  * new method or constructor that is later added to one of the super
  * classes), because the design and implementation of those methods
  * are unlikely to have considered security impact with regard to
- * CipherInputStream.
+ * <code>CipherInputStream</code>.
  *
  * @author  Li Gong
  * @see     java.io.InputStream
@@ -163,13 +165,13 @@ public class CipherInputStream extends FilterInputStream {
     }
 
     /**
-     * Constructs a CipherInputStream from an InputStream and a
-     * Cipher.
+     * Constructs a <code>CipherInputStream</code> from an
+     * <code>InputStream</code> and a <code>Cipher</code>.
      * <br>Note: if the specified input stream or cipher is
-     * null, a NullPointerException may be thrown later when
+     * null, a <code>NullPointerException</code> may be thrown later when
      * they are used.
      * @param is the to-be-processed input stream
-     * @param c an initialized Cipher object
+     * @param c an initialized <code>Cipher</code> object
      */
     public CipherInputStream(InputStream is, Cipher c) {
         super(is);
@@ -178,11 +180,12 @@ public class CipherInputStream extends FilterInputStream {
     }
 
     /**
-     * Constructs a CipherInputStream from an InputStream without
-     * specifying a Cipher. This has the effect of constructing a
-     * CipherInputStream using a NullCipher.
+     * Constructs a <code>CipherInputStream</code> from an
+     * <code>InputStream</code> without specifying a <code>Cipher</code>.
+     * This has the effect of constructing a <code>CipherInputStream</code>
+     * using a <code>NullCipher</code>.
      * <br>Note: if the specified input stream is null, a
-     * NullPointerException may be thrown later when it is used.
+     * <code>NullPointerException</code> may be thrown later when it is used.
      * @param is the to-be-processed input stream
      */
     protected CipherInputStream(InputStream is) {
