@@ -132,6 +132,7 @@ class WindowsConstants {
     // copy flags
     public static final int COPY_FILE_FAIL_IF_EXISTS       = 0x00000001;
     public static final int COPY_FILE_COPY_SYMLINK         = 0x00000800;
+    public static final int COPY_FILE_NO_BUFFERING         = 0x00001000;
 
     // move flags
     public static final int MOVEFILE_REPLACE_EXISTING       = 0x00000001;

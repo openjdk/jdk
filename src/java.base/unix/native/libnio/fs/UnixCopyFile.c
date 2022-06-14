@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "jni_util.h"
 #include "jlong.h"
 
+#include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
 
@@ -36,6 +37,8 @@
 #include <copyfile.h>
 #endif
 #include "sun_nio_fs_UnixCopyFile.h"
+
+#define DEFAULT_TRANSFER_SIZE 8192
 
 #define RESTARTABLE(_cmd, _result) do { \
   do { \
@@ -69,21 +72,36 @@ int fcopyfile_callback(int what, int stage, copyfile_state_t state,
 #endif
 
 // Transfer via user-space buffers
-void transfer(JNIEnv* env, jint dst, jint src, volatile jint* cancel)
+void transfer(JNIEnv* env, jint dst, jint src, jlong transferSize,
+              volatile jint* cancel)
 {
-    char buf[8192];
+    char stackBuf[DEFAULT_TRANSFER_SIZE];
+    char* buf = NULL;
+
+    if ((unsigned long)transferSize > sizeof(stackBuf)) {
+        // stack-allocated buffer is too small so malloc
+        buf = (char*)malloc(transferSize*sizeof(char));
+        if (buf == NULL) {
+            JNU_ThrowOutOfMemoryError(env, NULL);
+            return;
+        }
+    } else {
+        // use stack-allocated buffer
+        buf = stackBuf;
+        transferSize = sizeof(stackBuf);
+    }
 
     for (;;) {
         ssize_t n, pos, len;
-        RESTARTABLE(read((int)src, &buf, sizeof(buf)), n);
+        RESTARTABLE(read((int)src, buf, transferSize), n);
         if (n <= 0) {
             if (n < 0)
                 throwUnixException(env, errno);
-            return;
+            goto cleanup;
         }
         if (cancel != NULL && *cancel != 0) {
             throwUnixException(env, ECANCELED);
-            return;
+            goto cleanup;
         }
         pos = 0;
         len = n;
@@ -93,12 +111,26 @@ void transfer(JNIEnv* env, jint dst, jint src, volatile jint* cancel)
             RESTARTABLE(write((int)dst, bufp, len), n);
             if (n == -1) {
                 throwUnixException(env, errno);
-                return;
+                goto cleanup;
             }
             pos += n;
             len -= n;
         } while (len > 0);
     }
+
+cleanup:
+    if (buf != stackBuf)
+        free(buf);
+}
+
+/**
+ * Return the default transfer buffer size
+ */
+JNIEXPORT jlong JNICALL
+Java_sun_nio_fs_UnixCopyFile_transferSize0
+    (JNIEnv* env, jclass this)
+{
+    return DEFAULT_TRANSFER_SIZE;
 }
 
 /**
@@ -106,8 +138,9 @@ void transfer(JNIEnv* env, jint dst, jint src, volatile jint* cancel)
  * otherwise via user-space buffers
  */
 JNIEXPORT void JNICALL
-Java_sun_nio_fs_UnixCopyFile_transfer
-    (JNIEnv* env, jclass this, jint dst, jint src, jlong cancelAddress)
+Java_sun_nio_fs_UnixCopyFile_transfer0
+    (JNIEnv* env, jclass this, jint dst, jint src, jlong transferSize,
+    jlong cancelAddress)
 {
     volatile jint* cancel = (jint*)jlong_to_ptr(cancelAddress);
 
@@ -122,7 +155,7 @@ Java_sun_nio_fs_UnixCopyFile_transfer
         if (bytes_sent == -1) {
             if (errno == EINVAL || errno == ENOSYS) {
                 // Fall back to copying via user-space buffers
-                transfer(env, dst, src, cancel);
+                transfer(env, dst, src, transferSize, cancel);
             } else {
                 throwUnixException(env, errno);
             }
@@ -152,6 +185,6 @@ Java_sun_nio_fs_UnixCopyFile_transfer
     if (state != NULL)
         copyfile_state_free(state);
 #else
-    transfer(env, dst, src, cancel);
+    transfer(env, dst, src, transferSize, cancel);
 #endif
 }

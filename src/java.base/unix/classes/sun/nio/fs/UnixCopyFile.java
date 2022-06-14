@@ -30,6 +30,7 @@ import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.CopyOption;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.LinkPermission;
 import java.nio.file.StandardCopyOption;
@@ -44,6 +45,8 @@ import static sun.nio.fs.UnixConstants.*;
  */
 
 class UnixCopyFile {
+    private static final long TRANSFER_SIZE = transferSize0();
+
     private UnixCopyFile() {  }
 
     // The flags that control how a file is copied or moved
@@ -217,6 +220,24 @@ class UnixCopyFile {
         }
     }
 
+    // calculate the least common multiple of two values
+    private static long lcm(long x, long y) {
+        if (x <= 0 || y <= 0)
+            throw new IllegalArgumentException("Non-positive parameter");
+
+        long u = x;
+        long v = y;
+
+        while (u != v) {
+            if (u < v)
+                u += x;
+            else // u > v
+                v += y;
+        }
+
+        return u;
+    }
+
     // copy regular file from source to target
     private static void copyFile(UnixPath source,
                                  UnixFileAttributes attrs,
@@ -248,11 +269,23 @@ class UnixCopyFile {
             // set to true when file and attributes copied
             boolean complete = false;
             try {
+                long transferSize = TRANSFER_SIZE;
+                try {
+                    long bss = Files.getFileStore(source).getBlockSize();
+                    long bst = Files.getFileStore(target).getBlockSize();
+                    if (bss > 0 && bst > 0) {
+                        transferSize = bss == bst ? bss : lcm(bss, bst);
+                    }
+                } catch (IOException | IllegalArgumentException |
+                         SecurityException | UnsupportedOperationException
+                         ignored) {
+                }
+
                 // transfer bytes to target file
                 try {
                     long comp = Blocker.begin();
                     try {
-                        transfer(fo, fi, addressToPollForCancel);
+                        transfer0(fo, fi, transferSize, addressToPollForCancel);
                     } finally {
                         Blocker.end(comp);
                     }
@@ -628,7 +661,10 @@ class UnixCopyFile {
 
     // -- native methods --
 
-    static native void transfer(int dst, int src, long addressToPollForCancel)
+    static native long transferSize0();
+
+    static native void transfer0(int dst, int src, long transferSize,
+                                 long addressToPollForCancel)
         throws UnixException;
 
     static {

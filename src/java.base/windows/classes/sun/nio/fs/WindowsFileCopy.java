@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,9 @@ import static sun.nio.fs.WindowsConstants.*;
  */
 
 class WindowsFileCopy {
+    // file size above which copying uses unbuffered I/O
+    private static final long UNBUFFERED_IO_THRESHOLD = 314572800; // 300 MiB
+
     private WindowsFileCopy() {
     }
 
@@ -174,7 +177,13 @@ class WindowsFileCopy {
 
         // Use CopyFileEx if the file is not a directory or junction
         if (!sourceAttrs.isDirectory() && !sourceAttrs.isDirectoryLink()) {
-            final int flags = (!followLinks) ? COPY_FILE_COPY_SYMLINK : 0;
+            long size = 0;
+            try {
+                size = Files.size(source);
+            } catch (IOException ignored) {
+            }
+            final int flags = ((!followLinks) ? COPY_FILE_COPY_SYMLINK : 0) |
+                ((size > UNBUFFERED_IO_THRESHOLD) ? COPY_FILE_NO_BUFFERING : 0);
 
             if (interruptible) {
                 // interruptible copy
