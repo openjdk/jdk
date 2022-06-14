@@ -209,11 +209,15 @@ void FileMapInfo::populate_header(size_t core_region_alignment) {
     // dynamic header including base archive name for non-default base archive
     c_header_size = sizeof(DynamicArchiveHeader);
     header_size = c_header_size;
-    if (!FLAG_IS_DEFAULT(SharedArchiveFile)) {
-      base_archive_name_size = strlen(Arguments::GetSharedArchivePath()) + 1;
+
+    const char* default_base_archive_name = Arguments::get_default_shared_archive_path();
+    const char* current_base_archive_name = Arguments::GetSharedArchivePath();
+    if (!os::same_files(current_base_archive_name, default_base_archive_name)) {
+      base_archive_name_size = strlen(current_base_archive_name) + 1;
       header_size += base_archive_name_size;
       base_archive_name_offset = c_header_size;
     }
+    FREE_C_HEAP_ARRAY(const char, default_base_archive_name);
   }
   _header = (FileMapHeader*)os::malloc(header_size, mtInternal);
   memset((void*)_header, 0, header_size);
@@ -301,7 +305,7 @@ void FileMapHeader::print(outputStream* st) {
 
   st->print_cr("- magic:                          0x%08x", magic());
   st->print_cr("- crc:                            0x%08x", crc());
-  st->print_cr("- version:                        %d", version());
+  st->print_cr("- version:                        0x%x", version());
   st->print_cr("- header_size:                    " UINT32_FORMAT, header_size());
   st->print_cr("- base_archive_name_offset:       " UINT32_FORMAT, base_archive_name_offset());
   st->print_cr("- base_archive_name_size:         " UINT32_FORMAT, base_archive_name_size());
@@ -1151,14 +1155,14 @@ public:
     }
 
     if (gen_header._version < CDS_GENERIC_HEADER_SUPPORTED_MIN_VERSION) {
-      FileMapInfo::fail_continue("Cannot handle shared archive file version %d. Must be at least %d",
+      FileMapInfo::fail_continue("Cannot handle shared archive file version 0x%x. Must be at least 0x%x.",
                                  gen_header._version, CDS_GENERIC_HEADER_SUPPORTED_MIN_VERSION);
       return false;
     }
 
     if (gen_header._version !=  CURRENT_CDS_ARCHIVE_VERSION) {
-      FileMapInfo::fail_continue("The shared archive file version %d does not match the required version %d",
-                                    gen_header._version, CURRENT_CDS_ARCHIVE_VERSION);
+      FileMapInfo::fail_continue("The shared archive file version 0x%x does not match the required version 0x%x.",
+                                 gen_header._version, CURRENT_CDS_ARCHIVE_VERSION);
     }
 
     size_t filelen = os::lseek(fd, 0, SEEK_END);
@@ -1332,8 +1336,8 @@ bool FileMapInfo::init_from_file(int fd) {
   }
 
   if (header()->version() != CURRENT_CDS_ARCHIVE_VERSION) {
-    log_info(cds)("_version expected: %d", CURRENT_CDS_ARCHIVE_VERSION);
-    log_info(cds)("           actual: %d", header()->version());
+    log_info(cds)("_version expected: 0x%x", CURRENT_CDS_ARCHIVE_VERSION);
+    log_info(cds)("           actual: 0x%x", header()->version());
     fail_continue("The shared archive file has the wrong version.");
     return false;
   }
@@ -1370,12 +1374,10 @@ bool FileMapInfo::init_from_file(int fd) {
 
   _file_offset = header()->header_size(); // accounts for the size of _base_archive_name
 
-  if (is_static()) {
-    // just checking the last region is sufficient since the archive is written
-    // in sequential order
-    size_t len = os::lseek(fd, 0, SEEK_END);
-    FileMapRegion* si = space_at(MetaspaceShared::last_valid_region);
-    // The last space might be empty
+  size_t len = os::lseek(fd, 0, SEEK_END);
+
+  for (int i = 0; i <= MetaspaceShared::last_valid_region; i++) {
+    FileMapRegion* si = space_at(i);
     if (si->file_offset() > len || len - si->file_offset() < si->used()) {
       fail_continue("The shared archive file has been truncated.");
       return false;

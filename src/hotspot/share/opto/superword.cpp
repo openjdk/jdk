@@ -199,6 +199,16 @@ bool SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
   return success;
 }
 
+//------------------------------max vector size------------------------------
+int SuperWord::max_vector_size(BasicType bt) {
+  int max_vector = Matcher::max_vector_size(bt);
+  int sw_max_vector_limit = SuperWordMaxVectorSize / type2aelembytes(bt);
+  if (max_vector > sw_max_vector_limit) {
+    max_vector = sw_max_vector_limit;
+  }
+  return max_vector;
+}
+
 //------------------------------early unrolling analysis------------------------------
 void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
   bool is_slp = true;
@@ -217,7 +227,7 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
     ignored_loop_nodes[i] = -1;
   }
 
-  int max_vector = Matcher::max_vector_size(T_BYTE);
+  int max_vector = max_vector_size(T_BYTE);
 
   // Process the loop, some/all of the stack entries will not be in order, ergo
   // need to preprocess the ignored initial state before we process the loop
@@ -352,7 +362,7 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
 
       if (is_java_primitive(bt) == false) continue;
 
-      int cur_max_vector = Matcher::max_vector_size(bt);
+      int cur_max_vector = max_vector_size(bt);
 
       // If a max vector exists which is not larger than _local_loop_unroll_factor
       // stop looking, we already have the max vector to map to.
@@ -991,7 +1001,7 @@ int SuperWord::get_vw_bytes_special(MemNode* s) {
       }
     }
     if (should_combine_adjacent) {
-      vw = MIN2(Matcher::max_vector_size(btype)*type2aelembytes(btype), vw * 2);
+      vw = MIN2(max_vector_size(btype)*type2aelembytes(btype), vw * 2);
     }
   }
 
@@ -1689,7 +1699,7 @@ void SuperWord::combine_packs() {
     Node_List* p1 = _packset.at(i);
     if (p1 != NULL) {
       BasicType bt = velt_basic_type(p1->at(0));
-      uint max_vlen = Matcher::max_vector_size(bt); // Max elements in vector
+      uint max_vlen = max_vector_size(bt); // Max elements in vector
       assert(is_power_of_2(max_vlen), "sanity");
       uint psize = p1->size();
       if (!is_power_of_2(psize)) {
@@ -2013,6 +2023,13 @@ bool SuperWord::implemented(Node_List* p) {
         retValue = ReductionNode::implemented(opc, size, arith_type->basic_type());
       }
     } else {
+      // Vector unsigned right shift for signed subword types behaves differently
+      // from Java Spec. But when the shift amount is a constant not greater than
+      // the number of sign extended bits, the unsigned right shift can be
+      // vectorized to a signed right shift.
+      if (VectorNode::can_transform_shift_op(p0, velt_basic_type(p0))) {
+        opc = Op_RShiftI;
+      }
       retValue = VectorNode::implemented(opc, size, velt_basic_type(p0));
     }
     if (!retValue) {
@@ -2577,6 +2594,13 @@ bool SuperWord::output() {
             vlen_in_bytes = in2->as_Vector()->length_in_bytes();
           }
         } else {
+          // Vector unsigned right shift for signed subword types behaves differently
+          // from Java Spec. But when the shift amount is a constant not greater than
+          // the number of sign extended bits, the unsigned right shift can be
+          // vectorized to a signed right shift.
+          if (VectorNode::can_transform_shift_op(n, velt_basic_type(n))) {
+            opc = Op_RShiftI;
+          }
           vn = VectorNode::make(opc, in1, in2, vlen, velt_basic_type(n));
           vlen_in_bytes = vn->as_Vector()->length_in_bytes();
         }

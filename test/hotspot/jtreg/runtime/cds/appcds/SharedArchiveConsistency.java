@@ -76,7 +76,7 @@ public class SharedArchiveConsistency {
         return newArchiveName;
     }
 
-    public static void testAndCheck(String[] execArgs) throws Exception {
+    public static void testAndCheck(String[] execArgs, String... expectedMessages) throws Exception {
         OutputAnalyzer output = shareAuto ? TestCommon.execAuto(execArgs) : TestCommon.execCommon(execArgs);
         String stdtxt = output.getOutput();
         System.out.println("Note: this test may fail in very rare occasions due to CRC32 checksum collision");
@@ -88,6 +88,9 @@ public class SharedArchiveConsistency {
             output.shouldNotContain("A fatal error has been detected by the Java Runtime Environment");
           }
         }
+        for (int i = 0; i < expectedMessages.length; i++) {
+            output.shouldContain(expectedMessages[i]);
+        }
         for (String message : matchMessages) {
             if (stdtxt.contains(message)) {
                 // match any to return
@@ -95,6 +98,10 @@ public class SharedArchiveConsistency {
             }
         }
         TestCommon.checkExec(output);
+    }
+
+    private static String hex(int version) {
+        return String.format("0x%x", version);
     }
 
     // dump with hello.jsa, then
@@ -189,7 +196,7 @@ public class SharedArchiveConsistency {
         copiedJsa = CDSArchiveUtils.copyArchiveFile(orgJsaFile, modVersion);
         CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetVersion(), version);
         output = shareAuto ? TestCommon.execAuto(execArgs) : TestCommon.execCommon(execArgs);
-        output.shouldContain("The shared archive file version " + version + " does not match the required version " + currentCDSArchiveVersion);
+        output.shouldContain("The shared archive file version " + hex(version) + " does not match the required version " + hex(currentCDSArchiveVersion));
         if (shareAuto) {
             output.shouldContain(HELLO_WORLD);
         }
@@ -200,7 +207,7 @@ public class SharedArchiveConsistency {
         version = genericHeaderMinVersion - 1;
         CDSArchiveUtils.modifyHeaderIntField(copiedJsa, CDSArchiveUtils.offsetVersion(), version);
         output = shareAuto ? TestCommon.execAuto(execArgs) : TestCommon.execCommon(execArgs);
-        output.shouldContain("Cannot handle shared archive file version " + version + ". Must be at least " + genericHeaderMinVersion);
+        output.shouldContain("Cannot handle shared archive file version " + hex(version) + ". Must be at least " + hex(genericHeaderMinVersion));
         output.shouldNotContain("Checksum verification failed");
         if (shareAuto) {
             output.shouldContain(HELLO_WORLD);
@@ -236,10 +243,16 @@ public class SharedArchiveConsistency {
         testAndCheck(verifyExecArgs);
 
         // delete bytes in data section forward
-        System.out.println("\n6. Delete bytes at beginning of data section, should fail\n");
+        System.out.println("\n6a. Delete bytes at beginning of data section, should fail\n");
         String deleteBytes = startNewArchive("delete-bytes");
         CDSArchiveUtils.deleteBytesAtRandomPositionAfterHeader(orgJsaFile, deleteBytes, 4096 /*bytes*/);
         testAndCheck(verifyExecArgs);
+
+        // delete bytes at the end
+        System.out.println("\n6b. Delete bytes at the end, should fail\n");
+        deleteBytes = startNewArchive("delete-bytes-end");
+        CDSArchiveUtils.deleteBytesAtTheEnd(orgJsaFile, deleteBytes);
+        testAndCheck(verifyExecArgs, "The shared archive file has been truncated.");
 
         // modify contents in random area
         System.out.println("\n7. modify Content in random areas, should fail\n");

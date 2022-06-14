@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary Test virtual thread park when scheduler is a fixed thread pool
+ * @requires vm.continuations
  * @modules java.base/java.lang:+open
  * @compile --enable-preview -source ${jdk.version} ParkWithFixedThreadPool.java
  * @run testng/othervm --enable-preview ParkWithFixedThreadPool

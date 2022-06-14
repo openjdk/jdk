@@ -25,13 +25,10 @@
 
 package java.security;
 
-import java.security.spec.AlgorithmParameterSpec;
-import java.util.*;
-import java.io.*;
+import sun.security.jca.JCAUtil;
 
 import java.nio.ByteBuffer;
-
-import sun.security.jca.JCAUtil;
+import java.security.spec.AlgorithmParameterSpec;
 
 /**
  * This class defines the <i>Service Provider Interface</i> (<b>SPI</b>)
@@ -203,7 +200,7 @@ public abstract class SignatureSpi {
      * @since 1.5
      */
     protected void engineUpdate(ByteBuffer input) {
-        if (input.hasRemaining() == false) {
+        if (!input.hasRemaining()) {
             return;
         }
         try {
@@ -348,7 +345,7 @@ public abstract class SignatureSpi {
      * which it is possible to set the various parameters of this object.
      * A parameter may be any settable parameter for the algorithm, such as
      * a parameter size, or a source of random bits for signature generation
-     * (if appropriate), or an indication of whether or not to perform
+     * (if appropriate), or an indication of whether to perform
      * a specific but optional computation. A uniform algorithm-specific
      * naming scheme for each parameter is desirable but left unspecified
      * at this time.
@@ -417,7 +414,7 @@ public abstract class SignatureSpi {
      * is possible to get the various parameters of this object. A parameter
      * may be any settable parameter for the algorithm, such as a parameter
      * size, or  a source of random bits for signature generation (if
-     * appropriate), or an indication of whether or not to perform a
+     * appropriate), or an indication of whether to perform a
      * specific but optional computation. A uniform algorithm-specific
      * naming scheme for each parameter is desirable but left unspecified
      * at this time.

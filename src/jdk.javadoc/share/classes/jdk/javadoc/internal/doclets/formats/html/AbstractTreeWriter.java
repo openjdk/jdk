@@ -41,7 +41,7 @@ import java.util.TreeSet;
 
 /**
  * Abstract class to print the class hierarchy page for all the Classes. This
- * is sub-classed by {@link PackageTreeWriter} and {@link TreeWriter} to
+ * is subclassed by {@link PackageTreeWriter} and {@link TreeWriter} to
  * generate the Package Tree and global Tree(for all the classes and packages)
  * pages.
  */
@@ -66,12 +66,12 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
     }
 
     /**
-     * Add each level of the class tree. For each sub-class or
-     * sub-interface indents the next level information.
-     * Recurses itself to add sub-classes info.
+     * Add each level of the class tree. For each subclass or
+     * subinterface indents the next level information.
+     * Recurses itself to add subclasses info.
      *
      * @param parent the superclass or superinterface of the sset
-     * @param collection  a collection of the sub-classes at this level
+     * @param collection  a collection of the subclasses at this level
      * @param hierarchy the hierarchy for which we are generating a tree
      * @param content the content to which the level information will be added
      */

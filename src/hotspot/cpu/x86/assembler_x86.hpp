@@ -1169,9 +1169,10 @@ private:
   void vcvtps2pd(XMMRegister dst, XMMRegister src, int vector_len);
   void vcvtpd2ps(XMMRegister dst, XMMRegister src, int vector_len);
 
-  // Convert vector float and int
+  // Convert vector float to int/long
   void vcvtps2dq(XMMRegister dst, XMMRegister src, int vector_len);
   void vcvttps2dq(XMMRegister dst, XMMRegister src, int vector_len);
+  void evcvttps2qq(XMMRegister dst, XMMRegister src, int vector_len);
 
   // Convert vector long to vector FP
   void evcvtqq2ps(XMMRegister dst, XMMRegister src, int vector_len);
@@ -1188,6 +1189,9 @@ private:
   void evpmovqd(XMMRegister dst, XMMRegister src, int vector_len);
   void evpmovqb(XMMRegister dst, XMMRegister src, int vector_len);
   void evpmovqw(XMMRegister dst, XMMRegister src, int vector_len);
+
+  // Evex casts with signed saturation
+  void evpmovsqd(XMMRegister dst, XMMRegister src, int vector_len);
 
   //Abs of packed Integer values
   void pabsb(XMMRegister dst, XMMRegister src);
@@ -1443,9 +1447,11 @@ private:
   void size_prefix();
 
   void lzcntl(Register dst, Register src);
+  void lzcntl(Register dst, Address src);
 
 #ifdef _LP64
   void lzcntq(Register dst, Register src);
+  void lzcntq(Register dst, Address src);
 #endif
 
   enum Membar_mask_bits {
@@ -1784,6 +1790,7 @@ private:
   void evpcmpeqd(KRegister kdst, KRegister mask, XMMRegister nds, Address src, int vector_len);
 
   void pcmpeqq(XMMRegister dst, XMMRegister src);
+  void evpcmpeqq(KRegister kdst, KRegister mask, XMMRegister nds, XMMRegister src, int vector_len);
   void vpcmpCCq(XMMRegister dst, XMMRegister nds, XMMRegister src, int cond_encoding, int vector_len);
   void vpcmpeqq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void evpcmpeqq(KRegister kdst, XMMRegister nds, XMMRegister src, int vector_len);
@@ -1995,8 +2002,10 @@ private:
   void rolq(Register dst, int imm8);
   void rorq(Register dst);
   void rorq(Register dst, int imm8);
+  void rorxl(Register dst, Register src, int imm8);
+  void rorxl(Register dst, Address src, int imm8);
   void rorxq(Register dst, Register src, int imm8);
-  void rorxd(Register dst, Register src, int imm8);
+  void rorxq(Register dst, Address src, int imm8);
 #endif
 
   void sahf();
@@ -2132,7 +2141,9 @@ private:
 
   // BMI - count trailing zeros
   void tzcntl(Register dst, Register src);
+  void tzcntl(Register dst, Address src);
   void tzcntq(Register dst, Register src);
+  void tzcntq(Register dst, Address src);
 
   // Unordered Compare Scalar Double-Precision Floating-Point Values and set EFLAGS
   void ucomisd(XMMRegister dst, Address src);
@@ -2208,14 +2219,30 @@ private:
   void vminss(XMMRegister dst, XMMRegister nds, XMMRegister src);
   void vminsd(XMMRegister dst, XMMRegister nds, XMMRegister src);
 
+  void sarxl(Register dst, Register src1, Register src2);
+  void sarxl(Register dst, Address src1, Register src2);
+  void sarxq(Register dst, Register src1, Register src2);
+  void sarxq(Register dst, Address src1, Register src2);
   void shlxl(Register dst, Register src1, Register src2);
+  void shlxl(Register dst, Address src1, Register src2);
   void shlxq(Register dst, Register src1, Register src2);
+  void shlxq(Register dst, Address src1, Register src2);
   void shrxl(Register dst, Register src1, Register src2);
+  void shrxl(Register dst, Address src1, Register src2);
   void shrxq(Register dst, Register src1, Register src2);
+  void shrxq(Register dst, Address src1, Register src2);
 
   void bzhiq(Register dst, Register src1, Register src2);
-  void pext(Register dst, Register src1, Register src2);
-  void pdep(Register dst, Register src1, Register src2);
+
+  void pextl(Register dst, Register src1, Register src2);
+  void pdepl(Register dst, Register src1, Register src2);
+  void pextq(Register dst, Register src1, Register src2);
+  void pdepq(Register dst, Register src1, Register src2);
+  void pextl(Register dst, Register src1, Address src2);
+  void pdepl(Register dst, Register src1, Address src2);
+  void pextq(Register dst, Register src1, Address src2);
+  void pdepq(Register dst, Register src1, Address src2);
+
 
   //====================VECTOR ARITHMETIC=====================================
   // Add Packed Floating-Point Values
@@ -2745,6 +2772,10 @@ private:
   void evpmovm2w(XMMRegister dst, KRegister src, int vector_len);
   void evpmovm2d(XMMRegister dst, KRegister src, int vector_len);
   void evpmovm2q(XMMRegister dst, KRegister src, int vector_len);
+
+  // floating point class tests
+  void vfpclassss(KRegister kdst, XMMRegister src, uint8_t imm8);
+  void vfpclasssd(KRegister kdst, XMMRegister src, uint8_t imm8);
 
   // Vector blends
   void blendvps(XMMRegister dst, XMMRegister src);

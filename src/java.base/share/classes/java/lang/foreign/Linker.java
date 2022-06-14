@@ -212,7 +212,7 @@ public sealed interface Linker permits AbstractLinker {
      *
      * @param symbol the address of the target function.
      * @param function the function descriptor of the target function.
-     * @return a downcall method handle. The method handle type is <a href="CLinker.html#downcall-method-handles"><em>inferred</em></a>
+     * @return a downcall method handle. The method handle type is <a href="Linker.html#downcall-method-handles"><em>inferred</em></a>
      * @throws IllegalArgumentException if the provided function descriptor is not supported by this linker.
      * or if the symbol is {@link MemoryAddress#NULL}
      */
@@ -235,7 +235,7 @@ public sealed interface Linker permits AbstractLinker {
      * associated with the {@link MemoryAddress#NULL} address, or a {@link NullPointerException} if that parameter is {@code null}.
      *
      * @param function the function descriptor of the target function.
-     * @return a downcall method handle. The method handle type is <a href="CLinker.html#downcall-method-handles"><em>inferred</em></a>
+     * @return a downcall method handle. The method handle type is <a href="Linker.html#downcall-method-handles"><em>inferred</em></a>
      * from the provided function descriptor.
      * @throws IllegalArgumentException if the provided function descriptor is not supported by this linker.
      */
@@ -261,7 +261,7 @@ public sealed interface Linker permits AbstractLinker {
      * @return a zero-length segment whose base address is the address of the upcall stub.
      * @throws IllegalArgumentException if the provided function descriptor is not supported by this linker.
      * @throws IllegalArgumentException if it is determined that the target method handle can throw an exception, or if the target method handle
-     * has a type that does not match the upcall stub <a href="CLinker.html#upcall-stubs"><em>inferred type</em></a>.
+     * has a type that does not match the upcall stub <a href="Linker.html#upcall-stubs"><em>inferred type</em></a>.
      * @throws IllegalStateException if {@code session} is not {@linkplain MemorySession#isAlive() alive}.
      * @throws WrongThreadException if this method is called from a thread other than the thread
      * {@linkplain MemorySession#ownerThread() owning} {@code session}.

@@ -457,8 +457,8 @@ final class Exchange<T> {
                             "Unable to handle 101 while waiting for 100");
                     return MinimalFuture.failedFuture(failed);
                 }
-                return exchImpl.readBodyAsync(this::ignoreBody, false, parentExecutor)
-                        .thenApply(v ->  r1);
+                exchImpl.expectContinueFailed(rcode);
+                return MinimalFuture.completedFuture(r1);
             }
         });
     }

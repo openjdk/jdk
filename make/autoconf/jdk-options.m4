@@ -494,7 +494,7 @@ AC_DEFUN_ONCE([JDKOPT_ENABLE_DISABLE_FAILURE_HANDLER],
 [
   UTIL_ARG_ENABLE(NAME: jtreg-failure-handler, DEFAULT: auto,
       RESULT: BUILD_FAILURE_HANDLER,
-      DESC: [enable keeping of packaged modules in jdk image],
+      DESC: [enable building of the jtreg failure handler],
       DEFAULT_DESC: [enabled if jtreg is present],
       CHECKING_MSG: [if the jtreg failure handler should be built],
       CHECK_AVAILABLE: [

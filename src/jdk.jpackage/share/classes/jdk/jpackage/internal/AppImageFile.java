@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,10 +49,12 @@ import org.xml.sax.SAXException;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 import static jdk.jpackage.internal.StandardBundlerParam.ADD_LAUNCHERS;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
+import static jdk.jpackage.internal.StandardBundlerParam.MAIN_CLASS;
 import static jdk.jpackage.internal.StandardBundlerParam.LAUNCHER_AS_SERVICE;
 import static jdk.jpackage.internal.StandardBundlerParam.SHORTCUT_HINT;
 import static jdk.jpackage.internal.StandardBundlerParam.MENU_HINT;
 import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
+import static jdk.jpackage.internal.StandardBundlerParam.APP_STORE;
 
 public final class AppImageFile {
 
@@ -60,8 +62,10 @@ public final class AppImageFile {
     private final String creatorVersion;
     private final String creatorPlatform;
     private final String launcherName;
+    private final String mainClass;
     private final List<LauncherInfo> addLauncherInfos;
     private final boolean signed;
+    private final boolean appStore;
 
     private static final String FILENAME = ".jpackage.xml";
 
@@ -71,16 +75,19 @@ public final class AppImageFile {
 
 
     private AppImageFile() {
-        this(null, null, null, null, null);
+        this(null, null, null, null, null, null, null);
     }
 
-    private AppImageFile(String launcherName, List<LauncherInfo> launcherInfos,
-            String creatorVersion, String creatorPlatform, String signedStr) {
+    private AppImageFile(String launcherName, String mainClass,
+            List<LauncherInfo> launcherInfos, String creatorVersion,
+            String creatorPlatform, String signedStr, String appStoreStr) {
         this.launcherName = launcherName;
+        this.mainClass = mainClass;
         this.addLauncherInfos = launcherInfos;
         this.creatorVersion = creatorVersion;
         this.creatorPlatform = creatorPlatform;
         this.signed = "true".equals(signedStr);
+        this.appStore = "true".equals(appStoreStr);
     }
 
     /**
@@ -99,8 +106,19 @@ public final class AppImageFile {
         return launcherName;
     }
 
+    /**
+     * Returns main class name. Never returns null or empty value.
+     */
+    String getMainClass() {
+        return mainClass;
+    }
+
     boolean isSigned() {
         return signed;
+    }
+
+    boolean isAppStore() {
+        return appStore;
     }
 
     void verifyCompatible() throws ConfigException {
@@ -138,8 +156,16 @@ public final class AppImageFile {
             xml.writeCharacters(APP_NAME.fetchFrom(params));
             xml.writeEndElement();
 
+            xml.writeStartElement("main-class");
+            xml.writeCharacters(MAIN_CLASS.fetchFrom(params));
+            xml.writeEndElement();
+
             xml.writeStartElement("signed");
             xml.writeCharacters(SIGN_BUNDLE.fetchFrom(params).toString());
+            xml.writeEndElement();
+
+            xml.writeStartElement("app-store");
+            xml.writeCharacters(APP_STORE.fetchFrom(params).toString());
             xml.writeEndElement();
 
             List<Map<String, ? super Object>> addLaunchers =
@@ -176,6 +202,13 @@ public final class AppImageFile {
                 return new AppImageFile();
             }
 
+            String mainClass = xpathQueryNullable(xPath,
+                    "/jpackage-state/main-class/text()", doc);
+            if (mainClass == null) {
+                // No main class, this is fatal.
+                return new AppImageFile();
+            }
+
             List<LauncherInfo> launcherInfos = new ArrayList<>();
 
             String platform = xpathQueryNullable(xPath,
@@ -185,7 +218,10 @@ public final class AppImageFile {
                     "/jpackage-state/@version", doc);
 
             String signedStr = xpathQueryNullable(xPath,
-                    "/jpackage-state/@signed", doc);
+                    "/jpackage-state/signed/text()", doc);
+
+            String appStoreStr = xpathQueryNullable(xPath,
+                    "/jpackage-state/app-store/text()", doc);
 
             NodeList launcherNodes = (NodeList) xPath.evaluate(
                     "/jpackage-state/add-launcher", doc,
@@ -195,8 +231,8 @@ public final class AppImageFile {
                  launcherInfos.add(new LauncherInfo(launcherNodes.item(i)));
             }
 
-            AppImageFile file = new AppImageFile(
-                    mainLauncher, launcherInfos, version, platform, signedStr);
+            AppImageFile file = new AppImageFile(mainLauncher, mainClass,
+                    launcherInfos, version, platform, signedStr, appStoreStr);
             if (!file.isValid()) {
                 file = new AppImageFile();
             }
@@ -268,6 +304,16 @@ public final class AppImageFile {
     public static String extractAppName(Path appImageDir) {
         try {
             return AppImageFile.load(appImageDir).getLauncherName();
+        } catch (IOException ioe) {
+            Log.verbose(MessageFormat.format(I18N.getString(
+                    "warning.foreign-app-image"), appImageDir));
+            return null;
+        }
+    }
+
+    public static String extractMainClass(Path appImageDir) {
+        try {
+            return AppImageFile.load(appImageDir).getMainClass();
         } catch (IOException ioe) {
             Log.verbose(MessageFormat.format(I18N.getString(
                     "warning.foreign-app-image"), appImageDir));

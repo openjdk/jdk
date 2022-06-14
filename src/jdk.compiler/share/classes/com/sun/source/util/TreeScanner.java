@@ -396,7 +396,7 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
      */
     @Override
     public R visitCase(CaseTree node, P p) {
-        R r = scan(node.getExpressions(), p);
+        R r = scan(node.getLabels(), p);
         if (node.getCaseKind() == CaseTree.CaseKind.RULE)
             r = scanAndReduce(node.getBody(), p, r);
         else
@@ -771,9 +771,7 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
      */
     @Override
     public R visitBindingPattern(BindingPatternTree node, P p) {
-        R r = scan(node.getVariable(), p);
-        r = scanAndReduce(node.getGuard(), p, r);
-        return r;
+        return scan(node.getVariable(), p);
     }
 
     /**
@@ -795,6 +793,40 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     /**
      * {@inheritDoc}
      *
+     * @implSpec This implementation returns {@code null}.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     * @since 19
+     */
+    @Override
+    @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
+    public R visitConstantCaseLabel(ConstantCaseLabelTree node, P p) {
+        return scan(node.getConstantExpression(), p);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation returns {@code null}.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     * @since 19
+     */
+    @Override
+    @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
+    public R visitPatternCaseLabel(PatternCaseLabelTree node, P p) {
+        R r = scan(node.getPattern(), p);
+        r = scanAndReduce(node.getGuard(), p, r);
+        return r;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}
@@ -808,7 +840,6 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
         R r = scan(node.getDeconstructor(), p);
         r = scanAndReduce(node.getNestedPatterns(), p, r);
         r = scanAndReduce(node.getVariable(), p, r);
-        r = scanAndReduce(node.getGuard(), p, r);
         return r;
     }
 
@@ -853,9 +884,7 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
     @Override
     @PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING, reflective=true)
     public R visitParenthesizedPattern(ParenthesizedPatternTree node, P p) {
-        R r = scan(node.getPattern(), p);
-        r = scanAndReduce(node.getGuard(), p, r);
-        return r;
+        return scan(node.getPattern(), p);
     }
 
     /**
