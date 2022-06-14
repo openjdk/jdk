@@ -531,9 +531,6 @@ synthesizeUnloadEvent(void *signatureVoid, void *envVoid)
     return JNI_TRUE;
 }
 
-/* Garbage Collection Happened */
-static unsigned int garbageCollected = 0;
-
 /*
  * Run the event through each HandlerNode's filter, and if it passes, call the HandlerNode's
  * HandlerFunction for the event, and then report all accumulated events to the debugger.
@@ -620,39 +617,29 @@ event_callback(JNIEnv *env, EventInfo *evinfo)
     currentException = JNI_FUNC_PTR(env,ExceptionOccurred)(env);
     JNI_FUNC_PTR(env,ExceptionClear)(env);
 
-    /* See if a garbage collection finish event happened earlier.
-     *
-     * Note: The "if" is an optimization to avoid entering the lock on every
-     *       event; garbageCollected may be zapped before we enter
-     *       the lock but then this just becomes one big no-op.
-     */
-    if ( garbageCollected > 0 ) {
-        struct bag *unloadedSignatures = NULL;
+    /* check and process class unloading events */
+    struct bag *unloadedSignatures = NULL;
 
+    /* We also need to simulate the class unload events. */
+
+    debugMonitorEnter(handlerLock);
+
+    /* Analyze which class unloads occurred */
+    unloadedSignatures = classTrack_processUnloads(env);
+
+    debugMonitorExit(handlerLock);
+
+    /* Generate the synthetic class unload events and/or just cleanup.  */
+    if ( unloadedSignatures != NULL ) {
         /* We want to compact the hash table of all
          * objects sent to the front end by removing objects that have
          * been collected.
          */
         commonRef_compact();
 
-        /* We also need to simulate the class unload events. */
-
-        debugMonitorEnter(handlerLock);
-
-        /* Clear garbage collection counter */
-        garbageCollected = 0;
-
-        /* Analyze which class unloads occurred */
-        unloadedSignatures = classTrack_processUnloads(env);
-
-        debugMonitorExit(handlerLock);
-
-        /* Generate the synthetic class unload events and/or just cleanup.  */
-        if ( unloadedSignatures != NULL ) {
-            (void)bagEnumerateOver(unloadedSignatures, synthesizeUnloadEvent,
-                             (void *)env);
-            bagDestroyBag(unloadedSignatures);
-        }
+        (void)bagEnumerateOver(unloadedSignatures, synthesizeUnloadEvent,
+                         (void *)env);
+        bagDestroyBag(unloadedSignatures);
     }
 
     thread = evinfo->thread;
@@ -963,7 +950,6 @@ static void JNICALL
 cbGarbageCollectionFinish(jvmtiEnv *jvmti_env)
 {
     LOG_CB(("cbGarbageCollectionFinish"));
-    ++garbageCollected;
     LOG_MISC(("END cbGarbageCollectionFinish"));
 }
 
