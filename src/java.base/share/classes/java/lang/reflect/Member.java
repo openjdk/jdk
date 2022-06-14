@@ -88,12 +88,13 @@ public interface Member {
      * access flags} for this member, possibly empty}
      *
      * @implSpec
-     * The default implementation returns an empty set.
+     * The default implementation returns throws {@link
+     * UnsupportedOperationException}.
      * @see #getModifiers()
      * @since 20
      */
     public default Set<AccessFlag> accessFlags() {
-        return Set.of();
+        throw new UnsupportedOperationException();
     }
 
     /**

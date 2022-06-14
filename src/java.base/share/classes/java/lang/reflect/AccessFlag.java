@@ -296,7 +296,7 @@ public enum AccessFlag {
     }
 
     /**
-     * {@return a set of access flags for the given mask value
+     * {@return an unmodifiable set of access flags for the given mask value
      * appropriate for the location in question}
      *
      * @param mask bit mask of access flags
