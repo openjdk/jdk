@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2021, 2023, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,26 +46,26 @@ inline address pauth_strip_pointer(address ptr) {
   return result;
 }
 
-// Sign a return value, using the given modifier.
+// Sign a return value, using value zero as the modifier.
 //
-inline address pauth_sign_return_address(address ret_addr, address sp) {
+inline address pauth_sign_return_address(address ret_addr) {
   if (VM_Version::use_rop_protection()) {
     // A pointer cannot be double signed.
     guarantee(pauth_ptr_is_raw(ret_addr), "Return address is already signed");
     register address r17 __asm("r17") = ret_addr;
-    register address r16 __asm("r16") = sp;
+    register address r16 __asm("r16") = 0;
     asm (PACIA1716 : "+r"(r17) : "r"(r16));
     ret_addr = r17;
   }
   return ret_addr;
 }
 
-// Authenticate a return value, using the given modifier.
+// Authenticate a return value, using value zero as the modifier.
 //
-inline address pauth_authenticate_return_address(address ret_addr, address sp) {
+inline address pauth_authenticate_return_address(address ret_addr) {
   if (VM_Version::use_rop_protection()) {
     register address r17 __asm("r17") = ret_addr;
-    register address r16 __asm("r16") = sp;
+    register address r16 __asm("r16") = 0;
     asm (AUTIA1716 : "+r"(r17) : "r"(r16));
     ret_addr = r17;
     // Ensure that the pointer authenticated.

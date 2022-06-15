@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define CPU_AARCH64_STACKCHUNKFRAMESTREAM_AARCH64_INLINE_HPP
 
 #include "interpreter/oopMapCache.hpp"
+#include "pauth_aarch64.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/registerMap.hpp"
 
@@ -52,7 +53,7 @@ inline frame StackChunkFrameStream<frame_kind>::to_frame() const {
 template <ChunkFrames frame_kind>
 inline address StackChunkFrameStream<frame_kind>::get_pc() const {
   assert(!is_done(), "");
-  return *(address*)(_sp - 1);
+  return pauth_strip_pointer(*(address*)(_sp - 1));
 }
 
 template <ChunkFrames frame_kind>

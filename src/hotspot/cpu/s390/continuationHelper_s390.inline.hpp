@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,14 @@ inline void ContinuationHelper::update_register_map_with_callee(const frame& f, 
 
 inline void ContinuationHelper::push_pd(const frame& f) {
   Unimplemented();
+}
+
+inline address ContinuationHelper::return_pc_at(intptr_t* sp) {
+  return *(address*)sp;
+}
+
+inline void ContinuationHelper::patch_pc_at(intptr_t* sp, address pc) {
+  *(address*)sp = pc;
 }
 
 inline void ContinuationHelper::set_anchor_to_entry_pd(JavaFrameAnchor* anchor, ContinuationEntry* cont) {

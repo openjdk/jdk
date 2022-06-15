@@ -454,10 +454,10 @@ void VM_Version::initialize() {
     _rop_protection = false;
   } else if (strcmp(UseBranchProtection, "standard") == 0) {
     _rop_protection = false;
-    // Enable PAC if this code has been built with branch-protection, the CPU/OS
-    // supports it, and incompatible preview features aren't enabled.
+    // Enable PAC if this code has been built with branch-protection, and the
+    // CPU/OS supports it.
 #ifdef __ARM_FEATURE_PAC_DEFAULT
-    if (VM_Version::supports_paca() && !Arguments::enable_preview()) {
+    if (VM_Version::supports_paca()) {
       _rop_protection = true;
     }
 #endif
@@ -467,10 +467,6 @@ void VM_Version::initialize() {
     if (!VM_Version::supports_paca()) {
       warning("ROP-protection specified, but not supported on this CPU.");
       // Disable PAC to prevent illegal instruction crashes.
-      _rop_protection = false;
-    } else if (Arguments::enable_preview()) {
-      // Not currently compatible with continuation freeze/thaw.
-      warning("PAC-RET is incompatible with virtual threads preview feature.");
       _rop_protection = false;
     }
 #else
@@ -484,12 +480,6 @@ void VM_Version::initialize() {
     // Determine the mask of address bits used for PAC. Clear bit 55 of
     // the input to make it look like a user address.
     _pac_mask = (uintptr_t)pauth_strip_pointer((address)~(UINT64_C(1) << 55));
-
-    // The frame pointer must be preserved for ROP protection.
-    if (FLAG_IS_DEFAULT(PreserveFramePointer) == false && PreserveFramePointer == false ) {
-      vm_exit_during_initialization(err_msg("PreserveFramePointer cannot be disabled for ROP-protection"));
-    }
-    PreserveFramePointer = true;
   }
 
 #ifdef COMPILER2

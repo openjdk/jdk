@@ -6951,8 +6951,9 @@ class StubGenerator: public StubCodeGenerator {
 
     if (return_barrier_exception) {
       __ ldr(c_rarg1, Address(rfp, wordSize)); // return address
+      __ authenticate_return_address(c_rarg1);
       __ verify_oop(r0);
-      __ mov(r19, r0); // save return value contaning the exception oop in callee-saved R19
+      __ mov(r19, r0); // save return value containing the exception oop in callee-saved R19
 
       __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), rthread, c_rarg1);
 
@@ -6962,7 +6963,7 @@ class StubGenerator: public StubCodeGenerator {
       // see OptoRuntime::generate_exception_blob: r0 -- exception oop, r3 -- exception pc
 
       __ mov(r1, r0); // the exception handler
-      __ mov(r0, r19); // restore return value contaning the exception oop
+      __ mov(r0, r19); // restore return value containing the exception oop
       __ verify_oop(r0);
 
       __ leave();
