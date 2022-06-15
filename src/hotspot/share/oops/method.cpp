@@ -1495,7 +1495,7 @@ methodHandle Method::make_method_handle_intrinsic(vmIntrinsics::ID iid,
     m->set_interpreter_entry(m->adapter()->get_i2c_entry());
   }
   if (log_is_enabled(Debug, methodhandles)) {
-    LogTarget(Info, methodhandles) lt;
+    LogTarget(Debug, methodhandles) lt;
     LogStream ls(lt);
     m->print_on(&ls);
   }
