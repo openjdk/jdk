@@ -130,6 +130,12 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
 
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     REPRODUCIBLE_LDFLAGS="-experimental:deterministic"
+    FLAGS_LINKER_CHECK_ARGUMENTS(ARGUMENT: [$REPRODUCIBLE_LDFLAGS],
+        PREFIX: $3,
+        IF_FALSE: [
+            REPRODUCIBLE_LDFLAGS=
+        ]
+    )
   fi
 
   if test "x$ALLOW_ABSOLUTE_PATHS_IN_OUTPUT" = "xfalse"; then
