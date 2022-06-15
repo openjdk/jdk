@@ -25,6 +25,7 @@
 
 package javax.swing.text.html;
 
+import sun.awt.AppContext;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
@@ -92,8 +93,6 @@ import javax.swing.text.TextAction;
 import javax.swing.text.View;
 import javax.swing.text.ViewFactory;
 import javax.swing.text.html.parser.ParserDelegator;
-
-import sun.awt.AppContext;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
@@ -1182,6 +1181,15 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      * A factory to build views for HTML.  The following
      * table describes what this factory will build by
      * default.
+     * <p>
+     * Parsed tags that lack full support are handled differently by the editor.
+     * When the container using HTML tags is editable, all non-supported tags
+     * will be displayed as editable text fields in place of the tags. The contents
+     * within the tags will be handled by the editor as regular text.
+     * If the container is not editable and a tag is recognized but not supported,
+     * such as script tags, the tag and its contents will be hidden.
+     * If the container is not editable and a tag is unknown or not supported at
+     * all, the tags will be hidden but its contents will display as regular text.
      *
      * <table class="striped">
      * <caption>Describes the tag and view created by this factory by default
