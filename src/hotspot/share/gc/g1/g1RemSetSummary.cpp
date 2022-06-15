@@ -321,8 +321,8 @@ public:
   }
 };
 
-void G1RemSetSummary::print_on(outputStream* out, bool include_vtimes) {
-  if (include_vtimes) {
+void G1RemSetSummary::print_on(outputStream* out, bool show_thread_times) {
+  if (show_thread_times) {
     out->print_cr(" Concurrent refinement threads times (s)");
     out->print("     ");
     for (uint i = 0; i < _num_vtimes; i++) {
