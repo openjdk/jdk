@@ -135,6 +135,19 @@ public class HtmlIds {
     }
 
     /**
+     * Returns an id for a package name.
+     *
+     * @param pkgName the package name
+     *
+     * @return the id
+     */
+    HtmlId forPackageName(String pkgName) {
+        return pkgName.isEmpty()
+                ? UNNAMED_PACKAGE_ANCHOR
+                : HtmlId.of(pkgName);
+    }
+
+    /**
      * Returns an id for a class or interface.
      *
      * @param element the class or interface
