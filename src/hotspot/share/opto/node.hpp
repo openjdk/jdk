@@ -1663,6 +1663,36 @@ public:
 #endif
 };
 
+// Unique_Mixed_Node_List
+// unique: nodes are added only once
+// mixed: allow new and old nodes
+class Unique_Mixed_Node_List : public ResourceObj {
+public:
+  Unique_Mixed_Node_List() : _visited_set(cmpkey, hashkey) {}
+
+  void add(Node* node) {
+    if (not_a_node(node)) {
+      return; // Gracefully handle NULL, -1, 0xabababab, etc.
+    }
+    if (_visited_set[node] == nullptr) {
+      _visited_set.Insert(node, node);
+      _worklist.push(node);
+    }
+  }
+
+  Node* operator[] (uint i) const {
+    return _worklist[i];
+  }
+
+  size_t size() {
+    return _worklist.size();
+  }
+
+private:
+  Dict _visited_set;
+  Node_List _worklist;
+};
+
 // Inline definition of Compile::record_for_igvn must be deferred to this point.
 inline void Compile::record_for_igvn(Node* n) {
   _for_igvn->push(n);
