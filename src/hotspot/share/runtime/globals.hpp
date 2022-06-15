@@ -1066,7 +1066,7 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, ErrorFileToStdout, false,                                   \
           "If true, error data is printed to stdout instead of a file")     \
                                                                             \
-  product(bool, UseHeavyMonitors, false,                                    \
+  develop(bool, UseHeavyMonitors, false,                                    \
           "(Deprecated) Use heavyweight instead of lightweight Java "       \
           "monitors")                                                       \
                                                                             \
