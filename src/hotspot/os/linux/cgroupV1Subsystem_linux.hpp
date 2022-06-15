@@ -84,9 +84,6 @@ class CgroupV1Subsystem: public CgroupSubsystem {
     jlong kernel_memory_limit_in_bytes();
     jlong kernel_memory_max_usage_in_bytes();
 
-    jlong memory_swap_current_in_bytes();
-    jlong memory_swap_max_limit_in_bytes();
-
     char * cpu_cpuset_cpus();
     char * cpu_cpuset_memory_nodes();
 
@@ -97,6 +94,8 @@ class CgroupV1Subsystem: public CgroupSubsystem {
 
     jlong pids_max();
     jlong pids_current();
+
+    void print_version_specific_info(outputStream* st);
 
     const char * container_type() {
       return "cgroupv1";

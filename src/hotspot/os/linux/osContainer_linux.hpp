@@ -43,6 +43,9 @@ class OSContainer: AllStatic {
 
  public:
   static void init();
+  static void print_version_specific_info(outputStream* st);
+  static void print_container_helper(outputStream* st, jlong j, const char* metrics);
+
   static inline bool is_containerized();
   static const char * container_type();
 
@@ -51,13 +54,6 @@ class OSContainer: AllStatic {
   static jlong memory_soft_limit_in_bytes();
   static jlong memory_usage_in_bytes();
   static jlong memory_max_usage_in_bytes();
-
-  static jlong kernel_memory_usage_in_bytes();
-  static jlong kernel_memory_limit_in_bytes();
-  static jlong kernel_memory_max_usage_in_bytes();
-
-  static jlong memory_swap_current_in_bytes();
-  static jlong memory_swap_max_limit_in_bytes();
 
   static int active_processor_count();
 

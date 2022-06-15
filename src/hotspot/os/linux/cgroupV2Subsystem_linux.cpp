@@ -192,18 +192,6 @@ char* CgroupV2Subsystem::mem_swp_current_val() {
   return os::strdup(mem_swp_current_str);
 }
 
-jlong CgroupV2Subsystem::memory_swap_current_in_bytes() {
-  char* mem_swp_current_str = mem_swp_current_val();
-  jlong swap_current = limit_from_str(mem_swp_current_str);
-  return swap_current;
-}
-
-jlong CgroupV2Subsystem::memory_swap_max_limit_in_bytes() {
-  char* mem_swp_limit_str = mem_swp_limit_val();
-  jlong swap_limit = limit_from_str(mem_swp_limit_str);
-  return swap_limit;
-}
-
 /* memory_limit_in_bytes
  *
  * Return the limit of available memory for this process.
@@ -234,19 +222,16 @@ char* CgroupV2Subsystem::mem_limit_val() {
   return os::strdup(mem_limit_str);
 }
 
-// the kmem (kernel memory limits) are not separately accounted in cgroups v2
-jlong CgroupV2Subsystem::kernel_memory_usage_in_bytes() {
-  return OSCONTAINER_ERROR;
-}
+void CgroupV2Subsystem::print_version_specific_info(outputStream* st) {
+  char* mem_swp_current_str = mem_swp_current_val();
+  jlong swap_current = limit_from_str(mem_swp_current_str);
 
-jlong CgroupV2Subsystem::kernel_memory_limit_in_bytes() {
-  return OSCONTAINER_ERROR;
-}
+  char* mem_swp_limit_str = mem_swp_limit_val();
+  jlong swap_limit = limit_from_str(mem_swp_limit_str);
 
-jlong CgroupV2Subsystem::kernel_memory_max_usage_in_bytes() {
-  return OSCONTAINER_ERROR;
+  OSContainer::print_container_helper(st, swap_current, "memory_swap_current_in_bytes");
+  OSContainer::print_container_helper(st, swap_limit, "memory_swap_max_limit_in_bytes");
 }
-
 
 char* CgroupV2Controller::construct_path(char* mount_path, char *cgroup_path) {
   stringStream ss;

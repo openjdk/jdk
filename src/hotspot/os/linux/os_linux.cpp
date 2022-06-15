@@ -2204,19 +2204,6 @@ void os::Linux::print_uptime_info(outputStream* st) {
   }
 }
 
-static void print_container_helper(outputStream* st, jlong j, const char* metrics) {
-  st->print("%s: ", metrics);
-  if (j > 0) {
-    if (j >= 1024) {
-      st->print_cr(UINT64_FORMAT " k", uint64_t(j) / 1024);
-    } else {
-      st->print_cr(UINT64_FORMAT, uint64_t(j));
-    }
-  } else {
-    st->print_cr("%s", j == OSCONTAINER_ERROR ? "not supported" : "unlimited");
-  }
-}
-
 bool os::Linux::print_container_info(outputStream* st) {
   if (!OSContainer::is_containerized()) {
     st->print_cr("container information not found.");
@@ -2272,24 +2259,13 @@ bool os::Linux::print_container_info(outputStream* st) {
     st->print_cr("%s", i == OSCONTAINER_ERROR ? "not supported" : "no shares");
   }
 
-  print_container_helper(st, OSContainer::memory_limit_in_bytes(), "memory_limit_in_bytes");
-  print_container_helper(st, OSContainer::memory_and_swap_limit_in_bytes(), "memory_and_swap_limit_in_bytes");
-  print_container_helper(st, OSContainer::memory_soft_limit_in_bytes(), "memory_soft_limit_in_bytes");
-  print_container_helper(st, OSContainer::memory_usage_in_bytes(), "memory_usage_in_bytes");
-  print_container_helper(st, OSContainer::memory_max_usage_in_bytes(), "memory_max_usage_in_bytes");
+  OSContainer::print_container_helper(st, OSContainer::memory_limit_in_bytes(), "memory_limit_in_bytes");
+  OSContainer::print_container_helper(st, OSContainer::memory_and_swap_limit_in_bytes(), "memory_and_swap_limit_in_bytes");
+  OSContainer::print_container_helper(st, OSContainer::memory_soft_limit_in_bytes(), "memory_soft_limit_in_bytes");
+  OSContainer::print_container_helper(st, OSContainer::memory_usage_in_bytes(), "memory_usage_in_bytes");
+  OSContainer::print_container_helper(st, OSContainer::memory_max_usage_in_bytes(), "memory_max_usage_in_bytes");
 
-  // the kmem (kernel memory) values are only available in cgroupv1
-  if (p_ct != NULL && strcmp(p_ct, "cgroupv1") == 0) {
-    print_container_helper(st, OSContainer::kernel_memory_usage_in_bytes(), "kernel_memory_usage_in_bytes");
-    print_container_helper(st, OSContainer::kernel_memory_max_usage_in_bytes(), "kernel_memory_max_usage_in_bytes");
-    print_container_helper(st, OSContainer::kernel_memory_limit_in_bytes(), "kernel_memory_limit_in_bytes");
-  }
-
-  // cgroupv2 specific values
-  if (p_ct != NULL && strcmp(p_ct, "cgroupv2") == 0) {
-    print_container_helper(st, OSContainer::memory_swap_current_in_bytes(), "memory_swap_current_in_bytes");
-    print_container_helper(st, OSContainer::memory_swap_max_limit_in_bytes(), "memory_swap_max_limit_in_bytes");
-  }
+  OSContainer::print_version_specific_info(st);
 
   jlong j = OSContainer::pids_max();
   st->print("maximum number of tasks: ");
