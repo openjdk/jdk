@@ -706,6 +706,7 @@ class JavaThread: public Thread {
   friend class ThreadsSMRSupport; // to access _threadObj for exiting_threads_oops_do
   friend class HandshakeState;
   friend class Continuation;
+  friend class Threads;
  private:
   bool           _in_asgct;                      // Is set when this JavaThread is handling ASGCT call
   bool           _on_thread_list;                // Is set when this JavaThread is added to the Threads list
@@ -713,6 +714,8 @@ class JavaThread: public Thread {
   OopHandle      _vthread; // the value returned by Thread.currentThread(): the virtual thread, if mounted, otherwise _threadObj
   OopHandle      _jvmti_vthread;
   OopHandle      _extentLocalCache;
+
+  static OopStorage* _thread_oop_storage;
 
 #ifdef ASSERT
  private:
