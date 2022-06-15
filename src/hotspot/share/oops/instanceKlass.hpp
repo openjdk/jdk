@@ -543,8 +543,7 @@ public:
   bool is_not_initialized() const          { return init_state() <  being_initialized; }
   bool is_being_initialized() const        { return init_state() == being_initialized; }
   bool is_in_error_state() const           { return init_state() == initialization_error; }
-  bool is_reentrant_initialization(Thread *thread) { return thread == _init_thread; }
-  bool is_reentrant_linking(Thread *thread)        { return thread == _init_thread; }
+  bool is_init_thread(Thread *thread)      { return thread == _init_thread; }
   ClassState  init_state() const           { return Atomic::load(&_init_state); }
   const char* init_state_name() const;
   bool is_rewritten() const                { return (_misc_flags & _misc_rewritten) != 0; }
@@ -1155,11 +1154,14 @@ public:
  public:
   u2 idnum_allocated_count() const      { return _idnum_allocated_count; }
 
-private:
+ private:
   // initialization state
   void set_init_state(ClassState state);
   void set_rewritten()                  { _misc_flags |= _misc_rewritten; }
-  void set_init_thread(Thread *thread)  { _init_thread = thread; }
+  void set_init_thread(Thread *thread)  {
+    assert(thread == nullptr || _init_thread == nullptr, "Only one thread is allowed to own initialization");
+    _init_thread = thread;
+  }
 
   // The RedefineClasses() API can cause new method idnums to be needed
   // which will cause the caches to grow. Safety requires different

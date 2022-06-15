@@ -760,12 +760,12 @@ void InstanceKlass::check_link_state_and_wait(JavaThread* current) {
   MonitorLocker ml(current, _init_monitor);
 
   // Another thread is linking this class, wait.
-  while (is_being_linked() && !is_reentrant_linking(current)) {
+  while (is_being_linked() && !is_init_thread(current)) {
     ml.wait();
   }
 
   // This thread is recursively linking this class, continue
-  if (is_being_linked() && is_reentrant_linking(current)) {
+  if (is_being_linked() && is_init_thread(current)) {
     return;
   }
 
@@ -1036,7 +1036,7 @@ void InstanceKlass::initialize_impl(TRAPS) {
     MonitorLocker ml(THREAD, _init_monitor);
 
     // Step 2
-    while (is_being_initialized() && !is_reentrant_initialization(jt)) {
+    while (is_being_initialized() && !is_init_thread(jt)) {
       wait = true;
       jt->set_class_to_be_initialized(this);
       ml.wait();
@@ -1044,7 +1044,7 @@ void InstanceKlass::initialize_impl(TRAPS) {
     }
 
     // Step 3
-    if (is_being_initialized() && is_reentrant_initialization(jt)) {
+    if (is_being_initialized() && is_init_thread(jt)) {
       DTRACE_CLASSINIT_PROBE_WAIT(recursive, -1, wait);
       return;
     }
