@@ -299,71 +299,75 @@ public class ServerCloseTest implements HttpServerAdapters {
                     System.out.println(now() + getName() + ": Request line: " + requestLine);
 
                     StringTokenizer tokenizer = new StringTokenizer(requestLine);
-                    tokenizer.nextToken(); // Skip method token as not used
-                    String path = tokenizer.nextToken();
+                    String method = tokenizer.nextToken();
+                    if (!method.equals("GET") && !method.equals("POST")) {
+                        System.err.println(now() + getName() + ": Unexpected request method. Method: " + method);
+                        clientConnection.close();
+                        continue;
+                    }
 
-                    URI uri = null;
-                    boolean validURI = true;
+                    String path = tokenizer.nextToken();
+                    if (!path.contains("/dummy/x")) {
+                        System.err.println(now() + getName() + ": Unexpected request path. Path: " + path);
+                        clientConnection.close();
+                        continue;
+                    }
+
+                    URI uri;
                     try {
                         String hostport = serverAuthority();
                         uri = new URI((secure ? "https" : "http") + "://" + hostport + path);
                     } catch (Throwable x) {
-                        System.err.printf("Bad target address: \"%s\" in \"%s\"%n",
+                        System.err.printf(now() + getName() + ": Bad target address: \"%s\" in \"%s\"%n",
                                 path, requestLine);
-                        validURI = false;
+                        clientConnection.close();
+                        continue;
                     }
 
-                    // Proceed if URI is well-formed and the request path is as expected
-                    if (validURI && path.contains("/dummy/x")) {
-                        connections.add(clientConnection);
-
-                        // Read all headers until we find the empty line that
-                        // signals the end of all headers.
-                        String line = requestLine;
-                        while (!line.equals("")) {
-                            System.out.println(now() + getName() + ": Reading header: "
-                                    + (line = readLine(ccis)));
-                            headers.append(line).append("\r\n");
-                        }
-
-                        StringBuilder response = new StringBuilder();
-
-                        int index = headers.toString()
-                                .toLowerCase(Locale.US)
-                                .indexOf("content-length: ");
-                        byte[] b = uri.toString().getBytes(UTF_8);
-                        if (index >= 0) {
-                            index = index + "content-length: ".length();
-                            String cl = headers.toString().substring(index);
-                            StringTokenizer tk = new StringTokenizer(cl);
-                            int len = Integer.parseInt(tk.nextToken());
-                            assert len < b.length * 2;
-                            System.out.println(now() + getName()
-                                    + ": received body: "
-                                    + new String(ccis.readNBytes(len), UTF_8));
-                        }
-                        System.out.println(now()
-                                + getName() + ": sending back " + uri);
-
-                        response.append("HTTP/1.1 200 OK\r\nContent-Length: ")
-                                .append(b.length)
-                                .append("\r\n\r\n");
-
-                        // Then send the 200 OK response to the client
-                        System.out.println(now() + getName() + ": Sending "
-                                + response);
-                        pw.print(response);
-                        pw.flush();
-                        ccos.write(b);
-                        ccos.flush();
-                        ccos.close();
-                        connections.remove(clientConnection);
-                        clientConnection.close();
-                    } else {
-                        System.err.println(now() + getName() + ": Invalid request, closing client connection and " +
-                                "waiting for new request. Request: " + requestLine);
-                        clientConnection.close();
+                    // Method, path and URI are valid. Add to connections list
+                    connections.add(clientConnection);
+                    // Read all headers until we find the empty line that
+                    // signals the end of all headers.
+                    String line = requestLine;
+                    while (!line.equals("")) {
+                        System.out.println(now() + getName() + ": Reading header: "
+                                + (line = readLine(ccis)));
+                        headers.append(line).append("\r\n");
                     }
+
+                    StringBuilder response = new StringBuilder();
+
+                    int index = headers.toString()
+                            .toLowerCase(Locale.US)
+                            .indexOf("content-length: ");
+                    byte[] b = uri.toString().getBytes(UTF_8);
+                    if (index >= 0) {
+                        index = index + "content-length: ".length();
+                        String cl = headers.toString().substring(index);
+                        StringTokenizer tk = new StringTokenizer(cl);
+                        int len = Integer.parseInt(tk.nextToken());
+                        assert len < b.length * 2;
+                        System.out.println(now() + getName()
+                                + ": received body: "
+                                + new String(ccis.readNBytes(len), UTF_8));
+                    }
+                    System.out.println(now()
+                            + getName() + ": sending back " + uri);
+
+                    response.append("HTTP/1.1 200 OK\r\nContent-Length: ")
+                            .append(b.length)
+                            .append("\r\n\r\n");
+
+                    // Then send the 200 OK response to the client
+                    System.out.println(now() + getName() + ": Sending "
+                            + response);
+                    pw.print(response);
+                    pw.flush();
+                    ccos.write(b);
+                    ccos.flush();
+                    ccos.close();
+                    connections.remove(clientConnection);
+                    clientConnection.close();
                 }
             } catch (Throwable t) {
                 if (!stopped) {
