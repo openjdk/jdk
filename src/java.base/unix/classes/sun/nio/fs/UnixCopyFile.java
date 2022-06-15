@@ -26,6 +26,7 @@
 package sun.nio.fs;
 
 import java.io.IOException;
+import java.lang.annotation.Native;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.CopyOption;
 import java.nio.file.DirectoryNotEmptyException;
@@ -45,7 +46,7 @@ import static sun.nio.fs.UnixConstants.*;
  */
 
 class UnixCopyFile {
-    private static final long TRANSFER_SIZE = transferSize0();
+    @Native private static final long TRANSFER_SIZE = 8192;
 
     private UnixCopyFile() {  }
 
@@ -220,7 +221,10 @@ class UnixCopyFile {
         }
     }
 
-    // calculate the least common multiple of two values
+    // calculate the least common multiple of two values;
+    // the parameters in general will be powers of two likely in the
+    // range [4096, 65536] so this algorithm is expected to converge
+    // when it is rarely called
     private static long lcm(long x, long y) {
         if (x <= 0 || y <= 0)
             throw new IllegalArgumentException("Non-positive parameter");
@@ -271,14 +275,13 @@ class UnixCopyFile {
             try {
                 long transferSize = TRANSFER_SIZE;
                 try {
-                    long bss = Files.getFileStore(source).getBlockSize();
-                    long bst = Files.getFileStore(target).getBlockSize();
+                    long bss = UnixFileStoreAttributes.get(source).blockSize();
+                    long bst = UnixFileStoreAttributes.get(target).blockSize();
                     if (bss > 0 && bst > 0) {
                         transferSize = bss == bst ? bss : lcm(bss, bst);
                     }
-                } catch (IOException | IllegalArgumentException |
-                         SecurityException | UnsupportedOperationException
-                         ignored) {
+                } catch (IllegalArgumentException | SecurityException |
+                         UnixException | UnsupportedOperationException ignored) {
                 }
 
                 // transfer bytes to target file
@@ -660,8 +663,6 @@ class UnixCopyFile {
     }
 
     // -- native methods --
-
-    static native long transferSize0();
 
     static native void transfer0(int dst, int src, long transferSize,
                                  long addressToPollForCancel)

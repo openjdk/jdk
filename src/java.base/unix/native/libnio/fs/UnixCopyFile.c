@@ -38,7 +38,7 @@
 #endif
 #include "sun_nio_fs_UnixCopyFile.h"
 
-#define DEFAULT_TRANSFER_SIZE 8192
+#define DEFAULT_TRANSFER_SIZE (sun_nio_fs_UnixCopyFile_TRANSFER_SIZE)
 
 #define RESTARTABLE(_cmd, _result) do { \
   do { \
@@ -121,16 +121,6 @@ void transfer(JNIEnv* env, jint dst, jint src, jlong transferSize,
 cleanup:
     if (buf != stackBuf)
         free(buf);
-}
-
-/**
- * Return the default transfer buffer size
- */
-JNIEXPORT jlong JNICALL
-Java_sun_nio_fs_UnixCopyFile_transferSize0
-    (JNIEnv* env, jclass this)
-{
-    return DEFAULT_TRANSFER_SIZE;
 }
 
 /**
