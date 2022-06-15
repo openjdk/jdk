@@ -543,7 +543,8 @@ public:
   bool is_not_initialized() const          { return init_state() <  being_initialized; }
   bool is_being_initialized() const        { return init_state() == being_initialized; }
   bool is_in_error_state() const           { return init_state() == initialization_error; }
-  bool is_reentrant(Thread *thread)        { return thread == _init_thread; }
+  bool is_reentrant_initialization(Thread *thread) { return thread == _init_thread; }
+  bool is_reentrant_linking(Thread *thread)        { return thread == _init_thread; }
   ClassState  init_state() const           { return Atomic::load(&_init_state); }
   const char* init_state_name() const;
   bool is_rewritten() const                { return (_misc_flags & _misc_rewritten) != 0; }
