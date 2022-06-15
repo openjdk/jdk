@@ -1930,17 +1930,17 @@ void mvnw(Register Rd, Register Rm,
     data_processing(op31, type, opcode, Vd, Vn);        \
   }
 
-  INSN(fmovs,  0b000, 0b00, 0b000000);
-  INSN(fabss,  0b000, 0b00, 0b000001);
-  INSN(fnegs,  0b000, 0b00, 0b000010);
+  INSN(fmovs, 0b000, 0b00, 0b000000);
+  INSN(fabss, 0b000, 0b00, 0b000001);
+  INSN(fnegs, 0b000, 0b00, 0b000010);
   INSN(fsqrts, 0b000, 0b00, 0b000011);
-  INSN(fcvts,  0b000, 0b00, 0b000101);   // Single-precision to double-precision
+  INSN(fcvts, 0b000, 0b00, 0b000101);   // Single-precision to double-precision
 
-  INSN(fmovd,  0b000, 0b01, 0b000000);
-  INSN(fabsd,  0b000, 0b01, 0b000001);
-  INSN(fnegd,  0b000, 0b01, 0b000010);
+  INSN(fmovd, 0b000, 0b01, 0b000000);
+  INSN(fabsd, 0b000, 0b01, 0b000001);
+  INSN(fnegd, 0b000, 0b01, 0b000010);
   INSN(fsqrtd, 0b000, 0b01, 0b000011);
-  INSN(fcvtd,  0b000, 0b01, 0b000100);   // Double-precision to single-precision
+  INSN(fcvtd, 0b000, 0b01, 0b000100);   // Double-precision to single-precision
 
 private:
   void _fcvt_narrow_extend(FloatRegister Vd, SIMD_Arrangement Ta,
