@@ -31,7 +31,6 @@ import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -57,7 +56,7 @@ class Http2ClientImpl {
             Utils.getDebugLogger("Http2ClientImpl"::toString, Utils.DEBUG);
 
     private final HttpClientImpl client;
-    private volatile boolean stopping;
+    private boolean stopping;
 
     Http2ClientImpl(HttpClientImpl client) {
         this.client = client;
@@ -66,7 +65,7 @@ class Http2ClientImpl {
     /* Map key is "scheme:host:port" */
     private final Map<String,Http2Connection> connections = new ConcurrentHashMap<>();
 
-    private final Set<String> failures = Collections.synchronizedSet(new HashSet<>());
+    private final Set<String> failures = new HashSet<>();
 
     /**
      * When HTTP/2 requested only. The following describes the aggregate behavior including the
