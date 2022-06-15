@@ -37,7 +37,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * bit cannot be updated concurrently from other threads). Some extra complexity is required to support release
  * operations triggered by threads other than the owner thread, which we support.
  */
-public final class ConfinedSessionState extends MemorySessionImpl.State {
+final class ConfinedSessionState extends MemorySessionImpl.State {
 
     private int asyncReleaseCount = 0;
 
@@ -51,12 +51,12 @@ public final class ConfinedSessionState extends MemorySessionImpl.State {
         }
     }
 
-    public ConfinedSessionState(Thread owner, Cleaner cleaner) {
+    ConfinedSessionState(Thread owner, Cleaner cleaner) {
         super(owner, new ConfinedList(), cleaner);
     }
 
     @Override
-    public boolean isAlive() {
+    boolean isAlive() {
         return state != CLOSED;
     }
 
@@ -84,7 +84,7 @@ public final class ConfinedSessionState extends MemorySessionImpl.State {
         }
     }
 
-    public void justClose() {
+    void justClose() {
         checkValidStateWrapException();
         if (state == 0 || state - ((int)ASYNC_RELEASE_COUNT.getVolatile(this)) == 0) {
             state = CLOSED;
@@ -98,7 +98,7 @@ public final class ConfinedSessionState extends MemorySessionImpl.State {
      */
     static final class ConfinedList extends ResourceList {
         @Override
-        public void add(ResourceCleanup cleanup) {
+        void add(ResourceCleanup cleanup) {
             if (fst != ResourceCleanup.CLOSED_LIST) {
                 cleanup.next = fst;
                 fst = cleanup;

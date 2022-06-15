@@ -225,7 +225,7 @@ public non-sealed class MemorySessionImpl implements MemorySession, SegmentAlloc
                     null;
         }
 
-        public final void close() {
+        final void close() {
             try {
                 justClose();
                 if (cleanable != null) {
@@ -252,7 +252,7 @@ public non-sealed class MemorySessionImpl implements MemorySession, SegmentAlloc
             return false;
         }
 
-        public abstract boolean isAlive();
+        abstract boolean isAlive();
 
         public final Thread ownerThread() {
             return owner;
@@ -307,10 +307,10 @@ public non-sealed class MemorySessionImpl implements MemorySession, SegmentAlloc
          * is shared or confined, different implementations of this class will be used, see {@link ConfinedSessionState.ConfinedList}
          * and {@link SharedSessionState.SharedList}.
          */
-        public abstract static class ResourceList implements Runnable {
+        abstract static class ResourceList implements Runnable {
             ResourceCleanup fst;
 
-            public abstract void add(ResourceCleanup cleanup);
+            abstract void add(ResourceCleanup cleanup);
 
             abstract void cleanup();
 
@@ -348,7 +348,7 @@ public non-sealed class MemorySessionImpl implements MemorySession, SegmentAlloc
                 }
             };
 
-            public static ResourceCleanup ofRunnable(Runnable cleanupAction) {
+            static ResourceCleanup ofRunnable(Runnable cleanupAction) {
                 return cleanupAction instanceof ResourceCleanup ?
                         (ResourceCleanup)cleanupAction :
                         new ResourceCleanup() {

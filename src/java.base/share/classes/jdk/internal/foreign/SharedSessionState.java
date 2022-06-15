@@ -43,11 +43,11 @@ import jdk.internal.vm.annotation.ForceInline;
  * Since it is the responsibility of the closing thread to make sure that no concurrent access is possible,
  * checking the liveness bit upon access can be performed in plain mode, as in the confined case.
  */
-public class SharedSessionState extends MemorySessionImpl.State {
+class SharedSessionState extends MemorySessionImpl.State {
 
     private static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
 
-    public SharedSessionState(Cleaner cleaner) {
+    SharedSessionState(Cleaner cleaner) {
         super(null, new SharedList(), cleaner);
     }
 
@@ -80,7 +80,7 @@ public class SharedSessionState extends MemorySessionImpl.State {
         } while (!STATE.compareAndSet(this, value, value - 1));
     }
 
-    public void justClose() {
+    void justClose() {
         int prevState = (int) STATE.compareAndExchange(this, OPEN, CLOSING);
         if (prevState < 0) {
             throw alreadyClosed();
@@ -95,7 +95,7 @@ public class SharedSessionState extends MemorySessionImpl.State {
     }
 
     @Override
-    public boolean isAlive() {
+    boolean isAlive() {
         return (int) STATE.getVolatile(this) != CLOSED;
     }
 
@@ -115,7 +115,7 @@ public class SharedSessionState extends MemorySessionImpl.State {
         }
 
         @Override
-        public void add(ResourceCleanup cleanup) {
+        void add(ResourceCleanup cleanup) {
             while (true) {
                 ResourceCleanup prev = (ResourceCleanup) FST.getVolatile(this);
                 if (prev == ResourceCleanup.CLOSED_LIST) {
@@ -152,8 +152,8 @@ public class SharedSessionState extends MemorySessionImpl.State {
         }
     }
 
-    public static final class OfImplicit extends SharedSessionState {
-        public OfImplicit() {
+    static final class OfImplicit extends SharedSessionState {
+        OfImplicit() {
             super(CleanerFactory.cleaner());
         }
 
