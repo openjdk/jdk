@@ -110,9 +110,7 @@ public class TestClassUnloadEvents {
             for (Event event : eventSet) {
                 if (event instanceof ClassUnloadEvent) {
                     String className = ((ClassUnloadEvent)event).className();
-                    if (className.startsWith(CLASS_NAME_PREFIX)) {
-                        unloadedSampleClasses.add(className);
-                    }
+                    unloadedSampleClasses.add(className);
                 }
 
                 if (event instanceof VMDeathEvent) {
