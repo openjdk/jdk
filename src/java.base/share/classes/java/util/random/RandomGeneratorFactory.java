@@ -32,6 +32,8 @@ import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.List;
 import java.util.Map;
 import java.util.random.RandomGenerator.ArbitrarilyJumpableGenerator;
 import java.util.random.RandomGenerator.JumpableGenerator;
@@ -42,6 +44,8 @@ import java.util.ServiceLoader;
 import java.util.ServiceLoader.Provider;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import jdk.internal.misc.VM;
 import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
 
 /**
@@ -135,6 +139,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
 
     private static class FactoryMapHolder {
         static final Map<String, Provider<? extends RandomGenerator>> FACTORY_MAP = createFactoryMap();
+        static final List<Provider<? extends RandomGenerator>> BUILTIN_GENERATORS = filterBuiltIn(FACTORY_MAP);
 
         /**
          * Returns the factory map, lazily constructing map on first use.
@@ -147,6 +152,22 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
                 .stream()
                 .filter(p -> !p.type().isInterface())
                 .collect(Collectors.toMap(p -> p.type().getSimpleName(), Function.identity()));
+        }
+
+        @SuppressWarnings("removal")
+        private static List<Provider<? extends RandomGenerator>> filterBuiltIn(
+                Map<?, Provider<? extends RandomGenerator>> map) {
+            Predicate<Provider<?>> onlyBuiltIn;
+            if (System.getSecurityManager() != null) {
+                // Don't parse annotation for user classes
+                onlyBuiltIn = p -> VM.isSystemDomainLoader(p.type().getClassLoader());
+            } else {
+                onlyBuiltIn = p -> true;
+            }
+            return map.values().stream().filter(onlyBuiltIn)
+                    .filter(p -> !p.type().isAnnotationPresent(Deprecated.class) &&
+                            p.type().isAnnotationPresent(RandomGeneratorProperties.class))
+                    .toList();
         }
     }
 
@@ -166,6 +187,10 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      */
     private static Map<String, Provider<? extends RandomGenerator>> getFactoryMap() {
         return FactoryMapHolder.FACTORY_MAP;
+    }
+
+    private static List<Provider<? extends RandomGenerator>> getBuiltInFactories() {
+        return FactoryMapHolder.BUILTIN_GENERATORS;
     }
 
     /**
@@ -385,11 +410,8 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
      * @return a non-empty stream of all available {@link RandomGeneratorFactory RandomGeneratorFactory(s)}.
      */
     public static Stream<RandomGeneratorFactory<RandomGenerator>> all() {
-        Map<String, Provider<? extends RandomGenerator>> fm = getFactoryMap();
-        return fm.values()
-                 .stream()
-                 .filter(p -> !p.type().isAnnotationPresent(Deprecated.class) &&
-                              p.type().isAnnotationPresent(RandomGeneratorProperties.class))
+        List<Provider<? extends RandomGenerator>> fm = getBuiltInFactories();
+        return fm.stream()
                  .map(RandomGeneratorFactory::new);
     }
 

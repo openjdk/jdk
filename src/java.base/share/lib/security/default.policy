@@ -193,6 +193,10 @@ grant codeBase "jrt:/jdk.naming.dns" {
     permission java.security.AllPermission;
 };
 
+grant codeBase "jrt:/jdk.random" {
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.util.random";
+};
+
 grant codeBase "jrt:/jdk.scripting.nashorn" {
     permission java.security.AllPermission;
 };
