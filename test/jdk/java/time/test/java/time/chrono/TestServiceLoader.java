@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +59,7 @@
  */
 package test.java.time.chrono;
 
+import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 
 import java.time.chrono.Chronology;
@@ -81,7 +83,9 @@ public class TestServiceLoader {
         for (Chronology chrono : loader) {
             chronos.put(chrono.getId(), chrono);
         }
-        assertNotNull(chronos.get("Coptic"), "CopticChronology not found");
+        var coptic = chronos.get("Coptic");
+        assertNotNull(coptic, "CopticChronology not found");
+        assertEquals(coptic.isIsoBased(), false);
     }
 
 }

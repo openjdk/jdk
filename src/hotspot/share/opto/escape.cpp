@@ -233,6 +233,7 @@ bool ConnectionGraph::compute_escape() {
 
   if (non_escaped_allocs_worklist.length() == 0) {
     _collecting = false;
+    NOT_PRODUCT(escape_state_statistics(java_objects_worklist);)
     return false; // Nothing to do.
   }
   // Add final simple edges to graph.
@@ -262,7 +263,10 @@ bool ConnectionGraph::compute_escape() {
   // processing, calls to CI to resolve symbols (types, fields, methods)
   // referenced in bytecode. During symbol resolution VM may throw
   // an exception which CI cleans and converts to compilation failure.
-  if (C->failing())  return false;
+  if (C->failing()) {
+    NOT_PRODUCT(escape_state_statistics(java_objects_worklist);)
+    return false;
+  }
 
   // 2. Finish Graph construction by propagating references to all
   //    java objects through graph.
@@ -270,6 +274,7 @@ bool ConnectionGraph::compute_escape() {
                                  java_objects_worklist, oop_fields_worklist)) {
     // All objects escaped or hit time or iterations limits.
     _collecting = false;
+    NOT_PRODUCT(escape_state_statistics(java_objects_worklist);)
     return false;
   }
 
@@ -339,7 +344,10 @@ bool ConnectionGraph::compute_escape() {
     // Now use the escape information to create unique types for
     // scalar replaceable objects.
     split_unique_types(alloc_worklist, arraycopy_worklist, mergemem_worklist);
-    if (C->failing())  return false;
+    if (C->failing()) {
+      NOT_PRODUCT(escape_state_statistics(java_objects_worklist);)
+      return false;
+    }
     C->print_method(PHASE_AFTER_EA, 2);
 
 #ifdef ASSERT
@@ -375,6 +383,7 @@ bool ConnectionGraph::compute_escape() {
     }
   }
 
+  NOT_PRODUCT(escape_state_statistics(java_objects_worklist);)
   return has_non_escaping_obj;
 }
 
@@ -2632,7 +2641,7 @@ bool ConnectionGraph::split_AddP(Node *addp, Node *base) {
   // this code branch will go away.
   //
   if (!t->is_known_instance() &&
-      !t->maybe_java_subtype_of(base_t)) {
+      !base_t->maybe_java_subtype_of(t)) {
      return false; // bail out
   }
   const TypeOopPtr *tinst = base_t->add_offset(t->offset())->is_oopptr();
@@ -3316,7 +3325,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
         } else {
           tn_t = tn_type->isa_oopptr();
         }
-        if (tn_t != NULL && tn_t->maybe_java_subtype_of(tinst)) {
+        if (tn_t != NULL && tinst->maybe_java_subtype_of(tn_t)) {
           if (tn_type->isa_narrowoop()) {
             tn_type = tinst->make_narrowoop();
           } else {
@@ -3329,7 +3338,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
           record_for_optimizer(n);
         } else {
           assert(tn_type == TypePtr::NULL_PTR ||
-                 tn_t != NULL && !tinst->is_java_subtype_of(tn_t),
+                 tn_t != NULL && !tinst->maybe_java_subtype_of(tn_t),
                  "unexpected type");
           continue; // Skip dead path with different type
         }
@@ -3532,7 +3541,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
 
   //  Phase 3:  Process MergeMem nodes from mergemem_worklist.
   //            Walk each memory slice moving the first node encountered of each
-  //            instance type to the the input corresponding to its alias index.
+  //            instance type to the input corresponding to its alias index.
   uint length = mergemem_worklist.length();
   for( uint next = 0; next < length; ++next ) {
     MergeMemNode* nmm = mergemem_worklist.at(next);
@@ -3673,6 +3682,10 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
 }
 
 #ifndef PRODUCT
+int ConnectionGraph::_no_escape_counter = 0;
+int ConnectionGraph::_arg_escape_counter = 0;
+int ConnectionGraph::_global_escape_counter = 0;
+
 static const char *node_type_names[] = {
   "UnknownType",
   "JavaObject",
@@ -3777,6 +3790,30 @@ void ConnectionGraph::dump(GrowableArray<PointsToNode*>& ptnodes_worklist) {
         }
       }
       tty->cr();
+    }
+  }
+}
+
+void ConnectionGraph::print_statistics() {
+  tty->print_cr("No escape = %d, Arg escape = %d, Global escape = %d", Atomic::load(&_no_escape_counter), Atomic::load(&_arg_escape_counter), Atomic::load(&_global_escape_counter));
+}
+
+void ConnectionGraph::escape_state_statistics(GrowableArray<JavaObjectNode*>& java_objects_worklist) {
+  if (!PrintOptoStatistics || (_invocation > 0)) { // Collect data only for the first invocation
+    return;
+  }
+  for (int next = 0; next < java_objects_worklist.length(); ++next) {
+    JavaObjectNode* ptn = java_objects_worklist.at(next);
+    if (ptn->ideal_node()->is_Allocate()) {
+      if (ptn->escape_state() == PointsToNode::NoEscape) {
+        Atomic::inc(&ConnectionGraph::_no_escape_counter);
+      } else if (ptn->escape_state() == PointsToNode::ArgEscape) {
+        Atomic::inc(&ConnectionGraph::_arg_escape_counter);
+      } else if (ptn->escape_state() == PointsToNode::GlobalEscape) {
+        Atomic::inc(&ConnectionGraph::_global_escape_counter);
+      } else {
+        assert(false, "Unexpected Escape State");
+      }
     }
   }
 }

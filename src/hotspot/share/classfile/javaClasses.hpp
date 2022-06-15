@@ -628,7 +628,7 @@ class java_lang_VirtualThread : AllStatic {
   static oop vthread_scope();
   static oop carrier_thread(oop vthread);
   static oop continuation(oop vthread);
-  static u2 state(oop vthread);
+  static int state(oop vthread);
   static JavaThreadStatus map_state_to_thread_status(int state);
   static bool notify_jvmti_events();
   static void set_notify_jvmti_events(bool enable);

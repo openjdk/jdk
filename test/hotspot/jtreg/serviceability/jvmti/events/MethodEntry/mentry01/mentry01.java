@@ -41,6 +41,7 @@ import java.io.PrintStream;
  *     Ported from JVMDI.
  *     Fixed the 5004632 bug.
  *
+ * @requires vm.continuations
  * @library /test/lib
  * @compile --enable-preview -source ${jdk.version} mentry01.java
  * @run main/othervm/native --enable-preview -agentlib:mentry01 mentry01

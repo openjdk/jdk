@@ -327,6 +327,8 @@ class SuperWord : public ResourceObj {
 
   bool transform_loop(IdealLoopTree* lpt, bool do_optimization);
 
+  int max_vector_size(BasicType bt);
+
   void unrolling_analysis(int &local_loop_unroll_factor);
 
   // Accessors for SWPointer
