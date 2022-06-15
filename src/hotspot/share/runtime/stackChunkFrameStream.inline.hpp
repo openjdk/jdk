@@ -29,6 +29,7 @@
 #include "compiler/oopMap.hpp"
 #include "interpreter/interpreter.hpp"
 #include "logging/log.hpp"
+#include "memory/devirtualizer.inline.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.hpp"
 #include "oops/stackChunkOop.inline.hpp"

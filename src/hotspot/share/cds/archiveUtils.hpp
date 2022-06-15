@@ -25,6 +25,7 @@
 #ifndef SHARE_CDS_ARCHIVEUTILS_HPP
 #define SHARE_CDS_ARCHIVEUTILS_HPP
 
+#include "cds/serializeClosure.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
 #include "memory/virtualspace.hpp"

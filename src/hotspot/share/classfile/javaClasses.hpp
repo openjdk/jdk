@@ -36,6 +36,7 @@
 
 class JvmtiThreadState;
 class RecordComponent;
+class SerializeClosure;
 
 // Interface for manipulating the basic Java classes.
 

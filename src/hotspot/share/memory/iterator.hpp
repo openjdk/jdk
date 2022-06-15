@@ -28,7 +28,6 @@
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "utilities/bitMap.hpp"
 
 class CodeBlob;
 class nmethod;
@@ -326,39 +325,6 @@ public:
  virtual bool should_return_fine_grain() { return false; }
 };
 
-// Abstract closure for serializing data (read or write).
-
-class SerializeClosure : public Closure {
-public:
-  // Return bool indicating whether closure implements read or write.
-  virtual bool reading() const = 0;
-
-  // Read/write the void pointer pointed to by p.
-  virtual void do_ptr(void** p) = 0;
-
-  // Read/write the 32-bit unsigned integer pointed to by p.
-  virtual void do_u4(u4* p) = 0;
-
-  // Read/write the bool pointed to by p.
-  virtual void do_bool(bool* p) = 0;
-
-  // Read/write the region specified.
-  virtual void do_region(u_char* start, size_t size) = 0;
-
-  // Check/write the tag.  If reading, then compare the tag against
-  // the passed in value and fail is they don't match.  This allows
-  // for verification that sections of the serialized data are of the
-  // correct length.
-  virtual void do_tag(int tag) = 0;
-
-  // Read/write the oop
-  virtual void do_oop(oop* o) = 0;
-
-  bool writing() {
-    return !reading();
-  }
-};
-
 class SymbolClosure : public StackObj {
  public:
   virtual void do_symbol(Symbol**) = 0;
@@ -368,18 +334,6 @@ template <typename E>
 class CompareClosure : public Closure {
 public:
     virtual int do_compare(const E&, const E&) = 0;
-};
-
-// Dispatches to the non-virtual functions if OopClosureType has
-// a concrete implementation, otherwise a virtual call is taken.
-class Devirtualizer {
- public:
-  template <typename OopClosureType, typename T> static void do_oop(OopClosureType* closure, T* p);
-  template <typename OopClosureType>             static void do_klass(OopClosureType* closure, Klass* k);
-  template <typename OopClosureType>             static void do_cld(OopClosureType* closure, ClassLoaderData* cld);
-  template <typename OopClosureType>             static bool do_metadata(OopClosureType* closure);
-  template <typename DerivedOopClosureType>      static void do_derived_oop(DerivedOopClosureType* closure, oop* base, derived_pointer* derived);
-  template <typename BitMapClosureType>          static bool do_bit(BitMapClosureType* closure, BitMap::idx_t index);
 };
 
 class OopIteratorClosureDispatch {

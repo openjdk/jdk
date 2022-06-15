@@ -46,6 +46,7 @@
 class DumpedInternedStrings;
 class FileMapInfo;
 class KlassSubGraphInfo;
+class SerializeClosure;
 
 struct ArchivableStaticFieldInfo {
   const char* klass_name;

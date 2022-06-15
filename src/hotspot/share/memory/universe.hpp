@@ -43,35 +43,8 @@ class CollectedHeap;
 class DeferredObjAllocEvent;
 class OopStorage;
 class ReservedHeapSpace;
-
-// A helper class for caching a Method* when the user of the cache
-// only cares about the latest version of the Method*.  This cache safely
-// interacts with the RedefineClasses API.
-
-class LatestMethodCache : public CHeapObj<mtClass> {
-  // We save the Klass* and the idnum of Method* in order to get
-  // the current cached Method*.
- private:
-  Klass*                _klass;
-  int                   _method_idnum;
-
- public:
-  LatestMethodCache()   { _klass = NULL; _method_idnum = -1; }
-  ~LatestMethodCache()  { _klass = NULL; _method_idnum = -1; }
-
-  void   init(Klass* k, Method* m);
-  Klass* klass() const           { return _klass; }
-  int    method_idnum() const    { return _method_idnum; }
-
-  Method* get_method();
-
-  // CDS support.  Replace the klass in this with the archive version
-  // could use this for Enhanced Class Redefinition also.
-  void serialize(SerializeClosure* f) {
-    f->do_ptr((void**)&_klass);
-  }
-  void metaspace_pointers_do(MetaspaceClosure* it);
-};
+class LatestMethodCache;
+class SerializeClosure;
 
 class Universe: AllStatic {
   // Ugh.  Universe is much too friendly.
@@ -255,13 +228,12 @@ class Universe: AllStatic {
   static oop          vm_exception()                  { return virtual_machine_error_instance(); }
 
   static Array<Klass*>* the_array_interfaces_array()  { return _the_array_interfaces_array;   }
-  static Method*      finalizer_register_method()     { return _finalizer_register_cache->get_method(); }
-  static Method*      loader_addClass_method()        { return _loader_addClass_cache->get_method(); }
 
-  static Method*      throw_illegal_access_error()    { return _throw_illegal_access_error_cache->get_method(); }
-  static Method*      throw_no_such_method_error()    { return _throw_no_such_method_error_cache->get_method(); }
-
-  static Method*      do_stack_walk_method()          { return _do_stack_walk_cache->get_method(); }
+  static Method*      finalizer_register_method();
+  static Method*      loader_addClass_method();
+  static Method*      throw_illegal_access_error();
+  static Method*      throw_no_such_method_error();
+  static Method*      do_stack_walk_method();
 
   static oop          the_null_sentinel();
   static address      the_null_sentinel_addr()        { return (address) &_the_null_sentinel;  }

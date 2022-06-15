@@ -27,6 +27,7 @@
 #include "cds/archiveBuilder.hpp"
 #include "cds/cppVtables.hpp"
 #include "cds/metaspaceShared.hpp"
+#include "cds/serializeClosure.hpp"
 #include "logging/log.hpp"
 #include "oops/instanceClassLoaderKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
