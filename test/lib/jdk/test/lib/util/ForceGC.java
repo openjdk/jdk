@@ -32,30 +32,22 @@ import java.util.function.BooleanSupplier;
  * Utility class to invoke System.gc()
  */
 public class ForceGC {
-    /**
-     * Causes the current thread to wait until the {@code booleanSupplier}
-     * returns true, or a predefined waiting time (10 seconds) elapses.
-     *
-     * @param booleanSupplier boolean supplier
-     * @return true if the {@code booleanSupplier} returns true, or false
-     *     if did not complete after 10 Seconds
-     */
-    public static boolean wait(BooleanSupplier booleanSupplier) {
-        return wait(booleanSupplier, 10000L);
-    }
+    // The jtreg testing timeout factor.
+    private static final double TIMEOUT_FACTOR = Double.valueOf(
+            System.getProperty("test.timeout.factor", "1.0"));
 
     /**
      * Causes the current thread to wait until the {@code booleanSupplier}
-     * returns true, or the specified waiting time {@code timeout} elapses.
+     * returns true, or a specific waiting time elapses.  The waiting time
+     * is 1 second scalled with the jtreg testing timeout factor.
      *
      * @param booleanSupplier boolean supplier
-     * @param timeout the timeout milliseconds while waiting for the boolean
-     *        supplier to be true.
      * @return true if the {@code booleanSupplier} returns true, or false
-     *     if did not complete after {@code timeout} milliseconds.
+     *     if did not complete after the specific waiting time.
      */
-    public static boolean wait(BooleanSupplier booleanSupplier,
-            long timeout) {
+    public static boolean wait(BooleanSupplier booleanSupplier) {
+        long timeout = Math.round(1000L * TIMEOUT_FACTOR);
+         
         ReferenceQueue<Object> queue = new ReferenceQueue<>();
         Object obj = new Object();
         PhantomReference<Object> ref = new PhantomReference<>(obj, queue);
@@ -63,7 +55,7 @@ public class ForceGC {
         Reference.reachabilityFence(obj);
         Reference.reachabilityFence(ref);
 
-        for (int retries = (int)(timeout / 100); retries > 0; retries--) {
+        for (int retries = (int)(timeout / 200); retries >= 0; retries--) {
             if (booleanSupplier.getAsBoolean()) {
                 return true;
             }
@@ -75,7 +67,7 @@ public class ForceGC {
                 // if the reference has already been removed from the queue.
                 // But it is fine.  For most cases, the 1st GC is sufficient
                 // to trigger and complete the cleanup.
-                queue.remove(100L);
+                queue.remove(200L);
             } catch (InterruptedException ie) {
                 // ignore, the loop will try again
             }
