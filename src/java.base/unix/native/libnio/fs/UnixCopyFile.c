@@ -33,12 +33,13 @@
 
 #if defined(__linux__)
 #include <sys/sendfile.h>
+#include <fcntl.h>
 #elif defined(_ALLBSD_SOURCE)
 #include <copyfile.h>
 #endif
 #include "sun_nio_fs_UnixCopyFile.h"
 
-#define DEFAULT_TRANSFER_SIZE (sun_nio_fs_UnixCopyFile_TRANSFER_SIZE)
+#define MIN_TRANSFER_SIZE (sun_nio_fs_UnixCopyFile_MIN_TRANSFER_SIZE)
 
 #define RESTARTABLE(_cmd, _result) do { \
   do { \
@@ -75,8 +76,17 @@ int fcopyfile_callback(int what, int stage, copyfile_state_t state,
 void transfer(JNIEnv* env, jint dst, jint src, jlong transferSize,
               volatile jint* cancel)
 {
-    char stackBuf[DEFAULT_TRANSFER_SIZE];
+    char stackBuf[MIN_TRANSFER_SIZE];
     char* buf = NULL;
+
+#if defined(__linux__)
+    int advice = POSIX_FADV_SEQUENTIAL | // sequential data access
+                 POSIX_FADV_NOREUSE    | // will access only once
+                 POSIX_FADV_WILLNEED;    // will access in near future
+
+    // ignore the return value hence any failure
+    posix_fadvise(src, 0, 0, advice);
+#endif
 
     if ((unsigned long)transferSize > sizeof(stackBuf)) {
         // stack-allocated buffer is too small so malloc

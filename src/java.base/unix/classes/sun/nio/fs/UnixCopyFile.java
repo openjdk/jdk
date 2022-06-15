@@ -46,7 +46,7 @@ import static sun.nio.fs.UnixConstants.*;
  */
 
 class UnixCopyFile {
-    @Native private static final long TRANSFER_SIZE = 8192;
+    @Native private static final long MIN_TRANSFER_SIZE = 16384;
 
     private UnixCopyFile() {  }
 
@@ -273,12 +273,16 @@ class UnixCopyFile {
             // set to true when file and attributes copied
             boolean complete = false;
             try {
-                long transferSize = TRANSFER_SIZE;
+                long ts = MIN_TRANSFER_SIZE;
                 try {
                     long bss = UnixFileStoreAttributes.get(source).blockSize();
                     long bst = UnixFileStoreAttributes.get(target).blockSize();
                     if (bss > 0 && bst > 0) {
-                        transferSize = bss == bst ? bss : lcm(bss, bst);
+                        ts = bss == bst ? bss : lcm(bss, bst);
+                    }
+                    if (ts < MIN_TRANSFER_SIZE) {
+                        int factor = (int)((MIN_TRANSFER_SIZE + ts - 1)/ts);
+                        ts *= factor;
                     }
                 } catch (IllegalArgumentException | UnixException ignored) {
                 }
@@ -287,7 +291,7 @@ class UnixCopyFile {
                 try {
                     long comp = Blocker.begin();
                     try {
-                        transfer0(fo, fi, transferSize, addressToPollForCancel);
+                        transfer0(fo, fi, ts, addressToPollForCancel);
                     } finally {
                         Blocker.end(comp);
                     }
