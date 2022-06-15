@@ -280,8 +280,7 @@ class UnixCopyFile {
                     if (bss > 0 && bst > 0) {
                         transferSize = bss == bst ? bss : lcm(bss, bst);
                     }
-                } catch (IllegalArgumentException | SecurityException |
-                         UnixException | UnsupportedOperationException ignored) {
+                } catch (IllegalArgumentException | UnixException ignored) {
                 }
 
                 // transfer bytes to target file
