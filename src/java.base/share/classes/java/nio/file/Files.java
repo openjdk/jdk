@@ -1219,10 +1219,9 @@ public final class Files {
      * <tbody>
      * <tr>
      *   <th scope="row"> {@link StandardCopyOption#REPLACE_EXISTING REPLACE_EXISTING} </th>
-     *   <td> If the target file exists, then the target file is replaced if it
-     *     is not a non-empty directory. If the target file exists and is a
-     *     symbolic link, then the symbolic link itself, not the target of
-     *     the link, is replaced. </td>
+     *   <td> Replace an existing file. A non-empty directory cannot be
+     *     replaced. If the target file exists and is a symbolic link, then the
+     *     symbolic link itself, not the target of the link, is replaced. </td>
      * </tr>
      * <tr>
      *   <th scope="row"> {@link StandardCopyOption#COPY_ATTRIBUTES COPY_ATTRIBUTES} </th>
@@ -1342,10 +1341,9 @@ public final class Files {
      * <tbody>
      * <tr>
      *   <th scope="row"> {@link StandardCopyOption#REPLACE_EXISTING REPLACE_EXISTING} </th>
-     *   <td> If the target file exists, then the target file is replaced if it
-     *     is not a non-empty directory. If the target file exists and is a
-     *     symbolic link, then the symbolic link itself, not the target of
-     *     the link, is replaced. </td>
+     *   <td> Replace an existing file. A non-empty directory cannot be
+     *     replaced. If the target file exists and is a symbolic link, then the
+     *     symbolic link itself, not the target of the link, is replaced. </td>
      * </tr>
      * <tr>
      *   <th scope="row"> {@link StandardCopyOption#ATOMIC_MOVE ATOMIC_MOVE} </th>
