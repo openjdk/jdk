@@ -27,7 +27,7 @@
 #include "gc/shared/gcId.hpp"
 #include "runtime/nonJavaThread.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/thread.hpp"
 
 uint GCId::_next_id = 0;
 

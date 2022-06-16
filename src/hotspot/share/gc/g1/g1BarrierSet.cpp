@@ -37,7 +37,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/orderAccess.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/thread.hpp"
 #include "utilities/macros.hpp"
 #ifdef COMPILER1
 #include "gc/g1/c1/g1BarrierSetC1.hpp"

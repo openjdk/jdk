@@ -44,7 +44,7 @@
 #include "runtime/osThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/thread.hpp"
 #include "runtime/timer.hpp"
 #include "symbolengine.hpp"
 #include "unwind_windows_x86.hpp"

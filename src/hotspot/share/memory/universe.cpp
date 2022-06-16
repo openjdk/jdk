@@ -70,7 +70,7 @@
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
 #include "runtime/jniHandles.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/thread.hpp"
 #include "runtime/timerTrace.hpp"
 #include "services/memoryService.hpp"
 #include "utilities/align.hpp"

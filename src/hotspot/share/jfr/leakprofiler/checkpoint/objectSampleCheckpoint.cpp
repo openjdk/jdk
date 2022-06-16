@@ -46,7 +46,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/thread.hpp"
 
 const int initial_array_size = 64;
 

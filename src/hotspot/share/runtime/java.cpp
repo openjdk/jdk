@@ -69,7 +69,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/sweeper.hpp"
 #include "runtime/task.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/thread.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"

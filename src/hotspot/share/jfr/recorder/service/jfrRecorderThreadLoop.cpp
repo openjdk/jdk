@@ -33,7 +33,7 @@
 #include "runtime/handles.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/thread.hpp"
 
 //
 // Entry point for "JFR Recorder Thread" message loop.

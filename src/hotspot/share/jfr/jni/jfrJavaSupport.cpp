@@ -48,7 +48,7 @@
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/semaphore.inline.hpp"
 #include "runtime/synchronizer.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/thread.hpp"
 #include "runtime/threadSMR.hpp"
 #include "utilities/growableArray.hpp"
 #include "classfile/vmSymbols.hpp"

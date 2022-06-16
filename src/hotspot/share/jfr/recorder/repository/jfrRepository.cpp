@@ -34,7 +34,7 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/os.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/thread.hpp"
 
 static JfrRepository* _instance = NULL;
 

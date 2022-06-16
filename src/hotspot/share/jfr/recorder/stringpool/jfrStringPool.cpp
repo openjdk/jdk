@@ -37,7 +37,7 @@
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/thread.hpp"
 
 typedef JfrStringPool::BufferPtr BufferPtr;
 

@@ -38,7 +38,7 @@
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/os.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/thread.hpp"
 #include "runtime/threadCritical.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/events.hpp"

@@ -26,7 +26,7 @@
 #include "rdtsc_x86.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/orderAccess.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/thread.hpp"
 #include "vm_version_x86.hpp"
 
 // The following header contains the implementations of rdtsc()

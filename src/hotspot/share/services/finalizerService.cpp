@@ -36,7 +36,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/synchronizer.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/thread.hpp"
 #include "services/finalizerService.hpp"
 #include "utilities/concurrentHashTableTasks.inline.hpp"
 #include "utilities/debug.hpp"

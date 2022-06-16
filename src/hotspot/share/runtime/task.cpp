@@ -27,7 +27,7 @@
 #include "runtime/init.hpp"
 #include "runtime/nonJavaThread.hpp"
 #include "runtime/task.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/thread.hpp"
 #include "runtime/timer.hpp"
 
 int PeriodicTask::_num_tasks = 0;

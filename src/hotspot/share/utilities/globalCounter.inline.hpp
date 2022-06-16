@@ -28,7 +28,7 @@
 #include "utilities/globalCounter.hpp"
 
 #include "runtime/atomic.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/thread.hpp"
 
 inline GlobalCounter::CSContext
 GlobalCounter::critical_section_begin(Thread *thread) {

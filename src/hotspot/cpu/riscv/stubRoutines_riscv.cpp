@@ -28,7 +28,7 @@
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/thread.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // Implementation of the platform-specific part of StubRoutines - for

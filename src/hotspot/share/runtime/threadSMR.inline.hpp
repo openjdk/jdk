@@ -32,7 +32,7 @@
 #include "runtime/atomic.hpp"
 #include "memory/iterator.hpp"
 #include "runtime/prefetch.inline.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/thread.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 

@@ -26,7 +26,7 @@
 #include "gc/z/zCPU.inline.hpp"
 #include "memory/padded.inline.hpp"
 #include "runtime/os.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/thread.hpp"
 #include "utilities/debug.hpp"
 
 #define ZCPU_UNKNOWN_AFFINITY ((Thread*)-1)

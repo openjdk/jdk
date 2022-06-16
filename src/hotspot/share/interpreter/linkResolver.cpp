@@ -58,7 +58,7 @@
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/thread.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_JFR

@@ -51,7 +51,7 @@
 #include "runtime/osThread.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/synchronizer.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/thread.hpp"
 #include "runtime/vmOperations.hpp"
 
 #ifdef COMPILER2

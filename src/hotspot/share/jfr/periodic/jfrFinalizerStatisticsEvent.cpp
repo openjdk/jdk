@@ -32,7 +32,7 @@
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/thread.hpp"
 #include "services/finalizerService.hpp"
 
 static void send_event(const FinalizerEntry* fe, const InstanceKlass* ik, const JfrTicks& timestamp, Thread* thread) {

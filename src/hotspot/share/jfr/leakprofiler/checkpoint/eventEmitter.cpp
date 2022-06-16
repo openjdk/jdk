@@ -37,7 +37,7 @@
 #include "oops/markWord.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/thread.hpp"
 #include "runtime/vmThread.hpp"
 
 EventEmitter::EventEmitter(const JfrTicks& start_time, const JfrTicks& end_time) :

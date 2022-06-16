@@ -34,7 +34,7 @@
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/os.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/thread.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/vframe.hpp"

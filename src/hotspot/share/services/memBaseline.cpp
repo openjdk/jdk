@@ -27,7 +27,7 @@
 #include "memory/allocation.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/thread.hpp"
 #include "services/memBaseline.hpp"
 #include "services/memTracker.hpp"
 

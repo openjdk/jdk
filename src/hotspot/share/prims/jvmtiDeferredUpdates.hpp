@@ -26,7 +26,7 @@
 #ifndef SHARE_PRIMS_JVMTIDEFERREDUPDATES_HPP
 #define SHARE_PRIMS_JVMTIDEFERREDUPDATES_HPP
 
-#include "runtime/thread.inline.hpp"
+#include "runtime/thread.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 

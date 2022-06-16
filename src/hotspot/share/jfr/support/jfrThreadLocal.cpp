@@ -43,7 +43,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 #include "runtime/threadIdentifier.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/thread.hpp"
 #include "utilities/sizes.hpp"
 
 JfrThreadLocal::JfrThreadLocal() :

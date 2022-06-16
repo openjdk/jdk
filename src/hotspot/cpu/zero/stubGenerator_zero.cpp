@@ -37,7 +37,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/thread.hpp"
 #include "stack_zero.inline.hpp"
 #ifdef COMPILER2
 #include "opto/runtime.hpp"

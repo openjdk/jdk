@@ -30,7 +30,7 @@
 #include "jfr/utilities/jfrTime.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "runtime/os.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/thread.hpp"
 
 jlong JfrThreadCPULoadEvent::get_wallclock_time() {
   return os::javaTimeNanos();

@@ -27,7 +27,7 @@
 #include "oops/instanceKlass.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/osThread.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/thread.hpp"
 #include "runtime/threadCritical.hpp"
 #include "runtime/timer.hpp"
 #include "utilities/events.hpp"
