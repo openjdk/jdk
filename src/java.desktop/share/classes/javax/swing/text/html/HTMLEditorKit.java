@@ -25,7 +25,6 @@
 
 package javax.swing.text.html;
 
-import sun.awt.AppContext;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
@@ -93,6 +92,8 @@ import javax.swing.text.TextAction;
 import javax.swing.text.View;
 import javax.swing.text.ViewFactory;
 import javax.swing.text.html.parser.ParserDelegator;
+
+import sun.awt.AppContext;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
@@ -1181,15 +1182,6 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      * A factory to build views for HTML.  The following
      * table describes what this factory will build by
      * default.
-     * <p>
-     * Parsed tags that lack full support are handled differently by the editor.
-     * When the container using HTML tags is editable, all non-supported tags
-     * will be displayed as editable text fields in place of the tags. The contents
-     * within the tags will be handled by the editor as regular text.
-     * If the container is not editable and a tag is recognized but not supported,
-     * such as script tags, the tag and its contents will be hidden.
-     * If the container is not editable and a tag is unknown or not supported at
-     * all, the tags will be hidden but its contents will display as regular text.
      *
      * <table class="striped">
      * <caption>Describes the tag and view created by this factory by default
@@ -1307,6 +1299,27 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      *     <td>FrameView
      * </tbody>
      * </table>
+     *
+     * <p>
+     * @implNote
+     * Parsed tags that are unrecognized or are recognized but unsupported are
+     * handled differently by the editor.
+     *
+     * <ul>
+     * <li>When the container using HTML tags is editable:</li>
+     * <ul>
+     *     <li>Tags display the tag text as editable text fields.</li>
+     *     <li>The content within the tags will be handled by the editor as
+     *     regular text.</li>
+     * </ul>
+     * <li>When the container is not editable:</li>
+     * <ul>
+     *     <li>If the tag is recognized but not supported, such as script tags,
+     *     the tag and its contents will be hidden.</li>
+     *     <li>If the tag is unknown, the tag will be hidden but its contents
+     *     will display as regular text.</li>
+     * </ul>
+     * </ul>
      */
     public static class HTMLFactory implements ViewFactory {
         /**
