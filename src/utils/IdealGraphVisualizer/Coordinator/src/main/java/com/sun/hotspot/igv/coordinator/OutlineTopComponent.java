@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.io.Serializable;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.border.Border;
 import org.openide.ErrorManager;
@@ -221,15 +222,20 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         if (result.allItems().isEmpty()) {
             return;
         }
-        final InputGraphProvider p = LookupHistory.getLast(InputGraphProvider.class);
-        if (p == null) {
-            return;
-        }
-        try {
-            manager.setSelectedNodes(new GraphNode[]{FolderNode.getGraphNode(p.getGraph())});
-        } catch (Exception e) {
-            Exceptions.printStackTrace(e);
-        }
+        // Wait for LookupHistory to be updated with the last active graph
+        // before selecting it.
+        Runnable updateSelectedGraph = () -> {
+            final InputGraphProvider p = LookupHistory.getLast(InputGraphProvider.class);
+            if (p == null) {
+                return;
+            }
+            try {
+                manager.setSelectedNodes(new GraphNode[]{FolderNode.getGraphNode(p.getGraph())});
+            } catch (Exception e) {
+                Exceptions.printStackTrace(e);
+            }
+        };
+        SwingUtilities.invokeLater(updateSelectedGraph);
     }
 
     @Override
