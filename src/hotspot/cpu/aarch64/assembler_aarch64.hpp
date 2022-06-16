@@ -794,7 +794,7 @@ public:
     starti;                                                             \
     f(opcode, 31, 29), f(0b100101, 28, 23), f(shift/16, 22, 21),        \
       f(imm, 20, 5);                                                    \
-    zrf(Rd, 0);                                                          \
+    zrf(Rd, 0);                                                         \
   }
 
   INSN(movnw, 0b000);
@@ -1104,9 +1104,9 @@ public:
     rf(RM, 0);
   }
 
-#define INSN(NAME, opc)              \
-  void NAME(Register RN) {           \
-    branch_reg(opc, 0, 0, RN, r0);    \
+#define INSN(NAME, opc)                         \
+  void NAME(Register RN) {                      \
+    branch_reg(opc, 0, 0, RN, r0);              \
   }
 
   INSN(br,  0b0000);
@@ -1117,9 +1117,9 @@ public:
 
 #undef INSN
 
-#define INSN(NAME, opc)                     \
-  void NAME() {                             \
-    branch_reg(opc, 0, 0, dummy_reg, r0);    \
+#define INSN(NAME, opc)                         \
+  void NAME() {                                 \
+    branch_reg(opc, 0, 0, dummy_reg, r0);       \
   }
 
   INSN(eret, 0b0100);
@@ -2098,9 +2098,9 @@ public:
 
 #undef INSN
 
-#define INSN(NAME, sflag, type, rmode, opcode)                           \
+#define INSN(NAME, sflag, type, rmode, opcode)                          \
   void NAME(FloatRegister Vd, Register Rn) {                            \
-    float_int_convert(sflag, type, rmode, opcode, as_Register(Vd), Rn);  \
+    float_int_convert(sflag, type, rmode, opcode, as_Register(Vd), Rn); \
   }
 
   INSN(fmovs, 0b0, 0b00, 0b00, 0b111);
