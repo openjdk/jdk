@@ -1787,7 +1787,7 @@ void G1RemSet::print_summary_info() {
     G1RemSetSummary current;
     ResourceMark rm;
     LogStream ls(log.trace());
-    current.print_on(&ls, true);
+    current.print_on(&ls, true /* show_thread_times*/);
   }
 }
 
