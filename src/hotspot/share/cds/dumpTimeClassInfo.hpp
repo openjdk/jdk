@@ -24,6 +24,7 @@
 
 #ifndef SHARED_CDS_DUMPTIMESHAREDCLASSINFO_HPP
 #define SHARED_CDS_DUMPTIMESHAREDCLASSINFO_HPP
+
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/metaspaceShared.hpp"
