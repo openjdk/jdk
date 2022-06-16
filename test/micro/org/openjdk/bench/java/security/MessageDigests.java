@@ -45,18 +45,18 @@ import org.openjdk.jmh.annotations.Warmup;
  */
 @State(Scope.Thread)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@Warmup(iterations = 10, time = 1, timeUnit = TimeUnit.SECONDS)
-@Measurement(iterations = 10, time = 1, timeUnit = TimeUnit.SECONDS)
-@Fork(jvmArgsAppend = {"-Xms1024m", "-Xmx1024m", "-Xmn768m", "-XX:+UseParallelGC"}, value = 5)
+@Warmup(iterations = 5, time = 1)
+@Measurement(iterations = 5, time = 1)
+@Fork(jvmArgsAppend = {"-Xms1024m", "-Xmx1024m", "-Xmn768m", "-XX:+UseParallelGC"}, value = 3)
 public class MessageDigests {
 
-    @Param({"64", "1024", "16384"})
+    @Param({"64", "16384"})
     private int length;
 
-    @Param({"md2", "md5", "SHA-1", "SHA-224", "SHA-256", "SHA-384", "SHA-512", "SHA3-224", "SHA3-256", "SHA3-384", "SHA3-512"})
+    @Param({"md5", "SHA-1", "SHA-224", "SHA-256", "SHA-384", "SHA-512", "SHA3-256", "SHA3-512"})
     private String digesterName;
 
-    @Param({"DEFAULT", "SUN"})
+    @Param({"DEFAULT"})
     protected String provider;
 
     private byte[] inputBytes;
