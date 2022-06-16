@@ -2420,7 +2420,7 @@ public:
 #undef INSN
 
   // Advanced SIMD three different
-#define INSN(NAME, opc, opc2, acceptT2D)                                \
+#define INSN(NAME, opc, opc2, acceptT2D)                                                \
   void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, FloatRegister Vm) { \
     guarantee(T != T1Q && T != T1D, "incorrect arrangement");                           \
     if (!acceptT2D) guarantee(T != T2D, "incorrect arrangement");                       \
