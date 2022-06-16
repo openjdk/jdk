@@ -27,6 +27,7 @@
 
 #include "gc/g1/g1CollectedHeap.hpp"
 
+#include "oops/stackChunkOop.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1EvacFailureRegions.hpp"

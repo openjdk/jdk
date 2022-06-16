@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/continuationJavaClasses.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "gc/shared/allocTracer.hpp"
 #include "gc/shared/collectedHeap.hpp"
