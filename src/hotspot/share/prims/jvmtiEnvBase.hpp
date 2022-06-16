@@ -32,7 +32,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/fieldDescriptor.hpp"
 #include "runtime/frame.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/vmOperation.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"

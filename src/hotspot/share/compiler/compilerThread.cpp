@@ -26,8 +26,8 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileTask.hpp"
 #include "compiler/compilerThread.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/sweeper.hpp"
-#include "runtime/thread.hpp"
 
 // Create a CompilerThread
 CompilerThread::CompilerThread(CompileQueue* queue,

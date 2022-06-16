@@ -26,7 +26,7 @@
 #ifndef SHARE_RUNTIME_JAVATHREAD_INLINE_HPP
 #define SHARE_RUNTIME_JAVATHREAD_INLINE_HPP
 
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 
 #include "classfile/javaClasses.hpp"
 #include "gc/shared/tlab_globals.hpp"

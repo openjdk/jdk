@@ -39,6 +39,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/safepoint.hpp"
+#include "runtime/threads.hpp"
 
 static int start_pos_offset = invalid_offset;
 static int start_pos_address_offset = invalid_offset;

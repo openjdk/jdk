@@ -30,7 +30,7 @@
 
 #if defined(__APPLE__) && defined(AARCH64)
 
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 
 class ThreadWXEnable  {
   Thread* _thread;

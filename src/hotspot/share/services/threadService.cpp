@@ -45,6 +45,7 @@
 #include "runtime/init.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/objectMonitor.inline.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/threadSMR.inline.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vmThread.hpp"
