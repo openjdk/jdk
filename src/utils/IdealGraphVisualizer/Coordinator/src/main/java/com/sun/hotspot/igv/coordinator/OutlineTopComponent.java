@@ -130,6 +130,19 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         binaryServer = new Server(getDocument(), callback, true);
     }
 
+    // Fetch and select the latest active graph.
+    private void updateGraphSelection() {
+        final InputGraphProvider p = LookupHistory.getLast(InputGraphProvider.class);
+        if (p == null) {
+            return;
+        }
+        try {
+            manager.setSelectedNodes(new GraphNode[]{FolderNode.getGraphNode(p.getGraph())});
+        } catch (Exception e) {
+            Exceptions.printStackTrace(e);
+        }
+    }
+
     public void clear() {
         document.clear();
         FolderNode.clearGraphNodeMap();
@@ -184,6 +197,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         Lookup.Template<InputGraphProvider> tpl = new Lookup.Template<InputGraphProvider>(InputGraphProvider.class);
         result = Utilities.actionsGlobalContext().lookup(tpl);
         result.addLookupListener(this);
+        updateGraphSelection();
         this.requestActive();
     }
 
@@ -223,18 +237,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         }
         // Wait for LookupHistory to be updated with the last active graph
         // before selecting it.
-        Runnable updateSelectedGraph = () -> {
-            final InputGraphProvider p = LookupHistory.getLast(InputGraphProvider.class);
-            if (p == null) {
-                return;
-            }
-            try {
-                manager.setSelectedNodes(new GraphNode[]{FolderNode.getGraphNode(p.getGraph())});
-            } catch (Exception e) {
-                Exceptions.printStackTrace(e);
-            }
-        };
-        SwingUtilities.invokeLater(updateSelectedGraph);
+        SwingUtilities.invokeLater(() -> updateGraphSelection());
     }
 
     @Override
