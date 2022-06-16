@@ -49,6 +49,7 @@ public class TestDriver {
             "-XX:-TieredCompilation",
             "-XX:+PrintCompilation",
             "-XX:+TraceNewVectors",
+            "-XX:StressLongCountedLoop=0", // make sure int loops do not get converted to long
             TestIntVect.class.getName());
         outputAnalyzer.shouldHaveExitValue(0);
         return outputAnalyzer.asLines();
