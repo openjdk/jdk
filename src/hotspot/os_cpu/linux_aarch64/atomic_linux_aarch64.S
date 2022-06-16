@@ -263,10 +263,10 @@ aarch64_atomic_cmpxchg_1_relaxed_default_impl:
         .align 5
 aarch64_atomic_cmpxchg_4_relaxed_default_impl:
 #ifdef __ARM_FEATURE_ATOMICS
-        prfm    pstl1strm, [x0]
         mov     x3, x1
         cas     w3, w2, [x0]
 #else
+        prfm    pstl1strm, [x0]
 0:      ldxr    w3, [x0]
         cmp     w3, w1
         b.ne    1f
@@ -280,10 +280,10 @@ aarch64_atomic_cmpxchg_4_relaxed_default_impl:
         .align 5
 aarch64_atomic_cmpxchg_8_relaxed_default_impl:
 #ifdef __ARM_FEATURE_ATOMICS
-        prfm    pstl1strm, [x0]
         mov     x3, x1
         cas     x3, x2, [x0]
 #else
+        prfm    pstl1strm, [x0]
 0:      ldxr    x3, [x0]
         cmp     x3, x1
         b.ne    1f
