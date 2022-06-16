@@ -1857,7 +1857,7 @@ void mvnw(Register Rd, Register Rm,
 
 #undef INSN
 
-  // (2 sources)
+  // Data-processing (2 source)
 #define INSN(NAME, op29, opcode)                                \
   void NAME(Register Rd, Register Rn, Register Rm) {            \
     starti;                                                     \
@@ -1881,7 +1881,7 @@ void mvnw(Register Rd, Register Rm,
 
 #undef INSN
 
-  // (3 sources)
+  // Data-processing (3 source)
   void data_processing(unsigned op54, unsigned op31, unsigned o0,
                        Register Rd, Register Rn, Register Rm,
                        Register Ra) {
@@ -1932,17 +1932,17 @@ void mvnw(Register Rd, Register Rm,
     data_processing(op31, type, opcode, Vd, Vn);        \
   }
 
-  INSN(fmovs, 0b000, 0b00, 0b000000);
-  INSN(fabss, 0b000, 0b00, 0b000001);
-  INSN(fnegs, 0b000, 0b00, 0b000010);
+  INSN(fmovs,  0b000, 0b00, 0b000000);
+  INSN(fabss,  0b000, 0b00, 0b000001);
+  INSN(fnegs,  0b000, 0b00, 0b000010);
   INSN(fsqrts, 0b000, 0b00, 0b000011);
-  INSN(fcvts, 0b000, 0b00, 0b000101);   // Single-precision to double-precision
+  INSN(fcvts,  0b000, 0b00, 0b000101);   // Single-precision to double-precision
 
-  INSN(fmovd, 0b000, 0b01, 0b000000);
-  INSN(fabsd, 0b000, 0b01, 0b000001);
-  INSN(fnegd, 0b000, 0b01, 0b000010);
+  INSN(fmovd,  0b000, 0b01, 0b000000);
+  INSN(fabsd,  0b000, 0b01, 0b000001);
+  INSN(fnegd,  0b000, 0b01, 0b000010);
   INSN(fsqrtd, 0b000, 0b01, 0b000011);
-  INSN(fcvtd, 0b000, 0b01, 0b000100);   // Double-precision to single-precision
+  INSN(fcvtd,  0b000, 0b01, 0b000100);   // Double-precision to single-precision
 
 private:
   void _fcvt_narrow_extend(FloatRegister Vd, SIMD_Arrangement Ta,
@@ -2060,7 +2060,7 @@ public:
 
 #undef INSN
 
-   // Floating-point<->integer conversions
+  // Conversion between floating-point and integer
   void float_int_convert(unsigned sflag, unsigned ftype,
                          unsigned rmode, unsigned opcode,
                          Register Rd, Register Rn) {
@@ -2229,6 +2229,8 @@ public:
     else
       movi(Vn, T1D, 0);
   }
+
+  // Floating-point data-processing (1 source)
 
    // Floating-point rounding
    // type: half-precision = 11
@@ -2417,7 +2419,8 @@ public:
 
 #undef INSN
 
-#define INSN(NAME, opc, opc2, acceptT2D)                                                \
+  // Advanced SIMD three different
+#define INSN(NAME, opc, opc2, acceptT2D)                                \
   void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, FloatRegister Vm) { \
     guarantee(T != T1Q && T != T1D, "incorrect arrangement");                           \
     if (!acceptT2D) guarantee(T != T2D, "incorrect arrangement");                       \
