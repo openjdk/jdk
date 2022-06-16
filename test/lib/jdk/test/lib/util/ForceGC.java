@@ -47,7 +47,7 @@ public class ForceGC {
      */
     public static boolean wait(BooleanSupplier booleanSupplier) {
         long timeout = Math.round(1000L * TIMEOUT_FACTOR);
-         
+
         ReferenceQueue<Object> queue = new ReferenceQueue<>();
         Object obj = new Object();
         PhantomReference<Object> ref = new PhantomReference<>(obj, queue);
