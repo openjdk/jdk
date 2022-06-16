@@ -88,7 +88,7 @@ public interface Member {
      * access flags} for this member, possibly empty}
      *
      * @implSpec
-     * The default implementation returns throws {@link
+     * The default implementation throws {@link
      * UnsupportedOperationException}.
      * @see #getModifiers()
      * @since 20
