@@ -323,30 +323,6 @@ Method* interpretedVFrame::method() const {
   return stack_chunk() == NULL ? fr().interpreter_frame_method() : stack_chunk()->interpreter_frame_method(fr());
 }
 
-static oop read_oop(const void* addr, stackChunkOop chunk) {
-  if (addr == nullptr) {
-    return nullptr;
-  }
-
-  if (chunk == NULL) {
-    // Not in stack chunk
-    return RawAccess<>::oop_load((oop*)addr);
-  }
-
-  if (!chunk->is_gc_mode()) {
-    // Stack chunk is in stack format, not heap format.
-    return RawAccess<>::oop_load((oop*)addr);
-  }
-
-  if (chunk->has_bitmap() && UseCompressedOops) {
-    // Heap format, with special bitmap handling
-    return HeapAccess<>::oop_load((narrowOop*)addr);
-  }
-
-  // Heap format
-  return HeapAccess<>::oop_load((oop*)addr);
-}
-
 static StackValue* create_stack_value_from_oop_map(const InterpreterOopMap& oop_mask,
                                                    int index,
                                                    const intptr_t* const addr,
@@ -356,10 +332,7 @@ static StackValue* create_stack_value_from_oop_map(const InterpreterOopMap& oop_
 
   // categorize using oop_mask
   if (oop_mask.is_oop(index)) {
-    oop obj = read_oop(addr, chunk);
-    // reference (oop) "r"
-    Handle h(Thread::current(), obj);
-    return new StackValue(h);
+    return StackValue::create_stack_value_from_oop_location(chunk, (void*)addr);
   }
   // value (integer) "v"
   return new StackValue(addr != NULL ? *addr : 0);

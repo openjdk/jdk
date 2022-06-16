@@ -387,12 +387,13 @@ inline zaddress ZBarrier::make_load_good_no_relocate(zpointer o) {
 }
 
 
-#define z_assert_is_barrier_safe()                                                                                 \
-  assert(!Thread::current()->is_ConcurrentGC_thread() ||          /* Need extra checks for ConcurrentGCThreads */  \
-         Thread::current()->is_suspendible_thread() ||            /* Thread prevents safepoints */                 \
-         Thread::current()->is_indirectly_suspendible_thread() || /* Coordinator thread prevents safepoints */     \
-         SafepointSynchronize::is_at_safepoint(),                 /* Is at safepoint */                            \
+inline void z_assert_is_barrier_safe() {
+  assert(!Thread::current()->is_ConcurrentGC_thread() ||          /* Need extra checks for ConcurrentGCThreads */
+         Thread::current()->is_suspendible_thread() ||            /* Thread prevents safepoints */
+         Thread::current()->is_indirectly_suspendible_thread() || /* Coordinator thread prevents safepoints */
+         SafepointSynchronize::is_at_safepoint(),                 /* Is at safepoint */
          "Shouldn't perform load barrier");
+}
 
 template <typename ZBarrierSlowPath>
 inline zaddress ZBarrier::barrier(ZBarrierFastPath fast_path, ZBarrierSlowPath slow_path, ZBarrierColor color, volatile zpointer* p, zpointer o, bool allow_null) {

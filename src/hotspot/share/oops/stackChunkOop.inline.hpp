@@ -30,12 +30,16 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/universe.hpp"
+#include "oops/access.inline.hpp"
 #include "oops/instanceStackChunkKlass.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/registerMap.hpp"
 #include "runtime/smallRegisterMap.inline.hpp"
 #include "utilities/macros.hpp"
+#if INCLUDE_ZGC
+#include "gc/z/zContinuation.hpp"
+#endif
 #include CPU_HEADER_INLINE(stackChunkOop)
 
 DEF_HANDLE_CONSTR(stackChunk, is_stackChunk_noinline)
@@ -337,6 +341,19 @@ inline void stackChunkOopDesc::copy_from_chunk_to_stack(intptr_t* from, intptr_t
   if (to != nullptr)
 #endif
   memcpy(to, from, size << LogBytesPerWord);
+}
+
+template <typename OopT>
+inline oop stackChunkOopDesc::load_oop(OopT* addr) {
+  stackChunkOop chunk = this;
+#if INCLUDE_ZGC
+  if (UseZGC) {
+    // ZGC needs to do some special color tricks here
+    return ZContinuation::load_oop(addr, chunk);
+  }
+#endif
+  oop obj = RawAccess<>::oop_load(addr);
+  return NativeAccess<>::oop_load(&obj);
 }
 
 inline intptr_t* stackChunkOopDesc::relative_base() const {

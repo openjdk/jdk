@@ -184,6 +184,9 @@ public:
   inline void copy_from_stack_to_chunk(intptr_t* from, intptr_t* to, int size);
   inline void copy_from_chunk_to_stack(intptr_t* from, intptr_t* to, int size);
 
+  template <typename OopT>
+  inline oop load_oop(OopT* addr);
+
   using oopDesc::print_on;
   void print_on(bool verbose, outputStream* st) const;
 

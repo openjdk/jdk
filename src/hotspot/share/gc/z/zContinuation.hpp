@@ -36,6 +36,8 @@ public:
   static void color_stack_pointers(stackChunkOop chunk);
   template <typename RegisterMapT>
   static void uncolor_stack_pointers(const frame& f, const RegisterMapT* map);
+
+  static oop load_oop(void* addr, stackChunkOop chunk);
 };
 
 #endif // SHARE_GC_Z_ZCONTINUATION_HPP

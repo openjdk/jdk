@@ -31,30 +31,8 @@
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zStackChunkGCData.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/stackChunkOop.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/stackChunkFrameStream.inline.hpp"
-
-inline bool ZContinuation::requires_barriers(const ZHeap* heap, stackChunkOop chunk) {
-  zpointer* cont_addr = chunk->field_addr<zpointer>(jdk_internal_vm_StackChunk::cont_offset());
-
-  if (!heap->is_allocating(to_zaddress(chunk))) {
-    // An object that isn't allocating, is visible from GC tracing. Such
-    // stack chunks require barriers.
-    return true;
-  }
-
-  if (ZStackChunkGCData::color(chunk) != ZPointerStoreGoodMask) {
-    // If a chunk is allocated after a GC started, but before relocate start
-    // we can have an allocating chunk that isn't deeply good. That means that
-    // the contained oops might be bad and require GC barriers.
-    return true;
-  }
-
-  // The chunk is allocating and its pointers are good. This chunk needs no
-  // GC barriers
-  return false;
-}
 
 class ZColorStackOopClosure : public OopClosure {
 private:
@@ -116,6 +94,27 @@ inline void ZContinuation::uncolor_stack_pointers(const frame& f, const Register
     OopMapDo<ZUncolorStackOopClosure, DerivedOopClosure, SkipNullValue> visitor(&oop_closure, nullptr);
     visitor.oops_do(&f, map, f.oop_map());
   }
+}
+
+inline bool ZContinuation::requires_barriers(const ZHeap* heap, stackChunkOop chunk) {
+  zpointer* cont_addr = chunk->field_addr<zpointer>(jdk_internal_vm_StackChunk::cont_offset());
+
+  if (!heap->is_allocating(to_zaddress(chunk))) {
+    // An object that isn't allocating, is visible from GC tracing. Such
+    // stack chunks require barriers.
+    return true;
+  }
+
+  if (ZStackChunkGCData::color(chunk) != ZPointerStoreGoodMask) {
+    // If a chunk is allocated after a GC started, but before relocate start
+    // we can have an allocating chunk that isn't deeply good. That means that
+    // the contained oops might be bad and require GC barriers.
+    return true;
+  }
+
+  // The chunk is allocating and its pointers are good. This chunk needs no
+  // GC barriers
+  return false;
 }
 
 #endif // SHARE_GC_Z_ZCONTINUATION_INLINE_HPP
