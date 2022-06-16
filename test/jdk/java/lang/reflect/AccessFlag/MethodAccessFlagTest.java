@@ -62,7 +62,7 @@ public abstract class MethodAccessFlagTest {
             String actual = method.accessFlags().toString();
             if (!emf.value().equals(actual)) {
                 throw new RuntimeException("On " + method +
-                                           " expected " + emf.value() + 
+                                           " expected " + emf.value() +
                                            " got " + actual);
             }
         }

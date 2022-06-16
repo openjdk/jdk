@@ -62,7 +62,7 @@ public strictfp class StrictAccessFlagTest {
             String actual = method.accessFlags().toString();
             if (!expected.value().equals(actual)) {
                 throw new RuntimeException("On " + method +
-                                           " expected " + expected.value() + 
+                                           " expected " + expected.value() +
                                            " got " + actual);
             }
         }

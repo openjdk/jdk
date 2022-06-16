@@ -56,7 +56,7 @@ public class ClassAccessFlagTest {
             String actual = clazz.accessFlags().toString();
             if (!expected.value().equals(actual)) {
                 throw new RuntimeException("On " + clazz +
-                                           " expected " + expected.value() + 
+                                           " expected " + expected.value() +
                                            " got " + actual);
             }
         }
