@@ -23,11 +23,12 @@
 
 /*
  * @test
- * @bug 8286287
- * @summary Verifies newStringNoRepl() does not throw an Error.
+ * @bug 8286287 8288589
+ * @summary Verifies newStringNoRepl() throws a CharacterCodingException.
  */
 
 import java.io.IOException;
+import java.nio.charset.CharacterCodingException;
 import java.nio.file.Files;
 import java.util.HexFormat;
 import static java.nio.charset.StandardCharsets.UTF_16;
@@ -39,12 +40,16 @@ public class NewStringNoRepl {
         var f = Files.createTempFile(null, null);
         try (var fos = Files.newOutputStream(f)) {
             fos.write(MALFORMED_UTF16);
+            var read = Files.readString(f, UTF_16);
+            throw new RuntimeException("Exception should be thrown for a malformed input. Bytes read: " +
+                    HexFormat.of()
+                            .withPrefix("x")
+                            .withUpperCase()
+                            .formatHex(read.getBytes(UTF_16)));
+        } catch (CharacterCodingException cce) {
+            // success
+        } finally {
+            Files.delete(f);
         }
-        System.out.println("Returned bytes: " +
-            HexFormat.of()
-                .withPrefix("x")
-                .withUpperCase()
-                .formatHex(Files.readString(f, UTF_16).getBytes(UTF_16)));
-        Files.delete(f);
     }
 }
