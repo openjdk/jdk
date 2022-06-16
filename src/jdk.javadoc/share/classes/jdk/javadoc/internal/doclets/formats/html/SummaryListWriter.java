@@ -34,6 +34,7 @@ import javax.lang.model.element.PackageElement;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
+import jdk.javadoc.internal.doclets.formats.html.markup.Script;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
@@ -131,6 +132,23 @@ public class SummaryListWriter<L extends SummaryAPIListBuilder> extends SubWrite
             }
         }
         bodyContents.addMainContent(content);
+        // The script below enables checkboxes in the page and invokes their click handler
+        // to restore any previous state when the page is loaded via back/forward button.
+        bodyContents.addMainContent(new Script("""
+                document.addEventListener("DOMContentLoaded", function(e) {
+                    document.querySelectorAll('input[type="checkbox"]').forEach(
+                        function(c) {
+                            c.disabled = false;
+                            c.onclick();
+                        });
+                    });
+                window.addEventListener("load", function(e) {
+                    document.querySelectorAll('input[type="checkbox"]').forEach(
+                        function(c) {
+                            c.onclick();
+                        });
+                    });
+                """).asContent());
         bodyContents.setFooter(getFooter());
         body.add(bodyContents);
         printHtmlDocument(null, description, body);
@@ -140,7 +158,7 @@ public class SummaryListWriter<L extends SummaryAPIListBuilder> extends SubWrite
      * Add the index link.
      *
      * @param id the id for the link
-     * @param headingKey
+     * @param headingKey the key for the heading content
      * @param content the content to which the index link will be added
      */
     protected void addIndexLink(HtmlId id, String headingKey, Content content) {
@@ -196,32 +214,35 @@ public class SummaryListWriter<L extends SummaryAPIListBuilder> extends SubWrite
                                  String headingKey, String headerKey,
                                  Content content) {
         if (apiList.size() > 0) {
-            TableHeader tableHeader = new TableHeader(
-                    contents.getContent(headerKey), contents.descriptionLabel);
+            TableHeader tableHeader = getTableHeader(headerKey);
 
             Table table = new Table(HtmlStyle.summaryTable)
                     .setCaption(getTableCaption(headingKey))
                     .setHeader(tableHeader)
                     .setId(id)
-                    .setColumnStyles(HtmlStyle.colSummaryItemName, HtmlStyle.colLast);
+                    .setColumnStyles(getColumnStyles());
             addTableTabs(table, headingKey);
             for (Element e : apiList) {
                 Content link;
                 switch (e.getKind()) {
-                    case MODULE:
+                    case MODULE -> {
                         ModuleElement m = (ModuleElement) e;
                         link = getModuleLink(m, Text.of(m.getQualifiedName()));
-                        break;
-                    case PACKAGE:
+                    }
+                    case PACKAGE -> {
                         PackageElement pkg = (PackageElement) e;
                         link = getPackageLink(pkg, getLocalizedPackageName(pkg));
-                        break;
-                    default:
-                        link = getSummaryLink(e);
+                    }
+                    default -> link = getSummaryLink(e);
                 }
+                Content extraContent = getExtraContent(e);
                 Content desc = new ContentBuilder();
                 addComments(e, desc);
-                table.addRow(e, link, desc);
+                if (extraContent != null) {
+                    table.addRow(e, link, extraContent, desc);
+                } else {
+                    table.addRow(e, link, desc);
+                }
             }
             // note: singleton list
             content.add(HtmlTree.UL(HtmlStyle.blockList, HtmlTree.LI(table)));
@@ -269,6 +290,37 @@ public class SummaryListWriter<L extends SummaryAPIListBuilder> extends SubWrite
      * @param target the content to which the link should be added
      */
     protected void addExtraIndexLink(L list, Content target) {
+    }
+
+    /**
+     * Some subclasses of this class display an extra column in their element tables.
+     * This methods allows them to return the content to show for {@code element}.
+     * @param element the element
+     * @return content for extra content or null
+     */
+    protected Content getExtraContent(Element element) {
+        return null;
+    }
+
+    /**
+     * Gets the table header to use for a table with the first column identified by {@code headerKey}.
+     *
+     * @param headerKey the header key for the first table column
+     * @return the table header
+     */
+    protected TableHeader getTableHeader(String headerKey) {
+        return new TableHeader(
+                contents.getContent(headerKey), contents.descriptionLabel);
+    }
+
+    /**
+     * Gets the array of styles to use for table columns. The length of the returned
+     * array must match the number of column headers returned by {@link #getTableHeader(String)}.
+     *
+     * @return the styles to use for table columns
+     */
+    protected HtmlStyle[] getColumnStyles() {
+        return new HtmlStyle[]{ HtmlStyle.colSummaryItemName, HtmlStyle.colLast };
     }
 
     /**

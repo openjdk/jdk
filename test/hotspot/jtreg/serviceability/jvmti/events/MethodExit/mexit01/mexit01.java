@@ -42,6 +42,7 @@ import java.io.PrintStream;
  *     Ported from JVMDI.
  *     Fixed the 5004632 bug.
  *
+ * @requires vm.continuations
  * @library /test/lib
  * @compile mexit01a.jasm
  * @compile --enable-preview -source ${jdk.version} mexit01.java

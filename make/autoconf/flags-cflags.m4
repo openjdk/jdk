@@ -116,6 +116,18 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
     CFLAGS_DEBUG_SYMBOLS="-g"
     ASFLAGS_DEBUG_SYMBOLS="-g"
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
+    if test "x$ALLOW_ABSOLUTE_PATHS_IN_OUTPUT" = "xfalse"; then
+      # Check if compiler supports -fdebug-prefix-map. If so, use that to make
+      # the debug symbol paths resolve to paths relative to the workspace root.
+      workspace_root_trailing_slash="${WORKSPACE_ROOT%/}/"
+      DEBUG_PREFIX_CFLAGS="-fdebug-prefix-map=${workspace_root_trailing_slash}="
+      FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${DEBUG_PREFIX_CFLAGS}],
+        IF_FALSE: [
+            DEBUG_PREFIX_CFLAGS=
+        ]
+      )
+    fi
+
     CFLAGS_DEBUG_SYMBOLS="-g"
     ASFLAGS_DEBUG_SYMBOLS="-g"
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
@@ -460,9 +472,11 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     # Access APIs for Windows 8 and above
     # see https://docs.microsoft.com/en-us/cpp/porting/modifying-winver-and-win32-winnt?view=msvc-170
-    ALWAYS_DEFINES_JDK="-DWIN32_LEAN_AND_MEAN -D_WIN32_WINNT=0x0602 -D_CRT_SECURE_NO_DEPRECATE \
-        -D_CRT_NONSTDC_NO_DEPRECATE -DWIN32 -DIAL"
-    ALWAYS_DEFINES_JVM="-DNOMINMAX -DWIN32_LEAN_AND_MEAN -D_WIN32_WINNT=0x0602"
+    ALWAYS_DEFINES_JDK="-DWIN32_LEAN_AND_MEAN -D_WIN32_WINNT=0x0602 \
+        -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_DEPRECATE -DWIN32 -DIAL"
+    ALWAYS_DEFINES_JVM="-DNOMINMAX -DWIN32_LEAN_AND_MEAN -D_WIN32_WINNT=0x0602 \
+        -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_DEPRECATE \
+        -D_WINSOCK_DEPRECATED_NO_WARNINGS"
   fi
 
   ###############################################################################
@@ -893,8 +907,8 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
 # $2 - Prefix for compiler variables (either BUILD_ or nothing).
 AC_DEFUN([FLAGS_SETUP_GCC6_COMPILER_FLAGS],
 [
-  # These flags are required for GCC 6 builds as undefined behaviour in OpenJDK code
-  # runs afoul of the more aggressive versions of these optimisations.
+  # These flags are required for GCC 6 builds as undefined behavior in OpenJDK code
+  # runs afoul of the more aggressive versions of these optimizations.
   # Notably, value range propagation now assumes that the this pointer of C++
   # member functions is non-null.
   NO_DELETE_NULL_POINTER_CHECKS_CFLAG="-fno-delete-null-pointer-checks"

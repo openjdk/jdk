@@ -414,7 +414,7 @@ void frame::verify_deopt_original_pc(CompiledMethod* nm, intptr_t* unextended_sp
 
   address original_pc = nm->get_original_pc(&fr);
   assert(nm->insts_contains_inclusive(original_pc),
-         "original PC must be in the main code section of the the compiled method (or must be immediately following it) original_pc: " INTPTR_FORMAT " unextended_sp: " INTPTR_FORMAT " name: %s", p2i(original_pc), p2i(unextended_sp), nm->name());
+         "original PC must be in the main code section of the compiled method (or must be immediately following it) original_pc: " INTPTR_FORMAT " unextended_sp: " INTPTR_FORMAT " name: %s", p2i(original_pc), p2i(unextended_sp), nm->name());
 }
 #endif
 
@@ -619,13 +619,21 @@ void frame::describe_pd(FrameValues& values, int frame_no) {
 #endif // AMD64
   }
 
-  intptr_t* ret_pc_loc = sp() - return_addr_offset;
-  address ret_pc = *(address*)ret_pc_loc;
-  if (Continuation::is_return_barrier_entry(ret_pc))
-    values.describe(frame_no, ret_pc_loc, "return address (return barrier)");
-  else
-    values.describe(frame_no, ret_pc_loc, err_msg("return address for #%d", frame_no));
-  values.describe(frame_no, sp() - sender_sp_offset, err_msg("saved fp for #%d", frame_no), 0);
+  if (is_java_frame() || Continuation::is_continuation_enterSpecial(*this)) {
+    intptr_t* ret_pc_loc;
+    intptr_t* fp_loc;
+    if (is_interpreted_frame()) {
+      ret_pc_loc = fp() + return_addr_offset;
+      fp_loc = fp();
+    } else {
+      ret_pc_loc = real_fp() - return_addr_offset;
+      fp_loc = real_fp() - sender_sp_offset;
+    }
+    address ret_pc = *(address*)ret_pc_loc;
+    values.describe(frame_no, ret_pc_loc,
+      Continuation::is_return_barrier_entry(ret_pc) ? "return address (return barrier)" : "return address");
+    values.describe(-1, fp_loc, "saved fp", 0); // "unowned" as value belongs to sender
+  }
 }
 
 #endif // !PRODUCT

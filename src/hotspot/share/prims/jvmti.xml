@@ -9519,7 +9519,7 @@ myInit() {
         As a result, all future JNI calls are directed to the specified functions.
         Use <functionlink id="GetJNIFunctionTable"></functionlink> to get the
         function table to pass to this function.
-        For this function to take effect the the updated table entries must be
+        For this function to take effect the updated table entries must be
         used by the JNI clients.
         Since the table is defined <code>const</code> some compilers may optimize
         away the access to the table, thus preventing this function from taking

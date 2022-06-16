@@ -33,6 +33,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
@@ -44,7 +46,6 @@ import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
 import jdk.jfr.internal.Logger;
-import jdk.jfr.internal.PlatformRecording;
 import jdk.jfr.internal.SecuritySupport;
 
 /*
@@ -54,7 +55,7 @@ import jdk.jfr.internal.SecuritySupport;
 public abstract class AbstractEventStream implements EventStream {
     private static final AtomicLong counter = new AtomicLong();
 
-    private final Object terminated = new Object();
+    private final CountDownLatch terminated = new CountDownLatch(1);
     private final Runnable flushOperation = () -> dispatcher().runFlushActions();
     @SuppressWarnings("removal")
     private final AccessControlContext accessControllerContext;
@@ -178,33 +179,16 @@ public abstract class AbstractEventStream implements EventStream {
             throw new IllegalArgumentException("timeout value is negative");
         }
 
-        long base = System.currentTimeMillis();
-        long now = 0;
-
-        long millis;
+        long nanos;
         try {
-            millis = Math.multiplyExact(timeout.getSeconds(), 1000);
+            nanos = timeout.toNanos();
         } catch (ArithmeticException a) {
-            millis = Long.MAX_VALUE;
+            nanos = Long.MAX_VALUE;
         }
-        int nanos = timeout.toNanosPart();
-        if (nanos == 0 && millis == 0) {
-            synchronized (terminated) {
-                while (!isClosed()) {
-                    terminated.wait(0);
-                }
-            }
+        if (nanos == 0) {
+            terminated.await();
         } else {
-            while (!isClosed()) {
-                long delay = millis - now;
-                if (delay <= 0) {
-                    break;
-                }
-                synchronized (terminated) {
-                    terminated.wait(delay, nanos);
-                }
-                now = System.currentTimeMillis() - base;
-            }
+            terminated.await(nanos, TimeUnit.NANOSECONDS);
         }
     }
 
@@ -275,9 +259,7 @@ public abstract class AbstractEventStream implements EventStream {
             try {
                 close();
             } finally {
-                synchronized (terminated) {
-                    terminated.notifyAll();
-                }
+                terminated.countDown();
             }
         }
     }

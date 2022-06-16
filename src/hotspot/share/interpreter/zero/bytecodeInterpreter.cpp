@@ -3176,7 +3176,7 @@ run:
     // If we notify it again JVMDI will be all confused about how many frames
     // are still on the stack (4340444).
     //
-    // NOTE Further! It turns out the the JVMTI spec in fact expects to see
+    // NOTE Further! It turns out the JVMTI spec in fact expects to see
     // method_exit events whenever we leave an activation unless it was done
     // for popframe. This is nothing like jvmdi. However we are passing the
     // tests at the moment (apparently because they are jvmdi based) so rather

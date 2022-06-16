@@ -466,8 +466,8 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   __ sub(rscratch1, rscratch2, rscratch1, ext::uxtw, 3);
   __ andr(sp, rscratch1, -16);
 
- __ check_and_handle_popframe(rthread);
- __ check_and_handle_earlyret(rthread);
+  __ check_and_handle_popframe(rthread);
+  __ check_and_handle_earlyret(rthread);
 
   __ get_dispatch();
   __ dispatch_next(state, step);

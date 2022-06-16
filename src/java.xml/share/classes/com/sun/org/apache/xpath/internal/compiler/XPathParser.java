@@ -35,7 +35,7 @@ import jdk.xml.internal.XMLSecurityManager;
  * Tokenizes and parses XPath expressions. This should really be named
  * XPathParserImpl, and may be renamed in the future.
  * @xsl.usage general
- * @LastModified: Apr 2022
+ * @LastModified: May 2022
  */
 public class XPathParser
 {
@@ -78,6 +78,16 @@ public class XPathParser
 
   // XML security manager
   XMLSecurityManager m_xmlSecMgr;
+
+  // Union operands must be node-sets, e.g. //a | //b
+  // A flag indicating whether the operand is a location path
+  boolean isLocationPath = false;
+
+  // A flag indicating whether the next operand is required to be a location path
+  boolean lPathRequired = false;
+
+  // Keep track of the status of reading the next token after lPathRequired is flagged
+  boolean nextTokenRead = false;
 
   /**
    * The parser constructor.
@@ -434,9 +444,19 @@ public class XPathParser
    * Retrieve the next token from the command and
    * store it in m_token string.
    */
-  private final void nextToken()
+  private final void nextToken() throws TransformerException
   {
-
+    // before reading another token, check the last one
+    if (lPathRequired) {
+        if (nextTokenRead) {
+            // check whether the operand behind the union was a Location path
+            checkNodeSet();
+            lPathRequired = false;
+            nextTokenRead = false;
+        } else {
+            nextTokenRead = true;
+        }
+    }
     if (m_queueMark < m_ops.getTokenQueueSize())
     {
       m_token = (String) m_ops.m_tokenQueue.elementAt(m_queueMark++);
@@ -497,31 +517,28 @@ public class XPathParser
   }
 
   /**
-   * Consume an expected token, throwing an exception if it
-   * isn't there.
-   *
-   * @param expected The string to be expected.
-   *
-   * @throws TransformerException
+   * Checks whether the function token represents a function that returns a
+   * nodeset.
+   * @param funcTok the function token
+   * @return true if the function token represents a function that returns a
+   * nodeset, false otherwise
    */
-  private final void consumeExpected(String expected)
-          throws TransformerException
-  {
+  private boolean isNodesetFunction(int funcTok) {
+      return (funcTok == FunctionTable.FUNC_CURRENT || funcTok == FunctionTable.FUNC_HERE
+              || funcTok == FunctionTable.FUNC_ID);
+  }
 
-    if (tokenIs(expected))
+  /**
+   * Checks whether the operand is a location path, reports error if not.
+   *
+   * @throws TransformerException if an error is found
+   */
+  private void checkNodeSet() throws TransformerException {
+    if (!isLocationPath)
     {
-      nextToken();
+      error(XPATHErrorResources.ER_UNION_MUST_BE_NODESET,
+            new Object[]{});
     }
-    else
-    {
-      error(XPATHErrorResources.ER_EXPECTED_BUT_FOUND, new Object[]{ expected,
-                                                                     m_token });  //"Expected "+expected+", but found: "+m_token);
-
-          // Patch for Christina's gripe. She wants her errorHandler to return from
-          // this error and continue trying to parse, rather than throwing an exception.
-          // Without the patch, that put us into an endless loop.
-                throw new XPathProcessorException(CONTINUE_AFTER_FATAL_ERROR);
-        }
   }
 
   /**
@@ -1209,13 +1226,17 @@ public class XPathParser
 
       if (tokenIs(Token.VBAR))
       {
+        // check whether the operand before the union is a location path
+        checkNodeSet();
+
         if (false == foundUnion)
         {
           foundUnion = true;
-
           insertOp(opPos, 2, OpCodes.OP_UNION);
         }
 
+        isLocationPath = false;
+        lPathRequired = true;
         nextToken();
       }
       else
@@ -1464,7 +1485,7 @@ public class XPathParser
       m_ops.setOp(opPos + OpMap.MAPINDEX_LENGTH + 1, m_queueMark - 1);
 
       nextToken();
-      consumeExpected(':');
+      consumeExpected(Token.COLON);
 
       m_ops.setOp(opPos + OpMap.MAPINDEX_LENGTH + 2, m_queueMark - 1);
 
@@ -1494,6 +1515,10 @@ public class XPathParser
         m_ops.setOp(opPos + OpMap.MAPINDEX_LENGTH + 1, funcTok);
       }
 
+      // XML Signature here() function returns a node-set
+      if (isNodesetFunction(funcTok)) {
+          isLocationPath = true;
+      }
       nextToken();
     }
 
@@ -1544,7 +1569,7 @@ public class XPathParser
    */
   protected void LocationPath() throws TransformerException
   {
-
+    isLocationPath = true;
     int opPos = m_ops.getOp(OpMap.MAPINDEX_LENGTH);
 
     // int locationPathOpPos = opPos;
@@ -1861,7 +1886,7 @@ public class XPathParser
         }
 
         nextToken();
-        consumeExpected(':');
+        consumeExpected(Token.COLON);
       }
       else
       {
@@ -1908,7 +1933,7 @@ public class XPathParser
       nextToken();
       PredicateExpr();
       countPredicate--;
-      consumeExpected(']');
+      consumeExpected(Token.RBRACK);
     }
   }
 
@@ -1950,7 +1975,7 @@ public class XPathParser
       m_ops.setOp(OpMap.MAPINDEX_LENGTH, m_ops.getOp(OpMap.MAPINDEX_LENGTH) + 1);
 
       nextToken();
-      consumeExpected(':');
+      consumeExpected(Token.COLON);
     }
     else
     {
@@ -1969,7 +1994,7 @@ public class XPathParser
    * NCName ::=  (Letter | '_') (NCNameChar)
    * NCNameChar ::=  Letter | Digit | '.' | '-' | '_' | CombiningChar | Extender
    */
-  protected void NCName()
+  protected void NCName() throws TransformerException
   {
 
     m_ops.setOp(m_ops.getOp(OpMap.MAPINDEX_LENGTH), m_queueMark - 1);

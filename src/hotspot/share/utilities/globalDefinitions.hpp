@@ -156,6 +156,19 @@ inline intptr_t p2i(const volatile void* p) {
   return (intptr_t) p;
 }
 
+
+//----------------------------------------------------------------------------------------------------
+// Forbid the use of various C library functions.
+// Some of these have os:: replacements that should normally be used instead.
+// Others are considered security concerns, with preferred alternatives.
+
+FORBID_C_FUNCTION(void exit(int), "use os::exit");
+FORBID_C_FUNCTION(void _exit(int), "use os::exit");
+FORBID_C_FUNCTION(char* strerror(int), "use os::strerror");
+FORBID_C_FUNCTION(char* strtok(char*, const char*), "use strtok_r");
+FORBID_C_FUNCTION(int vsprintf(char*, const char*, va_list), "use os::vsnprintf");
+FORBID_C_FUNCTION(int vsnprintf(char*, size_t, const char*, va_list), "use os::vsnprintf");
+
 //----------------------------------------------------------------------------------------------------
 // Constants
 
@@ -721,6 +734,10 @@ inline bool is_integral_type(BasicType t) {
   return is_subword_type(t) || t == T_INT || t == T_LONG;
 }
 
+inline bool is_non_subword_integral_type(BasicType t) {
+  return t == T_INT || t == T_LONG;
+}
+
 inline bool is_floating_point_type(BasicType t) {
   return (t == T_FLOAT || t == T_DOUBLE);
 }
@@ -728,9 +745,13 @@ inline bool is_floating_point_type(BasicType t) {
 extern char type2char_tab[T_CONFLICT+1];     // Map a BasicType to a jchar
 inline char type2char(BasicType t) { return (uint)t < T_CONFLICT+1 ? type2char_tab[t] : 0; }
 extern int type2size[T_CONFLICT+1];         // Map BasicType to result stack elements
-extern const char* type2name_tab[T_CONFLICT+1];     // Map a BasicType to a jchar
-inline const char* type2name(BasicType t) { return (uint)t < T_CONFLICT+1 ? type2name_tab[t] : NULL; }
+extern const char* type2name_tab[T_CONFLICT+1];     // Map a BasicType to a char*
 extern BasicType name2type(const char* name);
+
+inline const char* type2name(BasicType t) {
+  assert((uint)t < T_CONFLICT + 1, "invalid type");
+  return type2name_tab[t];
+}
 
 inline jlong max_signed_integer(BasicType bt) {
   if (bt == T_INT) {

@@ -143,9 +143,10 @@ class InstanceKlass: public Klass {
 
   // See "The Java Virtual Machine Specification" section 2.16.2-5 for a detailed description
   // of the class loading & initialization procedure, and the use of the states.
-  enum ClassState {
+  enum ClassState : u1 {
     allocated,                          // allocated (but not yet linked)
     loaded,                             // loaded and inserted in class hierarchy (but not linked yet)
+    being_linked,                       // currently running verifier and rewriter
     linked,                             // successfully linked/verified (but not initialized yet)
     being_initialized,                  // currently running class initializer
     fully_initialized,                  // initialized (successful final state)
@@ -224,12 +225,9 @@ class InstanceKlass: public Klass {
   // _misc_flags.
   bool            _is_marked_dependent;     // used for marking during flushing and deoptimization
 
-  // Class states are defined as ClassState (see above).
-  // Place the _init_state here to utilize the unused 2-byte after
-  // _idnum_allocated_count.
-  u1              _init_state;              // state of class
+  ClassState      _init_state;              // state of class
 
-  u1              _reference_type;                // reference type
+  u1              _reference_type;          // reference type
 
   enum {
     _misc_rewritten                           = 1 << 0,  // methods rewritten.
@@ -252,7 +250,9 @@ class InstanceKlass: public Klass {
   }
   u2              _misc_flags;           // There is more space in access_flags for more flags.
 
+  Monitor*        _init_monitor;         // mutual exclusion to _init_state and _init_thread.
   Thread*         _init_thread;          // Pointer to current thread doing initialization (to handle recursive initialization)
+
   OopMapCache*    volatile _oop_map_cache;   // OopMapCache for all methods in the klass (allocated lazily)
   JNIid*          _jni_ids;              // First JNI identifier for static fields in this class
   jmethodID*      volatile _methods_jmethod_ids;  // jmethodIDs corresponding to method_idnum, or NULL if none
@@ -536,16 +536,32 @@ public:
                                        TRAPS);
  public:
   // initialization state
-  bool is_loaded() const                   { return _init_state >= loaded; }
-  bool is_linked() const                   { return _init_state >= linked; }
-  bool is_initialized() const              { return _init_state == fully_initialized; }
-  bool is_not_initialized() const          { return _init_state <  being_initialized; }
-  bool is_being_initialized() const        { return _init_state == being_initialized; }
-  bool is_in_error_state() const           { return _init_state == initialization_error; }
-  bool is_reentrant_initialization(Thread *thread)  { return thread == _init_thread; }
-  ClassState  init_state()                 { return (ClassState)_init_state; }
+  bool is_loaded() const                   { return init_state() >= loaded; }
+  bool is_linked() const                   { return init_state() >= linked; }
+  bool is_being_linked() const             { return init_state() == being_linked; }
+  bool is_initialized() const              { return init_state() == fully_initialized; }
+  bool is_not_initialized() const          { return init_state() <  being_initialized; }
+  bool is_being_initialized() const        { return init_state() == being_initialized; }
+  bool is_in_error_state() const           { return init_state() == initialization_error; }
+  bool is_init_thread(Thread *thread)      { return thread == _init_thread; }
+  ClassState  init_state() const           { return Atomic::load(&_init_state); }
   const char* init_state_name() const;
   bool is_rewritten() const                { return (_misc_flags & _misc_rewritten) != 0; }
+
+  class LockLinkState : public StackObj {
+    InstanceKlass* _ik;
+    JavaThread*    _current;
+   public:
+    LockLinkState(InstanceKlass* ik, JavaThread* current) : _ik(ik), _current(current) {
+      ik->check_link_state_and_wait(current);
+    }
+    ~LockLinkState() {
+      if (!_ik->is_linked()) {
+        // Reset to loaded if linking failed.
+        _ik->set_initialization_state_and_notify(loaded, _current);
+      }
+    }
+  };
 
   // is this a sealed class
   bool is_sealed() const;
@@ -911,7 +927,7 @@ public:
 
   // initialization
   void call_class_initializer(TRAPS);
-  void set_initialization_state_and_notify(ClassState state, TRAPS);
+  void set_initialization_state_and_notify(ClassState state, JavaThread* current);
 
   // OopMapCache support
   OopMapCache* oop_map_cache()               { return _oop_map_cache; }
@@ -1138,11 +1154,14 @@ public:
  public:
   u2 idnum_allocated_count() const      { return _idnum_allocated_count; }
 
-private:
+ private:
   // initialization state
   void set_init_state(ClassState state);
   void set_rewritten()                  { _misc_flags |= _misc_rewritten; }
-  void set_init_thread(Thread *thread)  { _init_thread = thread; }
+  void set_init_thread(Thread *thread)  {
+    assert(thread == nullptr || _init_thread == nullptr, "Only one thread is allowed to own initialization");
+    _init_thread = thread;
+  }
 
   // The RedefineClasses() API can cause new method idnums to be needed
   // which will cause the caches to grow. Safety requires different
@@ -1154,12 +1173,6 @@ private:
 
   // Lock during initialization
 public:
-  // Lock for (1) initialization; (2) access to the ConstantPool of this class.
-  // Must be one per class and it has to be a VM internal object so java code
-  // cannot lock it (like the mirror).
-  // It has to be an object not a Mutex because it's held through java calls.
-  oop init_lock() const;
-
   // Returns the array class for the n'th dimension
   virtual Klass* array_klass(int n, TRAPS);
   virtual Klass* array_klass_or_null(int n);
@@ -1169,9 +1182,10 @@ public:
   virtual Klass* array_klass_or_null();
 
   static void clean_initialization_error_table();
-private:
-  void fence_and_clear_init_lock();
 
+  Monitor* init_monitor() const { return _init_monitor; }
+private:
+  void check_link_state_and_wait(JavaThread* current);
   bool link_class_impl                           (TRAPS);
   bool verify_code                               (TRAPS);
   void initialize_impl                           (TRAPS);
