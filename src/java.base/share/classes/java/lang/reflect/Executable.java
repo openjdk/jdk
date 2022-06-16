@@ -253,9 +253,7 @@ public abstract sealed class Executable extends AccessibleObject
      * @return The number of formal parameters for the executable this
      * object represents
      */
-    public int getParameterCount() {
-        throw new AbstractMethodError();
-    }
+    public abstract int getParameterCount();
 
     /**
      * Returns an array of {@code Type} objects that represent the
