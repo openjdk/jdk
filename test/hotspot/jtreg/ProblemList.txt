@@ -120,6 +120,8 @@ serviceability/sa/ClhsdbPstack.java#core 8269982,8267433 macosx-aarch64,macosx-x
 serviceability/sa/TestJmapCore.java 8269982,8267433 macosx-aarch64,macosx-x64
 serviceability/sa/TestJmapCoreMetaspace.java 8269982,8267433 macosx-aarch64,macosx-x64
 
+serviceability/jvmti/vthread/VThreadNotifyFramePopTest/VThreadNotifyFramePopTest.java 8288214 generic-all
+
 #############################################################################
 
 # :hotspot_misc

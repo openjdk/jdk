@@ -245,9 +245,9 @@ public class Patterns {
                                       value=[@Patterns$DeconstructionPattern$A,@Patterns$DeconstructionPattern$A]
                                     )
 
-                            static java.lang.String $proxy$s(Patterns$DeconstructionPattern$R);
+                            private static java.lang.String $proxy$s(Patterns$DeconstructionPattern$R);
                               descriptor: (LPatterns$DeconstructionPattern$R;)Ljava/lang/String;
-                              flags: (0x1008) ACC_STATIC, ACC_SYNTHETIC
+                              flags: (0x100a) ACC_PRIVATE, ACC_STATIC, ACC_SYNTHETIC
 
                             static {};
                               descriptor: ()V
