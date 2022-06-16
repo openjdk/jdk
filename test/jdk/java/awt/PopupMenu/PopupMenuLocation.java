@@ -33,21 +33,25 @@ import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.event.InputEvent;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import javax.swing.SwingUtilities;
 
 /**
  * @test
  * @key headful
  * @bug 8160270
- * @run main/timeout=300 PopupMenuLocation
+ * @run main/timeout=300/othervm -Dsun.java2d.uiScale=1 PopupMenuLocation
  */
 public final class PopupMenuLocation {
 
     private static final int SIZE = 350;
     public static final String TEXT =
             "Long-long-long-long-long-long-long text in the item-";
-    private static volatile boolean action = false;
+    private static CountDownLatch actionEventReceivedLatch;
 
     public static void main(final String[] args) throws Exception {
         GraphicsEnvironment ge =
@@ -70,11 +74,12 @@ public final class PopupMenuLocation {
     }
 
     private static void test(final Point tmp) throws Exception {
+        actionEventReceivedLatch = new CountDownLatch(1);
         PopupMenu pm = new PopupMenu();
         for (int i = 1; i < 7; i++) {
             pm.add(TEXT + i);
         }
-        pm.addActionListener(e -> action = true);
+        pm.addActionListener(e -> actionEventReceivedLatch.countDown());
         Frame frame = new Frame();
         try {
             frame.setAlwaysOnTop(true);
@@ -109,19 +114,23 @@ public final class PopupMenuLocation {
         Robot robot = new Robot();
         robot.setAutoDelay(200);
         robot.waitForIdle();
-        Point pt = frame.getLocationOnScreen();
-        robot.mouseMove(pt.x + frame.getWidth() / 2, pt.y + 50);
+        final AtomicReference<Point> pt = new AtomicReference<>();
+        SwingUtilities.invokeAndWait(() -> {
+                                          pt.set(frame.getLocationOnScreen());
+                                     });
+        Point loc = pt.get();
+        robot.mouseMove(loc.x + frame.getWidth() / 2, loc.y + 50);
         robot.mousePress(InputEvent.BUTTON3_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
-        int x = pt.x + frame.getWidth() / 2;
-        int y = pt.y + 130;
+        int x = loc.x + frame.getWidth() / 2;
+        int y = loc.y + 130;
         robot.mouseMove(x, y);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         robot.waitForIdle();
-        if (!action) {
-            throw new RuntimeException();
+        if (!actionEventReceivedLatch.await(5, TimeUnit.SECONDS)) {
+            throw new RuntimeException("Waited too long, but haven't received " +
+                                       "the PopupMenu ActionEvent yet");
         }
-        action = false;
     }
 }
