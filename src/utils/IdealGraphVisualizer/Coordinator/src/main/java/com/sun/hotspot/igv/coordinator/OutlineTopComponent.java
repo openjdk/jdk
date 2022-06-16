@@ -190,7 +190,6 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     @Override
     public void componentClosed() {
         result.removeLookupListener(this);
-        result = null;
     }
 
     @Override
