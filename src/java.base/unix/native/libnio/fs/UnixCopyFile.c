@@ -70,14 +70,19 @@ int fcopyfile_callback(int what, int stage, copyfile_state_t state,
     }
     return COPYFILE_CONTINUE;
 }
-#endif
+
+#else
 
 // Transfer via user-space buffers
-void transfer(JNIEnv* env, jint dst, jint src, jlong transferSize,
+void transfer(JNIEnv* env, jint dst, jint src, jlong address, jint transferSize,
               volatile jint* cancel)
 {
-    char stackBuf[MIN_TRANSFER_SIZE];
-    char* buf = NULL;
+    char* buf = (char*)address;
+
+    if (buf == NULL) {
+        JNU_ThrowNullPointerException(env, "Buffer address is NULL");
+        return;
+    }
 
 #if defined(__linux__)
     int advice = POSIX_FADV_SEQUENTIAL | // sequential data access
@@ -88,30 +93,17 @@ void transfer(JNIEnv* env, jint dst, jint src, jlong transferSize,
     posix_fadvise(src, 0, 0, advice);
 #endif
 
-    if ((unsigned long)transferSize > sizeof(stackBuf)) {
-        // stack-allocated buffer is too small so malloc
-        buf = (char*)malloc(transferSize*sizeof(char));
-        if (buf == NULL) {
-            JNU_ThrowOutOfMemoryError(env, NULL);
-            return;
-        }
-    } else {
-        // use stack-allocated buffer
-        buf = stackBuf;
-        transferSize = sizeof(stackBuf);
-    }
-
     for (;;) {
         ssize_t n, pos, len;
         RESTARTABLE(read((int)src, buf, transferSize), n);
         if (n <= 0) {
             if (n < 0)
                 throwUnixException(env, errno);
-            goto cleanup;
+            return;
         }
         if (cancel != NULL && *cancel != 0) {
             throwUnixException(env, ECANCELED);
-            goto cleanup;
+            return;
         }
         pos = 0;
         len = n;
@@ -121,16 +113,24 @@ void transfer(JNIEnv* env, jint dst, jint src, jlong transferSize,
             RESTARTABLE(write((int)dst, bufp, len), n);
             if (n == -1) {
                 throwUnixException(env, errno);
-                goto cleanup;
+                return;
             }
             pos += n;
             len -= n;
         } while (len > 0);
     }
+}
+#endif
 
-cleanup:
-    if (buf != stackBuf)
-        free(buf);
+JNIEXPORT jboolean JNICALL
+Java_sun_nio_fs_UnixCopyFile_transferRequiresBuffer0
+    (JNIEnv *env, jclass this)
+{
+#if defined(__linux__) || defined(_ALLBSD_SOURCE)
+    return JNI_FALSE;
+#else
+    return JNI_TRUE;
+#endif
 }
 
 /**
@@ -139,8 +139,8 @@ cleanup:
  */
 JNIEXPORT void JNICALL
 Java_sun_nio_fs_UnixCopyFile_transfer0
-    (JNIEnv* env, jclass this, jint dst, jint src, jlong transferSize,
-    jlong cancelAddress)
+    (JNIEnv* env, jclass this, jint dst, jint src, jlong address, jint size,
+   jlong cancelAddress)
 {
     volatile jint* cancel = (jint*)jlong_to_ptr(cancelAddress);
 
@@ -155,7 +155,8 @@ Java_sun_nio_fs_UnixCopyFile_transfer0
         if (bytes_sent == -1) {
             if (errno == EINVAL || errno == ENOSYS) {
                 // Fall back to copying via user-space buffers
-                transfer(env, dst, src, transferSize, cancel);
+                char buf[MIN_TRANSFER_SIZE];
+                transfer(env, dst, src, (jlong)buf, sizeof(buf), cancel);
             } else {
                 throwUnixException(env, errno);
             }
@@ -185,6 +186,6 @@ Java_sun_nio_fs_UnixCopyFile_transfer0
     if (state != NULL)
         copyfile_state_free(state);
 #else
-    transfer(env, dst, src, transferSize, cancel);
+    transfer(env, dst, src, address, size, cancel);
 #endif
 }

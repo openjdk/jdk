@@ -27,6 +27,7 @@ package sun.nio.fs;
 
 import java.io.IOException;
 import java.lang.annotation.Native;
+import java.nio.ByteBuffer;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.CopyOption;
 import java.nio.file.DirectoryNotEmptyException;
@@ -38,6 +39,8 @@ import java.nio.file.StandardCopyOption;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import jdk.internal.misc.Blocker;
+import sun.nio.ch.DirectBuffer;
+import sun.nio.ch.Util;
 import static sun.nio.fs.UnixNativeDispatcher.*;
 import static sun.nio.fs.UnixConstants.*;
 
@@ -46,7 +49,7 @@ import static sun.nio.fs.UnixConstants.*;
  */
 
 class UnixCopyFile {
-    @Native private static final long MIN_TRANSFER_SIZE = 16384;
+    @Native private static final int MIN_TRANSFER_SIZE = 16384;
 
     private UnixCopyFile() {  }
 
@@ -242,6 +245,9 @@ class UnixCopyFile {
         return u;
     }
 
+    // whether transfer0() requires a buffer address
+    private static final boolean transferRequiresBuffer = transferRequiresBuffer0();
+
     // copy regular file from source to target
     private static void copyFile(UnixPath source,
                                  UnixFileAttributes attrs,
@@ -273,31 +279,46 @@ class UnixCopyFile {
             // set to true when file and attributes copied
             boolean complete = false;
             try {
-                long ts = MIN_TRANSFER_SIZE;
-                try {
-                    long bss = UnixFileStoreAttributes.get(source).blockSize();
-                    long bst = UnixFileStoreAttributes.get(target).blockSize();
-                    if (bss > 0 && bst > 0) {
-                        ts = bss == bst ? bss : lcm(bss, bst);
+                int transferSize = MIN_TRANSFER_SIZE;
+                if (transferRequiresBuffer) {
+                    int ts = MIN_TRANSFER_SIZE;
+                    try {
+                        long bss = UnixFileStoreAttributes.get(source).blockSize();
+                        long bst = UnixFileStoreAttributes.get(target).blockSize();
+                        if (bss > 0 && bst > 0) {
+                            ts = (int)(bss == bst ? bss : lcm(bss, bst));
+                        }
+                        if (ts < MIN_TRANSFER_SIZE) {
+                            int factor = (MIN_TRANSFER_SIZE + ts - 1)/ts;
+                            ts *= factor;
+                        }
+                    } catch (IllegalArgumentException | UnixException ignored) {
                     }
-                    if (ts < MIN_TRANSFER_SIZE) {
-                        int factor = (int)((MIN_TRANSFER_SIZE + ts - 1)/ts);
-                        ts *= factor;
-                    }
-                } catch (IllegalArgumentException | UnixException ignored) {
+                    transferSize = ts;
                 }
 
                 // transfer bytes to target file
                 try {
+                    ByteBuffer buf = null;
+                    long address = 0L;
+                    if (transferRequiresBuffer) {
+                        buf = Util.getTemporaryDirectBuffer(transferSize);
+                        address = ((DirectBuffer)buf).address();
+                    }
                     long comp = Blocker.begin();
                     try {
-                        transfer0(fo, fi, ts, addressToPollForCancel);
+                        transfer0(fo, fi, address, transferSize,
+                                  addressToPollForCancel);
                     } finally {
+                        if (buf != null) {
+                            Util.releaseTemporaryDirectBuffer(buf);
+                        }
                         Blocker.end(comp);
                     }
                 } catch (UnixException x) {
                     x.rethrowAsIOException(source, target);
                 }
+
                 // copy owner/permissions
                 if (flags.copyPosixAttributes) {
                     try {
@@ -667,7 +688,9 @@ class UnixCopyFile {
 
     // -- native methods --
 
-    static native void transfer0(int dst, int src, long transferSize,
+    static native boolean transferRequiresBuffer0();
+
+    static native void transfer0(int dst, int src, long address, int size,
                                  long addressToPollForCancel)
         throws UnixException;
 
