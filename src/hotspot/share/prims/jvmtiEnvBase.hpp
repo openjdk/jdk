@@ -661,7 +661,8 @@ public:
   VM_VirtualThreadGetStackTrace(JvmtiEnv *env, Handle vthread_h,
                                 jint start_depth, jint max_count,
                                 jvmtiFrameInfo* frame_buffer, jint* count_ptr)
-    : _vthread_h(vthread_h),
+    : _env(env),
+      _vthread_h(vthread_h),
       _start_depth(start_depth),
       _max_count(max_count),
       _frame_buffer(frame_buffer),
@@ -683,7 +684,8 @@ private:
 
 public:
   VM_VirtualThreadGetFrameCount(JvmtiEnv *env, Handle vthread_h, jint* count_ptr)
-    : _vthread_h(vthread_h),
+    : _env(env),
+      _vthread_h(vthread_h),
       _count_ptr(count_ptr),
       _result(JVMTI_ERROR_NONE)
   {}

@@ -594,7 +594,7 @@ void ErrorContext::stackmap_details(outputStream* ss, const Method* method) cons
 
 ClassVerifier::ClassVerifier(JavaThread* current, InstanceKlass* klass)
     : _thread(current), _previous_symbol(NULL), _symbols(NULL), _exception_type(NULL),
-      _message(NULL), _method_signatures_table(NULL), _klass(klass) {
+      _message(NULL), _klass(klass) {
   _this_type = VerificationType::reference_type(klass->name());
 }
 
@@ -625,16 +625,12 @@ void ClassVerifier::verify_class(TRAPS) {
   // Either verifying both local and remote classes or just remote classes.
   assert(BytecodeVerificationRemote, "Should not be here");
 
-  // Create hash table containing method signatures.
-  method_signatures_table_type method_signatures_table;
-  set_method_signatures_table(&method_signatures_table);
-
   Array<Method*>* methods = _klass->methods();
   int num_methods = methods->length();
 
   for (int index = 0; index < num_methods; index++) {
     // Check for recursive re-verification before each method.
-    if (was_recursively_verified())  return;
+    if (was_recursively_verified()) return;
 
     Method* m = methods->at(index);
     if (m->is_native() || m->is_abstract() || m->is_overpass()) {

@@ -1236,7 +1236,18 @@ void os::die() {
 const char* os::dll_file_extension() { return ".dll"; }
 
 void  os::dll_unload(void *lib) {
-  ::FreeLibrary((HMODULE)lib);
+  char name[MAX_PATH];
+  if (::GetModuleFileName((HMODULE)lib, name, sizeof(name)) == 0) {
+    snprintf(name, MAX_PATH, "<not available>");
+  }
+  if (::FreeLibrary((HMODULE)lib)) {
+    Events::log_dll_message(NULL, "Unloaded dll \"%s\" [" INTPTR_FORMAT "]", name, p2i(lib));
+    log_info(os)("Unloaded dll \"%s\" [" INTPTR_FORMAT "]", name, p2i(lib));
+  } else {
+    const DWORD errcode = ::GetLastError();
+    Events::log_dll_message(NULL, "Attempt to unload dll \"%s\" [" INTPTR_FORMAT "] failed (error code %d)", name, p2i(lib), errcode);
+    log_info(os)("Attempt to unload dll \"%s\" [" INTPTR_FORMAT "] failed (error code %d)", name, p2i(lib), errcode);
+  }
 }
 
 void* os::dll_lookup(void *lib, const char *name) {
@@ -1686,7 +1697,7 @@ void os::get_summary_os_info(char* buf, size_t buflen) {
 int os::vsnprintf(char* buf, size_t len, const char* fmt, va_list args) {
 #if _MSC_VER >= 1900
   // Starting with Visual Studio 2015, vsnprint is C99 compliant.
-  int result = ::vsnprintf(buf, len, fmt, args);
+  ALLOW_C_FUNCTION(::vsnprintf, int result = ::vsnprintf(buf, len, fmt, args);)
   // If an encoding error occurred (result < 0) then it's not clear
   // whether the buffer is NUL terminated, so ensure it is.
   if ((result < 0) && (len > 0)) {
@@ -4139,9 +4150,9 @@ int os::win32::exit_process_or_thread(Ept what, int exit_code) {
   if (what == EPT_THREAD) {
     _endthreadex((unsigned)exit_code);
   } else if (what == EPT_PROCESS) {
-    ::exit(exit_code);
+    ALLOW_C_FUNCTION(::exit, ::exit(exit_code);)
   } else { // EPT_PROCESS_DIE
-    ::_exit(exit_code);
+    ALLOW_C_FUNCTION(::_exit, ::_exit(exit_code);)
   }
 
   // Should not reach here

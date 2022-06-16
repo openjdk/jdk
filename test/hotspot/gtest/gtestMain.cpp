@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@
 #include "jni.h"
 #include "unittest.hpp"
 
+#include "runtime/os.hpp"
 #include "runtime/thread.inline.hpp"
 
 // Default value for -new-thread option: true on AIX because we run into
@@ -123,7 +124,7 @@ class JVMInitializerListener : public ::testing::EmptyTestEventListener {
       int ret_val = init_jvm(_argc, _argv, false, &_jvm);
       if (ret_val != 0) {
         ADD_FAILURE() << "Could not initialize the JVM: " << ret_val;
-        exit(1);
+        os::exit(1);
       }
     }
   }
@@ -245,7 +246,7 @@ static void runUnitTestsInner(int argc, char** argv) {
   char* java_home = get_java_home_arg(argc, argv);
   if (java_home == NULL) {
     fprintf(stderr, "ERROR: You must specify a JDK to use for running the unit tests.\n");
-    exit(1);
+    os::exit(1);
   }
 #ifndef _WIN32
   int overwrite = 1; // overwrite an eventual existing value for JAVA_HOME
@@ -294,7 +295,7 @@ static void runUnitTestsInner(int argc, char** argv) {
 
   if (result != 0) {
     fprintf(stderr, "ERROR: RUN_ALL_TESTS() failed. Error %d\n", result);
-    exit(2);
+    os::exit(2);
   }
 
   if (jvm_listener != NULL) {
@@ -323,7 +324,7 @@ static void run_in_new_thread(const args_t* args) {
   hdl = CreateThread(NULL, STACK_SIZE, thread_wrapper, (void*)args, 0, NULL);
   if (hdl == NULL) {
     fprintf(stderr, "Failed to create main thread\n");
-    exit(2);
+    os::exit(2);
   }
   WaitForSingleObject(hdl, INFINITE);
 }
@@ -345,12 +346,12 @@ static void run_in_new_thread(const args_t* args) {
 
   if (pthread_create(&tid, &attr, thread_wrapper, (void*)args) != 0) {
     fprintf(stderr, "Failed to create main thread\n");
-    exit(2);
+    os::exit(2);
   }
 
   if (pthread_join(tid, NULL) != 0) {
     fprintf(stderr, "Failed to join main thread\n");
-    exit(2);
+    os::exit(2);
   }
 }
 

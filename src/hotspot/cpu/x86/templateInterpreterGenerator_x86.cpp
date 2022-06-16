@@ -367,14 +367,10 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(
         address runtime_entry) {
   address entry = __ pc();
 
-  const Register rthread = NOT_LP64(rcx) LP64_ONLY(r15_thread);
-
   __ push(state);
-  NOT_LP64(__ get_thread(rthread);)
-  __ push_cont_fastpath(rthread);
+  __ push_cont_fastpath();
   __ call_VM(noreg, runtime_entry);
-  NOT_LP64(__ get_thread(rthread);)
-  __ pop_cont_fastpath(rthread);
+  __ pop_cont_fastpath();
 
   __ dispatch_via(vtos, Interpreter::_normal_table.table_for(vtos));
   return entry;
@@ -609,9 +605,7 @@ void TemplateInterpreterGenerator::lock_method() {
   __ movptr(lockreg, rsp); // object address
   __ lock_object(lockreg);
 
-  Register rthread = NOT_LP64(rax) LP64_ONLY(r15_thread);
-  NOT_LP64(__ get_thread(rthread);)
-  __ inc_held_monitor_count(rthread);
+  __ inc_held_monitor_count();
 }
 
 // Generate a fixed interpreter frame. This is identical setup for
@@ -666,24 +660,15 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 address TemplateInterpreterGenerator::generate_Continuation_doYield_entry(void) {
   if (!Continuations::enabled()) return nullptr;
 
-#ifdef _LP64
   address entry = __ pc();
   assert(StubRoutines::cont_doYield() != NULL, "stub not yet generated");
 
-  // __ movl(c_rarg1, Address(rsp, wordSize)); // scopes
-  const Register thread1 = NOT_LP64(rdi) LP64_ONLY(r15_thread);
-  NOT_LP64(__ get_thread(thread1));
-  __ push_cont_fastpath(thread1);
+  __ push_cont_fastpath();
 
   __ jump(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::cont_doYield())));
   // return value is in rax
 
   return entry;
-#else
-  // Not implemented. Allow startup of legacy Java code that does not touch
-  // Continuation.doYield yet. Throw AbstractMethodError on access.
-  return generate_abstract_entry();
-#endif
 }
 
 // Method entry for java.lang.ref.Reference.get.
@@ -1279,8 +1264,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
       __ bind(unlock);
       __ unlock_object(regmon);
-      NOT_LP64(__ get_thread(thread);)
-      __ dec_held_monitor_count(thread);
+      __ dec_held_monitor_count();
     }
     __ bind(L);
   }
