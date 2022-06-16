@@ -1100,7 +1100,7 @@ private:
   }
 
   // Machine dependent stuff
-#include OS_CPU_HEADER(thread)
+#include OS_CPU_HEADER(javaThread)
 
   // JSR166 per-thread parker
  private:

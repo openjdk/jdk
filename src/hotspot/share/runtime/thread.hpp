@@ -34,7 +34,6 @@
 #include "runtime/globals.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/javaFrameAnchor.hpp"
-//#include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "runtime/park.hpp"
 #include "runtime/safepointMechanism.hpp"

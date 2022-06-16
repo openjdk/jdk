@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020, Microsoft Corporation. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +23,8 @@
  *
  */
 
-#ifndef OS_CPU_WINDOWS_AARCH64_THREAD_WINDOWS_AARCH64_HPP
-#define OS_CPU_WINDOWS_AARCH64_THREAD_WINDOWS_AARCH64_HPP
+#ifndef OS_CPU_LINUX_PPC_JAVATHREAD_LINUX_PPC_HPP
+#define OS_CPU_LINUX_PPC_JAVATHREAD_LINUX_PPC_HPP
 
  private:
 
@@ -31,23 +32,13 @@
     _anchor.clear();
   }
 
+  // The `last' frame is the youngest Java frame on the thread's stack.
   frame pd_last_frame();
 
  public:
-  static ByteSize last_Java_fp_offset()          {
-    return byte_offset_of(JavaThread, _anchor) + JavaFrameAnchor::last_Java_fp_offset();
-  }
 
-  bool pd_get_top_frame_for_signal_handler(frame* fr_addr, void* ucontext,
-    bool isInJava);
+  bool pd_get_top_frame_for_signal_handler(frame* fr_addr, void* ucontext, bool isInJava);
 
   bool pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, bool isInJava);
-private:
-  bool pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava);
-public:
 
-  static Thread *aarch64_get_thread_helper() {
-     return Thread::current();
-  }
-
-#endif // OS_CPU_WINDOWS_AARCH64_THREAD_WINDOWS_AARCH64_HPP
+#endif // OS_CPU_LINUX_PPC_JAVATHREAD_LINUX_PPC_HPP
