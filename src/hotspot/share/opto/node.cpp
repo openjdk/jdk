@@ -44,6 +44,7 @@
 #include "utilities/copy.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include "utilities/stringUtils.hpp"
 
 class RegMask;
 // #include "phase.hpp"
@@ -1604,6 +1605,119 @@ Node* old_root() {
   return nullptr;
 }
 
+// BFS traverse all reachable nodes from start, call callback on them
+template <typename Callback>
+void visit_nodes(Node* start, Callback callback, bool traverse_output, bool only_ctrl) {
+  Unique_Mixed_Node_List worklist;
+  worklist.add(start);
+  for (uint i = 0; i < worklist.size(); i++) {
+    Node* n = worklist[i];
+    callback(n);
+    for (uint i = 0; i < n->len(); i++) {
+      if (!only_ctrl || n->is_Region() || (n->Opcode() == Op_Root) || (i == TypeFunc::Control)) {
+        // If only_ctrl is set: Add regions, the root node, or control inputs only
+        worklist.add(n->in(i));
+      }
+    }
+    if (traverse_output && !only_ctrl) {
+      for (uint i = 0; i < n->outcnt(); i++) {
+        worklist.add(n->raw_out(i));
+      }
+    }
+  }
+}
+
+// BFS traverse from start, return node with idx
+Node* find_node_by_idx(Node* start, uint idx, bool traverse_output, bool only_ctrl) {
+  ResourceMark rm;
+  Node* result = nullptr;
+  auto callback = [&] (Node* n) {
+    if (n->_idx == idx) {
+      if (result != nullptr) {
+        tty->print("find_node_by_idx: " INTPTR_FORMAT " and " INTPTR_FORMAT " both have idx==%d\n",
+          (uintptr_t)result, (uintptr_t)n, idx);
+      }
+      result = n;
+    }
+  };
+  visit_nodes(start, callback, traverse_output, only_ctrl);
+  return result;
+}
+
+int node_idx_cmp(Node** n1, Node** n2) {
+  return (*n1)->_idx - (*n2)->_idx;
+}
+
+Node* find_node_by_name(Node* start, const char* name) {
+  ResourceMark rm;
+  Node* result = nullptr;
+  GrowableArray<Node*> ns;
+  auto callback = [&] (Node* n) {
+    if (StringUtils::is_star_match(name, n->Name())) {
+      ns.push(n);
+      result = n;
+    }
+  };
+  visit_nodes(start, callback, true, false);
+  ns.sort(node_idx_cmp);
+  for (int i = 0; i < ns.length(); i++) {
+    ns.at(i)->dump();
+  }
+  return result;
+}
+
+Node* find_node_by_dump(Node* start, const char* pattern) {
+  ResourceMark rm;
+  Node* result = nullptr;
+  GrowableArray<Node*> ns;
+  auto callback = [&] (Node* n) {
+    stringStream stream;
+    n->dump("", false, &stream);
+    if (StringUtils::is_star_match(pattern, stream.base())) {
+      ns.push(n);
+      result = n;
+    }
+  };
+  visit_nodes(start, callback, true, false);
+  ns.sort(node_idx_cmp);
+  for (int i = 0; i < ns.length(); i++) {
+    ns.at(i)->dump();
+  }
+  return result;
+}
+
+// call from debugger: find node with name pattern in new/current graph
+// name can contain "*" in match pattern to match any characters
+// the matching is case insensitive
+Node* find_node_by_name(const char* name) {
+  Node* root = Compile::current()->root();
+  return find_node_by_name(root, name);
+}
+
+// call from debugger: find node with name pattern in old graph
+// name can contain "*" in match pattern to match any characters
+// the matching is case insensitive
+Node* find_old_node_by_name(const char* name) {
+  Node* root = old_root();
+  return find_node_by_name(root, name);
+}
+
+// call from debugger: find node with dump pattern in new/current graph
+// can contain "*" in match pattern to match any characters
+// the matching is case insensitive
+Node* find_node_by_dump(const char* pattern) {
+  Node* root = Compile::current()->root();
+  return find_node_by_dump(root, pattern);
+}
+
+// call from debugger: find node with name pattern in old graph
+// can contain "*" in match pattern to match any characters
+// the matching is case insensitive
+Node* find_old_node_by_dump(const char* pattern) {
+  Node* root = old_root();
+  return find_node_by_dump(root, pattern);
+}
+
 // Call this from debugger, search in same graph as n:
 Node* find_node(Node* n, const int idx) {
   return n->find(idx);
@@ -1649,54 +1763,7 @@ Node* Node::find_ctrl(int idx) {
 // not found or if the node to be found is not a control node (search will not find it).
 Node* Node::find(const int idx, bool only_ctrl) {
   ResourceMark rm;
-  VectorSet old_space;
-  VectorSet new_space;
-  Node_List worklist;
-  Arena* old_arena = Compile::current()->old_arena();
-  add_to_worklist(this, &worklist, old_arena, &old_space, &new_space);
-  Node* result = NULL;
-  int node_idx = (idx >= 0) ? idx : -idx;
-
-  for (uint list_index = 0; list_index < worklist.size(); list_index++) {
-    Node* n = worklist[list_index];
-
-    if ((int)n->_idx == node_idx debug_only(|| n->debug_idx() == node_idx)) {
-      if (result != NULL) {
-        tty->print("find: " INTPTR_FORMAT " and " INTPTR_FORMAT " both have idx==%d\n",
-                  (uintptr_t)result, (uintptr_t)n, node_idx);
-      }
-      result = n;
-    }
-
-    for (uint i = 0; i < n->len(); i++) {
-      if (!only_ctrl || n->is_Region() || (n->Opcode() == Op_Root) || (i == TypeFunc::Control)) {
-        // If only_ctrl is set: Add regions, the root node, or control inputs only
-        add_to_worklist(n->in(i), &worklist, old_arena, &old_space, &new_space);
-      }
-    }
-
-    // Also search along forward edges if idx is negative and the search is not done on control nodes only
-    if (idx < 0 && !only_ctrl) {
-      for (uint i = 0; i < n->outcnt(); i++) {
-        add_to_worklist(n->raw_out(i), &worklist, old_arena, &old_space, &new_space);
-      }
-    }
-  }
-  return result;
-}
-
-bool Node::add_to_worklist(Node* n, Node_List* worklist, Arena* old_arena, VectorSet* old_space, VectorSet* new_space) {
-  if (not_a_node(n)) {
-    return false; // Gracefully handle NULL, -1, 0xabababab, etc.
-  }
-
-  // Contained in new_space or old_space? Check old_arena first since it's mostly empty.
-  VectorSet* v = old_arena->contains(n) ? old_space : new_space;
-  if (!v->test_set(n->_idx)) {
-    worklist->push(n);
-    return true;
-  }
-  return false;
+  return find_node_by_idx(this, abs(idx), (idx < 0), only_ctrl);
 }
 
 class PrintBFS {
@@ -1933,10 +2000,6 @@ void PrintBFS::select_shortest_path() {
     // first edge -> leads us one step closer to _start
     current = info->edge_bwd.at(0);
   }
-}
-
-int node_idx_cmp(Node** n1, Node** n2) {
-  return (*n1)->_idx - (*n2)->_idx;
 }
 
 // go through worklist in desired order, put the marked ones in print list

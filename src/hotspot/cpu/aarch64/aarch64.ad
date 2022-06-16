@@ -2471,6 +2471,7 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
     case Op_CompressV:
     case Op_CompressM:
     case Op_ExpandV:
+    case Op_VectorLongToMask:
       return false;
     default:
       break;

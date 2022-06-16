@@ -1,0 +1,331 @@
+#
+# Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+name: 'OpenJDK GHA Sanity Checks'
+
+on:
+  push:
+    branches-ignore:
+      - master
+      - pr/*
+  workflow_dispatch:
+    inputs:
+      platforms:
+        description: 'Platform(s) to execute on (comma separated, e.g. "linux-x64, macos, aarch64")'
+        required: true
+        default: 'linux-x64, linux-x86, linux-x64-variants, linux-cross-compile, macos-x64, macos-aarch64, windows-x64, windows-aarch64'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+
+  ###
+  ### Determine platforms to include
+  ###
+
+  select:
+    name: 'Select platforms'
+    runs-on: ubuntu-20.04
+    outputs:
+      linux-x64: ${{ steps.include.outputs.linux-x64 }}
+      linux-x86: ${{ steps.include.outputs.linux-x86 }}
+      linux-x64-variants: ${{ steps.include.outputs.linux-x64-variants }}
+      linux-cross-compile: ${{ steps.include.outputs.linux-cross-compile }}
+      macos-x64: ${{ steps.include.outputs.macos-x64 }}
+      macos-aarch64: ${{ steps.include.outputs.macos-aarch64 }}
+      windows-x64: ${{ steps.include.outputs.windows-x64 }}
+      windows-aarch64: ${{ steps.include.outputs.windows-aarch64 }}
+
+    steps:
+        # This function must be inlined in main.yml, or we'd be forced to checkout the repo
+      - name: 'Check what jobs to run'
+        id: include
+        run: |
+          # Determine which platform jobs to run
+
+          # Returns 'true' if the input platform list matches any of the platform monikers given as argument,
+          # 'false' otherwise.
+          # arg $1: platform name or names to look for
+          function check_platform() {
+            if [[ '${{ !secrets.JDK_SUBMIT_FILTER || startsWith(github.ref, 'refs/heads/submit/') }}' == 'false' ]]; then
+              # If JDK_SUBMIT_FILTER is set, and this is not a "submit/" branch, don't run anything
+              echo 'false'
+              return
+            fi
+
+            if [[ $GITHUB_EVENT_NAME == workflow_dispatch ]]; then
+              input='${{ github.event.inputs.platforms }}'
+            elif [[ $GITHUB_EVENT_NAME == push ]]; then
+              input='${{ secrets.JDK_SUBMIT_PLATFORMS }}'
+            else
+              echo 'Internal error in GHA'
+              exit 1
+            fi
+
+            normalized_input="$(echo ,$input, | tr -d ' ')"
+            if [[ "$normalized_input" == ",," ]]; then
+              # For an empty input, assume all platforms should run
+              echo 'true'
+              return
+            else
+              # Check for all acceptable platform names
+              for part in $* ; do
+                if echo "$normalized_input" | grep -q -e ",$part," ; then
+                  echo 'true'
+                  return
+                fi
+              done
+            fi
+
+            echo 'false'
+          }
+
+          echo "::set-output name=linux-x64::$(check_platform linux-x64 linux x64)"
+          echo "::set-output name=linux-x86::$(check_platform linux-x86 linux x86)"
+          echo "::set-output name=linux-x64-variants::$(check_platform linux-x64-variants variants)"
+          echo "::set-output name=linux-cross-compile::$(check_platform linux-cross-compile cross-compile)"
+          echo "::set-output name=macos-x64::$(check_platform macos-x64 macos x64)"
+          echo "::set-output name=macos-aarch64::$(check_platform macos-aarch64 macos aarch64)"
+          echo "::set-output name=windows-x64::$(check_platform windows-x64 windows x64)"
+          echo "::set-output name=windows-aarch64::$(check_platform windows-aarch64 windows aarch64)"
+
+  ###
+  ### Build jobs
+  ###
+
+  build-linux-x64:
+    name: linux-x64
+    needs: select
+    uses: ./.github/workflows/build-linux.yml
+    with:
+      platform: linux-x64
+      apt-gcc-version: '10=10.3.0-1ubuntu1~20.04'
+    # The linux-x64 jdk bundle is used as buildjdk for the cross-compile job
+    if: needs.select.outputs.linux-x64 == 'true' || needs.select.outputs.linux-cross-compile == 'true'
+
+  build-linux-x86:
+    name: linux-x86
+    needs: select
+    uses: ./.github/workflows/build-linux.yml
+    with:
+      platform: linux-x86
+      apt-gcc-version: '10-multilib'
+      apt-architecture: 'i386'
+      # Some multilib libraries do not have proper inter-dependencies, so we have to
+      # install their dependencies manually.
+      apt-extra-packages: 'libfreetype6-dev:i386 libtiff-dev:i386 libcupsimage2-dev:i386'
+      extra-conf-options: '--with-target-bits=32'
+    if: needs.select.outputs.linux-x86 == 'true'
+
+  build-linux-x64-hs-nopch:
+    name: linux-x64-hs-nopch
+    needs: select
+    uses: ./.github/workflows/build-linux.yml
+    with:
+      platform: linux-x64
+      make-target: 'hotspot'
+      debug-levels: '[ "debug" ]'
+      apt-gcc-version: '10=10.3.0-1ubuntu1~20.04'
+      extra-conf-options: '--disable-precompiled-headers'
+    if: needs.select.outputs.linux-x64-variants == 'true'
+
+  build-linux-x64-hs-zero:
+    name: linux-x64-hs-zero
+    needs: select
+    uses: ./.github/workflows/build-linux.yml
+    with:
+      platform: linux-x64
+      make-target: 'hotspot'
+      debug-levels: '[ "debug" ]'
+      apt-gcc-version: '10=10.3.0-1ubuntu1~20.04'
+      extra-conf-options: '--with-jvm-variants=zero --disable-precompiled-headers'
+    if: needs.select.outputs.linux-x64-variants == 'true'
+
+  build-linux-x64-hs-minimal:
+    name: linux-x64-hs-minimal
+    needs: select
+    uses: ./.github/workflows/build-linux.yml
+    with:
+      platform: linux-x64
+      make-target: 'hotspot'
+      debug-levels: '[ "debug" ]'
+      apt-gcc-version: '10=10.3.0-1ubuntu1~20.04'
+      extra-conf-options: '--with-jvm-variants=minimal --disable-precompiled-headers'
+    if: needs.select.outputs.linux-x64-variants == 'true'
+
+  build-linux-x64-hs-optimized:
+    name: linux-x64-hs-optimized
+    needs: select
+    uses: ./.github/workflows/build-linux.yml
+    with:
+      platform: linux-x64
+      make-target: 'hotspot'
+      # Technically this is not the "debug" level, but we can't inject a new matrix state for just this job
+      debug-levels: '[ "debug" ]'
+      apt-gcc-version: '10=10.3.0-1ubuntu1~20.04'
+      extra-conf-options: '--with-debug-level=optimized --disable-precompiled-headers'
+    if: needs.select.outputs.linux-x64-variants == 'true'
+
+  build-linux-cross-compile:
+    name: linux-cross-compile
+    needs:
+      - select
+      - build-linux-x64
+    uses: ./.github/workflows/build-cross-compile.yml
+    if: needs.select.outputs.linux-cross-compile == 'true'
+
+  build-macos-x64:
+    name: macos-x64
+    needs: select
+    uses: ./.github/workflows/build-macos.yml
+    with:
+      platform: macos-x64
+      xcode-toolset-version: '11.3.1'
+    if: needs.select.outputs.macos-x64 == 'true'
+
+  build-macos-aarch64:
+    name: macos-aarch64
+    needs: select
+    uses: ./.github/workflows/build-macos.yml
+    with:
+      platform: macos-aarch64
+      xcode-toolset-version: '12.4'
+      extra-conf-options: '--openjdk-target=aarch64-apple-darwin'
+    if: needs.select.outputs.macos-aarch64 == 'true'
+
+  build-windows-x64:
+    name: windows-x64
+    needs: select
+    uses: ./.github/workflows/build-windows.yml
+    with:
+      platform: windows-x64
+      msvc-toolset-version: '14.25'
+      msvc-toolset-architecture: 'x86.x64'
+    if: needs.select.outputs.windows-x64 == 'true'
+
+  build-windows-aarch64:
+    name: windows-aarch64
+    needs: select
+    uses: ./.github/workflows/build-windows.yml
+    with:
+      platform: windows-aarch64
+      msvc-toolset-version: '14.29'
+      msvc-toolset-architecture: 'arm64'
+      make-target: 'hotspot'
+      extra-conf-options: '--openjdk-target=aarch64-unknown-cygwin'
+    if: needs.select.outputs.windows-aarch64 == 'true'
+
+  ###
+  ### Test jobs
+  ###
+
+  test-linux-x64:
+    name: linux-x64
+    needs:
+      - build-linux-x64
+    uses: ./.github/workflows/test.yml
+    with:
+      platform: linux-x64
+      bootjdk-platform: linux-x64
+      runs-on: ubuntu-20.04
+
+  test-linux-x86:
+    name: linux-x86
+    needs:
+      - build-linux-x86
+    uses: ./.github/workflows/test.yml
+    with:
+      platform: linux-x86
+      bootjdk-platform: linux-x64
+      runs-on: ubuntu-20.04
+
+  test-macos-x64:
+    name: macos-x64
+    needs:
+      - build-macos-x64
+    uses: ./.github/workflows/test.yml
+    with:
+      platform: macos-x64
+      bootjdk-platform: macos-x64
+      runs-on: macos-10.15
+
+  test-windows-x64:
+    name: windows-x64
+    needs:
+      - build-windows-x64
+    uses: ./.github/workflows/test.yml
+    with:
+      platform: windows-x64
+      bootjdk-platform: windows-x64
+      runs-on: windows-2019
+
+  # Remove bundles so they are not misconstrued as binary distributions from the JDK project
+  remove-bundles:
+    name: 'Remove bundle artifacts'
+    runs-on: ubuntu-20.04
+    if: always()
+    needs:
+      - build-linux-x64
+      - build-linux-x86
+      - build-linux-x64-hs-nopch
+      - build-linux-x64-hs-zero
+      - build-linux-x64-hs-minimal
+      - build-linux-x64-hs-optimized
+      - build-linux-cross-compile
+      - build-macos-x64
+      - build-macos-aarch64
+      - build-windows-x64
+      - build-windows-aarch64
+      - test-linux-x64
+      - test-linux-x86
+      - test-macos-x64
+      - test-windows-x64
+
+    steps:
+        # Hack to get hold of the api environment variables that are only defined for actions
+      - name: 'Get API configuration'
+        id: api
+        uses: actions/github-script@v6
+        with:
+          script: 'return { url: process.env["ACTIONS_RUNTIME_URL"], token: process.env["ACTIONS_RUNTIME_TOKEN"] }'
+
+      - name: 'Remove bundle artifacts'
+        run: |
+          # Find and remove all bundle artifacts
+          ALL_ARTIFACT_URLS="$(curl -s \
+              -H 'Accept: application/json;api-version=6.0-preview' \
+              -H 'Authorization: Bearer ${{ fromJson(steps.api.outputs.result).token }}' \
+              '${{ fromJson(steps.api.outputs.result).url }}_apis/pipelines/workflows/${{ github.run_id }}/artifacts?api-version=6.0-preview')"
+          BUNDLE_ARTIFACT_URLS="$(echo "$ALL_ARTIFACT_URLS" | jq -r -c '.value | map(select(.name|startswith("bundles-"))) | .[].url')"
+          for url in $BUNDLE_ARTIFACT_URLS; do
+            echo "Removing $url"
+            curl -s \
+                -H 'Accept: application/json;api-version=6.0-preview' \
+                -H 'Authorization: Bearer ${{ fromJson(steps.api.outputs.result).token }}' \
+                -X DELETE "$url" \
+            || echo "Failed to remove bundle"
+          done
