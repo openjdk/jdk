@@ -24,6 +24,7 @@
 /**
  * @test
  * @summary Verifies that MethodExit events are delivered on both carrier and virtual threads.
+ * @requires vm.continuations
  * @compile --enable-preview -source ${jdk.version} MethodExitTest.java
  * @run main/othervm/native --enable-preview -agentlib:MethodExitTest -Djdk.defaultScheduler.parallelism=2 MethodExitTest 150
  */

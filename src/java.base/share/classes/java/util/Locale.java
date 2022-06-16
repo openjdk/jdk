@@ -50,6 +50,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.spi.LocaleNameProvider;
 import java.util.stream.Collectors;
 
+import jdk.internal.vm.annotation.Stable;
+
 import sun.security.action.GetPropertyAction;
 import sun.util.locale.BaseLocale;
 import sun.util.locale.InternalLocaleBuilder;
@@ -681,7 +683,7 @@ public final class Locale implements Cloneable, Serializable {
         /**
          * Map to hold country codes for each ISO3166 part.
          */
-        private static Map<IsoCountryCode, Set<String>> iso3166CodesMap = new ConcurrentHashMap<>();
+        private static final Map<IsoCountryCode, Set<String>> iso3166CodesMap = new ConcurrentHashMap<>();
 
         /**
          * This method is called from Locale class to retrieve country code set
@@ -1079,17 +1081,18 @@ public final class Locale implements Cloneable, Serializable {
     private static Locale initDefault(Locale.Category category) {
         Properties props = GetPropertyAction.privilegedGetProperties();
 
+        Locale locale = Locale.defaultLocale;
         return getInstance(
             props.getProperty(category.languageKey,
-                    defaultLocale.getLanguage()),
+                    locale.getLanguage()),
             props.getProperty(category.scriptKey,
-                    defaultLocale.getScript()),
+                    locale.getScript()),
             props.getProperty(category.countryKey,
-                    defaultLocale.getCountry()),
+                    locale.getCountry()),
             props.getProperty(category.variantKey,
-                    defaultLocale.getVariant()),
+                    locale.getVariant()),
             getDefaultExtensions(props.getProperty(category.extensionsKey, ""))
-                .orElse(defaultLocale.getLocaleExtensions()));
+                .orElse(locale.getLocaleExtensions()));
     }
 
     private static Optional<LocaleExtensions> getDefaultExtensions(String extensionsProp) {
@@ -1265,11 +1268,12 @@ public final class Locale implements Cloneable, Serializable {
      * @return An array of ISO 639 two-letter language codes.
      */
     public static String[] getISOLanguages() {
-        if (isoLanguages == null) {
-            isoLanguages = getISO2Table(LocaleISOData.isoLanguageTable);
+        String[] languages = Locale.isoLanguages;
+        if (languages == null) {
+            Locale.isoLanguages = languages = getISO2Table(LocaleISOData.isoLanguageTable);
         }
-        String[] result = new String[isoLanguages.length];
-        System.arraycopy(isoLanguages, 0, result, 0, isoLanguages.length);
+        String[] result = new String[languages.length];
+        System.arraycopy(languages, 0, result, 0, languages.length);
         return result;
     }
 
@@ -1608,8 +1612,9 @@ public final class Locale implements Cloneable, Serializable {
      * @since 1.7
      */
     public String toLanguageTag() {
-        if (languageTag != null) {
-            return languageTag;
+        String lTag = this.languageTag;
+        if (lTag != null) {
+            return lTag;
         }
 
         LanguageTag tag = LanguageTag.parseLocale(baseLocale, localeExtensions);
@@ -1657,11 +1662,11 @@ public final class Locale implements Cloneable, Serializable {
 
         String langTag = buf.toString();
         synchronized (this) {
-            if (languageTag == null) {
-                languageTag = langTag;
+            if (this.languageTag == null) {
+                this.languageTag = langTag;
             }
         }
-        return languageTag;
+        return langTag;
     }
 
     /**
@@ -2257,7 +2262,7 @@ public final class Locale implements Cloneable, Serializable {
     /**
      * Calculated hashcode
      */
-    private transient volatile int hashCodeValue;
+    private transient @Stable int hashCodeValue;
 
     private static volatile Locale defaultLocale = initDefault();
     private static volatile Locale defaultDisplayLocale;
@@ -3110,7 +3115,7 @@ public final class Locale implements Cloneable, Serializable {
         private final String range;
         private final double weight;
 
-        private volatile int hash;
+        private @Stable int hash;
 
         /**
          * Constructs a {@code LanguageRange} using the given {@code range}.

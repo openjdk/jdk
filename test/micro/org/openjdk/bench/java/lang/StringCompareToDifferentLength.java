@@ -54,6 +54,7 @@ import org.openjdk.jmh.infra.Blackhole;
 @State(Scope.Benchmark)
 @Measurement(iterations = 3, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
 @Warmup(iterations = 3, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+@Fork(3)
 @CompilerControl(CompilerControl.Mode.DONT_INLINE)
 public class StringCompareToDifferentLength {
 

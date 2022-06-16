@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,8 +158,8 @@ public class NewDependencyCollector implements TaskListener {
             }
 
             // The completion dependency graph is not transitively closed for inheritance relations.
-            // For sjavac's purposes however, a class depends on it's super super type, so below we
-            // make sure that we include super types.
+            // For sjavac's purposes however, a class depends on its super-supertype, so below we
+            // make sure that we include supertypes.
             for (ClassSymbol cs : allSupertypes(cnode.getClassSymbol())) {
                 if (isSymbolRelevant(cp, cs)) {
                     fqDeps.add(cs.outermostClass().flatname.toString());

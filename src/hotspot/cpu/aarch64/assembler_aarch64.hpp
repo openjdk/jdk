@@ -794,7 +794,7 @@ public:
     starti;                                                             \
     f(opcode, 31, 29), f(0b100101, 28, 23), f(shift/16, 22, 21),        \
       f(imm, 20, 5);                                                    \
-    rf(Rd, 0);                                                          \
+    zrf(Rd, 0);                                                          \
   }
 
   INSN(movnw, 0b000);
@@ -1930,31 +1930,17 @@ void mvnw(Register Rd, Register Rm,
     data_processing(op31, type, opcode, Vd, Vn);        \
   }
 
-private:
-  INSN(i_fmovs, 0b000, 0b00, 0b000000);
-public:
+  INSN(fmovs, 0b000, 0b00, 0b000000);
   INSN(fabss, 0b000, 0b00, 0b000001);
   INSN(fnegs, 0b000, 0b00, 0b000010);
   INSN(fsqrts, 0b000, 0b00, 0b000011);
   INSN(fcvts, 0b000, 0b00, 0b000101);   // Single-precision to double-precision
 
-private:
-  INSN(i_fmovd, 0b000, 0b01, 0b000000);
-public:
+  INSN(fmovd, 0b000, 0b01, 0b000000);
   INSN(fabsd, 0b000, 0b01, 0b000001);
   INSN(fnegd, 0b000, 0b01, 0b000010);
   INSN(fsqrtd, 0b000, 0b01, 0b000011);
   INSN(fcvtd, 0b000, 0b01, 0b000100);   // Double-precision to single-precision
-
-  void fmovd(FloatRegister Vd, FloatRegister Vn) {
-    assert(Vd != Vn, "should be");
-    i_fmovd(Vd, Vn);
-  }
-
-  void fmovs(FloatRegister Vd, FloatRegister Vn) {
-    assert(Vd != Vn, "should be");
-    i_fmovs(Vd, Vn);
-  }
 
 private:
   void _fcvt_narrow_extend(FloatRegister Vd, SIMD_Arrangement Ta,
@@ -3861,6 +3847,7 @@ void sve_fcm(Condition cond, PRegister Pd, SIMD_RegVariant T,
   }
 
   INSN(sve_bext, 0b00);
+  INSN(sve_bdep, 0b01);
 #undef INSN
 
   Assembler(CodeBuffer* code) : AbstractAssembler(code) {

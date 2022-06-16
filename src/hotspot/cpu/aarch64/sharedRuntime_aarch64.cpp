@@ -81,8 +81,8 @@ class SimpleRuntimeFrame {
     // so that it agrees with the frame sender code.
     // we don't expect any arg reg save area so aarch64 asserts that
     // frame::arg_reg_save_area_bytes == 0
-    rbp_off = 0,
-    rbp_off2,
+    rfp_off = 0,
+    rfp_off2,
     return_off, return_off2,
     framesize
   };
@@ -2756,7 +2756,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
 }
 
 #ifdef COMPILER2
-// This is here instead of runtime_x86_64.cpp because it uses SimpleRuntimeFrame
+// This is here instead of runtime_aarch64_64.cpp because it uses SimpleRuntimeFrame
 //
 //------------------------------generate_exception_blob---------------------------
 // creates exception blob at the end

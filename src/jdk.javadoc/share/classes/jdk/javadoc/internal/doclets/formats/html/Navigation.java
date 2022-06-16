@@ -100,11 +100,11 @@ public class Navigation {
     }
 
     /**
-     * An interface to provide links for the sub-navigation area.
+     * An interface to provide links for the subnavigation area.
      */
     public interface SubNavLinks {
         /**
-         * {@return a list of links to display in the sub-navigation area}
+         * {@return a list of links to display in the subnavigation area}
          * Links should be wrapped in {@code HtmlTree.LI} elements as they are
          * displayed within an unordered list.
          */
@@ -350,9 +350,9 @@ public class Navigation {
     }
 
     /**
-     * Adds the summary links to the sub-navigation.
+     * Adds the summary links to the subnavigation.
      *
-     * @param target the content to which the sub-navigation will be added
+     * @param target the content to which the subnavigation will be added
      * @param nested whether to create a flat or nested list
      */
     private void addSummaryLinks(Content target, boolean nested) {
@@ -381,7 +381,7 @@ public class Navigation {
     }
 
     /**
-     * Adds the detail links to sub-navigation.
+     * Adds the detail links to subnavigation.
      *
      * @param target the content to which the links will be added
      * @param nested whether to create a flat or nested list

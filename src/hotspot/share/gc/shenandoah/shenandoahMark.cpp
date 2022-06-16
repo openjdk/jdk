@@ -78,26 +78,14 @@ void ShenandoahMark::mark_loop_prework(uint w, TaskTerminator *t, ShenandoahRefe
 
   // TODO: We can clean up this if we figure out how to do templated oop closures that
   // play nice with specialized_oop_iterators.
-  if (heap->unload_classes()) {
-    if (heap->has_forwarded_objects()) {
-      using Closure = ShenandoahMarkUpdateRefsMetadataClosure;
-      Closure cl(q, rp);
-      mark_loop_work<Closure, CANCELLABLE, STRING_DEDUP>(&cl, ld, w, t, req);
-    } else {
-      using Closure = ShenandoahMarkRefsMetadataClosure;
-      Closure cl(q, rp);
-      mark_loop_work<Closure, CANCELLABLE, STRING_DEDUP>(&cl, ld, w, t, req);
-    }
+  if (heap->has_forwarded_objects()) {
+    using Closure = ShenandoahMarkUpdateRefsClosure;
+    Closure cl(q, rp);
+    mark_loop_work<Closure, CANCELLABLE, STRING_DEDUP>(&cl, ld, w, t, req);
   } else {
-    if (heap->has_forwarded_objects()) {
-      using Closure = ShenandoahMarkUpdateRefsClosure;
-      Closure cl(q, rp);
-      mark_loop_work<Closure, CANCELLABLE, STRING_DEDUP>(&cl, ld, w, t, req);
-    } else {
-      using Closure = ShenandoahMarkRefsClosure;
-      Closure cl(q, rp);
-      mark_loop_work<Closure, CANCELLABLE, STRING_DEDUP>(&cl, ld, w, t, req);
-    }
+    using Closure = ShenandoahMarkRefsClosure;
+    Closure cl(q, rp);
+    mark_loop_work<Closure, CANCELLABLE, STRING_DEDUP>(&cl, ld, w, t, req);
   }
 
   heap->flush_liveness_cache(w);
