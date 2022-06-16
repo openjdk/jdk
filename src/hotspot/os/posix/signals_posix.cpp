@@ -1597,7 +1597,25 @@ static void SR_handler(int sig, siginfo_t* siginfo, ucontext_t* context) {
   PosixSignals::unblock_error_signals();
 
   Thread* thread = Thread::current_or_null_safe();
-  assert(thread != NULL, "Missing current thread in SR_handler");
+
+  // The suspend/resume signal may have been sent from outside the process, deliberately or
+  // accidentally. In that case the receiving thread may not be attached to the VM. We handle
+  // that case by asserting (debug VM) resp. writing a diagnostic message to tty and
+  // otherwise ignoring the stray signal (release VMs).
+  // We print the full siginfo as part of the diagnostic message, which will contain the
+  // sender pid and thus allow the user to investigate the signal sender.
+  if (thread == nullptr) {
+    stringStream ss;
+    ss.print_raw("Non-attached thread received stray SR signal (");
+    os::print_siginfo(&ss, siginfo);
+    ss.print_raw(").");
+    assert(thread != NULL, "%s.", ss.base());
+    tty->print_cr("%s", ss.base());
+    tty->flush();
+    return;
+  }
+
+  assert(thread != NULL, "Missing current thread in SR_handler (signal was sent by ");
 
   // On some systems we have seen signal delivery get "stuck" until the signal
   // mask is changed as part of thread termination. Check that the current thread
