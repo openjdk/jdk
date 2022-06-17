@@ -183,7 +183,8 @@ class WindowsFileCopy {
             } catch (IOException ignored) {
             }
             final int flags = ((!followLinks) ? COPY_FILE_COPY_SYMLINK : 0) |
-                ((size > UNBUFFERED_IO_THRESHOLD) ? COPY_FILE_NO_BUFFERING : 0);
+                              ((sourceAttrs.size() > UNBUFFERED_IO_THRESHOLD) ?
+                                  COPY_FILE_NO_BUFFERING : 0);
 
             if (interruptible) {
                 // interruptible copy
