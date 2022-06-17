@@ -30,9 +30,10 @@
 #include "runtime/continuation.hpp"
 #include "utilities/sizes.hpp"
 
-class RegisterMap;
-class OopMap;
+class CompiledMethod;
 class JavaThread;
+class OopMap;
+class RegisterMap;
 
 // Metadata stored in the continuation entry frame
 class ContinuationEntry {
@@ -114,7 +115,7 @@ public:
 
   intptr_t* bottom_sender_sp() const {
     intptr_t* sp = entry_sp() - argsize();
-#ifdef _LP64
+#ifdef _LP64_
     sp = align_down(sp, frame::frame_alignment);
 #endif
     return sp;
@@ -127,17 +128,7 @@ public:
   bool is_virtual_thread() const { return _flags != 0; }
 
 #ifndef PRODUCT
-  void describe(FrameValues& values, int frame_no) const {
-    address usp = (address)this;
-    values.describe(frame_no, (intptr_t*)(usp + in_bytes(ContinuationEntry::parent_offset())),    "parent");
-    values.describe(frame_no, (intptr_t*)(usp + in_bytes(ContinuationEntry::cont_offset())),      "continuation");
-    values.describe(frame_no, (intptr_t*)(usp + in_bytes(ContinuationEntry::flags_offset())),     "flags");
-    values.describe(frame_no, (intptr_t*)(usp + in_bytes(ContinuationEntry::chunk_offset())),     "chunk");
-    values.describe(frame_no, (intptr_t*)(usp + in_bytes(ContinuationEntry::argsize_offset())),   "argsize");
-    values.describe(frame_no, (intptr_t*)(usp + in_bytes(ContinuationEntry::pin_count_offset())), "pin_count");
-    values.describe(frame_no, (intptr_t*)(usp + in_bytes(ContinuationEntry::parent_cont_fastpath_offset())),      "parent fastpath");
-    values.describe(frame_no, (intptr_t*)(usp + in_bytes(ContinuationEntry::parent_held_monitor_count_offset())), "parent held monitor count");
-  }
+  void describe(FrameValues& values, int frame_no) const;
 #endif
 
 #ifdef ASSERT
