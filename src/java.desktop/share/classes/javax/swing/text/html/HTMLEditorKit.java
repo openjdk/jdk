@@ -1305,9 +1305,10 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      * handled differently by the editor.
      *
      * <ul>
-     * <li>When the container using HTML tags is editable:
+     * <li>When the container is editable:
      *     <ul>
-     *         <li>Tags display the tag text as editable text fields.</li>
+     *         <li>The tags will be displayed as editable text fields with the
+     *         tag name.</li>
      *         <li>The content within the tags will be handled by the editor as
      *         regular text.</li>
      *     </ul>
