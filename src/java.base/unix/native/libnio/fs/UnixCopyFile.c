@@ -27,6 +27,8 @@
 #include "jni_util.h"
 #include "jlong.h"
 
+#include "nio.h"
+
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
@@ -38,8 +40,6 @@
 #include <copyfile.h>
 #endif
 #include "sun_nio_fs_UnixCopyFile.h"
-
-#define MIN_TRANSFER_SIZE (sun_nio_fs_UnixCopyFile_MIN_TRANSFER_SIZE)
 
 #define RESTARTABLE(_cmd, _result) do { \
   do { \
@@ -70,19 +70,17 @@ int fcopyfile_callback(int what, int stage, copyfile_state_t state,
     }
     return COPYFILE_CONTINUE;
 }
-
-#else
+#endif
 
 // Transfer via user-space buffers
-void transfer(JNIEnv* env, jint dst, jint src, jlong address, jint transferSize,
-              volatile jint* cancel)
+JNIEXPORT void JNICALL
+Java_sun_nio_fs_UnixCopyFile_copy0
+    (JNIEnv* env, jclass this, jint dst, jint src, jlong address,
+    jint transferSize, jlong cancelAddress)
 {
-    char* buf = (char*)address;
+    volatile jint* cancel = (jint*)jlong_to_ptr(cancelAddress);
 
-    if (buf == NULL) {
-        JNU_ThrowNullPointerException(env, "Buffer address is NULL");
-        return;
-    }
+    char* buf = (char*)address;
 
 #if defined(__linux__)
     int advice = POSIX_FADV_SEQUENTIAL | // sequential data access
@@ -120,27 +118,14 @@ void transfer(JNIEnv* env, jint dst, jint src, jlong address, jint transferSize,
         } while (len > 0);
     }
 }
-#endif
-
-JNIEXPORT jboolean JNICALL
-Java_sun_nio_fs_UnixCopyFile_transferRequiresBuffer0
-    (JNIEnv *env, jclass this)
-{
-#if defined(__linux__) || defined(_ALLBSD_SOURCE)
-    return JNI_FALSE;
-#else
-    return JNI_TRUE;
-#endif
-}
 
 /**
  * Transfer all bytes from src to dst within the kernel if possible (Linux),
  * otherwise via user-space buffers
  */
-JNIEXPORT void JNICALL
+JNIEXPORT jint JNICALL
 Java_sun_nio_fs_UnixCopyFile_transfer0
-    (JNIEnv* env, jclass this, jint dst, jint src, jlong address, jint size,
-   jlong cancelAddress)
+    (JNIEnv* env, jclass this, jint dst, jint src, jlong cancelAddress)
 {
     volatile jint* cancel = (jint*)jlong_to_ptr(cancelAddress);
 
@@ -152,21 +137,23 @@ Java_sun_nio_fs_UnixCopyFile_transfer0
     ssize_t bytes_sent;
     do {
         RESTARTABLE(sendfile64(dst, src, NULL, count), bytes_sent);
-        if (bytes_sent == -1) {
-            if (errno == EINVAL || errno == ENOSYS) {
-                // Fall back to copying via user-space buffers
-                char buf[MIN_TRANSFER_SIZE];
-                transfer(env, dst, src, (jlong)buf, sizeof(buf), cancel);
+        if (bytes_sent < 0) {
+            if (errno == EINTR) {
+                return IOS_INTERRUPTED;
+            } else if (errno == EINVAL || errno == ENOSYS) {
+                return IOS_UNSUPPORTED_CASE;
             } else {
                 throwUnixException(env, errno);
             }
-            return;
+            return IOS_THROWN;
         }
         if (cancel != NULL && *cancel != 0) {
             throwUnixException(env, ECANCELED);
-            return;
+            return IOS_THROWN;
         }
     } while (bytes_sent > 0);
+
+    return 0;
 #elif defined(_ALLBSD_SOURCE)
     copyfile_state_t state;
     if (cancel != NULL) {
@@ -181,11 +168,13 @@ Java_sun_nio_fs_UnixCopyFile_transfer0
         if (state != NULL)
             copyfile_state_free(state);
         throwUnixException(env, errno_fcopyfile);
-        return;
+        return IOS_THROWN;
     }
     if (state != NULL)
         copyfile_state_free(state);
+
+    return 0;
 #else
-    transfer(env, dst, src, address, size, cancel);
+    return IOS_UNSUPPORTED;
 #endif
 }

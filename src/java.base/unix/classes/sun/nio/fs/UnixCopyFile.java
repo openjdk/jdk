@@ -26,7 +26,6 @@
 package sun.nio.fs;
 
 import java.io.IOException;
-import java.lang.annotation.Native;
 import java.nio.ByteBuffer;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.CopyOption;
@@ -40,6 +39,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import jdk.internal.misc.Blocker;
 import sun.nio.ch.DirectBuffer;
+import sun.nio.ch.IOStatus;
 import sun.nio.ch.Util;
 import static sun.nio.fs.UnixNativeDispatcher.*;
 import static sun.nio.fs.UnixConstants.*;
@@ -49,7 +49,8 @@ import static sun.nio.fs.UnixConstants.*;
  */
 
 class UnixCopyFile {
-    @Native private static final int MIN_TRANSFER_SIZE = 16384;
+    // minimum size of user-space copy buffer
+    private static final int MIN_TRANSFER_SIZE = 16384;
 
     private UnixCopyFile() {  }
 
@@ -245,8 +246,27 @@ class UnixCopyFile {
         return u;
     }
 
-    // whether transfer0() requires a buffer address
-    private static final boolean transferRequiresBuffer = transferRequiresBuffer0();
+    // calculate user-space copy buffer size
+    private static int computeTransferSize(UnixPath source, UnixPath target) {
+        int transferSize = MIN_TRANSFER_SIZE;
+        try {
+            long bss = UnixFileStoreAttributes.get(source).blockSize();
+            long bst = UnixFileStoreAttributes.get(target).blockSize();
+            if (bss > 0 && bst > 0) {
+                transferSize = (int)(bss == bst ? bss : lcm(bss, bst));
+            }
+            if (transferSize < MIN_TRANSFER_SIZE) {
+                int factor = (MIN_TRANSFER_SIZE + transferSize - 1)/transferSize;
+                transferSize *= factor;
+            }
+        } catch (IllegalArgumentException | UnixException
+                 ignored) {
+        }
+        return transferSize;
+    }
+
+    // whether transferring instead of user-space copy is unsupported
+    private static volatile boolean transferNotSupported;
 
     // copy regular file from source to target
     private static void copyFile(UnixPath source,
@@ -279,44 +299,49 @@ class UnixCopyFile {
             // set to true when file and attributes copied
             boolean complete = false;
             try {
-                int transferSize = MIN_TRANSFER_SIZE;
-                if (transferRequiresBuffer) {
-                    int ts = MIN_TRANSFER_SIZE;
+                boolean transferred = false;
+                if (!transferNotSupported) {
+                    // transfer bytes to target file
                     try {
-                        long bss = UnixFileStoreAttributes.get(source).blockSize();
-                        long bst = UnixFileStoreAttributes.get(target).blockSize();
-                        if (bss > 0 && bst > 0) {
-                            ts = (int)(bss == bst ? bss : lcm(bss, bst));
+                        int res;
+                        do {
+                            long comp = Blocker.begin();
+                            try {
+                                res = transfer0(fo, fi, addressToPollForCancel);
+                            } finally {
+                                Blocker.end(comp);
+                            }
+                        } while (res == IOStatus.INTERRUPTED);
+
+                        if (res == IOStatus.UNSUPPORTED) {
+                            transferNotSupported = true;
+                        } else if (res == 0) {
+                            transferred = true;
                         }
-                        if (ts < MIN_TRANSFER_SIZE) {
-                            int factor = (MIN_TRANSFER_SIZE + ts - 1)/ts;
-                            ts *= factor;
-                        }
-                    } catch (IllegalArgumentException | UnixException ignored) {
+                    } catch (UnixException x) {
+                        x.rethrowAsIOException(source, target);
                     }
-                    transferSize = ts;
                 }
 
-                // transfer bytes to target file
-                try {
-                    ByteBuffer buf = null;
-                    long address = 0L;
-                    if (transferRequiresBuffer) {
-                        buf = Util.getTemporaryDirectBuffer(transferSize);
-                        address = ((DirectBuffer)buf).address();
-                    }
-                    long comp = Blocker.begin();
+                if (!transferred) {
+                    //  determine copy buffer size
+                    int transferSize = computeTransferSize(source, target);
+
+                    // copy bytes to target file
                     try {
-                        transfer0(fo, fi, address, transferSize,
-                                  addressToPollForCancel);
-                    } finally {
-                        if (buf != null) {
+                        long comp = Blocker.begin();
+                        ByteBuffer buf =
+                            Util.getTemporaryDirectBuffer(transferSize);
+                        try {
+                            copy0(fo, fi, ((DirectBuffer)buf).address(),
+                                  transferSize, addressToPollForCancel);
+                        } finally {
                             Util.releaseTemporaryDirectBuffer(buf);
+                            Blocker.end(comp);
                         }
-                        Blocker.end(comp);
+                    } catch (UnixException x) {
+                        x.rethrowAsIOException(source, target);
                     }
-                } catch (UnixException x) {
-                    x.rethrowAsIOException(source, target);
                 }
 
                 // copy owner/permissions
@@ -688,10 +713,14 @@ class UnixCopyFile {
 
     // -- native methods --
 
-    static native boolean transferRequiresBuffer0();
+    // returns 0 on success, INTERRUPTED if the system call was interrupted,
+    // UNSUPPORTED_CASE if the call does not work with the supplied parameters,
+    // or UNSUPPORTED if the operation is not supported on this platform
+    static native int transfer0(int dst, int src, long addressToPollForCancel)
+        throws UnixException;
 
-    static native void transfer0(int dst, int src, long address, int size,
-                                 long addressToPollForCancel)
+    static native void copy0(int dst, int src, long address, int transferSize,
+                             long addressToPollForCancel)
         throws UnixException;
 
     static {
