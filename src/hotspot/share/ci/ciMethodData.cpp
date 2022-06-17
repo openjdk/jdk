@@ -248,8 +248,11 @@ bool ciMethodData::load_data() {
 
   // Note:  Extra data are all BitData, and do not need translation.
   _invocation_counter = mdo->invocation_count();
-  _state = mdo->is_mature()? mature_state: immature_state;
+  if (_invocation_counter == 0 && mdo->backedge_count() > 0) {
+    _invocation_counter = 1; // invocation counter may be slightly off
+  }
 
+  _state = (mdo->is_mature() ? mature_state : immature_state);
   _eflags = mdo->eflags();
   _arg_local = mdo->arg_local();
   _arg_stack = mdo->arg_stack();
