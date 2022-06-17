@@ -2139,7 +2139,7 @@ public class MetalLookAndFeel extends BasicLookAndFeel
 
 
     /**
-     * Returns a {@code LayoutStyle} implementing Java look and feel
+     * Returns a {@code LayoutStyle} implementing the Java look and feel
      * design guidelines.
      *
      * @return LayoutStyle implementing the Java look and feel design
