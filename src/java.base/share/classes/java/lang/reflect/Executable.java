@@ -411,7 +411,7 @@ public abstract sealed class Executable extends AccessibleObject
     }
 
     boolean hasRealParameterData() {
-        return parameterData().real;
+        return parameterData().isReal;
     }
 
     private ParameterData parameterData() {
@@ -774,6 +774,6 @@ public abstract sealed class Executable extends AccessibleObject
                 TypeAnnotation.TypeAnnotationTarget.THROWS);
     }
 
-    record ParameterData(Parameter[] parameters, boolean real) {}
+    record ParameterData(@Stable Parameter[] parameters, boolean isReal) {}
 
 }
