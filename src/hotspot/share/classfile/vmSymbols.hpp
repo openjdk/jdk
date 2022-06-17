@@ -32,8 +32,6 @@
 #include "utilities/macros.hpp"
 #include "utilities/enumIterator.hpp"
 
-class SerializeClosure;
-
 // The class vmSymbols is a name space for fast lookup of
 // symbols commonly used in the VM.
 //

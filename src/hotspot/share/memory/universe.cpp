@@ -26,7 +26,6 @@
 #include "cds/dynamicArchive.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
-#include "cds/serializeClosure.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.hpp"
@@ -81,35 +80,6 @@
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/preserveException.hpp"
-
-// A helper class for caching a Method* when the user of the cache
-// only cares about the latest version of the Method*.  This cache safely
-// interacts with the RedefineClasses API.
-
-class LatestMethodCache : public CHeapObj<mtClass> {
-  // We save the Klass* and the idnum of Method* in order to get
-  // the current cached Method*.
- private:
-  Klass*                _klass;
-  int                   _method_idnum;
-
- public:
-  LatestMethodCache()   { _klass = NULL; _method_idnum = -1; }
-  ~LatestMethodCache()  { _klass = NULL; _method_idnum = -1; }
-
-  void   init(Klass* k, Method* m);
-  Klass* klass() const           { return _klass; }
-  int    method_idnum() const    { return _method_idnum; }
-
-  Method* get_method();
-
-  // CDS support.  Replace the klass in this with the archive version
-  // could use this for Enhanced Class Redefinition also.
-  void serialize(SerializeClosure* f) {
-    f->do_ptr((void**)&_klass);
-  }
-  void metaspace_pointers_do(MetaspaceClosure* it);
-};
 
 // Known objects
 Klass* Universe::_typeArrayKlassObjs[T_LONG+1]        = { NULL /*, NULL...*/ };
@@ -1277,11 +1247,6 @@ void LatestMethodCache::init(Klass* k, Method* m) {
   assert(_method_idnum >= 0, "sanity check");
 }
 
-Method* Universe::finalizer_register_method()   { return _finalizer_register_cache->get_method(); }
-Method* Universe::loader_addClass_method()      { return _loader_addClass_cache->get_method(); }
-Method* Universe::throw_illegal_access_error()  { return _throw_illegal_access_error_cache->get_method(); }
-Method* Universe::throw_no_such_method_error()  { return _throw_no_such_method_error_cache->get_method(); }
-Method* Universe::do_stack_walk_method()        { return _do_stack_walk_cache->get_method(); }
 
 Method* LatestMethodCache::get_method() {
   if (klass() == NULL) return NULL;

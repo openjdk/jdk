@@ -34,7 +34,6 @@
 
 class FileMapInfo;
 class outputStream;
-class SerializeClosure;
 
 template<class E> class GrowableArray;
 
