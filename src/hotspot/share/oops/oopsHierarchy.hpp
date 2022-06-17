@@ -85,7 +85,9 @@ class oop {
   void unregister_oop();
 
   void check_oop() const {
+#if INCLUDE_ZGC
     z_catch_colored_oops(_o);
+#endif
   }
 
   void register_if_checking() {

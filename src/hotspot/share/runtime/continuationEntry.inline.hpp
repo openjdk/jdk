@@ -28,8 +28,10 @@
 #include "runtime/continuationEntry.hpp"
 
 #include "oops/access.hpp"
-#include "gc/z/zHeap.inline.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
+#if INCLUDE_ZGC
+#include "gc/z/zHeap.inline.hpp"
+#endif
 
 #include CPU_HEADER_INLINE(continuationEntry)
 
@@ -51,10 +53,12 @@ inline bool is_stack_watermark_processed(const JavaThread* thread, const void* a
 }
 
 inline oop ContinuationEntry::cont_oop(const JavaThread* thread) const {
+#if INCLUDE_ZGC
   if (UseZGC) {
     assert(!ZHeap::heap()->is_in((uintptr_t)(void*)&_cont), "Should not be in the heap");
     assert(is_stack_watermark_processed(thread != nullptr ? thread : JavaThread::current(), &_cont), "Not processed");
   }
+#endif
   return RawAccess<>::oop_load((oop*)&_cont);
 }
 

@@ -1280,7 +1280,7 @@ stackChunkOop Freeze<ConfigT>::allocate_chunk(size_t stack_size) {
   assert(chunk->flags() == 0, "");
   assert(chunk->is_gc_mode() == false, "");
 
-
+#if INCLUDE_ZGC
   if (UseZGC) {
     // fields are uninitialized
     chunk->set_parent_access<IS_DEST_UNINITIALIZED>(_cont.last_nonempty_chunk());
@@ -1288,8 +1288,9 @@ stackChunkOop Freeze<ConfigT>::allocate_chunk(size_t stack_size) {
     ZStackChunkGCData::initialize(chunk);
     assert(!chunk->requires_barriers(), "ZGC always allocates in the young generation");
     _barriers = false;
-  } else {
-    // ...
+  } else
+#endif
+  {
     chunk->set_parent_raw<typename ConfigT::OopT>(_cont.last_nonempty_chunk());
     chunk->set_cont_raw<typename ConfigT::OopT>(_cont.continuation());
     if (fast_oop != nullptr) {
