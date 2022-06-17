@@ -79,6 +79,26 @@ public sealed interface ClassDesc
     }
 
     /**
+      * Returns a {@linkplain ClassDesc} for a class or interface type,
+      * given the name of the class or interface in internal form,
+      * such as {@code "java/lang/String"}.
+      * (To create a descriptor for an array type, either use {@link #ofDescriptor(String)}
+      * or {@link #arrayType()}; to create a descriptor for a primitive type, use
+      * {@link #ofDescriptor(String)} or use the predefined constants in
+      * {@link ConstantDescs}).
+      *
+      * @param name the fully qualified class name, in internal (slash-separated) form
+      * @return a {@linkplain ClassDesc} describing the desired class
+      * @throws NullPointerException if the argument is {@code null}
+      * @throws IllegalArgumentException if the name string is not in the
+      * correct format
+      */
+     static ClassDesc ofInternalName(String name) {
+         ConstantUtils.validateInternalClassName(requireNonNull(name));
+         return ClassDesc.ofDescriptor("L" + name + ";");
+     }
+
+    /**
      * Returns a {@linkplain ClassDesc} for a class or interface type,
      * given a package name and the unqualified (simple) name for the
      * class or interface.
