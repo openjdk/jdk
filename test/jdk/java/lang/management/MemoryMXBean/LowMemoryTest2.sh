@@ -71,7 +71,7 @@ go -noclassgc -XX:MaxMetaspaceSize=32m -XX:+UseParallelGC LowMemoryTest2
 #  can sit atop of uncommitted address space, denying new loaders address space. In the old Metaspace,
 #  we would have committed the space right away and therefore the MemoryMXBean "committed" trigger
 #  would have fired. In the new Metaspace, we don't commit, so the MemoryMXBean does not fire.
-go -noclassgc -XX:MaxMetaspaceSize=16m -XX:CompressedClassSpaceSize=4m LowMemoryTest2
+go -noclassgc -XX:MaxMetaspaceSize=4m LowMemoryTest2
 
 echo ''
 if [ $failures -gt 0 ];

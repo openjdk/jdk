@@ -736,11 +736,9 @@ JVM_ENTRY(jobject, jmm_GetMemoryUsage(JNIEnv* env, jboolean heap))
   MemoryUsage usage;
 
   if (heap) {
-    // HeapUsage = GC heap
     usage = Universe::heap()->memory_usage();
   } else {
     // Calculate the memory usage by summing up the pools.
-    // NonHeapUsage = CodeHeaps + Metaspace
     size_t total_init = 0;
     size_t total_used = 0;
     size_t total_committed = 0;

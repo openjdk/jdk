@@ -27,9 +27,6 @@ package metaspace.gc;
  * Test observers the progress on used/committed memory.
  * MemoryPoolMXBean is used for that purpose.
  *
- * Depending on command line option the test checks either Metaspace or
- * Compressed Class Space area.
- *
  * This test checks two things:
  * 1) Loading/Unloading classes doesn't cause memory increase
  * 2) Loading classes causes permanent increase of memory.
@@ -127,18 +124,8 @@ public class MemoryUsageTest extends MetaspaceBaseGC {
         }
     }
 
-    /**
-     * Looks up for memory pool name.
-     * @param args command line options
-     */
     @Override
     protected void parseArgs(String[] args) {
-    }
-
-    private void printUsage() {
-        System.err.println("Usage: ");
-        System.err.println("java [-Xms..] [-XX:MetaspaceSize=..]  [-XX:MaxMetaspaceSize=..] \\");
-        System.err.println("    " + MemoryUsageTest.class.getCanonicalName());
     }
 
     /**
