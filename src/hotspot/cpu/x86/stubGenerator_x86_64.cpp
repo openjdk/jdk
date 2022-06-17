@@ -7691,7 +7691,9 @@ address generate_avx_ghash_processBlocks() {
       framesize // inclusive of return address
     };
 
-    CodeBuffer code("jfr_write_checkpoint", 512, 64);
+    // It looks like changing the code to use resolve_jobject increased the code size.
+    // We therefore bumped the size from 512 to 1024.
+    CodeBuffer code("jfr_write_checkpoint", 1024, 64);
     MacroAssembler* _masm = new MacroAssembler(&code);
 
     address start = __ pc();
