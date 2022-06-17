@@ -30,14 +30,8 @@
 #include "gc/shared/gcThreadLocalData.hpp"
 #include "gc/shared/threadLocalAllocBuffer.hpp"
 #include "memory/allocation.hpp"
-#include "oops/oop.hpp"
 #include "runtime/globals.hpp"
-#include "runtime/handshake.hpp"
-#include "runtime/javaFrameAnchor.hpp"
 #include "runtime/os.hpp"
-#include "runtime/park.hpp"
-#include "runtime/safepointMechanism.hpp"
-#include "runtime/stackOverflow.hpp"
 #include "runtime/threadHeapSampler.hpp"
 #include "runtime/threadLocalStorage.hpp"
 #include "runtime/threadStatisticalInfo.hpp"
@@ -50,18 +44,19 @@
 
 class HandleArea;
 class HandleMark;
+class ICRefillVerifier;
+class JvmtiRawMonitor;
+class Metadata;
+class OSThread;
+class ParkEvent;
+class ResourceArea;
 class SafeThreadsListPtr;
+class ThreadClosure;
 class ThreadsList;
 class ThreadsSMRSupport;
 
-class JvmtiRawMonitor;
-class OSThread;
-
-class ThreadClosure;
-class ICRefillVerifier;
-
-class Metadata;
-class ResourceArea;
+class OopClosure;
+class CodeBlobClosure;
 
 DEBUG_ONLY(class ResourceMark;)
 

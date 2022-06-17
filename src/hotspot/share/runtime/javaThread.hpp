@@ -48,38 +48,29 @@
 #include "jfr/support/jfrThreadExtension.hpp"
 #endif
 
-class ThreadSafepointState;
-class ThreadsList;
-
+class AsyncExceptionHandshake;
+class ContinuationEntry;
+class DeoptResourceMark;
 class JNIHandleBlock;
+class JVMCIRuntime;
+
+class JvmtiDeferredUpdates;
 class JvmtiSampledObjectAllocEventCollector;
 class JvmtiThreadState;
+
+class Metadata;
+class OopStorage;
 class OSThread;
+
+class ThreadsList;
+class ThreadSafepointState;
 class ThreadStatistics;
-class AsyncExceptionHandshake;
 
 class vframeArray;
 class vframe;
 class javaVFrame;
 
-class DeoptResourceMark;
-class JvmtiDeferredUpdates;
-
-class JVMCIRuntime;
-
-class Metadata;
-
-class OopStorage;
-
-class ContinuationEntry;
-
-DEBUG_ONLY(class ResourceMark;)
-
-class WorkerThread;
-
 class JavaThread;
-class CompilerThread;
-
 typedef void (*ThreadFunction)(JavaThread*, TRAPS);
 
 class JavaThread: public Thread {
