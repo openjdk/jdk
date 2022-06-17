@@ -527,16 +527,16 @@ public class ICC_ColorSpace extends ColorSpace {
                     ColorTransform[] transforms = new ColorTransform[2];
                     var xyz = (ICC_ColorSpace) getInstance(CS_CIEXYZ);
                     PCMM mdl = CMSManager.getModule();
-                    transforms[0] = mdl.createTransform(xyz.getProfile(),
-                                    ICC_Profile.icRelativeColorimetric,
-                                    ColorTransform.In);
                     try {
-                        transforms[1] = mdl.createTransform(thisProfile,
-                                        ColorTransform.Any, ColorTransform.Out);
+                        transforms[0] = mdl.createTransform(xyz.getProfile(),
+                                        ICC_Profile.icRelativeColorimetric,
+                                        ColorTransform.In);
                     } catch (CMMException e) {
-                        transforms[1] = mdl.createTransform(thisProfile,
-                                        ColorTransform.Any, ColorTransform.Out);
+                        transforms[0] = mdl.createTransform(xyz.getProfile(),
+                                        ColorTransform.Any, ColorTransform.In);
                     }
+                    transforms[1] = mdl.createTransform(thisProfile,
+                                    ColorTransform.Any, ColorTransform.Out);
                     if (needScaleInit) {
                         setComponentScaling();
                     }
