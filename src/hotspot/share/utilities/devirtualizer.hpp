@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_MEMORY_DEVIRTUALIZER_HPP
-#define SHARE_MEMORY_DEVIRTUALIZER_HPP
+#ifndef SHARE_UTILITIES_DEVIRTUALIZER_HPP
+#define SHARE_UTILITIES_DEVIRTUALIZER_HPP
 
 #include "memory/allocation.hpp"
 #include "oops/oopsHierarchy.hpp"
@@ -41,4 +41,4 @@ class Devirtualizer {
   template <typename BitMapClosureType>          static bool do_bit(BitMapClosureType* closure, BitMap::idx_t index);
 };
 
-#endif // SHARE_MEMORY_DEVIRTUALIZER_HPP
+#endif // SHARE_UTILITIES_DEVIRTUALIZER_HPP

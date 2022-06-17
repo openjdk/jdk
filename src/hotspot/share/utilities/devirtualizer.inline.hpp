@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_MEMORY_DEVIRTUALIZER_INLINE_HPP
-#define SHARE_MEMORY_DEVIRTUALIZER_INLINE_HPP
+#ifndef SHARE_UTILITIES_DEVIRTUALIZER_INLINE_HPP
+#define SHARE_UTILITIES_DEVIRTUALIZER_INLINE_HPP
 
 #include "utilities/devirtualizer.hpp"
 
@@ -167,5 +167,5 @@ inline void Devirtualizer::do_derived_oop(DerivedOopClosureType* closure, oop* b
   call_do_derived_oop(&DerivedOopClosureType::do_derived_oop, &DerivedOopClosure::do_derived_oop, closure, base, derived);
 }
 
-#endif // SHARE_MEMORY_DEVIRTUALIZER_INLINE_HPP
+#endif // SHARE_UTILITIES_DEVIRTUALIZER_INLINE_HPP
 
