@@ -133,7 +133,7 @@ public class ClassDescTest extends SymbolicDescTest {
     public void testSimpleClassDesc() throws ReflectiveOperationException {
 
         List<ClassDesc> stringClassDescs = Arrays.asList(ClassDesc.ofDescriptor("Ljava/lang/String;"),
-                                                        ClassDesc.ofInternalName("java/lang/String"),                                                        ClassDesc.of("java.lang", "String"),
+                                                        ClassDesc.ofInternalName("java/lang/String"),
                                                         ClassDesc.of("java.lang", "String"),
                                                         ClassDesc.of("java.lang.String"),
                                                         ClassDesc.of("java.lang.String").arrayType().componentType(),
