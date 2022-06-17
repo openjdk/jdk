@@ -25,13 +25,25 @@
 
 package javax.crypto;
 
-import java.io.*;
-import java.security.*;
-import java.security.spec.*;
-import sun.security.x509.AlgorithmId;
-import sun.security.util.DerValue;
 import sun.security.util.DerInputStream;
 import sun.security.util.DerOutputStream;
+import sun.security.util.DerValue;
+import sun.security.util.KnownOIDs;
+import sun.security.x509.AlgorithmId;
+
+import java.io.IOException;
+import java.security.AlgorithmParameters;
+import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
+import java.security.Key;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.Provider;
+import java.security.Security;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This class implements the {@code EncryptedPrivateKeyInfo} type
@@ -53,6 +65,29 @@ import sun.security.util.DerOutputStream;
  * @see java.security.spec.PKCS8EncodedKeySpec
  *
  * @since 1.4
+ *
+ *
+ *
+ *
+ * EncryptedPrivateKeyInfo ::= SEQUENCE {
+        encryptionAlgorithm  EncryptionAlgorithmIdentifier,
+        encryptedData        EncryptedData }
+
+encryption alg's AlgID...
+
+   PBES2Algorithms ALGORITHM-IDENTIFIER ::= {
+      {PBES2-params IDENTIFIED BY id-PBES2},
+      ...
+   }
+
+   id-PBES2 OBJECT IDENTIFIER ::= {pkcs-5 13}
+
+   PBES2-params ::= SEQUENCE {
+      keyDerivationFunc AlgorithmIdentifier {{PBES2-KDFs}},
+      encryptionScheme AlgorithmIdentifier {{PBES2-Encs}}
+   }
+ *
+ *
  */
 
 public class EncryptedPrivateKeyInfo {
@@ -181,7 +216,12 @@ public class EncryptedPrivateKeyInfo {
         if (algParams == null) {
             throw new NullPointerException("algParams must be non-null");
         }
-        this.algid = AlgorithmId.get(algParams);
+        List<KnownOIDs> list = getPBES2(algParams.getAlgorithm());
+        if (list == null) {
+            this.algid = AlgorithmId.get(algParams);
+        } else {
+            this.algid = AlgorithmId.get("PBES2");
+        }
 
         if (encryptedData == null) {
             throw new NullPointerException("encryptedData must be non-null");
@@ -427,4 +467,27 @@ public class EncryptedPrivateKeyInfo {
             throw new IOException("invalid key encoding");
         }
     }
+
+    private static final String PBES2Header = "PBEWithHmacSHA";
+    List<KnownOIDs> getPBES2(String algo) {
+        List<KnownOIDs> list = null;
+        if (!algo.startsWith(PBES2Header)) {
+            return list;
+        }
+
+        list =  new ArrayList<>(2);
+        if (algo.charAt(PBES2Header.length()) == '1') {
+            list.add(KnownOIDs.HmacSHA1);
+        } else {
+            list.add(KnownOIDs.findMatch(algo.substring(7, 17)));
+        }
+
+        if (algo.endsWith("AES_128")) {
+            list.add(KnownOIDs.findMatch("AES_128/CBC/NoPadding"));
+        } else if (algo.endsWith("AES_256")) {
+            list.add(KnownOIDs.findMatch("AES_128/CBC/NoPadding"));
+        }
+        return list;
+    }
+
 }
