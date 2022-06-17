@@ -402,6 +402,13 @@ public:
   // that are subsumed into coalesced ranges of dead memory need to be "unregistered".
   void global_oop_iterate_and_fill_dead(OopIterateClosure* cl);
   void oop_iterate_humongous(OopIterateClosure* cl);
+  void oop_iterate_humongous(OopIterateClosure* cl, HeapWord* start, size_t words);
+
+  // Invoke closure on every reference contained within the humongous object that spans this humongous
+  // region if the reference is contained within a DIRTY card and the reference is no more than words following
+  // start within the humongous object.
+  void oop_iterate_humongous_slice(OopIterateClosure* cl, bool dirty_only, HeapWord* start, size_t words,
+                                   bool write_table, bool is_concurrent);
 
   HeapWord* block_start(const void* p) const;
   size_t block_size(const HeapWord* p) const;

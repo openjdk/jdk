@@ -2461,6 +2461,7 @@ private:
               // old-gen region in the most recent collection set, or if this card holds pointers to other non-specific
               // old-gen heap regions.
               if (r->is_humongous()) {
+                // Need to examine both dirty and clean cards during mixed evac.
                 r->oop_iterate_humongous(&cl);
               } else {
                 // This is a mixed evacuation.  Old regions that are candidates for collection have not been coalesced
