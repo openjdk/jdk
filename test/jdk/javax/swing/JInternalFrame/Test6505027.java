@@ -37,7 +37,11 @@ import java.awt.Container;
 import java.awt.KeyboardFocusManager;
 import java.awt.Point;
 import java.awt.Robot;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import java.awt.event.InputEvent;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import javax.swing.DefaultCellEditor;
 import javax.swing.JComboBox;
 import javax.swing.JDesktopPane;
@@ -58,16 +62,20 @@ public class Test6505027 {
     private static final int WIDTH = 450;
     private static final int HEIGHT = 200;
     private static final int OFFSET = 10;
-
-    private static final String[] COLUMNS = { "Size", "Shape" }; // NON-NLS: column names
-    private static final String[] ITEMS = { "a", "b", "c", "d" }; // NON-NLS: combobox content
-    private static final String KEY = "terminateEditOnFocusLost"; // NON-NLS: property name
+    // NON-NLS: column names
+    private static final String[] COLUMNS = {"Size", "Shape"};
+    // NON-NLS: combobox content
+    private static final String[] ITEMS = {"a", "b", "c", "d"};
+    // NON-NLS: property name
+    private static final String KEY = "terminateEditOnFocusLost";
+    private static Robot robot;
+    private static final CountDownLatch focusGainedLatch = new CountDownLatch(1);
+    private final JTable table = new JTable(new DefaultTableModel(COLUMNS, 2));
 
     public static void main(String[] args) throws Throwable {
+        robot = new Robot();
         SwingTest.start(Test6505027.class);
     }
-
-    private final JTable table = new JTable(new DefaultTableModel(COLUMNS, 2));
 
     public Test6505027(JFrame main) {
         Container container = main;
@@ -86,7 +94,16 @@ public class Test6505027 {
             this.table.putClientProperty(KEY, Boolean.TRUE);
         }
         TableColumn column = this.table.getColumn(COLUMNS[1]);
-        column.setCellEditor(new DefaultCellEditor(new JComboBox(ITEMS)));
+        final JComboBox comboBox = new JComboBox(ITEMS);
+        comboBox.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusGained(final FocusEvent e) {
+                super.focusGained(e);
+                focusGainedLatch.countDown();
+            }
+        });
+
+        column.setCellEditor(new DefaultCellEditor(comboBox));
 
         container.add(BorderLayout.NORTH, new JTextField());
         container.add(BorderLayout.CENTER, new JScrollPane(this.table));
@@ -96,17 +113,23 @@ public class Test6505027 {
         Point point = this.table.getCellRect(1, 1, false).getLocation();
         SwingUtilities.convertPointToScreen(point, this.table);
 
-        Robot robot = new Robot();
         robot.setAutoDelay(50);
         robot.mouseMove(point.x + 1, point.y + 1);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
     }
 
-    public static void validate() {
-        Component component = KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
+    public static void validate() throws InterruptedException {
+        if (!focusGainedLatch.await(5, TimeUnit.SECONDS)) {
+            throw new RuntimeException("Waited too long, but JComboBox hasn't " +
+                                       "gained the focus yet");
+        }
+        Component component =
+                KeyboardFocusManager.getCurrentKeyboardFocusManager()
+                                    .getFocusOwner();
         if (!component.getClass().equals(JComboBox.class)) {
             throw new Error("unexpected focus owner: " + component);
         }
     }
+
 }
