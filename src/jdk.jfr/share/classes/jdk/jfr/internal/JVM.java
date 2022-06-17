@@ -265,7 +265,7 @@ public final class JVM {
      *
      * Setting period to 0 turns off the method sampler.
      *
-     * @param periodlMillis the sampling period
+     * @param periodMillis the sampling period
      */
     public native void setMethodSamplingPeriod(long type, long periodMillis);
 
