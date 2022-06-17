@@ -25,76 +25,11 @@
 #define SHARE_GC_Z_ZCONTINUATION_INLINE_HPP
 
 #include "classfile/javaClasses.hpp"
-#include "compiler/oopMap.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zContinuation.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zStackChunkGCData.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/frame.inline.hpp"
-#include "runtime/stackChunkFrameStream.inline.hpp"
-
-class ZColorStackOopClosure : public OopClosure {
-private:
-  uint64_t _color;
-
-public:
-  ZColorStackOopClosure(uint64_t color)
-    : _color(color) {}
-
-  virtual void do_oop(oop* p) {
-    // Convert zaddress to zpointer
-    zaddress_unsafe* p_zaddress_unsafe = (zaddress_unsafe*)p;
-    zpointer* p_zpointer = (zpointer*)p;
-    *p_zpointer = ZAddress::color(*p_zaddress_unsafe, _color);
-
-  }
-  virtual void do_oop(narrowOop* p) {
-    ShouldNotReachHere();
-  }
-};
-
-class ZUncolorStackOopClosure : public OopClosure {
-public:
-  void do_oop(oop* p) override {
-    zpointer ptr = *(volatile zpointer*)p;
-    zaddress addr = ZPointer::uncolor(ptr);
-    *(volatile zaddress*)p = addr;
-  }
-
-  void do_oop(narrowOop* p) override {}
-};
-
-class ZColorStackFrameClosure {
-  uint64_t _color;
-
-public:
-  ZColorStackFrameClosure(uint64_t color)
-    : _color(color) {}
-
-  template <ChunkFrames frame_kind, typename RegisterMapT>
-  bool do_frame(const StackChunkFrameStream<frame_kind>& f, const RegisterMapT* map) {
-    ZColorStackOopClosure oop_cl(_color);
-    f.iterate_oops(&oop_cl, map);
-    return true;
-  }
-};
-
-inline void ZContinuation::color_stack_pointers(stackChunkOop chunk) {
-  ZColorStackFrameClosure frame_cl(ZStackChunkGCData::color(chunk));
-  chunk->iterate_stack(&frame_cl);
-}
-
-template <typename RegisterMapT>
-inline void ZContinuation::uncolor_stack_pointers(const frame& f, const RegisterMapT* map) {
-  ZUncolorStackOopClosure oop_closure;
-  if (f.is_interpreted_frame()) {
-    f.oops_interpreted_do(&oop_closure, nullptr);
-  } else {
-    OopMapDo<ZUncolorStackOopClosure, DerivedOopClosure, SkipNullValue> visitor(&oop_closure, nullptr);
-    visitor.oops_do(&f, map, f.oop_map());
-  }
-}
 
 inline bool ZContinuation::requires_barriers(const ZHeap* heap, stackChunkOop chunk) {
   zpointer* cont_addr = chunk->field_addr<zpointer>(jdk_internal_vm_StackChunk::cont_offset());

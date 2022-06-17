@@ -37,6 +37,7 @@ class BarrierSetAssembler;
 class BarrierSetC1;
 class BarrierSetC2;
 class BarrierSetNMethod;
+class BarrierSetStackChunk;
 class JavaThread;
 
 // This class provides the interface between a barrier implementation and
@@ -74,6 +75,7 @@ private:
   BarrierSetC1* _barrier_set_c1;
   BarrierSetC2* _barrier_set_c2;
   BarrierSetNMethod* _barrier_set_nmethod;
+  BarrierSetStackChunk* _barrier_set_stack_chunk;
 
 public:
   // Metafunction mapping a class derived from BarrierSet to the
@@ -98,6 +100,7 @@ protected:
              BarrierSetC1* barrier_set_c1,
              BarrierSetC2* barrier_set_c2,
              BarrierSetNMethod* barrier_set_nmethod,
+             BarrierSetStackChunk* barrier_set_stack_chunk,
              const FakeRtti& fake_rtti);
   ~BarrierSet() { }
 
@@ -163,6 +166,11 @@ public:
 
   BarrierSetNMethod* barrier_set_nmethod() {
     return _barrier_set_nmethod;
+  }
+
+  BarrierSetStackChunk* barrier_set_stack_chunk() {
+    assert(_barrier_set_stack_chunk != NULL, "should be set");
+    return _barrier_set_stack_chunk;
   }
 
   // The AccessBarrier of a BarrierSet subclass is called by the Access API

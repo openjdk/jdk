@@ -19,39 +19,30 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-#ifndef SHARE_GC_Z_ZCONTINUATION_HPP
-#define SHARE_GC_Z_ZCONTINUATION_HPP
+#include "precompiled.hpp"
+#include "gc/z/zBarrierSetStackChunk.hpp"
+#include "gc/z/zContinuation.hpp"
+#include "utilities/debug.hpp"
 
-#include "memory/allStatic.hpp"
-#include "memory/iterator.hpp"
-#include "oops/oopsHierarchy.hpp"
+void ZBarrierSetStackChunk::encode_gc_mode(stackChunkOop chunk, OopIterator* iterator) {
+  ZContinuation::ZColorStackOopClosure cl(chunk);
+  iterator->oops_do(&cl);
+}
 
-class OopClosure;
-class ZHeap;
+void ZBarrierSetStackChunk::decode_gc_mode(stackChunkOop chunk, OopIterator* iterator) {
+  ZContinuation::ZUncolorStackOopClosure cl;
+  iterator->oops_do(&cl);
+}
 
-class ZContinuation : public AllStatic {
-public:
-  static bool requires_barriers(const ZHeap* heap, stackChunkOop chunk);
+oop ZBarrierSetStackChunk::load_oop(stackChunkOop chunk, oop* addr) {
+  return ZContinuation::load_oop(chunk, addr);
+}
 
-  static oop load_oop(stackChunkOop chunk, void* addr);
 
-  class ZColorStackOopClosure : public OopClosure {
-  private:
-    uintptr_t _color;
-
-  public:
-    ZColorStackOopClosure(stackChunkOop chunk);
-    virtual void do_oop(oop* p) override;
-    virtual void do_oop(narrowOop* p) override;
-  };
-
-  class ZUncolorStackOopClosure : public OopClosure {
-  public:
-    virtual void do_oop(oop* p) override;
-    virtual void do_oop(narrowOop* p) override;
-  };
-};
-
-#endif // SHARE_GC_Z_ZCONTINUATION_HPP
+oop ZBarrierSetStackChunk::load_oop(stackChunkOop chunk, narrowOop* addr) {
+  ShouldNotReachHere();
+  return NULL;
+}

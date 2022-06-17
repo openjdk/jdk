@@ -229,7 +229,7 @@ inline ZGeneration* ZBarrier::remap_generation(zpointer ptr) {
   // *Heap object fields*:
   //
   // could have double remap bit errors, and may enter this path. We are using
-  // knowledge about the how *remember* bits are to narrow down the
+  // knowledge about how *remember* bits are set, to narrow down the
   // possibilities.
 
   // Short summary:

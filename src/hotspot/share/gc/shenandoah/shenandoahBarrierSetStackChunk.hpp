@@ -19,39 +19,15 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-#ifndef SHARE_GC_Z_ZCONTINUATION_HPP
-#define SHARE_GC_Z_ZCONTINUATION_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHBARRIERSETSTACKCHUNK_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHBARRIERSETSTACKCHUNK_HPP
 
-#include "memory/allStatic.hpp"
-#include "memory/iterator.hpp"
-#include "oops/oopsHierarchy.hpp"
+#include "gc/shared/barrierSetStackChunk.hpp"
 
-class OopClosure;
-class ZHeap;
-
-class ZContinuation : public AllStatic {
-public:
-  static bool requires_barriers(const ZHeap* heap, stackChunkOop chunk);
-
-  static oop load_oop(stackChunkOop chunk, void* addr);
-
-  class ZColorStackOopClosure : public OopClosure {
-  private:
-    uintptr_t _color;
-
-  public:
-    ZColorStackOopClosure(stackChunkOop chunk);
-    virtual void do_oop(oop* p) override;
-    virtual void do_oop(narrowOop* p) override;
-  };
-
-  class ZUncolorStackOopClosure : public OopClosure {
-  public:
-    virtual void do_oop(oop* p) override;
-    virtual void do_oop(narrowOop* p) override;
-  };
+class ShenandoahBarrierSetStackChunk : public BarrierSetStackChunk {
 };
 
-#endif // SHARE_GC_Z_ZCONTINUATION_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHBARRIERSETSTACKCHUNK_HPP

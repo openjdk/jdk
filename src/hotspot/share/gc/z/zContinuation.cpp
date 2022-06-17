@@ -24,12 +24,12 @@
 #include "precompiled.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zBarrier.inline.hpp"
-#include "gc/z/zContinuation.hpp"
+#include "gc/z/zContinuation.inline.hpp"
 #include "gc/z/zStackChunkGCData.inline.hpp"
 #include "runtime/atomic.hpp"
 
-static zpointer materialize_zpointer(void* addr, stackChunkOop chunk) {
-  volatile uintptr_t* const value_addr = reinterpret_cast<volatile uintptr_t*>(addr);
+static zpointer materialize_zpointer(stackChunkOop chunk, void* addr) {
+  volatile uintptr_t* const value_addr = (volatile uintptr_t*)addr;
 
   // A stack chunk has two modes:
   //
@@ -74,10 +74,36 @@ static zpointer materialize_zpointer(void* addr, stackChunkOop chunk) {
   return ZAddress::color(zaddr, color);
 }
 
-oop ZContinuation::load_oop(void* addr, stackChunkOop chunk) {
+oop ZContinuation::load_oop(stackChunkOop chunk, void* addr) {
   // addr could contain either a zpointer or a zaddress
-  const zpointer zptr = materialize_zpointer(addr, chunk);
+  const zpointer zptr = materialize_zpointer(chunk, addr);
 
   // Apply the load barrier, without healing the zaddress/zpointer
   return to_oop(ZBarrier::load_barrier_on_oop_field_preloaded(NULL /* p */, zptr));
+}
+
+ZContinuation::ZColorStackOopClosure::ZColorStackOopClosure(stackChunkOop chunk)
+    : _color(ZStackChunkGCData::color(chunk)) {
+}
+
+void ZContinuation::ZColorStackOopClosure::do_oop(oop* p) {
+  // Convert zaddress to zpointer
+  zaddress_unsafe* p_zaddress_unsafe = (zaddress_unsafe*)p;
+  zpointer* p_zpointer = (zpointer*)p;
+  *p_zpointer = ZAddress::color(*p_zaddress_unsafe, _color);
+
+}
+
+void ZContinuation::ZColorStackOopClosure::do_oop(narrowOop* p) {
+  ShouldNotReachHere();
+}
+
+void ZContinuation::ZUncolorStackOopClosure::do_oop(oop* p) {
+  zpointer ptr = *(volatile zpointer*)p;
+  zaddress addr = ZPointer::uncolor(ptr);
+  *(volatile zaddress*)p = addr;
+}
+
+void ZContinuation::ZUncolorStackOopClosure::do_oop(narrowOop* p) {
+  ShouldNotReachHere();
 }
