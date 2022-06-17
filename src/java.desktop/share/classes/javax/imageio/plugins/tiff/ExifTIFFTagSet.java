@@ -32,8 +32,8 @@ import java.util.List;
  * A class representing the tags found in an Exif IFD.  Exif is a
  * standard for annotating images used by most digital camera
  * manufacturers.  The Exif specification may be found at
- * <a href="http://www.exif.org/Exif2-2.PDF">
- * {@code http://www.exif.org/Exif2-2.PDF}
+ * <a href="http://web.archive.org/web/20131018091152/http://exif.org/Exif2-2.PDF">
+ * {@code http://web.archive.org/web/20131018091152/http://exif.org/Exif2-2.PDF}
  * </a>.
  *
  * <p> The definitions of the data types referenced by the field
