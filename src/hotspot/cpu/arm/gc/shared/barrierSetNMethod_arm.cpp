@@ -34,6 +34,10 @@ void BarrierSetNMethod::disarm(nmethod* nm) {
   ShouldNotReachHere();
 }
 
+void BarrierSetNMethod::disarm_with_value(nmethod* nm, int value) {
+  ShouldNotReachHere();
+}
+
 bool BarrierSetNMethod::is_armed(nmethod* nm) {
   ShouldNotReachHere();
   return false;

@@ -226,10 +226,10 @@ void ZNMethod::disarm(nmethod* nm) {
   bs->disarm(nm);
 }
 
-void ZNMethod::arm(nmethod* nm, int arm_value) {
+void ZNMethod::disarm_with_value(nmethod* nm, int value) {
   BarrierSetNMethod* const bs = BarrierSet::barrier_set()->barrier_set_nmethod();
   if (bs != NULL) {
-    bs->arm(nm, arm_value);
+    bs->disarm_with_value(nm, value);
   }
 }
 
@@ -393,7 +393,7 @@ public:
       // The new disarm value is mark good, and hence never store good. Therefore, this operation
       // never completely disarms the nmethod. Therefore, we don't need to patch barriers yet
       // via ZNMethod::nmethod_patch_barriers.
-      ZNMethod::arm(nm, (int)untype(new_disarm_value_ptr));
+      ZNMethod::disarm_with_value(nm, (int)untype(new_disarm_value_ptr));
 
       log_trace(gc, nmethod)("nmethod: " PTR_FORMAT " visited by unlinking [" PTR_FORMAT " -> " PTR_FORMAT "]", p2i(nm), prev_color, untype(new_disarm_value_ptr));
       assert(ZNMethod::is_armed(nm), "Must be considered armed");

@@ -49,7 +49,7 @@ public:
 
   static bool is_armed(nmethod* nm);
   static void disarm(nmethod* nm);
-  static void arm(nmethod* nm, int arm_value);
+  static void disarm_with_value(nmethod* nm, int value);
 
   static void nmethod_patch_barriers(nmethod* nm);
 

@@ -162,7 +162,7 @@ void BarrierSetNMethod::disarm(nmethod* nm) {
   barrier->set_value(disarmed_value());
 }
 
-void BarrierSetNMethod::arm(nmethod* nm, int arm_value) {
+void BarrierSetNMethod::disarm_with_value(nmethod* nm, int value) {
   Unimplemented();
 }
 
