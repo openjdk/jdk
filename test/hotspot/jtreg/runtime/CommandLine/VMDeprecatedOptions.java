@@ -28,6 +28,7 @@ import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.cli.*;
+import sun.hotspot.WhiteBox;
 
 /*
  * @test
@@ -35,10 +36,14 @@ import jdk.test.lib.cli.*;
  * @summary Test that various options are deprecated. See deprecated_jvm_flags in arguments.cpp.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @run driver VMDeprecatedOptions
+ * @build sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI VMDeprecatedOptions
+
  */
 public class VMDeprecatedOptions {
 
+    private final static WhiteBox wb = WhiteBox.getWhiteBox();
     /**
      * each entry is {[0]: option name, [1]: value to set
      * (true/false/n/string)}.
@@ -57,7 +62,6 @@ public class VMDeprecatedOptions {
             {"TLABStats",                 "false"},
             {"AllowRedefinitionToAddDeleteMethods", "true"},
 
-            { "FlightRecorder",           "false"},
             // deprecated alias flags (see also aliased_jvm_flags):
             {"DefaultMaxRAMFraction", "4"},
             {"CreateMinidumpOnCrash", "false"}
@@ -69,10 +73,6 @@ public class VMDeprecatedOptions {
     static String getDeprecationString(String optionName) {
         return "Option " + optionName
             + " was deprecated in version [\\S]+ and will likely be removed in a future release";
-    }
-
-    static String getUnrecognizedOptionMessage(String optionName) {
-        return "Unrecognized VM option '" + optionName + "'";
     }
 
     static void testDeprecated(String[][] optionInfo) throws Throwable {
@@ -92,19 +92,13 @@ public class VMDeprecatedOptions {
             output.shouldMatch(match);
         }
 
-        // Verify ExtendedDTraceProbes option for jdk19
-        // if DTRACE_ENABLED is defined, Deprecated VM option
-        // if not, Unrecognized VM option
-        String dtraceOptionNames[] =  { "ExtendedDTraceProbes" };
-        String dtraceEexpectedValues[] = { "false" };
-        output = CommandLineOptionTest.startVMWithOptions(dtraceOptionNames, dTraceEexpectedValues);
-        try {
+        Object jfr = wb.getVMFlag("FlightRecorder");
+        if (jfr != null) {
+            String jfrOptionNames[] =  { "FlightRecorder" };
+            String jfrEexpectedValues[] = { "false" };
+            output = CommandLineOptionTest.startVMWithOptions(jfrOptionNames, jfrEexpectedValues);
             output.shouldHaveExitValue(0);
-            String match = getDeprecationString(dtraceOptionNames[0]);
-            output.shouldMatch(match);
-        }
-        catch (RuntimeException e) {
-            String match = getUnrecognizedOptionMessage(dtraceOptionNames[0]);
+            String match = getDeprecationString(jfrOptionNames[0]);
             output.shouldMatch(match);
         }
     }
