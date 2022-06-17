@@ -32,7 +32,6 @@
 #include "utilities/macros.hpp"
 
 class JavaThread;
-class JavaVMInitArgs;
 class Metadata;
 class Thread;
 class ThreadClosure;

@@ -30,6 +30,7 @@
 #include "stack_zero.hpp"
 #include "stack_zero.inline.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "utilities/align.hpp"
 
 // Inlined causes circular inclusion with thread.hpp

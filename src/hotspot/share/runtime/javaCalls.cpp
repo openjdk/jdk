@@ -48,6 +48,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/thread.inline.hpp"
 
 // -----------------------------------------------------
 // Implementation of JavaCallWrapper
