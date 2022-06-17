@@ -984,7 +984,13 @@ public class HtmlDocletWriter {
             case LINK, LINK_PLAIN -> {
                 // {@link[plain] reference label...}
                 LinkTree lt = (LinkTree) see;
-                refText = lt.getReference().toString();
+                var linkRef = lt.getReference();
+                if (linkRef == null) {
+                    messages.warning(ch.getDocTreePath(see),"doclet.link.no_reference");
+                    return invalidTagOutput(resources.getText("doclet.tag.invalid_input", lt.toString()),
+                        Optional.empty());
+                }
+                refText = linkRef.toString();
                 label = lt.getLabel();
             }
 
