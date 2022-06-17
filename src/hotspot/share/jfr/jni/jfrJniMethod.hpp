@@ -158,9 +158,10 @@ jboolean JNICALL jfr_is_class_excluded(JNIEnv* env, jobject jvm, jclass clazz);
 
 jboolean JNICALL jfr_is_class_instrumented(JNIEnv* env, jobject jvm, jclass clazz);
 
+jboolean JNICALL jfr_is_containerized(JNIEnv* env, jobject jvm);
+
 #ifdef __cplusplus
 }
 #endif
 
 #endif // SHARE_JFR_JNI_JFRJNIMETHOD_HPP
-

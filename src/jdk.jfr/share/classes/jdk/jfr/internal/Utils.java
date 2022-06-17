@@ -94,7 +94,6 @@ public final class Utils {
      * This field will be lazily initialized and the access is not synchronized.
      * The possible data race is benign and is worth of not introducing any contention here.
      */
-    private static Metrics[] metrics;
     private static Instant lastTimestamp;
 
     public static void checkAccessFlightRecorder() throws SecurityException {
@@ -698,18 +697,15 @@ public final class Utils {
         }
     }
 
-    public static boolean shouldSkipBytecode(String eventName, Class<?> superClass) {
-        if (superClass.getClassLoader() != null || !superClass.getName().equals("jdk.jfr.events.AbstractJDKEvent")) {
-            return false;
+    public static boolean shouldInstrument(boolean isJDK, String name) {
+        if (!isJDK) {
+            return true;
         }
-        return eventName.startsWith("jdk.Container") && getMetrics() == null;
-    }
-
-    private static Metrics getMetrics() {
-        if (metrics == null) {
-            metrics = new Metrics[]{Metrics.systemMetrics()};
+        if (!name.contains(".Container")) {
+            // Didn't match @Name("jdk.jfr.Container*") or class name "jdk.jfr.events.Container*"
+            return true;
         }
-        return metrics[0];
+        return JVM.getJVM().isContainerized();
     }
 
     private static String formatPositiveDuration(Duration d){
