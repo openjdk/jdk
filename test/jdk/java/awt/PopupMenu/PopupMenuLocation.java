@@ -21,6 +21,7 @@
  * questions.
  */
 
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Frame;
 import java.awt.GraphicsConfiguration;
@@ -35,36 +36,41 @@ import java.awt.Toolkit;
 import java.awt.event.InputEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.File;
+import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
-import javax.swing.SwingUtilities;
+import java.util.stream.IntStream;
+import javax.imageio.ImageIO;
 
 /**
  * @test
  * @key headful
  * @bug 8160270
- * @run main/timeout=300/othervm -Dsun.java2d.uiScale=1 PopupMenuLocation
+ * @run main/timeout=300 PopupMenuLocation
  */
 public final class PopupMenuLocation {
 
-    private static final int SIZE = 350;
     public static final String TEXT =
             "Long-long-long-long-long-long-long text in the item-";
-    private static CountDownLatch actionEventReceivedLatch;
+    private static final int SIZE = 350;
+    private static Robot robot;
+    private static volatile CountDownLatch actionEventReceivedLatch;
 
     public static void main(final String[] args) throws Exception {
+        robot = new Robot();
+        robot.setAutoDelay(200);
         GraphicsEnvironment ge =
                 GraphicsEnvironment.getLocalGraphicsEnvironment();
         GraphicsDevice[] sds = ge.getScreenDevices();
         for (GraphicsDevice sd : sds) {
             GraphicsConfiguration gc = sd.getDefaultConfiguration();
             Rectangle bounds = gc.getBounds();
-            Point point = new Point(bounds.x, bounds.y);
+            Point point = new Point(bounds.x + 20, bounds.y + 20);
             Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(gc);
             while (point.y < bounds.y + bounds.height - insets.bottom - SIZE) {
-                while (point.x
-                        < bounds.x + bounds.width - insets.right - SIZE) {
+                while (point.x <
+                       bounds.x + bounds.width - insets.right - SIZE) {
                     test(point);
                     point.translate(bounds.width / 5, 0);
                 }
@@ -76,9 +82,7 @@ public final class PopupMenuLocation {
     private static void test(final Point tmp) throws Exception {
         actionEventReceivedLatch = new CountDownLatch(1);
         PopupMenu pm = new PopupMenu();
-        for (int i = 1; i < 7; i++) {
-            pm.add(TEXT + i);
-        }
+        IntStream.rangeClosed(1, 6).forEach(i -> pm.add(TEXT + i));
         pm.addActionListener(e -> actionEventReceivedLatch.countDown());
         Frame frame = new Frame();
         try {
@@ -111,14 +115,8 @@ public final class PopupMenuLocation {
     }
 
     private static void openPopup(final Frame frame) throws Exception {
-        Robot robot = new Robot();
-        robot.setAutoDelay(200);
         robot.waitForIdle();
-        final AtomicReference<Point> pt = new AtomicReference<>();
-        SwingUtilities.invokeAndWait(() -> {
-                                          pt.set(frame.getLocationOnScreen());
-                                     });
-        Point loc = pt.get();
+        Point loc = frame.getLocationOnScreen();
         robot.mouseMove(loc.x + frame.getWidth() / 2, loc.y + 50);
         robot.mousePress(InputEvent.BUTTON3_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
@@ -129,8 +127,21 @@ public final class PopupMenuLocation {
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         robot.waitForIdle();
         if (!actionEventReceivedLatch.await(5, TimeUnit.SECONDS)) {
-            throw new RuntimeException("Waited too long, but haven't received " +
-                                       "the PopupMenu ActionEvent yet");
+            captureScreen();
+            throw new RuntimeException(
+                    "Waited too long, but haven't received " +
+                    "the PopupMenu ActionEvent yet");
         }
     }
+
+    private static void captureScreen() {
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        try {
+            ImageIO.write(robot.createScreenCapture(
+                    new Rectangle(0, 0, screenSize.width, screenSize.height)),
+                          "png", new File("screen1.png"));
+        } catch (IOException ignore) {
+        }
+    }
+
 }
