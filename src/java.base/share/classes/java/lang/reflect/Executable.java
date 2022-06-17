@@ -25,15 +25,15 @@
 
 package java.lang.reflect;
 
-import java.lang.annotation.*;
+import java.lang.annotation.Annotation;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 import java.util.StringJoiner;
-import java.util.stream.Stream;
 import java.util.stream.Collectors;
 
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.vm.annotation.Stable;
 import sun.reflect.annotation.AnnotationParser;
 import sun.reflect.annotation.AnnotationSupport;
 import sun.reflect.annotation.TypeAnnotationParser;
@@ -407,50 +407,40 @@ public abstract sealed class Executable extends AccessibleObject
     }
 
     private Parameter[] privateGetParameters() {
-        // Use tmp to avoid multiple writes to a volatile.
-        Parameter[] tmp = parameters;
-
-        if (tmp == null) {
-
-            // Otherwise, go to the JVM to get them
-            try {
-                tmp = getParameters0();
-            } catch(IllegalArgumentException e) {
-                // Rethrow ClassFormatErrors
-                throw new MalformedParametersException("Invalid constant pool index");
-            }
-
-            // If we get back nothing, then synthesize parameters
-            if (tmp == null) {
-                hasRealParameterData = false;
-                tmp = synthesizeAllParams();
-            } else {
-                hasRealParameterData = true;
-                verifyParameters(tmp);
-            }
-
-            // writing to volatile field acts as a releasing store
-            // and this must be strictly after assignment
-            // of hasRealParameterData
-            parameters = tmp;
-        }
-
-        return tmp;
+        return parameterData().parameters;
     }
 
     boolean hasRealParameterData() {
-        // If this somehow gets called before parameters gets
-        // initialized, force it into existence.
-        // This is an acquiring read and must be strictly
-        // before assignment of hasRealParameterData
-        if (parameters == null) {
-            privateGetParameters();
-        }
-        return hasRealParameterData;
+        return parameterData().real;
     }
 
-    private transient boolean hasRealParameterData;
-    private transient volatile Parameter[] parameters;
+    private ParameterData parameterData() {
+        ParameterData parameterData = this.parameterData;
+        if (parameterData != null){
+            return parameterData;
+        }
+
+        Parameter[] tmp;
+        // Go to the JVM to get them
+        try {
+            tmp = getParameters0();
+        } catch (IllegalArgumentException e) {
+            // Rethrow ClassFormatErrors
+            throw new MalformedParametersException("Invalid constant pool index");
+        }
+
+        // If we get back nothing, then synthesize parameters
+        if (tmp == null) {
+            tmp = synthesizeAllParams();
+            parameterData = new ParameterData(tmp, false);
+        } else {
+            verifyParameters(tmp);
+            parameterData = new ParameterData(tmp, true);
+        }
+        return this.parameterData = parameterData;
+    }
+
+    private transient @Stable ParameterData parameterData;
 
     private native Parameter[] getParameters0();
     native byte[] getTypeAnnotationBytes0();
@@ -783,4 +773,7 @@ public abstract sealed class Executable extends AccessibleObject
                 getGenericExceptionTypes(),
                 TypeAnnotation.TypeAnnotationTarget.THROWS);
     }
+
+    record ParameterData(Parameter[] parameters, boolean real) {}
+
 }
