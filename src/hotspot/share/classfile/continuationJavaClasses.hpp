@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_CLASSFILE_JDK_INTERNAL_VM_STACKCHUNK_HPP
-#define SHARE_CLASSFILE_JDK_INTERNAL_VM_STACKCHUNK_HPP
+#ifndef SHARE_CLASSFILE_CONTINUATIONJAVACLASSES_HPP
+#define SHARE_CLASSFILE_CONTINUATIONJAVACLASSES_HPP
 
 #include "memory/allStatic.hpp"
 #include "oops/oop.hpp"
@@ -136,4 +136,4 @@ class jdk_internal_vm_StackChunk: AllStatic {
   static inline void set_cont_raw(oop chunk, oop value);
 };
 
-#endif // SHARE_CLASSFILE_JDK_INTERNAL_VM_STACKCHUNK_HPP
+#endif // SHARE_CLASSFILE_CONTINUATIONJAVACLASSES_HPP
