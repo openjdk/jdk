@@ -30,11 +30,11 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "logging/log.hpp"
-#include "memory/devirtualizer.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/devirtualizer.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 

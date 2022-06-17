@@ -25,7 +25,7 @@
 #ifndef SHARE_MEMORY_DEVIRTUALIZER_INLINE_HPP
 #define SHARE_MEMORY_DEVIRTUALIZER_INLINE_HPP
 
-#include "memory/devirtualizer.hpp"
+#include "utilities/devirtualizer.hpp"
 
 #include "classfile/classLoaderData.hpp"
 #include "oops/access.inline.hpp"

@@ -29,12 +29,12 @@
 
 #include "classfile/javaClasses.hpp"
 #include "classfile/vmSymbols.hpp"
-#include "memory/devirtualizer.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/devirtualizer.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 

@@ -28,10 +28,10 @@
 #include "oops/instanceClassLoaderKlass.hpp"
 
 #include "classfile/javaClasses.hpp"
-#include "memory/devirtualizer.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/devirtualizer.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 

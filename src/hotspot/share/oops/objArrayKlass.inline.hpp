@@ -28,12 +28,12 @@
 #include "oops/objArrayKlass.hpp"
 
 #include "memory/memRegion.hpp"
-#include "memory/devirtualizer.inline.hpp"
 #include "oops/arrayKlass.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/klass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "utilities/devirtualizer.inline.hpp"
 #include "utilities/macros.hpp"
 
 template <typename T, class OopClosureType>
