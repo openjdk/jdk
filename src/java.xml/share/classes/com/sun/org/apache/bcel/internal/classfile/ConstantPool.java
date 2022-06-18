@@ -37,7 +37,7 @@ import com.sun.org.apache.bcel.internal.generic.ConstantPoolGen;
 
  * @see     Constant
  * @see     com.sun.org.apache.bcel.internal.generic.ConstantPoolGen
- * @LastModified: May 2022
+ * @LastModified: June 2022
  */
 public class ConstantPool implements Cloneable, Node {
 
@@ -228,8 +228,8 @@ public class ConstantPool implements Cloneable, Node {
          * This is a redundant measure as the ConstantPoolGen should have already
          * reported an error back in the situation.
         */
-        int size = constantPool.length < ConstantPoolGen.CONSTANT_POOL_SIZE - 1 ?
-                constantPool.length : ConstantPoolGen.CONSTANT_POOL_SIZE - 1;
+        int size = constantPool.length < ConstantPoolGen.CONSTANT_POOL_SIZE ?
+                constantPool.length : ConstantPoolGen.CONSTANT_POOL_SIZE;
 
         file.writeShort(size);
         for (int i = 1; i < size; i++) {
