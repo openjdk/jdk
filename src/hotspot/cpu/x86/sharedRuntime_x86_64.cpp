@@ -941,7 +941,7 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
     }
   }
 
-  __ push_cont_fastpath(r15_thread); // Set JavaThread::_cont_fastpath to the sp of the oldest interpreted frame we know about
+  __ push_cont_fastpath(); // Set JavaThread::_cont_fastpath to the sp of the oldest interpreted frame we know about
 
   // 6243940 We might end up in handle_wrong_method if
   // the callee is deoptimized as we race thru here. If that

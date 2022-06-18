@@ -3600,7 +3600,7 @@ public class Check {
     }
 
     void checkPreview(DiagnosticPosition pos, Symbol other, Symbol s) {
-        if ((s.flags() & PREVIEW_API) != 0 && !preview.participatesInPreview(other, s)) {
+        if ((s.flags() & PREVIEW_API) != 0 && !preview.participatesInPreview(syms, other, s)) {
             if ((s.flags() & PREVIEW_REFLECTIVE) == 0) {
                 if (!preview.isEnabled()) {
                     log.error(pos, Errors.IsPreview(s));

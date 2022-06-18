@@ -1396,7 +1396,8 @@ static bool skeleton_follow_inputs(Node* n, int op) {
           op == Op_MulI ||
           op == Op_SubL ||
           op == Op_SubI ||
-          op == Op_ConvI2L);
+          op == Op_ConvI2L ||
+          op == Op_CastII);
 }
 
 bool PhaseIdealLoop::skeleton_predicate_has_opaque(IfNode* iff) {
@@ -3095,6 +3096,9 @@ int PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
           Node* max_value = new SubINode(opaque_stride, cl->stride());
           register_new_node(max_value, predicate_proj);
           max_value = new AddINode(opaque_init, max_value);
+          register_new_node(max_value, predicate_proj);
+          // init + (current stride - initial stride) is within the loop so narrow its type by leveraging the type of the iv Phi
+          max_value = new CastIINode(max_value, loop->_head->as_CountedLoop()->phi()->bottom_type());
           register_new_node(max_value, predicate_proj);
           predicate_proj = add_range_check_predicate(loop, cl, predicate_proj, scale_con, int_offset, int_limit, stride_con, max_value);
           assert(skeleton_predicate_has_opaque(predicate_proj->in(0)->as_If()), "unexpected");

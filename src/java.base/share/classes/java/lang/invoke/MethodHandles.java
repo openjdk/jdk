@@ -5104,7 +5104,7 @@ assert((int)twice.invokeExact(21) == 42);
      */
     public static  MethodHandle empty(MethodType type) {
         Objects.requireNonNull(type);
-        return dropArguments(zero(type.returnType()), 0, type.parameterList());
+        return dropArgumentsTrusted(zero(type.returnType()), 0, type.ptypes());
     }
 
     private static final MethodHandle[] IDENTITY_MHS = new MethodHandle[Wrapper.COUNT];
@@ -5263,14 +5263,10 @@ assertEquals("yz", (String) d0.invokeExact(123, "x", "y", "z"));
      *                  or if the new method handle's type would have too many parameters
      */
     public static MethodHandle dropArguments(MethodHandle target, int pos, List<Class<?>> valueTypes) {
-        return dropArguments0(target, pos, copyTypes(valueTypes.toArray()));
+        return dropArgumentsTrusted(target, pos, valueTypes.toArray(new Class<?>[0]).clone());
     }
 
-    private static List<Class<?>> copyTypes(Object[] array) {
-        return Arrays.asList(Arrays.copyOf(array, array.length, Class[].class));
-    }
-
-    private static MethodHandle dropArguments0(MethodHandle target, int pos, List<Class<?>> valueTypes) {
+    static MethodHandle dropArgumentsTrusted(MethodHandle target, int pos, Class<?>[] valueTypes) {
         MethodType oldType = target.type();  // get NPE
         int dropped = dropArgumentChecks(oldType, pos, valueTypes);
         MethodType newType = oldType.insertParameterTypes(pos, valueTypes);
@@ -5285,8 +5281,8 @@ assertEquals("yz", (String) d0.invokeExact(123, "x", "y", "z"));
         return result;
     }
 
-    private static int dropArgumentChecks(MethodType oldType, int pos, List<Class<?>> valueTypes) {
-        int dropped = valueTypes.size();
+    private static int dropArgumentChecks(MethodType oldType, int pos, Class<?>[] valueTypes) {
+        int dropped = valueTypes.length;
         MethodType.checkSlotCount(dropped);
         int outargs = oldType.parameterCount();
         int inargs  = outargs + dropped;
@@ -5344,51 +5340,59 @@ assertEquals("xz", (String) d12.invokeExact("x", 12, true, "z"));
      *                  <a href="MethodHandle.html#maxarity">too many parameters</a>
      */
     public static MethodHandle dropArguments(MethodHandle target, int pos, Class<?>... valueTypes) {
-        return dropArguments0(target, pos, copyTypes(valueTypes));
+        return dropArgumentsTrusted(target, pos, valueTypes.clone());
+    }
+
+    /* Convenience overloads for trusting internal low-arity call-sites */
+    static MethodHandle dropArguments(MethodHandle target, int pos, Class<?> valueType1) {
+        return dropArgumentsTrusted(target, pos, new Class<?>[] { valueType1 });
+    }
+    static MethodHandle dropArguments(MethodHandle target, int pos, Class<?> valueType1, Class<?> valueType2) {
+        return dropArgumentsTrusted(target, pos, new Class<?>[] { valueType1, valueType2 });
     }
 
     // private version which allows caller some freedom with error handling
-    private static MethodHandle dropArgumentsToMatch(MethodHandle target, int skip, List<Class<?>> newTypes, int pos,
+    private static MethodHandle dropArgumentsToMatch(MethodHandle target, int skip, Class<?>[] newTypes, int pos,
                                       boolean nullOnFailure) {
-        newTypes = copyTypes(newTypes.toArray());
-        List<Class<?>> oldTypes = target.type().parameterList();
-        int match = oldTypes.size();
+        Class<?>[] oldTypes = target.type().ptypes();
+        int match = oldTypes.length;
         if (skip != 0) {
             if (skip < 0 || skip > match) {
                 throw newIllegalArgumentException("illegal skip", skip, target);
             }
-            oldTypes = oldTypes.subList(skip, match);
+            oldTypes = Arrays.copyOfRange(oldTypes, skip, match);
             match -= skip;
         }
-        List<Class<?>> addTypes = newTypes;
-        int add = addTypes.size();
+        Class<?>[] addTypes = newTypes;
+        int add = addTypes.length;
         if (pos != 0) {
             if (pos < 0 || pos > add) {
-                throw newIllegalArgumentException("illegal pos", pos, newTypes);
+                throw newIllegalArgumentException("illegal pos", pos, Arrays.toString(newTypes));
             }
-            addTypes = addTypes.subList(pos, add);
+            addTypes = Arrays.copyOfRange(addTypes, pos, add);
             add -= pos;
-            assert(addTypes.size() == add);
+            assert(addTypes.length == add);
         }
         // Do not add types which already match the existing arguments.
-        if (match > add || !oldTypes.equals(addTypes.subList(0, match))) {
+        if (match > add || !Arrays.equals(oldTypes, 0, oldTypes.length, addTypes, 0, match)) {
             if (nullOnFailure) {
                 return null;
             }
-            throw newIllegalArgumentException("argument lists do not match", oldTypes, newTypes);
+            throw newIllegalArgumentException("argument lists do not match",
+                Arrays.toString(oldTypes), Arrays.toString(newTypes));
         }
-        addTypes = addTypes.subList(match, add);
+        addTypes = Arrays.copyOfRange(addTypes, match, add);
         add -= match;
-        assert(addTypes.size() == add);
+        assert(addTypes.length == add);
         // newTypes:     (   P*[pos], M*[match], A*[add] )
         // target: ( S*[skip],        M*[match]  )
         MethodHandle adapter = target;
         if (add > 0) {
-            adapter = dropArguments0(adapter, skip+ match, addTypes);
+            adapter = dropArgumentsTrusted(adapter, skip+ match, addTypes);
         }
         // adapter: (S*[skip],        M*[match], A*[add] )
         if (pos > 0) {
-            adapter = dropArguments0(adapter, skip, newTypes.subList(0, pos));
+            adapter = dropArgumentsTrusted(adapter, skip, Arrays.copyOfRange(newTypes, 0, pos));
         }
         // adapter: (S*[skip], P*[pos], M*[match], A*[add] )
         return adapter;
@@ -5452,7 +5456,7 @@ assertEquals("xy", h3.invoke("x", "y", 1, "a", "b", "c"));
     public static MethodHandle dropArgumentsToMatch(MethodHandle target, int skip, List<Class<?>> newTypes, int pos) {
         Objects.requireNonNull(target);
         Objects.requireNonNull(newTypes);
-        return dropArgumentsToMatch(target, skip, newTypes, pos, false);
+        return dropArgumentsToMatch(target, skip, newTypes.toArray(new Class<?>[0]).clone(), pos, false);
     }
 
     /**
@@ -5771,7 +5775,7 @@ assertEquals("[top, [[up, down, strange], charm], bottom]",
         MethodType targetType = target.type();
         MethodType filterType = filter.type();
         Class<?> rtype = filterType.returnType();
-        List<Class<?>> filterArgs = filterType.parameterList();
+        Class<?>[] filterArgs = filterType.ptypes();
         if (pos < 0 || (rtype == void.class && pos > targetType.parameterCount()) ||
                        (rtype != void.class && pos >= targetType.parameterCount())) {
             throw newIllegalArgumentException("position is out of range for target", target, pos);
@@ -5782,7 +5786,7 @@ assertEquals("[top, [[up, down, strange], charm], bottom]",
         if (rtype != targetType.parameterType(pos)) {
             throw newIllegalArgumentException("target and filter types do not match", targetType, filterType);
         }
-        return targetType.dropParameterTypes(pos, pos+1).insertParameterTypes(pos, filterArgs);
+        return targetType.dropParameterTypes(pos, pos + 1).insertParameterTypes(pos, filterArgs);
     }
 
     /**
@@ -6240,8 +6244,8 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
             throw misMatchedTypes("target and fallback types", ttype, ftype);
         if (gtype.returnType() != boolean.class)
             throw newIllegalArgumentException("guard type is not a predicate "+gtype);
-        List<Class<?>> targs = ttype.parameterList();
-        test = dropArgumentsToMatch(test, 0, targs, 0, true);
+
+        test = dropArgumentsToMatch(test, 0, ttype.ptypes(), 0, true);
         if (test == null) {
             throw misMatchedTypes("target and test types", ttype, gtype);
         }
@@ -6314,7 +6318,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
             throw newIllegalArgumentException("handler does not accept exception type "+exType);
         if (htype.returnType() != ttype.returnType())
             throw misMatchedTypes("target and handler return types", ttype, htype);
-        handler = dropArgumentsToMatch(handler, 1, ttype.parameterList(), 0, true);
+        handler = dropArgumentsToMatch(handler, 1, ttype.ptypes(), 0, true);
         if (handler == null) {
             throw misMatchedTypes("target and handler types", ttype, htype);
         }
@@ -6689,7 +6693,6 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         final List<Class<?>> commonParameterSequence = new ArrayList<>(commonPrefix);
         commonParameterSequence.addAll(commonSuffix);
         loopChecks2(step, pred, fini, commonParameterSequence);
-
         // Step 3: fill in omitted functions.
         for (int i = 0; i < nclauses; ++i) {
             Class<?> t = iterationVariableTypes.get(i);
@@ -6700,7 +6703,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
                 step.set(i, dropArgumentsToMatch(identityOrVoid(t), 0, commonParameterSequence, i));
             }
             if (pred.get(i) == null) {
-                pred.set(i, dropArguments0(constant(boolean.class, true), 0, commonParameterSequence));
+                pred.set(i, dropArguments(constant(boolean.class, true), 0, commonParameterSequence));
             }
             if (fini.get(i) == null) {
                 fini.set(i, empty(methodType(t, commonParameterSequence)));
@@ -6799,7 +6802,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         return hs.stream().map(h -> {
             int pc = h.type().parameterCount();
             int tpsize = targetParams.size();
-            return pc < tpsize ? dropArguments0(h, pc, targetParams.subList(pc, tpsize)) : h;
+            return pc < tpsize ? dropArguments(h, pc, targetParams.subList(pc, tpsize)) : h;
         }).toList();
     }
 
@@ -7743,7 +7746,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * @since 9
      */
     public static MethodHandle tryFinally(MethodHandle target, MethodHandle cleanup) {
-        List<Class<?>> targetParamTypes = target.type().parameterList();
+        Class<?>[] targetParamTypes = target.type().ptypes();
         Class<?> rtype = target.type().returnType();
 
         tryFinallyChecks(target, cleanup);
@@ -7751,7 +7754,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         // Match parameter lists: if the cleanup has a shorter parameter list than the target, add ignored arguments.
         // The cleanup parameter list (minus the leading Throwable and result parameters) must be a sublist of the
         // target parameter list.
-        cleanup = dropArgumentsToMatch(cleanup, (rtype == void.class ? 1 : 2), targetParamTypes, 0);
+        cleanup = dropArgumentsToMatch(cleanup, (rtype == void.class ? 1 : 2), targetParamTypes, 0, false);
 
         // Ensure that the intrinsic type checks the instance thrown by the
         // target against the first parameter of cleanup
