@@ -216,13 +216,13 @@ public class UnloadingTest {
         void unload() {
             // Force garbage collection to trigger unloading of class loader
             // and native library.
-            if (!ForceGC.wait(() -> weakRef.get() == null)) {
+            if (!ForceGC.wait(() -> weakRef.refersTo(null))) {
                 throw new RuntimeException("loader " + " not unloaded!");
             }
         }
 
         boolean tryUnload() {
-            return ForceGC.wait(() -> weakRef.get() == null);
+            return ForceGC.wait(() -> weakRef.refersTo(null));
         }
     }
 

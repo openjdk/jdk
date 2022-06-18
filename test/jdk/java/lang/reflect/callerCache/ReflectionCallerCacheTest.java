@@ -107,7 +107,7 @@ public class ReflectionCallerCacheTest {
         WeakReference<?> weakLoader = loadAndRunClass(classname);
 
         // Force garbage collection to trigger unloading of class loader
-        if (!ForceGC.wait(() -> weakLoader.get() == null)) {
+        if (!ForceGC.wait(() -> weakLoader.refersTo(null))) {
             throw new RuntimeException("Class " + classname + " not unloaded!");
         }
     }

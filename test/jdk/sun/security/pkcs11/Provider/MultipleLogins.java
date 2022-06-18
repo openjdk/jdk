@@ -90,7 +90,7 @@ public class MultipleLogins {
             providers[i] = null;
 
             int finalI = i;
-            if (!ForceGC.wait(() -> weakRef[finalI].get() == null)) {
+            if (!ForceGC.wait(() -> weakRef[finalI].refersTo(null))) {
                 throw new RuntimeException("Expected SunPKCS11 Provider to be GC'ed..");
             }
         }

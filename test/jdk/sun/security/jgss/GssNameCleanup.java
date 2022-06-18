@@ -55,7 +55,7 @@ public final class GssNameCleanup {
             name = null;
 
             // Check if the object has been collected.
-            if (!ForceGC.wait(() -> weakRef.get() == null)) {
+            if (!ForceGC.wait(() -> weakRef.refersTo(null))) {
                 throw new RuntimeException("GSSName object is not released");
             }
         } catch (GSSException gsse) {

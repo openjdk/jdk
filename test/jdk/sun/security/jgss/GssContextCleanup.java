@@ -54,7 +54,7 @@ public final class GssContextCleanup {
         context = null;
 
         // Check if the object has been collected.
-        if (!ForceGC.wait(() -> weakRef.get() == null)) {
+        if (!ForceGC.wait(() -> weakRef.refersTo(null))) {
             throw new RuntimeException("GSSContext object is not released");
         }
     }
