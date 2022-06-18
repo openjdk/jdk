@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -428,8 +428,10 @@ public final class ZoneOffset
             ZoneOffset result = SECONDS_CACHE.get(totalSecs);
             if (result == null) {
                 result = new ZoneOffset(totalSeconds);
-                SECONDS_CACHE.putIfAbsent(totalSecs, result);
-                result = SECONDS_CACHE.get(totalSecs);
+                ZoneOffset prev = SECONDS_CACHE.putIfAbsent(totalSecs, result);
+                if (prev != null) {
+                    result = prev;
+                }
                 ID_CACHE.putIfAbsent(result.getId(), result);
             }
             return result;
