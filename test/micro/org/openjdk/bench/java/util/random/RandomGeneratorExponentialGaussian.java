@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,52 +20,64 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package org.openjdk.bench.java.util;
+package org.openjdk.bench.java.util.random;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
-import org.openjdk.jmh.annotations.Fork;
-import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
-import org.openjdk.jmh.annotations.Warmup;
-
-import java.util.Random;
+import org.openjdk.jmh.annotations.Param;
+import java.util.random.RandomGenerator;
+import java.util.random.RandomGeneratorFactory;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Tests java.util.Random's different flavours of next-methods.
+ * Tests java.util.random.RandomGenerator's implementations of nextExponential and nextGaussian
  */
-@BenchmarkMode(Mode.AverageTime)
+@BenchmarkMode({Mode.SampleTime, Mode.Throughput})
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
-@Warmup(iterations = 4, time = 2)
-@Measurement(iterations = 4, time = 2)
-@Fork(value = 3)
-public class RandomNext {
+public class RandomGeneratorExponentialGaussian {
 
-    public Random rnd;
+    RandomGenerator randomGenerator;
+
+    @Param({"L64X128MixRandom", "L64X1024MixRandom"})
+    String randomGeneratorName;
+
+    double[] buffer;
+
+    @Param("1024")
+    int size;
 
     @Setup
     public void setup() {
-        rnd = new Random();
+        buffer = new double[size];
+        randomGenerator = RandomGeneratorFactory.of(randomGeneratorName).create(randomGeneratorName.hashCode());
     }
 
     @Benchmark
-    public int testNextInt() {
-        return rnd.nextInt();
+    public double testNextGaussian() {
+        return randomGenerator.nextGaussian();
     }
 
     @Benchmark
-    public int testNextInt100() {
-        return rnd.nextInt(100);
+    public double[] testFillBufferWithNextGaussian() {
+        for (int i = 0; i < size; i++) buffer[i] = randomGenerator.nextGaussian();
+        return buffer;
     }
 
     @Benchmark
-    public int testNextInt128() {
-        return rnd.nextInt(128);
+    public double testNextExponential() {
+        return randomGenerator.nextExponential();
     }
+
+    @Benchmark
+    public double[] testFillBufferWithNextExponential() {
+        for (int i = 0; i < size; i++) buffer[i] = randomGenerator.nextExponential();
+        return buffer;
+    }
+
 }
