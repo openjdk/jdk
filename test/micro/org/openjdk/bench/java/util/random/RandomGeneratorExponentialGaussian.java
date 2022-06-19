@@ -32,7 +32,6 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Param;
 import java.util.random.RandomGenerator;
 import java.util.random.RandomGeneratorFactory;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -42,7 +41,7 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Thread)
 public class RandomGeneratorExponentialGaussian {
 
-    ThreadLocal<RandomGenerator> randomGeneratorThreadLocal;
+    RandomGenerator randomGenerator;
 
     @Param({"L64X128MixRandom", "L64X1024MixRandom"})
     String randomGeneratorName;
@@ -55,20 +54,18 @@ public class RandomGeneratorExponentialGaussian {
     @Setup
     public void setup() {
         buffer = new double[size];
-        randomGeneratorThreadLocal = ThreadLocal.withInitial(() ->
-            RandomGeneratorFactory.of(randomGeneratorName).create(ThreadLocalRandom.current().nextLong()));
+        randomGenerator = RandomGeneratorFactory.of(randomGeneratorName).create(randomGeneratorName.hashCode());
     }
 
     @Benchmark
     @BenchmarkMode({Mode.SampleTime, Mode.AverageTime})
     public double testNextGaussian() {
-        return randomGeneratorThreadLocal.get().nextGaussian();
+        return randomGenerator.nextGaussian();
     }
 
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     public double[] testFillBufferWithNextGaussian() {
-        RandomGenerator randomGenerator = randomGeneratorThreadLocal.get();
         for (int i = 0; i < size; i++) buffer[i] = randomGenerator.nextGaussian();
         return buffer;
     }
@@ -76,13 +73,12 @@ public class RandomGeneratorExponentialGaussian {
     @Benchmark
     @BenchmarkMode({Mode.SampleTime, Mode.AverageTime})
     public double testNextExponential() {
-        return randomGeneratorThreadLocal.get().nextExponential();
+        return randomGenerator.nextExponential();
     }
 
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     public double[] testFillBufferWithNextExponential() {
-        RandomGenerator randomGenerator = randomGeneratorThreadLocal.get();
         for (int i = 0; i < size; i++) buffer[i] = randomGenerator.nextExponential();
         return buffer;
     }
