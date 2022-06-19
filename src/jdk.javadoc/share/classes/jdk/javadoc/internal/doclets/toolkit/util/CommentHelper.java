@@ -314,7 +314,7 @@ public class CommentHelper {
             public String visitSee(SeeTree node, Void p) {
                 Utils utils = configuration.utils;
                 return node.getReference().stream()
-                        .filter(utils::isText)
+                        .filter(dt -> dt.getKind() == DocTree.Kind.TEXT)
                         .map(dt -> ((TextTree) dt).getBody())
                         .collect(Collectors.joining());
             }

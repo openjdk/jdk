@@ -134,7 +134,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
         CommentHelper ch = utils.getCommentHelper(field);
         List<? extends DocTree> description = ch.getDescription(serialFieldTag);
         if (!description.isEmpty()) {
-            Content serialFieldContent = new RawHtml(ch.getText(description));
+            Content serialFieldContent = RawHtml.of(ch.getText(description)); // should interpret tags
             var div = HtmlTree.DIV(HtmlStyle.block, serialFieldContent);
             content.add(div);
         }
