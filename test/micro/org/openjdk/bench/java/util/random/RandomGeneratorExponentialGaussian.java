@@ -38,7 +38,6 @@ import java.util.concurrent.TimeUnit;
 /**
  * Tests java.util.random.RandomGenerator's implementations of nextExponential and nextGaussian
  */
-@BenchmarkMode({Mode.SampleTime, Mode.Throughput})
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
 public class RandomGeneratorExponentialGaussian {
@@ -61,11 +60,13 @@ public class RandomGeneratorExponentialGaussian {
     }
 
     @Benchmark
+    @BenchmarkMode({Mode.SampleTime, Mode.AverageTime})
     public double testNextGaussian() {
         return randomGeneratorThreadLocal.get().nextGaussian();
     }
 
     @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
     public double[] testFillBufferWithNextGaussian() {
         RandomGenerator randomGenerator = randomGeneratorThreadLocal.get();
         for (int i = 0; i < size; i++) buffer[i] = randomGenerator.nextGaussian();
@@ -73,11 +74,13 @@ public class RandomGeneratorExponentialGaussian {
     }
 
     @Benchmark
+    @BenchmarkMode({Mode.SampleTime, Mode.AverageTime})
     public double testNextExponential() {
         return randomGeneratorThreadLocal.get().nextExponential();
     }
 
     @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
     public double[] testFillBufferWithNextExponential() {
         RandomGenerator randomGenerator = randomGeneratorThreadLocal.get();
         for (int i = 0; i < size; i++) buffer[i] = randomGenerator.nextExponential();
