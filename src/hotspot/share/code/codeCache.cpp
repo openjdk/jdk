@@ -698,7 +698,7 @@ CodeBlob* CodeCache::find_blob(void* start) {
   guarantee(is_result_safe || is_in_asgct(), "unsafe access to zombie method");
   // When in ASGCT the previous gurantee will pass for a zombie method but we still don't want that code blob returned in order
   // to minimize the chance of accessing dead memory
-  return is_result_safe ? result : NULL;
+  return result;
 }
 
 // Lookup that does not fail if you lookup a zombie method (if you call this, be sure to know

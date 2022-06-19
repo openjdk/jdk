@@ -64,6 +64,47 @@ enum {
   ticks_safepoint             = -10
 };
 
+class frameLocker {
+ private:
+  CompiledMethod* _cm;
+ public:
+  frameLocker(frame& fr) {
+    CodeBlob* cb = fr.cb();
+    _cm = cb != NULL ? cb->as_compiled_method_or_null() : NULL;
+    if (_cm != NULL) {
+      nmethodLocker::lock(_cm);
+    }
+  }
+
+  ~frameLocker() {
+    if (_cm != NULL) {
+      nmethodLocker::unlock(_cm);
+    }
+  }
+
+  static void lock(frame& fr) {
+    CodeBlob* cb = fr.cb();
+    CompiledMethod* cm = cb != NULL ? cb->as_compiled_method_or_null() : NULL;
+    if (cm != NULL) {
+      nmethodLocker::lock(cm);
+    }
+    guarantee(cm == NULL || is_locked(fr), "");
+  }
+
+  static void unlock(frame& fr) {
+    CodeBlob* cb = fr.cb();
+    CompiledMethod* cm = cb != NULL ? cb->as_compiled_method_or_null() : NULL;
+    if (cm != NULL) {
+      nmethodLocker::unlock(cm);
+    }
+  }
+
+  static bool is_locked(frame& fr) {
+    CodeBlob* cb = fr.cb();
+    return cb != NULL && (!cb->is_compiled() || cb->is_locked_by_vm());
+  }
+};
+
 #if INCLUDE_JVMTI
 
 //-------------------------------------------------------
@@ -77,6 +118,7 @@ class vframeStreamForte : public vframeStreamCommon {
  public:
   // constructor that starts with sender of frame fr (top_frame)
   vframeStreamForte(JavaThread *jt, frame fr, bool stop_at_java_call_stub);
+  ~vframeStreamForte();
   void forte_next();
 };
 
@@ -97,6 +139,10 @@ vframeStreamForte::vframeStreamForte(JavaThread *jt,
   _reg_map.set_async(true);
   _stop_at_java_call_stub = stop_at_java_call_stub;
   _frame = fr;
+
+  // lock the frame to prevent the collection of the associated compiled method by the code sweeper
+  frameLocker::lock(_frame);
+  assert(frameLocker::is_locked(_frame), "invariant");
 
   // We must always have a valid frame to start filling
 
@@ -119,6 +165,7 @@ void vframeStreamForte::forte_next() {
   // handle frames with inlining
   if (_mode == compiled_mode &&
       vframeStreamCommon::fill_in_compiled_inlined_sender()) {
+    // no need to unlock the current frame - it will be don in the stream destructor
     return;
   }
 
@@ -137,12 +184,23 @@ void vframeStreamForte::forte_next() {
 
     if ((loop_max != 0 && loop_count > loop_max) || !_frame.safe_for_sender(_thread)) {
       _mode = at_end_mode;
+      // no need to unlock the current frame - it will be don in the stream destructor
       return;
     }
 
+   frame previous = _frame;
     _frame = _frame.sender(&_reg_map);
+    // invariant - only the current frame is locked by the stream
+   frameLocker::unlock(previous);
+   frameLocker::lock(_frame);
+   assert(frameLocker::is_locked(_frame), "invariant");
 
   } while (!fill_from_frame());
+}
+
+vframeStreamForte::~vframeStreamForte() {
+  // unlock the current frame when the stream is done
+  frameLocker::unlock(_frame);
 }
 
 // Determine if 'fr' is a decipherable compiled frame. We are already
@@ -313,7 +371,9 @@ static bool find_initial_Java_frame(JavaThread* thread,
   // recognizable to us. This should only happen if we are in a JRT_LEAF
   // or something called by a JRT_LEAF method.
 
+  assert(frameLocker::is_locked(*fr), "invariant");
   frame candidate = *fr;
+  frameLocker::lock(candidate);
 
 #ifdef ZERO
   // Zero has no frames with code blobs, so the generic code fails.
@@ -325,6 +385,7 @@ static bool find_initial_Java_frame(JavaThread* thread,
     while (true) {
       // Cannot walk this frame? Cannot do anything anymore.
       if (!candidate.safe_for_sender(thread)) {
+        frameLocker::unlock(candidate);
         return false;
       }
 
@@ -334,6 +395,7 @@ static bool find_initial_Java_frame(JavaThread* thread,
         // If initial frame is frame from StubGenerator and there is no
         // previous anchor, there are no java frames associated with a method
         if (jcw == NULL || jcw->is_first_frame()) {
+          frameLocker::unlock(candidate);
           return false;
         }
       }
@@ -342,14 +404,20 @@ static bool find_initial_Java_frame(JavaThread* thread,
       if (candidate.is_interpreted_frame()) {
         if (is_decipherable_interpreted_frame(thread, &candidate, method_p, bci_p)) {
           *initial_frame_p = candidate;
+          // effectively we need to unlock the 'candidate' and lock 'initial_frame_p' -> this results in no-op
           return true;
         }
       }
 
+      frame previous = candidate;
       // Walk some more.
       candidate = candidate.sender(&map);
+      frameLocker::unlock(previous);
+      frameLocker::lock(candidate);
+      assert(frameLocker::is_locked(candidate), "invariant");
     }
 
+    frameLocker::unlock(candidate);
     // No dice, report no initial frames.
     return false;
   }
@@ -359,7 +427,7 @@ static bool find_initial_Java_frame(JavaThread* thread,
   // it see if we can find such a frame because only frames with codeBlobs
   // are possible Java frames.
 
-  if (fr->cb() == NULL) {
+  if (candidate.cb() == NULL) {
 
     // See if we can find a useful frame
     int loop_count;
@@ -367,11 +435,21 @@ static bool find_initial_Java_frame(JavaThread* thread,
     RegisterMap map(thread, false, false);
 
     for (loop_count = 0; loop_max == 0 || loop_count < loop_max; loop_count++) {
-      if (!candidate.safe_for_sender(thread)) return false;
+      if (!candidate.safe_for_sender(thread)) {
+        frameLocker::unlock(candidate);
+        return false;
+      }
+      frame previous = candidate;
       candidate = candidate.sender(&map);
+      frameLocker::unlock(previous);
+      frameLocker::lock(candidate);
+      assert(frameLocker::is_locked(candidate), "invariant");
       if (candidate.cb() != NULL) break;
     }
-    if (candidate.cb() == NULL) return false;
+    if (candidate.cb() == NULL) {
+      frameLocker::unlock(candidate);
+      return false;
+    }
   }
 
   // We have a frame known to be in the codeCache
@@ -388,6 +466,7 @@ static bool find_initial_Java_frame(JavaThread* thread,
       // If initial frame is frame from StubGenerator and there is no
       // previous anchor, there are no java frames associated with a method
       if (jcw == NULL || jcw->is_first_frame()) {
+        frameLocker::unlock(candidate);
         return false;
       }
     }
@@ -395,6 +474,7 @@ static bool find_initial_Java_frame(JavaThread* thread,
     if (candidate.is_interpreted_frame()) {
       if (is_decipherable_interpreted_frame(thread, &candidate, method_p, bci_p)) {
         *initial_frame_p = candidate;
+        // effectively we need to unlock the 'candidate' and lock 'initial_frame_p' -> this results in no-op
         return true;
       }
 
@@ -403,7 +483,7 @@ static bool find_initial_Java_frame(JavaThread* thread,
     }
 
     if (candidate.cb()->is_compiled()) {
-
+      guarantee(frameLocker::is_locked(candidate), "");
       CompiledMethod* nm = candidate.cb()->as_compiled_method();
       *method_p = nm->method();
 
@@ -420,13 +500,17 @@ static bool find_initial_Java_frame(JavaThread* thread,
 
       // Native wrapper code is trivial to decode by vframeStream
 
-      if (nm->is_native_method()) return true;
+      if (nm->is_native_method()) {
+        frameLocker::unlock(candidate);
+        return true;
+      }
 
       // If the frame is not decipherable, then a PC was found
       // that does not have a PCDesc from which a BCI can be obtained.
       // Nevertheless, a Method was found.
 
       if (!is_decipherable_compiled_frame(thread, &candidate, nm)) {
+        frameLocker::unlock(candidate);
         return false;
       }
 
@@ -435,22 +519,36 @@ static bool find_initial_Java_frame(JavaThread* thread,
 
       assert(nm->pc_desc_at(candidate.pc()) != NULL, "debug information must be available if the frame is decipherable");
 
+      // effectively we need to unlock the 'candidate' and lock 'initial_frame_p' -> this results in no-op
       return true;
     }
 
     // Must be some stub frame that we don't care about
 
-    if (!candidate.safe_for_sender(thread)) return false;
+    if (!candidate.safe_for_sender(thread)) {
+      frameLocker::unlock(candidate);
+      return false;
+    }
+
+    frame previous = candidate;
     candidate = candidate.sender(&map);
+
+    // make sure the previous candidate is unlocked
+    frameLocker::unlock(previous);
+    frameLocker::lock(candidate);
+    assert(frameLocker::is_locked(candidate), "invariant");
 
     // If it isn't in the code cache something is wrong
     // since once we find a frame in the code cache they
     // all should be there.
 
-    if (candidate.cb() == NULL) return false;
-
+    if (candidate.cb() == NULL) {
+      frameLocker::unlock(candidate);
+      return false;
+    }
   }
 
+  frameLocker::unlock(candidate);
   return false;
 
 }
@@ -474,7 +572,11 @@ static void forte_fill_call_trace_given_top(JavaThread* thd,
   find_initial_Java_frame(thd, &top_frame, &initial_Java_frame, &method, &bci);
 
   // Check if a Java Method has been found.
-  if (method == NULL) return;
+  if (method == NULL) {
+    // // need to unlock the initial_Java_frame
+    frameLocker::unlock(initial_Java_frame);
+    return;
+  }
 
   if (!Method::is_valid_method(method)) {
     trace->num_frames = ticks_GC_active; // -2
@@ -596,7 +698,7 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
     return;
   }
 
-  // !important! make sure all to call thread->set_in_asgct(false) before every return
+// !important! make sure all to call thread->set_in_asgct(false) before every return
   thread->set_in_asgct(true);
 
   switch (thread->thread_state()) {
@@ -623,6 +725,7 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
         if (!thread->has_last_Java_frame()) {
           trace->num_frames = 0; // No Java frames
         } else {
+          frameLocker lock(fr);
           trace->num_frames = ticks_not_walkable_not_Java;    // -4 non walkable frame by default
           forte_fill_call_trace_given_top(thread, trace, depth, fr);
 
@@ -632,7 +735,6 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
           // look invalid. It's a small window but it does happen.
           // The assert is left here commented out as a reminder.
           // assert(trace->num_frames != ticks_not_walkable_not_Java, "should always be walkable");
-
         }
       }
     }
@@ -646,8 +748,11 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
       if (!thread->pd_get_top_frame_for_signal_handler(&fr, ucontext, true)) {
         trace->num_frames = ticks_unknown_Java;  // -5 unknown frame
       } else {
+        frameLocker lock(fr);
         trace->num_frames = ticks_not_walkable_Java;  // -6, non walkable frame by default
-        forte_fill_call_trace_given_top(thread, trace, depth, fr);
+        if (fr.cb() != NULL && !fr.cb()->is_zombie()) {
+          forte_fill_call_trace_given_top(thread, trace, depth, fr);
+        }
       }
     }
     break;
