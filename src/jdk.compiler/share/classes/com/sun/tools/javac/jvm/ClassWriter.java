@@ -1037,11 +1037,11 @@ public class ClassWriter extends ClassFile {
 
     private boolean requiresParamFlags(MethodSymbol m) {
         if (!m.extraParams.isEmpty()) {
-            return m.extraParams.stream().anyMatch(p -> (p.flags_field & MANDATED) != 0);
+            return m.extraParams.stream().anyMatch(p -> (p.flags_field & (SYNTHETIC | MANDATED)) != 0);
         }
         if (m.params != null) {
             // parameter is stored in params for Enum#valueOf(name)
-            return m.params.stream().anyMatch(p -> (p.flags_field & MANDATED) != 0);
+            return m.params.stream().anyMatch(p -> (p.flags_field & (SYNTHETIC | MANDATED)) != 0);
         }
         return false;
     }
