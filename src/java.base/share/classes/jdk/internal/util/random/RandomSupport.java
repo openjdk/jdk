@@ -1146,6 +1146,24 @@ public class RandomSupport {
      * Implementation support for the {@code nextExponential} method of
      * {@link java.util.random.RandomGenerator}.
      *
+     * @param rng an instance of {@code RandomGenerator}, used to generate uniformly
+     *            pseudorandomly chosen {@code long} values
+     *
+     * @return a nonnegative {@code double} value chosen pseudorandomly
+     *         from an exponential distribution whose mean is 1
+     */
+    public static double computeNextExponential(RandomGenerator rng) {
+        return computeNextExponentialSoftCapped(rng, MAX_EXPONENTIAL);
+    }
+
+    /**
+     * Generates a pseudorandom value {@code x} such that {@code Math.min(x, maxValue)}
+     * follows the same distribution as it would if {@code x} was exponentially distributed
+     * with mean 1, but with a worst-case number of calls to {@link
+     * RandomGenerator#nextLong()} that's linear with {@code maxValue}. {@code maxValue} is
+     * a "soft" cap in that a value larger than {@code maxValue} may be returned in order
+     * to save a calculation.
+     *
      * Certain details of the algorithm used in this method may depend critically
      * on the quality of the low-order bits delivered by {@code nextLong()}.  This method
      * should not be used with RNG algorithms (such as a simple Linear Congruential
@@ -1161,17 +1179,6 @@ public class RandomSupport {
      *
      * @return a nonnegative {@code double} value chosen pseudorandomly
      *         from an exponential distribution whose mean is 1
-     */
-    public static double computeNextExponential(RandomGenerator rng) {
-        return computeNextExponentialSoftCapped(rng, MAX_EXPONENTIAL);
-    }
-
-    /**
-     * Generates a pseudorandom value {@code x} such that {@code Math.min(x, maxValue)} follows the same distribution
-     * as it would if {@code x} was exponentially distributed with mean 1, but with a worst-case number of calls to
-     * {@link RandomGenerator#nextLong()} that's linear with {@code maxValue}.
-     * @param rng the random generator whose nextLong method will be used
-     * @param maxValue a soft limit on the value to return
      */
     public static double computeNextExponentialSoftCapped(RandomGenerator rng, double maxValue) {
         /*
