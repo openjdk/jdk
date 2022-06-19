@@ -1167,8 +1167,10 @@ public class RandomSupport {
     }
 
     /**
-     * Generates an exponentially-distributed value with a "soft" maximum value. When the exponential distribution would
-     * produce a value larger than {@code maxValue}, returns either {@code maxValue} or that value.
+     * Generates a pseudorandom value {@code x} such that {@code Math.min(x, maxValue)} follows the same distribution
+     * as it would if {@code x} was exponentially distributed with mean 1, but with a worst-case number of calls to
+     * {@link RandomGenerator#nextLong()} that's linear with {@code maxValue}.
+     * @param rng the random generator whose nextLong method will be used
      * @param maxValue a soft limit on the value to return
      */
     public static double computeNextExponentialSoftCapped(RandomGenerator rng, double maxValue) {
