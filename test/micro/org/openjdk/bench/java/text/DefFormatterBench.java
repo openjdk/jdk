@@ -31,6 +31,7 @@ import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OperationsPerInvocation;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
@@ -61,6 +62,7 @@ public class DefFormatterBench {
     private DefNumberFormat dnf = new DefNumberFormat();
 
     @Benchmark
+    @OperationsPerInvocation(13)
     public void testDefNumberFormatter(final Blackhole blackhole) {
         for (double value : values) {
             blackhole.consume(this.dnf.format(value));
