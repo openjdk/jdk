@@ -511,7 +511,7 @@ void JfrThreadSampler::run() {
      * Let L be last_java_ms or last_native_ms.
      * Let N be now_ms.
      *
-     * Interval, I, might be max_int64_t so the addition
+     * Interval, I, might be max_jlong so the addition
      * could potentially overflow without parenthesis (UB). Also note that
      * L - N < 0. Avoid UB, by adding parenthesis.
      */
