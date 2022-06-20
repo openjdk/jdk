@@ -271,19 +271,19 @@ JVM_ENTRY_NO_ENV(void, jfr_set_output(JNIEnv* env, jobject jvm, jstring path))
   JfrRepository::set_chunk_path(path, thread);
 JVM_END
 
-JVM_ENTRY_NO_ENV(void, jfr_set_method_sampling_interval(JNIEnv* env, jobject jvm, jlong type, jlong intervalMillis))
-  if (intervalMillis < 0) {
-    intervalMillis = 0;
+JVM_ENTRY_NO_ENV(void, jfr_set_method_sampling_period(JNIEnv* env, jobject jvm, jlong type, jlong periodMillis))
+  if (periodMillis < 0) {
+    periodMillis = 0;
   }
   JfrEventId typed_event_id = (JfrEventId)type;
   assert(EventExecutionSample::eventId == typed_event_id || EventNativeMethodSample::eventId == typed_event_id, "invariant");
-  if (intervalMillis > 0) {
+  if (periodMillis > 0) {
     JfrEventSetting::set_enabled(typed_event_id, true); // ensure sampling event is enabled
   }
   if (EventExecutionSample::eventId == type) {
-    JfrThreadSampling::set_java_sample_interval(intervalMillis);
+    JfrThreadSampling::set_java_sample_period(periodMillis);
   } else {
-    JfrThreadSampling::set_native_sample_interval(intervalMillis);
+    JfrThreadSampling::set_native_sample_period(periodMillis);
   }
 JVM_END
 
