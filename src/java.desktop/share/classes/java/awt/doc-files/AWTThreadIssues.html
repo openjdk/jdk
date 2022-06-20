@@ -153,13 +153,7 @@ exit cleanly under normal conditions, it is not guaranteed that it
 will exit cleanly in all cases. Two examples:
 <ul>
   <li> Other packages can create displayable components for internal
-       needs and never make them undisplayable. See
-<a href="https://bugs.openjdk.org/browse/JDK-4515058">
-4515058</a>,
-<a href="https://bugs.openjdk.org/browse/JDK-4671025">
-4671025</a>, and
-<a href="https://bugs.openjdk.org/browse/JDK-4465537">
-4465537</a>.
+       needs and never make them undisplayable.
   <li> Both Microsoft Windows and X11 allow an application to send native
        events to windows that belong to another application. With this
        feature it is possible to write a malicious program that will
