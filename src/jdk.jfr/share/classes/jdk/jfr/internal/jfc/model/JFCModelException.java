@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,30 +23,13 @@
  * questions.
  */
 package jdk.jfr.internal.jfc.model;
+/**
+ * Signals that a JFCModel is invalid.
+ */
+public final class JFCModelException extends Exception {
+    private static final long serialVersionUID = -613252344752758699L;
 
-import java.util.List;
-
-// Base class for <condition>, <or>, <not>, <and> and <test>
-abstract class XmlExpression extends XmlElement {
-
-    public final List<XmlExpression> getExpressions() {
-        return elements(XmlExpression.class);
-    }
-
-    @Override
-    protected List<Constraint> constraints() {
-        return List.of(
-            Constraint.any(XmlOr.class),
-            Constraint.any(XmlAnd.class),
-            Constraint.any(XmlTest.class),
-            Constraint.any(XmlNot.class)
-        );
-    }
-
-    @Override
-    protected void validateChildConstraints() throws JFCModelException {
-        if (getExpressions().size() < 2) {
-            throw new JFCModelException("Expected + <" + getElementName() + "> to have at least two children");
-        }
+    public JFCModelException(String errorMessage) {
+        super(errorMessage);
     }
 }
