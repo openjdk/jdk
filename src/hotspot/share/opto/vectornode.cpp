@@ -861,7 +861,7 @@ Node* VectorNode::try_to_gen_masked_vector(PhaseGVN* gvn, Node* node, const Type
   Node* mask = NULL;
   // Generate a vector mask for vector operation whose vector length is lower than the
   // hardware supported max vector length.
-  if (vt->length_in_bytes() < MaxVectorSize) {
+  if (vt->length_in_bytes() < (uint)MaxVectorSize) {
     Node* length = gvn->transform(new ConvI2LNode(gvn->makecon(TypeInt::make(vlen))));
     mask = gvn->transform(VectorMaskGenNode::make(length, bt, vlen));
   } else {
