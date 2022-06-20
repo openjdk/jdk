@@ -528,7 +528,8 @@ public class InternationalFormatter extends DefaultFormatter {
 
                         updateMask(iterator);
                     }
-                    catch (ParseException | NullPointerException | IllegalArgumentException e) {}
+                    catch (ParseException | NullPointerException | IllegalArgumentException e) {
+                    }
                 }
             }
         }
@@ -1046,7 +1047,8 @@ public class InternationalFormatter extends DefaultFormatter {
                                     validEdit = true;
                                 }
                             }
-                            catch (ParseException | BadLocationException e) { }
+                            catch (ParseException | BadLocationException e) {
+                            }
                         }
                     }
                 }
