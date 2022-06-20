@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,21 +120,21 @@ implements java.io.Serializable
      *
      * @serial
      */
-    private String type;
+    private final String type;
 
     /**
      * The permission name.
      *
      * @serial
      */
-    private String name;
+    private final String name;
 
     /**
      * The actions of the permission.
      *
      * @serial
      */
-    private String actions;
+    private final String actions;
 
     private transient java.security.cert.Certificate[] certs;
 
@@ -261,11 +261,11 @@ implements java.io.Serializable
                     try {
                         Constructor<?> c = pc.getConstructor(PARAMS1);
                         return (Permission) c.newInstance(
-                              new Object[] { name});
+                              new Object[] {null});
                     } catch (NoSuchMethodException ne1) {
                         Constructor<?> c = pc.getConstructor(PARAMS2);
                         return (Permission) c.newInstance(
-                              new Object[] { name, actions });
+                              new Object[] {null, null});
                     }
                 }
             } else {
@@ -277,7 +277,7 @@ implements java.io.Serializable
                     } catch (NoSuchMethodException ne) {
                         Constructor<?> c = pc.getConstructor(PARAMS2);
                         return (Permission) c.newInstance(
-                              new Object[] { name, actions });
+                              new Object[] { name, null});
                     }
                 } else {
                     Constructor<?> c = pc.getConstructor(PARAMS2);
@@ -363,10 +363,10 @@ implements java.io.Serializable
         }
 
         // check certs
-        if ((this.certs == null && that.certs != null) ||
-            (this.certs != null && that.certs == null) ||
-            (this.certs != null && that.certs != null &&
-                this.certs.length != that.certs.length)) {
+        if (this.certs == null && that.certs != null ||
+            this.certs != null && that.certs == null ||
+            this.certs != null &&
+               this.certs.length != that.certs.length) {
             return false;
         }
 
@@ -576,7 +576,7 @@ implements java.io.Serializable
             // we know of 3 different cert types: X.509, PGP, SDSI, which
             // could all be present in the stream at the same time
             cfs = new Hashtable<>(3);
-            certList = new ArrayList<>(size > 20 ? 20 : size);
+            certList = new ArrayList<>(Math.min(size, 20));
         } else if (size < 0) {
             throw new IOException("size cannot be negative");
         }

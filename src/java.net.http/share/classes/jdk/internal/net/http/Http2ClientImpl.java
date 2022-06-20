@@ -188,9 +188,7 @@ class Http2ClientImpl {
         if (debug.on())
             debug.log("removing from the connection pool: %s", c);
         synchronized (this) {
-            Http2Connection c1 = connections.get(c.key());
-            if (c1 != null && c1.equals(c)) {
-                connections.remove(c.key());
+            if (connections.remove(c.key(), c)) {
                 if (debug.on())
                     debug.log("removed from the connection pool: %s", c);
             }

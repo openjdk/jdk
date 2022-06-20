@@ -26,6 +26,7 @@
 package com.sun.jndi.ldap;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Vector;
 import java.util.Hashtable;
@@ -1577,15 +1578,15 @@ public final class LdapClient implements PooledConnection {
 
 
     private void notifyUnsolicited(Object e) {
-        Vector<LdapCtx> unsolicitedCopy;
+        ArrayList<LdapCtx> unsolicitedCopy;
         synchronized (unsolicited) {
-            unsolicitedCopy = new Vector<>(unsolicited);
+            unsolicitedCopy = new ArrayList<>(unsolicited);
             if (e instanceof NamingException) {
                 unsolicited.setSize(0);  // no more listeners after exception
             }
         }
         for (int i = 0; i < unsolicitedCopy.size(); i++) {
-            unsolicitedCopy.elementAt(i).fireUnsolicited(e);
+            unsolicitedCopy.get(i).fireUnsolicited(e);
         }
     }
 

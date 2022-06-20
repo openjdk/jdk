@@ -1501,7 +1501,7 @@ void C2_MacroAssembler::load_vector(XMMRegister dst, AddressLiteral src, int vle
 
 void C2_MacroAssembler::load_iota_indices(XMMRegister dst, Register scratch, int vlen_in_bytes) {
   ExternalAddress addr(StubRoutines::x86::vector_iota_indices());
-  if (vlen_in_bytes == 4) {
+  if (vlen_in_bytes <= 4) {
     movdl(dst, addr);
   } else if (vlen_in_bytes == 8) {
     movq(dst, addr);
@@ -4183,6 +4183,28 @@ void C2_MacroAssembler::vector_cast_float_special_cases_evex(XMMRegister dst, XM
   bind(done);
 }
 
+void C2_MacroAssembler::vector_cast_float_to_long_special_cases_evex(
+                                                             XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                                                             XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2,
+                                                             Register scratch, AddressLiteral double_sign_flip,
+                                                             int vec_enc) {
+  Label done;
+  evmovdquq(xtmp1, k0, double_sign_flip, false, vec_enc, scratch);
+  Assembler::evpcmpeqq(ktmp1, k0, xtmp1, dst, vec_enc);
+  kortestwl(ktmp1, ktmp1);
+  jccb(Assembler::equal, done);
+
+  vpxor(xtmp2, xtmp2, xtmp2, vec_enc);
+  evcmpps(ktmp2, k0, src, src, Assembler::UNORD_Q, vec_enc);
+  evmovdquq(dst, ktmp2, xtmp2, true, vec_enc);
+
+  kxorwl(ktmp1, ktmp1, ktmp2);
+  evcmpps(ktmp1, ktmp1, src, xtmp2, Assembler::NLT_UQ, vec_enc);
+  vpternlogq(xtmp2, 0x11, xtmp1, xtmp1, vec_enc);
+  evmovdquq(dst, ktmp1, xtmp2, true, vec_enc);
+  bind(done);
+}
+
 /*
  * Following routine handles special floating point values(NaN/Inf/-Inf/Max/Min) for casting operation.
  * If src is NaN, the result is 0.
@@ -4241,6 +4263,35 @@ void C2_MacroAssembler::vector_castF2I_evex(XMMRegister dst, XMMRegister src, XM
                                             Register scratch, int vec_enc) {
   vcvttps2dq(dst, src, vec_enc);
   vector_cast_float_special_cases_evex(dst, src, xtmp1, xtmp2, ktmp1, ktmp2, scratch, float_sign_flip, vec_enc);
+}
+
+void C2_MacroAssembler::vector_castF2L_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
+                                            KRegister ktmp1, KRegister ktmp2, AddressLiteral double_sign_flip,
+                                            Register scratch, int vec_enc) {
+  evcvttps2qq(dst, src, vec_enc);
+  vector_cast_float_to_long_special_cases_evex(dst, src, xtmp1, xtmp2, ktmp1, ktmp2, scratch, double_sign_flip, vec_enc);
+}
+
+void C2_MacroAssembler::vector_castD2X_evex(BasicType to_elem_bt, XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                                            XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2,
+                                            AddressLiteral double_sign_flip, Register scratch, int vec_enc) {
+  vector_castD2L_evex(dst, src, xtmp1, xtmp2, ktmp1, ktmp2, double_sign_flip, scratch, vec_enc);
+  if (to_elem_bt != T_LONG) {
+    switch(to_elem_bt) {
+      case T_INT:
+        evpmovsqd(dst, dst, vec_enc);
+        break;
+      case T_SHORT:
+        evpmovsqd(dst, dst, vec_enc);
+        evpmovdw(dst, dst, vec_enc);
+        break;
+      case T_BYTE:
+        evpmovsqd(dst, dst, vec_enc);
+        evpmovdb(dst, dst, vec_enc);
+        break;
+      default: assert(false, "%s", type2name(to_elem_bt));
+    }
+  }
 }
 
 #ifdef _LP64
@@ -4346,7 +4397,7 @@ void C2_MacroAssembler::vector_long_to_maskvec(XMMRegister dst, Register src, Re
   int index = 0;
   int vindex = 0;
   mov64(rtmp1, 0x0101010101010101L);
-  pdep(rtmp1, src, rtmp1);
+  pdepq(rtmp1, src, rtmp1);
   if (mask_len > 8) {
     movq(rtmp2, src);
     vpxor(xtmp, xtmp, xtmp, vec_enc);
@@ -4363,7 +4414,7 @@ void C2_MacroAssembler::vector_long_to_maskvec(XMMRegister dst, Register src, Re
     }
     mov64(rtmp1, 0x0101010101010101L);
     shrq(rtmp2, 8);
-    pdep(rtmp1, rtmp2, rtmp1);
+    pdepq(rtmp1, rtmp2, rtmp1);
     pinsrq(xtmp, rtmp1, index % 2);
     vindex = index / 2;
     if (vindex) {
@@ -4504,7 +4555,7 @@ void C2_MacroAssembler::vector_mask_compress(KRegister dst, KRegister src, Regis
   kmov(rtmp1, src);
   andq(rtmp1, (0xFFFFFFFFFFFFFFFFUL >> (64 - mask_len)));
   mov64(rtmp2, -1L);
-  pext(rtmp2, rtmp2, rtmp1);
+  pextq(rtmp2, rtmp2, rtmp1);
   kmov(dst, rtmp2);
 }
 
@@ -5316,3 +5367,4 @@ void C2_MacroAssembler::udivmodL(Register rax, Register divisor, Register rdx, R
   bind(done);
 }
 #endif
+

@@ -1,0 +1,154 @@
+#
+# Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+name: 'Build (cross-compile)'
+
+on:
+  workflow_call:
+    inputs:
+      gcc-major-version:
+        required: false
+        type: string
+        default: '10'
+      apt-gcc-version:
+        required: false
+        type: string
+        default: '10.3.0-1ubuntu1~20.04'
+      apt-gcc-cross-suffix:
+        required: false
+        type: string
+        default: 'cross1'
+
+jobs:
+  build-cross-compile:
+    name: build
+    runs-on: ubuntu-20.04
+
+    strategy:
+      fail-fast: false
+      matrix:
+        target-cpu:
+          - aarch64
+          - arm
+          - s390x
+          - ppc64le
+        include:
+          - target-cpu: aarch64
+            debian-arch: arm64
+            gnu-arch: aarch64
+          - target-cpu: arm
+            debian-arch: armhf
+            gnu-arch: arm
+            gnu-abi: eabihf
+          - target-cpu: s390x
+            debian-arch: s390x
+            gnu-arch: s390x
+          - target-cpu: ppc64le
+            debian-arch: ppc64el
+            gnu-arch: powerpc64le
+
+    steps:
+      - name: 'Checkout the JDK source'
+        uses: actions/checkout@v3
+
+      - name: 'Get the BootJDK'
+        id: bootjdk
+        uses: ./.github/actions/get-bootjdk
+        with:
+          platform: linux-x64
+
+        # Use linux-x64 JDK bundle as build JDK
+      - name: 'Get build JDK'
+        id: buildjdk
+        uses: ./.github/actions/get-bundles
+        with:
+          platform: linux-x64
+
+        # Upgrading apt to solve libc6 installation bugs, see JDK-8260460.
+      - name: 'Install toolchain and dependencies'
+        run: |
+          # Install dependencies using apt-get
+          sudo apt-get update
+          sudo apt-get install --only-upgrade apt
+          sudo apt-get install \
+              gcc-${{ inputs.gcc-major-version }}=${{ inputs.apt-gcc-version }} \
+              g++-${{ inputs.gcc-major-version }}=${{ inputs.apt-gcc-version }} \
+              gcc-${{ inputs.gcc-major-version }}-${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}}=${{ inputs.apt-gcc-version }}${{ inputs.apt-gcc-cross-suffix }} \
+              g++-${{ inputs.gcc-major-version }}-${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}}=${{ inputs.apt-gcc-version }}${{ inputs.apt-gcc-cross-suffix }} \
+              libxrandr-dev libxtst-dev libcups2-dev libasound2-dev
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ inputs.gcc-major-version }} 100 --slave /usr/bin/g++ g++ /usr/bin/g++-${{ inputs.gcc-major-version }}
+
+      - name: 'Check cache for sysroot'
+        id: get-cached-sysroot
+        uses: actions/cache@v3
+        with:
+          path: sysroot
+          key: sysroot-${{ matrix.debian-arch }}-${{ hashFiles('./.github/workflows/build-cross-compile.yml') }}
+
+      - name: 'Install sysroot dependencies'
+        run: sudo apt-get install debootstrap qemu-user-static
+        if: steps.get-cached-sysroot.outputs.cache-hit != 'true'
+
+      - name: 'Create sysroot'
+        run: >
+          sudo qemu-debootstrap
+          --arch=${{ matrix.debian-arch }}
+          --verbose
+          --include=fakeroot,symlinks,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxrandr-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype6-dev,libpng-dev
+          --resolve-deps
+          buster
+          sysroot
+          https://httpredir.debian.org/debian/
+        if: steps.get-cached-sysroot.outputs.cache-hit != 'true'
+
+      - name: 'Prepare sysroot'
+        run: |
+          # Prepare sysroot and remove unused files to minimize cache
+          sudo chroot sysroot symlinks -cr .
+          sudo chown ${USER} -R sysroot
+          rm -rf sysroot/{dev,proc,run,sys}
+        if: steps.get-cached-sysroot.outputs.cache-hit != 'true'
+
+      - name: 'Configure'
+        run: >
+          bash configure
+          --with-conf-name=linux-${{ matrix.target-cpu }}
+          --with-version-opt=${GITHUB_ACTOR}-${GITHUB_SHA}
+          --with-boot-jdk=${{ steps.bootjdk.outputs.path }}
+          --with-zlib=system
+          --enable-debug
+          --disable-precompiled-headers
+          --openjdk-target=${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}}
+          --with-sysroot=sysroot
+          --with-build-jdk=${{ steps.buildjdk.outputs.jdk-path }}
+          CC=${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}}-gcc-10
+          CXX=${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}}-g++-10
+
+      - name: 'Build'
+        id: build
+        uses: ./.github/actions/do-build
+        with:
+          make-target: 'hotspot'
+          platform: linux-${{ matrix.target-cpu }}

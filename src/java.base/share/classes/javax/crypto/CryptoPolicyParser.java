@@ -71,6 +71,7 @@ final class CryptoPolicyParser {
     // Convenience variables for parsing
     private StreamTokenizer st;
     private int lookahead;
+    private boolean allPermEntryFound = false;
 
     /**
      * Creates a CryptoPolicyParser object.
@@ -129,7 +130,7 @@ final class CryptoPolicyParser {
          * The crypto jurisdiction policy must be consistent. The
          * following hashtable is used for checking consistency.
          */
-        Hashtable<String, Vector<String>> processedPermissions = null;
+        Hashtable<String, Vector<String>> processedPermissions = new Hashtable<>();
 
         /*
          * The main parsing loop.  The loop is executed once for each entry
@@ -191,6 +192,16 @@ final class CryptoPolicyParser {
         e.cryptoPermission = match("permission type");
 
         if (e.cryptoPermission.equals("javax.crypto.CryptoAllPermission")) {
+            /*
+             * This catches while processing the "javax.crypto.CryptoAllPermission"
+             * entry, but the "processedPermissions" Hashtable already contains
+             * an entry for "javax.crypto.CryptoPermission".
+             */
+            if (!processedPermissions.isEmpty()) {
+                throw new ParsingException(st.lineno(), "Inconsistent policy");
+            }
+            allPermEntryFound = true;
+
             // Done with the CryptoAllPermission entry.
             e.alg = CryptoAllPermission.ALG_NAME;
             e.maxKeySize = Integer.MAX_VALUE;
@@ -494,16 +505,19 @@ final class CryptoPolicyParser {
         String thisExemptionMechanism =
             exemptionMechanism == null ? "none" : exemptionMechanism;
 
-        if (processedPermissions == null) {
-            processedPermissions = new Hashtable<>();
+        /*
+         * This catches while processing a "javax.crypto.CryptoPermission" entry, but
+         * "javax.crypto.CryptoAllPermission" entry already exists.
+         */
+        if (allPermEntryFound) {
+            return false;
+        }
+
+        if (processedPermissions.isEmpty()) {
             Vector<String> exemptionMechanisms = new Vector<>(1);
             exemptionMechanisms.addElement(thisExemptionMechanism);
             processedPermissions.put(alg, exemptionMechanisms);
             return true;
-        }
-
-        if (processedPermissions.containsKey(CryptoAllPermission.ALG_NAME)) {
-            return false;
         }
 
         Vector<String> exemptionMechanisms;
