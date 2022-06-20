@@ -28,13 +28,14 @@
 
 class ZStackChunkGCData {
 private:
-  uint64_t _color;
+  // The implicit color of all oops when the chunk was recently allocated
+  uintptr_t _color;
 
   static ZStackChunkGCData* data(stackChunkOop chunk);
 
 public:
   static void initialize(stackChunkOop chunk);
-  static uint64_t color(stackChunkOop chunk);
+  static uintptr_t color(stackChunkOop chunk);
 };
 
 #endif // SHARE_GC_Z_ZSTACKCHUNKGCDATA_HPP

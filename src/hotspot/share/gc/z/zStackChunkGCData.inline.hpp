@@ -35,7 +35,7 @@ inline void ZStackChunkGCData::initialize(stackChunkOop chunk) {
   data(chunk)->_color = ZPointerStoreGoodMask;
 }
 
-inline uint64_t ZStackChunkGCData::color(stackChunkOop chunk) {
+inline uintptr_t ZStackChunkGCData::color(stackChunkOop chunk) {
   return data(chunk)->_color;
 }
 

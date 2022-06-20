@@ -28,35 +28,56 @@
 #include "gc/z/zStackChunkGCData.inline.hpp"
 #include "runtime/atomic.hpp"
 
-oop ZContinuation::load_oop(void* addr, stackChunkOop chunk) {
-  volatile uint64_t* value_addr = reinterpret_cast<volatile uint64_t*>(addr);
-  uint64_t value = Atomic::load(value_addr);
+static zpointer materialize_zpointer(void* addr, stackChunkOop chunk) {
+  volatile uintptr_t* const value_addr = reinterpret_cast<volatile uintptr_t*>(addr);
+
+  // A stack chunk has two modes:
+  //
+  // 1) It's recently allocated and the contents is a copy of the native stack.
+  //    All oops have the format of oops in the stack. That is, they are
+  //    zaddresses, and don't have any colored metadata bits.
+  //
+  // 2) It has lived long enough that the GC needs to visit the oops.
+  //    Before the GC visits the oops, they are converted into zpointers,
+  //    and become colored pointers.
+  //
+  // The load_oop function supports loading oops from chunks in either of the
+  // two modes. It even supports loading oops, while another thread is
+  // converting the chunk to "gc mode" [transition from (1) to (2)]. So, we
+  // load the oop once and perform all checks on that loaded copy.
+
+  // Load once
+  const uintptr_t value = Atomic::load(value_addr);
 
   if ((value & ~ZPointerAllMetadataMask) == 0) {
-    // Must be null of some sort
-    return (oop)NULL;
+    // Must be null of some sort - either zaddress or zpointer
+    return zpointer::null;
   }
 
-  uint64_t impossible_zaddress_mask = ~((ZAddressHeapBase - 1) | ZAddressHeapBase);
-
+  const uint64_t impossible_zaddress_mask = ~((ZAddressHeapBase - 1) | ZAddressHeapBase);
   if ((value & impossible_zaddress_mask) != 0) {
-    // If it isn't a zaddress, it's a zpointer
-    zpointer zptr = to_zpointer(value);
-    return to_oop(ZBarrier::load_barrier_on_oop_field_preloaded(NULL /* p */, zptr));
+    // Must be a zpointer - it has bits forbidden in zaddresses
+    return to_zpointer(value);
   }
 
   // Must be zaddress
-  zaddress_unsafe zaddr = to_zaddress_unsafe(value);
-  // A zaddress can only be written to the chunk when the global color
-  // matches the color of the chunk, which was populated when the chunk
-  // was allocated. Therefore, we can create a zpointer based on the address
-  // and the chunk color.
-  uint64_t color = ZStackChunkGCData::color(chunk);
-  zpointer zptr = ZAddress::color(zaddr, color);
+  const zaddress_unsafe zaddr = to_zaddress_unsafe(value);
 
-  if (!ZPointer::is_load_good(zptr)) {
-    return to_oop(ZBarrier::relocate_or_remap(zaddr, ZBarrier::remap_generation(zptr)));
-  }
+  // A zaddress means that the chunk was recently allocated, and the layout is
+  // that of a native stack. That means that oops are uncolored (zaddress). But
+  // the oops still have an implicit color, saved away in the chunk.
 
-  return to_oop(safe(zaddr));
+  // Use the implicit color, and create a zpointer that is equivalent with
+  // what we would have written if we where to eagerly create the zpointer
+  // when the stack frames where copied into the chunk.
+  const uint64_t color = ZStackChunkGCData::color(chunk);
+  return ZAddress::color(zaddr, color);
+}
+
+oop ZContinuation::load_oop(void* addr, stackChunkOop chunk) {
+  // addr could contain either a zpointer or a zaddress
+  const zpointer zptr = materialize_zpointer(addr, chunk);
+
+  // Apply the load barrier, without healing the zaddress/zpointer
+  return to_oop(ZBarrier::load_barrier_on_oop_field_preloaded(NULL /* p */, zptr));
 }
