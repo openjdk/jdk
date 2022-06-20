@@ -74,7 +74,7 @@ public:
   // Make sure that the given bitmap has no marked objects in the
   // range [from,limit). If it does, print an error message and return
   // false. Otherwise, just return true.
-  bool verify_no_bits_over_tams(const G1CMBitMap* const bitmap,
+  bool verify_no_bits_over_threshold(const G1CMBitMap* const bitmap,
                                 HeapWord* from, HeapWord* limit);
 
   // Verify that the marking bitmap range [tams,end) for the given

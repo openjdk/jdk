@@ -293,10 +293,6 @@ inline void HeapRegion::note_end_of_marking(size_t marked_bytes) {
   _marked_bytes = marked_bytes;
   _garbage_bytes = byte_size(bottom(), _top_at_mark_start) - _marked_bytes;
 
-  // We know that humongous regions do not need scrubbing as they are contiguous
-  // and there is only one object in them at a time. So do not bother moving
-  // _parsable_bottom.
-  assert(needs_scrubbing() || parsable_bottom() == bottom(), "Regions that are not scrubbed should not move parsable_bottom");
   if (needs_scrubbing()) {
     _parsable_bottom = _top_at_mark_start;
   }

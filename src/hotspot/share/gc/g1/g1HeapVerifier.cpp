@@ -659,7 +659,7 @@ void G1HeapVerifier::verify_dirty_young_regions() {
   _g1h->collection_set()->iterate(&cl);
 }
 
-bool G1HeapVerifier::verify_no_bits_over_tams(const G1CMBitMap* const bitmap,
+bool G1HeapVerifier::verify_no_bits_over_threshold(const G1CMBitMap* const bitmap,
                                               HeapWord* tams, HeapWord* end) {
   guarantee(tams <= end,
             "tams: " PTR_FORMAT " end: " PTR_FORMAT, p2i(tams), p2i(end));
@@ -675,18 +675,20 @@ bool G1HeapVerifier::verify_no_bits_over_tams(const G1CMBitMap* const bitmap,
 bool G1HeapVerifier::verify_bitmaps(const char* caller, HeapRegion* hr) {
   const G1CMBitMap* const bitmap = _g1h->concurrent_mark()->mark_bitmap();
 
-  HeapWord* tams   = hr->top_at_mark_start();
-  HeapWord* end    = hr->end();
+  // We reset TAMS to bottom after Remark, keeping PB as indicator of up to where
+  // marks should be used (and are valid).
+  HeapWord* threshold = MAX2(hr->top_at_mark_start(), hr->parsable_bottom());
 
-  bool result = true;
+  HeapWord* end = hr->end();
+
   // We cannot verify the marking bitmap while we are clearing it.
   if (!_g1h->collector_state()->clearing_bitmap()) {
-    result = verify_no_bits_over_tams(bitmap, tams, end);
-  }
-  if (!result) {
-    log_error(gc, verify)("#### Bitmap verification failed for " HR_FORMAT, HR_FORMAT_PARAMS(hr));
-    log_error(gc, verify)("#### Caller: %s", caller);
-    return false;
+    bool result = verify_no_bits_over_threshold(bitmap, threshold, end);
+    if (!result) {
+      log_error(gc, verify)("#### Bitmap verification failed for " HR_FORMAT, HR_FORMAT_PARAMS(hr));
+      log_error(gc, verify)("#### Caller: %s", caller);
+      return false;
+    }
   }
   return true;
 }
