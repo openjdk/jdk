@@ -59,7 +59,7 @@ static const char* reference_type_name(ReferenceType type) {
 
   default:
     ShouldNotReachHere();
-    return NULL;
+    return "ERROR";
   }
 }
 
