@@ -483,10 +483,10 @@ public class ElementsTable {
 
     /**
      * Returns the aggregate set of included packages and specified
-     * sub packages.
+     * subpackages.
      *
      * @return the aggregate set of included packages and specified
-     * sub packages
+     * subpackages
      */
     Iterable<ModulePackage> getPackagesToParse() throws IOException {
         List<ModulePackage> result = new ArrayList<>();

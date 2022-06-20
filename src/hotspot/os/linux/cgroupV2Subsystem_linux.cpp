@@ -213,17 +213,12 @@ char* CgroupV2Subsystem::mem_limit_val() {
 }
 
 char* CgroupV2Controller::construct_path(char* mount_path, char *cgroup_path) {
-  char buf[MAXPATHLEN+1];
-  int buflen;
-  strncpy(buf, mount_path, MAXPATHLEN);
-  buf[MAXPATHLEN] = '\0';
-  buflen = strlen(buf);
-  if ((buflen + strlen(cgroup_path)) > MAXPATHLEN) {
-    return NULL;
+  stringStream ss;
+  ss.print_raw(mount_path);
+  if (strcmp(cgroup_path, "/") != 0) {
+    ss.print_raw(cgroup_path);
   }
-  strncat(buf, cgroup_path, MAXPATHLEN-buflen);
-  buf[MAXPATHLEN] = '\0';
-  return os::strdup(buf);
+  return os::strdup(ss.base());
 }
 
 char* CgroupV2Subsystem::pids_max_val() {

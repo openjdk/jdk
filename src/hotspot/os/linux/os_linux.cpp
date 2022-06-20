@@ -1747,10 +1747,10 @@ void * os::Linux::dlopen_helper(const char *filename, char *ebuf,
       ::strncpy(ebuf, error_report, ebuflen-1);
       ebuf[ebuflen-1]='\0';
     }
-    Events::log(NULL, "Loading shared library %s failed, %s", filename, error_report);
+    Events::log_dll_message(NULL, "Loading shared library %s failed, %s", filename, error_report);
     log_info(os)("shared library load of %s failed, %s", filename, error_report);
   } else {
-    Events::log(NULL, "Loaded shared library %s", filename);
+    Events::log_dll_message(NULL, "Loaded shared library %s", filename);
     log_info(os)("shared library load of %s was successful", filename);
   }
   return result;
@@ -1784,6 +1784,18 @@ void * os::Linux::dll_load_in_vmthread(const char *filename, char *ebuf,
   }
 
   return result;
+}
+
+const char* os::Linux::dll_path(void* lib) {
+  struct link_map *lmap;
+  const char* l_path = NULL;
+  assert(lib != NULL, "dll_path parameter must not be NULL");
+
+  int res_dli = ::dlinfo(lib, RTLD_DI_LINKMAP, &lmap);
+  if (res_dli == 0) {
+    l_path = lmap->l_name;
+  }
+  return l_path;
 }
 
 static bool _print_ascii_file(const char* filename, outputStream* st, const char* hdr = NULL) {
