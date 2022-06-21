@@ -40,6 +40,7 @@
 #include "oops/klass.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/stackChunkOop.inline.hpp"
+#include "runtime/continuationJavaClasses.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"

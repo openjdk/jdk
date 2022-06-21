@@ -26,11 +26,10 @@
 #define SHARE_CLASSFILE_JDK_INTERNAL_VM_STACKCHUNK_INLINE_HPP
 
 #include "classfile/javaClasses.hpp"
-#include "classfile/continuationJavaClasses.hpp"
-#include "oops/access.inline.hpp"
-#include "oops/stackChunkOop.hpp"
 #include "logging/log.hpp"
+#include "oops/access.inline.hpp"
 #include "oops/stackChunkOop.inline.hpp"
+#include "runtime/continuationJavaClasses.hpp"
 
 inline oop jdk_internal_vm_ContinuationScope::name(oop ref) {
   return ref->obj_field(_name_offset);

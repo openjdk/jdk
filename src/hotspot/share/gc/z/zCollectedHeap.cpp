@@ -23,7 +23,6 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
-#include "classfile/continuationJavaClasses.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/z/zCollectedHeap.hpp"
@@ -42,6 +41,7 @@
 #include "memory/metaspaceCriticalAllocation.hpp"
 #include "memory/universe.hpp"
 #include "oops/stackChunkOop.hpp"
+#include "runtime/continuationJavaClasses.hpp"
 #include "utilities/align.hpp"
 
 ZCollectedHeap* ZCollectedHeap::heap() {
