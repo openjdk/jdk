@@ -54,7 +54,7 @@ static zpointer materialize_zpointer(stackChunkOop chunk, void* addr) {
     return zpointer::null;
   }
 
-  const uint64_t impossible_zaddress_mask = ~((ZAddressHeapBase - 1) | ZAddressHeapBase);
+  const uintptr_t impossible_zaddress_mask = ~((ZAddressHeapBase - 1) | ZAddressHeapBase);
   if ((value & impossible_zaddress_mask) != 0) {
     // Must be a zpointer - it has bits forbidden in zaddresses
     return to_zpointer(value);
@@ -70,7 +70,7 @@ static zpointer materialize_zpointer(stackChunkOop chunk, void* addr) {
   // Use the implicit color, and create a zpointer that is equivalent with
   // what we would have written if we where to eagerly create the zpointer
   // when the stack frames where copied into the chunk.
-  const uint64_t color = ZStackChunkGCData::color(chunk);
+  const uintptr_t color = ZStackChunkGCData::color(chunk);
   return ZAddress::color(zaddr, color);
 }
 
