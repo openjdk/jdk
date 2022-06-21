@@ -27,7 +27,6 @@
 
 #include "gc/g1/g1CollectedHeap.hpp"
 
-#include "oops/stackChunkOop.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1EvacFailureRegions.hpp"
@@ -39,6 +38,7 @@
 #include "gc/g1/heapRegionSet.inline.hpp"
 #include "gc/shared/markBitMap.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
+#include "oops/stackChunkOop.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/bitMap.inline.hpp"
 

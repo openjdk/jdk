@@ -22,11 +22,11 @@
  *
  */
 
-#ifndef SHARE_CLASSFILE_JAVACLASSES_IMPL_HPP
-#define SHARE_CLASSFILE_JAVACLASSES_IMPL_HPP
+#ifndef SHARE_CLASSFILE_JAVACLASSESIMPL_HPP
+#define SHARE_CLASSFILE_JAVACLASSESIMPL_HPP
 
-#include "classfile/javaClasses.hpp"
 #include "classfile/continuationJavaClasses.hpp"
+#include "classfile/javaClasses.hpp"
 #include "utilities/macros.hpp"
 
 #define DECLARE_INJECTED_FIELD_ENUM(klass, name, signature, may_be_java) \
@@ -69,4 +69,4 @@ enum class InjectedFieldID : int {
 
 #undef DECLARE_INJECTED_FIELD_ENUM
 
-#endif // SHARE_CLASSFILE_JAVACLASSES_IMPL_HPP
+#endif // SHARE_CLASSFILE_JAVACLASSESIMPL_HPP

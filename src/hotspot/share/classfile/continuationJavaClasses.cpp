@@ -23,9 +23,9 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/javaClassesImpl.hpp"
-#include "classfile/javaClasses.hpp"
 #include "classfile/continuationJavaClasses.hpp"
+#include "classfile/javaClasses.hpp"
+#include "classfile/javaClassesImpl.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 
