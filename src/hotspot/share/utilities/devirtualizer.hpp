@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,10 @@
 #ifndef SHARE_UTILITIES_DEVIRTUALIZER_HPP
 #define SHARE_UTILITIES_DEVIRTUALIZER_HPP
 
-#include "memory/allocation.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/bitMap.hpp"
+
+class ClassLoaderData;
 
 // Dispatches to the non-virtual functions if OopClosureType has
 // a concrete implementation, otherwise a virtual call is taken.
