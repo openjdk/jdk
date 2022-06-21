@@ -904,8 +904,9 @@ class JavaThread: public Thread {
   // JavaThread termination support
  public:
   enum TerminatedTypes {
-    _not_terminated = 0xDEAD - 2,
+    _not_terminated = 0xDEAD - 3,
     _thread_exiting,                             // JavaThread::exit() has been called for this thread
+    _thread_gc_barrier_detached,                 // thread's GC barrier has been detached
     _thread_terminated,                          // JavaThread is removed from thread list
     _vm_exited                                   // JavaThread is still executing native code, but VM is terminated
                                                  // only VM_Exit can set _vm_exited
@@ -914,10 +915,14 @@ class JavaThread: public Thread {
  private:
   // In general a JavaThread's _terminated field transitions as follows:
   //
-  //   _not_terminated => _thread_exiting => _thread_terminated
+  //   _not_terminated => _thread_exiting => _thread_gc_barrier_detached => _thread_terminated
   //
   // _vm_exited is a special value to cover the case of a JavaThread
   // executing native code after the VM itself is terminated.
+  //
+  // A JavaThread that fails to JNI attach has these _terminated field transitions:
+  //   _not_terminated => _thread_terminated
+  //
   volatile TerminatedTypes _terminated;
 
   jint                  _in_deopt_handler;       // count of deoptimization
@@ -1172,13 +1177,17 @@ private:
   bool on_thread_list() const { return _on_thread_list; }
   void set_on_thread_list() { _on_thread_list = true; }
 
-  // thread has called JavaThread::exit() or is terminated
+  // thread has called JavaThread::exit(), thread's GC barrier is detached
+  // or thread is terminated
   bool is_exiting() const;
+  // thread's GC barrier is NOT detached and thread is NOT terminated
+  bool is_oop_safe() const;
   // thread is terminated (no longer on the threads list); we compare
-  // against the two non-terminated values so that a freed JavaThread
+  // against the three non-terminated values so that a freed JavaThread
   // will also be considered terminated.
   bool check_is_terminated(TerminatedTypes l_terminated) const {
-    return l_terminated != _not_terminated && l_terminated != _thread_exiting;
+    return l_terminated != _not_terminated && l_terminated != _thread_exiting &&
+           l_terminated != _thread_gc_barrier_detached;
   }
   bool is_terminated() const;
   void set_terminated(TerminatedTypes t);

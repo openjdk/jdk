@@ -3599,6 +3599,12 @@ void Threads::remove(JavaThread* p, bool is_daemon) {
     // StackWatermarkSet::on_safepoint(), which performs GC processing,
     // requiring the GC state to be alive.
     BarrierSet::barrier_set()->on_thread_detach(p);
+    if (p->is_exiting()) {
+      // If we got here via JavaThread::exit(), then we remember that the
+      // thread's GC barrier has been detached. We don't do this when we get
+      // here from another path, e.g., cleanup_failed_attach_current_thread().
+      p->set_terminated(JavaThread::_thread_gc_barrier_detached);
+    }
 
     assert(ThreadsSMRSupport::get_java_thread_list()->includes(p), "p must be present");
 
