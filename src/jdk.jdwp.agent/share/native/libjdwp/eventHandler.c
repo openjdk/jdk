@@ -643,7 +643,7 @@ event_callback(JNIEnv *env, EventInfo *evinfo)
 
     /* See if a garbage collection finish event happened earlier. */
     if ( garbageCollected > 0) {
-       commonRef_compact();
+        commonRef_compact();
         garbageCollected = 0;
     }
 

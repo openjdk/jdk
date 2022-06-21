@@ -2849,7 +2849,7 @@ void JvmtiTagMap::iterate_over_reachable_objects(jvmtiHeapRootCallback heap_root
 }
 
 // iterate over all objects that are reachable from a given object
-void JvmtiTagMap::iterate_over_objects_reachable_from_object(jobject object,
+void JvmtiTagMap::iterate_over_objects_reachable_from_object(jobject object,post_dead_objects_on_vm_thread
                                                              jvmtiObjectReferenceCallback object_ref_callback,
                                                              const void* user_data) {
   oop obj = JNIHandles::resolve(object);
