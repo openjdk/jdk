@@ -29,6 +29,7 @@
 
 import java.lang.annotation.*;
 import java.lang.reflect.*;
+import java.util.*;
 
 /*
  * Class access flags that can directly or indirectly declared in
@@ -47,6 +48,8 @@ public class ClassAccessFlagTest {
         }
         checkClass(TestInterface.class);
         checkClass(ExpectedClassFlags.class);
+        checkPrimitives();
+        checkArrays();
     }
 
     private static void checkClass(Class<?> clazz) {
@@ -61,6 +64,91 @@ public class ClassAccessFlagTest {
             }
         }
     }
+
+    private static void checkPrimitives() {
+        final Class<?>[] primitives = {
+            byte.class,
+            int.class,
+            long.class,
+            short.class,
+            char.class,
+            float.class,
+            double.class,
+            boolean.class,
+            void.class // same access flag rules
+        };
+
+        var mustBePresent = Set.of(AccessFlag.PUBLIC, AccessFlag.FINAL);
+        var mustBeAbsent = Set.of(AccessFlag.PRIVATE,
+                                  AccessFlag.PROTECTED,
+                                  AccessFlag.INTERFACE);
+
+        for(var primClass : primitives) {
+            // PUBLIC must be present, PROTECTED and PRIVATE must be
+            // absent.
+            // FINAL must be present, INTERFACE must be absent.
+            var accessFlags = primClass.accessFlags();
+            if (!accessFlags.containsAll(mustBePresent)) {
+                throw new RuntimeException("Missing mandatory flags on " +
+                                           primClass);
+            }
+
+            if (containsAny(accessFlags, mustBeAbsent)) {
+                throw new RuntimeException("Unexpected flags present on " +
+                                           primClass);
+            }
+        }
+    }
+
+    private static boolean containsAny(Set<AccessFlag> input,
+                                       Set<AccessFlag> test) {
+        var copy = new HashSet<>(input);
+        return copy.removeAll(test);
+    }
+
+    private static void checkArrays() {
+        Class<?>[] accessClasses = {
+            PublicInterface.class,
+            ProtectedInterface.class,
+            PrivateInterface.class,
+        };
+
+        for (var accessClass : accessClasses) {
+            AccessFlag accessLevel;
+            var flags = accessClass.accessFlags();
+            if (flags.contains(AccessFlag.PUBLIC))
+                accessLevel = AccessFlag.PUBLIC;
+            else if (flags.contains(AccessFlag.PROTECTED))
+                accessLevel = AccessFlag.PROTECTED;
+            else if (flags.contains(AccessFlag.PRIVATE))
+                accessLevel = AccessFlag.PRIVATE;
+            else
+                accessLevel = null;
+
+            var arrayClass = accessClass.arrayType();
+            // Access modifier must match on the array type
+            if (accessLevel != null) {
+                if (!arrayClass.accessFlags().contains(accessLevel)) {
+                    throw new RuntimeException("Mismatched access flags on " +
+                                               arrayClass);
+                }
+            } else {
+                if (containsAny(arrayClass.accessFlags(),
+                                Set.of(AccessFlag.PUBLIC,
+                                       AccessFlag.PROTECTED,
+                                       AccessFlag.PRIVATE))) {
+                    throw new RuntimeException("Unexpected access flags on " +
+                                               arrayClass);
+                }
+            }
+        }
+
+    }
+
+    public      interface PublicInterface {}
+    protected   interface ProtectedInterface {}
+    private     interface PrivateInterface {}
+    /*package*/ interface PackageInterface {}
 
     // Classes
     @ExpectedClassFlags("[PUBLIC, STATIC, FINAL, ENUM]")
