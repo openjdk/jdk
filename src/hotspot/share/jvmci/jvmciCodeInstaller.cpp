@@ -662,7 +662,13 @@ JVMCI::CodeInstallResult CodeInstaller::initialize_buffer(CodeBuffer& buffer, bo
   // section itself so they don't need to be accounted for in the
   // locs_buffer above.
   int stubs_size = estimate_stubs_size(JVMCI_CHECK_OK);
-  int total_size = align_up(_code_size, buffer.insts()->alignment()) + align_up(_constants_size, buffer.consts()->alignment()) + align_up(stubs_size, buffer.stubs()->alignment());
+
+  assert((CodeBuffer::SECT_INSTS == CodeBuffer::SECT_STUBS - 1) &&
+         (CodeBuffer::SECT_CONSTS == CodeBuffer::SECT_INSTS - 1), "sections order: consts, insts, stubs");
+  // buffer content: [constants + code_align] + [code + stubs_align] + [stubs]
+  int total_size = align_up(_constants_size, CodeSection::alignment(CodeBuffer::SECT_INSTS)) +
+                   align_up(_code_size, CodeSection::alignment(CodeBuffer::SECT_STUBS)) +
+                   stubs_size;
 
   if (check_size && total_size > JVMCINMethodSizeLimit) {
     return JVMCI::code_too_large;
@@ -1064,10 +1070,9 @@ void CodeInstaller::record_scope(jint pc_offset, JVMCIObject position, ScopeMode
   }
 
   // has_ea_local_in_scope and arg_escape should be added to JVMCI
-  const bool is_opt_native         = false;
   const bool has_ea_local_in_scope = false;
   const bool arg_escape            = false;
-  _debug_recorder->describe_scope(pc_offset, method, NULL, bci, reexecute, throw_exception, is_mh_invoke, is_opt_native, return_oop,
+  _debug_recorder->describe_scope(pc_offset, method, NULL, bci, reexecute, throw_exception, is_mh_invoke, return_oop,
                                   has_ea_local_in_scope, arg_escape,
                                   locals_token, expressions_token, monitors_token);
 }

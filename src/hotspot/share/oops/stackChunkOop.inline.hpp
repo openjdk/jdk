@@ -57,8 +57,8 @@ inline int stackChunkOopDesc::stack_size() const        { return jdk_internal_vm
 inline int stackChunkOopDesc::sp() const                { return jdk_internal_vm_StackChunk::sp(as_oop()); }
 inline void stackChunkOopDesc::set_sp(int value)        { jdk_internal_vm_StackChunk::set_sp(this, value); }
 
-inline address stackChunkOopDesc::pc() const            { return (address)jdk_internal_vm_StackChunk::pc(as_oop()); }
-inline void stackChunkOopDesc::set_pc(address value)    { jdk_internal_vm_StackChunk::set_pc(this, (intptr_t)value); }
+inline address stackChunkOopDesc::pc() const            { return jdk_internal_vm_StackChunk::pc(as_oop()); }
+inline void stackChunkOopDesc::set_pc(address value)    { jdk_internal_vm_StackChunk::set_pc(this, value); }
 
 inline int stackChunkOopDesc::argsize() const           { return jdk_internal_vm_StackChunk::argsize(as_oop()); }
 inline void stackChunkOopDesc::set_argsize(int value)   { jdk_internal_vm_StackChunk::set_argsize(as_oop(), value); }
@@ -316,6 +316,12 @@ inline void stackChunkOopDesc::copy_from_stack_to_chunk(intptr_t* from, intptr_t
   assert(to >= start_address(), "Chunk underflow");
   assert(to + size <= end_address(), "Chunk overflow");
 
+#if !defined(AMD64) || !defined(AARCH64) || defined(ZERO)
+  // Suppress compilation warning-as-error on unimplemented architectures
+  // that stub out arch-specific methods. Some compilers are smart enough
+  // to figure out the argument is always null and then warn about it.
+  if (to != nullptr)
+#endif
   memcpy(to, from, size << LogBytesPerWord);
 }
 
@@ -330,7 +336,9 @@ inline void stackChunkOopDesc::copy_from_chunk_to_stack(intptr_t* from, intptr_t
   assert(from + size <= end_address(), "");
 
 #if !defined(AMD64) || !defined(AARCH64) || defined(ZERO)
-  // Suppress compilation error from dummy function (somewhere).
+  // Suppress compilation warning-as-error on unimplemented architectures
+  // that stub out arch-specific methods. Some compilers are smart enough
+  // to figure out the argument is always null and then warn about it.
   if (to != nullptr)
 #endif
   memcpy(to, from, size << LogBytesPerWord);

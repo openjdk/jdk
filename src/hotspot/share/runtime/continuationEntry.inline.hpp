@@ -36,5 +36,12 @@ inline oop ContinuationEntry::cont_oop() const {
   return NativeAccess<>::oop_load(&snapshot);
 }
 
+inline oop ContinuationEntry::cont_oop_or_null(const ContinuationEntry* ce) {
+  return ce == nullptr ? nullptr : ce->cont_oop();
+}
+
+inline oop ContinuationEntry::scope() const {
+  return Continuation::continuation_scope(cont_oop());
+}
 
 #endif // SHARE_VM_RUNTIME_CONTINUATIONENTRY_INLINE_HPP

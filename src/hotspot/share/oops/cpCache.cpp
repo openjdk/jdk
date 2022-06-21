@@ -266,7 +266,7 @@ void ConstantPoolCacheEntry::set_direct_or_vtable_call(Bytecodes::Code invoke_co
     }
     if (invoke_code == Bytecodes::_invokestatic) {
       assert(method->method_holder()->is_initialized() ||
-             method->method_holder()->is_reentrant_initialization(Thread::current()),
+             method->method_holder()->is_init_thread(Thread::current()),
              "invalid class initialization state for invoke_static");
 
       if (!VM_Version::supports_fast_class_init_checks() && method->needs_clinit_barrier()) {
@@ -373,15 +373,9 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
   // A losing writer waits on the lock until the winner writes f1 and leaves
   // the lock, so that when the losing writer returns, he can use the linked
   // cache entry.
+  // Lock fields to write
+  MutexLocker ml(cpool->pool_holder()->init_monitor());
 
-  JavaThread* current = JavaThread::current();
-  objArrayHandle resolved_references(current, cpool->resolved_references());
-  // Use the resolved_references() lock for this cpCache entry.
-  // resolved_references are created for all classes with Invokedynamic, MethodHandle
-  // or MethodType constant pool cache entries.
-  assert(resolved_references() != NULL,
-         "a resolved_references array should have been created for this class");
-  ObjectLocker ol(resolved_references, current);
   if (!is_f1_null()) {
     return;
   }
@@ -453,6 +447,7 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
   // Store appendix, if any.
   if (has_appendix) {
     const int appendix_index = f2_as_index();
+    objArrayOop resolved_references = cpool->resolved_references();
     assert(appendix_index >= 0 && appendix_index < resolved_references->length(), "oob");
     assert(resolved_references->obj_at(appendix_index) == NULL, "init just once");
     resolved_references->obj_at_put(appendix_index, appendix());
@@ -480,14 +475,7 @@ bool ConstantPoolCacheEntry::save_and_throw_indy_exc(
   assert(PENDING_EXCEPTION->is_a(vmClasses::LinkageError_klass()),
          "No LinkageError exception");
 
-  // Use the resolved_references() lock for this cpCache entry.
-  // resolved_references are created for all classes with Invokedynamic, MethodHandle
-  // or MethodType constant pool cache entries.
-  JavaThread* current = THREAD;
-  objArrayHandle resolved_references(current, cpool->resolved_references());
-  assert(resolved_references() != NULL,
-         "a resolved_references array should have been created for this class");
-  ObjectLocker ol(resolved_references, current);
+  MutexLocker ml(THREAD, cpool->pool_holder()->init_monitor());
 
   // if f1 is not null or the indy_resolution_failed flag is set then another
   // thread either succeeded in resolving the method or got a LinkageError

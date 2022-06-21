@@ -800,15 +800,6 @@ void MacroAssembler::warn(const char* msg) {
   pop(rbp);
 }
 
-void MacroAssembler::_assert_asm(Assembler::Condition cc, const char* msg) {
-#ifdef ASSERT
-  Label OK;
-  jcc(cc, OK);
-  stop(msg);
-  bind(OK);
-#endif
-}
-
 void MacroAssembler::print_state() {
   address rip = pc();
   pusha();            // get regs on stack
@@ -918,7 +909,7 @@ static int reg2offset_out(VMReg r) {
 }
 
 // A long move
-void MacroAssembler::long_move(VMRegPair src, VMRegPair dst) {
+void MacroAssembler::long_move(VMRegPair src, VMRegPair dst, Register tmp, int in_stk_bias, int out_stk_bias) {
 
   // The calling conventions assures us that each VMregpair is either
   // all really one physical register or adjacent stack slots.
@@ -929,21 +920,22 @@ void MacroAssembler::long_move(VMRegPair src, VMRegPair dst) {
         mov(dst.first()->as_Register(), src.first()->as_Register());
       }
     } else {
-      assert(dst.is_single_reg(), "not a stack pair");
-      movq(Address(rsp, reg2offset_out(dst.first())), src.first()->as_Register());
+      assert(dst.is_single_reg(), "not a stack pair: (%s, %s), (%s, %s)",
+             src.first()->name(), src.second()->name(), dst.first()->name(), dst.second()->name());
+      movq(Address(rsp, reg2offset_out(dst.first()) + out_stk_bias), src.first()->as_Register());
     }
   } else if (dst.is_single_phys_reg()) {
     assert(src.is_single_reg(),  "not a stack pair");
-    movq(dst.first()->as_Register(), Address(rbp, reg2offset_out(src.first())));
+    movq(dst.first()->as_Register(), Address(rbp, reg2offset_in(src.first()) + in_stk_bias));
   } else {
     assert(src.is_single_reg() && dst.is_single_reg(), "not stack pairs");
-    movq(rax, Address(rbp, reg2offset_in(src.first())));
-    movq(Address(rsp, reg2offset_out(dst.first())), rax);
+    movq(tmp, Address(rbp, reg2offset_in(src.first()) + in_stk_bias));
+    movq(Address(rsp, reg2offset_out(dst.first()) + out_stk_bias), tmp);
   }
 }
 
 // A double move
-void MacroAssembler::double_move(VMRegPair src, VMRegPair dst) {
+void MacroAssembler::double_move(VMRegPair src, VMRegPair dst, Register tmp, int in_stk_bias, int out_stk_bias) {
 
   // The calling conventions assures us that each VMregpair is either
   // all really one physical register or adjacent stack slots.
@@ -956,21 +948,21 @@ void MacroAssembler::double_move(VMRegPair src, VMRegPair dst) {
       }
     } else {
       assert(dst.is_single_reg(), "not a stack pair");
-      movdbl(Address(rsp, reg2offset_out(dst.first())), src.first()->as_XMMRegister());
+      movdbl(Address(rsp, reg2offset_out(dst.first()) + out_stk_bias), src.first()->as_XMMRegister());
     }
   } else if (dst.is_single_phys_reg()) {
     assert(src.is_single_reg(),  "not a stack pair");
-    movdbl(dst.first()->as_XMMRegister(), Address(rbp, reg2offset_out(src.first())));
+    movdbl(dst.first()->as_XMMRegister(), Address(rbp, reg2offset_in(src.first()) + in_stk_bias));
   } else {
     assert(src.is_single_reg() && dst.is_single_reg(), "not stack pairs");
-    movq(rax, Address(rbp, reg2offset_in(src.first())));
-    movq(Address(rsp, reg2offset_out(dst.first())), rax);
+    movq(tmp, Address(rbp, reg2offset_in(src.first()) + in_stk_bias));
+    movq(Address(rsp, reg2offset_out(dst.first()) + out_stk_bias), tmp);
   }
 }
 
 
 // A float arg may have to do float reg int reg conversion
-void MacroAssembler::float_move(VMRegPair src, VMRegPair dst) {
+void MacroAssembler::float_move(VMRegPair src, VMRegPair dst, Register tmp, int in_stk_bias, int out_stk_bias) {
   assert(!src.second()->is_valid() && !dst.second()->is_valid(), "bad float_move");
 
   // The calling conventions assures us that each VMregpair is either
@@ -978,17 +970,17 @@ void MacroAssembler::float_move(VMRegPair src, VMRegPair dst) {
 
   if (src.first()->is_stack()) {
     if (dst.first()->is_stack()) {
-      movl(rax, Address(rbp, reg2offset_in(src.first())));
-      movptr(Address(rsp, reg2offset_out(dst.first())), rax);
+      movl(tmp, Address(rbp, reg2offset_in(src.first()) + in_stk_bias));
+      movptr(Address(rsp, reg2offset_out(dst.first()) + out_stk_bias), tmp);
     } else {
       // stack to reg
       assert(dst.first()->is_XMMRegister(), "only expect xmm registers as parameters");
-      movflt(dst.first()->as_XMMRegister(), Address(rbp, reg2offset_in(src.first())));
+      movflt(dst.first()->as_XMMRegister(), Address(rbp, reg2offset_in(src.first()) + in_stk_bias));
     }
   } else if (dst.first()->is_stack()) {
     // reg to stack
     assert(src.first()->is_XMMRegister(), "only expect xmm registers as parameters");
-    movflt(Address(rsp, reg2offset_out(dst.first())), src.first()->as_XMMRegister());
+    movflt(Address(rsp, reg2offset_out(dst.first()) + out_stk_bias), src.first()->as_XMMRegister());
   } else {
     // reg to reg
     // In theory these overlap but the ordering is such that this is likely a nop
@@ -1002,21 +994,21 @@ void MacroAssembler::float_move(VMRegPair src, VMRegPair dst) {
 // 64 bits items (x86_32/64 abi) even though java would only store
 // 32bits for a parameter. On 32bit it will simply be 32 bits
 // So this routine will do 32->32 on 32bit and 32->64 on 64bit
-void MacroAssembler::move32_64(VMRegPair src, VMRegPair dst) {
+void MacroAssembler::move32_64(VMRegPair src, VMRegPair dst, Register tmp, int in_stk_bias, int out_stk_bias) {
   if (src.first()->is_stack()) {
     if (dst.first()->is_stack()) {
       // stack to stack
-      movslq(rax, Address(rbp, reg2offset_in(src.first())));
-      movq(Address(rsp, reg2offset_out(dst.first())), rax);
+      movslq(tmp, Address(rbp, reg2offset_in(src.first()) + in_stk_bias));
+      movq(Address(rsp, reg2offset_out(dst.first()) + out_stk_bias), tmp);
     } else {
       // stack to reg
-      movslq(dst.first()->as_Register(), Address(rbp, reg2offset_in(src.first())));
+      movslq(dst.first()->as_Register(), Address(rbp, reg2offset_in(src.first()) + in_stk_bias));
     }
   } else if (dst.first()->is_stack()) {
     // reg to stack
     // Do we really have to sign extend???
     // __ movslq(src.first()->as_Register(), src.first()->as_Register());
-    movq(Address(rsp, reg2offset_out(dst.first())), src.first()->as_Register());
+    movq(Address(rsp, reg2offset_out(dst.first()) + out_stk_bias), src.first()->as_Register());
   } else {
     // Do we really have to sign extend???
     // __ movslq(dst.first()->as_Register(), src.first()->as_Register());
@@ -1076,7 +1068,7 @@ void MacroAssembler::object_move(OopMap* map,
     cmovptr(Assembler::equal, rHandle, Address(rbp, reg2offset_in(src.first())));
   } else {
 
-    // Oop is in an a register we must store it to the space we reserve
+    // Oop is in a register we must store it to the space we reserve
     // on the stack for oop_handles and pass a handle if oop is non-NULL
 
     const Register rOop = src.first()->as_Register();
@@ -1998,6 +1990,7 @@ void MacroAssembler::post_call_nop() {
   if (!Continuations::enabled()) {
     return;
   }
+  InstructionMark im(this);
   relocate(post_call_nop_Relocation::spec());
   emit_int8((int8_t)0x0f);
   emit_int8((int8_t)0x1f);
@@ -2584,8 +2577,9 @@ void MacroAssembler::vmovdqu(XMMRegister dst, AddressLiteral src, Register scrat
 }
 
 void MacroAssembler::vmovdqu(XMMRegister dst, AddressLiteral src, Register scratch_reg, int vector_len) {
-  assert(vector_len <= AVX_256bit, "AVX2 vector length");
-  if (vector_len == AVX_256bit) {
+  if (vector_len == AVX_512bit) {
+    evmovdquq(dst, src, AVX_512bit, scratch_reg);
+  } else if (vector_len == AVX_256bit) {
     vmovdqu(dst, src, scratch_reg);
   } else {
     movdqu(dst, src, scratch_reg);
@@ -2839,36 +2833,122 @@ void MacroAssembler::push_IU_state() {
   pusha();
 }
 
-void MacroAssembler::push_cont_fastpath(Register java_thread) {
+void MacroAssembler::push_cont_fastpath() {
   if (!Continuations::enabled()) return;
+
+#ifndef _LP64
+  Register rthread = rax;
+  Register rrealsp = rbx;
+  push(rthread);
+  push(rrealsp);
+
+  get_thread(rthread);
+
+  // The code below wants the original RSP.
+  // Move it back after the pushes above.
+  movptr(rrealsp, rsp);
+  addptr(rrealsp, 2*wordSize);
+#else
+  Register rthread = r15_thread;
+  Register rrealsp = rsp;
+#endif
+
   Label done;
-  cmpptr(rsp, Address(java_thread, JavaThread::cont_fastpath_offset()));
+  cmpptr(rrealsp, Address(rthread, JavaThread::cont_fastpath_offset()));
   jccb(Assembler::belowEqual, done);
-  movptr(Address(java_thread, JavaThread::cont_fastpath_offset()), rsp);
+  movptr(Address(rthread, JavaThread::cont_fastpath_offset()), rrealsp);
   bind(done);
+
+#ifndef _LP64
+  pop(rrealsp);
+  pop(rthread);
+#endif
 }
 
-void MacroAssembler::pop_cont_fastpath(Register java_thread) {
+void MacroAssembler::pop_cont_fastpath() {
   if (!Continuations::enabled()) return;
+
+#ifndef _LP64
+  Register rthread = rax;
+  Register rrealsp = rbx;
+  push(rthread);
+  push(rrealsp);
+
+  get_thread(rthread);
+
+  // The code below wants the original RSP.
+  // Move it back after the pushes above.
+  movptr(rrealsp, rsp);
+  addptr(rrealsp, 2*wordSize);
+#else
+  Register rthread = r15_thread;
+  Register rrealsp = rsp;
+#endif
+
   Label done;
-  cmpptr(rsp, Address(java_thread, JavaThread::cont_fastpath_offset()));
+  cmpptr(rrealsp, Address(rthread, JavaThread::cont_fastpath_offset()));
   jccb(Assembler::below, done);
-  movptr(Address(java_thread, JavaThread::cont_fastpath_offset()), 0);
+  movptr(Address(rthread, JavaThread::cont_fastpath_offset()), 0);
   bind(done);
+
+#ifndef _LP64
+  pop(rrealsp);
+  pop(rthread);
+#endif
 }
 
-void MacroAssembler::inc_held_monitor_count(Register java_thread) {
+void MacroAssembler::inc_held_monitor_count() {
   if (!Continuations::enabled()) return;
-  incrementl(Address(java_thread, JavaThread::held_monitor_count_offset()));
+
+#ifndef _LP64
+  Register thread = rax;
+  push(thread);
+  get_thread(thread);
+#else
+  Register thread = r15_thread;
+#endif
+
+  incrementl(Address(thread, JavaThread::held_monitor_count_offset()));
+
+#ifndef _LP64
+  pop(thread);
+#endif
 }
 
-void MacroAssembler::dec_held_monitor_count(Register java_thread) {
+void MacroAssembler::dec_held_monitor_count() {
   if (!Continuations::enabled()) return;
-  decrementl(Address(java_thread, JavaThread::held_monitor_count_offset()));
+
+#ifndef _LP64
+  Register thread = rax;
+  push(thread);
+  get_thread(thread);
+#else
+  Register thread = r15_thread;
+#endif
+
+  decrementl(Address(thread, JavaThread::held_monitor_count_offset()));
+
+#ifndef _LP64
+  pop(thread);
+#endif
 }
 
-void MacroAssembler::reset_held_monitor_count(Register java_thread) {
-  movl(Address(java_thread, JavaThread::held_monitor_count_offset()), (int32_t)0);
+void MacroAssembler::reset_held_monitor_count() {
+  if (!Continuations::enabled()) return;
+
+#ifndef _LP64
+  Register thread = rax;
+  push(thread);
+  get_thread(thread);
+#else
+  Register thread = r15_thread;
+#endif
+
+  movl(Address(thread, JavaThread::held_monitor_count_offset()), (int32_t)0);
+
+#ifndef _LP64
+  pop(thread);
+#endif
 }
 
 #ifdef ASSERT
@@ -3234,6 +3314,15 @@ void MacroAssembler::vpand(XMMRegister dst, XMMRegister nds, AddressLiteral src,
 void MacroAssembler::vpbroadcastw(XMMRegister dst, XMMRegister src, int vector_len) {
   assert(((dst->encoding() < 16 && src->encoding() < 16) || VM_Version::supports_avx512vlbw()),"XMM register should be 0-15");
   Assembler::vpbroadcastw(dst, src, vector_len);
+}
+
+void MacroAssembler::vpbroadcastq(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch) {
+  if (reachable(src)) {
+    Assembler::vpbroadcastq(dst, as_Address(src), vector_len);
+  } else {
+    lea(rscratch, src);
+    Assembler::vpbroadcastq(dst, Address(rscratch, 0), vector_len);
+  }
 }
 
 void MacroAssembler::vbroadcastsd(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch) {
@@ -4160,7 +4249,7 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
 
   // Get super_klass value into rax (even if it was in rdi or rcx).
   bool pushed_rax = false, pushed_rcx = false, pushed_rdi = false;
-  if (super_klass != rax || UseCompressedOops) {
+  if (super_klass != rax) {
     if (!IS_A_TEMP(rax)) { push(rax); pushed_rax = true; }
     mov(rax, super_klass);
   }

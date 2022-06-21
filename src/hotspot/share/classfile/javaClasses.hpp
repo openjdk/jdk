@@ -83,7 +83,10 @@ class RecordComponent;
   f(jdk_internal_vm_Continuation) \
   f(jdk_internal_vm_StackChunk) \
   f(java_util_concurrent_locks_AbstractOwnableSynchronizer) \
-  f(jdk_internal_invoke_NativeEntryPoint) \
+  f(jdk_internal_foreign_abi_NativeEntryPoint) \
+  f(jdk_internal_foreign_abi_ABIDescriptor) \
+  f(jdk_internal_foreign_abi_VMStorage) \
+  f(jdk_internal_foreign_abi_CallConv) \
   f(jdk_internal_misc_UnsafeConstants) \
   f(java_lang_boxing_object) \
   f(vector_VectorPayload) \
@@ -282,7 +285,6 @@ class java_lang_Class : AllStatic {
   static int _static_oop_field_count_offset;
 
   static int _protection_domain_offset;
-  static int _init_lock_offset;
   static int _signers_offset;
   static int _class_loader_offset;
   static int _module_offset;
@@ -297,7 +299,6 @@ class java_lang_Class : AllStatic {
   static GrowableArray<Klass*>* _fixup_mirror_list;
   static GrowableArray<Klass*>* _fixup_module_field_list;
 
-  static void set_init_lock(oop java_class, oop init_lock);
   static void set_protection_domain(oop java_class, oop protection_domain);
   static void set_class_loader(oop java_class, oop class_loader);
   static void set_component_mirror(oop java_class, oop comp_mirror);
@@ -353,10 +354,6 @@ class java_lang_Class : AllStatic {
 
   // Support for embedded per-class oops
   static oop  protection_domain(oop java_class);
-  static oop  init_lock(oop java_class);
-  static void clear_init_lock(oop java_class) {
-    set_init_lock(java_class, NULL);
-  }
   static oop  component_mirror(oop java_class);
   static objArrayOop  signers(oop java_class);
   static void set_signers(oop java_class, objArrayOop signers);
@@ -625,7 +622,7 @@ class java_lang_VirtualThread : AllStatic {
   static oop vthread_scope();
   static oop carrier_thread(oop vthread);
   static oop continuation(oop vthread);
-  static u2 state(oop vthread);
+  static int state(oop vthread);
   static JavaThreadStatus map_state_to_thread_status(int state);
   static bool notify_jvmti_events();
   static void set_notify_jvmti_events(bool enable);
@@ -1165,8 +1162,8 @@ class jdk_internal_vm_StackChunk: AllStatic {
   static inline int sp(oop chunk);
   static inline void set_sp(oop chunk, int value);
   static inline void set_sp(HeapWord* chunk, int value); // used while allocating
-  static inline intptr_t pc(oop chunk);
-  static inline void set_pc(oop chunk, intptr_t value);
+  static inline address pc(oop chunk);
+  static inline void set_pc(oop chunk, address value);
   static inline int argsize(oop chunk);
   static inline void set_argsize(oop chunk, int value);
   static inline uint8_t flags(oop chunk);
@@ -1276,16 +1273,12 @@ class java_lang_invoke_LambdaForm: AllStatic {
 // Interface to java.lang.invoke.NativeEntryPoint objects
 // (These are a private interface for managing adapter code generation.)
 
-class jdk_internal_invoke_NativeEntryPoint: AllStatic {
+class jdk_internal_foreign_abi_NativeEntryPoint: AllStatic {
   friend class JavaClasses;
 
  private:
-  static int _shadow_space_offset;
-  static int _argMoves_offset;
-  static int _returnMoves_offset;
-  static int _need_transition_offset;
   static int _method_type_offset;
-  static int _name_offset;
+  static int _downcall_stub_address_offset;
 
   static void compute_offsets();
 
@@ -1293,12 +1286,8 @@ class jdk_internal_invoke_NativeEntryPoint: AllStatic {
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
 
   // Accessors
-  static jint       shadow_space(oop entry);
-  static oop        argMoves(oop entry);
-  static oop        returnMoves(oop entry);
-  static jboolean   need_transition(oop entry);
   static oop        method_type(oop entry);
-  static oop        name(oop entry);
+  static jlong      downcall_stub_address(oop entry);
 
   // Testers
   static bool is_subclass(Klass* klass) {
@@ -1308,12 +1297,92 @@ class jdk_internal_invoke_NativeEntryPoint: AllStatic {
   static bool is_instance(oop obj);
 
   // Accessors for code generation:
-  static int shadow_space_offset_in_bytes()    { return _shadow_space_offset;    }
-  static int argMoves_offset_in_bytes()        { return _argMoves_offset;        }
-  static int returnMoves_offset_in_bytes()     { return _returnMoves_offset;     }
-  static int need_transition_offset_in_bytes() { return _need_transition_offset; }
-  static int method_type_offset_in_bytes()     { return _method_type_offset;     }
-  static int name_offset_in_bytes()            { return _name_offset;            }
+  static int method_type_offset_in_bytes()           { return _method_type_offset; }
+  static int downcall_stub_address_offset_in_bytes() { return _downcall_stub_address_offset; }
+};
+
+class jdk_internal_foreign_abi_ABIDescriptor: AllStatic {
+  friend class JavaClasses;
+
+ private:
+  static int _inputStorage_offset;
+  static int _outputStorage_offset;
+  static int _volatileStorage_offset;
+  static int _stackAlignment_offset;
+  static int _shadowSpace_offset;
+  static int _targetAddrStorage_offset;
+  static int _retBufAddrStorage_offset;
+
+  static void compute_offsets();
+
+ public:
+  static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
+
+  // Accessors
+  static objArrayOop inputStorage(oop entry);
+  static objArrayOop outputStorage(oop entry);
+  static objArrayOop volatileStorage(oop entry);
+  static jint        stackAlignment(oop entry);
+  static jint        shadowSpace(oop entry);
+  static oop         targetAddrStorage(oop entry);
+  static oop         retBufAddrStorage(oop entry);
+
+  // Testers
+  static bool is_subclass(Klass* klass) {
+    return vmClasses::ABIDescriptor_klass() != NULL &&
+      klass->is_subclass_of(vmClasses::ABIDescriptor_klass());
+  }
+  static bool is_instance(oop obj);
+};
+
+class jdk_internal_foreign_abi_VMStorage: AllStatic {
+  friend class JavaClasses;
+
+ private:
+  static int _type_offset;
+  static int _index_offset;
+  static int _debugName_offset;
+
+  static void compute_offsets();
+
+ public:
+  static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
+
+  // Accessors
+  static jint        type(oop entry);
+  static jint        index(oop entry);
+  static oop         debugName(oop entry);
+
+  // Testers
+  static bool is_subclass(Klass* klass) {
+    return vmClasses::VMStorage_klass() != NULL &&
+      klass->is_subclass_of(vmClasses::VMStorage_klass());
+  }
+  static bool is_instance(oop obj);
+};
+
+class jdk_internal_foreign_abi_CallConv: AllStatic {
+  friend class JavaClasses;
+
+ private:
+  static int _argRegs_offset;
+  static int _retRegs_offset;
+
+  static void compute_offsets();
+
+ public:
+  static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
+
+  // Accessors
+  static objArrayOop argRegs(oop entry);
+  static objArrayOop retRegs(oop entry);
+
+  // Testers
+  static bool is_subclass(Klass* klass) {
+    return vmClasses::CallConv_klass() != NULL &&
+      klass->is_subclass_of(vmClasses::CallConv_klass());
+  }
+  static bool is_instance(oop obj);
 };
 
 // Interface to java.lang.invoke.MemberName objects

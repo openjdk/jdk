@@ -513,8 +513,8 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* curr
     // JavaCallWrapper::~JavaCallWrapper
     return StubRoutines::catch_exception_entry();
   }
-  if (blob != NULL && blob->is_optimized_entry_blob()) {
-    return ((OptimizedEntryBlob*)blob)->exception_handler();
+  if (blob != NULL && blob->is_upcall_stub()) {
+    return ((UpcallStub*)blob)->exception_handler();
   }
   // Interpreted code
   if (Interpreter::contains(return_address)) {
@@ -1405,7 +1405,7 @@ methodHandle SharedRuntime::resolve_sub_helper(bool is_virtual, bool is_optimize
 
   if (invoke_code == Bytecodes::_invokestatic) {
     assert(callee_method->method_holder()->is_initialized() ||
-           callee_method->method_holder()->is_reentrant_initialization(current),
+           callee_method->method_holder()->is_init_thread(current),
            "invalid class initialization state for invoke_static");
     if (!VM_Version::supports_fast_class_init_checks() && callee_method->needs_clinit_barrier()) {
       // In order to keep class initialization check, do not patch call
@@ -1459,7 +1459,7 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::handle_wrong_method_ic_miss(JavaThread* 
   frame stub_frame = current->last_frame();
   assert(stub_frame.is_runtime_frame(), "sanity check");
   frame caller_frame = stub_frame.sender(&reg_map);
-  assert(!caller_frame.is_interpreted_frame() && !caller_frame.is_entry_frame() && !caller_frame.is_optimized_entry_frame(), "unexpected frame");
+  assert(!caller_frame.is_interpreted_frame() && !caller_frame.is_entry_frame() && !caller_frame.is_upcall_stub_frame(), "unexpected frame");
 #endif /* ASSERT */
 
   methodHandle callee_method;
@@ -1492,7 +1492,7 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::handle_wrong_method(JavaThread* current)
 
   if (caller_frame.is_interpreted_frame() ||
       caller_frame.is_entry_frame() ||
-      caller_frame.is_optimized_entry_frame()) {
+      caller_frame.is_upcall_stub_frame()) {
     Method* callee = current->callee_target();
     guarantee(callee != NULL && callee->is_method(), "bad handshake");
     current->set_vm_result_2(callee);

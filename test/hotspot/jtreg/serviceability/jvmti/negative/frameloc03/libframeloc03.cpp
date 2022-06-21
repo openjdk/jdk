@@ -38,7 +38,8 @@ static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
 
 
-jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
+JNIEXPORT jint JNICALL
+Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jvmtiError err;
   jint res;
 

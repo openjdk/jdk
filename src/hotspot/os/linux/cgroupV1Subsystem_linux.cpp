@@ -37,40 +37,26 @@
  * on the contents of the mountinfo and cgroup files.
  */
 void CgroupV1Controller::set_subsystem_path(char *cgroup_path) {
-  char buf[MAXPATHLEN+1];
+  stringStream ss;
   if (_root != NULL && cgroup_path != NULL) {
     if (strcmp(_root, "/") == 0) {
-      int buflen;
-      strncpy(buf, _mount_point, MAXPATHLEN);
-      buf[MAXPATHLEN-1] = '\0';
+      ss.print_raw(_mount_point);
       if (strcmp(cgroup_path,"/") != 0) {
-        buflen = strlen(buf);
-        if ((buflen + strlen(cgroup_path)) > (MAXPATHLEN-1)) {
-          return;
-        }
-        strncat(buf, cgroup_path, MAXPATHLEN-buflen);
-        buf[MAXPATHLEN-1] = '\0';
+        ss.print_raw(cgroup_path);
       }
-      _path = os::strdup(buf);
+      _path = os::strdup(ss.base());
     } else {
       if (strcmp(_root, cgroup_path) == 0) {
-        strncpy(buf, _mount_point, MAXPATHLEN);
-        buf[MAXPATHLEN-1] = '\0';
-        _path = os::strdup(buf);
+        ss.print_raw(_mount_point);
+        _path = os::strdup(ss.base());
       } else {
         char *p = strstr(cgroup_path, _root);
         if (p != NULL && p == _root) {
           if (strlen(cgroup_path) > strlen(_root)) {
-            int buflen;
-            strncpy(buf, _mount_point, MAXPATHLEN);
-            buf[MAXPATHLEN-1] = '\0';
-            buflen = strlen(buf);
-            if ((buflen + strlen(cgroup_path) - strlen(_root)) > (MAXPATHLEN-1)) {
-              return;
-            }
-            strncat(buf, cgroup_path + strlen(_root), MAXPATHLEN-buflen);
-            buf[MAXPATHLEN-1] = '\0';
-            _path = os::strdup(buf);
+            ss.print_raw(_mount_point);
+            const char* cg_path_sub = cgroup_path + strlen(_root);
+            ss.print_raw(cg_path_sub);
+            _path = os::strdup(ss.base());
           }
         }
       }
@@ -136,17 +122,37 @@ jlong CgroupV1Subsystem::memory_and_swap_limit_in_bytes() {
       const char* matchline = "hierarchical_memsw_limit";
       const char* format = "%s " JULONG_FORMAT;
       GET_CONTAINER_INFO_LINE(julong, _memory->controller(), "/memory.stat", matchline,
-                             "Hierarchical Memory and Swap Limit is : " JULONG_FORMAT, format, hier_memlimit)
-      if (hier_memlimit >= _unlimited_memory) {
+                             "Hierarchical Memory and Swap Limit is : " JULONG_FORMAT, format, hier_memswlimit)
+      if (hier_memswlimit >= _unlimited_memory) {
         log_trace(os, container)("Hierarchical Memory and Swap Limit is: Unlimited");
       } else {
-        return (jlong)hier_memlimit;
+        jlong swappiness = read_mem_swappiness();
+        if (swappiness == 0) {
+            const char* matchmemline = "hierarchical_memory_limit";
+            GET_CONTAINER_INFO_LINE(julong, _memory->controller(), "/memory.stat", matchmemline,
+                             "Hierarchical Memory Limit is : " JULONG_FORMAT, format, hier_memlimit)
+            log_trace(os, container)("Memory and Swap Limit has been reset to " JULONG_FORMAT " because swappiness is 0", hier_memlimit);
+            return (jlong)hier_memlimit;
+        }
+        return (jlong)hier_memswlimit;
       }
     }
     return (jlong)-1;
   } else {
+    jlong swappiness = read_mem_swappiness();
+    if (swappiness == 0) {
+      jlong memlimit = read_memory_limit_in_bytes();
+      log_trace(os, container)("Memory and Swap Limit has been reset to " JULONG_FORMAT " because swappiness is 0", memlimit);
+      return memlimit;
+    }
     return (jlong)memswlimit;
   }
+}
+
+jlong CgroupV1Subsystem::read_mem_swappiness() {
+  GET_CONTAINER_INFO(julong, _memory->controller(), "/memory.swappiness",
+                     "Swappiness is: " JULONG_FORMAT, JULONG_FORMAT, swappiness);
+  return swappiness;
 }
 
 jlong CgroupV1Subsystem::memory_soft_limit_in_bytes() {

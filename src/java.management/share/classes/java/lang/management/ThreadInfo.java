@@ -29,7 +29,6 @@ import javax.management.openmbean.ArrayType;
 import javax.management.openmbean.CompositeData;
 import sun.management.ManagementFactoryHelper;
 import sun.management.ThreadInfoCompositeData;
-import static java.lang.Thread.State.*;
 
 /**
  * Thread information. {@code ThreadInfo} contains the information
@@ -93,6 +92,7 @@ import static java.lang.Thread.State.*;
  */
 
 public class ThreadInfo {
+    private boolean      virtual;   // accessed by ThreadImpl
     private String       threadName;
     private long         threadId;
     private long         blockedTime;
@@ -224,6 +224,7 @@ public class ThreadInfo {
                             StackTraceElement[] stackTrace,
                             MonitorInfo[] lockedMonitors,
                             LockInfo[] lockedSynchronizers) {
+        this.virtual = t.isVirtual();
         this.threadId = t.threadId();
         this.threadName = t.getName();
         this.threadState = ManagementFactoryHelper.toThreadState(state);
@@ -333,7 +334,7 @@ public class ThreadInfo {
      *
      * <p>The Java virtual machine may measure the time with a high
      * resolution timer.  This statistic is reset when
-     * the thread contention monitoring is reenabled.
+     * the thread contention monitoring is re-enabled.
      *
      * @return the approximate accumulated elapsed time in milliseconds
      * that a thread entered the {@code BLOCKED} state;
@@ -377,7 +378,7 @@ public class ThreadInfo {
      *
      * <p>The Java virtual machine may measure the time with a high
      * resolution timer.  This statistic is reset when
-     * the thread contention monitoring is reenabled.
+     * the thread contention monitoring is re-enabled.
      *
      * @return the approximate accumulated elapsed time in milliseconds
      * that a thread has been in the {@code WAITING} or

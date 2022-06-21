@@ -359,7 +359,9 @@ public class Resolve {
                     ||
                     env.toplevel.packge == c.packge()
                     ||
-                    isInnerSubClass(env.enclClass.sym, c.owner);
+                    isInnerSubClass(env.enclClass.sym, c.owner)
+                    ||
+                    env.info.allowProtectedAccess;
                 break;
         }
         return (checkInner == false || c.type.getEnclosingType() == Type.noType) ?
@@ -3776,7 +3778,7 @@ public class Resolve {
                             types.asSuper(env.enclClass.type, c), env.enclClass.sym);
                 }
             }
-            //find a direct super type that is a subtype of 'c'
+            //find a direct supertype that is a subtype of 'c'
             for (Type i : types.directSupertypes(env.enclClass.type)) {
                 if (i.tsym.isSubClass(c, types) && i.tsym != c) {
                     log.error(pos,

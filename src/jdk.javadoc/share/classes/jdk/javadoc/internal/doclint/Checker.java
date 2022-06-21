@@ -199,7 +199,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
                     // Don't report an empty description if the comment contains @deprecated,
                     // because javadoc will use the content of that tag in summary tables.
                     if (tree.getBlockTags().stream().allMatch(t -> t.getKind() != DocTree.Kind.DEPRECATED)) {
-                        env.messages.report(MISSING, Kind.WARNING, tree, "dc.empty.description");
+                        env.messages.report(MISSING, Kind.WARNING, tree, "dc.empty.main.description");
                     }
                 }
             }
@@ -1114,6 +1114,16 @@ public class Checker extends DocTreePathScanner<Void, Void> {
             Element e = env.trees.getElement(new DocTreePath(getCurrentPath(), ref));
             if (!isConstant(e))
                 env.messages.error(REFERENCE, tree, "dc.value.not.a.constant");
+        }
+        TextTree format = tree.getFormat();
+        if (format != null) {
+            String f = format.getBody().toString();
+            long count = format.getBody().toString().chars()
+                    .filter(ch -> ch == '%')
+                    .count();
+            if (count != 1) {
+                env.messages.error(REFERENCE, format, "dc.value.bad.format", f);
+            }
         }
 
         markEnclosingTag(Flag.HAS_INLINE_TAG);

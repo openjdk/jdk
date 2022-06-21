@@ -1187,7 +1187,7 @@ void LIRGenerator::do_Return(Return* x) {
   set_no_result(x);
 }
 
-// Examble: ref.get()
+// Example: ref.get()
 // Combination of LoadField and g1 pre-write barrier
 void LIRGenerator::do_Reference_get(Intrinsic* x) {
 
@@ -1198,7 +1198,7 @@ void LIRGenerator::do_Reference_get(Intrinsic* x) {
   LIRItem reference(x->argument_at(0), this);
   reference.load_item();
 
-  // need to perform the null check on the reference objecy
+  // need to perform the null check on the reference object
   CodeEmitInfo* info = NULL;
   if (x->needs_null_check()) {
     info = state_for(x);
@@ -1298,20 +1298,27 @@ void LIRGenerator::do_getModifiers(Intrinsic* x) {
     info = state_for(x);
   }
 
-  LabelObj* L_not_prim = new LabelObj();
-  LabelObj* L_done = new LabelObj();
+  // While reading off the universal constant mirror is less efficient than doing
+  // another branch and returning the constant answer, this branchless code runs into
+  // much less risk of confusion for C1 register allocator. The choice of the universe
+  // object here is correct as long as it returns the same modifiers we would expect
+  // from the primitive class itself. See spec for Class.getModifiers that provides
+  // the typed array klasses with similar modifiers as their component types.
 
+  Klass* univ_klass_obj = Universe::byteArrayKlassObj();
+  assert(univ_klass_obj->modifier_flags() == (JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC), "Sanity");
+  LIR_Opr prim_klass = LIR_OprFact::metadataConst(univ_klass_obj);
+
+  LIR_Opr recv_klass = new_register(T_METADATA);
+  __ move(new LIR_Address(receiver.result(), java_lang_Class::klass_offset(), T_ADDRESS), recv_klass, info);
+
+  // Check if this is a Java mirror of primitive type, and select the appropriate klass.
   LIR_Opr klass = new_register(T_METADATA);
-  // Checking if it's a java mirror of primitive type
-  __ move(new LIR_Address(receiver.result(), java_lang_Class::klass_offset(), T_ADDRESS), klass, info);
-  __ cmp(lir_cond_notEqual, klass, LIR_OprFact::metadataConst(0));
-  __ branch(lir_cond_notEqual, L_not_prim->label());
-  __ move(LIR_OprFact::intConst(JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC), result);
-  __ branch(lir_cond_always, L_done->label());
+  __ cmp(lir_cond_equal, recv_klass, LIR_OprFact::metadataConst(0));
+  __ cmove(lir_cond_equal, prim_klass, recv_klass, klass, T_ADDRESS);
 
-  __ branch_destination(L_not_prim->label());
+  // Get the answer.
   __ move(new LIR_Address(klass, in_bytes(Klass::modifier_flags_offset()), T_INT), result);
-  __ branch_destination(L_done->label());
 }
 
 void LIRGenerator::do_getObjectSize(Intrinsic* x) {
@@ -2898,22 +2905,6 @@ void LIRGenerator::do_IfOp(IfOp* x) {
   __ cmove(lir_cond(x->cond()), t_val.result(), f_val.result(), reg, as_BasicType(x->x()->type()));
 }
 
-#ifdef JFR_HAVE_INTRINSICS
-
-void LIRGenerator::do_getEventWriter(Intrinsic* x) {
-  BasicTypeList signature(0);
-  CallingConvention* cc = frame_map()->c_calling_convention(&signature);
-  LIR_Opr reg = result_register_for(x->type());
-  address entry = StubRoutines::jfr_get_event_writer();
-  CodeEmitInfo* info = state_for(x, x->state());
-  __ call_runtime(entry, getThreadTemp(), reg, cc->args(), info);
-  LIR_Opr result = rlock_result(x);
-  __ move(reg, result);
-}
-
-#endif
-
-
 void LIRGenerator::do_RuntimeCall(address routine, Intrinsic* x) {
   assert(x->number_of_arguments() == 0, "wrong type");
   // Enforce computation of _reserved_argument_area_size which is required on some platforms.
@@ -2939,9 +2930,6 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   }
 
 #ifdef JFR_HAVE_INTRINSICS
-  case vmIntrinsics::_getEventWriter:
-    do_getEventWriter(x);
-    break;
   case vmIntrinsics::_counterTime:
     do_RuntimeCall(CAST_FROM_FN_PTR(address, JfrTime::time_function()), x);
     break;

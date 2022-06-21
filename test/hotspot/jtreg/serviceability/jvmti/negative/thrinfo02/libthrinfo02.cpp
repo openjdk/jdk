@@ -36,7 +36,8 @@ static jvmtiEnv *jvmti = NULL;
 static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
 
-jint Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
+JNIEXPORT jint JNICALL
+Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jint res;
 
   if (options != NULL && strcmp(options, "printdump") == 0) {

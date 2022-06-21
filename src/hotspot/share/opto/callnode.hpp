@@ -49,7 +49,6 @@ class     CallRuntimeNode;
 class       CallLeafNode;
 class         CallLeafNoFPNode;
 class         CallLeafVectorNode;
-class     CallNativeNode;
 class     AllocateNode;
 class       AllocateArrayNode;
 class     AbstractLockNode;
@@ -128,7 +127,7 @@ public:
   virtual uint ideal_reg() const { return NotAMachineReg; }
   virtual uint match_edge(uint idx) const;
 #ifndef PRODUCT
-  virtual void dump_req(outputStream *st = tty) const;
+  virtual void dump_req(outputStream *st = tty, DumpConfig* dc = nullptr) const;
 #endif
 };
 
@@ -149,7 +148,7 @@ class RethrowNode : public Node {
   virtual uint match_edge(uint idx) const;
   virtual uint ideal_reg() const { return NotAMachineReg; }
 #ifndef PRODUCT
-  virtual void dump_req(outputStream *st = tty) const;
+  virtual void dump_req(outputStream *st = tty, DumpConfig* dc = nullptr) const;
 #endif
 };
 
@@ -656,7 +655,7 @@ public:
   virtual void copy_call_debug_info(PhaseIterGVN* phase, SafePointNode* sfpt) {}
 
 #ifndef PRODUCT
-  virtual void        dump_req(outputStream* st = tty) const;
+  virtual void        dump_req(outputStream* st = tty, DumpConfig* dc = nullptr) const;
   virtual void        dump_spec(outputStream* st) const;
 #endif
 };
@@ -817,42 +816,6 @@ public:
   }
   virtual int   Opcode() const;
   virtual bool        guaranteed_safepoint()  { return false; }
-#ifndef PRODUCT
-  virtual void  dump_spec(outputStream *st) const;
-#endif
-};
-
-//------------------------------CallNativeNode-----------------------------------
-// Make a direct call into a foreign function with an arbitrary ABI
-// safepoints
-class CallNativeNode : public CallNode {
-  friend class MachCallNativeNode;
-  virtual bool cmp( const Node &n ) const;
-  virtual uint size_of() const;
-  static void print_regs(const GrowableArray<VMReg>& regs, outputStream* st);
-public:
-  GrowableArray<VMReg> _arg_regs;
-  GrowableArray<VMReg> _ret_regs;
-  const int _shadow_space_bytes;
-  const bool _need_transition;
-
-  CallNativeNode(const TypeFunc* tf, address addr, const char* name,
-                 const TypePtr* adr_type,
-                 const GrowableArray<VMReg>& arg_regs,
-                 const GrowableArray<VMReg>& ret_regs,
-                 int shadow_space_bytes,
-                 bool need_transition)
-    : CallNode(tf, addr, adr_type), _arg_regs(arg_regs),
-      _ret_regs(ret_regs), _shadow_space_bytes(shadow_space_bytes),
-      _need_transition(need_transition)
-  {
-    init_class_id(Class_CallNative);
-    _name = name;
-  }
-  virtual int   Opcode() const;
-  virtual bool  guaranteed_safepoint()  { return _need_transition; }
-  virtual Node* match(const ProjNode *proj, const Matcher *m);
-  virtual void  calling_convention( BasicType* sig_bt, VMRegPair *parm_regs, uint argcnt ) const;
 #ifndef PRODUCT
   virtual void  dump_spec(outputStream *st) const;
 #endif

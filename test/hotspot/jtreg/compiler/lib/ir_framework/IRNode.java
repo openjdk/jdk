@@ -141,6 +141,7 @@ public class IRNode {
     public static final String MEMBAR_STORESTORE = START + "MemBarStoreStore" + MID + END;
     public static final String SAFEPOINT = START + "SafePoint" + MID + END;
 
+    public static final String CMOVEI = START + "CMoveI" + MID + END;
     public static final String ABS_I = START + "AbsI" + MID + END;
     public static final String ABS_L = START + "AbsL" + MID + END;
     public static final String ABS_F = START + "AbsF" + MID + END;
@@ -156,6 +157,8 @@ public class IRNode {
     public static final String RSHIFT = START + "RShift(I|L)" + MID + END;
     public static final String RSHIFT_I = START + "RShiftI" + MID + END;
     public static final String RSHIFT_L = START + "RShiftL" + MID + END;
+    public static final String RSHIFT_VB = START + "RShiftVB" + MID + END;
+    public static final String RSHIFT_VS = START + "RShiftVS" + MID + END;
     public static final String URSHIFT = START + "URShift(B|S|I|L)" + MID + END;
     public static final String URSHIFT_I = START + "URShiftI" + MID + END;
     public static final String URSHIFT_L = START + "URShiftL" + MID + END;
@@ -163,6 +166,7 @@ public class IRNode {
     public static final String ADD_I = START + "AddI" + MID + END;
     public static final String ADD_L = START + "AddL" + MID + END;
     public static final String ADD_VD = START + "AddVD" + MID + END;
+    public static final String ADD_VI = START + "AddVI" + MID + END;
     public static final String SUB = START + "Sub(I|L|F|D)" + MID + END;
     public static final String SUB_I = START + "SubI" + MID + END;
     public static final String SUB_L = START + "SubL" + MID + END;
@@ -172,13 +176,16 @@ public class IRNode {
     public static final String MUL_I = START + "MulI" + MID + END;
     public static final String MUL_L = START + "MulL" + MID + END;
     public static final String MUL_F = START + "MulF" + MID + END;
-    public static final String DIV = START + "(NoOvf)?Div(I|L|F|D)" + MID + END;
-    public static final String DIV_L = START + "(NoOvf)?DivL" + MID + END;
+    public static final String DIV = START + "Div(I|L|F|D)" + MID + END;
+    public static final String DIV_L = START + "DivL" + MID + END;
     public static final String CON_I = START + "ConI" + MID + END;
     public static final String CON_L = START + "ConL" + MID + END;
     public static final String CONV_I2L = START + "ConvI2L" + MID + END;
     public static final String CONV_L2I = START + "ConvL2I" + MID + END;
+    public static final String CAST_II = START + "CastII" + MID + END;
+    public static final String CAST_LL = START + "CastLL" + MID + END;
     public static final String POPCOUNT_L = START + "PopCountL" + MID + END;
+    public static final String PHI = START + "Phi" + MID + END;
 
     public static final String VECTOR_CAST_B2X = START + "VectorCastB2X" + MID + END;
     public static final String VECTOR_CAST_S2X = START + "VectorCastS2X" + MID + END;

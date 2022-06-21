@@ -313,7 +313,7 @@ void C1_MacroAssembler::verified_entry(bool breakAtEntry) {
 }
 
 void C1_MacroAssembler::load_parameter(int offset_in_words, Register reg) {
-  // rbp, + 0: link
+  // rfp, + 0: link
   //     + 1: return address
   //     + 2: argument with offset 0
   //     + 3: argument with offset 1

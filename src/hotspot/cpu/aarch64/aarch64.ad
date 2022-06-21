@@ -1199,6 +1199,9 @@ reg_class gov_pr (
     // P7, non-allocatable, preserved with all elements preset to TRUE.
 );
 
+reg_class p0_reg(P0);
+reg_class p1_reg(P1);
+
 // Singleton class for condition codes
 reg_class int_flags(RFLAGS);
 
@@ -1773,16 +1776,6 @@ int MachCallRuntimeNode::ret_addr_offset() {
   //   lea(rscratch1, RuntimeAddress(addr)
   //   stp(zr, rscratch2, Address(__ pre(sp, -2 * wordSize)))
   //   blr(rscratch1)
-  CodeBlob *cb = CodeCache::find_blob(_entry_point);
-  if (cb) {
-    return 1 * NativeInstruction::instruction_size;
-  } else {
-    return 6 * NativeInstruction::instruction_size;
-  }
-}
-
-int MachCallNativeNode::ret_addr_offset() {
-  // This is implemented using aarch64_enc_java_to_runtime as above.
   CodeBlob *cb = CodeCache::find_blob(_entry_point);
   if (cb) {
     return 1 * NativeInstruction::instruction_size;
@@ -2439,6 +2432,19 @@ const bool Matcher::match_rule_supported(int opcode) {
   return ret_value; // Per default match rules are supported.
 }
 
+const bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
+  if (UseSVE == 0) {
+    // ConvD2I and ConvL2F are not profitable to be vectorized on NEON, because no direct
+    // NEON instructions support them. But the match rule support for them is profitable for
+    // Vector API intrinsics.
+    if ((opcode == Op_VectorCastD2X && bt == T_INT) ||
+        (opcode == Op_VectorCastL2X && bt == T_FLOAT)) {
+      return false;
+    }
+  }
+  return match_rule_supported_vector(opcode, vlen, bt);
+}
+
 // Identify extra cases that we might want to provide match rules for vector nodes and
 // other intrinsics guarded with vector length (vlen) and element type (bt).
 const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
@@ -2475,6 +2481,10 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
       break;
     case Op_LoadVectorGather:
     case Op_StoreVectorScatter:
+    case Op_CompressV:
+    case Op_CompressM:
+    case Op_ExpandV:
+    case Op_VectorLongToMask:
       return false;
     default:
       break;
@@ -2794,10 +2804,6 @@ bool Matcher::pd_clone_address_expressions(AddPNode* m, Matcher::MStack& mstack,
     mstack.push(m->in(AddPNode::Base), Pre_Visit);
     return true;
   }
-  return false;
-}
-
-bool Parse::do_one_bytecode_targeted() {
   return false;
 }
 
@@ -3829,6 +3835,7 @@ encode %{
       }
     }
 
+    _masm.clear_inst_mark();
     __ post_call_nop();
 
     // Only non uncommon_trap calls need to reinitialize ptrue.
@@ -3845,6 +3852,7 @@ encode %{
       ciEnv::current()->record_failure("CodeCache is full");
       return;
     }
+    _masm.clear_inst_mark();
     __ post_call_nop();
     if (Compile::current()->max_vector_size() > 0) {
       __ reinitialize_ptrue();
@@ -3874,6 +3882,7 @@ encode %{
         ciEnv::current()->record_failure("CodeCache is full");
         return;
       }
+      _masm.clear_inst_mark();
       __ post_call_nop();
     } else {
       Label retaddr;
@@ -5725,6 +5734,24 @@ operand pReg()
 operand pRegGov()
 %{
   constraint(ALLOC_IN_RC(gov_pr));
+  match(RegVectMask);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand pRegGov_P0()
+%{
+  constraint(ALLOC_IN_RC(p0_reg));
+  match(RegVectMask);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand pRegGov_P1()
+%{
+  constraint(ALLOC_IN_RC(p1_reg));
   match(RegVectMask);
   op_cost(0);
   format %{ %}
@@ -8648,7 +8675,6 @@ instruct countTrailingZerosL(iRegINoSp dst, iRegL src) %{
 //
 
 instruct popCountI(iRegINoSp dst, iRegIorL2I src, vRegF tmp) %{
-  predicate(UsePopCountInstruction);
   match(Set dst (PopCountI src));
   effect(TEMP tmp);
   ins_cost(INSN_COST * 13);
@@ -8670,7 +8696,6 @@ instruct popCountI(iRegINoSp dst, iRegIorL2I src, vRegF tmp) %{
 %}
 
 instruct popCountI_mem(iRegINoSp dst, memory4 mem, vRegF tmp) %{
-  predicate(UsePopCountInstruction);
   match(Set dst (PopCountI (LoadI mem)));
   effect(TEMP tmp);
   ins_cost(INSN_COST * 13);
@@ -8693,7 +8718,6 @@ instruct popCountI_mem(iRegINoSp dst, memory4 mem, vRegF tmp) %{
 
 // Note: Long.bitCount(long) returns an int.
 instruct popCountL(iRegINoSp dst, iRegL src, vRegD tmp) %{
-  predicate(UsePopCountInstruction);
   match(Set dst (PopCountL src));
   effect(TEMP tmp);
   ins_cost(INSN_COST * 13);
@@ -8713,7 +8737,6 @@ instruct popCountL(iRegINoSp dst, iRegL src, vRegD tmp) %{
 %}
 
 instruct popCountL_mem(iRegINoSp dst, memory8 mem, vRegD tmp) %{
-  predicate(UsePopCountInstruction);
   match(Set dst (PopCountL (LoadL mem)));
   effect(TEMP tmp);
   ins_cost(INSN_COST * 13);
@@ -11122,10 +11145,26 @@ instruct mulHiL_rReg(iRegLNoSp dst, iRegL src1, iRegL src2, rFlagsReg cr)
   match(Set dst (MulHiL src1 src2));
 
   ins_cost(INSN_COST * 7);
-  format %{ "smulh   $dst, $src1, $src2, \t# mulhi" %}
+  format %{ "smulh   $dst, $src1, $src2\t# mulhi" %}
 
   ins_encode %{
     __ smulh(as_Register($dst$$reg),
+             as_Register($src1$$reg),
+             as_Register($src2$$reg));
+  %}
+
+  ins_pipe(lmul_reg_reg);
+%}
+
+instruct umulHiL_rReg(iRegLNoSp dst, iRegL src1, iRegL src2, rFlagsReg cr)
+%{
+  match(Set dst (UMulHiL src1 src2));
+
+  ins_cost(INSN_COST * 7);
+  format %{ "umulh   $dst, $src1, $src2\t# umulhi" %}
+
+  ins_encode %{
+    __ umulh(as_Register($dst$$reg),
              as_Register($src1$$reg),
              as_Register($src2$$reg));
   %}
@@ -11331,7 +11370,7 @@ instruct modI(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
 
   ins_cost(INSN_COST * 22);
   format %{ "sdivw  rscratch1, $src1, $src2\n\t"
-            "msubw($dst, rscratch1, $src2, $src1" %}
+            "msubw  $dst, rscratch1, $src2, $src1" %}
 
   ins_encode(aarch64_enc_modw(dst, src1, src2));
   ins_pipe(idiv_reg_reg);
@@ -11344,9 +11383,73 @@ instruct modL(iRegLNoSp dst, iRegL src1, iRegL src2) %{
 
   ins_cost(INSN_COST * 38);
   format %{ "sdiv   rscratch1, $src1, $src2\n"
-            "msub($dst, rscratch1, $src2, $src1" %}
+            "msub   $dst, rscratch1, $src2, $src1" %}
 
   ins_encode(aarch64_enc_mod(dst, src1, src2));
+  ins_pipe(ldiv_reg_reg);
+%}
+
+// Unsigned Integer Divide
+
+instruct UdivI_reg_reg(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
+  match(Set dst (UDivI src1 src2));
+
+  ins_cost(INSN_COST * 19);
+  format %{ "udivw  $dst, $src1, $src2" %}
+
+  ins_encode %{
+    __ udivw($dst$$Register, $src1$$Register, $src2$$Register);
+  %}
+
+  ins_pipe(idiv_reg_reg);
+%}
+
+//  Unsigned Long Divide
+
+instruct UdivL_reg_reg(iRegLNoSp dst, iRegL src1, iRegL src2) %{
+  match(Set dst (UDivL src1 src2));
+
+  ins_cost(INSN_COST * 35);
+  format %{ "udiv   $dst, $src1, $src2" %}
+
+  ins_encode %{
+    __ udiv($dst$$Register, $src1$$Register, $src2$$Register);
+  %}
+
+  ins_pipe(ldiv_reg_reg);
+%}
+
+// Unsigned Integer Remainder
+
+instruct UmodI_reg_reg(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
+  match(Set dst (UModI src1 src2));
+
+  ins_cost(INSN_COST * 22);
+  format %{ "udivw  rscratch1, $src1, $src2\n\t"
+            "msubw  $dst, rscratch1, $src2, $src1" %}
+
+  ins_encode %{
+    __ udivw(rscratch1, $src1$$Register, $src2$$Register);
+    __ msubw($dst$$Register, rscratch1, $src2$$Register, $src1$$Register);
+  %}
+
+  ins_pipe(idiv_reg_reg);
+%}
+
+// Unsigned Long Remainder
+
+instruct UModL_reg_reg(iRegLNoSp dst, iRegL src1, iRegL src2) %{
+  match(Set dst (UModL src1 src2));
+
+  ins_cost(INSN_COST * 38);
+  format %{ "udiv   rscratch1, $src1, $src2\n"
+            "msub   $dst, rscratch1, $src2, $src1" %}
+
+  ins_encode %{
+    __ udiv(rscratch1, $src1$$Register, $src2$$Register);
+    __ msub($dst$$Register, rscratch1, $src2$$Register, $src1$$Register);
+  %}
+
   ins_pipe(ldiv_reg_reg);
 %}
 
@@ -15423,7 +15526,11 @@ instruct clearArray_imm_reg(immL cnt, iRegP_R10 base, iRegL_R11 temp, Universe d
   format %{ "ClearArray $cnt, $base" %}
 
   ins_encode %{
-    __ zero_words($base$$Register, (uint64_t)$cnt$$constant);
+    address tpc = __ zero_words($base$$Register, (uint64_t)$cnt$$constant);
+    if (tpc == NULL) {
+      ciEnv::current()->record_failure("CodeCache is full");
+      return;
+    }
   %}
 
   ins_pipe(pipe_class_memory);
@@ -15475,10 +15582,10 @@ instruct overflowAddL_reg_imm(rFlagsReg cr, iRegL op1, immLAddSub op2)
 %{
   match(Set cr (OverflowAddL op1 op2));
 
-  format %{ "cmn   $op1, $op2\t# overflow check long" %}
+  format %{ "adds  zr, $op1, $op2\t# overflow check long" %}
   ins_cost(INSN_COST);
   ins_encode %{
-    __ cmn($op1$$Register, $op2$$constant);
+    __ adds(zr, $op1$$Register, $op2$$constant);
   %}
 
   ins_pipe(icmp_reg_imm);
@@ -16760,21 +16867,6 @@ instruct CallLeafNoFPDirect(method meth)
   ins_pipe(pipe_class_call);
 %}
 
-instruct CallNativeDirect(method meth)
-%{
-  match(CallNative);
-
-  effect(USE meth);
-
-  ins_cost(CALL_COST);
-
-  format %{ "CALL, native $meth" %}
-
-  ins_encode( aarch64_enc_java_to_runtime(meth) );
-
-  ins_pipe(pipe_class_call);
-%}
-
 // Tail Call; Jump from runtime stub to Java code.
 // Also known as an 'interprocedural jump'.
 // Target of jump will eventually return to caller.
@@ -16907,7 +16999,7 @@ instruct partialSubtypeCheckVsZero(iRegP_R4 sub, iRegP_R0 super, iRegP_R2 temp, 
 instruct string_compareU(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 cnt2,
                         iRegI_R0 result, iRegP_R10 tmp1, iRegL_R11 tmp2, rFlagsReg cr)
 %{
-  predicate(((StrCompNode*)n)->encoding() == StrIntrinsicNode::UU);
+  predicate((UseSVE == 0) && (((StrCompNode*)n)->encoding() == StrIntrinsicNode::UU));
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(KILL tmp1, KILL tmp2, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
@@ -16917,7 +17009,7 @@ instruct string_compareU(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 c
     __ string_compare($str1$$Register, $str2$$Register,
                       $cnt1$$Register, $cnt2$$Register, $result$$Register,
                       $tmp1$$Register, $tmp2$$Register,
-                      fnoreg, fnoreg, fnoreg, StrIntrinsicNode::UU);
+                      fnoreg, fnoreg, fnoreg, pnoreg, pnoreg, StrIntrinsicNode::UU);
   %}
   ins_pipe(pipe_class_memory);
 %}
@@ -16925,7 +17017,7 @@ instruct string_compareU(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 c
 instruct string_compareL(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 cnt2,
                         iRegI_R0 result, iRegP_R10 tmp1, iRegL_R11 tmp2, rFlagsReg cr)
 %{
-  predicate(((StrCompNode*)n)->encoding() == StrIntrinsicNode::LL);
+  predicate((UseSVE == 0) && (((StrCompNode*)n)->encoding() == StrIntrinsicNode::LL));
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(KILL tmp1, KILL tmp2, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
@@ -16934,7 +17026,7 @@ instruct string_compareL(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 c
     __ string_compare($str1$$Register, $str2$$Register,
                       $cnt1$$Register, $cnt2$$Register, $result$$Register,
                       $tmp1$$Register, $tmp2$$Register,
-                      fnoreg, fnoreg, fnoreg, StrIntrinsicNode::LL);
+                      fnoreg, fnoreg, fnoreg, pnoreg, pnoreg, StrIntrinsicNode::LL);
   %}
   ins_pipe(pipe_class_memory);
 %}
@@ -16943,7 +17035,7 @@ instruct string_compareUL(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 
                         iRegI_R0 result, iRegP_R10 tmp1, iRegL_R11 tmp2,
                         vRegD_V0 vtmp1, vRegD_V1 vtmp2, vRegD_V2 vtmp3, rFlagsReg cr)
 %{
-  predicate(((StrCompNode*)n)->encoding() == StrIntrinsicNode::UL);
+  predicate((UseSVE == 0) && (((StrCompNode*)n)->encoding() == StrIntrinsicNode::UL));
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(KILL tmp1, KILL tmp2, KILL vtmp1, KILL vtmp2, KILL vtmp3,
          USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
@@ -16954,7 +17046,7 @@ instruct string_compareUL(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 
                       $cnt1$$Register, $cnt2$$Register, $result$$Register,
                       $tmp1$$Register, $tmp2$$Register,
                       $vtmp1$$FloatRegister, $vtmp2$$FloatRegister,
-                      $vtmp3$$FloatRegister, StrIntrinsicNode::UL);
+                      $vtmp3$$FloatRegister, pnoreg, pnoreg, StrIntrinsicNode::UL);
   %}
   ins_pipe(pipe_class_memory);
 %}
@@ -16963,7 +17055,7 @@ instruct string_compareLU(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 
                         iRegI_R0 result, iRegP_R10 tmp1, iRegL_R11 tmp2,
                         vRegD_V0 vtmp1, vRegD_V1 vtmp2, vRegD_V2 vtmp3, rFlagsReg cr)
 %{
-  predicate(((StrCompNode*)n)->encoding() == StrIntrinsicNode::LU);
+  predicate((UseSVE == 0) && (((StrCompNode*)n)->encoding() == StrIntrinsicNode::LU));
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(KILL tmp1, KILL tmp2, KILL vtmp1, KILL vtmp2, KILL vtmp3,
          USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
@@ -16974,7 +17066,7 @@ instruct string_compareLU(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 
                       $cnt1$$Register, $cnt2$$Register, $result$$Register,
                       $tmp1$$Register, $tmp2$$Register,
                       $vtmp1$$FloatRegister, $vtmp2$$FloatRegister,
-                      $vtmp3$$FloatRegister,StrIntrinsicNode::LU);
+                      $vtmp3$$FloatRegister, pnoreg, pnoreg, StrIntrinsicNode::LU);
   %}
   ins_pipe(pipe_class_memory);
 %}

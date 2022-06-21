@@ -32,7 +32,7 @@ import jdk.xml.internal.XMLSecurityManager.Limit;
  * This class is in charge of lexical processing of the XPath
  * expression into tokens.
  *
- * @LastModified: Apr 2022
+ * @LastModified: June 2022
  */
 class Lexer
 {
@@ -155,6 +155,7 @@ class Lexer
     boolean isStartOfPat = true;
     boolean isAttrName = false;
     boolean isNum = false;
+    boolean isAxis = false;
 
     // Nesting of '[' so we can know if the given element should be
     // counted inside the m_patternMap.
@@ -254,8 +255,7 @@ class Lexer
             // check operator symbol
             String s = pat.substring(startSubstring, i);
             if (Token.contains(s)) {
-                m_opCount++;
-                isLiteral = false;
+                incrementCount();
             }
             addToTokenQueue(s);
           }
@@ -339,23 +339,45 @@ class Lexer
         {
           nesting--;
         }
-        else if ((Token.LPAREN == c) || (Token.LBRACK == c))
+        else if (Token.LBRACK == c)
         {
           nesting++;
-          if (!isLiteral && (Token.LPAREN == c)) {
-            m_grpCount++;
-            m_opCount++;
-            isLiteral = false;
+          incrementCount();
+          isAxis = false;
+        }
+        else if ((Token.LPAREN == c))
+        {
+          nesting++;
+          if (isLiteral) {
+              if (!isAxis) {
+                  incrementCount();
+              }
+          } else {
+              m_grpCount++;
+              incrementCount();
           }
+          isAxis = false;
         }
 
-        if ((Token.GT == c || Token.LT == c || Token.EQ == c) && Token.EQ != peekNext(pat, i)) {
-            m_opCount++;
-            isLiteral = false;
+        if ((Token.GT == c || Token.LT == c || Token.EQ == c || Token.EM == c)) {
+            if (Token.EQ != peekNext(pat, i)) {
+                incrementCount();
+            }
         }
-        else if ((Token.LPAREN != c) && (Token.RPAREN != c) && (Token.RBRACK != c)) {
-            m_opCount++;
-            isLiteral = false;
+        else if (Token.SLASH == c) {
+            isAxis = false;
+            if (Token.SLASH != peekNext(pat, i)) {
+                incrementCount();
+            }
+        }
+        // '(' and '[' already counted above; ':' is examined in case below
+        // ',' is part of a function
+        else if ((Token.LPAREN != c) && (Token.LBRACK != c) && (Token.RPAREN != c)
+                && (Token.RBRACK != c) && (Token.COLON != c) && (Token.COMMA != c)) {
+            if (Token.STAR != c || !isAxis) {
+                incrementCount();
+            }
+            isAxis = false;
         }
 
         addToTokenQueue(pat.substring(i, i + 1));
@@ -376,6 +398,7 @@ class Lexer
             startSubstring = -1;
             posOfNSSep = -1;
             m_opCount++;
+            isAxis = true;
             addToTokenQueue(pat.substring(i - 1, i + 1));
 
             break;
@@ -389,6 +412,9 @@ class Lexer
       // fall through on purpose
       default :
         isLiteral = true;
+        if (!isNum && Token.DOT == c && Token.DOT != peekNext(pat, i)) {
+            incrementCount();
+        }
         if (-1 == startSubstring)
         {
           startSubstring = i;
@@ -441,6 +467,11 @@ class Lexer
     }
 
     m_processor.m_queueMark = 0;
+  }
+
+  private void incrementCount() {
+      m_opCount++;
+      isLiteral = false;
   }
 
   /**

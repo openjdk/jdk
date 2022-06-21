@@ -24,20 +24,6 @@
 #
 
 ###############################################################################
-# Check which variant of the JDK that we want to build.
-# Currently we have:
-#    normal:   standard edition
-# but the custom make system may add other variants
-#
-# Effectively the JDK variant gives a name to a specific set of
-# modules to compile into the JDK.
-AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_VARIANT],
-[
-  # Deprecated in JDK 12
-  UTIL_DEPRECATED_ARG_WITH([jdk-variant])
-])
-
-###############################################################################
 # Set the debug level
 #    release: no debug information, all optimizations, no asserts.
 #    optimized: no debug information, all optimizations, no asserts, HotSpot target is 'optimized'.
@@ -508,7 +494,7 @@ AC_DEFUN_ONCE([JDKOPT_ENABLE_DISABLE_FAILURE_HANDLER],
 [
   UTIL_ARG_ENABLE(NAME: jtreg-failure-handler, DEFAULT: auto,
       RESULT: BUILD_FAILURE_HANDLER,
-      DESC: [enable keeping of packaged modules in jdk image],
+      DESC: [enable building of the jtreg failure handler],
       DEFAULT_DESC: [enabled if jtreg is present],
       CHECKING_MSG: [if the jtreg failure handler should be built],
       CHECK_AVAILABLE: [

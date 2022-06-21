@@ -61,13 +61,13 @@ struct CodeBlobType {
 //    AdapterBlob        : Used to hold C2I/I2C adapters
 //    VtableBlob         : Used for holding vtable chunks
 //    MethodHandlesAdapterBlob : Used to hold MethodHandles adapters
-//    OptimizedEntryBlob : Used for upcalls from native code
 //   RuntimeStub         : Call to VM runtime methods
 //   SingletonBlob       : Super-class for all blobs that exist in only one instance
 //    DeoptimizationBlob : Used for deoptimization
 //    ExceptionBlob      : Used for stack unrolling
 //    SafepointBlob      : Used to handle illegal instruction exceptions
 //    UncommonTrapBlob   : Used to handle uncommon traps
+//   UpcallStub  : Used for upcalls from native code
 //
 //
 // Layout : continuous in the CodeCache
@@ -79,8 +79,9 @@ struct CodeBlobType {
 
 
 class CodeBlobLayout;
-class OptimizedEntryBlob; // for as_optimized_entry_blob()
-class JavaFrameAnchor; // for OptimizedEntryBlob::jfa_for_frame
+class UpcallStub; // for as_upcall_stub()
+class RuntimeStub; // for as_runtime_stub()
+class JavaFrameAnchor; // for UpcallStub::jfa_for_frame
 
 class CodeBlob {
   friend class VMStructs;
@@ -153,7 +154,7 @@ public:
   virtual bool is_adapter_blob() const                { return false; }
   virtual bool is_vtable_blob() const                 { return false; }
   virtual bool is_method_handles_adapter_blob() const { return false; }
-  virtual bool is_optimized_entry_blob() const        { return false; }
+  virtual bool is_upcall_stub() const                 { return false; }
   bool is_compiled() const                            { return _is_compiled; }
   const bool* is_compiled_addr() const                { return &_is_compiled; }
 
@@ -169,7 +170,8 @@ public:
   CompiledMethod* as_compiled_method_or_null() { return is_compiled() ? (CompiledMethod*) this : NULL; }
   CompiledMethod* as_compiled_method()         { assert(is_compiled(), "must be compiled"); return (CompiledMethod*) this; }
   CodeBlob* as_codeblob_or_null() const        { return (CodeBlob*) this; }
-  OptimizedEntryBlob* as_optimized_entry_blob() const             { assert(is_optimized_entry_blob(), "must be entry blob"); return (OptimizedEntryBlob*) this; }
+  UpcallStub* as_upcall_stub() const           { assert(is_upcall_stub(), "must be upcall stub"); return (UpcallStub*) this; }
+  RuntimeStub* as_runtime_stub() const         { assert(is_runtime_stub(), "must be runtime blob"); return (RuntimeStub*) this; }
 
   // Boundaries
   address header_begin() const        { return (address) this; }
@@ -380,6 +382,8 @@ class RuntimeBlob : public CodeBlob {
     bool        caller_must_gc_arguments = false
   );
 
+  static void free(RuntimeBlob* blob);
+
   // GC support
   virtual bool is_alive() const                  = 0;
 
@@ -405,7 +409,7 @@ class BufferBlob: public RuntimeBlob {
   friend class AdapterBlob;
   friend class VtableBlob;
   friend class MethodHandlesAdapterBlob;
-  friend class OptimizedEntryBlob;
+  friend class UpcallStub;
   friend class WhiteBox;
 
  private:
@@ -474,7 +478,7 @@ public:
 
 class MethodHandlesAdapterBlob: public BufferBlob {
 private:
-  MethodHandlesAdapterBlob(int size)                 : BufferBlob("MethodHandles adapters", size) {}
+  MethodHandlesAdapterBlob(int size): BufferBlob("MethodHandles adapters", size) {}
 
 public:
   // Creation
@@ -518,6 +522,8 @@ class RuntimeStub: public RuntimeBlob {
     OopMapSet*  oop_maps,
     bool        caller_must_gc_arguments
   );
+
+  static void free(RuntimeStub* stub) { RuntimeBlob::free(stub); }
 
   // Typing
   bool is_runtime_stub() const                   { return true; }
@@ -747,43 +753,60 @@ class SafepointBlob: public SingletonBlob {
 
 //----------------------------------------------------------------------------------------------------
 
-class ProgrammableUpcallHandler;
+class UpcallLinker;
 
-class OptimizedEntryBlob: public BufferBlob {
-  friend class ProgrammableUpcallHandler;
+// A (Panama) upcall stub. Not used by JNI.
+class UpcallStub: public RuntimeBlob {
+  friend class UpcallLinker;
  private:
   intptr_t _exception_handler_offset;
   jobject _receiver;
   ByteSize _frame_data_offset;
 
-  OptimizedEntryBlob(const char* name, int size, CodeBuffer* cb, intptr_t exception_handler_offset,
+  UpcallStub(const char* name, CodeBuffer* cb, int size,
+                     intptr_t exception_handler_offset,
                      jobject receiver, ByteSize frame_data_offset);
+
+  // This ordinary operator delete is needed even though not used, so the
+  // below two-argument operator delete will be treated as a placement
+  // delete rather than an ordinary sized delete; see C++14 3.7.4.2/p2.
+  void operator delete(void* p);
+  void* operator new(size_t s, unsigned size) throw();
 
   struct FrameData {
     JavaFrameAnchor jfa;
     JavaThread* thread;
     JNIHandleBlock* old_handles;
     JNIHandleBlock* new_handles;
-    bool should_detach;
   };
 
   // defined in frame_ARCH.cpp
   FrameData* frame_data_for_frame(const frame& frame) const;
  public:
   // Creation
-  static OptimizedEntryBlob* create(const char* name, CodeBuffer* cb,
-                                    intptr_t exception_handler_offset, jobject receiver,
-                                    ByteSize frame_data_offset);
+  static UpcallStub* create(const char* name, CodeBuffer* cb,
+                            intptr_t exception_handler_offset,
+                            jobject receiver, ByteSize frame_data_offset);
+
+  static void free(UpcallStub* blob);
 
   address exception_handler() { return code_begin() + _exception_handler_offset; }
   jobject receiver() { return _receiver; }
 
   JavaFrameAnchor* jfa_for_frame(const frame& frame) const;
 
-  void oops_do(OopClosure* f, const frame& frame);
-
   // Typing
-  virtual bool is_optimized_entry_blob() const override { return true; }
+  virtual bool is_upcall_stub() const override { return true; }
+
+  // GC/Verification support
+  void oops_do(OopClosure* f, const frame& frame);
+  virtual void preserve_callee_argument_oops(frame fr, const RegisterMap* reg_map, OopClosure* f) override;
+  virtual bool is_alive() const override { return true; }
+  virtual void verify() override;
+
+  // Misc.
+  virtual void print_on(outputStream* st) const override;
+  virtual void print_value_on(outputStream* st) const override;
 };
 
 #endif // SHARE_CODE_CODEBLOB_HPP

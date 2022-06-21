@@ -307,7 +307,7 @@ public class PointerLocation {
       } else {
           tty.print(" in ");
           // Since we potentially have a random address in the codecache and therefore could
-          // be dealing with a freed or partialy intialized blob, exceptions are possible.
+          // be dealing with a freed or partially initialized blob, exceptions are possible.
           // One known case is an NMethod where the method is still null, resulting in an NPE.
           try {
               if (verbose) {
