@@ -1610,7 +1610,7 @@ static void SR_handler(int sig, siginfo_t* siginfo, ucontext_t* context) {
     os::print_siginfo(&ss, siginfo);
     ss.print_raw(").");
     assert(thread != NULL, "%s.", ss.base());
-    tty->print_cr("%s", ss.base());
+    log_warning(os)("%s", ss.base());
     return;
   }
 
