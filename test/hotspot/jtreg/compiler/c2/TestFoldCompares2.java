@@ -25,7 +25,7 @@
  * @test
  * @bug 8286104
  * @summary Test Fold-compares are safe when C2 optimizes unstable_if traps
- *          (-XX:+AggressiveLivenessForUnstableIf)
+ *          (-XX:+OptimizeUnstableIf)
  *
  * @run main/othervm -XX:CompileCommand=compileOnly,java.lang.Short::valueOf
  *                   -XX:CompileCommand=compileonly,compiler.c2.TestFoldCompares2$Numbers::isSupported

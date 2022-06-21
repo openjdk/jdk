@@ -619,8 +619,8 @@ public:
           "invalid uncommon_trap call!");
   }
 
-  // The starting point of the pruned block, where control should go
-  // when deoptimization does happen.
+  // The starting point of the pruned block, where control goes when
+  // deoptimization does happen.
   int next_bci() const {
     return _path == nullptr ? -1 : _path->start();
   }
@@ -631,17 +631,6 @@ public:
 
   void set_modified() {
     _modified = true;
-  }
-
-  Parse::Block* path() const {
-    return _path;
-  }
-
-  // This can only be determined in parse-time.
-  // if _path has only one predecessor, it is trivial if this block is small(1~2 bytecodes)
-  // or if _path has more than one predecessor and has been parsed, _unc does not mask out any real code.
-  bool is_trivial() const {
-    return _path != nullptr && _path->is_parsed();
   }
 
   CallStaticJavaNode* uncommon_trap() const {

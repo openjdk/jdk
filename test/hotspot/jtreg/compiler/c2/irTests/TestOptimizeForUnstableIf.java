@@ -32,9 +32,9 @@ import compiler.lib.ir_framework.*;
  * @summary Test C2 uses aggressive liveness to get rid of the boxing object which is
  *  only consumed by uncommon_trap.
  * @library /test/lib /
- * @run driver compiler.c2.irTests.TestAggressiveLivenessForUnstableIf
+ * @run driver compiler.c2.irTests.TestOptimizeUnstableIf
  */
-public class TestAggressiveLivenessForUnstableIf {
+public class TestOptimizeUnstableIf {
 
     public static void main(String[] args) {
         TestFramework.run();
@@ -42,7 +42,7 @@ public class TestAggressiveLivenessForUnstableIf {
 
     @Test
     @Arguments({Argument.MAX}) // the argument needs to be big enough to fall out of cache.
-    @IR(applyIf = {"AggressiveLivenessForUnstableIf", "true"}, failOn = {IRNode.ALLOC_OF, "Integer"})
+    @IR(failOn = {IRNode.ALLOC_OF, "Integer"})
     public static int boxing_object(int value) {
         Integer ii = Integer.valueOf(value);
         int sum = 0;
