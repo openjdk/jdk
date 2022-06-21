@@ -44,11 +44,11 @@ public class NoReplTest {
     private final static String MALFORMED_WINDOWS_1252 = "\u0080\u041e";
     private final static Charset WINDOWS_1252 = Charset.forName("windows-1252");
 
-    @Test
     /**
      * Verifies newStringNoRepl() throws a CharacterCodingException.
      * The method is invoked by `Files.readString()` method.
      */
+    @Test
     public void newStringNoReplTest() throws IOException {
         var f = Files.createTempFile(null, null);
         try (var fos = Files.newOutputStream(f)) {
@@ -66,11 +66,11 @@ public class NoReplTest {
         }
     }
 
-    @Test
     /**
      * Verifies getBytesNoRepl() throws a CharacterCodingException.
      * The method is invoked by `Files.writeString()` method.
      */
+    @Test
     public void getBytesNoReplTest() throws IOException {
         var f = Files.createTempFile(null, null);
         try {
