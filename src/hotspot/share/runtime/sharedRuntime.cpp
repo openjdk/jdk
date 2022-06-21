@@ -3123,6 +3123,8 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
       CompileTask::print(tty, nm, msg);
     }
     nm->post_compiled_method_load_event();
+  } else if (blob != NULL && blob->is_mh_intrinsic()) {
+    blob->as_mh_intrinsic()->post_dynamic_code_generated_event();
   }
 }
 

@@ -482,6 +482,8 @@ public:
   void verify();
 
   Method* method()      const               { return _method; }
+
+  void post_dynamic_code_generated_event();
 };
 
 //---------------------------------------------------------------------------------------------------

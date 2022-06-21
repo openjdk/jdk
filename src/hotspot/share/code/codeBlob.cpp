@@ -358,6 +358,12 @@ void MethodHandleIntrinsicBlob::verify() {
   NativeJump::check_verified_entry_alignment(code_begin());
 }
 
+void MethodHandleIntrinsicBlob::post_dynamic_code_generated_event() {
+  if (JvmtiExport::should_post_dynamic_code_generated()) {
+    JvmtiExport::post_dynamic_code_generated(name(), code_begin(), code_end());
+  }
+}
+
 void* VtableBlob::operator new(size_t s, unsigned size) throw() {
   // Handling of allocation failure stops compilation and prints a bunch of
   // stuff, which requires unlocking the CodeCache_lock, so that the Compile_lock
