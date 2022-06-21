@@ -27,6 +27,7 @@ package sun.security.util;
 
 import sun.security.validator.Validator;
 
+import java.lang.ref.SoftReference;
 import java.security.AlgorithmParameters;
 import java.security.CryptoPrimitive;
 import java.security.Key;
@@ -53,6 +54,7 @@ import java.util.Set;
 import java.util.Collection;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
@@ -100,6 +102,8 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
 
     private final Set<String> disabledAlgorithms;
     private final Constraints algorithmConstraints;
+    private volatile SoftReference<Map<String, Boolean>> cacheRef =
+            new SoftReference<>(null);
 
     public static DisabledAlgorithmConstraints certPathConstraints() {
         return CertPathHolder.CONSTRAINTS;
@@ -157,7 +161,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                     " or empty.");
         }
 
-        if (!checkAlgorithm(disabledAlgorithms, algorithm, decomposer)) {
+        if (!cachedCheckAlgorithm(algorithm)) {
             return false;
         }
 
@@ -240,7 +244,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         // Check if named curves in the key are disabled.
         for (Key key : cp.getKeys()) {
             for (String curve : getNamedCurveFromKey(key)) {
-                if (!checkAlgorithm(disabledAlgorithms, curve, decomposer)) {
+                if (!cachedCheckAlgorithm(curve)) {
                     throw new CertPathValidatorException(
                             "Algorithm constraints check failed on disabled " +
                                     "algorithm: " + curve,
@@ -959,6 +963,25 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
 
             return true;
         }
+    }
+
+    private boolean cachedCheckAlgorithm(String algorithm) {
+        Map<String, Boolean> cache;
+        if ((cache = cacheRef.get()) == null) {
+            synchronized (this) {
+                if ((cache = cacheRef.get()) == null) {
+                    cache = new ConcurrentHashMap<>();
+                    cacheRef = new SoftReference<>(cache);
+                }
+            }
+        }
+        Boolean result = cache.get(algorithm);
+        if (result != null) {
+            return result;
+        }
+        result = checkAlgorithm(disabledAlgorithms, algorithm, decomposer);
+        cache.put(algorithm, result);
+        return result;
     }
 
     /*
