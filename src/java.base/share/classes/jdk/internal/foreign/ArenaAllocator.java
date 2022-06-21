@@ -71,6 +71,7 @@ public final class ArenaAllocator implements SegmentAllocator {
 
     @Override
     public MemorySegment allocate(long bytesSize, long bytesAlignment) {
+        Utils.checkAllocationSizeAndAlign(bytesSize, bytesAlignment);
         // try to slice from current segment first...
         MemorySegment slice = trySlice(bytesSize, bytesAlignment);
         if (slice != null) {

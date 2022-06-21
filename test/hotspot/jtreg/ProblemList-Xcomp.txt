@@ -31,9 +31,6 @@ vmTestbase/nsk/jvmti/AttachOnDemand/attach022/TestDescription.java 8277573 gener
 
 vmTestbase/nsk/jvmti/SetFieldAccessWatch/setfldw001/TestDescription.java 8205957 generic-all
 
-serviceability/jvmti/vthread/ContFramePopTest/ContFramePopTest.java 8278053 generic-all
-serviceability/jvmti/vthread/ContStackDepthTest/ContStackDepthTest.java 8278053 generic-all
-
 serviceability/sa/TestJhsdbJstackMixed.java 8248675 linux-aarch64
 
 vmTestbase/nsk/jvmti/scenarios/sampling/SP07/sp07t002/TestDescription.java 8245680 windows-x64
