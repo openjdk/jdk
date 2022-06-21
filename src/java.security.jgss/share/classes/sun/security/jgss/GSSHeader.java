@@ -45,7 +45,7 @@ import sun.security.util.*;
 
 /*
  * The RFC states that implementations should explicitly follow the
- * encoding scheme descibed in this section rather than use ASN.1
+ * encoding scheme described in this section rather than use ASN.1
  * compilers. However, we should consider removing duplicate ASN.1
  * like code from here and depend on sun.security.util if possible.
  */
@@ -131,7 +131,7 @@ public class GSSHeader {
 
     /**
      * Used to obtain the length of the encoding of this GSSHeader.
-     * @return the lenght of the encoding of this GSSHeader instance.
+     * @return the length of the encoding of this GSSHeader instance.
      */
     public int getLength() {
         int lenField = mechOidBytes.length + mechTokenLength;

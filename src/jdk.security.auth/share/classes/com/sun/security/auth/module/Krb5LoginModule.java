@@ -778,7 +778,7 @@ public class Krb5LoginModule implements LoginModule {
                     }
                 }
 
-                // we should hava a non-null cred
+                // we should have a non-null cred
                 if (isInitiator && (cred == null)) {
                     throw new LoginException
                         ("TGT Can not be obtained from the KDC ");

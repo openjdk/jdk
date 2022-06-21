@@ -139,7 +139,7 @@ final class P11Cipher extends CipherSpi {
     // flag indicating whether an operation is initialized
     private boolean initialized;
 
-    // falg indicating encrypt or decrypt mode
+    // flag indicating encrypt or decrypt mode
     private boolean encrypt;
 
     // mode, one of MODE_* above (MODE_ECB for stream ciphers)

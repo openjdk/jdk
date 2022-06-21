@@ -50,7 +50,7 @@
  */
 
 /*
- * platoform.h
+ * platform.h
  * 10.12.2001
  *
  * declaration of all platform dependent functions used by pkcs11wrapper.c

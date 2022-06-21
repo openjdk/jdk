@@ -181,7 +181,7 @@ class SubjectComber {
                                 } catch (DestroyFailedException dfe) {
                                     if (DEBUG) {
                                         System.out.println("Expired ticket not" +
-                                                " detroyed successfully. " + dfe);
+                                                " destroyed successfully. " + dfe);
                                     }
                                 }
                             }
