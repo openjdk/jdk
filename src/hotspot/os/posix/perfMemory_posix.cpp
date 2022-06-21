@@ -781,7 +781,7 @@ static void cleanup_sharedmem_resources(int vmid, const char* dirname) {
     }
 
     // we now have a file name that converts to a valid integer
-    // that could represent a process id . 
+    // that could represent a process id .
     unlink_sharedmem_file_if_stale(vmid, pid, dirname, entry->d_name);
   }
 
@@ -971,7 +971,7 @@ static int open_sharedmem_file(const char* filename, int oflags, TRAPS) {
 
 static int open_sharedmem_file_from_proc_maps(int vmid, int oflags, TRAPS) {
   char buffer[512];
-  jio_snprintf(buffer, sizeof(buffer), "/proc/%d/maps", vmid); // FIXME: assert return 
+  jio_snprintf(buffer, sizeof(buffer), "/proc/%d/maps", vmid); // FIXME: assert return
 
   FILE* f = os::fopen(buffer, "r");
   int num_found = 0;
