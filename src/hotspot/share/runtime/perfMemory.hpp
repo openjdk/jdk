@@ -123,6 +123,8 @@ class PerfMemory : AllStatic {
     static PerfDataPrologue*  _prologue;
     static int    _initialized;
     static bool   _destroyed;
+    static int    _attach_id;
+    static bool   _attach_id_initialized;
 
     static void create_memory_region(size_t sizep);
     static void delete_memory_region();
@@ -157,6 +159,14 @@ class PerfMemory : AllStatic {
     // returns the complete file path of hsperfdata.
     // the caller is expected to free the allocated memory.
     static char* get_perfdata_file_path();
+
+    // Used/Implemented only by posix
+    static int attach_id();
+
+    static void set_attach_id(int i) {
+      _attach_id_initialized = true;
+      _attach_id = i;
+    }
 };
 
 void perfMemory_init();

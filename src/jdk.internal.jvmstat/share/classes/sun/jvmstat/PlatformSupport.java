@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package sun.jvmstat;
 import java.io.File;
 import java.lang.reflect.Constructor;
 import java.util.List;
+import java.util.Set;
 import jdk.internal.vm.VMSupport;
 
 /*
@@ -102,12 +103,11 @@ public class PlatformSupport {
         return Integer.parseInt(file.getName());
     }
 
+    public Set<Integer> activeVms() {
+        return null;
+    }
 
-    /*
-     * Return the inner most namespaced PID if there is one,
-     * otherwise return the original PID.
-     */
-    public int getNamespaceVmId(int pid) {
-        return pid;
+    public Integer getAttachID(int pid) {
+        return null;
     }
 }

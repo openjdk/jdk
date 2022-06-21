@@ -38,33 +38,7 @@ import java.nio.file.Files;
  * cgroup container processes.
  */
 public class PlatformSupportImpl extends PlatformSupport {
-    private static final String containerTmpPath = "/root" + getTemporaryDirectory();
     private static final String pidPatternStr = "^[0-9]+$";
-
-    private long tmpInode;
-    private long tmpDev;
-
-    public PlatformSupportImpl() {
-        super();
-        try {
-            var tmpPath = Path.of(getTemporaryDirectory());
-            tmpInode = (Long)Files.getAttribute(tmpPath, "unix:ino");
-            tmpDev = (Long)Files.getAttribute(tmpPath, "unix:dev");
-        } catch (IOException e) {
-            tmpInode = -1L;
-            tmpDev = -1L;
-        }
-    }
-
-    private boolean tempDirectoryEquals(Path p) {
-        try {
-            long ino = (Long)Files.getAttribute(p, "unix:ino");
-            long dev = (Long)Files.getAttribute(p, "unix:dev");
-            return (ino == tmpInode) && (dev == tmpDev);
-        } catch (IOException e) {
-            return false;
-        }
-    }
 
     /*
      * Return the temporary directories that the VM uses for the attach
@@ -123,26 +97,13 @@ public class PlatformSupportImpl extends PlatformSupport {
      * checking the last component in the path for both the hostpid
      * and potential namespacepids (if one exists).
      */
-    public List<String> getTemporaryDirectories(int pid) {
-        FilenameFilter pidFilter;
-        Matcher pidMatcher;
+    public Set<Integer> activeVms() {
+        Set<Integer> jvmSet = new HashSet<Integer>();
         Pattern pidPattern = Pattern.compile(pidPatternStr);
+        Matcher pidMatcher = pidPattern.matcher("");
 
-        File procdir = new File("/proc");
 
-        if (pid != 0) {
-            pidPattern = Pattern.compile(Integer.toString(pid));
-        }
-        else {
-            pidPattern = Pattern.compile(pidPatternStr);
-        }
-        pidMatcher = pidPattern.matcher("");
-
-        // Add the default temporary directory first
-        List<String> v = new ArrayList<>();
-        v.add(getTemporaryDirectory());
-
-        pidFilter = new FilenameFilter() {
+        FilenameFilter pidFilter = new FilenameFilter() {
             public boolean accept(File dir, String name) {
                 if (!dir.isDirectory())
                     return false;
@@ -151,92 +112,68 @@ public class PlatformSupportImpl extends PlatformSupport {
             }
         };
 
-        File[] dirs = procdir.listFiles(pidFilter);
+        File procdir = new File("/proc");
+        procdir.listFiles((File dir, String name) -> {
+                pidMatcher.reset(name);
+                if (pidMatcher.matches()) {
+                    int pid;
+                    try {
+                        pid = Integer.parseInt(name);
+                    } catch (NumberFormatException e) {
+                        return false;
+                        // FIXME should never happen
+                    }
+                    if (getAttachID(pid) != null) {
+                        jvmSet.add(pid);
+                    }
+                }
+                return false;
+            });
 
-        // Add all unique /proc/{pid}/root/tmp dirs that are not mapped to /tmp
-        for (File dir : dirs) {
-            String containerTmpDir = dir.getAbsolutePath() + containerTmpPath;
-            File containerFile = new File(containerTmpDir);
-
-            if (containerFile.exists() && containerFile.isDirectory() &&
-                containerFile.canRead() &&
-                !tempDirectoryEquals(containerFile.toPath())) {
-                v.add(containerTmpDir);
-            }
-        }
-
-        return v;
+        return jvmSet;
     }
 
+    public Integer getAttachID(int pid) {
+        //System.out.println("getAttachID: " + pid);
+        String mapsFile = "/proc/" + pid + "/maps";
+        String pattern = "/tmp/hsperfdata_";
 
-    /*
-     * Extract either the host PID or the NameSpace PID
-     * from a file path.
-     *
-     * File path should be in 1 of these 2 forms:
-     *
-     * /proc/{pid}/root/tmp/hsperfdata_{user}/{nspid}
-     *              or
-     * /tmp/hsperfdata_{user}/{pid}
-     *
-     * In either case we want to return {pid} and NOT {nspid}
-     *
-     * This function filters out host pids which do not have
-     * associated hsperfdata files.  This is due to the fact that
-     * getTemporaryDirectories will return /proc/{pid}/root/tmp
-     * paths for all container processes whether they are java
-     * processes or not causing duplicate matches.
-     */
-    public int getLocalVmId(File file) throws NumberFormatException {
-        String p = file.getAbsolutePath();
-        String s[] = p.split("\\/");
-
-        // Determine if this file is from a container
-        if (s.length == 7 && s[1].equals("proc")) {
-            int hostpid = Integer.parseInt(s[2]);
-            int nspid = Integer.parseInt(s[6]);
-            if (nspid == hostpid || nspid == getNamespaceVmId(hostpid)) {
-                return hostpid;
-            }
-            else {
-                return -1;
-            }
-        }
-        else {
-            return Integer.parseInt(file.getName());
-        }
-    }
-
-
-    /*
-     * Return the inner most namespaced PID if there is one,
-     * otherwise return the original PID.
-     */
-    public int getNamespaceVmId(int pid) {
-        // Assuming a real procfs sits beneath, reading this doesn't block
-        // nor will it consume a lot of memory.
-        Path statusPath = Paths.get("/proc", Integer.toString(pid), "status");
-        if (Files.notExists(statusPath)) {
-            return pid; // Likely a bad pid, but this is properly handled later.
-        }
-
-        try {
-            for (String line : Files.readAllLines(statusPath)) {
-                String[] parts = line.split(":");
-                if (parts.length == 2 && parts[0].trim().equals("NSpid")) {
-                    parts = parts[1].trim().split("\\s+");
-                    // The last entry represents the PID the JVM "thinks" it is.
-                    // Even in non-namespaced pids these entries should be
-                    // valid. You could refer to it as the inner most pid.
-                    int ns_pid = Integer.parseInt(parts[parts.length - 1]);
-                    return ns_pid;
+        try (BufferedReader reader = newBufferedReader(mapsFile)) {
+            for (;;) {
+                String line = reader.readLine();
+                if (line == null) {
+                    break;
+                }
+                int i = line.indexOf(pattern);
+                if (i > 0) {
+                    //System.out.println("Found: " + line);
+                    i += pattern.length();
+                    while (i < line.length() && line.charAt(i) != '/') {
+                        i++;
+                    }
+                    i++;
+                    String tail = line.substring(i);
+                    //System.out.println(tail);
+                    try {
+                        int attachID = Integer.parseInt(tail);
+                        // System.out.println("attachID = " + attachID);
+                        return attachID;
+                    } catch (NumberFormatException e) {
+                        // not a hsperfdata file created by the VM. Ignore
+                    }
                 }
             }
-            // Old kernels may not have NSpid field (i.e. 3.10).
-            // Fallback to original pid in the event we cannot deduce.
-            return pid;
-        } catch (NumberFormatException | IOException x) {
-            return pid;
-        }
+        } catch (IOException e) {}
+
+        // This process is not mapping a hsperfdata
+        return null;
+    }
+
+    private static BufferedReader newBufferedReader(String fileName)
+        throws IOException
+    {
+        InputStream in = new FileInputStream(new File(fileName));
+        Reader reader = new InputStreamReader(in);
+        return new BufferedReader(reader);
     }
 }

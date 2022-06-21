@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,8 @@ size_t                   PerfMemory::_capacity = 0;
 int                      PerfMemory::_initialized = false;
 PerfDataPrologue*        PerfMemory::_prologue = NULL;
 bool                     PerfMemory::_destroyed = false;
+int                      PerfMemory::_attach_id = 0;
+bool                     PerfMemory::_attach_id_initialized = false;
 
 void perfMemory_init() {
 

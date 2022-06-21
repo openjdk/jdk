@@ -27,6 +27,7 @@
 #include "memory/allocation.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/os.inline.hpp"
+#include "runtime/perfMemory.hpp"
 #include "services/attachListener.hpp"
 
 #include <unistd.h>
@@ -188,8 +189,9 @@ int LinuxAttachListener::init() {
     ::atexit(listener_cleanup);
   }
 
+  int vmid = PerfMemory::attach_id();
   int n = snprintf(path, UNIX_PATH_MAX, "%s/.java_pid%d",
-                   os::get_temp_directory(), os::current_process_id());
+                   os::get_temp_directory(), vmid);
   if (n < (int)UNIX_PATH_MAX) {
     n = snprintf(initial_path, UNIX_PATH_MAX, "%s.tmp", path);
   }
@@ -447,8 +449,9 @@ void AttachListener::vm_start() {
   struct stat64 st;
   int ret;
 
+  int vmid = PerfMemory::attach_id();
   int n = snprintf(fn, UNIX_PATH_MAX, "%s/.java_pid%d",
-           os::get_temp_directory(), os::current_process_id());
+           os::get_temp_directory(), vmid);
   assert(n < (int)UNIX_PATH_MAX, "java_pid file name buffer overflow");
 
   RESTARTABLE(::stat64(fn, &st), ret);
@@ -512,12 +515,14 @@ bool AttachListener::is_init_trigger() {
   char fn[PATH_MAX + 1];
   int ret;
   struct stat64 st;
-  sprintf(fn, ".attach_pid%d", os::current_process_id());
+  int attach_id = PerfMemory::attach_id();
+  sprintf(fn, ".attach_pid%d", attach_id);
+
   RESTARTABLE(::stat64(fn, &st), ret);
   if (ret == -1) {
     log_trace(attach)("Failed to find attach file: %s, trying alternate", fn);
     snprintf(fn, sizeof(fn), "%s/.attach_pid%d",
-             os::get_temp_directory(), os::current_process_id());
+             os::get_temp_directory(), attach_id);
     RESTARTABLE(::stat64(fn, &st), ret);
     if (ret == -1) {
       log_debug(attach)("Failed to find attach file: %s", fn);

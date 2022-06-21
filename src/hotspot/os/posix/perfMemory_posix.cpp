@@ -48,6 +48,10 @@
 # include <signal.h>
 # include <pwd.h>
 
+#if defined(LINUX)
+# include <sys/file.h>
+#endif
+
 static char* backing_store_file_name = NULL;  // name of the backing store
                                               // file, if successfully created.
 
@@ -149,20 +153,8 @@ static void save_memory_to_file(char* addr, size_t size) {
 // the caller is expected to free the allocated memory.
 //
 #define TMP_BUFFER_LEN (4+22)
-static char* get_user_tmp_dir(const char* user, int vmid, int nspid) {
+static char* get_user_tmp_dir(const char* user, int vmid) {
   char* tmpdir = (char *)os::get_temp_directory();
-#if defined(LINUX)
-  // On linux, if containerized process, get dirname of
-  // /proc/{vmid}/root/tmp/{PERFDATA_NAME_user}
-  // otherwise /tmp/{PERFDATA_NAME_user}
-  char buffer[TMP_BUFFER_LEN];
-  assert(strlen(tmpdir) == 4, "No longer using /tmp - update buffer size");
-
-  if (nspid != -1) {
-    jio_snprintf(buffer, TMP_BUFFER_LEN, "/proc/%d/root%s", vmid, tmpdir);
-    tmpdir = buffer;
-  }
-#endif
   const char* perfdir = PERFDATA_NAME;
   size_t nbytes = strlen(tmpdir) + strlen(perfdir) + strlen(user) + 3;
   char* dirname = NEW_C_HEAP_ARRAY(char, nbytes, mtInternal);
@@ -181,7 +173,7 @@ static pid_t filename_to_pid(const char* filename) {
   // a filename that doesn't begin with a digit is not a
   // candidate for conversion.
   //
-  if (!isdigit(*filename)) {
+  if (!isdigit(*filename) && *filename != '-') {
     return 0;
   }
 
@@ -502,6 +494,7 @@ static char* get_user_name(uid_t uid) {
   return user_name;
 }
 
+#if !defined(LINUX)
 // return the name of the user that owns the process identified by vmid.
 //
 // This method uses a slow directory search algorithm to find the backing
@@ -511,7 +504,7 @@ static char* get_user_name(uid_t uid) {
 // the caller is expected to free the allocated memory.
 //
 //
-static char* get_user_name_slow(int vmid, int nspid, TRAPS) {
+static char* get_user_name(int vmid, TRAPS) {
 
   // short circuit the directory search if the process doesn't even exist.
   if (kill(vmid, 0) == OS_ERR) {
@@ -529,22 +522,7 @@ static char* get_user_name_slow(int vmid, int nspid, TRAPS) {
   time_t oldest_ctime = 0;
   int searchpid;
   char* tmpdirname = (char *)os::get_temp_directory();
-#if defined(LINUX)
-  char buffer[MAXPATHLEN + 1];
-  assert(strlen(tmpdirname) == 4, "No longer using /tmp - update buffer size");
-
-  // On Linux, if nspid != -1, look in /proc/{vmid}/root/tmp for directories
-  // containing nspid, otherwise just look for vmid in /tmp.
-  if (nspid == -1) {
-    searchpid = vmid;
-  } else {
-    jio_snprintf(buffer, MAXPATHLEN, "/proc/%d/root%s", vmid, tmpdirname);
-    tmpdirname = buffer;
-    searchpid = nspid;
-  }
-#else
   searchpid = vmid;
-#endif
 
   // open the temp directory
   DIR* tmpdirp = os::opendir(tmpdirname);
@@ -555,7 +533,7 @@ static char* get_user_name_slow(int vmid, int nspid, TRAPS) {
   }
 
   // for each entry in the directory that matches the pattern hsperfdata_*,
-  // open the directory and check if the file for the given vmid (or nspid) exists.
+  // open the directory and check if the file for the given vmid exists.
   // The file with the expected name and the latest creation date is used
   // to determine the user name for the process id.
   //
@@ -598,7 +576,6 @@ static char* get_user_name_slow(int vmid, int nspid, TRAPS) {
     struct dirent* udentry;
     errno = 0;
     while ((udentry = os::readdir(subdirp)) != NULL) {
-
       if (filename_to_pid(udentry->d_name) == searchpid) {
         struct stat statbuf;
         int result;
@@ -648,38 +625,20 @@ static char* get_user_name_slow(int vmid, int nspid, TRAPS) {
 
   return(oldest_user);
 }
-
-// return the name of the user that owns the JVM indicated by the given vmid.
-//
-static char* get_user_name(int vmid, int *nspid, TRAPS) {
-  char *result = get_user_name_slow(vmid, *nspid, THREAD);
-
-#if defined(LINUX)
-  // If we are examining a container process without PID namespaces enabled
-  // we need to use /proc/{pid}/root/tmp to find hsperfdata files.
-  if (result == NULL) {
-    result = get_user_name_slow(vmid, vmid, THREAD);
-    // Enable nspid logic going forward
-    if (result != NULL) *nspid = vmid;
-  }
 #endif
-  return result;
-}
 
 // return the file name of the backing store file for the named
 // shared memory region for the given user name and vmid.
 //
 // the caller is expected to free the allocated memory.
 //
-static char* get_sharedmem_filename(const char* dirname, int vmid, int nspid) {
-
-  int pid = LINUX_ONLY((nspid == -1) ? vmid : nspid) NOT_LINUX(vmid);
-
+static char* get_sharedmem_filename(const char* dirname, int vmid) {
+  // add 1 for possible leading negative sign.
   // add 2 for the file separator and a null terminator.
-  size_t nbytes = strlen(dirname) + UINT_CHARS + 2;
+  size_t nbytes = strlen(dirname) + 1 + UINT_CHARS + 2;
 
   char* name = NEW_C_HEAP_ARRAY(char, nbytes, mtInternal);
-  snprintf(name, nbytes, "%s/%d", dirname, pid);
+  snprintf(name, nbytes, "%s/%d", dirname, vmid);
 
   return name;
 }
@@ -707,6 +666,74 @@ static void remove_file(const char* path) {
   }
 }
 
+#if defined(LINUX)
+
+static void unlink_sharedmem_file_if_stale(int vmid, int pid, const char* dirname, const char* filename) {
+  if (vmid == pid) {
+    // We will later try to test contention with flock.
+    return;
+  }
+
+  int fd = ::open(filename, O_RDONLY);
+  if (fd < 0) {
+    // The file was deleted, or we don't have access. Just ignore it.
+    return;
+  }
+
+  if (flock(fd, LOCK_EX|LOCK_NB) != 0) {
+    // This file is locked by a compatible JVM process that's still alive.
+    // Let that process delete it.
+  } else {
+    if (pid < 0) {
+      // This file was created by a compatible JVM process with random_id().
+      // The process has since died. OK to delete.
+      log_debug(perf, memops)("Removing stale file %s/%s -- detected by flock", dirname, filename);
+      unlink(filename);
+    } else if (kill(pid, 0) == OS_ERR && (errno == ESRCH || errno == EPERM)) {
+      // This file was created by:
+      //   [a] a process that has died, or
+      //   [b] a process outside of my namespace that's still alive
+      // Note that [b] can happen if:
+      //   - You are using an older JVM that do not use flock(), AND
+      //   - You are sharing a /tmp directory across different process
+      //     namespaces.
+      // This is not supported. Either upgrade the JVM or stop sharing
+      // /tmp directories. See JDK-8286030
+      log_debug(perf, memops)("Removing stale file %s/%s -- detected by kill(0)", dirname, filename);
+      unlink(filename);
+    }
+  }
+
+  if (fd >= 0) {
+    ::close(fd); // this also gives up the lock, if we are holding it.
+  }
+
+  errno = 0;
+}
+
+#else
+
+static void unlink_sharedmem_file_if_stale(int vmid, int pid, const char* dirname, const char* filename) {
+  // if process id matches the current process id or the
+  // process is not running, then remove the stale file resources.
+  //
+  // process liveness is detected by sending signal number 0 to
+  // the process id (see kill(2)). if kill determines that the
+  // process does not exist, then the file resources are removed.
+  // if kill determines that that we don't have permission to
+  // signal the process, then the file resources are assumed to
+  // be stale and are removed because the resources for such a
+  // process should be in a different user specific directory.
+  //
+  if ((pid == os::current_process_id()) ||
+      (kill(pid, 0) == OS_ERR && (errno == ESRCH || errno == EPERM))) {
+    log_debug(perf, memops)("Removing stale file %s/%s\n", dirname, filename);
+    unlink(filename);
+  }
+  errno = 0;
+}
+
+#endif
 
 // cleanup stale shared memory resources
 //
@@ -717,7 +744,7 @@ static void remove_file(const char* path) {
 // determine if the process is alive. If the process is not alive,
 // any stale file resources are removed.
 //
-static void cleanup_sharedmem_resources(const char* dirname) {
+static void cleanup_sharedmem_resources(int vmid, const char* dirname) {
 
   int saved_cwd_fd;
   // open the directory and set the current working directory to it
@@ -745,6 +772,7 @@ static void cleanup_sharedmem_resources(const char* dirname) {
 
       if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
         // attempt to remove all unexpected files, except "." and ".."
+        log_debug(perf, memops)("Removing invalid file %s/%s\n", dirname, entry->d_name);
         unlink(entry->d_name);
       }
 
@@ -753,23 +781,8 @@ static void cleanup_sharedmem_resources(const char* dirname) {
     }
 
     // we now have a file name that converts to a valid integer
-    // that could represent a process id . if this process id
-    // matches the current process id or the process is not running,
-    // then remove the stale file resources.
-    //
-    // process liveness is detected by sending signal number 0 to
-    // the process id (see kill(2)). if kill determines that the
-    // process does not exist, then the file resources are removed.
-    // if kill determines that that we don't have permission to
-    // signal the process, then the file resources are assumed to
-    // be stale and are removed because the resources for such a
-    // process should be in a different user specific directory.
-    //
-    if ((pid == os::current_process_id()) ||
-        (kill(pid, 0) == OS_ERR && (errno == ESRCH || errno == EPERM))) {
-        unlink(entry->d_name);
-    }
-    errno = 0;
+    // that could represent a process id . 
+    unlink_sharedmem_file_if_stale(vmid, pid, dirname, entry->d_name);
   }
 
   // close the directory and reset the current working directory
@@ -820,7 +833,8 @@ static bool make_user_tmp_dir(const char* dirname) {
 // This method also creates the user specific temporary directory, if
 // it does not yet exist.
 //
-static int create_sharedmem_resources(const char* dirname, const char* filename, size_t size) {
+static int create_sharedmem_resources(const char* dirname, const char* filename,
+                                      size_t size, bool* lock_failed) {
 
   // make the user temporary directory
   if (!make_user_tmp_dir(dirname)) {
@@ -856,6 +870,17 @@ static int create_sharedmem_resources(const char* dirname, const char* filename,
 
     return -1;
   }
+
+#if defined(LINUX)
+  int n = flock(fd, LOCK_EX|LOCK_NB);
+  if (n != 0) {
+    log_warning(perf, memops)("Cannot use file %s/%s because it is locked by another process\n", dirname, filename);
+    *lock_failed = 1;
+    ::close(fd);
+    return -1;
+  }
+#endif
+
   // close the directory and reset the current working directory
   close_directory_secure_cwd(dirp, saved_cwd_fd);
 
@@ -944,6 +969,58 @@ static int open_sharedmem_file(const char* filename, int oflags, TRAPS) {
   return fd;
 }
 
+static int open_sharedmem_file_from_proc_maps(int vmid, int oflags, TRAPS) {
+  char buffer[512];
+  jio_snprintf(buffer, sizeof(buffer), "/proc/%d/maps", vmid); // FIXME: assert return 
+
+  FILE* f = os::fopen(buffer, "r");
+  int num_found = 0;
+  if (f != NULL) {
+    char line[512];
+    const char* pattern1 = " rw";
+    const char* pattern2 = " /tmp/hsperfdata_"; // FIXME - use os::get_temp_directory()
+    while(fgets(line, sizeof(line), f) == line) {
+      char* p1 = strstr(line, pattern1);
+      char* p2 = strstr(line, pattern2);
+      if (p1 == NULL || p2 == NULL || p1 >= p2) {
+        continue;
+      }
+      char* p = p2 + strlen(pattern2);
+      while (*p && *p != '/') {
+        p++;
+      }
+      p++;
+
+      if (*p == 0) {
+        continue;
+      }
+
+      if (*p == '-') {
+        p++;
+        if (*p == 0) {
+          continue;
+        }
+      }
+
+      while (*p && isdigit(*p)) {
+        p++;
+      }
+      if (*p != 0 && *p != '\n') {
+        continue;
+      }
+      *p = 0;
+      p2 += 1;
+
+      ::fclose(f);
+
+      jio_snprintf(buffer, sizeof(buffer), "/proc/%d/root%s", vmid, p2);
+      return open_sharedmem_file(buffer, oflags, THREAD);
+    }
+    ::fclose(f);
+  }
+  return 0;
+}
+
 // create a named shared memory region. returns the address of the
 // memory region on success or NULL on failure. A return value of
 // NULL will ultimately disable the shared memory feature.
@@ -956,21 +1033,10 @@ static int open_sharedmem_file(const char* filename, int oflags, TRAPS) {
 // created and terminating JVMs by watching the file system name space
 // for files being created or removed.
 //
-static char* mmap_create_shared(size_t size) {
-
-  int result;
-  int fd;
-  char* mapAddress;
-
-  int vmid = os::current_process_id();
-
-  char* user_name = get_user_name(geteuid());
-
-  if (user_name == NULL)
-    return NULL;
-
-  char* dirname = get_user_tmp_dir(user_name, vmid, -1);
-  char* filename = get_sharedmem_filename(dirname, vmid, -1);
+static char* mmap_create_shared(size_t size, const char* user_name, int vmid,
+                                bool* lock_failed) {
+  char* dirname = get_user_tmp_dir(user_name, vmid);
+  char* filename = get_sharedmem_filename(dirname, vmid);
 
   // get the short filename
   char* short_filename = strrchr(filename, '/');
@@ -981,14 +1047,13 @@ static char* mmap_create_shared(size_t size) {
   }
 
   // cleanup any stale shared memory files
-  cleanup_sharedmem_resources(dirname);
+  cleanup_sharedmem_resources(vmid, dirname);
 
   assert(((size > 0) && (size % os::vm_page_size() == 0)),
          "unexpected PerfMemory region size");
 
-  fd = create_sharedmem_resources(dirname, short_filename, size);
+  int fd = create_sharedmem_resources(dirname, short_filename, size, lock_failed);
 
-  FREE_C_HEAP_ARRAY(char, user_name);
   FREE_C_HEAP_ARRAY(char, dirname);
 
   if (fd == -1) {
@@ -996,9 +1061,9 @@ static char* mmap_create_shared(size_t size) {
     return NULL;
   }
 
-  mapAddress = (char*)::mmap((char*)0, size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
+  char* mapAddress = (char*)::mmap((char*)0, size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
 
-  result = ::close(fd);
+  int result = ::close(fd);
   assert(result != OS_ERR, "could not close file");
 
   if (mapAddress == MAP_FAILED) {
@@ -1021,6 +1086,73 @@ static char* mmap_create_shared(size_t size) {
 
   return mapAddress;
 }
+
+#if !defined(LINUX)
+static char* mmap_create_shared(size_t size) {
+  char* user_name = get_user_name(geteuid());
+
+  if (user_name == NULL)
+    return NULL;
+
+  char* result = mmap_create_shared(size, user_name, os::current_process_id(), NULL);
+  FREE_C_HEAP_ARRAY(char, user_name);
+  return result;
+}
+#endif
+
+#if defined(LINUX)
+static int random_id() {
+  // Use negative numbers for random IDs so we don't conflict with
+  // real Linux PIDs, which are always positive.
+  int fd = open("/dev/urandom", O_RDONLY);
+  for (;;) {
+    int i;
+    if (fd < 0 || read(fd, &i, sizeof(i)) != sizeof(i)) {
+      i = os::random();
+    }
+    i = - (i & 0x000fffff);
+    if (i != 0) {
+      if (fd >= 0) {
+        close(fd);
+      }
+      return i;
+    }
+  }
+}
+
+static char* mmap_create_shared(size_t size) {
+  int vmid = UseRandomAttachID ? random_id() : os::current_process_id();
+  char* user_name = get_user_name(geteuid());
+
+  if (user_name == NULL)
+    return NULL;
+
+  char* result;
+  for (;;) {
+    bool lock_failed = false;
+    log_debug(perf, memops)("Trying vmid = %d", vmid);
+    result = mmap_create_shared(size, user_name, vmid, &lock_failed);
+    if (lock_failed) {
+      // We should come here only when two JVMs with the same namespaced PID
+      // run in two different containers that share the same /tmp directory.
+      assert(result == NULL, "sanity");
+      vmid = random_id();
+    } else {
+      break;
+    }
+  }
+
+  if (result != NULL) {
+    PerfMemory::set_attach_id(vmid);
+  }
+
+  log_debug(perf, memops)("mmap_create_shared() = %p vmid = %d", result, vmid);
+  FREE_C_HEAP_ARRAY(char, user_name);
+  return result;
+}
+#endif
+
+
 
 // release a named shared memory region that was mmap-ed.
 //
@@ -1104,16 +1236,19 @@ static void mmap_attach_shared(int vmid, char** addr, size_t* sizep, TRAPS) {
 
   ResourceMark rm;
 
-  // for linux, determine if vmid is for a containerized process
-  int nspid = LINUX_ONLY(os::Linux::get_namespace_pid(vmid)) NOT_LINUX(-1);
-  const char* luser = get_user_name(vmid, &nspid, CHECK);
+#if defined(LINUX)
 
+  int fd = open_sharedmem_file_from_proc_maps(vmid, file_flags, THREAD);
+
+#else
+
+  const char* luser = get_user_name(vmid, CHECK);
   if (luser == NULL) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
               "Could not map vmid to user Name");
   }
 
-  char* dirname = get_user_tmp_dir(luser, vmid, nspid);
+  char* dirname = get_user_tmp_dir(luser, vmid);
 
   // since we don't follow symbolic links when creating the backing
   // store file, we don't follow them when attaching either.
@@ -1125,7 +1260,7 @@ static void mmap_attach_shared(int vmid, char** addr, size_t* sizep, TRAPS) {
               "Process not found");
   }
 
-  char* filename = get_sharedmem_filename(dirname, vmid, nspid);
+  char* filename = get_sharedmem_filename(dirname, vmid);
 
   // copy heap memory to resource memory. the open_sharedmem_file
   // method below need to use the filename, but could throw an
@@ -1141,6 +1276,8 @@ static void mmap_attach_shared(int vmid, char** addr, size_t* sizep, TRAPS) {
 
   // open the shared memory file for the give vmid
   int fd = open_sharedmem_file(rfilename, file_flags, THREAD);
+
+#endif
 
   if (fd == OS_ERR) {
     return;
@@ -1293,4 +1430,12 @@ void PerfMemory::detach(char* addr, size_t bytes) {
   }
 
   unmap_shared(addr, bytes);
+}
+
+int PerfMemory::attach_id() {
+  if (_attach_id_initialized) {
+    return _attach_id;
+  } else {
+    return os::current_process_id();
+  }
 }

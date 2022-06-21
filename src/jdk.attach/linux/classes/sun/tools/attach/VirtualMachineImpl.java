@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 package sun.tools.attach;
 
+import sun.jvmstat.PlatformSupport;
 import com.sun.tools.attach.AttachOperationFailedException;
 import com.sun.tools.attach.AgentLoadException;
 import com.sun.tools.attach.AttachNotSupportedException;
@@ -68,17 +69,17 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
             throw new AttachNotSupportedException("Invalid process identifier: " + vmid);
         }
 
-        // Try to resolve to the "inner most" pid namespace
-        int ns_pid = getNamespacePid(pid);
+        // The attach pid may be different than pid for containerized processes.
+        int attach_id = getAttachID(pid);
 
         // Find the socket file. If not found then we attempt to start the
         // attach mechanism in the target VM by sending it a QUIT signal.
         // Then we attempt to find the socket file again.
-        File socket_file = findSocketFile(pid, ns_pid);
+        File socket_file = findSocketFile(pid, attach_id);
         socket_path = socket_file.getPath();
         if (!socket_file.exists()) {
             // Keep canonical version of File, to delete, in case target process ends and /proc link has gone:
-            File f = createAttachFile(pid, ns_pid).getCanonicalFile();
+            File f = createAttachFile(pid, attach_id).getCanonicalFile();
             try {
                 sendQuitTo(pid);
 
@@ -275,20 +276,20 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
     }
 
     // Return the socket file for the given process.
-    private File findSocketFile(int pid, int ns_pid) {
+    private File findSocketFile(int pid, int attach_id) {
         // A process may not exist in the same mount namespace as the caller.
         // Instead, attach relative to the target root filesystem as exposed by
         // procfs regardless of namespaces.
         String root = "/proc/" + pid + "/root/" + tmpdir;
-        return new File(root, ".java_pid" + ns_pid);
+        return new File(root, ".java_pid" + attach_id);
     }
 
     // On Linux a simple handshake is used to start the attach mechanism
     // if not already started. The client creates a .attach_pid<pid> file in the
     // target VM's working directory (or temp directory), and the SIGQUIT handler
     // checks for the file.
-    private File createAttachFile(int pid, int ns_pid) throws IOException {
-        String fn = ".attach_pid" + ns_pid;
+    private File createAttachFile(int pid, int attach_id) throws IOException {
+        String fn = ".attach_pid" + attach_id;
         String path = "/proc/" + pid + "/cwd/" + fn;
         File f = new File(path);
         try {
@@ -296,7 +297,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
             f.createNewFile();
         } catch (IOException x) {
             String root;
-            if (pid != ns_pid) {
+            if (pid != attach_id) {
                 // A process may not exist in the same mount namespace as the caller.
                 // Instead, attach relative to the target root filesystem as exposed by
                 // procfs regardless of namespaces.
@@ -358,6 +359,15 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         }
     }
 
+    private int getAttachID(int pid) throws AttachNotSupportedException, IOException {
+        Integer n = PlatformSupport.getInstance().getAttachID(pid);
+        if (n != null) {
+            System.out.println("Helloooooo: " + pid + " -> " + n);
+            return n;
+        } else {
+            return getNamespacePid(pid);
+        }
+    }
 
     //-- native methods
 

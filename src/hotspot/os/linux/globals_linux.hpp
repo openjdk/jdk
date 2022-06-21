@@ -85,6 +85,9 @@
   product(bool, UseCpuAllocPath, false, DIAGNOSTIC,                     \
           "Use CPU_ALLOC code path in os::active_processor_count ")     \
                                                                         \
+  product(bool, UseRandomAttachID, false, DIAGNOSTIC,                   \
+          "Always use a random ID for hsperfdata file")                 \
+                                                                        \
   product(bool, DumpPerfMapAtExit, false, DIAGNOSTIC,                   \
           "Write map file for Linux perf tool at exit")
 

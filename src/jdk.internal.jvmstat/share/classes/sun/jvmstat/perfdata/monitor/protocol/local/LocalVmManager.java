@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package sun.jvmstat.perfdata.monitor.protocol.local;
 import java.util.*;
 import java.util.regex.*;
 import java.io.*;
+import sun.jvmstat.PlatformSupport;
 
 /**
  * Class for managing the LocalMonitoredVm instances on the local system.
@@ -85,12 +86,16 @@ public class LocalVmManager {
      * @return Set - the Set of monitorable Java Virtual Machines
      */
     public synchronized Set<Integer> activeVms() {
+        Set<Integer> jvmSet = PlatformSupport.getInstance().activeVms();
+        if (jvmSet != null) {
+            return jvmSet;
+        }
         /*
          * TODO: this method was synchronized due to its thread-unsafe use of the regexp
          * Matcher objects. That is not the case anymore, but I am too afraid to change
          * it now. Maybe fix this later in a separate RFE.
          */
-        Set<Integer> jvmSet = new HashSet<Integer>();
+        jvmSet = new HashSet<Integer>();
         List<String> tmpdirs = PerfDataFile.getTempDirectories(0);
 
         for (String dir : tmpdirs) {
