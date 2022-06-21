@@ -232,7 +232,6 @@ inline void* stackChunkOopDesc::gc_data() const {
 
 inline BitMapView stackChunkOopDesc::bitmap() const {
   HeapWord* bitmap_addr = static_cast<HeapWord*>(gc_data());
-  // TODO: Abstract bitmap size
   int stack_sz = stack_size();
   size_t bitmap_size_in_bits = InstanceStackChunkKlass::bitmap_size_in_bits(stack_sz);
 

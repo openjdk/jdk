@@ -57,7 +57,6 @@ InstanceStackChunkKlass::InstanceStackChunkKlass(const ClassFileParser& parser)
   set_layout_helper(lh);
 }
 
-// TODO: Generalize GC data size?
 size_t InstanceStackChunkKlass::oop_size(oop obj) const {
   return instance_size(jdk_internal_vm_StackChunk::size(obj));
 }
