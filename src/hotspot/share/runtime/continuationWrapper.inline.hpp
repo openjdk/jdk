@@ -143,9 +143,6 @@ inline ContinuationWrapper::ContinuationWrapper(JavaThread* thread, oop continua
   {
   assert(oopDesc::is_oop(_continuation),
          "Invalid continuation object: " INTPTR_FORMAT, p2i((void*)_continuation));
-  // FIXME: Can't safely read cont_oop without first poking flushing the stack watermark
-  //assert(_continuation == _entry->cont_oop(), "cont: " INTPTR_FORMAT " entry: " INTPTR_FORMAT " entry_sp: "
-  //       INTPTR_FORMAT, p2i((oopDesc*)_continuation), p2i((oopDesc*)_entry->cont_oop()), p2i(entrySP()));
   disallow_safepoint();
   read();
 }

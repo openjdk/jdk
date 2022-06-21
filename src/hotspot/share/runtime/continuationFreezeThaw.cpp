@@ -280,7 +280,6 @@ static bool stack_overflow_check(JavaThread* thread, int size, address sp) {
   return true;
 }
 
-// TODO: Should we remove reliance on this?
 static oop get_continuation(JavaThread* thread) {
   assert(thread != nullptr, "");
   assert(thread->threadObj() != nullptr, "");
@@ -1535,9 +1534,8 @@ static inline int prepare_thaw_internal(JavaThread* thread, bool return_barrier)
   ContinuationEntry* ce = thread->last_continuation();
   assert(ce != nullptr, "");
 
-  // FIXME: Workaround since we don't have a last java frame and can't ce->flush_stack_processing.
-  //oop continuation = ce->cont_oop();
-  //assert(continuation == get_continuation(thread), "");
+  // At this point the stack watermark has not been processed, therefore we can not
+  // read the continuation oop from the entry. Instead we read it from the thread.
   oop continuation = get_continuation(thread);
   verify_continuation(continuation);
 
@@ -2237,8 +2235,8 @@ static inline intptr_t* thaw_internal(JavaThread* thread, const Continuation::th
   ContinuationEntry* entry = thread->last_continuation();
   assert(entry != nullptr, "");
 
-  // FIXME: Workaround since we don't have a last java frame and can't ce->flush_stack_processing.
-  //oop oopCont = entry->cont_oop();
+  // At this point the stack watermark has not been processed, therefore we can not
+  // read the continuation oop from the entry. Instead we read it from the thread.
   oop oopCont = get_continuation(thread);
   verify_continuation(oopCont);
 
