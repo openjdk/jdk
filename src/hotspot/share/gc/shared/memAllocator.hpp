@@ -44,10 +44,14 @@ protected:
 
 private:
   // Allocate from the current thread's TLAB, with broken-out slow path.
-  HeapWord* allocate_inside_tlab(Allocation& allocation) const;
-  HeapWord* allocate_inside_tlab_fast() const;
-  HeapWord* allocate_inside_tlab_slow(Allocation& allocation) const;
-  HeapWord* allocate_outside_tlab(Allocation& allocation) const;
+  HeapWord* mem_allocate_inside_tlab(Allocation& allocation) const;
+  HeapWord* mem_allocate_inside_tlab_fast() const;
+  HeapWord* mem_allocate_inside_tlab_slow(Allocation& allocation) const;
+  HeapWord* mem_allocate_outside_tlab(Allocation& allocation) const;
+
+  // Raw memory allocation. This will try to do a TLAB allocation, and otherwise fall
+  // back to calling CollectedHeap::mem_allocate().
+  HeapWord* mem_allocate(Allocation& allocation) const;
 
 protected:
   MemAllocator(Klass* klass, size_t word_size, Thread* thread)
@@ -56,25 +60,25 @@ protected:
       _word_size(word_size)
   { }
 
-  // This function clears the memory of the object
-  void mem_clear(HeapWord* mem) const;
-  // This finish constructing an oop by installing the mark word and the Klass* pointer
-  // last. At the point when the Klass pointer is initialized, this is a constructed object
-  // that must be parseable as an oop by concurrent collectors.
-  oop finish(HeapWord* mem) const;
+  // Fast-path TLAB allocation failed. Takes a slow-path and potentially safepoint.
+  virtual HeapWord* mem_allocate_slow(Allocation& allocation) const;
 
-  // Raw memory allocation. This will try to do a TLAB allocation, and otherwise fall
-  // back to calling CollectedHeap::mem_allocate().
-  HeapWord* mem_allocate(Allocation& allocation) const;
+  virtual oop initialize(HeapWord* mem) const = 0;
 
   virtual MemRegion obj_memory_range(oop obj) const {
     return MemRegion(cast_from_oop<HeapWord*>(obj), _word_size);
   }
 
+  // This function clears the memory of the object
+  void mem_clear(HeapWord* mem) const;
+
+  // This finish constructing an oop by installing the mark word and the Klass* pointer
+  // last. At the point when the Klass pointer is initialized, this is a constructed object
+  // that must be parseable as an oop by concurrent collectors.
+  oop finish(HeapWord* mem) const;
+
 public:
   oop allocate() const;
-  oop try_allocate_in_existing_tlab();
-  virtual oop initialize(HeapWord* mem) const = 0;
 };
 
 class ObjAllocator: public MemAllocator {
@@ -103,16 +107,6 @@ class ClassAllocator: public MemAllocator {
 public:
   ClassAllocator(Klass* klass, size_t word_size, Thread* thread = Thread::current())
     : MemAllocator(klass, word_size, thread) {}
-  virtual oop initialize(HeapWord* mem) const;
-};
-
-class StackChunkAllocator : public MemAllocator {
-  const size_t _stack_size;
-
-public:
-  StackChunkAllocator(Klass* klass, size_t word_size, size_t stack_size, Thread* thread = Thread::current())
-    : MemAllocator(klass, word_size, thread),
-      _stack_size(stack_size) {}
   virtual oop initialize(HeapWord* mem) const;
 };
 

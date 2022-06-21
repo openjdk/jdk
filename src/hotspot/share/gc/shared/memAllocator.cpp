@@ -60,9 +60,6 @@ class MemAllocator::Allocation: StackObj {
   void notify_allocation_jfr_sampler();
   void notify_allocation_dtrace_sampler();
   void check_for_bad_heap_word_value() const;
-#ifdef ASSERT
-  void check_for_valid_allocation_state() const;
-#endif
 
   class PreserveObj;
 
@@ -140,11 +137,11 @@ bool MemAllocator::Allocation::check_out_of_memory() {
 }
 
 void MemAllocator::Allocation::verify_before() {
-  // Clear unhandled oops for memory allocation.  Memory allocation might
-  // not take out a lock if from tlab, so clear here.
-  JavaThread* THREAD = _thread; // For exception macros.
-  assert(!HAS_PENDING_EXCEPTION, "Should not allocate with exception pending");
-  debug_only(check_for_valid_allocation_state());
+  // How to choose between a pending exception and a potential
+  // OutOfMemoryError?  Don't allow pending exceptions.
+  // This is a VM policy failure, so how do we exhaustively test it?
+  assert(!_thread->has_pending_exception(),
+         "shouldn't be allocating with pending exception");
   assert(!Universe::heap()->is_gc_active(), "Allocation during gc not allowed");
 }
 
@@ -163,18 +160,6 @@ void MemAllocator::Allocation::check_for_bad_heap_word_value() const {
     }
   }
 }
-
-#ifdef ASSERT
-void MemAllocator::Allocation::check_for_valid_allocation_state() const {
-  // How to choose between a pending exception and a potential
-  // OutOfMemoryError?  Don't allow pending exceptions.
-  // This is a VM policy failure, so how do we exhaustively test it?
-  assert(!_thread->has_pending_exception(),
-         "shouldn't be allocating with pending exception");
-  // Allocation of an oop can always invoke a safepoint.
-  JavaThread::cast(_thread)->check_for_valid_safepoint_state();
-}
-#endif
 
 void MemAllocator::Allocation::notify_allocation_jvmti_sampler() {
   // support for JVMTI VMObjectAlloc event (no-op if not enabled)
@@ -251,7 +236,7 @@ void MemAllocator::Allocation::notify_allocation() {
   notify_allocation_jvmti_sampler();
 }
 
-HeapWord* MemAllocator::allocate_outside_tlab(Allocation& allocation) const {
+HeapWord* MemAllocator::mem_allocate_outside_tlab(Allocation& allocation) const {
   allocation._allocated_outside_tlab = true;
   HeapWord* mem = Universe::heap()->mem_allocate(_word_size, &allocation._overhead_limit_exceeded);
   if (mem == NULL) {
@@ -265,24 +250,24 @@ HeapWord* MemAllocator::allocate_outside_tlab(Allocation& allocation) const {
   return mem;
 }
 
-HeapWord* MemAllocator::allocate_inside_tlab(Allocation& allocation) const {
+HeapWord* MemAllocator::mem_allocate_inside_tlab(Allocation& allocation) const {
   assert(UseTLAB, "should use UseTLAB");
 
   // Try allocating from an existing TLAB.
-  HeapWord* mem = allocate_inside_tlab_fast();
+  HeapWord* mem = mem_allocate_inside_tlab_fast();
   if (mem != NULL) {
     return mem;
   }
 
   // Try refilling the TLAB and allocating the object in it.
-  return allocate_inside_tlab_slow(allocation);
+  return mem_allocate_inside_tlab_slow(allocation);
 }
 
-HeapWord* MemAllocator::allocate_inside_tlab_fast() const {
+HeapWord* MemAllocator::mem_allocate_inside_tlab_fast() const {
   return _thread->tlab().allocate(_word_size);
 }
 
-HeapWord* MemAllocator::allocate_inside_tlab_slow(Allocation& allocation) const {
+HeapWord* MemAllocator::mem_allocate_inside_tlab_slow(Allocation& allocation) const {
   HeapWord* mem = NULL;
   ThreadLocalAllocBuffer& tlab = _thread->tlab();
 
@@ -349,15 +334,32 @@ HeapWord* MemAllocator::allocate_inside_tlab_slow(Allocation& allocation) const 
   return mem;
 }
 
-HeapWord* MemAllocator::mem_allocate(Allocation& allocation) const {
+
+HeapWord* MemAllocator::mem_allocate_slow(Allocation& allocation) const {
+  // Allocation of an oop can always invoke a safepoint.
+  debug_only(JavaThread::cast(_thread)->check_for_valid_safepoint_state());
+
   if (UseTLAB) {
-    HeapWord* result = allocate_inside_tlab(allocation);
-    if (result != NULL) {
-      return result;
+    // Try refilling the TLAB and allocating the object in it.
+    HeapWord* mem = mem_allocate_inside_tlab_slow(allocation);
+    if (mem != NULL) {
+      return mem;
     }
   }
 
-  return allocate_outside_tlab(allocation);
+  return mem_allocate_outside_tlab(allocation);
+}
+
+HeapWord* MemAllocator::mem_allocate(Allocation& allocation) const {
+  if (UseTLAB) {
+    // Try allocating from an existing TLAB.
+    HeapWord* mem = mem_allocate_inside_tlab_fast();
+    if (mem != NULL) {
+      return mem;
+    }
+  }
+
+  return mem_allocate_slow(allocation);
 }
 
 oop MemAllocator::allocate() const {
@@ -365,21 +367,6 @@ oop MemAllocator::allocate() const {
   {
     Allocation allocation(*this, &obj);
     HeapWord* mem = mem_allocate(allocation);
-    if (mem != NULL) {
-      obj = initialize(mem);
-    } else {
-      // The unhandled oop detector will poison local variable obj,
-      // so reset it to NULL if mem is NULL.
-      obj = NULL;
-    }
-  }
-  return obj;
-}
-
-oop MemAllocator::try_allocate_in_existing_tlab() {
-  oop obj = NULL;
-  {
-    HeapWord* mem = allocate_inside_tlab_fast();
     if (mem != NULL) {
       obj = initialize(mem);
     } else {
@@ -443,22 +430,5 @@ oop ClassAllocator::initialize(HeapWord* mem) const {
   assert(_word_size > 0, "oop_size must be positive.");
   mem_clear(mem);
   java_lang_Class::set_oop_size(mem, _word_size);
-  return finish(mem);
-}
-
-// Does the minimal amount of initialization needed for a TLAB allocation.
-// We don't need to do a full initialization, as such an allocation need not be immediately walkable.
-oop StackChunkAllocator::initialize(HeapWord* mem) const {
-  assert(_stack_size > 0, "");
-  assert(_stack_size <= max_jint, "");
-  assert(_word_size > _stack_size, "");
-
-  // zero out fields (but not the stack)
-  const size_t hs = oopDesc::header_size();
-  Copy::fill_to_aligned_words(mem + hs, vmClasses::StackChunk_klass()->size_helper() - hs);
-
-  jdk_internal_vm_StackChunk::set_size(mem, (int)_stack_size);
-  jdk_internal_vm_StackChunk::set_sp(mem, (int)_stack_size);
-
   return finish(mem);
 }

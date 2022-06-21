@@ -1237,6 +1237,62 @@ inline bool FreezeBase::stack_overflow() { // detect stack overflow in recursive
   return false;
 }
 
+class StackChunkAllocator : public MemAllocator {
+  const size_t                                 _stack_size;
+  ContinuationWrapper&                         _continuation_wrapper;
+  JvmtiSampledObjectAllocEventCollector* const _jvmti_event_collector;
+  mutable bool                                 _took_slow_path;
+
+  // Does the minimal amount of initialization needed for a TLAB allocation.
+  // We don't need to do a full initialization, as such an allocation need not be immediately walkable.
+  virtual oop initialize(HeapWord* mem) const override {
+    assert(_stack_size > 0, "");
+    assert(_stack_size <= max_jint, "");
+    assert(_word_size > _stack_size, "");
+
+    // zero out fields (but not the stack)
+    const size_t hs = oopDesc::header_size();
+    Copy::fill_to_aligned_words(mem + hs, vmClasses::StackChunk_klass()->size_helper() - hs);
+
+    jdk_internal_vm_StackChunk::set_size(mem, (int)_stack_size);
+    jdk_internal_vm_StackChunk::set_sp(mem, (int)_stack_size);
+
+    return finish(mem);
+  }
+
+  virtual HeapWord* mem_allocate_slow(Allocation& allocation) const override {
+    _took_slow_path = true;
+
+    ContinuationWrapper::SafepointOp so(_thread, _continuation_wrapper);
+
+    // Can safepoint
+    _jvmti_event_collector->start();
+
+    return MemAllocator::mem_allocate_slow(allocation);
+  }
+
+public:
+  StackChunkAllocator(Klass* klass,
+                      size_t word_size,
+                      Thread* thread,
+                      size_t stack_size,
+                      ContinuationWrapper& continuation_wrapper,
+                      JvmtiSampledObjectAllocEventCollector* jvmti_event_collector)
+    : MemAllocator(klass, word_size, thread),
+      _stack_size(stack_size),
+      _continuation_wrapper(continuation_wrapper),
+      _jvmti_event_collector(jvmti_event_collector),
+      _took_slow_path(false) {}
+
+  stackChunkOop allocate() const {
+    return stackChunkOopDesc::cast(MemAllocator::allocate());
+  }
+
+  bool took_slow_path() const {
+    return _took_slow_path;
+  }
+};
+
 template <typename ConfigT>
 stackChunkOop Freeze<ConfigT>::allocate_chunk(size_t stack_size) {
   log_develop_trace(continuations)("allocate_chunk allocating new chunk");
@@ -1254,20 +1310,13 @@ stackChunkOop Freeze<ConfigT>::allocate_chunk(size_t stack_size) {
   JavaThread* current = _preempt ? JavaThread::current() : _thread;
   assert(current == JavaThread::current(), "should be current");
 
-  StackChunkAllocator allocator(klass, size_in_words, stack_size, current);
-  oop fast_oop = allocator.try_allocate_in_existing_tlab();
-  oop chunk_oop = fast_oop;
-  if (chunk_oop == nullptr) {
-    ContinuationWrapper::SafepointOp so(current, _cont);
-    assert(_jvmti_event_collector != nullptr, "");
-    _jvmti_event_collector->start();  // can safepoint
-    chunk_oop = allocator.allocate(); // can safepoint
-    if (chunk_oop == nullptr) {
-      return nullptr; // OOME
-    }
+  StackChunkAllocator allocator(klass, size_in_words, current, stack_size, _cont, _jvmti_event_collector);
+  stackChunkOop chunk = allocator.allocate();
+
+  if (chunk == nullptr) {
+    return nullptr; // OOME
   }
 
-  stackChunkOop chunk = stackChunkOopDesc::cast(chunk_oop);
   // assert that chunk is properly initialized
   assert(chunk->stack_size() == (int)stack_size, "");
   assert(chunk->size() >= stack_size, "chunk->size(): %zu size: %zu", chunk->size(), stack_size);
@@ -1285,6 +1334,7 @@ stackChunkOop Freeze<ConfigT>::allocate_chunk(size_t stack_size) {
     chunk->set_parent_access<IS_DEST_UNINITIALIZED>(_cont.last_nonempty_chunk());
     chunk->set_cont_access<IS_DEST_UNINITIALIZED>(_cont.continuation());
     ZStackChunkGCData::initialize(chunk);
+
     assert(!chunk->requires_barriers(), "ZGC always allocates in the young generation");
     _barriers = false;
   } else
@@ -1292,7 +1342,8 @@ stackChunkOop Freeze<ConfigT>::allocate_chunk(size_t stack_size) {
   {
     chunk->set_parent_raw<typename ConfigT::OopT>(_cont.last_nonempty_chunk());
     chunk->set_cont_raw<typename ConfigT::OopT>(_cont.continuation());
-    if (fast_oop != nullptr) {
+
+    if (!allocator.took_slow_path()) {
       assert(!chunk->requires_barriers(), "Unfamiliar GC requires barriers on TLAB allocation");
     } else {
       assert(!UseShenandoahGC || !chunk->requires_barriers(), "Allocated ShenandoahGC object requires barriers");
