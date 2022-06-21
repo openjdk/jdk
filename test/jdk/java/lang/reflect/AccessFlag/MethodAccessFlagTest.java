@@ -24,8 +24,13 @@
 /*
  * @test
  * @bug 8266670
- * @summary Test expected AccessFlag's on methods
+ * @summary Test expected AccessFlag's on methods and parameters
+ * @compile -parameters MethodAccessFlagTest.java
+ * @run main MethodAccessFlagTest
  */
+
+// Use -parameters flag to javac to have access flag information about
+// parameters preserved in the resulting class file.
 
 import java.lang.annotation.*;
 import java.lang.reflect.*;
@@ -35,11 +40,13 @@ import java.lang.reflect.*;
  * public, private, protected, static, final, synchronized,
  * bridge, varargs, native, abstract, strictfp, synthetic,
  *
- * At a source level, constructors can be modifiers as public,
+ * At a source level, constructors can have modifiers public,
  * protected, or private.
  *
  * The modifiers bridge and synthetic cannot be applied directly and
  * strictfp can only be applied in older source versions.
+ *
+ * Method parameters can be final, synthetic, and mandated.
  */
 public abstract class MethodAccessFlagTest {
     @ExpectedMethodFlags("[PUBLIC, STATIC, VARARGS]")
@@ -53,6 +60,79 @@ public abstract class MethodAccessFlagTest {
                  MethodAccessFlagTest.class.getDeclaredMethods()) {
             checkExecutable(method);
         }
+
+        // Hard-code information about parameter modifiers; could be
+        // represented as annotations on the class and decoded.
+        for (var ctor : NestedClass.class.getConstructors()) {
+            for (var parameter : ctor.getParameters()) {
+                String expected = null;
+                if (parameter.getType() == int.class) {
+                    // The explicit int parameter is expected to have
+                    // the final flag
+                    expected = "[FINAL]";
+                } else {
+                    // The implicit this$0 parameter is expected to have the
+                    // final and mandated flags
+                    expected = "[FINAL, MANDATED]";
+                }
+                checkString(parameter.toString(),
+                            parameter.accessFlags().toString(),
+                            expected);
+            }
+        }
+
+        for (var method : BridgeExample.class.getDeclaredMethods()) {
+            // Find the two "clone" methods, one implicit and one
+            // explicit
+            if (!method.getName().equals("clone")) {
+                throw new RuntimeException("Unexpected name for " + method);
+            }
+            String expected = null;
+            if (method.getReturnType() == Object.class) {
+                expected = "[PUBLIC, BRIDGE, SYNTHETIC]";
+            } else {
+                expected = "[PUBLIC]";
+            }
+            checkString(method.toString(),
+                        method.accessFlags().toString(),
+                        expected);
+        }
+
+        // Hard-code information about parameter modifiers; could be
+        // represented as annotations on the class and decoded.
+        for (var ctor : TestEnum.class.getDeclaredConstructors()) {
+            // Each of the two parameters used in javac's enum
+            // constructor implementation is synthetic. This may need
+            // to be updated if javac's enum constructor generation
+            // idiom changes.
+            for (var parameter : ctor.getParameters()) {
+                checkString(parameter.toString(),
+                            parameter.accessFlags().toString(),
+                            "[SYNTHETIC]");
+            }
+        }
+
+    }
+
+    class NestedClass {
+        private int i;
+        // Implicit leading parameter
+        public NestedClass(final int i) {
+            this.i = i;
+        }
+    }
+
+    class BridgeExample implements Cloneable {
+        public BridgeExample(){}
+        // Triggers generation of a bridge method.
+        public BridgeExample clone() {
+            return new BridgeExample();
+        }
+    }
+
+    // Use as a host for a constructor with synthetic parameters
+    enum TestEnum {
+        INSTANCE;
     }
 
     private static void checkExecutable(Executable method) {
@@ -60,11 +140,17 @@ public abstract class MethodAccessFlagTest {
             method.getAnnotation(ExpectedMethodFlags.class);
         if (emf != null) {
             String actual = method.accessFlags().toString();
-            if (!emf.value().equals(actual)) {
-                throw new RuntimeException("On " + method +
-                                           " expected " + emf.value() +
-                                           " got " + actual);
-            }
+            checkString(method.toString(), emf.value(), actual);
+        }
+    }
+
+    private static void checkString(String declaration,
+                               String expected,
+                               String actual) {
+        if (!expected.equals(actual)) {
+            throw new RuntimeException("On " + declaration +
+                                       " expected " + expected +
+                                       " got " + actual);
         }
     }
 
