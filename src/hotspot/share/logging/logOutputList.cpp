@@ -43,9 +43,10 @@ jint LogOutputList::decrease_readers() {
 
 void LogOutputList::wait_until_no_readers() const {
   OrderAccess::storeload();
-  while (_active_readers != 0) {
+  while (Atomic::load(&_active_readers) != 0) {
     // Busy wait
   }
+  OrderAccess::loadstore();
 }
 
 void LogOutputList::set_output_level(LogOutput* output, LogLevelType level) {
