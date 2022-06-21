@@ -30,6 +30,7 @@
 #include "gc/shared/gcThreadLocalData.hpp"
 #include "gc/shared/threadLocalAllocBuffer.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "runtime/threadHeapSampler.hpp"
