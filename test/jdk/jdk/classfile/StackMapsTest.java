@@ -55,10 +55,36 @@ public class StackMapsTest {
                 ClassDesc.of("DeadCodePattern"),
                 List.of(Classfile.Option.generateStackmap(false), Classfile.Option.patchDeadCode(false)),
                 clb -> clb.withMethodBody(
-                        "twoReturns",
-                        MethodTypeDesc.of(ConstantDescs.CD_void),
-                        0,
-                        cob -> cob.return_().return_()));
+                                "twoReturns",
+                                MethodTypeDesc.of(ConstantDescs.CD_void),
+                                0,
+                                cob -> cob.return_().return_())
+                        .withMethodBody(
+                                "deadJumpInExceptionBlocks",
+                                MethodTypeDesc.of(ConstantDescs.CD_void),
+                                0,
+                                cob -> {
+                                    var deadEnd = cob.newLabel();
+                                    cob.goto_(deadEnd);
+                                    var deadStart = cob.newBoundLabel();
+                                    cob.return_(); //dead code
+                                    cob.labelBinding(deadEnd);
+                                    cob.return_();
+                                    var handler = cob.newBoundLabel();
+                                    cob.athrow();
+                                    //exception block before dead code to stay untouched
+                                    cob.exceptionCatch(cob.startLabel(), deadStart, handler, ConstantDescs.CD_Throwable);
+                                    //exception block after dead code to stay untouched
+                                    cob.exceptionCatch(deadEnd, handler, handler, ConstantDescs.CD_Throwable);
+                                     //exception block overlapping dead code to cut from right
+                                    cob.exceptionCatch(cob.startLabel(), deadEnd, handler, ConstantDescs.CD_Throwable);
+                                    //exception block overlapping dead code to from left
+                                    cob.exceptionCatch(deadStart, handler, handler, ConstantDescs.CD_Throwable);
+                                    //exception block matching dead code to remove
+                                    cob.exceptionCatch(deadStart, deadEnd, handler, ConstantDescs.CD_Throwable);
+                                    //exception block around dead code to split
+                                    cob.exceptionCatch(cob.startLabel(), handler, handler, ConstantDescs.CD_Throwable);
+                                }));
     }
 
     @Test

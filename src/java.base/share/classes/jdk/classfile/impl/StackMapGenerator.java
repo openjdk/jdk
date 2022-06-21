@@ -360,7 +360,7 @@ public final class StackMapGenerator {
             int handlerEnd = labelContext.labelToBci(e.tryEnd());
             if (rangeStart >= handlerEnd || rangeEnd <= handlerStart) {
                 //out of range
-                return;
+                continue;
             }
             if (trace) System.out.println("      Removing dead code range from exception handler start: " + handlerStart + " end: " + handlerEnd);
             if (rangeStart <= handlerStart) {
