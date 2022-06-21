@@ -1965,6 +1965,10 @@ inline void ThawBase::patch(frame& f, const frame& caller, bool bottom) {
   if (bottom) {
     ContinuationHelper::Frame::patch_pc(caller, _cont.is_empty() ? caller.pc()
                                                                  : StubRoutines::cont_returnBarrier());
+  } else {
+    // caller might have been deoptimized during thaw but we've overwritten the return address when copying f from the heap.
+    // If the caller is not deoptimized, pc is unchanged.
+    ContinuationHelper::Frame::patch_pc(caller, caller.raw_pc());
   }
 
   patch_pd(f, caller);
