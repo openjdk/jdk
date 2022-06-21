@@ -168,7 +168,7 @@ void vmClasses::resolve_all(TRAPS) {
 
   if (UseSharedSpaces) {
     // These should already have been initialized during CDS dump.
-    assert(vmClasses::Reference_klass()->reference_type() == REF_OTHER, "sanity");
+    assert(vmClasses::Reference_klass()->reference_type() == REF_NONE, "sanity");
     assert(vmClasses::SoftReference_klass()->reference_type() == REF_SOFT, "sanity");
     assert(vmClasses::WeakReference_klass()->reference_type() == REF_WEAK, "sanity");
     assert(vmClasses::FinalReference_klass()->reference_type() == REF_FINAL, "sanity");
