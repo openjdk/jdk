@@ -28,6 +28,7 @@
 #include "gc/shared/workerPolicy.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
 #include "runtime/javaThread.hpp"
+#include "runtime/threads.hpp"
 
 uint ShenandoahWorkerPolicy::_prev_par_marking     = 0;
 uint ShenandoahWorkerPolicy::_prev_conc_marking    = 0;
