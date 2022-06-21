@@ -1774,7 +1774,7 @@ void LinkResolver::resolve_invokedynamic(CallInfo& result, const constantPoolHan
   // the interpreter or runtime performs a serialized check of
   // the relevant CPCE::f1 field.  This is done by the caller
   // of this method, via CPCE::set_dynamic_call, which uses
-  // an ObjectLocker to do the final serialization of updates
+  // a lock to do the final serialization of updates
   // to CPCE state, including f1.
 
   // Log dynamic info to CDS classlist.
