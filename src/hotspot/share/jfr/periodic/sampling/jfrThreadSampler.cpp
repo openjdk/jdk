@@ -322,8 +322,8 @@ class JfrThreadSampler : public NonJavaThread {
   JfrStackFrame* const _frames;
   JavaThread* _last_thread_java;
   JavaThread* _last_thread_native;
-  size_t _interval_java;
-  size_t _interval_native;
+  int64_t _java_period_millis;
+  int64_t _native_period_millis;
   const size_t _min_size; // for enqueue buffer monitoring
   const size_t _renew_size;
   int _cur_index;
@@ -335,17 +335,15 @@ class JfrThreadSampler : public NonJavaThread {
 
   JavaThread* next_thread(ThreadsList* t_list, JavaThread* first_sampled, JavaThread* current);
   void task_stacktrace(JfrSampleType type, JavaThread** last_thread);
-  JfrThreadSampler(size_t interval_java, size_t interval_native, u4 max_frames);
+  JfrThreadSampler(int64_t java_period_millis, int64_t native_period_millis, u4 max_frames);
   ~JfrThreadSampler();
 
   void start_thread();
 
   void enroll();
   void disenroll();
-  void set_java_interval(size_t interval) { _interval_java = interval; };
-  void set_native_interval(size_t interval) { _interval_native = interval; };
-  size_t get_java_interval() { return _interval_java; };
-  size_t get_native_interval() { return _interval_native; };
+  void set_java_period(int64_t period_millis);
+  void set_native_period(int64_t period_millis);
  protected:
   virtual void post_run();
  public:
@@ -355,6 +353,8 @@ class JfrThreadSampler : public NonJavaThread {
   void run();
   static Monitor* transition_block() { return JfrThreadSampler_lock; }
   static void on_javathread_suspend(JavaThread* thread);
+  int64_t get_java_period() const { return _java_period_millis; };
+  int64_t get_native_period() const { return _native_period_millis; };
 };
 
 static void clear_transition_block(JavaThread* jt) {
@@ -394,23 +394,35 @@ bool JfrThreadSampleClosure::do_sample_thread(JavaThread* thread, JfrStackFrame*
   return ret;
 }
 
-JfrThreadSampler::JfrThreadSampler(size_t interval_java, size_t interval_native, u4 max_frames) :
+JfrThreadSampler::JfrThreadSampler(int64_t java_period_millis, int64_t native_period_millis, u4 max_frames) :
   _sample(),
   _sampler_thread(NULL),
   _frames(JfrCHeapObj::new_array<JfrStackFrame>(max_frames)),
   _last_thread_java(NULL),
   _last_thread_native(NULL),
-  _interval_java(interval_java),
-  _interval_native(interval_native),
+  _java_period_millis(java_period_millis),
+  _native_period_millis(native_period_millis),
   _min_size(JfrOptionSet::stackdepth() * sizeof(intptr_t)),
   _renew_size(_min_size * 2),
   _cur_index(-1),
   _max_frames(max_frames),
   _disenrolled(true) {
+  assert(_java_period_millis >= 0, "invariant");
+  assert(_native_period_millis >= 0, "invariant");
 }
 
 JfrThreadSampler::~JfrThreadSampler() {
   JfrCHeapObj::free(_frames, sizeof(JfrStackFrame) * _max_frames);
+}
+
+void JfrThreadSampler::set_java_period(int64_t period_millis) {
+  assert(period_millis >= 0, "invariant");
+  _java_period_millis = period_millis;
+}
+
+void JfrThreadSampler::set_native_period(int64_t period_millis) {
+  assert(period_millis >= 0, "invariant");
+  _native_period_millis = period_millis;
 }
 
 static inline bool is_released(JavaThread* jt) {
@@ -470,7 +482,7 @@ void JfrThreadSampler::disenroll() {
   }
 }
 
-static jlong get_monotonic_ms() {
+static int64_t get_monotonic_ms() {
   return os::javaTimeNanos() / 1000000;
 }
 
@@ -479,8 +491,8 @@ void JfrThreadSampler::run() {
 
   _sampler_thread = this;
 
-  jlong last_java_ms = get_monotonic_ms();
-  jlong last_native_ms = last_java_ms;
+  int64_t last_java_ms = get_monotonic_ms();
+  int64_t last_native_ms = last_java_ms;
   while (true) {
     if (!_sample.trywait()) {
       // disenrolled
@@ -489,13 +501,13 @@ void JfrThreadSampler::run() {
       last_native_ms = last_java_ms;
     }
     _sample.signal();
-    jlong java_interval = _interval_java == 0 ? max_jlong : MAX2<jlong>(_interval_java, 1);
-    jlong native_interval = _interval_native == 0 ? max_jlong : MAX2<jlong>(_interval_native, 1);
+    const int64_t java_period_millis = _java_period_millis == 0 ? max_jlong : MAX2<int64_t>(_java_period_millis, 1);
+    const int64_t native_period_millis = _native_period_millis == 0 ? max_jlong : MAX2<int64_t>(_native_period_millis, 1);
 
-    jlong now_ms = get_monotonic_ms();
+    const int64_t now_ms = get_monotonic_ms();
 
     /*
-     * Let I be java_interval or native_interval.
+     * Let I be java_period or native_period.
      * Let L be last_java_ms or last_native_ms.
      * Let N be now_ms.
      *
@@ -503,10 +515,10 @@ void JfrThreadSampler::run() {
      * could potentially overflow without parenthesis (UB). Also note that
      * L - N < 0. Avoid UB, by adding parenthesis.
      */
-    jlong next_j = java_interval + (last_java_ms - now_ms);
-    jlong next_n = native_interval + (last_native_ms - now_ms);
+    const int64_t next_j = java_period_millis + (last_java_ms - now_ms);
+    const int64_t next_n = native_period_millis + (last_native_ms - now_ms);
 
-    jlong sleep_to_next = MIN2<jlong>(next_j, next_n);
+    const int64_t sleep_to_next = MIN2<int64_t>(next_j, next_n);
 
     if (sleep_to_next > 0) {
       os::naked_short_sleep(sleep_to_next);
@@ -622,58 +634,76 @@ JfrThreadSampling::~JfrThreadSampling() {
   }
 }
 
-static void log(size_t interval_java, size_t interval_native) {
-  log_trace(jfr)("Updated thread sampler for java: " SIZE_FORMAT "  ms, native " SIZE_FORMAT " ms", interval_java, interval_native);
+#ifdef ASSERT
+void assert_periods(const JfrThreadSampler* sampler, int64_t java_period_millis, int64_t native_period_millis) {
+  assert(sampler != nullptr, "invariant");
+  assert(sampler->get_java_period() == java_period_millis, "invariant");
+  assert(sampler->get_native_period() == native_period_millis, "invariant");
+}
+#endif
+
+static void log(int64_t java_period_millis, int64_t native_period_millis) {
+  log_trace(jfr)("Updated thread sampler for java: " INT64_FORMAT "  ms, native " INT64_FORMAT " ms", java_period_millis, native_period_millis);
 }
 
-void JfrThreadSampling::start_sampler(size_t interval_java, size_t interval_native) {
-  assert(_sampler == NULL, "invariant");
-  log_trace(jfr)("Enrolling thread sampler");
-  _sampler = new JfrThreadSampler(interval_java, interval_native, JfrOptionSet::stackdepth());
+void JfrThreadSampling::create_sampler(int64_t java_period_millis, int64_t native_period_millis) {
+  assert(_sampler == nullptr, "invariant");
+  log_trace(jfr)("Creating thread sampler for java:" INT64_FORMAT " ms, native " INT64_FORMAT " ms", java_period_millis, native_period_millis);
+  _sampler = new JfrThreadSampler(java_period_millis, native_period_millis, JfrOptionSet::stackdepth());
   _sampler->start_thread();
   _sampler->enroll();
 }
 
-void JfrThreadSampling::set_sampling_interval(bool java_interval, size_t period) {
-  size_t interval_java = 0;
-  size_t interval_native = 0;
-  if (_sampler != NULL) {
-    interval_java = _sampler->get_java_interval();
-    interval_native = _sampler->get_native_interval();
-  }
-  if (java_interval) {
-    interval_java = period;
-  } else {
-    interval_native = period;
-  }
-  if (interval_java > 0 || interval_native > 0) {
-    if (_sampler == NULL) {
-      log_trace(jfr)("Creating thread sampler for java:%zu ms, native %zu ms", interval_java, interval_native);
-      start_sampler(interval_java, interval_native);
+void JfrThreadSampling::update_run_state(int64_t java_period_millis, int64_t native_period_millis) {
+  if (java_period_millis > 0 || native_period_millis > 0) {
+    if (_sampler == nullptr) {
+      create_sampler(java_period_millis, native_period_millis);
     } else {
-      _sampler->set_java_interval(interval_java);
-      _sampler->set_native_interval(interval_native);
       _sampler->enroll();
     }
-    assert(_sampler != NULL, "invariant");
-    log(interval_java, interval_native);
-  } else if (_sampler != NULL) {
+    DEBUG_ONLY(assert_periods(_sampler, java_period_millis, native_period_millis);)
+    log(java_period_millis, native_period_millis);
+    return;
+  }
+  if (_sampler != nullptr) {
+    DEBUG_ONLY(assert_periods(_sampler, java_period_millis, native_period_millis);)
     _sampler->disenroll();
   }
 }
 
-void JfrThreadSampling::set_java_sample_interval(size_t period) {
-  if (_instance == NULL && 0 == period) {
-    return;
+void JfrThreadSampling::set_sampling_period(bool is_java_period, int64_t period_millis) {
+  int64_t java_period_millis = 0;
+  int64_t native_period_millis = 0;
+  if (is_java_period) {
+    java_period_millis = period_millis;
+    if (_sampler != nullptr) {
+      _sampler->set_java_period(java_period_millis);
+      native_period_millis = _sampler->get_native_period();
+    }
+  } else {
+    native_period_millis = period_millis;
+    if (_sampler != nullptr) {
+      _sampler->set_native_period(native_period_millis);
+      java_period_millis = _sampler->get_java_period();
+    }
   }
-  instance().set_sampling_interval(true, period);
+  update_run_state(java_period_millis, native_period_millis);
 }
 
-void JfrThreadSampling::set_native_sample_interval(size_t period) {
-  if (_instance == NULL && 0 == period) {
+void JfrThreadSampling::set_java_sample_period(int64_t period_millis) {
+  assert(period_millis >= 0, "invariant");
+  if (_instance == NULL && 0 == period_millis) {
     return;
   }
-  instance().set_sampling_interval(false, period);
+  instance().set_sampling_period(true, period_millis);
+}
+
+void JfrThreadSampling::set_native_sample_period(int64_t period_millis) {
+  assert(period_millis >= 0, "invariant");
+  if (_instance == NULL && 0 == period_millis) {
+    return;
+  }
+  instance().set_sampling_period(false, period_millis);
 }
 
 void JfrThreadSampling::on_javathread_suspend(JavaThread* thread) {

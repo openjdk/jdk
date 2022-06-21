@@ -174,7 +174,15 @@ public final class JDKEvents {
     }
 
     private static void initializeContainerEvents() {
-        containerMetrics = Container.metrics();
+        if (JVM.getJVM().isContainerized() ) {
+            Logger.log(LogTag.JFR_SYSTEM, LogLevel.DEBUG, "JVM is containerized");
+            containerMetrics = Container.metrics();
+            if (containerMetrics != null) {
+                Logger.log(LogTag.JFR_SYSTEM, LogLevel.DEBUG, "Container metrics are available");
+            }
+        }
+        // The registration of events and hooks are needed to provide metadata,
+        // even when not running in a container
         SecuritySupport.registerEvent(ContainerConfigurationEvent.class);
         SecuritySupport.registerEvent(ContainerCPUUsageEvent.class);
         SecuritySupport.registerEvent(ContainerCPUThrottlingEvent.class);

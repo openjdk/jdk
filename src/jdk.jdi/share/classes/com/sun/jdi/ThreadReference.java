@@ -518,7 +518,7 @@ public interface ThreadReference extends ObjectReference {
      *
      * @since 19
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.VIRTUAL_THREADS)
+    @PreviewFeature(feature = PreviewFeature.Feature.VIRTUAL_THREADS, reflective = true)
     default boolean isVirtual() {
         throw new UnsupportedOperationException("Method not implemented");
     }
