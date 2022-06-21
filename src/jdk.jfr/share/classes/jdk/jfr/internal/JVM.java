@@ -620,4 +620,13 @@ public final class JVM {
      * @return the id, or a negative value if it does not exists.
      */
     public native long getTypeId(String name);
+
+    /**
+     * Returns {@code true}, if the JVM is running in a container, {@code false} otherwise.
+     * <p>
+     * If -XX:-UseContainerSupport has been specified, this method returns {@code false},
+     * which is questionable, but Container.metrics() returns {@code null}, so events
+     * can't be emitted anyway.
+     */
+    public native boolean isContainerized();
 }

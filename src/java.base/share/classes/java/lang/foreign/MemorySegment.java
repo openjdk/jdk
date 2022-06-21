@@ -883,9 +883,7 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
         Reflection.ensureNativeAccess(Reflection.getCallerClass(), MemorySegment.class, "ofAddress");
         Objects.requireNonNull(address);
         Objects.requireNonNull(session);
-        if (bytesSize < 0) {
-            throw new IllegalArgumentException("Invalid size : " + bytesSize);
-        }
+        Utils.checkAllocationSizeAndAlign(bytesSize, 1);
         return NativeMemorySegmentImpl.makeNativeSegmentUnchecked(address, bytesSize, session);
     }
 
@@ -957,15 +955,7 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
      */
     static MemorySegment allocateNative(long bytesSize, long alignmentBytes, MemorySession session) {
         Objects.requireNonNull(session);
-        if (bytesSize < 0) {
-            throw new IllegalArgumentException("Invalid allocation size : " + bytesSize);
-        }
-
-        if (alignmentBytes <= 0 ||
-                ((alignmentBytes & (alignmentBytes - 1)) != 0L)) {
-            throw new IllegalArgumentException("Invalid alignment constraint : " + alignmentBytes);
-        }
-
+        Utils.checkAllocationSizeAndAlign(bytesSize, alignmentBytes);
         return NativeMemorySegmentImpl.makeNativeSegment(bytesSize, alignmentBytes, session);
     }
 

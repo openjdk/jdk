@@ -108,7 +108,7 @@ void ThreadIdTable::lazy_initialize(const ThreadsList *threads) {
         MutexLocker ml(Threads_lock);
         if (!thread->is_exiting()) {
           // Must be inside the lock to ensure that we don't add a thread to the table
-          // that has just passed the removal point in ThreadsSMRSupport::remove_thread()
+          // that has just passed the removal point in Threads::remove().
           add_thread(java_tid, thread);
         }
       }

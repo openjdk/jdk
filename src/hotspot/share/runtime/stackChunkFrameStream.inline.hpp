@@ -35,6 +35,7 @@
 #include "oops/instanceStackChunkKlass.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/devirtualizer.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include CPU_HEADER_INLINE(stackChunkFrameStream)
