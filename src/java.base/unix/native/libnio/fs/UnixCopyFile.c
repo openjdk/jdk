@@ -72,9 +72,9 @@ int fcopyfile_callback(int what, int stage, copyfile_state_t state,
 }
 #endif
 
-// Transfer via user-space buffers
+// Copy via an intermediate temporary direct buffer
 JNIEXPORT void JNICALL
-Java_sun_nio_fs_UnixCopyFile_copy0
+Java_sun_nio_fs_UnixCopyFile_bufferCopy0
     (JNIEnv* env, jclass this, jint dst, jint src, jlong address,
     jint transferSize, jlong cancelAddress)
 {
@@ -119,12 +119,18 @@ Java_sun_nio_fs_UnixCopyFile_copy0
     }
 }
 
-/**
- * Transfer all bytes from src to dst within the kernel if possible (Linux),
- * otherwise via user-space buffers
- */
+// Copy all bytes from src to dst, within the kernel if possible (Linux),
+// and return zero, otherwise return the appropriate status code.
+//
+// Return value
+//   0 on success
+//   IOS_UNAVAILABLE if the platform function would block
+//   IOS_UNSUPPORTED_CASE if the call does not work with the given parameters
+//   IOS_UNSUPPORTED if direct copying is not supported on this platform
+//   IOS_THROWN if a Java exception is thrown
+//
 JNIEXPORT jint JNICALL
-Java_sun_nio_fs_UnixCopyFile_transfer0
+Java_sun_nio_fs_UnixCopyFile_directCopy0
     (JNIEnv* env, jclass this, jint dst, jint src, jlong cancelAddress)
 {
     volatile jint* cancel = (jint*)jlong_to_ptr(cancelAddress);
@@ -138,13 +144,11 @@ Java_sun_nio_fs_UnixCopyFile_transfer0
     do {
         RESTARTABLE(sendfile64(dst, src, NULL, count), bytes_sent);
         if (bytes_sent < 0) {
-            if (errno == EINTR) {
-                return IOS_INTERRUPTED;
-            } else if (errno == EINVAL || errno == ENOSYS) {
+            if (errno == EAGAIN)
+                return IOS_UNAVAILABLE;
+            if (errno == EINVAL || errno == ENOSYS)
                 return IOS_UNSUPPORTED_CASE;
-            } else {
-                throwUnixException(env, errno);
-            }
+            throwUnixException(env, errno);
             return IOS_THROWN;
         }
         if (cancel != NULL && *cancel != 0) {

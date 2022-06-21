@@ -31,7 +31,6 @@ import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.CopyOption;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.FileAlreadyExistsException;
-import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.LinkPermission;
 import java.nio.file.StandardCopyOption;
@@ -49,8 +48,8 @@ import static sun.nio.fs.UnixConstants.*;
  */
 
 class UnixCopyFile {
-    // minimum size of user-space copy buffer
-    private static final int MIN_TRANSFER_SIZE = 16384;
+    // minimum size of a temporary direct buffer
+    private static final int MIN_BUFFER_SIZE = 16384;
 
     private UnixCopyFile() {  }
 
@@ -246,27 +245,26 @@ class UnixCopyFile {
         return u;
     }
 
-    // calculate user-space copy buffer size
-    private static int computeTransferSize(UnixPath source, UnixPath target) {
-        int transferSize = MIN_TRANSFER_SIZE;
+    // calculate temporary direct buffer size
+    private static int temporaryBufferSize(UnixPath source, UnixPath target) {
+        int bufferSize = MIN_BUFFER_SIZE;
         try {
             long bss = UnixFileStoreAttributes.get(source).blockSize();
             long bst = UnixFileStoreAttributes.get(target).blockSize();
             if (bss > 0 && bst > 0) {
-                transferSize = (int)(bss == bst ? bss : lcm(bss, bst));
+                bufferSize = (int)(bss == bst ? bss : lcm(bss, bst));
             }
-            if (transferSize < MIN_TRANSFER_SIZE) {
-                int factor = (MIN_TRANSFER_SIZE + transferSize - 1)/transferSize;
-                transferSize *= factor;
+            if (bufferSize < MIN_BUFFER_SIZE) {
+                int factor = (MIN_BUFFER_SIZE + bufferSize - 1)/bufferSize;
+                bufferSize *= factor;
             }
-        } catch (IllegalArgumentException | UnixException
-                 ignored) {
+        } catch (IllegalArgumentException | UnixException ignored) {
         }
-        return transferSize;
+        return bufferSize;
     }
 
-    // whether transferring instead of user-space copy is unsupported
-    private static volatile boolean transferNotSupported;
+    // whether direct copying is supported on this platform
+    private static volatile boolean directCopyNotSupported;
 
     // copy regular file from source to target
     private static void copyFile(UnixPath source,
@@ -299,48 +297,37 @@ class UnixCopyFile {
             // set to true when file and attributes copied
             boolean complete = false;
             try {
-                boolean transferred = false;
-                if (!transferNotSupported) {
-                    // transfer bytes to target file
+                boolean copied = false;
+                if (!directCopyNotSupported) {
+                    // copy bytes to target using platform function
+                    long comp = Blocker.begin();
                     try {
-                        int res;
-                        do {
-                            long comp = Blocker.begin();
-                            try {
-                                res = transfer0(fo, fi, addressToPollForCancel);
-                            } finally {
-                                Blocker.end(comp);
-                            }
-                        } while (res == IOStatus.INTERRUPTED);
-
-                        if (res == IOStatus.UNSUPPORTED) {
-                            transferNotSupported = true;
-                        } else if (res == 0) {
-                            transferred = true;
+                        int res = directCopy0(fo, fi, addressToPollForCancel);
+                        if (res == 0) {
+                            copied = true;
+                        } else if (res == IOStatus.UNSUPPORTED) {
+                            directCopyNotSupported = true;
                         }
                     } catch (UnixException x) {
                         x.rethrowAsIOException(source, target);
+                    } finally {
+                        Blocker.end(comp);
                     }
                 }
 
-                if (!transferred) {
-                    //  determine copy buffer size
-                    int transferSize = computeTransferSize(source, target);
-
-                    // copy bytes to target file
+                if (!copied) {
+                    // copy bytes to target via a temporary direct buffer
+                    int bufferSize = temporaryBufferSize(source, target);
+                    ByteBuffer buf = Util.getTemporaryDirectBuffer(bufferSize);
+                    long comp = Blocker.begin();
                     try {
-                        long comp = Blocker.begin();
-                        ByteBuffer buf =
-                            Util.getTemporaryDirectBuffer(transferSize);
-                        try {
-                            copy0(fo, fi, ((DirectBuffer)buf).address(),
-                                  transferSize, addressToPollForCancel);
-                        } finally {
-                            Util.releaseTemporaryDirectBuffer(buf);
-                            Blocker.end(comp);
-                        }
+                        bufferCopy0(fo, fi, ((DirectBuffer)buf).address(),
+                                    bufferSize, addressToPollForCancel);
                     } catch (UnixException x) {
                         x.rethrowAsIOException(source, target);
+                    } finally {
+                        Util.releaseTemporaryDirectBuffer(buf);
+                        Blocker.end(comp);
                     }
                 }
 
@@ -713,14 +700,38 @@ class UnixCopyFile {
 
     // -- native methods --
 
-    // returns 0 on success, INTERRUPTED if the system call was interrupted,
-    // UNSUPPORTED_CASE if the call does not work with the supplied parameters,
-    // or UNSUPPORTED if the operation is not supported on this platform
-    static native int transfer0(int dst, int src, long addressToPollForCancel)
+    /**
+     * Copies data between file descriptors {@code src} and {@code dst} using
+     * a platform-specific function or system call possibly having kernel
+     * support.
+     *
+     * @param dst destination file descriptor
+     * @param src source file descriptor
+     * @param addressToPollForCancel address to check for cancellation
+     *        (a non-zero value written to this address indicates cancel)
+     *
+     * @return 0 on success, UNAVAILABLE if the platform function would block,
+     *         UNSUPPORTED_CASE if the call does not work with the given
+     *         parameters, or UNSUPPORTED if direct copying is not supported
+     *         on this platform
+     */
+    private static native int directCopy0(int dst, int src,
+                                          long addressToPollForCancel)
         throws UnixException;
 
-    static native void copy0(int dst, int src, long address, int transferSize,
-                             long addressToPollForCancel)
+    /**
+     * Copies data between file descriptors {@code src} and {@code dst} using
+     * an intermediate temporary direct buffer.
+     *
+     * @param dst destination file descriptor
+     * @param src source file descriptor
+     * @param address the address of the temporary direct buffer's array
+     * @param size the size of the temporary direct buffer's array
+     * @param addressToPollForCancel address to check for cancellation
+     *        (a non-zero value written to this address indicates cancel)
+     */
+    private static native void bufferCopy0(int dst, int src, long address,
+                                           int size, long addressToPollForCancel)
         throws UnixException;
 
     static {
