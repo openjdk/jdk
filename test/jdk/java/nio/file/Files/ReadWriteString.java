@@ -24,6 +24,7 @@
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.CharacterCodingException;
 import java.nio.charset.MalformedInputException;
 import java.nio.charset.UnmappableCharacterException;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
@@ -61,7 +62,8 @@ public class ReadWriteString {
     final String TEXT_UNICODE = "\u201CHello\u201D";
     final String TEXT_ASCII = "ABCDEFGHIJKLMNOPQRSTUVWXYZ\n abcdefghijklmnopqrstuvwxyz\n 1234567890\n";
     private static final String JA_STRING = "\u65e5\u672c\u8a9e\u6587\u5b57\u5217";
-    private static final byte[] MALFORMED_UTF16 = {(byte)0x00, (byte)0x20, (byte)0x00};
+    private static final Charset WINDOWS_1252 = Charset.forName("windows-1252");
+    private static final Charset WINDOWS_31J = Charset.forName("windows-31j");
 
     static byte[] data = getData();
 
@@ -96,8 +98,8 @@ public class ReadWriteString {
             {path, "\u00A0\u00A1", US_ASCII},
             {path, "\ud800", UTF_8},
             {path, JA_STRING, ISO_8859_1},
-            {path, "\u041e", Charset.forName("windows-1252")}, // cyrillic capital letter O
-            {path, "\u091c", Charset.forName("windows-31j")}, // devanagari letter ja
+            {path, "\u041e", WINDOWS_1252}, // cyrillic capital letter O
+            {path, "\u091c", WINDOWS_31J}, // devanagari letter ja
         };
     }
 
@@ -119,9 +121,11 @@ public class ReadWriteString {
      */
     @DataProvider(name = "illegalInputBytes")
     public Object[][] getIllegalInputBytes() throws IOException {
-        Path path = Files.createTempFile("illegalInputBytes", null);
         return new Object[][]{
-            {path, MALFORMED_UTF16, UTF_16},
+            {new byte[] {(byte)0x00, (byte)0x20, (byte)0x00}, UTF_16, MalformedInputException.class},
+            {new byte[] {-50}, UTF_16, MalformedInputException.class},
+            {new byte[] {(byte)0x81}, WINDOWS_1252, UnmappableCharacterException.class}, // unused in Cp1252
+            {new byte[] {(byte)0x81, (byte)0xff}, WINDOWS_31J, UnmappableCharacterException.class}, // invalid trailing byte
         };
     }
 
@@ -288,20 +292,26 @@ public class ReadWriteString {
      * Verifies that IOException is thrown when reading a file containing
      * illegal bytes
      *
-     * @param path the path to write and read
      * @param data the data used for the test
      * @param csRead the Charset to use for reading the file
+     * @param expected exception class
      * @throws IOException when the Charset used for reading the file is incorrect
      */
-    @Test(dataProvider = "illegalInputBytes", expectedExceptions = MalformedInputException.class)
-    public void testMalformedReadBytes(Path path, byte[] data, Charset csRead) throws IOException {
+    @Test(dataProvider = "illegalInputBytes")
+    public void testMalformedReadBytes(byte[] data, Charset csRead, Class<CharacterCodingException> expected)
+            throws IOException {
+        Path path = Files.createTempFile("illegalInputBytes", null);
         path.toFile().deleteOnExit();
         Files.write(path, data, CREATE);
-        if (csRead == null) {
-            Files.readString(path);
-        } else {
+        try {
             Files.readString(path, csRead);
+        } catch (MalformedInputException | UnmappableCharacterException e) {
+            if (expected.isInstance(e)) {
+                // success
+                return;
+            }
         }
+        throw new RuntimeException("An instance of " + expected + " should be thrown");
     }
 
     private void checkNullPointerException(Callable<?> c) {
