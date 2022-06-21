@@ -139,6 +139,26 @@ public class TestSegmentAllocators {
         SegmentAllocator.newNativeArena( -1, MemorySession.global());
     }
 
+    @Test(dataProvider = "allocators", expectedExceptions = IllegalArgumentException.class)
+    public void testBadAllocationSize(SegmentAllocator allocator) {
+        allocator.allocate(-1);
+    }
+
+    @Test(dataProvider = "allocators", expectedExceptions = IllegalArgumentException.class)
+    public void testBadAllocationAlignZero(SegmentAllocator allocator) {
+        allocator.allocate(1, 0);
+    }
+
+    @Test(dataProvider = "allocators", expectedExceptions = IllegalArgumentException.class)
+    public void testBadAllocationAlignNeg(SegmentAllocator allocator) {
+        allocator.allocate(1, -1);
+    }
+
+    @Test(dataProvider = "allocators", expectedExceptions = IllegalArgumentException.class)
+    public void testBadAllocationAlignNotPowerTwo(SegmentAllocator allocator) {
+        allocator.allocate(1, 3);
+    }
+
     @Test(dataProvider = "arrayAllocations")
     public <Z> void testArray(AllocationFactory allocationFactory, ValueLayout layout, AllocationFunction<Object, ValueLayout> allocationFunction, ToArrayHelper<Z> arrayHelper) {
         Z arr = arrayHelper.array();
@@ -442,6 +462,15 @@ public class TestSegmentAllocators {
             private MemoryAddress[] wrap(long[] ints) {
                 return LongStream.of(ints).mapToObj(MemoryAddress::ofLong).toArray(MemoryAddress[]::new);
             }
+        };
+    }
+
+    @DataProvider(name = "allocators")
+    static Object[][] allocators() {
+        return new Object[][] {
+                { SegmentAllocator.implicitAllocator() },
+                { SegmentAllocator.newNativeArena(MemorySession.global()) },
+                { SegmentAllocator.prefixAllocator(MemorySegment.allocateNative(10, MemorySession.global())) },
         };
     }
 }
