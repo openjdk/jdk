@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,6 +87,7 @@ public class AppImagePackageTest {
                 cmd.addArguments("--icon", iconPath("icon"));
             }
             cmd.removeArgumentWithValue("--input");
+            cmd.createJPackageXMLFile("EmptyAppImagePackageTest", "Hello");
 
             // on mac, with --app-image and without --mac-package-identifier,
             // will try to infer it from the image, so foreign image needs it.
@@ -101,4 +102,5 @@ public class AppImagePackageTest {
         return TKit.TEST_SRC_ROOT.resolve(Path.of("resources", name
                 + TKit.ICON_SUFFIX));
     }
+
 }

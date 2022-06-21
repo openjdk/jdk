@@ -153,10 +153,7 @@ public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegm
 
     @Override
     public MemorySegment allocate(long bytesSize, long bytesAlignment) {
-        if (bytesAlignment <= 0 ||
-                ((bytesAlignment & (bytesAlignment - 1)) != 0L)) {
-            throw new IllegalArgumentException("Invalid alignment constraint : " + bytesAlignment);
-        }
+        Utils.checkAllocationSizeAndAlign(bytesSize, bytesAlignment);
         return asSlice(0, bytesSize);
     }
 
