@@ -26,8 +26,9 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.MalformedInputException;
 import java.nio.charset.UnmappableCharacterException;
-import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.nio.charset.StandardCharsets.US_ASCII;
+import static java.nio.charset.StandardCharsets.UTF_16;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import java.nio.file.Files;
 import java.nio.file.OpenOption;
@@ -46,7 +47,7 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 /* @test
- * @bug 8201276 8205058 8209576 8287541
+ * @bug 8201276 8205058 8209576 8287541 8288589
  * @build ReadWriteString PassThroughFileSystem
  * @run testng ReadWriteString
  * @summary Unit test for methods for Files readString and write methods.
@@ -60,6 +61,7 @@ public class ReadWriteString {
     final String TEXT_UNICODE = "\u201CHello\u201D";
     final String TEXT_ASCII = "ABCDEFGHIJKLMNOPQRSTUVWXYZ\n abcdefghijklmnopqrstuvwxyz\n 1234567890\n";
     private static final String JA_STRING = "\u65e5\u672c\u8a9e\u6587\u5b57\u5217";
+    private static final byte[] MALFORMED_UTF16 = {(byte)0x00, (byte)0x20, (byte)0x00};
 
     static byte[] data = getData();
 
@@ -109,6 +111,17 @@ public class ReadWriteString {
         return new Object[][]{
             {path, data, ISO_8859_1, null},
             {path, data, ISO_8859_1, UTF_8}
+        };
+    }
+
+    /*
+     * DataProvider for illegal input bytes test
+     */
+    @DataProvider(name = "illegalInputBytes")
+    public Object[][] getIllegalInputBytes() throws IOException {
+        Path path = Files.createTempFile("illegalInputBytes", null);
+        return new Object[][]{
+            {path, MALFORMED_UTF16, UTF_16},
         };
     }
 
@@ -264,6 +277,26 @@ public class ReadWriteString {
         path.toFile().deleteOnExit();
         String temp = new String(data, csWrite);
         Files.writeString(path, temp, csWrite, CREATE);
+        if (csRead == null) {
+            Files.readString(path);
+        } else {
+            Files.readString(path, csRead);
+        }
+    }
+
+    /**
+     * Verifies that IOException is thrown when reading a file containing
+     * illegal bytes
+     *
+     * @param path the path to write and read
+     * @param data the data used for the test
+     * @param csRead the Charset to use for reading the file
+     * @throws IOException when the Charset used for reading the file is incorrect
+     */
+    @Test(dataProvider = "illegalInputBytes", expectedExceptions = MalformedInputException.class)
+    public void testMalformedReadBytes(Path path, byte[] data, Charset csRead) throws IOException {
+        path.toFile().deleteOnExit();
+        Files.write(path, data, CREATE);
         if (csRead == null) {
             Files.readString(path);
         } else {
