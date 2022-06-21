@@ -2685,9 +2685,7 @@ bool G1CollectedHeap::is_potential_eager_reclaim_candidate(HeapRegion* r) const 
   // the assumption that such objects are likely still live.
   HeapRegionRemSet* rem_set = r->rem_set();
 
-  return G1EagerReclaimHumongousObjectsWithStaleRefs ?
-         rem_set->occupancy_less_or_equal_than(G1EagerReclaimRemSetThreshold) :
-         G1EagerReclaimHumongousObjects && rem_set->is_empty();
+  return rem_set->occupancy_less_or_equal_than(G1EagerReclaimRemSetThreshold);
 }
 
 #ifndef PRODUCT
@@ -2921,18 +2919,6 @@ void G1CollectedHeap::make_pending_list_reachable() {
       _cm->mark_in_next_bitmap(0 /* worker_id */, pll_head);
     }
   }
-}
-
-static bool do_humongous_object_logging() {
-  return log_is_enabled(Debug, gc, humongous);
-}
-
-bool G1CollectedHeap::should_do_eager_reclaim() const {
-  // As eager reclaim logging also gives information about humongous objects in
-  // the heap in general, always do the eager reclaim pass even without known
-  // candidates.
-  return (G1EagerReclaimHumongousObjects &&
-          (has_humongous_reclaim_candidates() || do_humongous_object_logging()));
 }
 
 void G1CollectedHeap::set_humongous_stats(uint num_humongous_total, uint num_humongous_candidates) {

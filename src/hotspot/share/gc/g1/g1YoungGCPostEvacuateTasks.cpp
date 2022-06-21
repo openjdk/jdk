@@ -280,8 +280,6 @@ public:
     g1h->decrement_summary_bytes(_bytes_freed);
   }
 
-  static bool should_execute() {   return G1CollectedHeap::heap()->should_do_eager_reclaim(); }
-
   double worker_cost() const override { return 1.0; }
   void do_work(uint worker_id) override {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
@@ -673,9 +671,7 @@ G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2
 #if COMPILER2_OR_JVMCI
   add_serial_task(new UpdateDerivedPointersTask());
 #endif
-  if (EagerlyReclaimHumongousObjectsTask::should_execute()) {
-    add_serial_task(new EagerlyReclaimHumongousObjectsTask());
-  }
+  add_serial_task(new EagerlyReclaimHumongousObjectsTask());
 
   if (evac_failure_regions->evacuation_failed()) {
     add_parallel_task(new RestorePreservedMarksTask(per_thread_states->preserved_marks_set()));
