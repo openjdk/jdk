@@ -27,17 +27,20 @@
 
 #include "runtime/continuationEntry.hpp"
 
-#include "oops/access.hpp"
+#include "gc/shared/collectedHeap.hpp"
+#include "memory/universe.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
-#if INCLUDE_ZGC
-#include "gc/z/zHeap.inline.hpp"
-#endif
+#include "runtime/thread.hpp"
 
 #include CPU_HEADER_INLINE(continuationEntry)
 
 inline bool is_stack_watermark_processed(const JavaThread* thread, const void* addr) {
   StackWatermark* sw = StackWatermarkSet::get(const_cast<JavaThread*>(thread), StackWatermarkKind::gc);
-  assert(sw != nullptr, "Wrong GC");
+
+  if (sw == nullptr) {
+    // No stale processing without stack watermarks
+    return true;
+  }
 
   if (!sw->processing_started()) {
     return false;
@@ -53,13 +56,9 @@ inline bool is_stack_watermark_processed(const JavaThread* thread, const void* a
 }
 
 inline oop ContinuationEntry::cont_oop(const JavaThread* thread) const {
-#if INCLUDE_ZGC
-  if (UseZGC) {
-    assert(!ZHeap::heap()->is_in((uintptr_t)(void*)&_cont), "Should not be in the heap");
-    assert(is_stack_watermark_processed(thread != nullptr ? thread : JavaThread::current(), &_cont), "Not processed");
-  }
-#endif
-  return RawAccess<>::oop_load((oop*)&_cont);
+  assert(!Universe::heap()->is_in((void*)&_cont), "Should not be in the heap");
+  assert(is_stack_watermark_processed(thread != nullptr ? thread : JavaThread::current(), &_cont), "Not processed");
+  return *(oop*)&_cont;
 }
 
 
