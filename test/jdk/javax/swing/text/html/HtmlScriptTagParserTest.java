@@ -40,9 +40,9 @@ import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 
 public class HtmlScriptTagParserTest {
-    private static String instructionsText = "Pass if you can see the script " +
-            "and foo tags and its contents as text in editable JTextFields " +
-            "and JTextAreas in the frame. Fail if this is not shown.";
+    private static final String instructionsText = "Pass if you can see the " +
+            "script and foo tags and its contents as text in editable " +
+            "JTextFields and JTextAreas in the frame. Fail if this is not shown.";
 
     private static final String htmlText = "<!DOCTYPE html> <html> <head> " +
             "<title>Title</title> </head> <body> <script>function foo() " +
