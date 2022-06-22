@@ -23,7 +23,6 @@
 
 /*
  * @test
- * @key headful
  * @bug 4422535
  * @summary setCurrentAccessibleValue returns true only for an Integer
  * @run main SetCurrentAccessibleValueTest
