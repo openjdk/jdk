@@ -28,6 +28,7 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.DatagramChannel;
+import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 
 import static java.lang.Thread.sleep;
@@ -60,6 +61,8 @@ public class InterruptibleDatagramSocket {
         latch.countDown();
         try {
             s.receive(p);
+            System.out.println("Received data " + Arrays.toString(p.getData())
+                    + " from " + p.getSocketAddress());
         } finally {
             try {
                 coordinator.join();
@@ -95,12 +98,17 @@ public class InterruptibleDatagramSocket {
 
     public static void main(String[] args) throws Exception {
         try (DatagramSocket s = new DatagramSocket()) {
+            System.out.println("Established uninterruptible datagram socket "
+                    + s.getLocalSocketAddress());
             test(s, false);
         }
         try (DatagramSocket s = new MulticastSocket()) {
+            System.out.println("Established uninterruptible multicast socket "
+                    + s.getLocalSocketAddress());
             test(s, false);
         }
         try (DatagramSocket s = DatagramChannel.open().socket()) {
+            System.out.println("Established interruptible datagram socket");
             test(s, true);
         }
     }
