@@ -1052,10 +1052,23 @@ void G1ConcurrentMark::mark_from_roots() {
   print_stats();
 }
 
-void G1ConcurrentMark::verify_during_pause(G1HeapVerifier::G1VerifyType type, VerifyOption vo, const char* caller) {
+const char* G1ConcurrentMark::verify_location_string(VerifyLocation location) {
+  static const char* location_strings[] = { "Remark Before",
+                                            "Remark After",
+                                            "Remark Overflow",
+                                            "Cleanup Before",
+                                            "Cleanup After" };
+  return location_strings[static_cast<std::underlying_type_t<VerifyLocation>>(location)];
+}
+
+void G1ConcurrentMark::verify_during_pause(G1HeapVerifier::G1VerifyType type,
+                                           VerifyOption vo,
+                                           VerifyLocation location) {
   G1HeapVerifier* verifier = _g1h->verifier();
 
   verifier->verify_region_sets_optional();
+
+  const char* caller = verify_location_string(location);
 
   if (VerifyDuringGC) {
     GCTraceTime(Debug, gc, phases) debug(caller, _gc_timer_cm);
@@ -1065,9 +1078,13 @@ void G1ConcurrentMark::verify_during_pause(G1HeapVerifier::G1VerifyType type, Ve
 
     jio_snprintf(buffer, BufLen, "During GC (%s)", caller);
     verifier->verify(type, vo, buffer);
-  }
 
-  verifier->check_bitmaps(caller);
+    // Only check bitmap in Remark, and not at After-Verification because the regions
+    // already have their TAMS'es reset.
+    if (location != VerifyLocation::RemarkAfter) {
+      verifier->verify_bitmap_clear(true /* above_tams_only */);
+    }
+  }
 }
 
 class G1UpdateRemSetTrackingBeforeRebuildTask : public WorkerTask {
@@ -1150,8 +1167,8 @@ class G1UpdateRemSetTrackingBeforeRebuildTask : public WorkerTask {
     }
 
     void add_marked_bytes_and_note_end(HeapRegion* hr, size_t marked_bytes) {
-      _cl->do_heap_region(hr);
       hr->note_end_of_marking(marked_bytes);
+      _cl->do_heap_region(hr);
     }
 
   public:
@@ -1215,7 +1232,7 @@ void G1ConcurrentMark::remark() {
 
   double start = os::elapsedTime();
 
-  verify_during_pause(G1HeapVerifier::G1VerifyRemark, VerifyOption::G1UseConcMarking, "Remark before");
+  verify_during_pause(G1HeapVerifier::G1VerifyRemark, VerifyOption::G1UseConcMarking, VerifyLocation::RemarkBefore);
 
   {
     GCTraceTime(Debug, gc, phases) debug("Finalize Marking", _gc_timer_cm);
@@ -1239,6 +1256,10 @@ void G1ConcurrentMark::remark() {
       GCTraceTime(Debug, gc, phases) debug("Flush Task Caches", _gc_timer_cm);
       flush_all_task_caches();
     }
+
+    // All marking completed. Check bitmap now as we will start to reset TAMSes
+    // in parallel below so that we can not do this in the After-Remark verification.
+    _g1h->verifier()->verify_bitmap_clear(true /* above_tams_only */);
 
     {
       GCTraceTime(Debug, gc, phases) debug("Update Remembered Set Tracking Before Rebuild", _gc_timer_cm);
@@ -1272,16 +1293,16 @@ void G1ConcurrentMark::remark() {
 
     compute_new_sizes();
 
-    verify_during_pause(G1HeapVerifier::G1VerifyRemark, VerifyOption::G1UseConcMarking, "Remark after");
+    verify_during_pause(G1HeapVerifier::G1VerifyRemark, VerifyOption::G1UseConcMarking, VerifyLocation::RemarkAfter);
 
     assert(!restart_for_overflow(), "sanity");
-    // Completely reset the marking state since marking completed
+    // Completely reset the marking state (except bitmaps) since marking completed.
     reset_at_marking_complete();
   } else {
     // We overflowed.  Restart concurrent marking.
     _restart_for_overflow = true;
 
-    verify_during_pause(G1HeapVerifier::G1VerifyRemark, VerifyOption::G1UseConcMarking, "Remark overflow");
+    verify_during_pause(G1HeapVerifier::G1VerifyRemark, VerifyOption::G1UseConcMarking, VerifyLocation::RemarkOverflow);
 
     // Clear the marking state because we will be restarting
     // marking due to overflowing the global mark stack.
@@ -1427,7 +1448,7 @@ void G1ConcurrentMark::cleanup() {
 
   double start = os::elapsedTime();
 
-  verify_during_pause(G1HeapVerifier::G1VerifyCleanup, VerifyOption::G1UseConcMarking, "Cleanup before");
+  verify_during_pause(G1HeapVerifier::G1VerifyCleanup, VerifyOption::G1UseConcMarking, VerifyLocation::CleanupBefore);
 
   if (needs_remembered_set_rebuild()) {
     // Update the remset tracking information as well as marking all regions
@@ -1439,9 +1460,8 @@ void G1ConcurrentMark::cleanup() {
     log_debug(gc, phases)("No Remembered Sets to update after rebuild");
   }
 
-  verify_during_pause(G1HeapVerifier::G1VerifyCleanup, VerifyOption::G1UseConcMarking, "Cleanup after");
+  verify_during_pause(G1HeapVerifier::G1VerifyCleanup, VerifyOption::G1UseConcMarking, VerifyLocation::CleanupAfter);
 
-  _g1h->collector_state()->set_clearing_bitmap(true);
   // We need to make this be a "collection" so any collection pause that
   // races with it goes around and waits for Cleanup to finish.
   _g1h->increment_total_collections();
@@ -1778,8 +1798,7 @@ class G1RemarkThreadsClosure : public ThreadClosure {
         // * Weakly reachable otherwise
         // Some objects reachable from nmethods, such as the class loader (or klass_holder) of the receiver should be
         // live by the SATB invariant but other oops recorded in nmethods may behave differently.
-        //JavaThread::cast(thread)->nmethods_do(&_code_cl);
-        JavaThread::cast(thread)->oops_do_frames(&_cm_cl, &_code_cl);
+        JavaThread::cast(thread)->nmethods_do(&_code_cl);
       }
     }
   }
@@ -2001,7 +2020,7 @@ void G1ConcurrentMark::print_stats() {
   }
 }
 
-bool G1ConcurrentMark::concurrent_cycle_abort() {
+void G1ConcurrentMark::concurrent_cycle_abort() {
   // We haven't started a concurrent cycle no need to do anything; we might have
   // aborted the marking because of shutting down though. In this case the marking
   // might have already completed the abort (leading to in_progress() below to
@@ -2012,7 +2031,12 @@ bool G1ConcurrentMark::concurrent_cycle_abort() {
   // has been signalled is already rare), and this work should be negligible compared
   // to actual full gc work.
   if (!cm_thread()->in_progress() && !_g1h->concurrent_mark_is_terminating()) {
-    return false;
+    return;
+  }
+
+  {
+    GCTraceTime(Debug, gc) debug("Clear Bitmap");
+    clear_bitmap(_g1h->workers());
   }
 
   // Empty mark stack
@@ -2027,10 +2051,8 @@ bool G1ConcurrentMark::concurrent_cycle_abort() {
   satb_mq_set.abandon_partial_marking();
   // This can be called either during or outside marking, we'll read
   // the expected_active value from the SATB queue set.
-  satb_mq_set.set_active_all_threads(
-                                 false, /* new active value */
-                                 satb_mq_set.is_active() /* expected_active */);
-  return true;
+  satb_mq_set.set_active_all_threads(false, /* new active value */
+                                     satb_mq_set.is_active() /* expected_active */);
 }
 
 void G1ConcurrentMark::abort_marking_threads() {

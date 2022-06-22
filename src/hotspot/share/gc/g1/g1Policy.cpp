@@ -1139,6 +1139,7 @@ void G1Policy::record_concurrent_mark_cleanup_end(bool has_rebuilt_remembered_se
   }
   collector_state()->set_in_young_gc_before_mixed(mixed_gc_pending);
   collector_state()->set_mark_or_rebuild_in_progress(false);
+  collector_state()->set_clearing_bitmap(true);
 
   double end_sec = os::elapsedTime();
   double elapsed_time_ms = (end_sec - _mark_cleanup_start_sec) * 1000.0;

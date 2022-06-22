@@ -285,8 +285,6 @@ G1CollectedHeap::humongous_obj_allocate_initialize_regions(HeapRegion* first_hr,
   assert(hr->bottom() < obj_top && obj_top <= hr->end(),
          "obj_top should be in last region");
 
-  _verifier->check_bitmaps("Humongous Region Allocation", first_hr);
-
   assert(words_not_fillable == 0 ||
          first_hr->bottom() + word_size_sum - words_not_fillable == hr->top(),
          "Miscalculation in humongous allocation");
@@ -985,7 +983,7 @@ void G1CollectedHeap::print_heap_after_full_collection() {
   }
 }
 
-bool G1CollectedHeap::abort_concurrent_cycle() {
+void G1CollectedHeap::abort_concurrent_cycle() {
   // If we start the compaction before the CM threads finish
   // scanning the root regions we might trip them over as we'll
   // be moving objects / updating references. So let's wait until
@@ -1002,7 +1000,7 @@ bool G1CollectedHeap::abort_concurrent_cycle() {
 
   // Abandon current iterations of concurrent marking and concurrent
   // refinement, if any are in progress.
-  return concurrent_mark()->concurrent_cycle_abort();
+  concurrent_mark()->concurrent_cycle_abort();
 }
 
 void G1CollectedHeap::prepare_heap_for_full_collection() {
@@ -1027,7 +1025,7 @@ void G1CollectedHeap::verify_before_full_collection(bool explicit_gc) {
   }
   _verifier->verify_region_sets_optional();
   _verifier->verify_before_gc(G1HeapVerifier::G1VerifyFull);
-  _verifier->check_bitmaps("Full GC Start");
+  _verifier->verify_bitmap_clear(false /* above_tams_only */);
 }
 
 void G1CollectedHeap::prepare_heap_for_mutators() {
@@ -1076,9 +1074,7 @@ void G1CollectedHeap::verify_after_full_collection() {
   _hrm.verify_optional();
   _verifier->verify_region_sets_optional();
   _verifier->verify_after_gc(G1HeapVerifier::G1VerifyFull);
-
-  // This call implicitly verifies that the marking bitmap is cleared after Full GC.
-  _verifier->check_bitmaps("Full GC End");
+  _verifier->verify_bitmap_clear(false /* above_tams_only */);
 
   // At this point there should be no regions in the
   // entire heap tagged as young.
@@ -2753,7 +2749,6 @@ void G1CollectedHeap::verify_before_young_collection(G1HeapVerifier::G1VerifyTyp
     heap_region_iterate(&v_cl);
   }
   _verifier->verify_before_gc(type);
-  _verifier->check_bitmaps("GC Start");
   verify_numa_regions("GC Start");
   phase_times()->record_verify_before_time_ms((Ticks::now() - start).seconds() * MILLIUNITS);
 }
@@ -2769,7 +2764,6 @@ void G1CollectedHeap::verify_after_young_collection(G1HeapVerifier::G1VerifyType
     heap_region_iterate(&v_cl);
   }
   _verifier->verify_after_gc(type);
-  _verifier->check_bitmaps("GC End");
   verify_numa_regions("GC End");
   _verifier->verify_region_sets_optional();
   phase_times()->record_verify_after_time_ms((Ticks::now() - start).seconds() * MILLIUNITS);
@@ -2878,6 +2872,7 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
   // without its logging output interfering with the logging output
   // that came from the pause.
   if (should_start_concurrent_mark_operation) {
+    verifier()->verify_bitmap_clear(true /* above_tams_only */);
     // CAUTION: after the start_concurrent_cycle() call below, the concurrent marking
     // thread(s) could be running concurrently with us. Make sure that anything
     // after this point does not assume that we are the only GC thread running.
@@ -3209,7 +3204,6 @@ HeapRegion* G1CollectedHeap::new_mutator_alloc_region(size_t word_size,
     if (new_alloc_region != NULL) {
       set_region_short_lived_locked(new_alloc_region);
       _hr_printer.alloc(new_alloc_region, !should_allocate);
-      _verifier->check_bitmaps("Mutator Region Allocation", new_alloc_region);
       _policy->remset_tracker()->update_at_allocate(new_alloc_region);
       return new_alloc_region;
     }
@@ -3266,11 +3260,9 @@ HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size, G1HeapRegionA
     if (type.is_survivor()) {
       new_alloc_region->set_survivor();
       _survivor.add(new_alloc_region);
-      _verifier->check_bitmaps("Survivor Region Allocation", new_alloc_region);
       register_new_survivor_region_with_region_attr(new_alloc_region);
     } else {
       new_alloc_region->set_old();
-      _verifier->check_bitmaps("Old Region Allocation", new_alloc_region);
     }
     _policy->remset_tracker()->update_at_allocate(new_alloc_region);
     register_region_with_region_attr(new_alloc_region);

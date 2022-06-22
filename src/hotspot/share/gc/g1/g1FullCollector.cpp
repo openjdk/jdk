@@ -171,25 +171,8 @@ public:
 void G1FullCollector::prepare_collection() {
   _heap->policy()->record_full_collection_start();
 
-  bool aborted = _heap->abort_concurrent_cycle();
-  // Verification needs the marks/parsable_bottom (pb) values intact, so only clear
-  // the bitmap after verification if required.
-  // If we abort during marking, since pb is at bottom, verification won't use the
-  // marks below tams. This is fine because the heap is still parsable (only filler
-  // objects are dead then).
-  // During remset rebuild and scrubbing we need to use the marks and pb to find
-  // dead objects and parse the heap as we unloaded classes earlier.
-  // After remset rebuild, the situation is mostly the same as during marking: pb
-  // is at bottom of the regions and the heap is parsable. We may have extra marks
-  // above tams (as it has been reset to bottom earlier) though. In that case we
-  // simply do not check the marks above tams.
+  _heap->abort_concurrent_cycle();
   _heap->verify_before_full_collection(scope()->is_explicit_gc());
-  if (aborted) {
-    // Clear all marks in the next bitmap for this full gc as it has been in use
-    // by the concurrent cycle that is interrupted by this full gc.
-    GCTraceTime(Debug, gc) debug("Clear Bitmap");
-    _heap->concurrent_mark()->clear_bitmap(_heap->workers());
-  }
 
   _heap->gc_prologue(true);
   _heap->retire_tlabs();

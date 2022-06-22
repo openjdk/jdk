@@ -595,6 +595,30 @@ void G1HeapVerifier::verify_after_gc(G1VerifyType type) {
   verify(type, VerifyOption::G1UseConcMarking, "After GC");
 }
 
+void G1HeapVerifier::verify_bitmap_clear(bool from_tams) {
+  if (!G1VerifyBitmaps) {
+    return;
+  }
+
+  class G1VerifyBitmapClear : public HeapRegionClosure {
+    bool _from_tams;
+
+  public:
+    G1VerifyBitmapClear(bool from_tams) : _from_tams(from_tams) { }
+
+    virtual bool do_heap_region(HeapRegion* r) {
+      G1CMBitMap* bitmap = G1CollectedHeap::heap()->concurrent_mark()->mark_bitmap();
+
+      HeapWord* start = _from_tams ? r->top_at_mark_start() : r->bottom();
+
+      HeapWord* mark = bitmap->get_next_marked_addr(start, r->end());
+      guarantee(mark == r->end(), "Found mark at " PTR_FORMAT " in region %u from start " PTR_FORMAT, p2i(mark), r->hrm_index(), p2i(start));
+      return false;
+    }
+  } cl(from_tams);
+
+  G1CollectedHeap::heap()->heap_region_iterate(&cl);
+}
 
 #ifndef PRODUCT
 class G1VerifyCardTableCleanup: public HeapRegionClosure {
@@ -657,79 +681,6 @@ public:
 void G1HeapVerifier::verify_dirty_young_regions() {
   G1VerifyDirtyYoungListClosure cl(this);
   _g1h->collection_set()->iterate(&cl);
-}
-
-bool G1HeapVerifier::verify_no_bits_over_threshold(const G1CMBitMap* const bitmap,
-                                              HeapWord* tams, HeapWord* end) {
-  guarantee(tams <= end,
-            "tams: " PTR_FORMAT " end: " PTR_FORMAT, p2i(tams), p2i(end));
-  HeapWord* result = bitmap->get_next_marked_addr(tams, end);
-  if (result < end) {
-    log_error(gc, verify)("## wrong marked address on bitmap: " PTR_FORMAT, p2i(result));
-    log_error(gc, verify)("## tams: " PTR_FORMAT " end: " PTR_FORMAT, p2i(tams), p2i(end));
-    return false;
-  }
-  return true;
-}
-
-bool G1HeapVerifier::verify_bitmaps(const char* caller, HeapRegion* hr) {
-  const G1CMBitMap* const bitmap = _g1h->concurrent_mark()->mark_bitmap();
-
-  // We reset TAMS to bottom after Remark, keeping PB as indicator of up to where
-  // marks should be used (and are valid).
-  HeapWord* threshold = MAX2(hr->top_at_mark_start(), hr->parsable_bottom());
-
-  HeapWord* end = hr->end();
-
-  // We cannot verify the marking bitmap while we are clearing it.
-  if (!_g1h->collector_state()->clearing_bitmap()) {
-    bool result = verify_no_bits_over_threshold(bitmap, threshold, end);
-    if (!result) {
-      log_error(gc, verify)("#### Bitmap verification failed for " HR_FORMAT, HR_FORMAT_PARAMS(hr));
-      log_error(gc, verify)("#### Caller: %s", caller);
-      return false;
-    }
-  }
-  return true;
-}
-
-void G1HeapVerifier::check_bitmaps(const char* caller, HeapRegion* hr) {
-  if (!G1VerifyBitmaps) {
-    return;
-  }
-
-  guarantee(verify_bitmaps(caller, hr), "bitmap verification");
-}
-
-class G1VerifyBitmapClosure : public HeapRegionClosure {
-private:
-  const char* _caller;
-  G1HeapVerifier* _verifier;
-  bool _failures;
-
-public:
-  G1VerifyBitmapClosure(const char* caller, G1HeapVerifier* verifier) :
-    _caller(caller), _verifier(verifier), _failures(false) { }
-
-  bool failures() { return _failures; }
-
-  virtual bool do_heap_region(HeapRegion* hr) {
-    bool result = _verifier->verify_bitmaps(_caller, hr);
-    if (!result) {
-      _failures = true;
-    }
-    return false;
-  }
-};
-
-void G1HeapVerifier::check_bitmaps(const char* caller) {
-  if (!G1VerifyBitmaps) {
-    return;
-  }
-
-  G1VerifyBitmapClosure cl(caller, this);
-  _g1h->heap_region_iterate(&cl);
-  guarantee(!cl.failures(), "bitmap verification");
 }
 
 class G1CheckRegionAttrTableClosure : public HeapRegionClosure {

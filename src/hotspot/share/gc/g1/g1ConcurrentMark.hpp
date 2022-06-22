@@ -356,7 +356,17 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   uint      _num_concurrent_workers; // The number of marking worker threads we're using
   uint      _max_concurrent_workers; // Maximum number of marking worker threads
 
-  void verify_during_pause(G1HeapVerifier::G1VerifyType type, VerifyOption vo, const char* caller);
+  enum class VerifyLocation {
+    RemarkBefore,
+    RemarkAfter,
+    RemarkOverflow,
+    CleanupBefore,
+    CleanupAfter
+  };
+  static const char* verify_location_string(VerifyLocation location);
+  void verify_during_pause(G1HeapVerifier::G1VerifyType type,
+                           VerifyOption vo,
+                           VerifyLocation location);
 
   void finalize_marking();
 
@@ -491,9 +501,8 @@ public:
   G1CMRootMemRegions* root_regions() { return &_root_regions; }
 
   void concurrent_cycle_start();
-  // Abandon current marking iteration due to a Full GC. Returns true if we had to
-  // actually abort the concurrent cycle.
-  bool concurrent_cycle_abort();
+  // Abandon current marking iteration due to a Full GC.
+  void concurrent_cycle_abort();
   void concurrent_cycle_end();
 
   // Notifies marking threads to abort. This is a best-effort notification. Does not

@@ -1283,7 +1283,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
       // A clear bitmap is obvious for young regions as we never mark through them;
       // old regions are only in the collection set after the concurrent cycle completed,
       // so their bitmaps must also be clear except when the pause occurs during the
-      // concurrent bitmap clear. At that point the region's bitmap may contain mark
+      // concurrent bitmap clear. At that point the region's bitmap may contain marks
       // while being in the collection set at the same time.
       if (_g1h->collector_state()->clearing_bitmap() && hr->is_old()) {
         _g1h->clear_bitmap_for_region(hr);

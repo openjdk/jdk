@@ -178,7 +178,6 @@ public:
     hr->rem_set()->clear_locked(true);
 
     hr->note_self_forwarding_removal_end(live_bytes);
-    _g1h->verifier()->check_bitmaps("Self-Forwarding Ptr Removal", hr);
 
     return false;
   }
