@@ -34,6 +34,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xmixed -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:TypeProfileLevel=020
+ *                   -XX:+UnlockExperimentalVMOptions -XX:PerMethodSpecTrapLimit=5000 -XX:PerMethodTrapLimit=100
  *                   compiler.arraycopy.TestArrayCopyNoInitDeopt
  */
 
