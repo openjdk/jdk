@@ -33,6 +33,7 @@
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahNMethod.inline.hpp"
+#include "memory/iterator.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/thread.hpp"

@@ -147,7 +147,8 @@ void JvmtiTagMap::check_hashmap(bool post_events) {
   if (_needs_cleaning &&
       post_events &&
       env()->is_enabled(JVMTI_EVENT_OBJECT_FREE)) {
-    remove_dead_entries_locked(true /* post_object_free */);
+    GrowableArray<jlong> objects;
+    remove_dead_entries_locked(&objects);
   }
   if (_needs_rehashing) {
     log_info(jvmti, table)("TagMap table needs rehashing");
@@ -1167,30 +1168,34 @@ void JvmtiTagMap::iterate_through_heap(jint heap_filter,
   VMThread::execute(&op);
 }
 
-void JvmtiTagMap::remove_dead_entries_locked(bool post_object_free) {
+void JvmtiTagMap::remove_dead_entries_locked(GrowableArray<jlong>* objects) {
   assert(is_locked(), "precondition");
   if (_needs_cleaning) {
     // Recheck whether to post object free events under the lock.
-    post_object_free = post_object_free && env()->is_enabled(JVMTI_EVENT_OBJECT_FREE);
+    if (!env()->is_enabled(JVMTI_EVENT_OBJECT_FREE)) {
+      objects = NULL;
+    }
     log_info(jvmti, table)("TagMap table needs cleaning%s",
-                           (post_object_free ? " and posting" : ""));
-    hashmap()->remove_dead_entries(env(), post_object_free);
+                           ((objects != NULL) ? " and posting" : ""));
+    hashmap()->remove_dead_entries(objects);
     _needs_cleaning = false;
   }
 }
 
-void JvmtiTagMap::remove_dead_entries(bool post_object_free) {
+void JvmtiTagMap::remove_dead_entries(GrowableArray<jlong>* objects) {
   MutexLocker ml(lock(), Mutex::_no_safepoint_check_flag);
-  remove_dead_entries_locked(post_object_free);
+  remove_dead_entries_locked(objects);
 }
 
-class VM_JvmtiPostObjectFree: public VM_Operation {
+class VM_JvmtiCollectFreedObject: public VM_Operation {
   JvmtiTagMap* _tag_map;
+  GrowableArray<jlong>* _objects;
  public:
-  VM_JvmtiPostObjectFree(JvmtiTagMap* tag_map) : _tag_map(tag_map) {}
+    VM_JvmtiCollectFreedObject(JvmtiTagMap* tag_map, GrowableArray<jlong>* objects) :
+      _tag_map(tag_map), _objects(objects) {}
   VMOp_Type type() const { return VMOp_Cleanup; }
   void doit() {
-    _tag_map->remove_dead_entries(true /* post_object_free */);
+    _tag_map->remove_dead_entries(_objects);
   }
 
   // Doesn't need a safepoint, just the VM thread
@@ -1198,9 +1203,14 @@ class VM_JvmtiPostObjectFree: public VM_Operation {
 };
 
 // PostObjectFree can't be called by JavaThread, so call it from the VM thread.
-void JvmtiTagMap::post_dead_objects_on_vm_thread() {
-  VM_JvmtiPostObjectFree op(this);
+void JvmtiTagMap::post_dead_objects() {
+  GrowableArray<jlong> objects;
+  VM_JvmtiCollectFreedObject op(this, &objects);
   VMThread::execute(&op);
+
+  for (int index = 0; index < objects.length(); index++) {
+    JvmtiExport::post_object_free(env(), objects.at(index));
+  }
 }
 
 void JvmtiTagMap::flush_object_free_events() {
@@ -1215,9 +1225,9 @@ void JvmtiTagMap::flush_object_free_events() {
     } // Drop the lock so we can do the cleaning on the VM thread.
     // Needs both cleaning and event posting (up to some other thread
     // getting there first after we dropped the lock).
-    post_dead_objects_on_vm_thread();
+    post_dead_objects();
   } else {
-    remove_dead_entries(false);
+    remove_dead_entries(NULL);
   }
 }
 
@@ -1330,7 +1340,7 @@ jvmtiError JvmtiTagMap::get_objects_with_tags(const jlong* tags,
     entry_iterate(&collector);
   }
   if (collector.some_dead_found() && env()->is_enabled(JVMTI_EVENT_OBJECT_FREE)) {
-    post_dead_objects_on_vm_thread();
+    post_dead_objects();
   }
   return collector.result(count_ptr, object_result_ptr, tag_result_ptr);
 }

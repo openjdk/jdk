@@ -289,7 +289,7 @@ public final class EventControl {
                 if (value == null) {
                     value = nc.control.getDefaultValue();
                 }
-                if (ActiveSettingEvent.EVENT.isEnabled()) {
+                if (ActiveSettingEvent.enabled()) {
                     ActiveSettingEvent.commit(timestamp, 0L, type.getId(), nc.name(), value);
                 }
             }

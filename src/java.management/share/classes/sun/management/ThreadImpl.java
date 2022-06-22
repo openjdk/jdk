@@ -31,7 +31,6 @@ import java.lang.management.ThreadMXBean;
 import java.util.stream.Stream;
 import javax.management.ObjectName;
 import java.util.Objects;
-import sun.management.Util;
 
 /**
  * Implementation for java.lang.management.ThreadMXBean as well as providing the
@@ -222,7 +221,7 @@ public class ThreadImpl implements ThreadMXBean {
 
     private boolean verifyCurrentThreadCpuTime() {
         // check if Thread CPU time measurement is supported.
-        if (Util.isVirtual(Thread.currentThread())) {
+        if (Thread.currentThread().isVirtual()) {
             throw new UnsupportedOperationException("Not supported by virtual threads");
         }
         if (!isCurrentThreadCpuTimeSupported()) {
@@ -284,7 +283,7 @@ public class ThreadImpl implements ThreadMXBean {
                 long id = ids[0];
                 Thread thread = Thread.currentThread();
                 if (id == thread.threadId()) {
-                    if (Util.isVirtual(thread)) {
+                    if (thread.isVirtual()) {
                         times[0] = -1;
                     } else {
                         times[0] = getThreadTotalCpuTime0(0);
@@ -327,7 +326,7 @@ public class ThreadImpl implements ThreadMXBean {
                 long id = ids[0];
                 Thread thread = Thread.currentThread();
                 if (id == thread.threadId()) {
-                    if (Util.isVirtual(thread)) {
+                    if (thread.isVirtual()) {
                         times[0] = -1;
                     } else {
                         times[0] = getThreadUserCpuTime0(0);
@@ -361,7 +360,7 @@ public class ThreadImpl implements ThreadMXBean {
     }
 
     protected long getCurrentThreadAllocatedBytes() {
-        if (isThreadAllocatedMemoryEnabled() && !Util.isVirtual(Thread.currentThread())) {
+        if (isThreadAllocatedMemoryEnabled() && !Thread.currentThread().isVirtual()) {
             return getThreadAllocatedMemory0(0);
         }
         return -1;
@@ -377,7 +376,7 @@ public class ThreadImpl implements ThreadMXBean {
         if (verified) {
             Thread thread = Thread.currentThread();
             if (id == thread.threadId()) {
-                if (Util.isVirtual(thread)) {
+                if (thread.isVirtual()) {
                     return -1L;
                 } else {
                     return getThreadAllocatedMemory0(0);
@@ -577,7 +576,7 @@ public class ThreadImpl implements ThreadMXBean {
      */
     private static long[] platformThreadIds(Thread[] threads) {
         return Stream.of(threads)
-                .filter(t -> !Util.isVirtual(t))
+                .filter(t -> !t.isVirtual())
                 .mapToLong(Thread::threadId)
                 .toArray();
     }

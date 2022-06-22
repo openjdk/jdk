@@ -39,11 +39,13 @@
   *                   -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
   *                   -XX:CompileThreshold=10000
   *                   -server -XX:-TieredCompilation -XX:TypeProfileLevel=020
+  *                   -XX:+UnlockExperimentalVMOptions -XX:PerMethodSpecTrapLimit=5000 -XX:PerMethodTrapLimit=100
   *                    compiler.profiling.TestTypeProfiling
   * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
   *                   -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
   *                   -XX:CompileThreshold=10000
   *                   -server -XX:-TieredCompilation -XX:TypeProfileLevel=200
+  *                   -XX:+UnlockExperimentalVMOptions -XX:PerMethodSpecTrapLimit=5000 -XX:PerMethodTrapLimit=100
   *                    compiler.profiling.TestTypeProfiling
   */
 

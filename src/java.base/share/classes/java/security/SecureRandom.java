@@ -725,6 +725,11 @@ public class SecureRandom extends java.util.Random {
      * in the given {@code long seed}. The given seed supplements,
      * rather than replaces, the existing seed. Thus, repeated calls
      * are guaranteed never to reduce randomness.
+     * <p>
+     * A PRNG {@code SecureRandom} will not seed itself automatically if
+     * {@code setSeed} is called before any {@code nextBytes} or {@code reseed}
+     * calls. The caller should make sure that the {@code seed} argument
+     * contains enough entropy for the security of this {@code SecureRandom}.
      *
      * <p>This method is defined for compatibility with
      * {@code java.util.Random}.
