@@ -46,8 +46,8 @@
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/prefetch.inline.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/globalDefinitions.hpp"
 

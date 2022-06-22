@@ -1,7 +1,6 @@
 /*
  * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2014 SAP SE. All rights reserved.
- * Copyright (c) 2022, IBM Corp.
+ * Copyright (c) 2012, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +26,7 @@
 #include "precompiled.hpp"
 #include "memory/metaspace.hpp"
 #include "runtime/frame.inline.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 
 frame JavaThread::pd_last_frame() {
   assert(has_last_Java_frame(), "must have last_Java_sp() when suspended");
@@ -38,8 +37,9 @@ frame JavaThread::pd_last_frame() {
   // Last_Java_pc is not set, if we come here from compiled code.
   // Assume spill slot for link register contains a suitable pc.
   // Should have been filled by method entry code.
-  if (pc == NULL)
-    pc =  (address) *(sp + 2);
+  if (pc == NULL) {
+    pc = (address) *(sp + 2);
+  }
 
   return frame(sp, pc);
 }
@@ -58,14 +58,14 @@ bool JavaThread::pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, 
   // if we were running Java code when SIGPROF came in.
   if (isInJava) {
     ucontext_t* uc = (ucontext_t*) ucontext;
-    address pc = (address)uc->uc_mcontext.jmp_context.iar;
+    address pc = (address)uc->uc_mcontext.regs->nip;
 
     if (pc == NULL) {
       // ucontext wasn't useful
       return false;
     }
 
-    frame ret_frame((intptr_t*)uc->uc_mcontext.jmp_context.gpr[1/*REG_SP*/], pc);
+    frame ret_frame((intptr_t*)uc->uc_mcontext.regs->gpr[1/*REG_SP*/], pc);
 
     if (ret_frame.fp() == NULL) {
       // The found frame does not have a valid frame pointer.
@@ -84,7 +84,7 @@ bool JavaThread::pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, 
       if (!Method::is_valid_method(m)) return false;
       if (!Metaspace::contains(m->constMethod())) return false;
 
-      uint64_t reg_bcp = uc->uc_mcontext.jmp_context.gpr[14/*R14_bcp*/];
+      uint64_t reg_bcp = uc->uc_mcontext.regs->gpr[14/*R14_bcp*/];
       uint64_t istate_bcp = istate->bcp;
       uint64_t code_start = (uint64_t)(m->code_base());
       uint64_t code_end = (uint64_t)(m->code_base() + m->code_size());

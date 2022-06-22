@@ -28,8 +28,8 @@
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 
