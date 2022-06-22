@@ -150,9 +150,17 @@ public class Integers {
     }
 
     @Benchmark
-    public void compareUnsigned(Blackhole bh) {
+    public void compareUnsignedIndirect(Blackhole bh) {
         for (int i = 0; i < size; i++) {
             int r = (Integer.compareUnsigned(intsSmall[i], bound - 16) < 0) ? 1 : 0;
+            bh.consume(r);
+        }
+    }
+
+    @Benchmark
+    public void compareUnsignedDirect(Blackhole bh) {
+        for (int i = 0; i < size; i++) {
+            int r = Integer.compareUnsigned(intsSmall[i], bound - 16);
             bh.consume(r);
         }
     }
