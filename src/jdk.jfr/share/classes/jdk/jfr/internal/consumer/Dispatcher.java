@@ -216,8 +216,8 @@ final class Dispatcher {
         sb.append("Meta actions: " + metadataActions.length + "\n");
         sb.append("Flush actions: " + flushActions.length + "\n");
         sb.append("Close actions: " + closeActions.length+ "\n");
-        sb.append("Event dispatchers :" + dispatchers.length+ "\n" );
-        sb.append("Dispatch lookup size:" + dispatcherLookup.size());
+        sb.append("Event dispatchers: " + dispatchers.length+ "\n" );
+        sb.append("Dispatch lookup size: " + dispatcherLookup.size());
         return sb.toString();
     }
 }
