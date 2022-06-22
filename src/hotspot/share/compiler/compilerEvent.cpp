@@ -28,8 +28,8 @@
 #include "jfr/jfrEvents.hpp"
 #include "jfr/metadata/jfrSerializer.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/semaphore.inline.hpp"
-#include "runtime/thread.inline.hpp"
 #include "utilities/growableArray.hpp"
 
 // Synchronizes access to phases_names.

@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "code/dependencyContext.hpp"
 #include "code/nmethod.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "unittest.hpp"
 
 class TestDependencyContext {

@@ -36,7 +36,7 @@
 #include "memory/iterator.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 
 ShenandoahForwardedIsAliveClosure::ShenandoahForwardedIsAliveClosure() :
   _mark_context(ShenandoahHeap::heap()->marking_context()) {

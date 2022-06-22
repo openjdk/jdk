@@ -162,4 +162,17 @@ public final class Utils {
             throw new IllegalArgumentException(msg);
         }
     }
+
+    public static void checkAllocationSizeAndAlign(long bytesSize, long alignmentBytes) {
+        // size should be >= 0
+        if (bytesSize < 0) {
+            throw new IllegalArgumentException("Invalid allocation size : " + bytesSize);
+        }
+
+        // alignment should be > 0, and power of two
+        if (alignmentBytes <= 0 ||
+                ((alignmentBytes & (alignmentBytes - 1)) != 0L)) {
+            throw new IllegalArgumentException("Invalid alignment constraint : " + alignmentBytes);
+        }
+    }
 }
