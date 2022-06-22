@@ -229,8 +229,7 @@ class UnixCopyFile {
     // range [4096, 65536] so this algorithm is expected to converge
     // when it is rarely called
     private static long lcm(long x, long y) {
-        if (x <= 0 || y <= 0)
-            throw new IllegalArgumentException("Non-positive parameter");
+        assert x > 0 && y > 0 : "Non-positive parameter";
 
         long u = x;
         long v = y;
@@ -258,7 +257,7 @@ class UnixCopyFile {
                 int factor = (MIN_BUFFER_SIZE + bufferSize - 1)/bufferSize;
                 bufferSize *= factor;
             }
-        } catch (IllegalArgumentException | UnixException ignored) {
+        } catch (UnixException ignored) {
         }
         return bufferSize;
     }
@@ -319,15 +318,18 @@ class UnixCopyFile {
                     // copy bytes to target via a temporary direct buffer
                     int bufferSize = temporaryBufferSize(source, target);
                     ByteBuffer buf = Util.getTemporaryDirectBuffer(bufferSize);
-                    long comp = Blocker.begin();
                     try {
-                        bufferCopy0(fo, fi, ((DirectBuffer)buf).address(),
-                                    bufferSize, addressToPollForCancel);
-                    } catch (UnixException x) {
-                        x.rethrowAsIOException(source, target);
+                        long comp = Blocker.begin();
+                        try {
+                            bufferedCopy0(fo, fi, ((DirectBuffer)buf).address(),
+                                          bufferSize, addressToPollForCancel);
+                        } catch (UnixException x) {
+                            x.rethrowAsIOException(source, target);
+                        } finally {
+                            Blocker.end(comp);
+                        }
                     } finally {
                         Util.releaseTemporaryDirectBuffer(buf);
-                        Blocker.end(comp);
                     }
                 }
 
@@ -730,8 +732,8 @@ class UnixCopyFile {
      * @param addressToPollForCancel address to check for cancellation
      *        (a non-zero value written to this address indicates cancel)
      */
-    private static native void bufferCopy0(int dst, int src, long address,
-                                           int size, long addressToPollForCancel)
+    private static native void bufferedCopy0(int dst, int src, long address,
+                                             int size, long addressToPollForCancel)
         throws UnixException;
 
     static {
