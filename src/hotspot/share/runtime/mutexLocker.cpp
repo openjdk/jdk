@@ -25,10 +25,10 @@
 #include "precompiled.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "memory/universe.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/vmThread.hpp"
 
 // Mutexes used in the VM (see comment in mutexLocker.hpp):

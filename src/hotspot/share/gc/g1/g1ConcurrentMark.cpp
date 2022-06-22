@@ -72,6 +72,7 @@
 #include "runtime/java.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/prefetch.inline.hpp"
+#include "runtime/threads.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/formatBuffer.hpp"

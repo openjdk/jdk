@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "runtime/frame.inline.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
 
 frame JavaThread::pd_last_frame() {
   assert(has_last_Java_frame(), "must have last_Java_sp() when suspended");
@@ -36,6 +36,7 @@ frame JavaThread::pd_last_frame() {
 // currently interrupted by SIGPROF
 bool JavaThread::pd_get_top_frame_for_signal_handler(frame* fr_addr,
   void* ucontext, bool isInJava) {
+
   assert(Thread::current() == this, "caller must be current thread");
   return pd_get_top_frame(fr_addr, ucontext, isInJava);
 }
@@ -46,31 +47,26 @@ bool JavaThread::pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, 
 
 bool JavaThread::pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava) {
   // If we have a last_Java_frame, then we should use it even if
-  // isInJava == true.  It should be more reliable than ucontext info.
+  // isInJava == true.  It should be more reliable than CONTEXT info.
   if (has_last_Java_frame() && frame_anchor()->walkable()) {
     *fr_addr = pd_last_frame();
     return true;
   }
 
   // At this point, we don't have a last_Java_frame, so
-  // we try to glean some information out of the ucontext
+  // we try to glean some information out of the CONTEXT
   // if we were running Java code when SIGPROF came in.
   if (isInJava) {
-    ucontext_t* uc = (ucontext_t*) ucontext;
-
-    intptr_t* ret_fp;
-    intptr_t* ret_sp;
-    address addr = os::fetch_frame_from_context(uc, &ret_sp, &ret_fp);
-    if (addr == NULL || ret_sp == NULL ) {
-      // ucontext wasn't useful
+    frame ret_frame = os::fetch_frame_from_context(ucontext);
+    if (ret_frame.pc() == NULL || ret_frame.sp() == NULL ) {
+      // CONTEXT wasn't useful
       return false;
     }
 
-    frame ret_frame(ret_sp, ret_fp, addr);
     if (!ret_frame.safe_for_sender(this)) {
 #if COMPILER2_OR_JVMCI
       // C2 and JVMCI use ebp as a general register see if NULL fp helps
-      frame ret_frame2(ret_sp, NULL, addr);
+      frame ret_frame2(ret_frame.sp(), NULL, ret_frame.pc());
       if (!ret_frame2.safe_for_sender(this)) {
         // nothing else to try if the frame isn't good
         return false;

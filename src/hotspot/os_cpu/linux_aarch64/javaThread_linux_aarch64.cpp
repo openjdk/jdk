@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020, 2021, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,13 @@
 
 #include "precompiled.hpp"
 #include "runtime/frame.inline.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
 
 frame JavaThread::pd_last_frame() {
   assert(has_last_Java_frame(), "must have last_Java_sp() when suspended");
-  return frame(_anchor.last_Java_sp(), _anchor.last_Java_fp(), _anchor.last_Java_pc());
+  frame f = frame(_anchor.last_Java_sp(), _anchor.last_Java_fp(), _anchor.last_Java_pc());
+  f.set_sp_is_trusted();
+  return f;
 }
 
 // For Forte Analyzer AsyncGetCallTrace profiling support - thread is
@@ -59,8 +61,8 @@ bool JavaThread::pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava)
   if (isInJava) {
     ucontext_t* uc = (ucontext_t*) ucontext;
 
-    intptr_t* ret_fp = NULL;
-    intptr_t* ret_sp = NULL;
+    intptr_t* ret_fp;
+    intptr_t* ret_sp;
     address addr = os::fetch_frame_from_context(uc, &ret_sp, &ret_fp);
     if (addr == NULL || ret_sp == NULL ) {
       // ucontext wasn't useful

@@ -36,7 +36,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiUtil.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "utilities/exceptions.hpp"
 
 static const size_t ERROR_MSG_BUFFER_SIZE = 256;

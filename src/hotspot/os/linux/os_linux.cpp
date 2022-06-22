@@ -50,6 +50,7 @@
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/osThread.hpp"
@@ -57,8 +58,8 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/threadCritical.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vm_version.hpp"
@@ -2204,19 +2205,6 @@ void os::Linux::print_uptime_info(outputStream* st) {
   }
 }
 
-static void print_container_helper(outputStream* st, jlong j, const char* metrics) {
-  st->print("%s: ", metrics);
-  if (j > 0) {
-    if (j >= 1024) {
-      st->print_cr(UINT64_FORMAT " k", uint64_t(j) / 1024);
-    } else {
-      st->print_cr(UINT64_FORMAT, uint64_t(j));
-    }
-  } else {
-    st->print_cr("%s", j == OSCONTAINER_ERROR ? "not supported" : "unlimited");
-  }
-}
-
 bool os::Linux::print_container_info(outputStream* st) {
   if (!OSContainer::is_containerized()) {
     st->print_cr("container information not found.");
@@ -2272,11 +2260,13 @@ bool os::Linux::print_container_info(outputStream* st) {
     st->print_cr("%s", i == OSCONTAINER_ERROR ? "not supported" : "no shares");
   }
 
-  print_container_helper(st, OSContainer::memory_limit_in_bytes(), "memory_limit_in_bytes");
-  print_container_helper(st, OSContainer::memory_and_swap_limit_in_bytes(), "memory_and_swap_limit_in_bytes");
-  print_container_helper(st, OSContainer::memory_soft_limit_in_bytes(), "memory_soft_limit_in_bytes");
-  print_container_helper(st, OSContainer::memory_usage_in_bytes(), "memory_usage_in_bytes");
-  print_container_helper(st, OSContainer::memory_max_usage_in_bytes(), "memory_max_usage_in_bytes");
+  OSContainer::print_container_helper(st, OSContainer::memory_limit_in_bytes(), "memory_limit_in_bytes");
+  OSContainer::print_container_helper(st, OSContainer::memory_and_swap_limit_in_bytes(), "memory_and_swap_limit_in_bytes");
+  OSContainer::print_container_helper(st, OSContainer::memory_soft_limit_in_bytes(), "memory_soft_limit_in_bytes");
+  OSContainer::print_container_helper(st, OSContainer::memory_usage_in_bytes(), "memory_usage_in_bytes");
+  OSContainer::print_container_helper(st, OSContainer::memory_max_usage_in_bytes(), "memory_max_usage_in_bytes");
+
+  OSContainer::print_version_specific_info(st);
 
   jlong j = OSContainer::pids_max();
   st->print("maximum number of tasks: ");

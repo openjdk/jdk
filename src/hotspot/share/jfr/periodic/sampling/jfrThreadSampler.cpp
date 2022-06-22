@@ -36,9 +36,9 @@
 #include "jfrfiles/jfrEventClasses.hpp"
 #include "logging/log.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/semaphore.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
 
 enum JfrSampleType {

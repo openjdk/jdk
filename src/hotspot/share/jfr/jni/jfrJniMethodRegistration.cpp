@@ -27,7 +27,7 @@
 #include "jfr/jni/jfrJniMethodRegistration.hpp"
 #include "logging/log.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "utilities/exceptions.hpp"
 
 JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
