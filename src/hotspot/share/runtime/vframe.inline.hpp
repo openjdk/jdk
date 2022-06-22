@@ -27,6 +27,7 @@
 
 #include "runtime/vframe.hpp"
 
+#include "classfile/javaClasses.inline.hpp"
 #include "oops/stackChunkOop.inline.hpp"
 #include "runtime/continuationJavaClasses.inline.hpp"
 #include "runtime/frame.inline.hpp"
