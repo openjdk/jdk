@@ -35,7 +35,7 @@
 #include "gc/g1/heapRegionRemSet.inline.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/iterator.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
 
 void G1RemSetSummary::update() {
   class CollectData : public ThreadClosure {

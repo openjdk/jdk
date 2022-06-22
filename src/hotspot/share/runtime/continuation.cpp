@@ -29,6 +29,7 @@
 #include "runtime/continuationHelper.inline.hpp"
 #include "runtime/continuationWrapper.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vframe_hp.hpp"

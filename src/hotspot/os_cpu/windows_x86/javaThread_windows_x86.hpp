@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef OS_CPU_WINDOWS_X86_THREAD_WINDOWS_X86_HPP
-#define OS_CPU_WINDOWS_X86_THREAD_WINDOWS_X86_HPP
+#ifndef OS_CPU_WINDOWS_X86_JAVATHREAD_WINDOWS_X86_HPP
+#define OS_CPU_WINDOWS_X86_JAVATHREAD_WINDOWS_X86_HPP
 
  private:
   // On windows, in the stubGenerator, there's nowhere to save callee saved regs
@@ -54,4 +54,4 @@
 private:
   bool pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava);
 
-#endif // OS_CPU_WINDOWS_X86_THREAD_WINDOWS_X86_HPP
+#endif // OS_CPU_WINDOWS_X86_JAVATHREAD_WINDOWS_X86_HPP

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef OS_CPU_BSD_ZERO_THREAD_BSD_ZERO_HPP
-#define OS_CPU_BSD_ZERO_THREAD_BSD_ZERO_HPP
+#ifndef OS_CPU_LINUX_ZERO_JAVATHREAD_LINUX_ZERO_HPP
+#define OS_CPU_LINUX_ZERO_JAVATHREAD_LINUX_ZERO_HPP
 
  private:
   ZeroStack  _zero_stack;
@@ -96,9 +96,10 @@
  public:
   bool pd_get_top_frame_for_signal_handler(frame* fr_addr,
                                            void* ucontext,
-                                           bool isInJava) {
-    ShouldNotCallThis();
-    return false;
-  }
+                                           bool isInJava);
 
-#endif // OS_CPU_BSD_ZERO_THREAD_BSD_ZERO_HPP
+  bool pd_get_top_frame_for_profiling(frame* fr_addr,
+                                      void* ucontext,
+                                      bool isInJava);
+
+#endif // OS_CPU_LINUX_ZERO_JAVATHREAD_LINUX_ZERO_HPP

@@ -56,9 +56,9 @@
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/debug.hpp"
 
 #ifdef LINUX

@@ -57,8 +57,8 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/signature.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "utilities/copy.hpp"
 

@@ -46,7 +46,7 @@
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/timer.hpp"
 #include "signals_posix.hpp"
 #include "utilities/debug.hpp"
