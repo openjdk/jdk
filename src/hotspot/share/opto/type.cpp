@@ -2276,7 +2276,7 @@ int TypeAry::hash(void) const {
 /**
  * Return same type without a speculative part in the element
  */
-const TypeAry* TypeAry::remove_speculative() const {
+const Type* TypeAry::remove_speculative() const {
   return make(_elem->remove_speculative(), _size, _stable);
 }
 
@@ -2708,7 +2708,7 @@ int TypePtr::hash(void) const {
 /**
  * Return same type without a speculative part
  */
-const TypePtr* TypePtr::remove_speculative() const {
+const Type* TypePtr::remove_speculative() const {
   if (_speculative == NULL) {
     return this;
   }
@@ -3030,7 +3030,7 @@ const TypeRawPtr *TypeRawPtr::make( address bits ) {
 }
 
 //------------------------------cast_to_ptr_type-------------------------------
-const TypeRawPtr* TypeRawPtr::cast_to_ptr_type(PTR ptr) const {
+const TypePtr* TypeRawPtr::cast_to_ptr_type(PTR ptr) const {
   assert( ptr != Constant, "what is the constant?" );
   assert( ptr != Null, "Use TypePtr for NULL" );
   assert( _bits==0, "Why cast a constant address?");
@@ -3242,7 +3242,7 @@ const TypeOopPtr *TypeOopPtr::make(PTR ptr, int offset, int instance_id,
 
 
 //------------------------------cast_to_ptr_type-------------------------------
-const TypeOopPtr* TypeOopPtr::cast_to_ptr_type(PTR ptr) const {
+const TypePtr* TypeOopPtr::cast_to_ptr_type(PTR ptr) const {
   assert(_base == OopPtr, "subclass must override cast_to_ptr_type");
   if( ptr == _ptr ) return this;
   return make(ptr, _offset, _instance_id, _speculative, _inline_depth);
@@ -3581,14 +3581,14 @@ const TypePtr *TypeOopPtr::add_offset(intptr_t offset) const {
   return make(_ptr, xadd_offset(offset), _instance_id, add_offset_speculative(offset), _inline_depth);
 }
 
-const TypeOopPtr* TypeOopPtr::with_offset(intptr_t offset) const {
+const TypePtr* TypeOopPtr::with_offset(intptr_t offset) const {
   return make(_ptr, offset, _instance_id, with_offset_speculative(offset), _inline_depth);
 }
 
 /**
  * Return same type without a speculative part
  */
-const TypeOopPtr* TypeOopPtr::remove_speculative() const {
+const Type* TypeOopPtr::remove_speculative() const {
   if (_speculative == NULL) {
     return this;
   }
@@ -3738,7 +3738,7 @@ const Type* TypeInstPtr::get_const_boxed_value() const {
 }
 
 //------------------------------cast_to_ptr_type-------------------------------
-const TypeInstPtr* TypeInstPtr::cast_to_ptr_type(PTR ptr) const {
+const TypePtr* TypeInstPtr::cast_to_ptr_type(PTR ptr) const {
   if( ptr == _ptr ) return this;
   // Reconstruct _sig info here since not a problem with later lazy
   // construction, _sig will show up on demand.
@@ -3747,7 +3747,7 @@ const TypeInstPtr* TypeInstPtr::cast_to_ptr_type(PTR ptr) const {
 
 
 //-----------------------------cast_to_exactness-------------------------------
-const TypeInstPtr* TypeInstPtr::cast_to_exactness(bool klass_is_exact) const {
+const TypeOopPtr* TypeInstPtr::cast_to_exactness(bool klass_is_exact) const {
   if( klass_is_exact == _klass_is_exact ) return this;
   if (!_klass->is_loaded())  return this;
   ciInstanceKlass* ik = _klass->as_instance_klass();
@@ -3757,7 +3757,7 @@ const TypeInstPtr* TypeInstPtr::cast_to_exactness(bool klass_is_exact) const {
 }
 
 //-----------------------------cast_to_instance_id----------------------------
-const TypeInstPtr* TypeInstPtr::cast_to_instance_id(int instance_id) const {
+const TypeOopPtr* TypeInstPtr::cast_to_instance_id(int instance_id) const {
   if( instance_id == _instance_id ) return this;
   return make(_ptr, klass(), _klass_is_exact, const_oop(), _offset, instance_id, _speculative, _inline_depth);
 }
@@ -4278,12 +4278,12 @@ const TypePtr* TypeInstPtr::add_offset(intptr_t offset) const {
               _instance_id, add_offset_speculative(offset), _inline_depth);
 }
 
-const TypeInstPtr* TypeInstPtr::with_offset(intptr_t offset) const {
+const TypePtr* TypeInstPtr::with_offset(intptr_t offset) const {
   return make(_ptr, klass(), klass_is_exact(), const_oop(), offset,
               _instance_id, with_offset_speculative(offset), _inline_depth);
 }
 
-const TypeInstPtr* TypeInstPtr::remove_speculative() const {
+const Type* TypeInstPtr::remove_speculative() const {
   if (_speculative == NULL) {
     return this;
   }
@@ -4352,21 +4352,21 @@ const TypeAryPtr *TypeAryPtr::make(PTR ptr, ciObject* o, const TypeAry *ary, ciK
 }
 
 //------------------------------cast_to_ptr_type-------------------------------
-const TypeAryPtr* TypeAryPtr::cast_to_ptr_type(PTR ptr) const {
+const TypePtr* TypeAryPtr::cast_to_ptr_type(PTR ptr) const {
   if( ptr == _ptr ) return this;
   return make(ptr, ptr == Constant ? const_oop() : NULL, _ary, klass(), klass_is_exact(), _offset, _instance_id, _speculative, _inline_depth);
 }
 
 
 //-----------------------------cast_to_exactness-------------------------------
-const TypeAryPtr* TypeAryPtr::cast_to_exactness(bool klass_is_exact) const {
+const TypeOopPtr* TypeAryPtr::cast_to_exactness(bool klass_is_exact) const {
   if( klass_is_exact == _klass_is_exact ) return this;
   if (_ary->ary_must_be_exact())  return this;  // cannot clear xk
   return make(ptr(), const_oop(), _ary, klass(), klass_is_exact, _offset, _instance_id, _speculative, _inline_depth);
 }
 
 //-----------------------------cast_to_instance_id----------------------------
-const TypeAryPtr* TypeAryPtr::cast_to_instance_id(int instance_id) const {
+const TypeOopPtr* TypeAryPtr::cast_to_instance_id(int instance_id) const {
   if( instance_id == _instance_id ) return this;
   return make(_ptr, const_oop(), _ary, klass(), _klass_is_exact, _offset, instance_id, _speculative, _inline_depth);
 }
@@ -4870,7 +4870,7 @@ const TypePtr *TypeAryPtr::add_offset(intptr_t offset) const {
   return make(_ptr, _const_oop, _ary, _klass, _klass_is_exact, xadd_offset(offset), _instance_id, add_offset_speculative(offset), _inline_depth);
 }
 
-const TypeAryPtr* TypeAryPtr::with_offset(intptr_t offset) const {
+const TypePtr* TypeAryPtr::with_offset(intptr_t offset) const {
   return make(_ptr, _const_oop, _ary, _klass, _klass_is_exact, offset, _instance_id, with_offset_speculative(offset), _inline_depth);
 }
 
@@ -4878,7 +4878,7 @@ const TypeAryPtr* TypeAryPtr::with_ary(const TypeAry* ary) const {
   return make(_ptr, _const_oop, ary, _klass, _klass_is_exact, _offset, _instance_id, _speculative, _inline_depth);
 }
 
-const TypeAryPtr* TypeAryPtr::remove_speculative() const {
+const Type* TypeAryPtr::remove_speculative() const {
   if (_speculative == NULL) {
     return this;
   }
@@ -5018,7 +5018,7 @@ const TypeNarrowOop* TypeNarrowOop::make(const TypePtr* type) {
   return (const TypeNarrowOop*)(new TypeNarrowOop(type))->hashcons();
 }
 
-const TypeNarrowOop* TypeNarrowOop::remove_speculative() const {
+const Type* TypeNarrowOop::remove_speculative() const {
   return make(_ptrtype->remove_speculative()->is_ptr());
 }
 
@@ -5112,7 +5112,7 @@ intptr_t TypeMetadataPtr::get_con() const {
 }
 
 //------------------------------cast_to_ptr_type-------------------------------
-const TypeMetadataPtr* TypeMetadataPtr::cast_to_ptr_type(PTR ptr) const {
+const TypePtr* TypeMetadataPtr::cast_to_ptr_type(PTR ptr) const {
   if( ptr == _ptr ) return this;
   return make(ptr, metadata(), _offset);
 }
@@ -5417,12 +5417,12 @@ const TypePtr *TypeInstKlassPtr::add_offset( intptr_t offset ) const {
   return make( _ptr, klass(), xadd_offset(offset) );
 }
 
-const TypeInstKlassPtr* TypeInstKlassPtr::with_offset(intptr_t offset) const {
+const TypePtr* TypeInstKlassPtr::with_offset(intptr_t offset) const {
   return make(_ptr, klass(), offset);
 }
 
 //------------------------------cast_to_ptr_type-------------------------------
-const TypeInstKlassPtr* TypeInstKlassPtr::cast_to_ptr_type(PTR ptr) const {
+const TypePtr* TypeInstKlassPtr::cast_to_ptr_type(PTR ptr) const {
   assert(_base == InstKlassPtr, "subclass must override cast_to_ptr_type");
   if( ptr == _ptr ) return this;
   return make(ptr, _klass, _offset);
@@ -5692,7 +5692,7 @@ const TypeAryKlassPtr *TypeAryKlassPtr::make(PTR ptr, ciKlass* klass, int offset
   if (klass->is_obj_array_klass()) {
     // Element is an object array. Recursively call ourself.
     ciKlass* eklass = klass->as_obj_array_klass()->element_klass();
-    const TypeKlassPtr *etype = TypeKlassPtr::make(eklass)->cast_to_exactness(false);
+    const TypeKlassPtr *etype = TypeKlassPtr::make(eklass)->cast_to_exactness(false)->is_klassptr();
     return TypeAryKlassPtr::make(ptr, etype, NULL, offset);
   } else if (klass->is_type_array_klass()) {
     // Element is an typeArray
@@ -5840,12 +5840,12 @@ const TypePtr *TypeAryKlassPtr::add_offset(intptr_t offset) const {
   return make(_ptr, elem(), klass(), xadd_offset(offset));
 }
 
-const TypeAryKlassPtr* TypeAryKlassPtr::with_offset(intptr_t offset) const {
+const TypePtr* TypeAryKlassPtr::with_offset(intptr_t offset) const {
   return make(_ptr, elem(), klass(), offset);
 }
 
 //------------------------------cast_to_ptr_type-------------------------------
-const TypeAryKlassPtr* TypeAryKlassPtr::cast_to_ptr_type(PTR ptr) const {
+const TypePtr* TypeAryKlassPtr::cast_to_ptr_type(PTR ptr) const {
   assert(_base == AryKlassPtr, "subclass must override cast_to_ptr_type");
   if (ptr == _ptr) return this;
   return make(ptr, elem(), _klass, _offset);
@@ -5861,7 +5861,7 @@ bool TypeAryKlassPtr::must_be_exact() const {
 
 
 //-----------------------------cast_to_exactness-------------------------------
-const TypeKlassPtr *TypeAryKlassPtr::cast_to_exactness(bool klass_is_exact) const {
+const TypeKlassPtr* TypeAryKlassPtr::cast_to_exactness(bool klass_is_exact) const {
   if (must_be_exact()) return this;  // cannot clear xk
   ciKlass* k = _klass;
   const Type* elem = this->elem();

@@ -1313,9 +1313,9 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
          offset > arrayOopDesc::length_offset_in_bytes() ) {
       offset = Type::OffsetBot; // Flatten constant access into array body only
       tj = ta = ta->
-              remove_speculative()->
+              remove_speculative()->is_ptr()->
               cast_to_ptr_type(ptr)->
-              with_offset(offset);
+              with_offset(offset)->is_aryptr();
     }
   } else if( ta && _AliasLevel >= 2 ) {
     // For arrays indexed by constant indices, we flatten the alias
@@ -1325,10 +1325,10 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
       if( ta->const_oop() ) { // MethodData* or Method*
         offset = Type::OffsetBot;   // Flatten constant access into array body
         tj = ta = ta->
-                remove_speculative()->
-                cast_to_ptr_type(ptr)->
+                remove_speculative()->is_ptr()->
+                cast_to_ptr_type(ptr)->is_oopptr()->
                 cast_to_exactness(false)->
-                with_offset(offset);
+                with_offset(offset)->is_aryptr();
       } else if( offset == arrayOopDesc::length_offset_in_bytes() ) {
         // range is OK as-is.
         tj = ta = TypeAryPtr::RANGE;
@@ -1343,20 +1343,20 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
       } else {                  // Random constant offset into array body
         offset = Type::OffsetBot;   // Flatten constant access into array body
         tj = ta = ta->
-                remove_speculative()->
-                cast_to_ptr_type(ptr)->
+                remove_speculative()->is_ptr()->
+                cast_to_ptr_type(ptr)->is_oopptr()->
                 cast_to_exactness(false)->
-                with_offset(offset);
+                with_offset(offset)->is_aryptr();
       }
     }
     // Arrays of fixed size alias with arrays of unknown size.
     if (ta->size() != TypeInt::POS) {
       const TypeAry *tary = TypeAry::make(ta->elem(), TypeInt::POS);
       tj = ta = ta->
-              remove_speculative()->
-              cast_to_ptr_type(ptr)->
+              remove_speculative()->is_ptr()->
+              cast_to_ptr_type(ptr)->is_aryptr()->
               with_ary(tary)->
-              cast_to_exactness(false);
+              cast_to_exactness(false)->is_aryptr();
     }
     // Arrays of known objects become arrays of unknown objects.
     if (ta->elem()->isa_narrowoop() && ta->elem() != TypeNarrowOop::BOTTOM) {
@@ -1379,10 +1379,10 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
     // Also, make sure exact and non-exact variants alias the same.
     if (ptr == TypePtr::NotNull || ta->klass_is_exact() || ta->speculative() != NULL) {
       tj = ta = ta->
-              remove_speculative()->
-              cast_to_ptr_type(TypePtr::BotPTR)->
+              remove_speculative()->is_ptr()->
+              cast_to_ptr_type(TypePtr::BotPTR)->is_oopptr()->
               cast_to_exactness(false)->
-              with_offset(offset);
+              with_offset(offset)->is_aryptr();
     }
   }
 
@@ -1398,9 +1398,9 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
         assert(!is_known_inst, "not scalarizable allocation");
         tj = to = to->
                 cast_to_instance_id(TypeOopPtr::InstanceBot)->
-                remove_speculative()->
-                cast_to_ptr_type(TypePtr::BotPTR)->
-                cast_to_exactness(false);
+                remove_speculative()->is_ptr()->
+                cast_to_ptr_type(TypePtr::BotPTR)->is_oopptr()->
+                cast_to_exactness(false)->is_instptr();
       }
     } else if( is_known_inst ) {
       tj = to; // Keep NotNull and klass_is_exact for instance type
@@ -1409,13 +1409,13 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
       // Make sure the Bottom and NotNull variants alias the same.
       // Also, make sure exact and non-exact variants alias the same.
       tj = to = to->
-              remove_speculative()->
+              remove_speculative()->is_oopptr()->
               cast_to_instance_id(TypeOopPtr::InstanceBot)->
-              cast_to_ptr_type(TypePtr::BotPTR)->
-              cast_to_exactness(false);
+              cast_to_ptr_type(TypePtr::BotPTR)->is_oopptr()->
+              cast_to_exactness(false)->is_instptr();
     }
     if (to->speculative() != NULL) {
-      tj = to = to->remove_speculative();
+      tj = to = to->remove_speculative()->is_instptr();
     }
     // Canonicalize the holder of this field
     if (offset >= 0 && offset < instanceOopDesc::base_offset_in_bytes()) {
@@ -1480,7 +1480,7 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
          offset < (int)(primary_supers_offset + Klass::primary_super_limit() * wordSize)) ||
         offset == (int)in_bytes(Klass::secondary_super_cache_offset())) {
       offset = in_bytes(Klass::secondary_super_cache_offset());
-      tj = tk = tk->with_offset(offset);
+      tj = tk = tk->with_offset(offset)->is_klassptr();
     }
   }
 

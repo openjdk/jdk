@@ -774,7 +774,7 @@ public:
   virtual const Type *xmeet( const Type *t ) const;
   virtual const Type *xdual() const;    // Compute dual right now.
   bool ary_must_be_exact() const;  // true if arrays of such are never generic
-  virtual const TypeAry* remove_speculative() const;
+  virtual const Type* remove_speculative() const;
   virtual const Type* cleanup_speculative() const;
 #ifdef ASSERT
   // One type is interface, the other is oop
@@ -996,7 +996,7 @@ public:
   virtual ciKlass* speculative_type_not_null() const;
   virtual bool speculative_maybe_null() const;
   virtual bool speculative_always_null() const;
-  virtual const TypePtr* remove_speculative() const;
+  virtual const Type* remove_speculative() const;
   virtual const Type* cleanup_speculative() const;
   virtual bool would_improve_type(ciKlass* exact_kls, int inline_depth) const;
   virtual bool would_improve_ptr(ProfilePtrKind maybe_null) const;
@@ -1032,12 +1032,12 @@ public:
   static const TypeRawPtr *make( address bits );
 
   // Return a 'ptr' version of this type
-  virtual const TypeRawPtr* cast_to_ptr_type(PTR ptr) const;
+  virtual const TypePtr* cast_to_ptr_type(PTR ptr) const;
 
   virtual intptr_t get_con() const;
 
   virtual const TypePtr* add_offset(intptr_t offset) const;
-  virtual const TypeRawPtr* with_offset(intptr_t offset) const { ShouldNotReachHere(); return NULL;}
+  virtual const TypePtr* with_offset(intptr_t offset) const { ShouldNotReachHere(); return NULL;}
 
   virtual const Type *xmeet( const Type *t ) const;
   virtual const Type *xdual() const;    // Compute dual right now.
@@ -1155,7 +1155,7 @@ public:
 
   virtual intptr_t get_con() const;
 
-  virtual const TypeOopPtr* cast_to_ptr_type(PTR ptr) const;
+  virtual const TypePtr* cast_to_ptr_type(PTR ptr) const;
 
   virtual const TypeOopPtr* cast_to_exactness(bool klass_is_exact) const;
 
@@ -1164,11 +1164,11 @@ public:
   // corresponding pointer to klass, for a given instance
   virtual const TypeKlassPtr* as_klass_type(bool try_for_exact = false) const;
 
-  virtual const TypeOopPtr* with_offset(intptr_t offset) const;
+  virtual const TypePtr* with_offset(intptr_t offset) const;
   virtual const TypePtr* add_offset(intptr_t offset) const;
 
   // Speculative type helper methods.
-  virtual const TypeOopPtr* remove_speculative() const;
+  virtual const Type* remove_speculative() const;
   virtual const Type* cleanup_speculative() const;
   virtual bool would_improve_type(ciKlass* exact_kls, int inline_depth) const;
   virtual const TypePtr* with_inline_depth(int depth) const;
@@ -1249,17 +1249,17 @@ public:
   // be a TypeInstPtr, but may also be a TypeInt::INT for int.class, etc.
   ciType* java_mirror_type() const;
 
-  virtual const TypeInstPtr* cast_to_ptr_type(PTR ptr) const;
+  virtual const TypePtr* cast_to_ptr_type(PTR ptr) const;
 
-  virtual const TypeInstPtr* cast_to_exactness(bool klass_is_exact) const;
+  virtual const TypeOopPtr* cast_to_exactness(bool klass_is_exact) const;
 
-  virtual const TypeInstPtr* cast_to_instance_id(int instance_id) const;
+  virtual const TypeOopPtr* cast_to_instance_id(int instance_id) const;
 
   virtual const TypePtr* add_offset(intptr_t offset) const;
-  virtual const TypeInstPtr* with_offset(intptr_t offset) const;
+  virtual const TypePtr* with_offset(intptr_t offset) const;
 
   // Speculative type helper methods.
-  virtual const TypeInstPtr* remove_speculative() const;
+  virtual const Type* remove_speculative() const;
   virtual const TypePtr* with_inline_depth(int depth) const;
   virtual const TypePtr* with_instance_id(int instance_id) const;
 
@@ -1350,22 +1350,22 @@ public:
                                 int inline_depth = InlineDepthBottom, bool is_autobox_cache = false);
 
   // Return a 'ptr' version of this type
-  virtual const TypeAryPtr* cast_to_ptr_type(PTR ptr) const;
+  virtual const TypePtr* cast_to_ptr_type(PTR ptr) const;
 
-  virtual const TypeAryPtr* cast_to_exactness(bool klass_is_exact) const;
+  virtual const TypeOopPtr* cast_to_exactness(bool klass_is_exact) const;
 
-  virtual const TypeAryPtr* cast_to_instance_id(int instance_id) const;
+  virtual const TypeOopPtr* cast_to_instance_id(int instance_id) const;
 
   virtual const TypeAryPtr* cast_to_size(const TypeInt* size) const;
   virtual const TypeInt* narrow_size_type(const TypeInt* size) const;
 
   virtual bool empty(void) const;        // TRUE if type is vacuous
   virtual const TypePtr *add_offset( intptr_t offset ) const;
-  virtual const TypeAryPtr *with_offset( intptr_t offset ) const;
+  virtual const TypePtr *with_offset( intptr_t offset ) const;
   const TypeAryPtr* with_ary(const TypeAry* ary) const;
 
   // Speculative type helper methods.
-  virtual const TypeAryPtr* remove_speculative() const;
+  virtual const Type* remove_speculative() const;
   virtual const TypePtr* with_inline_depth(int depth) const;
   virtual const TypePtr* with_instance_id(int instance_id) const;
 
@@ -1431,7 +1431,7 @@ public:
 
   ciMetadata* metadata() const { return _metadata; }
 
-  virtual const TypeMetadataPtr* cast_to_ptr_type(PTR ptr) const;
+  virtual const TypePtr* cast_to_ptr_type(PTR ptr) const;
 
   virtual const TypePtr *add_offset( intptr_t offset ) const;
 
@@ -1493,9 +1493,9 @@ public:
 
   virtual bool  is_loaded() const { return _klass->is_loaded(); }
 
-  virtual const TypeKlassPtr* cast_to_ptr_type(PTR ptr) const { ShouldNotReachHere(); return NULL; }
+  virtual const TypePtr* cast_to_ptr_type(PTR ptr) const { ShouldNotReachHere(); return NULL; }
 
-  virtual const TypeKlassPtr *cast_to_exactness(bool klass_is_exact) const { ShouldNotReachHere(); return NULL; }
+  virtual const TypeKlassPtr* cast_to_exactness(bool klass_is_exact) const { ShouldNotReachHere(); return NULL; }
 
   // corresponding pointer to instance, for a given class
   virtual const TypeOopPtr* as_instance_type(bool klass_change = true) const { ShouldNotReachHere(); return NULL; }
@@ -1506,7 +1506,7 @@ public:
 
   virtual intptr_t get_con() const;
 
-  virtual const TypeKlassPtr* with_offset(intptr_t offset) const { ShouldNotReachHere(); return NULL; }
+  virtual const TypePtr* with_offset(intptr_t offset) const { ShouldNotReachHere(); return NULL; }
 
 #ifndef PRODUCT
   virtual void dump2( Dict &d, uint depth, outputStream *st ) const; // Specialized per-Type dumping
@@ -1540,9 +1540,9 @@ public:
   }
   static const TypeInstKlassPtr *make(PTR ptr, ciKlass* k, int offset);
 
-  virtual const TypeInstKlassPtr* cast_to_ptr_type(PTR ptr) const;
+  virtual const TypePtr* cast_to_ptr_type(PTR ptr) const;
 
-  virtual const TypeKlassPtr *cast_to_exactness(bool klass_is_exact) const;
+  virtual const TypeKlassPtr* cast_to_exactness(bool klass_is_exact) const;
 
   // corresponding pointer to instance, for a given class
   virtual const TypeOopPtr* as_instance_type(bool klass_change = true) const;
@@ -1552,7 +1552,7 @@ public:
   virtual const TypePtr *add_offset( intptr_t offset ) const;
   virtual const Type    *xmeet( const Type *t ) const;
   virtual const Type    *xdual() const;
-  virtual const TypeInstKlassPtr* with_offset(intptr_t offset) const;
+  virtual const TypePtr* with_offset(intptr_t offset) const;
 
   bool is_interface() const { return klass()->is_interface(); }
 
@@ -1596,7 +1596,7 @@ public:
   virtual bool eq(const Type *t) const;
   virtual int hash() const;             // Type specific hashing
 
-  virtual const TypeAryKlassPtr* cast_to_ptr_type(PTR ptr) const;
+  virtual const TypePtr* cast_to_ptr_type(PTR ptr) const;
 
   virtual const TypeKlassPtr *cast_to_exactness(bool klass_is_exact) const;
 
@@ -1607,7 +1607,7 @@ public:
   virtual const Type    *xmeet( const Type *t ) const;
   virtual const Type    *xdual() const;      // Compute dual right now.
 
-  virtual const TypeAryKlassPtr* with_offset(intptr_t offset) const;
+  virtual const TypePtr* with_offset(intptr_t offset) const;
 
   virtual bool empty(void) const {
     return TypeKlassPtr::empty() || _elem->empty();
@@ -1699,7 +1699,7 @@ public:
   static const TypeNarrowOop *BOTTOM;
   static const TypeNarrowOop *NULL_PTR;
 
-  virtual const TypeNarrowOop* remove_speculative() const;
+  virtual const Type* remove_speculative() const;
   virtual const Type* cleanup_speculative() const;
 
 #ifndef PRODUCT
