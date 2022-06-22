@@ -47,6 +47,7 @@ public class ServerCompilerScheduler implements Scheduler {
     private static class Node {
 
         public static final String WARNING_BLOCK_PROJECTION_WITH_MULTIPLE_SUCCS = "Block projection with multiple successors";
+        public static final String WARNING_REGION_WITH_MULTIPLE_SUCCS = "Region with multiple successors";
         public static final String WARNING_PHI_INPUT_WITHOUT_REGION = "Phi input without associated region";
         public static final String WARNING_REGION_WITHOUT_CONTROL_INPUT = "Region without control input";
         public static final String WARNING_PHI_WITH_REGIONLESS_INPUTS = "Phi node with input nodes without associated region";
@@ -54,6 +55,7 @@ public class ServerCompilerScheduler implements Scheduler {
         public static final String WARNING_CFG_AND_INPUT_TO_PHI = "CFG node is a phi input";
         public static final String WARNING_PHI_NON_DOMINATING_INPUTS = "Phi input that does not dominate the phi's input block";
         public static final String WARNING_CONTROL_UNREACHABLE_CFG = "Control-unreachable CFG node";
+        public static final String WARNING_CFG_WITHOUT_SUCCESSORS = "CFG node without control successors";
 
         public InputNode inputNode;
         public Set<Node> succs = new HashSet<>();
@@ -325,7 +327,6 @@ public class ServerCompilerScheduler implements Scheduler {
             }
             buildUpGraph();
             markCFGNodes();
-            connectOrphansAndWidows();
             buildBlocks();
             schedulePinned();
             buildDominators();
@@ -466,9 +467,12 @@ public class ServerCompilerScheduler implements Scheduler {
 
         // Mark all nodes reachable in backward traversal from root
         Set<Node> reachable = reachableNodes();
+        // Schedule non-CFG, reachable nodes without block. CFG nodes should
+        // have been all scheduled by buildBlocks, otherwise it means they are
+        // control-unreachable and they should remain unscheduled.
         Set<Node> unscheduled = new HashSet<>();
         for (Node n : this.nodes) {
-            if (n.block == null && reachable.contains(n)) {
+            if (n.block == null && reachable.contains(n) && !n.isCFG) {
                 unscheduled.add(n);
             }
         }
@@ -492,17 +496,6 @@ public class ServerCompilerScheduler implements Scheduler {
 
             if (!progress) {
                 break;
-            }
-        }
-
-        Set<Node> curReachable = new HashSet<>(reachable);
-        for (Node n : curReachable) {
-            if (n.block != null) {
-                for (Node s : n.succs) {
-                    if (!reachable.contains(s)) {
-                        markWithBlock(s, n.block, reachable);
-                    }
-                }
             }
         }
 
@@ -540,36 +533,6 @@ public class ServerCompilerScheduler implements Scheduler {
             }
         }
         return srcBlocks;
-    }
-
-    private void markWithBlock(Node n, InputBlock b, Set<Node> reachable) {
-        assert !reachable.contains(n);
-        Stack<Node> stack = new Stack<>();
-        stack.push(n);
-        n.block = b;
-        b.addNode(n.inputNode.getId());
-        reachable.add(n);
-
-        while (!stack.isEmpty()) {
-            Node cur = stack.pop();
-            for (Node s : cur.succs) {
-                if (!reachable.contains(s)) {
-                    reachable.add(s);
-                    s.block = b;
-                    b.addNode(s.inputNode.getId());
-                    stack.push(s);
-                }
-            }
-
-            for (Node s : cur.preds) {
-                if (!reachable.contains(s)) {
-                    reachable.add(s);
-                    s.block = b;
-                    b.addNode(s.inputNode.getId());
-                    stack.push(s);
-                }
-            }
-        }
     }
 
     public InputBlock getCommonDominator(InputBlock ba, InputBlock bb) {
@@ -843,43 +806,6 @@ public class ServerCompilerScheduler implements Scheduler {
         }
     }
 
-    // Fix ill-formed graphs with orphan/widow control-flow nodes by adding
-    // edges from/to the Root node. Such edges are assumed by different parts of
-    // the scheduling algorithm, but are not always present, e.g. for certain
-    // 'Safepoint' nodes in the 'Before RemoveUseless' phase.
-    public void connectOrphansAndWidows() {
-        Node root = findRoot();
-        if (root == null) {
-            return;
-        }
-        for (Node n : nodes) {
-            if (n.isCFG) {
-                boolean orphan = true;
-                for (Node p : n.preds) {
-                    if (p != n && p.isCFG) {
-                        orphan = false;
-                    }
-                }
-                if (orphan) {
-                    // Add edge from root to this node.
-                    root.succs.add(n);
-                    n.preds.add(0, root);
-                }
-                boolean widow = true;
-                for (Node s : n.succs) {
-                    if (s != n && s.isCFG) {
-                        widow = false;
-                    }
-                }
-                if (widow) {
-                    // Add edge from this node to root.
-                    root.preds.add(n);
-                    n.succs.add(root);
-                }
-            }
-        }
-    }
-
     // Check invariants in the input graph and in the output schedule, and add
     // warnings to nodes where the invariants do not hold.
     public void check() {
@@ -888,6 +814,12 @@ public class ServerCompilerScheduler implements Scheduler {
             // Check that region nodes are well-formed.
             if (isRegion(n) && !n.isBlockStart) {
                 n.addWarning(Node.WARNING_NOT_MARKED_WITH_BLOCK_START);
+            }
+            if (isRegion(n) && controlSuccs.get(n).size() > 1) {
+                n.addWarning(Node.WARNING_REGION_WITH_MULTIPLE_SUCCS);
+            }
+            if (n.isCFG && controlSuccs.get(n).isEmpty()) {
+                n.addWarning(Node.WARNING_CFG_WITHOUT_SUCCESSORS);
             }
             if (n.isCFG && n.block == null) {
                 n.addWarning(Node.WARNING_CONTROL_UNREACHABLE_CFG);

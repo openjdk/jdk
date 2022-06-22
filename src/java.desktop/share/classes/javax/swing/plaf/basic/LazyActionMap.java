@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,15 +150,10 @@ class LazyActionMap extends ActionMapUIResource {
             } catch (NoSuchMethodException nsme) {
                 assert false : "LazyActionMap unable to load actions " +
                         klass;
-            } catch (IllegalAccessException iae) {
+            } catch (IllegalAccessException | IllegalArgumentException |
+                     InvocationTargetException e) {
                 assert false : "LazyActionMap unable to load actions " +
-                        iae;
-            } catch (InvocationTargetException ite) {
-                assert false : "LazyActionMap unable to load actions " +
-                        ite;
-            } catch (IllegalArgumentException iae) {
-                assert false : "LazyActionMap unable to load actions " +
-                        iae;
+                        e;
             }
         }
     }

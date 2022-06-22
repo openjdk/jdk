@@ -61,6 +61,10 @@
 #include "runtime/thread.hpp"
 #include "utilities/debug.hpp"
 
+#ifdef LINUX
+#include "osContainer_linux.hpp"
+#endif
+
 #define NO_TRANSITION(result_type, header) extern "C" { result_type JNICALL header {
 #define NO_TRANSITION_END } }
 
@@ -267,19 +271,19 @@ JVM_ENTRY_NO_ENV(void, jfr_set_output(JNIEnv* env, jobject jvm, jstring path))
   JfrRepository::set_chunk_path(path, thread);
 JVM_END
 
-JVM_ENTRY_NO_ENV(void, jfr_set_method_sampling_interval(JNIEnv* env, jobject jvm, jlong type, jlong intervalMillis))
-  if (intervalMillis < 0) {
-    intervalMillis = 0;
+JVM_ENTRY_NO_ENV(void, jfr_set_method_sampling_period(JNIEnv* env, jobject jvm, jlong type, jlong periodMillis))
+  if (periodMillis < 0) {
+    periodMillis = 0;
   }
   JfrEventId typed_event_id = (JfrEventId)type;
   assert(EventExecutionSample::eventId == typed_event_id || EventNativeMethodSample::eventId == typed_event_id, "invariant");
-  if (intervalMillis > 0) {
+  if (periodMillis > 0) {
     JfrEventSetting::set_enabled(typed_event_id, true); // ensure sampling event is enabled
   }
   if (EventExecutionSample::eventId == type) {
-    JfrThreadSampling::set_java_sample_interval(intervalMillis);
+    JfrThreadSampling::set_java_sample_period(periodMillis);
   } else {
-    JfrThreadSampling::set_native_sample_interval(intervalMillis);
+    JfrThreadSampling::set_native_sample_period(periodMillis);
   }
 JVM_END
 
@@ -380,4 +384,12 @@ JVM_END
 
 JVM_ENTRY_NO_ENV(jboolean, jfr_is_class_instrumented(JNIEnv* env, jobject jvm, jclass clazz))
   return JfrJavaSupport::is_instrumented(clazz, thread);
+JVM_END
+
+JVM_ENTRY_NO_ENV(jboolean, jfr_is_containerized(JNIEnv* env, jobject jvm))
+#ifdef LINUX
+  return OSContainer::is_containerized();
+#else
+  return false;
+#endif
 JVM_END

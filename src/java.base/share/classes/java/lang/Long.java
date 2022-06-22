@@ -1926,7 +1926,7 @@ public final class Long extends Number
      * value:
      * {@snippet lang="java" :
      * // Compressing drink to food
-     * compress(0xCAFEBABE, 0xFF00FFF0) == 0xCABAB
+     * compress(0xCAFEBABEL, 0xFF00FFF0L) == 0xCABABL
      * }
      * Starting from the least significant hexadecimal digit at position 0
      * from the right, the mask {@code 0xFF00FFF0} selects hexadecimal digits
@@ -1938,16 +1938,16 @@ public final class Long extends Number
      * understand the behaviour of {@code compress}:
      * {@snippet lang="java" :
      * // Returns 1 if the bit at position n is one
-     * compress(x, 1 << n) == (x >> n & 1)
+     * compress(x, 1L << n) == (x >> n & 1)
      *
      * // Logical shift right
-     * compress(x, -1 << n) == x >>> n
+     * compress(x, -1L << n) == x >>> n
      *
      * // Any bits not covered by the mask are ignored
      * compress(x, m) == compress(x & m, m)
      *
      * // Compressing a value by itself
-     * compress(m, m) == (m == -1 || m == 0) ? m : (1 << bitCount(m)) - 1
+     * compress(m, m) == (m == -1 || m == 0) ? m : (1L << bitCount(m)) - 1
      *
      * // Expanding then compressing with the same mask
      * compress(expand(x, m), m) == x & compress(m, m)
@@ -1969,7 +1969,7 @@ public final class Long extends Number
      * }
      *
      * // Separate the sheep from the goats
-     * sag(0xCAFEBABE, 0xFF00FFF0) == 0xCABABFEE
+     * sag(0x00000000_CAFEBABEL, 0xFFFFFFFF_FF00FFF0L) == 0x00000000_CABABFEEL
      * }
      *
      * @param i the value whose bits are to be compressed
@@ -2018,7 +2018,7 @@ public final class Long extends Number
      * Consider the simple case of expanding the digits of a hexadecimal
      * value:
      * {@snippet lang="java" :
-     * expand(0x0000CABAB, 0xFF00FFF0) == 0xCA00BAB0
+     * expand(0x0000CABABL, 0xFF00FFF0L) == 0xCA00BAB0L
      * }
      * Starting from the least significant hexadecimal digit at position 0
      * from the right, the mask {@code 0xFF00FFF0} selects the first five
@@ -2029,13 +2029,13 @@ public final class Long extends Number
      * understand the behaviour of {@code expand}:
      * {@snippet lang="java" :
      * // Logically shift right the bit at position 0
-     * expand(x, 1 << n) == (x & 1) << n
+     * expand(x, 1L << n) == (x & 1) << n
      *
      * // Logically shift right
-     * expand(x, -1 << n) == x << n
+     * expand(x, -1L << n) == x << n
      *
      * // Expanding all bits returns the mask
-     * expand(-1, m) == m
+     * expand(-1L, m) == m
      *
      * // Any bits not covered by the mask are ignored
      * expand(x, m) == expand(x, m) & m
@@ -2049,7 +2049,7 @@ public final class Long extends Number
      * {@snippet lang="java" :
      * long select(long i, long n) {
      *     // the one-bit in i (the mask) with index n
-     *     long nthBit = Long.expand(1 << n, i);
+     *     long nthBit = Long.expand(1L << n, i);
      *     // the bit position of the one-bit with index n
      *     return Long.numberOfTrailingZeros(nthBit);
      * }
