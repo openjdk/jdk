@@ -463,10 +463,8 @@ reportEvents(JNIEnv *env, jbyte sessionID, jthread thread, EventIndex ei,
  * structure) kind of way.
  */
 static jboolean
-synthesizeUnloadEvent(void *signatureVoid, void *envVoid)
+synthesizeUnloadEvent(char *signature, JNIEnv *env)
 {
-    JNIEnv *env = (JNIEnv *)envVoid;
-    char *signature = *(char **)signatureVoid;
     char *classname;
     HandlerNode *node;
     jbyte eventSessionID = currentSessionID;
@@ -481,7 +479,7 @@ synthesizeUnloadEvent(void *signatureVoid, void *envVoid)
     classname = jvmtiAllocate((int)strlen(signature)+1);
     (void)strcpy(classname, signature);
     convertSignatureToClassname(classname);
-
+printf("synthesizeUnloadEvent: %s, %s\n", signature, classname);
     debugMonitorEnter(handlerLock);
 
     node = getHandlerChain(EI_GC_FINISH)->first;
@@ -594,27 +592,6 @@ filterAndHandleEvent(JNIEnv *env, EventInfo *evinfo, EventIndex ei,
 
 }
 
-static void
-process_classUnload(JNIEnv *env) {
-    /* check and process class unloading events */
-    struct bag *unloadedSignatures = NULL;
-
-    /* We also need to simulate the class unload events. */
-    debugMonitorEnter(handlerLock);
-
-    /* Analyze which class unloads occurred */
-    unloadedSignatures = classTrack_processUnloads(env);
-
-    debugMonitorExit(handlerLock);
-
-    /* Generate the synthetic class unload events and/or just cleanup.  */
-    if ( unloadedSignatures != NULL ) {
-      (void)bagEnumerateOver(unloadedSignatures, synthesizeUnloadEvent,
-                             (void *)env);
-      bagDestroyBag(unloadedSignatures);
-    }
-}
-
 /*
  * The JVMTI generic event callback. Each event is passed to a sequence of
  * handlers in a chain until the chain ends or one handler
@@ -650,7 +627,6 @@ event_callback(JNIEnv *env, EventInfo *evinfo)
     if (evinfo->ei == EI_CLASS_UNLOAD) {
         synthesizeUnloadEvent((char*)jlong_to_ptr(evinfo->tag), env);
     }
-
 
     thread = evinfo->thread;
     if (thread != NULL) {
@@ -989,7 +965,7 @@ cbClassLoad(jvmtiEnv *jvmti_env, JNIEnv *env,
  * in deletedSignatures. Those are only used in addPreparedClass() by the
  * same thread.
  */
-static void JNICALL
+void JNICALL
 cbTrackingObjectFree(jvmtiEnv* jvmti_env, jlong tag)
 {
     EventInfo info;
@@ -1000,7 +976,7 @@ cbTrackingObjectFree(jvmtiEnv* jvmti_env, jlong tag)
     (void)memset(&info,0,sizeof(info));
     info.ei         = EI_CLASS_UNLOAD;
     info.tag        = tag;
-    event_callback(env(), &info);
+    event_callback(getEnv(), &info);
     } END_CALLBACK();
 
     LOG_MISC(("END cbTrackingObjectFree"));

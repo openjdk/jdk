@@ -1210,6 +1210,11 @@ void JvmtiTagMap::post_dead_objects() {
   FreedObjectTags objects;
   VM_JvmtiCollectFreedObject op(this, &objects);
   VMThread::execute(&op);
+
+  for (int index = 0; index < objects.length(); index++) {
+    JvmtiExport::post_object_free(env(), objects.at(index));
+  }
+
 }
 
 void JvmtiTagMap::flush_object_free_events() {

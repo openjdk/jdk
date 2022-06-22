@@ -56,23 +56,8 @@ struct bag* deletedSignatures;
  */
 static jrawMonitorID classTrackLock;
 
-/*
- * Invoke the callback when classes are freed, find and record the signature
- * in deletedSignatures. Those are only used in addPreparedClass() by the
- * same thread.
- */
-static void JNICALL
-cbTrackingObjectFree(jvmtiEnv* jvmti_env, jlong tag)
-{
-    debugMonitorEnter(classTrackLock);
-    if (deletedSignatures == NULL) {
-      debugMonitorExit(classTrackLock);
-      return;
-    }
-    *(char**)bagAdd(deletedSignatures) = (char*)jlong_to_ptr(tag);
-
-    debugMonitorExit(classTrackLock);
-}
+extern void JNICALL
+cbTrackingObjectFree(jvmtiEnv* jvmti_env, jlong tag);
 
 /*
  * Called after class unloads have occurred.
@@ -142,6 +127,7 @@ classTrack_addPreparedClass(JNIEnv *env_unused, jclass klass)
 static jboolean
 setupEvents()
 {
+  printf("SetupEvents!!!\n");
     jvmtiCapabilities caps;
     memset(&caps, 0, sizeof(caps));
     caps.can_generate_object_free_events = 1;
