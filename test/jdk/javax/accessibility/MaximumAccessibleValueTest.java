@@ -23,7 +23,6 @@
 
 /*
  * @test
- * @key headful
  * @bug 4422362
  * @summary Wrong Max Accessible Value with BoundedRangeModel components
  * @run main MaximumAccessibleValueTest
