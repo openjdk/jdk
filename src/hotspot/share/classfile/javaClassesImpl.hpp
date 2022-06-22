@@ -29,9 +29,6 @@
 #include "runtime/continuationJavaClasses.hpp"
 #include "utilities/macros.hpp"
 
-#define DECLARE_INJECTED_FIELD_ENUM(klass, name, signature, may_be_java) \
-  klass##_##name##_enum,
-
 #define ALL_INJECTED_FIELDS(macro)          \
   STRING_INJECTED_FIELDS(macro)             \
   CLASS_INJECTED_FIELDS(macro)              \
@@ -45,7 +42,7 @@
   INTERNALERROR_INJECTED_FIELDS(macro)      \
   STACKCHUNK_INJECTED_FIELDS(macro)
 
-#define INJECTED_FIELD_COMPUTE_OFFSET(klass, name, signature, may_be_java)    \
+#define INJECTED_FIELD_COMPUTE_OFFSET(klass, name, signature, may_be_java) \
   klass::_##name##_offset = JavaClasses::compute_injected_offset(InjectedFieldID::klass##_##name##_enum);
 
 #if INCLUDE_CDS
@@ -61,6 +58,9 @@
 #define FIELD_COMPUTE_OFFSET(offset, klass, name, signature, is_static) \
   JavaClasses::compute_offset(offset, klass, name, vmSymbols::signature(), is_static)
 
+
+#define DECLARE_INJECTED_FIELD_ENUM(klass, name, signature, may_be_java) \
+  klass##_##name##_enum,
 
 enum class InjectedFieldID : int {
   ALL_INJECTED_FIELDS(DECLARE_INJECTED_FIELD_ENUM)

@@ -26,7 +26,6 @@
 
 #include "oops/instanceStackChunkKlass.hpp"
 
-#include "classfile/continuationJavaClasses.inline.hpp"
 #include "code/codeBlob.inline.hpp"
 #include "code/codeCache.inline.hpp"
 #include "code/nativeInst.hpp"

@@ -22,14 +22,16 @@
  *
  */
 
-#ifndef SHARE_CLASSFILE_JDK_INTERNAL_VM_STACKCHUNK_INLINE_HPP
-#define SHARE_CLASSFILE_JDK_INTERNAL_VM_STACKCHUNK_INLINE_HPP
+#ifndef SHARE_RUNTIME_CONTINUATIONJAVACLASSES_INLINE_HPP
+#define SHARE_RUNTIME_CONTINUATIONJAVACLASSES_INLINE_HPP
 
-#include "classfile/javaClasses.hpp"
+#include "runtime/continuationJavaClasses.hpp"
+
 #include "logging/log.hpp"
 #include "oops/access.inline.hpp"
+#include "oops/oop.inline.hpp"
 #include "oops/stackChunkOop.inline.hpp"
-#include "runtime/continuationJavaClasses.hpp"
+#include "runtime/atomic.hpp"
 
 inline oop jdk_internal_vm_ContinuationScope::name(oop ref) {
   return ref->obj_field(_name_offset);
@@ -187,4 +189,4 @@ inline void jdk_internal_vm_StackChunk::set_maxThawingSize(oop chunk, int value)
   chunk->int_field_put(_maxThawingSize_offset, value);
 }
 
-#endif // SHARE_CLASSFILE_JDK_INTERNAL_VM_STACKCHUNK_INLINE_HPP
+#endif // SHARE_RUNTIME_CONTINUATIONJAVACLASSES_INLINE_HPP

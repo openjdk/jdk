@@ -26,9 +26,9 @@
 #define SHARE_CLASSFILE_JAVACLASSES_HPP
 
 #include "classfile/vmClasses.hpp"
-#include "oops/oop.hpp"
 #include "oops/instanceKlass.hpp"
-#include "oops/symbol.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "runtime/handles.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmEnums.hpp"
 
@@ -1930,4 +1930,5 @@ class JavaClasses : AllStatic {
 };
 
 #undef CHECK_INIT
+
 #endif // SHARE_CLASSFILE_JAVACLASSES_HPP

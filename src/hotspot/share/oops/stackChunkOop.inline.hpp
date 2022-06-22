@@ -31,7 +31,7 @@
 #include "memory/memRegion.hpp"
 #include "memory/universe.hpp"
 #include "oops/instanceStackChunkKlass.inline.hpp"
-#include "runtime/continuationJavaClasses.hpp"
+#include "runtime/continuationJavaClasses.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/registerMap.hpp"

@@ -22,11 +22,13 @@
  *
  */
 
-#ifndef SHARE_CLASSFILE_CONTINUATIONJAVACLASSES_HPP
-#define SHARE_CLASSFILE_CONTINUATIONJAVACLASSES_HPP
+#ifndef SHARE_RUNTIME_CONTINUATIONJAVACLASSES_HPP
+#define SHARE_RUNTIME_CONTINUATIONJAVACLASSES_HPP
 
 #include "memory/allStatic.hpp"
-#include "oops/oop.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 
 class SerializeClosure;
 
@@ -74,11 +76,11 @@ class jdk_internal_vm_Continuation: AllStatic {
 };
 
 // Interface to jdk.internal.vm.StackChunk objects
-#define STACKCHUNK_INJECTED_FIELDS(macro)                                    \
-  macro(jdk_internal_vm_StackChunk, cont,           continuation_signature, false)  \
-  macro(jdk_internal_vm_StackChunk, flags,          byte_signature, false)          \
-  macro(jdk_internal_vm_StackChunk, pc,             intptr_signature, false)        \
-  macro(jdk_internal_vm_StackChunk, maxThawingSize, int_signature, false)           \
+#define STACKCHUNK_INJECTED_FIELDS(macro)                                          \
+  macro(jdk_internal_vm_StackChunk, cont,           continuation_signature, false) \
+  macro(jdk_internal_vm_StackChunk, flags,          byte_signature,         false) \
+  macro(jdk_internal_vm_StackChunk, pc,             intptr_signature,       false) \
+  macro(jdk_internal_vm_StackChunk, maxThawingSize, int_signature,          false) \
 
 class jdk_internal_vm_StackChunk: AllStatic {
   friend class JavaClasses;
@@ -136,4 +138,4 @@ class jdk_internal_vm_StackChunk: AllStatic {
   static inline void set_cont_raw(oop chunk, oop value);
 };
 
-#endif // SHARE_CLASSFILE_CONTINUATIONJAVACLASSES_HPP
+#endif // SHARE_RUNTIME_CONTINUATIONJAVACLASSES_HPP

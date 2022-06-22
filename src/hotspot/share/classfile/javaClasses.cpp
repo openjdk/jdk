@@ -29,7 +29,6 @@
 #include "cds/metaspaceShared.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classLoaderData.inline.hpp"
-#include "classfile/continuationJavaClasses.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/javaClassesImpl.hpp"
 #include "classfile/javaThreadStatus.hpp"
@@ -66,6 +65,7 @@
 #include "prims/methodHandles.hpp"
 #include "prims/resolvedMethodTable.hpp"
 #include "runtime/continuationEntry.inline.hpp"
+#include "runtime/continuationJavaClasses.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -131,7 +131,9 @@ InjectedField* JavaClasses::get_injected(Symbol* class_name, int* field_count) {
 #define LOOKUP_INJECTED_FIELD(klass, name, signature, may_be_java) \
   if (sid == VM_SYMBOL_ENUM_NAME(klass)) {                         \
     count++;                                                       \
-    if (start == -1) start = (int)InjectedFieldID::klass##_##name##_enum; \
+    if (start == -1) {                                             \
+      start = (int)InjectedFieldID::klass##_##name##_enum;         \
+    }                                                              \
   }
   ALL_INJECTED_FIELDS(LOOKUP_INJECTED_FIELD);
 #undef LOOKUP_INJECTED_FIELD
