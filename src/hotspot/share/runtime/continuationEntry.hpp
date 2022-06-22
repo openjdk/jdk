@@ -113,14 +113,7 @@ public:
   void update_register_map(RegisterMap* map) const;
   void flush_stack_processing(JavaThread* thread) const;
 
-  intptr_t* bottom_sender_sp() const {
-    intptr_t* sp = entry_sp() - argsize();
-#ifdef _LP64_
-    sp = align_down(sp, frame::frame_alignment);
-#endif
-    return sp;
-  }
-
+  inline intptr_t* bottom_sender_sp() const;
   inline oop cont_oop() const;
   inline oop scope() const;
   inline static oop cont_oop_or_null(const ContinuationEntry* ce);

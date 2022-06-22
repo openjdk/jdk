@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "runtime/continuation.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/continuation.hpp"

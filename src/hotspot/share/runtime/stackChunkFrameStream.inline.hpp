@@ -26,6 +26,7 @@
 
 #include "runtime/stackChunkFrameStream.hpp"
 
+#include "code/codeCache.inline.hpp"
 #include "compiler/oopMap.hpp"
 #include "interpreter/interpreter.hpp"
 #include "logging/log.hpp"

@@ -25,16 +25,15 @@
 #ifndef SHARE_VM_RUNTIME_CONTINUATION_HPP
 #define SHARE_VM_RUNTIME_CONTINUATION_HPP
 
+#include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "memory/iterator.hpp"
-//#include "runtime/frame.hpp"
-#include "runtime/globals.hpp"
 #include "jni.h"
 
 class ContinuationEntry;
 class frame;
 class FrameValues;
 class Handle;
+class outputStream;
 class RegisterMap;
 
 class Continuations : public AllStatic {
