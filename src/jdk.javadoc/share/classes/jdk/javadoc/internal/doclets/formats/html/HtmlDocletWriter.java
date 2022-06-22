@@ -979,11 +979,21 @@ public class HtmlDocletWriter {
         String tagName = ch.getTagName(see);
 
         String seeText = utils.normalizeNewlines(ch.getText(see)).toString();
+        String refText;
         List<? extends DocTree> label;
         switch (kind) {
-            case LINK, LINK_PLAIN ->
+            case LINK, LINK_PLAIN -> {
                 // {@link[plain] reference label...}
-                label = ((LinkTree) see).getLabel();
+                LinkTree lt = (LinkTree) see;
+                var linkRef = lt.getReference();
+                if (linkRef == null) {
+                    messages.warning(ch.getDocTreePath(see),"doclet.link.no_reference");
+                    return invalidTagOutput(resources.getText("doclet.tag.invalid_input", lt.toString()),
+                        Optional.empty());
+                }
+                refText = linkRef.toString();
+                label = lt.getLabel();
+            }
 
             case SEE -> {
                 List<? extends DocTree> ref = ((SeeTree) see).getReference();
@@ -999,6 +1009,7 @@ public class HtmlDocletWriter {
                     }
                     case REFERENCE -> {
                         // @see reference label...
+                        refText = ref.get(0).toString();
                         label = ref.subList(1, ref.size());
                     }
                     case ERRONEOUS -> {
@@ -1059,7 +1070,7 @@ public class HtmlDocletWriter {
                         messages.warning(ch.getDocTreePath(see),
                                 "doclet.see.class_or_package_not_found",
                                 "@" + tagName,
-                                seeText);
+                                refText);
                     }
                     return invalidTagOutput(resources.getText("doclet.tag.invalid", tagName),
                             Optional.of(labelContent.isEmpty() ? text: labelContent));
@@ -1113,7 +1124,7 @@ public class HtmlDocletWriter {
                     if (!configuration.isDocLintReferenceGroupEnabled()) {
                         messages.warning(
                                 ch.getDocTreePath(see), "doclet.see.class_or_package_not_found",
-                                tagName, seeText);
+                                tagName, refText);
                     }
                 }
             }

@@ -996,11 +996,12 @@ JRT_ENTRY_NO_ASYNC(void, SharedRuntime::register_finalizer(JavaThread* current, 
 JRT_END
 
 jlong SharedRuntime::get_java_tid(Thread* thread) {
-  if (thread != NULL) {
-    if (thread->is_Java_thread()) {
-      oop obj = JavaThread::cast(thread)->threadObj();
-      return (obj == NULL) ? 0 : java_lang_Thread::thread_id(obj);
-    }
+  if (thread != NULL && thread->is_Java_thread()) {
+    Thread* current = Thread::current();
+    guarantee(current != thread || JavaThread::cast(thread)->is_oop_safe(),
+              "current cannot touch oops after its GC barrier is detached.");
+    oop obj = JavaThread::cast(thread)->threadObj();
+    return (obj == NULL) ? 0 : java_lang_Thread::thread_id(obj);
   }
   return 0;
 }
@@ -1405,7 +1406,7 @@ methodHandle SharedRuntime::resolve_sub_helper(bool is_virtual, bool is_optimize
 
   if (invoke_code == Bytecodes::_invokestatic) {
     assert(callee_method->method_holder()->is_initialized() ||
-           callee_method->method_holder()->is_reentrant_initialization(current),
+           callee_method->method_holder()->is_init_thread(current),
            "invalid class initialization state for invoke_static");
     if (!VM_Version::supports_fast_class_init_checks() && callee_method->needs_clinit_barrier()) {
       // In order to keep class initialization check, do not patch call

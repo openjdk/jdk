@@ -84,7 +84,7 @@ public class VectorFPtoIntCastTest {
     }
 
     @Test
-    @IR(counts = {"F2X", ">= 1"})
+    @IR(counts = {IRNode.VECTOR_CAST_F2X, "> 0"})
     public void float2int() {
         var cvec = (IntVector)fvec512.convertShape(VectorOperators.F2I, ispec512, 0);
         cvec.intoArray(int_arr, 0);
@@ -101,7 +101,7 @@ public class VectorFPtoIntCastTest {
     }
 
     @Test
-    @IR(counts = {"F2X", ">= 1"})
+    @IR(counts = {IRNode.VECTOR_CAST_F2X, "> 0"})
     public void float2long() {
         var cvec = (LongVector)fvec512.convertShape(VectorOperators.F2L, lspec512, 0);
         cvec.intoArray(long_arr, 0);
@@ -118,7 +118,7 @@ public class VectorFPtoIntCastTest {
     }
 
     @Test
-    @IR(counts = {"F2X", ">= 1"})
+    @IR(counts = {IRNode.VECTOR_CAST_F2X, "> 0"})
     public void float2short() {
         var cvec = (ShortVector)fvec512.convertShape(VectorOperators.F2S, sspec256, 0);
         cvec.intoArray(short_arr, 0);
@@ -135,7 +135,7 @@ public class VectorFPtoIntCastTest {
     }
 
     @Test
-    @IR(counts = {"F2X", ">= 1"})
+    @IR(counts = {IRNode.VECTOR_CAST_F2X, "> 0"})
     public void float2byte() {
         var cvec = (ByteVector)fvec512.convertShape(VectorOperators.F2B, bspec128, 0);
         cvec.intoArray(byte_arr, 0);
@@ -152,7 +152,7 @@ public class VectorFPtoIntCastTest {
     }
 
     @Test
-    @IR(counts = {"D2X", ">= 1"})
+    @IR(counts = {IRNode.VECTOR_CAST_D2X, "> 0"})
     public void double2int() {
         var cvec = (IntVector)dvec512.convertShape(VectorOperators.D2I, ispec256, 0);
         cvec.intoArray(int_arr, 0);
@@ -169,7 +169,7 @@ public class VectorFPtoIntCastTest {
     }
 
     @Test
-    @IR(counts = {"D2X", ">= 1"})
+    @IR(counts = {IRNode.VECTOR_CAST_D2X, "> 0"})
     public void double2long() {
         var cvec = (LongVector)dvec512.convertShape(VectorOperators.D2L, lspec512, 0);
         cvec.intoArray(long_arr, 0);
@@ -186,7 +186,7 @@ public class VectorFPtoIntCastTest {
     }
 
     @Test
-    @IR(counts = {"D2X", ">= 1"})
+    @IR(counts = {IRNode.VECTOR_CAST_D2X, "> 0"})
     public void double2short() {
         var cvec = (ShortVector)dvec512.convertShape(VectorOperators.D2S, sspec128, 0);
         cvec.intoArray(short_arr, 0);
@@ -203,7 +203,7 @@ public class VectorFPtoIntCastTest {
     }
 
     @Test
-    @IR(counts = {"D2X", ">= 1"})
+    @IR(counts = {IRNode.VECTOR_CAST_D2X, "> 0"})
     public void double2byte() {
         var cvec = (ByteVector)dvec512.convertShape(VectorOperators.D2B, bspec64, 0);
         cvec.intoArray(byte_arr, 0);

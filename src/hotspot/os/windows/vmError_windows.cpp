@@ -25,8 +25,8 @@
 #include "precompiled.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/vmError.hpp"
 
 LONG WINAPI crash_handler(struct _EXCEPTION_POINTERS* exceptionInfo) {

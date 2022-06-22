@@ -24,9 +24,9 @@
 
 #include "precompiled.hpp"
 #include "logging/log.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/stackOverflow.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 

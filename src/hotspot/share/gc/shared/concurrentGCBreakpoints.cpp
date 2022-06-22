@@ -28,8 +28,8 @@
 #include "logging/log.hpp"
 #include "memory/universe.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/debug.hpp"
 
 // States:
