@@ -105,7 +105,9 @@ public class JWebServerLauncher {
     }
 
     /**
-     * Launches the jwebserver which will serve the current directory contents
+     * Launches the jwebserver, as a separate process, which will then serve the
+     * current directory contents.
+     * This method behaves the same as calling {@link #launch(Path) launch(null)}.
      *
      * @return The {@link JWebServerProcess} representing the launched server
      * @throws IOException
@@ -115,7 +117,11 @@ public class JWebServerLauncher {
     }
 
     /**
-     * Launches the jwebserver which will serve the passed {@code dirToServe} directory's content.
+     * Launches the jwebserver, as a separate process, which will serve the passed
+     * {@code dirToServe} directory's content.
+     * Once this method returns successfully, the caller is responsible for managing the launched
+     * {@link JWebServerProcess#process process}, including {@link Process#destroy() destroying}
+     * it, when the server is no longer needed.
      *
      * @param dirToServe The directory to serve. Can be null in which case the current directory's
      *                   content will be served.
