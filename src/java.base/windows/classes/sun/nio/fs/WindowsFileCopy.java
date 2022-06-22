@@ -183,9 +183,9 @@ class WindowsFileCopy {
 
         // Use CopyFileEx if the file is not a directory or junction
         if (!sourceAttrs.isDirectory() && !sourceAttrs.isDirectoryLink()) {
-            final int flags = ((!followLinks) ? COPY_FILE_COPY_SYMLINK : 0) |
-                              ((sourceAttrs.size() > UNBUFFERED_IO_THRESHOLD) ?
-                                  COPY_FILE_NO_BUFFERING : 0);
+            boolean isBuffering = sourceAttrs.size() <= UNBUFFERED_IO_THRESHOLD;
+            final int flags = (followLinks ? 0 : COPY_FILE_COPY_SYMLINK) |
+                              (isBuffering ? 0 : COPY_FILE_NO_BUFFERING);
 
             if (interruptible) {
                 // interruptible copy
