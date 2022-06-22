@@ -187,7 +187,7 @@ void JvmtiTagMapTable::resize_if_needed() {
 }
 
 // Serially remove entries for dead oops from the table, and notify jvmti.
-void JvmtiTagMapTable::remove_dead_entries(GrowableArray<jlong>* objects) {
+void JvmtiTagMapTable::remove_dead_entries(FreedObjectTags* objects) {
   int oops_removed = 0;
   int oops_counted = 0;
   for (int i = 0; i < table_size(); ++i) {

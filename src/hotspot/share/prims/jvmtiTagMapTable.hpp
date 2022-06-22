@@ -28,6 +28,8 @@
 #include "oops/weakHandle.hpp"
 #include "utilities/hashtable.hpp"
 
+typedef GrowableArrayCHeap<jlong, mtInternal> FreedObjectTags;
+
 class JvmtiEnv;
 
 // Hashtable to record oops used for JvmtiTagMap
@@ -88,7 +90,7 @@ public:
   bool is_empty() const { return number_of_entries() == 0; }
 
   // Cleanup cleared entries and post
-  void remove_dead_entries(GrowableArray<jlong>* objects);
+  void remove_dead_entries(FreedObjectTags* objects);
   void rehash();
   void clear();
 };

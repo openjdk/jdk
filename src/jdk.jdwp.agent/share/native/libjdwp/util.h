@@ -162,21 +162,22 @@ typedef enum {
         EI_CLASS_PREPARE        =  7,
         EI_GC_FINISH            =  8,
         EI_CLASS_LOAD           =  9,
-        EI_FIELD_ACCESS         = 10,
-        EI_FIELD_MODIFICATION   = 11,
-        EI_EXCEPTION_CATCH      = 12,
-        EI_METHOD_ENTRY         = 13,
-        EI_METHOD_EXIT          = 14,
-        EI_MONITOR_CONTENDED_ENTER = 15,
-        EI_MONITOR_CONTENDED_ENTERED = 16,
-        EI_MONITOR_WAIT         = 17,
-        EI_MONITOR_WAITED       = 18,
-        EI_VM_INIT              = 19,
-        EI_VM_DEATH             = 20,
-        EI_VIRTUAL_THREAD_START = 21,
-        EI_VIRTUAL_THREAD_END   = 22,
+        EI_CLASS_UNLOAD         = 10,
+        EI_FIELD_ACCESS         = 11,
+        EI_FIELD_MODIFICATION   = 12,
+        EI_EXCEPTION_CATCH      = 13,
+        EI_METHOD_ENTRY         = 14,
+        EI_METHOD_EXIT          = 15,
+        EI_MONITOR_CONTENDED_ENTER = 16,
+        EI_MONITOR_CONTENDED_ENTERED = 17,
+        EI_MONITOR_WAIT         = 18,
+        EI_MONITOR_WAITED       = 19,
+        EI_VM_INIT              = 20,
+        EI_VM_DEATH             = 21,
+        EI_VIRTUAL_THREAD_START = 22,
+        EI_VIRTUAL_THREAD_END   = 23,
 
-        EI_max                  = 22
+        EI_max                  = 23
 } EventIndex;
 
 /* Agent errors that might be in a jvmtiError for JDWP or internal.
@@ -222,6 +223,7 @@ typedef struct {
     jmethodID   method;
     jlocation   location;
     jobject     object; /* possibly an exception or user object */
+    jlong       tag;
 
     union {
 

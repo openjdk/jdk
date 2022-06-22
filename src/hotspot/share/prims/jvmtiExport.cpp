@@ -1691,9 +1691,9 @@ void JvmtiExport::continuation_yield_cleanup(JavaThread* thread, jint continuati
 }
 
 void JvmtiExport::post_object_free(JvmtiEnv* env, jlong tag) {
-  Thread *thread = Thread::current();
+  JavaThread *thread = JavaThread::current();
 
-  if (thread->is_Java_thread() && JavaThread::cast(thread)->is_in_VTMS_transition()) {
+  if (thread->is_in_VTMS_transition()) {
     return; // no events should be posted if thread is in a VTMS transition
   }
   assert(env->is_enabled(JVMTI_EVENT_OBJECT_FREE), "checking");
@@ -1701,6 +1701,8 @@ void JvmtiExport::post_object_free(JvmtiEnv* env, jlong tag) {
   EVT_TRIG_TRACE(JVMTI_EVENT_OBJECT_FREE, ("[?] Trg Object Free triggered" ));
   EVT_TRACE(JVMTI_EVENT_OBJECT_FREE, ("[?] Evt Object Free sent"));
 
+  JvmtiThreadEventMark jem(thread);
+  JvmtiJavaThreadEventTransition jet(thread);
   jvmtiEventObjectFree callback = env->callbacks()->ObjectFree;
   if (callback != NULL) {
     (*callback)(env->jvmti_external(), tag);

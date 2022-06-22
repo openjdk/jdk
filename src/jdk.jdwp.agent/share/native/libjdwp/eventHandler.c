@@ -647,7 +647,10 @@ event_callback(JNIEnv *env, EventInfo *evinfo)
         garbageCollected = 0;
     }
 
-    process_classUnload(env);
+    if (evinfo->ei == EI_CLASS_UNLOAD) {
+        synthesizeUnloadEvent((char*)jlong_to_ptr(evinfo->tag), env);
+    }
+
 
     thread = evinfo->thread;
     if (thread != NULL) {
@@ -979,6 +982,29 @@ cbClassLoad(jvmtiEnv *jvmti_env, JNIEnv *env,
     } END_CALLBACK();
 
     LOG_MISC(("END cbClassLoad"));
+}
+
+/*
+ * Invoke the callback when classes are freed, find and record the signature
+ * in deletedSignatures. Those are only used in addPreparedClass() by the
+ * same thread.
+ */
+static void JNICALL
+cbTrackingObjectFree(jvmtiEnv* jvmti_env, jlong tag)
+{
+    EventInfo info;
+
+    LOG_CB(("cbTrackingObjectFree"));
+
+    BEGIN_CALLBACK() {
+    (void)memset(&info,0,sizeof(info));
+    info.ei         = EI_CLASS_UNLOAD;
+    info.tag        = tag;
+    event_callback(env(), &info);
+    } END_CALLBACK();
+
+    LOG_MISC(("END cbTrackingObjectFree"));
+
 }
 
 /* Event callback for JVMTI_EVENT_FIELD_ACCESS */

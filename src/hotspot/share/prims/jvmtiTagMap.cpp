@@ -147,8 +147,11 @@ void JvmtiTagMap::check_hashmap(bool post_events) {
   if (_needs_cleaning &&
       post_events &&
       env()->is_enabled(JVMTI_EVENT_OBJECT_FREE)) {
-    GrowableArray<jlong> objects;
+    FreedObjectTags objects;
     remove_dead_entries_locked(&objects);
+    for (int index = 0; index < objects.length(); index++) {
+      JvmtiExport::post_object_free(env(), objects.at(index));
+    }
   }
   if (_needs_rehashing) {
     log_info(jvmti, table)("TagMap table needs rehashing");
@@ -1168,7 +1171,7 @@ void JvmtiTagMap::iterate_through_heap(jint heap_filter,
   VMThread::execute(&op);
 }
 
-void JvmtiTagMap::remove_dead_entries_locked(GrowableArray<jlong>* objects) {
+void JvmtiTagMap::remove_dead_entries_locked(FreedObjectTags * objects) {
   assert(is_locked(), "precondition");
   if (_needs_cleaning) {
     // Recheck whether to post object free events under the lock.
@@ -1182,16 +1185,16 @@ void JvmtiTagMap::remove_dead_entries_locked(GrowableArray<jlong>* objects) {
   }
 }
 
-void JvmtiTagMap::remove_dead_entries(GrowableArray<jlong>* objects) {
+void JvmtiTagMap::remove_dead_entries(FreedObjectTags* objects) {
   MutexLocker ml(lock(), Mutex::_no_safepoint_check_flag);
   remove_dead_entries_locked(objects);
 }
 
 class VM_JvmtiCollectFreedObject: public VM_Operation {
   JvmtiTagMap* _tag_map;
-  GrowableArray<jlong>* _objects;
+  FreedObjectTags* _objects;
  public:
-    VM_JvmtiCollectFreedObject(JvmtiTagMap* tag_map, GrowableArray<jlong>* objects) :
+    VM_JvmtiCollectFreedObject(JvmtiTagMap* tag_map, FreedObjectTags* objects) :
       _tag_map(tag_map), _objects(objects) {}
   VMOp_Type type() const { return VMOp_Cleanup; }
   void doit() {
@@ -1204,13 +1207,9 @@ class VM_JvmtiCollectFreedObject: public VM_Operation {
 
 // PostObjectFree can't be called by JavaThread, so call it from the VM thread.
 void JvmtiTagMap::post_dead_objects() {
-  GrowableArray<jlong> objects;
+  FreedObjectTags objects;
   VM_JvmtiCollectFreedObject op(this, &objects);
   VMThread::execute(&op);
-
-  for (int index = 0; index < objects.length(); index++) {
-    JvmtiExport::post_object_free(env(), objects.at(index));
-  }
 }
 
 void JvmtiTagMap::flush_object_free_events() {
@@ -2859,7 +2858,7 @@ void JvmtiTagMap::iterate_over_reachable_objects(jvmtiHeapRootCallback heap_root
 }
 
 // iterate over all objects that are reachable from a given object
-void JvmtiTagMap::iterate_over_objects_reachable_from_object(jobject object,post_dead_objects_on_vm_thread
+void JvmtiTagMap::iterate_over_objects_reachable_from_object(jobject object,
                                                              jvmtiObjectReferenceCallback object_ref_callback,
                                                              const void* user_data) {
   oop obj = JNIHandles::resolve(object);

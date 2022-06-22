@@ -1937,6 +1937,7 @@ eventIndexInit(void)
     index2jvmti[EI_CLASS_PREPARE      -EI_min] = JVMTI_EVENT_CLASS_PREPARE;
     index2jvmti[EI_GC_FINISH          -EI_min] = JVMTI_EVENT_GARBAGE_COLLECTION_FINISH;
     index2jvmti[EI_CLASS_LOAD         -EI_min] = JVMTI_EVENT_CLASS_LOAD;
+//    index2jvmti[EI_CLASS_UNLOAD]      -EI_min] = JVMTI_EVENT_CLASS_UNLOAD;
     index2jvmti[EI_FIELD_ACCESS       -EI_min] = JVMTI_EVENT_FIELD_ACCESS;
     index2jvmti[EI_FIELD_MODIFICATION -EI_min] = JVMTI_EVENT_FIELD_MODIFICATION;
     index2jvmti[EI_EXCEPTION_CATCH    -EI_min] = JVMTI_EVENT_EXCEPTION_CATCH;
@@ -1960,6 +1961,7 @@ eventIndexInit(void)
     index2jdwp[EI_CLASS_PREPARE       -EI_min] = JDWP_EVENT(CLASS_PREPARE);
     index2jdwp[EI_GC_FINISH           -EI_min] = JDWP_EVENT(CLASS_UNLOAD);
     index2jdwp[EI_CLASS_LOAD          -EI_min] = JDWP_EVENT(CLASS_LOAD);
+    index2jdwp[EI_CLASS_UNLOAD        -EI_min] = JDWP_EVENT(CLASS_UNLOAD);
     index2jdwp[EI_FIELD_ACCESS        -EI_min] = JDWP_EVENT(FIELD_ACCESS);
     index2jdwp[EI_FIELD_MODIFICATION  -EI_min] = JDWP_EVENT(FIELD_MODIFICATION);
     index2jdwp[EI_EXCEPTION_CATCH     -EI_min] = JDWP_EVENT(EXCEPTION_CATCH);

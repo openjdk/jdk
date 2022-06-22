@@ -29,10 +29,11 @@
 
 #include "jvmtifiles/jvmti.h"
 #include "memory/allocation.hpp"
+#include "prims/jvmtiTagMapTable.hpp"
 
 class JvmtiEnv;
-class JvmtiTagMapTable;
 class JvmtiTagMapEntryClosure;
+
 
 class JvmtiTagMap :  public CHeapObj<mtInternal> {
  private:
@@ -110,8 +111,8 @@ class JvmtiTagMap :  public CHeapObj<mtInternal> {
                                    jlong** tag_result_ptr);
 
 
-  void remove_dead_entries(GrowableArray<jlong>* objects);
-  void remove_dead_entries_locked(GrowableArray<jlong>* objects);
+  void remove_dead_entries(FreedObjectTags * objects);
+  void remove_dead_entries_locked(FreedObjectTags* objects);
 
   static void check_hashmaps_for_heapwalk();
   static void set_needs_rehashing() NOT_JVMTI_RETURN;
