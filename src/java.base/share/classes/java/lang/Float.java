@@ -585,7 +585,7 @@ public final class Float extends Number
      */
     @IntrinsicCandidate
     public static boolean isInfinite(float v) {
-        return (v == POSITIVE_INFINITY) || (v == NEGATIVE_INFINITY);
+        return Math.abs(v) > MAX_VALUE;
     }
 
 
