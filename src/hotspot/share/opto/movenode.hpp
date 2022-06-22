@@ -160,10 +160,6 @@ class BinaryNode : public Node {
   BinaryNode( Node *n1, Node *n2 ) : Node(0,n1,n2) { }
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return 0; }
-
-#ifndef PRODUCT
-  virtual void related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const;
-#endif
 };
 
 
