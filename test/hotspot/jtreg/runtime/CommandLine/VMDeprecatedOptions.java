@@ -67,6 +67,9 @@ public class VMDeprecatedOptions {
             {"CreateMinidumpOnCrash", "false"}
           }
         ));
+        if (wb.isJFRIncluded()) {
+            deprecated.add(new String[] {"FlightRecorder",                  "false"});
+        }
         DEPRECATED_OPTIONS = deprecated.toArray(new String[][]{});
     };
 
@@ -89,16 +92,6 @@ public class VMDeprecatedOptions {
         output.shouldHaveExitValue(0);
         for (String[] deprecated : optionInfo) {
             String match = getDeprecationString(deprecated[0]);
-            output.shouldMatch(match);
-        }
-
-        Object jfr = wb.getVMFlag("FlightRecorder");
-        if (jfr != null) {
-            String jfrOptionNames[] =  { "FlightRecorder" };
-            String jfrEexpectedValues[] = { "false" };
-            output = CommandLineOptionTest.startVMWithOptions(jfrOptionNames, jfrEexpectedValues);
-            output.shouldHaveExitValue(0);
-            String match = getDeprecationString(jfrOptionNames[0]);
             output.shouldMatch(match);
         }
     }
