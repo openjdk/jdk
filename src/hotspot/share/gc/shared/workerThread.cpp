@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "logging/log.hpp"
+#include "memory/iterator.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"

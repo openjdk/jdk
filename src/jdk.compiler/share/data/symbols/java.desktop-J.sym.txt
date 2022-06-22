@@ -120,6 +120,10 @@ class name java/awt/SystemColor
 header extends java/awt/Color implements java/io/Serializable flags 31
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 
+class name java/awt/SystemTray
+header extends java/lang/Object flags 21
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+
 class name java/awt/TextComponent
 header extends java/awt/Component implements javax/accessibility/Accessible nestMembers java/awt/TextComponent$AccessibleAWTTextComponent sealed true flags 21
 innerclass innerClass java/awt/TextComponent$AccessibleAWTTextComponent outerClass java/awt/TextComponent innerClassName AccessibleAWTTextComponent flags 4

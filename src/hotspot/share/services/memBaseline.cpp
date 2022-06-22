@@ -26,8 +26,8 @@
 #include "classfile/classLoaderDataGraph.inline.hpp"
 #include "memory/allocation.hpp"
 #include "memory/metaspaceUtils.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/thread.inline.hpp"
 #include "services/memBaseline.hpp"
 #include "services/memTracker.hpp"
 

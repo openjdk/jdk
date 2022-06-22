@@ -706,7 +706,26 @@ void* os::dll_lookup(void* handle, const char* name) {
 }
 
 void os::dll_unload(void *lib) {
-  ::dlclose(lib);
+  const char* l_path = LINUX_ONLY(os::Linux::dll_path(lib))
+                       NOT_LINUX("<not available>");
+  if (l_path == NULL) l_path = "<not available>";
+  int res = ::dlclose(lib);
+
+  if (res == 0) {
+    Events::log_dll_message(NULL, "Unloaded shared library \"%s\" [" INTPTR_FORMAT "]",
+                            l_path, p2i(lib));
+    log_info(os)("Unloaded shared library \"%s\" [" INTPTR_FORMAT "]", l_path, p2i(lib));
+  } else {
+    const char* error_report = ::dlerror();
+    if (error_report == NULL) {
+      error_report = "dlerror returned no error description";
+    }
+
+    Events::log_dll_message(NULL, "Attempt to unload shared library \"%s\" [" INTPTR_FORMAT "] failed, %s",
+                            l_path, p2i(lib), error_report);
+    log_info(os)("Attempt to unload shared library \"%s\" [" INTPTR_FORMAT "] failed, %s",
+                  l_path, p2i(lib), error_report);
+  }
 }
 
 jlong os::lseek(int fd, jlong offset, int whence) {

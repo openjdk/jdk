@@ -633,7 +633,7 @@ void Dictionary::verify() {
   // class loader must be present;  a null class loader is the
   // bootstrap loader
   guarantee(cld != NULL &&
-            (cld->the_null_class_loader_data() || cld->class_loader()->is_instance()),
+            (cld->is_the_null_class_loader_data() || cld->class_loader_no_keepalive()->is_instance()),
             "checking type of class_loader");
 
   ResourceMark rm;

@@ -129,10 +129,14 @@ class name java/lang/Deprecated
 header extends java/lang/Object implements java/lang/annotation/Annotation flags 2601 runtimeAnnotations @Ljava/lang/annotation/Documented;@Ljava/lang/annotation/Retention;(value=eLjava/lang/annotation/RetentionPolicy;RUNTIME;)@Ljava/lang/annotation/Target;(value={eLjava/lang/annotation/ElementType;CONSTRUCTOR;eLjava/lang/annotation/ElementType;FIELD;eLjava/lang/annotation/ElementType;LOCAL_VARIABLE;eLjava/lang/annotation/ElementType;METHOD;eLjava/lang/annotation/ElementType;PACKAGE;eLjava/lang/annotation/ElementType;MODULE;eLjava/lang/annotation/ElementType;PARAMETER;eLjava/lang/annotation/ElementType;TYPE;})
 
 class name java/lang/Double
+-method name isInfinite descriptor (D)Z
 field name PRECISION descriptor I constantValue 53 flags 19
+method name isInfinite descriptor (D)Z flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/IntrinsicCandidate;
 
 class name java/lang/Float
+-method name isInfinite descriptor (F)Z
 field name PRECISION descriptor I constantValue 24 flags 19
+method name isInfinite descriptor (F)Z flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/IntrinsicCandidate;
 
 class name java/lang/IllegalCallerException
 header extends java/lang/RuntimeException flags 21
@@ -142,8 +146,8 @@ class name java/lang/Integer
 -method name remainderUnsigned descriptor (II)I
 method name divideUnsigned descriptor (II)I flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/IntrinsicCandidate;
 method name remainderUnsigned descriptor (II)I flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/IntrinsicCandidate;
-method name compress descriptor (II)I flags 9
-method name expand descriptor (II)I flags 9
+method name compress descriptor (II)I flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/IntrinsicCandidate;
+method name expand descriptor (II)I flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/IntrinsicCandidate;
 
 class name java/lang/LayerInstantiationException
 header extends java/lang/RuntimeException flags 21
@@ -153,8 +157,8 @@ class name java/lang/Long
 -method name remainderUnsigned descriptor (JJ)J
 method name divideUnsigned descriptor (JJ)J flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/IntrinsicCandidate;
 method name remainderUnsigned descriptor (JJ)J flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/IntrinsicCandidate;
-method name compress descriptor (JJ)J flags 9
-method name expand descriptor (JJ)J flags 9
+method name compress descriptor (JJ)J flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/IntrinsicCandidate;
+method name expand descriptor (JJ)J flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/IntrinsicCandidate;
 
 class name java/lang/MatchException
 header extends java/lang/RuntimeException flags 31 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;SWITCH_PATTERN_MATCHING;)
@@ -187,6 +191,7 @@ innerclass innerClass java/lang/Thread$State outerClass java/lang/Thread innerCl
 innerclass innerClass java/lang/Thread$Builder outerClass java/lang/Thread innerClassName Builder flags 609
 innerclass innerClass java/lang/Thread$Builder$OfPlatform outerClass java/lang/Thread$Builder innerClassName OfPlatform flags 609
 innerclass innerClass java/lang/Thread$Builder$OfVirtual outerClass java/lang/Thread$Builder innerClassName OfVirtual flags 609
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 -method name yield descriptor ()V
 -method name sleep descriptor (J)V
 -method name start descriptor ()V
@@ -1143,11 +1148,17 @@ innerclass innerClass java/util/Locale$Category outerClass java/util/Locale inne
 class name java/util/HashMap
 method name newHashMap descriptor (I)Ljava/util/HashMap; flags 9 signature <K:Ljava/lang/Object;V:Ljava/lang/Object;>(I)Ljava/util/HashMap<TK;TV;>;
 
+class name java/util/HashSet
+method name newHashSet descriptor (I)Ljava/util/HashSet; flags 9 signature <T:Ljava/lang/Object;>(I)Ljava/util/HashSet<TT;>;
+
 class name java/util/IllegalFormatException
 header extends java/lang/IllegalArgumentException sealed true flags 21
 
 class name java/util/LinkedHashMap
 method name newLinkedHashMap descriptor (I)Ljava/util/LinkedHashMap; flags 9 signature <K:Ljava/lang/Object;V:Ljava/lang/Object;>(I)Ljava/util/LinkedHashMap<TK;TV;>;
+
+class name java/util/LinkedHashSet
+method name newLinkedHashSet descriptor (I)Ljava/util/LinkedHashSet; flags 9 signature <T:Ljava/lang/Object;>(I)Ljava/util/LinkedHashSet<TT;>;
 
 class name java/util/Locale
 -method name <init> descriptor (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
@@ -1651,8 +1662,8 @@ field name VECTOR_OP_COMPRESS_BITS descriptor I constantValue 33 flags 19
 field name VECTOR_OP_EXPAND_BITS descriptor I constantValue 34 flags 19
 method name fromBitsCoerced descriptor (Ljava/lang/Class;Ljava/lang/Class;IJILjdk/internal/vm/vector/VectorSupport$VectorSpecies;Ljdk/internal/vm/vector/VectorSupport$FromBitsCoercedOperation;)Ljdk/internal/vm/vector/VectorSupport$VectorPayload; flags 9 signature <VM:Ljdk/internal/vm/vector/VectorSupport$VectorPayload;S:Ljdk/internal/vm/vector/VectorSupport$VectorSpecies<TE;>;E:Ljava/lang/Object;>(Ljava/lang/Class<+TVM;>;Ljava/lang/Class<TE;>;IJITS;Ljdk/internal/vm/vector/VectorSupport$FromBitsCoercedOperation<TVM;TS;>;)TVM; runtimeAnnotations @Ljdk/internal/vm/annotation/IntrinsicCandidate;
 method name load descriptor (Ljava/lang/Class;Ljava/lang/Class;ILjava/lang/Object;JLjava/lang/Object;JLjdk/internal/vm/vector/VectorSupport$VectorSpecies;Ljdk/internal/vm/vector/VectorSupport$LoadOperation;)Ljdk/internal/vm/vector/VectorSupport$VectorPayload; flags 9 signature <C:Ljava/lang/Object;VM:Ljdk/internal/vm/vector/VectorSupport$VectorPayload;E:Ljava/lang/Object;S:Ljdk/internal/vm/vector/VectorSupport$VectorSpecies<TE;>;>(Ljava/lang/Class<+TVM;>;Ljava/lang/Class<TE;>;ILjava/lang/Object;JTC;JTS;Ljdk/internal/vm/vector/VectorSupport$LoadOperation<TC;TVM;TS;>;)TVM; runtimeAnnotations @Ljdk/internal/vm/annotation/IntrinsicCandidate;
-method name loadMasked descriptor (Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/Class;ILjava/lang/Object;JLjdk/internal/vm/vector/VectorSupport$VectorMask;Ljava/lang/Object;JLjdk/internal/vm/vector/VectorSupport$VectorSpecies;Ljdk/internal/vm/vector/VectorSupport$LoadVectorMaskedOperation;)Ljdk/internal/vm/vector/VectorSupport$Vector; flags 9 signature <C:Ljava/lang/Object;V:Ljdk/internal/vm/vector/VectorSupport$Vector<*>;E:Ljava/lang/Object;S:Ljdk/internal/vm/vector/VectorSupport$VectorSpecies<TE;>;M:Ljdk/internal/vm/vector/VectorSupport$VectorMask<TE;>;>(Ljava/lang/Class<+TV;>;Ljava/lang/Class<TM;>;Ljava/lang/Class<TE;>;ILjava/lang/Object;JTM;TC;JTS;Ljdk/internal/vm/vector/VectorSupport$LoadVectorMaskedOperation<TC;TV;TS;TM;>;)TV; runtimeAnnotations @Ljdk/internal/vm/annotation/IntrinsicCandidate;
 method name store descriptor (Ljava/lang/Class;Ljava/lang/Class;ILjava/lang/Object;JLjdk/internal/vm/vector/VectorSupport$VectorPayload;Ljava/lang/Object;JLjdk/internal/vm/vector/VectorSupport$StoreVectorOperation;)V flags 9 signature <C:Ljava/lang/Object;V:Ljdk/internal/vm/vector/VectorSupport$VectorPayload;>(Ljava/lang/Class<*>;Ljava/lang/Class<*>;ILjava/lang/Object;JTV;TC;JLjdk/internal/vm/vector/VectorSupport$StoreVectorOperation<TC;TV;>;)V runtimeAnnotations @Ljdk/internal/vm/annotation/IntrinsicCandidate;
 method name storeMasked descriptor (Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/Class;ILjava/lang/Object;JLjdk/internal/vm/vector/VectorSupport$Vector;Ljdk/internal/vm/vector/VectorSupport$VectorMask;Ljava/lang/Object;JLjdk/internal/vm/vector/VectorSupport$StoreVectorMaskedOperation;)V flags 9 signature <C:Ljava/lang/Object;V:Ljdk/internal/vm/vector/VectorSupport$Vector<TE;>;M:Ljdk/internal/vm/vector/VectorSupport$VectorMask<TE;>;E:Ljava/lang/Object;>(Ljava/lang/Class<+TV;>;Ljava/lang/Class<TM;>;Ljava/lang/Class<TE;>;ILjava/lang/Object;JTV;TM;TC;JLjdk/internal/vm/vector/VectorSupport$StoreVectorMaskedOperation<TC;TV;TM;>;)V runtimeAnnotations @Ljdk/internal/vm/annotation/IntrinsicCandidate;
 method name compressExpandOp descriptor (ILjava/lang/Class;Ljava/lang/Class;Ljava/lang/Class;ILjdk/internal/vm/vector/VectorSupport$Vector;Ljdk/internal/vm/vector/VectorSupport$VectorMask;Ljdk/internal/vm/vector/VectorSupport$CompressExpandOperation;)Ljdk/internal/vm/vector/VectorSupport$VectorPayload; flags 9 signature <V:Ljdk/internal/vm/vector/VectorSupport$Vector<TE;>;M:Ljdk/internal/vm/vector/VectorSupport$VectorMask<TE;>;E:Ljava/lang/Object;>(ILjava/lang/Class<+TV;>;Ljava/lang/Class<+TM;>;Ljava/lang/Class<TE;>;ITV;TM;Ljdk/internal/vm/vector/VectorSupport$CompressExpandOperation<TV;TM;>;)Ljdk/internal/vm/vector/VectorSupport$VectorPayload; runtimeAnnotations @Ljdk/internal/vm/annotation/IntrinsicCandidate;
+method name loadMasked descriptor (Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/Class;ILjava/lang/Object;JLjdk/internal/vm/vector/VectorSupport$VectorMask;ILjava/lang/Object;JLjdk/internal/vm/vector/VectorSupport$VectorSpecies;Ljdk/internal/vm/vector/VectorSupport$LoadVectorMaskedOperation;)Ljdk/internal/vm/vector/VectorSupport$Vector; flags 9 signature <C:Ljava/lang/Object;V:Ljdk/internal/vm/vector/VectorSupport$Vector<*>;E:Ljava/lang/Object;S:Ljdk/internal/vm/vector/VectorSupport$VectorSpecies<TE;>;M:Ljdk/internal/vm/vector/VectorSupport$VectorMask<TE;>;>(Ljava/lang/Class<+TV;>;Ljava/lang/Class<TM;>;Ljava/lang/Class<TE;>;ILjava/lang/Object;JTM;ITC;JTS;Ljdk/internal/vm/vector/VectorSupport$LoadVectorMaskedOperation<TC;TV;TS;TM;>;)TV; runtimeAnnotations @Ljdk/internal/vm/annotation/IntrinsicCandidate;
 

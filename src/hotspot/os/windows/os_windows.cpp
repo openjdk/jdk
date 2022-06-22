@@ -50,6 +50,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/orderAccess.hpp"
@@ -61,7 +62,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/threadCritical.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vm_version.hpp"
@@ -1236,7 +1237,18 @@ void os::die() {
 const char* os::dll_file_extension() { return ".dll"; }
 
 void  os::dll_unload(void *lib) {
-  ::FreeLibrary((HMODULE)lib);
+  char name[MAX_PATH];
+  if (::GetModuleFileName((HMODULE)lib, name, sizeof(name)) == 0) {
+    snprintf(name, MAX_PATH, "<not available>");
+  }
+  if (::FreeLibrary((HMODULE)lib)) {
+    Events::log_dll_message(NULL, "Unloaded dll \"%s\" [" INTPTR_FORMAT "]", name, p2i(lib));
+    log_info(os)("Unloaded dll \"%s\" [" INTPTR_FORMAT "]", name, p2i(lib));
+  } else {
+    const DWORD errcode = ::GetLastError();
+    Events::log_dll_message(NULL, "Attempt to unload dll \"%s\" [" INTPTR_FORMAT "] failed (error code %d)", name, p2i(lib), errcode);
+    log_info(os)("Attempt to unload dll \"%s\" [" INTPTR_FORMAT "] failed (error code %d)", name, p2i(lib), errcode);
+  }
 }
 
 void* os::dll_lookup(void *lib, const char *name) {
