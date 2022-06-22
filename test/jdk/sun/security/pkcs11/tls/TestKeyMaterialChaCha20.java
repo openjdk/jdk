@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8288985
  * @summary Test that KeyMaterial generator works with ChaCha20-Poly1305
  * @author Zdenek Zambersky
  * @library /test/lib ..
