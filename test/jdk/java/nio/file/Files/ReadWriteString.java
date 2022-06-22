@@ -92,7 +92,7 @@ public class ReadWriteString {
      */
     @DataProvider(name = "malformedWrite")
     public Object[][] getMalformedWrite() throws IOException {
-        Path path = Files.createTempFile("malformedWrite", null);
+        Path path = Files.createFile(Path.of("malformedWrite"));
         return new Object[][]{
             {path, "\ud800", null},  //the default Charset is UTF_8
             {path, "\u00A0\u00A1", US_ASCII},
@@ -109,7 +109,7 @@ public class ReadWriteString {
      */
     @DataProvider(name = "illegalInput")
     public Object[][] getIllegalInput() throws IOException {
-        Path path = Files.createTempFile("illegalInput", null);
+        Path path = Files.createFile(Path.of("illegalInput"));
         return new Object[][]{
             {path, data, ISO_8859_1, null},
             {path, data, ISO_8859_1, UTF_8}
@@ -160,16 +160,9 @@ public class ReadWriteString {
 
     @BeforeClass
     void setup() throws IOException {
-        testFiles[0] = Files.createTempFile("readWriteString", null);
-        testFiles[1] = Files.createTempFile("writeString_file1", null);
-        testFiles[2] = Files.createTempFile("writeString_file2", null);
-    }
-
-    @AfterClass
-    void cleanup() throws IOException {
-        for (Path path : testFiles) {
-            Files.deleteIfExists(path);
-        }
+        testFiles[0] = Files.createFile(Path.of("readWriteString"));
+        testFiles[1] = Files.createFile(Path.of("writeString_file1"));
+        testFiles[2] = Files.createFile(Path.of("writeString_file2"));
     }
 
     /**
@@ -258,11 +251,10 @@ public class ReadWriteString {
      */
     @Test(dataProvider = "malformedWrite", expectedExceptions = UnmappableCharacterException.class)
     public void testMalformedWrite(Path path, String s, Charset cs) throws IOException {
-        path.toFile().deleteOnExit();
         if (cs == null) {
-            Files.writeString(path, s, CREATE);
+            Files.writeString(path, s);
         } else {
-            Files.writeString(path, s, cs, CREATE);
+            Files.writeString(path, s, cs);
         }
     }
 
@@ -278,9 +270,8 @@ public class ReadWriteString {
      */
     @Test(dataProvider = "illegalInput", expectedExceptions = MalformedInputException.class)
     public void testMalformedRead(Path path, byte[] data, Charset csWrite, Charset csRead) throws IOException {
-        path.toFile().deleteOnExit();
         String temp = new String(data, csWrite);
-        Files.writeString(path, temp, csWrite, CREATE);
+        Files.writeString(path, temp, csWrite);
         if (csRead == null) {
             Files.readString(path);
         } else {
@@ -300,9 +291,8 @@ public class ReadWriteString {
     @Test(dataProvider = "illegalInputBytes")
     public void testMalformedReadBytes(byte[] data, Charset csRead, Class<CharacterCodingException> expected)
             throws IOException {
-        Path path = Files.createTempFile("illegalInputBytes", null);
-        path.toFile().deleteOnExit();
-        Files.write(path, data, CREATE);
+        Path path = Path.of("illegalInputBytes");
+        Files.write(path, data);
         try {
             Files.readString(path, csRead);
         } catch (MalformedInputException | UnmappableCharacterException e) {
