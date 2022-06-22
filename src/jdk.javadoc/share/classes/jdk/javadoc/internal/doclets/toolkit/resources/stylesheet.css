@@ -611,6 +611,7 @@ main, nav, header, footer, section {
 ul.ui-autocomplete {
     position:fixed;
     z-index:999999;
+    background-color: #FFFFFF;
 }
 ul.ui-autocomplete  li {
     float:left;
@@ -619,6 +620,9 @@ ul.ui-autocomplete  li {
 }
 .result-highlight {
     font-weight:bold;
+}
+.ui-autocomplete .result-item {
+    font-size: inherit;
 }
 #search-input {
     background-image:url('resources/glass.png');
