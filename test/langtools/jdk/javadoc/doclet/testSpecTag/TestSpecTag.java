@@ -108,7 +108,7 @@ public class TestSpecTag extends JavadocTester {
         checkOutput("external-specs.html", true,
                 """
                     <!-- ========= START OF TOP NAVBAR ======= -->
-                    <div class="top-nav" id="navbar-top"><button id="navbar-toggle-button" aria-controls="navbar-top" aria-expanded="false" aria-label="Toggle navigation links"><span class="nav-bar-toggle-icon"></span><span class="nav-bar-toggle-icon"></span><span class="nav-bar-toggle-icon"></span></button>
+                    <div class="top-nav" id="navbar-top"><button id="navbar-toggle-button" aria-controls="navbar-top" aria-expanded="false" aria-label="Toggle navigation links"><span class="nav-bar-toggle-icon">&nbsp;</span><span class="nav-bar-toggle-icon">&nbsp;</span><span class="nav-bar-toggle-icon">&nbsp;</span></button>
                     <div class="skip-nav"><a href="#skip-navbar-top" title="Skip navigation links">Skip navigation links</a></div>
                     <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
                     <li><a href="p/package-summary.html">Package</a></li>
