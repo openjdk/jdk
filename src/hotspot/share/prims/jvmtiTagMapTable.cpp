@@ -187,7 +187,7 @@ void JvmtiTagMapTable::resize_if_needed() {
 }
 
 // Serially remove entries for dead oops from the table, and notify jvmti.
-void JvmtiTagMapTable::remove_dead_entries(JvmtiEnv* env, bool post_object_free) {
+void JvmtiTagMapTable::remove_dead_entries(GrowableArray<jlong>* objects) {
   int oops_removed = 0;
   int oops_counted = 0;
   for (int i = 0; i < table_size(); ++i) {
@@ -207,18 +207,17 @@ void JvmtiTagMapTable::remove_dead_entries(JvmtiEnv* env, bool post_object_free)
         free_entry(entry);
 
         // post the event to the profiler
-        if (post_object_free) {
-          JvmtiExport::post_object_free(env, tag);
+        if (objects != NULL) {
+          objects->append(tag);
         }
-
       }
       // get next entry
       entry = *p;
     }
   }
 
-  log_info(jvmti, table) ("JvmtiTagMap entries counted %d removed %d; %s",
-                          oops_counted, oops_removed, post_object_free ? "free object posted" : "no posting");
+  log_info(jvmti, table) ("JvmtiTagMap entries counted %d removed %d",
+                          oops_counted, oops_removed);
 }
 
 // Rehash oops in the table
