@@ -92,7 +92,7 @@ public class WindowsHelper {
         BiConsumer<JPackageCommand, Boolean> installMsi = (cmd, install) -> {
             cmd.verifyIsOfType(PackageType.WIN_MSI);
             runMsiexecWithRetries(Executor.of("msiexec", "/qn", "/norestart",
-                    install ? "/i" : "/x").addArgument(cmd.outputBundle()));
+                    install ? "/i" : "/x").addArgument(cmd.outputBundle().normalize()));
         };
 
         PackageHandlers msi = new PackageHandlers();
