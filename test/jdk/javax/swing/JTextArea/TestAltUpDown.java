@@ -24,6 +24,7 @@
 /* @test
    @bug 8267374
    @key headful
+   @requires (os.family == "mac")
    @summary Verifies ALT+Up/ALT+Down keypress move cursor to start/end of textline.
    @run main TestAltUpDown
  */
