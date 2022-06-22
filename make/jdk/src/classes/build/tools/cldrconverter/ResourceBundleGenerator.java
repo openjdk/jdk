@@ -155,9 +155,9 @@ class ResourceBundleGenerator implements BundleGenerator {
                             fmt = new Formatter();
                         }
                         String metaVal = oldEntry.metaKey();
-                        if (val instanceof String[]) {
+                        if (val instanceof String[] values) {
                             fmt.format("        final String[] %s = new String[] {\n", metaVal);
-                            for (String s : (String[]) val) {
+                            for (String s : values) {
                                 fmt.format("            \"%s\",\n", CLDRConverter.saveConvert(s, useJava));
                             }
                             fmt.format("        };\n");
@@ -267,10 +267,9 @@ class ResourceBundleGenerator implements BundleGenerator {
             if (obj instanceof BundleEntryValue entry) {
                 if (value instanceof String s) {
                     return s.equals(entry.value);
-                } else if (!(entry.value instanceof String[])) {
-                    return false;
+                } else if (entry.value instanceof String[] otherVal) {
+                    return Arrays.equals((String[]) value, otherVal);
                 }
-                return Arrays.equals((String[])value, (String[])entry.value);
             }
             return false;
         }
