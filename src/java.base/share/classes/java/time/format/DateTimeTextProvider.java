@@ -309,15 +309,7 @@ class DateTimeTextProvider {
 
     private Object findStore(TemporalField field, Locale locale) {
         Entry<TemporalField, Locale> key = createEntry(field, locale);
-        Object store = CACHE.get(key);
-        if (store == null) {
-            store = createStore(field, locale);
-            Object prev = CACHE.putIfAbsent(key, store);
-            if (prev != null) {
-                store = prev;
-            }
-        }
-        return store;
+        return CACHE.computeIfAbsent(key, e -> createStore(e.getKey(), e.getValue()));
     }
 
     private static int toWeekDay(int calWeekDay) {

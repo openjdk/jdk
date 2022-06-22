@@ -160,15 +160,7 @@ public final class DecimalStyle {
      */
     public static DecimalStyle of(Locale locale) {
         Objects.requireNonNull(locale, "locale");
-        DecimalStyle info = CACHE.get(locale);
-        if (info == null) {
-            info = create(locale);
-            DecimalStyle prev = CACHE.putIfAbsent(locale, info);
-            if (prev != null) {
-                info = prev;
-            }
-        }
-        return info;
+        return CACHE.computeIfAbsent(locale, l -> create(l));
     }
 
     private static DecimalStyle create(Locale locale) {
