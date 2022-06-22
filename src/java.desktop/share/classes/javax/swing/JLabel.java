@@ -874,8 +874,9 @@ public class JLabel extends JComponent implements SwingConstants, Accessible
 
 
     /**
-     * This is overridden to return false if the current Icon's Image is
-     * not equal to the passed in Image <code>img</code>.
+     * Returns true if one of this JLabel's icon or disabled icon is derived from
+     * ImageIcon and it's Image is equal to the image passed in Image <code>img</code>; false
+     * otherwise.
      *
      * @see     java.awt.image.ImageObserver
      * @see     java.awt.Component#imageUpdate(java.awt.Image, int, int, int, int, int)
