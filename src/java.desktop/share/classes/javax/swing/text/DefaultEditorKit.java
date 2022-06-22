@@ -644,14 +644,16 @@ public class DefaultEditorKit extends EditorKit {
 
     /**
      * Name of the <code>Action</code> for moving the caret
-     * to the end of a line and logically upward one position.
+     * to the begin of a line it not at the begin already or
+     * upward one line otherwise.
      * @see #getActions
      */
     public static final String beginLineUpAction = "caret-begin-line-and-up";
 
     /**
      * Name of the <code>Action</code> for moving the caret
-     * to the end of a line and logically downward one position.
+     * to the end of a line if not at the end already
+     * or downward one line otherwise.
      * @see #getActions
      */
     public static final String endLineDownAction = "caret-end-line-and-down";
