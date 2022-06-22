@@ -1584,15 +1584,19 @@ void Parse::adjust_map_after_if(BoolTest::mask btest, Node* c, float prob,
 
   bool is_fallthrough = (path == successor_for_bci(iter().next_bci()));
 
-  if (path_is_suitable_for_uncommon_trap(prob)) {
+  if (path_is_suitable_for_uncommon_trap(prob) && (!OptimizeUnstableIf || !path->is_merged())) {
+    sync_jvms();
+    SafePointNode* sfpt = clone_map();
+
     repush_if_args();
     Node* call = uncommon_trap(Deoptimization::Reason_unstable_if,
                   Deoptimization::Action_reinterpret,
                   NULL,
                   (is_fallthrough ? "taken always" : "taken never"));
 
-    if (call != nullptr) {
-      C->record_unstable_if_trap(new UnstableIfTrap(call->as_CallStaticJava(), path));
+    if (call != nullptr && OptimizeUnstableIf) {
+      UnstableIfTrap* trap = new UnstableIfTrap(call->as_CallStaticJava(), path, block(), sfpt, btest, c);
+      C->record_unstable_if_trap(trap);
     }
     return;
   }
@@ -2767,4 +2771,17 @@ void Parse::do_one_bytecode() {
     printer->set_traverse_outs(old);
   }
 #endif
+}
+
+void UnstableIfTrap::suppress(Parse* parser) {
+  assert(_path != nullptr, "broken");
+
+  parser->set_block(_block);
+  parser->set_map(_sfpt);
+  parser->set_sp(_sfpt->jvms()->sp());
+  parser->adjust_map_after_if(_btest, _cmp, PROB_MAX, _path, NULL);
+
+  int pnum = _path->next_path_num();
+  parser->merge_common(_path, pnum);
+  _path = nullptr;
 }

@@ -149,6 +149,7 @@ public:
 //------------------------------Parse------------------------------------------
 // Parse bytecodes, build a Graph
 class Parse : public GraphKit {
+  friend class UnstableIfTrap;
  public:
   // Per-block information needed by the parser:
   class Block {
@@ -167,6 +168,7 @@ class Parse : public GraphKit {
     int                _num_successors; // Includes only normal control flow.
     int                _all_successors; // Include exception paths also.
     Block**            _successors;
+    GrowableArray<UnstableIfTrap* > _unstable_if_traps;
 
    public:
 
@@ -186,6 +188,8 @@ class Parse : public GraphKit {
 
     SafePointNode* start_map() const       { assert(is_merged(),"");   return _start_map; }
     void set_start_map(SafePointNode* m)   { assert(!is_merged(), ""); _start_map = m; }
+    void add_unstable_if_trap(UnstableIfTrap* trap);
+    GrowableArray<UnstableIfTrap* >& unstable_if_traps() { return _unstable_if_traps; }
 
     // True after any predecessor flows control into this block
     bool is_merged() const                 { return _start_map != NULL; }
@@ -610,14 +614,28 @@ class UnstableIfTrap {
   CallStaticJavaNode* const _unc;
   // Parse::_blocks outlive Parse object itself.
   // They are reclaimed by ResourceMark in CompileBroker::invoke_compiler_on_method().
-  Parse::Block* const _path; // the pruned path
+  Parse::Block* _path;       // the pruned path
   bool _modified;            // modified locals based on next_bci()
+  Parse::Block* _block;
+  SafePointNode* _sfpt;
+  BoolTest::mask _btest;
+  Node* _cmp;
 
 public:
-  UnstableIfTrap(CallStaticJavaNode* call, Parse::Block* path): _unc(call), _path(path), _modified(false) {
+  UnstableIfTrap(CallStaticJavaNode* call, Parse::Block* path, Parse::Block* block, SafePointNode* sfpt,
+                 BoolTest::mask btest, Node* cmp): _unc(call), _path(path), _modified(false),
+                                                   _block(block), _sfpt(sfpt), _btest(btest), _cmp(cmp) {
     assert(_unc != NULL && Deoptimization::trap_request_reason(_unc->uncommon_trap_request()) == Deoptimization::Reason_unstable_if,
           "invalid uncommon_trap call!");
+
+    if (_path != nullptr) {
+      _path->add_unstable_if_trap(this);
+    }
   }
+
+#ifdef ASSERT
+  Parse::Block* path() const { return _path; }
+#endif
 
   // The starting point of the pruned block, where control goes when
   // deoptimization does happen.
@@ -632,6 +650,8 @@ public:
   void set_modified() {
     _modified = true;
   }
+
+  void suppress(Parse* parser);
 
   CallStaticJavaNode* uncommon_trap() const {
     return _unc;

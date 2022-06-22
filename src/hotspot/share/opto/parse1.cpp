@@ -650,6 +650,20 @@ void Parse::do_all_blocks() {
         continue;
       }
 
+      if (OptimizeUnstableIf) {
+        // suppress the superficial unstable_if traps associated with _path.
+        auto unstable_if_traps = block->unstable_if_traps();
+        while (unstable_if_traps.length() > 0) {
+          UnstableIfTrap* trap = unstable_if_traps.pop();
+
+          trap->suppress(this);
+          CallStaticJavaNode* unc = trap->uncommon_trap();
+          unc->set_req(0, top());
+          record_for_igvn(unc);
+          //tty->print("mark dead: ");
+          //unc->dump();
+        }
+      }
       // Prepare to parse this block.
       load_state_from(block);
 
@@ -1334,6 +1348,11 @@ void Parse::Block::init_graph(Parse* outer) {
     }
     #endif
   }
+}
+
+void Parse::Block::add_unstable_if_trap(UnstableIfTrap* trap) {
+  assert(trap->path() == this, "sanity check");
+  _unstable_if_traps.append(trap);
 }
 
 //---------------------------successor_for_bci---------------------------------
