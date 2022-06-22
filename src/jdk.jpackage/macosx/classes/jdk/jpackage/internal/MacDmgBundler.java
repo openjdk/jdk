@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
 
     // Background image name in resources
     static final String DEFAULT_BACKGROUND_IMAGE = "background_dmg.tiff";
-    // Backround image name and folder under which it will be stored in DMG
+    // Background image name and folder under which it will be stored in DMG
     static final String BACKGROUND_IMAGE_FOLDER =".background";
     static final String BACKGROUND_IMAGE = "background.tiff";
     static final String DEFAULT_DMG_SETUP_SCRIPT = "DMGsetup.scpt";
@@ -117,7 +117,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
         Path volumePath = rootPath.resolve(APP_NAME.fetchFrom(params));
         String volumeUrl = volumePath.toUri().toString() + File.separator;
 
-        // Provide full path to backround image, so we can find it.
+        // Provide full path to background image, so we can find it.
         Path bgFile = Path.of(rootPath.toString(), APP_NAME.fetchFrom(params),
                               BACKGROUND_IMAGE_FOLDER, BACKGROUND_IMAGE);
 
@@ -277,11 +277,8 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
         Path finalDMG = outdir.resolve(MAC_INSTALLER_NAME.fetchFrom(params)
                 + INSTALLER_SUFFIX.fetchFrom(params) + ".dmg");
 
-        Path srcFolder = APP_IMAGE_TEMP_ROOT.fetchFrom(params);
-        Path predefinedImage = StandardBundlerParam.getPredefinedAppImage(params);
-        if (predefinedImage != null) {
-            srcFolder = predefinedImage;
-        } else if (StandardBundlerParam.isRuntimeInstaller(params)) {
+        Path srcFolder = appLocation.getParent();
+        if (StandardBundlerParam.isRuntimeInstaller(params)) {
             Path newRoot = Files.createTempDirectory(TEMP_ROOT.fetchFrom(params),
                     "root-");
 
@@ -397,7 +394,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
 
             // We will not consider setting background image and creating link
             // to install-dir in DMG as critical error, since it can fail in
-            // headless enviroment.
+            // headless environment.
             try {
                 pb = new ProcessBuilder("/usr/bin/osascript",
                         getConfig_VolumeScript(params).toAbsolutePath().toString());

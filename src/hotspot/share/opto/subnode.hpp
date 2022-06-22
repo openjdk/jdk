@@ -376,7 +376,7 @@ public:
 
 //------------------------------AbsFNode---------------------------------------
 // Absolute value a float, a common float-point idiom with a cheap hardware
-// implemention on most chips.  Since a naive graph involves control flow, we
+// implementation on most chips.  Since a naive graph involves control flow, we
 // "match" it in the ideal world (so the control flow can be removed).
 class AbsFNode : public AbsNode {
 public:
@@ -388,7 +388,7 @@ public:
 
 //------------------------------AbsDNode---------------------------------------
 // Absolute value a double, a common float-point idiom with a cheap hardware
-// implemention on most chips.  Since a naive graph involves control flow, we
+// implementation on most chips.  Since a naive graph involves control flow, we
 // "match" it in the ideal world (so the control flow can be removed).
 class AbsDNode : public AbsNode {
 public:
@@ -546,6 +546,26 @@ public:
   virtual int Opcode() const;
   const Type *bottom_type() const { return TypeInt::SHORT; }
   virtual uint ideal_reg() const { return Op_RegI; }
+};
+
+//-------------------------------ReverseINode--------------------------------
+// reverse bits of an int
+class ReverseINode : public Node {
+public:
+  ReverseINode(Node *c, Node *in1) : Node(c, in1) {}
+  virtual int Opcode() const;
+  const Type *bottom_type() const { return TypeInt::INT; }
+  virtual uint ideal_reg() const { return Op_RegI; }
+};
+
+//-------------------------------ReverseLNode--------------------------------
+// reverse bits of a long
+class ReverseLNode : public Node {
+public:
+  ReverseLNode(Node *c, Node *in1) : Node(c, in1) {}
+  virtual int Opcode() const;
+  const Type *bottom_type() const { return TypeLong::LONG; }
+  virtual uint ideal_reg() const { return Op_RegL; }
 };
 
 #endif // SHARE_OPTO_SUBNODE_HPP

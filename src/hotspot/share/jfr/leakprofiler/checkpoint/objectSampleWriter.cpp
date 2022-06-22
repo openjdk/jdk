@@ -626,7 +626,7 @@ ObjectSampleWriter::~ObjectSampleWriter() {
   write_field_infos(_writer);
   write_root_descriptors(_writer);
 
-  // Followings are RA allocated, memory will be released automatically.
+  // Following are RA allocated, memory will be released automatically.
   if (field_infos != NULL) {
     field_infos->~FieldTable();
     field_infos = NULL;

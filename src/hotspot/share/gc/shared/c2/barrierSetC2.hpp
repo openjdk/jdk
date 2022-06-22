@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,7 @@ public:
   const TypePtr* type() const { return reinterpret_cast<const TypePtr*>(_type); }
 };
 
-// This class wraps a bunch of context parameters thare are passed around in the
+// This class wraps a bunch of context parameters that are passed around in the
 // BarrierSetC2 backend hierarchy, for loads and stores, to reduce boiler plate.
 class C2Access: public StackObj {
 protected:
@@ -163,27 +163,24 @@ public:
   virtual bool is_parse_access() const { return true; }
 };
 
-// This class wraps a bunch of context parameters thare are passed around in the
+// This class wraps a bunch of context parameters that are passed around in the
 // BarrierSetC2 backend hierarchy, for atomic accesses, to reduce boiler plate.
 class C2AtomicParseAccess: public C2ParseAccess {
   Node* _memory;
   uint  _alias_idx;
-  bool  _needs_pinning;
 
 public:
   C2AtomicParseAccess(GraphKit* kit, DecoratorSet decorators, BasicType type,
                  Node* base, C2AccessValuePtr& addr, uint alias_idx) :
     C2ParseAccess(kit, decorators, type, base, addr),
     _memory(NULL),
-    _alias_idx(alias_idx),
-    _needs_pinning(true) {}
+    _alias_idx(alias_idx) {}
 
   // Set the memory node based on the current memory slice.
   virtual void set_memory();
 
   Node* memory() const       { return _memory; }
   uint alias_idx() const     { return _alias_idx; }
-  bool needs_pinning() const { return _needs_pinning; }
 };
 
 // C2Access for optimization time calls to the BarrierSetC2 backend.

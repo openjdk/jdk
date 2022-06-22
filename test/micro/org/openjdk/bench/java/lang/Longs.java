@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,6 +89,22 @@ public class Longs {
         }
     }
 
+    /** Performs expand on small values */
+    @Benchmark
+    public void expand(Blackhole bh) {
+        for (long i : longArraySmall) {
+            bh.consume(Long.expand(i, 0xFF00F0F0F0000000L));
+        }
+    }
+
+    /** Performs compress on large values */
+    @Benchmark
+    public void compress(Blackhole bh) {
+        for (long i : longArrayBig) {
+            bh.consume(Long.compress(i, 0x000000000F0F0F1FL));
+        }
+    }
+
     /*
      * Have them public to avoid total unrolling
      */
@@ -103,5 +119,26 @@ public class Longs {
             dx = (dx - x);
         }
         return x;
+    }
+
+    @Benchmark
+    public void shiftRight(Blackhole bh) {
+        for (int i = 0; i < size; i++) {
+            bh.consume(longArrayBig[i] >> longArraySmall[i]);
+        }
+    }
+
+    @Benchmark
+    public void shiftURight(Blackhole bh) {
+        for (int i = 0; i < size; i++) {
+            bh.consume(longArrayBig[i] >>> longArraySmall[i]);
+        }
+    }
+
+    @Benchmark
+    public void shiftLeft(Blackhole bh) {
+        for (int i = 0; i < size; i++) {
+            bh.consume(longArrayBig[i] << longArraySmall[i]);
+        }
     }
 }

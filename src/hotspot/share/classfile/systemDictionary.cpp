@@ -274,24 +274,16 @@ Klass* SystemDictionary::resolve_or_null(Symbol* class_name, Handle class_loader
   if (Signature::is_array(class_name)) {
     return resolve_array_class_or_null(class_name, class_loader, protection_domain, THREAD);
   } else {
-    return resolve_instance_class_or_null_helper(class_name, class_loader, protection_domain, THREAD);
-  }
-}
-
-// name may be in the form of "java/lang/Object" or "Ljava/lang/Object;"
-InstanceKlass* SystemDictionary::resolve_instance_class_or_null_helper(Symbol* class_name,
-                                                                       Handle class_loader,
-                                                                       Handle protection_domain,
-                                                                       TRAPS) {
-  assert(class_name != NULL && !Signature::is_array(class_name), "must be");
-  if (Signature::has_envelope(class_name)) {
-    ResourceMark rm(THREAD);
-    // Ignore wrapping L and ;.
-    TempNewSymbol name = SymbolTable::new_symbol(class_name->as_C_string() + 1,
-                                                 class_name->utf8_length() - 2);
-    return resolve_instance_class_or_null(name, class_loader, protection_domain, THREAD);
-  } else {
-    return resolve_instance_class_or_null(class_name, class_loader, protection_domain, THREAD);
+    assert(class_name != NULL && !Signature::is_array(class_name), "must be");
+    if (Signature::has_envelope(class_name)) {
+      ResourceMark rm(THREAD);
+      // Ignore wrapping L and ;.
+      TempNewSymbol name = SymbolTable::new_symbol(class_name->as_C_string() + 1,
+                                                   class_name->utf8_length() - 2);
+      return resolve_instance_class_or_null(name, class_loader, protection_domain, THREAD);
+    } else {
+      return resolve_instance_class_or_null(class_name, class_loader, protection_domain, THREAD);
+    }
   }
 }
 
@@ -424,10 +416,10 @@ InstanceKlass* SystemDictionary::resolve_super_or_fail(Symbol* class_name,
 
   // Resolve the superclass or superinterface, check results on return
   InstanceKlass* superk =
-    SystemDictionary::resolve_instance_class_or_null_helper(super_name,
-                                                            class_loader,
-                                                            protection_domain,
-                                                            THREAD);
+    SystemDictionary::resolve_instance_class_or_null(super_name,
+                                                     class_loader,
+                                                     protection_domain,
+                                                     THREAD);
 
   // Clean up placeholder entry.
   {
@@ -1013,6 +1005,15 @@ bool SystemDictionary::is_shared_class_visible_impl(Symbol* class_name,
     return true;
   }
 
+  if (pkg_entry == NULL) {
+    // We might have looked up pkg_entry before the module system was initialized.
+    // Need to reload it now.
+    TempNewSymbol pkg_name = ClassLoader::package_from_class_name(class_name);
+    if (pkg_name != NULL) {
+      pkg_entry = ClassLoaderData::class_loader_data(class_loader())->packages()->lookup_only(pkg_name);
+    }
+  }
+
   ModuleEntry* mod_entry = (pkg_entry == NULL) ? NULL : pkg_entry->module();
   bool should_be_in_named_module = (mod_entry != NULL && mod_entry->is_named());
   bool was_archived_from_named_module = scp_entry->in_named_module();
@@ -1444,7 +1445,6 @@ void SystemDictionary::define_instance_class(InstanceKlass* k, Handle class_load
     // Grabs and releases SystemDictionary_lock
     update_dictionary(name_hash, k, class_loader);
   }
-  k->eager_initialize(THREAD);
 
   // notify jvmti
   if (JvmtiExport::should_post_class_load()) {
@@ -1662,7 +1662,7 @@ void SystemDictionary::initialize(TRAPS) {
 // Constraints on class loaders. The details of the algorithm can be
 // found in the OOPSLA'98 paper "Dynamic Class Loading in the Java
 // Virtual Machine" by Sheng Liang and Gilad Bracha.  The basic idea is
-// that the dictionary needs to maintain a set of contraints that
+// that the dictionary needs to maintain a set of constraints that
 // must be satisfied by all classes in the dictionary.
 // if defining is true, then LinkageError if already in dictionary
 // if initiating loader, then ok if InstanceKlass matches existing entry

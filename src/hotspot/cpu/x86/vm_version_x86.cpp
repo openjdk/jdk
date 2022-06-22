@@ -408,7 +408,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     intx saved_useavx = UseAVX;
     intx saved_usesse = UseSSE;
 
-    // If UseAVX is unitialized or is set by the user to include EVEX
+    // If UseAVX is uninitialized or is set by the user to include EVEX
     if (use_evex) {
       // check _cpuid_info.sef_cpuid7_ebx.bits.avx512f
       __ lea(rsi, Address(rbp, in_bytes(VM_Version::sef_cpuid7_offset())));
@@ -498,7 +498,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     VM_Version::set_cpuinfo_cont_addr(__ pc());
     // Returns here after signal. Save xmm0 to check it later.
 
-    // If UseAVX is unitialized or is set by the user to include EVEX
+    // If UseAVX is uninitialized or is set by the user to include EVEX
     if (use_evex) {
       // check _cpuid_info.sef_cpuid7_ebx.bits.avx512f
       __ lea(rsi, Address(rbp, in_bytes(VM_Version::sef_cpuid7_offset())));
@@ -922,6 +922,7 @@ void VM_Version::get_processor_features() {
     _features &= ~CPU_AVX512_VNNI;
     _features &= ~CPU_AVX512_VBMI;
     _features &= ~CPU_AVX512_VBMI2;
+    _features &= ~CPU_AVX512_BITALG;
   }
 
   if (UseAVX < 2)
@@ -937,6 +938,8 @@ void VM_Version::get_processor_features() {
     _features &= ~CPU_HT;
   }
 
+  // Note: Any modifications to following suppressed feature list for KNL target
+  // should also be applied to test/hotspot/jtreg/compiler/lib/ir_framework/test/IREncodingPrinter.java
   if (is_intel()) { // Intel cpus specific settings
     if (is_knights_family()) {
       _features &= ~CPU_VZEROUPPER;
@@ -951,6 +954,8 @@ void VM_Version::get_processor_features() {
       _features &= ~CPU_AVX512_VBMI2;
       _features &= ~CPU_CLWB;
       _features &= ~CPU_FLUSHOPT;
+      _features &= ~CPU_GFNI;
+      _features &= ~CPU_AVX512_BITALG;
     }
   }
 
@@ -1291,6 +1296,27 @@ void VM_Version::get_processor_features() {
     // If default, use highest supported configuration
     FLAG_SET_DEFAULT(MaxVectorSize, max_vector_size);
   }
+
+#if defined(COMPILER2)
+  if (FLAG_IS_DEFAULT(SuperWordMaxVectorSize)) {
+    if (FLAG_IS_DEFAULT(UseAVX) && UseAVX > 2 &&
+        is_intel_skylake() && _stepping >= 5) {
+      // Limit auto vectorization to 256 bit (32 byte) by default on Cascade Lake
+      FLAG_SET_DEFAULT(SuperWordMaxVectorSize, MIN2(MaxVectorSize, (intx)32));
+    } else {
+      FLAG_SET_DEFAULT(SuperWordMaxVectorSize, MaxVectorSize);
+    }
+  } else {
+    if (SuperWordMaxVectorSize > MaxVectorSize) {
+      warning("SuperWordMaxVectorSize cannot be greater than MaxVectorSize %i", (int) MaxVectorSize);
+      FLAG_SET_DEFAULT(SuperWordMaxVectorSize, MaxVectorSize);
+    }
+    if (!is_power_of_2(SuperWordMaxVectorSize)) {
+      warning("SuperWordMaxVectorSize must be a power of 2, setting to MaxVectorSize: %i", (int) MaxVectorSize);
+      FLAG_SET_DEFAULT(SuperWordMaxVectorSize, MaxVectorSize);
+    }
+  }
+#endif
 
 #if defined(COMPILER2) && defined(ASSERT)
   if (MaxVectorSize > 0) {
@@ -2142,7 +2168,7 @@ const char* const _family_id_intel[ExtendedFamilyIdLength_INTEL] = {
   "386",
   "486",
   "Pentium",
-  "Pentium Pro",   //or Pentium-M/Woodcrest depeding on model
+  "Pentium Pro",   //or Pentium-M/Woodcrest depending on model
   "",
   "",
   "",
@@ -2257,7 +2283,7 @@ const char* const _model_id_pentium_pro[] = {
   NULL
 };
 
-/* Brand ID is for back compability
+/* Brand ID is for back compatibility
  * Newer CPUs uses the extended brand string */
 const char* const _brand_id[] = {
   "",
@@ -2793,7 +2819,7 @@ int64_t VM_Version::max_qualified_cpu_freq_from_brand_string(void) {
     }
   }
   if (multiplier > 0) {
-    // Compute freqency (in Hz) from brand string.
+    // Compute frequency (in Hz) from brand string.
     if (brand_string[idx-3] == '.') { // if format is "x.xx"
       frequency =  (brand_string[idx-4] - '0') * multiplier;
       frequency += (brand_string[idx-2] - '0') * multiplier / 10;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
 #include "utilities/vmError.hpp"
 
 // Events and EventMark provide interfaces to log events taking place in the vm.
-// This facility is extremly useful for post-mortem debugging. The eventlog
+// This facility is extremely useful for post-mortem debugging. The eventlog
 // often provides crucial information about events leading up to the crash.
 //
 // Abstractly the logs can record whatever they way but normally they
@@ -230,6 +230,9 @@ class Events : AllStatic {
   // Deoptization related messages
   static StringEventLog* _deopt_messages;
 
+  // dynamic lib related messages
+  static StringEventLog* _dll_messages;
+
   // Redefinition related messages
   static StringEventLog* _redefinitions;
 
@@ -266,6 +269,8 @@ class Events : AllStatic {
   static void log_class_loading(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
 
   static void log_deopt_message(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
+
+  static void log_dll_message(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
 
   // Register default loggers
   static void init();
@@ -333,6 +338,15 @@ inline void Events::log_deopt_message(Thread* thread, const char* format, ...) {
     va_list ap;
     va_start(ap, format);
     _deopt_messages->logv(thread, format, ap);
+    va_end(ap);
+  }
+}
+
+inline void Events::log_dll_message(Thread* thread, const char* format, ...) {
+  if (LogEvents && _dll_messages != NULL) {
+    va_list ap;
+    va_start(ap, format);
+    _dll_messages->logv(thread, format, ap);
     va_end(ap);
   }
 }

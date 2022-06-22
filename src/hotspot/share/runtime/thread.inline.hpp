@@ -28,12 +28,14 @@
 
 #include "runtime/thread.hpp"
 
-#include "classfile/vmClasses.hpp"
+#include "classfile/javaClasses.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "memory/universe.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/continuation.hpp"
+#include "runtime/continuationEntry.inline.hpp"
 #include "runtime/nonJavaThread.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/safepoint.hpp"
@@ -126,6 +128,15 @@ inline void JavaThread::clear_obj_deopt_flag() {
   clear_suspend_flag(_obj_deopt);
 }
 
+#if INCLUDE_JVMTI
+inline void JavaThread::set_carrier_thread_suspended() {
+  _carrier_thread_suspended = true;
+}
+inline void JavaThread::clear_carrier_thread_suspended() {
+  _carrier_thread_suspended = false;
+}
+#endif
+
 class AsyncExceptionHandshake : public AsyncHandshakeClosure {
   OopHandle _exception;
   bool _is_ThreadDeath;
@@ -136,6 +147,12 @@ class AsyncExceptionHandshake : public AsyncHandshakeClosure {
   }
 
   ~AsyncExceptionHandshake() {
+    Thread* current = Thread::current();
+    // Can get here from the VMThread via install_async_exception() bail out.
+    if (current->is_Java_thread()) {
+      guarantee(JavaThread::cast(current)->is_oop_safe(),
+                "JavaThread cannot touch oops after its GC barrier is detached.");
+    }
     assert(!_exception.is_empty(), "invariant");
     _exception.release(Universe::vm_global());
   }
@@ -223,6 +240,18 @@ bool JavaThread::is_at_poll_safepoint() {
   return _safepoint_state->is_at_poll_safepoint();
 }
 
+bool JavaThread::is_vthread_mounted() const {
+  return vthread_continuation() != nullptr;
+}
+
+const ContinuationEntry* JavaThread::vthread_continuation() const {
+  for (ContinuationEntry* c = last_continuation(); c != nullptr; c = c->parent()) {
+    if (c->is_virtual_thread())
+      return c;
+  }
+  return nullptr;
+}
+
 void JavaThread::enter_critical() {
   assert(Thread::current() == this ||
          (Thread::current()->is_VM_thread() &&
@@ -237,21 +266,24 @@ inline void JavaThread::set_done_attaching_via_jni() {
 }
 
 inline bool JavaThread::is_exiting() const {
-  // Use load-acquire so that setting of _terminated by
-  // JavaThread::exit() is seen more quickly.
   TerminatedTypes l_terminated = Atomic::load_acquire(&_terminated);
-  return l_terminated == _thread_exiting || check_is_terminated(l_terminated);
+  return l_terminated == _thread_exiting ||
+         l_terminated == _thread_gc_barrier_detached ||
+         check_is_terminated(l_terminated);
+}
+
+inline bool JavaThread::is_oop_safe() const {
+  TerminatedTypes l_terminated = Atomic::load_acquire(&_terminated);
+  return l_terminated != _thread_gc_barrier_detached &&
+         !check_is_terminated(l_terminated);
 }
 
 inline bool JavaThread::is_terminated() const {
-  // Use load-acquire so that setting of _terminated by
-  // JavaThread::exit() is seen more quickly.
   TerminatedTypes l_terminated = Atomic::load_acquire(&_terminated);
   return check_is_terminated(l_terminated);
 }
 
 inline void JavaThread::set_terminated(TerminatedTypes t) {
-  // use release-store so the setting of _terminated is seen more quickly
   Atomic::release_store(&_terminated, t);
 }
 

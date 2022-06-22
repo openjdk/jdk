@@ -156,6 +156,19 @@ inline intptr_t p2i(const volatile void* p) {
   return (intptr_t) p;
 }
 
+
+//----------------------------------------------------------------------------------------------------
+// Forbid the use of various C library functions.
+// Some of these have os:: replacements that should normally be used instead.
+// Others are considered security concerns, with preferred alternatives.
+
+FORBID_C_FUNCTION(void exit(int), "use os::exit");
+FORBID_C_FUNCTION(void _exit(int), "use os::exit");
+FORBID_C_FUNCTION(char* strerror(int), "use os::strerror");
+FORBID_C_FUNCTION(char* strtok(char*, const char*), "use strtok_r");
+FORBID_C_FUNCTION(int vsprintf(char*, const char*, va_list), "use os::vsnprintf");
+FORBID_C_FUNCTION(int vsnprintf(char*, size_t, const char*, va_list), "use os::vsnprintf");
+
 //----------------------------------------------------------------------------------------------------
 // Constants
 
@@ -278,7 +291,7 @@ const jint  NANOSECS_PER_MILLISEC = 1000000;
 
 
 // Unit conversion functions
-// The caller is responsible for considering overlow.
+// The caller is responsible for considering overflow.
 
 inline int64_t nanos_to_millis(int64_t nanos) {
   return nanos / NANOUNITS_PER_MILLIUNIT;
@@ -472,7 +485,7 @@ extern "C" {
 
 // Unsigned byte types for os and stream.hpp
 
-// Unsigned one, two, four and eigth byte quantities used for describing
+// Unsigned one, two, four and eight byte quantities used for describing
 // the .class file format. See JVM book chapter 4.
 
 typedef jubyte  u1;
@@ -713,12 +726,16 @@ inline bool is_double_word_type(BasicType t) {
   return (t == T_DOUBLE || t == T_LONG);
 }
 
-inline bool is_reference_type(BasicType t) {
-  return (t == T_OBJECT || t == T_ARRAY);
+inline bool is_reference_type(BasicType t, bool include_narrow_oop = false) {
+  return (t == T_OBJECT || t == T_ARRAY || (include_narrow_oop && t == T_NARROWOOP));
 }
 
 inline bool is_integral_type(BasicType t) {
   return is_subword_type(t) || t == T_INT || t == T_LONG;
+}
+
+inline bool is_non_subword_integral_type(BasicType t) {
+  return t == T_INT || t == T_LONG;
 }
 
 inline bool is_floating_point_type(BasicType t) {
@@ -728,9 +745,13 @@ inline bool is_floating_point_type(BasicType t) {
 extern char type2char_tab[T_CONFLICT+1];     // Map a BasicType to a jchar
 inline char type2char(BasicType t) { return (uint)t < T_CONFLICT+1 ? type2char_tab[t] : 0; }
 extern int type2size[T_CONFLICT+1];         // Map BasicType to result stack elements
-extern const char* type2name_tab[T_CONFLICT+1];     // Map a BasicType to a jchar
-inline const char* type2name(BasicType t) { return (uint)t < T_CONFLICT+1 ? type2name_tab[t] : NULL; }
+extern const char* type2name_tab[T_CONFLICT+1];     // Map a BasicType to a char*
 extern BasicType name2type(const char* name);
+
+inline const char* type2name(BasicType t) {
+  assert((uint)t < T_CONFLICT + 1, "invalid type");
+  return type2name_tab[t];
+}
 
 inline jlong max_signed_integer(BasicType bt) {
   if (bt == T_INT) {
@@ -956,13 +977,13 @@ TosState as_TosState(BasicType type);
 enum JavaThreadState {
   _thread_uninitialized     =  0, // should never happen (missing initialization)
   _thread_new               =  2, // just starting up, i.e., in process of being initialized
-  _thread_new_trans         =  3, // corresponding transition state (not used, included for completness)
+  _thread_new_trans         =  3, // corresponding transition state (not used, included for completeness)
   _thread_in_native         =  4, // running in native code
   _thread_in_native_trans   =  5, // corresponding transition state
   _thread_in_vm             =  6, // running in VM
   _thread_in_vm_trans       =  7, // corresponding transition state
   _thread_in_Java           =  8, // running in Java or in stub code
-  _thread_in_Java_trans     =  9, // corresponding transition state (not used, included for completness)
+  _thread_in_Java_trans     =  9, // corresponding transition state (not used, included for completeness)
   _thread_blocked           = 10, // blocked in vm
   _thread_blocked_trans     = 11, // corresponding transition state
   _thread_max_state         = 12  // maximum thread state+1 - used for statistics allocation

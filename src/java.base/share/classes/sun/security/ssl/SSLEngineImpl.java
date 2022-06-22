@@ -461,7 +461,7 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
             }
 
             /*
-             * Make sure the destination bufffers are writable.
+             * Make sure the destination buffers are writable.
              */
             if (dsts[i].isReadOnly()) {
                 throw new ReadOnlyBufferException();

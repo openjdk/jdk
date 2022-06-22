@@ -181,7 +181,7 @@ public abstract class Dependencies {
         public abstract static class Node extends GraphUtils.AbstractNode<ClassSymbol, Node>
                 implements GraphUtils.DottableNode<ClassSymbol, Node> {
             /**
-             * dependant nodes grouped by kind
+             * dependent nodes grouped by kind
              */
             EnumMap<CompletionCause, List<Node>> depsByKind;
 

@@ -41,6 +41,10 @@
 #include "opto/subnode.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "utilities/macros.hpp"
+#if INCLUDE_JFR
+#include "jfr/jfr.hpp"
+#endif
 
 void trace_type_profile(Compile* C, ciMethod *method, int depth, int bci, ciMethod *prof_method, ciKlass *prof_klass, int site_count, int receiver_count) {
   if (TraceTypeProfile || C->print_inlining()) {
@@ -511,6 +515,7 @@ void Parse::do_call() {
   ciKlass*         holder       = iter().get_declared_method_holder();
   ciInstanceKlass* klass = ciEnv::get_instance_klass_for_declared_method_holder(holder);
   assert(declared_signature != NULL, "cannot be null");
+  JFR_ONLY(Jfr::on_resolution(this, holder, orig_callee);)
 
   // Bump max node limit for JSR292 users
   if (bc() == Bytecodes::_invokedynamic || orig_callee->is_method_handle_intrinsic()) {
@@ -854,7 +859,7 @@ void Parse::catch_call_exceptions(ciExceptionHandlerStream& handlers) {
         method()->print_name(); tty->cr();
       } else if (PrintOpto && (Verbose || WizardMode)) {
         tty->print("Bailing out on unloaded exception type ");
-        extype->klass()->print_name();
+        extype->instance_klass()->print_name();
         tty->print(" at bci:%d in ", bci());
         method()->print_name(); tty->cr();
       }
@@ -864,7 +869,7 @@ void Parse::catch_call_exceptions(ciExceptionHandlerStream& handlers) {
       push_ex_oop(ex_oop);
       uncommon_trap(Deoptimization::Reason_unloaded,
                     Deoptimization::Action_reinterpret,
-                    extype->klass(), "!loaded exception");
+                    extype->instance_klass(), "!loaded exception");
       set_bci(iter().cur_bci()); // put it back
       continue;
     }
@@ -911,7 +916,7 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
 
   // determine potential exception handlers
   ciExceptionHandlerStream handlers(method(), bci(),
-                                    ex_type->klass()->as_instance_klass(),
+                                    ex_type->instance_klass(),
                                     ex_type->klass_is_exact());
 
   // Start executing from the given throw state.  (Keep its stack, for now.)
@@ -1133,7 +1138,7 @@ ciMethod* Compile::optimize_inlining(ciMethod* caller, ciInstanceKlass* klass, c
     return NULL;
   }
 
-  ciInstanceKlass* receiver_klass = receiver_type->klass()->as_instance_klass();
+  ciInstanceKlass* receiver_klass = receiver_type->is_instptr()->instance_klass();
   if (receiver_klass->is_loaded() && receiver_klass->is_initialized() && !receiver_klass->is_interface() &&
       (receiver_klass == actual_receiver || receiver_klass->is_subtype_of(actual_receiver))) {
     // ikl is a same or better type than the original actual_receiver,

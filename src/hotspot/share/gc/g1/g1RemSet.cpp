@@ -1384,7 +1384,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
 
       uint const region_idx = _ct->region_idx_for(card_ptr);
 
-      // The second clause must come after - the log buffers might contain cards to uncommited
+      // The second clause must come after - the log buffers might contain cards to uncommitted
       // regions.
       // This code may count duplicate entries in the log buffers (even if rare) multiple
       // times.
@@ -1763,7 +1763,7 @@ void G1RemSet::enqueue_for_reprocessing(CardValue* card_ptr) {
   dcqs.enqueue_completed_buffer(BufferNode::make_node_from_buffer(buffer, index));
 }
 
-void G1RemSet::print_periodic_summary_info(const char* header, uint period_count) {
+void G1RemSet::print_periodic_summary_info(const char* header, uint period_count, bool show_thread_times) {
   if ((G1SummarizeRSetStatsPeriod > 0) && log_is_enabled(Trace, gc, remset) &&
       (period_count % G1SummarizeRSetStatsPeriod == 0)) {
 
@@ -1774,7 +1774,7 @@ void G1RemSet::print_periodic_summary_info(const char* header, uint period_count
     log.trace("%s", header);
     ResourceMark rm;
     LogStream ls(log.trace());
-    _prev_period_summary.print_on(&ls);
+    _prev_period_summary.print_on(&ls, show_thread_times);
 
     _prev_period_summary.set(&current);
   }
@@ -1787,7 +1787,7 @@ void G1RemSet::print_summary_info() {
     G1RemSetSummary current;
     ResourceMark rm;
     LogStream ls(log.trace());
-    current.print_on(&ls);
+    current.print_on(&ls, true /* show_thread_times*/);
   }
 }
 

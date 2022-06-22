@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2012, 2021 SAP SE. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -1125,11 +1125,6 @@ int MachCallRuntimeNode::ret_addr_offset() {
   return 4;
 }
 
-int MachCallNativeNode::ret_addr_offset() {
-  Unimplemented();
-  return -1;
-}
-
 //=============================================================================
 
 // condition code conversions
@@ -2168,6 +2163,10 @@ const bool Matcher::match_rule_supported(int opcode) {
   }
 
   return true; // Per default match rules are supported.
+}
+
+const bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
+  return match_rule_supported_vector(opcode, vlen, bt);
 }
 
 const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
@@ -4136,7 +4135,7 @@ operand immP_NM() %{
   interface(CONST_INTER);
 %}
 
-// costant 'pointer 0'.
+// constant 'pointer 0'.
 operand immP_0() %{
   predicate(n->get_ptr() == 0);
   match(ConP);
@@ -4911,7 +4910,7 @@ operand cmpOp() %{
 //----------OPERAND CLASSES----------------------------------------------------
 // Operand Classes are groups of operands that are used to simplify
 // instruction definitions by not requiring the AD writer to specify
-// seperate instructions for every form of operand when the
+// separate instructions for every form of operand when the
 // instruction accepts multiple operand types with the same basic
 // encoding and format. The classic case of this is memory operands.
 // Indirect is not included since its use is limited to Compare & Swap.
@@ -9009,6 +9008,50 @@ instruct modL_reg_reg_Ex(iRegLdst dst, iRegLsrc src1, iRegLsrc src2) %{
   %}
 %}
 
+instruct udivI_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
+  match(Set dst (UDivI src1 src2));
+  format %{ "DIVWU   $dst, $src1, $src2" %}
+  size(4);
+  ins_encode %{
+    __ divwu($dst$$Register, $src1$$Register, $src2$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct umodI_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
+  match(Set dst (UModI src1 src2));
+  expand %{
+    iRegIdst tmp1;
+    iRegIdst tmp2;
+    udivI_reg_reg(tmp1, src1, src2);
+    // Compute lower 32 bit result using signed instructions as suggested by ISA.
+    // Upper 32 bit will contain garbage.
+    mulI_reg_reg(tmp2, src2, tmp1);
+    subI_reg_reg(dst, src1, tmp2);
+  %}
+%}
+
+instruct udivL_reg_reg(iRegLdst dst, iRegLsrc src1, iRegLsrc src2) %{
+  match(Set dst (UDivL src1 src2));
+  format %{ "DIVDU   $dst, $src1, $src2" %}
+  size(4);
+  ins_encode %{
+    __ divdu($dst$$Register, $src1$$Register, $src2$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct umodL_reg_reg(iRegLdst dst, iRegLsrc src1, iRegLsrc src2) %{
+  match(Set dst (UModL src1 src2));
+  expand %{
+    iRegLdst tmp1;
+    iRegLdst tmp2;
+    udivL_reg_reg(tmp1, src1, src2);
+    mulL_reg_reg(tmp2, src2, tmp1);
+    subL_reg_reg(dst, src1, tmp2);
+  %}
+%}
+
 // Integer Shift Instructions
 
 // Register Shift Left
@@ -12133,7 +12176,7 @@ instruct cmpFastLock(flagsReg crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iR
   ins_encode %{
     __ compiler_fast_lock_object($crx$$CondRegister, $oop$$Register, $box$$Register,
                                  $tmp1$$Register, $tmp2$$Register, /*tmp3*/ R0);
-    // If locking was successfull, crx should indicate 'EQ'.
+    // If locking was successful, crx should indicate 'EQ'.
     // The compiler generates a branch to the runtime call to
     // _complete_monitor_locking_Java for the case where crx is 'NE'.
   %}
@@ -12153,7 +12196,7 @@ instruct cmpFastLock_tm(flagsReg crx, iRegPdst oop, rarg2RegP box, iRegPdst tmp1
                                  _rtm_counters, _stack_rtm_counters,
                                  ((Method*)(ra_->C->method()->constant_encoding()))->method_data(),
                                  /*RTM*/ true, ra_->C->profile_rtm());
-    // If locking was successfull, crx should indicate 'EQ'.
+    // If locking was successful, crx should indicate 'EQ'.
     // The compiler generates a branch to the runtime call to
     // _complete_monitor_locking_Java for the case where crx is 'NE'.
   %}
@@ -12170,7 +12213,7 @@ instruct cmpFastUnlock(flagsReg crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, 
     __ compiler_fast_unlock_object($crx$$CondRegister, $oop$$Register, $box$$Register,
                                    $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
                                    false);
-    // If unlocking was successfull, crx should indicate 'EQ'.
+    // If unlocking was successful, crx should indicate 'EQ'.
     // The compiler generates a branch to the runtime call to
     // _complete_monitor_unlocking_Java for the case where crx is 'NE'.
   %}
@@ -12187,7 +12230,7 @@ instruct cmpFastUnlock_tm(flagsReg crx, iRegPdst oop, iRegPdst box, iRegPdst tmp
     __ compiler_fast_unlock_object($crx$$CondRegister, $oop$$Register, $box$$Register,
                                    $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
                                    /*RTM*/ true);
-    // If unlocking was successfull, crx should indicate 'EQ'.
+    // If unlocking was successful, crx should indicate 'EQ'.
     // The compiler generates a branch to the runtime call to
     // _complete_monitor_unlocking_Java for the case where crx is 'NE'.
   %}
@@ -14059,13 +14102,28 @@ instruct vsqrt2D_reg(vecX dst, vecX src) %{
 
 // Vector Population Count Instructions
 
-instruct vpopcnt4I_reg(vecX dst, vecX src) %{
+instruct vpopcnt_reg(vecX dst, vecX src) %{
   match(Set dst (PopCountVI src));
-  predicate(n->as_Vector()->length() == 4);
-  format %{ "VPOPCNTW $dst,$src\t// pop count packed4I" %}
+  format %{ "VPOPCNT $dst,$src\t// pop count packed" %}
   size(4);
   ins_encode %{
-    __ vpopcntw($dst$$VectorSRegister->to_vr(), $src$$VectorSRegister->to_vr());
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    switch (bt) {
+      case T_BYTE:
+        __ vpopcntb($dst$$VectorSRegister->to_vr(), $src$$VectorSRegister->to_vr());
+        break;
+      case T_SHORT:
+        __ vpopcnth($dst$$VectorSRegister->to_vr(), $src$$VectorSRegister->to_vr());
+        break;
+      case T_INT:
+        __ vpopcntw($dst$$VectorSRegister->to_vr(), $src$$VectorSRegister->to_vr());
+        break;
+      case T_LONG:
+        __ vpopcntd($dst$$VectorSRegister->to_vr(), $src$$VectorSRegister->to_vr());
+        break;
+      default:
+        ShouldNotReachHere();
+    }
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -14474,7 +14532,7 @@ instruct CallLeafDirect(method meth) %{
 %}
 
 // postalloc expand of CallLeafDirect.
-// Load adress to call from TOC, then bl to it.
+// Load address to call from TOC, then bl to it.
 instruct CallLeafDirect_Ex(method meth) %{
   match(CallLeaf);
   effect(USE meth);
@@ -14490,7 +14548,7 @@ instruct CallLeafDirect_Ex(method meth) %{
 
 // Call runtime without safepoint - same as CallLeaf.
 // postalloc expand of CallLeafNoFPDirect.
-// Load adress to call from TOC, then bl to it.
+// Load address to call from TOC, then bl to it.
 instruct CallLeafNoFPDirect_Ex(method meth) %{
   match(CallLeafNoFP);
   effect(USE meth);
@@ -14790,7 +14848,7 @@ instruct cacheWBPostSync()
 //
 // // Change (inc mov) to lea
 // peephole %{
-//   // increment preceeded by register-register move
+//   // increment preceded by register-register move
 //   peepmatch ( incI_eReg movI );
 //   // require that the destination register of the increment
 //   // match the destination register of the move

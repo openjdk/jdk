@@ -23,6 +23,8 @@
 package jdk.jpackage.test;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -78,6 +80,14 @@ public final class LinuxHelper {
                         () -> cmd.name()).replaceAll("\\s+", "_"));
         return cmd.appLayout().destktopIntegrationDirectory().resolve(
                 desktopFileName);
+    }
+
+    static Path getServiceUnitFilePath(JPackageCommand cmd, String launcherName) {
+        cmd.verifyIsOfType(PackageType.LINUX);
+        return cmd.pathToUnpackedPackageFile(
+                Path.of("/lib/systemd/system").resolve(getServiceUnitFileName(
+                        getPackageName(cmd),
+                        Optional.ofNullable(launcherName).orElseGet(cmd::name))));
     }
 
     static String getBundleName(JPackageCommand cmd) {
@@ -668,6 +678,31 @@ public final class LinuxHelper {
         return arch;
     }
 
+    private static String getServiceUnitFileName(String packageName,
+            String launcherName) {
+        try {
+            return getServiceUnitFileName.invoke(null, packageName, launcherName).toString();
+        } catch (InvocationTargetException | IllegalAccessException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private static Method initGetServiceUnitFileName() {
+        try {
+            return Class.forName(
+                    "jdk.jpackage.internal.LinuxLaunchersAsServices").getMethod(
+                            "getServiceUnitFileName", String.class, String.class);
+        } catch (ClassNotFoundException ex) {
+            if (TKit.isLinux()) {
+                throw new RuntimeException(ex);
+            } else {
+                return null;
+            }
+        } catch (NoSuchMethodException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
     static final Set<Path> CRITICAL_RUNTIME_FILES = Set.of(Path.of(
             "lib/server/libjvm.so"));
 
@@ -677,4 +712,6 @@ public final class LinuxHelper {
 
     // Values grabbed from https://linux.die.net/man/1/xdg-icon-resource
     private final static Set<Integer> XDG_CMD_VALID_ICON_SIZES = Set.of(16, 22, 32, 48, 64, 128);
+
+    private final static Method getServiceUnitFileName = initGetServiceUnitFileName();
 }

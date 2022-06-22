@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,7 +92,7 @@ protected:
   // The memory node index this allocation region belongs to.
   uint _node_index;
 
-  // Reset the alloc region to point a the dummy region.
+  // Reset the alloc region to point the dummy region.
   void reset_alloc_region();
 
   // Perform a non-MT-safe allocation out of the given region.
@@ -112,7 +112,7 @@ protected:
                                 size_t* actual_word_size);
 
   // Ensure that the region passed as a parameter has been filled up
-  // so that noone else can allocate out of it any more.
+  // so that no one else can allocate out of it any more.
   // Returns the number of bytes that have been wasted by filled up
   // the space.
   size_t fill_up_remaining_space(HeapRegion* alloc_region);

@@ -144,7 +144,7 @@ public class PackageSummaryBuilder extends AbstractBuilder {
     }
 
     /**
-     * Builds a list of "nearby" packages (subpackages, super and sibling packages).
+     * Builds a list of "nearby" packages (subpackages, superpackages, and sibling packages).
      *
      * @param summariesList the list of summaries to which the summary will be added
      */

@@ -536,12 +536,6 @@ static SpecialFlag const special_jvm_flags[] = {
   { "DynamicDumpSharedSpaces",      JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "RequireSharedSpaces",          JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "UseSharedSpaces",              JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
-#ifdef PRODUCT
-  { "UseHeavyMonitors",             JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::jdk(20) },
-#endif
-  { "ExtendedDTraceProbes",         JDK_Version::jdk(19), JDK_Version::jdk(20), JDK_Version::jdk(21) },
-  { "UseContainerCpuShares",        JDK_Version::jdk(19), JDK_Version::jdk(20), JDK_Version::jdk(21) },
-  { "PreferContainerQuotaForCPUCount", JDK_Version::jdk(19), JDK_Version::jdk(20), JDK_Version::jdk(21) },
 
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::undefined(), JDK_Version::undefined() },
@@ -550,9 +544,11 @@ static SpecialFlag const special_jvm_flags[] = {
 
   // -------------- Obsolete Flags - sorted by expired_in --------------
 
-  { "FilterSpuriousWakeups",        JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::jdk(20) },
-  { "MinInliningThreshold",         JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::jdk(20) },
-  { "PrefetchFieldsAhead",          JDK_Version::undefined(), JDK_Version::jdk(19), JDK_Version::jdk(20) },
+  { "ExtendedDTraceProbes",         JDK_Version::jdk(19), JDK_Version::jdk(20), JDK_Version::jdk(21) },
+  { "UseContainerCpuShares",        JDK_Version::jdk(19), JDK_Version::jdk(20), JDK_Version::jdk(21) },
+  { "PreferContainerQuotaForCPUCount", JDK_Version::jdk(19), JDK_Version::jdk(20), JDK_Version::jdk(21) },
+  { "AliasLevel",                   JDK_Version::jdk(19), JDK_Version::jdk(20), JDK_Version::jdk(21) },
+
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
 #endif
@@ -1760,6 +1756,18 @@ void Arguments::set_heap_size() {
       reasonable_max = MIN2(reasonable_max, (julong)ErgoHeapSizeLimit);
     }
 
+    reasonable_max = limit_heap_by_allocatable_memory(reasonable_max);
+
+    if (!FLAG_IS_DEFAULT(InitialHeapSize)) {
+      // An initial heap size was specified on the command line,
+      // so be sure that the maximum size is consistent.  Done
+      // after call to limit_heap_by_allocatable_memory because that
+      // method might reduce the allocation size.
+      reasonable_max = MAX2(reasonable_max, (julong)InitialHeapSize);
+    } else if (!FLAG_IS_DEFAULT(MinHeapSize)) {
+      reasonable_max = MAX2(reasonable_max, (julong)MinHeapSize);
+    }
+
 #ifdef _LP64
     if (UseCompressedOops || UseCompressedClassPointers) {
       // HeapBaseMinAddress can be greater than default but not less than.
@@ -1805,18 +1813,6 @@ void Arguments::set_heap_size() {
       }
     }
 #endif // _LP64
-
-    reasonable_max = limit_heap_by_allocatable_memory(reasonable_max);
-
-    if (!FLAG_IS_DEFAULT(InitialHeapSize)) {
-      // An initial heap size was specified on the command line,
-      // so be sure that the maximum size is consistent.  Done
-      // after call to limit_heap_by_allocatable_memory because that
-      // method might reduce the allocation size.
-      reasonable_max = MAX2(reasonable_max, (julong)InitialHeapSize);
-    } else if (!FLAG_IS_DEFAULT(MinHeapSize)) {
-      reasonable_max = MAX2(reasonable_max, (julong)MinHeapSize);
-    }
 
     log_trace(gc, heap)("  Maximum heap size " SIZE_FORMAT, (size_t) reasonable_max);
     FLAG_SET_ERGO(MaxHeapSize, (size_t)reasonable_max);

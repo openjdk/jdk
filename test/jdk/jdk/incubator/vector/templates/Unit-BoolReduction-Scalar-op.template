@@ -1,3 +1,4 @@
+
     static boolean [[TEST]](boolean[] a, int idx) {
         boolean res = [[TEST_INIT]];
         for (int i = idx; i < (idx + SPECIES.length()); i++) {

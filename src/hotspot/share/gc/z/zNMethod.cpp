@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/continuation.hpp"
 #include "utilities/debug.hpp"
 
 static ZNMethodData* gc_data(const nmethod* nm) {
@@ -206,6 +207,13 @@ void ZNMethod::disarm(nmethod* nm) {
   bs->disarm(nm);
 }
 
+void ZNMethod::arm(nmethod* nm, int arm_value) {
+  BarrierSetNMethod* const bs = BarrierSet::barrier_set()->barrier_set_nmethod();
+  if (bs != NULL) {
+    bs->arm(nm, arm_value);
+  }
+}
+
 void ZNMethod::nmethod_oops_do(nmethod* nm, OopClosure* cl) {
   ZLocker<ZReentrantLock> locker(ZNMethod::lock_for_nmethod(nm));
   if (!nm->is_alive()) {
@@ -331,7 +339,14 @@ public:
     if (ZNMethod::is_armed(nm)) {
       // Heal oops and disarm
       ZNMethod::nmethod_oops_barrier(nm);
-      ZNMethod::disarm(nm);
+
+      if (Continuations::enabled()) {
+        // Loom needs to know about visited nmethods. Arm the nmethods to get
+        // mark_as_maybe_on_continuation() callbacks when they are used again.
+        ZNMethod::arm(nm, 0);
+      } else {
+        ZNMethod::disarm(nm);
+      }
     }
 
     // Clear compiled ICs and exception caches

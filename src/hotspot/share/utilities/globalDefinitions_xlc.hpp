@@ -132,7 +132,7 @@ inline int g_isfinite(jdouble f)                 { return finite(f); }
 //
 //   void* operator new(size_t size) throw() NOINLINE;
 //
-// For function/method defintions, the more common placement BEFORE the
+// For function/method definitions, the more common placement BEFORE the
 // function/method declarator seems to be supported as well:
 //
 //   NOINLINE void* CHeapObj<F>::operator new(size_t size) throw() {...}

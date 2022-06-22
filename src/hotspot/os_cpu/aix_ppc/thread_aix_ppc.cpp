@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2014 SAP SE. All rights reserved.
  * Copyright (c) 2022, IBM Corp.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -35,7 +35,7 @@ frame JavaThread::pd_last_frame() {
   intptr_t* sp = last_Java_sp();
   address pc = _anchor.last_Java_pc();
 
-  // Last_Java_pc ist not set, if we come here from compiled code.
+  // Last_Java_pc is not set, if we come here from compiled code.
   // Assume spill slot for link register contains a suitable pc.
   // Should have been filled by method entry code.
   if (pc == NULL)
