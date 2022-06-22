@@ -29,6 +29,7 @@
 
 #include "oops/access.hpp"
 #include "runtime/frame.hpp"
+#include "utilities/align.hpp"
 
 #include CPU_HEADER_INLINE(continuationEntry)
 
