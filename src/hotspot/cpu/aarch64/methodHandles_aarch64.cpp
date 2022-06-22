@@ -185,7 +185,7 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
     return NULL;
   }
 
-  // r13: sender SP (must preserve; see prepare_to_jump_from_interpreted)
+  // r19_sender_sp: sender SP (must preserve; see prepare_to_jump_from_interpreted)
   // rmethod: Method*
   // r3: argument locator (parameter slot count, added to rsp)
   // r1: used as temp to hold mh or receiver
@@ -443,7 +443,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       break;
     }
 
-    // live at this point:  rmethod, r13 (if interpreted)
+    // live at this point:  rmethod, r19_sender_sp (if interpreted)
 
     // After figuring out which concrete method to call, jump into it.
     // Note that this works in the interpreter with no data motion.
