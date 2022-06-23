@@ -332,7 +332,6 @@ Node::Node(uint req)
   : _idx(Init(req))
 #ifdef ASSERT
   , _parse_idx(_idx)
-  , _indent(0)
 #endif
 {
   assert( req < Compile::current()->max_node_limit() - NodeLimitFudgeFactor, "Input limit exceeded" );
@@ -353,7 +352,6 @@ Node::Node(Node *n0)
   : _idx(Init(1))
 #ifdef ASSERT
   , _parse_idx(_idx)
-  , _indent(0)
 #endif
 {
   debug_only( verify_construction() );
@@ -367,7 +365,6 @@ Node::Node(Node *n0, Node *n1)
   : _idx(Init(2))
 #ifdef ASSERT
   , _parse_idx(_idx)
-  , _indent(0)
 #endif
 {
   debug_only( verify_construction() );
@@ -383,7 +380,6 @@ Node::Node(Node *n0, Node *n1, Node *n2)
   : _idx(Init(3))
 #ifdef ASSERT
   , _parse_idx(_idx)
-  , _indent(0)
 #endif
 {
   debug_only( verify_construction() );
@@ -401,7 +397,6 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3)
   : _idx(Init(4))
 #ifdef ASSERT
   , _parse_idx(_idx)
-  , _indent(0)
 #endif
 {
   debug_only( verify_construction() );
@@ -421,7 +416,6 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3, Node *n4)
   : _idx(Init(5))
 #ifdef ASSERT
   , _parse_idx(_idx)
-  , _indent(0)
 #endif
 {
   debug_only( verify_construction() );
@@ -444,7 +438,6 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3,
   : _idx(Init(6))
 #ifdef ASSERT
   , _parse_idx(_idx)
-  , _indent(0)
 #endif
 {
   debug_only( verify_construction() );
@@ -469,7 +462,6 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3,
   : _idx(Init(7))
 #ifdef ASSERT
   , _parse_idx(_idx)
-  , _indent(0)
 #endif
 {
   debug_only( verify_construction() );
@@ -2525,10 +2517,6 @@ void Node::dump(const char* suffix, bool mark, outputStream* st, DumpConfig* dc)
   bool is_new = C->node_arena()->contains(this);
   C->_in_dump_cnt++;
 
-  if (_indent > 0) {
-    st->print("%*s", (_indent << 1), "  ");
-  }
-
   // idx mark name ===
   dump_idx(true, st, dc);
   st->print(mark ? " >" : "  ");
@@ -2605,6 +2593,11 @@ void Node::dump(const char* suffix, bool mark, outputStream* st, DumpConfig* dc)
   C->_in_dump_cnt--;
 }
 
+// call from debugger: dump node to tty with newline
+void Node::dump() const {
+  dump("\n");
+}
+
 //------------------------------dump_req--------------------------------------
 void Node::dump_req(outputStream* st, DumpConfig* dc) const {
   // Dump the required input edges
@@ -2657,12 +2650,13 @@ void Node::dump_out(outputStream* st, DumpConfig* dc) const {
 }
 
 //------------------------------dump-------------------------------------------
+// call from debugger: dump Node's inputs (or outputs if d negative)
 void Node::dump(int d) const {
   dump_bfs(abs(d), nullptr, (d>0) ? "+$" : "-$");
 }
 
 //------------------------------dump_ctrl--------------------------------------
-// Dump a Node's control history to depth
+// call from debugger: dump Node's control inputs (or outputs if d negative)
 void Node::dump_ctrl(int d) const {
   dump_bfs(abs(d), nullptr, (d>0) ? "+$c" : "-$c");
 }
