@@ -26,6 +26,7 @@
 package sun.nio.ch;
 
 import java.io.IOException;
+import java.nio.channels.CancelledKeyException;
 import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.IllegalSelectorException;
 import java.nio.channels.SelectableChannel;
@@ -225,6 +226,7 @@ public abstract class SelectorImpl
             keys.remove(k);
             k.cancel();
             throw e;
+        } catch (CancelledKeyException ignored) {
         }
         return k;
     }

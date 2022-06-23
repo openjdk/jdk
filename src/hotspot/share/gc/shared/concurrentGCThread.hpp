@@ -25,8 +25,8 @@
 #ifndef SHARE_GC_SHARED_CONCURRENTGCTHREAD_HPP
 #define SHARE_GC_SHARED_CONCURRENTGCTHREAD_HPP
 
+#include "runtime/javaThread.hpp"
 #include "runtime/nonJavaThread.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/debug.hpp"
 
 class ConcurrentGCThread: public NamedThread {
