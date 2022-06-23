@@ -26,7 +26,6 @@ package jdk.incubator.concurrent;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
-import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.time.Duration;
@@ -300,7 +299,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
      */
     public StructuredTaskScope() {
         PreviewFeatures.ensureEnabled();
-        this.factory = FactoryHolder.VIRTUAL_THREAD_FACTORY;
+        this.factory = Thread.ofVirtual().factory();
         this.flock = ThreadFlock.open(null);
     }
 
@@ -839,7 +838,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
          * name of {@code null} and a thread factory that creates virtual threads.
          */
         public ShutdownOnSuccess() {
-            super(null, FactoryHolder.VIRTUAL_THREAD_FACTORY);
+            super(null, Thread.ofVirtual().factory());
         }
 
         /**
@@ -1015,7 +1014,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
          * name of {@code null} and a thread factory that creates virtual threads.
          */
         public ShutdownOnFailure() {
-            super(null, FactoryHolder.VIRTUAL_THREAD_FACTORY);
+            super(null, Thread.ofVirtual().factory());
         }
 
         /**
@@ -1159,31 +1158,6 @@ public class StructuredTaskScope<T> implements AutoCloseable {
                 Objects.requireNonNull(ex, "esf returned null");
                 throw ex;
             }
-        }
-    }
-
-    /**
-     * Holder class for the virtual thread factory. It uses reflection to allow
-     * this class be compiled in an incubator module without also enabling preview
-     * features.
-     */
-    private static class FactoryHolder {
-        static final ThreadFactory VIRTUAL_THREAD_FACTORY = virtualThreadFactory();
-
-        @SuppressWarnings("removal")
-        private static ThreadFactory virtualThreadFactory() {
-            PrivilegedAction<ThreadFactory> pa = () -> {
-                try {
-                    Method ofVirtualMethod = Thread.class.getDeclaredMethod("ofVirtual");
-                    Object virtualThreadBuilder = ofVirtualMethod.invoke(null);
-                    Class<?> ofVirtualClass = Class.forName("java.lang.Thread$Builder$OfVirtual");
-                    Method factoryMethod = ofVirtualClass.getMethod("factory");
-                    return (ThreadFactory) factoryMethod.invoke(virtualThreadBuilder);
-                } catch (Exception e) {
-                    throw new InternalError(e);
-                }
-            };
-            return AccessController.doPrivileged(pa);
         }
     }
 }

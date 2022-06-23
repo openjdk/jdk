@@ -73,14 +73,47 @@ public final class AppImageFile {
             Platform.LINUX, "linux", Platform.WINDOWS, "windows", Platform.MAC,
             "macOS");
 
-
-    private AppImageFile() {
-        this(null, null, null, null, null, null, null);
-    }
-
-    private AppImageFile(String launcherName, String mainClass,
+    private AppImageFile(Path appImageDir, String launcherName, String mainClass,
             List<LauncherInfo> launcherInfos, String creatorVersion,
             String creatorPlatform, String signedStr, String appStoreStr) {
+        boolean isValid = true;
+        if (!Objects.equals(getVersion(), creatorVersion)) {
+            isValid = false;
+        }
+
+        if (!Objects.equals(getPlatform(), creatorPlatform)) {
+            isValid = false;
+        }
+
+        if (launcherName == null || launcherName.length() == 0) {
+            isValid = false;
+        }
+
+        if (mainClass == null || mainClass.length() == 0) {
+            isValid = false;
+        }
+
+        for (var launcher : launcherInfos) {
+            if ("".equals(launcher.getName())) {
+                isValid = false;
+            }
+        }
+
+        if (signedStr == null ||
+                !("true".equals(signedStr) || "false".equals(signedStr))) {
+            isValid = false;
+        }
+
+        if (appStoreStr == null ||
+                !("true".equals(appStoreStr) || "false".equals(appStoreStr))) {
+            isValid = false;
+        }
+
+        if (!isValid) {
+            throw new RuntimeException(MessageFormat.format(I18N.getString(
+                "error.invalid-app-image"), appImageDir));
+        }
+
         this.launcherName = launcherName;
         this.mainClass = mainClass;
         this.addLauncherInfos = launcherInfos;
@@ -119,10 +152,6 @@ public final class AppImageFile {
 
     boolean isAppStore() {
         return appStore;
-    }
-
-    void verifyCompatible() throws ConfigException {
-        // Just do nothing for now.
     }
 
     /**
@@ -189,7 +218,7 @@ public final class AppImageFile {
      * @return valid info about application image or null
      * @throws IOException
      */
-    static AppImageFile load(Path appImageDir) throws IOException {
+    static AppImageFile load(Path appImageDir) {
         try {
             Document doc = readXml(appImageDir);
 
@@ -197,17 +226,9 @@ public final class AppImageFile {
 
             String mainLauncher = xpathQueryNullable(xPath,
                     "/jpackage-state/main-launcher/text()", doc);
-            if (mainLauncher == null) {
-                // No main launcher, this is fatal.
-                return new AppImageFile();
-            }
 
             String mainClass = xpathQueryNullable(xPath,
                     "/jpackage-state/main-class/text()", doc);
-            if (mainClass == null) {
-                // No main class, this is fatal.
-                return new AppImageFile();
-            }
 
             List<LauncherInfo> launcherInfos = new ArrayList<>();
 
@@ -231,15 +252,17 @@ public final class AppImageFile {
                  launcherInfos.add(new LauncherInfo(launcherNodes.item(i)));
             }
 
-            AppImageFile file = new AppImageFile(mainLauncher, mainClass,
+            return new AppImageFile(appImageDir, mainLauncher, mainClass,
                     launcherInfos, version, platform, signedStr, appStoreStr);
-            if (!file.isValid()) {
-                file = new AppImageFile();
-            }
-            return file;
         } catch (XPathExpressionException ex) {
             // This should never happen as XPath expressions should be correct
             throw new RuntimeException(ex);
+        } catch (NoSuchFileException nsfe) {
+            // non jpackage generated app-image (no app/.jpackage.xml)
+            throw new RuntimeException(MessageFormat.format(I18N.getString(
+                    "error.foreign-app-image"), appImageDir));
+        } catch (IOException ioe) {
+            throw new RuntimeException(ioe);
         }
     }
 
@@ -275,23 +298,11 @@ public final class AppImageFile {
             Map<String, Object> params) {
         List<LauncherInfo> launchers = new ArrayList<>();
         if (appImageDir != null) {
-            try {
-                AppImageFile appImageInfo = AppImageFile.load(appImageDir);
-                if (appImageInfo != null) {
-                    launchers.add(new LauncherInfo(
-                            appImageInfo.getLauncherName(), params));
+            AppImageFile appImageInfo = AppImageFile.load(appImageDir);
+            launchers.add(new LauncherInfo(
+                    appImageInfo.getLauncherName(), params));
                     launchers.addAll(appImageInfo.getAddLaunchers());
-                    return launchers;
-                }
-            } catch (NoSuchFileException nsfe) {
-                // non jpackage generated app-image (no app/.jpackage.xml)
-                Log.info(MessageFormat.format(I18N.getString(
-                        "warning.foreign-app-image"), appImageDir));
-            } catch (IOException ioe) {
-                Log.verbose(ioe);
-                Log.info(MessageFormat.format(I18N.getString(
-                        "warning.invalid-app-image"), appImageDir));
-            }
+            return launchers;
         }
 
         launchers.add(new LauncherInfo(params));
@@ -302,23 +313,11 @@ public final class AppImageFile {
     }
 
     public static String extractAppName(Path appImageDir) {
-        try {
-            return AppImageFile.load(appImageDir).getLauncherName();
-        } catch (IOException ioe) {
-            Log.verbose(MessageFormat.format(I18N.getString(
-                    "warning.foreign-app-image"), appImageDir));
-            return null;
-        }
+        return AppImageFile.load(appImageDir).getLauncherName();
     }
 
     public static String extractMainClass(Path appImageDir) {
-        try {
-            return AppImageFile.load(appImageDir).getMainClass();
-        } catch (IOException ioe) {
-            Log.verbose(MessageFormat.format(I18N.getString(
-                    "warning.foreign-app-image"), appImageDir));
-            return null;
-        }
+        return AppImageFile.load(appImageDir).getMainClass();
     }
 
     private static String xpathQueryNullable(XPath xPath, String xpathExpr,
@@ -331,34 +330,12 @@ public final class AppImageFile {
         return null;
     }
 
-    static String getVersion() {
-        return "1.0";
+    public static String getVersion() {
+        return System.getProperty("java.version");
     }
 
-    static String getPlatform() {
+    public static String getPlatform() {
         return PLATFORM_LABELS.get(Platform.getPlatform());
-    }
-
-    private boolean isValid() {
-        if (launcherName == null || launcherName.length() == 0) {
-            return false;
-        }
-
-        for (var launcher : addLauncherInfos) {
-            if ("".equals(launcher.getName())) {
-                return false;
-            }
-        }
-
-        if (!Objects.equals(getVersion(), creatorVersion)) {
-            return false;
-        }
-
-        if (!Objects.equals(getPlatform(), creatorPlatform)) {
-            return false;
-        }
-
-        return true;
     }
 
     static class LauncherInfo {

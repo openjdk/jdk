@@ -317,10 +317,6 @@ private:
 
 private:
   // Basic loading operations
-  static InstanceKlass* resolve_instance_class_or_null_helper(Symbol* name,
-                                                              Handle class_loader,
-                                                              Handle protection_domain,
-                                                              TRAPS);
   static InstanceKlass* resolve_instance_class_or_null(Symbol* class_name,
                                                        Handle class_loader,
                                                        Handle protection_domain, TRAPS);

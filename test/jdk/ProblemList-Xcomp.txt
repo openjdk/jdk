@@ -30,3 +30,4 @@
 java/lang/invoke/MethodHandles/CatchExceptionTest.java 8146623 generic-all
 java/lang/ref/ReferenceEnqueue.java 8284236 generic-all
 java/lang/ref/OOMEInReferenceHandler.java 8066859 generic-all
+java/lang/reflect/callerCache/ReflectionCallerCacheTest.java 8288286 macosx-x64,windows-x64

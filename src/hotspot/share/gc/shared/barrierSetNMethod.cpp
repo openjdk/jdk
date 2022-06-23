@@ -33,8 +33,9 @@
 #include "oops/access.inline.hpp"
 #include "oops/method.hpp"
 #include "runtime/frame.inline.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/threadWXSetters.inline.hpp"
+#include "runtime/threads.hpp"
 #include "utilities/debug.hpp"
 
 class LoadPhantomOopClosure : public OopClosure {

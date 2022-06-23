@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,190 +33,167 @@
  /*
  * Obtain test artifacts for Actalis CA from:
  *
- * Test web site with *active *TLS Server certificate:
- * https://ssltest-a.actalis.it:8443
- * If doesn't work then use certificate of https://www.actalis.it
+ * Test website with *active* TLS Server certificate:
+ * https://ssltest-active.actalis.it/
  *
- * Test web site with *revoked *TLS Server certificate:
- * https://ssltest-r.actalis.it:8444
+ * Test website with *revoked* TLS Server certificate:
+ * https://ssltest-revoked.actalis.it/
  *
- * Test web site with *expired *TLS Server certificate:
- * https://ssltest-e.actalis.it:8445
+ * Test website with *expired* TLS Server certificate:
+ * https://ssltest-expired.actalis.it/
  */
 public class ActalisCA {
 
-    // Owner: CN=Actalis Extended Validation Server CA G1,
-    // O=Actalis S.p.A./03358520967, L=Milano, ST=Milano, C=IT
-    // Issuer: CN=Actalis Authentication Root CA, O=Actalis S.p.A./03358520967,
-    // L=Milan, C=IT
-    private static final String INT_VALID = "-----BEGIN CERTIFICATE-----\n"
-            + "MIIGTDCCBDSgAwIBAgIIMtYr/GdQGsswDQYJKoZIhvcNAQELBQAwazELMAkGA1UE\n"
-            + "BhMCSVQxDjAMBgNVBAcMBU1pbGFuMSMwIQYDVQQKDBpBY3RhbGlzIFMucC5BLi8w\n"
-            + "MzM1ODUyMDk2NzEnMCUGA1UEAwweQWN0YWxpcyBBdXRoZW50aWNhdGlvbiBSb290\n"
-            + "IENBMB4XDTE1MDUxNDA3MDAzOFoXDTMwMDUxNDA3MDAzOFowgYcxCzAJBgNVBAYT\n"
-            + "AklUMQ8wDQYDVQQIDAZNaWxhbm8xDzANBgNVBAcMBk1pbGFubzEjMCEGA1UECgwa\n"
-            + "QWN0YWxpcyBTLnAuQS4vMDMzNTg1MjA5NjcxMTAvBgNVBAMMKEFjdGFsaXMgRXh0\n"
-            + "ZW5kZWQgVmFsaWRhdGlvbiBTZXJ2ZXIgQ0EgRzEwggEiMA0GCSqGSIb3DQEBAQUA\n"
-            + "A4IBDwAwggEKAoIBAQD1Ygc1CwmqXqjd3dTEKMLUwGdb/3+00ytg0uBb4RB+89/O\n"
-            + "4K/STFZcGUjcCq6Job5cmxZBGyRRBYfCEn4vg8onedFztkO0NvD04z4wLFyxjSRT\n"
-            + "bcMm2d+/Xci5XLA3Q9wG8TGzHTVQKmdvFpQ7b7EsmOc0uXA7w3UGhLjb2EYpu/Id\n"
-            + "uZ1LUTyEOHc3XHXI3a3udkRBDs/bObTcbte80DPbNetRFB+jHbIw5sH171IeBFGN\n"
-            + "PB92Iebp01yE8g3X9RqPXrrV7ririEtwFMYp+KgA8BRHxsoNV3xZmhdzJm0AMzC2\n"
-            + "waLM3H562xPM0UntAYh2pRrAUUtgURRizCT1kr6tAgMBAAGjggHVMIIB0TBBBggr\n"
-            + "BgEFBQcBAQQ1MDMwMQYIKwYBBQUHMAGGJWh0dHA6Ly9vY3NwMDUuYWN0YWxpcy5p\n"
-            + "dC9WQS9BVVRILVJPT1QwHQYDVR0OBBYEFGHB5IYeTW10dLzZlzsxcXjLP5/cMA8G\n"
-            + "A1UdEwEB/wQFMAMBAf8wHwYDVR0jBBgwFoAUUtiIOsifeGbtifN7OHCUyQICNtAw\n"
-            + "RQYDVR0gBD4wPDA6BgRVHSAAMDIwMAYIKwYBBQUHAgEWJGh0dHBzOi8vd3d3LmFj\n"
-            + "dGFsaXMuaXQvYXJlYS1kb3dubG9hZDCB4wYDVR0fBIHbMIHYMIGWoIGToIGQhoGN\n"
-            + "bGRhcDovL2xkYXAwNS5hY3RhbGlzLml0L2NuJTNkQWN0YWxpcyUyMEF1dGhlbnRp\n"
-            + "Y2F0aW9uJTIwUm9vdCUyMENBLG8lM2RBY3RhbGlzJTIwUy5wLkEuJTJmMDMzNTg1\n"
-            + "MjA5NjcsYyUzZElUP2NlcnRpZmljYXRlUmV2b2NhdGlvbkxpc3Q7YmluYXJ5MD2g\n"
-            + "O6A5hjdodHRwOi8vY3JsMDUuYWN0YWxpcy5pdC9SZXBvc2l0b3J5L0FVVEgtUk9P\n"
-            + "VC9nZXRMYXN0Q1JMMA4GA1UdDwEB/wQEAwIBBjANBgkqhkiG9w0BAQsFAAOCAgEA\n"
-            + "OD8D2Z2fw76+GIu+mDEgygH/y7F9K4I6rZOc3LqGBecO3C0fGcIuuG7APtxGGk7Y\n"
-            + "nk97Qt+3pDoek9EP65/1u128pRncZcjEAeMgKb7UuJxwoR6Sj5zhOadotKcCQqmF\n"
-            + "Si99ExNo6dTq5Eyp1KrqepLmezbO9owx4Q44mtNpfKLMgzDqOn/dwNMo/pGYbMfP\n"
-            + "DjhxEnta1HXgcEcgCk1Au16xkdzapwY4sXpKuwB24phfWF+cveKAQ0Rncmvrm34i\n"
-            + "9B6leZUkSHDe4mRkbO5nObhKHYRmVSr0Q/wvGCmTgGTKuw/Gj8+RFb5MEkOKEcJn\n"
-            + "I32CPohpiW/jlpeLaFBIgJnXuZTxmfTX55sqtXDlKxRxFwq1W3kML4UfGZsgjx1l\n"
-            + "hX5fQ1QlEZeO9CyPpgGO5Py2KXXKhUxCtF7tawAYimWwslxvPCjHDND/WhM1Fz9e\n"
-            + "2yqwHcSQAOUVv5mk9uYc6/NSLwLb5in3R728GNEpHHhbx5QZhtdqR8mb56uJUDKI\n"
-            + "AwnnZckcR+SLGL2Agx7hY7YCMOQhSsO6PA81M/mGW2hGCiZw3GULJe9ejL/vdS0I\n"
-            + "PWrp7YLnXUa6mtXVSBKGrVrlbpJaN10+fB4Yrlk4O2sF4WNUAHMBn9T+zOXaBAhj\n"
-            + "vNlMU7+elLkTcKIB7qJJuSZChxzoevM2ciO3BpGuRxg=\n"
-            + "-----END CERTIFICATE-----";
+    // Owner: CN=Actalis Organization Validated Server CA G3, O=Actalis S.p.A.,
+    //        L=Ponte San Pietro, ST=Bergamo, C=IT
+    // Issuer: CN=Actalis Authentication Root CA, O=Actalis S.p.A ./03358520967,
+    //         L=Milan, C=IT
+    // Serial number: 5c3b3f37adfc28fe0fcfd3abf83f8551
+    // Valid from: Mon Jul 06 00:20:55 PDT 2020 until: Sun Sep 22 04:22:02 PDT 2030
+    private static final String INT = "-----BEGIN CERTIFICATE-----\n" +
+            "MIIHdTCCBV2gAwIBAgIQXDs/N638KP4Pz9Or+D+FUTANBgkqhkiG9w0BAQsFADBr\n" +
+            "MQswCQYDVQQGEwJJVDEOMAwGA1UEBwwFTWlsYW4xIzAhBgNVBAoMGkFjdGFsaXMg\n" +
+            "Uy5wLkEuLzAzMzU4NTIwOTY3MScwJQYDVQQDDB5BY3RhbGlzIEF1dGhlbnRpY2F0\n" +
+            "aW9uIFJvb3QgQ0EwHhcNMjAwNzA2MDcyMDU1WhcNMzAwOTIyMTEyMjAyWjCBiTEL\n" +
+            "MAkGA1UEBhMCSVQxEDAOBgNVBAgMB0JlcmdhbW8xGTAXBgNVBAcMEFBvbnRlIFNh\n" +
+            "biBQaWV0cm8xFzAVBgNVBAoMDkFjdGFsaXMgUy5wLkEuMTQwMgYDVQQDDCtBY3Rh\n" +
+            "bGlzIE9yZ2FuaXphdGlvbiBWYWxpZGF0ZWQgU2VydmVyIENBIEczMIICIjANBgkq\n" +
+            "hkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAs73Ch+t2owm3ayTkyqy0OPuCTiybxTyS\n" +
+            "4cU4y0t2RGSwCNjLh/rcutO0yoriZxVtPrNMcIRQ544BQhHFt/ypW7e+t8wWKrHa\n" +
+            "r3BkKwSUbqNwpDWP1bXs7IJTVhHXWGAm7Ak1FhrrBmtXk8QtdzTzDDuxfFBK7sCL\n" +
+            "N0Jdqoqb1V1z3wsWqAvr4KlSCFW05Nh4baWm/kXOmb8U+XR6kUmuoVvia3iBhotR\n" +
+            "TzAHTO9SWWkgjTcir/nhBvyL2RoqkgYyP/k50bznaVOGFnFWzfl0XnrM/salfCBh\n" +
+            "O0/1vNaoU8elR6AtbdCFAupgQy95GuFIRVS8n/cF0QupfPjUl+kGSLzvGAc+6oNE\n" +
+            "alpAhKIS/+P0uODzRrS9Eq0WX1iSj6KHtQMNN4ZKsS4nsuvYCahnAc0QwQyoduAW\n" +
+            "iU/ynhU9WTIEe1VIoEDE79NPOI2/80RqbZqdpAKUaf0FvuqVXhEcjiJJu+d0w9YN\n" +
+            "b7gurd6xkaSXemW/fP4idBiNkd8aCVAdshGQYn6yh+na0Lu5IG88Z2kSIFcXDtwy\n" +
+            "zjcxkW86pwkO6GekEomVBNKcv0Cey2Smf8uhpZk15TSCeyFDrZBWH9OsDst/Tnhz\n" +
+            "pN156Huw3M3RRdEegt33fcyPykgt0HThxrEv9DwOzhs6lCQ5RNQJO7ZvZF1ZiqgT\n" +
+            "FOJ6vs1xMqECAwEAAaOCAfQwggHwMA8GA1UdEwEB/wQFMAMBAf8wHwYDVR0jBBgw\n" +
+            "FoAUUtiIOsifeGbtifN7OHCUyQICNtAwQQYIKwYBBQUHAQEENTAzMDEGCCsGAQUF\n" +
+            "BzABhiVodHRwOi8vb2NzcDA1LmFjdGFsaXMuaXQvVkEvQVVUSC1ST09UMEUGA1Ud\n" +
+            "IAQ+MDwwOgYEVR0gADAyMDAGCCsGAQUFBwIBFiRodHRwczovL3d3dy5hY3RhbGlz\n" +
+            "Lml0L2FyZWEtZG93bmxvYWQwHQYDVR0lBBYwFAYIKwYBBQUHAwIGCCsGAQUFBwMB\n" +
+            "MIHjBgNVHR8EgdswgdgwgZaggZOggZCGgY1sZGFwOi8vbGRhcDA1LmFjdGFsaXMu\n" +
+            "aXQvY24lM2RBY3RhbGlzJTIwQXV0aGVudGljYXRpb24lMjBSb290JTIwQ0EsbyUz\n" +
+            "ZEFjdGFsaXMlMjBTLnAuQS4lMmYwMzM1ODUyMDk2NyxjJTNkSVQ/Y2VydGlmaWNh\n" +
+            "dGVSZXZvY2F0aW9uTGlzdDtiaW5hcnkwPaA7oDmGN2h0dHA6Ly9jcmwwNS5hY3Rh\n" +
+            "bGlzLml0L1JlcG9zaXRvcnkvQVVUSC1ST09UL2dldExhc3RDUkwwHQYDVR0OBBYE\n" +
+            "FJ+KsbXxsd6C9Cd8vojN3qlDgaNLMA4GA1UdDwEB/wQEAwIBBjANBgkqhkiG9w0B\n" +
+            "AQsFAAOCAgEAJbygMnKJ5M6byr5Ectq05ODqwNMtky8TEF3O55g6RHhxblf6OegZ\n" +
+            "4ui4+ElHNOIXjycbeuUGuFA4LScCC9fnI1Rnn8TI2Q7OP5YWifEfnrdp99t/tJzQ\n" +
+            "hfdi7ZTdRRZZGV9x+grfR/RtjT2C3Lt9X4lcbuSxTea3PHAwwi0A3bYRR1L5ciPm\n" +
+            "eAnYtG9kpat8/RuC22oxiZZ5FdjU6wrRWkASRLiIwNcFIYfvpUbMWElaCUhqaB2y\n" +
+            "YvWF8o02pnaYb4bvTCg4cVabVnojUuuXH81LeQhhsSXLwcdwSdew0NL4zCiNCn2Q\n" +
+            "iDZpz2biCWDggibmWxsUUF6AbqMHnwsdS8vsKXiFQJHeAdNAhA+kwpqYAdhUiCdj\n" +
+            "RTUdtRNUucLvZEN1OAvVYyog9xYCfhtkqgXQROMANP+Z/+yaZahaP/Vgak/V00se\n" +
+            "Hdh7F+B6h5HVdwdh+17E2jl+aMTfyvBFcg2H/9Qjyl4TY8NW/6v0DPK52sVt8a35\n" +
+            "I+7xLGLPohAl4z6pEf2OxgjMNfXXCXS33smRgz1dLQFo8UpAb3rf84zkXaqEI6Qi\n" +
+            "2P+5pibVFQigRbn4RcE+K2a/nm2M/o+WZTSio+E+YXacnNk71VcO82biOof+jBKT\n" +
+            "iC3Xi7rAlypmme+QFBw9F1J89ig3smV/HaN8tO0lfTpvm7Zvzd5TkMs=\n" +
+            "-----END CERTIFICATE-----";
 
-    // Owner: OID.1.3.6.1.4.1.311.60.2.1.3=IT, STREET=Via S. Clemente 53,
-    // OID.2.5.4.15=Private Organization, CN=www.actalis.it,
-    // SERIALNUMBER=03358520967, O=Actalis S.p.A., L=Ponte San Pietro, ST=Bergamo, C=IT
-    // Issuer: CN=Actalis Extended Validation Server CA G1,
-    // O=Actalis S.p.A./03358520967, L=Milano, ST=Milano, C=IT
-    // Serial number: eeeee6d6463bde2
-    // Valid from: Sat Jun 17 05:59:17 PDT 2017 until: Mon Jun 17 05:59:17 PDT 2019
-    private static final String VALID = "-----BEGIN CERTIFICATE-----\n"
-            + "MIIHwTCCBqmgAwIBAgIIDu7ubWRjveIwDQYJKoZIhvcNAQELBQAwgYcxCzAJBgNV\n"
-            + "BAYTAklUMQ8wDQYDVQQIDAZNaWxhbm8xDzANBgNVBAcMBk1pbGFubzEjMCEGA1UE\n"
-            + "CgwaQWN0YWxpcyBTLnAuQS4vMDMzNTg1MjA5NjcxMTAvBgNVBAMMKEFjdGFsaXMg\n"
-            + "RXh0ZW5kZWQgVmFsaWRhdGlvbiBTZXJ2ZXIgQ0EgRzEwHhcNMTcwNjE3MTI1OTE3\n"
-            + "WhcNMTkwNjE3MTI1OTE3WjCB0zELMAkGA1UEBhMCSVQxEDAOBgNVBAgMB0Jlcmdh\n"
-            + "bW8xGTAXBgNVBAcMEFBvbnRlIFNhbiBQaWV0cm8xFzAVBgNVBAoMDkFjdGFsaXMg\n"
-            + "Uy5wLkEuMRQwEgYDVQQFEwswMzM1ODUyMDk2NzEXMBUGA1UEAwwOd3d3LmFjdGFs\n"
-            + "aXMuaXQxHTAbBgNVBA8MFFByaXZhdGUgT3JnYW5pemF0aW9uMRswGQYDVQQJDBJW\n"
-            + "aWEgUy4gQ2xlbWVudGUgNTMxEzARBgsrBgEEAYI3PAIBAxMCSVQwggEiMA0GCSqG\n"
-            + "SIb3DQEBAQUAA4IBDwAwggEKAoIBAQCwZ3++4pQYGfhXSqin1CKRJ6SOqkTcX3O0\n"
-            + "6b4jZbSNomyqyn6aHOz6ztOlj++fPzxmIzErEySOTd3G0pr+iwpYQVdeg1Y27KL8\n"
-            + "OiwwUrlV4ZMa8KKXr4BnWlDbFIo+eIcSew5V7CiodDyxpj9zjqJK497LF1jxgXtr\n"
-            + "IoMRwrh2Y0NbJCZGUCL30sQr/W4xBnO1+pi2DbCieGe/XoK8yEtx9FdnEFvyT9qn\n"
-            + "zYyrXvnTvfVSwzwtEIn+akjomI4WfCFLBF0M7v4dAHypfnPAAoW1c0BBqNB32zf0\n"
-            + "rYwNnD7UwZlcDihEYlgC70Dfy7bPsdq2spmOMk/VUqb3U0LHRVM3AgMBAAGjggPh\n"
-            + "MIID3TB9BggrBgEFBQcBAQRxMG8wOgYIKwYBBQUHMAKGLmh0dHA6Ly9jYWNlcnQu\n"
-            + "YWN0YWxpcy5pdC9jZXJ0cy9hY3RhbGlzLWF1dGV2ZzEwMQYIKwYBBQUHMAGGJWh0\n"
-            + "dHA6Ly9vY3NwMDUuYWN0YWxpcy5pdC9WQS9BVVRIRVYtRzEwHQYDVR0OBBYEFK9y\n"
-            + "954QoY/5XV6TayD1gWVy0gQOMAwGA1UdEwEB/wQCMAAwHwYDVR0jBBgwFoAUYcHk\n"
-            + "hh5NbXR0vNmXOzFxeMs/n9wwUAYDVR0gBEkwRzA8BgYrgR8BEQEwMjAwBggrBgEF\n"
-            + "BQcCARYkaHR0cHM6Ly93d3cuYWN0YWxpcy5pdC9hcmVhLWRvd25sb2FkMAcGBWeB\n"
-            + "DAEBMIHvBgNVHR8EgecwgeQwgaKggZ+ggZyGgZlsZGFwOi8vbGRhcDA1LmFjdGFs\n"
-            + "aXMuaXQvY24lM2RBY3RhbGlzJTIwRXh0ZW5kZWQlMjBWYWxpZGF0aW9uJTIwU2Vy\n"
-            + "dmVyJTIwQ0ElMjBHMSxvJTNkQWN0YWxpcyUyMFMucC5BLi8wMzM1ODUyMDk2Nyxj\n"
-            + "JTNkSVQ/Y2VydGlmaWNhdGVSZXZvY2F0aW9uTGlzdDtiaW5hcnkwPaA7oDmGN2h0\n"
-            + "dHA6Ly9jcmwwNS5hY3RhbGlzLml0L1JlcG9zaXRvcnkvQVVUSEVWLUcxL2dldExh\n"
-            + "c3RDUkwwDgYDVR0PAQH/BAQDAgWgMB0GA1UdJQQWMBQGCCsGAQUFBwMBBggrBgEF\n"
-            + "BQcDAjAZBgNVHREEEjAQgg53d3cuYWN0YWxpcy5pdDCCAX4GCisGAQQB1nkCBAIE\n"
-            + "ggFuBIIBagFoAHYApLkJkLQYWBSHuxOizGdwCjw1mAT5G9+443fNDsgN3BAAAAFc\n"
-            + "tiwHywAABAMARzBFAiEA7GC5/kja3l8cBw1/wBpHl/AKH6eL1MKpmICtf5G09c4C\n"
-            + "IBM887DQEwD2E4Xx/IP+33NMvUOhSwZ4XODgqFVXsz0wAHYA7ku9t3XOYLrhQmkf\n"
-            + "q+GeZqMPfl+wctiDAMR7iXqo/csAAAFctiwIqwAABAMARzBFAiEAwwiR95ozXdKs\n"
-            + "+uULfrzgENbHc2rLgGIac6ZMv0xHDLACIFLQVpvQBRQfys2KVRGHQKGxqAeghQZw\n"
-            + "9nJL+U5huzfaAHYA3esdK3oNT6Ygi4GtgWhwfi6OnQHVXIiNPRHEzbbsvswAAAFc\n"
-            + "tiwMqwAABAMARzBFAiEAifV9ocxbO6b3I22jb2zxBvG2e83hXHitOhYXkHdSmZkC\n"
-            + "IDJLuPvGOczF9axgphImlUbT9dX3wRpjEi5IeV+pxMiYMA0GCSqGSIb3DQEBCwUA\n"
-            + "A4IBAQB5U6k1Onv9Y7POHGnUOI0ATHevbpbS/7r68DZQ6cRmDIpsZyjW6PxYs9nc\n"
-            + "3ob3Pjomm+S7StDl9ehI7rYLlZC52QlXlsq1fzEQ9xSkf+VSD70A91dPIFAdI/jQ\n"
-            + "aWvIUvQEbhfUZc0ihIple0VyWGH5bza0DLW+C8ttF8KqICUfL8S8mZgjbXvVg2fY\n"
-            + "HLW9lWR/Pkco2yRc8gZyr9FGkXOcmJ8aFaCuJnGm/IVRCieYp60If4DoAKz49xpF\n"
-            + "CF6RjOAJ//UGSp/ySjHMmT8PLO7NvhsT4XDDGTSeIYYpO++tbEIcLcjW9m2k5Gnh\n"
-            + "kmEenr0hdcpeLgsP3Fsy7JxyQNpL\n"
-            + "-----END CERTIFICATE-----";
+    // Owner: CN=ssltest-active.actalis.it, O=Actalis S.p.A., L=Ponte San Pietro,
+    //        ST=Bergamo, C=IT
+    // Issuer: CN=Actalis Organization Validated Server CA G3, O=Actalis S.p A.,
+    //         L=Ponte San Pietro, ST=Bergamo, C=IT
+    // Serial number: 4a49e2afcd448af3b7f5f14e1cd5954
+    // Valid from: Tue Mar 08 08:00:57 PST 2022 until: Wed Mar 08 08:00:57 PST 2023
+    private static final String VALID = "-----BEGIN CERTIFICATE-----\n" +
+            "MIIH0jCCBbqgAwIBAgIQBKSeKvzUSK87f18U4c1ZVDANBgkqhkiG9w0BAQsFADCB\n" +
+            "iTELMAkGA1UEBhMCSVQxEDAOBgNVBAgMB0JlcmdhbW8xGTAXBgNVBAcMEFBvbnRl\n" +
+            "IFNhbiBQaWV0cm8xFzAVBgNVBAoMDkFjdGFsaXMgUy5wLkEuMTQwMgYDVQQDDCtB\n" +
+            "Y3RhbGlzIE9yZ2FuaXphdGlvbiBWYWxpZGF0ZWQgU2VydmVyIENBIEczMB4XDTIy\n" +
+            "MDMwODE2MDA1N1oXDTIzMDMwODE2MDA1N1owdzELMAkGA1UEBhMCSVQxEDAOBgNV\n" +
+            "BAgMB0JlcmdhbW8xGTAXBgNVBAcMEFBvbnRlIFNhbiBQaWV0cm8xFzAVBgNVBAoM\n" +
+            "DkFjdGFsaXMgUy5wLkEuMSIwIAYDVQQDDBlzc2x0ZXN0LWFjdGl2ZS5hY3RhbGlz\n" +
+            "Lml0MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsJnlOatNNth7gfqZ\n" +
+            "WN8HMfp9qlkDf/YW8ReNXyTtqFEy2xZrVVmAV2XIqL1lJDYJz86mdVsz3AqIMTzo\n" +
+            "GxPlmn/oEnF0YeRYQ1coKRdwP7hWSwqyMMhh+C7r5zMA9gQQVXV5wWR5U+bgvt23\n" +
+            "Y/55DOqk3Fp5Odt6Lyu6xA45MwHrj2Gr/nMKe8L7f8UYPWT98MJa1+TXB24yllOw\n" +
+            "rZE8gZByLBCVzDkVwRwTgu+HgY6zm5sJTvBT4tyJy4QD8u2xLWoZ5sXodrU0Z3Nf\n" +
+            "xU9keMFp6CIh1t+akqFgpW81b/HWkfUO0+L6PH4hgaSPtiwp2dVFsF9v5p4on9qA\n" +
+            "2j1d9QIDAQABo4IDRTCCA0EwDAYDVR0TAQH/BAIwADAfBgNVHSMEGDAWgBSfirG1\n" +
+            "8bHegvQnfL6Izd6pQ4GjSzB+BggrBgEFBQcBAQRyMHAwOwYIKwYBBQUHMAKGL2h0\n" +
+            "dHA6Ly9jYWNlcnQuYWN0YWxpcy5pdC9jZXJ0cy9hY3RhbGlzLWF1dGhvdmczMDEG\n" +
+            "CCsGAQUFBzABhiVodHRwOi8vb2NzcDA5LmFjdGFsaXMuaXQvVkEvQVVUSE9WLUcz\n" +
+            "MCQGA1UdEQQdMBuCGXNzbHRlc3QtYWN0aXZlLmFjdGFsaXMuaXQwUQYDVR0gBEow\n" +
+            "SDA8BgYrgR8BFAEwMjAwBggrBgEFBQcCARYkaHR0cHM6Ly93d3cuYWN0YWxpcy5p\n" +
+            "dC9hcmVhLWRvd25sb2FkMAgGBmeBDAECAjAdBgNVHSUEFjAUBggrBgEFBQcDAgYI\n" +
+            "KwYBBQUHAwEwSAYDVR0fBEEwPzA9oDugOYY3aHR0cDovL2NybDA5LmFjdGFsaXMu\n" +
+            "aXQvUmVwb3NpdG9yeS9BVVRIT1YtRzMvZ2V0TGFzdENSTDAdBgNVHQ4EFgQUIbcm\n" +
+            "54DVM6gC8DYhvnZg8ILaLrAwDgYDVR0PAQH/BAQDAgWgMIIBfQYKKwYBBAHWeQIE\n" +
+            "AgSCAW0EggFpAWcAdQCt9776fP8QyIudPZwePhhqtGcpXc+xDCTKhYY069yCigAA\n" +
+            "AX9qTFEkAAAEAwBGMEQCIFB4RW+Fca/jj96sFg9JtZVe/CAQq74HAezTi2AD07qL\n" +
+            "AiBej8APns5uKmaHNYbU6lel6kdowIaUY/+iqX82e2KhrAB2AOg+0No+9QY1MudX\n" +
+            "KLyJa8kD08vREWvs62nhd31tBr1uAAABf2pMUVMAAAQDAEcwRQIgcopYpSUDiQ2C\n" +
+            "7j06vgbfsn3ux4REvpbrbWatifLtfVMCIQCi96i+4EhAUOw4dumA7hJwlG+qD/+5\n" +
+            "uSL3aKB9KR7apAB2AG9Tdqwx8DEZ2JkApFEV/3cVHBHZAsEAKQaNsgiaN9kTAAAB\n" +
+            "f2pMUYEAAAQDAEcwRQIgdCNjaV7nQcCiVefX28u1vtQMy+rqT4F4i9EVJ2xbqbQC\n" +
+            "IQCrpcYqt53tX/rSMoGnjFhDGnMhnYyc2AqzpokfhmdcVTANBgkqhkiG9w0BAQsF\n" +
+            "AAOCAgEAfXISBKP1dZQv1kkWZVDXiVY/fv+068DKq2e8hgBcsN6b9a2rlVfBU2iq\n" +
+            "W9KqFNET5GDWf1wjM71Itjau8b1A3+apcNdEGQk3eqIOymK5kVtVvAI2ahp4926x\n" +
+            "Kkt/sexmi1pJGA+eLfTixkCoaESh5P8U7HDW/vUFXm2AtLQih+oT5OVoYt5e9pXr\n" +
+            "hr8oadm/ZDJxiyDL1vcTIsl2TM4/Fpo2IWxYzUC+YshnuLiRwWI840maJmWFx/lJ\n" +
+            "Pzdik3P51Uef7VsCSBhTxER09/B4IrEUMDAhVgG5QNbcFSHvnmpV8JLrNuBKUROU\n" +
+            "xnDsWieKlb5YO6S6PjGOncOrd+k4RCIYRaekSnx52WBKkpqxMEv/rjY1Glx4Cota\n" +
+            "mpNiYDvZHGzrRQtY2eH17XhFatBxEEbJMA+0QPbFksHcKxAxJgMDncqag4TDq5fT\n" +
+            "I2NUxqiB51F5w0x+++lyLnUZ+z4BJFZ73VdtfoJ2fsuRhemOoZjHPi/V2exXpAfb\n" +
+            "pomha3KCrTcuFv1lj8mPx5L4ciNPxuDFgjeXEaTGjS8IvdNoJIrgdHdahMwkwS/y\n" +
+            "wei7FJ1Ey0maqRUpUlAY6sIQPQ/KDltTuKX/C94C5pYLI0JXCScr5xg6C+r2ckbA\n" +
+            "rjhpn3C/NptVyZgT8bL4XT5ITrAjwPciBj0yxYzUkrLZO1wKQSQ=\n" +
+            "-----END CERTIFICATE-----";
 
-    // Owner:  CN=Actalis Authentication CA G3, O=Actalis S.p.A./03358520967, L=Milano, ST=Milano, C=IT
-    // Issuer: CN=Actalis Authentication Root CA, O=Actalis S.p.A./03358520967, L=Milan, C=IT
-    // SN:     741d584a 72fc06bc
-    // Valid from: Wed Feb 12 22:32:23 PST 2014
-    // Valid till: Mon Feb 12 22:32:23 PST 2024
-    private static final String INT_REVOKED = "-----BEGIN CERTIFICATE-----\n"
-            + "MIIGTTCCBDWgAwIBAgIIdB1YSnL8BrwwDQYJKoZIhvcNAQELBQAwazELMAkGA1UE\n"
-            + "BhMCSVQxDjAMBgNVBAcMBU1pbGFuMSMwIQYDVQQKDBpBY3RhbGlzIFMucC5BLi8w\n"
-            + "MzM1ODUyMDk2NzEnMCUGA1UEAwweQWN0YWxpcyBBdXRoZW50aWNhdGlvbiBSb290\n"
-            + "IENBMB4XDTE0MDIxMzE1MDIyM1oXDTI0MDIxMzE1MDIyM1owezELMAkGA1UEBhMC\n"
-            + "SVQxDzANBgNVBAgMBk1pbGFubzEPMA0GA1UEBwwGTWlsYW5vMSMwIQYDVQQKDBpB\n"
-            + "Y3RhbGlzIFMucC5BLi8wMzM1ODUyMDk2NzElMCMGA1UEAwwcQWN0YWxpcyBBdXRo\n"
-            + "ZW50aWNhdGlvbiBDQSBHMzCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEB\n"
-            + "AMzhDjmhNDym6ze3PegbIKmiavXpAjgVCZ344k1DOtdSCV6k3h3rqfHqFn3mrayA\n"
-            + "btmJ0NeC886WxUUsJwHJ3bOnNBQZIHxLV+1RVD/6TQqb6/bPJu4rDwEfhbJSmErc\n"
-            + "29wUJWqxXMhSAWTHi3Pq0vrkx59e5KTEyfB2kHo6InlR72sCCRdtCL9aDuDm8nYK\n"
-            + "pTSAJr36ultwME5NyCNSyN2JIK0wYbEi7MVNbp5KN9MusTp3cOMDoVBreYulmnEu\n"
-            + "TNazmoAv0K8oLS7iX7c9x+zGjUUAucFEuSlRn3sL6hFAiKjy4PDClvnyqQHBBdZr\n"
-            + "/3JOxAcgXv7aZ4/STeXeDXsCAwEAAaOCAeMwggHfMEEGCCsGAQUFBwEBBDUwMzAx\n"
-            + "BggrBgEFBQcwAYYlaHR0cDovL3BvcnRhbC5hY3RhbGlzLml0L1ZBL0FVVEgtUk9P\n"
-            + "VDAdBgNVHQ4EFgQUqqr9yowdTfEug+EG/PqO6g4jrj0wDwYDVR0TAQH/BAUwAwEB\n"
-            + "/zAfBgNVHSMEGDAWgBRS2Ig6yJ94Zu2J83s4cJTJAgI20DBUBgNVHSAETTBLMEkG\n"
-            + "BFUdIAAwQTA/BggrBgEFBQcCARYzaHR0cHM6Ly9wb3J0YWwuYWN0YWxpcy5pdC9S\n"
-            + "ZXBvc2l0b3J5L1BvbGljeS9TU0wvQ1BTMIHiBgNVHR8EgdowgdcwgZSggZGggY6G\n"
-            + "gYtsZGFwOi8vbGRhcC5hY3RhbGlzLml0L2NuJTNkQWN0YWxpcyUyMEF1dGhlbnRp\n"
-            + "Y2F0aW9uJTIwUm9vdCUyMENBLG8lM2RBY3RhbGlzJTIwUy5wLkEuJTJmMDMzNTg1\n"
-            + "MjA5NjcsYyUzZElUP2NlcnRpZmljYXRlUmV2b2NhdGlvbkxpc3Q7YmluYXJ5MD6g\n"
-            + "PKA6hjhodHRwOi8vcG9ydGFsLmFjdGFsaXMuaXQvUmVwb3NpdG9yeS9BVVRILVJP\n"
-            + "T1QvZ2V0TGFzdENSTDAOBgNVHQ8BAf8EBAMCAQYwDQYJKoZIhvcNAQELBQADggIB\n"
-            + "ABP93l+9QBgzHF0Clf3gMAelGqwXT25DwZVFIkBw6YyqOPcaqzw1XKHJJEMQ8xOp\n"
-            + "8uuiPLP/ObxEXBBvH7ofNW7nRUIzGsuLPhzdfJhdzilCVAvz4WRsX44nWOQS4Qu0\n"
-            + "npo7dbq/KxFUCUO9yNEJp6YxNloy8XFIlazkHFTKGJqoUpsGoc7B9YmPchhE2FPb\n"
-            + "OZiOCg4Y2Qp43UJfnENgZ3gJFh16juQE1uS8Q/JJI7ZzJfJ/W0uQoDnCprOPUpLF\n"
-            + "G03e0asFxwQqhL84Jvf7rJZaWvwydHP4hH47nzpHWEGXwfJLXXoO7LHgqVB7K9Ar\n"
-            + "Zf3pY0S/3Fs+AN/PrEY3Z3rb7ypQLRiot1oJLl8matiGEF4aFL5DDkr9wfRAZ8S8\n"
-            + "WT69vN68ENGgEwyeZSlQxn+4g6quHRav0fmF2fGnLaq7tteSPVocT7XaMEpkHqNs\n"
-            + "x1q/PJbr39s/1QVZtS9CrdoCr0QAnBaX//PPB6ansSLFcvEqM9QcV9xQZex88ToX\n"
-            + "nk3TcHtA0ezWJlCkg626MhdQZrhHbkauHfIGSOmCkn3zHp0BZQ6Vo7UOdRMT7QS7\n"
-            + "y7AkET9Qmapwh2CFUdCJSXklVRd+06XhhOB37NQU0pGJQJ3xjEPrILZ8kLhW3Tyq\n"
-            + "Iv30LW7MXZ4yQn/JHEZbuiOOb4R45hsPZxe6gOq/e+sf\n"
-            + "-----END CERTIFICATE-----";
-
-    // Owner:  CN=ssltest-r.actalis.it, O=Actalis S.p.A., L=Ponte San Pietro, ST=Bergamo, C=IT
-    // Issuer: CN=Actalis Authentication CA G3, O=Actalis S.p.A./03358520967, L=Milano, ST=Milano, C=IT
-    // SN:     0455de97 5c71c96f
-    // Valid from: Thu Jan 28 16:23:52 PST 2016
-    // Valid till: Mon Jan 28 16:23:52 PST 2019
-    private static final String REVOKED = "-----BEGIN CERTIFICATE-----\n"
-            + "MIIFmDCCBICgAwIBAgIIBFXel1xxyW8wDQYJKoZIhvcNAQELBQAwezELMAkGA1UE\n"
-            + "BhMCSVQxDzANBgNVBAgMBk1pbGFubzEPMA0GA1UEBwwGTWlsYW5vMSMwIQYDVQQK\n"
-            + "DBpBY3RhbGlzIFMucC5BLi8wMzM1ODUyMDk2NzElMCMGA1UEAwwcQWN0YWxpcyBB\n"
-            + "dXRoZW50aWNhdGlvbiBDQSBHMzAeFw0xNjAxMjkwODUzNTJaFw0xOTAxMjkwODUz\n"
-            + "NTJaMHIxCzAJBgNVBAYTAklUMRAwDgYDVQQIDAdCZXJnYW1vMRkwFwYDVQQHDBBQ\n"
-            + "b250ZSBTYW4gUGlldHJvMRcwFQYDVQQKDA5BY3RhbGlzIFMucC5BLjEdMBsGA1UE\n"
-            + "AwwUc3NsdGVzdC1yLmFjdGFsaXMuaXQwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAw\n"
-            + "ggEKAoIBAQClbzoXCvD21FD7Oy/TKZu4fmDFJrISrNfasLlC3krLHkgb1vg23Z1P\n"
-            + "+7rIymDgrJSzjvYmisl+VM7xXxTsyI2pp9Qp/uzTMAMML9ISd/s0LaMBiNN5iPyj\n"
-            + "W91gGzGe30Jc319afKwFBaveSv7NO3DWsmHw9koezWkKUug2dnQCVXk1uTSdobnq\n"
-            + "wOgwxdd86LpZnFLxBIYdU68S4vogAQZjdja/S1+tF6JnfvY6o/xRJmQckVtNmUs6\n"
-            + "Dj3KoN2o/8BEgSCYcJz8tfoZcVazVkWOp/u6moUnm1/IKSYNgtHnB1ub0fB2AttW\n"
-            + "Vi7cs3SG/tDMMP8yc1kWScWf8CYj/AI1AgMBAAGjggInMIICIzA/BggrBgEFBQcB\n"
-            + "AQQzMDEwLwYIKwYBBQUHMAGGI2h0dHA6Ly9vY3NwMDMuYWN0YWxpcy5pdC9WQS9B\n"
-            + "VVRILUczMB0GA1UdDgQWBBRIKN5WmrjivlnT1rDzsH1WZ+PuvTAMBgNVHRMBAf8E\n"
-            + "AjAAMB8GA1UdIwQYMBaAFKqq/cqMHU3xLoPhBvz6juoOI649MGAGA1UdIARZMFcw\n"
-            + "SwYGK4EfARQBMEEwPwYIKwYBBQUHAgEWM2h0dHBzOi8vcG9ydGFsLmFjdGFsaXMu\n"
-            + "aXQvUmVwb3NpdG9yeS9Qb2xpY3kvU1NML0NQUzAIBgZngQwBAgIwgd8GA1UdHwSB\n"
-            + "1zCB1DCBlKCBkaCBjoaBi2xkYXA6Ly9sZGFwMDMuYWN0YWxpcy5pdC9jbiUzZEFj\n"
-            + "dGFsaXMlMjBBdXRoZW50aWNhdGlvbiUyMENBJTIwRzMsbyUzZEFjdGFsaXMlMjBT\n"
-            + "LnAuQS4lMmYwMzM1ODUyMDk2NyxjJTNkSVQ/Y2VydGlmaWNhdGVSZXZvY2F0aW9u\n"
-            + "TGlzdDtiaW5hcnkwO6A5oDeGNWh0dHA6Ly9jcmwwMy5hY3RhbGlzLml0L1JlcG9z\n"
-            + "aXRvcnkvQVVUSC1HMy9nZXRMYXN0Q1JMMA4GA1UdDwEB/wQEAwIFoDAdBgNVHSUE\n"
-            + "FjAUBggrBgEFBQcDAQYIKwYBBQUHAwIwHwYDVR0RBBgwFoIUc3NsdGVzdC1yLmFj\n"
-            + "dGFsaXMuaXQwDQYJKoZIhvcNAQELBQADggEBAHZLND53/CZoMlDtfln0ZByCEhoF\n"
-            + "/XtA9cYy2azRGgS/VY4WUccvg99MM50cwn5GPRsJpoaFXeDrjV3DkOUK1jERzjx4\n"
-            + "5y83K/AkCGe7uU17aS+tweETizBAfHNj78oHmZDmkDSEY2STaeuHNDJ9ft0v3QTb\n"
-            + "VW54R5W3OBU7L/sJoEUdRxzGN7vO82PboGvyApMCWDRLKE7bPP4genQtF3XPcaFl\n"
-            + "ekuSiEVYS+KnM2v9tCWHqw6x7raWHFB9w1kAKNwv0hbEJkeC+a2bCdPwv8hs//sa\n"
-            + "gUF4p61mIpf+5qmQ6gcZOClPWyrbYdQdfCvKgbEdKhwB0v5KS0NIRRn41SE=\n"
-            + "-----END CERTIFICATE-----";
+    // Owner: CN=ssltest-revoked.actalis.it, O=Actalis S.p.A., L=Ponte San Pietro,
+    //        ST=Bergamo, C=IT
+    // Issuer: CN=Actalis Organization Validated Server CA G3, O=Actalis S.p .A.,
+    //         L=Ponte San Pietro, ST=Bergamo, C=IT
+    // Serial number: 3dbdba0fefe7c6bd978220de52ffe3b2
+    // Valid from: Fri Oct 08 02:23:49 PDT 2021 until: Sat Oct 08 02:23:49 PDT 2022
+    private static final String REVOKED = "-----BEGIN CERTIFICATE-----\n" +
+            "MIIH1zCCBb+gAwIBAgIQPb26D+/nxr2XgiDeUv/jsjANBgkqhkiG9w0BAQsFADCB\n" +
+            "iTELMAkGA1UEBhMCSVQxEDAOBgNVBAgMB0JlcmdhbW8xGTAXBgNVBAcMEFBvbnRl\n" +
+            "IFNhbiBQaWV0cm8xFzAVBgNVBAoMDkFjdGFsaXMgUy5wLkEuMTQwMgYDVQQDDCtB\n" +
+            "Y3RhbGlzIE9yZ2FuaXphdGlvbiBWYWxpZGF0ZWQgU2VydmVyIENBIEczMB4XDTIx\n" +
+            "MTAwODA5MjM0OVoXDTIyMTAwODA5MjM0OVoweDELMAkGA1UEBhMCSVQxEDAOBgNV\n" +
+            "BAgMB0JlcmdhbW8xGTAXBgNVBAcMEFBvbnRlIFNhbiBQaWV0cm8xFzAVBgNVBAoM\n" +
+            "DkFjdGFsaXMgUy5wLkEuMSMwIQYDVQQDDBpzc2x0ZXN0LXJldm9rZWQuYWN0YWxp\n" +
+            "cy5pdDCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAPPgHusiIPuBvyPF\n" +
+            "5lvUnfRraGomDTTJ4FBHomWJgbyTcfjJ6WqP5p6dwcRTyXT1U/odp5bxSYGBpj31\n" +
+            "1zi1tqtJGxuXauTytKUPL1pOXOD4V9JpOL9VetDZS5Lvo3bnAjGLJA/Bqr7VRmMY\n" +
+            "l9LiGjIlJcSCQWCDxcHDkJA/4Vrmek6z1Pwzz/OjkBYRJ3T75qlWtTh/8ZhvnKxs\n" +
+            "WAeHD/n0hLshMbqke2CuGHGC1+tAUlb8ZzIZjdVKoWL4VrQPN0NzgQF2jX6AS/ru\n" +
+            "NNO3UrvwjD2Us9YUrDxxQLCw0LT/TkchhYWp675mY/e1EjoX+vnXpO3J3CMEfCv5\n" +
+            "aVtXzusCAwEAAaOCA0kwggNFMAwGA1UdEwEB/wQCMAAwHwYDVR0jBBgwFoAUn4qx\n" +
+            "tfGx3oL0J3y+iM3eqUOBo0swfgYIKwYBBQUHAQEEcjBwMDsGCCsGAQUFBzAChi9o\n" +
+            "dHRwOi8vY2FjZXJ0LmFjdGFsaXMuaXQvY2VydHMvYWN0YWxpcy1hdXRob3ZnMzAx\n" +
+            "BggrBgEFBQcwAYYlaHR0cDovL29jc3AwOS5hY3RhbGlzLml0L1ZBL0FVVEhPVi1H\n" +
+            "MzAlBgNVHREEHjAcghpzc2x0ZXN0LXJldm9rZWQuYWN0YWxpcy5pdDBRBgNVHSAE\n" +
+            "SjBIMDwGBiuBHwEUATAyMDAGCCsGAQUFBwIBFiRodHRwczovL3d3dy5hY3RhbGlz\n" +
+            "Lml0L2FyZWEtZG93bmxvYWQwCAYGZ4EMAQICMB0GA1UdJQQWMBQGCCsGAQUFBwMC\n" +
+            "BggrBgEFBQcDATBIBgNVHR8EQTA/MD2gO6A5hjdodHRwOi8vY3JsMDkuYWN0YWxp\n" +
+            "cy5pdC9SZXBvc2l0b3J5L0FVVEhPVi1HMy9nZXRMYXN0Q1JMMB0GA1UdDgQWBBTe\n" +
+            "jnmMDJmWf46bs3abftL18WTLPzAOBgNVHQ8BAf8EBAMCBaAwggGABgorBgEEAdZ5\n" +
+            "AgQCBIIBcASCAWwBagB2AFWB1MIWkDYBSuoLm1c8U/DA5Dh4cCUIFy+jqh0HE9MM\n" +
+            "AAABfF9AbyoAAAQDAEcwRQIgb4G8Pbdfmo9KKxA1AXSB6MGNWb5SzDbKK12xR6/d\n" +
+            "gvQCIQDlIsOyHxCDIPGFIRgKrsKH1nHj2DQ++7J1V5g9r/JNwwB3AFGjsPX9AXmc\n" +
+            "Vm24N3iPDKR6zBsny/eeiEKaDf7UiwXlAAABfF9Aby0AAAQDAEgwRgIhAO7xBWad\n" +
+            "yewERj1dP5Uebb4K4AFI/1CDhVljDDJ/hejTAiEAzQH3I6FyCBfT92HeMB3AonNC\n" +
+            "HaNEXSzmwksP6umHAzYAdwBGpVXrdfqRIDC1oolp9PN9ESxBdL79SbiFq/L8cP5t\n" +
+            "RwAAAXxfQG70AAAEAwBIMEYCIQCCkh1gHDflb+PNRy3T7AEBvHf/ZlFKpZcMMz2N\n" +
+            "4RV04QIhAJHrg7WiSAOW0qN3Xx5FCqm+GBomtByHlY8qg9F4VTEmMA0GCSqGSIb3\n" +
+            "DQEBCwUAA4ICAQBfsH+q/ZIUIrIz4JsN8Ac8Rfbr0p1jqWc7WNyPKgDzxiI92T5O\n" +
+            "IjJty1sshsoWct4hLmCk0nqTt2/Pvk76RUSvpneVh9lrmmnxOUeu/PxykYzOQoYq\n" +
+            "gGvXQrDPc0R1Q/gt2Q8Orcow/TTNpbWjZYhlOmT8JHUCpUgfKm00xCWayWRVMyZH\n" +
+            "lFFOHcM7+1cngXC7rkGESB0pmdkJ3Zh0fhYYdhjltZJOScO3wGCH5UtlvgbcZkYh\n" +
+            "h1NMdp/yveucVwNajHGIzJ56KyFcxHrXlqIhV8HslyrSvFHQklETLyAJBt8uLoVi\n" +
+            "W4ytCS11qHFcSv9D5btlGqqpub6XicRwM1jGRvD/odrTuRetT8Wi4qB0XeDGmaG8\n" +
+            "al9Z6HEZoxTQ5+Pb0xIu5FOF7rC5p/BjqDxGlKBCFWyhEwR7T17javCLMNQGCQMc\n" +
+            "LsLG8iUjPSQB/wiJ8RtruU7kEQrEoxRJjJLIfkLt9ti8C3yK7T7SCPBdoeM6CyI/\n" +
+            "V5p7FDcvBXtDPukWTnPQ2DtUUGw8244QLWavFoHbvFekzlm2GWZYTPEwlaNAcwmg\n" +
+            "0ZpxphiuMoouwud1Oaa1xzToPn+iyIjun8+wkB+rbaenIMSpqwWk8s3jtmconGKP\n" +
+            "JCJvmsfAxAXrAy4Iizums4Z1kPN1ApfNIoPprTfu5cSza3xeOMq0txkERQ==\n" +
+            "-----END CERTIFICATE-----";
 
     public static void main(String[] args) throws Exception {
 
@@ -232,22 +209,17 @@ public class ActalisCA {
         }
 
         // Validate valid
-        pathValidator.validate(new String[]{VALID, INT_VALID},
+        pathValidator.validate(new String[]{VALID, INT},
                 ValidatePathWithParams.Status.GOOD, null, System.out);
 
-        // Revoked certificate is using SHA1 signature
         if (ocspEnabled) {
-            // Revoked test certificate is expired
-            // and backdated revocation check is only possible with OCSP
-            pathValidator.setValidationDate("July 01, 2016");
+            // Revoked test certificate will expire in Oct 2022
+            pathValidator.setValidationDate("June 01, 2022");
         }
 
         // Validate Revoked
-        pathValidator.validate(new String[]{REVOKED, INT_REVOKED},
+        pathValidator.validate(new String[]{REVOKED, INT},
                 ValidatePathWithParams.Status.REVOKED,
-                "Fri Jan 29 01:06:42 PST 2016", System.out);
-
-        // reset validation date back to current date
-        pathValidator.resetValidationDate();
+                "Mon Mar 07 06:11:11 PST 2022", System.out);
     }
 }
