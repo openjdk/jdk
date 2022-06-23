@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8266670
- * @summary Test expected AccessFlag's on fields.
+ * @summary Test expected AccessFlag's on classes.
  */
 
 import java.lang.annotation.*;

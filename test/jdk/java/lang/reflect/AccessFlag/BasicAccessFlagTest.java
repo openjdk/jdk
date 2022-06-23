@@ -44,6 +44,10 @@ public class BasicAccessFlagTest {
         testMaskToAccessFlagsPositive();
     }
 
+    /*
+     * Verify sourceModifier() == true access flags have a
+     * corresponding constant in java.lang.reflect.Modifier.
+     */
     private static void testSourceModifiers() throws Exception {
         Class<?> modifierClass = Modifier.class;
 
@@ -94,7 +98,7 @@ public class BasicAccessFlagTest {
             }
         }
 
-        // Then test for disjointness
+        // ...then test for disjointness
         for (var entry : maskToFlags.entrySet()) {
             var value = entry.getValue();
             if (value.size() == 0) {
