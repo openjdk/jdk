@@ -37,6 +37,8 @@ typedef VMRegImpl* VMReg;
 class RegisterImpl;
 typedef RegisterImpl* Register;
 
+// The implementation of integer registers for the ia32 architecture
+
 inline constexpr Register as_Register(int encoding);
 
 class RegisterImpl: public AbstractRegisterImpl {
@@ -64,7 +66,7 @@ public:
   inline VMReg as_VMReg() const;
 
   // accessors
-  int raw_encoding() const                       { return this - first(); }
+  int   raw_encoding() const                     { return this - first(); }
   int   encoding() const                         { assert(is_valid(), "invalid register"); return (this - first()); }
   bool  is_valid() const                         { return 0 <= raw_encoding() && raw_encoding() < number_of_registers; }
   bool  has_byte_register() const                { return 0 <= raw_encoding() && raw_encoding() < number_of_byte_registers; }
@@ -121,12 +123,10 @@ public:
 
   // derived registers, offsets, and addresses
 
-  FloatRegister successor() const {
-    return as_FloatRegister(encoding() + 1);
-  }
+  FloatRegister successor() const                          { return as_FloatRegister(encoding() + 1); }
 
   // accessors
-  int raw_encoding() const                       { return this - first(); }
+  int   raw_encoding() const                      { return this - first(); }
   int   encoding() const                          { assert(is_valid(), "invalid register"); return this - first(); }
   bool  is_valid() const                          { return 0 <= raw_encoding() && raw_encoding() < number_of_registers; }
   const char* name() const;
@@ -253,7 +253,7 @@ public:
   KRegister successor() const                          { return as_KRegister(encoding() + 1); }
 
   // accessors
-  int raw_encoding() const                       { return this - first(); }
+  int   raw_encoding() const                      { return this - first(); }
   int   encoding() const                          { assert(is_valid(), "invalid register (%d)", (int)raw_encoding()); return raw_encoding(); }
   bool  is_valid() const                          { return 0 <= raw_encoding() && raw_encoding() < number_of_registers; }
   const char* name() const;

@@ -76,7 +76,7 @@ const char* XMMRegisterImpl::name() const {
 }
 
 const char* XMMRegisterImpl::sub_word_name(int i) const {
-  static const char *const names[] = {
+  const char* names[number_of_registers * 8] = {
       "xmm0:0", "xmm0:1", "xmm0:2", "xmm0:3", "xmm0:4", "xmm0:5", "xmm0:6", "xmm0:7",
       "xmm1:0", "xmm1:1", "xmm1:2", "xmm1:3", "xmm1:4", "xmm1:5", "xmm1:6", "xmm1:7",
       "xmm2:0", "xmm2:1", "xmm2:2", "xmm2:3", "xmm2:4", "xmm2:5", "xmm2:6", "xmm2:7",
