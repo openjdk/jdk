@@ -1102,9 +1102,9 @@ public class Utils {
     }
 
     /**
-     * Given a class, return the closest visible super class.
+     * Given a class, return the closest visible superclass.
      * @param type the TypeMirror to be interrogated
-     * @return  the closest visible super class.  Return null if it cannot
+     * @return  the closest visible superclass.  Return null if it cannot
      *          be found.
      */
     public TypeMirror getFirstVisibleSuperClass(TypeMirror type) {
@@ -1113,10 +1113,10 @@ public class Utils {
 
 
     /**
-     * Given a class, return the closest visible super class.
+     * Given a class, return the closest visible superclass.
      *
      * @param te the TypeElement to be interrogated
-     * @return the closest visible super class.  Return null if it cannot
+     * @return the closest visible superclass.  Return null if it cannot
      *         be found.
      */
     public TypeMirror getFirstVisibleSuperClass(TypeElement te) {
@@ -2230,7 +2230,7 @@ public class Utils {
                 .toList();
     }
 
-    public <T extends DocTree> List<? extends T> getBlockTags(Element element, Predicate<DocTree> filter, Class<T> tClass) {
+    public <T extends DocTree> List<T> getBlockTags(Element element, Predicate<DocTree> filter, Class<T> tClass) {
         return getBlockTags(element).stream()
                 .filter(t -> t.getKind() != ERRONEOUS)
                 .filter(filter)
@@ -2477,21 +2477,21 @@ public class Utils {
         return getBlockTags(field, DocTree.Kind.SERIAL_FIELD, SerialFieldTree.class);
     }
 
-    public List<? extends ThrowsTree> getThrowsTrees(Element element) {
+    public List<ThrowsTree> getThrowsTrees(Element element) {
         return getBlockTags(element,
                 t -> switch (t.getKind()) { case EXCEPTION, THROWS -> true; default -> false; },
                 ThrowsTree.class);
     }
 
-    public List<? extends ParamTree> getTypeParamTrees(Element element) {
+    public List<ParamTree> getTypeParamTrees(Element element) {
         return getParamTrees(element, true);
     }
 
-    public List<? extends ParamTree> getParamTrees(Element element) {
+    public List<ParamTree> getParamTrees(Element element) {
         return getParamTrees(element, false);
     }
 
-    private  List<? extends ParamTree> getParamTrees(Element element, boolean isTypeParameters) {
+    private  List<ParamTree> getParamTrees(Element element, boolean isTypeParameters) {
         return getBlockTags(element,
                 t -> t.getKind() == PARAM && ((ParamTree) t).isTypeParameter() == isTypeParameters,
                 ParamTree.class);

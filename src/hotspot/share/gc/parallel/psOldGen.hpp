@@ -30,6 +30,7 @@
 #include "gc/parallel/psGenerationCounters.hpp"
 #include "gc/parallel/psVirtualspace.hpp"
 #include "gc/parallel/spaceCounters.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
 
 class PSOldGen : public CHeapObj<mtGC> {

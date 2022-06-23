@@ -1303,9 +1303,9 @@ public class Gen extends JCTree.Visitor {
 
             List<JCCase> l = cases;
             for (int i = 0; i < labels.length; i++) {
-                if (l.head.labels.head.isExpression()) {
+                if (l.head.labels.head instanceof JCConstantCaseLabel constLabel) {
                     Assert.check(l.head.labels.size() == 1);
-                    int val = ((Number)((JCExpression) l.head.labels.head).type.constValue()).intValue();
+                    int val = ((Number) constLabel.expr.type.constValue()).intValue();
                     labels[i] = val;
                     if (val < lo) lo = val;
                     if (hi < val) hi = val;

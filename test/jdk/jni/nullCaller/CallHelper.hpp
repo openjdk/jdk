@@ -48,7 +48,7 @@ protected:
     void emitErrorMessage(const std::string& msg) {
         std::string nm = classname;
         std::replace(nm.begin(), nm.end(), '/', '.');
-        ::printf("ERROR: %s::%s, %s\n", nm.c_str(), method.c_str(), msg.c_str());
+        ::fprintf(stderr, "ERROR: %s::%s, %s\n", nm.c_str(), method.c_str(), msg.c_str());
     }
 
     // check the given object which is expected to be null
@@ -202,7 +202,7 @@ public:
 };
 
 void emitErrorMessageAndExit(const std::string& msg) {
-    ::printf("ERROR: %s\n", msg.c_str());
+    ::fprintf(stderr, "ERROR: %s\n", msg.c_str());
     ::exit(-1);
 }
 

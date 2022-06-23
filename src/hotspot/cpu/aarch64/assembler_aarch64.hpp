@@ -768,7 +768,7 @@ public:
   INSN(andw, 0b000, true);
   INSN(orrw, 0b001, true);
   INSN(eorw, 0b010, true);
-  INSN(andr,  0b100, false);
+  INSN(andr, 0b100, false);
   INSN(orr,  0b101, false);
   INSN(eor,  0b110, false);
 
@@ -794,15 +794,15 @@ public:
     starti;                                                             \
     f(opcode, 31, 29), f(0b100101, 28, 23), f(shift/16, 22, 21),        \
       f(imm, 20, 5);                                                    \
-    zrf(Rd, 0);                                                          \
+    zrf(Rd, 0);                                                         \
   }
 
   INSN(movnw, 0b000);
   INSN(movzw, 0b010);
   INSN(movkw, 0b011);
-  INSN(movn, 0b100);
-  INSN(movz, 0b110);
-  INSN(movk, 0b111);
+  INSN(movn,  0b100);
+  INSN(movz,  0b110);
+  INSN(movk,  0b111);
 
 #undef INSN
 
@@ -1104,12 +1104,12 @@ public:
     rf(RM, 0);
   }
 
-#define INSN(NAME, opc)              \
-  void NAME(Register RN) {           \
-    branch_reg(opc, 0, 0, RN, r0);    \
+#define INSN(NAME, opc)                         \
+  void NAME(Register RN) {                      \
+    branch_reg(opc, 0, 0, RN, r0);              \
   }
 
-  INSN(br, 0b0000);
+  INSN(br,  0b0000);
   INSN(blr, 0b0001);
   INSN(ret, 0b0010);
 
@@ -1117,9 +1117,9 @@ public:
 
 #undef INSN
 
-#define INSN(NAME, opc)                     \
-  void NAME() {                             \
-    branch_reg(opc, 0, 0, dummy_reg, r0);    \
+#define INSN(NAME, opc)                         \
+  void NAME() {                                 \
+    branch_reg(opc, 0, 0, dummy_reg, r0);       \
   }
 
   INSN(eret, 0b0100);
@@ -1208,44 +1208,46 @@ public:
   }
 
   // bytes
-  INSN3(stxrb, byte, 0b000, 0);
+  INSN3(stxrb,  byte, 0b000, 0);
   INSN3(stlxrb, byte, 0b000, 1);
-  INSN2(ldxrb, byte, 0b010, 0);
+  INSN2(ldxrb,  byte, 0b010, 0);
   INSN2(ldaxrb, byte, 0b010, 1);
-  INSN2(stlrb, byte, 0b100, 1);
-  INSN2(ldarb, byte, 0b110, 1);
+  INSN2(stlrb,  byte, 0b100, 1);
+  INSN2(ldarb,  byte, 0b110, 1);
 
   // halfwords
-  INSN3(stxrh, halfword, 0b000, 0);
+  INSN3(stxrh,  halfword, 0b000, 0);
   INSN3(stlxrh, halfword, 0b000, 1);
-  INSN2(ldxrh, halfword, 0b010, 0);
+  INSN2(ldxrh,  halfword, 0b010, 0);
   INSN2(ldaxrh, halfword, 0b010, 1);
-  INSN2(stlrh, halfword, 0b100, 1);
-  INSN2(ldarh, halfword, 0b110, 1);
+  INSN2(stlrh,  halfword, 0b100, 1);
+  INSN2(ldarh,  halfword, 0b110, 1);
 
   // words
-  INSN3(stxrw, word, 0b000, 0);
+  INSN3(stxrw,  word, 0b000, 0);
   INSN3(stlxrw, word, 0b000, 1);
-  INSN4(stxpw, word, 0b001, 0);
+  INSN4(stxpw,  word, 0b001, 0);
   INSN4(stlxpw, word, 0b001, 1);
-  INSN2(ldxrw, word, 0b010, 0);
+  INSN2(ldxrw,  word, 0b010, 0);
   INSN2(ldaxrw, word, 0b010, 1);
-  INSN_FOO(ldxpw, word, 0b011, 0);
+  INSN2(stlrw,  word, 0b100, 1);
+  INSN2(ldarw,  word, 0b110, 1);
+  // pairs of words
+  INSN_FOO(ldxpw,  word, 0b011, 0);
   INSN_FOO(ldaxpw, word, 0b011, 1);
-  INSN2(stlrw, word, 0b100, 1);
-  INSN2(ldarw, word, 0b110, 1);
 
   // xwords
-  INSN3(stxr, xword, 0b000, 0);
+  INSN3(stxr,  xword, 0b000, 0);
   INSN3(stlxr, xword, 0b000, 1);
-  INSN4(stxp, xword, 0b001, 0);
+  INSN4(stxp,  xword, 0b001, 0);
   INSN4(stlxp, xword, 0b001, 1);
-  INSN2(ldxr, xword, 0b010, 0);
+  INSN2(ldxr,  xword, 0b010, 0);
   INSN2(ldaxr, xword, 0b010, 1);
-  INSN_FOO(ldxp, xword, 0b011, 0);
+  INSN2(stlr,  xword, 0b100, 1);
+  INSN2(ldar,  xword, 0b110, 1);
+  // pairs of xwords
+  INSN_FOO(ldxp,  xword, 0b011, 0);
   INSN_FOO(ldaxp, xword, 0b011, 1);
-  INSN2(stlr, xword, 0b100, 1);
-  INSN2(ldar, xword, 0b110, 1);
 
 #undef INSN2
 #undef INSN3
@@ -1271,10 +1273,10 @@ public:
     assert(Rs != Rn && Rs != Rt, "unpredictable instruction");          \
     lse_cas(Rs, Rt, Rn, sz, a, r, true);                                \
   }
-  INSN(cas,    false, false)
-  INSN(casa,   true,  false)
-  INSN(casl,   false, true)
-  INSN(casal,  true,  true)
+  INSN(cas,   false, false)
+  INSN(casa,  true,  false)
+  INSN(casl,  false, true)
+  INSN(casal, true,  true)
 #undef INSN
 
   // CASP
@@ -1286,10 +1288,10 @@ public:
            Rs != Rn && Rs1 != Rn && Rs != Rt, "invalid registers");     \
     lse_cas(Rs, Rt, Rn, sz, a, r, false);                               \
   }
-  INSN(casp,    false, false)
-  INSN(caspa,   true,  false)
-  INSN(caspl,   false, true)
-  INSN(caspal,  true,  true)
+  INSN(casp,   false, false)
+  INSN(caspa,  true,  false)
+  INSN(caspl,  false, true)
+  INSN(caspal, true,  true)
 #undef INSN
 
   // 8.1 Atomic operations
@@ -1415,17 +1417,17 @@ public:
     ld_st1(size, p1, V, L, Rt1, Rt2, adr, no_allocate); \
    }
 
-  INSN(stpw, 0b00, 0b101, 0, 0, false);
-  INSN(ldpw, 0b00, 0b101, 0, 1, false);
+  INSN(stpw,  0b00, 0b101, 0, 0, false);
+  INSN(ldpw,  0b00, 0b101, 0, 1, false);
   INSN(ldpsw, 0b01, 0b101, 0, 1, false);
-  INSN(stp, 0b10, 0b101, 0, 0, false);
-  INSN(ldp, 0b10, 0b101, 0, 1, false);
+  INSN(stp,   0b10, 0b101, 0, 0, false);
+  INSN(ldp,   0b10, 0b101, 0, 1, false);
 
   // Load/store no-allocate pair (offset)
   INSN(stnpw, 0b00, 0b101, 0, 0, true);
   INSN(ldnpw, 0b00, 0b101, 0, 1, true);
-  INSN(stnp, 0b10, 0b101, 0, 0, true);
-  INSN(ldnp, 0b10, 0b101, 0, 1, true);
+  INSN(stnp,  0b10, 0b101, 0, 0, true);
+  INSN(ldnp,  0b10, 0b101, 0, 1, true);
 
 #undef INSN
 
@@ -1475,21 +1477,21 @@ public:
     ld_st2(Rt, adr, size, op);                          \
   }                                                     \
 
-  INSN(str, 0b11, 0b00);
+  INSN(str,  0b11, 0b00);
   INSN(strw, 0b10, 0b00);
   INSN(strb, 0b00, 0b00);
   INSN(strh, 0b01, 0b00);
 
-  INSN(ldr, 0b11, 0b01);
+  INSN(ldr,  0b11, 0b01);
   INSN(ldrw, 0b10, 0b01);
   INSN(ldrb, 0b00, 0b01);
   INSN(ldrh, 0b01, 0b01);
 
-  INSN(ldrsb, 0b00, 0b10);
+  INSN(ldrsb,  0b00, 0b10);
   INSN(ldrsbw, 0b00, 0b11);
-  INSN(ldrsh, 0b01, 0b10);
+  INSN(ldrsh,  0b01, 0b10);
   INSN(ldrshw, 0b01, 0b11);
-  INSN(ldrsw, 0b10, 0b10);
+  INSN(ldrsw,  0b10, 0b10);
 
 #undef INSN
 
@@ -1569,13 +1571,13 @@ public:
     op_shifted_reg(current_insn, 0b01010, kind, shift, size, op);       \
   }
 
-  INSN(andr, 1, 0b00, 0);
-  INSN(orr, 1, 0b01, 0);
-  INSN(eor, 1, 0b10, 0);
-  INSN(ands, 1, 0b11, 0);
-  INSN(andw, 0, 0b00, 0);
-  INSN(orrw, 0, 0b01, 0);
-  INSN(eorw, 0, 0b10, 0);
+  INSN(andr,  1, 0b00, 0);
+  INSN(orr,   1, 0b01, 0);
+  INSN(eor,   1, 0b10, 0);
+  INSN(ands,  1, 0b11, 0);
+  INSN(andw,  0, 0b00, 0);
+  INSN(orrw,  0, 0b01, 0);
+  INSN(eorw,  0, 0b10, 0);
   INSN(andsw, 0, 0b11, 0);
 
 #undef INSN
@@ -1597,13 +1599,13 @@ public:
     assert(false, " can't be used with immediate operand");             \
   }
 
-  INSN(bic, 1, 0b00, 1);
-  INSN(orn, 1, 0b01, 1);
-  INSN(eon, 1, 0b10, 1);
-  INSN(bics, 1, 0b11, 1);
-  INSN(bicw, 0, 0b00, 1);
-  INSN(ornw, 0, 0b01, 1);
-  INSN(eonw, 0, 0b10, 1);
+  INSN(bic,   1, 0b00, 1);
+  INSN(orn,   1, 0b01, 1);
+  INSN(eon,   1, 0b10, 1);
+  INSN(bics,  1, 0b11, 1);
+  INSN(bicw,  0, 0b00, 1);
+  INSN(ornw,  0, 0b01, 1);
+  INSN(eonw,  0, 0b10, 1);
   INSN(bicsw, 0, 0b11, 1);
 
 #undef INSN
@@ -1636,13 +1638,13 @@ void mvnw(Register Rd, Register Rm,
     op_shifted_reg(current_insn, 0b01011, kind, shift, size, op);      \
   }
 
-  INSN(add, 1, 0b000);
-  INSN(sub, 1, 0b10);
+  INSN(add,  1, 0b000);
+  INSN(sub,  1, 0b10);
   INSN(addw, 0, 0b000);
   INSN(subw, 0, 0b10);
 
-  INSN(adds, 1, 0b001);
-  INSN(subs, 1, 0b11);
+  INSN(adds,  1, 0b001);
+  INSN(subs,  1, 0b11);
   INSN(addsw, 0, 0b001);
   INSN(subsw, 0, 0b11);
 
@@ -1667,8 +1669,8 @@ void mvnw(Register Rd, Register Rm,
 
   INSN(addw, 0b000);
   INSN(subw, 0b010);
-  INSN(add, 0b100);
-  INSN(sub, 0b110);
+  INSN(add,  0b100);
+  INSN(sub,  0b110);
 
 #undef INSN
 
@@ -1682,8 +1684,8 @@ void mvnw(Register Rd, Register Rm,
 
   INSN(addsw, 0b001);
   INSN(subsw, 0b011);
-  INSN(adds, 0b101);
-  INSN(subs, 0b111);
+  INSN(adds,  0b101);
+  INSN(subs,  0b111);
 
 #undef INSN
 
@@ -1722,14 +1724,14 @@ void mvnw(Register Rd, Register Rm,
       add_sub_carry(op, Rd, Rn, Rm);                    \
     }
 
-  INSN(adcw, 0b000);
+  INSN(adcw,  0b000);
   INSN(adcsw, 0b001);
-  INSN(sbcw, 0b010);
+  INSN(sbcw,  0b010);
   INSN(sbcsw, 0b011);
-  INSN(adc, 0b100);
-  INSN(adcs, 0b101);
-  INSN(sbc,0b110);
-  INSN(sbcs, 0b111);
+  INSN(adc,   0b100);
+  INSN(adcs,  0b101);
+  INSN(sbc,   0b110);
+  INSN(sbcs,  0b111);
 
 #undef INSN
 
@@ -1782,14 +1784,14 @@ void mvnw(Register Rd, Register Rm,
     conditional_select(op, op2, Rd, Rn, Rm, cond);                      \
   }
 
-  INSN(cselw, 0b000, 0b00);
+  INSN(cselw,  0b000, 0b00);
   INSN(csincw, 0b000, 0b01);
   INSN(csinvw, 0b010, 0b00);
   INSN(csnegw, 0b010, 0b01);
-  INSN(csel, 0b100, 0b00);
-  INSN(csinc, 0b100, 0b01);
-  INSN(csinv, 0b110, 0b00);
-  INSN(csneg, 0b110, 0b01);
+  INSN(csel,   0b100, 0b00);
+  INSN(csinc,  0b100, 0b01);
+  INSN(csinv,  0b110, 0b00);
+  INSN(csneg,  0b110, 0b01);
 
 #undef INSN
 
@@ -1855,7 +1857,7 @@ void mvnw(Register Rd, Register Rm,
 
 #undef INSN
 
-  // (2 sources)
+  // Data-processing (2 source)
 #define INSN(NAME, op29, opcode)                                \
   void NAME(Register Rd, Register Rn, Register Rm) {            \
     starti;                                                     \
@@ -1879,7 +1881,7 @@ void mvnw(Register Rd, Register Rm,
 
 #undef INSN
 
-  // (3 sources)
+  // Data-processing (3 source)
   void data_processing(unsigned op54, unsigned op31, unsigned o0,
                        Register Rd, Register Rn, Register Rm,
                        Register Ra) {
@@ -1894,10 +1896,10 @@ void mvnw(Register Rd, Register Rm,
     data_processing(op54, op31, o0, Rd, Rn, Rm, Ra);                    \
   }
 
-  INSN(maddw, 0b000, 0b000, 0);
-  INSN(msubw, 0b000, 0b000, 1);
-  INSN(madd, 0b100, 0b000, 0);
-  INSN(msub, 0b100, 0b000, 1);
+  INSN(maddw,  0b000, 0b000, 0);
+  INSN(msubw,  0b000, 0b000, 1);
+  INSN(madd,   0b100, 0b000, 0);
+  INSN(msub,   0b100, 0b000, 1);
   INSN(smaddl, 0b100, 0b001, 0);
   INSN(smsubl, 0b100, 0b001, 1);
   INSN(umaddl, 0b100, 0b101, 0);
@@ -1930,31 +1932,17 @@ void mvnw(Register Rd, Register Rm,
     data_processing(op31, type, opcode, Vd, Vn);        \
   }
 
-private:
-  INSN(i_fmovs, 0b000, 0b00, 0b000000);
-public:
-  INSN(fabss, 0b000, 0b00, 0b000001);
-  INSN(fnegs, 0b000, 0b00, 0b000010);
+  INSN(fmovs,  0b000, 0b00, 0b000000);
+  INSN(fabss,  0b000, 0b00, 0b000001);
+  INSN(fnegs,  0b000, 0b00, 0b000010);
   INSN(fsqrts, 0b000, 0b00, 0b000011);
-  INSN(fcvts, 0b000, 0b00, 0b000101);   // Single-precision to double-precision
+  INSN(fcvts,  0b000, 0b00, 0b000101);   // Single-precision to double-precision
 
-private:
-  INSN(i_fmovd, 0b000, 0b01, 0b000000);
-public:
-  INSN(fabsd, 0b000, 0b01, 0b000001);
-  INSN(fnegd, 0b000, 0b01, 0b000010);
+  INSN(fmovd,  0b000, 0b01, 0b000000);
+  INSN(fabsd,  0b000, 0b01, 0b000001);
+  INSN(fnegd,  0b000, 0b01, 0b000010);
   INSN(fsqrtd, 0b000, 0b01, 0b000011);
-  INSN(fcvtd, 0b000, 0b01, 0b000100);   // Double-precision to single-precision
-
-  void fmovd(FloatRegister Vd, FloatRegister Vn) {
-    assert(Vd != Vn, "should be");
-    i_fmovd(Vd, Vn);
-  }
-
-  void fmovs(FloatRegister Vd, FloatRegister Vn) {
-    assert(Vd != Vn, "should be");
-    i_fmovs(Vd, Vn);
-  }
+  INSN(fcvtd,  0b000, 0b01, 0b000100);   // Double-precision to single-precision
 
 private:
   void _fcvt_narrow_extend(FloatRegister Vd, SIMD_Arrangement Ta,
@@ -2034,15 +2022,15 @@ public:
     data_processing(op31, type, o1, o0, Vd, Vn, Vm, Va);                \
   }
 
-  INSN(fmadds, 0b000, 0b00, 0, 0);
-  INSN(fmsubs, 0b000, 0b00, 0, 1);
+  INSN(fmadds,  0b000, 0b00, 0, 0);
+  INSN(fmsubs,  0b000, 0b00, 0, 1);
   INSN(fnmadds, 0b000, 0b00, 1, 0);
   INSN(fnmsubs, 0b000, 0b00, 1, 1);
 
-  INSN(fmaddd, 0b000, 0b01, 0, 0);
-  INSN(fmsubd, 0b000, 0b01, 0, 1);
+  INSN(fmaddd,  0b000, 0b01, 0, 0);
+  INSN(fmsubd,  0b000, 0b01, 0, 1);
   INSN(fnmaddd, 0b000, 0b01, 1, 0);
-  INSN(fnmsub, 0b000, 0b01, 1, 1);
+  INSN(fnmsub,  0b000, 0b01, 1, 1);
 
 #undef INSN
 
@@ -2072,7 +2060,7 @@ public:
 
 #undef INSN
 
-   // Floating-point<->integer conversions
+  // Conversion between floating-point and integer
   void float_int_convert(unsigned sflag, unsigned ftype,
                          unsigned rmode, unsigned opcode,
                          Register Rd, Register Rn) {
@@ -2110,9 +2098,9 @@ public:
 
 #undef INSN
 
-#define INSN(NAME, sflag, type, rmode, opcode)                           \
+#define INSN(NAME, sflag, type, rmode, opcode)                          \
   void NAME(FloatRegister Vd, Register Rn) {                            \
-    float_int_convert(sflag, type, rmode, opcode, as_Register(Vd), Rn);  \
+    float_int_convert(sflag, type, rmode, opcode, as_Register(Vd), Rn); \
   }
 
   INSN(fmovs, 0b0, 0b00, 0b00, 0b111);
@@ -2241,6 +2229,8 @@ public:
     else
       movi(Vn, T1D, 0);
   }
+
+  // Floating-point data-processing (1 source)
 
    // Floating-point rounding
    // type: half-precision = 11
@@ -2429,6 +2419,7 @@ public:
 
 #undef INSN
 
+  // Advanced SIMD three different
 #define INSN(NAME, opc, opc2, acceptT2D)                                                \
   void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, FloatRegister Vm) { \
     guarantee(T != T1Q && T != T1D, "incorrect arrangement");                           \
@@ -2670,9 +2661,9 @@ public:
     f(opc, 31, 10), rf(Vn, 5), rf(Vd, 0);         \
   }
 
-  INSN(aese, 0b0100111000101000010010);
-  INSN(aesd, 0b0100111000101000010110);
-  INSN(aesmc, 0b0100111000101000011010);
+  INSN(aese,   0b0100111000101000010010);
+  INSN(aesd,   0b0100111000101000010110);
+  INSN(aesmc,  0b0100111000101000011010);
   INSN(aesimc, 0b0100111000101000011110);
 
 #undef INSN
@@ -3128,25 +3119,25 @@ public:
     sve_predicate_reg_insn(op1, op2, Zdn_or_Zd_or_Vd, T, Pg, Znm_or_Vn);                                \
   }
 
-  INSN(sve_abs,  0b00000100, 0b010110101); // vector abs, unary
-  INSN(sve_add,  0b00000100, 0b000000000); // vector add
-  INSN(sve_and,  0b00000100, 0b011010000); // vector and
-  INSN(sve_andv, 0b00000100, 0b011010001); // bitwise and reduction to scalar
-  INSN(sve_asr,  0b00000100, 0b010000100); // vector arithmetic shift right
-  INSN(sve_bic,  0b00000100, 0b011011000); // vector bitwise clear
-  INSN(sve_clz,  0b00000100, 0b011001101); // vector count leading zero bits
-  INSN(sve_cnt,  0b00000100, 0b011010101); // count non-zero bits
-  INSN(sve_cpy,  0b00000101, 0b100000100); // copy scalar to each active vector element
-  INSN(sve_eor,  0b00000100, 0b011001000); // vector eor
-  INSN(sve_eorv, 0b00000100, 0b011001001); // bitwise xor reduction to scalar
-  INSN(sve_lsl,  0b00000100, 0b010011100); // vector logical shift left
-  INSN(sve_lsr,  0b00000100, 0b010001100); // vector logical shift right
-  INSN(sve_mul,  0b00000100, 0b010000000); // vector mul
-  INSN(sve_neg,  0b00000100, 0b010111101); // vector neg, unary
-  INSN(sve_not,  0b00000100, 0b011110101); // bitwise invert vector, unary
-  INSN(sve_orr,  0b00000100, 0b011000000); // vector or
-  INSN(sve_orv,  0b00000100, 0b011000001); // bitwise or reduction to scalar
-  INSN(sve_smax, 0b00000100, 0b001000000); // signed maximum vectors
+  INSN(sve_abs,   0b00000100, 0b010110101); // vector abs, unary
+  INSN(sve_add,   0b00000100, 0b000000000); // vector add
+  INSN(sve_and,   0b00000100, 0b011010000); // vector and
+  INSN(sve_andv,  0b00000100, 0b011010001); // bitwise and reduction to scalar
+  INSN(sve_asr,   0b00000100, 0b010000100); // vector arithmetic shift right
+  INSN(sve_bic,   0b00000100, 0b011011000); // vector bitwise clear
+  INSN(sve_clz,   0b00000100, 0b011001101); // vector count leading zero bits
+  INSN(sve_cnt,   0b00000100, 0b011010101); // count non-zero bits
+  INSN(sve_cpy,   0b00000101, 0b100000100); // copy scalar to each active vector element
+  INSN(sve_eor,   0b00000100, 0b011001000); // vector eor
+  INSN(sve_eorv,  0b00000100, 0b011001001); // bitwise xor reduction to scalar
+  INSN(sve_lsl,   0b00000100, 0b010011100); // vector logical shift left
+  INSN(sve_lsr,   0b00000100, 0b010001100); // vector logical shift right
+  INSN(sve_mul,   0b00000100, 0b010000000); // vector mul
+  INSN(sve_neg,   0b00000100, 0b010111101); // vector neg, unary
+  INSN(sve_not,   0b00000100, 0b011110101); // bitwise invert vector, unary
+  INSN(sve_orr,   0b00000100, 0b011000000); // vector or
+  INSN(sve_orv,   0b00000100, 0b011000001); // bitwise or reduction to scalar
+  INSN(sve_smax,  0b00000100, 0b001000000); // signed maximum vectors
   INSN(sve_smaxv, 0b00000100, 0b001000001); // signed maximum reduction to scalar
   INSN(sve_smin,  0b00000100, 0b001010000); // signed minimum vectors
   INSN(sve_sminv, 0b00000100, 0b001010001); // signed minimum reduction to scalar
@@ -3161,22 +3152,22 @@ public:
     sve_predicate_reg_insn(op1, op2, Zd_or_Zdn_or_Vd, T, Pg, Zn_or_Zm);                               \
   }
 
-  INSN(sve_fabs,    0b00000100, 0b011100101);
-  INSN(sve_fadd,    0b01100101, 0b000000100);
-  INSN(sve_fadda,   0b01100101, 0b011000001); // add strictly-ordered reduction to scalar Vd
-  INSN(sve_fdiv,    0b01100101, 0b001101100);
-  INSN(sve_fmax,    0b01100101, 0b000110100); // floating-point maximum
-  INSN(sve_fmaxv,   0b01100101, 0b000110001); // floating-point maximum recursive reduction to scalar
-  INSN(sve_fmin,    0b01100101, 0b000111100); // floating-point minimum
-  INSN(sve_fminv,   0b01100101, 0b000111001); // floating-point minimum recursive reduction to scalar
-  INSN(sve_fmul,    0b01100101, 0b000010100);
-  INSN(sve_fneg,    0b00000100, 0b011101101);
-  INSN(sve_frintm,  0b01100101, 0b000010101); // floating-point round to integral value, toward minus infinity
-  INSN(sve_frintn,  0b01100101, 0b000000101); // floating-point round to integral value, nearest with ties to even
-  INSN(sve_frinta,  0b01100101, 0b000100101); // floating-point round to integral value, nearest with ties to away
-  INSN(sve_frintp,  0b01100101, 0b000001101); // floating-point round to integral value, toward plus infinity
-  INSN(sve_fsqrt,   0b01100101, 0b001101101);
-  INSN(sve_fsub,    0b01100101, 0b000001100);
+  INSN(sve_fabs,   0b00000100, 0b011100101);
+  INSN(sve_fadd,   0b01100101, 0b000000100);
+  INSN(sve_fadda,  0b01100101, 0b011000001); // add strictly-ordered reduction to scalar Vd
+  INSN(sve_fdiv,   0b01100101, 0b001101100);
+  INSN(sve_fmax,   0b01100101, 0b000110100); // floating-point maximum
+  INSN(sve_fmaxv,  0b01100101, 0b000110001); // floating-point maximum recursive reduction to scalar
+  INSN(sve_fmin,   0b01100101, 0b000111100); // floating-point minimum
+  INSN(sve_fminv,  0b01100101, 0b000111001); // floating-point minimum recursive reduction to scalar
+  INSN(sve_fmul,   0b01100101, 0b000010100);
+  INSN(sve_fneg,   0b00000100, 0b011101101);
+  INSN(sve_frintm, 0b01100101, 0b000010101); // floating-point round to integral value, toward minus infinity
+  INSN(sve_frintn, 0b01100101, 0b000000101); // floating-point round to integral value, nearest with ties to even
+  INSN(sve_frinta, 0b01100101, 0b000100101); // floating-point round to integral value, nearest with ties to away
+  INSN(sve_frintp, 0b01100101, 0b000001101); // floating-point round to integral value, toward plus infinity
+  INSN(sve_fsqrt,  0b01100101, 0b001101101);
+  INSN(sve_fsub,   0b01100101, 0b000001100);
 #undef INSN
 
   // SVE multiple-add/sub - predicated
@@ -3861,6 +3852,7 @@ void sve_fcm(Condition cond, PRegister Pd, SIMD_RegVariant T,
   }
 
   INSN(sve_bext, 0b00);
+  INSN(sve_bdep, 0b01);
 #undef INSN
 
   Assembler(CodeBuffer* code) : AbstractAssembler(code) {

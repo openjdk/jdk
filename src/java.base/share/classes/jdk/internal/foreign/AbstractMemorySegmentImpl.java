@@ -41,6 +41,7 @@ import java.nio.IntBuffer;
 import java.nio.LongBuffer;
 import java.nio.ShortBuffer;
 import java.util.*;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntFunction;
@@ -51,6 +52,7 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.foreign.UnmapperProxy;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.ForceInline;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
@@ -64,7 +66,7 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
  * are defined for each memory segment kind, see {@link NativeMemorySegmentImpl}, {@link HeapMemorySegmentImpl} and
  * {@link MappedMemorySegmentImpl}.
  */
-public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegment, SegmentAllocator, Scoped {
+public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegment, SegmentAllocator, Scoped, BiFunction<String, List<Number>, RuntimeException> {
 
     private static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
 
@@ -151,10 +153,7 @@ public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegm
 
     @Override
     public MemorySegment allocate(long bytesSize, long bytesAlignment) {
-        if (bytesAlignment <= 0 ||
-                ((bytesAlignment & (bytesAlignment - 1)) != 0L)) {
-            throw new IllegalArgumentException("Invalid alignment constraint : " + bytesAlignment);
-        }
+        Utils.checkAllocationSizeAndAlign(bytesSize, bytesAlignment);
         return asSlice(0, bytesSize);
     }
 
@@ -394,11 +393,18 @@ public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegm
     @ForceInline
     void checkBounds(long offset, long length) {
         if (length > 0) {
-            Objects.checkIndex(offset, this.length - length + 1);
+            Preconditions.checkIndex(offset, this.length - length + 1, this);
         } else if (length < 0 || offset < 0 ||
                 offset > this.length - length) {
             throw outOfBoundException(offset, length);
         }
+    }
+
+    @Override
+    public RuntimeException apply(String s, List<Number> numbers) {
+        long offset = numbers.get(0).longValue();
+        long length = byteSize() - numbers.get(1).longValue() + 1;
+        return outOfBoundException(offset, length);
     }
 
     @Override
@@ -413,7 +419,7 @@ public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegm
     }
 
     private IndexOutOfBoundsException outOfBoundException(long offset, long length) {
-        return new IndexOutOfBoundsException(String.format("Out of bound access on segment %s; new offset = %d; new length = %d",
+        return new IndexOutOfBoundsException(String.format("Out of bound access on segment %s; offset = %d; length = %d",
                         this, offset, length));
     }
 

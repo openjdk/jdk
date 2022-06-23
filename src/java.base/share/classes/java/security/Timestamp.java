@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,11 @@
 
 package java.security;
 
-import java.io.*;
-import java.security.cert.Certificate;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.Serializable;
 import java.security.cert.CertPath;
-import java.security.cert.X509Extension;
+import java.security.cert.Certificate;
 import java.util.Date;
 import java.util.List;
 
@@ -59,7 +60,7 @@ public final class Timestamp implements Serializable {
      *
      * @serial
      */
-    private CertPath signerCertPath;
+    private final CertPath signerCertPath;
 
     /*
      * Hash code for this timestamp.

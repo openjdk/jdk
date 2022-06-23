@@ -50,6 +50,7 @@
 #include "runtime/notificationThread.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.inline.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmOperations.hpp"
 #include "services/classLoadingService.hpp"
