@@ -502,7 +502,7 @@ public final class OutputAnalyzer {
         if (getExitValue() == notExpectedExitValue) {
             reportDiagnosticSummary();
             throw new RuntimeException("Unexpected to get exit value of ["
-                    + notExpectedExitValue + "], exit value is: [" + getExitValue() + "]");
+                    + notExpectedExitValue + "]");
         }
         return this;
     }

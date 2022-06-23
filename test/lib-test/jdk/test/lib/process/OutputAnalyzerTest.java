@@ -237,7 +237,7 @@ public class OutputAnalyzerTest {
                 out.shouldNotHaveExitValue(0);
                 throw new RuntimeException("'shouldNotHaveExitValue' should have thrown an exception");
             } catch (Throwable ex) {
-                if (!ex.getMessage().equals("Unexpected to get exit value of [0], exit value is: [0]")) {
+                if (!ex.getMessage().equals("Unexpected to get exit value of [0]")) {
                     throw new RuntimeException("Unexpected message: " + ex.getMessage());
                 }
             }
