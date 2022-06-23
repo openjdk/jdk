@@ -25,7 +25,7 @@
 #ifndef CPU_X86_VMREG_X86_INLINE_HPP
 #define CPU_X86_VMREG_X86_INLINE_HPP
 
-inline VMReg RegisterImpl::as_VMReg() {
+inline VMReg RegisterImpl::as_VMReg() const {
   if( this==noreg ) return VMRegImpl::Bad();
 #ifdef AMD64
   return VMRegImpl::as_VMReg(encoding() << 1 );
@@ -34,15 +34,15 @@ inline VMReg RegisterImpl::as_VMReg() {
 #endif // AMD64
 }
 
-inline VMReg FloatRegisterImpl::as_VMReg() {
+inline VMReg FloatRegisterImpl::as_VMReg() const {
   return VMRegImpl::as_VMReg((encoding() << 1) + ConcreteRegisterImpl::max_gpr);
 }
 
-inline VMReg XMMRegisterImpl::as_VMReg() {
+inline VMReg XMMRegisterImpl::as_VMReg() const {
   return VMRegImpl::as_VMReg((encoding() << 4) + ConcreteRegisterImpl::max_fpr);
 }
 
-inline VMReg KRegisterImpl::as_VMReg() {
+inline VMReg KRegisterImpl::as_VMReg() const {
   return VMRegImpl::as_VMReg((encoding() << 1) + ConcreteRegisterImpl::max_xmm);
 }
 
