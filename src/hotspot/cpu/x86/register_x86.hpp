@@ -64,9 +64,10 @@ public:
   inline VMReg as_VMReg() const;
 
   // accessors
+  int raw_encoding() const                       { return this - first(); }
   int   encoding() const                         { assert(is_valid(), "invalid register"); return (this - first()); }
-  bool  is_valid() const                         { return 0 <= (this - first()) && (this - first()) < number_of_registers; }
-  bool  has_byte_register() const                { return 0 <= (this - first()) && (this - first()) < number_of_byte_registers; }
+  bool  is_valid() const                         { return 0 <= raw_encoding() && raw_encoding() < number_of_registers; }
+  bool  has_byte_register() const                { return 0 <= raw_encoding() && raw_encoding() < number_of_byte_registers; }
   const char *name() const;
 };
 
@@ -125,8 +126,9 @@ public:
   }
 
   // accessors
+  int raw_encoding() const                       { return this - first(); }
   int   encoding() const                          { assert(is_valid(), "invalid register"); return this - first(); }
-  bool  is_valid() const                          { return 0 <= (this - first()) && (this - first()) < number_of_registers; }
+  bool  is_valid() const                          { return 0 <= raw_encoding() && raw_encoding() < number_of_registers; }
   const char* name() const;
 
 };
@@ -165,8 +167,9 @@ class XMMRegisterImpl: public AbstractRegisterImpl {
   XMMRegister successor() const                          { return as_XMMRegister(encoding() + 1); }
 
   // accessors
-  int   encoding() const                          { assert(is_valid(), "invalid register (%d)", (int)(this - first()) ); return (this - first()); }
-  bool  is_valid() const                          { return 0 <= (this - first()) && (this - first()) < number_of_registers; }
+  int raw_encoding() const                       { return this - first(); }
+  int   encoding() const                          { assert(is_valid(), "invalid register (%d)", (int)raw_encoding() ); return raw_encoding(); }
+  bool  is_valid() const                          { return 0 <= raw_encoding() && raw_encoding() < number_of_registers; }
   const char* name() const;
   const char* sub_word_name(int offset) const;
 
@@ -250,8 +253,9 @@ public:
   KRegister successor() const                          { return as_KRegister(encoding() + 1); }
 
   // accessors
-  int   encoding() const                          { assert(is_valid(), "invalid register (%d)", (int)(this - first())); return (this - first()); }
-  bool  is_valid() const                          { return 0 <= (this - first()) && (this - first()) < number_of_registers; }
+  int raw_encoding() const                       { return this - first(); }
+  int   encoding() const                          { assert(is_valid(), "invalid register (%d)", (int)raw_encoding()); return raw_encoding(); }
+  bool  is_valid() const                          { return 0 <= raw_encoding() && raw_encoding() < number_of_registers; }
   const char* name() const;
 };
 
