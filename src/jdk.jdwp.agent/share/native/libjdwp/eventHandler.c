@@ -960,9 +960,7 @@ cbClassLoad(jvmtiEnv *jvmti_env, JNIEnv *env,
 }
 
 /*
- * Invoke the callback when classes are freed, find and record the signature
- * in deletedSignatures. Those are only used in addPreparedClass() by the
- * same thread.
+ * Invoke the callback when classes are freed.
  */
 void JNICALL
 cbTrackingObjectFree(jvmtiEnv* jvmti_env, jlong tag)

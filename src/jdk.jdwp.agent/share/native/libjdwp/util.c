@@ -1960,7 +1960,6 @@ eventIndexInit(void)
     index2jdwp[EI_CLASS_PREPARE       -EI_min] = JDWP_EVENT(CLASS_PREPARE);
     index2jdwp[EI_GC_FINISH           -EI_min] = JDWP_EVENT(CLASS_UNLOAD);
     index2jdwp[EI_CLASS_LOAD          -EI_min] = JDWP_EVENT(CLASS_LOAD);
-    index2jdwp[EI_CLASS_UNLOAD        -EI_min] = JDWP_EVENT(CLASS_UNLOAD);
     index2jdwp[EI_FIELD_ACCESS        -EI_min] = JDWP_EVENT(FIELD_ACCESS);
     index2jdwp[EI_FIELD_MODIFICATION  -EI_min] = JDWP_EVENT(FIELD_MODIFICATION);
     index2jdwp[EI_EXCEPTION_CATCH     -EI_min] = JDWP_EVENT(EXCEPTION_CATCH);

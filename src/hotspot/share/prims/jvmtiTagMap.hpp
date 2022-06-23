@@ -54,7 +54,7 @@ class JvmtiTagMap :  public CHeapObj<mtInternal> {
   void check_hashmap(bool post_events);
 
   void entry_iterate(JvmtiTagMapEntryClosure* closure);
-  void post_dead_objects(bool locked);
+  void remove_and_post_dead_objects(bool locked);
 
  public:
   // indicates if this tag map is locked

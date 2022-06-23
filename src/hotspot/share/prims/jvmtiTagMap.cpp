@@ -147,7 +147,7 @@ void JvmtiTagMap::check_hashmap(bool post_events) {
   if (_needs_cleaning &&
       post_events &&
       env()->is_enabled(JVMTI_EVENT_OBJECT_FREE)) {
-    post_dead_objects(true /* locked */);
+    remove_and_post_dead_objects(true /* locked */);
   }
   if (_needs_rehashing) {
     log_info(jvmti, table)("TagMap table needs rehashing");
@@ -1186,7 +1186,7 @@ void JvmtiTagMap::remove_dead_entries(GrowableArray<jlong>* objects) {
   remove_dead_entries_locked(objects);
 }
 
-void JvmtiTagMap::post_dead_objects(bool locked) {
+void JvmtiTagMap::remove_and_post_dead_objects(bool locked) {
   ResourceMark rm;
   GrowableArray<jlong> objects;
   if (locked) {
@@ -1211,7 +1211,7 @@ void JvmtiTagMap::flush_object_free_events() {
     } // Drop the lock so we can do the cleaning on the VM thread.
     // Needs both cleaning and event posting (up to some other thread
     // getting there first after we dropped the lock).
-    post_dead_objects(false /* locked */);
+    remove_and_post_dead_objects(false /* locked */);
   } else {
     remove_dead_entries(NULL);
   }
@@ -1326,7 +1326,7 @@ jvmtiError JvmtiTagMap::get_objects_with_tags(const jlong* tags,
     entry_iterate(&collector);
   }
   if (collector.some_dead_found() && env()->is_enabled(JVMTI_EVENT_OBJECT_FREE)) {
-    post_dead_objects(false /* locked */);
+    remove_and_post_dead_objects(false /* locked */);
   }
   return collector.result(count_ptr, object_result_ptr, tag_result_ptr);
 }
