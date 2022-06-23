@@ -71,7 +71,7 @@ public class TestKeyMaterialChaCha20 extends PKCS11Test {
         SecretKey masterSecret = kg2.generateKey();
 
         // https://github.com/openjdk/jdk/blob/ccec5d1e8529c8211cc678d8acc8d37fe461cb51/src/java.base/share/classes/sun/security/ssl/SSLTrafficKeyDerivation.java#L270
-        // https://github.com/openjdk/jdk/blob/master/src/java.base/share/classes/sun/security/ssl/CipherSuite.java#L93
+        // https://github.com/openjdk/jdk/blob/ccec5d1e8529c8211cc678d8acc8d37fe461cb51/src/java.base/share/classes/sun/security/ssl/CipherSuite.java#L93
         TlsKeyMaterialParameterSpec params = new TlsKeyMaterialParameterSpec(
             masterSecret, 3, 3,
             new byte[32],
