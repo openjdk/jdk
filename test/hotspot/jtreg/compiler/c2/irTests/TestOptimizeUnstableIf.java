@@ -29,7 +29,7 @@ import compiler.lib.ir_framework.*;
 /*
  * @test
  * @bug 8286104
- * @summary Test C2 uses aggressive liveness to get rid of the boxing object which is
+ * @summary Test that C2 uses aggressive liveness to get rid of the boxing object which is
  *  only consumed by uncommon_trap.
  * @library /test/lib /
  * @run driver compiler.c2.irTests.TestOptimizeUnstableIf

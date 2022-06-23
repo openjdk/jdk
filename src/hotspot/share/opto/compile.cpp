@@ -1951,7 +1951,7 @@ void Compile::process_for_unstable_if_traps(PhaseIterGVN& igvn) {
       }
     }
 
-    // keep the mondified for late query
+    // keep the mondified trap for late query
     if (modified) {
       trap->set_modified();
     } else {
