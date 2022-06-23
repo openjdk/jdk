@@ -35,7 +35,18 @@
 #include "MTLUtils.h"
 #import "MTLLayer.h"
 
+/**
+ * The max size of the vertex batch.
+ *
+ * Note:
+ * This is the max number of vertices (of struct Vertex - 8 bytes)
+ * that can be accommodated in 4KB.
+ *
+ * [MTLRenderCommandEncoder setVertexBytes] expects the data size
+ * to be less than or equal to 4KB.
+ */
 static const int VERTEX_BATCH_SIZE = 510;
+
 static const int MAX_NO_OF_BATCHES = 20;
 
 struct primDetail {

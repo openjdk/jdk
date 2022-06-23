@@ -49,7 +49,6 @@ jint mtlPreviousOp = MTL_OP_INIT;
 extern void MTLGC_DestroyMTLGraphicsConfig(jlong pConfigInfo);
 
 bool isDrawOp (jint op) {
-
      switch(op) {
         case MTL_OP_DRAW_LINE:
         case MTL_OP_DRAW_RECT:
