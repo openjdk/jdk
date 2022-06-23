@@ -92,24 +92,31 @@ private:
 template <bool atomic>
 class ShenandoahEvacuateUpdateRootClosureBase : public ShenandoahOopClosureBase {
 protected:
-    ShenandoahHeap* const _heap;
+  ShenandoahHeap* const _heap;
 public:
-    inline ShenandoahEvacuateUpdateRootClosureBase();
-    inline virtual void do_oop(oop* p);
-    inline virtual void do_oop(narrowOop* p);
+  inline ShenandoahEvacuateUpdateRootClosureBase();
+  inline void do_oop(oop* p);
+  inline void do_oop(narrowOop* p);
 protected:
-    template <class T>
-    inline void do_oop_work(T* p, Thread* t);
+  template <class T>
+  inline void do_oop_work(T* p, Thread* t);
 };
 
-using ShenandoahEvacuateUpdateMetadataClosure = ShenandoahEvacuateUpdateRootClosureBase<false>;
+class ShenandoahEvacuateUpdateMetadataClosure : public ShenandoahEvacuateUpdateRootClosureBase<false> {
+private:
+  Thread* const _thread;
+public:
+  inline ShenandoahEvacuateUpdateMetadataClosure();
+  inline void do_oop(oop* p);
+  inline void do_oop(narrowOop* p);
+};
 
 // Context free version, cannot cache calling thread
 class ShenandoahEvacuateUpdateRootsClosure : public ShenandoahEvacuateUpdateRootClosureBase<true> {
 public:
   inline ShenandoahEvacuateUpdateRootsClosure();
-  inline virtual void do_oop(oop* p);
-  inline virtual void do_oop(narrowOop* p);
+  inline void do_oop(oop* p);
+  inline void do_oop(narrowOop* p);
 };
 
 class ShenandoahContextEvacuateUpdateRootsClosure : public ShenandoahEvacuateUpdateRootClosureBase<true> {
