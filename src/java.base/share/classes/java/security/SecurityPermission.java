@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,13 @@
 
 package java.security;
 
-import java.security.*;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.StringTokenizer;
-
 /**
  * This class is for security permissions. A {@code SecurityPermission}
  * contains a name (also referred to as a "target name") but no actions list;
  * you either have the named permission or you don't.
  * <p>
  * The target name is the name of a security configuration parameter
- * (see below). Currently the {@code SecurityPermission} object is used to
+ * (see below). Currently, the {@code SecurityPermission} object is used to
  * guard access to the {@link AccessControlContext}, {@link Policy},
  * {@link Provider}, {@link Security}, {@link Signer}, and {@link Identity}
  * objects.

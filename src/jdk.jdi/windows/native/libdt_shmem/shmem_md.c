@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,12 +39,16 @@
 
 static HANDLE memHandle = NULL;
 
+#ifndef SHMEM_BUILD_TIME
+#define SHMEM_BUILD_TIME __DATE__
+#endif
+
 #ifdef DEBUG
 #define sysAssert(expression) {         \
     if (!(expression)) {                \
             exitTransportWithError \
             ("\"%s\", line %d: assertion failure\n", \
-             __FILE__, __DATE__, __LINE__); \
+             __FILE__, SHMEM_BUILD_TIME, __LINE__); \
     }                                   \
 }
 #else

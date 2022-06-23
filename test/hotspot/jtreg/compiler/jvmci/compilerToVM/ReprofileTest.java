@@ -40,6 +40,7 @@
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
  *                   -Xmixed -Xbatch
+ *                   -XX:TypeProfileLevel=0
  *                   compiler.jvmci.compilerToVM.ReprofileTest
  */
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,12 +48,12 @@ public interface RSAPublicKey extends java.security.PublicKey, RSAKey
     @Deprecated
     @SuppressWarnings("serial")
     @java.io.Serial
-    static final long serialVersionUID = -8727434096241101194L;
+    long serialVersionUID = -8727434096241101194L;
 
     /**
      * Returns the public exponent.
      *
      * @return the public exponent
      */
-    public BigInteger getPublicExponent();
+    BigInteger getPublicExponent();
 }

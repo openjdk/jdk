@@ -26,7 +26,7 @@
 #include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 #include "services/diagnosticArgument.hpp"
 #include "utilities/globalDefinitions.hpp"
 

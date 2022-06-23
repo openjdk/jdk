@@ -981,6 +981,10 @@ const bool Matcher::match_rule_supported(int opcode) {
   return true;  // Per default match rules are supported.
 }
 
+const bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
+  return match_rule_supported_vector(opcode, vlen, bt);
+}
+
 const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
 
   // TODO

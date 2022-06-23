@@ -26,7 +26,7 @@
 #define SHARE_MEMORY_RESOURCEAREA_HPP
 
 #include "memory/allocation.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 
 // The resource area holds temporary data structures in the VM.
 // The actual allocation areas are thread local. Typical usage:
