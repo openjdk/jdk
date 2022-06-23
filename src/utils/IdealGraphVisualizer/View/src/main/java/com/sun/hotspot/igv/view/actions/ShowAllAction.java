@@ -30,6 +30,7 @@ import javax.swing.Action;
 import javax.swing.KeyStroke;
 import org.openide.util.HelpCtx;
 import org.openide.util.actions.CallableSystemAction;
+import org.openide.util.Utilities;
 
 /**
  *
@@ -47,7 +48,8 @@ public final class ShowAllAction extends CallableSystemAction {
 
     public ShowAllAction() {
         putValue(Action.SHORT_DESCRIPTION, "Show all nodes");
-        putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_A, InputEvent.CTRL_MASK));
+        // D is the Control key on most platforms, the Command (meta) key on Macintosh
+        putValue(Action.ACCELERATOR_KEY, Utilities.stringToKey("D-A"));
     }
 
     @Override
