@@ -186,15 +186,15 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
                 PrevDiagramAction.get(PrevDiagramAction.class),
                 NextDiagramAction.get(NextDiagramAction.class),
                 null,
-                ExpandDiffAction.get(ExpandDiffAction.class),
                 ShrinkDiffAction.get(ShrinkDiffAction.class),
+                ExpandDiffAction.get(ExpandDiffAction.class),
                 null,
                 ExtractAction.get(ExtractAction.class),
                 ShowAllAction.get(HideAction.class),
                 ShowAllAction.get(ShowAllAction.class),
                 null,
-                ZoomInAction.get(ZoomInAction.class),
                 ZoomOutAction.get(ZoomOutAction.class),
+                ZoomInAction.get(ZoomInAction.class),
         };
 
 
@@ -248,18 +248,18 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
             doc.getChangedEvent().addListener(d -> closeOnRemovedOrEmptyGroup());
         }
 
-        toolBar.add(NextDiagramAction.get(NextDiagramAction.class));
         toolBar.add(PrevDiagramAction.get(PrevDiagramAction.class));
+        toolBar.add(NextDiagramAction.get(NextDiagramAction.class));
         toolBar.addSeparator();
-        toolBar.add(ExpandDiffAction.get(ExpandDiffAction.class));
         toolBar.add(ShrinkDiffAction.get(ShrinkDiffAction.class));
+        toolBar.add(ExpandDiffAction.get(ExpandDiffAction.class));
         toolBar.addSeparator();
         toolBar.add(ExtractAction.get(ExtractAction.class));
         toolBar.add(ShowAllAction.get(HideAction.class));
         toolBar.add(ShowAllAction.get(ShowAllAction.class));
         toolBar.addSeparator();
-        toolBar.add(ShowAllAction.get(ZoomInAction.class));
         toolBar.add(ShowAllAction.get(ZoomOutAction.class));
+        toolBar.add(ShowAllAction.get(ZoomInAction.class));
 
         toolBar.addSeparator();
         ButtonGroup layoutButtons = new ButtonGroup();
