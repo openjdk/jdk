@@ -29,7 +29,7 @@
 #include "code/location.hpp"
 #include "code/nmethod.hpp"
 #include "code/oopRecorder.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 #include "utilities/growableArray.hpp"
 
 // Classes used for serializing debugging information.

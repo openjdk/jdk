@@ -27,10 +27,10 @@
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
 
 int ContinuationEntry::_return_pc_offset = 0;
 address ContinuationEntry::_return_pc = nullptr;

@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8167108 8266130 8283467 8284632
+ * @bug 8167108 8266130 8283467 8284632 8286830
  * @summary Stress test JVM/TI StopThread() at thread exit.
  * @requires vm.jvmti
  * @run main/othervm/native -agentlib:StopAtExit StopAtExit
@@ -72,6 +72,8 @@ public class StopAtExit extends Thread {
                 usage();
             }
         }
+        timeMax /= 2;  // Split time between the two sub-tests.
+
         test(timeMax);
 
         // Fire-up deamon that just creates new threads. This generates contention on
