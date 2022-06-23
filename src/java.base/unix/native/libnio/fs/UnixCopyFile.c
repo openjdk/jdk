@@ -74,7 +74,7 @@ int fcopyfile_callback(int what, int stage, copyfile_state_t state,
 
 // Copy via an intermediate temporary direct buffer
 JNIEXPORT void JNICALL
-Java_sun_nio_fs_UnixCopyFile_bufferCopy0
+Java_sun_nio_fs_UnixCopyFile_bufferedCopy0
     (JNIEnv* env, jclass this, jint dst, jint src, jlong address,
     jint transferSize, jlong cancelAddress)
 {
