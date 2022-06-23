@@ -1,5 +1,4 @@
 /*
- * Copyright (c) 2022 SAP SE. All rights reserved.
  * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -20,22 +19,44 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-    .globl SafeFetch32_impl
-    .globl _SafeFetch32_fault
-    .globl _SafeFetch32_continuation
-    .type SafeFetch32_impl, %function
+import java.util.concurrent.CountDownLatch;
 
-    # Support for int SafeFetch32(int* address, int defaultval);
-    #
-    #  r0 : address
-    #  r1 : defaultval
-SafeFetch32_impl:
-_SafeFetch32_fault:
-    ldr      r0, [r0]
-    bx       lr
-_SafeFetch32_continuation:
-    mov      r0, r1
-    bx       lr
+/**
+ * Test native threads attaching to the VM with JNI AttachCurrentThread.
+ */
+public class ExplicitAttach {
+    private static volatile CountDownLatch latch;
+
+    public static void main(String[] args) throws Exception {
+        int threadCount;
+        if (args.length > 0) {
+            threadCount = Integer.parseInt(args[0]);
+        } else {
+            threadCount = 2;
+        }
+        latch = new CountDownLatch(threadCount);
+
+        // start the threads and wait for the threads to call home
+        startThreads(threadCount);
+        latch.await();
+    }
+
+    /**
+     * Invoked by attached threads.
+     */
+    private static void callback() {
+        System.out.println(Thread.currentThread());
+        latch.countDown();
+    }
+
+    /**
+     * Start n native threads that attach to the VM and invoke callback.
+     */
+    private static native void startThreads(int n);
+
+    static {
+        System.loadLibrary("ExplicitAttach");
+    }
+}
