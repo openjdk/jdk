@@ -25,16 +25,20 @@
 
 package javax.crypto;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StreamTokenizer;
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Vector;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import static java.util.Locale.ENGLISH;
 
 import java.security.GeneralSecurityException;
 import java.security.spec.AlgorithmParameterSpec;
-import java.lang.reflect.*;
 
 /**
  * JCE has two pairs of jurisdiction policy files: one represents U.S. export
@@ -63,10 +67,9 @@ import java.lang.reflect.*;
  * @see javax.crypto.CryptoPermissions
  * @since 1.4
  */
-
 final class CryptoPolicyParser {
 
-    private final Vector<GrantEntry> grantEntries;
+    private final ArrayList<GrantEntry> grantEntries;
 
     // Convenience variables for parsing
     private StreamTokenizer st;
@@ -77,7 +80,7 @@ final class CryptoPolicyParser {
      * Creates a CryptoPolicyParser object.
      */
     CryptoPolicyParser() {
-        grantEntries = new Vector<>();
+        grantEntries = new ArrayList<>();
     }
 
     /**
@@ -130,7 +133,7 @@ final class CryptoPolicyParser {
          * The crypto jurisdiction policy must be consistent. The
          * following hashtable is used for checking consistency.
          */
-        Hashtable<String, Vector<String>> processedPermissions = new Hashtable<>();
+        HashMap<String, List<String>> processedPermissions = new HashMap<>();
 
         /*
          * The main parsing loop.  The loop is executed once for each entry
@@ -142,7 +145,7 @@ final class CryptoPolicyParser {
         while (lookahead != StreamTokenizer.TT_EOF) {
             if (peek("grant")) {
                 GrantEntry ge = parseGrantEntry(processedPermissions);
-                grantEntries.addElement(ge);
+                grantEntries.add(ge);
             } else {
                 throw new ParsingException(st.lineno(), "expected grant " +
                                            "statement");
@@ -155,7 +158,7 @@ final class CryptoPolicyParser {
      * parse a Grant entry
      */
     private GrantEntry parseGrantEntry(
-            Hashtable<String, Vector<String>> processedPermissions)
+            Map<String, List<String>> processedPermissions)
         throws ParsingException, IOException
     {
         GrantEntry e = new GrantEntry();
@@ -183,7 +186,7 @@ final class CryptoPolicyParser {
      * parse a CryptoPermission entry
      */
     private CryptoPermissionEntry parsePermissionEntry(
-            Hashtable<String, Vector<String>> processedPermissions)
+            Map<String, List<String>> processedPermissions)
         throws ParsingException, IOException
     {
         CryptoPermissionEntry e = new CryptoPermissionEntry();
@@ -470,13 +473,8 @@ final class CryptoPolicyParser {
     CryptoPermission[] getPermissions() {
         ArrayList<CryptoPermission> result = new ArrayList<>();
 
-        Enumeration<GrantEntry> grantEnum = grantEntries.elements();
-        while (grantEnum.hasMoreElements()) {
-            GrantEntry ge = grantEnum.nextElement();
-            Enumeration<CryptoPermissionEntry> permEnum =
-                    ge.permissionElements();
-            while (permEnum.hasMoreElements()) {
-                CryptoPermissionEntry pe = permEnum.nextElement();
+        for (GrantEntry ge : grantEntries) {
+            for (CryptoPermissionEntry pe : ge.permissionEntries) {
                 if (pe.cryptoPermission.equals(
                                         "javax.crypto.CryptoAllPermission")) {
                     result.add(CryptoAllPermission.INSTANCE);
@@ -501,7 +499,7 @@ final class CryptoPolicyParser {
     }
 
     private boolean isConsistent(String alg, String exemptionMechanism,
-            Hashtable<String, Vector<String>> processedPermissions) {
+            Map<String, List<String>> processedPermissions) {
         String thisExemptionMechanism =
             exemptionMechanism == null ? "none" : exemptionMechanism;
 
@@ -513,26 +511,17 @@ final class CryptoPolicyParser {
             return false;
         }
 
-        if (processedPermissions.isEmpty()) {
-            Vector<String> exemptionMechanisms = new Vector<>(1);
-            exemptionMechanisms.addElement(thisExemptionMechanism);
-            processedPermissions.put(alg, exemptionMechanisms);
-            return true;
-        }
-
-        Vector<String> exemptionMechanisms;
-
-        if (processedPermissions.containsKey(alg)) {
-            exemptionMechanisms = processedPermissions.get(alg);
+        List<String> exemptionMechanisms = processedPermissions.get(alg);
+        if (exemptionMechanisms != null) {
             if (exemptionMechanisms.contains(thisExemptionMechanism)) {
                 return false;
             }
         } else {
-            exemptionMechanisms = new Vector<>(1);
+            exemptionMechanisms = new ArrayList<>(1);
+            processedPermissions.put(alg, exemptionMechanisms);
         }
 
-        exemptionMechanisms.addElement(thisExemptionMechanism);
-        processedPermissions.put(alg, exemptionMechanisms);
+        exemptionMechanisms.add(thisExemptionMechanism);
         return true;
     }
 
@@ -563,37 +552,17 @@ final class CryptoPolicyParser {
      * @see javax.crypto.CryptoPermission
      * @see javax.crypto.CryptoPermissions
      */
-
     private static class GrantEntry {
 
-        private final Vector<CryptoPermissionEntry> permissionEntries;
+        private final ArrayList<CryptoPermissionEntry> permissionEntries;
 
         GrantEntry() {
-            permissionEntries = new Vector<>();
+            permissionEntries = new ArrayList<>();
         }
 
-        void add(CryptoPermissionEntry pe)
-        {
-            permissionEntries.addElement(pe);
+        void add(CryptoPermissionEntry pe) {
+            permissionEntries.add(pe);
         }
-
-        boolean remove(CryptoPermissionEntry pe)
-        {
-            return permissionEntries.removeElement(pe);
-        }
-
-        boolean contains(CryptoPermissionEntry pe)
-        {
-            return permissionEntries.contains(pe);
-        }
-
-        /**
-         * Enumerate all the permission entries in this GrantEntry.
-         */
-        Enumeration<CryptoPermissionEntry> permissionElements(){
-            return permissionEntries.elements();
-        }
-
     }
 
     /**
@@ -615,7 +584,6 @@ final class CryptoPolicyParser {
      * @see javax.crypto.CryptoPermission
      * @see javax.crypto.CryptoAllPermission
      */
-
     private static class CryptoPermissionEntry {
 
         String cryptoPermission;
