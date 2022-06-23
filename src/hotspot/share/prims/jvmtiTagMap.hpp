@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,10 @@
 
 #include "jvmtifiles/jvmti.h"
 #include "memory/allocation.hpp"
-#include "prims/jvmtiTagMapTable.hpp"
 
 class JvmtiEnv;
+class JvmtiTagMapTable;
 class JvmtiTagMapEntryClosure;
-
 
 class JvmtiTagMap :  public CHeapObj<mtInternal> {
  private:
@@ -55,7 +54,7 @@ class JvmtiTagMap :  public CHeapObj<mtInternal> {
   void check_hashmap(bool post_events);
 
   void entry_iterate(JvmtiTagMapEntryClosure* closure);
-  void post_dead_objects();
+  void post_dead_objects(bool locked);
 
  public:
   // indicates if this tag map is locked
@@ -111,8 +110,8 @@ class JvmtiTagMap :  public CHeapObj<mtInternal> {
                                    jlong** tag_result_ptr);
 
 
-  void remove_dead_entries(FreedObjectTags * objects);
-  void remove_dead_entries_locked(FreedObjectTags* objects);
+  void remove_dead_entries(GrowableArray<jlong>* objects);
+  void remove_dead_entries_locked(GrowableArray<jlong>* objects);
 
   static void check_hashmaps_for_heapwalk();
   static void set_needs_rehashing() NOT_JVMTI_RETURN;

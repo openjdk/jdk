@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,8 +186,9 @@ void JvmtiTagMapTable::resize_if_needed() {
   }
 }
 
-// Serially remove entries for dead oops from the table, and notify jvmti.
-void JvmtiTagMapTable::remove_dead_entries(FreedObjectTags* objects) {
+// Serially remove entries for dead oops from the table and store dead oops'
+// tag in objects array if provided.
+void JvmtiTagMapTable::remove_dead_entries(GrowableArray<jlong>* objects) {
   int oops_removed = 0;
   int oops_counted = 0;
   for (int i = 0; i < table_size(); ++i) {
@@ -206,7 +207,7 @@ void JvmtiTagMapTable::remove_dead_entries(FreedObjectTags* objects) {
         *p = entry->next();
         free_entry(entry);
 
-        // post the event to the profiler
+        // collect object tag for posting JVMTI event later
         if (objects != NULL) {
           objects->append(tag);
         }

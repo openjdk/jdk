@@ -386,7 +386,7 @@ class JvmtiExport : public AllStatic {
   static void post_monitor_contended_entered(JavaThread *thread, ObjectMonitor *obj_mntr) NOT_JVMTI_RETURN;
   static void post_monitor_wait(JavaThread *thread, oop obj, jlong timeout) NOT_JVMTI_RETURN;
   static void post_monitor_waited(JavaThread *thread, ObjectMonitor *obj_mntr, jboolean timed_out) NOT_JVMTI_RETURN;
-  static void post_object_free(JvmtiEnv* env, jlong tag) NOT_JVMTI_RETURN;
+  static void post_object_free(JvmtiEnv* env, GrowableArray<jlong>* objects) NOT_JVMTI_RETURN;
   static void post_resource_exhausted(jint resource_exhausted_flags, const char* detail) NOT_JVMTI_RETURN;
   static void record_vm_internal_object_allocation(oop object) NOT_JVMTI_RETURN;
   // Post objects collected by vm_object_alloc_event_collector.
@@ -436,6 +436,9 @@ class JvmtiExport : public AllStatic {
                                                      oop * thread_oop_p);
   static jvmtiError cv_oop_to_JavaThread(ThreadsList * t_list, oop thread_oop,
                                          JavaThread ** jt_pp);
+private:
+  static void post_object_free_on_vm_thread(JvmtiEnv* env, GrowableArray<jlong>* objects) NOT_JVMTI_RETURN;
+  static void post_object_free_on_java_thread(JvmtiEnv* env, GrowableArray<jlong>* objects) NOT_JVMTI_RETURN;
 };
 
 // Support class used by JvmtiDynamicCodeEventCollector and others. It

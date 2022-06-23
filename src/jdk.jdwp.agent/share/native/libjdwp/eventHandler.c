@@ -457,10 +457,9 @@ reportEvents(JNIEnv *env, jbyte sessionID, jthread thread, EventIndex ei,
     }
 }
 
-/* A bagEnumerateFunction.  Create a synthetic class unload event
- * for every class no longer present.  Analogous to event_callback
- * combined with a handler in a unload specific (no event
- * structure) kind of way.
+/* Create a synthetic class unload event for every class no longer present.
+ * Analogous to event_callback combined with a handler in a unload specific
+ * (no event structure) kind of way.
  */
 static jboolean
 synthesizeUnloadEvent(char *signature, JNIEnv *env)
@@ -479,7 +478,7 @@ synthesizeUnloadEvent(char *signature, JNIEnv *env)
     classname = jvmtiAllocate((int)strlen(signature)+1);
     (void)strcpy(classname, signature);
     convertSignatureToClassname(classname);
-printf("synthesizeUnloadEvent: %s, %s\n", signature, classname);
+
     debugMonitorEnter(handlerLock);
 
     node = getHandlerChain(EI_GC_FINISH)->first;
