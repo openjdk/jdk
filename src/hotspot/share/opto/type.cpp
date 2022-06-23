@@ -1150,6 +1150,21 @@ Type::Category Type::category() const {
   }
   return Category::Undef;
 }
+
+bool Type::has_category(Type::Category cat) const {
+  if (category() == cat) {
+    return true;
+  }
+  if (category() == Category::Mixed) {
+    const TypeTuple* tuple = is_tuple();
+    for (uint i = 0; i < tuple->cnt(); i++) {
+      if (tuple->field_at(i)->has_category(cat)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
 #endif
 
 //------------------------------typerr-----------------------------------------

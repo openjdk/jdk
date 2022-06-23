@@ -1817,6 +1817,7 @@ private:
   bool _use_color = false;
   bool _print_blocks = false;
   bool _print_old = false;
+  bool _dump_only = false;
   static void print_options_help(bool print_examples);
   bool parse_options();
 
@@ -2077,9 +2078,13 @@ void PrintBFS::print_options_help(bool print_examples) {
   tty->print("      #: display node category in color (not supported in all terminals)\n");
   tty->print("      @: print old nodes - before matching (if available)\n");
   tty->print("      B: print scheduling blocks (if available)\n");
+  tty->print("      $: dump only, no header, no other columns\n");
   tty->print("\n");
   tty->print("recursively follow edges to nodes with permitted visit types,\n");
   tty->print("on the boundary additionally display nodes allowed in boundary types\n");
+  tty->print("Note: the categories can be overlapping. For example a mixed node\n");
+  tty->print("      can contain control and memory output. Some from the other\n");
+  tty->print("      category are also control (Halt, Return, etc).\n");
   tty->print("\n");
   tty->print("output columns:\n");
   tty->print("  dist:  BFS distance to this/start\n");
@@ -2184,6 +2189,9 @@ bool PrintBFS::parse_options() {
       case '@':
         _print_old = true;
         break;
+      case '$':
+        _dump_only = true;
+        break;
       case 'h':
         print_options_help(false);
         return false;
@@ -2210,23 +2218,20 @@ bool PrintBFS::parse_options() {
 
 bool PrintBFS::filter_category(Node* n, Filter& filter) {
   const Type* t = n->bottom_type();
-  switch (t->category()) {
-    case Type::Category::Data:
-      return filter._data;
-    case Type::Category::Memory:
-      return filter._memory;
-    case Type::Category::Mixed:
-      return filter._mixed;
-    case Type::Category::Control:
-      return filter._control;
-    case Type::Category::Other:
-      return filter._other;
-    case Type::Category::Undef:
-      n->dump();
-      assert(false, "category undef ??");
-    default:
-      n->dump();
-      assert(false, "not covered");
+  if (filter._data && t->has_category(Type::Category::Data)) {
+    return true;
+  }
+  if (filter._memory && t->has_category(Type::Category::Memory)) {
+    return true;
+  }
+  if (filter._mixed && t->has_category(Type::Category::Mixed)) {
+    return true;
+  }
+  if (filter._control && (t->has_category(Type::Category::Control) || n->is_CFG())) {
+    return true;
+  }
+  if (filter._other && t->has_category(Type::Category::Other)) {
+    return true;
   }
   return false;
 }
@@ -2349,6 +2354,9 @@ void PrintBFS::maybe_traverse(Node* src, Node* dst) {
 }
 
 void PrintBFS::print_header() const {
+  if (_dump_only) {
+    return; // no header in dump only mode
+  }
   tty->print("dist");                         // distance
   if (_all_paths) {
     tty->print(" apd");                       // all paths distance
@@ -2364,6 +2372,10 @@ void PrintBFS::print_header() const {
 }
 
 void PrintBFS::print_node(Node* n) {
+  if (_dump_only) {
+    n->dump("\n", false, tty, &_dcc);
+    return;
+  }
   tty->print("%4d", find_info(n)->distance());// distance
   if (_all_paths) {
     Info* info = find_info(n);
@@ -2650,82 +2662,17 @@ void Node::dump_out(outputStream* st, DumpConfig* dc) const {
   st->print("]] ");
 }
 
-//----------------------------collect_nodes_i----------------------------------
-// Collects nodes from an Ideal graph, starting from a given start node and
-// moving in a given direction until a certain depth (distance from the start
-// node) is reached. Duplicates are ignored.
-// Arguments:
-//   queue:         the nodes are collected into this array.
-//   start:         the node at which to start collecting.
-//   direction:     if this is a positive number, collect input nodes; if it is
-//                  a negative number, collect output nodes.
-//   depth:         collect nodes up to this distance from the start node.
-//   include_start: whether to include the start node in the result collection.
-//   only_ctrl:     whether to regard control edges only during traversal.
-//   only_data:     whether to regard data edges only during traversal.
-static void collect_nodes_i(GrowableArray<Node*>* queue, const Node* start, int direction, uint depth, bool include_start, bool only_ctrl, bool only_data) {
-  bool indent = depth <= PrintIdealIndentThreshold;
-  Node* s = (Node*) start; // remove const
-  queue->append(s);
-  int begin = 0;
-  int end = 0;
-
-  s->set_indent(0);
-  for(uint i = 0; i < depth; i++) {
-    end = queue->length();
-    for(int j = begin; j < end; j++) {
-      Node* tp  = queue->at(j);
-      uint limit = direction > 0 ? tp->len() : tp->outcnt();
-      for(uint k = 0; k < limit; k++) {
-        Node* n = direction > 0 ? tp->in(k) : tp->raw_out(k);
-
-        if (not_a_node(n))  continue;
-        // do not recurse through top or the root (would reach unrelated stuff)
-        if (n->is_Root() || n->is_top()) continue;
-        if (only_ctrl && !n->is_CFG()) continue;
-        if (only_data && n->is_CFG()) continue;
-        bool in_queue = queue->contains(n);
-        if (!in_queue) {
-          queue->append(n);
-          n->set_indent(indent ? (i + 1) : 0);
-        }
-      }
-    }
-    begin = end;
-  }
-  if (!include_start) {
-    queue->remove(s);
-  }
-}
-
-//------------------------------dump_nodes-------------------------------------
-static void dump_nodes(const Node* start, int d, bool only_ctrl) {
-  if (not_a_node(start)) return;
-
-  GrowableArray <Node *> queue(Compile::current()->live_nodes());
-  collect_nodes_i(&queue, start, d, (uint) ABS(d), true, only_ctrl, false);
-
-  int end = queue.length();
-  if (d > 0) {
-    for(int j = end-1; j >= 0; j--) {
-      queue.at(j)->dump();
-    }
-  } else {
-    for(int j = 0; j < end; j++) {
-      queue.at(j)->dump();
-    }
-  }
-}
-
 //------------------------------dump-------------------------------------------
 void Node::dump(int d) const {
-  dump_nodes(this, d, false);
+  Node* self = (Node*)this;
+  self->dump_bfs(abs(d), nullptr, (d>0) ? "+$" : "-$");
 }
 
 //------------------------------dump_ctrl--------------------------------------
 // Dump a Node's control history to depth
 void Node::dump_ctrl(int d) const {
-  dump_nodes(this, d, true);
+  Node* self = (Node*)this;
+  self->dump_bfs(abs(d), nullptr, (d>0) ? "+$c" : "-$c");
 }
 
 //-----------------------------dump_compact------------------------------------
@@ -2746,25 +2693,6 @@ void Node::dump_comp(const char* suffix, outputStream *st) const {
     st->print("%s", suffix);
   }
   C->_in_dump_cnt--;
-}
-
-//---------------------------collect_nodes-------------------------------------
-// An entry point to the low-level node collection facility, to start from a
-// given node in the graph. The start node is by default not included in the
-// result.
-// Arguments:
-//   ns:   collect the nodes into this data structure.
-//   d:    the depth (distance from start node) to which nodes should be
-//         collected. A value >0 indicates input nodes, a value <0, output
-//         nodes.
-//   ctrl: include only control nodes.
-//   data: include only data nodes.
-void Node::collect_nodes(GrowableArray<Node*> *ns, int d, bool ctrl, bool data) const {
-  if (ctrl && data) {
-    // ignore nonsensical combination
-    return;
-  }
-  collect_nodes_i(ns, this, d, (uint) ABS(d), false, ctrl, data);
 }
 
 // VERIFICATION CODE
