@@ -69,6 +69,7 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
         addKeyType("AES",      CKK_AES);
         addKeyType("Blowfish", CKK_BLOWFISH);
         addKeyType("ChaCha20", CKK_CHACHA20);
+        addKeyType("ChaCha20-Poly1305", CKK_CHACHA20);
 
         // we don't implement RC2 or IDEA, but we want to be able to generate
         // keys for those SSL/TLS ciphersuites.
@@ -99,9 +100,6 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
 
     // returns direct lookup result of keyTypes using algorithm
     static long getKeyType(String algorithm) {
-        if ("ChaCha20-Poly1305".equals(algorithm)) {
-            algorithm = "ChaCha20";
-        }
         Long l = keyTypes.get(algorithm);
         if (l == null) {
             algorithm = algorithm.toUpperCase(Locale.ENGLISH);
