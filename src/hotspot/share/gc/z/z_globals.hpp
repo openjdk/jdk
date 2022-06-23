@@ -94,7 +94,7 @@
   product(bool, ZVerifyObjects, false, DIAGNOSTIC,                          \
           "Verify objects")                                                 \
                                                                             \
-  develop(bool, ZVerifyOops, true,                                          \
+  develop(bool, ZVerifyOops, false,                                         \
           "Verify accessed oops")                                           \
                                                                             \
   product(bool, ZVerifyMarking, trueInDebug, DIAGNOSTIC,                    \

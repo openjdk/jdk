@@ -211,7 +211,6 @@ inline void assert_is_valid(zpointer ptr) {
 }
 
 inline uintptr_t untype(zpointer ptr) {
-  assert_is_valid(ptr);
   return static_cast<uintptr_t>(ptr);
 }
 
@@ -230,7 +229,6 @@ inline bool is_null(zpointer ptr) {
 }
 
 inline bool is_null_any(zpointer ptr) {
-  assert_is_valid(ptr);
   uintptr_t raw_addr = untype(ptr);
   return (raw_addr & ~ZPointerAllMetadataMask) == 0;
 }
@@ -287,13 +285,12 @@ inline void assert_is_valid(zaddress addr) {
 }
 
 inline uintptr_t untype(zaddress addr) {
-  assert_is_valid(addr);
   return static_cast<uintptr_t>(addr);
 }
 
 #ifdef ASSERT
 inline void dereferenceable_test(zaddress addr) {
-  if (!is_null(addr)) {
+  if (ZVerifyOops && !is_null(addr)) {
     (void)Atomic::load((int*)(uintptr_t)addr);
   }
 }
@@ -312,12 +309,12 @@ inline zaddress to_zaddress(oopDesc* o) {
 
 inline oop to_oop(zaddress addr) {
   oop obj = cast_to_oop(addr);
-  assert(oopDesc::is_oop_or_null(obj), "Broken oop: " PTR_FORMAT " [" PTR_FORMAT " " PTR_FORMAT " " PTR_FORMAT " " PTR_FORMAT "]",
-      p2i(obj),
-      *(uintptr_t*)(untype(addr) + 0x00),
-      *(uintptr_t*)(untype(addr) + 0x08),
-      *(uintptr_t*)(untype(addr) + 0x10),
-      *(uintptr_t*)(untype(addr) + 0x18));
+  assert(!ZVerifyOops || oopDesc::is_oop_or_null(obj), "Broken oop: " PTR_FORMAT " [" PTR_FORMAT " " PTR_FORMAT " " PTR_FORMAT " " PTR_FORMAT "]",
+         p2i(obj),
+         *(uintptr_t*)(untype(addr) + 0x00),
+         *(uintptr_t*)(untype(addr) + 0x08),
+         *(uintptr_t*)(untype(addr) + 0x10),
+         *(uintptr_t*)(untype(addr) + 0x18));
   return obj;
 }
 
@@ -346,7 +343,6 @@ inline void assert_is_valid(zaddress_unsafe addr) {
 
 
 inline uintptr_t untype(zaddress_unsafe addr) {
-  assert_is_valid(addr);
   return static_cast<uintptr_t>(addr);
 }
 
@@ -407,7 +403,6 @@ inline zaddress_unsafe ZOffset::address_unsafe(zoffset offset) {
 // ZPointer functions
 
 inline zaddress ZPointer::uncolor(zpointer ptr) {
-  assert_is_valid(ptr);
   assert(ZPointer::is_load_good(ptr) || is_null_any(ptr),
       "Should be load good when handed out: " PTR_FORMAT, untype(ptr));
   uintptr_t raw_addr = untype(ptr);
@@ -420,7 +415,6 @@ inline zaddress ZPointer::uncolor_store_good(zpointer ptr) {
 }
 
 inline zaddress_unsafe ZPointer::uncolor_unsafe(zpointer ptr) {
-  assert_is_valid(ptr);
   assert(ZPointer::is_store_bad(ptr), "Unexpected ptr");
   uintptr_t raw_addr = untype(ptr);
   return to_zaddress_unsafe(raw_addr >> ZPointer::load_shift_lookup(raw_addr));
