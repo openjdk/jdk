@@ -1037,10 +1037,6 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
   }
 
   if (UseSuperWord) {
-    if (!cl->is_reduction_loop()) {
-      phase->mark_reductions(this);
-    }
-
     // Only attempt slp analysis when user controls do not prohibit it
     if (!range_checks_present() && (LoopMaxUnroll > _local_loop_unroll_factor)) {
       // Once policy_slp_analysis succeeds, mark the loop with the
@@ -1693,15 +1689,6 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
   _igvn.register_new_node_with_optimizer(new_pre_exit);
   set_idom(new_pre_exit, pre_end, dd_main_head);
   set_loop(new_pre_exit, outer_loop->_parent);
-
-  if (peel_only) {
-    // Nodes in the peeled iteration that were marked as reductions within the
-    // original loop might not be reductions within their new outer loop.
-    for (uint i = 0; i < loop->_body.size(); i++) {
-      Node* n = old_new[loop->_body[i]->_idx];
-      n->remove_flag(Node::Flag_is_reduction);
-    }
-  }
 
   // Step B2: Build a zero-trip guard for the main-loop.  After leaving the
   // pre-loop, the main-loop may not execute at all.  Later in life this
@@ -2495,69 +2482,6 @@ void PhaseIdealLoop::do_maximally_unroll(IdealLoopTree *loop, Node_List &old_new
   if (cl->trip_count() > 0) {
     assert((cl->trip_count() & 1) == 0, "missed peeling");
     do_unroll(loop, old_new, false);
-  }
-}
-
-void PhaseIdealLoop::mark_reductions(IdealLoopTree *loop) {
-  if (SuperWordReductions == false) return;
-
-  CountedLoopNode* loop_head = loop->_head->as_CountedLoop();
-  if (loop_head->unrolled_count() > 1) {
-    return;
-  }
-
-  Node* trip_phi = loop_head->phi();
-  for (DUIterator_Fast imax, i = loop_head->fast_outs(imax); i < imax; i++) {
-    Node* phi = loop_head->fast_out(i);
-    if (phi->is_Phi() && phi->outcnt() > 0 && phi != trip_phi) {
-      // For definitions which are loop inclusive and not tripcounts.
-      Node* def_node = phi->in(LoopNode::LoopBackControl);
-
-      if (def_node != nullptr) {
-        Node* n_ctrl = get_ctrl(def_node);
-        if (n_ctrl != nullptr && loop->is_member(get_loop(n_ctrl))) {
-          // Now test it to see if it fits the standard pattern for a reduction operator.
-          int opc = def_node->Opcode();
-          if (opc != ReductionNode::opcode(opc, def_node->bottom_type()->basic_type())
-              || opc == Op_MinD || opc == Op_MinF || opc == Op_MaxD || opc == Op_MaxF) {
-            if (!def_node->is_reduction()) { // Not marked yet
-              // To be a reduction, the arithmetic node must have the phi as input and provide a def to it
-              bool ok = false;
-              for (unsigned j = 1; j < def_node->req(); j++) {
-                Node* in = def_node->in(j);
-                if (in == phi) {
-                  ok = true;
-                  break;
-                }
-              }
-
-              // do nothing if we did not match the initial criteria
-              if (ok == false) {
-                continue;
-              }
-
-              // The result of the reduction must not be used in the loop
-              for (DUIterator_Fast imax, i = def_node->fast_outs(imax); i < imax && ok; i++) {
-                Node* u = def_node->fast_out(i);
-                if (!loop->is_member(get_loop(ctrl_or_self(u)))) {
-                  continue;
-                }
-                if (u == phi) {
-                  continue;
-                }
-                ok = false;
-              }
-
-              // iff the uses conform
-              if (ok) {
-                def_node->add_flag(Node::Flag_is_reduction);
-                loop_head->mark_has_reductions();
-              }
-            }
-          }
-        }
-      }
-    }
   }
 }
 

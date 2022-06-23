@@ -784,13 +784,12 @@ public:
     Flag_avoid_back_to_back_before   = 1 << 8,
     Flag_avoid_back_to_back_after    = 1 << 9,
     Flag_has_call                    = 1 << 10,
-    Flag_is_reduction                = 1 << 11,
-    Flag_is_scheduled                = 1 << 12,
-    Flag_is_expensive                = 1 << 13,
-    Flag_is_predicated_vector        = 1 << 14,
-    Flag_for_post_loop_opts_igvn     = 1 << 15,
-    Flag_is_removed_by_peephole      = 1 << 16,
-    Flag_is_predicated_using_blend   = 1 << 17,
+    Flag_is_scheduled                = 1 << 11,
+    Flag_is_expensive                = 1 << 12,
+    Flag_is_predicated_vector        = 1 << 13,
+    Flag_for_post_loop_opts_igvn     = 1 << 14,
+    Flag_is_removed_by_peephole      = 1 << 15,
+    Flag_is_predicated_using_blend   = 1 << 16,
     _last_flag                       = Flag_is_predicated_using_blend
   };
 
@@ -801,6 +800,9 @@ private:
   juint _flags;
 
   static juint max_flags();
+
+  // Whether the node is part of a reduction cycle via the 'input' edge index.
+  bool in_reduction_cycle(uint input) const;
 
 protected:
   // These methods should be called from constructors only.
@@ -1002,9 +1004,32 @@ public:
   // The node is expensive: the best control is set during loop opts
   bool is_expensive() const { return (_flags & Flag_is_expensive) != 0 && in(0) != nullptr; }
 
+  // Search for an 'edge'-index path P to a node e such that: path(n) for all n
+  // in P, end(e), and |P| <= 'max'. Return e, if found, or nullptr otherwise.
+  template <typename NodePredicate1, typename NodePredicate2>
+  const Node* find_in_path(uint input, int max, NodePredicate1 path, NodePredicate2 end) const {
+    const Node* current = this;
+    for (int i = 0; i <= max; i++) {
+      if (current == nullptr) {
+        return nullptr;
+      }
+      if (end(current)) {
+        return current;
+      }
+      if (!path(current)) {
+        return nullptr;
+      }
+      current = current->in(input);
+    }
+    return nullptr;
+  }
+
+  // Whether the node is a standard reduction operator.
+  bool is_reduction_operator() const;
+
   // An arithmetic node which accumulates a data in a loop.
-  // It must have the loop's phi as input and provide a def to the phi.
-  bool is_reduction() const { return (_flags & Flag_is_reduction) != 0; }
+  // It must be part of a reduction cycle within the loop.
+  bool is_reduction() const;
 
   bool is_predicated_vector() const { return (_flags & Flag_is_predicated_vector) != 0; }
 

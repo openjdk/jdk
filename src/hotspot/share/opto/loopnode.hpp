@@ -61,23 +61,22 @@ protected:
   uint _loop_flags;
   // Names for flag bitfields
   enum { Normal=0, Pre=1, Main=2, Post=3, PreMainPostFlagsMask=3,
-         MainHasNoPreLoop    = 1<<2,
-         HasExactTripCount   = 1<<3,
-         InnerLoop           = 1<<4,
-         PartialPeelLoop     = 1<<5,
-         PartialPeelFailed   = 1<<6,
-         HasReductions       = 1<<7,
-         WasSlpAnalyzed      = 1<<8,
-         PassedSlpAnalysis   = 1<<9,
-         DoUnrollOnly        = 1<<10,
-         VectorizedLoop      = 1<<11,
-         HasAtomicPostLoop   = 1<<12,
-         IsMultiversioned    = 1<<13,
-         StripMined          = 1<<14,
-         SubwordLoop         = 1<<15,
-         ProfileTripFailed   = 1<<16,
-         LoopNestInnerLoop = 1 << 17,
-         LoopNestLongOuterLoop = 1 << 18};
+         MainHasNoPreLoop      = 1<<2,
+         HasExactTripCount     = 1<<3,
+         InnerLoop             = 1<<4,
+         PartialPeelLoop       = 1<<5,
+         PartialPeelFailed     = 1<<6,
+         WasSlpAnalyzed        = 1<<7,
+         PassedSlpAnalysis     = 1<<8,
+         DoUnrollOnly          = 1<<9,
+         VectorizedLoop        = 1<<10,
+         HasAtomicPostLoop     = 1<<11,
+         IsMultiversioned      = 1<<12,
+         StripMined            = 1<<13,
+         SubwordLoop           = 1<<14,
+         ProfileTripFailed     = 1<<15,
+         LoopNestInnerLoop     = 1<<16,
+         LoopNestLongOuterLoop = 1<<17};
   char _unswitch_count;
   enum { _unswitch_max=3 };
   char _postloop_flags;
@@ -105,7 +104,6 @@ public:
   bool is_loop_nest_outer_loop() const { return _loop_flags & LoopNestLongOuterLoop; }
 
   void mark_partial_peel_failed() { _loop_flags |= PartialPeelFailed; }
-  void mark_has_reductions() { _loop_flags |= HasReductions; }
   void mark_was_slp() { _loop_flags |= WasSlpAnalyzed; }
   void mark_passed_slp() { _loop_flags |= PassedSlpAnalysis; }
   void mark_do_unroll_only() { _loop_flags |= DoUnrollOnly; }
@@ -286,7 +284,6 @@ public:
   bool is_pre_loop      () const { return (_loop_flags&PreMainPostFlagsMask) == Pre;    }
   bool is_main_loop     () const { return (_loop_flags&PreMainPostFlagsMask) == Main;   }
   bool is_post_loop     () const { return (_loop_flags&PreMainPostFlagsMask) == Post;   }
-  bool is_reduction_loop() const { return (_loop_flags&HasReductions) == HasReductions; }
   bool was_slp_analyzed () const { return (_loop_flags&WasSlpAnalyzed) == WasSlpAnalyzed; }
   bool has_passed_slp   () const { return (_loop_flags&PassedSlpAnalysis) == PassedSlpAnalysis; }
   bool is_unroll_only   () const { return (_loop_flags&DoUnrollOnly) == DoUnrollOnly; }
@@ -891,7 +888,7 @@ class PhaseIdealLoop : public PhaseTransform {
 public:
   // Set/get control node out.  Set lower bit to distinguish from IdealLoopTree
   // Returns true if "n" is a data node, false if it's a control node.
-  bool has_ctrl( Node *n ) const { return ((intptr_t)_nodes[n->_idx]) & 1; }
+  bool has_ctrl(const Node* n) const { return ((intptr_t)_nodes[n->_idx]) & 1; }
 
 private:
   // clear out dead code after build_loop_late
@@ -968,7 +965,7 @@ public:
 
   PhaseIterGVN &igvn() const { return _igvn; }
 
-  bool has_node( Node* n ) const {
+  bool has_node(const Node* n) const {
     guarantee(n != nullptr, "No Node.");
     return _nodes[n->_idx] != nullptr;
   }
@@ -999,7 +996,7 @@ public:
   // location of all Nodes in the subsumed block, we lazily do it.  As we
   // pull such a subsumed block out of the array, we write back the final
   // correct block.
-  Node *get_ctrl( Node *i ) {
+  Node* get_ctrl(const Node* i) {
 
     assert(has_node(i), "");
     Node *n = get_ctrl_no_update(i);
@@ -1020,12 +1017,12 @@ public:
     }
   }
 
-  Node *get_ctrl_no_update_helper(Node *i) const {
+  Node* get_ctrl_no_update_helper(const Node* i) const {
     assert(has_ctrl(i), "should be control, not loop");
     return (Node*)(((intptr_t)_nodes[i->_idx]) & ~1);
   }
 
-  Node *get_ctrl_no_update(Node *i) const {
+  Node* get_ctrl_no_update(const Node* i) const {
     assert( has_ctrl(i), "" );
     Node *n = get_ctrl_no_update_helper(i);
     if (!n->in(0)) {
@@ -1309,9 +1306,6 @@ public:
 
   // Unroll the loop body one step - make each trip do 2 iterations.
   void do_unroll( IdealLoopTree *loop, Node_List &old_new, bool adjust_min_trip );
-
-  // Mark vector reduction candidates before loop unrolling
-  void mark_reductions( IdealLoopTree *loop );
 
   // Return true if exp is a constant times an induction var
   bool is_scaled_iv(Node* exp, Node* iv, BasicType bt, jlong* p_scale, bool* p_short_scale, int depth = 0);

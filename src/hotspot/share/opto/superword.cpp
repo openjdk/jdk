@@ -71,6 +71,7 @@ SuperWord::SuperWord(PhaseIdealLoop* phase) :
   _lpt(nullptr),                                            // loop tree node
   _lp(nullptr),                                             // CountedLoopNode
   _pre_loop_end(nullptr),                                   // Pre loop CountedLoopEndNode
+  _loop_reductions(arena()),                                // reduction nodes in the current loop
   _bb(nullptr),                                             // basic block
   _iv(nullptr),                                             // induction var
   _race_possible(false),                                    // cases where SDMU is true
@@ -110,7 +111,11 @@ bool SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
     return false; // skip malformed counted loop
   }
 
-  if (cl->is_rce_post_loop() && cl->is_reduction_loop()) {
+  if (SuperWordReductions) {
+    mark_reductions(lpt);
+  }
+
+  if (cl->is_rce_post_loop() && is_reduction_loop()) {
     // Post loop vectorization doesn't support reductions
     return false;
   }
@@ -177,7 +182,7 @@ bool SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
     assert(_packset.length() == 0, "packset must be empty");
     success = SLP_extract();
     if (PostLoopMultiversioning) {
-      if (cl->is_vectorized_loop() && cl->is_main_loop() && !cl->is_reduction_loop()) {
+      if (cl->is_vectorized_loop() && cl->is_main_loop() && !is_reduction_loop()) {
         IdealLoopTree *lpt_next = cl->is_strip_mined() ? lpt->_parent->_next : lpt->_next;
         CountedLoopNode *cl_next = lpt_next->_head->as_CountedLoop();
         // Main loop SLP works well for manually unrolled loops. But post loop
@@ -233,7 +238,7 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
   for (uint i = 0; i < lpt()->_body.size(); i++) {
     Node* n = lpt()->_body.at(i);
     if (n == cl->incr() ||
-      n->is_reduction() ||
+      is_reduction(n) ||
       n->is_AddP() ||
       n->is_Cmp() ||
       n->is_Bool() ||
@@ -417,6 +422,84 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
     cl->mark_was_slp();
     if (cl->is_main_loop() || cl->is_rce_post_loop()) {
       cl->set_slp_max_unroll(local_loop_unroll_factor);
+    }
+  }
+}
+
+void SuperWord::mark_reductions(IdealLoopTree* lpt) {
+
+  _loop_reductions.clear();
+  CountedLoopNode* loop_head = lpt->_head->as_CountedLoop();
+  Node* trip_phi = loop_head->phi();
+
+  // Iterate through all phi nodes associated to the loop and search for
+  // reduction cycles of at most 'loop_head->unrolled_count()' nodes.
+  for (DUIterator_Fast imax, i = loop_head->fast_outs(imax); i < imax; i++) {
+    Node* phi = loop_head->fast_out(i);
+    if (!phi->is_Phi()) {
+      continue;
+    }
+    if (phi->outcnt() == 0) {
+      continue;
+    }
+    if (phi == trip_phi) {
+      continue;
+    }
+    // For definitions which are loop inclusive and not tripcounts.
+    Node* last = phi->in(LoopNode::LoopBackControl);
+    if (last == nullptr) {
+      continue;
+    }
+    // Test that the node fits the standard pattern for a reduction operator.
+    if (!last->is_reduction_operator()) {
+      continue;
+    }
+    // Test that the node is not used within the loop by non-phi nodes.
+    bool used_in_loop = false;
+    for (DUIterator_Fast imax, i = last->fast_outs(imax); i < imax; i++) {
+      Node* u = last->fast_out(i);
+      if (u != phi &&
+          lpt->is_member(_phase->get_loop(_phase->ctrl_or_self(u)))) {
+        used_in_loop = true;
+        break;
+      }
+    }
+    if (used_in_loop) {
+      continue;
+    }
+    // Test that 'last' is the bottom of a reduction cycle. To contain the
+    // number of searched paths, assume that all nodes in a reduction cycle are
+    // connected via the same edge index. This assumption is realistic because
+    // non-trivial reduction cycles are typically formed by nodes cloned by loop
+    // unrolling. To further bound the search, constrain the size of reduction
+    // cycles to the loop's unrolled count.
+    int reduction_input = -1;
+    for (uint input = 1; input < last->req(); input++) {
+      // Test whether there is a reduction path of length
+      // 'loop_head->unrolled_count()' from 'last' to the phi node following
+      // edge index 'input' (typically 1 or 2).
+      // FIXME: add parameter to require that the path's length is equal to
+      // 'loop_head->unrolled_count()'.
+      if (last->find_in_path(input, loop_head->unrolled_count(),
+                             [&](const Node* n) {
+                               Node* ctrl = _phase->get_ctrl(n);
+                               return (n->Opcode() == last->Opcode() &&
+                                       ctrl != nullptr &&
+                                       lpt->is_member(_phase->get_loop(ctrl)));
+                             },
+                             [&](const Node* n) {return n == phi;})) {
+        reduction_input = input;
+        break;
+      }
+    }
+    if (reduction_input == -1) {
+      continue;
+    }
+    // Mark all nodes in the found path as reductions.
+    Node* current = last;
+    for (int i = 0; i < loop_head->unrolled_count(); i++) {
+      _loop_reductions.set(current->_idx);
+      current = current->in(reduction_input);
     }
   }
 }
@@ -1444,7 +1527,7 @@ bool SuperWord::reduction(Node* s1, Node* s2) {
   int d1 = depth(s1);
   int d2 = depth(s2);
   if (d2 > d1) {
-    if (s1->is_reduction() && s2->is_reduction()) {
+    if (is_reduction(s1) && is_reduction(s2)) {
       // This is an ordered set, so s1 should define s2
       for (DUIterator_Fast imax, i = s1->fast_outs(imax); i < imax; i++) {
         Node* t1 = s1->fast_out(i);
@@ -1661,7 +1744,7 @@ void SuperWord::order_def_uses(Node_List* p) {
   if (s1->is_Store()) return;
 
   // reductions are always managed beforehand
-  if (s1->is_reduction()) return;
+  if (is_reduction(s1)) return;
 
   for (DUIterator_Fast imax, i = s1->fast_outs(imax); i < imax; i++) {
     Node* t1 = s1->fast_out(i);
@@ -1697,15 +1780,15 @@ void SuperWord::order_def_uses(Node_List* p) {
 bool SuperWord::opnd_positions_match(Node* d1, Node* u1, Node* d2, Node* u2) {
   // check reductions to see if they are marshalled to represent the reduction
   // operator in a specified opnd
-  if (u1->is_reduction() && u2->is_reduction()) {
+  if (is_reduction(u1) && is_reduction(u2)) {
     // ensure reductions have phis and reduction definitions feeding the 1st operand
     Node* first = u1->in(2);
-    if (first->is_Phi() || first->is_reduction()) {
+    if (first->is_Phi() || is_reduction(first)) {
       u1->swap_edges(1, 2);
     }
     // ensure reductions have phis and reduction definitions feeding the 1st operand
     first = u2->in(2);
-    if (first->is_Phi() || first->is_reduction()) {
+    if (first->is_Phi() || is_reduction(first)) {
       u2->swap_edges(1, 2);
     }
     return true;
@@ -1928,7 +2011,7 @@ void SuperWord::filter_packs() {
       remove_pack_at(i);
     }
     Node *n = pk->at(0);
-    if (n->is_reduction()) {
+    if (is_reduction(n)) {
       _num_reductions++;
     } else {
       _num_work_vecs++;
@@ -2179,7 +2262,7 @@ bool SuperWord::implemented(Node_List* p) {
   if (p0 != nullptr) {
     int opc = p0->Opcode();
     uint size = p->size();
-    if (p0->is_reduction()) {
+    if (is_reduction(p0)) {
       const Type *arith_type = p0->bottom_type();
       // Length 2 reductions of INT/LONG do not offer performance benefits
       if (((arith_type->basic_type() == T_INT) || (arith_type->basic_type() == T_LONG)) && (size == 2)) {
@@ -2269,13 +2352,13 @@ bool SuperWord::profitable(Node_List* p) {
     }
   }
   // Check if reductions are connected
-  if (p0->is_reduction()) {
+  if (is_reduction(p0)) {
     Node* second_in = p0->in(2);
     Node_List* second_pk = my_pack(second_in);
     if ((second_pk == nullptr) || (_num_work_vecs == _num_reductions)) {
-      // Remove reduction flag if no parent pack or if not enough work
+      // Unmark reduction if no parent pack or if not enough work
       // to cover reduction expansion overhead
-      p0->remove_flag(Node::Flag_is_reduction);
+      _loop_reductions.remove(p0->_idx);
       return false;
     } else if (second_pk->size() != p->size()) {
       return false;
@@ -2307,7 +2390,7 @@ bool SuperWord::profitable(Node_List* p) {
           if (def == n) {
             // Reductions should only have a Phi use at the loop head or a non-phi use
             // outside of the loop if it is the last element of the pack (e.g. SafePoint).
-            if (def->is_reduction() &&
+            if (is_reduction(def) &&
                 ((use->is_Phi() && use->in(0) == _lpt->_head) ||
                  (!_lpt->is_member(_phase->get_loop(_phase->ctrl_or_self(use))) && i == p->size()-1))) {
               continue;
@@ -2776,7 +2859,7 @@ bool SuperWord::output() {
       } else if (n->req() == 3 && !is_cmov_pack(p)) {
         // Promote operands to vector
         Node* in1 = nullptr;
-        bool node_isa_reduction = n->is_reduction();
+        bool node_isa_reduction = is_reduction(n);
         if (node_isa_reduction) {
           // the input to the first reduction operation is retained
           in1 = low_adr->in(1);
@@ -3030,7 +3113,7 @@ bool SuperWord::output() {
 Node* SuperWord::create_post_loop_vmask() {
   CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
   assert(cl->is_rce_post_loop(), "Must be an rce post loop");
-  assert(!cl->is_reduction_loop(), "no vector reduction in post loop");
+  assert(!is_reduction_loop(), "no vector reduction in post loop");
   assert(abs(cl->stride_con()) == 1, "post loop stride can only be +/-1");
 
   // Collect vector element types of all post loop packs. Also collect
@@ -3308,7 +3391,7 @@ void SuperWord::insert_extracts(Node_List* p) {
     _n_idx_list.pop();
     Node* def = use->in(idx);
 
-    if (def->is_reduction()) continue;
+    if (is_reduction(def)) continue;
 
     // Insert extract operation
     _igvn.hash_delete(def);
@@ -3331,7 +3414,7 @@ void SuperWord::insert_extracts(Node_List* p) {
 bool SuperWord::is_vector_use(Node* use, int u_idx) {
   Node_List* u_pk = my_pack(use);
   if (u_pk == nullptr) return false;
-  if (use->is_reduction()) return true;
+  if (is_reduction(use)) return true;
   Node* def = use->in(u_idx);
   Node_List* d_pk = my_pack(def);
   if (d_pk == nullptr) {
@@ -3492,7 +3575,7 @@ bool SuperWord::construct_bb() {
         if (in_bb(use) && !visited_test(use) &&
             // Don't go around backedge
             (!use->is_Phi() || n == entry)) {
-          if (use->is_reduction()) {
+          if (is_reduction(use)) {
             // First see if we can map the reduction on the given system we are on, then
             // make a data entry operation for each reduction we see.
             BasicType bt = use->bottom_type()->basic_type();

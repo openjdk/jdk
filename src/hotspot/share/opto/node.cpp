@@ -521,10 +521,6 @@ Node *Node::clone() const {
     // If it is applicable, it will happen anyway when the cloned node is registered with IGVN.
     n->remove_flag(Node::NodeFlags::Flag_for_post_loop_opts_igvn);
   }
-  if (n->is_reduction()) {
-    // Do not copy reduction information. This must be explicitly set by the calling code.
-    n->remove_flag(Node::Flag_is_reduction);
-  }
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   bs->register_potential_barrier_node(n);
 
@@ -1097,6 +1093,21 @@ juint Node::max_flags() {
   return (PD::_last_flag << 1) - 1; // allow flags combination
 }
 #endif
+
+bool Node::in_reduction_cycle(uint input) const {
+  // First find input reduction path to phi node.
+  auto has_my_opcode = [&](const Node* n){ return n->Opcode() == this->Opcode(); };
+  const Node* phi = find_in_path(input, LoopMaxUnroll, has_my_opcode,
+                                 [&](const Node* n) { return n->is_Phi(); });
+  if (phi == nullptr) {
+    return false;
+  }
+  // If there is an input reduction path from the the phi's loop-back to me,
+  // then I am part of a reduction cycle.
+  const Node* last = phi->in(LoopNode::LoopBackControl);
+  return this == last->find_in_path(input, LoopMaxUnroll, has_my_opcode,
+                                    [&](const Node* n) { return n == this; });
+}
 
 //------------------------------format-----------------------------------------
 // Print as assembly
@@ -2901,6 +2912,26 @@ bool Node::is_dead_loop_safe() const {
       return false;
     }
     return true;
+  }
+  return false;
+}
+
+bool Node::is_reduction_operator() const {
+  int opc = Opcode();
+  return (opc != ReductionNode::opcode(opc, bottom_type()->basic_type())
+          || opc == Op_MinD || opc == Op_MinF || opc == Op_MaxD || opc == Op_MaxF);
+}
+
+bool Node::is_reduction() const {
+  if (!is_reduction_operator()) {
+    return false;
+  }
+  // Test whether there is a reduction cycle via every edge index
+  // (typically indices 1 and 2).
+  for (uint input = 1; input < req(); input++) {
+    if (in_reduction_cycle(input)) {
+      return true;
+    }
   }
   return false;
 }

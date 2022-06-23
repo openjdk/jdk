@@ -2624,10 +2624,6 @@ void PhaseIdealLoop::clone_loop_body(const Node_List& body, Node_List &old_new, 
     Node* old = body.at(i);
     Node* nnn = old->clone();
     old_new.map(old->_idx, nnn);
-    if (old->is_reduction()) {
-      // Reduction flag is not copied by default. Copy it here when cloning the entire loop body.
-      nnn->add_flag(Node::Flag_is_reduction);
-    }
     if (C->do_vector_loop() && cm != nullptr) {
       cm->verify_insert_and_clone(old, nnn, cm->clone_idx());
     }
