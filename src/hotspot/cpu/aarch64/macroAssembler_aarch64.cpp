@@ -619,8 +619,23 @@ address MacroAssembler::trampoline_call1(Address entry, CodeBuffer* cbuf, bool c
          || entry.rspec().type() == relocInfo::static_call_type
          || entry.rspec().type() == relocInfo::virtual_call_type, "wrong reloc type");
 
+  bool need_trampoline = far_branches();
+  if (!need_trampoline && entry.rspec().type() == relocInfo::runtime_call_type && !CodeCache::contains(entry.target())) {
+    // If it is a runtime call of an address outside small CodeCache,
+    // we need to check whether it is in range.
+    address target = entry.target();
+    assert(target < CodeCache::low_bound() || target >= CodeCache::high_bound(), "target is inside CodeCache");
+    // Case 1: -------T-------L====CodeCache====H-------
+    //                ^-------longest branch---|
+    // Case 2: -------L====CodeCache====H-------T-------
+    //                |-------longest branch ---^
+    address longest_branch_start = (target < CodeCache::low_bound()) ? CodeCache::high_bound() - NativeInstruction::instruction_size
+                                                                     : CodeCache::low_bound();
+    need_trampoline = !reachable_from_branch_at(longest_branch_start, target);
+  }
+
   // We need a trampoline if branches are far.
-  if (far_branches()) {
+  if (need_trampoline) {
     bool in_scratch_emit_size = false;
 #ifdef COMPILER2
     if (check_emit_size) {
@@ -643,7 +658,7 @@ address MacroAssembler::trampoline_call1(Address entry, CodeBuffer* cbuf, bool c
 
   if (cbuf) cbuf->set_insts_mark();
   relocate(entry.rspec());
-  if (!far_branches()) {
+  if (!need_trampoline) {
     bl(entry.target());
   } else {
     bl(pc());
