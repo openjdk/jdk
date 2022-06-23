@@ -25,8 +25,8 @@
 #include "gc/shared/gcLogPrecious.hpp"
 #include "gc/z/zCPU.inline.hpp"
 #include "memory/padded.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
-#include "runtime/thread.inline.hpp"
 #include "utilities/debug.hpp"
 
 #define ZCPU_UNKNOWN_AFFINITY ((Thread*)-1)

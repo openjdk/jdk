@@ -57,7 +57,7 @@ public:
   // subtract all counters from the other summary, and set them in the current
   void subtract_from(G1RemSetSummary* other);
 
-  void print_on(outputStream* out);
+  void print_on(outputStream* out, bool show_thread_times);
 
   double rs_thread_vtime(uint thread) const;
 

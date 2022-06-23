@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,9 +48,12 @@ public class TestNative {
 
     static volatile boolean alive = true;
 
+    // Please resist the temptation to speed up the test by decreasing
+    // the period. It is explicity set to 1100 ms to provoke the 1000 ms
+    // threshold in the JVM for os::naked_short_sleep().
     public static void main(String[] args) throws Exception {
         try (RecordingStream rs = new RecordingStream()) {
-            rs.enable(NATIVE_EVENT).withPeriod(Duration.ofMillis(1));
+            rs.enable(NATIVE_EVENT).withPeriod(Duration.ofMillis(1100));
             rs.onEvent(NATIVE_EVENT, e -> {
                 alive = false;
                 rs.close();
