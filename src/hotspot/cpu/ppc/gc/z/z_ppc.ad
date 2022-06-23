@@ -37,7 +37,13 @@ static void z_color(MacroAssembler& _masm, Register dst, Register src) {
   assert_different_registers(dst, src);
   __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBits);
   __ li(dst, barrier_Relocation::unpatched); // Load color bits.
-  __ rldimi(dst, src, ZPointerLoadShift, 0); // Insert shifted pointer.
+  if (src == noreg) { // noreg encodes null.
+    if (ZPointerLoadShift >= 16) {
+      __ rldicl(dst, dst, 0, 64 - ZPointerLoadShift); // Clear sign extension from li.
+    }
+  } else {
+    __ rldimi(dst, src, ZPointerLoadShift, 0); // Insert shifted pointer.
+  }
 }
 
 static void z_uncolor(MacroAssembler& _masm, Register ref) {
@@ -172,10 +178,25 @@ instruct zStoreP(memoryAlg4 mem, iRegPsrc src, iRegPdst tmp, flagsRegCR0 cr0)
 %{
   predicate(UseZGC && n->as_Store()->barrier_data() != 0);
   match(Set mem (StoreP mem src));
-  effect(TEMP_DEF tmp, KILL cr0);
+  effect(TEMP tmp, KILL cr0);
+  ins_cost(2 * MEMORY_REF_COST);
   format %{ "std    $mem, $src\t# ptr" %}
   ins_encode %{
     z_store_barrier(_masm, this, $mem$$base$$Register, $mem$$disp, $src$$Register, $tmp$$Register, false /* is_atomic */);
+    __ std($tmp$$Register, $mem$$disp, $mem$$base$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct zStorePNull(memoryAlg4 mem, immP_0 zero, iRegPdst tmp, flagsRegCR0 cr0)
+%{
+  predicate(UseZGC && n->as_Store()->barrier_data() != 0);
+  match(Set mem (StoreP mem zero));
+  effect(TEMP tmp, KILL cr0);
+  ins_cost(MEMORY_REF_COST);
+  format %{ "std    $mem, null\t# ptr" %}
+  ins_encode %{
+    z_store_barrier(_masm, this, $mem$$base$$Register, $mem$$disp, noreg, $tmp$$Register, false /* is_atomic */);
     __ std($tmp$$Register, $mem$$disp, $mem$$base$$Register);
   %}
   ins_pipe(pipe_class_default);

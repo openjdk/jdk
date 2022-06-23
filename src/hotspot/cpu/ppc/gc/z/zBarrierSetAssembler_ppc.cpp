@@ -229,6 +229,7 @@ static void load_least_significant_16_oop_bits(MacroAssembler* masm, Register ds
 
 static void emit_store_fast_path_check(MacroAssembler* masm, Register base, RegisterOrConstant ind_or_offs, bool is_atomic, Label& medium_path) {
   if (is_atomic) {
+    assert(ZPointerLoadShift + LogMinObjAlignmentInBytes >= 16, "or replace following code");
     load_least_significant_16_oop_bits(masm, R0, ind_or_offs, base);
     // Atomic operations must ensure that the contents of memory are store-good before
     // an atomic operation can execute.
@@ -266,7 +267,11 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
     __ bind(medium_path_continuation);
     __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodBits);
     __ li(rnew_zpointer, barrier_Relocation::unpatched); // Load color bits.
-    __ rldimi(rnew_zpointer, rnew_zaddress, ZPointerLoadShift, 0); // Insert shifted pointer.
+    if (rnew_zaddress == noreg) { // noreg encodes null.
+      if (ZPointerLoadShift >= 16) {
+        __ rldicl(rnew_zpointer, rnew_zpointer, 0, 64 - ZPointerLoadShift); // Clear sign extension from li.
+      }
+    }
   } else {
     __ ld(R0, ind_or_offset, ref_base);
     __ ld(rnew_zpointer, in_bytes(ZThreadLocalData::store_bad_mask_offset()), R16_thread);
@@ -274,9 +279,9 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
     __ bne(CCR0, medium_path);
     __ bind(medium_path_continuation);
     __ ld(rnew_zpointer, in_bytes(ZThreadLocalData::store_good_mask_offset()), R16_thread);
-    if (rnew_zaddress != noreg) {
-      __ rldimi(rnew_zpointer, rnew_zaddress, ZPointerLoadShift, 0);
-    }
+  }
+  if (rnew_zaddress != noreg) { // noreg encodes null.
+    __ rldimi(rnew_zpointer, rnew_zaddress, ZPointerLoadShift, 0); // Insert shifted pointer.
   }
 }
 
@@ -791,18 +796,10 @@ void ZBarrierSetAssembler::generate_c1_store_barrier_stub(LIR_Assembler* ce,
 
   __ bind(slow);
 
-  {
-    // Call VM
-    ZRuntimeCallSpill rcs(ce->masm(), noreg, ce->compilation()->has_fpu_code()
-                                             ? MacroAssembler::PRESERVATION_FRAME_LR_GP_FP_REGS
-                                             : MacroAssembler::PRESERVATION_FRAME_LR_GP_REGS);
-    __ add(R3_ARG1, ind_or_offs, rbase);
-    if (stub->is_atomic()) {
-      __ call_VM_leaf(ZBarrierSetRuntime::store_barrier_on_oop_field_with_healing_addr(), R3_ARG1);
-    } else {
-      __ call_VM_leaf(ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing_addr(), R3_ARG1);
-    }
-  }
+  __ load_const_optimized(/*stub address*/ new_zpointer, stub->runtime_stub(), R0);
+  __ add(R0, ind_or_offs, rbase); // pass store address in R0
+  __ mtctr(new_zpointer);
+  __ bctrl();
 
   // Stub exit
   __ b(*stub->continuation());
@@ -840,6 +837,32 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_runtime_stub(StubAssembler* 
   __ blr();
 
   __ block_comment("} c1_load_barrier_runtime_stub (zgc)");
+}
+
+void ZBarrierSetAssembler::generate_c1_store_barrier_runtime_stub(StubAssembler* sasm,
+                                                                  bool self_healing) const {
+  __ block_comment("c1_store_barrier_runtime_stub (zgc) {");
+
+  const int nbytes_save = MacroAssembler::num_volatile_regs * BytesPerWord;
+  __ save_volatile_gprs(R1_SP, -nbytes_save);
+  __ mr(R3_ARG1, R0); // store address
+
+  __ save_LR_CR(R0);
+  __ push_frame_reg_args(nbytes_save, R0);
+
+  if (self_healing) {
+    __ call_VM_leaf(ZBarrierSetRuntime::store_barrier_on_oop_field_with_healing_addr());
+  } else {
+    __ call_VM_leaf(ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing_addr());
+  }
+
+  __ pop_frame();
+  __ restore_LR_CR(R3_RET);
+  __ restore_volatile_gprs(R1_SP, -nbytes_save);
+
+  __ blr();
+
+  __ block_comment("} c1_store_barrier_runtime_stub (zgc)");
 }
 
 #undef __
