@@ -140,15 +140,6 @@ void ShenandoahEvacuateUpdateRootClosureBase<atomic>::do_oop_work(T* p, Thread* 
     }
   }
 }
-template <bool atomic>
-void ShenandoahEvacuateUpdateRootClosureBase<atomic>::do_oop(oop* p) {
-  do_oop_work(p, Thread::current());
-}
-
-template <bool atomic>
-void ShenandoahEvacuateUpdateRootClosureBase<atomic>::do_oop(narrowOop* p) {
-  do_oop_work(p, Thread::current());
-}
 
 ShenandoahEvacuateUpdateMetadataClosure::ShenandoahEvacuateUpdateMetadataClosure() :
   ShenandoahEvacuateUpdateRootClosureBase<false>(), _thread(Thread::current()) {

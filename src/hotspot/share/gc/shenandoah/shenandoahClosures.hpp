@@ -95,8 +95,6 @@ protected:
   ShenandoahHeap* const _heap;
 public:
   inline ShenandoahEvacuateUpdateRootClosureBase();
-  inline void do_oop(oop* p);
-  inline void do_oop(narrowOop* p);
 protected:
   template <class T>
   inline void do_oop_work(T* p, Thread* t);
