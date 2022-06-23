@@ -1063,19 +1063,23 @@ void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, 
                                  ? (RegisterOrConstant)addr.disp()
                                  : (RegisterOrConstant)addr.index();
 
-  store_barrier_medium(masm,
-                       rbase,
-                       ind_or_offs,
-                       stub->new_zpointer(),
-                       stub->is_atomic(),
-                       *stub->continuation(),
-                       slow);
+  if (!stub->is_native()) {
+    store_barrier_medium(masm,
+                         rbase,
+                         ind_or_offs,
+                         stub->new_zpointer(),
+                         stub->is_atomic(),
+                         *stub->continuation(),
+                         slow);
+  }
 
   __ bind(slow);
   {
     ZSaveLiveRegisters save_live_registers(masm, stub);
     __ add(R3_ARG1, ind_or_offs, rbase);
-    if (stub->is_atomic()) {
+    if (stub->is_native()) {
+      __ call_VM_leaf(ZBarrierSetRuntime::store_barrier_on_native_oop_field_without_healing_addr(), R3_ARG1);
+    } else if (stub->is_atomic()) {
       __ call_VM_leaf(ZBarrierSetRuntime::store_barrier_on_oop_field_with_healing_addr(), R3_ARG1);
     } else {
       __ call_VM_leaf(ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing_addr(), R3_ARG1);
