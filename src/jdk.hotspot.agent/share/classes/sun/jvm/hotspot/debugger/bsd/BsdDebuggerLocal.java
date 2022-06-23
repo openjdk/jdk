@@ -525,7 +525,7 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
     /** From the BsdDebugger interface */
     public long getAddressValue(Address addr) {
       if (addr == null) return 0;
-      return (addr.asLongValue());
+      return addr.asLongValue();
     }
 
     /** From the BsdDebugger interface */

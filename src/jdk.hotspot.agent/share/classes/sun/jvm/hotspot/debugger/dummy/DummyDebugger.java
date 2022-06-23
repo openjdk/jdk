@@ -73,7 +73,7 @@ public class DummyDebugger extends DebuggerBase {
 
   public long getAddressValue(Address addr) {
     if (addr == null) return 0;
-    return (addr.asLongValue());
+    return addr.asLongValue();
   }
 
   public String getOS() {

@@ -303,7 +303,7 @@ public class RemoteDebuggerClient extends DebuggerBase implements JVMDebugger {
 
   public long getAddressValue(Address addr) throws DebuggerException {
     if (addr == null) return 0;
-    return (addr.asLongValue());
+    return addr.asLongValue();
   }
 
   public Address newAddress(long value) {
