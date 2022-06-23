@@ -39,11 +39,6 @@
 
 import jdk.test.lib.jvmti.DebugeeClass;
 
-import java.io.PrintStream;
-
-
-
-
 public class suspendthrdlst02 extends DebugeeClass {
 
     // load native library if required

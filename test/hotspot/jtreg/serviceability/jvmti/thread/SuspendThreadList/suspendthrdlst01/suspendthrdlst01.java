@@ -40,7 +40,7 @@
  */
 
 import jdk.test.lib.jvmti.DebugeeClass;
-import java.io.PrintStream;
+
 
 public class suspendthrdlst01 extends DebugeeClass {
 

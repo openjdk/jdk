@@ -42,9 +42,6 @@
  * @run main/othervm/native -agentlib:thrstat04 thrstat04
  */
 
-
-import java.io.PrintStream;
-
 public class thrstat04 {
 
     native static int check(Thread thr);

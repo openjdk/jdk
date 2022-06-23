@@ -31,8 +31,6 @@ package MyPackage;
  * @run main/othervm/native -agentlib:AddModuleExportsAndOpensTest MyPackage.AddModuleExportsAndOpensTest
  */
 
-import java.io.PrintStream;
-
 public class AddModuleExportsAndOpensTest {
 
     static {

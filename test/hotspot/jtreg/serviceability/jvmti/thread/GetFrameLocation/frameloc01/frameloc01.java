@@ -47,8 +47,6 @@
  * @run main/othervm/native -agentlib:frameloc01 frameloc01
  */
 
-import java.io.PrintStream;
-
 public class frameloc01 {
 
     static {

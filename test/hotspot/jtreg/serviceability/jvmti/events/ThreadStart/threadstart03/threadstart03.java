@@ -21,8 +21,6 @@
  * questions.
  */
 
-import java.io.PrintStream;
-
 /*
  * @test
  *
@@ -62,13 +60,10 @@ public class threadstart03 {
     native static int check(Thread thr, String name);
 
     public static void main(String args[]) {
-        int result = run(args, System.out);
+        int result = check(new Thread(ThreadName), ThreadName);
         if (result != 0) {
             throw new RuntimeException("Unexpected status: " + result);
         }
     }
 
-    public static int run(String args[], PrintStream out) {
-        return check(new Thread(ThreadName), ThreadName);
-    }
 }

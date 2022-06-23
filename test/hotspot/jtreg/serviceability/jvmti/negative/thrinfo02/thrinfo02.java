@@ -39,8 +39,6 @@
  * @run main/othervm/native -agentlib:thrinfo02 thrinfo02
  */
 
-import java.io.PrintStream;
-
 public class thrinfo02 {
 
     static {

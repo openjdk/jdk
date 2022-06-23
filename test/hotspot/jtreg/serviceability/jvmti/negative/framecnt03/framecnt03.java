@@ -38,8 +38,6 @@
  * @run main/othervm/native -agentlib:framecnt03 framecnt03
  */
 
-import java.io.PrintStream;
-
 public class framecnt03 {
 
     static {

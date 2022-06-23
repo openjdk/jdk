@@ -21,8 +21,6 @@
  * questions.
  */
 
-import java.io.PrintStream;
-
 /*
  * @test
  *
@@ -63,13 +61,6 @@ public class threadend01 {
     static volatile int thrCount = THREADS_LIMIT;
 
     public static void main(String args[]) {
-        int result = run(args, System.out);
-        if (result != 0) {
-            throw new RuntimeException("Unexpected status: " + result);
-        }
-    }
-
-    public static int run(String args[], PrintStream out) {
         Thread t = new TestThread(NAME_PREFIX + thrCount);
         getReady(THREADS_LIMIT, NAME_PREFIX);
         t.start();
@@ -78,7 +69,10 @@ public class threadend01 {
         } catch (InterruptedException e) {
             throw new Error("Unexpected: " + e);
         }
-        return check();
+        int result = check();
+        if (result != 0) {
+            throw new RuntimeException("Unexpected status: " + result);
+        }
     }
 
     static class TestThread extends Thread {

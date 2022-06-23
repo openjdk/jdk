@@ -41,7 +41,6 @@
  * @library /test/lib
  * @run main/othervm/native -agentlib:getstacktr02 getstacktr02
  */
-import java.io.PrintStream;
 
 public class getstacktr02 {
 

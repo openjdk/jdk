@@ -21,8 +21,6 @@
  * questions.
  */
 
-import java.io.PrintStream;
-
 /*
  * @test
  *

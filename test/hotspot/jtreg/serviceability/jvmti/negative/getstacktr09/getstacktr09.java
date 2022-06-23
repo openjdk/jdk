@@ -40,9 +40,6 @@
  * @run main/othervm/native -agentlib:getstacktr09 getstacktr09
  */
 
-
-import java.io.PrintStream;
-
 public class getstacktr09 {
 
     final static int FAILED = 2;

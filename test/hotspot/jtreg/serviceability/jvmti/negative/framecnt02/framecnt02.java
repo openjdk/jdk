@@ -42,8 +42,6 @@
  * @run main/othervm/native -agentlib:framecnt02 framecnt02
  */
 
-import java.io.PrintStream;
-
 public class framecnt02 {
 
     native static void checkFrames(Thread thr, int thr_num);
