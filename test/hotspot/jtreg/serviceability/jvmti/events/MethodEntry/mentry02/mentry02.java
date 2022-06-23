@@ -48,7 +48,6 @@ import java.io.PrintStream;
 
 public class mentry02 {
 
-    final static int JCK_STATUS_BASE = 95;
     final static int MAX_LOOP = 100;
 
     static {

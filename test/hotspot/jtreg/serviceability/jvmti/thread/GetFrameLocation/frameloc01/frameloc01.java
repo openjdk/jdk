@@ -51,8 +51,6 @@ import java.io.PrintStream;
 
 public class frameloc01 {
 
-    final static int JCK_STATUS_BASE = 95;
-
     static {
         try {
             System.loadLibrary("frameloc01");
@@ -73,13 +71,6 @@ public class frameloc01 {
     static Object lock2 = new Object();
 
     public static void main(String args[]) {
-
-
-        // produce JCK-like exit status.
-        System.exit(run(args, System.out) + JCK_STATUS_BASE);
-    }
-
-    public static int run(String argv[], PrintStream ref) {
         frameloc01a thr = new frameloc01a();
 
         getReady(frameloc01a.class);
@@ -98,7 +89,10 @@ public class frameloc01 {
             checkFrame01(thr, frameloc01a.class, true);
         }
 
-        return getRes();
+        int result = getRes();
+        if (result != 0) {
+            throw new RuntimeException("check failed with result " + result);
+        }
     }
 
     private static void waitForChildThread(frameloc01a thr) {

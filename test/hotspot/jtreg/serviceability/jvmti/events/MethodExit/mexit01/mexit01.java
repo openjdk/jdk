@@ -51,8 +51,6 @@ import java.io.PrintStream;
 
 public class mexit01 {
 
-    final static int JCK_STATUS_BASE = 95;
-
     static {
         try {
             System.loadLibrary("mexit01");

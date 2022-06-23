@@ -42,8 +42,6 @@ import java.io.PrintStream;
 
 public class framecnt03 {
 
-    final static int JCK_STATUS_BASE = 95;
-
     static {
         try {
             System.loadLibrary("framecnt03");
@@ -58,13 +56,9 @@ public class framecnt03 {
     native static int check();
 
     public static void main(String args[]) {
-
-
-        // produce JCK-like exit status.
-        System.exit(run(args, System.out) + JCK_STATUS_BASE);
-    }
-
-    public static int run(String args[], PrintStream out) {
-        return check();
+        int result = check();
+        if (result != 0) {
+            throw new RuntimeException("check failed with result " + result);
+        }
     }
 }

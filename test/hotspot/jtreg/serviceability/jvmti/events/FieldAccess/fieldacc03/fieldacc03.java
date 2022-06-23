@@ -48,8 +48,6 @@ import java.io.PrintStream;
 
 public class fieldacc03 {
 
-    final static int JCK_STATUS_BASE = 95;
-
     static {
         try {
             System.loadLibrary("fieldacc03");

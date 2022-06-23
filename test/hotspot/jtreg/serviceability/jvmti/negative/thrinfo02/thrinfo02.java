@@ -43,8 +43,6 @@ import java.io.PrintStream;
 
 public class thrinfo02 {
 
-    final static int JCK_STATUS_BASE = 95;
-
     static {
         try {
             System.loadLibrary("thrinfo02");
@@ -60,11 +58,9 @@ public class thrinfo02 {
 
     public static void main(String args[]) {
         Thread.currentThread().setName("main");
-        // produce JCK-like exit status.
-        System.exit(run(args, System.out) + JCK_STATUS_BASE);
-    }
-
-    public static int run(String args[], PrintStream out) {
-        return check(Thread.currentThread(), Thread.currentThread().getThreadGroup());
+        int result = check(Thread.currentThread(), Thread.currentThread().getThreadGroup());
+        if (result != 0) {
+            throw new RuntimeException("check failed with result " + result);
+        }
     }
 }

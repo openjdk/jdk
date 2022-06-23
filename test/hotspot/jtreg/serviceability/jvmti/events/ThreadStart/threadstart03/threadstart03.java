@@ -46,7 +46,6 @@ import java.io.PrintStream;
 
 public class threadstart03 {
 
-    final static int JCK_STATUS_BASE = 95;
     final static String ThreadName = "testedThread";
 
     static {

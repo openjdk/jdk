@@ -45,7 +45,6 @@ import java.io.PrintStream;
 
 public class getstacktr09 {
 
-    final static int JCK_STATUS_BASE = 95;
     final static int FAILED = 2;
 
     static {
@@ -62,13 +61,6 @@ public class getstacktr09 {
     native static int check(Thread thread1, Thread thread2);
 
     public static void main(String args[]) {
-
-
-        // produce JCK-like exit status.
-        System.exit(run(args, System.out) + JCK_STATUS_BASE);
-    }
-
-    public static int run(String args[], PrintStream out) {
         TestThread tested_thread_thr1 = new TestThread();
         TestThread thr2 = new TestThread();
 
@@ -76,11 +68,13 @@ public class getstacktr09 {
         try {
             thr2.join();
         } catch (InterruptedException ex) {
-            out.println("# Unexpected " + ex);
-            return FAILED;
+            throw new RuntimeException(ex);
         }
 
-        return check(tested_thread_thr1, thr2);
+        int result = check(tested_thread_thr1, thr2);
+        if (result != 0) {
+            throw new RuntimeException("check failed with result " + result);
+        }
     }
 
     static class TestThread extends Thread {

@@ -47,8 +47,6 @@ import java.io.PrintStream;
 
 public class fieldmod01 {
 
-    final static int JCK_STATUS_BASE = 95;
-
     static {
         try {
             System.loadLibrary("fieldmod01");
