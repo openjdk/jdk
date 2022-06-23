@@ -142,7 +142,7 @@ class ResourceBundleGenerator implements BundleGenerator {
             map = newMap;
         } else {
             // generic reduction of duplicated values
-            Map<String, Object> newMap = new HashMap<>(map);
+            Map<String, Object> newMap = new LinkedHashMap<>(map);
             Map<BundleEntryValue, BundleEntryValue> dedup = new HashMap<>(map.size());
             for (Map.Entry<String, ?> entry : map.entrySet()) {
                 String key = entry.getKey();
