@@ -25,11 +25,14 @@
 
 package java.io;
 
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Arrays;
 import jdk.internal.misc.Blocker;
 import jdk.internal.util.ArraysSupport;
+import sun.nio.ch.DirectBuffer;
 import sun.nio.ch.FileChannelImpl;
+import sun.nio.ch.Util;
 
 /**
  * A {@code FileInputStream} obtains input bytes
@@ -244,12 +247,15 @@ public class FileInputStream extends InputStream
 
     /**
      * Reads a subarray as a sequence of bytes.
-     * @param     b the data to be written
+     * @param     b the data to be read
      * @param     off the start offset in the data
-     * @param     len the number of bytes that are written
+     * @param     len the number of bytes to be read
+     * @param     address the address of the temporary direct buffer's array
+     * @param     size the size of the temporary direct buffer's array
      * @throws    IOException If an I/O error has occurred.
      */
-    private native int readBytes(byte[] b, int off, int len) throws IOException;
+    private native int readBytes0(byte[] b, int off, int len, long address,
+                                  int size) throws IOException;
 
     /**
      * Reads up to {@code b.length} bytes of data from this input
@@ -264,11 +270,18 @@ public class FileInputStream extends InputStream
      */
     @Override
     public int read(byte[] b) throws IOException {
-        long comp = Blocker.begin();
+        int size = RandomAccessFile.bufferSize(b.length);
+        ByteBuffer buf = Util.getTemporaryDirectBuffer(size);
         try {
-            return readBytes(b, 0, b.length);
+            long comp = Blocker.begin();
+            try {
+                long address = ((DirectBuffer)buf).address();
+                return readBytes0(b, 0, b.length, address, size);
+            } finally {
+                Blocker.end(comp);
+            }
         } finally {
-            Blocker.end(comp);
+            Util.releaseTemporaryDirectBuffer(buf);
         }
     }
 
@@ -288,11 +301,18 @@ public class FileInputStream extends InputStream
      */
     @Override
     public int read(byte[] b, int off, int len) throws IOException {
-        long comp = Blocker.begin();
+        int size = RandomAccessFile.bufferSize(len);
+        ByteBuffer buf = Util.getTemporaryDirectBuffer(size);
         try {
-            return readBytes(b, off, len);
+            long comp = Blocker.begin();
+            try {
+                long address = ((DirectBuffer)buf).address();
+                return readBytes0(b, off, len, address, size);
+            } finally {
+                Blocker.end(comp);
+            }
         } finally {
-            Blocker.end(comp);
+            Util.releaseTemporaryDirectBuffer(buf);
         }
     }
 

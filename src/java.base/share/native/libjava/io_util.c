@@ -74,11 +74,11 @@ outOfBounds(JNIEnv *env, jint off, jint len, jbyteArray array) {
 
 jint
 readBytes(JNIEnv *env, jobject this, jbyteArray bytes,
-          jint off, jint len, jfieldID fid)
+          jint off, jint len, jfieldID fid, jlong address, jint size)
 {
-    char stackBuf[STACK_BUF_SIZE];
-    char *buf = NULL;
-    jint buf_size, read_size;
+    char *buf = (char*)jlong_to_ptr(address);
+    const jint buf_size = size;
+    jint read_size;
     jint n, nread;
     FD fd;
 
@@ -94,16 +94,6 @@ readBytes(JNIEnv *env, jobject this, jbyteArray bytes,
 
     if (len == 0) {
         return 0;
-    } else if (len > STACK_BUF_SIZE) {
-        buf_size = len < MAX_MALLOC_SIZE ? len : MAX_MALLOC_SIZE;
-        buf = malloc(buf_size);
-        if (buf == NULL) {
-            JNU_ThrowOutOfMemoryError(env, NULL);
-            return 0;
-        }
-    } else {
-        buf = stackBuf;
-        buf_size = STACK_BUF_SIZE;
     }
 
     nread = 0;
@@ -135,9 +125,6 @@ readBytes(JNIEnv *env, jobject this, jbyteArray bytes,
         }
     }
 
-    if (buf != stackBuf) {
-        free(buf);
-    }
     return nread;
 }
 
@@ -163,11 +150,12 @@ writeSingle(JNIEnv *env, jobject this, jint byte, jboolean append, jfieldID fid)
 
 void
 writeBytes(JNIEnv *env, jobject this, jbyteArray bytes,
-           jint off, jint len, jboolean append, jfieldID fid)
+           jint off, jint len, jboolean append, jfieldID fid,
+           jlong address, jint size)
 {
-    char stackBuf[STACK_BUF_SIZE];
-    char *buf = NULL;
-    jint buf_size, write_size;
+    char *buf = (char*)jlong_to_ptr(address);
+    const jint buf_size = size;
+    jint write_size;
     jint n;
     FD fd;
 
@@ -183,16 +171,6 @@ writeBytes(JNIEnv *env, jobject this, jbyteArray bytes,
 
     if (len == 0) {
         return;
-    } else if (len > STACK_BUF_SIZE) {
-        buf_size = len < MAX_MALLOC_SIZE ? len : MAX_MALLOC_SIZE;
-        buf = malloc(buf_size);
-        if (buf == NULL) {
-            JNU_ThrowOutOfMemoryError(env, NULL);
-            return;
-        }
-    } else {
-        buf = stackBuf;
-        buf_size = STACK_BUF_SIZE;
     }
 
     while (len > 0) {
@@ -219,10 +197,6 @@ writeBytes(JNIEnv *env, jobject this, jbyteArray bytes,
             (*env)->ExceptionClear(env);
             break;
         }
-    }
-
-    if (buf != stackBuf) {
-        free(buf);
     }
 }
 
