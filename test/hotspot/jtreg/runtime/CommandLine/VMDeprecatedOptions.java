@@ -68,7 +68,7 @@ public class VMDeprecatedOptions {
           }
         ));
         if (wb.isJFRIncluded()) {
-            deprecated.add(new String[] {"FlightRecorder",                  "false"});
+            deprecated.add(new String[] {"FlightRecorder", "false"});
         }
         DEPRECATED_OPTIONS = deprecated.toArray(new String[][]{});
     };
