@@ -692,6 +692,7 @@ sanity/client/SwingSet/src/ButtonDemoScreenshotTest.java 8265770 macosx-all
 
 # core_tools
 
+tools/jlink/plugins/CompressorPluginTest.java                   8247407 generic-all
 
 ############################################################################
 
