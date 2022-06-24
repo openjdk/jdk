@@ -35,6 +35,8 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -Xmixed -XX:-BackgroundCompilation -XX:-TieredCompilation -XX:CompileThreshold=1000
+ *                   -XX:+UnlockExperimentalVMOptions -XX:PerMethodTrapLimit=100 -XX:-StressReflectiveCode
+ *                   -XX:+UncommonNullCast -XX:-StressMethodHandleLinkerInlining -XX:TypeProfileLevel=0
  *                   -XX:CompileCommand=exclude,compiler.intrinsics.klass.CastNullCheckDroppingsTest::runTest
  *                   compiler.intrinsics.klass.CastNullCheckDroppingsTest
  */
@@ -356,7 +358,7 @@ public class CastNullCheckDroppingsTest {
         if (exist != mustExist) {
             System.err.println("events:");
             System.err.println(events);
-            throw new AssertionError("compilation must " + (mustExist ? "" : " not ") + " got deoptimized");
+            throw new AssertionError("compilation must " + (mustExist ? "" : " not ") + " get deoptimized");
         }
 
         if (mustExist && events.stream()

@@ -34,7 +34,7 @@
 #include "code/exceptionHandlerTable.hpp"
 #include "compiler/compilerThread.hpp"
 #include "oops/methodData.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 
 class CompileTask;
 class OopMapSet;

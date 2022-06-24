@@ -26,7 +26,6 @@
 
 #include "oops/instanceStackChunkKlass.hpp"
 
-#include "classfile/javaClasses.inline.hpp"
 #include "code/codeBlob.inline.hpp"
 #include "code/codeCache.inline.hpp"
 #include "code/nativeInst.hpp"
@@ -35,11 +34,11 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "logging/log.hpp"
-#include "memory/iterator.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/klass.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/stackChunkOop.inline.hpp"
+#include "runtime/continuationJavaClasses.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
@@ -47,6 +46,7 @@
 #include "runtime/stackChunkFrameStream.inline.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/devirtualizer.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 

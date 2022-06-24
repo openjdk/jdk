@@ -433,14 +433,7 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     }
 
     public static EditorTopComponent getActive() {
-        Set<? extends Mode> modes = WindowManager.getDefault().getModes();
-        for (Mode m : modes) {
-            TopComponent tc = m.getSelectedTopComponent();
-            if (tc instanceof EditorTopComponent) {
-                return (EditorTopComponent) tc;
-            }
-        }
-        return null;
+        return (EditorTopComponent) EditorTopComponent.getRegistry().getActivated();
     }
 
     /** This method is called from within the constructor to

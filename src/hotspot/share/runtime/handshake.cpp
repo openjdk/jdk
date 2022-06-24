@@ -32,11 +32,11 @@
 #include "runtime/atomic.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/task.hpp"
-#include "runtime/thread.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/formatBuffer.hpp"
@@ -351,12 +351,17 @@ void Handshake::execute(HandshakeClosure* hs_cl, JavaThread* target) {
 }
 
 void Handshake::execute(HandshakeClosure* hs_cl, ThreadsListHandle* tlh, JavaThread* target) {
-  JavaThread* self = JavaThread::current();
-  HandshakeOperation op(hs_cl, target, Thread::current());
+  guarantee(target != nullptr, "must be");
+
+  JavaThread* current = JavaThread::current();
+  if (target == current) {
+    hs_cl->do_thread(target);
+    return;
+  }
+
+  HandshakeOperation op(hs_cl, target, current);
 
   jlong start_time_ns = os::javaTimeNanos();
-
-  guarantee(target != nullptr, "must be");
   if (tlh == nullptr) {
     guarantee(Thread::is_JavaThread_protected_by_TLH(target),
               "missing ThreadsListHandle in calling context.");
@@ -389,9 +394,9 @@ void Handshake::execute(HandshakeClosure* hs_cl, ThreadsListHandle* tlh, JavaThr
     hsy.add_result(pr);
     // Check for pending handshakes to avoid possible deadlocks where our
     // target is trying to handshake us.
-    if (SafepointMechanism::should_process(self)) {
+    if (SafepointMechanism::should_process(current)) {
       // Will not suspend here.
-      ThreadBlockInVM tbivm(self);
+      ThreadBlockInVM tbivm(current);
     }
     hsy.process();
   }

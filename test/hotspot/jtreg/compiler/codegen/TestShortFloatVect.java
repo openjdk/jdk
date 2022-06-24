@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,19 @@
 
 /**
  * @test
+ * @key randomness
  * @bug 7119644
  * @summary Increase superword's vector size up to 256 bits
- *
+ * @library /test/lib
  * @run main/othervm/timeout=300 -Xbatch -XX:+IgnoreUnrecognizedVMOptions
  *    -XX:-TieredCompilation -XX:-OptimizeFill
  *    compiler.codegen.TestShortFloatVect
  */
 
 package compiler.codegen;
+
+import java.util.Random;
+import jdk.test.lib.Utils;
 
 public class TestShortFloatVect {
   private static final int ARRLEN = 997;
@@ -40,6 +44,34 @@ public class TestShortFloatVect {
   private static final int SCALE = 2;
   private static final int ALIGN_OFF = 8;
   private static final int UNALIGN_OFF = 5;
+
+  private static final short[] sspecial = {
+    0, 0x8, 0xF, 0x3F, 0x7C, 0x7F, 0x8F, 0xF3, 0xF8, 0xFF, 0x38FF, (short)0x8F8F,
+    (short)0x8FFF, 0x7FF3, 0x7FFF, (short)0xFF33, (short)0xFFF8, (short)0xFFFF,
+    (short)0xFFFFFF, (short)Integer.MAX_VALUE, (short)Integer.MIN_VALUE
+  };
+
+  private static final float[] fspecial = {
+    1.0f,
+    -1.0f,
+    0.0f,
+    -0.0f,
+    Float.MAX_VALUE,
+    Float.MIN_VALUE,
+    -Float.MAX_VALUE,
+    -Float.MIN_VALUE,
+    Float.NaN,
+    Float.POSITIVE_INFINITY,
+    Float.NEGATIVE_INFINITY,
+    Integer.MAX_VALUE,
+    Integer.MIN_VALUE,
+    -Integer.MAX_VALUE,
+    -Integer.MIN_VALUE,
+    Long.MAX_VALUE,
+    Long.MIN_VALUE,
+    -Long.MAX_VALUE,
+    -Long.MIN_VALUE
+  };
 
   public static void main(String args[]) {
     System.out.println("Testing Short + Float vectors");
@@ -75,6 +107,8 @@ public class TestShortFloatVect {
       test_vi_unaln(a1, b1, (short)123, 103.f);
       test_cp_unalndst(a1, a2, b1, b2);
       test_cp_unalnsrc(a1, a2, b1, b2);
+      test_conv_s2f(a1, b1);
+      test_conv_f2s(a1, b1);
     }
     // Initialize
     for (int i=0; i<ARRLEN; i++) {
@@ -338,6 +372,41 @@ public class TestShortFloatVect {
         errn += verify("test_cp_unalnsrc_overlap: a1", i, a1[i], (short)v);
         errn += verify("test_cp_unalnsrc_overlap: b1", i, b1[i], (float)v);
       }
+      for (int j = 0; j < sspecial.length; j++) {
+        short shortValue = sspecial[j];
+        for (int i = 0; i < ARRLEN; i++) {
+          a1[i] = shortValue;
+        }
+        test_conv_s2f(a1, b1);
+        for (int i = 0; i < ARRLEN; i++) {
+          errn += verify("test_conv_s2f: b1", i, b1[i], (float)(shortValue));
+        }
+      }
+      for (int j = 0; j < fspecial.length; j++) {
+        float floatValue = fspecial[j];
+        for (int i = 0; i < ARRLEN; i++) {
+          b1[i] = floatValue;
+        }
+        test_conv_f2s(a1, b1);
+        for (int i = 0; i < ARRLEN; i++) {
+          errn += verify("test_conv_f2s: a1", i, a1[i], (short)floatValue);
+        }
+      }
+      Random r = Utils.getRandomInstance();
+      for (int i = 0; i < ARRLEN; i++) {
+        a1[i] = (short)r.nextInt();
+      }
+      test_conv_s2f(a1, b1);
+      for (int i = 0; i < ARRLEN; i++) {
+        errn += verify("test_conv_s2f: b1", i, b1[i], (float)(a1[i]));
+      }
+      for (int i = 0; i < ARRLEN; i++) {
+        b1[i] = r.nextFloat();
+      }
+      test_conv_f2s(a1, b1);
+      for (int i = 0; i < ARRLEN; i++) {
+        errn += verify("test_conv_f2s: a1", i, a1[i], (short)(b1[i]));
+      }
 
     }
 
@@ -448,6 +517,18 @@ public class TestShortFloatVect {
     }
     end = System.currentTimeMillis();
     System.out.println("test_cp_unalnsrc: " + (end - start));
+    start = System.currentTimeMillis();
+    for (int i = 0; i < ITERS; i++) {
+      test_conv_s2f(a1, b1);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_conv_s2f: " + (end - start));
+    start = System.currentTimeMillis();
+    for (int i = 0; i < ITERS; i++) {
+      test_conv_f2s(a1, b1);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_conv_f2s: " + (end - start));
     return errn;
   }
 
@@ -554,6 +635,16 @@ public class TestShortFloatVect {
     for (int i = 0; i < a.length-UNALIGN_OFF; i+=1) {
       a[i] = b[i+UNALIGN_OFF];
       c[i] = d[i+UNALIGN_OFF];
+    }
+  }
+  static void test_conv_s2f(short[] a, float[] b) {
+    for (int i = 0; i < a.length; i+=1) {
+      b[i] = (float) a[i];
+    }
+  }
+  static void test_conv_f2s(short[] a, float[] b) {
+    for (int i = 0; i < a.length; i+=1) {
+      a[i] = (short) b[i];
     }
   }
 

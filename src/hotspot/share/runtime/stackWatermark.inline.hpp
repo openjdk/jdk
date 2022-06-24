@@ -29,8 +29,8 @@
 
 #include "code/nmethod.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/registerMap.hpp"
-#include "runtime/thread.hpp"
 
 static inline bool is_above_watermark(uintptr_t sp, uintptr_t watermark) {
   if (watermark == 0) {

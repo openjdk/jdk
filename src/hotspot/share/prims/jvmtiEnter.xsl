@@ -49,6 +49,8 @@
 # include "prims/jvmtiUtil.hpp"
 # include "runtime/fieldDescriptor.inline.hpp"
 # include "runtime/jniHandles.hpp"
+# include "runtime/thread.inline.hpp"
+# include "runtime/threads.hpp"
 # include "runtime/threadSMR.hpp"
 
 </xsl:text>
