@@ -983,7 +983,7 @@ public class TypeEnter implements Completer {
                 List<JCVariableDecl> fields = TreeInfo.recordFields(tree);
                 memberEnter.memberEnter(fields, env);
                 for (JCVariableDecl field : fields) {
-                    sym.getRecordComponent(field, true,
+                    sym.createRecordComponent(field,
                             field.mods.annotations.isEmpty() ?
                                     List.nil() :
                                     new TreeCopier<JCTree>(make.at(field.pos)).copy(field.mods.annotations));
@@ -1251,19 +1251,14 @@ public class TypeEnter implements Completer {
             for (JCVariableDecl field: recordFields) {
                 RecordComponent rec = tree.sym.getRecordComponent(field.sym);
                 TreeCopier<JCTree> tc = new TreeCopier<>(make.at(field.pos));
-                List<JCAnnotation> originalAnnos = rec.getOriginalAnnos().isEmpty() ?
-                        rec.getOriginalAnnos() :
-                        tc.copy(rec.getOriginalAnnos());
+                List<JCAnnotation> originalAnnos = tc.copy(rec.getOriginalAnnos());
 
+                field.mods.flags &= ~Flags.VARARGS;
                 if (originalAnnos.length() != field.mods.annotations.length()) {
-                    // if the field have less annotations than the record component, overwrite any annotation in the
-                    // field with the original annotations declared by the user
-                    field.mods = make.Modifiers(field.mods.flags & ~Flags.VARARGS, originalAnnos);
+                    field.mods.annotations = originalAnnos;
                     annotate.annotateLater(originalAnnos, env, field.sym, field.pos());
-                } else {
-                    // fields can't be varargs, lets remove the flag if present
-                    field.mods.flags &= ~Flags.VARARGS;
                 }
+
                 // also here
                 field.sym.flags_field &= ~Flags.VARARGS;
             }
