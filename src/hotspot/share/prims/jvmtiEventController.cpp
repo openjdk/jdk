@@ -353,12 +353,11 @@ void VM_ChangeSingleStep::doit() {
 
 
 void JvmtiEventControllerPrivate::enter_interp_only_mode(JvmtiThreadState *state) {
+  assert(state != NULL, "sanity check");
   EC_TRACE(("[%s] # Entering interpreter only mode",
             JvmtiTrace::safe_get_thread_name(state->get_thread_or_saved())));
   JavaThread *target = state->get_thread();
-  Thread *current = Thread::current();
 
-  assert(state != NULL, "sanity check");
   if (state->is_pending_interp_only_mode()) {
     return;  // An EnterInterpOnlyModeClosure handshake is already pending for execution.
   }
@@ -368,13 +367,8 @@ void JvmtiEventControllerPrivate::enter_interp_only_mode(JvmtiThreadState *state
     return;  // EnterInterpOnlyModeClosure will be executed right after mount.
   }
   EnterInterpOnlyModeClosure hs;
-  if (target->is_handshake_safe_for(current)) {
-    hs.do_thread(target);
-  } else {
-    assert(state->get_thread() != NULL, "sanity check");
-    Handshake::execute(&hs, target);
-    guarantee(hs.completed(), "Handshake failed: Target thread is not alive?");
-  }
+  Handshake::execute(&hs, target);
+  guarantee(hs.completed(), "Handshake failed: Target thread is not alive?");
 }
 
 
