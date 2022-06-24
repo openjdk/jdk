@@ -58,11 +58,6 @@ public final class ShowAllAction extends CallableSystemAction {
     }
 
     @Override
-    protected void initialize() {
-        super.initialize();
-    }
-
-    @Override
     public HelpCtx getHelpCtx() {
         return HelpCtx.DEFAULT_HELP;
     }
