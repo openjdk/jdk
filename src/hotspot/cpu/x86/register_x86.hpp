@@ -67,7 +67,7 @@ public:
 
   // accessors
   int   raw_encoding() const                     { return this - first(); }
-  int   encoding() const                         { assert(is_valid(), "invalid register"); return (this - first()); }
+  int   encoding() const                         { assert(is_valid(), "invalid register"); return raw_encoding(); }
   bool  is_valid() const                         { return 0 <= raw_encoding() && raw_encoding() < number_of_registers; }
   bool  has_byte_register() const                { return 0 <= raw_encoding() && raw_encoding() < number_of_byte_registers; }
   const char *name() const;
