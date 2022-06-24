@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ public class KeyStoreException extends GeneralSecurityException {
     private static final long serialVersionUID = -1119353179322377262L;
 
     /**
-     * Constructs a KeyStoreException with no detail message.  (A
+     * Constructs a {@code KeyStoreException} with no detail message.  (A
      * detail message is a String that describes this particular
      * exception.)
      */
@@ -49,7 +49,7 @@ public class KeyStoreException extends GeneralSecurityException {
     }
 
     /**
-     * Constructs a KeyStoreException with the specified detail
+     * Constructs a {@code KeyStoreException} with the specified detail
      * message.  (A detail message is a String that describes this
      * particular exception.)
      *

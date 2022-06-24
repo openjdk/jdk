@@ -115,7 +115,7 @@ public class KeyFactory {
     private Iterator<Service> serviceIterator;
 
     /**
-     * Creates a KeyFactory object.
+     * Creates a {@code KeyFactory} object.
      *
      * @param keyFacSpi the delegate
      * @param provider the provider
@@ -141,13 +141,13 @@ public class KeyFactory {
     }
 
     /**
-     * Returns a KeyFactory object that converts
+     * Returns a {@code KeyFactory} object that converts
      * public/private keys of the specified algorithm.
      *
      * <p> This method traverses the list of registered security Providers,
      * starting with the most preferred Provider.
-     * A new KeyFactory object encapsulating the
-     * KeyFactorySpi implementation from the first
+     * A new {@code KeyFactory} object encapsulating the
+     * {@code KeyFactorySpi} implementation from the first
      * Provider that supports the specified algorithm is returned.
      *
      * <p> Note that the list of registered providers may be retrieved via
@@ -184,11 +184,11 @@ public class KeyFactory {
     }
 
     /**
-     * Returns a KeyFactory object that converts
+     * Returns a {@code KeyFactory} object that converts
      * public/private keys of the specified algorithm.
      *
-     * <p> A new KeyFactory object encapsulating the
-     * KeyFactorySpi implementation from the specified provider
+     * <p> A new {@code KeyFactory} object encapsulating the
+     * {@code KeyFactorySpi} implementation from the specified provider
      * is returned.  The specified provider must be registered
      * in the security provider list.
      *
@@ -229,11 +229,11 @@ public class KeyFactory {
     }
 
     /**
-     * Returns a KeyFactory object that converts
+     * Returns a {@code KeyFactory} object that converts
      * public/private keys of the specified algorithm.
      *
-     * <p> A new KeyFactory object encapsulating the
-     * KeyFactorySpi implementation from the specified Provider
+     * <p> A new {@code KeyFactory} object encapsulating the
+     * {@code KeyFactorySpi} implementation from the specified Provider
      * object is returned.  Note that the specified Provider object
      * does not have to be registered in the provider list.
      *
@@ -294,7 +294,7 @@ public class KeyFactory {
     }
 
     /**
-     * Update the active KeyFactorySpi of this class and return the next
+     * Update the active {@code KeyFactorySpi} of this class and return the next
      * implementation for failover. If no more implementations are
      * available, this method returns null. However, the active spi of
      * this class is never set to null.

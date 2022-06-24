@@ -90,7 +90,7 @@ import sun.security.util.Debug;
  * (SafeKeyper) are one option, and simpler mechanisms such as files may also
  * be used (in a variety of formats).
  *
- * <p> Typical ways to request a KeyStore object include
+ * <p> Typical ways to request a {@code KeyStore} object include
  * specifying an existing keystore file,
  * relying on the default type and providing a specific keystore type.
  *
@@ -235,7 +235,7 @@ public class KeyStore {
         /**
          * Gets the parameter used to protect keystore data.
          *
-         * @return the parameter used to protect keystore data, or null
+         * @return the parameter used to protect keystore data, or {@code null}
          */
         ProtectionParameter getProtectionParameter();
     }
@@ -395,7 +395,7 @@ public class KeyStore {
          * CallbackHandler.
          *
          * @param handler the CallbackHandler
-         * @throws    NullPointerException if handler is null
+         * @throws    NullPointerException if handler is {@code null}
          */
         public CallbackHandlerProtection(CallbackHandler handler) {
             if (handler == null) {
@@ -802,8 +802,8 @@ public class KeyStore {
     }
 
     /**
-     * Creates a KeyStore object of the given type, and encapsulates the given
-     * provider implementation (SPI object) in it.
+     * Creates a {@code KeyStore} object of the given type, and encapsulates
+     * the given provider implementation (SPI object) in it.
      *
      * @param keyStoreSpi the provider implementation.
      * @param provider the provider.
@@ -826,12 +826,12 @@ public class KeyStore {
     }
 
     /**
-     * Returns a keystore object of the specified type.
+     * Returns a {@code KeyStore} object of the specified type.
      *
      * <p> This method traverses the list of registered security Providers,
      * starting with the most preferred Provider.
-     * A new KeyStore object encapsulating the
-     * KeyStoreSpi implementation from the first
+     * A new {@code KeyStore} object encapsulating the
+     * {@code KeyStoreSpi} implementation from the first
      * Provider that supports the specified type is returned.
      *
      * <p> Note that the list of registered providers may be retrieved via
@@ -874,10 +874,10 @@ public class KeyStore {
     }
 
     /**
-     * Returns a keystore object of the specified type.
+     * Returns a {@code KeyStore} object of the specified type.
      *
-     * <p> A new KeyStore object encapsulating the
-     * KeyStoreSpi implementation from the specified provider
+     * <p> A new {@code KeyStore} object encapsulating the
+     * {@code KeyStoreSpi} implementation from the specified provider
      * is returned.  The specified provider must be registered
      * in the security provider list.
      *
@@ -923,10 +923,10 @@ public class KeyStore {
     }
 
     /**
-     * Returns a keystore object of the specified type.
+     * Returns a {@code KeyStore} object of the specified type.
      *
-     * <p> A new KeyStore object encapsulating the
-     * KeyStoreSpi implementation from the specified Provider
+     * <p> A new {@code KeyStore} object encapsulating the
+     * {@code KeyStoreSpi} implementation from the specified Provider
      * object is returned.  Note that the specified Provider object
      * does not have to be registered in the provider list.
      *
@@ -1054,8 +1054,8 @@ public class KeyStore {
      * @param alias the alias name
      * @param password the password for recovering the key
      *
-     * @return the requested key, or null if the given alias does not exist
-     * or does not identify a key-related entry.
+     * @return the requested key, or {@code null} if the given alias does
+     * not exist or does not identify a key-related entry.
      *
      * @throws    KeyStoreException if the keystore has not been initialized
      * (loaded).
@@ -1084,8 +1084,8 @@ public class KeyStore {
      * @param alias the alias name
      *
      * @return the certificate chain (ordered with the user's certificate first
-     * followed by zero or more certificate authorities), or null if the given alias
-     * does not exist or does not contain a certificate chain
+     * followed by zero or more certificate authorities), or {@code null}
+     * if the given alias does not exist or does not contain a certificate chain
      *
      * @throws    KeyStoreException if the keystore has not been initialized
      * (loaded).
@@ -1117,8 +1117,8 @@ public class KeyStore {
      *
      * @param alias the alias name
      *
-     * @return the certificate, or null if the given alias does not exist or
-     * does not contain a certificate.
+     * @return the certificate, or {@code null} if the given alias does not
+     * exist or does not contain a certificate.
      *
      * @throws    KeyStoreException if the keystore has not been initialized
      * (loaded).
@@ -1137,8 +1137,8 @@ public class KeyStore {
      *
      * @param alias the alias name
      *
-     * @return the creation date of this entry, or null if the given alias does
-     * not exist
+     * @return the creation date of this entry, or {@code null} if the given
+     * alias does not exist
      *
      * @throws    KeyStoreException if the keystore has not been initialized
      * (loaded).
@@ -1389,7 +1389,7 @@ public class KeyStore {
      * @param cert the certificate to match with.
      *
      * @return the alias name of the first entry with a matching certificate,
-     * or null if no such entry exists in this keystore.
+     * or {@code null} if no such entry exists in this keystore.
      *
      * @throws    KeyStoreException if the keystore has not been initialized
      * (loaded).
@@ -1461,7 +1461,7 @@ public class KeyStore {
     }
 
     /**
-     * Loads this KeyStore from the given input stream.
+     * Loads this keystore from the given input stream.
      *
      * <p>A password may be given to unlock the keystore
      * (e.g. the keystore resides on a hardware token device),
@@ -1667,7 +1667,8 @@ public class KeyStore {
      * Provider, it invokes the {@link
      * KeyStoreSpi#engineProbe(InputStream) engineProbe} method to
      * determine if it supports the specified keystore.
-     * A new KeyStore object is returned that encapsulates the KeyStoreSpi
+     * A new {@code KeyStore} object is returned that encapsulates the
+     * {@code KeyStoreSpi}
      * implementation from the first Provider that supports the specified file.
      *
      * <p> Note that the list of registered providers may be retrieved via
@@ -1678,7 +1679,7 @@ public class KeyStore {
      *
      * @return a keystore object loaded with keystore data
      *
-     * @throws KeyStoreException if no Provider supports a KeyStoreSpi
+     * @throws KeyStoreException if no Provider supports a {@code KeyStoreSpi}
      *             implementation for the specified keystore file.
      * @throws IOException if there is an I/O or format problem with the
      *             keystore data, if a password is required but not given,
@@ -1722,7 +1723,8 @@ public class KeyStore {
      * Provider, it invokes the {@link
      * KeyStoreSpi#engineProbe(InputStream) engineProbe} method to
      * determine if it supports the specified keystore.
-     * A new KeyStore object is returned that encapsulates the KeyStoreSpi
+     * A new {@code KeyStore} object is returned that encapsulates the
+     * {@code KeyStoreSpi}
      * implementation from the first Provider that supports the specified file.
      *
      * <p> Note that the list of registered providers may be retrieved via
@@ -1734,7 +1736,7 @@ public class KeyStore {
      *
      * @return a keystore object loaded with keystore data
      *
-     * @throws KeyStoreException if no Provider supports a KeyStoreSpi
+     * @throws KeyStoreException if no Provider supports a {@code KeyStoreSpi}
      *             implementation for the specified keystore file.
      * @throws IOException if there is an I/O or format problem with the
      *             keystore data. If the error is due to an incorrect
@@ -1836,10 +1838,10 @@ public class KeyStore {
     }
 
     /**
-     * A description of a to-be-instantiated KeyStore object.
+     * A description of a to-be-instantiated {@code KeyStore} object.
      *
      * <p>An instance of this class encapsulates the information needed to
-     * instantiate and initialize a KeyStore object. That process is
+     * instantiate and initialize a {@code KeyStore} object. That process is
      * triggered when the {@linkplain #getKeyStore} method is called.
      *
      * <p>This makes it possible to decouple configuration from KeyStore
@@ -1881,7 +1883,7 @@ public class KeyStore {
          * @return the ProtectionParameters that should be used to obtain
          *   the {@link KeyStore.Entry Entry} with the given alias.
          * @param alias the alias of the KeyStore entry
-         * @throws NullPointerException if alias is null
+         * @throws NullPointerException if alias is {@code null}
          * @throws KeyStoreException if an error occurred during the
          *   operation
          * @throws IllegalStateException if the getKeyStore method has
@@ -1897,7 +1899,7 @@ public class KeyStore {
          * #getProtectionParameter getProtectionParameter()} method will
          * return {@code protectionParameters}.
          *
-         * <p> This is useful if an existing KeyStore object needs to be
+         * <p> This is useful if an existing {@code KeyStore} object needs to be
          * used with Builder-based APIs.
          *
          * @return a new Builder object
@@ -1905,7 +1907,7 @@ public class KeyStore {
          * @param protectionParameter the ProtectionParameter used to
          *   protect the KeyStore entries
          * @throws NullPointerException if keyStore or
-         *   protectionParameters is null
+         *   protectionParameters is {@code null}
          * @throws IllegalArgumentException if the keyStore has not been
          *   initialized
          */
@@ -1974,10 +1976,11 @@ public class KeyStore {
          * @return a new Builder object
          * @param type the type of KeyStore to be constructed
          * @param provider the provider from which the KeyStore is to
-         *   be instantiated (or null)
+         *   be instantiated (or {@code null})
          * @param file the File that contains the KeyStore data
          * @param protection the ProtectionParameter securing the KeyStore data
-         * @throws NullPointerException if type, file or protection is null
+         * @throws NullPointerException if type, file or protection is
+         * {@code null}
          * @throws IllegalArgumentException if protection is not an instance
          *   of either PasswordProtection or CallbackHandlerProtection; or
          *   if file does not exist or does not refer to a normal file
@@ -2034,7 +2037,7 @@ public class KeyStore {
          * @return a new Builder object
          * @param file the File that contains the KeyStore data
          * @param protection the ProtectionParameter securing the KeyStore data
-         * @throws NullPointerException if file or protection is null
+         * @throws NullPointerException if file or protection is {@code null}
          * @throws IllegalArgumentException if protection is not an instance
          *   of either PasswordProtection or CallbackHandlerProtection; or
          *   if file does not exist or does not refer to a normal file
@@ -2175,7 +2178,8 @@ public class KeyStore {
          * Returns a new Builder object.
          *
          * <p>Each call to the {@link #getKeyStore} method on the returned
-         * builder will return a new KeyStore object of type {@code type}.
+         * builder will return a new {@code KeyStore} object of type
+         * {@code type}.
          * Its {@link KeyStore#load(KeyStore.LoadStoreParameter) load()}
          * method is invoked using a
          * {@code LoadStoreParameter} that encapsulates
@@ -2194,9 +2198,9 @@ public class KeyStore {
          * @return a new Builder object
          * @param type the type of KeyStore to be constructed
          * @param provider the provider from which the KeyStore is to
-         *   be instantiated (or null)
+         *   be instantiated (or {@code null})
          * @param protection the ProtectionParameter securing the Keystore
-         * @throws NullPointerException if type or protection is null
+         * @throws NullPointerException if type or protection is {@code null}
          */
         public static Builder newInstance(final String type,
                 final Provider provider, final ProtectionParameter protection) {

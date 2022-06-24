@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ public class KeyException extends GeneralSecurityException {
     private static final long serialVersionUID = -7483676942812432108L;
 
     /**
-     * Constructs a KeyException with no detail message. A detail
+     * Constructs a {@code KeyException} with no detail message. A detail
      * message is a String that describes this particular exception.
      */
     public KeyException() {
@@ -50,7 +50,7 @@ public class KeyException extends GeneralSecurityException {
     }
 
     /**
-     * Constructs a KeyException with the specified detail message.
+     * Constructs a {@code KeyException} with the specified detail message.
      * A detail message is a String that describes this particular
      * exception.
      *

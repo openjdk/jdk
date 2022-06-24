@@ -57,8 +57,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * Permission is stored in the appropriate PermissionCollection. If no such
  * collection exists yet, the Permission object's class is determined and the
  * {@code newPermissionCollection} method is called on that class to create
- * the PermissionCollection and add it to the Permissions object. If
- * {@code newPermissionCollection} returns null, then a default
+ * the PermissionCollection and add it to the {@code Permissions} object. If
+ * {@code newPermissionCollection} returns {@code null}, then a default
  * PermissionCollection that uses a hashtable will be created and used. Each
  * hashtable entry stores a Permission object as both the key and the value.
  *
@@ -96,7 +96,8 @@ implements Serializable
     PermissionCollection allPermission;
 
     /**
-     * Creates a new Permissions object containing no PermissionCollections.
+     * Creates a new {@code Permissions} object containing no
+     * PermissionCollections.
      */
     public Permissions() {
         permsMap = new ConcurrentHashMap<>(11);
@@ -107,7 +108,7 @@ implements Serializable
      * Adds a permission object to the PermissionCollection for the class the
      * permission belongs to. For example, if <i>permission</i> is a
      * FilePermission, it is added to the FilePermissionCollection stored
-     * in this Permissions object.
+     * in this {@code Permissions} object.
      *
      * This method creates
      * a new PermissionCollection object (and adds the permission to it)
@@ -115,7 +116,7 @@ implements Serializable
      *
      * @param permission the Permission object to add.
      *
-     * @throws    SecurityException if this Permissions object is
+     * @throws    SecurityException if this {@code Permissions} object is
      * marked as readonly.
      *
      * @see PermissionCollection#isReadOnly()
@@ -147,10 +148,10 @@ implements Serializable
      * imply the specified permission.
      *
      * <p>For example, suppose there is a FilePermissionCollection in this
-     * Permissions object, and it contains one FilePermission that specifies
-     * "read" access for  all files in all subdirectories of the "/tmp"
-     * directory, and another FilePermission that specifies "write" access
-     * for all files in the "/tmp/scratch/foo" directory.
+     * {@code Permissions} object, and it contains one FilePermission that
+     * specifies "read" access for  all files in all subdirectories of the
+     * "/tmp" directory, and another FilePermission that specifies "write"
+     * access for all files in the "/tmp/scratch/foo" directory.
      * Then if the {@code implies} method
      * is called with a permission specifying both "read" and "write" access
      * to files in the "/tmp/scratch/foo" directory, {@code true} is
@@ -184,7 +185,7 @@ implements Serializable
 
     /**
      * Returns an enumeration of all the Permission objects in all the
-     * PermissionCollections in this Permissions object.
+     * PermissionCollections in this {@code Permissions} object.
      *
      * @return an enumeration of all the Permissions.
      */
@@ -197,11 +198,11 @@ implements Serializable
     }
 
     /**
-     * Gets the PermissionCollection in this Permissions object for
+     * Gets the PermissionCollection in this {@code Permissions} object for
      * permissions whose type is the same as that of <i>p</i>.
      * For example, if <i>p</i> is a FilePermission,
      * the FilePermissionCollection
-     * stored in this Permissions object will be returned.
+     * stored in this {@code Permissions} object will be returned.
      *
      * If createEmpty is true,
      * this method creates a new PermissionCollection object for the specified
@@ -213,8 +214,8 @@ implements Serializable
      * correct semantics when the {@code PermissionCollection.implies}
      * method is called.
      * If the call returns a PermissionCollection, that collection is stored
-     * in this Permissions object. If the call returns null and createEmpty
-     * is true, then
+     * in this {@code Permissions} object. If the call returns {@code null} and
+     * createEmpty is true, then
      * this method instantiates and stores a default PermissionCollection
      * that uses a hashtable to store its permission objects.
      *
@@ -281,7 +282,7 @@ implements Serializable
      * @param p the type of unresolved permission to resolve
      *
      * @return PermissionCollection containing the unresolved permissions,
-     *  or null if there were no unresolved permissions of type p.
+     *  or {@code null} if there were no unresolved permissions of type p.
      *
      */
     private PermissionCollection getUnresolvedPermissions(Permission p)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ public class NoSuchProviderException extends GeneralSecurityException {
     private static final long serialVersionUID = 8488111756688534474L;
 
     /**
-     * Constructs a NoSuchProviderException with no detail message. A
+     * Constructs a {@code NoSuchProviderException} with no detail message. A
      * detail message is a String that describes this particular
      * exception.
      */
@@ -48,7 +48,7 @@ public class NoSuchProviderException extends GeneralSecurityException {
     }
 
     /**
-     * Constructs a NoSuchProviderException with the specified detail
+     * Constructs a {@code NoSuchProviderException} with the specified detail
      * message. A detail message is a String that describes this
      * particular exception.
      *

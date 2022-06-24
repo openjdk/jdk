@@ -41,16 +41,16 @@ import sun.security.util.FilePermCompat;
 import sun.security.util.SecurityConstants;
 
 /**
- * The ProtectionDomain class encapsulates the characteristics of a domain,
- * which encloses a set of classes whose instances are granted a set
+ * The {@code ProtectionDomain} class encapsulates the characteristics of a
+ * domain, which encloses a set of classes whose instances are granted a set
  * of permissions when being executed on behalf of a given set of Principals.
  * <p>
- * A static set of permissions can be bound to a ProtectionDomain when it is
- * constructed; such permissions are granted to the domain regardless of the
- * Policy in force. However, to support dynamic security policies, a
- * ProtectionDomain can also be constructed such that it is dynamically
- * mapped to a set of permissions by the current Policy whenever a permission
- * is checked.
+ * A static set of permissions can be bound to a {@code ProtectionDomain}
+ * when it is constructed; such permissions are granted to the domain
+ * regardless of the Policy in force. However, to support dynamic security
+ * policies, a {@code ProtectionDomain} can also be constructed such that it
+ * is dynamically mapped to a set of permissions by the current Policy whenever
+ * a permission is checked.
  *
  * @author Li Gong
  * @author Roland Schemers
@@ -158,9 +158,9 @@ public class ProtectionDomain {
     final Key key = new Key();
 
     /**
-     * Creates a new ProtectionDomain with the given CodeSource and
-     * Permissions. If the permissions object is not null, then
-     *  {@code setReadOnly()} will be called on the passed in
+     * Creates a new {@code ProtectionDomain} with the given CodeSource and
+     * Permissions. If the permissions object is not {@code null}, then
+     * {@code setReadOnly()} will be called on the passed in
      * Permissions object.
      * <p>
      * The permissions granted to this domain are static, i.e.
@@ -188,7 +188,7 @@ public class ProtectionDomain {
     }
 
     /**
-     * Creates a new ProtectionDomain qualified by the given CodeSource,
+     * Creates a new {@code ProtectionDomain} qualified by the given CodeSource,
      * Permissions, ClassLoader and array of Principals. If the
      * permissions object is not null, then {@code setReadOnly()}
      * will be called on the passed in Permissions object.
@@ -238,7 +238,7 @@ public class ProtectionDomain {
 
     /**
      * Returns the CodeSource of this domain.
-     * @return the CodeSource of this domain which may be null.
+     * @return the CodeSource of this domain which may be {@code null}.
      * @since 1.2
      */
     public final CodeSource getCodeSource() {
@@ -248,7 +248,7 @@ public class ProtectionDomain {
 
     /**
      * Returns the ClassLoader of this domain.
-     * @return the ClassLoader of this domain which may be null.
+     * @return the ClassLoader of this domain which may be {@code null}.
      *
      * @since 1.4
      */
@@ -271,7 +271,8 @@ public class ProtectionDomain {
     /**
      * Returns the static permissions granted to this domain.
      *
-     * @return the static set of permissions for this domain which may be null.
+     * @return the static set of permissions for this domain which may be
+     * {@code null}.
      * @see Policy#refresh
      * @see Policy#getPermissions(ProtectionDomain)
      */
@@ -293,11 +294,11 @@ public class ProtectionDomain {
     }
 
     /**
-     * Check and see if this ProtectionDomain implies the permissions
+     * Check and see if this {@code ProtectionDomain} implies the permissions
      * expressed in the Permission object.
      * <p>
      * The set of permissions evaluated is a function of whether the
-     * ProtectionDomain was constructed with a static set of permissions
+     * {@code ProtectionDomain} was constructed with a static set of permissions
      * or it was bound to a dynamically mapped set of permissions.
      * <p>
      * If the {@link #staticPermissionsOnly()} method returns
@@ -400,7 +401,7 @@ public class ProtectionDomain {
     }
 
     /**
-     * Convert a ProtectionDomain to a String.
+     * Convert a {@code ProtectionDomain} to a String.
      */
     @Override public String toString() {
         String pals = "<no principals>";
@@ -443,16 +444,16 @@ public class ProtectionDomain {
     /**
      * Return true (merge policy permissions) in the following cases:
      *
-     * . SecurityManager is null
+     * . SecurityManager is {@code null}
      *
-     * . SecurityManager is not null,
-     *          debug is not null,
+     * . SecurityManager is not {@code null},
+     *          debug is not {@code null},
      *          SecurityManager implementation is in bootclasspath,
      *          Policy implementation is in bootclasspath
      *          (the bootclasspath restrictions avoid recursion)
      *
-     * . SecurityManager is not null,
-     *          debug is null,
+     * . SecurityManager is not {@code null},
+     *          debug is {@code null},
      *          caller has Policy.getPolicy permission
      */
     @SuppressWarnings("removal")

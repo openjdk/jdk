@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ package java.security;
  * This class defines the <i>Service Provider Interface</i> (<b>SPI</b>)
  * for the {@code Policy} class.
  * All the abstract methods in this class must be implemented by each
- * service provider who wishes to supply a Policy implementation.
+ * service provider who wishes to supply a {@code Policy} implementation.
  *
  * <p> Subclass implementations of this abstract class must provide
  * a public constructor that takes a {@code Policy.Parameters}

@@ -61,7 +61,7 @@ public final class CodeSigner implements Serializable {
     private transient int myhash = -1;
 
     /**
-     * Constructs a CodeSigner object.
+     * Constructs a {@code CodeSigner} object.
      *
      * @param signerCertPath The signer's certificate path.
      *                       It must not be {@code null}.

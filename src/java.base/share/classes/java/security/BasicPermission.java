@@ -34,11 +34,11 @@ import java.util.Hashtable;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * The BasicPermission class extends the Permission class, and
+ * The {@code BasicPermission} class extends the {@code Permission} class, and
  * can be used as the base class for permissions that want to
- * follow the same naming convention as BasicPermission.
+ * follow the same naming convention as {@code BasicPermission}.
  * <P>
- * The name for a BasicPermission is the name of the given permission
+ * The name for a {@code BasicPermission} is the name of the given permission
  * (for example, "exit",
  * "setFactory", "print.queueJob", etc.). The naming
  * convention follows the  hierarchical property naming convention.
@@ -47,12 +47,12 @@ import java.util.concurrent.ConcurrentHashMap;
  * For example, "*" and "java.*" signify a wildcard match, while "*java", "a*b",
  * and "java*" do not.
  * <P>
- * The action string (inherited from Permission) is unused.
- * Thus, BasicPermission is commonly used as the base class for
+ * The action string (inherited from {@code Permission}) is unused.
+ * Thus, {@code BasicPermission} is commonly used as the base class for
  * "named" permissions
  * (ones that contain a name but no actions list; you either have the
  * named permission or you don't.)
- * Subclasses may implement actions on top of BasicPermission,
+ * Subclasses may implement actions on top of {@code BasicPermission},
  * if desired.
  *
  * @see java.security.Permission
@@ -82,7 +82,7 @@ public abstract class BasicPermission extends Permission
     private transient boolean exitVM;
 
     /**
-     * initialize a BasicPermission object. Common to all constructors.
+     * initialize a {@code BasicPermission} object. Common to all constructors.
      */
     private void init(String name) {
         if (name == null)
@@ -116,12 +116,12 @@ public abstract class BasicPermission extends Permission
     }
 
     /**
-     * Creates a new BasicPermission with the specified name.
+     * Creates a new {@code BasicPermission} with the specified name.
      * Name is the symbolic name of the permission, such as
      * "setFactory",
      * "print.queueJob", or "topLevelWindow", etc.
      *
-     * @param name the name of the BasicPermission.
+     * @param name the name of the {@code BasicPermission}.
      *
      * @throws NullPointerException if {@code name} is {@code null}.
      * @throws IllegalArgumentException if {@code name} is empty.
@@ -133,11 +133,11 @@ public abstract class BasicPermission extends Permission
 
 
     /**
-     * Creates a new BasicPermission object with the specified name.
-     * The name is the symbolic name of the BasicPermission, and the
+     * Creates a new {@code BasicPermission} object with the specified name.
+     * The name is the symbolic name of the {@code BasicPermission}, and the
      * actions String is currently unused.
      *
-     * @param name the name of the BasicPermission.
+     * @param name the name of the {@code BasicPermission}.
      * @param actions ignored.
      *
      * @throws NullPointerException if {@code name} is {@code null}.
@@ -193,13 +193,14 @@ public abstract class BasicPermission extends Permission
     }
 
     /**
-     * Checks two BasicPermission objects for equality.
+     * Checks two {@code BasicPermission} objects for equality.
      * Checks that {@code obj}'s class is the same as this object's class
      * and has the same name as this object.
      *
      * @param obj the object we are testing for equality with this object.
      * @return true if {@code obj}'s class is the same as this object's class
-     *  and has the same name as this BasicPermission object, false otherwise.
+     * and has the same name as this {@code BasicPermission} object,
+     * false otherwise.
      */
     @Override
     public boolean equals(Object obj) {
@@ -219,7 +220,7 @@ public abstract class BasicPermission extends Permission
      * Returns the hash code value for this object.
      * The hash code used is the hash code of the name, that is,
      * {@code getName().hashCode()}, where {@code getName} is
-     * from the Permission superclass.
+     * from the {@code Permission} superclass.
      *
      * @return a hash code value for this object.
      */
@@ -231,7 +232,7 @@ public abstract class BasicPermission extends Permission
     /**
      * Returns the canonical string representation of the actions,
      * which currently is the empty string "", since there are no actions for
-     * a BasicPermission.
+     * a {@code BasicPermission}.
      *
      * @return the empty string "".
      */
@@ -241,15 +242,15 @@ public abstract class BasicPermission extends Permission
     }
 
     /**
-     * Returns a new PermissionCollection object for storing BasicPermission
-     * objects.
+     * Returns a new {@code PermissionCollection} object for storing
+     * BasicPermissions.
      *
-     * <p>BasicPermission objects must be stored in a manner that allows them
-     * to be inserted in any order, but that also enables the
-     * PermissionCollection {@code implies} method
+     * <p>{@code BasicPermission} objects must be stored in a manner
+     * that allows them to be inserted in any order, but that also enables the
+     * {@code PermissionCollection} {@code implies} method
      * to be implemented in an efficient (and consistent) manner.
      *
-     * @return a new PermissionCollection object suitable for
+     * @return a new {@code PermissionCollection} object suitable for
      * storing BasicPermissions.
      */
     @Override
@@ -258,8 +259,8 @@ public abstract class BasicPermission extends Permission
     }
 
     /**
-     * readObject is called to restore the state of the BasicPermission from
-     * a stream.
+     * {@code readObject} is called to restore the state of the
+     * (@code BasicPermission} from a stream.
      *
      * @param  s the {@code ObjectInputStream} from which data is read
      * @throws IOException if an I/O error occurs
@@ -275,12 +276,12 @@ public abstract class BasicPermission extends Permission
     }
 
     /**
-     * Returns the canonical name of this BasicPermission.
+     * Returns the canonical name of this {@code BasicPermission}.
      * All internal invocations of getName should invoke this method, so
      * that the pre-JDK 1.6 "exitVM" and current "exitVM.*" permission are
      * equivalent in equals/hashCode methods.
      *
-     * @return the canonical name of this BasicPermission.
+     * @return the canonical name of this {@code BasicPermission}.
      */
     final String getCanonicalName() {
         return exitVM ? "exitVM.*" : getName();
@@ -288,14 +289,14 @@ public abstract class BasicPermission extends Permission
 }
 
 /**
- * A BasicPermissionCollection stores a collection
- * of BasicPermission permissions. BasicPermission objects
+ * A {@code BasicPermissionCollection} stores a collection
+ * of {@code BasicPermission} permissions. {@code BasicPermission} objects
  * must be stored in a manner that allows them to be inserted in any
  * order, but enable the implies function to evaluate the implies
  * method in an efficient (and consistent) manner.
  *
- * A BasicPermissionCollection handles comparing a permission like "a.b.c.d.e"
- * with a Permission such as "a.b.*", or "*".
+ * A {@code BasicPermissionCollection} handles comparing a permission
+ * like "a.b.c.d.e" with a {@code Permission} such as "a.b.*", or "*".
  *
  * @see java.security.Permission
  * @see java.security.Permissions
@@ -322,8 +323,8 @@ final class BasicPermissionCollection
     private transient ConcurrentHashMap<String, Permission> perms;
 
     /**
-     * This is set to {@code true} if this BasicPermissionCollection
-     * contains a BasicPermission with '*' as its permission name.
+     * This is set to {@code true} if this (@code BasicPermissionCollection}
+     * contains a {code BasicPermission} with '*' as its permission name.
      *
      * @see #serialPersistentFields
      */
@@ -351,16 +352,16 @@ final class BasicPermissionCollection
      * Adds a permission to the BasicPermissions. The key for the hash is
      * permission.path.
      *
-     * @param permission the Permission object to add.
+     * @param permission the {@code Permission} object to add.
      *
      * @throws    IllegalArgumentException   if the permission is not a
-     *                                       BasicPermission, or if
+     *                                       {@code BasicPermission}, or if
      *                                       the permission is not of the
      *                                       same Class as the other
      *                                       permissions in this collection.
      *
-     * @throws    SecurityException   if this BasicPermissionCollection object
-     *                                has been marked readonly
+     * @throws    SecurityException   if this {@code BasicPermissionCollection}
+     *                                object has been marked readonly
      */
     @Override
     public void add(Permission permission) {

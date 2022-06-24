@@ -40,7 +40,7 @@ public class InvalidKeyException extends KeyException {
     private static final long serialVersionUID = 5698479920593359816L;
 
     /**
-     * Constructs an InvalidKeyException with no detail message. A
+     * Constructs an {@code InvalidKeyException} with no detail message. A
      * detail message is a String that describes this particular
      * exception.
      */
@@ -49,7 +49,7 @@ public class InvalidKeyException extends KeyException {
     }
 
     /**
-     * Constructs an InvalidKeyException with the specified detail
+     * Constructs an {@code InvalidKeyException} with the specified detail
      * message. A detail message is a String that describes this
      * particular exception.
      *

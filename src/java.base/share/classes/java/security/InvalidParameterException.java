@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ public class InvalidParameterException extends IllegalArgumentException {
     private static final long serialVersionUID = -857968536935667808L;
 
     /**
-     * Constructs an InvalidParameterException with no detail message.
+     * Constructs an {@code InvalidParameterException} with no detail message.
      * A detail message is a String that describes this particular
      * exception.
      */
@@ -49,7 +49,7 @@ public class InvalidParameterException extends IllegalArgumentException {
     }
 
     /**
-     * Constructs an InvalidParameterException with the specified
+     * Constructs an {@code InvalidParameterException} with the specified
      * detail message.  A detail message is a String that describes
      * this particular exception.
      *
