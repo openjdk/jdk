@@ -55,6 +55,7 @@
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
 #include "memory/memRegion.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "utilities/bitMap.hpp"
 
 // A "G1CollectedHeap" is an implementation of a java heap for HotSpot.

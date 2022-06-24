@@ -28,6 +28,7 @@ package java.lang.foreign;
 import java.util.Objects;
 import java.util.Optional;
 import jdk.internal.foreign.Utils;
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
 abstract non-sealed class AbstractLayout implements MemoryLayout {
@@ -86,6 +87,7 @@ abstract non-sealed class AbstractLayout implements MemoryLayout {
     }
 
     @Override
+    @ForceInline
     public long byteSize() {
         if (cachedSize == 0) {
             cachedSize = Utils.bitsToBytesOrThrow(bitSize(),

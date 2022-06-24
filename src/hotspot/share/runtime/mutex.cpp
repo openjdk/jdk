@@ -26,11 +26,11 @@
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
-#include "runtime/thread.inline.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
 

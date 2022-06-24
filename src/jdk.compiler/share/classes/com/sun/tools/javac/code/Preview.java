@@ -124,15 +124,22 @@ public class Preview {
      * Returns true if {@code s} is deemed to participate in the preview of {@code previewSymbol}, and
      * therefore no warnings or errors will be produced.
      *
+     * @parem syms the symbol table
      * @param s the symbol depending on the preview symbol
      * @param previewSymbol the preview symbol marked with @Preview
      * @return true if {@code s} is participating in the preview of {@code previewSymbol}
      */
-    public boolean participatesInPreview(Symbol s, Symbol previewSymbol) {
-        // Hardcode the incubating vector API module for now
-        // Will generalize with an annotation, @PreviewParticipating say, later
-        return previewSymbol.packge().modle == s.packge().modle ||
-                s.packge().modle.name == names.jdk_incubator_vector;
+    public boolean participatesInPreview(Symtab syms, Symbol s, Symbol previewSymbol) {
+        // All symbols in the same module as the preview symbol participate in the preview API
+        if (previewSymbol.packge().modle == s.packge().modle) {
+            return true;
+        }
+
+        // If java.base's jdk.internal.javac package is exported to s's module then
+        // s participates in the preview API
+        return syms.java_base.exports.stream()
+                .filter(ed -> ed.packge.fullname == names.jdk_internal_javac)
+                .anyMatch(ed -> ed.modules.contains(s.packge().modle));
     }
 
     /**

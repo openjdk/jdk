@@ -733,7 +733,7 @@ public class RandomSupport {
                 r = (r * (0.5f * bound - halfOrigin) + halfOrigin) * 2.0f;
             }
             if (r >= bound) // may need to correct a rounding problem
-                r = Math.nextDown(r);
+                r = Math.nextDown(bound);
         }
         return r;
     }
@@ -765,7 +765,7 @@ public class RandomSupport {
         float r = rng.nextFloat();
         r = r * bound;
         if (r >= bound) // may need to correct a rounding problem
-            r = Math.nextDown(r);
+            r = Math.nextDown(bound);
         return r;
     }
 

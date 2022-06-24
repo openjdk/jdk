@@ -1693,6 +1693,10 @@ static inline bool is_pop_count_instr_target(BasicType bt) {
          (is_non_subword_integral_type(bt) && VM_Version::supports_avx512_vpopcntdq());
 }
 
+const bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
+  return match_rule_supported_vector(opcode, vlen, bt);
+}
+
 // Identify extra cases that we might want to provide match rules for vector nodes and
 // other intrinsics guarded with vector length (vlen) and element type (bt).
 const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
@@ -1878,11 +1882,15 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
       }
       break;
     case Op_VectorCastD2X:
-      if (is_subword_type(bt) || bt == T_INT) {
-        return false;
-      }
-      if (bt == T_LONG && !VM_Version::supports_avx512dq()) {
-        return false;
+      // Conversion to integral type is only supported on AVX-512 platforms with avx512dq.
+      // Need avx512vl for size_in_bits < 512
+      if (is_integral_type(bt)) {
+        if (!VM_Version::supports_avx512dq()) {
+          return false;
+        }
+        if (size_in_bits < 512 && !VM_Version::supports_avx512vl()) {
+          return false;
+        }
       }
       break;
     case Op_RoundVD:
@@ -1891,8 +1899,20 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
       }
       break;
     case Op_VectorCastF2X:
-      if (is_subword_type(bt) || bt == T_LONG) {
-        return false;
+      // F2I is supported on all AVX and above platforms
+      // For conversion to other integral types need AVX512:
+      //     Conversion to long in addition needs avx512dq
+      //     Need avx512vl for size_in_bits < 512
+      if (is_integral_type(bt) && (bt != T_INT)) {
+        if (UseAVX <= 2) {
+          return false;
+        }
+        if ((bt == T_LONG) && !VM_Version::supports_avx512dq()) {
+          return false;
+        }
+        if (size_in_bits < 512 && !VM_Version::supports_avx512vl()) {
+          return false;
+        }
       }
       break;
     case Op_MulReductionVI:
@@ -7325,6 +7345,8 @@ instruct vcastFtoD_reg(vec dst, vec src) %{
 
 
 instruct castFtoI_reg_avx(vec dst, vec src, vec xtmp1, vec xtmp2, vec xtmp3, vec xtmp4, rRegP scratch, rFlagsReg cr) %{
+  // F2I conversion for < 64 byte vector using AVX instructions
+  // AVX512 platforms that dont support avx512vl also use AVX instructions to support F2I
   predicate(!VM_Version::supports_avx512vl() &&
             Matcher::vector_length_in_bytes(n) < 64 &&
             Matcher::vector_element_basic_type(n) == T_INT);
@@ -7356,6 +7378,37 @@ instruct castFtoI_reg_evex(vec dst, vec src, vec xtmp1, vec xtmp2, kReg ktmp1, k
   ins_pipe( pipe_slow );
 %}
 
+instruct castFtoX_reg_evex(vec dst, vec src, vec xtmp1, vec xtmp2, kReg ktmp1, kReg ktmp2, rRegP scratch, rFlagsReg cr) %{
+  // F2X conversion for integral non T_INT target using AVX512 instructions
+  // Platforms that dont support avx512vl can only support 64 byte vectors
+  predicate(is_integral_type(Matcher::vector_element_basic_type(n)) &&
+            Matcher::vector_element_basic_type(n) != T_INT);
+  match(Set dst (VectorCastF2X src));
+  effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP ktmp1, TEMP ktmp2, TEMP scratch, KILL cr);
+  format %{ "vector_cast_f2x $dst,$src\t! using $xtmp1, $xtmp2, $ktmp1, $ktmp2 and $scratch as TEMP" %}
+  ins_encode %{
+    BasicType to_elem_bt = Matcher::vector_element_basic_type(this);
+    if (to_elem_bt == T_LONG) {
+      int vlen_enc = vector_length_encoding(this);
+      __ vector_castF2L_evex($dst$$XMMRegister, $src$$XMMRegister, $xtmp1$$XMMRegister,
+                             $xtmp2$$XMMRegister, $ktmp1$$KRegister, $ktmp2$$KRegister,
+                             ExternalAddress(vector_double_signflip()), $scratch$$Register, vlen_enc);
+    } else {
+      int vlen_enc = vector_length_encoding(this, $src);
+      __ vector_castF2I_evex($dst$$XMMRegister, $src$$XMMRegister, $xtmp1$$XMMRegister,
+                             $xtmp2$$XMMRegister, $ktmp1$$KRegister, $ktmp2$$KRegister,
+                             ExternalAddress(vector_float_signflip()), $scratch$$Register, vlen_enc);
+      if (to_elem_bt == T_SHORT) {
+        __ evpmovdw($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
+      } else {
+        assert(to_elem_bt == T_BYTE, "required");
+        __ evpmovdb($dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
+      }
+    }
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 instruct vcastDtoF_reg(vec dst, vec src) %{
   predicate(Matcher::vector_element_basic_type(n) == T_FLOAT);
   match(Set dst (VectorCastD2X src));
@@ -7367,14 +7420,15 @@ instruct vcastDtoF_reg(vec dst, vec src) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct castDtoL_reg_evex(vec dst, vec src, vec xtmp1, vec xtmp2, kReg ktmp1, kReg ktmp2, rRegP scratch, rFlagsReg cr) %{
-  predicate(Matcher::vector_element_basic_type(n) == T_LONG);
+instruct castDtoX_reg_evex(vec dst, vec src, vec xtmp1, vec xtmp2, kReg ktmp1, kReg ktmp2, rRegP scratch, rFlagsReg cr) %{
+  predicate(is_integral_type(Matcher::vector_element_basic_type(n)));
   match(Set dst (VectorCastD2X src));
   effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP ktmp1, TEMP ktmp2, TEMP scratch, KILL cr);
-  format %{ "vector_cast_d2l $dst,$src\t! using $xtmp1, $xtmp2, $ktmp1, $ktmp2 and $scratch as TEMP" %}
+  format %{ "vector_cast_d2x $dst,$src\t! using $xtmp1, $xtmp2, $ktmp1, $ktmp2 and $scratch as TEMP" %}
   ins_encode %{
-    int vlen_enc = vector_length_encoding(this);
-    __ vector_castD2L_evex($dst$$XMMRegister, $src$$XMMRegister, $xtmp1$$XMMRegister,
+    int vlen_enc = vector_length_encoding(this, $src);
+    BasicType to_elem_bt = Matcher::vector_element_basic_type(this);
+    __ vector_castD2X_evex(to_elem_bt, $dst$$XMMRegister, $src$$XMMRegister, $xtmp1$$XMMRegister,
                            $xtmp2$$XMMRegister, $ktmp1$$KRegister, $ktmp2$$KRegister,
                            ExternalAddress(vector_double_signflip()), $scratch$$Register, vlen_enc);
   %}

@@ -29,7 +29,7 @@
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
 #include "jfr/utilities/jfrAllocation.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 
 class CompositeOperationOr {
  public:

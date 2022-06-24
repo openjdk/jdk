@@ -26,8 +26,8 @@
 #define SHARE_RUNTIME_SAFEPOINT_HPP
 
 #include "memory/allStatic.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
-#include "runtime/thread.hpp"
 #include "runtime/vmOperation.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/waitBarrier.hpp"

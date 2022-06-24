@@ -141,9 +141,17 @@ module java.base {
         jdk.compiler;
     exports com.sun.security.ntlm to
         java.security.sasl;
+    // Note: all modules in the exported list participate in preview  features
+    // and therefore if they use preview features they do not need to be
+    // compiled with "--enable-preview".
+    // It is recommended for any modules that do participate that their
+    // module declaration be annotated with jdk.internal.javac.ParticipatesInPreview
     exports jdk.internal.javac to
         java.compiler,
+        java.management, // participates in preview features
         jdk.compiler,
+        jdk.incubator.concurrent, // participates in preview features
+        jdk.incubator.vector, // participates in preview features
         jdk.jdi,
         jdk.jfr,
         jdk.jshell,

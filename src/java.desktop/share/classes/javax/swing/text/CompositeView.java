@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@ package javax.swing.text;
 
 import java.util.*;
 import java.awt.*;
-import javax.swing.event.*;
-import javax.swing.SwingConstants;
 
 /**
  * <code>CompositeView</code> is an abstract <code>View</code>
@@ -398,8 +396,7 @@ public abstract class CompositeView extends View {
             try {
                 retValue = getNextVisualPositionFrom(-1, Position.Bias.Forward,
                                                      a, EAST, bias);
-            } catch (BadLocationException ble) { }
-            catch (IllegalArgumentException iae) { }
+            } catch (BadLocationException | IllegalArgumentException e) { }
             if(retValue == -1) {
                 retValue = getStartOffset();
                 bias[0] = Position.Bias.Forward;
@@ -411,8 +408,7 @@ public abstract class CompositeView extends View {
             try {
                 retValue = getNextVisualPositionFrom(-1, Position.Bias.Forward,
                                                      a, WEST, bias);
-            } catch (BadLocationException ble) { }
-            catch (IllegalArgumentException iae) { }
+            } catch (BadLocationException | IllegalArgumentException e) { }
 
             if(retValue == -1) {
                 // NOTE: this could actually use end offset with backward.
