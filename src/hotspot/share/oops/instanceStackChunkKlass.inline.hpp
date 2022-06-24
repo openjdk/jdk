@@ -26,7 +26,6 @@
 
 #include "oops/instanceStackChunkKlass.hpp"
 
-#include "classfile/javaClasses.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/stackChunkOop.inline.hpp"
 #include "runtime/continuationJavaClasses.hpp"

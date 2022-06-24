@@ -23,6 +23,8 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/javaClasses.hpp"
+#include "classfile/vmClasses.hpp"
 #include "gc/shared/allocTracer.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/memAllocator.hpp"
