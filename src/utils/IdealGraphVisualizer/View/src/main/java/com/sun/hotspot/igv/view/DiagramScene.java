@@ -409,33 +409,32 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         panAction = new CustomizablePanAction(~0, MouseEvent.BUTTON1_DOWN_MASK);
         this.getActions().addAction(panAction);
 
-        selectAction = new CustomSelectAction(new SelectProvider () {
-            public boolean isAimingAllowed (Widget widget, Point localLocation, boolean invertSelection) {
+        selectAction = new CustomSelectAction(new SelectProvider() {
+            public boolean isAimingAllowed(Widget widget, Point localLocation, boolean invertSelection) {
                 return false;
             }
 
-            public boolean isSelectionAllowed (Widget widget, Point localLocation, boolean invertSelection) {
-                return findObject (widget) != null;
+            public boolean isSelectionAllowed(Widget widget, Point localLocation, boolean invertSelection) {
+                return findObject(widget) != null;
             }
 
-            public void select (Widget widget, Point localLocation, boolean invertSelection) {
+            public void select(Widget widget, Point localLocation, boolean invertSelection) {
                 EditorTopComponent editor = EditorTopComponent.getActive();
                 if (editor != null) {
                     editor.requestActive();
                 }
-
-                Object object = findObject (widget);
-                setFocusedObject (object);
+                Object object = findObject(widget);
+                setFocusedObject(object);
                 if (object != null) {
-                    if (! invertSelection  &&  getSelectedObjects ().contains (object))
+                    if (!invertSelection && getSelectedObjects().contains(object)) {
                         return;
-                    userSelectionSuggested (Collections.singleton (object), invertSelection);
-                } else
-                    userSelectionSuggested (Collections.emptySet (), invertSelection);
+                    }
+                    userSelectionSuggested(Collections.singleton(object), invertSelection);
+                } else {
+                    userSelectionSuggested(Collections.emptySet(), invertSelection);
+                }
             }
         });
-
-
 
         this.getActions().addAction(selectAction);
 

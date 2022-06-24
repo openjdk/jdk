@@ -347,7 +347,6 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
                     @Override public void actionPerformed(ActionEvent e) {
                         EditorTopComponent.this.overviewButton.setSelected(true);
                         EditorTopComponent.this.overviewAction.setState(true);
-                        //showSatellite();
                     }
                 });
         centerPanel.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(
@@ -357,7 +356,6 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
                     @Override public void actionPerformed(ActionEvent e) {
                         EditorTopComponent.this.overviewButton.setSelected(false);
                         EditorTopComponent.this.overviewAction.setState(false);
-                        //showScene();
                     }
                 });
 
