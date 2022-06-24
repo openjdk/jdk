@@ -38,3 +38,5 @@ vmTestbase/nsk/jvmti/scenarios/sampling/SP07/sp07t002/TestDescription.java 82456
 vmTestbase/vm/mlvm/mixed/stress/regression/b6969574/INDIFY_Test.java 8265295 linux-x64,windows-x64
 
 serviceability/jvmti/VMObjectAlloc/VMObjectAllocTest.java 8288430 generic-all
+
+serviceability/jvmti/vthread/ContStackDepthTest/ContStackDepthTest.java 8288949 generic-all
