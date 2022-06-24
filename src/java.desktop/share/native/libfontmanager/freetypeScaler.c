@@ -51,6 +51,7 @@
 #define  FTFixedToFloat(x) ((x) / (float)(ftFixed1))
 #define  FT26Dot6ToFloat(x)  ((x) / ((float) (1<<6)))
 #define  FT26Dot6ToInt(x) (((int)(x)) >> 6)
+#define  FT26Dot6ToIntRound(x) (((int)(x + (1 << 5))) >> 6)
 #define  FT26Dot6ToIntCeil(x) (((int)(x - 1 + (1 << 6))) >> 6)
 #define  IntToFT26Dot6(x) (((FT_Fixed)(x)) << 6)
 
@@ -1312,17 +1313,17 @@ static jlong
             (float) - (advh * FTFixedToFloat(context->transform.yx));
     } else {
         if (!ftglyph->advance.y) {
-            glyphInfo->advanceX = FT26Dot6ToFloat(
+            glyphInfo->advanceX = FT26Dot6ToIntRound(
                     FT_MulFix(ftglyph->advance.x, manualScale));
             glyphInfo->advanceY = 0;
         } else if (!ftglyph->advance.x) {
             glyphInfo->advanceX = 0;
-            glyphInfo->advanceY = FT26Dot6ToFloat(
+            glyphInfo->advanceY = FT26Dot6ToIntRound(
                     -FT_MulFix(ftglyph->advance.y, manualScale));
         } else {
-            glyphInfo->advanceX = FT26Dot6ToFloat(
+            glyphInfo->advanceX = FT26Dot6ToIntRound(
                     FT_MulFix(ftglyph->advance.x, manualScale));
-            glyphInfo->advanceY = FT26Dot6ToFloat(
+            glyphInfo->advanceY = FT26Dot6ToIntRound(
                     -FT_MulFix(ftglyph->advance.y, manualScale));
         }
     }
