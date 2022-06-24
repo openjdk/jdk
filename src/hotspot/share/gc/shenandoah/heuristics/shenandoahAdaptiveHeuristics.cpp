@@ -85,8 +85,9 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
   // we hit max_cset. When max_cset is hit, we terminate the cset selection. Note that in this scheme,
   // ShenandoahGarbageThreshold is the soft threshold which would be ignored until min_garbage is hit.
 
-  size_t max_cset    = (ShenandoahHeap::heap()->get_young_evac_reserve() / ShenandoahEvacWaste);
-  size_t capacity    = ShenandoahHeap::heap()->young_generation()->soft_max_capacity();
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  size_t max_cset    = (size_t) (heap->get_young_evac_reserve() / ShenandoahEvacWaste);
+  size_t capacity    = heap->young_generation()->soft_max_capacity();
 
   // As currently implemented, we are not enforcing that new_garbage > min_garbage
   // size_t free_target = (capacity / 100) * ShenandoahMinFreeThreshold + max_cset;
@@ -106,13 +107,17 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
   // particular, regions that have reached tenure age will be sorted into this array before younger regions that contain
   // more garbage.  This represents one of the reasons why we keep looking at regions even after we decide, for example,
   // to exclude one of the regions because it might require evacuation of too much live data.
-
+  bool is_generational = heap->mode()->is_generational();
   for (size_t idx = 0; idx < size; idx++) {
     ShenandoahHeapRegion* r = data[idx]._region;
-    size_t biased_garbage = data[idx]._garbage;
-
-    size_t new_cset    = cur_cset + r->get_live_data_bytes();
-
+    size_t new_cset;
+    if (is_generational && (r->age() >= InitialTenuringThreshold)) {
+      // Entire region will be promoted, This region does not impact young-gen evacuation reserve.  Memory has already
+      // been set aside to hold evacuation results as advance_promotion_reserve.
+      new_cset = cur_cset;
+    } else {
+      new_cset = cur_cset + r->get_live_data_bytes();
+    }
     // As currently implemented, we are not enforcing that new_garbage > min_garbage
     // size_t new_garbage = cur_garbage + r->garbage();
 
@@ -139,8 +144,6 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
       cset->add_region(r);
       cur_cset = new_cset;
       // cur_garbage = new_garbage;
-    } else if (biased_garbage == 0) {
-      break;
     }
   }
 }

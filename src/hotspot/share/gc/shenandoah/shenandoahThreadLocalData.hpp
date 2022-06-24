@@ -56,12 +56,14 @@ private:
   PLAB* _plab;
   size_t _plab_size;
 
-  size_t _plab_evacuated;
-  size_t _plab_promoted;
-
   uint  _worker_id;
   int  _disarmed_value;
   double _paced_time;
+
+  size_t _plab_evacuated;
+  size_t _plab_promoted;
+  size_t _plab_preallocated_promoted;
+  bool   _plab_retries_enabled;
 
   ShenandoahThreadLocalData() :
     _gc_state(0),
@@ -72,10 +74,12 @@ private:
     _gclab_size(0),
     _plab(NULL),
     _plab_size(0),
+    _disarmed_value(0),
+    _paced_time(0),
     _plab_evacuated(0),
     _plab_promoted(0),
-    _disarmed_value(0),
-    _paced_time(0) {
+    _plab_preallocated_promoted(0),
+    _plab_retries_enabled(true) {
 
     // At least on x86_64, nmethod entry barrier encodes _disarmed_value offset
     // in instruction as disp8 immed
@@ -155,6 +159,18 @@ public:
     data(thread)->_plab_size = v;
   }
 
+  static void enable_plab_retries(Thread* thread) {
+    data(thread)->_plab_retries_enabled = true;
+  }
+
+  static void disable_plab_retries(Thread* thread) {
+    data(thread)->_plab_retries_enabled = false;
+  }
+
+  static bool plab_retries_enabled(Thread* thread) {
+    return data(thread)->_plab_retries_enabled;
+  }
+
   static void enable_plab_promotions(Thread* thread) {
     data(thread)->_plab_allows_promotion = true;
   }
@@ -197,6 +213,14 @@ public:
 
   static size_t get_plab_promoted(Thread* thread) {
     return data(thread)->_plab_promoted;
+  }
+
+  static void set_plab_preallocated_promoted(Thread* thread, size_t value) {
+    data(thread)->_plab_preallocated_promoted = value;
+  }
+
+  static size_t get_plab_preallocated_promoted(Thread* thread) {
+    return data(thread)->_plab_preallocated_promoted;
   }
 
   static void add_paced_time(Thread* thread, double v) {

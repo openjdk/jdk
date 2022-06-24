@@ -89,7 +89,7 @@ bool ShenandoahOldHeuristics::prime_collection_set(ShenandoahCollectionSet* coll
   // promotion until a subsequent evacuation pass.  Enforcement is provided at the time PLABs and shared allocations
   // in old-gen memory are requested.
 
-  const size_t promotion_budget_bytes = heap->get_promotion_reserve();
+  const size_t promotion_budget_bytes = heap->get_promoted_reserve();
 
   // old_evacuation_budget is an upper bound on the amount of live memory that can be evacuated.
   //

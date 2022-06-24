@@ -521,6 +521,13 @@
           "subsequent concurrent mark phase of GC.")                        \
           range(0, 100)                                                     \
                                                                             \
+  product(uintx, ShenandoahOldCompactionReserve, 8, EXPERIMENTAL,           \
+          "During generational GC, prevent promotions from filling "        \
+          "this number of heap regions.  These regions are reserved "       \
+          "for the purpose of supporting compaction of old-gen "            \
+          "memory.  Otherwise, old-gen memory cannot be compacted.")        \
+          range(0, 128)                                                     \
+                                                                            \
   product(bool, ShenandoahPromoteTenuredObjects, true, DIAGNOSTIC,          \
           "Turn on/off evacuating individual tenured young objects "        \
           " to the old generation.")                                        \

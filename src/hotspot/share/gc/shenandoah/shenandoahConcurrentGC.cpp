@@ -241,9 +241,9 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
       heap->set_young_evac_reserve(0);
       heap->set_old_evac_reserve(0);
       heap->reset_old_evac_expended();
-      heap->set_promotion_reserve(0);
+      heap->set_promoted_reserve(0);
     }
-    log_info(gc, ergo)("At end of concurrent GC, old_available: " SIZE_FORMAT "%s, young_available: " SIZE_FORMAT "%s",
+    log_info(gc, ergo)("At end of Concurrent GC, old_available: " SIZE_FORMAT "%s, young_available: " SIZE_FORMAT "%s",
                        byte_size_in_proper_unit(old_available), proper_unit_for_byte_size(old_available),
                        byte_size_in_proper_unit(young_available), proper_unit_for_byte_size(young_available));
   }
@@ -704,7 +704,7 @@ void ShenandoahConcurrentGC::op_final_mark() {
     // Upon return from prepare_regions_and_collection_set(), certain parameters have been established to govern the
     // evacuation efforts that are about to begin.  In particular:
     //
-    // heap->get_promotion_reserve() represents the amount of memory within old-gen's available memory that has
+    // heap->get_promoted_reserve() represents the amount of memory within old-gen's available memory that has
     //   been set aside to hold objects promoted from young-gen memory.  This represents an estimated percentage
     //   of the live young-gen memory within the collection set.  If there is more data ready to be promoted than
     //   can fit within this reserve, the promotion of some objects will be deferred until a subsequent evacuation

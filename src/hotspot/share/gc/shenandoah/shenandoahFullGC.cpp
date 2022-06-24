@@ -198,7 +198,7 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
     heap->set_young_evac_reserve(0);
     heap->set_old_evac_reserve(0);
     heap->reset_old_evac_expended();
-    heap->set_promotion_reserve(0);
+    heap->set_promoted_reserve(0);
 
     // Full GC supersedes any marking or coalescing in old generation.
     heap->cancel_old_gc();

@@ -52,10 +52,17 @@ private:
                                              // not include bytes reserved for old-generation replicas.  The value is
                                              // conservative in that memory may be reserved for objects that will be promoted.
   size_t                _young_bytes_to_evacuate;
+  size_t                _young_bytes_to_promote;
   size_t                _old_bytes_to_evacuate;
 
   size_t                _young_region_count;
   size_t                _old_region_count;
+
+  size_t                _old_garbage;        // How many bytes of old garbage are present in a mixed collection set?
+
+  bool*                 _preselected_regions;   // Points to array identifying which tenure-age regions have been preselected
+                                                // for inclusion in collection set.  This field is only valid during brief
+                                                // spans of time while collection set is being constructed.
 
   shenandoah_padding(0);
   volatile size_t       _current_index;
@@ -102,9 +109,17 @@ public:
   inline size_t get_old_bytes_reserved_for_evacuation();
   inline void reserve_old_bytes_for_evacuation(size_t byte_count);
 
+  inline size_t get_young_bytes_to_be_promoted();
+
   inline size_t get_old_region_count();
 
   inline size_t get_young_region_count();
+
+  inline size_t get_old_garbage();
+
+  void establish_preselected(bool *preselected) { _preselected_regions = preselected; }
+  void abandon_preselected() { _preselected_regions = nullptr; }
+  bool is_preselected(int region_idx) { return (_preselected_regions != nullptr) && _preselected_regions[region_idx]; }
 
   bool has_old_regions() const { return _has_old_regions; }
   size_t used()          const { return _used; }

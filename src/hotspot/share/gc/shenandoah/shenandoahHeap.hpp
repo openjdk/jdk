@@ -350,7 +350,7 @@ private:
   //
   // 1. Unadjust the capacity within young-gen and old-gen to undo the effects of borrowing memory from old-gen.  Note that
   //    the entirety of the collection set is now available, so allocation capacity naturally increase at this time.
-  // 2. Clear (reset to zero) _alloc_supplement_reserve, _young_evac_reserve, _old_evac_reserve, and _promotion_reserve
+  // 2. Clear (reset to zero) _alloc_supplement_reserve, _young_evac_reserve, _old_evac_reserve, and _promoted_reserve
   //
   // _young_evac_reserve and _old_evac_reserve are only non-zero during evacuation and update-references.
   //
@@ -364,11 +364,11 @@ private:
   // Only after "all" threads fail to evacuate an object do we consider the evacuation effort to have failed.
 
   intptr_t _alloc_supplement_reserve;  // Bytes reserved for young allocations during evac and update refs
-  size_t _promotion_reserve;           // Bytes reserved within old-gen to hold the results of promotion
-
+  size_t _promoted_reserve;            // Bytes reserved within old-gen to hold the results of promotion
+  volatile size_t _promoted_expended;  // Bytes of old-gen memory expended on promotions
 
   size_t _old_evac_reserve;            // Bytes reserved within old-gen to hold evacuated objects from old-gen collection set
-  size_t _old_evac_expended;           // Bytes of old-gen memory expended on old-gen evacuations
+  volatile size_t _old_evac_expended;  // Bytes of old-gen memory expended on old-gen evacuations
 
   size_t _young_evac_reserve;          // Bytes reserved within young-gen to hold evacuated objects from young-gen collection set
 
@@ -426,8 +426,13 @@ public:
   inline size_t get_previous_promotion() const;
 
   // Returns previous value
-  inline size_t set_promotion_reserve(size_t new_val);
-  inline size_t get_promotion_reserve() const;
+  inline size_t set_promoted_reserve(size_t new_val);
+  inline size_t get_promoted_reserve() const;
+
+  inline void reset_promoted_expended();
+  inline size_t expend_promoted(size_t increment);
+  inline size_t unexpend_promoted(size_t decrement);
+  inline size_t get_promoted_expended();
 
   // Returns previous value
   inline size_t set_old_evac_reserve(size_t new_val);
@@ -435,7 +440,7 @@ public:
 
   inline void reset_old_evac_expended();
   inline size_t expend_old_evac(size_t increment);
-  inline size_t get_old_evac_expended() const;
+  inline size_t get_old_evac_expended();
 
   // Returns previous value
   inline size_t set_young_evac_reserve(size_t new_val);
@@ -790,6 +795,7 @@ public:
   void clear_cards(HeapWord* start, HeapWord* end);
   void mark_card_as_dirty(void* location);
   void retire_plab(PLAB* plab);
+  void retire_plab(PLAB* plab, Thread* thread);
   void cancel_old_gc();
   bool is_old_gc_active();
   void coalesce_and_fill_old_regions();

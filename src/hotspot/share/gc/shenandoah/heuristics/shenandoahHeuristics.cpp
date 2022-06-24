@@ -77,8 +77,25 @@ ShenandoahHeuristics::~ShenandoahHeuristics() {
   FREE_C_HEAP_ARRAY(RegionGarbage, _region_data);
 }
 
-void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collection_set, ShenandoahOldHeuristics* old_heuristics) {
+size_t ShenandoahHeuristics::select_aged_regions(size_t old_available, size_t num_regions, bool preselected_regions[]) {
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  size_t old_consumed = 0;
+  if (heap->mode()->is_generational()) {
+    for (size_t i = 0; i < num_regions; i++) {
+      ShenandoahHeapRegion* region = heap->get_region(i);
+      if (in_generation(region) && !region->is_empty() && region->is_regular() && (region->age() >= InitialTenuringThreshold)) {
+        size_t promotion_need = (size_t) (region->get_live_data_bytes() * ShenandoahEvacWaste);
+        if (old_consumed + promotion_need < old_available) {
+          old_consumed += promotion_need;
+          preselected_regions[i] = true;
+        }
+      }
+    }
+  }
+  return old_consumed;
+}
 
+void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collection_set, ShenandoahOldHeuristics* old_heuristics) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
   assert(collection_set->count() == 0, "Must be empty");
@@ -131,9 +148,16 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
         live_memory += region->get_live_data_bytes();
         // This is our candidate for later consideration.
         candidates[cand_idx]._region = region;
-        if (heap->mode()->is_generational() && (region->age() >= InitialTenuringThreshold)) {
-          // Bias selection of regions that have reached tenure age
-          for (uint j = region->age() - InitialTenuringThreshold; j > 0; j--) {
+        if (collection_set->is_preselected(i)) {
+          // If regions is presected, we know mode()->is_generational() and region->age() >= InitialTenuringThreshold)
+
+          // TODO: Deprecate and/or refine ShenandoahTenuredRegionUsageBias.  If we preselect the regions, we can just
+          // set garbage to "max" value, which is the region size rather than doing this extra work to bias selection.
+          // May also want to exercise more discretion in select_aged_regions() if we decide there are good reasons
+          // to not promote all eligible aged regions on the current GC pass.
+
+          // If we're at tenure age, bias at least once.
+          for (uint j = region->age() + 1 - InitialTenuringThreshold; j > 0; j--) {
             garbage = (garbage + ShenandoahTenuredRegionUsageBias) * ShenandoahTenuredRegionUsageBias;
           }
         }
@@ -250,7 +274,7 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
 
       const size_t available_young_regions = free_regions + immediate_regions + young_generation->free_unaffiliated_regions();
       const size_t available_old_regions = old_generation->free_unaffiliated_regions();
-      size_t already_reserved_old_bytes = heap->get_old_evac_reserve() + heap->get_promotion_reserve();
+      size_t already_reserved_old_bytes = heap->get_old_evac_reserve() + heap->get_promoted_reserve();
       size_t regions_reserved_for_evac_and_promotion = (already_reserved_old_bytes + region_size_bytes - 1) / region_size_bytes;
       regions_available_to_loan = available_old_regions - regions_reserved_for_evac_and_promotion;
 
@@ -314,7 +338,7 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
 
     heap->set_alloc_supplement_reserve(potential_evac_supplement);
 
-    size_t promotion_budget = heap->get_promotion_reserve();
+    size_t promotion_budget = heap->get_promoted_reserve();
     size_t old_evac_budget = heap->get_old_evac_reserve();
     size_t alloc_budget_evac_and_update = potential_evac_supplement + young_available;
 
@@ -359,6 +383,10 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
                      byte_size_in_proper_unit(collection_set->garbage()),
                      proper_unit_for_byte_size(collection_set->garbage()),
                      cset_percent);
+
+  size_t bytes_evacuated = collection_set->get_bytes_reserved_for_evacuation();
+  log_info(gc, ergo)("Total Evacuation: " SIZE_FORMAT "%s",
+                     byte_size_in_proper_unit(bytes_evacuated), proper_unit_for_byte_size(bytes_evacuated));
 }
 
 void ShenandoahHeuristics::record_cycle_start() {
