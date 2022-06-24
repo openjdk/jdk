@@ -45,14 +45,7 @@ public class threadstart01 {
     final static String NAME_PREFIX = "threadstart01-";
 
     static {
-        try {
-            System.loadLibrary("threadstart01");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load threadstart01 library");
-            System.err.println("java.library.path:"
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
+        System.loadLibrary("threadstart01");
     }
 
     native static void getReady(int i, String name);

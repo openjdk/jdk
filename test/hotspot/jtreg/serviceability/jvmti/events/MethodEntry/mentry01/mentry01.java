@@ -50,14 +50,7 @@
 public class mentry01 {
 
     static {
-        try {
-            System.loadLibrary("mentry01");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load mentry01 library");
-            System.err.println("java.library.path:"
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
+        System.loadLibrary("mentry01");
     }
 
     static volatile int result;

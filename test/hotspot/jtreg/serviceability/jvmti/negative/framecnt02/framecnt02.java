@@ -48,14 +48,7 @@ public class framecnt02 {
     native static int getRes();
 
     static {
-        try {
-            System.loadLibrary("framecnt02");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load framecnt02 library");
-            System.err.println("java.library.path:"
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
+        System.loadLibrary("framecnt02");
     }
 
     static int flag = 0;

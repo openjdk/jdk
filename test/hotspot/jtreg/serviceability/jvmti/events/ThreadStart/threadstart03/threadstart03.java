@@ -47,14 +47,7 @@ public class threadstart03 {
     final static String ThreadName = "testedThread";
 
     static {
-        try {
-            System.loadLibrary("threadstart03");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load threadstart03 library");
-            System.err.println("java.library.path:"
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
+        System.loadLibrary("threadstart03");
     }
 
     native static int check(Thread thr, String name);

@@ -46,14 +46,7 @@
 public class fieldacc02 {
 
     static {
-        try {
-            System.loadLibrary("fieldacc02");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load fieldacc02 library");
-            System.err.println("java.library.path:"
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
+        System.loadLibrary("fieldacc02");
     }
 
     static volatile int result;

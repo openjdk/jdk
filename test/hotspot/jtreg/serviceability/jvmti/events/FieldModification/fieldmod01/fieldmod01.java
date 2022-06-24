@@ -46,14 +46,7 @@
 public class fieldmod01 {
 
     static {
-        try {
-            System.loadLibrary("fieldmod01");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load fieldmod01 library");
-            System.err.println("java.library.path:"
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
+        System.loadLibrary("fieldmod01");
     }
 
     static volatile int result;

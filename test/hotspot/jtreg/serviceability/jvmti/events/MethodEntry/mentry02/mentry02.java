@@ -49,14 +49,7 @@ public class mentry02 {
     final static int MAX_LOOP = 100;
 
     static {
-        try {
-            System.loadLibrary("mentry02");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load mentry02 library");
-            System.err.println("java.library.path:"
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
+        System.loadLibrary("mentry02");
     }
 
     static volatile int result;

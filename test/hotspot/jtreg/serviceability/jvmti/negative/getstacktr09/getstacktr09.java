@@ -45,14 +45,7 @@ public class getstacktr09 {
     final static int FAILED = 2;
 
     static {
-        try {
-            System.loadLibrary("getstacktr09");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load getstacktr09 library");
-            System.err.println("java.library.path:"
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
+        System.loadLibrary("getstacktr09");
     }
 
     native static int check(Thread thread1, Thread thread2);

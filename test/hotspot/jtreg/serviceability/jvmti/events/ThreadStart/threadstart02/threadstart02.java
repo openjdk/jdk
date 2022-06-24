@@ -64,14 +64,7 @@
 public class threadstart02 {
 
     static {
-        try {
-            System.loadLibrary("threadstart02");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load threadstart02 library");
-            System.err.println("java.library.path:"
-                    + System.getProperty("java.library.path"));
-            throw ule;
-        }
+        System.loadLibrary("threadstart02");
     }
 
     native static int check();

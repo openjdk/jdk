@@ -43,14 +43,7 @@
 public class frameloc02 {
 
     static {
-        try {
-            System.loadLibrary("frameloc02");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load frameloc02 library");
-            System.err.println("java.library.path:"
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
+        System.loadLibrary("frameloc02");
     }
 
     native static int check(Thread thr);

@@ -45,14 +45,7 @@ public class threadend01 {
     final static String NAME_PREFIX = "threadend01-";
 
     static {
-        try {
-            System.loadLibrary("threadend01");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load threadend01 library");
-            System.err.println("java.library.path:"
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
+        System.loadLibrary("threadend01");
     }
 
     native static void getReady(int i, String name);

@@ -44,14 +44,7 @@
 public class frameloc03 {
 
     static {
-        try {
-            System.loadLibrary("frameloc03");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load frameloc03 library");
-            System.err.println("java.library.path:"
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
+        System.loadLibrary("frameloc03");
     }
 
     public static Object lockStart = new Object();
