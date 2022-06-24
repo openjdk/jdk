@@ -15060,10 +15060,10 @@ instruct overflowAddL_reg_imm(rFlagsReg cr, iRegL op1, immLAddSub op2)
 %{
   match(Set cr (OverflowAddL op1 op2));
 
-  format %{ "cmn   $op1, $op2\t# overflow check long" %}
+  format %{ "adds  zr, $op1, $op2\t# overflow check long" %}
   ins_cost(INSN_COST);
   ins_encode %{
-    __ cmn($op1$$Register, $op2$$constant);
+    __ adds(zr, $op1$$Register, $op2$$constant);
   %}
 
   ins_pipe(icmp_reg_imm);
