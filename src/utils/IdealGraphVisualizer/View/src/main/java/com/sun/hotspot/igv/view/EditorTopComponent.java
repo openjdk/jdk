@@ -115,7 +115,7 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     private static final Component quicksearch;
     static {
         Action searchAction = Utilities.actionsForPath("Actions/Search").get(0);
-        quicksearch =  ((Presenter.Toolbar) searchAction).getToolbarPresenter();
+        quicksearch = ((Presenter.Toolbar) searchAction).getToolbarPresenter();
         Dimension preferredSize = quicksearch.getPreferredSize();
         preferredSize = new Dimension((int) preferredSize.getWidth() * 2, (int) preferredSize.getHeight());
         quicksearch.setMinimumSize(preferredSize); // necessary for GTK LAF
