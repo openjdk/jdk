@@ -291,10 +291,18 @@ const nsKeyToJavaModifierTable[] =
         //kCGSFlagsMaskAppleLeftAlternateKey,
         //kCGSFlagsMaskAppleRightAlternateKey,
         58,
-        61,
+        0,
         java_awt_event_InputEvent_ALT_DOWN_MASK,
         java_awt_event_InputEvent_ALT_MASK,
         java_awt_event_KeyEvent_VK_ALT
+    },
+    {
+        NSAlternateKeyMask,
+        0,
+        61,
+        java_awt_event_InputEvent_ALT_GRAPH_DOWN_MASK,
+        java_awt_event_InputEvent_ALT_GRAPH_MASK,
+        java_awt_event_KeyEvent_VK_ALT_GRAPH
     },
     // NSNumericPadKeyMask
     {
@@ -309,6 +317,7 @@ const nsKeyToJavaModifierTable[] =
     {0, 0, 0, 0, 0, 0}
 };
 
+static BOOL leftAltKeyPressed;
 
 /*
  * Almost all unicode characters just go from NS to Java with no translation.
@@ -539,9 +548,13 @@ NsKeyModifiersToJavaKeyInfo(NSUInteger nsFlags, unsigned short eventKeyCode,
             //    *javaKeyLocation = java_awt_event_KeyEvent_KEY_LOCATION_RIGHT;
             //}
             if (eventKeyCode == cur->leftKeyCode) {
+                leftAltKeyPressed = YES;
                 *javaKeyLocation = java_awt_event_KeyEvent_KEY_LOCATION_LEFT;
             } else if (eventKeyCode == cur->rightKeyCode) {
                 *javaKeyLocation = java_awt_event_KeyEvent_KEY_LOCATION_RIGHT;
+            } else if (cur->nsMask == NSAlternateKeyMask) {
+                leftAltKeyPressed = NO;
+                continue;
             }
             *javaKeyType = (cur->nsMask & nsFlags) ?
             java_awt_event_KeyEvent_KEY_PRESSED :
@@ -565,6 +578,9 @@ jint NsKeyModifiersToJavaModifiers(NSUInteger nsFlags, BOOL isExtMods)
             //right alt, but that should be ok, since right alt contains left alt
             //mask value.
             javaModifiers |= isExtMods ? cur->javaExtMask : cur->javaMask;
+            if (cur->nsMask == NSAlternateKeyMask && leftAltKeyPressed) {
+                    break; //since right alt key struct is defined last, break out of the loop                }
+            }
         }
     }
 
