@@ -2652,13 +2652,13 @@ void Node::dump_out(outputStream* st, DumpConfig* dc) const {
 //------------------------------dump-------------------------------------------
 // call from debugger: dump Node's inputs (or outputs if d negative)
 void Node::dump(int d) const {
-  dump_bfs(abs(d), nullptr, (d>0) ? "+$" : "-$");
+  dump_bfs(abs(d), nullptr, (d > 0) ? "+$" : "-$");
 }
 
 //------------------------------dump_ctrl--------------------------------------
 // call from debugger: dump Node's control inputs (or outputs if d negative)
 void Node::dump_ctrl(int d) const {
-  dump_bfs(abs(d), nullptr, (d>0) ? "+$c" : "-$c");
+  dump_bfs(abs(d), nullptr, (d > 0) ? "+$c" : "-$c");
 }
 
 //-----------------------------dump_compact------------------------------------
