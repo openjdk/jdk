@@ -537,7 +537,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
             List<Field> instanceFields = new ArrayList<>();
             Iterator<Field> itr = null;
             // loader + signer + protectionDomain + 2 reserved + fieldSize + cpool entris number
-            size += OBJ_ID_SIZE * 5 + INT_SIZE + SHORT_SIZE;
+            size += (int) (OBJ_ID_SIZE * 5 + INT_SIZE + SHORT_SIZE);
             for (itr = declaredFields.iterator(); itr.hasNext();) {
                 Field field = itr.next();
                 if (field.isStatic()) {
@@ -551,16 +551,16 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
             // size of instance field descriptors
             size += calculateFieldDescriptorsDumpRecordSize(instanceFields, null);
         } else {
-            size += OBJ_ID_SIZE * 5  + INT_SIZE + SHORT_SIZE * 3;
+            size += (int) (OBJ_ID_SIZE * 5  + INT_SIZE + SHORT_SIZE * 3);
         }
         return size;
     }
 
     private int calculateFieldDescriptorsDumpRecordSize(List<Field> fields, InstanceKlass ik) {
         int size = 0;
-        size += SHORT_SIZE;
+        size += (int) SHORT_SIZE;
         for (Field field : fields) {
-            size += OBJ_ID_SIZE + BYTE_SIZE;
+            size += (int) (OBJ_ID_SIZE + BYTE_SIZE);
             // ik == null for instance fields
             if (ik != null) {
                 // static field
