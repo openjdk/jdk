@@ -983,47 +983,39 @@ HeapWord* ShenandoahHeap::allocate_from_plab_slow(Thread* thread, size_t size, b
 // would allow smaller and faster in-line implementation of alloc_from_plab().  Since plabs are aligned on card-table boundaries,
 // this object registration loop can be performed without acquiring a lock.
 void ShenandoahHeap::retire_plab(PLAB* plab, Thread* thread) {
-  if (!mode()->is_generational()) {
-    plab->retire();
-  } else {
-    // We don't enforce limits on plab_evacuated.  We let it consume all available old-gen memory in order to reduce
-    // probability of an evacuation failure.  We do enforce limits on promotion, to make sure that excessive promotion
-    // does not result in an old-gen evacuation failure.  Note that a failed promotion is relatively harmless.  Any
-    // object that fails to promote in the current cycle will be eligible for promotion in a subsequent cycle.
+  // We don't enforce limits on plab_evacuated.  We let it consume all available old-gen memory in order to reduce
+  // probability of an evacuation failure.  We do enforce limits on promotion, to make sure that excessive promotion
+  // does not result in an old-gen evacuation failure.  Note that a failed promotion is relatively harmless.  Any
+  // object that fails to promote in the current cycle will be eligible for promotion in a subsequent cycle.
 
-    // When the plab was instantiated, its entirety was treated as if the entire buffer was going to be dedicated to
-    // promotions.  Now that we are retiring the buffer, we adjust for the reality that the plab is not entirely promotions.
-    //  1. Some of the plab may have been dedicated to evacuations.
-    //  2. Some of the plab may have been abandoned due to waste (at the end of the plab).
-    size_t not_promoted =
-      ShenandoahThreadLocalData::get_plab_preallocated_promoted(thread) - ShenandoahThreadLocalData::get_plab_promoted(thread);
-    ShenandoahThreadLocalData::reset_plab_promoted(thread);
-    ShenandoahThreadLocalData::reset_plab_evacuated(thread);
-    ShenandoahThreadLocalData::set_plab_preallocated_promoted(thread, 0);
-    if (not_promoted > 0) {
-      unexpend_promoted(not_promoted);
-    }
-    size_t waste = plab->waste();
-    HeapWord* top = plab->top();
-    plab->retire();
-    if (top != NULL && plab->waste() > waste && is_in_old(top)) {
-      // If retiring the plab created a filler object, then we
-      // need to register it with our card scanner so it can
-      // safely walk the region backing the plab.
-      log_debug(gc)("retire_plab() is registering remnant of size " SIZE_FORMAT " at " PTR_FORMAT,
-                    plab->waste() - waste, p2i(top));
-      card_scan()->register_object_wo_lock(top);
-    }
+  // When the plab was instantiated, its entirety was treated as if the entire buffer was going to be dedicated to
+  // promotions.  Now that we are retiring the buffer, we adjust for the reality that the plab is not entirely promotions.
+  //  1. Some of the plab may have been dedicated to evacuations.
+  //  2. Some of the plab may have been abandoned due to waste (at the end of the plab).
+  size_t not_promoted =
+    ShenandoahThreadLocalData::get_plab_preallocated_promoted(thread) - ShenandoahThreadLocalData::get_plab_promoted(thread);
+  ShenandoahThreadLocalData::reset_plab_promoted(thread);
+  ShenandoahThreadLocalData::reset_plab_evacuated(thread);
+  ShenandoahThreadLocalData::set_plab_preallocated_promoted(thread, 0);
+  if (not_promoted > 0) {
+    unexpend_promoted(not_promoted);
+  }
+  size_t waste = plab->waste();
+  HeapWord* top = plab->top();
+  plab->retire();
+  if (top != NULL && plab->waste() > waste && is_in_old(top)) {
+    // If retiring the plab created a filler object, then we
+    // need to register it with our card scanner so it can
+    // safely walk the region backing the plab.
+    log_debug(gc)("retire_plab() is registering remnant of size " SIZE_FORMAT " at " PTR_FORMAT,
+                  plab->waste() - waste, p2i(top));
+    card_scan()->register_object_wo_lock(top);
   }
 }
 
 void ShenandoahHeap::retire_plab(PLAB* plab) {
-  if (!mode()->is_generational()) {
-    plab->retire();
-  } else {
-    Thread* thread = Thread::current();
-    retire_plab(plab, thread);
-  }
+  Thread* thread = Thread::current();
+  retire_plab(plab, thread);
 }
 
 void ShenandoahHeap::cancel_old_gc() {
