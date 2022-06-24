@@ -34,6 +34,7 @@
 #include "prims/jvmtiImpl.hpp"
 #include "prims/jvmtiTagMap.hpp"
 #include "prims/jvmtiThreadState.inline.hpp"
+#include "runtime/continuationJavaClasses.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaThread.inline.hpp"

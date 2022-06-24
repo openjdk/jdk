@@ -56,6 +56,7 @@
 #include "prims/nativeLookup.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/continuation.hpp"
+#include "runtime/continuationJavaClasses.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/frame.inline.hpp"

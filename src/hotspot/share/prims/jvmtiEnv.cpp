@@ -59,6 +59,7 @@
 #include "prims/jvmtiThreadState.inline.hpp"
 #include "prims/jvmtiUtil.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/continuationJavaClasses.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"

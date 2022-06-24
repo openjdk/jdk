@@ -30,8 +30,14 @@
 #include "logging/log.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/instanceKlass.inline.hpp"
 #include "oops/stackChunkOop.inline.hpp"
 #include "runtime/atomic.hpp"
+
+inline oop java_lang_VirtualThread::vthread_scope() {
+  oop base = vmClasses::VirtualThread_klass()->static_field_base_raw();
+  return base->obj_field(static_vthread_scope_offset);
+}
 
 inline oop jdk_internal_vm_ContinuationScope::name(oop ref) {
   return ref->obj_field(_name_offset);

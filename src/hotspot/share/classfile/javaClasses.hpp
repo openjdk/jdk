@@ -520,55 +520,6 @@ class java_lang_ThreadGroup : AllStatic {
   friend class JavaClasses;
 };
 
-
-// Interface to java.lang.VirtualThread objects
-
-class java_lang_VirtualThread : AllStatic {
- private:
-  static int static_notify_jvmti_events_offset;
-  static int static_vthread_scope_offset;
-  static int _carrierThread_offset;
-  static int _continuation_offset;
-  static int _state_offset;
-  JFR_ONLY(static int _jfr_epoch_offset;)
- public:
-  enum {
-    NEW          = 0,
-    STARTED      = 1,
-    RUNNABLE     = 2,
-    RUNNING      = 3,
-    PARKING      = 4,
-    PARKED       = 5,
-    PINNED       = 6,
-    YIELDING     = 7,
-    TERMINATED   = 99,
-
-    // can be suspended from scheduling when unmounted
-    SUSPENDED    = 1 << 8,
-    RUNNABLE_SUSPENDED = (RUNNABLE | SUSPENDED),
-    PARKED_SUSPENDED   = (PARKED | SUSPENDED)
-  };
-
-  static void compute_offsets();
-  static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
-
-  // Testers
-  static bool is_subclass(Klass* klass) {
-    return klass->is_subclass_of(vmClasses::VirtualThread_klass());
-  }
-  static bool is_instance(oop obj);
-
-  static oop vthread_scope();
-  static oop carrier_thread(oop vthread);
-  static oop continuation(oop vthread);
-  static int state(oop vthread);
-  static JavaThreadStatus map_state_to_thread_status(int state);
-  static bool notify_jvmti_events();
-  static void set_notify_jvmti_events(bool enable);
-  static void init_static_notify_jvmti_events();
-};
-
-
 // Interface to java.lang.Throwable objects
 
 class java_lang_Throwable: AllStatic {

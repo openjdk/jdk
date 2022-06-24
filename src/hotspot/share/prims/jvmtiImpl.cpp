@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "code/nmethod.hpp"
 #include "interpreter/interpreter.hpp"
@@ -42,6 +41,7 @@
 #include "prims/jvmtiImpl.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
 #include "runtime/continuation.hpp"
+#include "runtime/continuationJavaClasses.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"

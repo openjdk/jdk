@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,6 +27,7 @@
 #include "code/scopeDesc.hpp"
 #include "memory/allocation.hpp"
 #include "prims/jvmtiDeferredUpdates.hpp"
+#include "runtime/continuationJavaClasses.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/escapeBarrier.hpp"
 #include "runtime/frame.inline.hpp"

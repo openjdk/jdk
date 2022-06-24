@@ -203,11 +203,6 @@ inline int64_t java_lang_Thread::thread_id(oop java_thread) {
   return java_thread->long_field(_tid_offset);
 }
 
-inline oop java_lang_VirtualThread::vthread_scope() {
-  oop base = vmClasses::VirtualThread_klass()->static_field_base_raw();
-  return base->obj_field(static_vthread_scope_offset);
-}
-
 #if INCLUDE_JFR
 inline u2 java_lang_Thread::jfr_epoch(oop ref) {
   return ref->short_field(_jfr_epoch_offset);
