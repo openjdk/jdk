@@ -531,12 +531,8 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
             Boolean.class,
             params -> {
                 if (hasPredefinedAppImage(params)) {
-                    try {
-                        return AppImageFile.load(getPredefinedAppImage(params))
-                                .isAppStore();
-                    } catch (IOException ex) {
-                        return false;
-                    }
+                    return AppImageFile.load(getPredefinedAppImage(params))
+                            .isAppStore();
                 }
                 return false;
             },

@@ -140,14 +140,9 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
                     SIGN_BUNDLE.fetchFrom(params)).orElse(Boolean.FALSE)) {
                 // if signing bundle with app-image, warn user if app-image
                 // is not already signed.
-                try {
-                    if (!(AppImageFile.load(applicationImage).isSigned())) {
-                        Log.info(MessageFormat.format(I18N.getString(
-                                 "warning.unsigned.app.image"), getID()));
-                    }
-                } catch (IOException ioe) {
-                    // Ignore - In case of a forign or tampered with app-image,
-                    // user is notified of this when the name is extracted.
+                if (!(AppImageFile.load(applicationImage).isSigned())) {
+                    Log.info(MessageFormat.format(I18N.getString(
+                            "warning.unsigned.app.image"), getID()));
                 }
             }
         } else {

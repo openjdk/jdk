@@ -44,9 +44,9 @@
 #include "memory/resourceArea.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/thread.inline.hpp"
 
 const int initial_array_size = 64;
 
