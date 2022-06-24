@@ -68,7 +68,7 @@ import sun.security.util.Debug;
 import sun.security.util.DerValue;
 import sun.security.util.ECUtil;
 
-import sun.security.pkcs11.Secmod.*;
+import sun.security.pkcs11.Secmod.ModuleType;
 import static sun.security.pkcs11.P11Util.*;
 
 import sun.security.pkcs11.wrapper.*;
@@ -538,11 +538,8 @@ final class P11KeyStore extends KeyStoreSpi {
      * XXX - not sure whether to keep this
      */
     private boolean deleteEntry(String alias) throws KeyStoreException {
-        AliasInfo aliasInfo = aliasMap.get(alias);
+        AliasInfo aliasInfo = aliasMap.remove(alias);
         if (aliasInfo != null) {
-
-            aliasMap.remove(alias);
-
             try {
                 if (aliasInfo.type == ATTR_CLASS_CERT) {
                     // trusted certificate entry
