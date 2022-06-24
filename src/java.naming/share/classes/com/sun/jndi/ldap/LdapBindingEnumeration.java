@@ -25,6 +25,7 @@
 
 package com.sun.jndi.ldap;
 
+import java.lang.invoke.VarHandle;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
@@ -102,6 +103,9 @@ final class LdapBindingEnumeration
             binding.setNameInNamespace(dn);
             return binding;
         } finally {
+            // Ensure writes are visible to the Cleaner thread
+            VarHandle.fullFence();
+            // Ensure Cleaner does not run until after this method completes
             Reference.reachabilityFence(this);
         }
     }
@@ -109,7 +113,14 @@ final class LdapBindingEnumeration
     @Override
     protected AbstractLdapNamingEnumeration<? extends NameClassPair> getReferredResults(
             LdapReferralContext refCtx) throws NamingException{
-        // repeat the original operation at the new context
-        return (AbstractLdapNamingEnumeration<? extends NameClassPair>)refCtx.listBindings(listArg);
+        try {
+            // repeat the original operation at the new context
+            return (AbstractLdapNamingEnumeration<? extends NameClassPair>) refCtx.listBindings(listArg);
+        } finally {
+            // Ensure writes are visible to the Cleaner thread
+            VarHandle.fullFence();
+            // Ensure Cleaner does not run until after this method completes
+            Reference.reachabilityFence(this);
+        }
     }
 }

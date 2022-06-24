@@ -224,7 +224,8 @@ module java.base {
         jdk.management,
         jdk.jfr;
     exports jdk.internal.ref to
-        java.desktop;
+        java.desktop,
+        java.naming;
     exports jdk.internal.reflect to
         java.logging,
         java.sql,

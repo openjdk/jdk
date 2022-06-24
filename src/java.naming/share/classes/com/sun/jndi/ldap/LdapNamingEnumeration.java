@@ -29,6 +29,7 @@ import javax.naming.*;
 import javax.naming.directory.*;
 
 import com.sun.jndi.toolkit.ctx.Continuation;
+import java.lang.invoke.VarHandle;
 import java.util.Vector;
 import javax.naming.ldap.Control;
 import java.lang.ref.Reference;
@@ -70,7 +71,10 @@ final class LdapNamingEnumeration
             }
             ncp.setNameInNamespace(dn);
             return ncp;
-        } finally {
+        }  finally {
+            // Ensure writes are visible to the Cleaner thread
+            VarHandle.fullFence();
+            // Ensure Cleaner does not run until after this method completes
             Reference.reachabilityFence(this);
         }
     }
@@ -78,7 +82,14 @@ final class LdapNamingEnumeration
     @Override
     protected AbstractLdapNamingEnumeration<? extends NameClassPair> getReferredResults(
             LdapReferralContext refCtx) throws NamingException {
-        // repeat the original operation at the new context
-        return (AbstractLdapNamingEnumeration<? extends NameClassPair>)refCtx.list(listArg);
+        try {
+            // repeat the original operation at the new context
+            return (AbstractLdapNamingEnumeration<? extends NameClassPair>)refCtx.list(listArg);
+        } finally {
+            // Ensure writes are visible to the Cleaner thread
+            VarHandle.fullFence();
+            // Ensure Cleaner does not run until after this method completes
+            Reference.reachabilityFence(this);
+        }
     }
 }
