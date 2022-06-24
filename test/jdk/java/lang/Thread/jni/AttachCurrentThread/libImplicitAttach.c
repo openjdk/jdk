@@ -1,5 +1,4 @@
 /*
- * Copyright (c) 2022 SAP SE. All rights reserved.
  * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -20,22 +19,26 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
+#include <stdio.h>
+#include <pthread.h>
 
-    .globl SafeFetch32_impl
-    .globl _SafeFetch32_fault
-    .globl _SafeFetch32_continuation
-    .type SafeFetch32_impl, %function
+#define STACK_SIZE 0x100000
 
-    # Support for int SafeFetch32(int* address, int defaultval);
-    #
-    #  r0 : address
-    #  r1 : defaultval
-SafeFetch32_impl:
-_SafeFetch32_fault:
-    ldr      r0, [r0]
-    bx       lr
-_SafeFetch32_continuation:
-    mov      r0, r1
-    bx       lr
+/**
+ * Creates n threads to execute the given function.
+ */
+void start_threads(int n, void *(*f)(void *)) {
+    pthread_t tid;
+    pthread_attr_t attr;
+    int i;
+
+    pthread_attr_init(&attr);
+    pthread_attr_setstacksize(&attr, STACK_SIZE);
+    for (i = 0; i < n ; i++) {
+        int res = pthread_create(&tid, &attr, f, NULL);
+        if (res != 0) {
+            fprintf(stderr, "pthread_create failed: %d\n", res);
+        }
+    }
+}

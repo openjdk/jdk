@@ -21,30 +21,42 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8286287
- * @summary Verifies newStringNoRepl() does not throw an Error.
+import java.util.concurrent.CountDownLatch;
+
+/**
+ * Test native threads attaching to the VM with JNI AttachCurrentThread.
  */
+public class ExplicitAttach {
+    private static volatile CountDownLatch latch;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.HexFormat;
-import static java.nio.charset.StandardCharsets.UTF_16;
-
-public class NewStringNoRepl {
-    private final static byte[] MALFORMED_UTF16 = {(byte)0x00, (byte)0x20, (byte)0x00};
-
-    public static void main(String... args) throws IOException {
-        var f = Files.createTempFile(null, null);
-        try (var fos = Files.newOutputStream(f)) {
-            fos.write(MALFORMED_UTF16);
+    public static void main(String[] args) throws Exception {
+        int threadCount;
+        if (args.length > 0) {
+            threadCount = Integer.parseInt(args[0]);
+        } else {
+            threadCount = 2;
         }
-        System.out.println("Returned bytes: " +
-            HexFormat.of()
-                .withPrefix("x")
-                .withUpperCase()
-                .formatHex(Files.readString(f, UTF_16).getBytes(UTF_16)));
-        Files.delete(f);
+        latch = new CountDownLatch(threadCount);
+
+        // start the threads and wait for the threads to call home
+        startThreads(threadCount);
+        latch.await();
+    }
+
+    /**
+     * Invoked by attached threads.
+     */
+    private static void callback() {
+        System.out.println(Thread.currentThread());
+        latch.countDown();
+    }
+
+    /**
+     * Start n native threads that attach to the VM and invoke callback.
+     */
+    private static native void startThreads(int n);
+
+    static {
+        System.loadLibrary("ExplicitAttach");
     }
 }
