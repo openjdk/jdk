@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,33 +23,27 @@
 
 /*
  * @test
- *
- * @summary converted from VM Testbase nsk/jvmti/GetFrameCount/framecnt003.
- * VM Testbase keywords: [quick, jpda, jvmti, noras]
- * VM Testbase readme:
- * DESCRIPTION
- *     The test exercises JVMTI function GetFrameCount(thread, countPtr).
- *     The test checks if the function returns JVMTI_ERROR_INVALID_THREAD
- *     if thread is not a thread object.
- * COMMENTS
- *     Ported from JVMDI.
- *
+ * @bug 8288976
  * @library /test/lib
- * @run main/othervm/native -agentlib:framecnt03 framecnt03
+ * @summary Check that the right message is displayed for NoClassDefFoundError exception.
+ * @requires vm.flagless
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ * @compile C.java
+ * @run driver Bad_NCDFE_Msg
  */
 
-public class framecnt03 {
+import java.io.File;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
-    static {
-        System.loadLibrary("framecnt03");
-    }
+public class Bad_NCDFE_Msg {
 
-    native static int check();
-
-    public static void main(String args[]) {
-        int result = check();
-        if (result != 0) {
-            throw new RuntimeException("check failed with result " + result);
-        }
+    public static void main(String args[]) throws Throwable {
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            "-cp", System.getProperty("test.classes") + File.separator + "pkg", "C");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldContain("java.lang.NoClassDefFoundError: C (wrong name: pkg/C");
+        output.shouldHaveExitValue(1);
     }
 }

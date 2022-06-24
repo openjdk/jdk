@@ -33,7 +33,6 @@ import java.util.Formatter;
 import java.util.HashSet;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Locale;
 import java.util.Objects;
@@ -70,7 +69,6 @@ class ResourceBundleGenerator implements BundleGenerator {
     private static final String META_VALUE_PREFIX = "metaValue_";
 
     @Override
-    @SuppressWarnings("unchecked")
     public void generateBundle(String packageName, String baseName, String localeID, boolean useJava,
                                Map<String, ?> map, BundleType type) throws IOException {
         String suffix = useJava ? ".java" : ".properties";
@@ -144,56 +142,34 @@ class ResourceBundleGenerator implements BundleGenerator {
             map = newMap;
         } else {
             // generic reduction of duplicated values
-            Map<String, Object> newMap = null;
-            for (String key : map.keySet()) {
-                Object val = map.get(key);
-                String metaVal = null;
-
-                for (Map.Entry<String, ?> entry : map.entrySet()) {
-                    String k = entry.getKey();
-                    if (!k.equals(key) &&
-                        Objects.deepEquals(val, entry.getValue()) &&
-                        !(Objects.nonNull(newMap) && newMap.containsKey(k))) {
-                        if (Objects.isNull(newMap)) {
-                            newMap = new HashMap<>();
+            Map<String, Object> newMap = new LinkedHashMap<>(map);
+            Map<BundleEntryValue, BundleEntryValue> dedup = new HashMap<>(map.size());
+            for (Map.Entry<String, ?> entry : map.entrySet()) {
+                String key = entry.getKey();
+                Object val = entry.getValue();
+                BundleEntryValue newEntry = new BundleEntryValue(key, val);
+                BundleEntryValue oldEntry = dedup.putIfAbsent(newEntry, newEntry);
+                if (oldEntry != null) {
+                    if (oldEntry.meta()) {
+                        if (fmt == null) {
                             fmt = new Formatter();
                         }
-
-                        if (Objects.isNull(metaVal)) {
-                            metaVal = META_VALUE_PREFIX + key.replaceAll("[\\.-]", "_");
-
-                            if (val instanceof String[]) {
-                                fmt.format("        final String[] %s = new String[] {\n", metaVal);
-                                for (String s : (String[]) val) {
-                                    fmt.format("            \"%s\",\n", CLDRConverter.saveConvert(s, useJava));
-                                }
-                                fmt.format("        };\n");
-                            } else if (val instanceof List) {
-                                fmt.format("        final String[] %s = new String[] {\n", metaVal);
-                                for (String s : (List<String>) val) {
-                                    fmt.format("            \"%s\",\n", CLDRConverter.saveConvert(s, useJava));
-                                }
-                                fmt.format("        };\n");
-                            } else {
-                                fmt.format("        final String %s = \"%s\";\n", metaVal, CLDRConverter.saveConvert((String)val, useJava));
+                        String metaVal = oldEntry.metaKey();
+                        if (val instanceof String[] values) {
+                            fmt.format("        final String[] %s = new String[] {\n", metaVal);
+                            for (String s : values) {
+                                fmt.format("            \"%s\",\n", CLDRConverter.saveConvert(s, useJava));
                             }
+                            fmt.format("        };\n");
+                        } else {
+                            fmt.format("        final String %s = \"%s\";\n", metaVal, CLDRConverter.saveConvert((String)val, useJava));
                         }
-
-                        newMap.put(k, metaVal);
+                        newMap.put(oldEntry.key, oldEntry.metaKey());
                     }
-                }
-
-                if (Objects.nonNull(metaVal)) {
-                    newMap.put(key, metaVal);
+                    newMap.put(key, oldEntry.metaKey());
                 }
             }
-
-            if (Objects.nonNull(newMap)) {
-                for (String key : map.keySet()) {
-                    newMap.putIfAbsent(key, map.get(key));
-                }
-                map = newMap;
-            }
+            map = newMap;
         }
 
         try (PrintWriter out = new PrintWriter(file, encoding)) {
@@ -244,6 +220,58 @@ class ResourceBundleGenerator implements BundleGenerator {
             if (useJava) {
                 out.println("        };\n        return data;\n    }\n}");
             }
+        }
+    }
+
+    private static class BundleEntryValue {
+        private final String key;
+        private final Object value;
+        private final int hashCode;
+        private String metaKey;
+
+        BundleEntryValue(String key, Object value) {
+            this.key = Objects.requireNonNull(key);
+            this.value = Objects.requireNonNull(value);
+            if (value instanceof String) {
+                hashCode = value.hashCode();
+            } else if (value instanceof String[] arr) {
+                hashCode = Arrays.hashCode(arr);
+            } else {
+                throw new InternalError("Expected a string or a string array");
+            }
+        }
+
+        /**
+         * mark the entry as meta
+         * @return true if the entry was not meta before, false otherwise
+         */
+        public boolean meta() {
+            if (metaKey == null) {
+                metaKey = META_VALUE_PREFIX + key.replaceAll("[\\.-]", "_");
+                return true;
+            }
+            return false;
+        }
+
+        public String metaKey() {
+            return metaKey;
+        }
+
+        @Override
+        public int hashCode() {
+            return hashCode;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof BundleEntryValue entry) {
+                if (value instanceof String s) {
+                    return s.equals(entry.value);
+                } else if (entry.value instanceof String[] otherVal) {
+                    return Arrays.equals((String[]) value, otherVal);
+                }
+            }
+            return false;
         }
     }
 

@@ -74,13 +74,13 @@ int fcopyfile_callback(int what, int stage, copyfile_state_t state,
 
 // Copy via an intermediate temporary direct buffer
 JNIEXPORT void JNICALL
-Java_sun_nio_fs_UnixCopyFile_bufferCopy0
+Java_sun_nio_fs_UnixCopyFile_bufferedCopy0
     (JNIEnv* env, jclass this, jint dst, jint src, jlong address,
     jint transferSize, jlong cancelAddress)
 {
     volatile jint* cancel = (jint*)jlong_to_ptr(cancelAddress);
 
-    char* buf = (char*)address;
+    char* buf = (char*)jlong_to_ptr(address);
 
 #if defined(__linux__)
     int advice = POSIX_FADV_SEQUENTIAL | // sequential data access

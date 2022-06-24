@@ -21,30 +21,6 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8286287
- * @summary Verifies newStringNoRepl() does not throw an Error.
- */
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.HexFormat;
-import static java.nio.charset.StandardCharsets.UTF_16;
-
-public class NewStringNoRepl {
-    private final static byte[] MALFORMED_UTF16 = {(byte)0x00, (byte)0x20, (byte)0x00};
-
-    public static void main(String... args) throws IOException {
-        var f = Files.createTempFile(null, null);
-        try (var fos = Files.newOutputStream(f)) {
-            fos.write(MALFORMED_UTF16);
-        }
-        System.out.println("Returned bytes: " +
-            HexFormat.of()
-                .withPrefix("x")
-                .withUpperCase()
-                .formatHex(Files.readString(f, UTF_16).getBytes(UTF_16)));
-        Files.delete(f);
-    }
-}
+// class used by test Bad_NCDFE_Msg.java.
+package pkg;
+public class C { }
