@@ -107,7 +107,7 @@ public class bug4529206 {
                     }
                 }
             });
-	} finally {
+        } finally {
             SwingUtilities.invokeAndWait(() -> {
                 if (frame != null) {
                     frame.dispose();
