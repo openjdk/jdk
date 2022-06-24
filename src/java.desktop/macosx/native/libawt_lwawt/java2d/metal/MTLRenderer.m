@@ -81,7 +81,7 @@ void MTLRenderer_SetPrimitiveType(MTLPrimitiveType type) {
     }
 }
 
-void MTLRenderer_AddVertexToBatch(float x, float y)
+inline void MTLRenderer_AddVertexToBatch(float x, float y)
 {
    vertexBatch[currentIndexInBatch].position[0] = x;
    vertexBatch[currentIndexInBatch].position[1] = y;
@@ -258,7 +258,6 @@ void MTLRenderer_DrawRect(MTLContext *mtlc, BMTLSDOps * dstOps, jint x, jint y, 
 
     // Translate each vertex by a fraction so
     // that we hit pixel centers.
-    //const int verticesCount = 5;
     float fx = (float)x + 0.2f;
     float fy = (float)y + 0.5f;
     float fw = (float)w;
