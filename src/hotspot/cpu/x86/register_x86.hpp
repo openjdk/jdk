@@ -73,8 +73,6 @@ public:
   const char *name() const;
 };
 
-// The implementation of integer registers for the ia32 architecture
-
 REGISTER_IMPL_DECLARATION(Register, RegisterImpl, RegisterImpl::number_of_registers);
 
 // The integer registers of the ia32/amd64 architecture
@@ -168,7 +166,7 @@ class XMMRegisterImpl: public AbstractRegisterImpl {
 
   // accessors
   int raw_encoding() const                       { return this - first(); }
-  int   encoding() const                          { assert(is_valid(), "invalid register (%d)", (int)raw_encoding() ); return raw_encoding(); }
+  int   encoding() const                         { assert(is_valid(), "invalid register"); return raw_encoding(); }
   bool  is_valid() const                          { return 0 <= raw_encoding() && raw_encoding() < number_of_registers; }
   const char* name() const;
   const char* sub_word_name(int offset) const;
