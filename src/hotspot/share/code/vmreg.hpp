@@ -56,16 +56,25 @@ private:
     BAD_REG = -1
   };
 
-
+  // Despite being private, this field is exported to the
+  // serviceability agent and our friends.
   static VMReg stack0;
+
   static constexpr VMReg first();
   // Names for registers
   static const char *regName[];
   static const int register_count;
 
+  static constexpr VMReg stack_0() {
+    return first() + ((ConcreteRegisterImpl::number_of_registers + 7) & ~7);
+  }
+
 public:
 
-  static VMReg  as_VMReg(int val, bool bad_ok = false) { assert(val > BAD_REG || bad_ok, "invalid"); return val + first(); }
+  static VMReg  as_VMReg(int val, bool bad_ok = false) {
+    assert(val > BAD_REG || bad_ok, "invalid");
+    return val + first();
+  }
 
   const char*  name() {
     if (is_reg()) {
@@ -77,10 +86,10 @@ public:
       return "STACKED REG";
     }
   }
-  int raw_encoding() const { return this - first(); }
+  intptr_t value() const { return this - first(); }
   static VMReg Bad() { return BAD_REG+first(); }
-  bool is_valid() const { return raw_encoding() != BAD_REG; }
-  bool is_stack() const { return this >= stack0; }
+  bool is_valid() const { return value() != BAD_REG; }
+  bool is_stack() const { return this >= stack_0(); }
   bool is_reg()   const { return is_valid() && !is_stack(); }
 
   // A concrete register is a value that returns true for is_reg() and is
@@ -111,8 +120,6 @@ public:
   }
 
 
-  intptr_t value() const         {return raw_encoding(); }
-
   void print_on(outputStream* st) const;
   void print() const;
 
@@ -131,12 +138,12 @@ public:
 
   // Convert register numbers to stack slots and vice versa
   static VMReg stack2reg( int idx ) {
-    return stack0 + idx;
+    return stack_0() + idx;
   }
 
   uintptr_t reg2stack() {
     assert( is_stack(), "Not a stack-based register" );
-    return this - stack0;
+    return this - stack_0();
   }
 
   static void set_regName();
