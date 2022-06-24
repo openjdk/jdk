@@ -19,39 +19,31 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_VM_RUNTIME_CONTINUATIONENTRY_INLINE_HPP
-#define SHARE_VM_RUNTIME_CONTINUATIONENTRY_INLINE_HPP
+/*
+ * @test
+ * @bug 8288976
+ * @library /test/lib
+ * @summary Check that the right message is displayed for NoClassDefFoundError exception.
+ * @requires vm.flagless
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ * @compile C.java
+ * @run driver Bad_NCDFE_Msg
+ */
 
-#include "runtime/continuationEntry.hpp"
+import java.io.File;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
-#include "oops/access.hpp"
-#include "runtime/frame.hpp"
-#include "utilities/align.hpp"
+public class Bad_NCDFE_Msg {
 
-#include CPU_HEADER_INLINE(continuationEntry)
-
-inline intptr_t* ContinuationEntry::bottom_sender_sp() const {
-  intptr_t* sp = entry_sp() - argsize();
-#ifdef _LP64
-  sp = align_down(sp, frame::frame_alignment);
-#endif
-  return sp;
+    public static void main(String args[]) throws Throwable {
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            "-cp", System.getProperty("test.classes") + File.separator + "pkg", "C");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldContain("java.lang.NoClassDefFoundError: C (wrong name: pkg/C");
+        output.shouldHaveExitValue(1);
+    }
 }
-
-inline oop ContinuationEntry::cont_oop() const {
-  oop snapshot = _cont;
-  return NativeAccess<>::oop_load(&snapshot);
-}
-
-inline oop ContinuationEntry::cont_oop_or_null(const ContinuationEntry* ce) {
-  return ce == nullptr ? nullptr : ce->cont_oop();
-}
-
-inline oop ContinuationEntry::scope() const {
-  return Continuation::continuation_scope(cont_oop());
-}
-
-#endif // SHARE_VM_RUNTIME_CONTINUATIONENTRY_INLINE_HPP

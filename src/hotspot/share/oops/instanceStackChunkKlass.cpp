@@ -23,14 +23,15 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/javaClasses.inline.hpp"
 #include "classfile/vmClasses.hpp"
 #include "compiler/oopMap.inline.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceStackChunkKlass.inline.hpp"
 #include "oops/stackChunkOop.inline.hpp"
 #include "runtime/continuation.hpp"
+#include "runtime/continuationJavaClasses.inline.hpp"
 #include "runtime/frame.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/registerMap.hpp"
