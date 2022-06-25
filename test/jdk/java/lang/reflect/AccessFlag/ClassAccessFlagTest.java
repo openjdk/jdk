@@ -39,17 +39,42 @@ import java.util.*;
  *
  * Additionally, the access flags super and synthetic cannot be
  * explicitly applied.
+ *
+ * This test is written on top of the facilities of core reflection.
+ *
+ * Note that core reflection does not offer a supported mechanism to
+ * return the Class object created from a module-info.class
+ * file. Therefore, this test does not attempt to probe the setting of
+ * that access flag.
+ *
+ * For a class, the VM must treat the class as if the ACC_SUPER bit
+ * were set, but that bit is cleared by HotSpot when it is passed out
+ * to the core reflection libraries. Therefore, this test does not
+ * attempt to check whether or not AccessFlag.SUPER is set.
  */
-public class ClassAccessFlagTest {
+@ExpectedClassFlags("[PUBLIC, FINAL]")
+public final class ClassAccessFlagTest {
     public static void main(String... args) {
-        for (var clazz :
-                 ClassAccessFlagTest.class.getDeclaredClasses()) {
-            checkClass(clazz);
-        }
-        checkClass(TestInterface.class);
-        checkClass(ExpectedClassFlags.class);
+        // Top-level and axuillary classes; i.e. non-inner classes
+        Class<?>[] testClasses = {
+            ClassAccessFlagTest.class,
+            TestInterface.class,
+            ExpectedClassFlags.class,
+            TestOuterEnum.class
+        };
+        checkClasses(testClasses);
+
+        // Nested classes of ClassAccessFlagTest
+        checkClasses(ClassAccessFlagTest.class.getDeclaredClasses());
+
         checkPrimitives();
         checkArrays();
+    }
+
+    private static void checkClasses(Class<?>[] classes) {
+        for (var clazz : classes) {
+            checkClass(clazz);
+        }
     }
 
     private static void checkClass(Class<?> clazz) {
@@ -145,12 +170,29 @@ public class ClassAccessFlagTest {
 
     }
 
+    // inner classes and interfaces; possible flags on INNER_CLASS
+    // locations:
+    // PUBLIC, PRIVATE, PROTECTED, STATIC, FINAL, INTERFACE, ABSTRACT,
+    // SYNTHETIC, ANNOTATION, ENUM.
+
+    @ExpectedClassFlags("[PUBLIC, STATIC, INTERFACE, ABSTRACT]")
     public      interface PublicInterface {}
+    @ExpectedClassFlags("[PROTECTED, STATIC, INTERFACE, ABSTRACT]")
     protected   interface ProtectedInterface {}
+    @ExpectedClassFlags("[PRIVATE, STATIC, INTERFACE, ABSTRACT]")
     private     interface PrivateInterface {}
+    @ExpectedClassFlags("[STATIC, INTERFACE, ABSTRACT]")
     /*package*/ interface PackageInterface {}
 
-    // Classes
+    @ExpectedClassFlags("[FINAL]")
+    /*package*/ final class TestFinalClass {}
+
+    @ExpectedClassFlags("[ABSTRACT]")
+    /*package*/ abstract class TestAbstractClass {}
+
+    @ExpectedClassFlags("[STATIC, INTERFACE, ABSTRACT, ANNOTATION]")
+    /*package*/ @interface TestMarkerAnnotation {}
+
     @ExpectedClassFlags("[PUBLIC, STATIC, FINAL, ENUM]")
     public enum MetaSynVar {
         QUUX;
@@ -182,3 +224,9 @@ public class ClassAccessFlagTest {
 
 @ExpectedClassFlags("[INTERFACE, ABSTRACT]")
 interface TestInterface {}
+
+
+@ExpectedClassFlags("[FINAL, ENUM]")
+enum TestOuterEnum {
+    INSTANCE;
+}
