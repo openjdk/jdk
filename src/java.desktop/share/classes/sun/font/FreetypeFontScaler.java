@@ -144,8 +144,7 @@ class FreetypeFontScaler extends FontScaler {
                                          glyphCode,
                                          x, y);
         }
-        return FontScaler.getNullScaler().
-            getGlyphOutline(0L, glyphCode, x,y);
+        return null;
     }
 
     synchronized GeneralPath getGlyphVectorOutline(

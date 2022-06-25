@@ -29,6 +29,7 @@ import java.awt.font.FontRenderContext;
 import java.awt.font.GlyphVector;
 import java.awt.font.TextLayout;
 
+import sun.font.StandardGlyphVector;
 import sun.java2d.SunGraphics2D;
 import sun.java2d.SurfaceData;
 import sun.font.GlyphList;
@@ -47,35 +48,43 @@ public abstract class GlyphListPipe implements TextPipe {
         if (info.nonInvertibleTx) {
             return;
         }
-        if (info.pixelHeight > OutlineTextRenderer.THRESHHOLD) {
-            SurfaceData.outlineTextRenderer.drawString(sg2d, s, x, y);
-            return;
-        }
-
-        float devx, devy;
-        if (sg2d.transformState >= SunGraphics2D.TRANSFORM_TRANSLATESCALE) {
-            double[] origin = {x + info.originX, y + info.originY};
-            sg2d.transform.transform(origin, 0, origin, 0, 1);
-            devx = (float)origin[0];
-            devy = (float)origin[1];
-        } else {
-            devx = (float)(x + info.originX + sg2d.transX);
-            devy = (float)(y + info.originY + sg2d.transY);
-        }
-        /* setFromString returns false if shaping is needed, and we then back
-         * off to a TextLayout. Such text may benefit slightly from a lower
-         * overhead in this approach over the approach in previous releases.
-         */
         GlyphList gl = GlyphList.getInstance();
-        if (gl.setFromString(info, s, devx, devy)) {
-            drawGlyphList(sg2d, gl);
+        boolean renderFallback = false;
+        try {
+            if (info.pixelHeight > OutlineTextRenderer.THRESHHOLD) {
+                SurfaceData.outlineTextRenderer.drawGlyphVector(sg2d,
+                        new StandardGlyphVector(sg2d.getFont(), s, sg2d.getFontRenderContext()), (float) x, (float) y, gl);
+                if (gl.getNumGlyphs() > 0) renderFallback = true;
+            }
+
+            float devx, devy;
+            if (sg2d.transformState >= SunGraphics2D.TRANSFORM_TRANSLATESCALE) {
+                double[] origin = {x + info.originX, y + info.originY};
+                sg2d.transform.transform(origin, 0, origin, 0, 1);
+                devx = (float)origin[0];
+                devy = (float)origin[1];
+            } else {
+                devx = (float)(x + info.originX + sg2d.transX);
+                devy = (float)(y + info.originY + sg2d.transY);
+            }
+            /* setFromString returns false if shaping is needed, and we then back
+             * off to a TextLayout. Such text may benefit slightly from a lower
+             * overhead in this approach over the approach in previous releases.
+             */
+            if (renderFallback) {
+                gl.setPosition(devx, devy);
+                drawGlyphList(sg2d, gl);
+                return;
+            } else if (gl.setFromString(info, s, devx, devy)) {
+                drawGlyphList(sg2d, gl);
+                return;
+            }
+        } finally {
             gl.dispose();
-        } else {
-            gl.dispose(); // release this asap.
-            TextLayout tl = new TextLayout(s, sg2d.getFont(),
-                                           sg2d.getFontRenderContext());
-            tl.draw(sg2d, (float)x, (float)y);
         }
+        TextLayout tl = new TextLayout(s, sg2d.getFont(),
+                sg2d.getFontRenderContext());
+        tl.draw(sg2d, (float)x, (float)y);
     }
 
     public void drawChars(SunGraphics2D sg2d,
@@ -86,33 +95,39 @@ public abstract class GlyphListPipe implements TextPipe {
         if (info.nonInvertibleTx) {
             return;
         }
-        float x, y;
-        if (info.pixelHeight > OutlineTextRenderer.THRESHHOLD) {
-            SurfaceData.outlineTextRenderer.drawChars(
-                                        sg2d, data, offset, length, ix, iy);
-            return;
-        }
-        if (sg2d.transformState >= SunGraphics2D.TRANSFORM_TRANSLATESCALE) {
-            double[] origin = {ix + info.originX, iy + info.originY};
-            sg2d.transform.transform(origin, 0, origin, 0, 1);
-            x = (float) origin[0];
-            y = (float) origin[1];
-        } else {
-            x = ix + info.originX + sg2d.transX;
-            y = iy + info.originY + sg2d.transY;
-        }
         GlyphList gl = GlyphList.getInstance();
-        if (gl.setFromChars(info, data, offset, length, x, y)) {
-            drawGlyphList(sg2d, gl);
+        boolean renderFallback = false;
+        try {
+            float x, y;
+            if (info.pixelHeight > OutlineTextRenderer.THRESHHOLD) {
+                SurfaceData.outlineTextRenderer.drawGlyphVector(sg2d,
+                        new StandardGlyphVector(sg2d.getFont(), data, offset, length, sg2d.getFontRenderContext()), ix, iy, gl);
+                if (gl.getNumGlyphs() > 0) renderFallback = true;
+            }
+            if (sg2d.transformState >= SunGraphics2D.TRANSFORM_TRANSLATESCALE) {
+                double[] origin = {ix + info.originX, iy + info.originY};
+                sg2d.transform.transform(origin, 0, origin, 0, 1);
+                x = (float) origin[0];
+                y = (float) origin[1];
+            } else {
+                x = ix + info.originX + sg2d.transX;
+                y = iy + info.originY + sg2d.transY;
+            }
+            if (renderFallback) {
+                gl.setPosition(x, y);
+                drawGlyphList(sg2d, gl);
+                return;
+            } else if (gl.setFromChars(info, data, offset, length, x, y)) {
+                drawGlyphList(sg2d, gl);
+                return;
+            }
+        } finally {
             gl.dispose();
-        } else {
-            gl.dispose(); // release this asap.
-            TextLayout tl = new TextLayout(new String(data, offset, length),
-                                           sg2d.getFont(),
-                                           sg2d.getFontRenderContext());
-            tl.draw(sg2d, ix, iy);
-
         }
+        TextLayout tl = new TextLayout(new String(data, offset, length),
+                sg2d.getFont(),
+                sg2d.getFontRenderContext());
+        tl.draw(sg2d, ix, iy);
     }
 
     public void drawGlyphVector(SunGraphics2D sg2d, GlyphVector gv,
@@ -123,24 +138,29 @@ public abstract class GlyphListPipe implements TextPipe {
         if (info.nonInvertibleTx) {
             return;
         }
-        if (info.pixelHeight > OutlineTextRenderer.THRESHHOLD) {
-            SurfaceData.outlineTextRenderer.drawGlyphVector(sg2d, gv, x, y);
-            return;
-        }
-        if (sg2d.transformState >= SunGraphics2D.TRANSFORM_TRANSLATESCALE) {
-            double[] origin = {x, y};
-            sg2d.transform.transform(origin, 0, origin, 0, 1);
-            x = (float) origin[0];
-            y = (float) origin[1];
-        } else {
-            x += sg2d.transX; // don't use the glyph info origin, already in gv.
-            y += sg2d.transY;
-        }
-
         GlyphList gl = GlyphList.getInstance();
-        gl.setFromGlyphVector(info, gv, x, y);
-        drawGlyphList(sg2d, gl, info.aaHint);
-        gl.dispose();
+        boolean renderFallback = false;
+        try {
+            if (info.pixelHeight > OutlineTextRenderer.THRESHHOLD) {
+                SurfaceData.outlineTextRenderer.drawGlyphVector(sg2d, gv, x, y, gl);
+                if (gl.getNumGlyphs() > 0) renderFallback = true;
+            }
+            if (sg2d.transformState >= SunGraphics2D.TRANSFORM_TRANSLATESCALE) {
+                double[] origin = {x, y};
+                sg2d.transform.transform(origin, 0, origin, 0, 1);
+                x = (float) origin[0];
+                y = (float) origin[1];
+            } else {
+                x += sg2d.transX; // don't use the glyph info origin, already in gv.
+                y += sg2d.transY;
+            }
+
+            if (renderFallback) gl.setPosition(x, y);
+            else gl.setFromGlyphVector(info, gv, x, y);
+            drawGlyphList(sg2d, gl, info.aaHint);
+        } finally {
+            gl.dispose();
+        }
     }
 
     protected abstract void drawGlyphList(SunGraphics2D sg2d, GlyphList gl);
