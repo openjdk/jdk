@@ -695,7 +695,6 @@ javax/swing/JTable/8236907/LastVisibleRow.java 8284619 macosx-all
 
 # core_tools
 
-tools/jlink/plugins/CompressorPluginTest.java                   8247407 generic-all
 
 ############################################################################
 
