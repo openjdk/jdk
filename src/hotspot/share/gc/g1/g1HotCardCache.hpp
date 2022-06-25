@@ -27,8 +27,8 @@
 
 #include "gc/g1/g1CardCounts.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class G1CardTableEntryClosure;

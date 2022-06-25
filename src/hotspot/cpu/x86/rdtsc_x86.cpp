@@ -25,8 +25,8 @@
 #include "precompiled.hpp"
 #include "rdtsc_x86.hpp"
 #include "runtime/globals_extension.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/orderAccess.hpp"
-#include "runtime/thread.inline.hpp"
 #include "vm_version_x86.hpp"
 
 // The following header contains the implementations of rdtsc()

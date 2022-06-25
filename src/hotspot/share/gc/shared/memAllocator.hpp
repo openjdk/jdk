@@ -27,7 +27,7 @@
 
 #include "memory/memRegion.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"

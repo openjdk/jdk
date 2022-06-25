@@ -29,6 +29,7 @@ import java.io.InputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
+import java.lang.reflect.AccessFlag;
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -105,7 +106,7 @@ public class ModuleDescriptor
          * An open module. An open module does not declare any open packages
          * but the resulting module is treated as if all packages are open.
          */
-        OPEN,
+        OPEN(AccessFlag.OPEN.mask()),
 
         /**
          * An automatic module. An automatic module is treated as if it exports
@@ -114,19 +115,24 @@ public class ModuleDescriptor
          * @apiNote This modifier does not correspond to a module flag in the
          * binary form of a module declaration ({@code module-info.class}).
          */
-        AUTOMATIC,
+        AUTOMATIC(0 /* no flag per above comment */),
 
         /**
          * The module was not explicitly or implicitly declared.
          */
-        SYNTHETIC,
+        SYNTHETIC(AccessFlag.SYNTHETIC.mask()),
 
         /**
          * The module was implicitly declared.
          */
-        MANDATED;
-    }
+        MANDATED(AccessFlag.MANDATED.mask());
 
+        private final int mask;
+        private Modifier(int mask) {
+            this.mask = mask;
+        }
+        private int mask() {return mask;}
+    }
 
     /**
      * <p> A dependence upon a module. </p>
@@ -152,28 +158,31 @@ public class ModuleDescriptor
              * module</i> to have an implicitly declared dependence on the module
              * named by the {@code Requires}.
              */
-            TRANSITIVE,
+            TRANSITIVE(AccessFlag.TRANSITIVE.mask()),
 
             /**
              * The dependence is mandatory in the static phase, during compilation,
              * but is optional in the dynamic phase, during execution.
              */
-            STATIC,
+            STATIC(AccessFlag.STATIC_PHASE.mask()),
 
             /**
              * The dependence was not explicitly or implicitly declared in the
              * source of the module declaration.
              */
-            SYNTHETIC,
+            SYNTHETIC(AccessFlag.SYNTHETIC.mask()),
 
             /**
              * The dependence was implicitly declared in the source of the module
              * declaration.
              */
-            MANDATED;
-
+            MANDATED(AccessFlag.MANDATED.mask());
+            private final int mask;
+            private Modifier(int mask) {
+                this.mask = mask;
+            }
+            private int mask() {return mask;}
         }
-
         private final Set<Modifier> mods;
         private final String name;
         private final Version compiledVersion;
@@ -201,6 +210,21 @@ public class ModuleDescriptor
          */
         public Set<Modifier> modifiers() {
             return mods;
+        }
+
+        /**
+         * {@return an unmodifiable set of the module {@linkplain AccessFlag
+         * requires flags, possibly empty}}
+         * @see #modifiers()
+         * @jvms 4.7.25 The Module Attribute
+         * @since 20
+         */
+        public Set<AccessFlag> accessFlags() {
+            int mask = 0;
+            for (var modifier : mods) {
+                mask |= modifier.mask();
+            }
+            return AccessFlag.maskToAccessFlags(mask, AccessFlag.Location.MODULE_REQUIRES);
         }
 
         /**
@@ -376,14 +400,19 @@ public class ModuleDescriptor
              * The export was not explicitly or implicitly declared in the
              * source of the module declaration.
              */
-            SYNTHETIC,
+            SYNTHETIC(AccessFlag.SYNTHETIC.mask()),
 
             /**
              * The export was implicitly declared in the source of the module
              * declaration.
              */
-            MANDATED;
+            MANDATED(AccessFlag.MANDATED.mask());
 
+            private final int mask;
+            private Modifier(int mask) {
+                this.mask = mask;
+            }
+            private int mask() {return mask;}
         }
 
         private final Set<Modifier> mods;
@@ -415,6 +444,21 @@ public class ModuleDescriptor
          */
         public Set<Modifier> modifiers() {
             return mods;
+        }
+
+        /**
+         * {@return an unmodifiable set of the module {@linkplain AccessFlag
+         * export flags} for this module descriptor, possibly empty}
+         * @see #modifiers()
+         * @jvms 4.7.25 The Module Attribute
+         * @since 20
+         */
+        public Set<AccessFlag> accessFlags() {
+            int mask = 0;
+            for (var modifier : mods) {
+                mask |= modifier.mask();
+            }
+            return AccessFlag.maskToAccessFlags(mask, AccessFlag.Location.MODULE_EXPORTS);
         }
 
         /**
@@ -579,14 +623,18 @@ public class ModuleDescriptor
              * The open package was not explicitly or implicitly declared in
              * the source of the module declaration.
              */
-            SYNTHETIC,
+            SYNTHETIC(AccessFlag.SYNTHETIC.mask()),
 
             /**
              * The open package was implicitly declared in the source of the
              * module declaration.
              */
-            MANDATED;
-
+            MANDATED(AccessFlag.MANDATED.mask());
+            private final int mask;
+            private Modifier(int mask) {
+                this.mask = mask;
+            }
+            private int mask() {return mask;}
         }
 
         private final Set<Modifier> mods;
@@ -618,6 +666,21 @@ public class ModuleDescriptor
          */
         public Set<Modifier> modifiers() {
             return mods;
+        }
+
+        /**
+         * {@return an unmodifiable set of the module {@linkplain AccessFlag
+         * opens flags}, possibly empty}
+         * @see #modifiers()
+         * @jvms 4.7.25 The Module Attribute
+         * @since 20
+         */
+        public Set<AccessFlag> accessFlags() {
+            int mask = 0;
+            for (var modifier : mods) {
+                mask |= modifier.mask();
+            }
+            return AccessFlag.maskToAccessFlags(mask, AccessFlag.Location.MODULE_OPENS);
         }
 
         /**
@@ -1288,6 +1351,21 @@ public class ModuleDescriptor
      */
     public Set<Modifier> modifiers() {
         return modifiers;
+    }
+
+    /**
+     * {@return an unmodifiable set of the {@linkplain AccessFlag
+     * module flags}, possibly empty}
+     * @see #modifiers()
+     * @jvms 4.7.25 The Module Attribute
+     * @since 20
+     */
+    public Set<AccessFlag> accessFlags() {
+        int mask = 0;
+        for (var modifier : modifiers) {
+            mask |= modifier.mask();
+        }
+        return AccessFlag.maskToAccessFlags(mask, AccessFlag.Location.MODULE);
     }
 
     /**

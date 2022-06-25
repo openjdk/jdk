@@ -78,6 +78,7 @@
 #include "runtime/handshake.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/jfieldIDWorkaround.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/os.inline.hpp"
@@ -85,7 +86,6 @@
 #include "runtime/perfData.hpp"
 #include "runtime/reflection.hpp"
 #include "runtime/synchronizer.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/threadIdentifier.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vframe.inline.hpp"
@@ -3487,10 +3487,13 @@ JVM_LEAF(jboolean, JVM_IsSupportedJNIVersion(jint version))
 JVM_END
 
 
-JVM_LEAF(jboolean, JVM_IsPreviewEnabled(JNIEnv *env))
+JVM_LEAF(jboolean, JVM_IsPreviewEnabled(void))
   return Arguments::enable_preview() ? JNI_TRUE : JNI_FALSE;
 JVM_END
 
+JVM_LEAF(jboolean, JVM_IsContinuationsSupported(void))
+  return VMContinuations ? JNI_TRUE : JNI_FALSE;
+JVM_END
 
 // String support ///////////////////////////////////////////////////////////////////////////
 

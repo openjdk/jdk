@@ -2432,6 +2432,19 @@ const bool Matcher::match_rule_supported(int opcode) {
   return ret_value; // Per default match rules are supported.
 }
 
+const bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
+  if (UseSVE == 0) {
+    // ConvD2I and ConvL2F are not profitable to be vectorized on NEON, because no direct
+    // NEON instructions support them. But the match rule support for them is profitable for
+    // Vector API intrinsics.
+    if ((opcode == Op_VectorCastD2X && bt == T_INT) ||
+        (opcode == Op_VectorCastL2X && bt == T_FLOAT)) {
+      return false;
+    }
+  }
+  return match_rule_supported_vector(opcode, vlen, bt);
+}
+
 // Identify extra cases that we might want to provide match rules for vector nodes and
 // other intrinsics guarded with vector length (vlen) and element type (bt).
 const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
@@ -2471,6 +2484,7 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
     case Op_CompressV:
     case Op_CompressM:
     case Op_ExpandV:
+    case Op_VectorLongToMask:
       return false;
     default:
       break;
@@ -11356,7 +11370,7 @@ instruct modI(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
 
   ins_cost(INSN_COST * 22);
   format %{ "sdivw  rscratch1, $src1, $src2\n\t"
-            "msubw($dst, rscratch1, $src2, $src1" %}
+            "msubw  $dst, rscratch1, $src2, $src1" %}
 
   ins_encode(aarch64_enc_modw(dst, src1, src2));
   ins_pipe(idiv_reg_reg);
@@ -11369,9 +11383,73 @@ instruct modL(iRegLNoSp dst, iRegL src1, iRegL src2) %{
 
   ins_cost(INSN_COST * 38);
   format %{ "sdiv   rscratch1, $src1, $src2\n"
-            "msub($dst, rscratch1, $src2, $src1" %}
+            "msub   $dst, rscratch1, $src2, $src1" %}
 
   ins_encode(aarch64_enc_mod(dst, src1, src2));
+  ins_pipe(ldiv_reg_reg);
+%}
+
+// Unsigned Integer Divide
+
+instruct UdivI_reg_reg(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
+  match(Set dst (UDivI src1 src2));
+
+  ins_cost(INSN_COST * 19);
+  format %{ "udivw  $dst, $src1, $src2" %}
+
+  ins_encode %{
+    __ udivw($dst$$Register, $src1$$Register, $src2$$Register);
+  %}
+
+  ins_pipe(idiv_reg_reg);
+%}
+
+//  Unsigned Long Divide
+
+instruct UdivL_reg_reg(iRegLNoSp dst, iRegL src1, iRegL src2) %{
+  match(Set dst (UDivL src1 src2));
+
+  ins_cost(INSN_COST * 35);
+  format %{ "udiv   $dst, $src1, $src2" %}
+
+  ins_encode %{
+    __ udiv($dst$$Register, $src1$$Register, $src2$$Register);
+  %}
+
+  ins_pipe(ldiv_reg_reg);
+%}
+
+// Unsigned Integer Remainder
+
+instruct UmodI_reg_reg(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
+  match(Set dst (UModI src1 src2));
+
+  ins_cost(INSN_COST * 22);
+  format %{ "udivw  rscratch1, $src1, $src2\n\t"
+            "msubw  $dst, rscratch1, $src2, $src1" %}
+
+  ins_encode %{
+    __ udivw(rscratch1, $src1$$Register, $src2$$Register);
+    __ msubw($dst$$Register, rscratch1, $src2$$Register, $src1$$Register);
+  %}
+
+  ins_pipe(idiv_reg_reg);
+%}
+
+// Unsigned Long Remainder
+
+instruct UModL_reg_reg(iRegLNoSp dst, iRegL src1, iRegL src2) %{
+  match(Set dst (UModL src1 src2));
+
+  ins_cost(INSN_COST * 38);
+  format %{ "udiv   rscratch1, $src1, $src2\n"
+            "msub   $dst, rscratch1, $src2, $src1" %}
+
+  ins_encode %{
+    __ udiv(rscratch1, $src1$$Register, $src2$$Register);
+    __ msub($dst$$Register, rscratch1, $src2$$Register, $src1$$Register);
+  %}
+
   ins_pipe(ldiv_reg_reg);
 %}
 
