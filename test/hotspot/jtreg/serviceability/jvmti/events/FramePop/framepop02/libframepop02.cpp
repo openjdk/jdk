@@ -57,7 +57,7 @@ static int thr_count = 0;
 static int max_depth = 0;
 static thr threads[MAX_THREADS];
 
-static volatile int callbacksEnabled = NSK_FALSE;
+static volatile int callbacksEnabled = JNI_FALSE;
 static jrawMonitorID agent_lock;
 
 void print_current_time() {
@@ -200,13 +200,13 @@ void JNICALL MethodEntry(jvmtiEnv *jvmti, JNIEnv *jni,
 
 void JNICALL VMStart(jvmtiEnv *jvmti, JNIEnv* jni) {
   RawMonitorLocker rml(jvmti, jni, agent_lock);
-  callbacksEnabled = NSK_TRUE;
+  callbacksEnabled = JNI_TRUE;
 }
 
 
 void JNICALL VMDeath(jvmtiEnv *jvmti, JNIEnv* jni) {
   RawMonitorLocker rml(jvmti, jni, agent_lock);
-  callbacksEnabled = NSK_FALSE;
+  callbacksEnabled = JNI_FALSE;
 }
 
 void JNICALL FramePop(jvmtiEnv *jvmti, JNIEnv *jni,
