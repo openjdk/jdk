@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1180,8 +1180,8 @@ public abstract class FileSystemProvider {
      * {@link #checkAccess(Path, AccessMode...)} method when symbolic links
      * are followed. If the option {@link LinkOption#NOFOLLOW_LINKS NOFOLLOW_LINKS}
      * is present then symbolic links are not followed and the method
-     *  {@link #readAttributes(Path, Class, LinkOption...)} is called
-     *  to determine whether a file exists.
+     * {@link #readAttributes(Path, Class, LinkOption...)} is called
+     * to determine whether a file exists.
      *
      * @param   path
      *          the path to the file to test
@@ -1233,7 +1233,7 @@ public abstract class FileSystemProvider {
      * <p> It is implementation specific if all file attributes are read as an
      * atomic operation with respect to other file system operations.
      *
-     *  @implSpec
+     * @implSpec
      * The default implementation of this method invokes the
      * {@link #readAttributes(Path, Class, LinkOption...)} method
      * to read the file's attributes.

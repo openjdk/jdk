@@ -842,6 +842,10 @@ final class ZipPath implements Path {
         return getFileAttributeView(view).readAttributes(attrs);
     }
 
+    ZipFileAttributes readAttributesIfExists() throws IOException {
+        return zfs.getFileAttributes(getResolvedPath());
+    }
+
     FileStore getFileStore() throws IOException {
         // each ZipFileSystem only has one root (as requested for now)
         if (exists())

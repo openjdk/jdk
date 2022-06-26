@@ -303,7 +303,6 @@ public abstract class UnixFileSystemProvider
                     case READ -> r = true;
                     case WRITE -> w = true;
                     case EXECUTE -> x = true;
-                    default -> throw new AssertionError("Should not get here");
                 }
             }
         }
