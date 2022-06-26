@@ -481,6 +481,11 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
             public Type visitErrorType(ErrorType t, Void aVoid) {
                 return super.visitErrorType((ErrorType)t.typeNoMetadata(), aVoid);
             }
+
+            @Override
+            public Type visitType(Type t, Void aVoid) {
+                return super.visitType(t.typeNoMetadata(), aVoid);
+            }
         };
 
     public Type preannotatedType() {

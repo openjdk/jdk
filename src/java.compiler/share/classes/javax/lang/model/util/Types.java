@@ -157,6 +157,8 @@ public interface Types {
      * the direct supertypes of a type mirror representing {@code
      * java.lang.Object}.
      *
+     * Annotations on the direct super types are preserved.
+     *
      * @param t  the type being examined
      * @return the direct supertypes, or an empty list if none
      * @throws IllegalArgumentException if given a type for an executable, package, or module

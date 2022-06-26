@@ -125,8 +125,8 @@ public class JavacTypes implements javax.lang.model.util.Types {
         validateTypeNotIn(t, EXEC_OR_PKG_OR_MOD);
         Type ty = (Type)t;
         return types.directSupertypes(ty).stream()
-                .map(Type::stripMetadata)
-                .toList();
+            .map(Type::stripMetadataIfNeeded)
+            .toList();
     }
 
     @DefinedBy(Api.LANGUAGE_MODEL)
