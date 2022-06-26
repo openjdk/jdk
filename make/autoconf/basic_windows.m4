@@ -89,8 +89,8 @@ AC_DEFUN([BASIC_SETUP_PATHS_WINDOWS],
   WINENV_TEMP_DIR=$($PATHTOOL -u $($CMD /q /c echo %TEMP% 2> /dev/null) | $TR -d '\r\n')
   AC_MSG_RESULT([$WINENV_TEMP_DIR])
 
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl2"; then
-    # Don't trust the current directory for WSL2, but change to an OK temp dir
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl1" || test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl2"; then
+    # Don't trust the current directory for WSL, but change to an OK temp dir
     cd "$WINENV_TEMP_DIR"
     # Bring along confdefs.h or autoconf gets all confused
     cp "$CONFIGURE_START_DIR/confdefs.h" "$WINENV_TEMP_DIR"
@@ -228,7 +228,7 @@ AC_DEFUN([BASIC_WINDOWS_FINALIZE_FIXPATH],
 # Platform-specific finalization
 AC_DEFUN([BASIC_WINDOWS_FINALIZE],
 [
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl2"; then
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl1" || test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl2"; then
     # Change back from temp dir
     cd $CONFIGURE_START_DIR
   fi
