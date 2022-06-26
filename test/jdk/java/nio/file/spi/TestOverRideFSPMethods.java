@@ -34,8 +34,8 @@ import static org.testng.AssertJUnit.assertTrue;
  * @test
  * @summary Verifies that a FileSystemProvider's implementation of the exists
  * and readAttributesIfExists methods are invoked
- * @build TestOverRideFSPMethods StubFSProvider
- * @run testng/othervm -Djava.nio.file.spi.DefaultFileSystemProvider=StubFSProvider TestOverRideFSPMethods
+ * @build TestOverRideFSPMethods TestProvider
+ * @run testng/othervm -Djava.nio.file.spi.DefaultFileSystemProvider=TestProvider TestOverRideFSPMethods
  */
 public class TestOverRideFSPMethods {
 
@@ -44,7 +44,7 @@ public class TestOverRideFSPMethods {
 
     /**
      * Validate that the Provider's version of exists() is invoked
-     * The StubFSProvider will always return true
+     * The TestProvider will always return true
      */
     @Test
     public void TestExists() {
@@ -57,8 +57,8 @@ public class TestOverRideFSPMethods {
     /**
      * Validate that the Provider's version of readAttributesIfExists() is invoked.
      *
-     * The StubFSProvider will return an instance of
-     * StubFSProvider.StubAttributes when readAttributesIfExists()
+     * The TestProvider will return an instance of
+     * TestProvider.TestAttributes when readAttributesIfExists()
      * is called
      * @throws IOException if an error occurs
      */
@@ -68,6 +68,6 @@ public class TestOverRideFSPMethods {
         var attrs = fsp.readAttributesIfExists(STUB_PATH,
                 BasicFileAttributes.class);
         // This should always be true if the StubFSProvider is used
-        assertTrue(attrs instanceof StubFSProvider.StubAttributes);
+        assertTrue(attrs instanceof TestProvider.TestAttributes);
     }
 }

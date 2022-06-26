@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,12 @@
 
 import java.io.File;
 import java.nio.file.*;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.attribute.FileAttribute;
-import java.nio.file.attribute.FileAttributeView;
-import java.nio.file.attribute.UserPrincipalLookupService;
+import java.nio.file.attribute.*;
 import java.nio.file.spi.FileSystemProvider;
 import java.nio.channels.FileChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.net.URI;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -99,7 +95,12 @@ public class TestProvider extends FileSystemProvider {
         Path delegate = theFileSystem.unwrap(file);
         return defaultProvider.readAttributes(delegate, type, options);
     }
-
+    public <A extends BasicFileAttributes> A readAttributesIfExists(Path path,
+                                                                    Class<A> type,
+                                                                    LinkOption... options)
+            throws IOException {
+        return (A) new TestAttributes();
+    }
     @Override
     public <V extends FileAttributeView> V getFileAttributeView(Path file,
                                                                 Class<V> type,
@@ -163,7 +164,12 @@ public class TestProvider extends FileSystemProvider {
         Path delegate = theFileSystem.unwrap(dir);
         defaultProvider.createDirectory(delegate, attrs);
     }
-
+    @Override
+    public boolean exists(Path path, LinkOption... options) {
+        var fs = path.getFileSystem();
+        return ((fs instanceof TestFileSystem)
+                && (fs.provider() instanceof TestProvider));
+    }
     @Override
     public SeekableByteChannel newByteChannel(Path file,
                                               Set<? extends OpenOption> options,
@@ -467,6 +473,53 @@ public class TestProvider extends FileSystemProvider {
                                   WatchEvent.Kind<?>... events)
         {
             throw new UnsupportedOperationException();
+        }
+    }
+    static class TestAttributes implements BasicFileAttributes {
+
+        @Override
+        public FileTime lastModifiedTime() {
+            return null;
+        }
+
+        @Override
+        public FileTime lastAccessTime() {
+            return null;
+        }
+
+        @Override
+        public FileTime creationTime() {
+            return null;
+        }
+
+        @Override
+        public boolean isRegularFile() {
+            return false;
+        }
+
+        @Override
+        public boolean isDirectory() {
+            return false;
+        }
+
+        @Override
+        public boolean isSymbolicLink() {
+            return false;
+        }
+
+        @Override
+        public boolean isOther() {
+            return false;
+        }
+
+        @Override
+        public long size() {
+            return 0;
+        }
+
+        @Override
+        public Object fileKey() {
+            return null;
         }
     }
 }
