@@ -218,13 +218,13 @@ public class FileOutputStream extends OutputStream
         throws FileNotFoundException
     {
         String name = (file != null ? file.getPath() : null);
+        if (name == null) {
+            throw new NullPointerException();
+        }
         @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkWrite(name);
-        }
-        if (name == null) {
-            throw new NullPointerException();
         }
         if (file.isInvalid()) {
             throw new FileNotFoundException("Invalid file path");
