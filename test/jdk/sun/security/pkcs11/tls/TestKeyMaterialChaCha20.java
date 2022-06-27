@@ -24,8 +24,7 @@
 /*
  * @test
  * @bug 8288985
- * @summary Test that KeyMaterial generator works with ChaCha20-Poly1305
- * @author Zdenek Zambersky
+ * @summary Tests that P11TlsKeyMaterialGenerator works with ChaCha20-Poly1305
  * @library /test/lib ..
  * @modules java.base/sun.security.internal.spec
  *          jdk.crypto.cryptoki
@@ -49,14 +48,26 @@ public class TestKeyMaterialChaCha20 extends PKCS11Test {
 
     @Override
     public void main(Provider provider) throws Exception {
+        KeyGenerator kg1, kg2, kg3;
         try {
-            KeyGenerator.getInstance("ChaCha20", provider);
-        } catch (NoSuchAlgorithmException e) {
-            System.out.println("Skipping, ChaCha20 not supported");
+            kg1 = KeyGenerator.getInstance("SunTlsRsaPremasterSecret", provider);
+        } catch (Exception e) {
+            System.out.println("Skipping, SunTlsRsaPremasterSecret KeyGenerator not supported");
+            return;
+        }
+        try {
+            kg2 = KeyGenerator.getInstance("SunTls12MasterSecret", provider);
+        } catch (Exception e) {
+            System.out.println("Skipping, SunTls12MasterSecret KeyGenerator not supported");
+            return;
+        }
+        try {
+            kg3 = KeyGenerator.getInstance("SunTls12KeyMaterial", provider);
+        } catch (Exception e) {
+            System.out.println("Skipping, SunTls12KeyMaterial KeyGenerator not supported");
             return;
         }
 
-        KeyGenerator kg1 = KeyGenerator.getInstance("SunTlsRsaPremasterSecret", provider);
         kg1.init(new TlsRsaPremasterSecretParameterSpec(0x0303, 0x0303));
         SecretKey preMasterSecret = kg1.generateKey();
 
@@ -66,12 +77,9 @@ public class TestKeyMaterialChaCha20 extends PKCS11Test {
             new byte[32],
             new byte[32],
             "SHA-256", 32, 64);
-        KeyGenerator kg2 = KeyGenerator.getInstance("SunTls12MasterSecret", provider);
         kg2.init(spec);
         SecretKey masterSecret = kg2.generateKey();
 
-        // https://github.com/openjdk/jdk/blob/ccec5d1e8529c8211cc678d8acc8d37fe461cb51/src/java.base/share/classes/sun/security/ssl/SSLTrafficKeyDerivation.java#L270
-        // https://github.com/openjdk/jdk/blob/ccec5d1e8529c8211cc678d8acc8d37fe461cb51/src/java.base/share/classes/sun/security/ssl/CipherSuite.java#L93
         TlsKeyMaterialParameterSpec params = new TlsKeyMaterialParameterSpec(
             masterSecret, 3, 3,
             new byte[32],
@@ -79,7 +87,6 @@ public class TestKeyMaterialChaCha20 extends PKCS11Test {
             "ChaCha20-Poly1305", 32, 32,
             12, 0,
             "SHA-256", 32, 64);
-        KeyGenerator kg3 = KeyGenerator.getInstance("SunTls12KeyMaterial", provider);
         kg3.init(params);
         kg3.generateKey();
     }
