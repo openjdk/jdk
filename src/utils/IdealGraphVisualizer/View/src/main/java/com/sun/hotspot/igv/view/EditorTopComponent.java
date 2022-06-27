@@ -353,7 +353,8 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
                 KeyStroke.getKeyStroke(KeyEvent.VK_S, 0, true), "showScene");
         centerPanel.getActionMap().put("showScene",
                 new AbstractAction("showScene") {
-                    @Override public void actionPerformed(ActionEvent e) {
+                    @Override 
+                    public void actionPerformed(ActionEvent e) {
                         EditorTopComponent.this.overviewButton.setSelected(false);
                         EditorTopComponent.this.overviewAction.setState(false);
                     }
