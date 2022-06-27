@@ -57,6 +57,7 @@
 #include "runtime/osThread.hpp"
 #include "runtime/safefetch.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/threadCrashProtection.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vm_version.hpp"
@@ -618,7 +619,7 @@ static bool has_reached_max_malloc_test_peak(size_t alloc_size) {
 
 #ifdef ASSERT
 static void check_crash_protection() {
-  assert(!os::ThreadCrashProtection::is_crash_protected(Thread::current_or_null()),
+  assert(!ThreadCrashProtection::is_crash_protected(Thread::current_or_null()),
          "not allowed when crash protection is set");
 }
 static void break_if_ptr_caught(void* ptr) {

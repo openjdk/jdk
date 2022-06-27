@@ -30,9 +30,6 @@
 #include "utilities/exceptions.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/macros.hpp"
-#ifndef _WINDOWS
-# include <setjmp.h>
-#endif
 #ifdef __APPLE__
 # include <mach/mach_time.h>
 #endif
@@ -872,10 +869,6 @@ class os: AllStatic {
   static bool supports_map_sync();
 
  public:
-  class CrashProtectionCallback : public StackObj {
-  public:
-    virtual void call() = 0;
-  };
 
   // Platform dependent stuff
 #ifndef _WINDOWS
