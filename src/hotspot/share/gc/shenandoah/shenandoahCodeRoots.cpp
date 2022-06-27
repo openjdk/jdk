@@ -126,6 +126,7 @@ void ShenandoahCodeRoots::flush_nmethod(nmethod* nm) {
 }
 
 void ShenandoahCodeRoots::arm_nmethods() {
+  assert(BarrierSet::barrier_set()->barrier_set_nmethod() != NULL, "Sanity");
   BarrierSet::barrier_set()->barrier_set_nmethod()->arm_all_nmethods();
 }
 
