@@ -436,9 +436,6 @@ class JvmtiExport : public AllStatic {
                                                      oop * thread_oop_p);
   static jvmtiError cv_oop_to_JavaThread(ThreadsList * t_list, oop thread_oop,
                                          JavaThread ** jt_pp);
-private:
-  static void post_object_free_on_vm_thread(JvmtiEnv* env, GrowableArray<jlong>* objects) NOT_JVMTI_RETURN;
-  static void post_object_free_on_java_thread(JvmtiEnv* env, GrowableArray<jlong>* objects) NOT_JVMTI_RETURN;
 };
 
 // Support class used by JvmtiDynamicCodeEventCollector and others. It

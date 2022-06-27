@@ -87,7 +87,7 @@ public:
 
   bool is_empty() const { return number_of_entries() == 0; }
 
-  // Cleanup cleared entries and store dead objects in objects array
+  // Cleanup cleared entries and store dead object tags in objects array
   void remove_dead_entries(GrowableArray<jlong>* objects);
   void rehash();
   void clear();

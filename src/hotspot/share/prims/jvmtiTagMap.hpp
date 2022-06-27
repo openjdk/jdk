@@ -51,10 +51,9 @@ class JvmtiTagMap :  public CHeapObj<mtInternal> {
   // accessors
   inline JvmtiEnv* env() const              { return _env; }
 
-  void check_hashmap(bool post_events);
+  void check_hashmap(GrowableArray<jlong>* objects);
 
   void entry_iterate(JvmtiTagMapEntryClosure* closure);
-  void remove_and_post_dead_objects(bool locked);
 
  public:
   // indicates if this tag map is locked
@@ -109,11 +108,12 @@ class JvmtiTagMap :  public CHeapObj<mtInternal> {
                                    jint* count_ptr, jobject** object_result_ptr,
                                    jlong** tag_result_ptr);
 
-
+  void remove_and_post_dead_objects();
   void remove_dead_entries(GrowableArray<jlong>* objects);
   void remove_dead_entries_locked(GrowableArray<jlong>* objects);
+  void post_dead_objects(GrowableArray<jlong>* const objects);
 
-  static void check_hashmaps_for_heapwalk();
+  static void check_hashmaps_for_heapwalk(GrowableArray<jlong>* objects);
   static void set_needs_rehashing() NOT_JVMTI_RETURN;
   static void set_needs_cleaning() NOT_JVMTI_RETURN;
   static void gc_notification(size_t num_dead_entries) NOT_JVMTI_RETURN;

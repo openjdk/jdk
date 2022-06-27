@@ -45,12 +45,17 @@
  */
 static jvmtiEnv* trackingEnv;
 
-extern void JNICALL
-cbTrackingObjectFree(jvmtiEnv* jvmti_env, jlong tag);
+extern jboolean synthesizeUnloadEvent(char *signature, JNIEnv *env);
 
 /*
- * Add a class to the prepared class table.
+ * Invoke the callback when classes are freed.
  */
+void JNICALL
+cbTrackingObjectFree(jvmtiEnv* jvmti_env, jlong tag)
+{
+  synthesizeUnloadEvent((char*)jlong_to_ptr(tag), getEnv());
+}
+
 void
 classTrack_addPreparedClass(JNIEnv *env_unused, jclass klass)
 {
@@ -147,19 +152,3 @@ classTrack_initialize(JNIEnv *env)
         EXIT_ERROR(error,"loaded classes array");
     }
 }
-
-/*
- * Called to activate class-tracking when a listener registers for EI_GC_FINISH.
- */
-void
-classTrack_activate(JNIEnv *env)
-{ }
-
-/*
- *
- * Called when agent detaches.
- */
-void
-classTrack_reset(void)
-{}
-

@@ -207,7 +207,7 @@ void JvmtiTagMapTable::remove_dead_entries(GrowableArray<jlong>* objects) {
         *p = entry->next();
         free_entry(entry);
 
-        // collect object tag for posting JVMTI event later
+        // collect object tags for posting JVMTI events later
         if (objects != NULL) {
           objects->append(tag);
         }

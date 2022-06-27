@@ -457,11 +457,8 @@ reportEvents(JNIEnv *env, jbyte sessionID, jthread thread, EventIndex ei,
     }
 }
 
-/* Create a synthetic class unload event for every class no longer present.
- * Analogous to event_callback combined with a handler in a unload specific
- * (no event structure) kind of way.
- */
-static jboolean
+/* Create a synthetic class unload event for the specified signature. */
+jboolean
 synthesizeUnloadEvent(char *signature, JNIEnv *env)
 {
     char *classname;
@@ -621,10 +618,6 @@ event_callback(JNIEnv *env, EventInfo *evinfo)
     if ( garbageCollected > 0) {
         commonRef_compact();
         garbageCollected = 0;
-    }
-
-    if (evinfo->ei == EI_CLASS_UNLOAD) {
-        synthesizeUnloadEvent((char*)jlong_to_ptr(evinfo->tag), env);
     }
 
     thread = evinfo->thread;
@@ -957,27 +950,6 @@ cbClassLoad(jvmtiEnv *jvmti_env, JNIEnv *env,
     } END_CALLBACK();
 
     LOG_MISC(("END cbClassLoad"));
-}
-
-/*
- * Invoke the callback when classes are freed.
- */
-void JNICALL
-cbTrackingObjectFree(jvmtiEnv* jvmti_env, jlong tag)
-{
-    EventInfo info;
-
-    LOG_CB(("cbTrackingObjectFree"));
-
-    BEGIN_CALLBACK() {
-    (void)memset(&info,0,sizeof(info));
-    info.ei         = EI_CLASS_UNLOAD;
-    info.tag        = tag;
-    event_callback(getEnv(), &info);
-    } END_CALLBACK();
-
-    LOG_MISC(("END cbTrackingObjectFree"));
-
 }
 
 /* Event callback for JVMTI_EVENT_FIELD_ACCESS */
@@ -1702,9 +1674,6 @@ installHandler(HandlerNode *node,
 
     node->handlerID = external? ++requestIdCounter : 0;
     error = eventFilterRestricted_install(node);
-    if (node->ei == EI_GC_FINISH) {
-        classTrack_activate(getEnv());
-    }
     if (error == JVMTI_ERROR_NONE) {
         insert(getHandlerChain(node->ei), node);
     }
