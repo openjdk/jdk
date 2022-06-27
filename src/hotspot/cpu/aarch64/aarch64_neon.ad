@@ -2391,6 +2391,41 @@ instruct vbsl16B(vecX dst, vecX src1, vecX src2)
   ins_pipe(vlogical128);
 %}
 
+// --------------------------------- VCMove ----------------------------
+
+instruct vcmove8B(vecD dst, vecD src1, vecD src2, immI cond, cmpOp copnd)
+%{
+  predicate(n->as_Vector()->length_in_bytes() == 8);
+  match(Set dst (CMoveVF (Binary copnd cond) (Binary src1 src2)));
+  format %{ "vcmoveD.$copnd  $dst, $src1, $src2\t# vector conditional move fp (8B)"%}
+  effect(TEMP_DEF dst);
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ neon_compare(as_FloatRegister($dst$$reg), bt, as_FloatRegister($src1$$reg),
+                    as_FloatRegister($src2$$reg), $cond$$constant, /*isQ*/ false);
+    __ bsl(as_FloatRegister($dst$$reg), __ T8B,
+           as_FloatRegister($src2$$reg), as_FloatRegister($src1$$reg));
+  %}
+  ins_pipe(vlogical64);
+%}
+
+instruct vcmove16B(vecX dst, vecX src1, vecX src2, immI cond, cmpOp copnd)
+%{
+  predicate(n->as_Vector()->length_in_bytes() == 16);
+  match(Set dst (CMoveVF (Binary copnd cond) (Binary src1 src2)));
+  match(Set dst (CMoveVD (Binary copnd cond) (Binary src1 src2)));
+  format %{ "vcmoveX.$copnd  $dst, $src1, $src2\t# vector conditional move fp (16B)"%}
+  effect(TEMP_DEF dst);
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ neon_compare(as_FloatRegister($dst$$reg), bt, as_FloatRegister($src1$$reg),
+                    as_FloatRegister($src2$$reg), $cond$$constant, /*isQ*/ true);
+    __ bsl(as_FloatRegister($dst$$reg), __ T16B,
+           as_FloatRegister($src2$$reg), as_FloatRegister($src1$$reg));
+  %}
+  ins_pipe(vlogical128);
+%}
+
 // --------------------------------- Load/store Mask ----------------------------
 
 instruct loadmask8B(vecD dst, vecD src  )

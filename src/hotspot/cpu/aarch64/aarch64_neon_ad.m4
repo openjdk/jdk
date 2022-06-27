@@ -1178,6 +1178,32 @@ VECTOR_BSL(8,  D, 64)
 VECTOR_BSL(16, X, 128)
 dnl
 
+// --------------------------------- VCMove ----------------------------
+dnl
+define(`VECTOR_CMOVE', `
+instruct vcmove$1B(vec$2 dst, vec$2 src1, vec$2 src2, immI cond, cmpOp copnd)
+%{
+  predicate(n->as_Vector()->length_in_bytes() == $1);
+  ifelse($2, D,
+  `match(Set dst (CMoveVF (Binary copnd cond) (Binary src1 src2)));',
+  `match(Set dst (CMoveVF (Binary copnd cond) (Binary src1 src2)));
+  match(Set dst (CMoveVD (Binary copnd cond) (Binary src1 src2)));')
+  format %{ "vcmove$2.$copnd  $dst, $src1, $src2\t# vector conditional move fp ($1B)"%}
+  effect(TEMP_DEF dst);
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ neon_compare(as_FloatRegister($dst$$reg), bt, as_FloatRegister($src1$$reg),
+                    as_FloatRegister($src2$$reg), $cond$$constant, /*isQ*/ $4);
+    __ bsl(as_FloatRegister($dst$$reg), __ T$1B,
+           as_FloatRegister($src2$$reg), as_FloatRegister($src1$$reg));
+  %}
+  ins_pipe(vlogical$3);
+%}')dnl
+dnl          $1  $2 $3  $4
+VECTOR_CMOVE(8,  D, 64, false)
+VECTOR_CMOVE(16, X, 128, true)
+dnl
+
 // --------------------------------- Load/store Mask ----------------------------
 dnl
 define(`PREDICATE', `ifelse($1, load,

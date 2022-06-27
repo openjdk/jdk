@@ -2306,6 +2306,25 @@ instruct vblend(vReg dst, vReg src1, vReg src2, pRegGov pg) %{
   ins_pipe(pipe_slow);
 %}
 
+// vector conditional move
+
+instruct vcmove(vReg dst, vReg src1, vReg src2, pRegGov pg, immI cond, cmpOp copnd) %{
+  predicate(UseSVE > 0);
+  match(Set dst (CMoveVF (Binary copnd cond) (Binary src1 src2)));
+  match(Set dst (CMoveVD (Binary copnd cond) (Binary src1 src2)));
+  effect(TEMP pg);
+  format %{ "sve_cmove.$copnd $dst, $src1, $src2\t# vector conditional move fp (sve)" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    Assembler::SIMD_RegVariant size = __ elemType_to_regVariant(bt);
+    __ sve_compare(as_PRegister($pg$$reg), bt, ptrue, as_FloatRegister($src1$$reg),
+                   as_FloatRegister($src2$$reg), $cond$$constant);
+    __ sve_sel(as_FloatRegister($dst$$reg), size, as_PRegister($pg$$reg),
+               as_FloatRegister($src2$$reg), as_FloatRegister($src1$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 // vector store mask
 
 instruct vstoremaskB(vReg dst, pRegGov src, immI_1 size) %{
