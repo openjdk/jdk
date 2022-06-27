@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,6 +100,11 @@ jlong OSContainer::memory_max_usage_in_bytes() {
   return cgroup_subsystem->memory_max_usage_in_bytes();
 }
 
+void OSContainer::print_version_specific_info(outputStream* st) {
+  assert(cgroup_subsystem != NULL, "cgroup subsystem not available");
+  cgroup_subsystem->print_version_specific_info(st);
+}
+
 char * OSContainer::cpu_cpuset_cpus() {
   assert(cgroup_subsystem != NULL, "cgroup subsystem not available");
   return cgroup_subsystem->cpu_cpuset_cpus();
@@ -138,4 +143,17 @@ jlong OSContainer::pids_max() {
 jlong OSContainer::pids_current() {
   assert(cgroup_subsystem != NULL, "cgroup subsystem not available");
   return cgroup_subsystem->pids_current();
+}
+
+void OSContainer::print_container_helper(outputStream* st, jlong j, const char* metrics) {
+  st->print("%s: ", metrics);
+  if (j > 0) {
+    if (j >= 1024) {
+      st->print_cr(UINT64_FORMAT " k", uint64_t(j) / 1024);
+    } else {
+      st->print_cr(UINT64_FORMAT, uint64_t(j));
+    }
+  } else {
+    st->print_cr("%s", j == OSCONTAINER_ERROR ? "not supported" : "unlimited");
+  }
 }

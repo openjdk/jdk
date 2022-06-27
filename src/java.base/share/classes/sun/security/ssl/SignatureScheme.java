@@ -450,13 +450,13 @@ enum SignatureScheme {
     static SignatureScheme getPreferableAlgorithm(
             AlgorithmConstraints constraints,
             List<SignatureScheme> schemes,
-            SignatureScheme certScheme,
+            String keyAlgorithm,
             ProtocolVersion version) {
 
         for (SignatureScheme ss : schemes) {
             if (ss.isAvailable &&
                     ss.handshakeSupportedProtocols.contains(version) &&
-                    certScheme.keyAlgorithm.equalsIgnoreCase(ss.keyAlgorithm) &&
+                    keyAlgorithm.equalsIgnoreCase(ss.keyAlgorithm) &&
                     ss.isPermitted(constraints)) {
                 return ss;
             }
