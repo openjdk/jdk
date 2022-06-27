@@ -47,7 +47,7 @@ public class CustomSelectAction extends WidgetAction.LockedAdapter {
         return false;
     }
 
-    protected int getModifierMask () {
+    protected int getModifierMask() {
         return org.openide.util.Utilities.isMac() ? MouseEvent.META_DOWN_MASK : MouseEvent.CTRL_DOWN_MASK;
     }
 
