@@ -501,13 +501,13 @@ $(eval $(call SetupApiDocsGeneration, REFERENCE_API, \
 # Setup generation of Classfile Processing API javadoc
 
 CLASSFILE_SRC := $(TOPDIR)/src/java.base/share/classes
-CLASSFILE_TARGET := $(DOCS_OUTPUTDIR)/classfile-api
+CLASSFILE_TARGET := $(DOCS_OUTPUTDIR)/classfile-api/javadoc
 
 $(eval $(call SetupExecute, CLASSFILE_API_TARGET, \
     DEPS := $(BUILD_TOOLS_JDK), \
     OUTPUT_DIR := $(CLASSFILE_TARGET), \
     SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/docs, \
-    COMMAND := $(JAVA) -Djava.awt.headless=true \
+    COMMAND := $(BUILD_JAVA) -Djava.awt.headless=true \
       $(NEW_JAVADOC) -d $(CLASSFILE_TARGET) \
       -XDignorePreview=true -notimestamp -public \
       -encoding ISO-8859-1 -docencoding UTF-8 -Xdoclint:none \
