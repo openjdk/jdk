@@ -154,48 +154,6 @@ private:
   static ThreadCrashProtection* _crash_protection;
 };
 
-class PlatformEvent : public CHeapObj<mtSynchronizer> {
-  private:
-    double CachePad [4] ;   // increase odds that _Event is sole occupant of cache line
-    volatile int _Event ;
-    HANDLE _ParkHandle ;
-
-  public:       // TODO-FIXME: make dtor private
-    ~PlatformEvent() { guarantee (0, "invariant") ; }
-
-  public:
-    PlatformEvent() {
-      _Event   = 0 ;
-      _ParkHandle = CreateEvent (NULL, false, false, NULL) ;
-      guarantee (_ParkHandle != NULL, "invariant") ;
-    }
-
-    // Exercise caution using reset() and fired() - they may require MEMBARs
-    void reset() { _Event = 0 ; }
-    int  fired() { return _Event; }
-    void park () ;
-    void unpark () ;
-    int  park (jlong millis) ;
-} ;
-
-
-
-class PlatformParker {
-  NONCOPYABLE(PlatformParker);
-
- protected:
-  HANDLE _ParkHandle;
-
- public:
-  PlatformParker() {
-    _ParkHandle = CreateEvent (NULL, true, false, NULL) ;
-    guarantee(_ParkHandle != NULL, "invariant") ;
-  }
-  ~PlatformParker() {
-    CloseHandle(_ParkHandle);
-  }
-};
-
 // Platform specific implementations that underpin VM Mutex/Monitor classes.
 // Note that CRITICAL_SECTION supports recursive locking, while the semantics
 // of the VM Mutex class does not. It is up to the Mutex class to hide this

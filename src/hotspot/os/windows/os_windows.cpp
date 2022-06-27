@@ -55,6 +55,7 @@
 #include "runtime/objectMonitor.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/osThread.hpp"
+#include "runtime/park.hpp"
 #include "runtime/perfMemory.hpp"
 #include "runtime/safefetch.hpp"
 #include "runtime/safepointMechanism.hpp"
@@ -5225,7 +5226,7 @@ class HighResolutionInterval : public CHeapObj<mtThread> {
 // explicit "PARKED" == 01b and "SIGNALED" == 10b bits.
 //
 
-int os::PlatformEvent::park(jlong Millis) {
+int PlatformEvent::park(jlong Millis) {
   // Transitions for _Event:
   //   -1 => -1 : illegal
   //    1 =>  0 : pass - return immediately
@@ -5282,7 +5283,7 @@ int os::PlatformEvent::park(jlong Millis) {
   }
   v = _Event;
   _Event = 0;
-  // see comment at end of os::PlatformEvent::park() below:
+  // see comment at end of PlatformEvent::park() below:
   OrderAccess::fence();
   // If we encounter a nearly simultaneous timeout expiry and unpark()
   // we return OS_OK indicating we awoke via unpark().
@@ -5290,7 +5291,7 @@ int os::PlatformEvent::park(jlong Millis) {
   return (v >= 0) ? OS_OK : OS_TIMEOUT;
 }
 
-void os::PlatformEvent::park() {
+void PlatformEvent::park() {
   // Transitions for _Event:
   //   -1 => -1 : illegal
   //    1 =>  0 : pass - return immediately
@@ -5324,7 +5325,7 @@ void os::PlatformEvent::park() {
   guarantee(_Event >= 0, "invariant");
 }
 
-void os::PlatformEvent::unpark() {
+void PlatformEvent::unpark() {
   guarantee(_ParkHandle != NULL, "Invariant");
 
   // Transitions for _Event:
