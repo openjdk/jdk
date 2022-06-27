@@ -72,16 +72,21 @@ public class DeleteTempJar
                     }
                 }
             });
-        server.start();
 
-        URL url = new URL("jar:http://localhost:"
+        try {
+            server.start();
+            URL url = new URL("jar:http://localhost:"
                           + new Integer(server.getAddress().getPort()).toString()
                           + "/deletetemp.jar!/");
-        JarURLConnection c = (JarURLConnection)url.openConnection();
-        JarFile f = c.getJarFile();
-        check(f.getEntry("entry") != null);
-        System.out.println(f.getName());
-        server.stop(0);
+            JarURLConnection c = (JarURLConnection)url.openConnection();
+            JarFile f = c.getJarFile();
+            check(f.getEntry("entry") != null);
+            System.out.println(f.getName());
+        } finally {
+            if (server != null) {
+                server.stop(0);
+            }
+        }
     }
 
     //--------------------- Infrastructure ---------------------------
