@@ -168,8 +168,8 @@ public final class ImportAction extends CallableSystemAction {
     }
 
     @Override
-    protected boolean asynchronous() { 
-        return false; 
+    protected boolean asynchronous() {
+        return false;
     }
 
     @Override
