@@ -282,12 +282,13 @@ public interface SegmentAllocator {
 
     private <Z> MemorySegment copyArrayWithSwapIfNeeded(Z array, ValueLayout elementLayout,
                                                         Function<Z, MemorySegment> heapSegmentFactory) {
-        Objects.requireNonNull(array);
         Objects.requireNonNull(elementLayout);
-        int size = Array.getLength(array);
-        MemorySegment addr = allocate(MemoryLayout.sequenceLayout(size, elementLayout));
-        MemorySegment.copy(heapSegmentFactory.apply(array), elementLayout, 0,
-                addr, elementLayout.withOrder(ByteOrder.nativeOrder()), 0, size);
+        int size = array == null ? 0 : Array.getLength(array);
+        MemorySegment addr = allocateArray(elementLayout, size);
+        if (size > 0) {
+            MemorySegment.copy(heapSegmentFactory.apply(array), elementLayout, 0,
+                    addr, elementLayout.withOrder(ByteOrder.nativeOrder()), 0, size);
+        }
         return addr;
     }
 
