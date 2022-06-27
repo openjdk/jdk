@@ -110,8 +110,6 @@ bool SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
     return false; // skip malformed counted loop
   }
 
-  assert(!lpt->has_reduction_nodes() || cl->is_reduction_loop(),
-         "non-reduction loop contains reduction nodes");
   bool post_loop_allowed = (PostLoopMultiversioning && Matcher::has_predicated_vectors() && cl->is_post_loop());
   if (post_loop_allowed) {
     if (cl->is_reduction_loop()) {
