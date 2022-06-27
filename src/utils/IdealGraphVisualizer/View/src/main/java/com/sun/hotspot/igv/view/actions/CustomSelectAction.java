@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,46 +21,47 @@
  * questions.
  *
  */
-package com.sun.hotspot.igv.controlflow;
+package com.sun.hotspot.igv.util;
 
-import java.awt.Point;
-import java.awt.event.MouseEvent;
-import org.netbeans.api.visual.action.SelectProvider;
-import org.netbeans.api.visual.action.WidgetAction;
 import org.netbeans.api.visual.widget.Widget;
-import org.openide.util.Utilities;
+import org.netbeans.api.visual.action.WidgetAction;
+import org.netbeans.api.visual.action.SelectProvider;
+
+import java.awt.event.MouseEvent;
+import java.awt.event.KeyEvent;
+import java.awt.*;
 
 /**
- * Selection action that acts on double-click only. Does not support aiming.
  *
- * @author Peter Hofer
+ * @author Tobias Holenstein
  */
-public class DoubleClickSelectAction extends WidgetAction.LockedAdapter {
+public class CustomSelectAction extends WidgetAction.LockedAdapter {
 
     private final SelectProvider provider;
 
-    public DoubleClickSelectAction(SelectProvider provider) {
+    public CustomSelectAction(SelectProvider provider) {
         this.provider = provider;
-    }
-
-    protected int getModifierMask () {
-        return Utilities.isMac() ? MouseEvent.META_DOWN_MASK : MouseEvent.CTRL_DOWN_MASK;
     }
 
     protected boolean isLocked() {
         return false;
     }
 
+    protected int getModifierMask() {
+        return org.openide.util.Utilities.isMac() ? MouseEvent.META_DOWN_MASK : MouseEvent.CTRL_DOWN_MASK;
+    }
+
     @Override
     public State mousePressed(Widget widget, WidgetMouseEvent event) {
-        if (event.getClickCount() >= 2 && (event.getButton() == MouseEvent.BUTTON1 || event.getButton() == MouseEvent.BUTTON2)) {
-            boolean invert = (event.getModifiersEx() & getModifierMask()) != 0;
-            Point point = event.getPoint();
-            if (provider.isSelectionAllowed(widget, point, invert)) {
-                provider.select(widget, point, invert);
+        Point localLocation = event.getPoint();
+        if (event.getButton() == MouseEvent.BUTTON1 || event.getButton() == MouseEvent.BUTTON2) {
+            boolean invertSelection = (event.getModifiersEx() & getModifierMask()) != 0;
+            if (provider.isSelectionAllowed(widget, localLocation, invertSelection)) {
+                provider.select(widget, localLocation, invertSelection);
                 return State.CHAIN_ONLY;
             }
         }
         return State.REJECTED;
     }
+
 }

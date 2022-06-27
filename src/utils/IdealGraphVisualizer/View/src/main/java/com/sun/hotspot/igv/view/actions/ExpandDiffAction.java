@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,22 +30,18 @@ import javax.swing.Action;
 import javax.swing.ImageIcon;
 import org.openide.util.*;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
-public final class PrevDiagramAction extends ContextAction<DiagramViewModel> implements ChangedListener<DiagramViewModel> {
+public final class ExpandDiffAction extends ContextAction<DiagramViewModel> implements ChangedListener<DiagramViewModel> {
 
     private DiagramViewModel model;
 
-    public PrevDiagramAction() {
-        putValue(Action.SHORT_DESCRIPTION, "Show previous graph of current group");
-        putValue(Action.SMALL_ICON, new ImageIcon(ImageUtilities.loadImage("com/sun/hotspot/igv/view/images/prev_diagram.png")));
+    public ExpandDiffAction() {
+        putValue(Action.SHORT_DESCRIPTION, "Expand the difference selection");
+        putValue(Action.SMALL_ICON, new ImageIcon(ImageUtilities.loadImage("com/sun/hotspot/igv/view/images/expand_right.png")));
     }
 
     @Override
     public String getName() {
-        return NbBundle.getMessage(PrevDiagramAction.class, "CTL_PrevDiagramAction");
+        return NbBundle.getMessage(ExpandDiffAction.class, "CTL_ExpandDiffAction");
     }
 
     @Override
@@ -60,8 +56,8 @@ public final class PrevDiagramAction extends ContextAction<DiagramViewModel> imp
 
     @Override
     public void performAction(DiagramViewModel model) {
-        if (model.getFirstPosition() != 0) {
-            model.setPositions(model.getFirstPosition() - 1, model.getSecondPosition() - 1);
+        if (model.getSecondPosition() != model.getPositions().size() - 1) {
+            model.setPositions(model.getFirstPosition(), model.getSecondPosition() + 1);
         }
     }
 
@@ -83,12 +79,12 @@ public final class PrevDiagramAction extends ContextAction<DiagramViewModel> imp
 
     @Override
     public boolean isEnabled(DiagramViewModel model) {
-        return model.getFirstPosition() != 0;
+        return model.getSecondPosition() != model.getPositions().size() - 1;
     }
 
     @Override
     public Action createContextAwareInstance(Lookup arg0) {
-        return new PrevDiagramAction();
+        return new ExpandDiffAction();
     }
 
     @Override
