@@ -23,26 +23,25 @@
 
 /**
  * @test
- * @bug 8288976
- * @library /test/lib
- * @summary Check that the right message is displayed for NoClassDefFoundError exception.
- * @requires vm.flagless
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @compile C.java
- * @run driver Bad_NCDFE_Msg
+ * @bug 8288120
+ * @summary Verify an appropriate accessor method is looked up.
+ * @compile --enable-preview -source ${jdk.version} ProxyMethodLookup.java
+ * @run main/othervm --enable-preview ProxyMethodLookup
+ */
+public class ProxyMethodLookup {
 
-import java.io.File;
-import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.process.OutputAnalyzer;
+    public static void main(String[] args) {
+        Object val = new R(new Component());
+        boolean b = val instanceof R(var c);
+   }
 
-public class Bad_NCDFE_Msg {
+    interface ComponentBase {}
 
-    public static void main(String args[]) throws Throwable {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "-cp", System.getProperty("test.classes") + File.separator + "pkg", "C");
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain("java.lang.NoClassDefFoundError: C (wrong name: pkg/C");
-        output.shouldHaveExitValue(1);
+    record Component() implements ComponentBase {}
+
+    sealed interface Base {
+        ComponentBase c();
     }
+
+    record R(Component c) implements Base {}
 }
