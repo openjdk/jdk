@@ -33,7 +33,7 @@ import java.lang.constant.MethodTypeDesc;
 
 import helpers.TestConstants;
 import jdk.classfile.AccessFlags;
-import jdk.classfile.jdktypes.AccessFlag;
+import java.lang.reflect.AccessFlag;
 import jdk.classfile.Classfile;
 import jdk.classfile.TypeKind;
 import jdk.classfile.Label;

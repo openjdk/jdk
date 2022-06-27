@@ -26,7 +26,7 @@ package jdk.classfile.impl;
 
 import java.util.Set;
 import jdk.classfile.AccessFlags;
-import jdk.classfile.jdktypes.AccessFlag;
+import java.lang.reflect.AccessFlag;
 /**
  * AccessFlagsImpl
  */

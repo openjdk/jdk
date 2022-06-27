@@ -30,7 +30,7 @@ import java.util.Set;
 
 import jdk.classfile.constantpool.ClassEntry;
 import jdk.classfile.constantpool.Utf8Entry;
-import jdk.classfile.jdktypes.AccessFlag;
+import java.lang.reflect.AccessFlag;
 
 import jdk.classfile.impl.TemporaryConstantPool;
 import jdk.classfile.impl.UnboundAttribute;

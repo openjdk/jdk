@@ -29,7 +29,7 @@ import java.lang.constant.ConstantDescs;
 import java.util.List;
 
 import jdk.classfile.constantpool.ClassEntry;
-import jdk.classfile.jdktypes.AccessFlag;
+import java.lang.reflect.AccessFlag;
 import jdk.classfile.attribute.StackMapTableAttribute.*;
 import jdk.classfile.ClassReader;
 

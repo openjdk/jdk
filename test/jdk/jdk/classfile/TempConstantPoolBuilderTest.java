@@ -31,7 +31,7 @@
 import jdk.classfile.*;
 import jdk.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import jdk.classfile.attribute.SourceFileAttribute;
-import jdk.classfile.jdktypes.AccessFlag;
+import java.lang.reflect.AccessFlag;
 import org.testng.annotations.Test;
 
 import java.lang.constant.ClassDesc;

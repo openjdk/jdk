@@ -31,7 +31,7 @@ import java.lang.constant.MethodTypeDesc;
 import java.util.HashSet;
 import java.util.Set;
 
-import jdk.classfile.jdktypes.AccessFlag;
+import java.lang.reflect.AccessFlag;
 import jdk.classfile.ClassElement;
 import jdk.classfile.ClassModel;
 import jdk.classfile.ClassTransform;

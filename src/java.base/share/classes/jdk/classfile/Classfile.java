@@ -45,7 +45,7 @@ import jdk.classfile.impl.ClassImpl;
 import jdk.classfile.impl.DirectClassBuilder;
 import jdk.classfile.impl.Options;
 import jdk.classfile.impl.UnboundAttribute;
-import jdk.classfile.jdktypes.AccessFlag;
+import java.lang.reflect.AccessFlag;
 import jdk.classfile.jdktypes.PackageDesc;
 
 /**

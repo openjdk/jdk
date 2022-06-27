@@ -34,7 +34,7 @@ import java.lang.constant.MethodTypeDesc;
 import java.util.List;
 
 import jdk.classfile.AccessFlags;
-import jdk.classfile.jdktypes.AccessFlag;
+import java.lang.reflect.AccessFlag;
 import jdk.classfile.ClassModel;
 import jdk.classfile.Classfile;
 import jdk.classfile.Instruction;

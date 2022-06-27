@@ -38,7 +38,7 @@ import java.net.URI;
 import java.nio.file.Paths;
 
 import jdk.classfile.AccessFlags;
-import jdk.classfile.jdktypes.AccessFlag;
+import java.lang.reflect.AccessFlag;
 import jdk.classfile.ClassModel;
 import jdk.classfile.Classfile;
 import jdk.classfile.Opcode;

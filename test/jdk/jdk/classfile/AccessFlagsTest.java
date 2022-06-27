@@ -33,7 +33,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.IntFunction;
-import jdk.classfile.jdktypes.AccessFlag;
+import java.lang.reflect.AccessFlag;
 import jdk.classfile.AccessFlags;
 import org.testng.annotations.Test;
 import static org.testng.Assert.assertEquals;

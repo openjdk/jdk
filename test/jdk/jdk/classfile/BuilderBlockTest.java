@@ -39,7 +39,7 @@ import java.nio.file.Paths;
 
 import helpers.ByteArrayClassLoader;
 import jdk.classfile.AccessFlags;
-import jdk.classfile.jdktypes.AccessFlag;
+import java.lang.reflect.AccessFlag;
 import jdk.classfile.Classfile;
 import jdk.classfile.Label;
 import jdk.classfile.TypeKind;

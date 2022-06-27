@@ -26,7 +26,7 @@ package jdk.classfile.transforms;
 import java.lang.constant.MethodTypeDesc;
 import java.util.Arrays;
 
-import jdk.classfile.jdktypes.AccessFlag;
+import java.lang.reflect.AccessFlag;
 import jdk.classfile.AccessFlags;
 import jdk.classfile.CodeBuilder;
 import jdk.classfile.CodeElement;

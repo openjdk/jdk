@@ -57,7 +57,7 @@ import jdk.classfile.impl.AbstractInstruction;
 import jdk.classfile.impl.RawBytecodeHelper;
 import jdk.classfile.impl.Util;
 import jdk.classfile.instruction.InvokeInstruction;
-import jdk.classfile.jdktypes.AccessFlag;
+import java.lang.reflect.AccessFlag;
 import jdk.classfile.transforms.LabelsRemapper;
 
 public class AdvancedTransformationsTest {

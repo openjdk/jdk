@@ -31,7 +31,7 @@ import java.util.function.Consumer;
 import jdk.classfile.constantpool.Utf8Entry;
 import jdk.classfile.impl.ChainedMethodBuilder;
 import jdk.classfile.impl.TerminalMethodBuilder;
-import jdk.classfile.jdktypes.AccessFlag;
+import java.lang.reflect.AccessFlag;
 
 /**
  * A builder for methods.  Builders are not created directly; they are passed

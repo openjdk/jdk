@@ -26,7 +26,7 @@ package jdk.classfile;
 
 import java.util.Set;
 import jdk.classfile.impl.AccessFlagsImpl;
-import jdk.classfile.jdktypes.AccessFlag;
+import java.lang.reflect.AccessFlag;
 
 /**
  * Models the access flags for a class, method, or field.  Delivered as a

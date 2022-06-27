@@ -38,7 +38,7 @@ import jdk.classfile.constantpool.Utf8Entry;
 import jdk.classfile.impl.ChainedClassBuilder;
 import jdk.classfile.impl.DirectClassBuilder;
 import jdk.classfile.impl.Util;
-import jdk.classfile.jdktypes.AccessFlag;
+import java.lang.reflect.AccessFlag;
 
 /**
  * A builder for classfiles.  Builders are not created directly; they are passed

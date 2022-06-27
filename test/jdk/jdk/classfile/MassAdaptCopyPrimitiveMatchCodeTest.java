@@ -29,7 +29,7 @@
  * @run testng MassAdaptCopyPrimitiveMatchCodeTest
  */
 import helpers.InstructionModelToCodeBuilder;
-import jdk.classfile.jdktypes.AccessFlag;
+import java.lang.reflect.AccessFlag;
 import jdk.classfile.Classfile;
 import jdk.classfile.attribute.CodeAttribute;
 import jdk.classfile.Attributes;

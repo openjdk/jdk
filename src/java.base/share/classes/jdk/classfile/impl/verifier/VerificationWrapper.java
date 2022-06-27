@@ -30,7 +30,7 @@ import jdk.classfile.constantpool.ClassEntry;
 import jdk.classfile.constantpool.DynamicConstantPoolEntry;
 import jdk.classfile.constantpool.MemberRefEntry;
 import jdk.classfile.constantpool.NameAndTypeEntry;
-import jdk.classfile.jdktypes.AccessFlag;
+import java.lang.reflect.AccessFlag;
 import jdk.classfile.ClassModel;
 import jdk.classfile.constantpool.ConstantPool;
 import jdk.classfile.MethodModel;

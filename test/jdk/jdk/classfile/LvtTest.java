@@ -50,7 +50,7 @@ import jdk.classfile.constantpool.ConstantPoolBuilder;
 import jdk.classfile.constantpool.Utf8Entry;
 import jdk.classfile.instruction.LocalVariable;
 import jdk.classfile.instruction.LocalVariableType;
-import jdk.classfile.jdktypes.AccessFlag;
+import java.lang.reflect.AccessFlag;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

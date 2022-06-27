@@ -51,7 +51,7 @@ import jdk.classfile.attribute.ExceptionsAttribute;
 import jdk.classfile.attribute.SignatureAttribute;
 import jdk.classfile.constantpool.ClassEntry;
 import jdk.classfile.instruction.ConstantInstruction;
-import jdk.classfile.jdktypes.AccessFlag;
+import java.lang.reflect.AccessFlag;
 
 /**
  * ExampleGallery

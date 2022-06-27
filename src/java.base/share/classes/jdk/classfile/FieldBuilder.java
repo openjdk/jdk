@@ -28,7 +28,7 @@ package jdk.classfile;
 import jdk.classfile.constantpool.Utf8Entry;
 import jdk.classfile.impl.ChainedFieldBuilder;
 import jdk.classfile.impl.TerminalFieldBuilder;
-import jdk.classfile.jdktypes.AccessFlag;
+import java.lang.reflect.AccessFlag;
 
 import java.util.Optional;
 import java.util.function.Consumer;

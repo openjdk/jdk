@@ -28,7 +28,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import jdk.classfile.constantpool.Utf8Entry;
-import jdk.classfile.jdktypes.AccessFlag;
+import java.lang.reflect.AccessFlag;
 import jdk.classfile.Classfile;
 import jdk.classfile.impl.TemporaryConstantPool;
 import jdk.classfile.impl.UnboundAttribute;

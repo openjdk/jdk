@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 
 import jdk.classfile.ClassBuilder;
 import jdk.classfile.constantpool.ClassEntry;
-import jdk.classfile.jdktypes.AccessFlag;
+import java.lang.reflect.AccessFlag;
 import jdk.classfile.AccessFlags;
 import jdk.classfile.Attribute;
 import jdk.classfile.AttributeMapper;

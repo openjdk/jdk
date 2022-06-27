@@ -35,7 +35,7 @@ import java.lang.constant.MethodTypeDesc;
 import jdk.classfile.*;
 import jdk.classfile.constantpool.ConstantPoolBuilder;
 import jdk.classfile.constantpool.StringEntry;
-import jdk.classfile.jdktypes.AccessFlag;
+import java.lang.reflect.AccessFlag;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 import static helpers.TestConstants.MTD_VOID;

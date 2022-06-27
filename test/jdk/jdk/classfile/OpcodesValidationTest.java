@@ -33,7 +33,7 @@ import java.lang.constant.ConstantDesc;
 import static java.lang.constant.ConstantDescs.CD_void;
 import java.lang.constant.MethodTypeDesc;
 
-import jdk.classfile.jdktypes.AccessFlag;
+import java.lang.reflect.AccessFlag;
 import jdk.classfile.Classfile;
 import jdk.classfile.Opcode;
 import org.testng.annotations.Test;

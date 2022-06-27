@@ -24,7 +24,7 @@
  */
 package org.openjdk.bench.jdk.classfile;
 
-import jdk.classfile.jdktypes.AccessFlag;
+import java.lang.reflect.AccessFlag;
 import jdk.classfile.ClassElement;
 import jdk.classfile.ClassModel;
 import jdk.classfile.Classfile;

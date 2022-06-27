@@ -35,7 +35,7 @@ import java.util.function.Function;
 import jdk.classfile.CodeElement;
 import jdk.classfile.Opcode;
 import jdk.classfile.constantpool.ClassEntry;
-import jdk.classfile.jdktypes.AccessFlag;
+import java.lang.reflect.AccessFlag;
 
 import static jdk.classfile.Classfile.ACC_STATIC;
 
