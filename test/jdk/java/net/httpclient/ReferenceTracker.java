@@ -179,13 +179,15 @@ public class ReferenceTracker {
                                 boolean printThreads) {
         AssertionError fail = null;
         graceDelayMs = Math.max(graceDelayMs, 100);
-        long delay = Math.min(graceDelayMs, 500);
+        long delay = Math.min(graceDelayMs, 10);
         var count = delay > 0 ? graceDelayMs / delay : 1;
         for (int i = 0; i < count; i++) {
             if (TRACKERS.stream().anyMatch(hasOutstanding)) {
                 System.gc();
                 try {
-                    System.out.println("Waiting for HTTP operations to terminate...");
+                    if (i == 0) {
+                        System.out.println("Waiting for HTTP operations to terminate...");
+                    }
                     Thread.sleep(Math.min(graceDelayMs, Math.max(delay, 1)));
                 } catch (InterruptedException x) {
                     // OK
