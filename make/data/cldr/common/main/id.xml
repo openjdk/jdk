@@ -154,6 +154,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="elx">Elam</language>
 			<language type="en">Inggris</language>
 			<language type="en_GB">Inggris (Inggris)</language>
+			<language type="en_GB" alt="short">Inggris (UK)</language>
 			<language type="enm">Inggris Abad Pertengahan</language>
 			<language type="eo">Esperanto</language>
 			<language type="es">Spanyol</language>

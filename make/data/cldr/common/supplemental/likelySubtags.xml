@@ -1926,6 +1926,8 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ Nzima; ?; ? } => { Nzima; Latin; Ghana }-->
 		<likelySubtag from="oc" to="oc_Latn_FR"/>
 		<!--{ Occitan; ?; ? } => { Occitan; Latin; France }-->
+		<likelySubtag from="oc_ES" to="oc_Latn_ES"/>
+		<!--{ Occitan; ? ; Spain } => { Occitan; Latin; Spain }-->
 		<likelySubtag from="ogc" to="ogc_Latn_ZZ"/>
 		<!--{ Ogbah; ?; ? } => { Ogbah; Latin; Unknown Region }-->
 		<likelySubtag from="oj" to="oj_Cans_CA"/>

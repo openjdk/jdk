@@ -13,29 +13,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</identity>
 	<localeDisplayNames>
 		<languages>
-			<language type="ar_001">Modern Standard Arabic</language>
 			<language type="bn">Bengali</language>
 			<language type="ckb" alt="menu">Kurdish (Central)</language>
 			<language type="ckb" alt="variant">Kurdish (Sorani)</language>
-			<language type="de_AT">Austrian German</language>
-			<language type="de_CH">Swiss High German</language>
-			<language type="en_AU">Australian English</language>
-			<language type="en_CA">Canadian English</language>
-			<language type="en_GB">British English</language>
-			<language type="en_GB" alt="short">UK English</language>
 			<language type="en_US">United States English</language>
-			<language type="en_US" alt="short">US English</language>
-			<language type="es_419">Latin American Spanish</language>
-			<language type="es_ES">European Spanish</language>
-			<language type="es_MX">Mexican Spanish</language>
-			<language type="fr_CA">Canadian French</language>
-			<language type="fr_CH">Swiss French</language>
-			<language type="pt_BR">Brazilian Portuguese</language>
-			<language type="pt_PT">European Portuguese</language>
 			<language type="ro_MD">Moldovan</language>
-			<language type="sr_ME">Montenegrin</language>
-			<language type="zh_Hans">Simplified Chinese</language>
-			<language type="zh_Hant">Traditional Chinese</language>
 		</languages>
 		<scripts>
 			<script type="Beng">Bengali</script>

@@ -100,6 +100,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="en_GB">Британија инҝилисҹәси</language>
 			<language type="en_GB" alt="short">инҝилис (Б.К.)</language>
 			<language type="en_US">Америка инҝилисҹәси</language>
+			<language type="en_US" alt="short">инҝилис (АБШ)</language>
 			<language type="eo">есперанто</language>
 			<language type="es">испан</language>
 			<language type="es_419">Латын Америкасы испанҹасы</language>

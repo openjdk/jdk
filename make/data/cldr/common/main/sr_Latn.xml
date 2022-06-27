@@ -135,7 +135,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="elx">elamitski</language>
 			<language type="en">engleski</language>
 			<language type="en_GB">engleski (Velika Britanija)</language>
+			<language type="en_GB" alt="short">engleski (UK)</language>
 			<language type="en_US">engleski (Sjedinjene Američke Države)</language>
+			<language type="en_US" alt="short">engleski (SAD)</language>
 			<language type="enm">srednjeengleski</language>
 			<language type="eo">esperanto</language>
 			<language type="es">španski</language>

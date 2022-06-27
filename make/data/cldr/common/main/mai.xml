@@ -21,7 +21,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="en_GB">ब्रिटिश अंग्रेज़ी</language>
 			<language type="en_GB" alt="short">यू॰के॰ अंग्रेज़ी</language>
 			<language type="en_US">अमेरिकी अंग्रेज़ी</language>
-			<language type="en_US" alt="short">अमेरिकी अंग्रेज़ी</language>
 			<language type="es">स्पेनिश</language>
 			<language type="es_419">लैटिन अमेरिकी स्पेनिश</language>
 			<language type="es_ES">यूरोपीय स्पेनिश</language>

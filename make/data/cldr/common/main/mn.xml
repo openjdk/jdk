@@ -109,9 +109,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="en_AU">австрали-англи</language>
 			<language type="en_CA">канад-англи</language>
 			<language type="en_GB">британи-англи</language>
-			<language type="en_GB" alt="short">британи-англи</language>
 			<language type="en_US">америк-англи</language>
-			<language type="en_US" alt="short">америк-англи</language>
 			<language type="eo">эсперанто</language>
 			<language type="es">испани</language>
 			<language type="es_419">испани хэл (Латин Америк)</language>

@@ -18,7 +18,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<languages>
 			<language type="ady">adygué</language>
 			<language type="ang">vieil anglais</language>
-			<language type="ar_001">arabe standard moderne</language>
 			<language type="asa">asou</language>
 			<language type="bbj">ghomala</language>
 			<language type="bik">bicol</language>
@@ -29,19 +28,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ckb">kurde central</language>
 			<language type="ckb" alt="menu">sorani</language>
 			<language type="cr">cri</language>
-			<language type="de_AT">allemand autrichien</language>
-			<language type="de_CH">allemand suisse</language>
 			<language type="den">slave</language>
 			<language type="dgr">tlicho</language>
 			<language type="ebu">embou</language>
-			<language type="en_AU">anglais australien</language>
-			<language type="en_CA">anglais canadien</language>
-			<language type="en_GB">anglais britannique</language>
-			<language type="en_US">anglais américain</language>
+			<language type="en_US" alt="short">anglais (É.-U.)</language>
 			<language type="esu">yupik central</language>
 			<language type="ewo">ewondo</language>
-			<language type="fr_CA">français canadien</language>
-			<language type="fr_CH">français suisse</language>
 			<language type="frc">cajun</language>
 			<language type="frp">franco-provençal</language>
 			<language type="goh">vieux haut-allemand</language>
@@ -62,7 +54,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="mwv">mentawai</language>
 			<language type="nds_NL">bas saxon</language>
 			<language type="njo">ao naga</language>
-			<language type="nl_BE">flamand</language>
 			<language type="nmg">kwasio</language>
 			<language type="nwc">newari classique</language>
 			<language type="nyn">nkole</language>
@@ -72,11 +63,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="peo">vieux perse</language>
 			<language type="pfl">palatin</language>
 			<language type="pro">ancien occitan</language>
-			<language type="pt_BR">portugais brésilien</language>
-			<language type="pt_PT">portugais européen</language>
 			<language type="quc">k’iche’</language>
 			<language type="rar">rarotonga</language>
-			<language type="ro_MD">moldave</language>
 			<language type="sbp">sangu</language>
 			<language type="sdh">kurde méridional</language>
 			<language type="sei">seri</language>
@@ -91,9 +79,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ug" alt="variant">ouïghour</language>
 			<language type="yue" alt="menu">chinois, cantonais</language>
 			<language type="zh" alt="menu">chinois, mandarin</language>
-			<language type="zh_Hans">chinois simplifié</language>
 			<language type="zh_Hans" alt="long">chinois, mandarin simplifié</language>
-			<language type="zh_Hant">chinois traditionnel</language>
 			<language type="zh_Hant" alt="long">chinois, mandarin traditionnel</language>
 		</languages>
 		<scripts>

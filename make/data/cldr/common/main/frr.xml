@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2022 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-DFS-2016
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="frr"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="frr">Nordfriisk</language>
+		</languages>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[a ā ä å b c d đ e ē f g h i j k l m n o ö p r s t u ü w]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[á à ă â ã æ ç é è ĕ ê ë ğ í ì ĭ î ï İ ī ı ñ ó ò ŏ ô ø ō œ q ß ş ú ù ŭ û ū v x y ÿ z]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ‚ &quot; “ „ « » ( ) \[ \] \{ \} § @ * / \&amp; #]</exemplarCharacters>
+	</characters>
+	<numbers>
+		<currencies>
+			<currency type="EUR">
+				<symbol>€</symbol>
+			</currency>
+		</currencies>
+	</numbers>
+</ldml>

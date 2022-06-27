@@ -449,7 +449,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="zh_Hans">गोरलै खालामनाय चाइनीज</language>
 			<language type="zh_Hans" alt="long">गोरलै खालामनाय मेण्डारिन चाइनीज</language>
 			<language type="zh_Hant">आसार-खान्थियारि चाइनीज</language>
-			<language type="zh_Hant" alt="long">आसार-खान्थियारि चाइनीज</language>
 			<language type="zu">ज़ुलू</language>
 			<language type="zun">ज़ुनी</language>
 			<language type="zxx">रिक्त</language>

@@ -19,43 +19,20 @@ annotations.
 	<localeDisplayNames>
 		<languages>
 			<language type="af">Afreeki</language>
-			<language type="ar_001">Modern Standard Arabic</language>
 			<language type="as">Aasaami</language>
 			<language type="bla">Siksika</language>
 			<language type="bn">Bangla</language>
 			<language type="bo">Tibbati</language>
 			<language type="ckb">Kurdish, Sorani</language>
 			<language type="crh">Crimean Turkish</language>
-			<language type="de_AT">Austrian German</language>
-			<language type="de_CH">Swiss High German</language>
-			<language type="en_AU">Australian English</language>
-			<language type="en_CA">Canadian English</language>
-			<language type="en_GB">British English</language>
-			<language type="en_GB" alt="short">UK English</language>
-			<language type="en_US">American English</language>
-			<language type="en_US" alt="short">US English</language>
-			<language type="es_419">Latin American Spanish</language>
-			<language type="es_ES">European Spanish</language>
-			<language type="es_MX">Mexican Spanish</language>
 			<language type="fa">Faarsi</language>
-			<language type="fa_AF">Dari</language>
-			<language type="fr_CA">Canadian French</language>
-			<language type="fr_CH">Swiss French</language>
 			<language type="ht">Haitian</language>
+			<language type="lah">Lahnda</language>
 			<language type="mus">Muscogee</language>
 			<language type="nan">Min Nan</language>
 			<language type="nds_NL">Low Saxon</language>
-			<language type="nl_BE">Flemish</language>
-			<language type="pt_BR">Brazilian Portuguese</language>
-			<language type="pt_PT">European Portuguese</language>
-			<language type="ro_MD">Moldavian</language>
-			<language type="sw_CD">Congo Swahili</language>
 			<language type="ug">Uighur</language>
 			<language type="wal">walamo</language>
-			<language type="zh_Hans">Simplified Chinese</language>
-			<language type="zh_Hans" alt="long">Simplified Mandarin Chinese</language>
-			<language type="zh_Hant">Traditional Chinese</language>
-			<language type="zh_Hant" alt="long">Traditional Mandarin Chinese</language>
 		</languages>
 		<scripts>
 			<script type="Bali">Baali</script>
@@ -139,6 +116,9 @@ annotations.
 						<dateFormatItem id="yyyyMMM">MMM r(U)</dateFormatItem>
 						<dateFormatItem id="yyyyMMMEd">E, d MMM r(U)</dateFormatItem>
 					</availableFormats>
+					<intervalFormats>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
 			<calendar type="generic">
@@ -170,6 +150,7 @@ annotations.
 						<dateFormatItem id="yyyyMd">d/M/y GGGGG</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="MEd">
 							<greatestDifference id="d">E, d/M – E, d/M</greatestDifference>
 							<greatestDifference id="M">E, d/M – E, d/M</greatestDifference>
@@ -343,6 +324,7 @@ annotations.
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<intervalFormats>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="GyM">
 							<greatestDifference id="G">M/y GGGGG – M/y GGGGG</greatestDifference>
 							<greatestDifference id="M">M/y – M/y GGGGG</greatestDifference>

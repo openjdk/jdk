@@ -141,7 +141,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="en_AU">Avstraliya ingiliscəsi</language>
 			<language type="en_CA">Kanada ingiliscəsi</language>
 			<language type="en_GB">Britaniya ingiliscəsi</language>
+			<language type="en_GB" alt="short">ingilis (BK)</language>
 			<language type="en_US">Amerika ingiliscəsi</language>
+			<language type="en_US" alt="short">ingilis (ABŞ)</language>
 			<language type="enm">orta ingilis</language>
 			<language type="eo">esperanto</language>
 			<language type="es">ispan</language>

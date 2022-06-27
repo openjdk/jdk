@@ -15,7 +15,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<languages>
 			<language type="ace">acehnés</language>
 			<language type="alt">altái meridional</language>
-			<language type="ar_001">árabe estándar moderno</language>
 			<language type="arp">arapaho</language>
 			<language type="ars" draft="contributed">árabe najdi</language>
 			<language type="bax" draft="contributed">bamun</language>
@@ -43,7 +42,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="lus" draft="contributed">lushai</language>
 			<language type="mga" draft="contributed">irlandés medieval</language>
 			<language type="nd">ndebele del norte</language>
-			<language type="nl_BE">flamenco</language>
 			<language type="nr">ndebele meridional</language>
 			<language type="nso" draft="contributed">sotho septentrional</language>
 			<language type="rm">romanche</language>
@@ -61,10 +59,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="tzm">tamazight del Marruecos Central</language>
 			<language type="ug" alt="variant">uigur variante</language>
 			<language type="xal" draft="contributed">kalmyk</language>
-			<language type="zh_Hans">chino simplificado</language>
-			<language type="zh_Hans" alt="long">chino mandarín simplificado</language>
-			<language type="zh_Hant">chino tradicional</language>
-			<language type="zh_Hant" alt="long">chino mandarín tradicional</language>
 		</languages>
 		<scripts>
 			<script type="Hrkt">silabarios del japonés</script>

@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2022 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-DFS-2016
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="oc"/>
+		<territory type="ES"/>
+	</identity>
+	<characters>
+		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” « » ( ) \[ \] § @ * / \&amp; # † ‡ ⋅]</exemplarCharacters>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="generic">
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="GyMMMM" draft="provisional">MMMM 'de' y G</dateFormatItem>
+						<dateFormatItem id="GyMMMMd" draft="provisional">d 'de' MMMM 'de' y G</dateFormatItem>
+						<dateFormatItem id="GyMMMMEd" draft="provisional">E, d 'de' MMMM 'de' y G</dateFormatItem>
+						<dateFormatItem id="MMMMEd" draft="provisional">E, d 'de' MMMM</dateFormatItem>
+						<dateFormatItem id="yyyyMMMMd" draft="provisional">d 'de' MMMM 'de' y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMMEd" draft="provisional">EEE, d 'de' MMMM 'de' y G</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="gregorian">
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="GyMMMM" draft="provisional">MMMM 'de' y G</dateFormatItem>
+						<dateFormatItem id="GyMMMMd" draft="provisional">d 'de' MMMM 'de' y G</dateFormatItem>
+						<dateFormatItem id="GyMMMMEd" draft="provisional">E, d 'de' MMMM 'de' y G</dateFormatItem>
+						<dateFormatItem id="MMMMEd" draft="provisional">E, d 'de' MMMM</dateFormatItem>
+						<dateFormatItem id="yMMMMd" draft="provisional">d 'de' MMMM 'de' y</dateFormatItem>
+						<dateFormatItem id="yMMMMEd" draft="provisional">EEE, d 'de' MMMM 'de' y</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatItem id="MMMMd">
+							<greatestDifference id="d" draft="provisional">d–d 'de' MMMM</greatestDifference>
+							<greatestDifference id="M" draft="provisional">d 'de' MMMM – d 'de' MMMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMMEd">
+							<greatestDifference id="d" draft="provisional">E, d 'de' MMMM – E, d 'de' MMMM</greatestDifference>
+							<greatestDifference id="M" draft="provisional">E, d 'de' MMMM – E, d 'de' MMMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMMd">
+							<greatestDifference id="d" draft="provisional">d–d 'de' MMMM 'de' y</greatestDifference>
+							<greatestDifference id="M" draft="provisional">d 'de' MMMM – d 'de' MMMM 'de' y</greatestDifference>
+							<greatestDifference id="y" draft="provisional">d 'de' MMMM 'de' y – d 'de' MMMM 'de' y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMMEd">
+							<greatestDifference id="d" draft="provisional">E, d 'de' MMMM – E, d 'de' MMMM 'de' y</greatestDifference>
+							<greatestDifference id="M" draft="provisional">E, d 'de' MMMM – E, d 'de' MMMM 'de' y</greatestDifference>
+							<greatestDifference id="y" draft="provisional">E, d 'de' MMMM 'de' y – E, d 'de' MMMM 'de' y</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+	</dates>
+</ldml>

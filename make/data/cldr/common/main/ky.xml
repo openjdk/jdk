@@ -105,6 +105,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="el">грекче</language>
 			<language type="en">англисче</language>
 			<language type="en_US">англисче (Америка Кошмо Штаттары)</language>
+			<language type="en_US" alt="short">англисче (АКШ)</language>
 			<language type="eo">эсперанто</language>
 			<language type="es">испанча</language>
 			<language type="es_ES">испанча (Европа)</language>
@@ -414,7 +415,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="zh" alt="menu">кытайча (мандарин)</language>
 			<language type="zh_Hans">кытайча (жөнөкөйлөштүрүлгөн)</language>
 			<language type="zh_Hant">кытайча (салттуу)</language>
-			<language type="zh_Hant" alt="long">кытайча (салттуу)</language>
 			<language type="zu">зулуча</language>
 			<language type="zun">зуниче</language>
 			<language type="zxx">тилдик мазмун жок</language>

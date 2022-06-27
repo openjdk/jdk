@@ -164,7 +164,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="en_AU">lea fakapālangi-ʻaositelēlia</language>
 			<language type="en_CA">lea fakapālangi-kānata</language>
 			<language type="en_GB">lea fakapilitānia</language>
-			<language type="en_GB" alt="short">lea fakapilitānia</language>
 			<language type="en_US">lea fakapālangi-ʻamelika</language>
 			<language type="en_US" alt="short">lea fakapālangi-ʻAmelika</language>
 			<language type="enm">lea fakapālangi-lotoloto</language>

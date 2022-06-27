@@ -166,7 +166,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="en_AU">Australijos anglų</language>
 			<language type="en_CA">Kanados anglų</language>
 			<language type="en_GB">Didžiosios Britanijos anglų</language>
+			<language type="en_GB" alt="short">anglų (JK)</language>
 			<language type="en_US">Jungtinių Valstijų anglų</language>
+			<language type="en_US" alt="short">anglų (JAV)</language>
 			<language type="enm">Vidurio Anglijos</language>
 			<language type="eo">esperanto</language>
 			<language type="es">ispanų</language>

@@ -118,6 +118,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="en_GB">брытанская англійская</language>
 			<language type="en_GB" alt="short">вялікабрытанская англійская</language>
 			<language type="en_US">амерыканская англійская</language>
+			<language type="en_US" alt="short">англійская (ЗША)</language>
 			<language type="eo">эсперанта</language>
 			<language type="es">іспанская</language>
 			<language type="es_419">лацінаамерыканская іспанская</language>

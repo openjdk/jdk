@@ -104,6 +104,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="eka">ekajuk</language>
 			<language type="el">grikskt</language>
 			<language type="en">enskt</language>
+			<language type="en_GB" alt="short">enskt (UK)</language>
+			<language type="en_US" alt="short">enskt (USA)</language>
 			<language type="eo">esperanto</language>
 			<language type="es">spanskt</language>
 			<language type="et">estiskt</language>

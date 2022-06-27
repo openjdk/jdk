@@ -149,7 +149,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="en_AU">ausztrál angol</language>
 			<language type="en_CA">kanadai angol</language>
 			<language type="en_GB">brit angol</language>
+			<language type="en_GB" alt="short">angol (UK)</language>
 			<language type="en_US">amerikai angol</language>
+			<language type="en_US" alt="short">angol (USA)</language>
 			<language type="enm">közép angol</language>
 			<language type="eo">eszperantó</language>
 			<language type="es">spanyol</language>

@@ -141,7 +141,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="en_AU">ஆஸ்திரேலிய ஆங்கிலம்</language>
 			<language type="en_CA">கனடிய ஆங்கிலம்</language>
 			<language type="en_GB">பிரிட்டிஷ் ஆங்கிலம்</language>
+			<language type="en_GB" alt="short">ஆங்கிலம் (யூகே)</language>
 			<language type="en_US">அமெரிக்க ஆங்கிலம்</language>
+			<language type="en_US" alt="short">ஆங்கிலம் (யூஎஸ்)</language>
 			<language type="enm">மிடில் ஆங்கிலம்</language>
 			<language type="eo">எஸ்பரேன்டோ</language>
 			<language type="es">ஸ்பானிஷ்</language>

@@ -168,7 +168,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="en_AU">австралиски англиски</language>
 			<language type="en_CA">канадски англиски</language>
 			<language type="en_GB">британски англиски</language>
+			<language type="en_GB" alt="short">англиски (ОК)</language>
 			<language type="en_US">американски англиски</language>
+			<language type="en_US" alt="short">англиски (САД)</language>
 			<language type="enm">средноанглиски</language>
 			<language type="eo">есперанто</language>
 			<language type="es">шпански</language>

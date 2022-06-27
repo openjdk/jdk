@@ -137,7 +137,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="en_AU">avstralska angleščina</language>
 			<language type="en_CA">kanadska angleščina</language>
 			<language type="en_GB">britanska angleščina</language>
+			<language type="en_GB" alt="short">angleščina (ZK)</language>
 			<language type="en_US">ameriška angleščina</language>
+			<language type="en_US" alt="short">angleščina (ZDA)</language>
 			<language type="enm">srednja angleščina</language>
 			<language type="eo">esperanto</language>
 			<language type="es">španščina</language>

@@ -14,7 +14,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	<localeDisplayNames>
 		<languages>
 			<language type="bn">Bengali</language>
-			<language type="ro_MD">Moldavian</language>
 		</languages>
 		<scripts>
 			<script type="Beng">Bengali</script>

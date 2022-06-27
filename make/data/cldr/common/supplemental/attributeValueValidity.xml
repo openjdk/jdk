@@ -9,14 +9,14 @@
 			<!-- BCP 47 contains many more language codes than we are interested in maintaining as a part of the CLDR -->
 			<!-- This list contains ONLY those languages considered to be 'of interest' as part of CLDR, -->
 			<!-- and is maintained manually by the CLDR TC -->
-			<!-- The following are in $language but not in comon/main or in modern coverage: cu lij prg vo -->
+			<!-- The following are in $language but not in common/main or in modern coverage: cu lij prg vo -->
 			<variable id='$language' type='choice'>
 				af agq ak am ann ar as asa ast az
 				bas be bem bez bg bm bn bo br brx bs
 				ca ccp ce ceb cgg chr ckb cs cu cy
 				da dav de dje doi dsb dua dyo dz
 				ebu ee el en eo es et eu ewo
-				fa ff fi fil fo fr fur fy
+				fa ff fi fil fo fr frr fur fy
 				ga gd gl gsw gu guz gv
 				ha haw he hi hr hsb hu hy
 				ia id ig ii is it

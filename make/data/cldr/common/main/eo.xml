@@ -57,9 +57,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="en_AU" draft="unconfirmed">aŭstralia angla</language>
 			<language type="en_CA" draft="unconfirmed">kanada angla</language>
 			<language type="en_GB" draft="unconfirmed">brita angla</language>
-			<language type="en_GB" alt="short" draft="unconfirmed">brita angla</language>
 			<language type="en_US" draft="unconfirmed">usona angla</language>
-			<language type="en_US" alt="short" draft="unconfirmed">usona angla</language>
 			<language type="eo">esperanto</language>
 			<language type="es">hispana</language>
 			<language type="es_419" draft="unconfirmed">amerika hispana</language>

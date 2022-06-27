@@ -104,7 +104,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="en_AU">آسٽريليائي انگريزي</language>
 			<language type="en_CA">ڪينيڊيائي انگريزي</language>
 			<language type="en_GB">برطانوي انگريزي</language>
-			<language type="en_GB" alt="short">برطانوي انگريزي</language>
 			<language type="en_US">آمريڪي انگريزي</language>
 			<language type="en_US" alt="short">انگريزي (آمريڪا)</language>
 			<language type="eo">ايسپرانٽو</language>

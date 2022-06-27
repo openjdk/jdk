@@ -82,7 +82,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="en_AU">awstralska jendźelšćina</language>
 			<language type="en_CA">kanadiska jendźelšćina</language>
 			<language type="en_GB">britiska jendźelšćina</language>
+			<language type="en_GB" alt="short">jendźelšćina (UK)</language>
 			<language type="en_US">ameriska jendźelšćina</language>
+			<language type="en_US" alt="short">jendźelšćina (USA)</language>
 			<language type="eo">esperanto</language>
 			<language type="es">španišćina</language>
 			<language type="es_419">łaćonskoameriska španišćina</language>
@@ -309,9 +311,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="zh">chinšćina</language>
 			<language type="zh" alt="menu">chinšćina (mandarin)</language>
 			<language type="zh_Hans">chinšćina (zjednorjena)</language>
-			<language type="zh_Hans" alt="long">chinšćina (zjednorjena)</language>
 			<language type="zh_Hant">chinšćina (tradicionalna)</language>
-			<language type="zh_Hant" alt="long">chinšćina (tradicionalna)</language>
 			<language type="zu">zulušćina</language>
 			<language type="zxx">žadyn rěčny wobsah</language>
 		</languages>

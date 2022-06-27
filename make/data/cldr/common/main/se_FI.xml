@@ -22,9 +22,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="en_AU">austrálialaš eaŋgalsgiella</language>
 			<language type="en_CA">kanádalaš eaŋgalsgiella</language>
 			<language type="en_GB">brihttalaš eaŋgalsgiella</language>
-			<language type="en_GB" alt="short">brihttalaš eaŋgalsgiella</language>
 			<language type="en_US">amerihkálaš eaŋgalsgiella</language>
-			<language type="en_US" alt="short">amerihkálaš eaŋgalsgiella</language>
 			<language type="es_419">latiinna-amerihkalaš spánskkagiella</language>
 			<language type="es_ES">espánjalaš spánskkagiella</language>
 			<language type="es_MX">meksikolaš spánskkagiella</language>
@@ -44,7 +42,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="th">thaigiella</language>
 			<language type="vi">vietnamagiella</language>
 			<language type="zh_Hans">álkes kiinnágiella</language>
-			<language type="zh_Hant">árbevirolaš kiinnágiella</language>
 		</languages>
 		<scripts>
 			<script type="Arab">arábalaš</script>

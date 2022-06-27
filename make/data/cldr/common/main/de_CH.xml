@@ -15,24 +15,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<languages>
 			<language type="ace">Aceh-Sprache</language>
 			<language type="ach">Acholi-Sprache</language>
-			<language type="ar_001">Modernes Hocharabisch</language>
 			<language type="ars">Nadschd-Arabisch</language>
 			<language type="bas">Basaa-Sprache</language>
 			<language type="bik">Bikol-Sprache</language>
 			<language type="bin">Bini-Sprache</language>
 			<language type="chb">Chibcha-Sprache</language>
-			<language type="de_CH">Schweizer Hochdeutsch</language>
 			<language type="din">Dinka-Sprache</language>
 			<language type="fan">Pangwe-Sprache</language>
 			<language type="gba">Gbaya-Sprache</language>
 			<language type="kmb">Kimbundu-Sprache</language>
 			<language type="mus">Muskogee-Sprache</language>
-			<language type="nl_BE">Flämisch</language>
 			<language type="prg">Altpreussisch</language>
 			<language type="rhg">Rohingya</language>
-			<language type="zh_Hans">Chinesisch (vereinfacht)</language>
 			<language type="zh_Hans" alt="long">Hochchinesisch (vereinfacht)</language>
-			<language type="zh_Hant">Chinesisch (traditionell)</language>
 			<language type="zh_Hant" alt="long">Hochchinesisch (traditionell)</language>
 		</languages>
 		<territories>

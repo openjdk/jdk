@@ -14,16 +14,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</identity>
 	<localeDisplayNames>
 		<languages>
-			<language type="ar_001" draft="contributed">savremeni standardni arapski</language>
 			<language type="arn" draft="contributed">mapudungun</language>
 			<language type="be" draft="contributed">bjeloruski</language>
 			<language type="bm" draft="contributed">bamanankan</language>
 			<language type="bn" draft="contributed">bangla</language>
 			<language type="de" draft="contributed">njemački</language>
 			<language type="de_CH">švajcarski visoki njemački</language>
-			<language type="en_GB">engleski (Velika Britanija)</language>
-			<language type="es_ES">španski (Evropa)</language>
-			<language type="fa_AF" draft="contributed">dari</language>
 			<language type="gsw">njemački (Švajcarska)</language>
 			<language type="ht" draft="contributed">haićanski kreolski</language>
 			<language type="lo" draft="contributed">laoški</language>
@@ -32,16 +28,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="nd">sjeverni ndebele</language>
 			<language type="nds" draft="contributed">niskonjemački</language>
 			<language type="nqo" draft="contributed">n’ko</language>
-			<language type="pt_PT" draft="contributed">portugalski (Portugal)</language>
 			<language type="se">sjeverni sami</language>
 			<language type="shi" draft="contributed">južni šilha</language>
 			<language type="si" draft="contributed">sinhalski</language>
-			<language type="sw_CD" draft="contributed">kisvahili</language>
 			<language type="tzm" draft="contributed">centralnoatlaski tamašek</language>
 			<language type="xh" draft="contributed">isikosa</language>
 			<language type="zgh" draft="contributed">standardni marokanski tamašek</language>
-			<language type="zh_Hans" draft="contributed">pojednostavljeni kineski</language>
-			<language type="zh_Hant" draft="contributed">tradicionalni kineski</language>
 			<language type="zu" draft="contributed">isizulu</language>
 		</languages>
 		<territories>

@@ -123,6 +123,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="en_GB">բրիտանական անգլերեն</language>
 			<language type="en_GB" alt="short">անգլերեն (Բրիտանիա)</language>
 			<language type="en_US">ամերիկյան անգլերեն</language>
+			<language type="en_US" alt="short">անգլերեն (ԱՄՆ)</language>
 			<language type="eo">էսպերանտո</language>
 			<language type="es">իսպաներեն</language>
 			<language type="es_419">լատինամերիկյան իսպաներեն</language>

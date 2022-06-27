@@ -14,7 +14,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<languages>
 			<language type="alt">sør-altaj</language>
 			<language type="ang">gammalengelsk</language>
-			<language type="ar_001">moderne standardarabisk</language>
 			<language type="asa">asu (Tanzania)</language>
 			<language type="bas">basa</language>
 			<language type="be">kviterussisk</language>
@@ -34,7 +33,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ebu">embu</language>
 			<language type="egy">gammalegyptisk</language>
 			<language type="elx">elamite</language>
-			<language type="fa_AF">dari</language>
 			<language type="fil">filippinsk</language>
 			<language type="fro">gammalfransk</language>
 			<language type="frs">austfrisisk</language>
@@ -64,7 +62,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="nds_NL">lågsaksisk</language>
 			<language type="ne">nepalsk</language>
 			<language type="niu">niuisk</language>
-			<language type="nl_BE">flamsk</language>
 			<language type="nog">nogai</language>
 			<language type="non">gammalnorsk</language>
 			<language type="nqo">n’ko</language>
@@ -98,8 +95,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="zgh">standard marokkansk tamazight</language>
 			<language type="zh_Hans">forenkla kinesisk</language>
 			<language type="zh_Hans" alt="long">forenkla mandarinkinesisk</language>
-			<language type="zh_Hant">tradisjonell kinesisk</language>
-			<language type="zh_Hant" alt="long">tradisjonell mandarinkinesisk</language>
 			<language type="zxx">utan språkleg innhald</language>
 			<language type="zza">zaza</language>
 		</languages>

@@ -70,6 +70,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="en_GB">Inggris Karajan Manunggal</language>
 			<language type="en_GB" alt="short">Inggris (Britania)</language>
 			<language type="en_US">Inggris Amérika Sarékat</language>
+			<language type="en_US" alt="short">Inggris (AS)</language>
 			<language type="eo">Esperanto</language>
 			<language type="es">Spanyol</language>
 			<language type="es_419">Spanyol (Amerika Latin)</language>

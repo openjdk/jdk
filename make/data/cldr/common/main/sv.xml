@@ -169,9 +169,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="en_AU">australisk engelska</language>
 			<language type="en_CA">kanadensisk engelska</language>
 			<language type="en_GB">brittisk engelska</language>
-			<language type="en_GB" alt="short">brittisk engelska</language>
 			<language type="en_US">amerikansk engelska</language>
-			<language type="en_US" alt="short">amerikansk engelska</language>
 			<language type="enm">medelengelska</language>
 			<language type="eo">esperanto</language>
 			<language type="es">spanska</language>
@@ -640,9 +638,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="zh">kinesiska</language>
 			<language type="zh" alt="menu">mandarin</language>
 			<language type="zh_Hans">förenklad kinesiska</language>
-			<language type="zh_Hans" alt="long">förenklad kinesiska</language>
 			<language type="zh_Hant">traditionell kinesiska</language>
-			<language type="zh_Hant" alt="long">traditionell kinesiska</language>
 			<language type="zu">zulu</language>
 			<language type="zun">zuni</language>
 			<language type="zxx">inget språkligt innehåll</language>

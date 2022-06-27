@@ -74,7 +74,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="en_AU">ingles australianu</language>
 			<language type="en_CA">ingles kanadianu</language>
 			<language type="en_GB">ingles britániku</language>
+			<language type="en_GB" alt="short">ingles (R.U.)</language>
 			<language type="en_US">ingles merkanu</language>
+			<language type="en_US" alt="short">ingles (S.U.)</language>
 			<language type="eo">sperantu</language>
 			<language type="es">spanhol</language>
 			<language type="es_419">spanhol latinu-merkanu</language>

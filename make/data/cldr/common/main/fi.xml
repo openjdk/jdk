@@ -168,7 +168,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="en_AU">australianenglanti</language>
 			<language type="en_CA">kanadanenglanti</language>
 			<language type="en_GB">britannianenglanti</language>
+			<language type="en_GB" alt="short">englanti (Britannia)</language>
 			<language type="en_US">amerikanenglanti</language>
+			<language type="en_US" alt="short">englanti (USA)</language>
 			<language type="enm">keskienglanti</language>
 			<language type="eo">esperanto</language>
 			<language type="es">espanja</language>

@@ -14530,4 +14530,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<featureName type="tnum">àireamhan clàrach</featureName>
 		<featureName type="zero">neoini le slais</featureName>
 	</typographicNames>
+	<personNames>
+		<personName order="sorting" length="long" usage="referring" formality="formal">
+			<namePattern alt="1" draft="provisional">{surname}, {prefix} {given} {given2}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="informal">
+			<namePattern alt="1" draft="provisional">{surname}, {given-informal}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="formal">
+			<namePattern alt="1" draft="provisional">{surname}, {prefix} {given} {given2}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="informal">
+			<namePattern alt="1" draft="provisional">{surname}, {given-informal}</namePattern>
+		</personName>
+	</personNames>
 </ldml>

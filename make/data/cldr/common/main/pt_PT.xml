@@ -51,7 +51,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="es_ES">espanhol europeu</language>
 			<language type="es_MX">espanhol mexicano</language>
 			<language type="et">estónio</language>
-			<language type="fa_AF">dari</language>
 			<language type="fon">fon</language>
 			<language type="fr_CA">francês canadiano</language>
 			<language type="fr_CH">francês suíço</language>
@@ -82,7 +81,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="nds">baixo-alemão</language>
 			<language type="nds_NL">baixo-saxão</language>
 			<language type="nl">neerlandês</language>
-			<language type="nl_BE">flamengo</language>
 			<language type="nn">norueguês nynorsk</language>
 			<language type="non">nórdico antigo</language>
 			<language type="oc">occitano</language>
@@ -98,7 +96,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="pt_PT">português europeu</language>
 			<language type="raj">rajastanês</language>
 			<language type="rhg" draft="contributed">rohingya</language>
-			<language type="ro_MD">moldávio</language>
 			<language type="se">sami do norte</language>
 			<language type="sga">irlandês antigo</language>
 			<language type="shu">árabe do Chade</language>
@@ -120,9 +117,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="yo">ioruba</language>
 			<language type="zgh">tamazight marroquino padrão</language>
 			<language type="zh" alt="menu">chinês mandarim</language>
-			<language type="zh_Hans">chinês simplificado</language>
 			<language type="zh_Hans" alt="long">chinês mandarim simplificado</language>
-			<language type="zh_Hant">chinês tradicional</language>
 			<language type="zh_Hant" alt="long">chinês mandarim tradicional</language>
 			<language type="zun">zuni</language>
 			<language type="zza">zaza</language>

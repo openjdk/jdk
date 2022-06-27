@@ -18,23 +18,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ace">achenés</language>
 			<language type="ady">adigeo</language>
 			<language type="alt">altái del sur</language>
-			<language type="ar_001">árabe estándar moderno</language>
 			<language type="arp">arapajó</language>
 			<language type="ars">árabe de Néyed</language>
 			<language type="bla">siksiká</language>
-			<language type="de_AT">alemán austríaco</language>
-			<language type="de_CH">alto alemán suizo</language>
-			<language type="en_AU">inglés australiano</language>
-			<language type="en_CA">inglés canadiense</language>
-			<language type="en_GB">inglés británico</language>
-			<language type="en_US">inglés estadounidense</language>
-			<language type="es_419">español latinoamericano</language>
-			<language type="es_ES">español de España</language>
-			<language type="es_MX">español de México</language>
 			<language type="eu">vasco</language>
-			<language type="fa_AF">darí</language>
-			<language type="fr_CA">francés canadiense</language>
-			<language type="fr_CH">francés suizo</language>
 			<language type="goh">alemán de la alta edad antigua</language>
 			<language type="grc">griego clásico</language>
 			<language type="gu">gujarati</language>
@@ -44,16 +31,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ks">cachemiro</language>
 			<language type="lo">laosiano</language>
 			<language type="ml">malabar</language>
-			<language type="nl_BE">flamenco</language>
 			<language type="nr">ndebele del sur</language>
 			<language type="nso">sesotho del norte</language>
 			<language type="pa">panyabí</language>
 			<language type="prg">prusiano antiguo</language>
 			<language type="ps" alt="variant">pashtún</language>
-			<language type="pt_BR">portugués de Brasil</language>
-			<language type="pt_PT">portugués de Portugal</language>
 			<language type="rm">retorrománico</language>
-			<language type="ro_MD">moldavo</language>
 			<language type="shu">árabe (Chad)</language>
 			<language type="sma">sami del sur</language>
 			<language type="st">sesotho del sur</language>
@@ -66,10 +49,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="wal">walamo</language>
 			<language type="wuu">wu</language>
 			<language type="xal">calmuco</language>
-			<language type="zh_Hans">chino simplificado</language>
-			<language type="zh_Hans" alt="long">chino mandarín simplificado</language>
-			<language type="zh_Hant">chino tradicional</language>
-			<language type="zh_Hant" alt="long">chino mandarín tradicional</language>
 			<language type="zun">zuni</language>
 		</languages>
 		<scripts>
@@ -1019,8 +998,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<decimalFormats numberSystem="latn">
 			<decimalFormatLength type="long">
 				<decimalFormat>
+					<pattern type="1000000000000" count="one">0 billón</pattern>
 					<pattern type="1000000000000" count="other">0 billón</pattern>
+					<pattern type="10000000000000" count="one">00 billones</pattern>
 					<pattern type="10000000000000" count="other">00 billones</pattern>
+					<pattern type="100000000000000" count="one">000 billones</pattern>
 					<pattern type="100000000000000" count="other">000 billones</pattern>
 				</decimalFormat>
 			</decimalFormatLength>

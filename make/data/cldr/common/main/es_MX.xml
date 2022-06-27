@@ -14,7 +14,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	<localeDisplayNames>
 		<languages>
 			<language type="ace">acehnés</language>
-			<language type="ar_001">árabe estándar moderno</language>
 			<language type="arp">arapaho</language>
 			<language type="bas">basa</language>
 			<language type="bax" draft="contributed">bamun</language>
@@ -41,7 +40,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="lus" draft="contributed">lushai</language>
 			<language type="mga" draft="contributed">irlandés medieval</language>
 			<language type="nan" draft="contributed">min nan (Chino)</language>
-			<language type="nl_BE">flamenco</language>
 			<language type="nr" draft="contributed">ndebele meridional</language>
 			<language type="nso">sotho septentrional</language>
 			<language type="pa">punyabí</language>
@@ -57,10 +55,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="wuu">chino wu</language>
 			<language type="xal" draft="contributed">kalmyk</language>
 			<language type="zgh">tamazight marroquí estándar</language>
-			<language type="zh_Hans">chino simplificado</language>
-			<language type="zh_Hans" alt="long">chino mandarín simplificado</language>
-			<language type="zh_Hant">chino tradicional</language>
-			<language type="zh_Hant" alt="long">chino mandarín tradicional</language>
 		</languages>
 		<scripts>
 			<script type="Mlym" draft="contributed">malayálam</script>
@@ -707,8 +701,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<decimalFormats numberSystem="latn">
 			<decimalFormatLength type="long">
 				<decimalFormat>
+					<pattern type="1000000000000" count="one">0 billón</pattern>
 					<pattern type="1000000000000" count="other">0 billones</pattern>
+					<pattern type="10000000000000" count="one">00 billones</pattern>
 					<pattern type="10000000000000" count="other">00 billones</pattern>
+					<pattern type="100000000000000" count="one">000 billones</pattern>
 					<pattern type="100000000000000" count="other">000 billones</pattern>
 				</decimalFormat>
 			</decimalFormatLength>

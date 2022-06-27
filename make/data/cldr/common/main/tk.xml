@@ -30,14 +30,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="alt">günorta Altaý dili</language>
 			<language type="am">amhar dili</language>
 			<language type="an">aragon dili</language>
+			<language type="ann" draft="contributed">Obolo dili</language>
 			<language type="anp">angika dili</language>
 			<language type="ar">arap dili</language>
 			<language type="ar_001">häzirki zaman standart arap dili</language>
 			<language type="arn">mapuçe dili</language>
 			<language type="arp">arapaho dili</language>
+			<language type="ars" draft="contributed">Nejdi arap dili</language>
 			<language type="as">assam dili</language>
 			<language type="asa">asu dili</language>
 			<language type="ast">asturiý dili</language>
+			<language type="atj" draft="contributed">Atikamekw dili</language>
 			<language type="av">awar dili</language>
 			<language type="awa">awadhi dili</language>
 			<language type="ay">aýmara dili</language>
@@ -63,6 +66,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="bug">bugiý dili</language>
 			<language type="byn">blin dili</language>
 			<language type="ca">katalan dili</language>
+			<language type="cay" draft="contributed">Kaýuga dili</language>
 			<language type="ccp">çakma dili</language>
 			<language type="ce">çeçen dili</language>
 			<language type="ceb">sebuan dili</language>
@@ -71,12 +75,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="chk">çuuk dili</language>
 			<language type="chm">mariý dili</language>
 			<language type="cho">çokto</language>
+			<language type="chp" draft="contributed">Çipewýan dili</language>
 			<language type="chr">çeroki</language>
 			<language type="chy">şaýenn dili</language>
 			<language type="ckb">merkezi kürt dili</language>
+			<language type="clc" draft="contributed">Çilkotin dili</language>
 			<language type="co">korsikan dili</language>
+			<language type="crg" draft="contributed">Miçif dili</language>
+			<language type="crj" draft="contributed">Günorta-gündogar kri dili</language>
+			<language type="crk" draft="contributed">Düzdeçi kri dili</language>
+			<language type="crl" draft="contributed">Demirgazyk-gündogar kri dili</language>
+			<language type="crm" draft="contributed">Los-kri dili</language>
+			<language type="crr" draft="contributed">Karolina algonkin dili</language>
 			<language type="crs">seselwa kreole-fransuz dili</language>
 			<language type="cs">çeh dili</language>
+			<language type="csw" draft="contributed">Batgalyk kri dili</language>
 			<language type="cu">buthana slaw dili</language>
 			<language type="cv">çuwaş dili</language>
 			<language type="cy">walliý dili</language>
@@ -103,6 +116,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="en">iňlis dili</language>
 			<language type="en_GB">iňlis dili (Beýik Britaniýa)</language>
 			<language type="en_US">iňlis dili (Amerika)</language>
+			<language type="en_US" alt="short">iňlis dili (ABŞ)</language>
 			<language type="eo">esperanto dili</language>
 			<language type="es">ispan dili</language>
 			<language type="es_ES">ispan dili (Ýewropa)</language>
@@ -118,6 +132,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="fo">farer dili</language>
 			<language type="fon">fon dili</language>
 			<language type="fr">fransuz dili</language>
+			<language type="frc" draft="contributed">Fransuz diliniň kajun şiwesi</language>
+			<language type="frr" draft="contributed">Demirgazyk friz dili</language>
 			<language type="fur">friul dili</language>
 			<language type="fy">günbatar friz dili</language>
 			<language type="ga">irland dili</language>
@@ -134,9 +150,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="gv">men dili</language>
 			<language type="gwi">gwiçin dili</language>
 			<language type="ha">hausa dili</language>
+			<language type="hai" draft="contributed">Haýda dili</language>
 			<language type="haw">gawaý dili</language>
+			<language type="hax" draft="contributed">Günorta haýda dili</language>
 			<language type="he">ýewreý dili</language>
 			<language type="hi">hindi dili</language>
+			<language type="hi_Latn" draft="contributed">Hindi dili (Latyn)</language>
+			<language type="hi_Latn" alt="variant" draft="contributed">Hingliş dili</language>
 			<language type="hil">hiligaýnon dili</language>
 			<language type="hmn">hmong dili</language>
 			<language type="hr">horwat dili</language>
@@ -144,6 +164,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ht">gaiti kreol dili</language>
 			<language type="hu">wenger dili</language>
 			<language type="hup">hupa</language>
+			<language type="hur" draft="contributed">Halkomelem dili</language>
 			<language type="hy">ermeni dili</language>
 			<language type="hz">gerero dili</language>
 			<language type="ia">interlingwa dili</language>
@@ -152,6 +173,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="id">indonez dili</language>
 			<language type="ig">igbo dili</language>
 			<language type="ii">syçuan-i dili</language>
+			<language type="ikt" draft="contributed">Günorta-kanada iniktitut dili</language>
 			<language type="ilo">iloko dili</language>
 			<language type="inh">inguş dili</language>
 			<language type="io">ido dili</language>
@@ -173,6 +195,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="kde">makonde dili</language>
 			<language type="kea">kabuwerdianu dili</language>
 			<language type="kfo">koro dili</language>
+			<language type="kgp" draft="contributed">Kaýngang dili</language>
 			<language type="kha">khasi dili</language>
 			<language type="khq">koýra-çini dili</language>
 			<language type="ki">kikuýu dili</language>
@@ -199,6 +222,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="kum">kumyk dili</language>
 			<language type="kv">komi dili</language>
 			<language type="kw">korn dili</language>
+			<language type="kwk" draft="contributed">Kwakwala dili</language>
 			<language type="ky">gyrgyz dili</language>
 			<language type="la">latyn dili</language>
 			<language type="lad">ladino dili</language>
@@ -207,11 +231,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="lez">lezgin dili</language>
 			<language type="lg">ganda dili</language>
 			<language type="li">limburg dili</language>
+			<language type="lil" draft="contributed">Lilluet dili</language>
 			<language type="lkt">lakota dili</language>
 			<language type="ln">lingala dili</language>
 			<language type="lo">laos dili</language>
+			<language type="lou" draft="contributed">Luiziana kreol dili</language>
 			<language type="loz">lozi dili</language>
 			<language type="lrc">demirgazyk luri dili</language>
+			<language type="lsm" draft="contributed">Samiýa dili</language>
 			<language type="lt">litwa dili</language>
 			<language type="lu">luba-katanga dili</language>
 			<language type="lua">luba-Lulua dili</language>
@@ -240,6 +267,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ml">malaýalam dili</language>
 			<language type="mn">mongol dili</language>
 			<language type="mni">manipuri dili</language>
+			<language type="moe" draft="contributed">Innu-aýmun dili</language>
 			<language type="moh">mogauk dili</language>
 			<language type="mos">mossi dili</language>
 			<language type="mr">marathi dili</language>
@@ -278,6 +306,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ny">nýanja dili</language>
 			<language type="nyn">nýankole dili</language>
 			<language type="oc">oksitan dili</language>
+			<language type="ojb" draft="contributed">Demirgazyk-günbatar ojibwa dili</language>
+			<language type="ojc" draft="contributed">Merkezi ojibwa dili</language>
+			<language type="ojs" draft="contributed">Oji-kri dili</language>
+			<language type="ojw" draft="contributed">Günbatar ojibwa dili</language>
+			<language type="oka" draft="contributed">Okanagan dili</language>
 			<language type="om">oromo dili</language>
 			<language type="or">oriýa dili</language>
 			<language type="os">osetin dili</language>
@@ -287,7 +320,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="pap">papýamento dili</language>
 			<language type="pau">palau dili</language>
 			<language type="pcm">nigeriýa-pijin dili</language>
+			<language type="pis" draft="contributed">Pijin dili</language>
 			<language type="pl">polýak dili</language>
+			<language type="pqm" draft="contributed">Malisit-Passamakwodi dili</language>
 			<language type="prg">prussiýa dili</language>
 			<language type="ps">peştun dili</language>
 			<language type="pt">portugal dili</language>
@@ -326,6 +361,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="si">singal dili</language>
 			<language type="sk">slowak dili</language>
 			<language type="sl">slowen dili</language>
+			<language type="slh" draft="contributed">Günorta Luşutsid dili</language>
 			<language type="sm">samoa dili</language>
 			<language type="sma">günorta saam dili</language>
 			<language type="smj">lule-saam dili</language>
@@ -340,6 +376,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ss">swati dili</language>
 			<language type="ssy">saho dili</language>
 			<language type="st">günorta soto dili</language>
+			<language type="str" draft="contributed">Demirgazyk bogaz saliş dili</language>
 			<language type="su">sundan dili</language>
 			<language type="suk">sukuma dili</language>
 			<language type="sv">şwed dili</language>
@@ -348,23 +385,29 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="swb">komor dili</language>
 			<language type="syr">siriýa dili</language>
 			<language type="ta">tamil dili</language>
+			<language type="tce" draft="contributed">Günorta Tutçone dili</language>
 			<language type="te">telugu dili</language>
 			<language type="tem">temne dili</language>
 			<language type="teo">teso dili</language>
 			<language type="tet">tetum dili</language>
 			<language type="tg">täjik dili</language>
+			<language type="tgx" draft="contributed">Tagiş dili</language>
 			<language type="th">taý dili</language>
+			<language type="tht" draft="contributed">Taltan dili</language>
 			<language type="ti">tigrinýa dili</language>
 			<language type="tig">tigre dili</language>
 			<language type="tk">türkmen dili</language>
 			<language type="tlh">klingon dili</language>
+			<language type="tli" draft="contributed">Tlinkit dili</language>
 			<language type="tn">tswana dili</language>
 			<language type="to">tongan dili</language>
+			<language type="tok" draft="contributed">Toki Pona dili</language>
 			<language type="tpi">tok-pisin dili</language>
 			<language type="tr">türk dili</language>
 			<language type="trv">taroko dili</language>
 			<language type="ts">tsonga dili</language>
 			<language type="tt">tatar dili</language>
+			<language type="ttm" draft="contributed">Demirgazyk tutçone dili</language>
 			<language type="tum">tumbuka dili</language>
 			<language type="tvl">tuwalu dili</language>
 			<language type="twq">tasawak dili</language>
@@ -388,6 +431,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="wal">wolaýta dili</language>
 			<language type="war">waraý dili</language>
 			<language type="wo">wolof dili</language>
+			<language type="wuu" draft="contributed">U hytaý dili</language>
 			<language type="xal">galmyk dili</language>
 			<language type="xh">kosa dili</language>
 			<language type="xog">soga dili</language>
@@ -395,6 +439,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ybb">ýemba dili</language>
 			<language type="yi">idiş dili</language>
 			<language type="yo">ýoruba dili</language>
+			<language type="yrl" draft="contributed">Nhengatu dili</language>
 			<language type="yue">kanton dili</language>
 			<language type="yue" alt="menu">hytaý dili, kantonça</language>
 			<language type="zgh">standart Marokko tamazight dili</language>
@@ -410,11 +455,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="zza">zazaki dili</language>
 		</languages>
 		<scripts>
+			<script type="Adlm" draft="contributed">Adlam</script>
 			<script type="Arab">Arap elipbiýi</script>
+			<script type="Aran" draft="contributed">Nastalik ýazuwy</script>
 			<script type="Armn">Ermeni elipbiýi</script>
 			<script type="Beng">Bengal elipbiýi</script>
 			<script type="Bopo">Bopomofo elipbiýi</script>
 			<script type="Brai">Braýl elipbiýi</script>
+			<script type="Cakm" draft="contributed">Çakma</script>
+			<script type="Cans" draft="contributed">Kanadanyň ýerlileriniň bogunlarynyň bitewileşdirilen ulgamy</script>
+			<script type="Cher" draft="contributed">Çeroki</script>
 			<script type="Cyrl">Kiril elipbiýi</script>
 			<script type="Deva">Dewanagari elipbiýi</script>
 			<script type="Ethi">Efiop elipbiýi</script>
@@ -442,14 +492,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Latn">Latyn elipbiýi</script>
 			<script type="Mlym">Malaýalam elipbiýi</script>
 			<script type="Mong">Mongol elipbiýi</script>
+			<script type="Mtei" draft="contributed">Meýteý Maýek</script>
 			<script type="Mymr">Mýanma elipbiýi</script>
+			<script type="Nkoo" draft="contributed">N'Ko</script>
+			<script type="Olck" draft="contributed">Ol Çiki</script>
 			<script type="Orya">Oriýa elipbiýi</script>
+			<script type="Rohg" draft="contributed">Hanifi</script>
 			<script type="Sinh">Singal elipbiýi</script>
+			<script type="Sund" draft="contributed">Sundanez ýazuwy</script>
+			<script type="Syrc" draft="contributed">Siriýa ýazuwy</script>
 			<script type="Taml">Tamil elipbiýi</script>
 			<script type="Telu">Telugu elipbiýi</script>
+			<script type="Tfng" draft="contributed">Tifinag ýazuwy</script>
 			<script type="Thaa">Taana elipbiýi</script>
 			<script type="Thai">Taý elipbiýi</script>
 			<script type="Tibt">Tibet elipbiýi</script>
+			<script type="Vaii" draft="contributed">Waý ýazuwy</script>
+			<script type="Yiii" draft="contributed">Ýi ýazuwy</script>
 			<script type="Zmth">Matematiki belgiler</script>
 			<script type="Zsye">Emoji</script>
 			<script type="Zsym">Nyşanlar</script>
@@ -674,6 +733,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="NR">Nauru</territory>
 			<territory type="NU">Niue</territory>
 			<territory type="NZ">Täze Zelandiýa</territory>
+			<territory type="NZ" alt="variant" draft="contributed">Aotearoa Täze Zelandiýa</territory>
 			<territory type="OM">Oman</territory>
 			<territory type="PA">Panama</territory>
 			<territory type="PE">Peru</territory>
@@ -777,11 +837,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<types>
 			<type key="calendar" type="buddhist">Buddist senenamasy</type>
 			<type key="calendar" type="chinese">Hytaý senenamasy</type>
+			<type key="calendar" type="coptic" draft="contributed">Kopt senenamasy</type>
 			<type key="calendar" type="dangi">Dangi senenamasy</type>
 			<type key="calendar" type="ethiopic">Efiop senenamasy</type>
+			<type key="calendar" type="ethiopic-amete-alem" draft="contributed">Efiopiýa Amete Alem senenamasy</type>
 			<type key="calendar" type="gregorian">Grigorian senenamasy</type>
 			<type key="calendar" type="hebrew">Ýewreý senenamasy</type>
 			<type key="calendar" type="islamic">Hijri-kamary senenamasy</type>
+			<type key="calendar" type="islamic-civil" draft="contributed">Hijri-kamary senenamasy (tablisaly, raýat eýýamy)</type>
+			<type key="calendar" type="islamic-tbla" draft="contributed">Hijri-kamary senenamasy (tablisaly, astronimiýa eýýamy)</type>
+			<type key="calendar" type="islamic-umalqura" draft="contributed">Hijri-kamary senenamasy (Umm al-Kura)</type>
 			<type key="calendar" type="iso8601">ISO-8601 senenamasy</type>
 			<type key="calendar" type="japanese">Ýapon senenamasy</type>
 			<type key="calendar" type="persian">Pars senenamasy</type>
@@ -806,6 +871,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="armn">Ermeni sanlary</type>
 			<type key="numbers" type="armnlow">Ermeni setir sanlary</type>
 			<type key="numbers" type="beng">Bengal sanlary</type>
+			<type key="numbers" type="cakm" draft="contributed">Çakma sanlary</type>
 			<type key="numbers" type="deva">Dewanagari sanlary</type>
 			<type key="numbers" type="ethi">Efiop sanlary</type>
 			<type key="numbers" type="fullwide">Doly giňlikdäki sanlar</type>
@@ -820,6 +886,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="hant">Adaty hytaý sanlary</type>
 			<type key="numbers" type="hantfin">Adaty hytaý maliýe sanlary</type>
 			<type key="numbers" type="hebr">Ýewreý sanlary</type>
+			<type key="numbers" type="java" draft="contributed">Ýawa sanlary</type>
 			<type key="numbers" type="jpan">Ýapon sanlary</type>
 			<type key="numbers" type="jpanfin">Ýapon maliýe sanlary</type>
 			<type key="numbers" type="khmr">Khmer sanlary</type>
@@ -827,7 +894,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="laoo">Laos sanlary</type>
 			<type key="numbers" type="latn">Latyn sanlary</type>
 			<type key="numbers" type="mlym">Malaýalam sanlary</type>
+			<type key="numbers" type="mtei" draft="contributed">Miteý Maýek sanlary</type>
 			<type key="numbers" type="mymr">Mýanma sanlary</type>
+			<type key="numbers" type="olck" draft="contributed">Ol Çiki sanlary</type>
 			<type key="numbers" type="orya">Oriýa sanlary</type>
 			<type key="numbers" type="roman">Rim sanlary</type>
 			<type key="numbers" type="romanlow">Rim setir sanlary</type>
@@ -836,6 +905,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="telu">Telugu sanlary</type>
 			<type key="numbers" type="thai">Taý sanlary</type>
 			<type key="numbers" type="tibt">Tibet sanlary</type>
+			<type key="numbers" type="vaii" draft="contributed">Waý sanlary</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">Metrik</measurementSystemName>
@@ -926,20 +996,32 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="contributed">{1} 'sagat' {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="contributed">{1} 'sagat' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="contributed">{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="contributed">{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
@@ -1413,20 +1495,32 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="contributed">{1} 'sagat' {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="contributed">{1} 'sagat' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="contributed">{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="contributed">{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
@@ -1624,6 +1718,169 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
+			</calendar>
+			<calendar type="islamic">
+				<months>
+					<monthContext type="format">
+						<!-- UPLOAD ERRORS
+							 <monthWidth type="abbreviated">
+							 <month type="1" draft="contributed">Aşyr</month>
+							 <month type="2" draft="contributed">Sap.</month>
+							 <month type="3" draft="contributed">4 tir 1</month>
+							 <month type="4" draft="contributed">4 tir 2</month>
+							 <month type="5" draft="contributed">4 tir 3</month>
+							 <month type="6" draft="contributed">4 tir 4</month>
+							 <month type="7" draft="contributed">Rej.</month>
+							 <month type="8" draft="contributed">Mer.</month>
+							 <month type="9" draft="contributed">Ora.</month>
+							 <month type="10" draft="contributed">Baýr.</month>
+							 <month type="11" draft="contributed">Boş aý</month>
+							 <month type="12" draft="contributed">Gur.</month>
+							 </monthWidth>
+						-->
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">1</month>
+							<month type="2" draft="contributed">2</month>
+							<month type="3" draft="contributed">3</month>
+							<month type="4" draft="contributed">4</month>
+							<month type="5" draft="contributed">5</month>
+							<month type="6" draft="contributed">6</month>
+							<month type="7" draft="contributed">7</month>
+							<month type="8" draft="contributed">8</month>
+							<month type="9" draft="contributed">9</month>
+							<month type="10" draft="contributed">10</month>
+							<month type="11" draft="contributed">11</month>
+							<month type="12" draft="contributed">12</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">Aşyr</month>
+							<month type="2" draft="contributed">Sapar</month>
+							<month type="3" draft="contributed">Dört tirkeşik 1</month>
+							<month type="4" draft="contributed">Dört tirkeşik 2</month>
+							<month type="5" draft="contributed">Dört tirkeşik 3</month>
+							<month type="6" draft="contributed">Dört tirkeşik 4</month>
+							<month type="7" draft="contributed">Rejep</month>
+							<month type="8" draft="contributed">Meret</month>
+							<month type="9" draft="contributed">Oraza</month>
+							<month type="10" draft="contributed">Baýram</month>
+							<month type="11" draft="contributed">Boş aý</month>
+							<month type="12" draft="contributed">Gurban</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<!-- UPLOAD ERRORS
+							 <monthWidth type="abbreviated">
+							 <month type="1" draft="contributed">Aşyr</month>
+							 <month type="2" draft="contributed">Sap.</month>
+							 <month type="3" draft="contributed">4 tir 1</month>
+							 <month type="4" draft="contributed">4 tir 2</month>
+							 <month type="5" draft="contributed">4 tir 3</month>
+							 <month type="6" draft="contributed">4 tir 4</month>
+							 <month type="7" draft="contributed">Rej.</month>
+							 <month type="8" draft="contributed">Mer.</month>
+							 <month type="9" draft="contributed">Ora.</month>
+							 <month type="10" draft="contributed">Baýr.</month>
+							 <month type="11" draft="contributed">Boş aý</month>
+							 <month type="12" draft="contributed">Gur.</month>
+							 </monthWidth>
+						-->
+						<monthWidth type="narrow">
+							<month type="1" draft="contributed">1</month>
+							<month type="2" draft="contributed">2</month>
+							<month type="3" draft="contributed">3</month>
+							<month type="4" draft="contributed">4</month>
+							<month type="5" draft="contributed">5</month>
+							<month type="6" draft="contributed">6</month>
+							<month type="7" draft="contributed">7</month>
+							<month type="8" draft="contributed">8</month>
+							<month type="9" draft="contributed">9</month>
+							<month type="10" draft="contributed">10</month>
+							<month type="11" draft="contributed">11</month>
+							<month type="12" draft="contributed">12</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">Aşyr</month>
+							<month type="2" draft="contributed">Sapar</month>
+							<month type="3" draft="contributed">Dört tirkeşik 1</month>
+							<month type="4" draft="contributed">Dört tirkeşik 2</month>
+							<month type="5" draft="contributed">Dört tirkeşik 3</month>
+							<month type="6" draft="contributed">Dört tirkeşik 4</month>
+							<month type="7" draft="contributed">Rejep</month>
+							<month type="8" draft="contributed">Meret</month>
+							<month type="9" draft="contributed">Oraza</month>
+							<month type="10" draft="contributed">Baýram</month>
+							<month type="11" draft="contributed">Boş aý</month>
+							<month type="12" draft="contributed">Gurban</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<eras>
+					<eraAbbr>
+						<era type="0" draft="contributed">HS</era>
+						<!-- UPLOAD ERRORS
+							 <dateFormats>
+							 <dateFormatLength type="full">
+							 <dateFormat>
+							 <pattern draft="contributed">EEEE, AAAA g, ý G</pattern>
+							 </dateFormat>
+							 </dateFormatLength>
+							 <dateFormatLength type="long">
+							 <dateFormat>
+							 <pattern draft="contributed">AAAA g, ý G</pattern>
+							 </dateFormat>
+							 </dateFormatLength>
+							 <dateFormatLength type="medium">
+							 <dateFormat>
+							 <pattern draft="contributed">AAA g, ý G</pattern>
+							 </dateFormat>
+							 </dateFormatLength>
+							 <dateFormatLength type="short">
+							 <dateFormat>
+							 <pattern draft="contributed">g/A/ý GGGGG</pattern>
+							 </dateFormat>
+							 </dateFormatLength>
+							 </dateFormats>
+							 <dateTimeFormats>
+							 <availableFormats>
+							 <dateFormatItem id="d" draft="contributed">g</dateFormatItem>
+							 <dateFormatItem id="E" draft="contributed">ccc</dateFormatItem>
+							 <dateFormatItem id="Ed" draft="contributed">g E</dateFormatItem>
+							 <dateFormatItem id="Gy" draft="contributed">b G</dateFormatItem>
+							 <dateFormatItem id="GyMd" draft="contributed">g/A/ý GGGGG</dateFormatItem>
+							 <dateFormatItem id="GyMMM" draft="contributed">AAA ý G</dateFormatItem>
+							 <dateFormatItem id="GyMMMd" draft="contributed">AAA g, ý G</dateFormatItem>
+							 <dateFormatItem id="GyMMMEd" draft="contributed">E, AAA g, ý G</dateFormatItem>
+							 <dateFormatItem id="M" draft="contributed">L</dateFormatItem>
+							 <dateFormatItem id="Md" draft="contributed">A/g</dateFormatItem>
+							 <dateFormatItem id="MEd" draft="contributed">E, A/g</dateFormatItem>
+							 <dateFormatItem id="MMM" draft="contributed">LLL</dateFormatItem>
+							 <dateFormatItem id="MMMd" draft="contributed">AAA g</dateFormatItem>
+							 <dateFormatItem id="MMMEd" draft="contributed">E, AAA g</dateFormatItem>
+							 <dateFormatItem id="MMMMd" draft="contributed">AAAA g</dateFormatItem>
+							 <dateFormatItem id="MMMMEd" draft="contributed">d/d</dateFormatItem>
+							 <dateFormatItem id="y" draft="contributed">ý G</dateFormatItem>
+							 <dateFormatItem id="yM" draft="contributed">d/d</dateFormatItem>
+							 <dateFormatItem id="yMd" draft="contributed">d/d</dateFormatItem>
+							 <dateFormatItem id="yMEd" draft="contributed">d/d</dateFormatItem>
+							 <dateFormatItem id="yMMM" draft="contributed">d/d</dateFormatItem>
+							 <dateFormatItem id="yMMMd" draft="contributed">d/d</dateFormatItem>
+							 <dateFormatItem id="yMMMEd" draft="contributed">d/d</dateFormatItem>
+							 <dateFormatItem id="yMMMM" draft="contributed">d/d</dateFormatItem>
+							 <dateFormatItem id="yyyy" draft="contributed">ý G</dateFormatItem>
+							 <dateFormatItem id="yyyyM" draft="contributed">A/ý GGGGG</dateFormatItem>
+							 <dateFormatItem id="yyyyMd" draft="contributed">g/A/ý GGGGG</dateFormatItem>
+							 <dateFormatItem id="yyyyMEd" draft="contributed">E, g/A/ý GGGGG</dateFormatItem>
+							 <dateFormatItem id="yyyyMMM" draft="contributed">AAA ý G</dateFormatItem>
+							 <dateFormatItem id="yyyyMMMd" draft="contributed">AAA g, ý G</dateFormatItem>
+							 <dateFormatItem id="yyyyMMMEd" draft="contributed">E, AAA g, ý G</dateFormatItem>
+							 <dateFormatItem id="yyyyMMMM" draft="contributed">AAAA ý G</dateFormatItem>
+							 <dateFormatItem id="yyyyQQQ" draft="contributed">QQQ ý G</dateFormatItem>
+							 <dateFormatItem id="yyyyQQQQ" draft="contributed">QQQQ ý G</dateFormatItem>
+							 </availableFormats>
+							 </dateTimeFormats>
+						-->
+					</eraAbbr>
+				</eras>
 			</calendar>
 		</calendars>
 		<fields>
@@ -2888,6 +3145,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Pacific/Enderbury">
 				<exemplarCity>Enderberi</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kanton">
+				<exemplarCity draft="contributed">Kanton</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
 				<exemplarCity>Kiritimati</exemplarCity>
@@ -4544,7 +4804,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00 ¤</pattern>
-					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
+					<pattern alt="noCurrency" draft="contributed">#,##0.00;(#,##0.00)</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
@@ -4575,6 +4835,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<pattern type="100000000000000" count="other">000 trln ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
+			<currencyPatternAppendISO draft="contributed">{0} ¤¤</currencyPatternAppendISO>
 			<unitPattern count="one">{0} {1}</unitPattern>
 			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
@@ -5970,6 +6231,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ýyl</unitPattern>
 				<perUnitPattern>{0}/ý</perUnitPattern>
 			</unit>
+			<unit type="duration-quarter">
+				<displayName draft="contributed">çärýek</displayName>
+				<unitPattern count="one" draft="contributed">{0} çärýek</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} çärýek</unitPattern>
+				<perUnitPattern draft="contributed">{0}/ç</perUnitPattern>
+			</unit>
 			<unit type="duration-month">
 				<displayName>aý</displayName>
 				<unitPattern count="one">{0} aý</unitPattern>
@@ -6940,6 +7207,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ý.</unitPattern>
 				<perUnitPattern>{0}/ý.</perUnitPattern>
 			</unit>
+			<unit type="duration-quarter">
+				<displayName draft="contributed">çär</displayName>
+				<unitPattern count="one" draft="contributed">{0} çär</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} çär</unitPattern>
+				<perUnitPattern draft="contributed">{0}/ç</perUnitPattern>
+			</unit>
 			<unit type="duration-month">
 				<displayName>aý</displayName>
 				<unitPattern count="one">{0} a</unitPattern>
@@ -7701,6 +7974,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0}ý</unitPattern>
 				<unitPattern count="other">{0}ý</unitPattern>
 			</unit>
+			<unit type="duration-quarter">
+				<displayName draft="contributed">çär</displayName>
+				<unitPattern count="one" draft="contributed">{0}ç</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}ç</unitPattern>
+				<perUnitPattern draft="contributed">{0}/ç</perUnitPattern>
+			</unit>
 			<unit type="duration-month">
 				<displayName>a</displayName>
 				<unitPattern count="one">{0}a</unitPattern>
@@ -8073,4 +8352,158 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<featureName type="tnum">tabulýar sanlar</featureName>
 		<featureName type="zero">ýapgyt 0</featureName>
 	</typographicNames>
+	<personNames>
+		<nameOrderLocales order="givenFirst" draft="contributed">und tk</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst" draft="contributed"/>
+		<initialPattern type="initial" draft="contributed">{0}.</initialPattern>
+		<initialPattern type="initialSequence" draft="contributed">{0} {1}</initialPattern>
+		<personName order="givenFirst" length="long" usage="referring" formality="formal">
+			<namePattern draft="contributed">{given} {given2} {surname} {suffix}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="referring" formality="informal">
+			<namePattern draft="contributed">{given-informal} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
+			<namePattern draft="contributed">{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
+			<namePattern draft="contributed">{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="formal">
+			<namePattern draft="contributed">{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="informal">
+			<namePattern draft="contributed">{given-informal-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
+			<namePattern draft="contributed">{given} {given2-initial} {surname} {suffix}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
+			<namePattern draft="contributed">{given-informal} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern draft="contributed">{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern draft="contributed">{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern draft="contributed">{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern draft="contributed">{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="formal">
+			<namePattern draft="contributed">{given-initial} {given2-initial} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="informal">
+			<namePattern draft="contributed">{given-informal} {surname-initial}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
+			<namePattern draft="contributed">{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
+			<namePattern draft="contributed">{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="formal">
+			<namePattern draft="contributed">{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="informal">
+			<namePattern draft="contributed">{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
+			<namePattern draft="contributed">{surname} {given} {given2} {suffix}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
+			<namePattern draft="contributed">{surname} {given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
+			<namePattern draft="contributed">{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
+			<namePattern draft="contributed">{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="formal">
+			<namePattern draft="contributed">{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="informal">
+			<namePattern draft="contributed">{surname-monogram-allCaps}{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
+			<namePattern draft="contributed">{surname} {given} {given2-initial} {suffix}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
+			<namePattern draft="contributed">{surname} {given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern draft="contributed">{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern draft="contributed">{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern draft="contributed">{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern draft="contributed">{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
+			<namePattern draft="contributed">{surname} {given-initial} {given2-initial}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="informal">
+			<namePattern draft="contributed">{surname} {given-initial}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
+			<namePattern draft="contributed">{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
+			<namePattern draft="contributed">{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="formal">
+			<namePattern draft="contributed">{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="informal">
+			<namePattern draft="contributed">{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="formal">
+			<namePattern draft="contributed">{surname-core}, {given} {given2} {surname-prefix}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="informal">
+			<namePattern draft="contributed">{surname}, {given-informal}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="formal">
+			<namePattern draft="contributed">{surname-core}, {given} {given2-initial} {surname-prefix}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="informal">
+			<namePattern draft="contributed">{surname}, {given-informal}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="formal">
+			<namePattern draft="contributed">{surname-core}, {given-initial} {given2-initial} {surname-prefix}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="informal">
+			<namePattern draft="contributed">{surname}, {given-informal}</namePattern>
+		</personName>
+		<sampleName item="givenOnly">
+			<nameField type="given" draft="contributed">Gurban</nameField>
+		</sampleName>
+		<sampleName item="givenSurnameOnly">
+			<nameField type="given" draft="contributed">Amangeldi</nameField>
+			<nameField type="surname" draft="contributed">Saparow</nameField>
+		</sampleName>
+		<sampleName item="given12Surname">
+			<nameField type="given" draft="contributed">Meretgeldi</nameField>
+			<nameField type="given2" draft="contributed">Durdyýewiç</nameField>
+			<nameField type="surname" draft="contributed">Gurbanow</nameField>
+		</sampleName>
+		<sampleName item="full">
+			<nameField type="prefix" draft="contributed">Prof. Dr.</nameField>
+			<nameField type="given" draft="contributed">Gurban Saparow</nameField>
+			<nameField type="given-informal" draft="contributed">Aman</nameField>
+			<nameField type="given2" draft="contributed">Aman Saparow</nameField>
+			<nameField type="surname-prefix" draft="contributed">wan den</nameField>
+			<nameField type="surname-core" draft="contributed">Gurdow</nameField>
+			<nameField type="surname2" draft="contributed">Gurbangeldiýew</nameField>
+			<nameField type="suffix" draft="contributed">magistr, ylymlaryň kandidaty</nameField>
+		</sampleName>
+	</personNames>
 </ldml>

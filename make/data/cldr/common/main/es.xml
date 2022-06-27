@@ -148,7 +148,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="en_AU">inglés australiano</language>
 			<language type="en_CA">inglés canadiense</language>
 			<language type="en_GB">inglés británico</language>
+			<language type="en_GB" alt="short">inglés (RU)</language>
 			<language type="en_US">inglés estadounidense</language>
+			<language type="en_US" alt="short">inglés (EE. UU.)</language>
 			<language type="enm">inglés medio</language>
 			<language type="eo">esperanto</language>
 			<language type="es">español</language>
@@ -10777,4 +10779,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<featureName type="tnum">números tabulares</featureName>
 		<featureName type="zero">cero cruzado</featureName>
 	</typographicNames>
+	<personNames>
+		<personName order="sorting" length="long" usage="referring" formality="formal">
+			<namePattern alt="1" draft="provisional">{surname}, {prefix} {given} {given2}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="informal">
+			<namePattern alt="1" draft="provisional">{surname}, {given-informal}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="formal">
+			<namePattern alt="1" draft="provisional">{surname}, {prefix} {given} {given2}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="informal">
+			<namePattern alt="1" draft="provisional">{surname}, {given-informal}</namePattern>
+		</personName>
+	</personNames>
 </ldml>

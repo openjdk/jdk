@@ -111,7 +111,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="el">ਯੂਨਾਨੀ</language>
 			<language type="en">ਅੰਗਰੇਜ਼ੀ</language>
 			<language type="en_GB">ਅੰਗਰੇਜ਼ੀ (ਬਰਤਾਨਵੀ)</language>
+			<language type="en_GB" alt="short">ਅੰਗਰੇਜ਼ੀ (ਯੂ.ਕੇ.)</language>
 			<language type="en_US">ਅੰਗਰੇਜ਼ੀ (ਅਮਰੀਕੀ)</language>
+			<language type="en_US" alt="short">ਅੰਗਰੇਜ਼ੀ (ਯੂ.ਐੱਸ.)</language>
 			<language type="eo">ਇਸਪੇਰਾਂਟੋ</language>
 			<language type="es">ਸਪੇਨੀ</language>
 			<language type="es_419">ਸਪੇਨੀ (ਲਾਤੀਨੀ ਅਮਰੀਕੀ)</language>

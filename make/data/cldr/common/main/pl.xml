@@ -163,7 +163,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="en_AU">angielski australijski</language>
 			<language type="en_CA">angielski kanadyjski</language>
 			<language type="en_GB">angielski brytyjski</language>
+			<language type="en_GB" alt="short">angielski (Wlk. Bryt.)</language>
 			<language type="en_US">angielski amerykański</language>
+			<language type="en_US" alt="short">angielski (USA)</language>
 			<language type="enm">średnioangielski</language>
 			<language type="eo">esperanto</language>
 			<language type="es">hiszpański</language>

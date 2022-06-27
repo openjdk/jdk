@@ -311,9 +311,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="zh">chinšćina</language>
 			<language type="zh" alt="menu">chinšćina (mandarin)</language>
 			<language type="zh_Hans">chinšćina (zjadnorjona)</language>
-			<language type="zh_Hans" alt="long">chinšćina (zjadnorjona)</language>
 			<language type="zh_Hant">chinšćina (tradicionalna)</language>
-			<language type="zh_Hant" alt="long">chinšćina (tradicionalna)</language>
 			<language type="zu">zulu</language>
 			<language type="zxx">žedno rěcne wopśimjeśe</language>
 		</languages>

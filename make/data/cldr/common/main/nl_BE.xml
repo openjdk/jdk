@@ -119,93 +119,63 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			 inherit initialPattern, initialSequence, and order='surnameFirst' from nl.xml
 		-->
 		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
-			<namePattern>{prefix} {given-initial-allCaps}{given2-initial-allCaps} {surname}</namePattern>
+			<namePattern draft="provisional">{prefix} {given-initial-allCaps}{given2-initial-allCaps} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
-			<namePattern>{prefix} {surname-core-initialCap}</namePattern>
+			<namePattern draft="provisional">{prefix} {surname-core-initialCap}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="monogram" formality="formal">
-			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+			<namePattern draft="provisional">{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="monogram" formality="informal">
-			<namePattern>{given-informal-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+			<namePattern draft="provisional">{given-informal-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname-initialCap}</namePattern>
+			<namePattern draft="provisional">{prefix} {surname-initialCap}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="monogram" formality="formal">
-			<namePattern>{given-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+			<namePattern draft="provisional">{given-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname-initialCap}</namePattern>
+			<namePattern draft="provisional">{prefix} {surname-initialCap}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="monogram" formality="formal">
-			<namePattern>{surname-monogram-allCaps}</namePattern>
+			<namePattern draft="provisional">{surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="sorting" length="long" usage="referring" formality="formal">
-			<namePattern>{surname}, {prefix} {given} {given2}, {suffix}</namePattern>
+			<namePattern draft="provisional">{surname}, {prefix} {given} {given2}, {suffix}</namePattern>
 		</personName>
 		<personName order="sorting" length="long" usage="referring" formality="informal">
-			<namePattern>{surname}, {given-informal}</namePattern>
-		</personName>
-		<personName order="sorting" length="long" usage="addressing" formality="formal">
-			<namePattern>{surname}, {given} {given2} {suffix}</namePattern>
-		</personName>
-		<personName order="sorting" length="long" usage="addressing" formality="informal">
-			<namePattern>{surname}, {given-informal}</namePattern>
-		</personName>
-		<personName order="sorting" length="long" usage="monogram" formality="formal">
-			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
-		</personName>
-		<personName order="sorting" length="long" usage="monogram" formality="informal">
-			<namePattern>{surname-monogram-allCaps}{given-informal-monogram-allCaps}</namePattern>
+			<namePattern draft="provisional">{surname}, {given-informal}</namePattern>
 		</personName>
 		<personName order="sorting" length="medium" usage="referring" formality="formal">
-			<namePattern>{surname}, {given} {given2-initial} {suffix}</namePattern>
+			<namePattern draft="provisional">{surname}, {given} {given2-initial} {suffix}</namePattern>
 		</personName>
 		<personName order="sorting" length="medium" usage="referring" formality="informal">
-			<namePattern>{surname}, {given-informal}</namePattern>
-		</personName>
-		<personName order="sorting" length="medium" usage="addressing" formality="formal">
-			<namePattern>{surname}, {given} {given2-initial} {suffix}</namePattern>
-		</personName>
-		<personName order="sorting" length="medium" usage="addressing" formality="informal">
-			<namePattern>{surname}, {given-informal}</namePattern>
-		</personName>
-		<personName order="sorting" length="medium" usage="monogram" formality="formal">
-			<namePattern>{surname-monogram-allCaps}</namePattern>
+			<namePattern draft="provisional">{surname}, {given-informal}</namePattern>
 		</personName>
 		<personName order="sorting" length="short" usage="referring" formality="formal">
-			<namePattern>{surname}, {given-initial}{given2-initial}</namePattern>
+			<namePattern draft="provisional">{surname}, {given-initial}{given2-initial}</namePattern>
 		</personName>
 		<personName order="sorting" length="short" usage="referring" formality="informal">
-			<namePattern>{surname}, {given-informal}</namePattern>
-		</personName>
-		<personName order="sorting" length="short" usage="addressing" formality="formal">
-			<namePattern>{surname}, {given-initial}{given2-initial}</namePattern>
-		</personName>
-		<personName order="sorting" length="short" usage="addressing" formality="informal">
-			<namePattern>{surname}, {given-informal}</namePattern>
-		</personName>
-		<personName order="sorting" length="short" usage="monogram" formality="formal">
-			<namePattern>{surname-monogram-allCaps}</namePattern>
+			<namePattern draft="provisional">{surname}, {given-informal}</namePattern>
 		</personName>
 		<sampleName item="givenOnly">
-			<nameField type="given">Liam</nameField>
+			<nameField type="given" draft="provisional">Liam</nameField>
 		</sampleName>
 		<sampleName item="givenSurnameOnly">
-			<nameField type="given">Liam</nameField>
-			<nameField type="surname">Van den Berg</nameField>
+			<nameField type="given" draft="provisional">Liam</nameField>
+			<nameField type="surname" draft="provisional">Van den Berg</nameField>
 		</sampleName>
 		<sampleName item="given12Surname">
-			<nameField type="given">Liam</nameField>
-			<nameField type="given2">Hugo Mees</nameField>
-			<nameField type="surname">Van den Berg</nameField>
+			<nameField type="given" draft="provisional">Liam</nameField>
+			<nameField type="given2" draft="provisional">Hugo Mees</nameField>
+			<nameField type="surname" draft="provisional">Van den Berg</nameField>
 		</sampleName>
 		<sampleName item="full">
-			<nameField type="given">Juliette</nameField>
-			<nameField type="given-informal">Juli</nameField>
-			<nameField type="surname">Van den Berg</nameField>
+			<nameField type="given" draft="provisional">Juliette</nameField>
+			<nameField type="given-informal" draft="provisional">Juli</nameField>
+			<nameField type="surname" draft="provisional">Van den Berg</nameField>
 		</sampleName>
 	</personNames>
 </ldml>

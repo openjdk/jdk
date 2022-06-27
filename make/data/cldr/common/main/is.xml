@@ -142,6 +142,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="en_GB">bresk enska</language>
 			<language type="en_GB" alt="short">enska (bresk)</language>
 			<language type="en_US">bandarísk enska</language>
+			<language type="en_US" alt="short">enska (BNA)</language>
 			<language type="enm">miðenska</language>
 			<language type="eo">esperantó</language>
 			<language type="es">spænska</language>

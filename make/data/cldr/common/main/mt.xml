@@ -134,7 +134,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="en_AU">Ingliż Awstraljan</language>
 			<language type="en_CA">Ingliż Kanadiż</language>
 			<language type="en_GB">Ingliż Brittaniku</language>
+			<language type="en_GB" alt="short">Ingliż (UK)</language>
 			<language type="en_US">Ingliż Amerikan</language>
+			<language type="en_US" alt="short">Ingliż (US)</language>
 			<language type="enm">Ingliż Medjevali</language>
 			<language type="eo">Esperanto</language>
 			<language type="es">Spanjol</language>

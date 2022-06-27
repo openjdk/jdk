@@ -160,9 +160,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="elx">Tiếng Elamite</language>
 			<language type="en">Tiếng Anh</language>
 			<language type="en_GB">Tiếng Anh (Anh)</language>
-			<language type="en_GB" alt="short">Tiếng Anh (Anh)</language>
 			<language type="en_US">Tiếng Anh (Mỹ)</language>
-			<language type="en_US" alt="short">Tiếng Anh (Mỹ)</language>
 			<language type="enm">Tiếng Anh Trung cổ</language>
 			<language type="eo">Tiếng Quốc Tế Ngữ</language>
 			<language type="es">Tiếng Tây Ban Nha</language>

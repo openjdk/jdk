@@ -180,9 +180,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="yo">Yoruba</language>
 			<language type="zh">Sinuwaa</language>
 			<language type="zh_Hans">Sinuwaa buñ woyofal</language>
-			<language type="zh_Hans" alt="long">Sinuwaa buñ woyofal</language>
 			<language type="zh_Hant">Sinuwaa bu cosaan</language>
-			<language type="zh_Hant" alt="long">Sinuwaa bu cosaan</language>
 		</languages>
 		<scripts>
 			<script type="Arab">Araab</script>

@@ -13,7 +13,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</identity>
 	<localeDisplayNames>
 		<languages>
-			<language type="ar_001">Kiarabu sanifu</language>
 			<language type="arq">Kiarabu cha Aljeria</language>
 			<language type="as">Kiasamisi</language>
 			<language type="chr">Kicheroki</language>
@@ -44,7 +43,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="nqo">Kiin’ko</language>
 			<language type="or">Kiodia</language>
 			<language type="pcm">Kipijini cha Nigeria</language>
-			<language type="ro_MD">Kimoldova cha Romania</language>
 			<language type="ses">Kikoyraborosenni</language>
 			<language type="shu">Kiarabu cha Chadi</language>
 			<language type="srn">Kisranantongo</language>

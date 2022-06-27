@@ -49,7 +49,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="el">грек</language>
 			<language type="en">инглиз</language>
 			<language type="en_GB">Британия инглизчәсе</language>
+			<language type="en_GB" alt="short">инглиз (Берләшкән Корольлек)</language>
 			<language type="en_US">Америка инглизчәсе</language>
+			<language type="en_US" alt="short">инглиз (АКШ)</language>
 			<language type="eo">эсперанто</language>
 			<language type="es">испан</language>
 			<language type="es_419">испан (Латин Америкасы)</language>

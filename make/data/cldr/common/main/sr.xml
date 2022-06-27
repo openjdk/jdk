@@ -136,7 +136,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="elx">еламитски</language>
 			<language type="en">енглески</language>
 			<language type="en_GB">енглески (Велика Британија)</language>
+			<language type="en_GB" alt="short">енглески (УК)</language>
 			<language type="en_US">енглески (Сједињене Америчке Државе)</language>
+			<language type="en_US" alt="short">енглески (САД)</language>
 			<language type="enm">средњеенглески</language>
 			<language type="eo">есперанто</language>
 			<language type="es">шпански</language>

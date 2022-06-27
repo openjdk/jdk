@@ -258,6 +258,7 @@ annotations.
 			<language type="hdn">Northern Haida</language>
 			<language type="he">Hebrew</language>
 			<language type="hi">Hindi</language>
+			<language type="hi_Latn" alt="variant">Hinglish</language>
 			<language type="hif">Fiji Hindi</language>
 			<language type="hil">Hiligaynon</language>
 			<language type="hit">Hittite</language>
@@ -355,7 +356,7 @@ annotations.
 			<language type="la">Latin</language>
 			<language type="lad">Ladino</language>
 			<language type="lag">Langi</language>
-			<language type="lah">Lahnda</language>
+			<language type="lah">Western Panjabi</language>
 			<language type="lam">Lamba</language>
 			<language type="lb">Luxembourgish</language>
 			<language type="lez">Lezghian</language>
@@ -1132,6 +1133,7 @@ annotations.
 			<territory type="NR">Nauru</territory>
 			<territory type="NU">Niue</territory>
 			<territory type="NZ">New Zealand</territory>
+			<territory type="NZ" alt="variant">Aotearoa New Zealand</territory>
 			<territory type="OM">Oman</territory>
 			<territory type="PA">Panama</territory>
 			<territory type="PE">Peru</territory>
@@ -1191,6 +1193,7 @@ annotations.
 			<territory type="TN">Tunisia</territory>
 			<territory type="TO">Tonga</territory>
 			<territory type="TR">Turkey</territory>
+			<territory type="TR" alt="variant">Türkiye</territory>
 			<territory type="TT">Trinidad &amp; Tobago</territory>
 			<territory type="TV">Tuvalu</territory>
 			<territory type="TW">Taiwan</territory>
@@ -1815,7 +1818,7 @@ annotations.
 						<dateFormatItem id="yyyyQQQQ">QQQQ r(U)</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="Bh">
 							<greatestDifference id="B">h B – h B</greatestDifference>
 							<greatestDifference id="h">h – h B</greatestDifference>
@@ -2032,7 +2035,7 @@ annotations.
 						<appendItem request="Year">{0} {1}</appendItem>
 					</appendItems>
 					<intervalFormats>
-						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="Bh">
 							<greatestDifference id="B">h B – h B</greatestDifference>
 							<greatestDifference id="h">h – h B</greatestDifference>
@@ -2512,7 +2515,7 @@ annotations.
 						<appendItem request="Year">{0} {1}</appendItem>
 					</appendItems>
 					<intervalFormats>
-						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="Bh">
 							<greatestDifference id="B">h B – h B</greatestDifference>
 							<greatestDifference id="h">h – h B</greatestDifference>
@@ -9398,58 +9401,22 @@ annotations.
 			<namePattern>{given-informal-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="sorting" length="long" usage="referring" formality="formal">
-			<namePattern>{surname}, {given} {given2} {suffix}</namePattern>
+			<namePattern>{surname-core}, {given} {given2} {surname-prefix}</namePattern>
 		</personName>
 		<personName order="sorting" length="long" usage="referring" formality="informal">
 			<namePattern>{surname}, {given-informal}</namePattern>
 		</personName>
-		<personName order="sorting" length="long" usage="addressing" formality="formal">
-			<namePattern>{surname}, {given} {given2} {suffix}</namePattern>
-		</personName>
-		<personName order="sorting" length="long" usage="addressing" formality="informal">
-			<namePattern>{surname}, {given-informal}</namePattern>
-		</personName>
-		<personName order="sorting" length="long" usage="monogram" formality="formal">
-			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
-		</personName>
-		<personName order="sorting" length="long" usage="monogram" formality="informal">
-			<namePattern>{surname-monogram-allCaps}{given-informal-monogram-allCaps}</namePattern>
-		</personName>
 		<personName order="sorting" length="medium" usage="referring" formality="formal">
-			<namePattern>{surname}, {given} {given2-initial} {suffix}</namePattern>
+			<namePattern>{surname-core}, {given} {given2-initial} {surname-prefix}</namePattern>
 		</personName>
 		<personName order="sorting" length="medium" usage="referring" formality="informal">
 			<namePattern>{surname}, {given-informal}</namePattern>
 		</personName>
-		<personName order="sorting" length="medium" usage="addressing" formality="formal">
-			<namePattern>{surname}, {given} {given2-initial} {suffix}</namePattern>
-		</personName>
-		<personName order="sorting" length="medium" usage="addressing" formality="informal">
-			<namePattern>{surname}, {given-informal}</namePattern>
-		</personName>
-		<personName order="sorting" length="medium" usage="monogram" formality="formal">
-			<namePattern>{surname-monogram-allCaps}</namePattern>
-		</personName>
-		<personName order="sorting" length="medium" usage="monogram" formality="informal">
-			<namePattern>{given-informal-monogram-allCaps}</namePattern>
-		</personName>
 		<personName order="sorting" length="short" usage="referring" formality="formal">
-			<namePattern>{surname}, {given-initial} {given2-initial}</namePattern>
+			<namePattern>{surname-core}, {given-initial} {given2-initial} {surname-prefix}</namePattern>
 		</personName>
 		<personName order="sorting" length="short" usage="referring" formality="informal">
 			<namePattern>{surname}, {given-informal}</namePattern>
-		</personName>
-		<personName order="sorting" length="short" usage="addressing" formality="formal">
-			<namePattern>{surname}, {given-initial} {given2-initial}</namePattern>
-		</personName>
-		<personName order="sorting" length="short" usage="addressing" formality="informal">
-			<namePattern>{surname}, {given-informal}</namePattern>
-		</personName>
-		<personName order="sorting" length="short" usage="monogram" formality="formal">
-			<namePattern>{surname-monogram-allCaps}</namePattern>
-		</personName>
-		<personName order="sorting" length="short" usage="monogram" formality="informal">
-			<namePattern>{given-informal-monogram-allCaps}</namePattern>
 		</personName>
 		<!-- The following samples are temporary, to be filled out with something better -->
 		<sampleName item="givenOnly">
@@ -9469,7 +9436,6 @@ annotations.
 			<nameField type="given">Ada Cornelia</nameField>
 			<nameField type="given-informal">Neele</nameField>
 			<nameField type="given2">Eva Sophia</nameField>
-			<nameField type="surname">van den Wolf</nameField>
 			<nameField type="surname-prefix">van den</nameField>
 			<nameField type="surname-core">Wolf</nameField>
 			<nameField type="surname2">Becker Schmidt</nameField>

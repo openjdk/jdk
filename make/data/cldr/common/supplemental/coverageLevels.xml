@@ -36,7 +36,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<approvalRequirement votes="=HIGH_BAR" locales="tr" paths="//ldml/localeDisplayNames/territories/territory\[@type=.CY.\]"/>
 			<approvalRequirement votes="=HIGH_BAR" locales="kea pt_CV" paths="//ldml/numbers/currencies/currency\[@type=.CVE.\]/(symbol|decimal)"/>
 			<!--  established locales - http://cldr.unicode.org/index/process#TOC-Draft-Status-of-Optimal-Field-Value -->
-			<approvalRequirement votes="=LOWER_BAR" locales="am ar bn ca cs da de el en es et fa fi fil fr ga gu he hi hr hu id it ja kk kn ko ky lt lv mk ml mr ms nl no pa pl pt pt_PT ro ru sk sl sr sv ta te th tr ur uk vi zh zh_Hant" paths=""/>
+			<approvalRequirement votes="=LOWER_BAR" locales="ar bn bg ca cs da de el en en_AU en_GB es_MX es et fa fi fil fr fr_CA gu he hi hr hu id is it ja kk kn ko lt lv mk ml mr ms nl no pa pl pt pt_PT ro ru sk sl sr sv ta te th tr ur uk vi zh zh_Hant" paths=""/>
 			<!--  all other items -->
 			<approvalRequirement votes="=vetter" locales="*" paths=""/>
 		</approvalRequirements>
@@ -99,14 +99,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<coverageVariable key="%keys100" value="(col(Alternate|Backwards|CaseFirst|CaseLevel|HiraganaQuaternary|Normalization|Numeric|Reorder|Strength)|kv|sd|timezone|va|variableTop|x)"/>
 		<coverageVariable key="%language30" value="und"/>
 		<coverageVariable key="%language40" value="(de(_(AT|CH))?|en(_(AU|CA|GB|US))?|es(_(ES|419|MX))?|fr(_(CA|CH))?|it|ja|pt(_(BR|PT))?|ru|zh(_(Hans|Hant))?)"/>
-		<coverageVariable key="%language60" value="(ar(_001)?|bn|hi|id|ko|nl(_BE)?|pl|th|tr)"/>
+		<coverageVariable key="%language60" value="(ar(_001)?|bn|hi(_Latn)|id|ko|nl(_BE)?|pl|th|tr)"/>
 		<coverageVariable key="%language60_CM" value="(bas|bax|bbj|bfd|bkm|bss|bum|byv|ewo|ff|kkj|maf|nnh|yav|ybb)"/>
 		<coverageVariable key="%language60_EU" value="(cs|da|e[lt]|fi|hu|lv|mt|s[klv])"/>
 		<coverageVariable key="%language60_GA" value="(fan|mye)"/>
 		<coverageVariable key="%language60_NG" value="(ff|ha|ibb|ig|kr|yo)"/>
 		<coverageVariable key="%language60_TD" value="(shu|dzg|kbl|mde|mua|sba)"/>
 		<!-- All locales present in main/ MUST have their language's name at least at level 80 (modern) -->
-		<coverageVariable key="%language80" value="(a([bfkmvyz]|ce|d[ay]|gq|in|l[et]|n[np]?|r[nps]?|s[at]?|tj|wa)|b([gm-os]|a[ns]?|e[mz]?|ho|in?|la|rx?|ug|yn)|c([ovy]|ay?|cp|eb?|gg|h[kmopry]?|kb|lc|r[gjklmr]|sw?)|d([evz]|a[krv]?|gr|je|oi|sb|ua|yo|zg)|e([elnos-u]|bu|fi|ka|wo)|f([afjy]|il?|on?|rc?|ur)|fa_AF|g([dlnv]|aa?|ez|il|or|sw|uz?|wi)|h([ertyz]|a[iwx]?|il?|mn|sb|u[pr]?)|i([adgiostu]|b[ab]|kt|lo|nh)|j([av]|bo|go|mc)|k([ijnvy]|a[bcjm]?|bd|cg|de|ea|fo|gp|h[aq]|kj?|ln?|mb?|ok?|pe|r[clu]?|s[bfh]?|um?|wk?)|l([bgntv]|a[dg]?|ez|il?|kt|o[uz]?|rc|sm|u[anosy]?)|m([hklr-ty]|a[dgiks]|df|e[nr]|fe|g[ho]?|i[cn]?|ni?|o[ehs]|u[als]|wl|yv|zn)|n([bglrv]|a[pq]?|ds?|ew?|i[au]|mg|nh?|og?|qo|so|us|yn?)|o([cmrs]|j[bcsw]|ka)|p([lst]|a[gmpu]?|cm|is|qm)|qu|r([mn]|a[pr]|hg|of?|wk?|up?)|s([dgikoqsv]|a[dhqt]?|b[ap]|c[no]?|e[hs]?|h[in]|lh?|m[ns]?|nk?|rn?|tr?|uk?|wb?|yr)|t([akns]|ce|e[mot]?|gx?|ht?|ig?|l[hi]|ok?|pi|rv?|tm?|um|vl|wq|yv?|zm)|u([gkrz]|dm|mb|nd)|v([ei]|ai|un)|w(a[elr]?|o|uu)|x(al|h|og)|y([io]|av|bb|rl|ue)|z(gh|h|un?|xx|za))"/>
+		<coverageVariable key="%language80" value="(a([bfkmvyz]|ce|d[ay]|gq|in|l[et]|n[np]?|r[nps]?|s[at]?|tj|wa)|b([gm-os]|a[ns]?|e[mz]?|ho|in?|la|rx?|ug|yn)|c([ovy]|ay?|cp|eb?|gg|h[kmopry]?|kb|lc|r[gjklmr]|sw?)|d([evz]|a[krv]?|gr|je|oi|sb|ua|yo|zg)|e([elnos-u]|bu|fi|ka|wo)|f([afjy]|il?|on?|r[cr]?|ur)|fa_AF|g([dlnv]|aa?|ez|il|or|sw|uz?|wi)|h([ertyz]|a[iwx]?|il?|mn|sb|u[pr]?)|i([adgiostu]|b[ab]|kt|lo|nh)|j([av]|bo|go|mc)|k([ijnvy]|a[bcjm]?|bd|cg|de|ea|fo|gp|h[aq]|kj?|ln?|mb?|ok?|pe|r[clu]?|s[bfh]?|um?|wk?)|l([bgntv]|a[dg]?|ez|il?|kt|o[uz]?|rc|sm|u[anosy]?)|m([hklr-ty]|a[dgiks]|df|e[nr]|fe|g[ho]?|i[cn]?|ni?|o[ehs]|u[als]|wl|yv|zn)|n([bglrv]|a[pq]?|ds?|ew?|i[au]|mg|nh?|og?|qo|so|us|yn?)|o([cmrs]|j[bcsw]|ka)|p([lst]|a[gmpu]?|cm|is|qm)|qu|r([mn]|a[pr]|hg|of?|wk?|up?)|s([dgikoqsv]|a[dhqt]?|b[ap]|c[no]?|e[hs]?|h[in]|lh?|m[ns]?|nk?|rn?|tr?|uk?|wb?|yr)|t([akns]|ce|e[mot]?|gx?|ht?|ig?|l[hi]|ok?|pi|rv?|tm?|um|vl|wq|yv?|zm)|u([gkrz]|dm|mb|nd)|v([ei]|ai|un)|w(a[elr]?|o|uu)|x(al|h|og)|y([io]|av|bb|rl|ue)|z(gh|h|un?|xx|za))"/>
 		<coverageVariable key="%languagecomp" value="(gan|hak|hsn|nan)"/> <!-- not currently used, just for reference: the only valid language codes that are not in modern coverage -->
 		<coverageVariable key="%lbTypes80" value="(strict|normal|loose)"/>
 		<coverageVariable key="%lwTypes" value="(normal|breakall|keepall|phrase)"/>

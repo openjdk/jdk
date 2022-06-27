@@ -110,8 +110,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="en_AU">آسٹریلیائی انگریزی</language>
 			<language type="en_CA">کینیڈین انگریزی</language>
 			<language type="en_GB">برطانوی انگریزی</language>
+			<language type="en_GB" alt="short">انگریزی (یو کے)</language>
 			<language type="en_US">امریکی انگریزی</language>
-			<language type="en_US" alt="short">امریکی انگریزی</language>
 			<language type="eo">ایسپرانٹو</language>
 			<language type="es">ہسپانوی</language>
 			<language type="es_419">لاطینی امریکی ہسپانوی</language>

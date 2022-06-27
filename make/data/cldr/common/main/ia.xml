@@ -103,6 +103,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="en_GB">anglese britannic</language>
 			<language type="en_GB" alt="short">anglese (GB)</language>
 			<language type="en_US">anglese american</language>
+			<language type="en_US" alt="short">anglese (SUA)</language>
 			<language type="eo">esperanto</language>
 			<language type="es">espaniol</language>
 			<language type="es_419">espaniol latinoamerican</language>

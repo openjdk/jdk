@@ -14,16 +14,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</identity>
 	<localeDisplayNames>
 		<languages>
-			<language type="ar_001" draft="contributed">савремени стандардни арапски</language>
 			<language type="arn" draft="contributed">мапудунгун</language>
 			<language type="be" draft="contributed">бјелоруски</language>
 			<language type="bm" draft="contributed">бамананкан</language>
 			<language type="bn" draft="contributed">бангла</language>
 			<language type="de" draft="contributed">њемачки</language>
 			<language type="de_CH">швајцарски високи њемачки</language>
-			<language type="en_GB">енглески (Велика Британија)</language>
-			<language type="es_ES">шпански (Европа)</language>
-			<language type="fa_AF" draft="contributed">дари</language>
 			<language type="gsw">њемачки (Швајцарска)</language>
 			<language type="ht" draft="contributed">хаићански креолски</language>
 			<language type="lo" draft="contributed">лаошки</language>
@@ -32,16 +28,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="nd">сјеверни ндебеле</language>
 			<language type="nds" draft="contributed">нискоњемачки</language>
 			<language type="nqo" draft="contributed">н’ко</language>
-			<language type="pt_PT" draft="contributed">португалски (Португал)</language>
 			<language type="se">сјеверни сами</language>
 			<language type="shi" draft="contributed">јужни шилха</language>
 			<language type="si" draft="contributed">синхалски</language>
-			<language type="sw_CD" draft="contributed">кисвахили</language>
 			<language type="tzm" draft="contributed">централноатласки тамашек</language>
 			<language type="xh" draft="contributed">исикоса</language>
 			<language type="zgh" draft="contributed">стандардни марокански тамашек</language>
-			<language type="zh_Hans" draft="contributed">поједностављени кинески</language>
-			<language type="zh_Hant" draft="contributed">традиционални кинески</language>
 			<language type="zu" draft="contributed">исизулу</language>
 		</languages>
 		<territories>

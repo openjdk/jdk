@@ -53,6 +53,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="en_GB">англисии британӣ</language>
 			<language type="en_GB" alt="short">англисӣ (ШМ)</language>
 			<language type="en_US">англисии америкоӣ</language>
+			<language type="en_US" alt="short">англисӣ (ИМ)</language>
 			<language type="eo">эсперанто</language>
 			<language type="es">испанӣ</language>
 			<language type="es_419">испании америкоии лотинӣ</language>
