@@ -51,7 +51,6 @@ MemoryManager*   MemoryService::_code_cache_manager    = NULL;
 GrowableArray<MemoryPool*>* MemoryService::_code_heap_pools =
     new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<MemoryPool*>(init_code_heap_pools_size, mtServiceability);
 MemoryPool*      MemoryService::_metaspace_pool        = NULL;
-MemoryPool*      MemoryService::_compressed_class_pool = NULL;
 
 class GcThreadCountClosure: public ThreadClosure {
  private:
