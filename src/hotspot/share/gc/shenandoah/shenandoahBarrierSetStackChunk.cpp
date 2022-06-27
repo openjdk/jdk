@@ -22,18 +22,24 @@
  *
  */
 
-#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHBARRIERSETSTACKCHUNK_HPP
-#define SHARE_GC_SHENANDOAH_SHENANDOAHBARRIERSETSTACKCHUNK_HPP
+#include "precompiled.hpp"
+#include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
+#include "gc/shenandoah/shenandoahBarrierSetStackChunk.hpp"
 
-#include "gc/shared/barrierSetStackChunk.hpp"
+void ShenandoahBarrierSetStackChunk::encode_gc_mode(stackChunkOop chunk, OopIterator* oop_iterator) {
+  // Nothing to do
+}
 
-class ShenandoahBarrierSetStackChunk : public BarrierSetStackChunk {
-public:
-  virtual void encode_gc_mode(stackChunkOop chunk, OopIterator* oop_iterator) override;
-  virtual void decode_gc_mode(stackChunkOop chunk, OopIterator* oop_iterator) override;
+void ShenandoahBarrierSetStackChunk::decode_gc_mode(stackChunkOop chunk, OopIterator* oop_iterator) {
+  // Nothing to do
+}
 
-  virtual oop load_oop(stackChunkOop chunk, oop* addr) override;
-  virtual oop load_oop(stackChunkOop chunk, narrowOop* addr) override;
-};
+oop ShenandoahBarrierSetStackChunk::load_oop(stackChunkOop chunk, oop* addr) {
+  oop result = BarrierSetStackChunk::load_oop(chunk, addr);
+  return ShenandoahBarrierSet::barrier_set()->load_reference_barrier(result);
+}
 
-#endif // SHARE_GC_SHENANDOAH_SHENANDOAHBARRIERSETSTACKCHUNK_HPP
+oop ShenandoahBarrierSetStackChunk::load_oop(stackChunkOop chunk, narrowOop* addr) {
+  oop result = BarrierSetStackChunk::load_oop(chunk, addr);
+  return ShenandoahBarrierSet::barrier_set()->load_reference_barrier(result);
+}

@@ -247,7 +247,7 @@ public:
       if (Continuations::enabled()) {
         // Loom needs to know about visited nmethods. Arm the nmethods to get
         // mark_as_maybe_on_continuation() callbacks when they are used again.
-        _bs->arm(nm, 0);
+        _bs->disarm_with_value(nm, 0);
       } else {
         _bs->disarm(nm);
       }

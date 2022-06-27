@@ -1203,7 +1203,11 @@ NOINLINE void FreezeBase::finish_freeze(const frame& f, const frame& top) {
     // old chunks are all in GC mode.
     assert(!UseG1GC, "G1 can not deal with allocating outside of eden");
     assert(!UseZGC, "ZGC can not deal with allocating chunks visible to marking");
-    ContinuationGCSupport::transform_stack_chunk(_cont.tail());
+    if (UseShenandoahGC) {
+      _cont.tail()->relativize_derived_pointers_concurrently();
+    } else {
+      ContinuationGCSupport::transform_stack_chunk(_cont.tail());
+    }
     // For objects in the old generation we must maintain the remembered set
     _cont.tail()->do_barriers<stackChunkOopDesc::BarrierType::Store>();
   }
