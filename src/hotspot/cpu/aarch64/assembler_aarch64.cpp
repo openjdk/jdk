@@ -31,7 +31,7 @@
 #include "memory/resourceArea.hpp"
 
 #ifndef PRODUCT
-const uintptr_t Assembler::asm_bp = 0x0000ffffac225378;
+const uintptr_t Assembler::asm_bp = 0x0000ffffac221240;
 #endif
 
 static float unpack(unsigned value);

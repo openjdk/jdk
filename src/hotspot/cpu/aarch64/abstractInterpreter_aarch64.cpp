@@ -170,6 +170,7 @@ void AbstractInterpreter::layout_activation(Method* method,
   // for the biggest user:
   //   -reserved slot for exception handler
   //   -reserved slots for JSR292. Method::extra_stack_entries() is the size.
+  //   -reserved slots for TraceBytecodes
   int max_stack = method->constMethod()->max_stack() + MAX2(3, Method::extra_stack_entries());
   intptr_t* extended_sp = (intptr_t*) monbot  -
     (max_stack * Interpreter::stackElementWords) -

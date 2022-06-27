@@ -799,7 +799,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
     __ stp(zr, zr, Address(sp, 12 * wordSize));
   } else {
     __ sub(esp, sp, 12 *  wordSize);
-    __ ldr(rscratch1, Address(rmethod, Method::const_offset()));      // get ConstMethod
+    __ ldr(rscratch1, Address(rmethod, Method::const_offset()));    // get ConstMethod
     __ add(rbcp, rscratch1, in_bytes(ConstMethod::codes_offset())); // get codebase
     __ stp(esp, rbcp, Address(__ pre(sp, -12 * wordSize)));
   }
@@ -812,12 +812,8 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
     __ bind(method_data_continue);
     __ stp(rscratch1, rmethod, Address(sp, 6 * wordSize));  // save Method* and mdp (method data pointer)
   } else {
-    __ stp(zr, rmethod, Address(sp, 6 * wordSize));        // save Method* (no mdp)
+    __ stp(zr, rmethod, Address(sp, 6 * wordSize));         // save Method* (no mdp)
   }
-
-  // Get mirror and store it in the frame as GC root for this Method*
-  __ load_mirror(r10, rmethod);
-  __ stp(r10, zr, Address(sp, 4 * wordSize));
 
   __ ldr(rcpool, Address(rmethod, Method::const_offset()));
   __ ldr(rcpool, Address(rcpool, ConstMethod::constants_offset()));
@@ -832,18 +828,21 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   // leave last_sp as null
   __ stp(zr, r19_sender_sp, Address(sp, 8 * wordSize));
 
-  // Move SP out of the way
+  // Get mirror
+  __ load_mirror(r10, rmethod);
   if (! native_call) {
     __ ldr(rscratch1, Address(rmethod, Method::const_offset()));
     __ ldrh(rscratch1, Address(rscratch1, ConstMethod::max_stack_offset()));
     __ add(rscratch1, rscratch1, MAX2(3, Method::extra_stack_entries()));
     __ sub(rscratch1, sp, rscratch1, ext::uxtw, 3);
     __ andr(rscratch1, rscratch1, -16);
-    __ str(rscratch1, Address(rfp, frame::interpreter_frame_extended_sp_offset * wordSize));
+    // Store extended SP and mirror
+    __ stp(r10, rscratch1, Address(sp, 4 * wordSize));
+    // Move SP out of the way
     __ mov(sp, rscratch1);
-  } else {
+    } else {
     __ mov(rscratch1, sp);
-    __ str(rscratch1, Address(rfp, frame::interpreter_frame_extended_sp_offset * wordSize));
+    __ stp(zr, rscratch1, Address(sp, 4 * wordSize));
   }
 }
 
