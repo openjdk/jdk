@@ -26,8 +26,8 @@
 package java.security;
 
 /**
- * The Key interface is the top-level interface for all keys. It
- * defines the functionality shared by all key objects. All keys
+ * The {@code Key} interface is the top-level interface for all keys. It
+ * defines the functionality shared by all {@code Key} objects. All keys
  * have three characteristics:
  *
  * <UL>

@@ -406,7 +406,7 @@ public class AlgorithmParameters {
      * Returns a formatted string describing the parameters.
      *
      * @return a formatted string describing the parameters, or {@code null}
-     *  if this parameter object has not been initialized.
+     * if this parameter object has not been initialized.
      */
     public final String toString() {
         if (!this.initialized) {

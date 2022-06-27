@@ -105,7 +105,7 @@ import java.io.*;
  * can be used to sign and serialize data/object for storage outside
  * the Java runtime (e.g., storing critical access control data on
  * disk).
- * <li> Nested {@code SignedObjects} can be used to construct a logical
+ * <li> Nested SignedObjects can be used to construct a logical
  * sequence of signatures, resembling a chain of authorization and
  * delegation.
  * </ul>

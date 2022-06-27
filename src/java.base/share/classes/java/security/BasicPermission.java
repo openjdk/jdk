@@ -199,8 +199,8 @@ public abstract class BasicPermission extends Permission
      *
      * @param obj the object we are testing for equality with this object.
      * @return true if {@code obj}'s class is the same as this object's class
-     * and has the same name as this {@code BasicPermission} object,
-     * false otherwise.
+     *  and has the same name as this {@code BasicPermission} object,
+     *  false otherwise.
      */
     @Override
     public boolean equals(Object obj) {

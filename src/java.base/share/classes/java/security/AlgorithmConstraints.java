@@ -58,13 +58,13 @@ public interface AlgorithmConstraints {
      * @param primitives a set of cryptographic primitives
      * @param algorithm the algorithm name
      * @param parameters the algorithm parameters, or {@code null}
-     * if no additional parameters
+     *     if no additional parameters
      *
      * @return true if the algorithm is permitted and can be used for all
      *     the specified cryptographic primitives
      *
      * @throws IllegalArgumentException if primitives or algorithm is
-     * {@code null} or empty
+     *     {@code null} or empty
      */
     boolean permits(Set<CryptoPrimitive> primitives,
             String algorithm, AlgorithmParameters parameters);
@@ -94,13 +94,13 @@ public interface AlgorithmConstraints {
      * @param algorithm the algorithm name
      * @param key the key
      * @param parameters the algorithm parameters, or {@code null}
-     * if no additional parameters
+     *     if no additional parameters
      *
      * @return true if the key and the algorithm can be used for all the
      *     specified cryptographic primitives
      *
      * @throws IllegalArgumentException if primitives or algorithm is
-     * {@code null} or empty, or the key is {@code null}
+     *     {@code null} or empty, or the key is {@code null}
      */
     boolean permits(Set<CryptoPrimitive> primitives,
                 String algorithm, Key key, AlgorithmParameters parameters);
