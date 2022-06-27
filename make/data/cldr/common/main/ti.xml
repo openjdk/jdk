@@ -664,11 +664,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} ሰዓት {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} ሰዓት {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1067,11 +1073,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} ሰዓት {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} ሰዓት {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -3550,37 +3562,65 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>¤#,##0.00</pattern>
+					<pattern alt="alphaNextToNumber" draft="provisional">¤ #,##0.00</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>¤#,##0.00</pattern>
+					<pattern alt="alphaNextToNumber" draft="provisional">¤ #,##0.00</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
 					<pattern type="1000" count="one">¤0 ሽ</pattern>
+					<pattern type="1000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 0 ሽ</pattern>
 					<pattern type="1000" count="other">¤0 ሽ</pattern>
+					<pattern type="1000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 0 ሽ</pattern>
 					<pattern type="10000" count="one">¤00 ሽ</pattern>
+					<pattern type="10000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 00 ሽ</pattern>
 					<pattern type="10000" count="other">¤00 ሽ</pattern>
+					<pattern type="10000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 00 ሽ</pattern>
 					<pattern type="100000" count="one">¤000 ሽ</pattern>
+					<pattern type="100000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 000 ሽ</pattern>
 					<pattern type="100000" count="other">¤000 ሽ</pattern>
+					<pattern type="100000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 000 ሽ</pattern>
 					<pattern type="1000000" count="one">¤0 ሚ</pattern>
+					<pattern type="1000000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 0 ሚ</pattern>
 					<pattern type="1000000" count="other">¤0 ሚ</pattern>
+					<pattern type="1000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 0 ሚ</pattern>
 					<pattern type="10000000" count="one">¤00 ሚ</pattern>
+					<pattern type="10000000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 00 ሚ</pattern>
 					<pattern type="10000000" count="other">¤00 ሚ</pattern>
+					<pattern type="10000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 00 ሚ</pattern>
 					<pattern type="100000000" count="one">¤000 ሚ</pattern>
+					<pattern type="100000000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 000 ሚ</pattern>
 					<pattern type="100000000" count="other">¤000 ሚ</pattern>
+					<pattern type="100000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 000 ሚ</pattern>
 					<pattern type="1000000000" count="one">¤0 ቢ</pattern>
+					<pattern type="1000000000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 0 ቢ</pattern>
 					<pattern type="1000000000" count="other">¤0 ቢ</pattern>
+					<pattern type="1000000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 0 ቢ</pattern>
 					<pattern type="10000000000" count="one">¤00 ቢ</pattern>
+					<pattern type="10000000000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 00 ቢ</pattern>
 					<pattern type="10000000000" count="other">¤00 ቢ</pattern>
+					<pattern type="10000000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 00 ቢ</pattern>
 					<pattern type="100000000000" count="one">¤000 ቢ</pattern>
+					<pattern type="100000000000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 000 ቢ</pattern>
 					<pattern type="100000000000" count="other">¤000 ቢ</pattern>
+					<pattern type="100000000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 000 ቢ</pattern>
 					<pattern type="1000000000000" count="one">¤0 ት</pattern>
+					<pattern type="1000000000000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 0 ት</pattern>
 					<pattern type="1000000000000" count="other">¤0 ት</pattern>
+					<pattern type="1000000000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 0 ት</pattern>
 					<pattern type="10000000000000" count="one">¤00 ት</pattern>
+					<pattern type="10000000000000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 00 ት</pattern>
 					<pattern type="10000000000000" count="other">¤00 ት</pattern>
+					<pattern type="10000000000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 00 ት</pattern>
 					<pattern type="100000000000000" count="one">¤000 ት</pattern>
+					<pattern type="100000000000000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 000 ት</pattern>
 					<pattern type="100000000000000" count="other">¤000 ት</pattern>
+					<pattern type="100000000000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 000 ት</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<unitPattern count="one">{0} {1}</unitPattern>

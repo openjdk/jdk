@@ -48,8 +48,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dateTimeFormats>
 					<intervalFormats>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d" draft="contributed">E, d – E, d. MMM</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E, d. MMM – E, d. MMM</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E, d – E, d. MMM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E, d. MMM – E, d. MMM</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>

@@ -466,11 +466,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} 'às' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} 'às' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -494,49 +500,49 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</availableFormats>
 					<intervalFormats>
 						<intervalFormatItem id="Gy">
-							<greatestDifference id="G">y G – y G</greatestDifference>
-							<greatestDifference id="y">y – y G</greatestDifference>
+							<greatestDifference id="G">y G – y G</greatestDifference>
+							<greatestDifference id="y">y – y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyM">
-							<greatestDifference id="G">MM/y GGGGG – MM/y GGGGG</greatestDifference>
-							<greatestDifference id="M">MM/y – MM/y GGGGG</greatestDifference>
-							<greatestDifference id="y">MM/y – MM/y GGGGG</greatestDifference>
+							<greatestDifference id="G">MM/y GGGGG – MM/y GGGGG</greatestDifference>
+							<greatestDifference id="M">MM/y – MM/y GGGGG</greatestDifference>
+							<greatestDifference id="y">MM/y – MM/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMd">
-							<greatestDifference id="d">d/MM/y – d/MM/y GGGGG</greatestDifference>
-							<greatestDifference id="G">d/MM/y GGGGG – d/MM/y GGGGG</greatestDifference>
-							<greatestDifference id="M">d/MM/y – d/MM/y GGGGG</greatestDifference>
-							<greatestDifference id="y">d/MM/y – d/MM/y GGGGG</greatestDifference>
+							<greatestDifference id="d">d/MM/y – d/MM/y GGGGG</greatestDifference>
+							<greatestDifference id="G">d/MM/y GGGGG – d/MM/y GGGGG</greatestDifference>
+							<greatestDifference id="M">d/MM/y – d/MM/y GGGGG</greatestDifference>
+							<greatestDifference id="y">d/MM/y – d/MM/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMEd">
-							<greatestDifference id="d">E, d/MM/y – E, d/MM/y GGGGG</greatestDifference>
-							<greatestDifference id="G">E, d/MM/y GGGGG – E, d/MM/y GGGGG</greatestDifference>
-							<greatestDifference id="M">E, d/MM/y – E, d/MM/y GGGGG</greatestDifference>
-							<greatestDifference id="y">E, d/MM/y – E, d/MM/y GGGGG</greatestDifference>
+							<greatestDifference id="d">E, d/MM/y – E, d/MM/y GGGGG</greatestDifference>
+							<greatestDifference id="G">E, d/MM/y GGGGG – E, d/MM/y GGGGG</greatestDifference>
+							<greatestDifference id="M">E, d/MM/y – E, d/MM/y GGGGG</greatestDifference>
+							<greatestDifference id="y">E, d/MM/y – E, d/MM/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMM">
-							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
-							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
-							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
+							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
+							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMd">
-							<greatestDifference id="d">d – d 'de' MMMM, y G</greatestDifference>
-							<greatestDifference id="G">d 'de' MMMM, y G – d 'de' MMMM, y G</greatestDifference>
-							<greatestDifference id="M">d 'de' MMMM – d 'de' MMMM, y G</greatestDifference>
-							<greatestDifference id="y">d 'de' MMMM, y – d 'de' MMMM, y G</greatestDifference>
+							<greatestDifference id="d">d – d 'de' MMMM, y G</greatestDifference>
+							<greatestDifference id="G">d 'de' MMMM, y G – d 'de' MMMM, y G</greatestDifference>
+							<greatestDifference id="M">d 'de' MMMM – d 'de' MMMM, y G</greatestDifference>
+							<greatestDifference id="y">d 'de' MMMM, y – d 'de' MMMM, y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMEd">
-							<greatestDifference id="d">E, d 'de' MMMM – E, d 'de' MMMM, y G</greatestDifference>
-							<greatestDifference id="G">E, d 'de' MMMM, y G – E, d 'de' MMMM, y G</greatestDifference>
-							<greatestDifference id="M">E, d 'de' MMMM – E, d 'de' MMMM, y G</greatestDifference>
-							<greatestDifference id="y">E, d 'de' MMMM, y – E, d 'de' MMMM, y G</greatestDifference>
+							<greatestDifference id="d">E, d 'de' MMMM – E, d 'de' MMMM, y G</greatestDifference>
+							<greatestDifference id="G">E, d 'de' MMMM, y G – E, d 'de' MMMM, y G</greatestDifference>
+							<greatestDifference id="M">E, d 'de' MMMM – E, d 'de' MMMM, y G</greatestDifference>
+							<greatestDifference id="y">E, d 'de' MMMM, y – E, d 'de' MMMM, y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a">h a – h a</greatestDifference>
-							<greatestDifference id="h">h–h a</greatestDifference>
+							<greatestDifference id="a">h a – h a</greatestDifference>
+							<greatestDifference id="h">h–h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="h">h:mm – h:mm a</greatestDifference>
+							<greatestDifference id="h">h:mm – h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M">MM–MM</greatestDifference>
@@ -545,26 +551,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M">MMM–MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d">ccc, dd/MM – ccc, dd/MM</greatestDifference>
+							<greatestDifference id="d">ccc, dd/MM – ccc, dd/MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMMEd">
-							<greatestDifference id="d">ccc, d 'de' MMMM – ccc, d 'de' MMMM</greatestDifference>
-							<greatestDifference id="M" draft="contributed">ccc, d 'de' MMMM – ccc, d 'de' MMMM</greatestDifference>
+							<greatestDifference id="d">ccc, d 'de' MMMM – ccc, d 'de' MMMM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">ccc, d 'de' MMMM – ccc, d 'de' MMMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">y–y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">E, dd/MM – E, dd/MM/y G</greatestDifference>
-							<greatestDifference id="y">E, dd/MM/y – E, dd/MM/y G</greatestDifference>
+							<greatestDifference id="d">E, dd/MM – E, dd/MM/y G</greatestDifference>
+							<greatestDifference id="y">E, dd/MM/y – E, dd/MM/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
-							<greatestDifference id="M">MMMM – MMMM 'de' y G</greatestDifference>
+							<greatestDifference id="M">MMMM – MMMM 'de' y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMMEd">
-							<greatestDifference id="d">E, d 'de' MMMM – E, d 'de' MMMM 'de' y G</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E, d 'de' MMMM – E, d 'de' MMMM 'de' y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">E, d 'de' MMMM 'de' y – E, d 'de' MMMM 'de' y G</greatestDifference>
+							<greatestDifference id="d">E, d 'de' MMMM – E, d 'de' MMMM 'de' y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E, d 'de' MMMM – E, d 'de' MMMM 'de' y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">E, d 'de' MMMM 'de' y – E, d 'de' MMMM 'de' y G</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -730,11 +736,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} 'às' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} 'às' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -769,44 +781,44 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="d">d–d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMd">
-							<greatestDifference id="d">d/M/y – d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="G">d/M/y GGGGG – d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="M">d/M/y – d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="y">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="d">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="G">d/M/y GGGGG – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">d/M/y – d/M/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMEd">
-							<greatestDifference id="d">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="G">E, d/M/y GGGGG – E, d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="M">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="y">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="d">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="G">E, d/M/y GGGGG – E, d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMd">
-							<greatestDifference id="d">d – d MMM y G</greatestDifference>
-							<greatestDifference id="G">d MMM y G – d MMM y G</greatestDifference>
-							<greatestDifference id="M">d MMM – d MMM y G</greatestDifference>
-							<greatestDifference id="y">d MMM y – d MMM y G</greatestDifference>
+							<greatestDifference id="d">d – d MMM y G</greatestDifference>
+							<greatestDifference id="G">d MMM y G – d MMM y G</greatestDifference>
+							<greatestDifference id="M">d MMM – d MMM y G</greatestDifference>
+							<greatestDifference id="y">d MMM y – d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMEd">
-							<greatestDifference id="d">E, d MMM – E, d MMM y G</greatestDifference>
-							<greatestDifference id="G">E, d MMM y G – E, d MMM y G</greatestDifference>
-							<greatestDifference id="M">E, d MMM – E, d MMM y G</greatestDifference>
-							<greatestDifference id="y">E, d MMM y – E, d MMM y G</greatestDifference>
+							<greatestDifference id="d">E, d MMM – E, d MMM y G</greatestDifference>
+							<greatestDifference id="G">E, d MMM y G – E, d MMM y G</greatestDifference>
+							<greatestDifference id="M">E, d MMM – E, d MMM y G</greatestDifference>
+							<greatestDifference id="y">E, d MMM y – E, d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="h">h–h a</greatestDifference>
+							<greatestDifference id="h">h–h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H">HH–HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="h">h–h a v</greatestDifference>
+							<greatestDifference id="h">h–h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M">M–M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">ccc, dd/MM – ccc, dd/MM</greatestDifference>
-							<greatestDifference id="M">ccc, dd/MM – ccc, dd/MM</greatestDifference>
+							<greatestDifference id="d">ccc, dd/MM – ccc, dd/MM</greatestDifference>
+							<greatestDifference id="M">ccc, dd/MM – ccc, dd/MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
 							<greatestDifference id="M">MMM–MMM</greatestDifference>
@@ -815,20 +827,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="d">d–d 'de' MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d">ccc, dd/MM – ccc, dd/MM</greatestDifference>
-							<greatestDifference id="M">ccc, dd/MM – ccc, dd/MM</greatestDifference>
+							<greatestDifference id="d">ccc, dd/MM – ccc, dd/MM</greatestDifference>
+							<greatestDifference id="M">ccc, dd/MM – ccc, dd/MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMMEd">
-							<greatestDifference id="d">ccc, d 'de' MMMM – ccc, d 'de' MMMM</greatestDifference>
-							<greatestDifference id="M" draft="contributed">ccc, d 'de' MMMM – ccc, d 'de' MMMM</greatestDifference>
+							<greatestDifference id="d">ccc, d 'de' MMMM – ccc, d 'de' MMMM</greatestDifference>
+							<greatestDifference id="M" draft="contributed">ccc, d 'de' MMMM – ccc, d 'de' MMMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
 							<greatestDifference id="y">y–y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">ccc, dd/MM/y – ccc, dd/MM/y</greatestDifference>
-							<greatestDifference id="M">ccc, dd/MM/y – ccc, dd/MM/y</greatestDifference>
-							<greatestDifference id="y">ccc, dd/MM/y – ccc, dd/MM/y</greatestDifference>
+							<greatestDifference id="d">ccc, dd/MM/y – ccc, dd/MM/y</greatestDifference>
+							<greatestDifference id="M">ccc, dd/MM/y – ccc, dd/MM/y</greatestDifference>
+							<greatestDifference id="y">ccc, dd/MM/y – ccc, dd/MM/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
 							<greatestDifference id="M">MMM–MMM 'de' y</greatestDifference>
@@ -837,12 +849,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="d">d–d 'de' MMM 'de' y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">E, dd/MM – E, dd/MM/y</greatestDifference>
+							<greatestDifference id="d">E, dd/MM – E, dd/MM/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMMEd">
-							<greatestDifference id="d">E, d 'de' MMMM – E, d 'de' MMMM 'de' y</greatestDifference>
-							<greatestDifference id="M">E, d 'de' MMMM – E, d 'de' MMMM 'de' y</greatestDifference>
-							<greatestDifference id="y">E, d 'de' MMMM 'de' y – E, d 'de' MMMM 'de' y</greatestDifference>
+							<greatestDifference id="d">E, d 'de' MMMM – E, d 'de' MMMM 'de' y</greatestDifference>
+							<greatestDifference id="M">E, d 'de' MMMM – E, d 'de' MMMM 'de' y</greatestDifference>
+							<greatestDifference id="y">E, d 'de' MMMM 'de' y – E, d 'de' MMMM 'de' y</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -2577,6 +2589,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00 ¤;(#,##0.00 ¤)</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00;(#,##0.00)</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">

@@ -518,7 +518,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<dateTimeFormats>
 					<intervalFormats>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="m" draft="unconfirmed">h.mm–h.mm a v</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">h.mm–h.mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="m" draft="unconfirmed">HH.mm–HH.mm v</greatestDifference>
@@ -716,12 +716,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
-							<pattern draft="provisional">EEEE, d MMMM y 'г'.</pattern>
+							<pattern draft="provisional">EEEE, d MMMM y 'г'.</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
-							<pattern draft="provisional">d MMMM y 'г'.</pattern>
+							<pattern draft="provisional">d MMMM y 'г'.</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
@@ -760,12 +760,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
-							<pattern draft="provisional">{1} 'у' {0}</pattern>
+							<pattern draft="provisional">{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
-							<pattern draft="provisional">{1} 'у' {0}</pattern>
+							<pattern draft="provisional">{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">

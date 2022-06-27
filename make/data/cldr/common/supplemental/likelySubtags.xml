@@ -108,8 +108,8 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ Ngas; ?; ? } => { Ngas; Latin; Unknown Region }-->
 		<likelySubtag from="ank" to="ank_Latn_ZZ"/>
 		<!--{ Goemai; ?; ? } => { Goemai; Latin; Unknown Region }-->
-		<likelySubtag from="ann" to="ann_Latn_ZZ"/>
-		<!--{ Obolo; ?; ? } => { Obolo; Latin; Unknown Region }-->
+		<likelySubtag from="ann" to="ann_Latn_NG"/>
+		<!--{ Obolo; ?; ? } => { Obolo; Latin; Nigeria }-->
 		<likelySubtag from="any" to="any_Latn_ZZ"/>
 		<!--{ Anyin; ?; ? } => { Anyin; Latin; Unknown Region }-->
 		<likelySubtag from="aoj" to="aoj_Latn_ZZ"/>
@@ -2010,6 +2010,8 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ Yom; ?; ? } => { Yom; Latin; Unknown Region }-->
 		<likelySubtag from="pip" to="pip_Latn_ZZ"/>
 		<!--{ Pero; ?; ? } => { Pero; Latin; Unknown Region }-->
+		<likelySubtag from="pis" to="pis_Latn_SB"/>
+		<!--{ Pijin; ?; ? } => { Pijin; Latin; Solomon Islands }-->
 		<likelySubtag from="pka" to="pka_Brah_IN"/>
 		<!--{ Ardhamāgadhī Prākrit; ?; ? } => { Ardhamāgadhī Prākrit; Brahmi; India }-->
 		<likelySubtag from="pko" to="pko_Latn_KE"/>
@@ -2458,6 +2460,8 @@ not be patched by hand, as any changes made in that fashion may be lost.
 		<!--{ Gizrra; ?; ? } => { Gizrra; Latin; Unknown Region }-->
 		<likelySubtag from="tog" to="tog_Latn_MW"/>
 		<!--{ Nyasa Tonga; ?; ? } => { Nyasa Tonga; Latin; Malawi }-->
+		<likelySubtag from="tok" to="tok_Latn_001"/>
+		<!--{ Toki Pona; ?; ? } => { Toki Pona; Latin; world }-->
 		<likelySubtag from="toq" to="toq_Latn_ZZ"/>
 		<!--{ Toposa; ?; ? } => { Toposa; Latin; Unknown Region }-->
 		<likelySubtag from="tpi" to="tpi_Latn_PG"/>

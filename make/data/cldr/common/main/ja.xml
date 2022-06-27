@@ -7234,25 +7234,40 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>¤#,##0.00</pattern>
+					<pattern alt="alphaNextToNumber" draft="provisional">¤ #,##0.00</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>¤#,##0.00;(¤#,##0.00)</pattern>
+					<pattern alt="alphaNextToNumber" draft="provisional">¤ #,##0.00;(¤ #,##0.00)</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00;(#,##0.00)</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
 					<pattern type="1000" count="other">0</pattern>
 					<pattern type="10000" count="other">¤0万</pattern>
+					<pattern type="10000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 0万</pattern>
 					<pattern type="100000" count="other">¤00万</pattern>
+					<pattern type="100000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 00万</pattern>
 					<pattern type="1000000" count="other">¤000万</pattern>
+					<pattern type="1000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 000万</pattern>
 					<pattern type="10000000" count="other">¤0000万</pattern>
+					<pattern type="10000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 0000万</pattern>
 					<pattern type="100000000" count="other">¤0億</pattern>
+					<pattern type="100000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 0億</pattern>
 					<pattern type="1000000000" count="other">¤00億</pattern>
+					<pattern type="1000000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 00億</pattern>
 					<pattern type="10000000000" count="other">¤000億</pattern>
+					<pattern type="10000000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 000億</pattern>
 					<pattern type="100000000000" count="other">¤0000億</pattern>
+					<pattern type="100000000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 0000億</pattern>
 					<pattern type="1000000000000" count="other">¤0兆</pattern>
+					<pattern type="1000000000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 0兆</pattern>
 					<pattern type="10000000000000" count="other">¤00兆</pattern>
+					<pattern type="10000000000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 00兆</pattern>
 					<pattern type="100000000000000" count="other">¤000兆</pattern>
+					<pattern type="100000000000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 000兆</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<unitPattern count="other">{0}{1}</unitPattern>
@@ -11458,4 +11473,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<featureName type="tnum">表形式数字</featureName>
 		<featureName type="zero">スラッシュゼロ</featureName>
 	</typographicNames>
+	<personNames>
+		<foreignSpaceReplacement xml:space="preserve">・</foreignSpaceReplacement>
+	</personNames>
 </ldml>

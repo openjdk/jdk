@@ -920,13 +920,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
-							<pattern>G y 'ж'. d MMMM, EEEE</pattern>
+							<pattern>G y 'ж'. d MMMM, EEEE</pattern>
 							<datetimeSkeleton>GyMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
-							<pattern>G y 'ж'. d MMMM</pattern>
+							<pattern>G y 'ж'. d MMMM</pattern>
 							<datetimeSkeleton>GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
@@ -973,20 +973,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="EBhm">E B h:mm</dateFormatItem>
 						<dateFormatItem id="EBhms">E B h:mm:ss</dateFormatItem>
 						<dateFormatItem id="Ed">d, E</dateFormatItem>
-						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
+						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
-						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="Gy">G y 'ж'.</dateFormatItem>
+						<dateFormatItem id="Gy">G y 'ж'.</dateFormatItem>
 						<dateFormatItem id="GyMd" draft="contributed">d/M/y GGGGG</dateFormatItem>
-						<dateFormatItem id="GyMMM">G y 'ж'. MMM</dateFormatItem>
-						<dateFormatItem id="GyMMMd">G y 'ж'. d MMM</dateFormatItem>
-						<dateFormatItem id="GyMMMEd">G y 'ж'. d MMM, E</dateFormatItem>
-						<dateFormatItem id="h">h a</dateFormatItem>
+						<dateFormatItem id="GyMMM">G y 'ж'. MMM</dateFormatItem>
+						<dateFormatItem id="GyMMMd">G y 'ж'. d MMM</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">G y 'ж'. d MMM, E</dateFormatItem>
+						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="H">HH</dateFormatItem>
-						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
-						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">dd.MM</dateFormatItem>
@@ -996,17 +996,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="MMMEd">d MMM, E</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
-						<dateFormatItem id="y">G y 'ж'.</dateFormatItem>
-						<dateFormatItem id="yyyy">G y 'ж'.</dateFormatItem>
+						<dateFormatItem id="y">G y 'ж'.</dateFormatItem>
+						<dateFormatItem id="yyyy">G y 'ж'.</dateFormatItem>
 						<dateFormatItem id="yyyyM">GGGGG MM.y</dateFormatItem>
 						<dateFormatItem id="yyyyMd">GGGGG dd.MM.y</dateFormatItem>
 						<dateFormatItem id="yyyyMEd">GGGGG dd.MM.y, E</dateFormatItem>
-						<dateFormatItem id="yyyyMMM">G y 'ж'. MMM</dateFormatItem>
-						<dateFormatItem id="yyyyMMMd">G y 'ж'. d MMM</dateFormatItem>
-						<dateFormatItem id="yyyyMMMEd">G y 'ж'. d MMM, E</dateFormatItem>
-						<dateFormatItem id="yyyyMMMM">G y 'ж'. MMMM</dateFormatItem>
-						<dateFormatItem id="yyyyQQQ">G y 'ж'. QQQ</dateFormatItem>
-						<dateFormatItem id="yyyyQQQQ">G y 'ж'. QQQQ</dateFormatItem>
+						<dateFormatItem id="yyyyMMM">G y 'ж'. MMM</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd">G y 'ж'. d MMM</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd">G y 'ж'. d MMM, E</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM">G y 'ж'. MMMM</dateFormatItem>
+						<dateFormatItem id="yyyyQQQ">G y 'ж'. QQQ</dateFormatItem>
+						<dateFormatItem id="yyyyQQQQ">G y 'ж'. QQQQ</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
 						<intervalFormatFallback>{0} - {1}</intervalFormatFallback>
@@ -1023,41 +1023,41 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="d">d–d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMd">
-							<greatestDifference id="d">G y 'ж'. d–d MMM</greatestDifference>
-							<greatestDifference id="G">G y 'ж'. d MMM – G y 'ж'. d MMM</greatestDifference>
-							<greatestDifference id="M">G y 'ж'. d MMM – d MMM</greatestDifference>
-							<greatestDifference id="y">G y 'ж'. d MMM – y 'ж'. d MMM</greatestDifference>
+							<greatestDifference id="d">G y 'ж'. d–d MMM</greatestDifference>
+							<greatestDifference id="G">G y 'ж'. d MMM – G y 'ж'. d MMM</greatestDifference>
+							<greatestDifference id="M">G y 'ж'. d MMM – d MMM</greatestDifference>
+							<greatestDifference id="y">G y 'ж'. d MMM – y 'ж'. d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMEd">
-							<greatestDifference id="d">G y 'ж'. d MMM, E – d MMM, E</greatestDifference>
-							<greatestDifference id="G">G y 'ж'. d MMM, E – G y 'ж'. d MMM, E</greatestDifference>
-							<greatestDifference id="M">G y 'ж'. d MMM, E – d MMM, E</greatestDifference>
-							<greatestDifference id="y">G y 'ж'. d MMM, E – y 'ж'. d MMM, E</greatestDifference>
+							<greatestDifference id="d">G y 'ж'. d MMM, E – d MMM, E</greatestDifference>
+							<greatestDifference id="G">G y 'ж'. d MMM, E – G y 'ж'. d MMM, E</greatestDifference>
+							<greatestDifference id="M">G y 'ж'. d MMM, E – d MMM, E</greatestDifference>
+							<greatestDifference id="y">G y 'ж'. d MMM, E – y 'ж'. d MMM, E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="h">h–h a</greatestDifference>
+							<greatestDifference id="h">h–h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H">HH–HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
-							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
 							<greatestDifference id="H">HH:mm–HH:mm</greatestDifference>
 							<greatestDifference id="m">HH:mm–HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
-							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H">HH:mm–HH:mm v</greatestDifference>
 							<greatestDifference id="m">HH:mm–HH:mm v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="h">h–h a v</greatestDifference>
+							<greatestDifference id="h">h–h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
 							<greatestDifference id="H">HH–HH v</greatestDifference>
@@ -1085,7 +1085,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M">d MMM, E – d MMM, E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
-							<greatestDifference id="y">G y–y 'жж'.</greatestDifference>
+							<greatestDifference id="y">G y–y 'жж'.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
 							<greatestDifference id="M">GGGGG MM.y – MM.y</greatestDifference>
@@ -1102,22 +1102,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">GGGGG dd.MM.y, E – dd.MM.y, E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
-							<greatestDifference id="M">G y 'ж'. MMM–MMM</greatestDifference>
-							<greatestDifference id="y">G y 'ж'. MMM – y 'ж'. MMM</greatestDifference>
+							<greatestDifference id="M">G y 'ж'. MMM–MMM</greatestDifference>
+							<greatestDifference id="y">G y 'ж'. MMM – y 'ж'. MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
-							<greatestDifference id="d">G y 'ж'. d–d MMM</greatestDifference>
-							<greatestDifference id="M">G y 'ж'. d MMM – d MMM</greatestDifference>
-							<greatestDifference id="y">G y 'ж'. d MMM – y 'ж'. d MMM</greatestDifference>
+							<greatestDifference id="d">G y 'ж'. d–d MMM</greatestDifference>
+							<greatestDifference id="M">G y 'ж'. d MMM – d MMM</greatestDifference>
+							<greatestDifference id="y">G y 'ж'. d MMM – y 'ж'. d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">G y 'ж'. d MMM, E – d MMM, E</greatestDifference>
-							<greatestDifference id="M">G y 'ж'. d MMM, E – d MMM, E</greatestDifference>
-							<greatestDifference id="y">G y 'ж'. d MMM, E – y 'ж'. d MMM, E</greatestDifference>
+							<greatestDifference id="d">G y 'ж'. d MMM, E – d MMM, E</greatestDifference>
+							<greatestDifference id="M">G y 'ж'. d MMM, E – d MMM, E</greatestDifference>
+							<greatestDifference id="y">G y 'ж'. d MMM, E – y 'ж'. d MMM, E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
-							<greatestDifference id="M">G y 'ж'. MMMM – MMMM</greatestDifference>
-							<greatestDifference id="y">G y 'ж'. MMMM – y 'ж'. MMMM</greatestDifference>
+							<greatestDifference id="M">G y 'ж'. MMMM – MMMM</greatestDifference>
+							<greatestDifference id="y">G y 'ж'. MMMM – y 'ж'. MMMM</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -1416,19 +1416,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
-							<pattern>y 'ж'. d MMMM, EEEE</pattern>
+							<pattern>y 'ж'. d MMMM, EEEE</pattern>
 							<datetimeSkeleton>yMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
-							<pattern>y 'ж'. d MMMM</pattern>
+							<pattern>y 'ж'. d MMMM</pattern>
 							<datetimeSkeleton>yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
-							<pattern>y 'ж'. dd MMM</pattern>
+							<pattern>y 'ж'. dd MMM</pattern>
 							<datetimeSkeleton>yMMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
@@ -1495,24 +1495,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="EBhm">E, B h:mm</dateFormatItem>
 						<dateFormatItem id="EBhms">E, B h:mm:ss</dateFormatItem>
 						<dateFormatItem id="Ed">d, E</dateFormatItem>
-						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
+						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
-						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="Gy">G y 'ж'.</dateFormatItem>
+						<dateFormatItem id="Gy">G y 'ж'.</dateFormatItem>
 						<dateFormatItem id="GyMd" draft="contributed">dd-MM-GGGGG y</dateFormatItem>
-						<dateFormatItem id="GyMMM">G y 'ж'. MMM</dateFormatItem>
-						<dateFormatItem id="GyMMMd">G y 'ж'. d MMM</dateFormatItem>
-						<dateFormatItem id="GyMMMEd">G y 'ж'. d MMM, E</dateFormatItem>
-						<dateFormatItem id="h">h a</dateFormatItem>
+						<dateFormatItem id="GyMMM">G y 'ж'. MMM</dateFormatItem>
+						<dateFormatItem id="GyMMMd">G y 'ж'. d MMM</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">G y 'ж'. d MMM, E</dateFormatItem>
+						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="H">HH</dateFormatItem>
-						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
-						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
+						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
 						<dateFormatItem id="Hmsv">HH:mm:ss v</dateFormatItem>
-						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
+						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
 						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">dd.MM</dateFormatItem>
@@ -1528,12 +1528,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yM">MM.y</dateFormatItem>
 						<dateFormatItem id="yMd">dd.MM.y</dateFormatItem>
 						<dateFormatItem id="yMEd">dd.MM.y, E</dateFormatItem>
-						<dateFormatItem id="yMMM">y 'ж'. MMM</dateFormatItem>
-						<dateFormatItem id="yMMMd">y 'ж'. d MMM</dateFormatItem>
-						<dateFormatItem id="yMMMEd">y 'ж'. d MMM, E</dateFormatItem>
-						<dateFormatItem id="yMMMM">y 'ж'. MMMM</dateFormatItem>
-						<dateFormatItem id="yQQQ">y 'ж'. QQQ</dateFormatItem>
-						<dateFormatItem id="yQQQQ">y 'ж'. QQQQ</dateFormatItem>
+						<dateFormatItem id="yMMM">y 'ж'. MMM</dateFormatItem>
+						<dateFormatItem id="yMMMd">y 'ж'. d MMM</dateFormatItem>
+						<dateFormatItem id="yMMMEd">y 'ж'. d MMM, E</dateFormatItem>
+						<dateFormatItem id="yMMMM">y 'ж'. MMMM</dateFormatItem>
+						<dateFormatItem id="yQQQ">y 'ж'. QQQ</dateFormatItem>
+						<dateFormatItem id="yQQQQ">y 'ж'. QQQQ</dateFormatItem>
 						<dateFormatItem id="yw" count="one">Y 'жылдың' w-'аптасы'</dateFormatItem>
 						<dateFormatItem id="yw" count="other">Y 'жылдың' w-'аптасы'</dateFormatItem>
 					</availableFormats>
@@ -1555,45 +1555,45 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="d">d–d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMd">
-							<greatestDifference id="d">G y 'ж'. d–d MMM</greatestDifference>
-							<greatestDifference id="G">G y 'ж'. d MMM – G y 'ж'. d MMM</greatestDifference>
-							<greatestDifference id="M">G y 'ж'. d MMM – d MMM</greatestDifference>
-							<greatestDifference id="y">G y 'ж'. d MMM – y 'ж'. d MMM</greatestDifference>
+							<greatestDifference id="d">G y 'ж'. d–d MMM</greatestDifference>
+							<greatestDifference id="G">G y 'ж'. d MMM – G y 'ж'. d MMM</greatestDifference>
+							<greatestDifference id="M">G y 'ж'. d MMM – d MMM</greatestDifference>
+							<greatestDifference id="y">G y 'ж'. d MMM – y 'ж'. d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMEd">
-							<greatestDifference id="d">G y 'ж'. d MMM, E – d MMM, E</greatestDifference>
-							<greatestDifference id="G">G y 'ж'. d MMM, E – G y 'ж'. d MMM, E</greatestDifference>
-							<greatestDifference id="M">G y 'ж'. d MMM, E – d MMM, E</greatestDifference>
-							<greatestDifference id="y">G y 'ж'. d MMM, E – y 'ж'. d MMM, E</greatestDifference>
+							<greatestDifference id="d">G y 'ж'. d MMM, E – d MMM, E</greatestDifference>
+							<greatestDifference id="G">G y 'ж'. d MMM, E – G y 'ж'. d MMM, E</greatestDifference>
+							<greatestDifference id="M">G y 'ж'. d MMM, E – d MMM, E</greatestDifference>
+							<greatestDifference id="y">G y 'ж'. d MMM, E – y 'ж'. d MMM, E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a">h a – h a</greatestDifference>
-							<greatestDifference id="h">h–h a</greatestDifference>
+							<greatestDifference id="a">h a – h a</greatestDifference>
+							<greatestDifference id="h">h–h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H">HH–HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
-							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
-							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
 							<greatestDifference id="H">HH:mm–HH:mm</greatestDifference>
 							<greatestDifference id="m">HH:mm–HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
-							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
-							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H">HH:mm–HH:mm v</greatestDifference>
 							<greatestDifference id="m">HH:mm–HH:mm v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a">h a – h a v</greatestDifference>
-							<greatestDifference id="h">h–h a v</greatestDifference>
+							<greatestDifference id="a">h a – h a v</greatestDifference>
+							<greatestDifference id="h">h–h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
 							<greatestDifference id="H">HH–HH v</greatestDifference>
@@ -1638,22 +1638,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">dd.MM.y, E – dd.MM.y, E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
-							<greatestDifference id="M">y 'ж'. MMM–MMM</greatestDifference>
-							<greatestDifference id="y">y 'ж'. MMM – y 'ж'. MMM</greatestDifference>
+							<greatestDifference id="M">y 'ж'. MMM–MMM</greatestDifference>
+							<greatestDifference id="y">y 'ж'. MMM – y 'ж'. MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
-							<greatestDifference id="d">y 'ж'. d–d MMM</greatestDifference>
-							<greatestDifference id="M">y 'ж'. d MMM – d MMM</greatestDifference>
-							<greatestDifference id="y">y 'ж'. d MMM – y 'ж'. d MMM</greatestDifference>
+							<greatestDifference id="d">y 'ж'. d–d MMM</greatestDifference>
+							<greatestDifference id="M">y 'ж'. d MMM – d MMM</greatestDifference>
+							<greatestDifference id="y">y 'ж'. d MMM – y 'ж'. d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">y 'ж'. d MMM, E – y 'ж'. d MMM, E</greatestDifference>
-							<greatestDifference id="M">y 'ж'. d MMM, E – d MMM, E</greatestDifference>
-							<greatestDifference id="y">y 'ж'. d MMM, E – y 'ж'. d MMM, E</greatestDifference>
+							<greatestDifference id="d">y 'ж'. d MMM, E – y 'ж'. d MMM, E</greatestDifference>
+							<greatestDifference id="M">y 'ж'. d MMM, E – d MMM, E</greatestDifference>
+							<greatestDifference id="y">y 'ж'. d MMM, E – y 'ж'. d MMM, E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
-							<greatestDifference id="M">y 'ж'. MMMM – MMMM</greatestDifference>
-							<greatestDifference id="y">y 'ж'. MMMM – y 'ж'. MMMM</greatestDifference>
+							<greatestDifference id="M">y 'ж'. MMMM – MMMM</greatestDifference>
+							<greatestDifference id="y">y 'ж'. MMMM – y 'ж'. MMMM</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -4596,9 +4596,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">

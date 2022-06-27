@@ -175,6 +175,7 @@ For terms of use, see http://www.unicode.org/copyright.html
         <!-- year-duration -->
         <convertUnit source='month' baseUnit='year' factor='1/12' systems="metric"/>
         <convertUnit source='month-person' baseUnit='year' factor='1/12'/>
+        <convertUnit source='quarter' baseUnit='year' factor='1/4' systems="metric"/>
         <convertUnit source='year' baseUnit='year' systems="metric"/>
         <convertUnit source='year-person' baseUnit='year'/>
         <convertUnit source='decade' baseUnit='year' factor='10' systems="metric"/>

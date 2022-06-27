@@ -919,11 +919,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} នៅ​ម៉ោង {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} នៅ​ម៉ោង {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1468,11 +1474,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} នៅ​ម៉ោង {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} នៅ​ម៉ោង {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -4517,25 +4529,41 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>#,##0.00¤</pattern>
+					<pattern alt="alphaNextToNumber" draft="provisional">#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00¤;(#,##0.00¤)</pattern>
+					<pattern alt="alphaNextToNumber" draft="provisional">#,##0.00 ¤;(#,##0.00 ¤)</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00;(#,##0.00)</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
 					<pattern type="1000" count="other">¤0 ពាន់</pattern>
+					<pattern type="1000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 0 ពាន់</pattern>
 					<pattern type="10000" count="other">¤00 ពាន់</pattern>
+					<pattern type="10000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 00 ពាន់</pattern>
 					<pattern type="100000" count="other">¤000 ពាន់</pattern>
+					<pattern type="100000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 000 ពាន់</pattern>
 					<pattern type="1000000" count="other">¤0 លាន</pattern>
+					<pattern type="1000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 0 លាន</pattern>
 					<pattern type="10000000" count="other">¤00 លាន</pattern>
+					<pattern type="10000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 00 លាន</pattern>
 					<pattern type="100000000" count="other">¤000 លាន</pattern>
+					<pattern type="100000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 000 លាន</pattern>
 					<pattern type="1000000000" count="other">¤0 ប៊ីលាន</pattern>
+					<pattern type="1000000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 0 ប៊ីលាន</pattern>
 					<pattern type="10000000000" count="other">¤00 ប៊ីលាន</pattern>
+					<pattern type="10000000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 00 ប៊ីលាន</pattern>
 					<pattern type="100000000000" count="other">¤000 ប៊ីលាន</pattern>
+					<pattern type="100000000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 000 ប៊ីលាន</pattern>
 					<pattern type="1000000000000" count="other">¤0 ទ្រីលាន</pattern>
+					<pattern type="1000000000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 0 ទ្រីលាន</pattern>
 					<pattern type="10000000000000" count="other">¤00 ទ្រីលាន</pattern>
+					<pattern type="10000000000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 00 ទ្រីលាន</pattern>
 					<pattern type="100000000000000" count="other">¤000 ទ្រីលាន</pattern>
+					<pattern type="100000000000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 000 ទ្រីលាន</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<unitPattern count="other">{0} {1}</unitPattern>

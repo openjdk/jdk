@@ -81,6 +81,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dayWidth>
 					</dayContext>
 				</days>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="GyMd" draft="contributed">dd.MM.y GGGGG</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
 			</calendar>
 		</calendars>
 		<fields>

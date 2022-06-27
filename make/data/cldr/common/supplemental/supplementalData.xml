@@ -1307,6 +1307,7 @@ XXX Code for transations where no currency is involved
 		<language type="amo" scripts="Latn"/>
 		<language type="an" scripts="Latn"/>
 		<language type="ang" scripts="Latn" alt="secondary"/>
+		<language type="ann" scripts="Latn" territories="NG"/>
 		<language type="anp" scripts="Deva"/>
 		<language type="aoz" scripts="Latn"/>
 		<language type="ar" scripts="Arab" territories="AE BH DJ DZ EG EH ER IL IQ JO KM KW LB LY MA MR OM PS QA SA SD SO SY TD TN YE"/>
@@ -2048,6 +2049,7 @@ XXX Code for transations where no currency is involved
 		<language type="pfl" scripts="Latn"/>
 		<language type="phn" scripts="Phnx" alt="secondary"/>
 		<language type="pi" scripts="Deva Sinh Thai" alt="secondary"/>
+		<language type="pis" scripts="Latn" territories="SB"/>
 		<language type="pko" scripts="Latn"/>
 		<language type="pl" scripts="Latn" territories="PL"/>
 		<language type="pl" territories="GB UA" alt="secondary"/>
@@ -2169,7 +2171,7 @@ XXX Code for transations where no currency is involved
 		<language type="smj" scripts="Latn"/>
 		<language type="smn" scripts="Latn"/>
 		<language type="smp" scripts="Samr" alt="secondary"/>
-		<language type="sms" scripts="Latn"/>
+		<language type="sms" scripts="Latn" territories="FI"/>
 		<language type="sn" scripts="Latn" territories="ZW"/>
 		<language type="snf" territories="SN" alt="secondary"/>
 		<language type="snk" scripts="Latn"/>
@@ -2261,6 +2263,7 @@ XXX Code for transations where no currency is involved
 		<language type="tnr" territories="SN" alt="secondary"/>
 		<language type="to" scripts="Latn" territories="TO"/>
 		<language type="tog" scripts="Latn"/>
+		<language type="tok" scripts="Latn"/>
 		<language type="tpi" scripts="Latn" territories="PG"/>
 		<language type="tr" scripts="Latn" territories="CY TR"/>
 		<language type="tr" scripts="Arab" territories="DE" alt="secondary"/>
@@ -2313,6 +2316,7 @@ XXX Code for transations where no currency is involved
 		<language type="ve" scripts="Latn"/>
 		<language type="ve" territories="ZA" alt="secondary"/>
 		<language type="vec" scripts="Latn"/>
+		<language type="vec" territories="IT BR HR SI MX" alt="secondary"/>
 		<language type="vep" scripts="Latn"/>
 		<language type="vi" scripts="Latn" territories="VN"/>
 		<language type="vi" scripts="Hani" territories="US" alt="secondary"/>
@@ -3692,6 +3696,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="ar" populationPercent="0.071"/>	<!--Arabic-->
 			<languagePopulation type="cch" populationPercent="0.021"/>	<!--Atsam-->
 			<languagePopulation type="amo" populationPercent="0.0087"/>	<!--Amo-->
+            <languagePopulation type="ann" populationPercent="0.0015"/>	<!--Obolo-->
 			<languagePopulation type="ff" populationPercent="0" references="R1150"/>	<!--Fulah-->
 			<languagePopulation type="ff_Adlm" populationPercent="0" references="R1150"/>	<!--Fulah (Adlam)-->
 		</territory>
@@ -3957,6 +3962,7 @@ XXX Code for transations where no currency is involved
 		</territory>
 		<territory type="SB" gdp="1330000000" literacyPercent="84.1" population="685097">	<!--Solomon Islands-->
 			<languagePopulation type="en" populationPercent="100" officialStatus="official" references="R1045"/>	<!--English-->
+			<languagePopulation type="pis" populationPercent="82.33" references="R1333"/>	<!--Pijin-->
 			<languagePopulation type="rug" populationPercent="1.4"/>	<!--Roviana-->
 		</territory>
 		<territory type="SC" gdp="2750000000" literacyPercent="91.8" population="95981">	<!--Seychelles-->
@@ -4708,7 +4714,8 @@ XXX Code for transations where no currency is involved
 
     <calendarPreferenceData>
         <calendarPreference territories="001" ordering="gregorian"/>
-        <calendarPreference territories="DJ DZ EH ER IQ JO KM LB LY MA MR OM PS SD SY TD TN YE" ordering="gregorian islamic islamic-civil islamic-tbla"/>
+        <calendarPreference territories="BD DJ DZ EH ER ID IQ JO KM LB LY MA MR MY NE OM PK PS SD SY TD TN YE" ordering="gregorian islamic islamic-civil islamic-tbla"/>
+        <calendarPreference territories="AL AZ MV TJ TM TR UZ XK" ordering="gregorian islamic-civil islamic-tbla"/>
         <calendarPreference territories="AE BH KW QA" ordering="gregorian islamic-umalqura islamic islamic-civil islamic-tbla"/>
         <calendarPreference territories="AF IR" ordering="persian gregorian islamic islamic-civil islamic-tbla"/>
         <calendarPreference territories="CN CX HK MO SG" ordering="gregorian chinese"/>
@@ -5372,10 +5379,16 @@ XXX Code for transations where no currency is involved
 		<parentLocale parent="en_150" locales="en_AT en_BE en_CH en_DE en_DK en_FI en_NL en_SE en_SI"/>
 		<parentLocale parent="en_IN" locales="hi_Latn"/>
 		<parentLocale parent="es_419" locales="es_AR es_BO es_BR es_BZ es_CL es_CO es_CR es_CU es_DO es_EC es_GT es_HN es_MX es_NI es_PA es_PE es_PR es_PY es_SV es_US es_UY es_VE"/>
+		<parentLocale parent="fr_HT" locales="ht"/>
 		<parentLocale parent="no" locales="nb nn"/>
 		<parentLocale parent="pt_PT" locales="pt_AO pt_CH pt_CV pt_FR pt_GQ pt_GW pt_LU pt_MO pt_MZ pt_ST pt_TL"/>
 		<parentLocale parent="zh_Hant_HK" locales="zh_Hant_MO"/>
 	</parentLocales>
+
+	<personNamesDefaults>
+		<nameOrderLocalesDefault order="givenFirst">en und</nameOrderLocalesDefault>
+		<nameOrderLocalesDefault order="surnameFirst">hu ja ko vi yue zh</nameOrderLocalesDefault>
+	</personNamesDefaults>
 
 	<references>
 		<reference type="R1000" uri="https://www.cia.gov/cia/publications/factbook/geos/aa.html">Dutch official</reference>
@@ -5699,5 +5712,6 @@ XXX Code for transations where no currency is involved
 		<reference type="R1330" uri="https://en.wikipedia.org/wiki/Languages_of_the_United_Kingdom">Analyzed from 2011 UK census and other sources</reference>
 		<reference type="R1331" uri="https://en.wikipedia.org/wiki/Languages_of_Canada">In total 86.2% of Canadians have working knowledge of English while 29.8% have a working knowledge of French.</reference>
 		<reference type="R1332" uri="https://statisticsmaldives.gov.mv/statistical-release-iii-education">2014 Maldives: 98% literacy in Divehi, 75% in English</reference>
+		<reference type="R1333" uri="https://www.ethnologue.com/language/pis">564000 speakers (divided by 685097 total population gives 82.33%)</reference>
 	</references>
 </supplementalData>

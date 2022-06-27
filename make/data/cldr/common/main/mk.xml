@@ -1282,13 +1282,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
-							<pattern draft="contributed">EEEE, dd MMMM y 'г'. G</pattern>
+							<pattern draft="contributed">EEEE, dd MMMM y 'г'. G</pattern>
 							<datetimeSkeleton draft="contributed">GyMMMMEEEEdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
-							<pattern draft="contributed">dd MMMM y 'г'. G</pattern>
+							<pattern draft="contributed">dd MMMM y 'г'. G</pattern>
 							<datetimeSkeleton draft="contributed">GyMMMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
@@ -1309,25 +1309,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<availableFormats>
 						<dateFormatItem id="E" draft="contributed">E</dateFormatItem>
 						<dateFormatItem id="Ed" draft="contributed">d E</dateFormatItem>
-						<dateFormatItem id="Gy" draft="contributed">y 'г'. G</dateFormatItem>
-						<dateFormatItem id="GyMMM" draft="contributed">MMM y 'г'. G</dateFormatItem>
-						<dateFormatItem id="GyMMMd" draft="contributed">dd MMM y 'г'. G</dateFormatItem>
-						<dateFormatItem id="GyMMMEd" draft="contributed">E, dd MMM y 'г'. G</dateFormatItem>
+						<dateFormatItem id="Gy" draft="contributed">y 'г'. G</dateFormatItem>
+						<dateFormatItem id="GyMMM" draft="contributed">MMM y 'г'. G</dateFormatItem>
+						<dateFormatItem id="GyMMMd" draft="contributed">dd MMM y 'г'. G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd" draft="contributed">E, dd MMM y 'г'. G</dateFormatItem>
 						<dateFormatItem id="Md" draft="contributed">dd.M</dateFormatItem>
 						<dateFormatItem id="MEd" draft="contributed">E, dd.M</dateFormatItem>
 						<dateFormatItem id="MMMd" draft="contributed">dd MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd" draft="contributed">E, dd MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd" draft="contributed">dd MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMEd" draft="contributed">E, dd MMMM</dateFormatItem>
-						<dateFormatItem id="y" draft="contributed">y 'г'. G</dateFormatItem>
-						<dateFormatItem id="yyyy" draft="contributed">y 'г'. G</dateFormatItem>
+						<dateFormatItem id="y" draft="contributed">y 'г'. G</dateFormatItem>
+						<dateFormatItem id="yyyy" draft="contributed">y 'г'. G</dateFormatItem>
 						<dateFormatItem id="yyyyM" draft="contributed">M.y G</dateFormatItem>
 						<dateFormatItem id="yyyyMd" draft="contributed">dd.M.y G</dateFormatItem>
 						<dateFormatItem id="yyyyMEd" draft="contributed">E, dd.M.y G</dateFormatItem>
-						<dateFormatItem id="yyyyMMM" draft="contributed">MMM y 'г'. G</dateFormatItem>
-						<dateFormatItem id="yyyyMMMd" draft="contributed">dd MMM y 'г'. G</dateFormatItem>
-						<dateFormatItem id="yyyyMMMEd" draft="contributed">E, dd MMM y 'г'. G</dateFormatItem>
-						<dateFormatItem id="yyyyMMMM" draft="contributed">MMMM y 'г'. G</dateFormatItem>
+						<dateFormatItem id="yyyyMMM" draft="contributed">MMM y 'г'. G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd" draft="contributed">dd MMM y 'г'. G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd" draft="contributed">E, dd MMM y 'г'. G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM" draft="contributed">MMMM y 'г'. G</dateFormatItem>
 						<dateFormatItem id="yyyyQQQ" draft="contributed">QQQ y G</dateFormatItem>
 						<dateFormatItem id="yyyyQQQQ" draft="contributed">QQQ y G</dateFormatItem>
 					</availableFormats>
@@ -1480,13 +1480,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
-							<pattern draft="contributed">EEEE, dd MMMM y 'г'. G</pattern>
+							<pattern draft="contributed">EEEE, dd MMMM y 'г'. G</pattern>
 							<datetimeSkeleton draft="contributed">GyMMMMEEEEdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
-							<pattern draft="contributed">dd MMMM y 'г'. G</pattern>
+							<pattern draft="contributed">dd MMMM y 'г'. G</pattern>
 							<datetimeSkeleton draft="contributed">GyMMMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
@@ -1590,13 +1590,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
-							<pattern>EEEE, dd MMMM y 'г'. G</pattern>
+							<pattern>EEEE, dd MMMM y 'г'. G</pattern>
 							<datetimeSkeleton>GyMMMMEEEEdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
-							<pattern>dd MMMM y 'г'. G</pattern>
+							<pattern>dd MMMM y 'г'. G</pattern>
 							<datetimeSkeleton>GyMMMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
@@ -1643,20 +1643,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
 						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">d E</dateFormatItem>
-						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
+						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
-						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="Gy">y 'г'. G</dateFormatItem>
+						<dateFormatItem id="Gy">y 'г'. G</dateFormatItem>
 						<dateFormatItem id="GyMd">d.M.y GGGGG</dateFormatItem>
-						<dateFormatItem id="GyMMM">MMM y 'г'. G</dateFormatItem>
-						<dateFormatItem id="GyMMMd">dd MMM y 'г'. G</dateFormatItem>
-						<dateFormatItem id="GyMMMEd">E, dd MMM y 'г'. G</dateFormatItem>
-						<dateFormatItem id="h">h a</dateFormatItem>
+						<dateFormatItem id="GyMMM">MMM y 'г'. G</dateFormatItem>
+						<dateFormatItem id="GyMMMd">dd MMM y 'г'. G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">E, dd MMM y 'г'. G</dateFormatItem>
+						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="H">HH</dateFormatItem>
-						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
-						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">dd.M</dateFormatItem>
@@ -1667,15 +1667,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="MMMMd">dd MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMEd">E, dd MMMM</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
-						<dateFormatItem id="y">y 'г'. G</dateFormatItem>
-						<dateFormatItem id="yyyy">y 'г'. G</dateFormatItem>
+						<dateFormatItem id="y">y 'г'. G</dateFormatItem>
+						<dateFormatItem id="yyyy">y 'г'. G</dateFormatItem>
 						<dateFormatItem id="yyyyM">M.y G</dateFormatItem>
 						<dateFormatItem id="yyyyMd">dd.M.y G</dateFormatItem>
 						<dateFormatItem id="yyyyMEd">E, dd.M.y G</dateFormatItem>
-						<dateFormatItem id="yyyyMMM">MMM y 'г'. G</dateFormatItem>
-						<dateFormatItem id="yyyyMMMd">dd MMM y 'г'. G</dateFormatItem>
-						<dateFormatItem id="yyyyMMMEd">E, dd MMM y 'г'. G</dateFormatItem>
-						<dateFormatItem id="yyyyMMMM">MMMM y 'г'. G</dateFormatItem>
+						<dateFormatItem id="yyyyMMM">MMM y 'г'. G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd">dd MMM y 'г'. G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd">E, dd MMM y 'г'. G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM">MMMM y 'г'. G</dateFormatItem>
 						<dateFormatItem id="yyyyQQQ">QQQ y G</dateFormatItem>
 						<dateFormatItem id="yyyyQQQQ">QQQ y G</dateFormatItem>
 					</availableFormats>
@@ -1732,33 +1732,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">G y MMM d, E – y MMM d, E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a">h a – h a</greatestDifference>
-							<greatestDifference id="h">h–h a</greatestDifference>
+							<greatestDifference id="a">h a – h a</greatestDifference>
+							<greatestDifference id="h">h–h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H">HH–HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
-							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
-							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
 							<greatestDifference id="H">HH:mm–HH:mm</greatestDifference>
 							<greatestDifference id="m">HH:mm–HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
-							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
-							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H">HH:mm–HH:mm v</greatestDifference>
 							<greatestDifference id="m">HH:mm–HH:mm v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a">h a – h a v</greatestDifference>
-							<greatestDifference id="h">h–h a v</greatestDifference>
+							<greatestDifference id="a">h a – h a v</greatestDifference>
+							<greatestDifference id="h">h–h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
 							<greatestDifference id="H">HH–HH v</greatestDifference>
@@ -2179,21 +2179,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
+							<pattern draft="contributed">{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1}, 'во' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern draft="contributed">{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1}, 'во' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
+							<pattern draft="contributed">{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1}, 'во' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
+							<pattern draft="contributed">{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1}, 'во' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -2206,24 +2218,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
 						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">d E</dateFormatItem>
-						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
+						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
-						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMd">d.M.y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM y G</dateFormatItem>
-						<dateFormatItem id="h">h a</dateFormatItem>
+						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="H">HH</dateFormatItem>
-						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
-						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
+						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
 						<dateFormatItem id="Hmsv">HH:mm:ss v</dateFormatItem>
-						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
+						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
 						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">d.M</dateFormatItem>
@@ -2241,12 +2253,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yM">M.y</dateFormatItem>
 						<dateFormatItem id="yMd">d.M.y</dateFormatItem>
 						<dateFormatItem id="yMEd">E, d.M.y</dateFormatItem>
-						<dateFormatItem id="yMMM">MMM y 'г'.</dateFormatItem>
-						<dateFormatItem id="yMMMd">d MMM y 'г'.</dateFormatItem>
-						<dateFormatItem id="yMMMEd">E, d MMM y 'г'.</dateFormatItem>
-						<dateFormatItem id="yMMMM">MMMM y 'г'.</dateFormatItem>
-						<dateFormatItem id="yQQQ">QQQ y 'г'.</dateFormatItem>
-						<dateFormatItem id="yQQQQ">QQQQ y 'г'.</dateFormatItem>
+						<dateFormatItem id="yMMM">MMM y 'г'.</dateFormatItem>
+						<dateFormatItem id="yMMMd">d MMM y 'г'.</dateFormatItem>
+						<dateFormatItem id="yMMMEd">E, d MMM y 'г'.</dateFormatItem>
+						<dateFormatItem id="yMMMM">MMMM y 'г'.</dateFormatItem>
+						<dateFormatItem id="yQQQ">QQQ y 'г'.</dateFormatItem>
+						<dateFormatItem id="yQQQQ">QQQQ y 'г'.</dateFormatItem>
 						<dateFormatItem id="yw" count="one">w. 'седмица' 'од' Y</dateFormatItem>
 						<dateFormatItem id="yw" count="other">w. 'седмица' 'од' Y</dateFormatItem>
 					</availableFormats>
@@ -2305,33 +2317,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">G y MMM d, E – y MMM d, E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a">h a – h a</greatestDifference>
-							<greatestDifference id="h">h – h a</greatestDifference>
+							<greatestDifference id="a">h a – h a</greatestDifference>
+							<greatestDifference id="h">h – h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H">HH – HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
-							<greatestDifference id="h">h:mm – h:mm a</greatestDifference>
-							<greatestDifference id="m">h:mm – h:mm a</greatestDifference>
+							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h">h:mm – h:mm a</greatestDifference>
+							<greatestDifference id="m">h:mm – h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
 							<greatestDifference id="H">HH:mm – HH:mm</greatestDifference>
 							<greatestDifference id="m">HH:mm – HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
-							<greatestDifference id="h">h:mm – h:mm a v</greatestDifference>
-							<greatestDifference id="m">h:mm – h:mm a v</greatestDifference>
+							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="h">h:mm – h:mm a v</greatestDifference>
+							<greatestDifference id="m">h:mm – h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H">HH:mm – HH:mm v</greatestDifference>
 							<greatestDifference id="m">HH:mm – HH:mm v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a">h a – h a v</greatestDifference>
-							<greatestDifference id="h">h – h a v</greatestDifference>
+							<greatestDifference id="a">h a – h a v</greatestDifference>
+							<greatestDifference id="h">h – h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
 							<greatestDifference id="H">HH – HH v</greatestDifference>
@@ -2473,13 +2485,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
-							<pattern draft="contributed">EEEE, dd MMMM y 'г'. G</pattern>
+							<pattern draft="contributed">EEEE, dd MMMM y 'г'. G</pattern>
 							<datetimeSkeleton draft="contributed">GyMMMMEEEEdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
-							<pattern draft="contributed">dd MMMM y 'г'. G</pattern>
+							<pattern draft="contributed">dd MMMM y 'г'. G</pattern>
 							<datetimeSkeleton draft="contributed">GyMMMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
@@ -2500,25 +2512,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<availableFormats>
 						<dateFormatItem id="E" draft="contributed">E</dateFormatItem>
 						<dateFormatItem id="Ed" draft="contributed">d E</dateFormatItem>
-						<dateFormatItem id="Gy" draft="contributed">y 'г'. G</dateFormatItem>
-						<dateFormatItem id="GyMMM" draft="contributed">MMM y 'г'. G</dateFormatItem>
-						<dateFormatItem id="GyMMMd" draft="contributed">dd MMM y 'г'. G</dateFormatItem>
-						<dateFormatItem id="GyMMMEd" draft="contributed">E, dd MMM y 'г'. G</dateFormatItem>
+						<dateFormatItem id="Gy" draft="contributed">y 'г'. G</dateFormatItem>
+						<dateFormatItem id="GyMMM" draft="contributed">MMM y 'г'. G</dateFormatItem>
+						<dateFormatItem id="GyMMMd" draft="contributed">dd MMM y 'г'. G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd" draft="contributed">E, dd MMM y 'г'. G</dateFormatItem>
 						<dateFormatItem id="Md" draft="contributed">dd.M</dateFormatItem>
 						<dateFormatItem id="MEd" draft="contributed">E, dd.M</dateFormatItem>
 						<dateFormatItem id="MMMd" draft="contributed">dd MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd" draft="contributed">E, dd MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd" draft="contributed">dd MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMEd" draft="contributed">E, dd MMMM</dateFormatItem>
-						<dateFormatItem id="y" draft="contributed">y 'г'. G</dateFormatItem>
-						<dateFormatItem id="yyyy" draft="contributed">y 'г'. G</dateFormatItem>
+						<dateFormatItem id="y" draft="contributed">y 'г'. G</dateFormatItem>
+						<dateFormatItem id="yyyy" draft="contributed">y 'г'. G</dateFormatItem>
 						<dateFormatItem id="yyyyM" draft="contributed">M.y G</dateFormatItem>
 						<dateFormatItem id="yyyyMd" draft="contributed">dd.M.y G</dateFormatItem>
 						<dateFormatItem id="yyyyMEd" draft="contributed">E, dd.M.y G</dateFormatItem>
-						<dateFormatItem id="yyyyMMM" draft="contributed">MMM y 'г'. G</dateFormatItem>
-						<dateFormatItem id="yyyyMMMd" draft="contributed">dd MMM y 'г'. G</dateFormatItem>
-						<dateFormatItem id="yyyyMMMEd" draft="contributed">E, dd MMM y 'г'. G</dateFormatItem>
-						<dateFormatItem id="yyyyMMMM" draft="contributed">MMMM y 'г'. G</dateFormatItem>
+						<dateFormatItem id="yyyyMMM" draft="contributed">MMM y 'г'. G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd" draft="contributed">dd MMM y 'г'. G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd" draft="contributed">E, dd MMM y 'г'. G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM" draft="contributed">MMMM y 'г'. G</dateFormatItem>
 						<dateFormatItem id="yyyyQQQ" draft="contributed">QQQ y G</dateFormatItem>
 						<dateFormatItem id="yyyyQQQQ" draft="contributed">QQQ y G</dateFormatItem>
 					</availableFormats>
@@ -2728,13 +2740,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
-							<pattern draft="contributed">EEEE, dd MMMM y 'г'. G</pattern>
+							<pattern draft="contributed">EEEE, dd MMMM y 'г'. G</pattern>
 							<datetimeSkeleton draft="contributed">GyMMMMEEEEdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
-							<pattern draft="contributed">dd MMMM y 'г'. G</pattern>
+							<pattern draft="contributed">dd MMMM y 'г'. G</pattern>
 							<datetimeSkeleton draft="contributed">GyMMMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
@@ -2755,25 +2767,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<availableFormats>
 						<dateFormatItem id="E" draft="contributed">E</dateFormatItem>
 						<dateFormatItem id="Ed" draft="contributed">d E</dateFormatItem>
-						<dateFormatItem id="Gy" draft="contributed">y 'г'. G</dateFormatItem>
-						<dateFormatItem id="GyMMM" draft="contributed">MMM y 'г'. G</dateFormatItem>
-						<dateFormatItem id="GyMMMd" draft="contributed">dd MMM y 'г'. G</dateFormatItem>
-						<dateFormatItem id="GyMMMEd" draft="contributed">E, dd MMM y 'г'. G</dateFormatItem>
+						<dateFormatItem id="Gy" draft="contributed">y 'г'. G</dateFormatItem>
+						<dateFormatItem id="GyMMM" draft="contributed">MMM y 'г'. G</dateFormatItem>
+						<dateFormatItem id="GyMMMd" draft="contributed">dd MMM y 'г'. G</dateFormatItem>
+						<dateFormatItem id="GyMMMEd" draft="contributed">E, dd MMM y 'г'. G</dateFormatItem>
 						<dateFormatItem id="Md" draft="contributed">dd.M</dateFormatItem>
 						<dateFormatItem id="MEd" draft="contributed">E, dd.M</dateFormatItem>
 						<dateFormatItem id="MMMd" draft="contributed">dd MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd" draft="contributed">E, dd MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd" draft="contributed">dd MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMEd" draft="contributed">E, dd MMMM</dateFormatItem>
-						<dateFormatItem id="y" draft="contributed">y 'г'. G</dateFormatItem>
-						<dateFormatItem id="yyyy" draft="contributed">y 'г'. G</dateFormatItem>
+						<dateFormatItem id="y" draft="contributed">y 'г'. G</dateFormatItem>
+						<dateFormatItem id="yyyy" draft="contributed">y 'г'. G</dateFormatItem>
 						<dateFormatItem id="yyyyM" draft="contributed">M.y G</dateFormatItem>
 						<dateFormatItem id="yyyyMd" draft="contributed">dd.M.y G</dateFormatItem>
 						<dateFormatItem id="yyyyMEd" draft="contributed">E, dd.M.y G</dateFormatItem>
-						<dateFormatItem id="yyyyMMM" draft="contributed">MMM y 'г'. G</dateFormatItem>
-						<dateFormatItem id="yyyyMMMd" draft="contributed">dd MMM y 'г'. G</dateFormatItem>
-						<dateFormatItem id="yyyyMMMEd" draft="contributed">E, dd MMM y 'г'. G</dateFormatItem>
-						<dateFormatItem id="yyyyMMMM" draft="contributed">MMMM y 'г'. G</dateFormatItem>
+						<dateFormatItem id="yyyyMMM" draft="contributed">MMM y 'г'. G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd" draft="contributed">dd MMM y 'г'. G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd" draft="contributed">E, dd MMM y 'г'. G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM" draft="contributed">MMMM y 'г'. G</dateFormatItem>
 						<dateFormatItem id="yyyyQQQ" draft="contributed">QQQ y G</dateFormatItem>
 						<dateFormatItem id="yyyyQQQQ" draft="contributed">QQQ y G</dateFormatItem>
 					</availableFormats>
@@ -5921,9 +5933,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2022 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-DFS-2016
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="tok"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="tok">Toki Pona</language>
+		</languages>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[a e i j k l m n o p s t u w]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[b c d f g h q r v x y z]</exemplarCharacters>
+		<exemplarCharacters type="index">[A E I J K L M N O P S T U W]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- ‑ / # % + 0 1 2 3 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‑ , ; \: ! ? . ' ‘ ’ &quot; “ ” ( ) \[ \] @ * / #]</exemplarCharacters>
+	</characters>
+</ldml>

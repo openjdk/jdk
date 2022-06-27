@@ -102,36 +102,36 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</availableFormats>
 					<intervalFormats>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d">MM-dd – MM-dd</greatestDifference>
-							<greatestDifference id="d" alt="variant">d/M – d/M</greatestDifference>
-							<greatestDifference id="M">MM-dd – MM-dd</greatestDifference>
-							<greatestDifference id="M" alt="variant">d/M – d/M</greatestDifference>
+							<greatestDifference id="d">MM-dd – MM-dd</greatestDifference>
+							<greatestDifference id="d" alt="variant">d/M – d/M</greatestDifference>
+							<greatestDifference id="M">MM-dd – MM-dd</greatestDifference>
+							<greatestDifference id="M" alt="variant">d/M – d/M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">E, MM-dd – E, MM-dd</greatestDifference>
-							<greatestDifference id="d" alt="variant">E, d/M – E, d/M</greatestDifference>
-							<greatestDifference id="M">E, MM-dd – E, MM-dd</greatestDifference>
-							<greatestDifference id="M" alt="variant">E, d/M – E, d/M</greatestDifference>
+							<greatestDifference id="d">E, MM-dd – E, MM-dd</greatestDifference>
+							<greatestDifference id="d" alt="variant">E, d/M – E, d/M</greatestDifference>
+							<greatestDifference id="M">E, MM-dd – E, MM-dd</greatestDifference>
+							<greatestDifference id="M" alt="variant">E, d/M – E, d/M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M">y-MM – y-MM</greatestDifference>
-							<greatestDifference id="y">y-MM – y-MM</greatestDifference>
+							<greatestDifference id="M">y-MM – y-MM</greatestDifference>
+							<greatestDifference id="y">y-MM – y-MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d">y-MM-dd – y-MM-dd</greatestDifference>
-							<greatestDifference id="d" alt="variant">d/M/y – d/M/y</greatestDifference>
-							<greatestDifference id="M">y-MM-dd – y-MM-dd</greatestDifference>
-							<greatestDifference id="M" alt="variant">d/M/y – d/M/y</greatestDifference>
-							<greatestDifference id="y">y-MM-dd – y-MM-dd</greatestDifference>
-							<greatestDifference id="y" alt="variant">d/M/y – d/M/y</greatestDifference>
+							<greatestDifference id="d">y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="d" alt="variant">d/M/y – d/M/y</greatestDifference>
+							<greatestDifference id="M">y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="M" alt="variant">d/M/y – d/M/y</greatestDifference>
+							<greatestDifference id="y">y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="y" alt="variant">d/M/y – d/M/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">E, y-MM-dd – E, y-MM-dd</greatestDifference>
-							<greatestDifference id="d" alt="variant">E, d/M/y – E, d/M/y</greatestDifference>
-							<greatestDifference id="M">E, y-MM-dd – E, y-MM-dd</greatestDifference>
-							<greatestDifference id="M" alt="variant">E, d/M/y – E, d/M/y</greatestDifference>
-							<greatestDifference id="y">E, y-MM-dd – E, y-MM-dd</greatestDifference>
-							<greatestDifference id="y" alt="variant">E, d/M/y – E, d/M/y</greatestDifference>
+							<greatestDifference id="d">E, y-MM-dd – E, y-MM-dd</greatestDifference>
+							<greatestDifference id="d" alt="variant">E, d/M/y – E, d/M/y</greatestDifference>
+							<greatestDifference id="M">E, y-MM-dd – E, y-MM-dd</greatestDifference>
+							<greatestDifference id="M" alt="variant">E, d/M/y – E, d/M/y</greatestDifference>
+							<greatestDifference id="y">E, y-MM-dd – E, y-MM-dd</greatestDifference>
+							<greatestDifference id="y" alt="variant">E, d/M/y – E, d/M/y</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -149,9 +149,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="EBhm">E, h:mm B</dateFormatItem>
 						<dateFormatItem id="EBhms">E, h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E d</dateFormatItem>
-						<dateFormatItem id="Ehm">E, h:mm a</dateFormatItem>
+						<dateFormatItem id="Ehm">E, h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E, HH:mm</dateFormatItem>
-						<dateFormatItem id="Ehms">E, h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Ehms">E, h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E, HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Md" alt="variant">d/M</dateFormatItem>
 						<dateFormatItem id="MEd" alt="variant">E, d/M</dateFormatItem>
@@ -215,15 +215,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
 							<greatestDifference id="d">M/d–M/d</greatestDifference>
-							<greatestDifference id="d" alt="variant">d/M – d/M</greatestDifference>
+							<greatestDifference id="d" alt="variant">d/M – d/M</greatestDifference>
 							<greatestDifference id="M">M/d–M/d</greatestDifference>
-							<greatestDifference id="M" alt="variant">d/M – d/M</greatestDifference>
+							<greatestDifference id="M" alt="variant">d/M – d/M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
 							<greatestDifference id="d">E, M/d–E, M/d</greatestDifference>
-							<greatestDifference id="d" alt="variant">E, d/M – E, d/M</greatestDifference>
+							<greatestDifference id="d" alt="variant">E, d/M – E, d/M</greatestDifference>
 							<greatestDifference id="M">E, M/d–E, M/d</greatestDifference>
-							<greatestDifference id="M" alt="variant">E, d/M – E, d/M</greatestDifference>
+							<greatestDifference id="M" alt="variant">E, d/M – E, d/M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
 							<greatestDifference id="M">MMM–MMM</greatestDifference>
@@ -245,19 +245,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
 							<greatestDifference id="d">M/d/y–M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="d" alt="variant">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="d" alt="variant">d/M/y – d/M/y GGGGG</greatestDifference>
 							<greatestDifference id="M">M/d/y–M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="M" alt="variant">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="M" alt="variant">d/M/y – d/M/y GGGGG</greatestDifference>
 							<greatestDifference id="y">M/d/y–M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="y" alt="variant">d/M/y – d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="y" alt="variant">d/M/y – d/M/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
 							<greatestDifference id="d">E, M/d/y–E, M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="d" alt="variant">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="d" alt="variant">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
 							<greatestDifference id="M">E, M/d/y–E, M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="M" alt="variant">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="M" alt="variant">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
 							<greatestDifference id="y">E, M/d/y–E, M/d/y GGGGG</greatestDifference>
-							<greatestDifference id="y" alt="variant">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="y" alt="variant">E, d/M/y – E, d/M/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
 							<greatestDifference id="M">MMM–MMM y G</greatestDifference>
@@ -410,33 +410,33 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="y">E, MMM d, y–E, MMM d, y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a">h a–h a</greatestDifference>
-							<greatestDifference id="h">h–h a</greatestDifference>
+							<greatestDifference id="a">h a–h a</greatestDifference>
+							<greatestDifference id="h">h–h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H">HH–HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a">h:mm a–h:mm a</greatestDifference>
-							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
-							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="a">h:mm a–h:mm a</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
 							<greatestDifference id="H">HH:mm–HH:mm</greatestDifference>
 							<greatestDifference id="m">HH:mm–HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a">h:mm a–h:mm a v</greatestDifference>
-							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
-							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="a">h:mm a–h:mm a v</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H">HH:mm–HH:mm v</greatestDifference>
 							<greatestDifference id="m">HH:mm–HH:mm v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a">h a–h a v</greatestDifference>
-							<greatestDifference id="h">h–h a v</greatestDifference>
+							<greatestDifference id="a">h a–h a v</greatestDifference>
+							<greatestDifference id="h">h–h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
 							<greatestDifference id="H">HH–HH v</greatestDifference>
@@ -446,15 +446,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
 							<greatestDifference id="d">M/d–M/d</greatestDifference>
-							<greatestDifference id="d" alt="variant">d/M – d/M</greatestDifference>
+							<greatestDifference id="d" alt="variant">d/M – d/M</greatestDifference>
 							<greatestDifference id="M">M/d–M/d</greatestDifference>
-							<greatestDifference id="M" alt="variant">d/M – d/M</greatestDifference>
+							<greatestDifference id="M" alt="variant">d/M – d/M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
 							<greatestDifference id="d">E, M/d–E, M/d</greatestDifference>
-							<greatestDifference id="d" alt="variant">E, d/M – E, d/M</greatestDifference>
+							<greatestDifference id="d" alt="variant">E, d/M – E, d/M</greatestDifference>
 							<greatestDifference id="M">E, M/d–E, M/d</greatestDifference>
-							<greatestDifference id="M" alt="variant">E, d/M – E, d/M</greatestDifference>
+							<greatestDifference id="M" alt="variant">E, d/M – E, d/M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
 							<greatestDifference id="M">MMM–MMM</greatestDifference>
@@ -476,19 +476,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
 							<greatestDifference id="d">M/d/y–M/d/y</greatestDifference>
-							<greatestDifference id="d" alt="variant">d/M/y – d/M/y</greatestDifference>
+							<greatestDifference id="d" alt="variant">d/M/y – d/M/y</greatestDifference>
 							<greatestDifference id="M">M/d/y–M/d/y</greatestDifference>
-							<greatestDifference id="M" alt="variant">d/M/y – d/M/y</greatestDifference>
+							<greatestDifference id="M" alt="variant">d/M/y – d/M/y</greatestDifference>
 							<greatestDifference id="y">M/d/y–M/d/y</greatestDifference>
-							<greatestDifference id="y" alt="variant">d/M/y – d/M/y</greatestDifference>
+							<greatestDifference id="y" alt="variant">d/M/y – d/M/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
 							<greatestDifference id="d">E, M/d/y–E, M/d/y</greatestDifference>
-							<greatestDifference id="d" alt="variant">E, d/M/y – E, d/M/y</greatestDifference>
+							<greatestDifference id="d" alt="variant">E, d/M/y – E, d/M/y</greatestDifference>
 							<greatestDifference id="M">E, M/d/y–E, M/d/y</greatestDifference>
-							<greatestDifference id="M" alt="variant">E, d/M/y – E, d/M/y</greatestDifference>
+							<greatestDifference id="M" alt="variant">E, d/M/y – E, d/M/y</greatestDifference>
 							<greatestDifference id="y">E, M/d/y–E, M/d/y</greatestDifference>
-							<greatestDifference id="y" alt="variant">E, d/M/y – E, d/M/y</greatestDifference>
+							<greatestDifference id="y" alt="variant">E, d/M/y – E, d/M/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
 							<greatestDifference id="M">MMM–MMM y</greatestDifference>
@@ -559,7 +559,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="quarter-narrow">
-				<displayName>qtr</displayName>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">in {0} qtr</relativeTimePattern>
 					<relativeTimePattern count="other">in {0} qtrs</relativeTimePattern>
@@ -584,7 +583,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="month-narrow">
-				<displayName>mo</displayName>
 				<relative type="-1">last mo</relative>
 				<relative type="0">this mo</relative>
 				<relative type="1">next mo</relative>
@@ -612,7 +610,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="week-narrow">
-				<displayName>wk</displayName>
 				<relative type="-1">last wk</relative>
 				<relative type="0">this wk</relative>
 				<relative type="1">next wk</relative>
@@ -838,7 +835,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="minute-narrow">
-				<displayName>min</displayName>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">in {0} min</relativeTimePattern>
 					<relativeTimePattern count="other">in {0} mins</relativeTimePattern>
