@@ -83,9 +83,7 @@ public class DeleteTempJar
             check(f.getEntry("entry") != null);
             System.out.println(f.getName());
         } finally {
-            if (server != null) {
-                server.stop(0);
-            }
+            server.stop(0);
         }
     }
 
