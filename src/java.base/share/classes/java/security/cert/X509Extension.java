@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ public interface X509Extension {
      * @return {@code true} if a critical extension is found that is
      * not supported, otherwise {@code false}.
      */
-    public boolean hasUnsupportedCriticalExtension();
+    boolean hasUnsupportedCriticalExtension();
 
     /**
      * Gets a Set of the OID strings for the extension(s) marked
@@ -105,7 +105,7 @@ public interface X509Extension {
      * If there are no extensions present at all, then this method returns
      * null.
      */
-    public Set<String> getCriticalExtensionOIDs();
+    Set<String> getCriticalExtensionOIDs();
 
     /**
      * Gets a Set of the OID strings for the extension(s) marked
@@ -142,7 +142,7 @@ public interface X509Extension {
      * If there are no extensions present at all, then this method returns
      * null.
      */
-    public Set<String> getNonCriticalExtensionOIDs();
+    Set<String> getNonCriticalExtensionOIDs();
 
     /**
      * Gets the DER-encoded OCTET string for the extension value
@@ -188,5 +188,5 @@ public interface X509Extension {
      * @return the DER-encoded octet string of the extension value or
      * null if it is not present.
      */
-    public byte[] getExtensionValue(String oid);
+    byte[] getExtensionValue(String oid);
 }

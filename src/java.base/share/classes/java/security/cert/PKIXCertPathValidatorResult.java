@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,9 +57,9 @@ import java.security.PublicKey;
  */
 public class PKIXCertPathValidatorResult implements CertPathValidatorResult {
 
-    private TrustAnchor trustAnchor;
-    private PolicyNode policyTree;
-    private PublicKey subjectPublicKey;
+    private final TrustAnchor trustAnchor;
+    private final PolicyNode policyTree;
+    private final PublicKey subjectPublicKey;
 
     /**
      * Creates an instance of {@code PKIXCertPathValidatorResult}
@@ -148,12 +148,10 @@ public class PKIXCertPathValidatorResult implements CertPathValidatorResult {
      *         {@code PKIXCertPathValidatorResult}
      */
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("PKIXCertPathValidatorResult: [\n");
-        sb.append("  Trust Anchor: " + trustAnchor + "\n");
-        sb.append("  Policy Tree: " + policyTree + "\n");
-        sb.append("  Subject Public Key: " + subjectPublicKey + "\n");
-        sb.append("]");
-        return sb.toString();
+        return "PKIXCertPathValidatorResult: [\n" +
+                "  Trust Anchor: " + trustAnchor + "\n" +
+                "  Policy Tree: " + policyTree + "\n" +
+                "  Subject Public Key: " + subjectPublicKey + "\n" +
+                "]";
     }
 }

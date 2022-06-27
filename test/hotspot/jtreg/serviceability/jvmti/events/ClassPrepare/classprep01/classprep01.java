@@ -21,9 +21,6 @@
  * questions.
  */
 
-import java.io.PrintStream;
-
-
 /*
  * @test
  *
@@ -49,14 +46,7 @@ import java.io.PrintStream;
 public class classprep01 {
 
     static {
-        try {
-            System.loadLibrary("classprep01");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load classprep01 library");
-            System.err.println("java.library.path:"
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
+        System.loadLibrary("classprep01");
     }
 
     native static void getReady();

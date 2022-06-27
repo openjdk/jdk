@@ -31,8 +31,8 @@
 #include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/thread.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "runtime/sharedRuntime.hpp"
 #ifdef COMPILER1
@@ -162,7 +162,7 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm,
   // that checks that the *(rfp+frame::interpreter_frame_last_sp) == NULL.
   //
   // If we care generating the pre-barrier without a frame (e.g. in the
-  // intrinsified Reference.get() routine) then ebp might be pointing to
+  // intrinsified Reference.get() routine) then rfp might be pointing to
   // the caller frame and so this check will most likely fail at runtime.
   //
   // Expanding the call directly bypasses the generation of the check.

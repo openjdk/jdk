@@ -33,7 +33,7 @@
  * @library classes
  * @build sun.hotspot.WhiteBox test.Empty
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -Xmn8m -XX:+UseG1GC -XX:+VerifyDuringGC -XX:+AlwaysTenure -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xlog:gc,class+unload=debug UnloadTestWithVerifyDuringGC
+ * @run main/othervm -Xbootclasspath/a:. -Xmn8m -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+VerifyDuringGC -XX:+AlwaysTenure -XX:+WhiteBoxAPI -Xlog:gc,class+unload=debug UnloadTestWithVerifyDuringGC
  */
 import sun.hotspot.WhiteBox;
 import jdk.test.lib.classloader.ClassUnloadCommon;

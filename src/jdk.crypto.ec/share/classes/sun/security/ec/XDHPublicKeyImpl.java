@@ -76,7 +76,7 @@ public final class XDHPublicKeyImpl extends X509Key implements XECPublicKey {
         // clear the extra bits
         int bitsMod8 = params.getBits() % 8;
         if (bitsMod8 != 0) {
-            int mask = (1 << bitsMod8) - 1;
+            byte mask = (byte) ((1 << bitsMod8) - 1);
             u_arr[0] &= mask;
         }
 

@@ -51,14 +51,7 @@
 public class thrinfo01 {
 
     static {
-        try {
-            System.loadLibrary("thrinfo01");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load thrinfo01 library");
-            System.err.println("java.library.path:"
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
+        System.loadLibrary("thrinfo01");
     }
 
     native static boolean checkInfo0(Thread thread, ThreadGroup threadGroup, int ind);

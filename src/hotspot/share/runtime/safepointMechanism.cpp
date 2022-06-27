@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
 #include "runtime/osThread.hpp"

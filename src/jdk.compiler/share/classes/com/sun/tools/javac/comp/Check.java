@@ -2960,6 +2960,9 @@ public class Check {
     /** Check an annotation of a symbol.
      */
     private void validateAnnotation(JCAnnotation a, JCTree declarationTree, Symbol s) {
+        /** NOTE: if annotation processors are present, annotation processing rounds can happen after this method,
+         *  this can impact in particular records for which annotations are forcibly propagated.
+         */
         validateAnnotationTree(a);
         boolean isRecordMember = ((s.flags_field & RECORD) != 0 || s.enclClass() != null && s.enclClass().isRecord());
 
@@ -3600,7 +3603,7 @@ public class Check {
     }
 
     void checkPreview(DiagnosticPosition pos, Symbol other, Symbol s) {
-        if ((s.flags() & PREVIEW_API) != 0 && !preview.participatesInPreview(other, s)) {
+        if ((s.flags() & PREVIEW_API) != 0 && !preview.participatesInPreview(syms, other, s)) {
             if ((s.flags() & PREVIEW_REFLECTIVE) == 0) {
                 if (!preview.isEnabled()) {
                     log.error(pos, Errors.IsPreview(s));

@@ -109,7 +109,7 @@ public class TestRemsetLoggingTools {
     }
 
     public static void expectRSetSummaries(String result, int expectedCumulative, int expectedPeriodic) throws Exception {
-        int actualTotal = result.split("Concurrent refinement threads times").length - 1;
+        int actualTotal = result.split("Current rem set statistics").length - 1;
         int actualCumulative = result.split("Cumulative RS summary").length - 1;
 
         if (expectedCumulative != actualCumulative) {

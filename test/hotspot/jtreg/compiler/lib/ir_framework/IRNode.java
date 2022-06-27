@@ -166,6 +166,7 @@ public class IRNode {
     public static final String ADD_I = START + "AddI" + MID + END;
     public static final String ADD_L = START + "AddL" + MID + END;
     public static final String ADD_VD = START + "AddVD" + MID + END;
+    public static final String ADD_VI = START + "AddVI" + MID + END;
     public static final String SUB = START + "Sub(I|L|F|D)" + MID + END;
     public static final String SUB_I = START + "SubI" + MID + END;
     public static final String SUB_L = START + "SubL" + MID + END;
