@@ -98,17 +98,18 @@ public class InterruptibleDatagramSocket {
 
     public static void main(String[] args) throws Exception {
         try (DatagramSocket s = new DatagramSocket()) {
-            System.out.println("Established uninterruptible datagram socket "
-                    + s.getLocalSocketAddress());
+            System.out.println("Testing interrrupt of DatagramSocket receive " +
+                    "on endpoint " + s.getLocalSocketAddress());
             test(s, false);
         }
         try (DatagramSocket s = new MulticastSocket()) {
-            System.out.println("Established uninterruptible multicast socket "
-                    + s.getLocalSocketAddress());
+            System.out.println("Testing interrrupt of MulticastSocket receive" +
+                    " on endpoint " + s.getLocalSocketAddress());
             test(s, false);
         }
         try (DatagramSocket s = DatagramChannel.open().socket()) {
-            System.out.println("Established interruptible datagram socket");
+            System.out.println("Testing interrrupt of DatagramChannel socket " +
+                    "receive on endpoint " + s.getLocalSocketAddress());
             test(s, true);
         }
     }
