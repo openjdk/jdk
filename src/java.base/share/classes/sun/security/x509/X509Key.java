@@ -25,20 +25,26 @@
 
 package sun.security.x509;
 
-import java.io.*;
-import java.util.Arrays;
-import java.security.Key;
-import java.security.PublicKey;
-import java.security.KeyFactory;
-import java.security.Security;
-import java.security.Provider;
+import sun.security.util.BitArray;
+import sun.security.util.DerOutputStream;
+import sun.security.util.DerValue;
+import sun.security.util.HexDumpEncoder;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.security.InvalidKeyException;
+import java.security.Key;
+import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
+import java.security.Provider;
+import java.security.PublicKey;
+import java.security.Security;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
-
-import sun.security.util.HexDumpEncoder;
-import sun.security.util.*;
+import java.util.Arrays;
 
 /**
  * Holds an X.509 key, for example a public key found in an X.509
@@ -395,6 +401,26 @@ public class X509Key implements PublicKey {
 
     public void decode(byte[] encodedKey) throws InvalidKeyException {
         decode(new ByteArrayInputStream(encodedKey));
+    }
+
+    /**
+     * jfkdsl
+     * @param encoded fjdskl
+     * @return fjdaskl
+     * @throws InvalidKeyException jfkdlsa
+     */
+    public static PublicKey parseKey(byte[] encoded) throws InvalidKeyException {
+        X509Key key = new X509Key();
+        key.decode(encoded);
+        PublicKey pubKey;
+        try {
+            pubKey = KeyFactory.getInstance(key.algid.getName())
+                        .generatePublic(new X509EncodedKeySpec(encoded));
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+            // Ignore and return raw key
+            throw new InvalidKeyException("error with encoding");
+        }
+        return pubKey;
     }
 
     /**
