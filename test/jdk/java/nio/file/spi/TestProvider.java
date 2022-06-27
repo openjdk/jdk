@@ -23,7 +23,10 @@
 
 import java.io.File;
 import java.nio.file.*;
-import java.nio.file.attribute.*;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.FileAttributeView;
+import java.nio.file.attribute.UserPrincipalLookupService;
 import java.nio.file.spi.FileSystemProvider;
 import java.nio.channels.FileChannel;
 import java.nio.channels.SeekableByteChannel;
@@ -42,10 +45,6 @@ public class TestProvider extends FileSystemProvider {
         this.defaultProvider = defaultProvider;
         FileSystem fs = defaultProvider.getFileSystem(URI.create("file:/"));
         this.theFileSystem = new TestFileSystem(fs, this);
-    }
-
-    FileSystemProvider defaultProvider() {
-        return defaultProvider;
     }
 
     @Override
@@ -95,12 +94,7 @@ public class TestProvider extends FileSystemProvider {
         Path delegate = theFileSystem.unwrap(file);
         return defaultProvider.readAttributes(delegate, type, options);
     }
-    public <A extends BasicFileAttributes> A readAttributesIfExists(Path path,
-                                                                    Class<A> type,
-                                                                    LinkOption... options)
-            throws IOException {
-        return (A) new TestAttributes();
-    }
+
     @Override
     public <V extends FileAttributeView> V getFileAttributeView(Path file,
                                                                 Class<V> type,
@@ -164,12 +158,7 @@ public class TestProvider extends FileSystemProvider {
         Path delegate = theFileSystem.unwrap(dir);
         defaultProvider.createDirectory(delegate, attrs);
     }
-    @Override
-    public boolean exists(Path path, LinkOption... options) {
-        var fs = path.getFileSystem();
-        return ((fs instanceof TestFileSystem)
-                && (fs.provider() instanceof TestProvider));
-    }
+
     @Override
     public SeekableByteChannel newByteChannel(Path file,
                                               Set<? extends OpenOption> options,
@@ -209,7 +198,8 @@ public class TestProvider extends FileSystemProvider {
     public void checkAccess(Path file, AccessMode... modes)
         throws IOException
     {
-        throw new RuntimeException("not implemented");
+        Path delegate = theFileSystem.unwrap(file);
+        defaultProvider.checkAccess(delegate, modes);
     }
 
     static class TestFileSystem extends FileSystem {
@@ -475,51 +465,5 @@ public class TestProvider extends FileSystemProvider {
             throw new UnsupportedOperationException();
         }
     }
-    static class TestAttributes implements BasicFileAttributes {
 
-        @Override
-        public FileTime lastModifiedTime() {
-            return null;
-        }
-
-        @Override
-        public FileTime lastAccessTime() {
-            return null;
-        }
-
-        @Override
-        public FileTime creationTime() {
-            return null;
-        }
-
-        @Override
-        public boolean isRegularFile() {
-            return false;
-        }
-
-        @Override
-        public boolean isDirectory() {
-            return false;
-        }
-
-        @Override
-        public boolean isSymbolicLink() {
-            return false;
-        }
-
-        @Override
-        public boolean isOther() {
-            return false;
-        }
-
-        @Override
-        public long size() {
-            return 0;
-        }
-
-        @Override
-        public Object fileKey() {
-            return null;
-        }
-    }
 }
