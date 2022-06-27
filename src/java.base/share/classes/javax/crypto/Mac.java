@@ -142,12 +142,11 @@ public class Mac implements Cloneable {
      * Returns a {@code Mac} object that implements the
      * specified MAC algorithm.
      *
-     * <p> This method traverses the list of registered security
-     * {@code Provider} objects,
-     * starting with the most preferred {@code Provider}.
+     * <p> This method traverses the list of registered security Providers,
+     * starting with the most preferred Provider.
      * A new {@code Mac} object encapsulating the
      * {@code MacSpi} implementation from the first
-     * {@code Provider} that supports the specified algorithm is returned.
+     * Provider that supports the specified algorithm is returned.
      *
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
@@ -241,8 +240,8 @@ public class Mac implements Cloneable {
      * specified MAC algorithm.
      *
      * <p> A new {@code Mac} object encapsulating the
-     * {@code MacSpi} implementation from the specified {@code Provider}
-     * object is returned.  Note that the specified {@code Provider} object
+     * {@code MacSpi} implementation from the specified Provider
+     * object is returned.  Note that the specified Provider object
      * does not have to be registered in the provider list.
      *
      * @param algorithm the standard name of the requested MAC algorithm.

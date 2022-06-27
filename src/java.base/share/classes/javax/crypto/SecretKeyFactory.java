@@ -124,12 +124,11 @@ public class SecretKeyFactory {
      * Returns a {@code SecretKeyFactory} object that converts
      * secret keys of the specified algorithm.
      *
-     * <p> This method traverses the list of registered security
-     * {@code Provider} objects
-     * starting with the most preferred {@code Provider}.
+     * <p> This method traverses the list of registered security Providers,
+     * starting with the most preferred Provider.
      * A new {@code SecretKeyFactory} object encapsulating the
      * {@code SecretKeyFactorySpi} implementation from the first
-     * {@code Provider} that supports the specified algorithm is returned.
+     * Provider that supports the specified algorithm is returned.
      *
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
@@ -217,9 +216,8 @@ public class SecretKeyFactory {
      * secret keys of the specified algorithm.
      *
      * <p> A new {@code SecretKeyFactory} object encapsulating the
-     * {@code SecretKeyFactorySpi} implementation from the specified
-     * {@code Provider} object is returned.  Note that the specified
-     * {@code Provider} object
+     * {@code SecretKeyFactorySpi} implementation from the specified Provider
+     * object is returned.  Note that the specified Provider object
      * does not have to be registered in the provider list.
      *
      * @param algorithm the standard name of the requested secret-key
@@ -283,8 +281,8 @@ public class SecretKeyFactory {
     /**
      * Update the active spi of this class and return the next
      * implementation for failover. If no more implementations are
-     * available, this method returns null. However, the active spi of
-     * this class is never set to null.
+     * available, this method returns {@code null}. However, the active spi of
+     * this class is never set to {@code null}.
      */
     private SecretKeyFactorySpi nextSpi(SecretKeyFactorySpi oldSpi) {
         synchronized (lock) {

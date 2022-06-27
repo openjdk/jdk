@@ -143,12 +143,11 @@ public class KeyAgreement {
      * Returns a {@code KeyAgreement} object that implements the
      * specified key agreement algorithm.
      *
-     * <p> This method traverses the list of registered security
-     * {@code Provider} objects,
-     * starting with the most preferred {@code Provider}.
+     * <p> This method traverses the list of registered security Providers,
+     * starting with the most preferred Provider.
      * A new {@code KeyAgreement} object encapsulating the
      * {@code KeyAgreementSpi} implementation from the first
-     * {@code Provider} that supports the specified algorithm is returned.
+     * Provider that supports the specified algorithm is returned.
      *
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.

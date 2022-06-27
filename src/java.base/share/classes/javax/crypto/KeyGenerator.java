@@ -204,12 +204,11 @@ public class KeyGenerator {
      * Returns a {@code KeyGenerator} object that generates secret keys
      * for the specified algorithm.
      *
-     * <p> This method traverses the list of registered security
-     * (@code Provider} objects, starting with the most preferred
-     * {@code Provider}.
+     * <p> This method traverses the list of registered security Providers,
+     * starting with the most preferred Provider.
      * A new {@code KeyGenerator} object encapsulating the
      * {@code KeyGeneratorSpi} implementation from the first
-     * {@code Provider} that supports the specified algorithm is returned.
+     * Provider that supports the specified algorithm is returned.
      *
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
@@ -249,7 +248,7 @@ public class KeyGenerator {
      * for the specified algorithm.
      *
      * <p> A new {@code KeyGenerator} object encapsulating the
-     * KeyGeneratorSpi implementation from the specified provider
+     * {@code KeyGeneratorSpi} implementation from the specified provider
      * is returned.  The specified provider must be registered
      * in the security provider list.
      *
@@ -295,8 +294,8 @@ public class KeyGenerator {
      * for the specified algorithm.
      *
      * <p> A new {@code KeyGenerator} object encapsulating the
-     * KeyGeneratorSpi implementation from the specified {@code Provider}
-     * object is returned.  Note that the specified {@code Provider} object
+     * {@code KeyGeneratorSpi} implementation from the specified Provider
+     * object is returned.  Note that the specified Provider object
      * does not have to be registered in the provider list.
      *
      * @param algorithm the standard name of the requested key algorithm.

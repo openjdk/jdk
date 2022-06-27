@@ -31,11 +31,11 @@ import java.io.*;
  * A <code>CipherOutputStream</code> is composed of an <code>OutputStream</code>
  * and a <code>Cipher</code> so that write() methods first process the data
  * before writing them out to the underlying <code>OutputStream</code>.
- * The cipher must be fully initialized before being used by a
+ * The <code>Cipher</code> must be fully initialized before being used by a
  * <code>CipherOutputStream</code>.
  *
- * <p> For example, if the cipher is initialized for encryption, the
- * <code>CipherOutputStream</code> will attempt to encrypt data before
+ * <p> For example, if the <code>Cipher</code> is initialized for encryption,
+ * the <code>CipherOutputStream</code> will attempt to encrypt data before
  * writing out the encrypted data.
  *
  * <p> This class adheres strictly to the semantics, especially the
@@ -45,7 +45,7 @@ import java.io.*;
  * This class has exactly those methods specified in its ancestor classes, and
  * overrides them all.  Moreover, this class catches all exceptions
  * that are not thrown by its ancestor classes. In particular, this
- * class catches <code>BadPaddingException</code> and other exceptions thrown by
+ * class catches BadPaddingException and other exceptions thrown by
  * failed integrity checks during decryption. These exceptions are not
  * re-thrown, so the client will not be informed that integrity checks
  * failed. Because of this behavior, this class may not be suitable
@@ -105,7 +105,7 @@ public class CipherOutputStream extends FilterOutputStream {
      * Constructs a <code>CipherOutputStream</code> from an
      * <code>OutputStream</code> and a <code>Cipher</code>.
      * <br>Note: if the specified output stream or cipher is
-     * null, a <code>NullPointerException</code> may be thrown later when
+     * <code>null</code>, a NullPointerException may be thrown later when
      * they are used.
      *
      * @param os  the <code>OutputStream</code> object
@@ -122,8 +122,8 @@ public class CipherOutputStream extends FilterOutputStream {
      * <code>OutputStream</code> without specifying a <code>Cipher</code>.
      * This has the effect of constructing a <code>CipherOutputStream</code>
      * using a <code>NullCipher</code>.
-     * <br>Note: if the specified output stream is null, a
-     * <code>NullPointerException</code> may be thrown later when it is used.
+     * <br>Note: if the specified output stream is <code>null</code>, a
+     * NullPointerException may be thrown later when it is used.
      *
      * @param os  the <code>OutputStream</code> object
      */
@@ -164,7 +164,7 @@ public class CipherOutputStream extends FilterOutputStream {
      * <code>b</code>, <code>0</code>, and <code>b.length</code>.
      *
      * @param      b   the data.
-     * @exception  NullPointerException if <code>b</code> is null.
+     * @exception  NullPointerException if <code>b</code> is <code>null</code>.
      * @exception  IOException  if an I/O error occurs.
      * @see        javax.crypto.CipherOutputStream#write(byte[], int, int)
      */
@@ -198,14 +198,15 @@ public class CipherOutputStream extends FilterOutputStream {
 
     /**
      * Flushes this output stream by forcing any buffered output bytes
-     * that have already been processed by the encapsulated cipher object
-     * to be written out.
+     * that have already been processed by the encapsulated <code>Cipher</code>
+     * object to be written out.
      *
-     * <p>Any bytes buffered by the encapsulated cipher
+     * <p>Any bytes buffered by the encapsulated <code>Cipher</code>
      * and waiting to be processed by it will not be written out. For example,
-     * if the encapsulated cipher is a block cipher, and the total number of
-     * bytes written using one of the <code>write</code> methods is less than
-     * the cipher's block size, no bytes will be written out.
+     * if the encapsulated <code>Cipher</code> is a block cipher, and the
+     * total number of bytes written using one of the <code>write</code>
+     * methods is less than the cipher's block size, no bytes will be written
+     * out.
      *
      * @exception  IOException  if an I/O error occurs.
      */
@@ -221,13 +222,13 @@ public class CipherOutputStream extends FilterOutputStream {
      * associated with this stream.
      * <p>
      * This method invokes the <code>doFinal</code> method of the encapsulated
-     * cipher object, which causes any bytes buffered by the encapsulated
-     * cipher to be processed. The result is written out by calling the
-     * <code>flush</code> method of this output stream.
+     * <code>Cipher</code> object, which causes any bytes buffered by the
+     * encapsulated <code>Cipher</code> to be processed. The result is written
+     * out by calling the <code>flush</code> method of this output stream.
      * <p>
-     * This method resets the encapsulated cipher object to its initial state
-     * and calls the <code>close</code> method of the underlying output
-     * stream.
+     * This method resets the encapsulated <code>Cipher</code> object to its
+     * initial state and calls the <code>close</code> method of the underlying
+     * output stream.
      *
      * @exception  IOException  if an I/O error occurs.
      */

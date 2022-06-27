@@ -137,12 +137,11 @@ public class AlgorithmParameterGenerator {
      * Returns an {@code AlgorithmParameterGenerator} object for generating
      * a set of parameters to be used with the specified algorithm.
      *
-     * <p> This method traverses the list of registered security
-     * {@code Provider} objects,
-     * starting with the most preferred {@code Provider}.
+     * <p> This method traverses the list of registered security Providers,
+     * starting with the most preferred Provider.
      * A new {@code AlgorithmParameterGenerator} object encapsulating the
      * {@code AlgorithmParameterGeneratorSpi} implementation from the first
-     * {@code Provider} that supports the specified algorithm is returned.
+     * Provider that supports the specified algorithm is returned.
      *
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
@@ -246,9 +245,8 @@ public class AlgorithmParameterGenerator {
      * a set of parameters to be used with the specified algorithm.
      *
      * <p> A new {@code AlgorithmParameterGenerator} object encapsulating the
-     * {@code AlgorithmParameterGeneratorSpi} implementation from the
-     * specified {@code Provider}
-     * object is returned.  Note that the specified {@code Provider} object
+     * {@code AlgorithmParameterGeneratorSpi} implementation from the Provider
+     * object is returned.  Note that the specified Provider object
      * does not have to be registered in the provider list.
      *
      * @param algorithm the string name of the algorithm this

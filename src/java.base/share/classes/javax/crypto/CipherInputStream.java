@@ -50,8 +50,8 @@ import java.io.InputStream;
  * <code>skip</code> method skips, and the <code>available</code>
  * method counts only data that have been processed by the encapsulated
  * <code>Cipher</code>.
- * This class may catch <code>BadPaddingException</code> and other exceptions
- * thrown by failed integrity checks during decryption. These exceptions are not
+ * This class may catch BadPaddingException and other exceptions thrown by
+ * failed integrity checks during decryption. These exceptions are not
  * re-thrown, so the client may not be informed that integrity checks
  * failed. Because of this behavior, this class may not be suitable
  * for use with decryption in an authenticated mode of operation (e.g. GCM).
@@ -168,7 +168,7 @@ public class CipherInputStream extends FilterInputStream {
      * Constructs a <code>CipherInputStream</code> from an
      * <code>InputStream</code> and a <code>Cipher</code>.
      * <br>Note: if the specified input stream or cipher is
-     * null, a <code>NullPointerException</code> may be thrown later when
+     * <code>null</code>, a NullPointerException may be thrown later when
      * they are used.
      * @param is the to-be-processed input stream
      * @param c an initialized <code>Cipher</code> object
@@ -184,8 +184,8 @@ public class CipherInputStream extends FilterInputStream {
      * <code>InputStream</code> without specifying a <code>Cipher</code>.
      * This has the effect of constructing a <code>CipherInputStream</code>
      * using a <code>NullCipher</code>.
-     * <br>Note: if the specified input stream is null, a
-     * <code>NullPointerException</code> may be thrown later when it is used.
+     * <br>Note: if the specified input stream is <code>null</code>, a
+     * NullPointerException may be thrown later when it is used.
      * @param is the to-be-processed input stream
      */
     protected CipherInputStream(InputStream is) {
@@ -241,7 +241,7 @@ public class CipherInputStream extends FilterInputStream {
     /**
      * Reads up to <code>len</code> bytes of data from this input stream
      * into an array of bytes. This method blocks until some input is
-     * available. If the first argument is <code>null,</code> up to
+     * available. If the first argument is <code>null</code>, up to
      * <code>len</code> bytes are read and discarded.
      *
      * @param      b     the buffer into which the data is read.

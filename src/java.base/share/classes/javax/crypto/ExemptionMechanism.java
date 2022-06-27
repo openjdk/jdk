@@ -104,12 +104,11 @@ public class ExemptionMechanism {
      * Returns an <code>ExemptionMechanism</code> object that implements the
      * specified exemption mechanism algorithm.
      *
-     * <p> This method traverses the list of registered security
-     * <code>Provider</code> objects,
-     * starting with the most preferred <code>Provider</code>.
+     * <p> This method traverses the list of registered security Providers,
+     * starting with the most preferred Provider.
      * A new <code>ExemptionMechanism</code> object encapsulating the
      * <code>ExemptionMechanismSpi</code> implementation from the first
-     * <code>Provider</code> that supports the specified algorithm is returned.
+     * Provider that supports the specified algorithm is returned.
      *
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
@@ -203,8 +202,7 @@ public class ExemptionMechanism {
      *
      * <p> A new <code>ExemptionMechanism</code> object encapsulating the
      * <code>ExemptionMechanismSpi</code> implementation from the specified
-     * <code>Provider</code> object is returned.  Note that the specified
-     * <code>Provider</code> object
+     * Provider object is returned.  Note that the specified Provider object
      * does not have to be registered in the provider list.
      *
      * @param algorithm the standard name of the requested exemption mechanism.

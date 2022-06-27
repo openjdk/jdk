@@ -389,7 +389,7 @@ implements Serializable {
 
     /**
      * Returns the <code>PermissionCollection</code> for the
-     * specified algorithm. Returns null if there
+     * specified algorithm. Returns <code>null</code> if there
      * isn't such a <code>PermissionCollection</code>.
      *
      * @param alg the algorithm name.
