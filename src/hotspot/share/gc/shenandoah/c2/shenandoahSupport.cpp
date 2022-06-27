@@ -2674,11 +2674,9 @@ void MemoryGraphFixer::fix_mem(Node* ctrl, Node* new_ctrl, Node* mem, Node* mem_
 }
 
 void MemoryGraphFixer::record_new_ctrl(Node* ctrl, Node* new_ctrl, Node* mem, Node* mem_for_ctrl) {
-  if (mem_for_ctrl != mem) {
-    if (new_ctrl != ctrl) {
-      _memory_nodes.map(ctrl->_idx, mem);
-      _memory_nodes.map(new_ctrl->_idx, mem_for_ctrl);
-    }
+  if (mem_for_ctrl != mem && new_ctrl != ctrl) {
+    _memory_nodes.map(ctrl->_idx, mem);
+    _memory_nodes.map(new_ctrl->_idx, mem_for_ctrl);
   }
 }
 
