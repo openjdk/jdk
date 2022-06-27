@@ -52,7 +52,7 @@ public class CustomSelectAction extends WidgetAction.LockedAdapter {
     }
 
     @Override
-    public State mousePressed (Widget widget, WidgetMouseEvent event) {
+    public State mousePressed(Widget widget, WidgetMouseEvent event) {
         Point localLocation = event.getPoint();
         if (event.getButton() == MouseEvent.BUTTON1 || event.getButton() == MouseEvent.BUTTON2) {
             boolean invertSelection = (event.getModifiersEx() & getModifierMask()) != 0;
