@@ -81,8 +81,8 @@ class SimpleRuntimeFrame {
     // so that it agrees with the frame sender code.
     // we don't expect any arg reg save area so aarch64 asserts that
     // frame::arg_reg_save_area_bytes == 0
-    rbp_off = 0,
-    rbp_off2,
+    rfp_off = 0,
+    rfp_off2,
     return_off, return_off2,
     framesize
   };
@@ -1050,7 +1050,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
 
   __ rt_call(CAST_FROM_FN_PTR(address, StubRoutines::cont_thaw()));
   oop_maps->add_gc_map(__ pc() - start, map->deep_copy());
-  ContinuationEntry::return_pc_offset = __ pc() - start;
+  ContinuationEntry::_return_pc_offset = __ pc() - start;
   __ post_call_nop();
 
   __ bind(exit);
@@ -1195,7 +1195,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                                               in_ByteSize(-1),
                                               oop_maps,
                                               exception_offset);
-    ContinuationEntry::set_enter_nmethod(nm);
+    ContinuationEntry::set_enter_code(nm);
     return nm;
   }
 
@@ -2756,7 +2756,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
 }
 
 #ifdef COMPILER2
-// This is here instead of runtime_x86_64.cpp because it uses SimpleRuntimeFrame
+// This is here instead of runtime_aarch64_64.cpp because it uses SimpleRuntimeFrame
 //
 //------------------------------generate_exception_blob---------------------------
 // creates exception blob at the end

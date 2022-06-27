@@ -35,6 +35,7 @@
 #include "logging/logStream.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"
 #include "utilities/bitMap.inline.hpp"
 

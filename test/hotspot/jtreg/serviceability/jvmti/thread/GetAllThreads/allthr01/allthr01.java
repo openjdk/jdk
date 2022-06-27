@@ -36,6 +36,7 @@
  *     Fixed according to the 4480280 bug.
  *     Ported from JVMDI.
  *
+ * @requires vm.continuations
  * @library /test/lib
  * @compile --enable-preview -source ${jdk.version} allthr01.java
  * @run main/othervm/native --enable-preview -agentlib:allthr01 allthr01
@@ -46,14 +47,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class allthr01 {
 
     static {
-        try {
-            System.loadLibrary("allthr01");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load allthr001 library");
-            System.err.println("java.library.path:"
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
+        System.loadLibrary("allthr01");
     }
 
     // Sync with native code

@@ -235,7 +235,7 @@ public abstract class Signature extends SignatureSpi {
      * {@code jdk.security.provider.preferred}
      * {@link Security#getProperty(String) Security} property to determine
      * the preferred provider order for the specified algorithm. This
-     * may be different than the order of providers returned by
+     * may be different from the order of providers returned by
      * {@link Security#getProviders() Security.getProviders()}.
      *
      * @param algorithm the standard name of the algorithm requested.
@@ -264,7 +264,7 @@ public abstract class Signature extends SignatureSpi {
             list = GetInstance.getServices("Signature", algorithm);
         }
         Iterator<Service> t = list.iterator();
-        if (t.hasNext() == false) {
+        if (!t.hasNext()) {
             throw new NoSuchAlgorithmException
                 (algorithm + " Signature not available");
         }
@@ -305,18 +305,17 @@ public abstract class Signature extends SignatureSpi {
 
     static {
         signatureInfo = new ConcurrentHashMap<>();
-        Boolean TRUE = Boolean.TRUE;
         // pre-initialize with values for our SignatureSpi implementations
-        signatureInfo.put("sun.security.provider.DSA$RawDSA", TRUE);
-        signatureInfo.put("sun.security.provider.DSA$SHA1withDSA", TRUE);
-        signatureInfo.put("sun.security.rsa.RSASignature$MD2withRSA", TRUE);
-        signatureInfo.put("sun.security.rsa.RSASignature$MD5withRSA", TRUE);
-        signatureInfo.put("sun.security.rsa.RSASignature$SHA1withRSA", TRUE);
-        signatureInfo.put("sun.security.rsa.RSASignature$SHA256withRSA", TRUE);
-        signatureInfo.put("sun.security.rsa.RSASignature$SHA384withRSA", TRUE);
-        signatureInfo.put("sun.security.rsa.RSASignature$SHA512withRSA", TRUE);
-        signatureInfo.put("sun.security.rsa.RSAPSSSignature", TRUE);
-        signatureInfo.put("sun.security.pkcs11.P11Signature", TRUE);
+        signatureInfo.put("sun.security.provider.DSA$RawDSA", true);
+        signatureInfo.put("sun.security.provider.DSA$SHA1withDSA", true);
+        signatureInfo.put("sun.security.rsa.RSASignature$MD2withRSA", true);
+        signatureInfo.put("sun.security.rsa.RSASignature$MD5withRSA", true);
+        signatureInfo.put("sun.security.rsa.RSASignature$SHA1withRSA", true);
+        signatureInfo.put("sun.security.rsa.RSASignature$SHA256withRSA", true);
+        signatureInfo.put("sun.security.rsa.RSASignature$SHA384withRSA", true);
+        signatureInfo.put("sun.security.rsa.RSASignature$SHA512withRSA", true);
+        signatureInfo.put("sun.security.rsa.RSAPSSSignature", true);
+        signatureInfo.put("sun.security.pkcs11.P11Signature", true);
     }
 
     private static boolean isSpi(Service s) {
@@ -334,7 +333,7 @@ public abstract class Signature extends SignatureSpi {
                 // instance of SignatureSpi but not Signature
                 boolean r = (instance instanceof SignatureSpi)
                                 && (!(instance instanceof Signature));
-                if ((debug != null) && (r == false)) {
+                if ((debug != null) && (!r)) {
                     debug.println("Not a SignatureSpi " + className);
                     debug.println("Delayed provider selection may not be "
                         + "available for algorithm " + s.getAlgorithm());
@@ -551,7 +550,7 @@ public abstract class Signature extends SignatureSpi {
                 && critSet.contains(KnownOIDs.KeyUsage.value())) {
                 boolean[] keyUsageInfo = xcert.getKeyUsage();
                 // keyUsageInfo[0] is for digitalSignature.
-                if ((keyUsageInfo != null) && (keyUsageInfo[0] == false))
+                if ((keyUsageInfo != null) && (!keyUsageInfo[0]))
                     throw new InvalidKeyException("Wrong key usage");
             }
         }
@@ -962,7 +961,7 @@ public abstract class Signature extends SignatureSpi {
      * which it is possible to set the various parameters of this object.
      * A parameter may be any settable parameter for the algorithm, such as
      * a parameter size, or a source of random bits for signature generation
-     * (if appropriate), or an indication of whether or not to perform
+     * (if appropriate), or an indication of whether to perform
      * a specific but optional computation. A uniform algorithm-specific
      * naming scheme for each parameter is desirable but left unspecified
      * at this time.
@@ -1033,7 +1032,7 @@ public abstract class Signature extends SignatureSpi {
      * get the various parameters of this object. A parameter may be any
      * settable parameter for the algorithm, such as a parameter size, or
      * a source of random bits for signature generation (if appropriate),
-     * or an indication of whether or not to perform a specific but optional
+     * or an indication of whether to perform a specific but optional
      * computation. A uniform algorithm-specific naming scheme for each
      * parameter is desirable but left unspecified at this time.
      *
@@ -1218,7 +1217,7 @@ public abstract class Signature extends SignatureSpi {
                     } else {
                         s = serviceIterator.next();
                     }
-                    if (isSpi(s) == false) {
+                    if (!isSpi(s)) {
                         continue;
                     }
                     try {
@@ -1260,11 +1259,11 @@ public abstract class Signature extends SignatureSpi {
                         s = serviceIterator.next();
                     }
                     // if provider says it does not support this key, ignore it
-                    if (key != null && s.supportsParameter(key) == false) {
+                    if (key != null && !s.supportsParameter(key)) {
                         continue;
                     }
                     // if instance is not a SignatureSpi, ignore it
-                    if (isSpi(s) == false) {
+                    if (!isSpi(s)) {
                         continue;
                     }
                     try {

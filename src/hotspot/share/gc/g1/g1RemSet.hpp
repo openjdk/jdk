@@ -146,7 +146,7 @@ public:
   void print_summary_info();
 
   // Print accumulated summary info from the last time called.
-  void print_periodic_summary_info(const char* header, uint period_count);
+  void print_periodic_summary_info(const char* header, uint period_count, bool show_thread_times);
 };
 
 #endif // SHARE_GC_G1_G1REMSET_HPP

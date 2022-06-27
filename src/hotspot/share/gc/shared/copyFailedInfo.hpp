@@ -26,7 +26,7 @@
 #define SHARE_GC_SHARED_COPYFAILEDINFO_HPP
 
 #include "jfr/support/jfrThreadId.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class CopyFailedInfo : public CHeapObj<mtGC> {

@@ -33,14 +33,12 @@ import java.text.spi.BreakIteratorProvider;
 import java.text.spi.CollatorProvider;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
-import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.spi.CalendarDataProvider;
 import java.util.spi.CalendarNameProvider;
@@ -63,13 +61,13 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
 
     // parent locales map
     private static volatile Map<Locale, Locale> parentLocalesMap;
-    // language aliases map
-    private static volatile Map<String,String> langAliasesMap;
     // cache to hold  locale to locale mapping for language aliases.
     private static final Map<Locale, Locale> langAliasesCache;
+    // cache the available locales
+    private static volatile Locale[] AVAILABLE_LOCALES;
+
     static {
         parentLocalesMap = new ConcurrentHashMap<>();
-        langAliasesMap = new ConcurrentHashMap<>();
         langAliasesCache = new ConcurrentHashMap<>();
         // Assuming these locales do NOT have irregular parent locales.
         parentLocalesMap.put(Locale.ROOT, Locale.ROOT);
@@ -175,29 +173,19 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
 
     @Override
     public Locale[] getAvailableLocales() {
-        Set<String> all = createLanguageTagSet("AvailableLocales");
-        Locale[] locs = new Locale[all.size()];
-        int index = 0;
-        for (String tag : all) {
-            locs[index++] = Locale.forLanguageTag(tag);
+        if (AVAILABLE_LOCALES == null) {
+            AVAILABLE_LOCALES = createLanguageTagSet("AvailableLocales").stream()
+                .map(Locale::forLanguageTag)
+                .toArray(Locale[]::new);
         }
-        return locs;
+        return AVAILABLE_LOCALES;
     }
 
     private static Locale applyAliases(Locale loc) {
-        if (langAliasesMap.isEmpty()) {
-            langAliasesMap = baseMetaInfo.getLanguageAliasMap();
-        }
-        Locale locale = langAliasesCache.get(loc);
-        if (locale == null) {
-            String locTag = loc.toLanguageTag();
-            Locale aliasLocale = langAliasesMap.containsKey(locTag)
-                    ? Locale.forLanguageTag(langAliasesMap.get(locTag)) : loc;
-            langAliasesCache.putIfAbsent(loc, aliasLocale);
-            return aliasLocale;
-        } else {
-            return locale;
-        }
+        return langAliasesCache.computeIfAbsent(loc, l -> {
+            var alias = baseMetaInfo.getLanguageAliasMap().get(l.toLanguageTag());
+            return alias != null ? Locale.forLanguageTag(alias) : l;
+        });
     }
 
     @Override
@@ -220,15 +208,9 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
                 supportedLocaleString = nonBaseTags;
             }
         }
-        if (supportedLocaleString == null) {
-            return Collections.emptySet();
-        }
-        StringTokenizer tokens = new StringTokenizer(supportedLocaleString);
-        Set<String> tagset = new HashSet<>((tokens.countTokens() * 4 + 2) / 3);
-        while (tokens.hasMoreTokens()) {
-            tagset.add(tokens.nextToken());
-        }
-        return tagset;
+        return supportedLocaleString != null ?
+                Set.of(supportedLocaleString.split("\s+")) :
+                Collections.emptySet();
     }
 
     // Implementation of ResourceBundleBasedAdapter

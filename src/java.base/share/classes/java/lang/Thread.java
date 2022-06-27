@@ -33,8 +33,11 @@ import java.security.ProtectionDomain;
 import java.time.Duration;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Objects;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.locks.LockSupport;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 import jdk.internal.event.ThreadSleepEvent;
 import jdk.internal.javac.PreviewFeature;
 import jdk.internal.misc.PreviewFeatures;
@@ -649,35 +652,39 @@ public class Thread implements Runnable {
     @SuppressWarnings("removal")
     Thread(ThreadGroup g, String name, int characteristics, Runnable task,
            long stackSize, AccessControlContext acc) {
-        if (name == null) {
-            throw new InternalError("name cannot be null");
-        }
 
         Thread parent = currentThread();
         boolean attached = (parent == this);   // primordial or JNI attached
-        if (attached && g == null) {
-            throw new InternalError("group cannot be null when attaching");
-        }
 
-        SecurityManager security = System.getSecurityManager();
-        if (g == null) {
-            // the security manager can choose the thread group
-            if (security != null) {
-                g = security.getThreadGroup();
-            }
-
-            // default to current thread's group
+        if (attached) {
             if (g == null) {
-                g = parent.getThreadGroup();
+                throw new InternalError("group cannot be null when attaching");
             }
-        }
+            this.holder = new FieldHolder(g, task, stackSize, NORM_PRIORITY, false);
+        } else {
+            SecurityManager sm = System.getSecurityManager();
+            if (g == null) {
+                // the security manager can choose the thread group
+                if (sm != null) {
+                    g = sm.getThreadGroup();
+                }
 
-        // permission checks when creating a child Thread
-        if (!attached && security != null) {
-            security.checkAccess(g);
-            if (isCCLOverridden(getClass())) {
-                security.checkPermission(SecurityConstants.SUBCLASS_IMPLEMENTATION_PERMISSION);
+                // default to current thread's group
+                if (g == null) {
+                    g = parent.getThreadGroup();
+                }
             }
+
+            // permission checks when creating a child Thread
+            if (sm != null) {
+                sm.checkAccess(g);
+                if (isCCLOverridden(getClass())) {
+                    sm.checkPermission(SecurityConstants.SUBCLASS_IMPLEMENTATION_PERMISSION);
+                }
+            }
+
+            int priority = Math.min(parent.getPriority(), g.getMaxPriority());
+            this.holder = new FieldHolder(g, task, stackSize, priority, parent.isDaemon());
         }
 
         if (attached && VM.initLevel() < 1) {
@@ -685,7 +692,8 @@ public class Thread implements Runnable {
         } else {
             this.tid = ThreadIdentifiers.next();
         }
-        this.name = name;
+        this.name = (name != null) ? name : genThreadName();
+
         if (acc != null) {
             this.inheritedAccessControlContext = acc;
         } else {
@@ -717,18 +725,6 @@ public class Thread implements Runnable {
                 this.contextClassLoader = ClassLoader.getSystemClassLoader();
             }
         }
-
-        int priority;
-        boolean daemon;
-        if (attached) {
-            // primordial or attached thread
-            priority = NORM_PRIORITY;
-            daemon = false;
-        } else {
-            priority = Math.min(parent.getPriority(), g.getMaxPriority());
-            daemon = parent.isDaemon();
-        }
-        this.holder = new FieldHolder(g, task, stackSize, priority, daemon);
     }
 
     /**
@@ -736,8 +732,9 @@ public class Thread implements Runnable {
      *
      * @param name thread name, can be null
      * @param characteristics thread characteristics
+     * @param bound true when bound to an OS thread
      */
-    Thread(String name, int characteristics) {
+    Thread(String name, int characteristics, boolean bound) {
         this.tid = ThreadIdentifiers.next();
         this.name = (name != null) ? name : "";
         this.inheritedAccessControlContext = Constants.NO_PERMISSIONS_ACC;
@@ -767,8 +764,14 @@ public class Thread implements Runnable {
             this.contextClassLoader = ClassLoader.getSystemClassLoader();
         }
 
-        // no additional fields
-        this.holder = null;
+        // create a FieldHolder object, needed when bound to an OS thread
+        if (bound) {
+            ThreadGroup g = Constants.VTHREAD_GROUP;
+            int pri = NORM_PRIORITY;
+            this.holder = new FieldHolder(g, null, -1, pri, true);
+        } else {
+            this.holder = null;
+        }
     }
 
     /**
@@ -1143,7 +1146,7 @@ public class Thread implements Runnable {
      * @see <a href="#inheritance">Inheritance when creating threads</a>
      */
     public Thread() {
-        this(null, genThreadName(), 0, null, 0, null);
+        this(null, null, 0, null, 0, null);
     }
 
     /**
@@ -1164,7 +1167,7 @@ public class Thread implements Runnable {
      * @see <a href="#inheritance">Inheritance when creating threads</a>
      */
     public Thread(Runnable task) {
-        this(null, genThreadName(), 0, task, 0, null);
+        this(null, null, 0, task, 0, null);
     }
 
     /**
@@ -1173,7 +1176,7 @@ public class Thread implements Runnable {
      * This is not a public constructor.
      */
     Thread(Runnable task, @SuppressWarnings("removal") AccessControlContext acc) {
-        this(null, genThreadName(), 0, task, 0, acc);
+        this(null, null, 0, task, 0, acc);
     }
 
     /**
@@ -1206,7 +1209,7 @@ public class Thread implements Runnable {
      * @see <a href="#inheritance">Inheritance when creating threads</a>
      */
     public Thread(ThreadGroup group, Runnable task) {
-        this(group, genThreadName(), 0, task, 0, null);
+        this(group, null, 0, task, 0, null);
     }
 
     /**
@@ -1495,8 +1498,9 @@ public class Thread implements Runnable {
      */
     @PreviewFeature(feature = PreviewFeature.Feature.VIRTUAL_THREADS)
     public static Thread startVirtualThread(Runnable task) {
+        Objects.requireNonNull(task);
         PreviewFeatures.ensureEnabled();
-        var thread = new VirtualThread(null, null, 0, task);
+        var thread = ThreadBuilders.newVirtualThread(null, null, 0, task);
         thread.start();
         return thread;
     }
@@ -1511,7 +1515,7 @@ public class Thread implements Runnable {
      */
     @PreviewFeature(feature = PreviewFeature.Feature.VIRTUAL_THREADS)
     public final boolean isVirtual() {
-        return (this instanceof VirtualThread);
+        return (this instanceof BaseVirtualThread);
     }
 
     /**
@@ -2617,8 +2621,10 @@ public class Thread implements Runnable {
         StackTraceElement[][] traces = dumpThreads(threads);
         Map<Thread, StackTraceElement[]> m = HashMap.newHashMap(threads.length);
         for (int i = 0; i < threads.length; i++) {
+            Thread thread = threads[i];
             StackTraceElement[] stackTrace = traces[i];
-            if (stackTrace != null) {
+            // BoundVirtualThread objects may be in list returned by the VM
+            if (!thread.isVirtual() && stackTrace != null) {
                 m.put(threads[i], stackTrace);
             }
             // else terminated so we don't put it in the map
@@ -2688,7 +2694,11 @@ public class Thread implements Runnable {
      * Return an array of all live threads.
      */
     static Thread[] getAllThreads() {
-        return getThreads();
+        Thread[] threads = getThreads();
+        return Stream.of(threads)
+                // BoundVirtualThread objects may be in list returned by the VM
+                .filter(Predicate.not(Thread::isVirtual))
+                .toArray(Thread[]::new);
     }
 
     private static native StackTraceElement[][] dumpThreads(Thread[] threads);
