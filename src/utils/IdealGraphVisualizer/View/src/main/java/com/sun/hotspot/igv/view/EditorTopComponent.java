@@ -370,8 +370,6 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         satelliteComponent.setSize(200, 200);
         centerPanel.add(SATELLITE_STRING, satelliteComponent);
 
-
-
         scene.getComponent().addHierarchyBoundsListener(new HierarchyBoundsListener() {
 
             @Override

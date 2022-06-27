@@ -37,7 +37,7 @@ import com.sun.hotspot.igv.hierarchicallayout.LinearLayoutManager;
 import com.sun.hotspot.igv.hierarchicallayout.HierarchicalLayoutManager;
 import com.sun.hotspot.igv.layout.LayoutGraph;
 import com.sun.hotspot.igv.layout.Link;
-import com.sun.hotspot.igv.selectioncoordinator.SelectionCoordinator;
+import com.sun.hotspot.igv.selectioncoordinator.*;
 import com.sun.hotspot.igv.util.ColorIcon;
 import com.sun.hotspot.igv.util.CustomSelectAction;
 import com.sun.hotspot.igv.util.DoubleClickAction;

@@ -34,10 +34,6 @@ public final class ShrinkDiffAction extends ContextAction<DiagramViewModel> impl
     private DiagramViewModel model;
 
     public ShrinkDiffAction() {
-        this(Utilities.actionsGlobalContext());
-    }
-
-    public ShrinkDiffAction(Lookup lookup) {
         putValue(Action.SHORT_DESCRIPTION, "Reduce the difference selection");
         putValue(Action.SMALL_ICON, new ImageIcon(ImageUtilities.loadImage("com/sun/hotspot/igv/view/images/shrink_right.png")));
     }
@@ -59,12 +55,10 @@ public final class ShrinkDiffAction extends ContextAction<DiagramViewModel> impl
 
     @Override
     public void performAction(DiagramViewModel model) {
-        int fp = model.getFirstPosition();
-        int sp = model.getSecondPosition();
-        if (sp != model.getPositions().size() - 1) {
-            int nfp = fp;
-            int nsp = (fp < sp) ? sp - 1 : sp;
-            model.setPositions(nfp, nsp);
+        int firstPos = model.getFirstPosition();
+        int secondPos = model.getSecondPosition();
+        if (secondPos != model.getPositions().size() - 1) {
+            model.setPositions(firstPos, (firstPos < secondPos) ? secondPos - 1 : secondPos);
         }
     }
 
@@ -91,7 +85,7 @@ public final class ShrinkDiffAction extends ContextAction<DiagramViewModel> impl
 
     @Override
     public Action createContextAwareInstance(Lookup arg0) {
-        return new ShrinkDiffAction(arg0);
+        return new ShrinkDiffAction();
     }
 
     @Override

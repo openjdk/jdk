@@ -35,10 +35,6 @@ public final class ExpandDiffAction extends ContextAction<DiagramViewModel> impl
     private DiagramViewModel model;
 
     public ExpandDiffAction() {
-        this(Utilities.actionsGlobalContext());
-    }
-
-    public ExpandDiffAction(Lookup lookup) {
         putValue(Action.SHORT_DESCRIPTION, "Expand the difference selection");
         putValue(Action.SMALL_ICON, new ImageIcon(ImageUtilities.loadImage("com/sun/hotspot/igv/view/images/expand_right.png")));
     }
@@ -92,7 +88,7 @@ public final class ExpandDiffAction extends ContextAction<DiagramViewModel> impl
 
     @Override
     public Action createContextAwareInstance(Lookup arg0) {
-        return new ExpandDiffAction(arg0);
+        return new ExpandDiffAction();
     }
 
     @Override
