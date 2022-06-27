@@ -60,12 +60,8 @@ public final class PrevDiagramAction extends ContextAction<DiagramViewModel> imp
 
     @Override
     public void performAction(DiagramViewModel model) {
-        int fp = model.getFirstPosition();
-        int sp = model.getSecondPosition();
-        if (fp != 0) {
-            int nfp = fp - 1;
-            int nsp = sp - 1;
-            model.setPositions(nfp, nsp);
+        if (model.getFirstPosition() != 0) {
+            model.setPositions(model.getFirstPosition() - 1, model.getSecondPosition() - 1);
         }
     }
 

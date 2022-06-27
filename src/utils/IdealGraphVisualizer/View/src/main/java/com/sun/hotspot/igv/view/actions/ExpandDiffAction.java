@@ -56,12 +56,8 @@ public final class ExpandDiffAction extends ContextAction<DiagramViewModel> impl
 
     @Override
     public void performAction(DiagramViewModel model) {
-        int fp = model.getFirstPosition();
-        int sp = model.getSecondPosition();
-        if (sp != model.getPositions().size() - 1) {
-            int nfp = fp;
-            int nsp = sp + 1;
-            model.setPositions(nfp, nsp);
+        if (model.getSecondPosition() != model.getPositions().size() - 1) {
+            model.setPositions(model.getFirstPosition(), model.getSecondPosition() + 1);
         }
     }
 
