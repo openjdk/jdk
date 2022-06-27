@@ -508,7 +508,7 @@ InstanceKlass::InstanceKlass(const ClassFileParser& parser, KlassKind kind) :
   _itable_len(parser.itable_size()),
   _nest_host_index(0),
   _init_state(allocated),
-  _reference_type(REF_NONE),
+  _reference_type(parser.determine_reference_type()),
   _init_monitor(create_init_monitor("InstanceKlassInitMonitor_lock")),
   _init_thread(NULL)
 {

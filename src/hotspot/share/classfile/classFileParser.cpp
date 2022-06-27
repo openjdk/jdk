@@ -6093,15 +6093,6 @@ ReferenceType ClassFileParser::super_reference_type() const {
   return _super_klass == NULL ? REF_NONE : _super_klass->reference_type();
 }
 
-bool ClassFileParser::is_instance_ref_klass() const {
-  // Only the subclasses of j.l.r.Reference are InstanceRefKlass.
-  // j.l.r.Reference itself is InstanceKlass because InstanceRefKlass denotes a
-  // klass requiring special treatment in ref-processing. The abstract
-  // j.l.r.Reference cannot be instantiated so doesn't partake in
-  // ref-processing.
-  return is_java_lang_ref_Reference_subclass();
-}
-
 bool ClassFileParser::is_java_lang_ref_Reference_subclass() const {
   if (_super_klass == NULL) {
     return false;
@@ -6113,6 +6104,42 @@ bool ClassFileParser::is_java_lang_ref_Reference_subclass() const {
   }
 
   return _super_klass->reference_type() != REF_NONE;
+}
+
+bool ClassFileParser::is_instance_ref_klass() const {
+  // Only the subclasses of j.l.r.Reference are InstanceRefKlass.
+  // j.l.r.Reference itself is InstanceKlass because InstanceRefKlass denotes a
+  // klass requiring special treatment in ref-processing. The abstract
+  // j.l.r.Reference cannot be instantiated so doesn't partake in
+  // ref-processing.
+  return is_java_lang_ref_Reference_subclass();
+}
+
+static ReferenceType reference_subclass_name_to_type(const Symbol* name) {
+  if (       name == vmSymbols::java_lang_ref_SoftReference()) {
+    return REF_SOFT;
+  } else if (name == vmSymbols::java_lang_ref_WeakReference()) {
+    return REF_WEAK;
+  } else if (name == vmSymbols::java_lang_ref_FinalReference()) {
+    return REF_FINAL;
+  } else if (name == vmSymbols::java_lang_ref_PhantomReference()) {
+    return REF_PHANTOM;
+  } else {
+    ShouldNotReachHere();
+    return REF_NONE;
+  }
+}
+
+ReferenceType ClassFileParser::determine_reference_type() const {
+  const ReferenceType rt = super_reference_type();
+  if (rt != REF_NONE) {
+    // Inherit type from super class
+    return rt;
+  }
+
+  // Bootstrapping: this is one of the direct subclasses of java.lang.ref.Reference
+  const Symbol* const name = class_name();
+  return reference_subclass_name_to_type(name);
 }
 
 // ----------------------------------------------------------------------------
