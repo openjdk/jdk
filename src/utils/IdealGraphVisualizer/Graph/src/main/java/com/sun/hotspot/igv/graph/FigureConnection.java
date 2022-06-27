@@ -105,7 +105,9 @@ public class FigureConnection implements Connection {
         builder.append(getOutputSlot().getFigure().getProperties().resolveString(shortNodeText));
         builder.append(" → ");
         builder.append(getInputSlot().getFigure().getProperties().resolveString(shortNodeText));
-        builder.append(" [" + getInputSlot().getPosition() + "]");
+        builder.append(" [")
+               .append(getInputSlot().getPosition())
+               .append("]");
         return builder.toString();
     }
 
