@@ -524,11 +524,11 @@ class MacroAssembler: public Assembler {
   void push_CPU_state();
   void pop_CPU_state();
 
-  void push_cont_fastpath(Register java_thread);
-  void pop_cont_fastpath(Register java_thread);
-  void inc_held_monitor_count(Register java_thread);
-  void dec_held_monitor_count(Register java_thread);
-  void reset_held_monitor_count(Register java_thread);
+  void push_cont_fastpath();
+  void pop_cont_fastpath();
+  void inc_held_monitor_count();
+  void dec_held_monitor_count();
+  void reset_held_monitor_count();
   DEBUG_ONLY(void stop_if_in_cont(Register cont_reg, const char* name);)
 
   // Round up to a power of two
@@ -711,7 +711,7 @@ public:
 
   void verify_tlab();
 
-  Condition negate_condition(Condition cond);
+  static Condition negate_condition(Condition cond);
 
   // Instructions that use AddressLiteral operands. These instruction can handle 32bit/64bit
   // operands. In general the names are modified to avoid hiding the instruction in Assembler

@@ -1136,8 +1136,8 @@ final class $vectortype$ extends $abstractvectortype$ {
     @ForceInline
     @Override
     final
-    $abstractvectortype$ fromArray0($type$[] a, int offset, VectorMask<$Boxtype$> m) {
-        return super.fromArray0Template($masktype$.class, a, offset, ($masktype$) m);  // specialize
+    $abstractvectortype$ fromArray0($type$[] a, int offset, VectorMask<$Boxtype$> m, int offsetInRange) {
+        return super.fromArray0Template($masktype$.class, a, offset, ($masktype$) m, offsetInRange);  // specialize
     }
 
 #if[!byteOrShort]
@@ -1160,8 +1160,8 @@ final class $vectortype$ extends $abstractvectortype$ {
     @ForceInline
     @Override
     final
-    $abstractvectortype$ fromCharArray0(char[] a, int offset, VectorMask<$Boxtype$> m) {
-        return super.fromCharArray0Template($masktype$.class, a, offset, ($masktype$) m);  // specialize
+    $abstractvectortype$ fromCharArray0(char[] a, int offset, VectorMask<$Boxtype$> m, int offsetInRange) {
+        return super.fromCharArray0Template($masktype$.class, a, offset, ($masktype$) m, offsetInRange);  // specialize
     }
 #end[short]
 
@@ -1176,8 +1176,8 @@ final class $vectortype$ extends $abstractvectortype$ {
     @ForceInline
     @Override
     final
-    $abstractvectortype$ fromBooleanArray0(boolean[] a, int offset, VectorMask<$Boxtype$> m) {
-        return super.fromBooleanArray0Template($masktype$.class, a, offset, ($masktype$) m);  // specialize
+    $abstractvectortype$ fromBooleanArray0(boolean[] a, int offset, VectorMask<$Boxtype$> m, int offsetInRange) {
+        return super.fromBooleanArray0Template($masktype$.class, a, offset, ($masktype$) m, offsetInRange);  // specialize
     }
 #end[byte]
 
@@ -1191,8 +1191,8 @@ final class $vectortype$ extends $abstractvectortype$ {
     @ForceInline
     @Override
     final
-    $abstractvectortype$ fromMemorySegment0(MemorySegment ms, long offset, VectorMask<$Boxtype$> m) {
-        return super.fromMemorySegment0Template($masktype$.class, ms, offset, ($masktype$) m);  // specialize
+    $abstractvectortype$ fromMemorySegment0(MemorySegment ms, long offset, VectorMask<$Boxtype$> m, int offsetInRange) {
+        return super.fromMemorySegment0Template($masktype$.class, ms, offset, ($masktype$) m, offsetInRange);  // specialize
     }
 
     @ForceInline

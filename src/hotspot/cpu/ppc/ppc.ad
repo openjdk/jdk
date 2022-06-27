@@ -14098,13 +14098,28 @@ instruct vsqrt2D_reg(vecX dst, vecX src) %{
 
 // Vector Population Count Instructions
 
-instruct vpopcnt4I_reg(vecX dst, vecX src) %{
+instruct vpopcnt_reg(vecX dst, vecX src) %{
   match(Set dst (PopCountVI src));
-  predicate(n->as_Vector()->length() == 4);
-  format %{ "VPOPCNTW $dst,$src\t// pop count packed4I" %}
+  format %{ "VPOPCNT $dst,$src\t// pop count packed" %}
   size(4);
   ins_encode %{
-    __ vpopcntw($dst$$VectorSRegister->to_vr(), $src$$VectorSRegister->to_vr());
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    switch (bt) {
+      case T_BYTE:
+        __ vpopcntb($dst$$VectorSRegister->to_vr(), $src$$VectorSRegister->to_vr());
+        break;
+      case T_SHORT:
+        __ vpopcnth($dst$$VectorSRegister->to_vr(), $src$$VectorSRegister->to_vr());
+        break;
+      case T_INT:
+        __ vpopcntw($dst$$VectorSRegister->to_vr(), $src$$VectorSRegister->to_vr());
+        break;
+      case T_LONG:
+        __ vpopcntd($dst$$VectorSRegister->to_vr(), $src$$VectorSRegister->to_vr());
+        break;
+      default:
+        ShouldNotReachHere();
+    }
   %}
   ins_pipe(pipe_class_default);
 %}

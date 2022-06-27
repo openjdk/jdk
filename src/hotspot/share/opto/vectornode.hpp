@@ -80,6 +80,7 @@ class VectorNode : public TypeNode {
   static VectorNode* make_mask_node(int vopc, Node* n1, Node* n2, uint vlen, BasicType bt);
 
   static bool is_shift_opcode(int opc);
+  static bool can_transform_shift_op(Node* n, BasicType bt);
 
   static bool is_vshift_cnt_opcode(int opc);
 
@@ -87,6 +88,7 @@ class VectorNode : public TypeNode {
 
   static int  opcode(int opc, BasicType bt);
   static int replicate_opcode(BasicType bt);
+  static bool vector_size_supported(BasicType bt, uint vlen);
   static bool implemented(int opc, uint vlen, BasicType bt);
   static bool is_shift(Node* n);
   static bool is_vshift_cnt(Node* n);

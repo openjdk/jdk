@@ -30,7 +30,9 @@ import java.util.random.RandomGenerator;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
-@Fork(1)
+@Warmup(iterations = 5, time = 1)
+@Measurement(iterations = 5, time = 1)
+@Fork(3)
 public class FPComparison {
     static final int INVOCATIONS = 1024;
 
