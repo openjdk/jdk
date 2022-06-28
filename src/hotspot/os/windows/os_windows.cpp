@@ -5100,35 +5100,6 @@ bool os::pd_unmap_memory(char* addr, size_t bytes) {
   return true;
 }
 
-Thread* os::ThreadCrashProtection::_protected_thread = NULL;
-os::ThreadCrashProtection* os::ThreadCrashProtection::_crash_protection = NULL;
-
-os::ThreadCrashProtection::ThreadCrashProtection() {
-  _protected_thread = Thread::current();
-  assert(_protected_thread->is_JfrSampler_thread(), "should be JFRSampler");
-}
-
-// See the caveats for this class in os_windows.hpp
-// Protects the callback call so that raised OS EXCEPTIONS causes a jump back
-// into this method and returns false. If no OS EXCEPTION was raised, returns
-// true.
-// The callback is supposed to provide the method that should be protected.
-//
-bool os::ThreadCrashProtection::call(os::CrashProtectionCallback& cb) {
-  bool success = true;
-  __try {
-    _crash_protection = this;
-    cb.call();
-  } __except(EXCEPTION_EXECUTE_HANDLER) {
-    // only for protection, nothing to do
-    success = false;
-  }
-  _crash_protection = NULL;
-  _protected_thread = NULL;
-  return success;
-}
-
-
 class HighResolutionInterval : public CHeapObj<mtThread> {
   // The default timer resolution seems to be 10 milliseconds.
   // (Where is this written down?)
@@ -5398,7 +5369,7 @@ void Parker::unpark() {
 // Platform Monitor implementation
 
 // Must already be locked
-int os::PlatformMonitor::wait(jlong millis) {
+int PlatformMonitor::wait(jlong millis) {
   assert(millis >= 0, "negative timeout");
   int ret = OS_TIMEOUT;
   int status = SleepConditionVariableCS(&_cond, &_mutex,

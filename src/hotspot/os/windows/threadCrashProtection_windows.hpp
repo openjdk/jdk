@@ -22,20 +22,17 @@
  *
  */
 
-#ifndef OS_POSIX_THREADCRASHPROTECTION_POSIX_HPP
-#define OS_POSIX_THREADCRASHPROTECTION_POSIX_HPP
+#ifndef OS_WINDOWS_THREADCRASHPROTECTION_WINDOWS_HPP
+#define OS_WINDOWS_THREADCRASHPROTECTION_WINDOWS_HPP
 
 #include "memory/allocation.hpp"
-
-#include <setjmp.h>
 
 class CrashProtectionCallback;
 class Thread;
 
 /*
  * Crash protection for the JfrSampler thread. Wrap the callback
- * with a sigsetjmp and in case of a SIGSEGV/SIGBUS we siglongjmp
- * back.
+ * with a __try { call() }
  * To be able to use this - don't take locks, don't rely on destructors,
  * don't make OS library calls, don't allocate memory, don't print,
  * don't call code that could leave the heap / memory in an inconsistent state,
@@ -49,13 +46,9 @@ public:
 
   ThreadCrashProtection();
   bool call(CrashProtectionCallback& cb);
-
-  static void check_crash_protection(int signal, Thread* thread);
 private:
   static Thread* _protected_thread;
   static ThreadCrashProtection* _crash_protection;
-  void restore();
-  sigjmp_buf _jmpbuf;
 };
 
-#endif // OS_POSIX_THREADCRASHPROTECTION_POSIX_HPP
+#endif // OS_WINDOWS_THREADCRASHPROTECTION_WINDOWS_HPP

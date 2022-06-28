@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,61 +19,46 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-#ifndef SHARE_GC_Z_ZLOCK_HPP
-#define SHARE_GC_Z_ZLOCK_HPP
+#ifndef OS_WINDOWS_MUTEX_WINDOWS_HPP
+#define OS_WINDOWS_MUTEX_WINDOWS_HPP
 
 #include "memory/allocation.hpp"
-#include "runtime/mutex.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 
-class ZLock {
-private:
-  PlatformMutex _lock;
+// Platform specific implementations that underpin VM Mutex/Monitor classes.
+// Note that CRITICAL_SECTION supports recursive locking, while the semantics
+// of the VM Mutex class does not. It is up to the Mutex class to hide this
+// difference in behaviour.
 
-public:
+class PlatformMutex : public CHeapObj<mtSynchronizer> {
+  NONCOPYABLE(PlatformMutex);
+
+ protected:
+  CRITICAL_SECTION   _mutex; // Native mutex for locking
+
+ public:
+  PlatformMutex();
+  ~PlatformMutex();
   void lock();
-  bool try_lock();
   void unlock();
+  bool try_lock();
 };
 
-class ZReentrantLock {
-private:
-  ZLock            _lock;
-  Thread* volatile _owner;
-  uint64_t         _count;
+class PlatformMonitor : public PlatformMutex {
+ private:
+  CONDITION_VARIABLE _cond;  // Native condition variable for blocking
+  NONCOPYABLE(PlatformMonitor);
 
-public:
-  ZReentrantLock();
-
-  void lock();
-  void unlock();
-
-  bool is_owned() const;
-};
-
-class ZConditionLock {
-private:
-  PlatformMonitor _lock;
-
-public:
-  void lock();
-  bool try_lock();
-  void unlock();
-
-  bool wait(uint64_t millis = 0);
+ public:
+  PlatformMonitor();
+  ~PlatformMonitor();
+  int wait(jlong millis);
   void notify();
   void notify_all();
 };
 
-template <typename T>
-class ZLocker : public StackObj {
-private:
-  T* const _lock;
-
-public:
-  ZLocker(T* lock);
-  ~ZLocker();
-};
-
-#endif // SHARE_GC_Z_ZLOCK_HPP
+#endif // OS_WINDOWS_PARK_WINDOWS_HPP
