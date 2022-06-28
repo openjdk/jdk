@@ -215,8 +215,8 @@ public class PassFailJFrame {
     }
 
     /**
-     * Dispose all the windows(s) i,e both the test instruction frame and
-     * the testWindow that is added via addTestWindow(Window testWindow)
+     * Dispose all the window(s) i,e both the test instruction frame and
+     * the window(s) that is added via addTestWindow(Window testWindow)
      */
     private static synchronized void disposeFrames() {
         for (Window win : windowList) {
@@ -258,13 +258,15 @@ public class PassFailJFrame {
 
     /**
      * Position the instruction frame with testWindow (testcase created
-     * window) by the specified position
+     * window) by the specified position.
      * Note: This method should be invoked from the method that creates
-     * testWindow
-     *  @param testWindow test window that the test is created
+     * testWindow.
+     *
+     * @param testWindow test window that the test is created
      * @param position  position can be either HORIZONTAL (both test
-     *                  instruction frame and test window as arranged side by
-     *                  side or VERTICAL (both test instruction frame and
+     *                  instruction frame and test window as arranged
+     *                  side by side) or VERTICAL (both test instruction
+     *                  frame and test window as arranged up and down)
      */
     public static void positionTestWindow(Window testWindow, Position position) {
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
