@@ -121,21 +121,7 @@ public class TestNulls {
             "java.lang.foreign.ValueLayout$OfLong/withAttribute(java.lang.String,java.lang.constant.Constable)/1/0",
             "java.lang.foreign.ValueLayout$OfDouble/withAttribute(java.lang.String,java.lang.constant.Constable)/1/0",
             "java.lang.foreign.GroupLayout/withAttribute(java.lang.String,java.lang.constant.Constable)/1/0",
-            "java.lang.foreign.FunctionDescriptor/withAttribute(java.lang.String,java.lang.constant.Constable)/1/0",
-            "java.lang.foreign.SegmentAllocator/allocateArray(java.lang.foreign.ValueLayout$OfByte,byte[])/1/0",
-            "java.lang.foreign.SegmentAllocator/allocateArray(java.lang.foreign.ValueLayout$OfShort,short[])/1/0",
-            "java.lang.foreign.SegmentAllocator/allocateArray(java.lang.foreign.ValueLayout$OfChar,char[])/1/0",
-            "java.lang.foreign.SegmentAllocator/allocateArray(java.lang.foreign.ValueLayout$OfInt,int[])/1/0",
-            "java.lang.foreign.SegmentAllocator/allocateArray(java.lang.foreign.ValueLayout$OfFloat,float[])/1/0",
-            "java.lang.foreign.SegmentAllocator/allocateArray(java.lang.foreign.ValueLayout$OfLong,long[])/1/0",
-            "java.lang.foreign.SegmentAllocator/allocateArray(java.lang.foreign.ValueLayout$OfDouble,double[])/1/0",
-            "java.lang.foreign.MemorySession/allocateArray(java.lang.foreign.ValueLayout$OfByte,byte[])/1/0",
-            "java.lang.foreign.MemorySession/allocateArray(java.lang.foreign.ValueLayout$OfShort,short[])/1/0",
-            "java.lang.foreign.MemorySession/allocateArray(java.lang.foreign.ValueLayout$OfChar,char[])/1/0",
-            "java.lang.foreign.MemorySession/allocateArray(java.lang.foreign.ValueLayout$OfInt,int[])/1/0",
-            "java.lang.foreign.MemorySession/allocateArray(java.lang.foreign.ValueLayout$OfFloat,float[])/1/0",
-            "java.lang.foreign.MemorySession/allocateArray(java.lang.foreign.ValueLayout$OfLong,long[])/1/0",
-            "java.lang.foreign.MemorySession/allocateArray(java.lang.foreign.ValueLayout$OfDouble,double[])/1/0"
+            "java.lang.foreign.FunctionDescriptor/withAttribute(java.lang.String,java.lang.constant.Constable)/1/0"
     );
 
     static final Set<String> OBJECT_METHODS = Stream.of(Object.class.getMethods())
