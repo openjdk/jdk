@@ -305,6 +305,12 @@ bool LibraryCallKit::arch_supports_vector(int sopc, int num_elem, BasicType type
       }
     }
 
+    // We reach here only when target specific checks in match_rule_supported_vector
+    // returned a true value for these predicated opcodes.
+    if (sopc == Op_StoreVectorMasked || sopc == Op_LoadVectorMasked) {
+      return true;
+    }
+
     if (!is_supported) {
     #ifndef PRODUCT
       if (C->print_intrinsics()) {

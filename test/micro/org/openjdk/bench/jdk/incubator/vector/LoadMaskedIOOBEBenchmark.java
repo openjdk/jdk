@@ -95,7 +95,7 @@ public class LoadMaskedIOOBEBenchmark {
     public void byteLoadArrayMaskIOOBE() {
         for (int i = 0; i < inSize; i += bspecies.length()) {
             VectorMask<Byte> mask = VectorMask.fromArray(bspecies, m, i);
-            ByteVector.fromArray(bspecies, byteIn, i, mask).intoArray(byteOut, i);
+            ByteVector.fromArray(bspecies, byteIn, i, mask).intoArray(byteOut, i, mask);
         }
     }
 
@@ -103,7 +103,7 @@ public class LoadMaskedIOOBEBenchmark {
     public void shortLoadArrayMaskIOOBE() {
         for (int i = 0; i < inSize; i += sspecies.length()) {
             VectorMask<Short> mask = VectorMask.fromArray(sspecies, m, i);
-            ShortVector.fromArray(sspecies, shortIn, i, mask).intoArray(shortOut, i);
+            ShortVector.fromArray(sspecies, shortIn, i, mask).intoArray(shortOut, i, mask);
         }
     }
 
@@ -111,7 +111,7 @@ public class LoadMaskedIOOBEBenchmark {
     public void intLoadArrayMaskIOOBE() {
         for (int i = 0; i < inSize; i += ispecies.length()) {
             VectorMask<Integer> mask = VectorMask.fromArray(ispecies, m, i);
-            IntVector.fromArray(ispecies, intIn, i, mask).intoArray(intOut, i);
+            IntVector.fromArray(ispecies, intIn, i, mask).intoArray(intOut, i, mask);
         }
     }
 
@@ -119,7 +119,7 @@ public class LoadMaskedIOOBEBenchmark {
     public void longLoadArrayMaskIOOBE() {
         for (int i = 0; i < inSize; i += lspecies.length()) {
             VectorMask<Long> mask = VectorMask.fromArray(lspecies, m, i);
-            LongVector.fromArray(lspecies, longIn, i, mask).intoArray(longOut, i);
+            LongVector.fromArray(lspecies, longIn, i, mask).intoArray(longOut, i, mask);
         }
     }
 
@@ -127,7 +127,7 @@ public class LoadMaskedIOOBEBenchmark {
     public void floatLoadArrayMaskIOOBE() {
         for (int i = 0; i < inSize; i += fspecies.length()) {
             VectorMask<Float> mask = VectorMask.fromArray(fspecies, m, i);
-            FloatVector.fromArray(fspecies, floatIn, i, mask).intoArray(floatOut, i);
+            FloatVector.fromArray(fspecies, floatIn, i, mask).intoArray(floatOut, i, mask);
         }
     }
 
@@ -135,7 +135,7 @@ public class LoadMaskedIOOBEBenchmark {
     public void doubleLoadArrayMaskIOOBE() {
         for (int i = 0; i < inSize; i += dspecies.length()) {
             VectorMask<Double> mask = VectorMask.fromArray(dspecies, m, i);
-            DoubleVector.fromArray(dspecies, doubleIn, i, mask).intoArray(doubleOut, i);
+            DoubleVector.fromArray(dspecies, doubleIn, i, mask).intoArray(doubleOut, i, mask);
         }
     }
 }

@@ -3906,6 +3906,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
 
     // End of low-level memory operations.
 
+    @ForceInline
     private static
     void checkMaskFromIndexSize(int offset,
                                 ShortSpecies vsp,
@@ -3916,6 +3917,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
             .checkIndexByLane(offset, limit, vsp.iota(), scale);
     }
 
+    @ForceInline
     private static
     void checkMaskFromIndexSize(long offset,
                                 ShortSpecies vsp,

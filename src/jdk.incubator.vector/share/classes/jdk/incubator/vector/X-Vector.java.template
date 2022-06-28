@@ -5133,6 +5133,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
 
     // End of low-level memory operations.
 
+    @ForceInline
     private static
     void checkMaskFromIndexSize(int offset,
                                 $Type$Species vsp,
@@ -5143,6 +5144,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
             .checkIndexByLane(offset, limit, vsp.iota(), scale);
     }
 
+    @ForceInline
     private static
     void checkMaskFromIndexSize(long offset,
                                 $Type$Species vsp,
