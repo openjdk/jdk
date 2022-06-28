@@ -627,6 +627,15 @@ public final class Locale implements Cloneable, Serializable {
      */
     public static final char UNICODE_LOCALE_EXTENSION = 'u';
 
+    /**
+     * The key for the transformed content extension ('t').
+     *
+     * @see #getExtension(char)
+     * @see Builder#setExtension(char, String)
+     * @since 20
+     */
+    public static final char TRANSFORMED_CONTENT_EXTENSION = 't';
+
     /** serialization ID
      */
     @java.io.Serial
