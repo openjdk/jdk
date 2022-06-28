@@ -459,7 +459,7 @@ reportEvents(JNIEnv *env, jbyte sessionID, jthread thread, EventIndex ei,
 
 /* Create a synthetic class unload event for the specified signature. */
 jboolean
-synthesizeUnloadEvent(char *signature, JNIEnv *env)
+eventHandler_synthesizeUnloadEvent(char *signature, JNIEnv *env)
 {
     char *classname;
     HandlerNode *node;

@@ -37,6 +37,7 @@
 #include "util.h"
 #include "bag.h"
 #include "classTrack.h"
+#include "eventHandler.h"
 
 #define NOT_TAGGED 0
 
@@ -45,15 +46,13 @@
  */
 static jvmtiEnv* trackingEnv;
 
-extern jboolean synthesizeUnloadEvent(char *signature, JNIEnv *env);
-
 /*
  * Invoke the callback when classes are freed.
  */
 void JNICALL
 cbTrackingObjectFree(jvmtiEnv* jvmti_env, jlong tag)
 {
-  synthesizeUnloadEvent((char*)jlong_to_ptr(tag), getEnv());
+    eventHandler_synthesizeUnloadEvent((char*)jlong_to_ptr(tag), getEnv());
 }
 
 void
