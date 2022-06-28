@@ -387,7 +387,7 @@ public abstract class CipherSpi {
      * @param opmode the operation mode of this cipher (this is one of
      * the following:
      * {@code ENCRYPT_MODE}, {@code DECRYPT_MODE},
-     * {@code WRAP_MODE}> or {@code UNWRAP_MODE})
+     * {@code WRAP_MODE}, or {@code UNWRAP_MODE})
      * @param key the encryption key
      * @param params the algorithm parameters
      * @param random the source of randomness
@@ -444,7 +444,7 @@ public abstract class CipherSpi {
      * @param opmode the operation mode of this {@code Cipher} (this is one of
      * the following:
      * {@code ENCRYPT_MODE}, {@code DECRYPT_MODE},
-     * {@code WRAP_MODE} or {@code UNWRAP_MODE})
+     * {@code WRAP_MODE}, or {@code UNWRAP_MODE})
      * @param key the encryption key
      * @param params the algorithm parameters
      * @param random the source of randomness
