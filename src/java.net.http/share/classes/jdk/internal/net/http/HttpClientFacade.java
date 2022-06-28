@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package jdk.internal.net.http;
 
 import java.io.IOException;
+import java.lang.ref.Cleaner;
 import java.lang.ref.Reference;
 import java.net.Authenticator;
 import java.net.CookieHandler;
@@ -44,12 +45,19 @@ import java.net.http.HttpResponse.PushPromiseHandler;
 import java.net.http.WebSocket;
 import jdk.internal.net.http.common.OperationTrackers.Trackable;
 import jdk.internal.net.http.common.OperationTrackers.Tracker;
+import jdk.internal.ref.CleanerFactory;
 
 /**
  * An HttpClientFacade is a simple class that wraps an HttpClient implementation
  * and delegates everything to its implementation delegate.
+ * @implSpec
+ * Though the facade strongly reference its implementation, the
+ * implementation MUST NOT strongly reference the facade.
+ * It MAY use weak references if needed.
  */
 public final class HttpClientFacade extends HttpClient implements Trackable {
+
+    static final Cleaner cleaner = CleanerFactory.cleaner();
 
     final HttpClientImpl impl;
 
@@ -58,6 +66,8 @@ public final class HttpClientFacade extends HttpClient implements Trackable {
      */
     HttpClientFacade(HttpClientImpl impl) {
         this.impl = impl;
+        // wakeup the impl when the facade is gc'ed
+        cleaner.register(this, impl::facadeCleanup);
     }
 
     @Override // for tests
