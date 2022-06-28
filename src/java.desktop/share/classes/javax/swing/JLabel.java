@@ -874,8 +874,8 @@ public class JLabel extends JComponent implements SwingConstants, Accessible
 
 
     /**
-     * Returns true if the label icon for present label state is an instance of ImageIcon
-     * and the image it contains is same as the <code>image</code>.
+     * Returns <code>true</code> if the label icon for present label state is an instance of ImageIcon
+     * and the image it contains is same as the <code>image</code>, <code>false</code> otherwise.
      *
      * @see     java.awt.image.ImageObserver
      * @see     java.awt.Component#imageUpdate(java.awt.Image, int, int, int, int, int)
