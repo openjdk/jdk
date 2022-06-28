@@ -38,6 +38,7 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.Provider;
 import java.util.Arrays;
+import java.util.HexFormat;
 import java.util.Random;
 import javax.crypto.Cipher;
 
@@ -71,17 +72,9 @@ public class TestRawRSACipher extends PKCS11Test {
         cipherText = c1.doFinal(plainText);
         recoveredText = c2.doFinal(cipherText);
         if (!Arrays.equals(plainText, recoveredText)) {
-            System.out.println("*** E/D Test -- plainText:");
-            for (int i = 0; i < plainText.length ; i++) {
-                System.out.printf(String.format("%02x ", plainText[i]));
-            }
-            System.out.print("\n");
-            System.out.println("*** E/D Test -- recoveredText:");
-            for (int i = 0; i < recoveredText.length ; i++) {
-                System.out.printf(String.format("%02x ", recoveredText[i]));
-            }
-            System.out.print("\n");
-
+            System.out.println("*** E/D Test:");
+            System.out.println("\tplainText = " + HexFormat.of().formatHex(plainText));
+            System.out.println("\trecoveredText = " + HexFormat.of().formatHex(recoveredText));
             throw new RuntimeException("E/D Test against SunJCE Failed!");
         }
 
@@ -90,17 +83,9 @@ public class TestRawRSACipher extends PKCS11Test {
         cipherText = c2.doFinal(plainText);
         recoveredText = c1.doFinal(cipherText);
         if (!Arrays.equals(plainText, recoveredText)) {
-            System.out.println("*** D/E Test -- plainText:");
-            for (int i = 0; i < plainText.length ; i++) {
-                System.out.printf(String.format("%02x ", plainText[i]));
-            }
-            System.out.print("\n");
-            System.out.println("*** D/E Test -- recoveredText:");
-            for (int i = 0; i < recoveredText.length ; i++) {
-                System.out.printf(String.format("%02x ", recoveredText[i]));
-            }
-            System.out.print("\n");
-
+            System.out.println("*** D/E Test:");
+            System.out.println("\tplainText = " + HexFormat.of().formatHex(plainText));
+            System.out.println("\trecoveredText = " + HexFormat.of().formatHex(recoveredText));
             throw new RuntimeException("D/E Test against SunJCE Failed!");
         }
 
