@@ -175,4 +175,9 @@ final class DCmdCheck extends AbstractDCmd {
                 false, "false", false)
         };
     }
+
+    @Override
+    public JfrCommand getCommand() {
+        return JfrCommand.CHECKING;
+    }
 }
