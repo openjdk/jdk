@@ -55,7 +55,7 @@ import jdk.test.lib.net.URIBuilder;
  */
 public class ReferralLimitSearchTest {
 
-    // number of refarral hops to test
+    // number of referral hops to test
     private static final int MAX_REFERRAL_LIMIT = 4;
 
     // position of the message-id inside the responses
