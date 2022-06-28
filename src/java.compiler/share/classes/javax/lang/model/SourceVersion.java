@@ -40,6 +40,7 @@ import java.util.HashSet;
  * model future releases of the language.
  *
  * @since 1.6
+ * @see java.lang.reflect.ClassFileFormatVersion
  */
 public enum SourceVersion {
     /*

@@ -37,7 +37,9 @@ package java.lang.reflect;
  * Specification.
  *
  * @since 20
+ * @see java.compiler/javax.lang.model.SourceVersion
  */
+@SuppressWarnings("doclint:reference") // cross-module links
 public enum ClassFileFormatVersion {
 
     /**
@@ -82,7 +84,7 @@ public enum ClassFileFormatVersion {
      *
      * @see <a
      * href="https://jcp.org/aboutJava/communityprocess/maintenance/jsr924/index.html">
-     * <cite>The Java Virtual Machine Specification, Java SE, Second Edition updated for Java SE 5.0</cite></a>
+     * <cite>The Java Virtual Machine Specification, Second Edition updated for Java SE 5.0</cite></a>
      * @see <a href="https://jcp.org/en/jsr/detail?id=14">
      * JSR 14: Add Generic Types To The Java&trade; Programming Language</a>
      * @see <a href="https://jcp.org/en/jsr/detail?id=175">
@@ -258,6 +260,7 @@ public enum ClassFileFormatVersion {
 
     /**
      * {@return the major class file version integer}
+     * @jvms 4.1 The {@code ClassFile} Structure
      */
     int major() {
         return major;

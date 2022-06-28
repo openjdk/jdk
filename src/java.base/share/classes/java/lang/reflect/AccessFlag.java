@@ -70,7 +70,7 @@ import static java.util.Map.entry;
  * added at the end of the existing list.
  *
  * @apiNote
- * The JVM class file format has a new version defined for each new
+ * The JVM class file format has a {@linkplain ClassFileFormatVersion new version} defined for each new
  * {@linkplain Runtime.Version#feature() feature release}. A new class
  * file version may define new access flags or retire old ones. {@code
  * AccessFlag} is intended to model the set of access flags across
@@ -306,10 +306,24 @@ public enum AccessFlag {
     }
 
     /**
-     * {@return kinds of constructs the flag can be applied to}
+     * {@return kinds of constructs the flag can be applied to in the
+     * latest class file format version}
      */
     public Set<Location> locations() {
         return locations;
+    }
+
+    /**
+     * {@return kinds of constructs the flag can be applied to in the
+     * given class file format version}
+     * @param cffv the class file format version to use
+     */
+    public Set<Location> locations(ClassFileFormatVersion cffv) {
+        if (cffv == ClassFileFormatVersion.latest()) {
+            return locations();
+        } else {
+            throw new UnsupportedOperationException(); // TOOD
+        }
     }
 
     /**
