@@ -373,9 +373,26 @@ public class WindowsHelper {
         }
 
         String value = status.assertExitCodeIsZero().getOutput().stream().skip(2).findFirst().orElseThrow();
-        // Extract the last field from the following line:
-        //     Common Desktop    REG_SZ    C:\Users\Public\Desktop
-        value = value.split("    REG_SZ    ")[1];
+        // Extract the last field from the following lines:
+        //    (Default)    REG_SZ    test1
+        //    string_val    REG_SZ    test2
+        //    string_val_empty    REG_SZ
+        //    bin_val    REG_BINARY    4242
+        //    bin_val_empty    REG_BINARY
+        //    dword_val    REG_DWORD    0x2a
+        //    qword_val    REG_QWORD    0x2a
+        //    multi_string_val    REG_MULTI_SZ    test3\0test4
+        //    multi_string_val_empty    REG_MULTI_SZ
+        //    expand_string_val    REG_EXPAND_SZ    test5
+        //    expand_string_val_empty    REG_EXPAND_SZ
+        String[] parts = value.split(" {4}REG_[A-Z_]+ {4}");
+        if (parts.length == 1) {
+            value = "";
+        } else if (parts.length == 2) {
+            value = parts[1];
+        } else {
+            throw new RuntimeException(String.format("Failed to extract registry value from string [%s]", value));
+        }
 
         TKit.trace(String.format("Registry value [%s] at [%s] path is [%s]",
                 valueName, keyPath, value));
