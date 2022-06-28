@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6994008
+ * @bug 6994008 8289401
  * @summary basic test for RSA/ECB/NoPadding cipher
  * @author Valerie Peng
  * @library /test/lib ..
@@ -71,6 +71,17 @@ public class TestRawRSACipher extends PKCS11Test {
         cipherText = c1.doFinal(plainText);
         recoveredText = c2.doFinal(cipherText);
         if (!Arrays.equals(plainText, recoveredText)) {
+            System.out.println("*** E/D Test -- plainText:");
+            for (int i = 0; i < plainText.length ; i++) {
+                System.out.printf(String.format("%02x ", plainText[i]));
+            }
+            System.out.print("\n");
+            System.out.println("*** E/D Test -- recoveredText:");
+            for (int i = 0; i < recoveredText.length ; i++) {
+                System.out.printf(String.format("%02x ", recoveredText[i]));
+            }
+            System.out.print("\n");
+
             throw new RuntimeException("E/D Test against SunJCE Failed!");
         }
 
@@ -79,6 +90,17 @@ public class TestRawRSACipher extends PKCS11Test {
         cipherText = c2.doFinal(plainText);
         recoveredText = c1.doFinal(cipherText);
         if (!Arrays.equals(plainText, recoveredText)) {
+            System.out.println("*** D/E Test -- plainText:");
+            for (int i = 0; i < plainText.length ; i++) {
+                System.out.printf(String.format("%02x ", plainText[i]));
+            }
+            System.out.print("\n");
+            System.out.println("*** D/E Test -- recoveredText:");
+            for (int i = 0; i < recoveredText.length ; i++) {
+                System.out.printf(String.format("%02x ", recoveredText[i]));
+            }
+            System.out.print("\n");
+
             throw new RuntimeException("D/E Test against SunJCE Failed!");
         }
 
