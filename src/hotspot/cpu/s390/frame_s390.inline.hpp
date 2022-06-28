@@ -56,7 +56,11 @@ inline void frame::setup() {
     assert(_cb == nullptr || _cb->as_compiled_method()->insts_contains_inclusive(_pc),
            "original PC must be in the main code section of the the compiled method (or must be immediately following it)");
   } else {
-    _deopt_state = not_deoptimized;
+    if (_cb == SharedRuntime::deopt_blob()) {
+      _deopt_state = is_deoptimized;
+    } else {
+      _deopt_state = not_deoptimized;
+    }
   }
 
   // assert(_on_heap || is_aligned(_sp, frame::frame_alignment), "SP must be 8-byte aligned");
