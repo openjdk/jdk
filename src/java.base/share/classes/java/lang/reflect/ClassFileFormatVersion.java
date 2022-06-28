@@ -54,7 +54,7 @@ public enum ClassFileFormatVersion {
      * The version recognized by the Java Platform 1.1.
      *
      */
-    RELEASE_1(46),
+    RELEASE_1(45),
 
     /**
      * The version recognized by the Java 2 Platform, Standard Edition,
@@ -64,19 +64,19 @@ public enum ClassFileFormatVersion {
      * Specification, Second Edition</cite>, which includes the {@link
      * AccessFlag#STRICT ACC_STRICT} access flag.
      */
-    RELEASE_2(47),
+    RELEASE_2(46),
 
     /**
      * The version recognized by the Java 2 Platform, Standard Edition,
      * v 1.3.
      */
-    RELEASE_3(48),
+    RELEASE_3(47),
 
     /**
      * The version recognized by the Java 2 Platform, Standard Edition,
      * v 1.4.
      */
-    RELEASE_4(49),
+    RELEASE_4(48),
 
     /**
      * The version recognized by the Java 2 Platform, Standard
@@ -90,7 +90,7 @@ public enum ClassFileFormatVersion {
      * @see <a href="https://jcp.org/en/jsr/detail?id=175">
      * JSR 175: A Metadata Facility for the Java&trade; Programming Language</a>
      */
-    RELEASE_5(50),
+    RELEASE_5(49),
 
     /**
      * The version recognized by the Java Platform, Standard Edition
@@ -100,7 +100,7 @@ public enum ClassFileFormatVersion {
      * href="https://jcp.org/aboutJava/communityprocess/maintenance/jsr924/index2.html">
      * <cite>The Java Virtual Machine Specification, Java SE, Second Edition updated for Java SE 6</cite></a>
      */
-    RELEASE_6(51),
+    RELEASE_6(50),
 
     /**
      * The version recognized by the Java Platform, Standard Edition
@@ -110,7 +110,7 @@ public enum ClassFileFormatVersion {
      * href="https://docs.oracle.com/javase/specs/jvms/se7/html/index.html">
      * <cite>The Java Virtual Machine Specification, Java SE 7 Edition</cite></a>
      */
-    RELEASE_7(52),
+    RELEASE_7(51),
 
     /**
      * The version recognized by the Java Platform, Standard Edition
@@ -122,7 +122,7 @@ public enum ClassFileFormatVersion {
      * @see <a href="https://jcp.org/en/jsr/detail?id=335">
      * JSR 335: Lambda Expressions for the Java&trade; Programming Language</a>
      */
-    RELEASE_8(53),
+    RELEASE_8(52),
 
     /**
      * The version recognized by the Java Platform, Standard Edition
@@ -134,7 +134,7 @@ public enum ClassFileFormatVersion {
      * @see <a href="https://jcp.org/en/jsr/detail?id=376">
      * JSR 376: Java&trade; Platform Module System</a>
      */
-     RELEASE_9(54),
+     RELEASE_9(53),
 
     /**
      * The version recognized by the Java Platform, Standard Edition
@@ -144,7 +144,7 @@ public enum ClassFileFormatVersion {
      * href="https://docs.oracle.com/javase/specs/jvms/se10/html/index.html">
      * <cite>The Java Virtual Machine Specification, Java SE 10 Edition</cite></a>
      */
-    RELEASE_10(55),
+    RELEASE_10(54),
 
     /**
      * The version recognized by the Java Platform, Standard Edition
@@ -154,7 +154,7 @@ public enum ClassFileFormatVersion {
      * href="https://docs.oracle.com/javase/specs/jvms/se11/html/index.html">
      * <cite>The Java Virtual Machine Specification, Java SE 11 Edition</cite></a>
      */
-    RELEASE_11(56),
+    RELEASE_11(55),
 
     /**
      * The version recognized by the Java Platform, Standard Edition
@@ -164,7 +164,7 @@ public enum ClassFileFormatVersion {
      * href="https://docs.oracle.com/javase/specs/jvms/se12/html/index.html">
      * <cite>The Java Virtual Machine Specification, Java SE 12 Edition</cite></a>
      */
-    RELEASE_12(57),
+    RELEASE_12(56),
 
     /**
      * The version recognized by the Java Platform, Standard Edition
@@ -174,7 +174,7 @@ public enum ClassFileFormatVersion {
      * href="https://docs.oracle.com/javase/specs/jvms/se13/html/index.html">
      * <cite>The Java Virtual Machine Specification, Java SE 13 Edition</cite></a>
      */
-    RELEASE_13(58),
+    RELEASE_13(57),
 
     /**
      * The version recognized by the Java Platform, Standard Edition
@@ -184,7 +184,7 @@ public enum ClassFileFormatVersion {
      * href="https://docs.oracle.com/javase/specs/jvms/se14/html/index.html">
      * <cite>The Java Virtual Machine Specification, Java SE 14 Edition</cite></a>
      */
-    RELEASE_14(59),
+    RELEASE_14(58),
 
     /**
      * The version recognized by the Java Platform, Standard Edition
@@ -194,7 +194,7 @@ public enum ClassFileFormatVersion {
      * href="https://docs.oracle.com/javase/specs/jvms/se15/html/index.html">
      * <cite>The Java Virtual Machine Specification, Java SE 15 Edition</cite></a>
      */
-    RELEASE_15(60),
+    RELEASE_15(59),
 
     /**
      * The version recognized by the Java Platform, Standard Edition
@@ -204,7 +204,7 @@ public enum ClassFileFormatVersion {
      * href="https://docs.oracle.com/javase/specs/jvms/se16/html/index.html">
      * <cite>The Java Virtual Machine Specification, Java SE 16 Edition</cite></a>
      */
-    RELEASE_16(61),
+    RELEASE_16(60),
 
     /**
      * The version recognized by the Java Platform, Standard Edition
@@ -221,7 +221,7 @@ public enum ClassFileFormatVersion {
      * @see <a href="https://openjdk.java.net/jeps/409">
      * JEP 409: Sealed Classes</a>
      */
-    RELEASE_17(62),
+    RELEASE_17(61),
 
     /**
      * The version recognized by the Java Platform, Standard Edition
@@ -231,19 +231,19 @@ public enum ClassFileFormatVersion {
      * href="https://docs.oracle.com/javase/specs/jvms/se18/html/index.html">
      * <cite>The Java Virtual Machine Specification, Java SE 18 Edition</cite></a>
      */
-    RELEASE_18(63),
+    RELEASE_18(62),
 
     /**
      * The version recognized by the Java Platform, Standard Edition
      * 19.
      */
-    RELEASE_19(64),
+    RELEASE_19(63),
 
     /**
      * The version recognized by the Java Platform, Standard Edition
      * 20.
      */
-    RELEASE_20(65);
+    RELEASE_20(64);
 
     private int major;
 
