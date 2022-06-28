@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,32 +32,43 @@ public class MovePointTests {
 
     public static void main(String argv[]) {
         BigDecimal bd;
-        BigDecimal res;
 
         bd = BigDecimal.valueOf(1, -3);
-        res = bd.movePointLeft(0);
-        if (res == bd) {  // intentionally ==
-            throw new RuntimeException("Unexpected result " +
-                    bd + " == " + res);
-        }
-        res = bd.movePointRight(0);
-        if (res == bd) {  // intentionally ==
-            throw new RuntimeException("Unexpected result " +
-                    bd + " == " + res);
-        }
+        checkNotIdentical(bd, bd.movePointLeft(0));
+        checkNotIdentical(bd, bd.movePointRight(0));
 
         bd = BigDecimal.valueOf(1, 3);
-        res = bd.movePointLeft(0);
-        if (res != bd) {  // intentionally !=
-            throw new RuntimeException("Unexpected result " +
-                    bd + " != " + res);
-        }
-        res = bd.movePointRight(0);
-        if (res != bd) {  // intentionally !=
-            throw new RuntimeException("Unexpected result " +
-                    bd + " != " + res);
-        }
+        checkIdentical(bd, bd.movePointLeft(0));
+        checkIdentical(bd, bd.movePointRight(0));
 
+        bd = BigDecimal.valueOf(1, -3);
+        checkNotEquals(bd, bd.movePointLeft(1));
+        checkNotEquals(bd, bd.movePointRight(1));
+
+        bd = BigDecimal.valueOf(1, -3);
+        checkNotEquals(bd, bd.movePointLeft(-1));
+        checkNotEquals(bd, bd.movePointRight(-1));
+    }
+
+    private static void checkIdentical(BigDecimal bd, BigDecimal res) {
+        if (res != bd) {  // intentionally !=
+            throw new RuntimeException("Unexpected result " +
+                    bd + " != " + res);
+        }
+    }
+
+    private static void checkNotIdentical(BigDecimal bd, BigDecimal res) {
+        if (res == bd) {  // intentionally ==
+            throw new RuntimeException("Unexpected result " +
+                    bd + " == " + res);
+        }
+    }
+
+    private static void checkNotEquals(BigDecimal bd, BigDecimal res) {
+        if (res.equals(bd)) {
+            throw new RuntimeException("Unexpected result " +
+                    bd + ".equals(" + res + ")");
+        }
     }
 
 }
