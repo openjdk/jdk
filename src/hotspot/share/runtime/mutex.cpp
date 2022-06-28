@@ -332,7 +332,6 @@ const char* Mutex::rank_name() const {
   return rank_name_internal(_rank);
 }
 
-
 void Mutex::assert_no_overlap(Rank orig, Rank adjusted, int adjust) {
   int i = 0;
   while (_ranks[i] < orig) i++;
@@ -355,6 +354,10 @@ void Mutex::print_on(outputStream* st) const {
   }
   DEBUG_ONLY(st->print(" %s", rank_name()));
   st->cr();
+}
+
+void Mutex::print() const {
+  print_on(::tty);
 }
 #endif // PRODUCT
 

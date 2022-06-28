@@ -35,10 +35,8 @@ public:
 
 #if defined(LINUX) || defined(AIX) || defined(BSD)
 # include "threadCrashProtection_posix.hpp"
-#elif defined(_WINDOWS)
-# include "threadCrashProtection_windows.hpp"
 #else
-# error "No ThreadCrashProtection implementation provided for this OS"
+# include OS_HEADER(threadCrashProtection)
 #endif
 
 #endif // SHARE_RUNTIME_THREADCRASHPROTECTION_HPP

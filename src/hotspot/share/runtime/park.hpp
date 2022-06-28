@@ -30,10 +30,8 @@
 
 #if defined(LINUX) || defined(AIX) || defined(BSD)
 # include "park_posix.hpp"
-#elif defined(_WINDOWS)
-# include "park_windows.hpp"
 #else
-# error "No PlatformParker implementation provided for this OS"
+# include OS_HEADER(park)
 #endif
 
 class Thread;

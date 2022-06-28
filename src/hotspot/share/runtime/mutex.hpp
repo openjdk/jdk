@@ -30,10 +30,8 @@
 
 #if defined(LINUX) || defined(AIX) || defined(BSD)
 # include "mutex_posix.hpp"
-#elif defined(_WINDOWS)
-# include "mutex_windows.hpp"
 #else
-# error "No PlatformMutex implementation provided for this OS"
+# include OS_HEADER(mutex)
 #endif
 
 
@@ -200,7 +198,7 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   void print_on_error(outputStream* st) const;
   #ifndef PRODUCT
     void print_on(outputStream* st) const;
-    void print() const                      { /*print_on(::tty); */ } // FIXME
+    void print() const;
   #endif
 };
 
