@@ -68,15 +68,10 @@ public class Basic {
         WatchEvent<?> event = events.iterator().next();
         System.out.format("got event: type=%s, count=%d, context=%s\n",
             event.kind(), event.count(), event.context());
-        if (event.kind() != expectedKind) {
-            throw new RuntimeException("unexpected event: " + event.kind() +
-                                       " (expected: " + expectedKind + ")");
-        }
-        if (!expectedContext.equals(event.context())) {
-            System.out.format("context: %s (%s) | expected: %s (%s)", event.context(), event.context().getClass(), expectedContext, expectedContext.getClass());
-            throw new RuntimeException("unexpected context: " + event.context() +
-                                       " (expected: " + expectedContext + ")");
-        }
+        if (event.kind() != expectedKind)
+            throw new RuntimeException("unexpected event");
+        if (!expectedContext.equals(event.context()))
+            throw new RuntimeException("unexpected context");
     }
 
     /**
@@ -130,7 +125,7 @@ public class Basic {
 
             System.out.println("reset key");
             if (!myKey.reset())
-                throw new RuntimeException("key has been cancelled");
+                throw new RuntimeException("key has been cancalled");
 
             System.out.println("OKAY");
 
