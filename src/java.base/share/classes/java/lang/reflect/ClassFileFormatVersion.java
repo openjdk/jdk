@@ -262,4 +262,56 @@ public enum ClassFileFormatVersion {
     int major() {
         return major;
     }
+
+    /**
+     * {@return the latest class file format version that is usable
+     * under the runtime version argument} If the runtime version's
+     * {@linkplain Runtime.Version#feature() feature} is greater than
+     * the feature of the {@linkplain #runtimeVersion() runtime
+     * version} of the {@linkplain #latest() latest source version},
+     * an {@code IllegalArgumentException} is thrown.
+     *
+     * <p>Because the class file format versions of the Java platform
+     * have so far followed a linear progression, only the feature
+     * component of a runtime version is queried to determine the
+     * mapping to a class file format version. If that linearity
+     * changes in the future, other components of the runtime version
+     * may influence the result.
+     *
+     * @apiNote
+     * An expression to convert from a string value, for example
+     * {@code "17"}, to the corresponding source version, {@code
+     * RELEASE_17}, is:
+     *
+     * <pre>{@code SourceVersion.valueOf(Runtime.Version.parse("17"))}</pre>
+     *
+     * @param rv runtime version to map to a class file format version
+     * @throws IllegalArgumentException if the feature of version
+     * argument is greater than the feature of the platform version.
+     */
+    public static ClassFileFormatVersion valueOf(Runtime.Version rv) {
+        // Could also implement this as a switch where a case was
+        // added with each new release.
+        return valueOf("RELEASE_" + rv.feature());
+    }
+    /**
+     * {@return the least runtime version that supports this class
+     * file format version; otherwise {@code null}} The returned
+     * runtime version has a {@linkplain Runtime.Version#feature()
+     * feature} large enough to support this source version and has no
+     * other elements set.
+     *
+     * Class file format versions greater than or equal to {@link
+     * RELEASE_6} have non-{@code null} results.
+     */
+    public Runtime.Version runtimeVersion() {
+        // Starting with Java SE 6, the leading digit was the primary
+        // way of identifying the platform version.
+        if (this.compareTo(RELEASE_6) >= 0) {
+            return Runtime.Version.parse(Integer.toString(ordinal()));
+        } else {
+            return null;
+        }
+    }
+
 }
