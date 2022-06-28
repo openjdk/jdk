@@ -4440,6 +4440,16 @@ operand immI_65535()
   interface(CONST_INTER);
 %}
 
+operand immI_positive()
+%{
+  predicate(n->get_int() > 0);
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 operand immL_255()
 %{
   predicate(n->get_long() == 255L);
