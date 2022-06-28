@@ -262,7 +262,7 @@ public enum ClassFileFormatVersion {
      * {@return the major class file version integer}
      * @jvms 4.1 The {@code ClassFile} Structure
      */
-    int major() {
+    public int major() {
         return major;
     }
 
