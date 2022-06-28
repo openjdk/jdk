@@ -6089,10 +6089,6 @@ const ClassFileStream* ClassFileParser::clone_stream() const {
   return _stream->clone();
 }
 
-ReferenceType ClassFileParser::super_reference_type() const {
-  return _super_klass == NULL ? REF_NONE : _super_klass->reference_type();
-}
-
 bool ClassFileParser::is_java_lang_ref_Reference_subclass() const {
   if (_super_klass == NULL) {
     return false;
@@ -6115,7 +6111,19 @@ bool ClassFileParser::is_instance_ref_klass() const {
   return is_java_lang_ref_Reference_subclass();
 }
 
-static ReferenceType reference_subclass_name_to_type(const Symbol* name) {
+ReferenceType ClassFileParser::determine_reference_type() const {
+  if (_super_klass == NULL) {
+    return REF_NONE;
+  }
+
+  const ReferenceType super_ref_type = _super_klass->reference_type();
+  if (super_ref_type != REF_NONE) {
+    // Inherit type from super class
+    return super_ref_type;
+  }
+
+  const Symbol* const name = class_name();
+
   if (       name == vmSymbols::java_lang_ref_SoftReference()) {
     return REF_SOFT;
   } else if (name == vmSymbols::java_lang_ref_WeakReference()) {
@@ -6125,21 +6133,9 @@ static ReferenceType reference_subclass_name_to_type(const Symbol* name) {
   } else if (name == vmSymbols::java_lang_ref_PhantomReference()) {
     return REF_PHANTOM;
   } else {
-    ShouldNotReachHere();
+    // non-strong references
     return REF_NONE;
   }
-}
-
-ReferenceType ClassFileParser::determine_reference_type() const {
-  const ReferenceType rt = super_reference_type();
-  if (rt != REF_NONE) {
-    // Inherit type from super class
-    return rt;
-  }
-
-  // Bootstrapping: this is one of the direct subclasses of java.lang.ref.Reference
-  const Symbol* const name = class_name();
-  return reference_subclass_name_to_type(name);
 }
 
 // ----------------------------------------------------------------------------

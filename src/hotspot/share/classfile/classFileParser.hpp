@@ -528,7 +528,6 @@ class ClassFileParser {
 
   void update_class_name(Symbol* new_name);
 
-  ReferenceType super_reference_type() const;
   bool is_java_lang_ref_Reference_subclass() const;
  public:
   ClassFileParser(ClassFileStream* stream,
