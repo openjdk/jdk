@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8289301
  * @summary P11Cipher should not throw OOB exception during padding
  * @library /test/lib ..
  * @run main/othervm TestPaddingOOB
