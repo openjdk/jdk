@@ -58,7 +58,7 @@ ZLiveMap::ZLiveMap(const ZLiveMap& other) :
     _bitmap(other._bitmap),
     _segment_shift(other._segment_shift) {}
 
-void ZLiveMap::reset(ZGenerationId id, size_t index) {
+void ZLiveMap::reset(ZGenerationId id) {
   ZGeneration* const generation = ZGeneration::generation(id);
   const uint32_t seqnum_initializing = (uint32_t)-1;
   bool contention = false;
@@ -94,8 +94,8 @@ void ZLiveMap::reset(ZGenerationId id, size_t index) {
       ZStatInc(ZCounterMarkSeqNumResetContention);
       contention = true;
 
-      log_trace(gc)("Mark seqnum reset contention, thread: " PTR_FORMAT " (%s), map: " PTR_FORMAT ", bit: " SIZE_FORMAT,
-                    p2i(Thread::current()), ZUtils::thread_name(), p2i(this), index);
+      log_trace(gc)("Mark seqnum reset contention, thread: " PTR_FORMAT " (%s), map: " PTR_FORMAT,
+                    p2i(Thread::current()), ZUtils::thread_name(), p2i(this));
     }
   }
 }

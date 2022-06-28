@@ -79,7 +79,7 @@ inline void ZRememberedSet::unset_range_non_par_current(uintptr_t offset, size_t
 
 template <typename Function>
 void ZRememberedSet::iterate_bitmap(Function function, CHeapBitMap* bitmap) {
-  bitmap->iterate_f([&](BitMap::idx_t index) {
+  bitmap->iterate([&](BitMap::idx_t index) {
     const uintptr_t offset = to_offset(index);
 
     function(offset);

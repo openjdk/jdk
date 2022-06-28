@@ -71,8 +71,8 @@ private:
   ZPageType type_from_size(size_t size) const;
   const char* type_to_string() const;
 
-  size_t bit_index(zaddress addr) const;
-  zoffset offset_from_bit_index(size_t index) const;
+  BitMap::idx_t bit_index(zaddress addr) const;
+  zoffset offset_from_bit_index(BitMap::idx_t index) const;
   oop object_from_bit_index(BitMap::idx_t index) const;
 
   bool is_live_bit_set(zaddress addr) const;

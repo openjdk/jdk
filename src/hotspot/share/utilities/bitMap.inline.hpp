@@ -249,10 +249,15 @@ static BitMap::idx_t high_order_bit_index(BitMap::bm_word_t cword) {
 }
 
 template<BitMap::bm_word_t flip, bool aligned_left>
-inline BitMap::idx_t BitMap::get_prev_bit_impl(idx_t l_index, idx_t r_index) const {
+inline BitMap::idx_t BitMap::get_prev_bit_impl(idx_t l_index, idx_t r_index_exclusive) const {
   STATIC_ASSERT(flip == find_ones_flip || flip == find_zeros_flip);
-  verify_range(l_index, r_index);
+  verify_range(l_index, r_index_exclusive);
   assert(!aligned_left || is_aligned(l_index, BitsPerWord), "l_index not aligned");
+
+  if (l_index == r_index_exclusive) {
+    // Empty range
+    return idx_t(-1);
+  }
 
   // The first word often contains an interesting bit, either due to
   // density or because of features of the calling algorithm.  So it's
@@ -261,6 +266,7 @@ inline BitMap::idx_t BitMap::get_prev_bit_impl(idx_t l_index, idx_t r_index) con
   // first word is indeed interesting.
 
   // Get the word containing r_index, and shift out high bits.
+  idx_t r_index = r_index_exclusive - 1;
   idx_t word_index = to_words_align_down(r_index);
   idx_t r_index_in_word = bit_in_word(r_index);
   idx_t r_index_bit = size_t(1) << r_index_in_word;
@@ -347,12 +353,15 @@ BitMap::get_prev_one_offset_aligned_left(idx_t l_offset, idx_t r_offset) const {
 }
 
 template <typename Function>
-inline bool BitMap::iterate_f(Function function, idx_t beg, idx_t end) {
+inline bool BitMap::iterate(Function function, idx_t beg, idx_t end) {
   for (idx_t index = beg; true; ++index) {
     index = get_next_one_offset(index, end);
     if (index >= end) {
+      // Nothing was found
       return true;
-    } else if (!function(index)) {
+    }
+
+    if (!function(index)) {
       return false;
     }
   }
@@ -360,21 +369,22 @@ inline bool BitMap::iterate_f(Function function, idx_t beg, idx_t end) {
 
 template <typename BitMapClosureType>
 inline bool BitMap::iterate(BitMapClosureType* cl, idx_t beg, idx_t end) {
-  auto cl_to_lambda = [&](idx_t index)-> bool {
+  auto cl_to_lambda = [&](idx_t index) -> bool {
     return cl->do_bit(index);
   };
 
-  return iterate_f(cl_to_lambda, beg, end);
+  return iterate(cl_to_lambda, beg, end);
 }
 
 template <typename Function>
-inline bool BitMap::iterate_reverse_f(Function function, idx_t beg, idx_t end) {
-  for (idx_t index = end; true; --index) {
+inline bool BitMap::iterate_reverse(Function function, idx_t beg, idx_t end) {
+  for (idx_t index = end; true;) {
     index = get_prev_one_offset(beg, index);
-    if (index == size_t(-1)) {
+    if (index == BitMap::idx_t(-1)) {
+      // Nothing was found
       return true;
     }
-    // Returns size_t(-1) if nothing was found
+
     if (!function(index)) {
       return false;
     }
@@ -385,12 +395,13 @@ inline bool BitMap::iterate_reverse_f(Function function, idx_t beg, idx_t end) {
   }
 }
 
-inline bool BitMap::iterate_reverse(BitMapClosure* cl, idx_t beg, idx_t end) {
-  auto cl_to_lambda = [&](idx_t index)-> bool {
+template <typename BitMapClosureType>
+inline bool BitMap::iterate_reverse(BitMapClosureType* cl, idx_t beg, idx_t end) {
+  auto cl_to_lambda = [&](idx_t index) -> bool {
     return cl->do_bit(index);
   };
 
-  return iterate_reverse_f(cl_to_lambda, beg, end);
+  return iterate_reverse(cl_to_lambda, beg, end);
 }
 
 // Returns a bit mask for a range of bits [beg, end) within a single word.  Each

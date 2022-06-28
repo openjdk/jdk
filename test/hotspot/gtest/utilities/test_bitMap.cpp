@@ -27,6 +27,9 @@
 #include "utilities/bitMap.inline.hpp"
 #include "unittest.hpp"
 
+typedef BitMap::idx_t idx_t;
+typedef BitMap::bm_word_t bm_word_t;
+
 class BitMapTest {
 
   template <class ResizableBitMapClass>
@@ -167,9 +170,9 @@ TEST_VM(BitMap, reinitialize) {
 
 class BitMapTestClosure : public BitMapClosure {
 private:
-  size_t* _sequence;
-  size_t  _length;
-  size_t  _index;
+  idx_t* _sequence;
+  size_t _length;
+  idx_t  _index;
 
 public:
   BitMapTestClosure(size_t* sequence, size_t length) : _sequence(sequence), _length(length), _index(length) {}
@@ -193,7 +196,7 @@ public:
 
 class BitMapTestIterateReverse {
 public:
-  static void test_with_lambda(size_t size, size_t* seq, size_t seq_length) {
+  static void test_with_lambda(idx_t size, idx_t* seq, size_t seq_length) {
     ResourceMark rm;
     ResourceBitMap bm(size, true /* clear */);
 
@@ -203,7 +206,7 @@ public:
     }
 
     // Iterate over the bits
-    size_t index = seq_length;
+    idx_t index = seq_length;
 
     auto lambda = [&](BitMap::idx_t bit) -> bool {
       if (index == 0) {
@@ -217,14 +220,14 @@ public:
       return true;
     };
 
-    bool val = bm.iterate_reverse_f(lambda, 0, bm.size() - 1);
+    bool val = bm.iterate_reverse(lambda, 0, bm.size());
 
     ASSERT_TRUE(val) << "Failed";
 
-    ASSERT_TRUE(index == 0) << "Not all visited";
+    ASSERT_TRUE(index == 0) << "Not all visited. index: " << index << " size: " << size << " seq_length: " << seq_length;
   }
 
-  static void test(size_t size, size_t* seq, size_t seq_length) {
+  static void test(idx_t size, idx_t* seq, size_t seq_length) {
     test_with_lambda(size, seq, seq_length);
 
     ResourceMark rm;
@@ -237,7 +240,7 @@ public:
 
     // Iterate over the bits
     BitMapTestClosure cl(seq, seq_length);
-    bool val = bm.iterate_reverse(&cl, 0, bm.size()-1);
+    bool val = bm.iterate_reverse(&cl, 0, bm.size());
     ASSERT_TRUE(val) << "Failed";
 
     ASSERT_TRUE(cl.all_visited()) << "Not all visited";
@@ -245,8 +248,8 @@ public:
 };
 
 TEST_VM(BitMap, iterate_reverse) {
-  const size_t word_size = sizeof(BitMap::bm_word_t) * BitsPerByte;
-  const size_t size = 4 * word_size;
+  const size_t word_size = sizeof(bm_word_t) * BitsPerByte;
+  const idx_t size = 4 * word_size;
 
   // With no bits set
   {
@@ -255,21 +258,21 @@ TEST_VM(BitMap, iterate_reverse) {
 
   // With end-points set
   {
-    size_t seq[] = {0, 2, 6, 31, 61, 131, size - 1};
+    idx_t seq[] = {0, 2, 6, 31, 61, 131, size - 1};
     BitMapTestIterateReverse::test(size, seq, ARRAY_SIZE(seq));
   }
 
   // Without end-points set
   {
-    size_t seq[] = {1, 2, 6, 31, 61, 131, size - 2};
+    idx_t seq[] = {1, 2, 6, 31, 61, 131, size - 2};
     BitMapTestIterateReverse::test(size, seq, ARRAY_SIZE(seq));
   }
 
   // With all bits set
   {
-    size_t* seq = (size_t*)os::malloc(size * sizeof(size_t), mtTest);
+    idx_t* seq = (idx_t*)os::malloc(size * sizeof(size_t), mtTest);
     for (size_t i = 0; i < size; i++) {
-      seq[i] = i;
+      seq[i] = idx_t(i);
     }
     BitMapTestIterateReverse::test(size, seq, size);
     os::free(seq);

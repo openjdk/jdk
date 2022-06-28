@@ -249,11 +249,11 @@ inline bool ZPage::is_marked() const {
   return _livemap.is_marked(_generation_id);
 }
 
-inline size_t ZPage::bit_index(zaddress addr) const {
+inline BitMap::idx_t ZPage::bit_index(zaddress addr) const {
   return (local_offset(addr) >> object_alignment_shift()) * 2;
 }
 
-inline zoffset ZPage::offset_from_bit_index(size_t index) const {
+inline zoffset ZPage::offset_from_bit_index(BitMap::idx_t index) const {
   const uintptr_t l_offset = ((index / 2) << object_alignment_shift());
   return start() + l_offset;
 }
@@ -265,13 +265,13 @@ inline oop ZPage::object_from_bit_index(BitMap::idx_t index) const {
 
 inline bool ZPage::is_live_bit_set(zaddress addr) const {
   assert(is_relocatable(), "Invalid page state");
-  const size_t index = bit_index(addr);
+  const BitMap::idx_t index = bit_index(addr);
   return _livemap.get(_generation_id, index);
 }
 
 inline bool ZPage::is_strong_bit_set(zaddress addr) const {
   assert(is_relocatable(), "Invalid page state");
-  const size_t index = bit_index(addr);
+  const BitMap::idx_t index = bit_index(addr);
   return _livemap.get(_generation_id, index + 1);
 }
 
@@ -311,7 +311,7 @@ inline bool ZPage::mark_object(zaddress addr, bool finalizable, bool& inc_live) 
   (void)to_oop(addr);
 
   // Set mark bit
-  const size_t index = bit_index(addr);
+  const BitMap::idx_t index = bit_index(addr);
   return _livemap.set(_generation_id, index, finalizable, inc_live);
 }
 
@@ -395,9 +395,12 @@ inline zaddress_unsafe ZPage::find_base(volatile zpointer* p) {
     return ZOffset::address_unsafe(start());
   }
 
-  const size_t index = bit_index(zaddress(uintptr_t(p)));
-  const size_t base_index = _livemap.find_base_bit(index);
-  if (base_index == size_t(-1)) {
+  // Note: when thinking about excluding looking at the index corresponding to
+  // the field address p, it's important to note that for medium pages both p
+  // and it's associated base could map to the same index.
+  const BitMap::idx_t index = bit_index(zaddress(uintptr_t(p)));
+  const BitMap::idx_t base_index = _livemap.find_base_bit(index);
+  if (base_index == BitMap::idx_t(-1)) {
     return zaddress_unsafe::null;
   } else {
     return ZOffset::address_unsafe(offset_from_bit_index(base_index));

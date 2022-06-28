@@ -730,7 +730,9 @@ private:
         ? from_page->remset_iterator_limited_current(from_local_offset, size)
         : from_page->remset_iterator_limited_previous(from_local_offset, size);
 
-    for (uintptr_t field_local_offset; iter.next(&field_local_offset);) {
+    for (uintptr_t field_bit; iter.next(&field_bit);) {
+      const uintptr_t field_local_offset = ZRememberedSet::to_offset(field_bit);
+
       // In-place relocation slides objects and needs to clear the remset
       // bits of the old fields. The 'previous' remset is cleared at the end
       // of the relocation.

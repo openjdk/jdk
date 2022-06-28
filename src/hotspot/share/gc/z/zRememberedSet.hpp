@@ -40,7 +40,7 @@ public:
   ZRememberedSetIterator(BitMap* bitmap);
   ZRememberedSetIterator(BitMap* bitmap, BitMap::idx_t start, BitMap::idx_t end);
 
-  bool next(size_t* index);
+  bool next(BitMap::idx_t* index);
 };
 
 class ZRememberedSetReverseIterator {
@@ -56,7 +56,7 @@ public:
   void reset(BitMap::idx_t start, BitMap::idx_t end);
   void reset(BitMap::idx_t end);
 
-  bool next(size_t* index);
+  bool next(BitMap::idx_t* index);
 };
 
 struct ZRememberedSetContaining {

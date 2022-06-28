@@ -67,10 +67,10 @@ protected:
     ZLiveMap livemap(1);
 
     bool inc_live;
-    uintptr_t object = 0u;
+    BitMap::idx_t object_index = BitMap::idx_t(0);
 
     // Mark the object strong.
-    livemap.set(ZGenerationId::old, object, false /* finalizable */, inc_live);
+    livemap.set(ZGenerationId::old, object_index, false /* finalizable */, inc_live);
 
     // Check that both bits are in the same segment.
     ASSERT_EQ(livemap.index_to_segment(0), livemap.index_to_segment(1));

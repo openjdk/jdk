@@ -201,7 +201,7 @@ public:
     //page.mark_object(object, dummy, dummy);
     {
       bool dummy = false;
-      const size_t index = page.bit_index(object);
+      const BitMap::idx_t index = page.bit_index(object);
       page._livemap.set(page._generation_id, index, dummy, dummy);
     }
 
