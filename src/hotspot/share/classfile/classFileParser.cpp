@@ -6089,17 +6089,8 @@ const ClassFileStream* ClassFileParser::clone_stream() const {
   return _stream->clone();
 }
 
-bool ClassFileParser::is_java_lang_ref_Reference_subclass() const {
-  if (_super_klass == NULL) {
-    return false;
-  }
-
-  if (_super_klass->name() == vmSymbols::java_lang_ref_Reference()) {
-    // Direct subclass of j.l.r.Reference: Soft|Weak|Final|Phantom
-    return true;
-  }
-
-  return _super_klass->reference_type() != REF_NONE;
+ReferenceType ClassFileParser::super_reference_type() const {
+  return _super_klass == NULL ? REF_NONE : _super_klass->reference_type();
 }
 
 bool ClassFileParser::is_instance_ref_klass() const {
@@ -6111,31 +6102,17 @@ bool ClassFileParser::is_instance_ref_klass() const {
   return is_java_lang_ref_Reference_subclass();
 }
 
-ReferenceType ClassFileParser::determine_reference_type() const {
+bool ClassFileParser::is_java_lang_ref_Reference_subclass() const {
   if (_super_klass == NULL) {
-    return REF_NONE;
+    return false;
   }
 
-  const ReferenceType super_ref_type = _super_klass->reference_type();
-  if (super_ref_type != REF_NONE) {
-    // Inherit type from super class
-    return super_ref_type;
+  if (_super_klass->name() == vmSymbols::java_lang_ref_Reference()) {
+    // Direct subclass of j.l.r.Reference: Soft|Weak|Final|Phantom
+    return true;
   }
 
-  const Symbol* const name = class_name();
-
-  if (       name == vmSymbols::java_lang_ref_SoftReference()) {
-    return REF_SOFT;
-  } else if (name == vmSymbols::java_lang_ref_WeakReference()) {
-    return REF_WEAK;
-  } else if (name == vmSymbols::java_lang_ref_FinalReference()) {
-    return REF_FINAL;
-  } else if (name == vmSymbols::java_lang_ref_PhantomReference()) {
-    return REF_PHANTOM;
-  } else {
-    // non-strong references
-    return REF_NONE;
-  }
+  return _super_klass->reference_type() != REF_NONE;
 }
 
 // ----------------------------------------------------------------------------
