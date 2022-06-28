@@ -3022,7 +3022,7 @@ class StubGenerator: public StubCodeGenerator {
 
  public:
   StubGenerator(CodeBuffer* code, int phase) : StubCodeGenerator(code) {
-    _stub_count = !all ? 0x100 : 0x200;
+    _stub_count = (phase == 0) ? 0x100 : 0x200;
     if (phase == 0) {
       generate_initial();
     } else if (phase == 1) {
