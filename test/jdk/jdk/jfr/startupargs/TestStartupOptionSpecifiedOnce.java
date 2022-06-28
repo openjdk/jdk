@@ -20,7 +20,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package jdk.jfr.startupargs;
 
 import jdk.test.lib.process.OutputAnalyzer;
@@ -31,7 +30,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * @test
+ * @test The test verifies that options can only be specified once with --XX:StartFlightRecording
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
@@ -46,22 +45,22 @@ public class TestStartupOptionSpecifiedOnce {
 
     public static void main(String[] args) throws Exception {
 
-        testSpecifiedOption("name=abc,name=abc", "name" );
-        testSpecifiedOption("disk=true,disk=true", "disk" );
-        testSpecifiedOption("delay=1s,delay=1s", "delay" );
-        testSpecifiedOption("duration=1s,duration=1s", "duration" );
-        testSpecifiedOption("maxage=1s,maxage=1s", "maxage" );
-        testSpecifiedOption("maxsize=1m,maxsize=1m", "maxsize" );
-        testSpecifiedOption("flush-interval=1s,flush-interval=1s", "flush-interval" );
-        testSpecifiedOption("dumponexit=true,dumponexit=true", "dumponexit" );
-        testSpecifiedOption("filename=filename,filename=filename", "filename" );
-        testSpecifiedOption("path-to-gc-roots=false,path-to-gc-roots=false", "path-to-gc-roots" );
+        testSpecifiedOption("name=abc,name=def", "name" );
+        testSpecifiedOption("disk=true,disk=false", "disk" );
+        testSpecifiedOption("delay=1s,delay=2s", "delay" );
+        testSpecifiedOption("duration=1s,duration=2s", "duration" );
+        testSpecifiedOption("maxage=1s,maxage=2s", "maxage" );
+        testSpecifiedOption("maxsize=1m,maxsize=2m", "maxsize" );
+        testSpecifiedOption("flush-interval=1s,flush-interval=2s", "flush-interval" );
+        testSpecifiedOption("dumponexit=true,dumponexit=false", "dumponexit" );
+        testSpecifiedOption("filename=filename1,filename=filename2", "filename" );
+        testSpecifiedOption("path-to-gc-roots=true,path-to-gc-roots=false", "path-to-gc-roots" );
 
         testMultipleOption("settings=default,settings=default");
 
-        testSpecifiedOptions("name=abc,name=abc,disk=true,disk=true", Set.of("name", "disk"));
-        testSpecifiedOptions("name=abc,name=abc,disk=true,disk=true,delay=1s,delay=1s", Set.of("name", "disk", "delay"));
-        testSpecifiedOptions("name=abc,name=abc,disk=true,disk=true,delay=1s,delay=1s,maxage=1s,maxage=1s", Set.of("name", "disk", "delay", "maxage"));
+        testSpecifiedOptions("name=abc,name=def,disk=true,disk=false", Set.of("name", "disk"));
+        testSpecifiedOptions("name=abc,name=def,disk=true,disk=false,delay=1s,delay=2s", Set.of("name", "disk", "delay"));
+        testSpecifiedOptions("name=abc,name=def,disk=true,disk=false,delay=1s,delay=2s,maxage=1s,maxage=2s", Set.of("name", "disk", "delay", "maxage"));
     }
 
     private static OutputAnalyzer startJfrJvm(String addedOptions) throws Exception {
@@ -78,12 +77,12 @@ public class TestStartupOptionSpecifiedOnce {
         String output = startJfrJvm(option).getOutput();
 
         try {
-            Matcher matcher = Pattern.compile("Option ([a-z-]+) can only specified once with starting flight recording").matcher(output);
+            Matcher matcher = Pattern.compile("Option ([a-z-]+) can only be specified once with starting flight recording").matcher(output);
             matcher.find();
             String outputtedOption = matcher.group(1);
 
             if (!outputtedOption.equals(expectOption)){
-                throw new RuntimeException("expect option is %s, but actual is %s".formatted(expectOption, outputtedOption));
+                throw new RuntimeException("expected option is %s, but actual is %s".formatted(expectOption, outputtedOption));
             }
 
         } catch (Exception e){
@@ -95,7 +94,7 @@ public class TestStartupOptionSpecifiedOnce {
     private static void testMultipleOption(String option) throws Exception{
 
         String output = startJfrJvm(option).getOutput();
-        final String regex = "Option ([a-z-]+) can only specified once with starting flight recording";
+        final String regex = "Option ([a-z-]+) can only be specified once with starting flight recording";
 
         try {
             Matcher matcher = Pattern.compile(regex).matcher(output);
@@ -114,7 +113,7 @@ public class TestStartupOptionSpecifiedOnce {
         String output = startJfrJvm(option).getOutput();
 
         try {
-            Matcher matcher = Pattern.compile("Options ([a-z-]+)((?:, [a-z-]+)*) and ([a-z-]+) can only specified once with starting flight recording").matcher(output);
+            Matcher matcher = Pattern.compile("Options ([a-z-]+)((?:, [a-z-]+)*) and ([a-z-]+) can only be specified once with starting flight recording").matcher(output);
             matcher.find();
 
             Set<String> outputtedOptions = new HashSet<>();
@@ -129,7 +128,7 @@ public class TestStartupOptionSpecifiedOnce {
             outputtedOptions.add(matcher.group(3));
 
             if (!outputtedOptions.equals(expectOptions)){
-                throw new RuntimeException("expect option is %s, but actual is %s".formatted(expectOptions, outputtedOptions));
+                throw new RuntimeException("expected options are %s, but actual are %s".formatted(expectOptions, outputtedOptions));
             }
 
         } catch (Exception e){
@@ -137,5 +136,4 @@ public class TestStartupOptionSpecifiedOnce {
             throw e;
         }
     }
-
 }
