@@ -53,6 +53,12 @@ public enum ClassFileFormatVersion {
     /**
      * The version recognized by the Java Platform 1.1.
      *
+     * @apiNote
+     * While {@code RELEASE_0} and {@code RELEASE_1} have the same
+     * {@linkplain #major() major version}, several additional
+     * attributes were defined for {@code RELEASE_1} (JVMS {@jvms
+     * 4.7}).
+     *
      */
     RELEASE_1(45),
 
@@ -153,6 +159,8 @@ public enum ClassFileFormatVersion {
      * @see <a
      * href="https://docs.oracle.com/javase/specs/jvms/se11/html/index.html">
      * <cite>The Java Virtual Machine Specification, Java SE 11 Edition</cite></a>
+     * @see <a href="https://openjdk.java.net/jeps/181">
+     * JEP 181: Nest-Based Access Control</a>
      */
     RELEASE_11(55),
 
@@ -193,6 +201,8 @@ public enum ClassFileFormatVersion {
      * @see <a
      * href="https://docs.oracle.com/javase/specs/jvms/se15/html/index.html">
      * <cite>The Java Virtual Machine Specification, Java SE 15 Edition</cite></a>
+     * @see <a href="https://openjdk.java.net/jeps/371">
+     * JEP 371: Hidden Classes</a>
      */
     RELEASE_15(59),
 
@@ -271,8 +281,8 @@ public enum ClassFileFormatVersion {
      * under the runtime version argument} If the runtime version's
      * {@linkplain Runtime.Version#feature() feature} is greater than
      * the feature of the {@linkplain #runtimeVersion() runtime
-     * version} of the {@linkplain #latest() latest source version},
-     * an {@code IllegalArgumentException} is thrown.
+     * version} of the {@linkplain #latest() latest class file format
+     * version}, an {@code IllegalArgumentException} is thrown.
      *
      * <p>Because the class file format versions of the Java platform
      * have so far followed a linear progression, only the feature
@@ -283,10 +293,11 @@ public enum ClassFileFormatVersion {
      *
      * @apiNote
      * An expression to convert from a string value, for example
-     * {@code "17"}, to the corresponding source version, {@code
-     * RELEASE_17}, is:
+     * {@code "17"}, to the corresponding class file format version,
+     * {@code RELEASE_17}, is:
      *
-     * <pre>{@code SourceVersion.valueOf(Runtime.Version.parse("17"))}</pre>
+     * {@snippet lang="java" :
+     * ClassFileFormatVersion.valueOf(Runtime.Version.parse("17"))}
      *
      * @param rv runtime version to map to a class file format version
      * @throws IllegalArgumentException if the feature of version
@@ -301,8 +312,8 @@ public enum ClassFileFormatVersion {
      * {@return the least runtime version that supports this class
      * file format version; otherwise {@code null}} The returned
      * runtime version has a {@linkplain Runtime.Version#feature()
-     * feature} large enough to support this source version and has no
-     * other elements set.
+     * feature} large enough to support this class file format version
+     * and has no other elements set.
      *
      * Class file format versions greater than or equal to {@link
      * RELEASE_6} have non-{@code null} results.
