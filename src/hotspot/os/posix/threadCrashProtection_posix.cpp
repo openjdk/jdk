@@ -35,7 +35,7 @@ ThreadCrashProtection::ThreadCrashProtection() {
 }
 
 /*
- * See the caveats for this class in os_posix.hpp
+ * See the caveats for this class in threadCrashProtection_posix.hpp
  * Protects the callback call so that SIGSEGV / SIGBUS jumps back into this
  * method and returns false. If none of the signals are raised, returns true.
  * The callback is supposed to provide the method that should be protected.
