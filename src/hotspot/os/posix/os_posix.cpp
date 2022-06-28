@@ -1182,7 +1182,7 @@ static void pthread_init_common(void) {
   if ((status = pthread_mutexattr_settype(_mutexAttr, PTHREAD_MUTEX_NORMAL)) != 0) {
     fatal("pthread_mutexattr_settype: %s", os::strerror(status));
   }
-  os::PlatformMutex::init();
+  PlatformMutex::init();
 }
 
 static int (*_pthread_condattr_setclock)(pthread_condattr_t *, clockid_t) = NULL;
@@ -1741,25 +1741,25 @@ void Parker::unpark() {
 
 #if PLATFORM_MONITOR_IMPL_INDIRECT
 
-os::PlatformMutex::Mutex::Mutex() : _next(NULL) {
+PlatformMutex::Mutex::Mutex() : _next(NULL) {
   int status = pthread_mutex_init(&_mutex, _mutexAttr);
   assert_status(status == 0, status, "mutex_init");
 }
 
-os::PlatformMutex::Mutex::~Mutex() {
+PlatformMutex::Mutex::~Mutex() {
   int status = pthread_mutex_destroy(&_mutex);
   assert_status(status == 0, status, "mutex_destroy");
 }
 
-pthread_mutex_t os::PlatformMutex::_freelist_lock;
-os::PlatformMutex::Mutex* os::PlatformMutex::_mutex_freelist = NULL;
+pthread_mutex_t PlatformMutex::_freelist_lock;
+PlatformMutex::Mutex* PlatformMutex::_mutex_freelist = NULL;
 
-void os::PlatformMutex::init() {
+void PlatformMutex::init() {
   int status = pthread_mutex_init(&_freelist_lock, _mutexAttr);
   assert_status(status == 0, status, "freelist lock init");
 }
 
-struct os::PlatformMutex::WithFreeListLocked : public StackObj {
+struct PlatformMutex::WithFreeListLocked : public StackObj {
   WithFreeListLocked() {
     int status = pthread_mutex_lock(&_freelist_lock);
     assert_status(status == 0, status, "freelist lock");
@@ -1771,7 +1771,7 @@ struct os::PlatformMutex::WithFreeListLocked : public StackObj {
   }
 };
 
-os::PlatformMutex::PlatformMutex() {
+PlatformMutex::PlatformMutex() {
   {
     WithFreeListLocked wfl;
     _impl = _mutex_freelist;
@@ -1784,26 +1784,26 @@ os::PlatformMutex::PlatformMutex() {
   _impl = new Mutex();
 }
 
-os::PlatformMutex::~PlatformMutex() {
+PlatformMutex::~PlatformMutex() {
   WithFreeListLocked wfl;
   assert(_impl->_next == NULL, "invariant");
   _impl->_next = _mutex_freelist;
   _mutex_freelist = _impl;
 }
 
-os::PlatformMonitor::Cond::Cond() : _next(NULL) {
+PlatformMonitor::Cond::Cond() : _next(NULL) {
   int status = pthread_cond_init(&_cond, _condAttr);
   assert_status(status == 0, status, "cond_init");
 }
 
-os::PlatformMonitor::Cond::~Cond() {
+PlatformMonitor::Cond::~Cond() {
   int status = pthread_cond_destroy(&_cond);
   assert_status(status == 0, status, "cond_destroy");
 }
 
-os::PlatformMonitor::Cond* os::PlatformMonitor::_cond_freelist = NULL;
+PlatformMonitor::Cond* PlatformMonitor::_cond_freelist = NULL;
 
-os::PlatformMonitor::PlatformMonitor() {
+PlatformMonitor::PlatformMonitor() {
   {
     WithFreeListLocked wfl;
     _impl = _cond_freelist;
@@ -1816,7 +1816,7 @@ os::PlatformMonitor::PlatformMonitor() {
   _impl = new Cond();
 }
 
-os::PlatformMonitor::~PlatformMonitor() {
+PlatformMonitor::~PlatformMonitor() {
   WithFreeListLocked wfl;
   assert(_impl->_next == NULL, "invariant");
   _impl->_next = _cond_freelist;
@@ -1825,22 +1825,22 @@ os::PlatformMonitor::~PlatformMonitor() {
 
 #else
 
-os::PlatformMutex::PlatformMutex() {
+PlatformMutex::PlatformMutex() {
   int status = pthread_mutex_init(&_mutex, _mutexAttr);
   assert_status(status == 0, status, "mutex_init");
 }
 
-os::PlatformMutex::~PlatformMutex() {
+PlatformMutex::~PlatformMutex() {
   int status = pthread_mutex_destroy(&_mutex);
   assert_status(status == 0, status, "mutex_destroy");
 }
 
-os::PlatformMonitor::PlatformMonitor() {
+PlatformMonitor::PlatformMonitor() {
   int status = pthread_cond_init(&_cond, _condAttr);
   assert_status(status == 0, status, "cond_init");
 }
 
-os::PlatformMonitor::~PlatformMonitor() {
+PlatformMonitor::~PlatformMonitor() {
   int status = pthread_cond_destroy(&_cond);
   assert_status(status == 0, status, "cond_destroy");
 }
@@ -1848,7 +1848,7 @@ os::PlatformMonitor::~PlatformMonitor() {
 #endif // PLATFORM_MONITOR_IMPL_INDIRECT
 
 // Must already be locked
-int os::PlatformMonitor::wait(jlong millis) {
+int PlatformMonitor::wait(jlong millis) {
   assert(millis >= 0, "negative timeout");
   if (millis > 0) {
     struct timespec abst;

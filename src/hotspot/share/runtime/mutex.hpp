@@ -27,7 +27,15 @@
 
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/os.hpp"
+
+#if defined(LINUX) || defined(AIX) || defined(BSD)
+# include "mutex_posix.hpp"
+#elif defined(_WINDOWS)
+# include "mutex_windows.hpp"
+#else
+# error "No PlatformMutex implementation provided for this OS"
+#endif
+
 
 // A Mutex/Monitor is a simple wrapper around a native lock plus condition
 // variable that supports lock ownership tracking, lock ranking for deadlock
@@ -89,7 +97,7 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   void raw_set_owner(Thread* new_owner) { Atomic::store(&_owner, new_owner); }
 
  protected:                              // Monitor-Mutex metadata
-  os::PlatformMonitor _lock;             // Native monitor implementation
+  PlatformMonitor _lock;                 // Native monitor implementation
   const char* _name;                     // Name of mutex/monitor
 
   // Debugging fields for naming, deadlock detection, etc. (some only used in debug mode)
@@ -192,7 +200,7 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   void print_on_error(outputStream* st) const;
   #ifndef PRODUCT
     void print_on(outputStream* st) const;
-    void print() const                      { print_on(::tty); }
+    void print() const                      { /*print_on(::tty); */ } // FIXME
   #endif
 };
 

@@ -25,11 +25,11 @@
 #define SHARE_GC_Z_ZLOCK_HPP
 
 #include "memory/allocation.hpp"
-#include "runtime/os.hpp"
+#include "runtime/mutex.hpp"
 
 class ZLock {
 private:
-  os::PlatformMutex _lock;
+  PlatformMutex _lock;
 
 public:
   void lock();
@@ -54,7 +54,7 @@ public:
 
 class ZConditionLock {
 private:
-  os::PlatformMonitor _lock;
+  PlatformMonitor _lock;
 
 public:
   void lock();
