@@ -137,7 +137,7 @@ public class Ed25519Operations extends EdECOperations {
             throw exception.apply("Invalid point");
         }
 
-        if (xLSB != x.asBigInteger().mod(BigInteger.valueOf(2)).intValue()) {
+        if (xLSB != (x.asBigInteger().intValue() & 1)) {
             x.setAdditiveInverse();
         }
 
