@@ -235,15 +235,15 @@ public class DSAParameterGenerator extends AlgorithmParameterGeneratorSpi {
                 /* Step 11.2 */
                 BigInteger W = V[0];
                 for (int i = 1; i < n; i++) {
-                    W = W.add(V[i].multiply(BigInteger.TWO.pow(i * outLen)));
+                    W = W.add(V[i].shiftLeft(i * outLen));
                 }
                 W = W.add((V[n].mod(BigInteger.TWO.pow(b)))
-                               .multiply(BigInteger.TWO.pow(n * outLen)));
+                               .shiftLeft(n * outLen));
                 /* Step 11.3 */
                 BigInteger twoLm1 = BigInteger.TWO.pow(valueL - 1);
                 BigInteger X = W.add(twoLm1);
                 /* Step 11.4, 11.5 */
-                BigInteger c = X.mod(resultQ.multiply(BigInteger.TWO));
+                BigInteger c = X.mod(resultQ.shiftLeft(1));
                 resultP = X.subtract(c.subtract(BigInteger.ONE));
                 /* Step 11.6, 11.7 */
                 if (resultP.compareTo(twoLm1) > -1
