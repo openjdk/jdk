@@ -110,12 +110,7 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
             // copy string
             {
                 String key = convertOldKeyName(attributes.getValue("type"));
-                if (key.length() == 2) {
-                    pushStringEntry(qName, attributes,
-                        CLDRConverter.LOCALE_KEY_PREFIX + key);
-                } else {
-                    pushIgnoredContainer(qName);
-                }
+                pushStringEntry(qName, attributes, CLDRConverter.LOCALE_KEY_PREFIX + key);
             }
             break;
 
@@ -124,13 +119,9 @@ class LDMLParseHandler extends AbstractLDMLHandler<Object> {
             // copy string
             {
                 String key = convertOldKeyName(attributes.getValue("key"));
-                if (key.length() == 2) {
-                    pushStringEntry(qName, attributes,
-                    CLDRConverter.LOCALE_TYPE_PREFIX + key + "." +
-                    attributes.getValue("type"));
-                } else {
-                    pushIgnoredContainer(qName);
-                }
+                pushStringEntry(qName, attributes,
+                CLDRConverter.LOCALE_TYPE_PREFIX + key + "." +
+                attributes.getValue("type"));
             }
             break;
 

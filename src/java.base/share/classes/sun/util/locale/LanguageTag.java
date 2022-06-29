@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ public class LanguageTag {
     public static final String PRIVATEUSE = "x";
     public static final String UNDETERMINED = "und";
     public static final String PRIVUSE_VARIANT_PREFIX = "lvariant";
+    public static final String TRANSFORMED_CONTENT = "t";
 
     //
     // Language subtag fields
@@ -662,6 +663,10 @@ public class LanguageTag {
         // privateuse    = "x" 1*("-" (1*8alphanum))
         int len = s.length();
         return (len >= 1) && (len <= 8) && LocaleUtils.isAlphaNumericString(s);
+    }
+
+    public static boolean isTransformedContentPrefixChar(char c) {
+        return (LocaleUtils.caseIgnoreMatch(TRANSFORMED_CONTENT, String.valueOf(c)));
     }
 
     //

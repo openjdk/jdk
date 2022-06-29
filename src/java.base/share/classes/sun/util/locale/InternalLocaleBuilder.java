@@ -438,8 +438,7 @@ public final class InternalLocaleBuilder {
             // map localeExtensions back to builder's internal format
             for (Character key : extKeys) {
                 Extension e = localeExtensions.getExtension(key);
-                if (e instanceof UnicodeLocaleExtension) {
-                    UnicodeLocaleExtension ue = (UnicodeLocaleExtension)e;
+                if (e instanceof UnicodeLocaleExtension ue) {
                     for (String uatr : ue.getUnicodeLocaleAttributes()) {
                         if (uattributes == null) {
                             uattributes = new HashSet<>(4);
