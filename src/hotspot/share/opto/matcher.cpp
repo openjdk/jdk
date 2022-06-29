@@ -279,7 +279,7 @@ void Matcher::match( ) {
       continue;
     }
     // calling_convention returns stack arguments as a count of
-    // slots beyond OptoReg::stack0()/SharedInfo::stack0.  We need to convert this to
+    // slots beyond OptoReg::stack0()/VMRegImpl::stack0.  We need to convert this to
     // the allocators point of view, taking into account all the
     // preserve area, locks & pad2.
 
