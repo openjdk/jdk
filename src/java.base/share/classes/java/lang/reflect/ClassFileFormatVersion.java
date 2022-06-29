@@ -308,6 +308,7 @@ public enum ClassFileFormatVersion {
         // added with each new release.
         return valueOf("RELEASE_" + rv.feature());
     }
+
     /**
      * {@return the least runtime version that supports this class
      * file format version; otherwise {@code null}} The returned
@@ -328,4 +329,21 @@ public enum ClassFileFormatVersion {
         }
     }
 
+    /**
+     * {@return the latest class file format version whose major class
+     * file version matches the argument}
+     * @param major the major class file version as an integer
+     * @throws IllegalArgumentException if the argument is outside of
+     * the range of major class file versions
+     */
+    public static ClassFileFormatVersion fromMajor(int major) {
+        if (major < 45  // RELEASE_0.major()
+            || major > latest().major()) {
+            throw new IllegalArgumentException("Out of range major class file vesion "
+                                               + major);
+        }
+        // RELEASE_0 and RELEASE_1 both have a major version of 45;
+        // return RELEASE_1 for an argument of 45.
+        return values()[major-44];
+    }
 }
