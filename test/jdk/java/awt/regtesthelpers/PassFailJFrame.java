@@ -287,7 +287,7 @@ public class PassFailJFrame {
     /**
      * Add the testWindow to the windowList so that test instruction frame
      * and testWindow and any other windows used in this test is disposed
-     * via disposeFrames().
+     * via disposeWindows().
      *
      * @param testWindow testWindow that needs to be disposed
      */
