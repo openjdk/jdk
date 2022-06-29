@@ -142,8 +142,7 @@ ifeq ($(call check-jvm-feature, compiler2), true)
 
   ifeq ($(HOTSPOT_TARGET_CPU_ARCH), aarch64)
     AD_SRC_FILES += $(call uniq, $(wildcard $(foreach d, $(AD_SRC_ROOTS), \
-        $d/cpu/$(HOTSPOT_TARGET_CPU_ARCH)/$(HOTSPOT_TARGET_CPU_ARCH)_neon.ad \
-        $d/cpu/$(HOTSPOT_TARGET_CPU_ARCH)/$(HOTSPOT_TARGET_CPU_ARCH)_sve.ad \
+        $d/cpu/$(HOTSPOT_TARGET_CPU_ARCH)/$(HOTSPOT_TARGET_CPU_ARCH)_vector.ad \
     )))
   endif
 

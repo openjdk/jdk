@@ -224,7 +224,7 @@ public class VectorFusedMultiplyAddSubTest {
     }
 
     @Test
-    @IR(counts = { "sve_mla", ">= 1" })
+    @IR(counts = { "vmla_masked", ">= 1" })
     public static void testByteMultiplyAddMasked() {
         VectorMask<Byte> mask = VectorMask.fromArray(B_SPECIES, m, 0);
         for (int i = 0; i < LENGTH; i += B_SPECIES.length()) {
@@ -237,7 +237,7 @@ public class VectorFusedMultiplyAddSubTest {
     }
 
     @Test
-    @IR(counts = { "sve_mls", ">= 1" })
+    @IR(counts = { "vmls_masked", ">= 1" })
     public static void testByteMultiplySubMasked() {
         VectorMask<Byte> mask = VectorMask.fromArray(B_SPECIES, m, 0);
         for (int i = 0; i < LENGTH; i += B_SPECIES.length()) {
@@ -250,7 +250,7 @@ public class VectorFusedMultiplyAddSubTest {
     }
 
     @Test
-    @IR(counts = { "sve_mla", ">= 1" })
+    @IR(counts = { "vmla_masked", ">= 1" })
     public static void testShortMultiplyAddMasked() {
         VectorMask<Short> mask = VectorMask.fromArray(S_SPECIES, m, 0);
         for (int i = 0; i < LENGTH; i += S_SPECIES.length()) {
@@ -263,7 +263,7 @@ public class VectorFusedMultiplyAddSubTest {
     }
 
     @Test
-    @IR(counts = { "sve_mls", ">= 1" })
+    @IR(counts = { "vmls_masked", ">= 1" })
     public static void testShortMultiplySubMasked() {
         VectorMask<Short> mask = VectorMask.fromArray(S_SPECIES, m, 0);
         for (int i = 0; i < LENGTH; i += S_SPECIES.length()) {
@@ -276,7 +276,7 @@ public class VectorFusedMultiplyAddSubTest {
     }
 
     @Test
-    @IR(counts = { "sve_mla", ">= 1" })
+    @IR(counts = { "vmla_masked", ">= 1" })
     public static void testIntMultiplyAddMasked() {
         VectorMask<Integer> mask = VectorMask.fromArray(I_SPECIES, m, 0);
         for (int i = 0; i < LENGTH; i += I_SPECIES.length()) {
@@ -289,7 +289,7 @@ public class VectorFusedMultiplyAddSubTest {
     }
 
     @Test
-    @IR(counts = { "sve_mls", ">= 1" })
+    @IR(counts = { "vmls_masked", ">= 1" })
     public static void testIntMultiplySubMasked() {
         VectorMask<Integer> mask = VectorMask.fromArray(I_SPECIES, m, 0);
         for (int i = 0; i < LENGTH; i += I_SPECIES.length()) {
@@ -302,7 +302,7 @@ public class VectorFusedMultiplyAddSubTest {
     }
 
     @Test
-    @IR(counts = { "sve_mla", ">= 1" })
+    @IR(counts = { "vmla_masked", ">= 1" })
     public static void testLongMultiplyAddMasked() {
         VectorMask<Long> mask = VectorMask.fromArray(L_SPECIES, m, 0);
         for (int i = 0; i < LENGTH; i += L_SPECIES.length()) {
@@ -315,7 +315,7 @@ public class VectorFusedMultiplyAddSubTest {
     }
 
     @Test
-    @IR(counts = { "sve_mls", ">= 1" })
+    @IR(counts = { "vmls_masked", ">= 1" })
     public static void testLongMultiplySubMasked() {
         VectorMask<Long> mask = VectorMask.fromArray(L_SPECIES, m, 0);
         for (int i = 0; i < LENGTH; i += L_SPECIES.length()) {
@@ -328,7 +328,7 @@ public class VectorFusedMultiplyAddSubTest {
     }
 
     @Test
-    @IR(counts = { "sve_fmsb", ">= 1" })
+    @IR(counts = { "vfmsb_masked", ">= 1" })
     public static void testFloatMultiplySubMasked() {
         VectorMask<Float> mask = VectorMask.fromArray(F_SPECIES, m, 0);
         for (int i = 0; i < LENGTH; i += F_SPECIES.length()) {
@@ -341,7 +341,7 @@ public class VectorFusedMultiplyAddSubTest {
     }
 
     @Test
-    @IR(counts = { "sve_fnmad", ">= 1" })
+    @IR(counts = { "vfnmad_masked", ">= 1" })
     public static void testFloatNegatedMultiplyAddMasked() {
         VectorMask<Float> mask = VectorMask.fromArray(F_SPECIES, m, 0);
         for (int i = 0; i < LENGTH; i += F_SPECIES.length()) {
@@ -354,7 +354,7 @@ public class VectorFusedMultiplyAddSubTest {
     }
 
     @Test
-    @IR(counts = { "sve_fnmsb", ">= 1" })
+    @IR(counts = { "vfnmsb_masked", ">= 1" })
     public static void testFloatNegatedMultiplySubMasked() {
         VectorMask<Float> mask = VectorMask.fromArray(F_SPECIES, m, 0);
         for (int i = 0; i < LENGTH; i += F_SPECIES.length()) {
@@ -367,7 +367,7 @@ public class VectorFusedMultiplyAddSubTest {
     }
 
     @Test
-    @IR(counts = { "sve_fmsb", ">= 1" })
+    @IR(counts = { "vfmsb_masked", ">= 1" })
     public static void testDoubleMultiplySubMasked() {
         VectorMask<Double> mask = VectorMask.fromArray(D_SPECIES, m, 0);
         for (int i = 0; i < LENGTH; i += D_SPECIES.length()) {
@@ -380,7 +380,7 @@ public class VectorFusedMultiplyAddSubTest {
     }
 
     @Test
-    @IR(counts = { "sve_fnmad", ">= 1" })
+    @IR(counts = { "vfnmad_masked", ">= 1" })
     public static void testDoubleNegatedMultiplyAddMasked() {
         VectorMask<Double> mask = VectorMask.fromArray(D_SPECIES, m, 0);
         for (int i = 0; i < LENGTH; i += D_SPECIES.length()) {
@@ -393,7 +393,7 @@ public class VectorFusedMultiplyAddSubTest {
     }
 
     @Test
-    @IR(counts = { "sve_fnmsb", ">= 1" })
+    @IR(counts = { "vfnmsb_masked", ">= 1" })
     public static void testDoubleNegatedMultiplySubMasked() {
         VectorMask<Double> mask = VectorMask.fromArray(D_SPECIES, m, 0);
         for (int i = 0; i < LENGTH; i += D_SPECIES.length()) {

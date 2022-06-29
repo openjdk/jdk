@@ -52,8 +52,8 @@
   // the cpu only look at the lower 5/6 bits anyway?
   static const bool need_masked_shift_count = false;
 
-  // No support for generic vector operands.
-  static const bool supports_generic_vector_operands = false;
+  // aarch64 supports generic vector operands: vReg.
+  static const bool supports_generic_vector_operands = true;
 
   static constexpr bool isSimpleConstant64(jlong value) {
     // Will one (StoreL ConL) be cheaper than two (StoreI ConI)?.

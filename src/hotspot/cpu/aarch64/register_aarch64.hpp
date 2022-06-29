@@ -137,7 +137,7 @@ class FloatRegisterImpl: public AbstractRegisterImpl {
 public:
   enum {
     number_of_registers = 32,
-    max_slots_per_register = 8,
+    max_slots_per_register = 4,
     save_slots_per_register = 2,
     slots_per_neon_register = 4,
     extra_save_slots_per_neon_register = slots_per_neon_register - save_slots_per_register
