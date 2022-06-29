@@ -711,26 +711,21 @@ static void remove_file(const char* path) {
   }
 }
 
-/*
-static int try_lock_file_before_remove(const char* dirname, const char* filename) {
-  int fd = -1;
+static int is_locked_by_other_process(const char* dirname, const char* filename) {
+  bool is_locked = false;
 
 #if defined(LINUX)
-  bool is_locked = false;
-  fd = ::open(filename, O_RDONLY);
+  int fd = ::open(filename, O_RDONLY);
   if (fd >= 0) {
     is_locked = (flock(fd, LOCK_EX|LOCK_NB) != 0);
+    // This file is locked by a compatible JVM process that's still alive.
+    ::close(fd); // this also gives up the lock, if we are holding it.
   }
   log_info(perf, memops)("is_locked %s/%s (fd = %d) = %s", dirname, filename, fd, is_locked ? "true" : "false");
-  if (!is_locked) {
-    ::close(fd);
-    fd = -1;
-  }
 #endif
 
-  return fd;
+  return is_locked;
 }
-*/
 
 // cleanup stale shared memory resources
 //
@@ -762,24 +757,22 @@ static void cleanup_sharedmem_resources(const char* dirname) {
   struct dirent* entry;
   errno = 0;
   while ((entry = os::readdir(dirp)) != NULL) {
-    const char* filename = entry->d_name;
-    pid_t pid = filename_to_pid(filename);
 
-    log_info(perf, memops)("Checking %s/%s",
-                           dirname, filename);
+    pid_t pid = filename_to_pid(entry->d_name);
+
     if (pid == 0) {
 
-      if (strcmp(filename, ".") != 0 && strcmp(filename, "..") != 0) {
+      if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
         // attempt to remove all unexpected files, except "." and ".."
-        unlink(filename);
+        unlink(entry->d_name);
       }
 
       errno = 0;
       continue;
     }
 
-    // FIXME -- update this comment
-    //
+
+
     // we now have a file name that converts to a valid integer
     // that could represent a process id . if this process id
     // matches the current process id or the process is not running,
@@ -793,36 +786,12 @@ static void cleanup_sharedmem_resources(const char* dirname) {
     // be stale and are removed because the resources for such a
     // process should be in a different user specific directory.
     //
-
-    bool is_locked = true;
-#if defined(LINUX)
-    int fd = ::open(filename, O_RDONLY);
-    if (fd >= 0) {
-      is_locked = (flock(fd, LOCK_EX|LOCK_NB) != 0);
-    } else {
-      is_locked = false;
-    }
-    log_info(perf, memops)("I %s %s/%s (fd = %d)", is_locked ? "successfully locked" : "failed to lock",
-                           dirname, filename, fd);
-#endif
-
-    if (is_locked) {
+    if (!is_locked_by_other_process(dirname, entry->d_name)) {
       if ((pid == os::current_process_id()) ||
           (kill(pid, 0) == OS_ERR && (errno == ESRCH || errno == EPERM))) {
-        log_info(perf, memops)("Unlinking stale file %s/%s", dirname, filename);
-        unlink(filename);
+        unlink(entry->d_name);
       }
     }
-
-#if defined(LINUX)
-    if (fd >= 0) {
-      // We hold the lock until after the file is removed. This prevents
-      // another JVM process from creating the file after we have decided to
-      // remove it.
-      ::close(fd);
-    }
-#endif
-
     errno = 0;
   }
 
@@ -922,11 +891,9 @@ static int create_sharedmem_resources(const char* dirname, const char* filename,
 #if defined(LINUX)
   int n = flock(fd, LOCK_EX|LOCK_NB);
   if (n != 0) {
-    log_warning(perf, memops)("Cannot use file %s/%s because it is locked by another process", dirname, filename);
+    log_warning(perf, memops)("Cannot use file %s/%s because it is locked by another process\n", dirname, filename);
     ::close(fd);
     return -1;
-  } else {
-    log_warning(perf, memops)("Succesfully locked %s/%s", dirname, filename);
   }
 #endif
 
@@ -1063,10 +1030,8 @@ static char* mmap_create_shared(size_t size) {
 
   mapAddress = (char*)::mmap((char*)0, size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
 
-#if 0
   result = ::close(fd);
   assert(result != OS_ERR, "could not close file");
-#endif
 
   if (mapAddress == MAP_FAILED) {
     if (PrintMiscellaneous && Verbose) {
