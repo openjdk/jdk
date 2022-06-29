@@ -30,6 +30,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import jdk.jpackage.internal.IOUtils;
 
@@ -117,22 +118,33 @@ final public class FileAssociations {
         Iterable<String> getFileNames() {
             return testFileNames;
         }
-        
+
         void openFiles(List<Path> testFiles) throws IOException {
             switch (invocationType) {
                 case DesktopOpenAssociatedFile:
                     TKit.trace(String.format("Use desktop to open [%s] file", testFiles.get(0)));
                     Desktop.getDesktop().open(testFiles.get(0).toFile());
                     break;
-                    
+
                 case WinCommandLine:
                 case WinDesktopOpenContextMenu:
                     // TBD: implement
             }
         }
-        
+
         private TestRun(Collection<String> testFileNames,
                 InvocationType invocationType) {
+
+            Objects.requireNonNull(invocationType);
+
+            if (testFileNames.size() == 0) {
+                throw new IllegalArgumentException("Empty test file names list");
+            }
+
+            if (invocationType == InvocationType.DesktopOpenAssociatedFile && testFileNames.size() != 1) {
+                throw new IllegalArgumentException("Only one file can be configured for opening with the desktop");
+            }
+
             this.testFileNames = testFileNames;
             this.invocationType = invocationType;
         }
