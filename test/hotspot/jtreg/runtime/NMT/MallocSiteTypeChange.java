@@ -56,7 +56,7 @@ public class MallocSiteTypeChange {
 
         pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "baseline"});
         output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Baseline succeeded");
+        output.shouldContain("Baseline taken");
 
         wb.NMTFree(addr);
         addr = wb.NMTMallocWithPseudoStackAndType(2 * 1024, pc, 9 /* mtInternal */ );

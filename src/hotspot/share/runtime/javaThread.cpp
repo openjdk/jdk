@@ -27,7 +27,7 @@
 #include "jvm.h"
 #include "cds/dynamicArchive.hpp"
 #include "ci/ciEnv.hpp"
-#include "classfile/javaClasses.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "classfile/javaThreadStatus.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
