@@ -67,8 +67,8 @@ public final class bug4209065 {
             frame.setVisible(true);
 
 
-            PassFailJFrame.addTestFrame(frame);
-            PassFailJFrame.positionTestFrame(frame,
+            PassFailJFrame.addTestWindow(frame);
+            PassFailJFrame.positionTestWindow(frame,
                     PassFailJFrame.Position.HORIZONTAL);
         });
     }
