@@ -108,7 +108,6 @@ public class TestClassUnloadEvents {
         boolean exited = false;
         while (!exited && (eventSet = vm.eventQueue().remove()) != null) {
             for (Event event : eventSet) {
-            System.out.println("Event: " + event);
                 if (event instanceof ClassUnloadEvent) {
                     String className = ((ClassUnloadEvent)event).className();
                     unloadedSampleClasses.add(className);
@@ -123,18 +122,6 @@ public class TestClassUnloadEvents {
         }
     } catch (Exception e) {
         e.printStackTrace();
-    } finally {
-        try {
-            InputStreamReader reader = new InputStreamReader(vm.process().getInputStream());
-            OutputStreamWriter writer = new OutputStreamWriter(System.out);
-            char[] buf = new char[512];
-
-            while (reader.read(buf) > 0) {
-                writer.write(buf);
-            }
-            writer.flush();
-        } catch (Exception e) {
-        }
     }
     if (unloadedSampleClasses.size() != NUM_CLASSES) {
         throw new RuntimeException("Wrong number of class unload events: expected " + NUM_CLASSES + " got " + unloadedSampleClasses.size());
