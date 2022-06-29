@@ -105,56 +105,6 @@ final class ZipPath implements Path {
     }
 
     @Override
-    public Path replaceExtension(String extension) {
-        Objects.requireNonNull(extension, "extension");
-
-        // verify the extension contains neither a leading nor trailing dot
-        if (!extension.isEmpty()) {
-            if (extension.charAt(0) == '.' ||
-                extension.charAt(extension.length() - 1) == '.')
-                throw new IllegalArgumentException("leading or trailing dot");
-        }
-
-        String thisExtension = getExtension().orElse(null);
-
-        // if this path has no extension, append that provided
-        if (thisExtension == null) {
-            if (extension.isEmpty()) {
-                return this;
-            } else {
-                byte[] ext = normalize(extension);
-                byte[] result = new byte[path.length + 1 + ext.length];
-                System.arraycopy(path, 0, result, 0, path.length);
-                result[path.length] = '.';
-                System.arraycopy(ext, 0, result, path.length + 1, ext.length);
-                return new ZipPath(this.zfs, result);
-            }
-        }
-
-        // find the index of the last dot in the path
-        int dotIndex = path.length - 1;
-        while (path[dotIndex] != '.') {
-            dotIndex--;
-            if (dotIndex < 0)
-                throw new IndexOutOfBoundsException();
-        }
-
-        // if the provided extension is empty, strip this path's extension
-        if (extension.isEmpty()) {
-            byte[] result = new byte[dotIndex];
-            System.arraycopy(path, 0, result, 0, dotIndex);
-            return new ZipPath(this.zfs, result);
-        }
-
-        // replace the path's extension with that provided
-        byte[] ext = normalize(extension);
-        byte[] result = new byte[dotIndex + 1 + ext.length];
-        System.arraycopy(path, 0, result, 0, dotIndex + 1);
-        System.arraycopy(ext, 0, result, dotIndex + 1, ext.length);
-        return new ZipPath(this.zfs, result);
-    }
-
-    @Override
     public ZipPath getParent() {
         int off = path.length;
         if (off == 0 || off == 1 && path[0] == '/')

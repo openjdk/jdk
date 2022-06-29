@@ -51,7 +51,7 @@ import java.util.Optional;
  * file system. {@code Path} defines the {@link #getFileName() getFileName},
  * {@link #getParent getParent}, {@link #getRoot getRoot}, and {@link #subpath
  * subpath} methods to access the path components or a subsequence of its name
- * elements.
+ * elements, and {@link #getExtension() getExtension} to obtain its extension.
  *
  * <p> In addition to accessing the components of a path, a {@code Path} also
  * defines the {@link #resolve(Path) resolve} and {@link #resolveSibling(Path)
@@ -94,6 +94,13 @@ import java.util.Optional;
  * <h2>Concurrency</h2>
  * <p> Implementations of this interface are immutable and safe for use by
  * multiple concurrent threads.
+ *
+ * @apiNote
+ * On some file systems a {@code Path} may have an internal representation
+ * which cannot be converted to a {@code String} without losing information.
+ * Otherwise stated, the internal representation might not be recoverable
+ * from the derived path string. This applies to the {@code Path} as a whole
+ * as well as to its components.
  *
  * @since 1.7
  */
@@ -252,15 +259,14 @@ public interface Path
 
     /**
      * Returns the file name extension of this path as an
-     * {@code Optional<String>}.  The extension is defined to be the portion
+     * {@code Optional<String>}. The extension is defined to be the portion
      * of the {@code String} representation of the file name after the last
-     * dot ('.').  If the first character in the file name string is a dot
-     * it is ignored.  If the extension cannot be determined, then an
-     * {@link Optional#empty empty} {@code Optional} is returned. This will
-     * occur if the path has zero elements ({@link #getFileName()} returns
-     * {@code null}), or the file name string does not contain a dot, or only
-     * the first character is a dot. If the last character is a dot, the
-     * extension is the empty {@code String} {@code ""}.
+     * dot ('.'). All leading dots are ignored. If the extension is missing,
+     * then an {@link Optional#empty empty} {@code Optional} is returned. This
+     * will occur if the path has zero elements ({@link #getFileName()} returns
+     * {@code null}), the file name string does not contain a dot, or only the
+     * first character is a dot. If the last character is a dot, the extension
+     * is the empty string.
      *
      * @implSpec
      * The default implementation is equivalent for this path to:
@@ -273,8 +279,8 @@ public interface Path
      * }</pre>
      *
      * @return  an {@code Optional} which either contains the file name
-     *          extension of this path, or is {@link Optional#empty empty}
-     *          if the extension is not found
+     *          extension of this path, which might be the empty string,
+     *          or equals {@link Optional#empty} if no extension is found
      *
      * @since 20
      */
@@ -299,98 +305,6 @@ public interface Path
         }
 
         return Optional.empty();
-    }
-
-    /**
-     * Returns whether the string representation of this path has an
-     * extension among the one or more extensions given as parameters.
-     * The extension of this path will be compared against the given
-     * parameters in the order in which they are supplied.
-     *
-     * @param   ext
-     *          the first extension for which to check
-     *
-     * @param   extensions
-     *          zero or more subsequent extensions for which to check
-     *
-     * @return  an {@code Optional} which either contains the found extension
-     *          or is {@link Optional#empty empty} if this path either does not
-     *          have an extension or its extension is not among those given
-     *
-     * @since 20
-     */
-    default Optional<String> hasExtension(String ext, String... extensions) {
-        Objects.requireNonNull(ext);
-
-        Optional<String> extension = getExtension();
-        String thisExtension = null;
-        if (extension.isEmpty() ||
-            (thisExtension = extension.get()).equals(ext))
-            return extension;
-
-        if (extensions != null) {
-            for (String e : extensions) {
-                Objects.requireNonNull(e);
-                if (e.equals(thisExtension))
-                    return Optional.of(e);
-            }
-        }
-
-        return Optional.empty();
-    }
-
-    /**
-     * Returns a {@code Path} which is equal to this path aside from its
-     * extension which is replaced by the provided extension. If the provided
-     * extension is {@link String#isEmpty() empty}, then the current extension
-     * and the dot ('.') preceding it are removed. If this path does not have
-     * an extension then the provided extension is appended.
-     *
-     * @implNote
-     * This default implementation works with the string representation of this
-     * path. Paths which have a native representation should override this
-     * implementation in order to preserve that representation.
-     *
-     * @param  extension
-     *         the extension to replace this path's current extension;
-     *         if non-empty, may not contain a leading or trailing dot
-     *         but is not otherwise checked for validity
-     *
-     * @return a path equal to this path but with extension replaced by
-     *         that provided
-     *
-     * @throws IllegalArgumentException if the provided extension contains a
-     *         leading or trailing dot ('.')
-     *
-     * @since 20
-     */
-    default Path replaceExtension(String extension) {
-        Objects.requireNonNull(extension, "extension");
-
-        // verify the extension contains neither a leading nor trailing dot
-        if (!extension.isEmpty()) {
-            if (extension.charAt(0) == '.' ||
-                extension.charAt(extension.length() - 1) == '.')
-                throw new IllegalArgumentException("leading or trailing dot");
-        }
-
-        String thisPath = toString();
-        String thisExtension = getExtension().orElse(null);
-        FileSystem fs = this.getFileSystem();
-
-        // if this path has no extension, append that provided
-        if (thisExtension == null)
-            return extension.isEmpty() ?
-                this : fs.getPath(thisPath + "." + extension);
-
-        // if the provided extension is empty, strip this path's extension
-        int dotIndex = thisPath.lastIndexOf('.');
-        assert dotIndex != -1;
-        if (extension.isEmpty())
-            return fs.getPath(thisPath.substring(0, dotIndex));
-
-        // replace the path's extension with that provided
-        return fs.getPath(thisPath.substring(0, dotIndex + 1) + extension);
     }
 
     /**
