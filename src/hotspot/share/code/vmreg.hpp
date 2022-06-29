@@ -37,7 +37,7 @@
 
 //------------------------------VMReg------------------------------------------
 // The VM uses 'unwarped' stack slots; the compiler uses 'warped' stack slots.
-// Register numbers below SharedInfo::stack0 are the same for both.  Register
+// Register numbers below VMRegImpl::stack0 are the same for both.  Register
 // numbers above stack0 are either warped (in the compiler) or unwarped
 // (in the VM).  Unwarped numbers represent stack indices, offsets from
 // the current stack pointer.  Warped numbers are required during compilation
@@ -160,7 +160,7 @@ inline constexpr VMReg VMRegImpl::first() { return all_VMRegs + 1; }
 //---------------------------VMRegPair-------------------------------------------
 // Pairs of 32-bit registers for arguments.
 // SharedRuntime::java_calling_convention will overwrite the structs with
-// the calling convention's registers.  VMRegImpl::Bad is returned for any
+ // the calling convention's registers.  VMRegImpl::Bad is returned for any
 // unused 32-bit register.  This happens for the unused high half of Int
 // arguments, or for 32-bit pointers or for longs in the 32-bit sparc build
 // (which are passed to natives in low 32-bits of e.g. O0/O1 and the high
