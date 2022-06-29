@@ -416,7 +416,7 @@
           "Set level of loop optimization for tier 1 compiles")             \
           range(5, 43)                                                      \
                                                                             \
-  develop(bool, OptimizeUnstableIf, true,                                   \
+  product(bool, OptimizeUnstableIf, true, DIAGNOSTIC,                       \
           "Optimize UnstableIf traps")                                      \
                                                                             \
   /* controls for heat-based inlining */                                    \

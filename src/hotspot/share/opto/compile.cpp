@@ -1875,17 +1875,16 @@ void Compile::remove_useless_unstable_if_traps(Unique_Node_List& useful) {
     }
   }
 }
+
+// Remove the unstable if trap associated with 'unc' from candidates. It is either dead
+// or fold-compares case. Return true if succeed or not found.
 //
-// Remove unstable_if trap of unc from candicates. It is either dead or fold-compares case.
-// Return true if succeed or not found.
-//
-// In rare cases, the found traps have been processed. It is too late to delete. return false
-// and ask fold-compares to yield.
+// In rare cases, the found trap has been processed. It is too late to delete it. Return
+// false and ask fold-compares to yield.
 //
 // 'fold-compares' may use the uncommon_trap of the dominating IfNode to cover the fused
 // IfNode. This breaks the unstable_if trap invariant: control takes the unstable path
 // when deoptimization does happen.
-//
 bool Compile::remove_unstable_if_trap(CallStaticJavaNode* unc, bool yield) {
   for (int i = 0; i < _unstable_if_traps.length(); ++i) {
     UnstableIfTrap* trap = _unstable_if_traps.at(i);

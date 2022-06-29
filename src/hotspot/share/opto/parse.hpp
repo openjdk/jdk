@@ -603,9 +603,7 @@ class Parse : public GraphKit {
 #endif
 };
 
-// Specialized uncommon_trap of unstable_if, we have 2 optimizations for them:
-//   1. suppress trivial Unstable_If traps
-//   2. use next_bci of path to update live locals.
+// Specialized uncommon_trap of unstable_if. C2 uses next_bci of path to update the live locals of it.
 class UnstableIfTrap {
   CallStaticJavaNode* const _unc;
   bool _modified;            // modified locals based on next_bci()
