@@ -108,6 +108,7 @@ public class TestClassUnloadEvents {
         boolean exited = false;
         while (!exited && (eventSet = vm.eventQueue().remove()) != null) {
             for (Event event : eventSet) {
+            System.out.println("Event: " + event);
                 if (event instanceof ClassUnloadEvent) {
                     String className = ((ClassUnloadEvent)event).className();
                     unloadedSampleClasses.add(className);
@@ -122,6 +123,19 @@ public class TestClassUnloadEvents {
         }
     } catch (Exception e) {
         e.printStackTrace();
+    } finally {
+        try {
+            Process p = vm.process();
+            InputStreamReader reader = new InputStreamReader(p.getInputStream());
+            OutputStreamWriter writer = new OutputStreamWriter(System.out);
+            char[] buf = new char[512];
+            int n;
+            while ((n = reader.read(buf)) > 0) {
+                writer.write(buf, 0, n);
+            }
+            writer.flush();
+        } catch (Exception e) {
+        }
     }
     if (unloadedSampleClasses.size() != NUM_CLASSES) {
         throw new RuntimeException("Wrong number of class unload events: expected " + NUM_CLASSES + " got " + unloadedSampleClasses.size());
@@ -132,7 +146,7 @@ public class TestClassUnloadEvents {
     LaunchingConnector launchingConnector = Bootstrap.virtualMachineManager().defaultConnector();
     Map<String, Connector.Argument> arguments = launchingConnector.defaultArguments();
     arguments.get("main").setValue(TestClassUnloadEvents.class.getName());
-    arguments.get("options").setValue("--add-exports java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED");
+    arguments.get("options").setValue("--add-exports java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED -Xlog:class+unload -Xlog:gc");
     return launchingConnector.launch(arguments);
   }
 }
