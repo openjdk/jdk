@@ -56,6 +56,8 @@ class Http2ClientImpl {
             Utils.getDebugLogger("Http2ClientImpl"::toString, Utils.DEBUG);
 
     private final HttpClientImpl client;
+
+    // only accessed from within synchronized blocks
     private boolean stopping;
 
     Http2ClientImpl(HttpClientImpl client) {
@@ -65,6 +67,7 @@ class Http2ClientImpl {
     /* Map key is "scheme:host:port" */
     private final Map<String,Http2Connection> connections = new ConcurrentHashMap<>();
 
+    // only accessed from within synchronized blocks
     private final Set<String> failures = new HashSet<>();
 
     /**
