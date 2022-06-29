@@ -301,6 +301,13 @@ public class JavacTypes implements javax.lang.model.util.Types {
     }
 
 
+    @DefinedBy(Api.LANGUAGE_MODEL)
+    @SuppressWarnings("unchecked")
+    public <T extends TypeMirror> T stripAnnotations(T t) {
+        return (T)((Type) t).stripMetadata();
+    }
+
+
     private static final Set<TypeKind> EXEC_OR_PKG_OR_MOD =
         EnumSet.of(TypeKind.EXECUTABLE, TypeKind.PACKAGE, TypeKind.MODULE);
 

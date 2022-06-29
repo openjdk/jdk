@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6453386
+ * @bug 8042981
  * @summary Test if annotations are stripped from the results of Types' methods
  * @library /tools/javac/lib
  * @modules java.compiler
@@ -132,11 +132,12 @@ class HostClass {
 
     public static @TypeAnnotation("foo3") String foo3() {return null;}
 
-    // public static @TypeAnnotation("foo4") java.util.Set foo4() {return null;}
+    public static  java.util.@TypeAnnotation("foo4")Set foo4() {return null;}
 
-    // public static @TypeAnnotation("foo4") String[] foo4() {return null;}
+    // Erasure on an annotated array not acting properly
+    //    public static  String@TypeAnnotation("foo5")[] foo5() {return null;}
 
-    // public static java.util.Set < String> foo5() {return null;}
+    // public static java.util.Set < @TypeAnnotation("foo5") String> foo6() {return null;}
 }
 
 @Retention(RetentionPolicy.RUNTIME)

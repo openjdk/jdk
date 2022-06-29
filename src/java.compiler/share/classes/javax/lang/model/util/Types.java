@@ -315,4 +315,16 @@ public interface Types {
      *          for the given type
      */
     TypeMirror asMemberOf(DeclaredType containing, Element element);
+
+    /**
+     * {@return a type mirror equal to the argument and with no annotations}
+     * @param t the type mirror
+     * @param <T> the specific type of type mirror
+     * @implSpec
+     * The default implementation throws {@code UnsupportedOperationException}.
+     * @since 20
+     */
+    default <T extends TypeMirror> T stripAnnotations(T t) {
+        throw new UnsupportedOperationException();
+    }
 }
