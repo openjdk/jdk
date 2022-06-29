@@ -243,7 +243,7 @@ public:
 // Stat unit printers
 //
 void ZStatUnitTime(LogTargetHandle log, const ZStatSampler& sampler, const ZStatSamplerHistory& history) {
-  log.print(" %10s: %-41s "
+  log.print(" %16s: %-41s "
             "%9.3f / %-9.3f "
             "%9.3f / %-9.3f "
             "%9.3f / %-9.3f "
@@ -261,7 +261,7 @@ void ZStatUnitTime(LogTargetHandle log, const ZStatSampler& sampler, const ZStat
 }
 
 void ZStatUnitBytes(LogTargetHandle log, const ZStatSampler& sampler, const ZStatSamplerHistory& history) {
-  log.print(" %10s: %-41s "
+  log.print(" %16s: %-41s "
             UINT64_FORMAT_W(9) " / " UINT64_FORMAT_W(-9) " "
             UINT64_FORMAT_W(9) " / " UINT64_FORMAT_W(-9) " "
             UINT64_FORMAT_W(9) " / " UINT64_FORMAT_W(-9) " "
@@ -279,7 +279,7 @@ void ZStatUnitBytes(LogTargetHandle log, const ZStatSampler& sampler, const ZSta
 }
 
 void ZStatUnitThreads(LogTargetHandle log, const ZStatSampler& sampler, const ZStatSamplerHistory& history) {
-  log.print(" %10s: %-41s "
+  log.print(" %16s: %-41s "
             UINT64_FORMAT_W(9) " / " UINT64_FORMAT_W(-9) " "
             UINT64_FORMAT_W(9) " / " UINT64_FORMAT_W(-9) " "
             UINT64_FORMAT_W(9) " / " UINT64_FORMAT_W(-9) " "
@@ -297,7 +297,7 @@ void ZStatUnitThreads(LogTargetHandle log, const ZStatSampler& sampler, const ZS
 }
 
 void ZStatUnitBytesPerSecond(LogTargetHandle log, const ZStatSampler& sampler, const ZStatSamplerHistory& history) {
-  log.print(" %10s: %-41s "
+  log.print(" %16s: %-41s "
             UINT64_FORMAT_W(9) " / " UINT64_FORMAT_W(-9) " "
             UINT64_FORMAT_W(9) " / " UINT64_FORMAT_W(-9) " "
             UINT64_FORMAT_W(9) " / " UINT64_FORMAT_W(-9) " "
@@ -315,7 +315,7 @@ void ZStatUnitBytesPerSecond(LogTargetHandle log, const ZStatSampler& sampler, c
 }
 
 void ZStatUnitOpsPerSecond(LogTargetHandle log, const ZStatSampler& sampler, const ZStatSamplerHistory& history) {
-  log.print(" %10s: %-41s "
+  log.print(" %16s: %-41s "
             UINT64_FORMAT_W(9) " / " UINT64_FORMAT_W(-9) " "
             UINT64_FORMAT_W(9) " / " UINT64_FORMAT_W(-9) " "
             UINT64_FORMAT_W(9) " / " UINT64_FORMAT_W(-9) " "
@@ -627,7 +627,7 @@ const char* ZStatPhase::name() const {
 }
 
 ZStatPhaseCollection::ZStatPhaseCollection(const char* name, bool minor) :
-    ZStatPhase("Collection", name),
+    ZStatPhase(minor ? "Minor Collection" : "Major Collection", name),
     _minor(minor) {}
 
 GCTracer* ZStatPhaseCollection::jfr_tracer() const {
@@ -687,7 +687,7 @@ void ZStatPhaseCollection::register_end(ConcurrentGCTimer* timer, const Ticks& s
 }
 
 ZStatPhaseGeneration::ZStatPhaseGeneration(const char* name, ZGenerationId id) :
-    ZStatPhase("Generation", name),
+    ZStatPhase(id == ZGenerationId::old ? "Old Generation" : "Young Generation", name),
     _id(id) {}
 
 void ZStatPhaseGeneration::register_start(ConcurrentGCTimer* timer, const Ticks& start) const {
@@ -728,8 +728,8 @@ void ZStatPhaseGeneration::register_end(ConcurrentGCTimer* timer, const Ticks& s
 
 Tickspan ZStatPhasePause::_max;
 
-ZStatPhasePause::ZStatPhasePause(const char* name) :
-    ZStatPhase("Phase", name) {}
+ZStatPhasePause::ZStatPhasePause(const char* name, ZGenerationId id) :
+    ZStatPhase(id == ZGenerationId::young ? "Young Pause" : "Old Pause", name) {}
 
 const Tickspan& ZStatPhasePause::max() {
   return _max;
@@ -760,8 +760,8 @@ void ZStatPhasePause::register_end(ConcurrentGCTimer* timer, const Ticks& start,
   log_end(log, duration);
 }
 
-ZStatPhaseConcurrent::ZStatPhaseConcurrent(const char* name) :
-    ZStatPhase("Phase", name) {}
+ZStatPhaseConcurrent::ZStatPhaseConcurrent(const char* name, ZGenerationId id) :
+    ZStatPhase(id == ZGenerationId::young ? "Young Phase" : "Old Phase", name) {}
 
 void ZStatPhaseConcurrent::register_start(ConcurrentGCTimer* timer, const Ticks& start) const {
   timer->register_gc_concurrent_start(name(), start);
@@ -784,8 +784,8 @@ void ZStatPhaseConcurrent::register_end(ConcurrentGCTimer* timer, const Ticks& s
   log_end(log, duration);
 }
 
-ZStatSubPhase::ZStatSubPhase(const char* name) :
-    ZStatPhase("Subphase", name) {}
+ZStatSubPhase::ZStatSubPhase(const char* name, ZGenerationId id) :
+    ZStatPhase(id == ZGenerationId::young ? "Young Subphase" : "Old Subphase", name) {}
 
 void ZStatSubPhase::register_start(ConcurrentGCTimer* timer, const Ticks& start) const {
   if (timer != NULL) {

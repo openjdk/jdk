@@ -255,7 +255,7 @@ private:
   static Tickspan _max; // Max pause time
 
 public:
-  ZStatPhasePause(const char* name);
+  ZStatPhasePause(const char* name, ZGenerationId id);
 
   static const Tickspan& max();
 
@@ -265,7 +265,7 @@ public:
 
 class ZStatPhaseConcurrent : public ZStatPhase {
 public:
-  ZStatPhaseConcurrent(const char* name);
+  ZStatPhaseConcurrent(const char* name, ZGenerationId id);
 
   virtual void register_start(ConcurrentGCTimer* timer, const Ticks& start) const;
   virtual void register_end(ConcurrentGCTimer* timer, const Ticks& start, const Ticks& end) const;
@@ -273,7 +273,7 @@ public:
 
 class ZStatSubPhase : public ZStatPhase {
 public:
-  ZStatSubPhase(const char* name);
+  ZStatSubPhase(const char* name, ZGenerationId id);
 
   virtual void register_start(ConcurrentGCTimer* timer, const Ticks& start) const;
   virtual void register_end(ConcurrentGCTimer* timer, const Ticks& start, const Ticks& end) const;

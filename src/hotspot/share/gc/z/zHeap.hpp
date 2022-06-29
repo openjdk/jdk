@@ -44,7 +44,6 @@ class ZHeap {
 private:
   static ZHeap*           _heap;
 
-
   ZPageAllocator          _page_allocator;
   ZPageTable              _page_table;
 
