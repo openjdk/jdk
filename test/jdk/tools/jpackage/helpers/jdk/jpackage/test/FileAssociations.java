@@ -22,9 +22,15 @@
  */
 package jdk.jpackage.test;
 
+import java.awt.Desktop;
+import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import jdk.jpackage.internal.IOUtils;
 
 
@@ -97,8 +103,72 @@ final public class FileAssociations {
         });
     }
 
+    Iterable<TestRun> getTestRuns() {
+        return Optional.ofNullable(testRuns).orElseGet(() -> {
+            return createTestRuns().addTestRunForFilenames("test").testRuns;
+        });
+    }
+
+    public static TestRunsBuilder createTestRuns() {
+        return new TestRunsBuilder();
+    }
+
+    static class TestRun {
+        Iterable<String> getFileNames() {
+            return testFileNames;
+        }
+        
+        void openFiles(List<Path> testFiles) throws IOException {
+            switch (invocationType) {
+                case DesktopOpenAssociatedFile:
+                    TKit.trace(String.format("Use desktop to open [%s] file", testFiles.get(0)));
+                    Desktop.getDesktop().open(testFiles.get(0).toFile());
+                    break;
+                    
+                case WinCommandLine:
+                case WinDesktopOpenContextMenu:
+                    // TBD: implement
+            }
+        }
+        
+        private TestRun(Collection<String> testFileNames,
+                InvocationType invocationType) {
+            this.testFileNames = testFileNames;
+            this.invocationType = invocationType;
+        }
+
+        private final Collection<String> testFileNames;
+        private final InvocationType invocationType;
+    }
+
+    public static class TestRunsBuilder {
+        public TestRunsBuilder setCurrentInvocationType(InvocationType v) {
+            curInvocationType = v;
+            return this;
+        }
+
+        public TestRunsBuilder addTestRunForFilenames(String ... filenames) {
+            testRuns.add(new TestRun(List.of(filenames), curInvocationType));
+            return this;
+        }
+
+        public void applyTo(FileAssociations fa) {
+            fa.testRuns = testRuns;
+        }
+
+        private InvocationType curInvocationType = InvocationType.DesktopOpenAssociatedFile;
+        private List<TestRun> testRuns = new ArrayList<>();
+    }
+
+    public static enum InvocationType {
+        DesktopOpenAssociatedFile,
+        WinCommandLine,
+        WinDesktopOpenContextMenu
+    }
+
     private Path file;
     final private String suffixName;
     private String description;
     private Path icon;
+    private Collection<TestRun> testRuns;
 }
