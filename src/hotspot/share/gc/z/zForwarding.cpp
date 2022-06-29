@@ -186,7 +186,11 @@ void ZForwarding::verify() const {
     // Check from index
     guarantee(entry.from_index() < _page->object_max_count(), "Invalid from index");
 
-    // Check for duplicates
+    const uintptr_t to_addr = ZAddress::good(entry.to_offset());
+    const size_t size = ZUtils::object_size(to_addr);
+    const size_t aligned_size = align_up(size, _page->object_alignment());
+
+    // Check for duplicates and overlaps
     for (ZForwardingCursor j = i + 1; j < _entries.length(); j++) {
       const ZForwardingEntry other = at(&j);
       if (!other.populated()) {
@@ -196,11 +200,15 @@ void ZForwarding::verify() const {
 
       guarantee(entry.from_index() != other.from_index(), "Duplicate from");
       guarantee(entry.to_offset() != other.to_offset(), "Duplicate to");
+      const uintptr_t other_to_addr = ZAddress::good(other.to_offset());
+      const size_t other_size = ZUtils::object_size(other_to_addr);
+      const size_t other_aligned_size = align_up(other_size, _page->object_alignment());
+      guarantee(aligned_size < to_addr - other_to_addr       ||
+                aligned_size < other_to_addr - to_addr       ||
+                other_aligned_size < to_addr - other_to_addr ||
+                other_aligned_size < other_to_addr - to_addr, "Overlap");
     }
 
-    const uintptr_t to_addr = ZAddress::good(entry.to_offset());
-    const size_t size = ZUtils::object_size(to_addr);
-    const size_t aligned_size = align_up(size, _page->object_alignment());
     live_bytes += aligned_size;
     live_objects++;
   }

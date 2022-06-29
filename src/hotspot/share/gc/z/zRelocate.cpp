@@ -71,8 +71,13 @@ static uintptr_t relocate_object_inner(ZForwarding* forwarding, uintptr_t from_a
     return 0;
   }
 
-  // Copy object
-  ZUtils::object_copy_disjoint(from_addr, to_addr, size);
+  // Copy object. Use conjoint copying if we are relocating
+  // in-place and the new object overlaps with the old object.
+  if (forwarding->in_place() && to_addr + size > from_addr) {
+    ZUtils::object_copy_conjoint(from_addr, to_addr, size);
+  } else {
+    ZUtils::object_copy_disjoint(from_addr, to_addr, size);
+  }
 
   // Insert forwarding
   const uintptr_t to_addr_final = forwarding_insert(forwarding, from_addr, to_addr, cursor);
@@ -296,7 +301,7 @@ private:
     }
 
     // Copy object. Use conjoint copying if we are relocating
-    // in-place and the new object overlapps with the old object.
+    // in-place and the new object overlaps with the old object.
     if (_forwarding->in_place() && to_addr + size > from_addr) {
       ZUtils::object_copy_conjoint(from_addr, to_addr, size);
     } else {
