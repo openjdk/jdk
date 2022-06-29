@@ -32,7 +32,7 @@
 #include "memory/iterator.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"

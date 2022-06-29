@@ -38,7 +38,7 @@
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/vmThread.hpp"
 
 //------------------------------------------------------------------------------------------------------------------------

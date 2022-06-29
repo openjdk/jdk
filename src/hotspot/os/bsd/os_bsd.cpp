@@ -47,6 +47,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/osThread.hpp"
@@ -55,8 +56,8 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/threadCritical.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
 #include "services/attachListener.hpp"
 #include "services/memTracker.hpp"
@@ -979,7 +980,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 
   void * result= ::dlopen(filename, RTLD_LAZY);
   if (result != NULL) {
-    Events::log(NULL, "Loaded shared library %s", filename);
+    Events::log_dll_message(NULL, "Loaded shared library %s", filename);
     // Successful loading
     log_info(os)("shared library load of %s was successful", filename);
     return result;
@@ -994,7 +995,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     ::strncpy(ebuf, error_report, ebuflen-1);
     ebuf[ebuflen-1]='\0';
   }
-  Events::log(NULL, "Loading shared library %s failed, %s", filename, error_report);
+  Events::log_dll_message(NULL, "Loading shared library %s failed, %s", filename, error_report);
   log_info(os)("shared library load of %s failed, %s", filename, error_report);
 
   return NULL;
@@ -1008,7 +1009,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   log_info(os)("attempting shared library load of %s", filename);
   void * result= ::dlopen(filename, RTLD_LAZY);
   if (result != NULL) {
-    Events::log(NULL, "Loaded shared library %s", filename);
+    Events::log_dll_message(NULL, "Loaded shared library %s", filename);
     // Successful loading
     log_info(os)("shared library load of %s was successful", filename);
     return result;
@@ -1025,7 +1026,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     ::strncpy(ebuf, error_report, ebuflen-1);
     ebuf[ebuflen-1]='\0';
   }
-  Events::log(NULL, "Loading shared library %s failed, %s", filename, error_report);
+  Events::log_dll_message(NULL, "Loading shared library %s failed, %s", filename, error_report);
   log_info(os)("shared library load of %s failed, %s", filename, error_report);
 
   int diag_msg_max_length=ebuflen-strlen(ebuf);
@@ -1785,13 +1786,6 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool 
   }
 
   return NULL;
-}
-
-// Sleep forever; naked call to OS-specific sleep; use with CAUTION
-void os::infinite_sleep() {
-  while (true) {    // sleep forever ...
-    ::sleep(100);   // ... 100 seconds at a time
-  }
 }
 
 // Used to convert frequent JVM_Yield() to nops

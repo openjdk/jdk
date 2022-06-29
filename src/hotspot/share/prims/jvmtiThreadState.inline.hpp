@@ -30,8 +30,8 @@
 #include "classfile/javaClasses.hpp"
 #include "prims/jvmtiEnvThreadState.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
-#include "runtime/thread.inline.hpp"
 
 // JvmtiEnvThreadStateIterator implementation
 

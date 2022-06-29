@@ -54,13 +54,13 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/reflectionUtils.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/timerTrace.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vmThread.hpp"
@@ -1155,7 +1155,7 @@ void JvmtiTagMap::iterate_through_heap(jint heap_filter,
 {
   // EA based optimizations on tagged objects are already reverted.
   // disabled if vritual threads are enabled with --enable-preview
-  EscapeBarrier eb(!Continuations::enabled() && !(heap_filter & JVMTI_HEAP_FILTER_UNTAGGED), JavaThread::current());
+  EscapeBarrier eb(!(heap_filter & JVMTI_HEAP_FILTER_UNTAGGED), JavaThread::current());
   eb.deoptimize_objects_all_threads();
   MutexLocker ml(Heap_lock);
   IterateThroughHeapObjectClosure blk(this,

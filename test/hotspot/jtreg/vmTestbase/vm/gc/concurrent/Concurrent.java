@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,7 +144,7 @@ class Forest {
         }
     }
 
-    // Swap subtrees in 2 trees, the the path is used
+    // Swap subtrees in 2 trees, the path is used
     // as sequence of 1-0 to select subtree (left-reight sequence)
     static void swapSubtrees(Tree t1, Tree t2, int depth, int path) {
         TreeNode tn1 = t1.getRoot();

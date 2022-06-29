@@ -64,6 +64,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/jfieldIDWorkaround.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/objectMonitor.inline.hpp"
@@ -71,8 +72,8 @@
 #include "runtime/osThread.hpp"
 #include "runtime/reflectionUtils.hpp"
 #include "runtime/signature.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/threadHeapSampler.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/vframe.inline.hpp"
@@ -929,13 +930,13 @@ JvmtiEnv::GetAllThreads(jint* threads_count_ptr, jthread** threads_ptr) {
 jvmtiError
 JvmtiEnv::SuspendThread(jthread thread) {
   JavaThread* current = JavaThread::current();
-  ThreadsListHandle tlh(current);
 
   jvmtiError err;
   JavaThread* java_thread = NULL;
   oop thread_oop = NULL;
   {
     JvmtiVTMSTransitionDisabler disabler(true);
+    ThreadsListHandle tlh(current);
 
     err = get_threadOop_and_JavaThread(tlh.list(), thread, &java_thread, &thread_oop);
     if (err != JVMTI_ERROR_NONE) {
@@ -960,13 +961,13 @@ JvmtiEnv::SuspendThread(jthread thread) {
 jvmtiError
 JvmtiEnv::SuspendThreadList(jint request_count, const jthread* request_list, jvmtiError* results) {
   JavaThread* current = JavaThread::current();
-  ThreadsListHandle tlh(current);
   HandleMark hm(current);
   Handle self_tobj = Handle(current, NULL);
   int self_idx = -1;
 
   {
     JvmtiVTMSTransitionDisabler disabler(true);
+    ThreadsListHandle tlh(current);
 
     for (int i = 0; i < request_count; i++) {
       JavaThread *java_thread = NULL;
@@ -1013,18 +1014,19 @@ JvmtiEnv::SuspendAllVirtualThreads(jint except_count, const jthread* except_list
     return JVMTI_ERROR_NONE; // Nothing to do when there are no virtual threads;
   }
   JavaThread* current = JavaThread::current();
-  ThreadsListHandle tlh(current);
-  jvmtiError err = JvmtiEnvBase::check_thread_list(except_count, except_list);
-  if (err != JVMTI_ERROR_NONE) {
-    return err;
-  }
   HandleMark hm(current);
   Handle self_tobj = Handle(current, NULL);
 
   {
     ResourceMark rm(current);
     JvmtiVTMSTransitionDisabler disabler(true);
+    ThreadsListHandle tlh(current);
     GrowableArray<jthread>* elist = new GrowableArray<jthread>(except_count);
+
+    jvmtiError err = JvmtiEnvBase::check_thread_list(except_count, except_list);
+    if (err != JVMTI_ERROR_NONE) {
+      return err;
+    }
 
     // Collect threads from except_list for which resumed status must be restored.
     for (int idx = 0; idx < except_count; idx++) {

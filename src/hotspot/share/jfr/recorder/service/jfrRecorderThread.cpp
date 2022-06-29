@@ -33,7 +33,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "utilities/preserveException.hpp"
 #include "utilities/macros.hpp"
 

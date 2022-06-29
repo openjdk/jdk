@@ -50,13 +50,13 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safefetch.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vm_version.hpp"
@@ -1684,12 +1684,8 @@ bool os::create_stack_guard_pages(char* addr, size_t bytes) {
 char* os::reserve_memory(size_t bytes, bool executable, MEMFLAGS flags) {
   char* result = pd_reserve_memory(bytes, executable);
   if (result != NULL) {
-    MemTracker::record_virtual_memory_reserve(result, bytes, CALLER_PC);
-    if (flags != mtOther) {
-      MemTracker::record_virtual_memory_type(result, flags);
-    }
+    MemTracker::record_virtual_memory_reserve(result, bytes, CALLER_PC, flags);
   }
-
   return result;
 }
 

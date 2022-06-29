@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,9 +72,9 @@ enum X509Authentication implements SSLAuthentication {
         this.keyTypes = keyTypes;
     }
 
-    static X509Authentication valueOf(SignatureScheme signatureScheme) {
+    static X509Authentication valueOfKeyAlgorithm(String keyAlgorithm) {
         for (X509Authentication au : X509Authentication.values()) {
-            if (au.keyAlgorithm.equals(signatureScheme.keyAlgorithm)) {
+            if (au.keyAlgorithm.equals(keyAlgorithm)) {
                 return au;
             }
         }

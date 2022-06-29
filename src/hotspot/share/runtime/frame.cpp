@@ -48,6 +48,7 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/monitorChunk.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -55,7 +56,6 @@
 #include "runtime/stackValue.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/decoder.hpp"
 #include "utilities/formatBuffer.hpp"
@@ -1153,8 +1153,8 @@ void frame::oops_do_internal(OopClosure* f, CodeBlobClosure* cf,
     oops_interpreted_do(f, map, use_interpreter_oop_map_cache);
   } else if (is_entry_frame()) {
     oops_entry_do(f, map);
-  } else if (is_optimized_entry_frame()) {
-    _cb->as_optimized_entry_blob()->oops_do(f, *this);
+  } else if (is_upcall_stub_frame()) {
+    _cb->as_upcall_stub()->oops_do(f, *this);
   } else if (CodeCache::contains(pc())) {
     oops_code_blob_do(f, cf, df, derived_mode, map);
   } else {

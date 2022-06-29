@@ -34,13 +34,13 @@ import jdk.internal.foreign.abi.ABIDescriptor;
 import jdk.internal.foreign.abi.Binding;
 import jdk.internal.foreign.abi.CallingSequence;
 import jdk.internal.foreign.abi.CallingSequenceBuilder;
-import jdk.internal.foreign.abi.ProgrammableUpcallHandler;
+import jdk.internal.foreign.abi.DowncallLinker;
+import jdk.internal.foreign.abi.UpcallLinker;
 import jdk.internal.foreign.abi.SharedUtils;
 import jdk.internal.foreign.abi.VMStorage;
 import jdk.internal.foreign.abi.aarch64.linux.LinuxAArch64CallArranger;
 import jdk.internal.foreign.abi.aarch64.macos.MacOsAArch64CallArranger;
 import jdk.internal.foreign.Utils;
-import jdk.internal.foreign.abi.ProgrammableInvoker;
 
 import java.lang.foreign.MemorySession;
 import java.lang.invoke.MethodHandle;
@@ -52,8 +52,8 @@ import static jdk.internal.foreign.PlatformLayouts.*;
 import static jdk.internal.foreign.abi.aarch64.AArch64Architecture.*;
 
 /**
- * For the AArch64 C ABI specifically, this class uses the ProgrammableInvoker API, namely CallingSequenceBuilder2
- * to translate a C FunctionDescriptor into a CallingSequence2, which can then be turned into a MethodHandle.
+ * For the AArch64 C ABI specifically, this class uses CallingSequenceBuilder
+ * to translate a C FunctionDescriptor into a CallingSequence, which can then be turned into a MethodHandle.
  *
  * This includes taking care of synthetic arguments like pointers to return buffers for 'in-memory' returns.
  *
@@ -110,9 +110,14 @@ public abstract class CallArranger {
      * Are variadic arguments assigned to registers as in the standard calling
      * convention, or always passed on the stack?
      *
-     * @returns true if variadic arguments should be spilled to the stack.
+     * @return true if variadic arguments should be spilled to the stack.
+      */
+     protected abstract boolean varArgsOnStack();
+
+    /**
+     * {@return true if this ABI requires sub-slot (smaller than STACK_SLOT_SIZE) packing of arguments on the stack.}
      */
-    protected abstract boolean varArgsOnStack();
+    protected abstract boolean requiresSubSlotStackPacking();
 
     protected CallArranger() {}
 
@@ -147,7 +152,7 @@ public abstract class CallArranger {
     public MethodHandle arrangeDowncall(MethodType mt, FunctionDescriptor cDesc) {
         Bindings bindings = getBindings(mt, cDesc, false);
 
-        MethodHandle handle = new ProgrammableInvoker(C, bindings.callingSequence).getBoundMethodHandle();
+        MethodHandle handle = new DowncallLinker(C, bindings.callingSequence).getBoundMethodHandle();
 
         if (bindings.isInMemoryReturn) {
             handle = SharedUtils.adaptDowncallForIMR(handle, cDesc);
@@ -163,7 +168,7 @@ public abstract class CallArranger {
             target = SharedUtils.adaptUpcallForIMR(target, true /* drop return, since we don't have bindings for it */);
         }
 
-        return ProgrammableUpcallHandler.make(C, target, bindings.callingSequence, session);
+        return UpcallLinker.make(C, target, bindings.callingSequence, session);
     }
 
     private static boolean isInMemoryReturn(Optional<MemoryLayout> returnLayout) {
@@ -173,8 +178,9 @@ public abstract class CallArranger {
             .isPresent();
     }
 
-    static class StorageCalculator {
+    class StorageCalculator {
         private final boolean forArguments;
+        private boolean forVarArgs = false;
 
         private final int[] nRegs = new int[] { 0, 0 };
         private long stackOffset = 0;
@@ -185,8 +191,21 @@ public abstract class CallArranger {
 
         VMStorage stackAlloc(long size, long alignment) {
             assert forArguments : "no stack returns";
-            alignment = Math.max(alignment, STACK_SLOT_SIZE);
-            stackOffset = Utils.alignUp(stackOffset, alignment);
+            // Implementation limit: each arg must take up at least an 8 byte stack slot (on the Java side)
+            // There is currently no way to address stack offsets that are not multiples of 8 bytes
+            // The VM can only address multiple-of-4-bytes offsets, which is also not good enough for some ABIs
+            // see JDK-8283462 and related issues
+            long stackSlotAlignment = Math.max(alignment, STACK_SLOT_SIZE);
+            long alignedStackOffset = Utils.alignUp(stackOffset, stackSlotAlignment);
+            // macos-aarch64 ABI potentially requires addressing stack offsets that are not multiples of 8 bytes
+            // Reject such call types here, to prevent undefined behavior down the line
+            // Reject if the above stack-slot-aligned offset does not match the offset the ABI really wants
+            // Except for variadic arguments, which _are_ passed at 8-byte-aligned offsets
+            if (requiresSubSlotStackPacking() && alignedStackOffset != Utils.alignUp(stackOffset, alignment)
+                    && !forVarArgs) // varargs are given a pass on all aarch64 ABIs
+                throw new UnsupportedOperationException("Call type not supported on this platform");
+
+            stackOffset = alignedStackOffset;
 
             VMStorage storage =
                 stackStorage((int)(stackOffset / STACK_SLOT_SIZE));
@@ -233,10 +252,11 @@ public abstract class CallArranger {
             // no further arguments are allocated to registers.
             nRegs[StorageClasses.INTEGER] = MAX_REGISTER_ARGUMENTS;
             nRegs[StorageClasses.VECTOR] = MAX_REGISTER_ARGUMENTS;
+            forVarArgs = true;
         }
     }
 
-    abstract static class BindingCalculator {
+    abstract class BindingCalculator {
         protected final StorageCalculator storageCalculator;
 
         protected BindingCalculator(boolean forArguments) {
@@ -288,7 +308,7 @@ public abstract class CallArranger {
         abstract List<Binding> getIndirectBindings();
     }
 
-    static class UnboxBindingCalculator extends BindingCalculator {
+    class UnboxBindingCalculator extends BindingCalculator {
         UnboxBindingCalculator(boolean forArguments) {
             super(forArguments);
         }
@@ -389,7 +409,7 @@ public abstract class CallArranger {
         }
     }
 
-    static class BoxBindingCalculator extends BindingCalculator{
+    class BoxBindingCalculator extends BindingCalculator {
         BoxBindingCalculator(boolean forArguments) {
             super(forArguments);
         }

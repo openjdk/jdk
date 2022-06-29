@@ -31,9 +31,17 @@ import java.lang.foreign.MemorySegment;
 import java.lang.foreign.MemorySession;
 import java.lang.foreign.SegmentAllocator;
 import java.lang.foreign.ValueLayout;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.CharBuffer;
+import java.nio.DoubleBuffer;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.nio.LongBuffer;
+import java.nio.ShortBuffer;
 import java.util.*;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntFunction;
@@ -44,6 +52,7 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.foreign.UnmapperProxy;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.ForceInline;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
@@ -57,7 +66,7 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
  * are defined for each memory segment kind, see {@link NativeMemorySegmentImpl}, {@link HeapMemorySegmentImpl} and
  * {@link MappedMemorySegmentImpl}.
  */
-public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegment, SegmentAllocator, Scoped {
+public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegment, SegmentAllocator, Scoped, BiFunction<String, List<Number>, RuntimeException> {
 
     private static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
 
@@ -144,10 +153,7 @@ public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegm
 
     @Override
     public MemorySegment allocate(long bytesSize, long bytesAlignment) {
-        if (bytesAlignment <= 0 ||
-                ((bytesAlignment & (bytesAlignment - 1)) != 0L)) {
-            throw new IllegalArgumentException("Invalid alignment constraint : " + bytesAlignment);
-        }
+        Utils.checkAllocationSizeAndAlign(bytesSize, bytesAlignment);
         return asSlice(0, bytesSize);
     }
 
@@ -387,11 +393,18 @@ public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegm
     @ForceInline
     void checkBounds(long offset, long length) {
         if (length > 0) {
-            Objects.checkIndex(offset, this.length - length + 1);
+            Preconditions.checkIndex(offset, this.length - length + 1, this);
         } else if (length < 0 || offset < 0 ||
                 offset > this.length - length) {
             throw outOfBoundException(offset, length);
         }
+    }
+
+    @Override
+    public RuntimeException apply(String s, List<Number> numbers) {
+        long offset = numbers.get(0).longValue();
+        long length = byteSize() - numbers.get(1).longValue() + 1;
+        return outOfBoundException(offset, length);
     }
 
     @Override
@@ -406,7 +419,7 @@ public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegm
     }
 
     private IndexOutOfBoundsException outOfBoundException(long offset, long length) {
-        return new IndexOutOfBoundsException(String.format("Out of bound access on segment %s; new offset = %d; new length = %d",
+        return new IndexOutOfBoundsException(String.format("Out of bound access on segment %s; offset = %d; length = %d",
                         this, offset, length));
     }
 
@@ -517,7 +530,7 @@ public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegm
         );
     }
 
-    public static AbstractMemorySegmentImpl ofBuffer(ByteBuffer bb) {
+    public static AbstractMemorySegmentImpl ofBuffer(Buffer bb) {
         Objects.requireNonNull(bb);
         long bbAddress = nioAccess.getBufferAddress(bb);
         Object base = nioAccess.getBufferBase(bb);
@@ -540,12 +553,50 @@ public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegm
         if (bb.isReadOnly()) {
             modes |= READ_ONLY;
         }
+        int scaleFactor = getScaleFactor(bb);
         if (base != null) {
-            return new HeapMemorySegmentImpl.OfByte(bbAddress + pos, (byte[])base, size, modes);
+            if (base instanceof byte[]) {
+                return new HeapMemorySegmentImpl.OfByte(bbAddress + (pos << scaleFactor), base, size << scaleFactor, modes);
+            } else if (base instanceof short[]) {
+                return new HeapMemorySegmentImpl.OfShort(bbAddress + (pos << scaleFactor), base, size << scaleFactor, modes);
+            } else if (base instanceof char[]) {
+                return new HeapMemorySegmentImpl.OfChar(bbAddress + (pos << scaleFactor), base, size << scaleFactor, modes);
+            } else if (base instanceof int[]) {
+                return new HeapMemorySegmentImpl.OfInt(bbAddress + (pos << scaleFactor), base, size << scaleFactor, modes);
+            } else if (base instanceof float[]) {
+                return new HeapMemorySegmentImpl.OfFloat(bbAddress + (pos << scaleFactor), base, size << scaleFactor, modes);
+            } else if (base instanceof long[]) {
+                return new HeapMemorySegmentImpl.OfLong(bbAddress + (pos << scaleFactor), base, size << scaleFactor, modes);
+            } else if (base instanceof double[]) {
+                return new HeapMemorySegmentImpl.OfDouble(bbAddress + (pos << scaleFactor), base, size << scaleFactor, modes);
+            } else {
+                throw new AssertionError("Cannot get here");
+            }
         } else if (unmapper == null) {
-            return new NativeMemorySegmentImpl(bbAddress + pos, size, modes, bufferSession);
+            return new NativeMemorySegmentImpl(bbAddress + (pos << scaleFactor), size << scaleFactor, modes, bufferSession);
         } else {
+            // we can ignore scale factor here, a mapped buffer is always a byte buffer, so scaleFactor == 0.
             return new MappedMemorySegmentImpl(bbAddress + pos, unmapper, size, modes, bufferSession);
+        }
+    }
+
+    private static int getScaleFactor(Buffer buffer) {
+        if (buffer instanceof ByteBuffer) {
+            return 0;
+        } else if (buffer instanceof CharBuffer) {
+            return 1;
+        } else if (buffer instanceof ShortBuffer) {
+            return 1;
+        } else if (buffer instanceof IntBuffer) {
+            return 2;
+        } else if (buffer instanceof FloatBuffer) {
+            return 2;
+        } else if (buffer instanceof LongBuffer) {
+            return 3;
+        } else if (buffer instanceof DoubleBuffer) {
+            return 3;
+        } else {
+            throw new AssertionError("Cannot get here");
         }
     }
 }

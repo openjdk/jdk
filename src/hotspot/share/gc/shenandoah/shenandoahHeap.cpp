@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2013, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2312,16 +2312,15 @@ bool ShenandoahHeap::requires_barriers(stackChunkOop obj) const {
 
   // Objects allocated after marking start are implicitly alive, don't need any barriers during
   // marking phase.
-  if (is_concurrent_mark_in_progress() && marking_context()->allocated_after_mark_start(obj)) {
-    return false;
+  if (is_concurrent_mark_in_progress() &&
+     !marking_context()->allocated_after_mark_start(obj)) {
+    return true;
   }
 
-  // Objects allocated after evacuation start are guaranteed in to-space, don't need any barriers
-  // during evacuation/update references phases.
-  if (has_forwarded_objects() &&
-      cast_from_oop<HeapWord*>(obj) >= heap_region_containing(obj)->get_update_watermark()) {
-    return false;
+  // Can not guarantee obj is deeply good.
+  if (has_forwarded_objects()) {
+    return true;
   }
 
-  return true;
+  return false;
 }

@@ -38,10 +38,10 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/align.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -3613,7 +3613,7 @@ class StubGenerator: public StubCodeGenerator {
 #define BLK_OFFSETOF(x) (offsetof(constant_block, x))
 
 // In little-endian mode, the lxv instruction loads the element at EA into
-// element 15 of the the vector register, EA+1 goes into element 14, and so
+// element 15 of the vector register, EA+1 goes into element 14, and so
 // on.
 //
 // To make a look-up table easier to read, ARRAY_TO_LXV_ORDER reverses the

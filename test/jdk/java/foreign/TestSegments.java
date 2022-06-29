@@ -154,6 +154,18 @@ public class TestSegments {
         memorySegment.get(JAVA_INT, offset);
     }
 
+    @Test
+    public void testSegmentOOBMessage() {
+        try {
+            var segment = MemorySegment.allocateNative(10, MemorySession.global());
+            segment.getAtIndex(ValueLayout.JAVA_INT, 2);
+        } catch (IndexOutOfBoundsException ex) {
+            assertTrue(ex.getMessage().contains("Out of bound access"));
+            assertTrue(ex.getMessage().contains("offset = 8"));
+            assertTrue(ex.getMessage().contains("length = 4"));
+        }
+    }
+
     @Test(dataProvider = "segmentFactories")
     public void testAccessModesOfFactories(Supplier<MemorySegment> segmentSupplier) {
         MemorySegment segment = segmentSupplier.get();
@@ -305,7 +317,7 @@ public class TestSegments {
     public void testFillEmpty() {
         MemorySegment.ofArray(new byte[] { }).fill((byte) 0xFF);
         MemorySegment.ofArray(new byte[2]).asSlice(0, 0).fill((byte) 0xFF);
-        MemorySegment.ofByteBuffer(ByteBuffer.allocateDirect(0)).fill((byte) 0xFF);
+        MemorySegment.ofBuffer(ByteBuffer.allocateDirect(0)).fill((byte) 0xFF);
     }
 
     @Test(dataProvider = "heapFactories")

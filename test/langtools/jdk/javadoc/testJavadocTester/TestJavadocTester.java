@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -202,13 +202,13 @@ public class TestJavadocTester extends JavadocTester {
         messages.forEach(this::report);
         checkMessages(
                 """
-                    Passed: p/C.html: following text found:
+                    Passed: out/p/C.html: following text found:
                     Second sentence""",
                 """
-                    Passed: p/C.html: following text found:
+                    Passed: out/p/C.html: following text found:
                     abc123""",
                 """
-                    Passed: p/C.html: following text found:
+                    Passed: out/p/C.html: following text found:
                     def456""");
     }
 
@@ -220,7 +220,7 @@ public class TestJavadocTester extends JavadocTester {
                 .check("Third sentence.");
         checkMessages(
                 """
-                    Passed: p/C.html: following text not found:
+                    Passed: out/p/C.html: following text not found:
                     Third sentence""");
     }
 
@@ -231,7 +231,7 @@ public class TestJavadocTester extends JavadocTester {
                 .check("Third sentence.");
         checkMessages(
                 """
-                    FAILED: p/C.html: following text not found:
+                    FAILED: out/p/C.html: following text not found:
                     Third sentence""");
     }
 
@@ -244,13 +244,13 @@ public class TestJavadocTester extends JavadocTester {
                         Pattern.compile("d.f4.6"));
         checkMessages(
                 """
-                    Passed: p/C.html: following pattern found:
+                    Passed: out/p/C.html: following pattern found:
                     S.cond s.nt.nc.""",
                 """
-                    Passed: p/C.html: following pattern found:
+                    Passed: out/p/C.html: following pattern found:
                     [abc]{3}[123]{3}""",
                 """
-                    Passed: p/C.html: following pattern found:
+                    Passed: out/p/C.html: following pattern found:
                     d.f4.6""");
     }
 
@@ -271,28 +271,28 @@ public class TestJavadocTester extends JavadocTester {
 
         checkMessages(
                 """
-                    Passed: p/C.html: following text found:
+                    Passed: out/p/C.html: following text found:
                     <h2>Method Summary</h2>""",
                 """
-                    Passed: p/C.html: following text found:
+                    Passed: out/p/C.html: following text found:
                     <a href="#m1()" class="member-name-link">m1</a>""",
                 """
-                    Passed: p/C.html: following text found:
+                    Passed: out/p/C.html: following text found:
                     <a href="#m2()" class="member-name-link">m2</a>""",
                 """
-                    Passed: p/C.html: following text found:
+                    Passed: out/p/C.html: following text found:
                     <a href="#m3()" class="member-name-link">m3</a>""",
                 """
-                    Passed: p/C.html: following text found:
+                    Passed: out/p/C.html: following text found:
                     <h2>Method Details</h2>""",
                 """
-                    Passed: p/C.html: following text found:
+                    Passed: out/p/C.html: following text found:
                     <section class="detail" id="m3()">""",
                 """
-                    Passed: p/C.html: following text found:
+                    Passed: out/p/C.html: following text found:
                     <section class="detail" id="m2()">""",
                 """
-                    Passed: p/C.html: following text found:
+                    Passed: out/p/C.html: following text found:
                     <section class="detail" id="m1()">"""
         );
     }
@@ -306,10 +306,10 @@ public class TestJavadocTester extends JavadocTester {
                         "First sentence");
         checkMessages(
                 """
-                    Passed: p/C.html: following text found:
+                    Passed: out/p/C.html: following text found:
                     Second sentence""",
                 """
-                    Passed: p/C.html: following text found:
+                    Passed: out/p/C.html: following text found:
                     First sentence""");
     }
 
@@ -321,10 +321,10 @@ public class TestJavadocTester extends JavadocTester {
                         "First sentence");
         checkMessages(
                 """
-                    Passed: p/C.html: following text found:
+                    Passed: out/p/C.html: following text found:
                     Second sentence""",
                 """
-                    FAILED: p/C.html: following text was found on line""");
+                    FAILED: out/p/C.html: following text was found on line""");
     }
 
     @Test
@@ -408,12 +408,12 @@ public class TestJavadocTester extends JavadocTester {
                 .setExpectOrdered(false)
                 .checkUnique("id=\"m1()\"", "id=\"m2()\"", "id=\"m3()\"")   // expect unique
                 .checkUnique("m1()", "m2()", "m3()");                       // expect not unique
-        checkMessages("Passed: p/C.html: id=\"m1()\" is unique",
-                "Passed: p/C.html: id=\"m2()\" is unique",
-                "Passed: p/C.html: id=\"m3()\" is unique",
-                "FAILED: p/C.html: m1() is not unique",
-                "FAILED: p/C.html: m2() is not unique",
-                "FAILED: p/C.html: m3() is not unique");
+        checkMessages("Passed: out/p/C.html: id=\"m1()\" is unique",
+                "Passed: out/p/C.html: id=\"m2()\" is unique",
+                "Passed: out/p/C.html: id=\"m3()\" is unique",
+                "FAILED: out/p/C.html: m1() is not unique",
+                "FAILED: out/p/C.html: m2() is not unique",
+                "FAILED: out/p/C.html: m3() is not unique");
     }
 
     /**

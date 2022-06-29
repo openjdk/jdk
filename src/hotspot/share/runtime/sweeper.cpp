@@ -39,11 +39,11 @@
 #include "oops/method.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/handshake.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sweeper.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/events.hpp"
@@ -598,7 +598,7 @@ void NMethodSweeper::possibly_flush(nmethod* nm) {
           } else if (MethodCounters::is_nmethod_age_unset(age)) {
             // No counters were used before. Set the counters to the detection
             // limit value. If the method is going to be used again it will be compiled
-            // with counters that we're going to use for analysis the the next time.
+            // with counters that we're going to use for analysis the next time.
             mc->reset_nmethod_age();
           } else {
             // Method was totally idle for 10 sweeps

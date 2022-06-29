@@ -47,8 +47,8 @@
 #include "memory/resourceArea.hpp"
 #include "prims/jvmtiTagMap.hpp"
 #include "runtime/handshake.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/debug.hpp"
 
 static const ZStatCounter ZCounterUndoPageAllocation("Memory", "Undo Page Allocation", ZStatUnitOpsPerSecond);

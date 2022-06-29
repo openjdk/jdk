@@ -33,6 +33,7 @@
 #include "utilities/align.hpp"
 #include "unittest.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/threads.hpp"
 
 static size_t small_page_size() {
   return os::vm_page_size();

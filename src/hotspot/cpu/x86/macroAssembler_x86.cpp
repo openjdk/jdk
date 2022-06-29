@@ -43,6 +43,7 @@
 #include "runtime/continuation.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/os.hpp"
@@ -50,7 +51,6 @@
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/macros.hpp"
 #include "crc32c.h"
 
@@ -1068,7 +1068,7 @@ void MacroAssembler::object_move(OopMap* map,
     cmovptr(Assembler::equal, rHandle, Address(rbp, reg2offset_in(src.first())));
   } else {
 
-    // Oop is in an a register we must store it to the space we reserve
+    // Oop is in a register we must store it to the space we reserve
     // on the stack for oop_handles and pass a handle if oop is non-NULL
 
     const Register rOop = src.first()->as_Register();
@@ -2584,8 +2584,9 @@ void MacroAssembler::vmovdqu(XMMRegister dst, AddressLiteral src, Register scrat
 }
 
 void MacroAssembler::vmovdqu(XMMRegister dst, AddressLiteral src, Register scratch_reg, int vector_len) {
-  assert(vector_len <= AVX_256bit, "AVX2 vector length");
-  if (vector_len == AVX_256bit) {
+  if (vector_len == AVX_512bit) {
+    evmovdquq(dst, src, AVX_512bit, scratch_reg);
+  } else if (vector_len == AVX_256bit) {
     vmovdqu(dst, src, scratch_reg);
   } else {
     movdqu(dst, src, scratch_reg);
@@ -2839,36 +2840,122 @@ void MacroAssembler::push_IU_state() {
   pusha();
 }
 
-void MacroAssembler::push_cont_fastpath(Register java_thread) {
+void MacroAssembler::push_cont_fastpath() {
   if (!Continuations::enabled()) return;
+
+#ifndef _LP64
+  Register rthread = rax;
+  Register rrealsp = rbx;
+  push(rthread);
+  push(rrealsp);
+
+  get_thread(rthread);
+
+  // The code below wants the original RSP.
+  // Move it back after the pushes above.
+  movptr(rrealsp, rsp);
+  addptr(rrealsp, 2*wordSize);
+#else
+  Register rthread = r15_thread;
+  Register rrealsp = rsp;
+#endif
+
   Label done;
-  cmpptr(rsp, Address(java_thread, JavaThread::cont_fastpath_offset()));
+  cmpptr(rrealsp, Address(rthread, JavaThread::cont_fastpath_offset()));
   jccb(Assembler::belowEqual, done);
-  movptr(Address(java_thread, JavaThread::cont_fastpath_offset()), rsp);
+  movptr(Address(rthread, JavaThread::cont_fastpath_offset()), rrealsp);
   bind(done);
+
+#ifndef _LP64
+  pop(rrealsp);
+  pop(rthread);
+#endif
 }
 
-void MacroAssembler::pop_cont_fastpath(Register java_thread) {
+void MacroAssembler::pop_cont_fastpath() {
   if (!Continuations::enabled()) return;
+
+#ifndef _LP64
+  Register rthread = rax;
+  Register rrealsp = rbx;
+  push(rthread);
+  push(rrealsp);
+
+  get_thread(rthread);
+
+  // The code below wants the original RSP.
+  // Move it back after the pushes above.
+  movptr(rrealsp, rsp);
+  addptr(rrealsp, 2*wordSize);
+#else
+  Register rthread = r15_thread;
+  Register rrealsp = rsp;
+#endif
+
   Label done;
-  cmpptr(rsp, Address(java_thread, JavaThread::cont_fastpath_offset()));
+  cmpptr(rrealsp, Address(rthread, JavaThread::cont_fastpath_offset()));
   jccb(Assembler::below, done);
-  movptr(Address(java_thread, JavaThread::cont_fastpath_offset()), 0);
+  movptr(Address(rthread, JavaThread::cont_fastpath_offset()), 0);
   bind(done);
+
+#ifndef _LP64
+  pop(rrealsp);
+  pop(rthread);
+#endif
 }
 
-void MacroAssembler::inc_held_monitor_count(Register java_thread) {
+void MacroAssembler::inc_held_monitor_count() {
   if (!Continuations::enabled()) return;
-  incrementl(Address(java_thread, JavaThread::held_monitor_count_offset()));
+
+#ifndef _LP64
+  Register thread = rax;
+  push(thread);
+  get_thread(thread);
+#else
+  Register thread = r15_thread;
+#endif
+
+  incrementl(Address(thread, JavaThread::held_monitor_count_offset()));
+
+#ifndef _LP64
+  pop(thread);
+#endif
 }
 
-void MacroAssembler::dec_held_monitor_count(Register java_thread) {
+void MacroAssembler::dec_held_monitor_count() {
   if (!Continuations::enabled()) return;
-  decrementl(Address(java_thread, JavaThread::held_monitor_count_offset()));
+
+#ifndef _LP64
+  Register thread = rax;
+  push(thread);
+  get_thread(thread);
+#else
+  Register thread = r15_thread;
+#endif
+
+  decrementl(Address(thread, JavaThread::held_monitor_count_offset()));
+
+#ifndef _LP64
+  pop(thread);
+#endif
 }
 
-void MacroAssembler::reset_held_monitor_count(Register java_thread) {
-  movl(Address(java_thread, JavaThread::held_monitor_count_offset()), (int32_t)0);
+void MacroAssembler::reset_held_monitor_count() {
+  if (!Continuations::enabled()) return;
+
+#ifndef _LP64
+  Register thread = rax;
+  push(thread);
+  get_thread(thread);
+#else
+  Register thread = r15_thread;
+#endif
+
+  movl(Address(thread, JavaThread::held_monitor_count_offset()), (int32_t)0);
+
+#ifndef _LP64
+  pop(thread);
+#endif
 }
 
 #ifdef ASSERT
@@ -3234,6 +3321,15 @@ void MacroAssembler::vpand(XMMRegister dst, XMMRegister nds, AddressLiteral src,
 void MacroAssembler::vpbroadcastw(XMMRegister dst, XMMRegister src, int vector_len) {
   assert(((dst->encoding() < 16 && src->encoding() < 16) || VM_Version::supports_avx512vlbw()),"XMM register should be 0-15");
   Assembler::vpbroadcastw(dst, src, vector_len);
+}
+
+void MacroAssembler::vpbroadcastq(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch) {
+  if (reachable(src)) {
+    Assembler::vpbroadcastq(dst, as_Address(src), vector_len);
+  } else {
+    lea(rscratch, src);
+    Assembler::vpbroadcastq(dst, Address(rscratch, 0), vector_len);
+  }
 }
 
 void MacroAssembler::vbroadcastsd(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch) {
@@ -4160,7 +4256,7 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
 
   // Get super_klass value into rax (even if it was in rdi or rcx).
   bool pushed_rax = false, pushed_rcx = false, pushed_rdi = false;
-  if (super_klass != rax || UseCompressedOops) {
+  if (super_klass != rax) {
     if (!IS_A_TEMP(rax)) { push(rax); pushed_rax = true; }
     mov(rax, super_klass);
   }
