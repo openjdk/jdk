@@ -48,6 +48,10 @@
 # include <signal.h>
 # include <pwd.h>
 
+#if defined(LINUX)
+# include <sys/file.h>
+#endif
+
 static char* backing_store_file_name = NULL;  // name of the backing store
                                               // file, if successfully created.
 
@@ -707,6 +711,26 @@ static void remove_file(const char* path) {
   }
 }
 
+/*
+static int try_lock_file_before_remove(const char* dirname, const char* filename) {
+  int fd = -1;
+
+#if defined(LINUX)
+  bool is_locked = false;
+  fd = ::open(filename, O_RDONLY);
+  if (fd >= 0) {
+    is_locked = (flock(fd, LOCK_EX|LOCK_NB) != 0);
+  }
+  log_info(perf, memops)("is_locked %s/%s (fd = %d) = %s", dirname, filename, fd, is_locked ? "true" : "false");
+  if (!is_locked) {
+    ::close(fd);
+    fd = -1;
+  }
+#endif
+
+  return fd;
+}
+*/
 
 // cleanup stale shared memory resources
 //
@@ -738,20 +762,24 @@ static void cleanup_sharedmem_resources(const char* dirname) {
   struct dirent* entry;
   errno = 0;
   while ((entry = os::readdir(dirp)) != NULL) {
+    const char* filename = entry->d_name;
+    pid_t pid = filename_to_pid(filename);
 
-    pid_t pid = filename_to_pid(entry->d_name);
-
+    log_info(perf, memops)("Checking %s/%s",
+                           dirname, filename);
     if (pid == 0) {
 
-      if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
+      if (strcmp(filename, ".") != 0 && strcmp(filename, "..") != 0) {
         // attempt to remove all unexpected files, except "." and ".."
-        unlink(entry->d_name);
+        unlink(filename);
       }
 
       errno = 0;
       continue;
     }
 
+    // FIXME -- update this comment
+    //
     // we now have a file name that converts to a valid integer
     // that could represent a process id . if this process id
     // matches the current process id or the process is not running,
@@ -765,10 +793,36 @@ static void cleanup_sharedmem_resources(const char* dirname) {
     // be stale and are removed because the resources for such a
     // process should be in a different user specific directory.
     //
-    if ((pid == os::current_process_id()) ||
-        (kill(pid, 0) == OS_ERR && (errno == ESRCH || errno == EPERM))) {
-        unlink(entry->d_name);
+
+    bool is_locked = true;
+#if defined(LINUX)
+    int fd = ::open(filename, O_RDONLY);
+    if (fd >= 0) {
+      is_locked = (flock(fd, LOCK_EX|LOCK_NB) != 0);
+    } else {
+      is_locked = false;
     }
+    log_info(perf, memops)("I %s %s/%s (fd = %d)", is_locked ? "successfully locked" : "failed to lock",
+                           dirname, filename, fd);
+#endif
+
+    if (is_locked) {
+      if ((pid == os::current_process_id()) ||
+          (kill(pid, 0) == OS_ERR && (errno == ESRCH || errno == EPERM))) {
+        log_info(perf, memops)("Unlinking stale file %s/%s", dirname, filename);
+        unlink(filename);
+      }
+    }
+
+#if defined(LINUX)
+    if (fd >= 0) {
+      // We hold the lock until after the file is removed. This prevents
+      // another JVM process from creating the file after we have decided to
+      // remove it.
+      ::close(fd);
+    }
+#endif
+
     errno = 0;
   }
 
@@ -864,6 +918,17 @@ static int create_sharedmem_resources(const char* dirname, const char* filename,
     ::close(fd);
     return -1;
   }
+
+#if defined(LINUX)
+  int n = flock(fd, LOCK_EX|LOCK_NB);
+  if (n != 0) {
+    log_warning(perf, memops)("Cannot use file %s/%s because it is locked by another process", dirname, filename);
+    ::close(fd);
+    return -1;
+  } else {
+    log_warning(perf, memops)("Succesfully locked %s/%s", dirname, filename);
+  }
+#endif
 
   ssize_t result;
 
@@ -998,8 +1063,10 @@ static char* mmap_create_shared(size_t size) {
 
   mapAddress = (char*)::mmap((char*)0, size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
 
+#if 0
   result = ::close(fd);
   assert(result != OS_ERR, "could not close file");
+#endif
 
   if (mapAddress == MAP_FAILED) {
     if (PrintMiscellaneous && Verbose) {
@@ -1018,6 +1085,8 @@ static char* mmap_create_shared(size_t size) {
 
   // it does not go through os api, the operation has to record from here
   MemTracker::record_virtual_memory_reserve_and_commit((address)mapAddress, size, CURRENT_PC, mtInternal);
+
+  log_info(perf, memops)("Successfully opened %s/%s", dirname, short_filename);
 
   return mapAddress;
 }
