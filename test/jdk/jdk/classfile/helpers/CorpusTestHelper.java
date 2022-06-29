@@ -29,8 +29,6 @@ import jdk.classfile.impl.UnboundAttribute;
 import jdk.classfile.instruction.LineNumber;
 import jdk.classfile.instruction.LocalVariable;
 import jdk.classfile.instruction.LocalVariableType;
-import org.testng.ITest;
-import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 
 import java.io.IOException;
@@ -48,7 +46,7 @@ import jdk.classfile.ClassTransform;
 import jdk.classfile.Attributes;
 import jdk.classfile.impl.DirectCodeBuilder;
 
-public class CorpusTestHelper  implements ITest {
+public class CorpusTestHelper  {
 
     protected static final FileSystem JRT = FileSystems.getFileSystem(URI.create("jrt:/"));
     protected static final String testFilter = null; //"modules/java.base/java/util/function/Supplier.class";
@@ -104,22 +102,11 @@ public class CorpusTestHelper  implements ITest {
     }
 
 
-    protected String testMethod = "";
     protected final Path path;
     protected final byte[] bytes;
 
     public CorpusTestHelper(Path path) throws IOException {
         this.path = path;
         this.bytes = Files.readAllBytes(path);
-    }
-
-    @BeforeMethod
-    public void handleTestMethodName(Method method) {
-        testMethod = method.getName();
-    }
-
-    @Override
-    public String getTestName() {
-        return testMethod + "[" + path.toString() + "]";
     }
 }

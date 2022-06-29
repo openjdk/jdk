@@ -276,8 +276,8 @@ public class BytecodeHelpers {
 
     public static MethodHandleEntry handleDescToHandleInfo(ConstantPoolBuilder constantPool, DirectMethodHandleDesc bootstrapMethod) {
         ClassEntry bsOwner = constantPool.classEntry(bootstrapMethod.owner());
-        NameAndTypeEntry bsNameAndType = constantPool.natEntry(bootstrapMethod.methodName(),
-                                                               MethodTypeDesc.ofDescriptor(bootstrapMethod.lookupDescriptor()));
+        NameAndTypeEntry bsNameAndType = constantPool.natEntry(constantPool.utf8Entry(bootstrapMethod.methodName()),
+                                                               constantPool.utf8Entry(bootstrapMethod.lookupDescriptor()));
         int bsRefKind = bootstrapMethod.refKind();
         MemberRefEntry bsReference = toBootstrapMemberRef(constantPool, bsRefKind, bsOwner, bsNameAndType, bootstrapMethod.isOwnerInterface());
 

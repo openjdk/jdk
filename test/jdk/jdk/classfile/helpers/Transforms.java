@@ -116,6 +116,9 @@ public class Transforms {
             System.arraycopy(bytes, 0, bs, 0, bytes.length);
             return bs;
         }),
+        BUILD_FROM_SCRATCH(bytes -> {
+            return RebuildingTransformation.transform(Classfile.parse(bytes));
+        }),
         SHARED_1(true, oneLevelNoop),
         SHARED_2(true, twoLevelNoop),
         SHARED_3(true, threeLevelNoop),
@@ -194,7 +197,8 @@ public class Transforms {
             return switch (this) {
                 case ARRAYCOPY -> Optional.of(ClassRecord.ofClassFile(ClassFile.read(new ByteArrayInputStream(bytes))));
                 case SHARED_1, SHARED_2, SHARED_3,
-                        UNSHARED_1, UNSHARED_2, UNSHARED_3
+                        UNSHARED_1, UNSHARED_2, UNSHARED_3,
+                            BUILD_FROM_SCRATCH
                         -> Optional.of(ClassRecord.ofClassModel(Classfile.parse(bytes), ClassRecord.CompatibilityFilter.By_ClassBuilder));
                 default -> Optional.empty();
             };
