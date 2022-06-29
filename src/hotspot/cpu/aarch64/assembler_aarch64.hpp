@@ -3633,7 +3633,7 @@ void sve_fcm(Condition cond, PRegister Pd, SIMD_RegVariant T,
   INSN(sve_uzp2, 0b1); // Concatenate odd elements from two predicates
 #undef INSN
 
-// SVE predicate generation (32-bit and 64-bit variants)
+// SVE integer compare scalar count and limit
 #define INSN(NAME, sf, op)                                                \
   void NAME(PRegister Pd, SIMD_RegVariant T, Register Rn, Register Rm) {  \
     starti;                                                               \
