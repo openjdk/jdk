@@ -201,7 +201,7 @@ public class PassFailJFrame {
             throw new IllegalStateException("awaitAndCheck() should not be called on EDT");
         }
         latch.await();
-        invokeAndWait(PassFailJFrame::disposeFrames);
+        invokeAndWait(PassFailJFrame::disposeWindows);
 
         if (timeout) {
             throw new RuntimeException(testFailedReason);
@@ -218,7 +218,7 @@ public class PassFailJFrame {
      * Dispose all the window(s) i,e both the test instruction frame and
      * the window(s) that is added via addTestWindow(Window testWindow)
      */
-    private static synchronized void disposeFrames() {
+    private static synchronized void disposeWindows() {
         for (Window win : windowList) {
             win.dispose();
         }
@@ -316,8 +316,7 @@ public class PassFailJFrame {
     public static void forceFail() {
         failed = true;
         testFailedReason = "Failure Reason:\n" +
-                           "Test force failed";
+                           "forceFail called";
         latch.countDown();
     }
 }
-
