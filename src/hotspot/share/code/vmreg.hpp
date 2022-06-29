@@ -37,7 +37,7 @@
 
 //------------------------------VMReg------------------------------------------
 // The VM uses 'unwarped' stack slots; the compiler uses 'warped' stack slots.
-// Register numbers below VMRegImpl::stack0 are the same for both.  Register
+// Register numbers below SharedInfo::stack0 are the same for both.  Register
 // numbers above stack0 are either warped (in the compiler) or unwarped
 // (in the VM).  Unwarped numbers represent stack indices, offsets from
 // the current stack pointer.  Warped numbers are required during compilation
@@ -57,7 +57,9 @@ private:
   };
 
   // Despite being private, this field is exported to the
-  // serviceability agent and our friends.
+  // serviceability agent and our friends. It's not really a pointer,
+  // but that's fine and dandy as long as no-one tries to dereference
+  // it.
   static VMReg stack0;
 
   static constexpr VMReg first();
@@ -65,11 +67,11 @@ private:
   static const char *regName[];
   static const int register_count;
 
+public:
+
   static constexpr VMReg stack_0() {
     return first() + ((ConcreteRegisterImpl::number_of_registers + 7) & ~7);
   }
-
-public:
 
   static VMReg  as_VMReg(int val, bool bad_ok = false) {
     assert(val > BAD_REG || bad_ok, "invalid");
@@ -107,15 +109,15 @@ public:
   // we don't try and get the VMReg number of a physical register that doesn't
   // have an expressible part. That would be pd specific code
   VMReg next() {
-    assert((is_reg() && value() < stack0->value() - 1) || is_stack(), "must be");
+    assert((is_reg() && this < stack_0() - 1) || is_stack(), "must be");
     return this + 1;
   }
   VMReg next(int i) {
-    assert((is_reg() && value() < stack0->value() - i) || is_stack(), "must be");
+    assert((is_reg() && this < stack_0() - i) || is_stack(), "must be");
     return this + i;
   }
   VMReg prev() {
-    assert((is_stack() && value() > stack0->value()) || (is_reg() && value() != 0), "must be");
+    assert((is_stack() && this > stack_0()) || (is_reg() && value() != 0), "must be");
     return this - 1;
   }
 

@@ -26,10 +26,11 @@
 #include "asm/assembler.hpp"
 #include "code/vmreg.hpp"
 
-VMRegImpl all_VMRegs[ConcreteRegisterImpl::number_of_registers + 1];
-
-// First VMReg value that could refer to a stack slot
-VMReg VMRegImpl::stack0 = VMRegImpl::stack_0();
+// First VMReg value that could refer to a stack slot.  This is only
+// used by SA and jvmti, but it's a leaky abstraction: SA and jvmti
+// "know" that stack0 is an integer masquerading as a pointer. For the
+// sake of those clients, we preserve this interface.
+VMReg SharedInfo::stack0 = (VMReg)VMRegImpl::stack_0()->value();
 
 // VMRegs are 4 bytes wide on all platforms
 const int VMRegImpl::stack_slot_size = 4;
@@ -50,5 +51,7 @@ void VMRegImpl::print_on(outputStream* st) const {
     st->print("BAD!");
   }
 }
+
+VMRegImpl all_VMRegs[ConcreteRegisterImpl::number_of_registers + 1];
 
 void VMRegImpl::print() const { print_on(tty); }
