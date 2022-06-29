@@ -4135,15 +4135,10 @@ public class Resolve {
                 return null;
 
             Pair<Symbol, JCDiagnostic> c = errCandidate();
-            if (compactMethodDiags) {
-                JCDiagnostic simpleDiag = MethodResolutionDiagHelper.rewrite(diags, pos, log.currentSource(), dkind, c.snd);
-                if (simpleDiag != null) {
-                    return simpleDiag;
-                }
-            }
             Symbol ws = c.fst.asMemberOf(site, types);
             return diags.create(dkind, log.currentSource(), pos,
                       "cant.apply.symbol",
+                      d -> MethodResolutionDiagHelper.rewrite(diags, pos, log.currentSource(), dkind, c.snd),
                       kindName(ws),
                       ws.name == names.init ? ws.owner.name : ws.name,
                       methodArguments(ws.type.getParameterTypes()),
@@ -4781,12 +4776,12 @@ public class Resolve {
                     DiagnosticPosition preferredPos, DiagnosticSource preferredSource,
                     DiagnosticType preferredKind, JCDiagnostic d) {
                 JCDiagnostic cause = (JCDiagnostic)d.getArgs()[causeIndex];
-                final DiagnosticPosition pos = d.getDiagnosticPosition();
-                UnaryOperator<JCDiagnostic> rewriter = pos != null ?
-                        diag -> diags.create(preferredKind, preferredSource, pos, "prob.found.req", cause) :
-                        null;
-                return diags.create(preferredKind, preferredSource, preferredPos,
-                        "prob.found.req", rewriter, cause);
+                DiagnosticPosition pos = d.getDiagnosticPosition();
+                if (pos == null) {
+                    pos = preferredPos;
+                }
+                return diags.create(preferredKind, preferredSource, pos,
+                        "prob.found.req", cause);
             }
         }
 

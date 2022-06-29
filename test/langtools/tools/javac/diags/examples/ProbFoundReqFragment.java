@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,9 @@
  */
 
 // key: compiler.err.prob.found.req
-// key: compiler.misc.prob.found.req
+// key: compiler.misc.kindname.class
+// key: compiler.misc.no.conforming.assignment.exists
+// key: compiler.misc.cant.apply.symbol
 // key: compiler.misc.inconvertible.types
 // key: compiler.misc.invalid.mref
 // key: compiler.misc.kindname.method

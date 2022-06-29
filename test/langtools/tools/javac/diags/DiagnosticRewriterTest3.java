@@ -28,6 +28,8 @@
  * @compile DiagnosticRewriterTest3.java
  */
 
+import java.util.Optional;
+
 class DiagnosticRewriterTest3 {
     void m() {
         Optional.of("").map(outer -> {

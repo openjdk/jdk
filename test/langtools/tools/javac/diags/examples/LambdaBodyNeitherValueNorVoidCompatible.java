@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,9 @@
  */
 
 // key: compiler.err.lambda.body.neither.value.nor.void.compatible
-// key: compiler.err.cant.apply.symbol
+// key: compiler.err.prob.found.req
 // key: compiler.misc.incompatible.ret.type.in.lambda
 // key: compiler.misc.missing.ret.val
-// key: compiler.misc.no.conforming.assignment.exists
 
 class LambdaBodyNeitherValueNorVoidCompatible {
     interface I {

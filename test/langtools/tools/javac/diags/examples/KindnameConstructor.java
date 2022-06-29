@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,10 @@
  */
 
 // key: compiler.misc.kindname.constructor
-// key: compiler.misc.kindname.class
-// key: compiler.err.cant.apply.symbol
-// key: compiler.misc.no.conforming.assignment.exists
+// key: compiler.err.cant.resolve.args
+// key: compiler.err.prob.found.req
+// key: compiler.misc.count.error.plural
 // key: compiler.misc.inconvertible.types
-// key: compiler.misc.count.error
 // key: compiler.err.error
 // options: -Xdiags:verbose
 // run: backdoor

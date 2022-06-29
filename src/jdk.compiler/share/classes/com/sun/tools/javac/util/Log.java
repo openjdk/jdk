@@ -666,7 +666,8 @@ public class Log extends AbstractLog {
                 expectDiagKeys.remove(diagnostic.getCode());
 
             if (diagnostic.hasRewriter()) {
-                diagnostic = diagnostic.rewrite();
+                JCDiagnostic rewrittenDiag = diagnostic.rewrite();
+                diagnostic = rewrittenDiag != null ? rewrittenDiag : diagnostic;
             }
 
             switch (diagnostic.getType()) {

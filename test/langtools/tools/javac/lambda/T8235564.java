@@ -46,6 +46,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.tools.Diagnostic;
+import javax.tools.SimpleJavaFileObject;
 import toolbox.ToolBox;
 
 public class T8235564 extends ComboInstance<T8235564> {
@@ -93,6 +94,9 @@ public class T8235564 extends ComboInstance<T8235564> {
                 .withOption("-XDdev")
                 .withWriter(out);
 
+        System.out.println("Current source:");
+        System.out.println( ((SimpleJavaFileObject)task.getSources().get(0)).getCharContent(true));
+
         task.analyze(result -> {
             List<String> diags = result.diagnosticsForKind(Diagnostic.Kind.ERROR)
                                        .stream()
@@ -108,7 +112,9 @@ public class T8235564 extends ComboInstance<T8235564> {
                 case UNDEFINED_MEMBER_REF ->
                     expected.add("4:compiler.err.invalid.mref");
                 case UNDEFINED_CONDEXPR -> {
-                    if (invocation != Invocation.EXISTING_WITHOUT_FUNCTIONAL) {
+                    if (invocation == Invocation.EXISTING_WITH_FUNCTIONAL) {
+                        expected.add("4:compiler.err.invalid.mref");
+                    } else if (invocation != Invocation.EXISTING_WITHOUT_FUNCTIONAL) {
                         expected.add("4:compiler.err.invalid.mref");
                         expected.add("4:compiler.err.invalid.mref");
                     }
@@ -117,14 +123,14 @@ public class T8235564 extends ComboInstance<T8235564> {
             switch (invocation) {
                 case EXISTING_WITH_FUNCTIONAL -> {
                     if (param == Parameter.UNDEFINED_CONDEXPR) {
-                        expected.add("4:compiler.err.cant.apply.symbol");
+                        expected.add("4:compiler.err.prob.found.req");
                     }
                 }
                 case EXISTING_WITHOUT_FUNCTIONAL -> {
                     if (param != Parameter.UNDEFINED_VARIABLE &&
                         param != Parameter.UNDEFINED_MEMBER_REF &&
                         param != Parameter.UNDEFINED_METHOD) {
-                        expected.add("4:compiler.err.cant.apply.symbol");
+                        expected.add("4:compiler.err.prob.found.req");
                     }
                 }
                 case UNDEFINED -> {
