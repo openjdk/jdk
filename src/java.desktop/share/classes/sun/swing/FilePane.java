@@ -1190,18 +1190,24 @@ public class FilePane extends JPanel implements PropertyChangeListener {
                 setIcon(icon);
 
             } else if (value instanceof Long) {
-                long len = ((Long) value) / 1024L;
+                long len = ((Long) value);
                 if (listViewWindowsStyle) {
+                    len /= 1024L;
                     text = MessageFormat.format(kiloByteString, len + 1);
                 } else if (len < 1024L) {
-                    text = MessageFormat.format(kiloByteString, (len == 0L) ? 1L : len);
+                    text = (len == 0L) ? 0 + " bytes" : len + " bytes";
                 } else {
                     len /= 1024L;
                     if (len < 1024L) {
-                        text = MessageFormat.format(megaByteString, len);
+                        text = MessageFormat.format(kiloByteString, len);
                     } else {
                         len /= 1024L;
-                        text = MessageFormat.format(gigaByteString, len);
+                        if (len < 1024L) {
+                            text = MessageFormat.format(megaByteString, len);
+                        } else {
+                            len /= 1024L;
+                            text = MessageFormat.format(gigaByteString, len);
+                        }
                     }
                 }
 
