@@ -146,7 +146,7 @@ public class TestClassUnloadEvents {
     LaunchingConnector launchingConnector = Bootstrap.virtualMachineManager().defaultConnector();
     Map<String, Connector.Argument> arguments = launchingConnector.defaultArguments();
     arguments.get("main").setValue(TestClassUnloadEvents.class.getName());
-    arguments.get("options").setValue("--add-exports java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED -Xlog:class+unload -Xlog:gc");
+    arguments.get("options").setValue("--add-exports java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED -Xlog:class+unload -Xlog:gc*=debug");
     return launchingConnector.launch(arguments);
   }
 }
