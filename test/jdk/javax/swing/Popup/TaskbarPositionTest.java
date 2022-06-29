@@ -366,7 +366,7 @@ public class TaskbarPositionTest implements ActionListener {
             robot.keyRelease(KeyEvent.VK_ESCAPE);
 
             robot.waitForIdle();
-	} finally {
+        } finally {
             SwingUtilities.invokeAndWait(() -> {
                 if (frame != null) {
                     frame.dispose();
