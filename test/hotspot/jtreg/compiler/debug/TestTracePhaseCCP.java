@@ -27,7 +27,7 @@
  * @requires vm.debug == true & vm.compiler2.enabled
  * @modules java.base/jdk.internal.misc
  *
- * @run main/othervm  -Xbatch -XX:CompileCommand=dontinline,compiler.debug.TestTracePhaseCCP::test
+ * @run main/othervm -Xbatch -XX:CompileCommand=dontinline,compiler.debug.TestTracePhaseCCP::test
  * -XX:CompileCommand=compileonly,compiler.debug.TestTracePhaseCCP::test -XX:+TracePhaseCCP
  * compiler.debug.TestTracePhaseCCP
  */
