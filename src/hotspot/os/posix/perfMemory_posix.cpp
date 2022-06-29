@@ -711,15 +711,17 @@ static void remove_file(const char* path) {
   }
 }
 
-static int is_locked_by_other_process(const char* dirname, const char* filename) {
+static bool is_locked_by_another_process(const char* dirname, const char* filename, int& fd) {
   bool is_locked = false;
 
 #if defined(LINUX)
-  int fd = ::open(filename, O_RDONLY);
+  fd = ::open(filename, O_RDONLY);
   if (fd >= 0) {
     is_locked = (flock(fd, LOCK_EX|LOCK_NB) != 0);
-    // This file is locked by a compatible JVM process that's still alive.
-    ::close(fd); // this also gives up the lock, if we are holding it.
+    // is_locked == true: This file is locked by a compatible JVM process that's still alive.
+    if (!is_locked) {
+      ::close(fd);
+    }
   }
   log_info(perf, memops)("is_locked %s/%s (fd = %d) = %s", dirname, filename, fd, is_locked ? "true" : "false");
 #endif
@@ -771,7 +773,7 @@ static void cleanup_sharedmem_resources(const char* dirname) {
       continue;
     }
 
-
+    // FIXME -- update comments below
 
     // we now have a file name that converts to a valid integer
     // that could represent a process id . if this process id
@@ -786,11 +788,18 @@ static void cleanup_sharedmem_resources(const char* dirname) {
     // be stale and are removed because the resources for such a
     // process should be in a different user specific directory.
     //
-    if (!is_locked_by_other_process(dirname, entry->d_name)) {
+    int fd = -1;
+    if (!is_locked_by_another_process(dirname, entry->d_name, fd)) {
       if ((pid == os::current_process_id()) ||
           (kill(pid, 0) == OS_ERR && (errno == ESRCH || errno == EPERM))) {
+        // kill() is needed to be compatible with older JVMs that don't do flock ...
         unlink(entry->d_name);
       }
+    }
+    if (fd >= 0) {
+      // LINUX: hold the lock to prevent other JVMs from using this file while we are in the middle
+      // of deleting it.
+      ::close(fd);
     }
     errno = 0;
   }
@@ -891,7 +900,7 @@ static int create_sharedmem_resources(const char* dirname, const char* filename,
 #if defined(LINUX)
   int n = flock(fd, LOCK_EX|LOCK_NB);
   if (n != 0) {
-    log_warning(perf, memops)("Cannot use file %s/%s because it is locked by another process\n", dirname, filename);
+    log_warning(perf, memops)("Cannot use file %s/%s because it is locked by another process", dirname, filename);
     ::close(fd);
     return -1;
   }
