@@ -66,7 +66,7 @@ public final class PopupMenuLocation {
         for (GraphicsDevice sd : sds) {
             GraphicsConfiguration gc = sd.getDefaultConfiguration();
             Rectangle bounds = gc.getBounds();
-            Point point = new Point(bounds.x + 20, bounds.y + 20);
+            Point point = new Point(bounds.x, bounds.y);
             Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(gc);
             while (point.y < bounds.y + bounds.height - insets.bottom - SIZE) {
                 while (point.x <
@@ -116,12 +116,12 @@ public final class PopupMenuLocation {
 
     private static void openPopup(final Frame frame) throws Exception {
         robot.waitForIdle();
-        Point loc = frame.getLocationOnScreen();
-        robot.mouseMove(loc.x + frame.getWidth() / 2, loc.y + 50);
+        Point pt = frame.getLocationOnScreen();
+        robot.mouseMove(pt.x + frame.getWidth() / 2, pt.y + 50);
         robot.mousePress(InputEvent.BUTTON3_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
-        int x = loc.x + frame.getWidth() / 2;
-        int y = loc.y + 130;
+        int x = pt.x + frame.getWidth() / 2;
+        int y = pt.y + 130;
         robot.mouseMove(x, y);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
