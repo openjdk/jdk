@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, Red Hat Inc.
  * Copyright (c) 2021, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -75,11 +75,11 @@ public class ProcRISCV64Thread implements ThreadProxy {
     }
 
     public boolean equals(Object obj) {
-        if ((obj == null) || !(obj instanceof ProcRISCV64Thread)) {
+        if (!(obj instanceof ProcRISCV64Thread other)) {
             return false;
         }
 
-        return (((ProcRISCV64Thread) obj).id == id);
+        return (other.id == id);
     }
 
     public int hashCode() {

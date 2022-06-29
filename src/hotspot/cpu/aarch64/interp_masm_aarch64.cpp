@@ -40,9 +40,9 @@
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/basicLock.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/thread.inline.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 void InterpreterMacroAssembler::narrow(Register result) {
