@@ -95,12 +95,12 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void check_extended_sp(const char* msg = "check extended SP") {
 #ifdef ASSERT
-      Label L;
-      ldr(rscratch1, Address(rfp, frame::interpreter_frame_extended_sp_offset * wordSize));
-      cmp(sp, rscratch1);
-      br(EQ, L);
-      stop(msg);
-      bind(L);
+    Label L;
+    ldr(rscratch1, Address(rfp, frame::interpreter_frame_extended_sp_offset * wordSize));
+    cmp(sp, rscratch1);
+    br(EQ, L);
+    stop(msg);
+    bind(L);
 #endif
   }
 
