@@ -103,7 +103,7 @@ public class TaskbarPositionTest implements ActionListener {
         fullScreenBounds = new Rectangle(new Point(), toolkit.getScreenSize());
         screenBounds = new Rectangle(new Point(), toolkit.getScreenSize());
 
-        // Place the frame near the bottom. This is a pretty wild guess.
+        // Place the frame near the bottom.
         frame.setLocation(0, screenBounds.y + screenBounds.height - frame.getHeight());
 
         // Reduce the screen bounds by the insets.
