@@ -726,11 +726,11 @@ private:
       in_place_relocation_clear_stale_current_remset_bits_up_to(from_local_offset);
     }
 
-    ZRememberedSetIterator iter = active_remset_is_current
+    BitMapIterator iter = active_remset_is_current
         ? from_page->remset_iterator_limited_current(from_local_offset, size)
         : from_page->remset_iterator_limited_previous(from_local_offset, size);
 
-    for (uintptr_t field_bit; iter.next(&field_bit);) {
+    for (BitMap::idx_t field_bit; iter.next(&field_bit);) {
       const uintptr_t field_local_offset = ZRememberedSet::to_offset(field_bit);
 
       // In-place relocation slides objects and needs to clear the remset

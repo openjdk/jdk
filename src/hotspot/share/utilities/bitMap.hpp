@@ -558,4 +558,35 @@ class BitMapClosure {
   virtual bool do_bit(BitMap::idx_t index) = 0;
 };
 
+// Stand-alone iterators
+
+class BitMapIterator {
+private:
+  BitMap* const _bitmap;
+  BitMap::idx_t _pos;
+  BitMap::idx_t _end;
+
+public:
+  BitMapIterator(BitMap* bitmap);
+  BitMapIterator(BitMap* bitmap, BitMap::idx_t start, BitMap::idx_t end);
+
+  bool next(BitMap::idx_t* index);
+};
+
+class BitMapReverseIterator {
+private:
+  BitMap* const _bitmap;
+  BitMap::idx_t _start;
+  BitMap::idx_t _pos;
+
+public:
+  BitMapReverseIterator(BitMap* bitmap);
+  BitMapReverseIterator(BitMap* bitmap, BitMap::idx_t start, BitMap::idx_t end);
+
+  void reset(BitMap::idx_t start, BitMap::idx_t end);
+  void reset(BitMap::idx_t end);
+
+  bool next(BitMap::idx_t* index);
+};
+
 #endif // SHARE_UTILITIES_BITMAP_HPP

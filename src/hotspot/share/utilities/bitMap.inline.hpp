@@ -465,4 +465,53 @@ inline void BitMap2D::at_put_grow(idx_t slot_index, idx_t bit_within_slot_index,
   _map.at_put(bit, value);
 }
 
+inline BitMapIterator::BitMapIterator(BitMap* bitmap)
+  : BitMapIterator(bitmap, 0, bitmap->size()) {}
+
+inline BitMapIterator::BitMapIterator(BitMap* bitmap, BitMap::idx_t start, BitMap::idx_t end)
+  : _bitmap(bitmap),
+    _pos(start),
+    _end(end) {}
+
+inline bool BitMapIterator::next(BitMap::idx_t* index) {
+  BitMap::idx_t res = _bitmap->get_next_one_offset(_pos, _end);
+  if (res == _end) {
+    return false;
+  }
+
+  _pos = res + 1;
+
+  *index = res;
+  return true;
+}
+
+inline BitMapReverseIterator::BitMapReverseIterator(BitMap* bitmap)
+  : BitMapReverseIterator(bitmap, 0, bitmap->size()) {}
+
+inline BitMapReverseIterator::BitMapReverseIterator(BitMap* bitmap, BitMap::idx_t start, BitMap::idx_t end)
+  : _bitmap(bitmap),
+    _start(start),
+    _pos(end) {}
+
+inline void BitMapReverseIterator::reset(BitMap::idx_t start, BitMap::idx_t end) {
+  _start = start;
+  _pos = end;
+}
+
+inline void BitMapReverseIterator::reset(BitMap::idx_t end) {
+  _pos = end;
+}
+
+inline bool BitMapReverseIterator::next(size_t* index) {
+  BitMap::idx_t res = _bitmap->get_prev_one_offset(_start, _pos);
+  if (res == BitMap::idx_t(-1)) {
+    return false;
+  }
+
+  _pos = res;
+
+  *index = res;
+  return true;
+}
+
 #endif // SHARE_UTILITIES_BITMAP_INLINE_HPP

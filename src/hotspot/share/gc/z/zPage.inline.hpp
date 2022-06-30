@@ -370,15 +370,15 @@ inline void ZPage::remset_mark_dirty() {
   _remembered_set.dirty();
 }
 
-inline ZRememberedSetReverseIterator ZPage::remset_reverse_iterator_previous() {
+inline BitMapReverseIterator ZPage::remset_reverse_iterator_previous() {
   return _remembered_set.iterator_reverse_previous();
 }
 
-inline ZRememberedSetIterator ZPage::remset_iterator_limited_current(uintptr_t l_offset, size_t size) {
+inline BitMapIterator ZPage::remset_iterator_limited_current(uintptr_t l_offset, size_t size) {
   return _remembered_set.iterator_limited_current(l_offset, size);
 }
 
-inline ZRememberedSetIterator ZPage::remset_iterator_limited_previous(uintptr_t l_offset, size_t size) {
+inline BitMapIterator ZPage::remset_iterator_limited_previous(uintptr_t l_offset, size_t size) {
   return _remembered_set.iterator_limited_previous(l_offset, size);
 }
 

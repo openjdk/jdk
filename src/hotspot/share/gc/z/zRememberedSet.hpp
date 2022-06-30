@@ -30,35 +30,6 @@
 class OopClosure;
 class ZPage;
 
-class ZRememberedSetIterator {
-private:
-  BitMap* const _bitmap;
-  BitMap::idx_t _pos;
-  BitMap::idx_t _end;
-
-public:
-  ZRememberedSetIterator(BitMap* bitmap);
-  ZRememberedSetIterator(BitMap* bitmap, BitMap::idx_t start, BitMap::idx_t end);
-
-  bool next(BitMap::idx_t* index);
-};
-
-class ZRememberedSetReverseIterator {
-private:
-  BitMap* const _bitmap;
-  BitMap::idx_t _start;
-  BitMap::idx_t _pos;
-
-public:
-  ZRememberedSetReverseIterator(BitMap* bitmap);
-  ZRememberedSetReverseIterator(BitMap* bitmap, BitMap::idx_t start, BitMap::idx_t end);
-
-  void reset(BitMap::idx_t start, BitMap::idx_t end);
-  void reset(BitMap::idx_t end);
-
-  bool next(BitMap::idx_t* index);
-};
-
 struct ZRememberedSetContaining {
   zaddress_unsafe _field_addr;
   zaddress_unsafe _addr;
@@ -66,14 +37,14 @@ struct ZRememberedSetContaining {
 
 class ZRememberedSetContainingIterator {
 private:
-  ZPage* const                  _page;
-  ZRememberedSetReverseIterator _remset_iter;
+  ZPage* const          _page;
+  BitMapReverseIterator _remset_iter;
 
-  zaddress_unsafe               _obj;
-  ZRememberedSetReverseIterator _obj_remset_iter;
+  zaddress_unsafe       _obj;
+  BitMapReverseIterator _obj_remset_iter;
 
   size_t to_index(zaddress_unsafe addr);
-  zaddress_unsafe to_addr(size_t index);
+  zaddress_unsafe to_addr(BitMap::idx_t index);
 
 public:
   ZRememberedSetContainingIterator(ZPage* page);
@@ -106,7 +77,6 @@ public:
 // "previous" bitmap is used by the GC to find pointers from old
 // gen to young gen.
 class ZRememberedSet {
-  friend class ZRememberedSetIterator;
   friend class ZRememberedSetContainingIterator;
 
 public:
@@ -162,9 +132,9 @@ public:
   bool is_dirty() const;
   void clean();
 
-  ZRememberedSetReverseIterator iterator_reverse_previous();
-  ZRememberedSetIterator iterator_limited_current(uintptr_t offset, size_t size);
-  ZRememberedSetIterator iterator_limited_previous(uintptr_t offset, size_t size);
+  BitMapReverseIterator iterator_reverse_previous();
+  BitMapIterator iterator_limited_current(uintptr_t offset, size_t size);
+  BitMapIterator iterator_limited_previous(uintptr_t offset, size_t size);
 };
 
 #endif // SHARE_GC_Z_ZREMEMBEREDSET_HPP

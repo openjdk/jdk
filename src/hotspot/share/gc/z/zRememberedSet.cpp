@@ -105,71 +105,22 @@ void ZRememberedSet::clean() {
   _dirty = false;
 }
 
-ZRememberedSetReverseIterator ZRememberedSet::iterator_reverse_previous() {
-  return ZRememberedSetReverseIterator(previous());
+BitMapReverseIterator ZRememberedSet::iterator_reverse_previous() {
+  return BitMapReverseIterator(previous());
 }
 
-ZRememberedSetIterator ZRememberedSet::iterator_limited_current(uintptr_t offset, size_t size) {
+BitMapIterator ZRememberedSet::iterator_limited_current(uintptr_t offset, size_t size) {
   const size_t index = to_index(offset);;
   const size_t bit_size = to_bit_size(size);
 
-  return ZRememberedSetIterator(current(), index, index + bit_size);
+  return BitMapIterator(current(), index, index + bit_size);
 }
 
-ZRememberedSetIterator ZRememberedSet::iterator_limited_previous(uintptr_t offset, size_t size) {
+BitMapIterator ZRememberedSet::iterator_limited_previous(uintptr_t offset, size_t size) {
   const size_t index = to_index(offset);;
   const size_t bit_size = to_bit_size(size);
 
-  return ZRememberedSetIterator(previous(), index, index + bit_size);
-}
-
-ZRememberedSetIterator::ZRememberedSetIterator(BitMap* bitmap) :
-    ZRememberedSetIterator(bitmap, 0, bitmap->size()) {}
-
-ZRememberedSetIterator::ZRememberedSetIterator(BitMap* bitmap, BitMap::idx_t start, BitMap::idx_t end) :
-    _bitmap(bitmap),
-    _pos(start),
-    _end(end) {}
-
-bool ZRememberedSetIterator::next(BitMap::idx_t* index) {
-  BitMap::idx_t res = _bitmap->get_next_one_offset(_pos, _end);
-  if (res == _end) {
-    return false;
-  }
-
-  _pos = res + 1;
-
-  *index = res;
-  return true;
-}
-
-ZRememberedSetReverseIterator::ZRememberedSetReverseIterator(BitMap* bitmap) :
-    ZRememberedSetReverseIterator(bitmap, 0, bitmap->size()) {}
-
-ZRememberedSetReverseIterator::ZRememberedSetReverseIterator(BitMap* bitmap, BitMap::idx_t start, BitMap::idx_t end) :
-    _bitmap(bitmap),
-    _start(start),
-    _pos(end) {}
-
-void ZRememberedSetReverseIterator::reset(BitMap::idx_t start, BitMap::idx_t end) {
-  _start = start;
-  _pos = end;
-}
-
-void ZRememberedSetReverseIterator::reset(BitMap::idx_t end) {
-  _pos = end;
-}
-
-bool ZRememberedSetReverseIterator::next(size_t* index) {
-  BitMap::idx_t res = _bitmap->get_prev_one_offset(_start, _pos);
-  if (res == BitMap::idx_t(-1)) {
-    return false;
-  }
-
-  _pos = res;
-
-  *index = res;
-  return true;
+  return BitMapIterator(previous(), index, index + bit_size);
 }
 
 size_t ZRememberedSetContainingIterator::to_index(zaddress_unsafe addr) {
