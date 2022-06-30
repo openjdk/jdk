@@ -39,15 +39,13 @@ public class ForceGC {
     /**
      * Causes the current thread to wait until the {@code booleanSupplier}
      * returns true, or a specific waiting time elapses.  The waiting time
-     * is 1 second scalled with the jtreg testing timeout factor.
+     * is 1 second scaled with the jtreg testing timeout factor.
      *
      * @param booleanSupplier boolean supplier
      * @return true if the {@code booleanSupplier} returns true, or false
      *     if did not complete after the specific waiting time.
      */
     public static boolean wait(BooleanSupplier booleanSupplier) {
-        long timeout = Math.round(1000L * TIMEOUT_FACTOR);
-
         ReferenceQueue<Object> queue = new ReferenceQueue<>();
         Object obj = new Object();
         PhantomReference<Object> ref = new PhantomReference<>(obj, queue);
@@ -55,7 +53,8 @@ public class ForceGC {
         Reference.reachabilityFence(obj);
         Reference.reachabilityFence(ref);
 
-        for (int retries = (int)(timeout / 200); retries >= 0; retries--) {
+        int retries = (int)(Math.round(1000L * TIMEOUT_FACTOR) / 200);
+        for (; retries >= 0; retries--) {
             if (booleanSupplier.getAsBoolean()) {
                 return true;
             }
