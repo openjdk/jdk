@@ -1478,6 +1478,9 @@ void LIR_Assembler::cmove(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, L
           __ mov_double(result->as_double_reg(), c->as_jdouble(), acond);
 #endif // __SOFTFP__
           break;
+        case T_METADATA:
+          __ mov_metadata(result->as_register(), c->as_metadata(), acond);
+          break;
         default:
           ShouldNotReachHere();
       }

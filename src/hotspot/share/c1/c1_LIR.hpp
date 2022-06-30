@@ -2439,7 +2439,7 @@ class LIR_OpVisitState: public StackObj {
   typedef enum { inputMode, firstMode = inputMode, tempMode, outputMode, numModes, invalidMode = -1 } OprMode;
 
   enum {
-    maxNumberOfOperands = 20,
+    maxNumberOfOperands = 21,
     maxNumberOfInfos = 4
   };
 

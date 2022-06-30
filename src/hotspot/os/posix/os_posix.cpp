@@ -854,6 +854,12 @@ char* os::build_agent_function_name(const char *sym_name, const char *lib_name,
   return agent_entry_name;
 }
 
+// Sleep forever; naked call to OS-specific sleep; use with CAUTION
+void os::infinite_sleep() {
+  while (true) {    // sleep forever ...
+    ::sleep(100);   // ... 100 seconds at a time
+  }
+}
 
 void os::naked_short_nanosleep(jlong ns) {
   struct timespec req;

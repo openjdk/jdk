@@ -41,33 +41,19 @@
  * @library /test/lib
  * @run main/othervm/native -agentlib:getstacktr02 getstacktr02
  */
-import java.io.PrintStream;
 
 public class getstacktr02 {
 
-    final static int JCK_STATUS_BASE = 95;
-
     static {
-        try {
-            System.loadLibrary("getstacktr02");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load getstacktr02 library");
-            System.err.println("java.library.path:"
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
+        System.loadLibrary("getstacktr02");
     }
 
     native static int check(Thread thread);
 
     public static void main(String args[]) {
-
-
-        // produce JCK-like exit status.
-        System.exit(run(args, System.out) + JCK_STATUS_BASE);
-    }
-
-    public static int run(String args[], PrintStream out) {
-        return check(Thread.currentThread());
+        int result = check(Thread.currentThread());
+        if (result != 0) {
+            throw new RuntimeException("check failed with result " + result);
+        }
     }
 }

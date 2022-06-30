@@ -21,30 +21,28 @@
  * questions.
  */
 
-/*
+/**
  * @test
- * @bug 8286287
- * @summary Verifies newStringNoRepl() does not throw an Error.
- */
+ * @bug 8288976
+ * @library /test/lib
+ * @summary Check that the right message is displayed for NoClassDefFoundError exception.
+ * @requires vm.flagless
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ * @compile C.java
+ * @run driver Bad_NCDFE_Msg
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.HexFormat;
-import static java.nio.charset.StandardCharsets.UTF_16;
+import java.io.File;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
-public class NewStringNoRepl {
-    private final static byte[] MALFORMED_UTF16 = {(byte)0x00, (byte)0x20, (byte)0x00};
+public class Bad_NCDFE_Msg {
 
-    public static void main(String... args) throws IOException {
-        var f = Files.createTempFile(null, null);
-        try (var fos = Files.newOutputStream(f)) {
-            fos.write(MALFORMED_UTF16);
-        }
-        System.out.println("Returned bytes: " +
-            HexFormat.of()
-                .withPrefix("x")
-                .withUpperCase()
-                .formatHex(Files.readString(f, UTF_16).getBytes(UTF_16)));
-        Files.delete(f);
+    public static void main(String args[]) throws Throwable {
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            "-cp", System.getProperty("test.classes") + File.separator + "pkg", "C");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldContain("java.lang.NoClassDefFoundError: C (wrong name: pkg/C");
+        output.shouldHaveExitValue(1);
     }
 }
