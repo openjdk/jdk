@@ -2432,6 +2432,11 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   Register lock = op->lock_opr()->as_pointer_register();
 
   if (UseHeavyMonitors) {
+    if (op->info() != NULL) {
+      int null_check_offset = __ offset();
+      __ null_check(obj);
+      add_debug_info_for_null_check(null_check_offset, op->info());
+    }
     __ b(*op->stub()->entry());
   } else if (op->code() == lir_lock) {
     assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
