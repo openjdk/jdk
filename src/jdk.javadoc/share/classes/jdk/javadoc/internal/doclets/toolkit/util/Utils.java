@@ -1291,7 +1291,7 @@ public class Utils {
      * @return true if the given Element is deprecated for removal.
      */
     public boolean isDeprecatedForRemoval(Element e) {
-        Object forRemoval = getDeprecatedElement(e, "forRemoval");
+        Object forRemoval = getAnnotationElement(e, getDeprecatedType(), "forRemoval");
         return forRemoval != null && (boolean) forRemoval;
     }
 
@@ -1302,21 +1302,31 @@ public class Utils {
      * @return the Deprecated.since value for e, or null.
      */
     public String getDeprecatedSince(Element e) {
-        return (String) getDeprecatedElement(e, "since");
+        return (String) getAnnotationElement(e, getDeprecatedType(), "since");
+    }
+
+    /**
+     * Returns the value of the internal {@code PreviewFeature.feature} element.
+     *
+     * @param e the Element to check
+     * @return the PreviewFeature.feature for e, or null
+     */
+    public Object getPreviewFeature(Element e) {
+        return getAnnotationElement(e, getSymbol("jdk.internal.javac.PreviewFeature"), "feature");
     }
 
     /**
      * Returns the Deprecated annotation element value of the given element, or null.
      */
-    private Object getDeprecatedElement(Element e, String elementName) {
+    private Object getAnnotationElement(Element e, TypeMirror annotationType, String annotationElementName) {
         List<? extends AnnotationMirror> annotationList = e.getAnnotationMirrors();
         JavacTypes jctypes = ((DocEnvImpl) configuration.docEnv).toolEnv.typeutils;
         for (AnnotationMirror anno : annotationList) {
-            if (jctypes.isSameType(anno.getAnnotationType().asElement().asType(), getDeprecatedType())) {
+            if (jctypes.isSameType(anno.getAnnotationType(), annotationType)) {
                 Map<? extends ExecutableElement, ? extends AnnotationValue> pairs = anno.getElementValues();
                 if (!pairs.isEmpty()) {
                     for (ExecutableElement element : pairs.keySet()) {
-                        if (element.getSimpleName().contentEquals(elementName)) {
+                        if (element.getSimpleName().contentEquals(annotationElementName)) {
                             return (pairs.get(element)).getValue();
                         }
                     }
@@ -1324,6 +1334,28 @@ public class Utils {
             }
         }
         return null;
+    }
+
+    /**
+     * Returns a map containing {@code jdk.internal.javac.PreviewFeature.JEP} element values associated with the
+     * {@code jdk.internal.javac.PreviewFeature.Feature} enum constant identified by {@code feature}.
+     *
+     * @param feature the name of the PreviewFeature.Feature enum value
+     * @return the map of PreviewFeature.JEP annotation element values, or an empty map
+     */
+    public Map<? extends ExecutableElement, ? extends AnnotationValue> getJepInfo(String feature) {
+        TypeElement featureType = elementUtils.getTypeElement("jdk.internal.javac.PreviewFeature.Feature");
+        TypeElement jepType = elementUtils.getTypeElement("jdk.internal.javac.PreviewFeature.JEP");
+        var featureVar = featureType.getEnclosedElements().stream()
+                .filter(e -> feature.equals(e.getSimpleName().toString())).findFirst();
+        if (featureVar.isPresent()) {
+            for (AnnotationMirror anno : featureVar.get().getAnnotationMirrors()) {
+                if (anno.getAnnotationType().asElement().equals(jepType)) {
+                    return anno.getElementValues();
+                }
+            }
+        }
+        return Map.of();
     }
 
     /**
