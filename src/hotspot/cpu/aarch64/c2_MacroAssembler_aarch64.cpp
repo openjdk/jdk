@@ -1395,18 +1395,15 @@ void C2_MacroAssembler::sve_gen_mask_imm(PRegister dst, BasicType bt, uint32_t l
   // Special patterns for "ptrue".
   if (lane_cnt == round_down_power_of_2(max_vector_length)) {
     sve_ptrue(dst, size, /* POW2 */ 0b00000);
-    return;
   } else if (lane_cnt == max_vector_length - (max_vector_length % 4)) {
     sve_ptrue(dst, size, /* MUL4 */ 0b11101);
-    return;
   } else if (lane_cnt == max_vector_length - (max_vector_length % 3)) {
     sve_ptrue(dst, size, /* MUL3 */ 0b11110);
-    return;
+  } else {
+    // Encode to "whilelow" for the remaining cases.
+    mov(rscratch1, lane_cnt);
+    sve_whilelow(dst, size, zr, rscratch1);
   }
-
-  // Encode to "whilelow" for the remaining cases.
-  mov(rscratch1, lane_cnt);
-  sve_whilelow(dst, size, zr, rscratch1);
 }
 
 // Pack active elements of src, under the control of mask, into the lowest-numbered elements of dst.
