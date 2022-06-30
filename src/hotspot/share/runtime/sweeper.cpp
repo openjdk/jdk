@@ -442,6 +442,9 @@ void NMethodSweeper::sweep_code_cache() {
     CompileBroker::set_should_compile_new_jobs(CompileBroker::run_compilation);
     log.debug("restart compiler");
     log_sweep("restart_compiler");
+    EventJitRestart event;
+    event.set_freedMemory(freed_memory);
+    event.commit();
   }
 }
 

@@ -54,7 +54,7 @@ public class TestLookForUntestedEvents {
 
     private static final Set<String> hardToTestEvents = new HashSet<>(
         Arrays.asList(
-            "DataLoss", "IntFlag", "ReservedStackActivation",
+            "DataLoss", "IntFlag", "ReservedStackActivation", "JitRestart",
             "DoubleFlag", "UnsignedLongFlagChanged", "IntFlagChanged",
             "UnsignedIntFlag", "UnsignedIntFlagChanged", "DoubleFlagChanged")
     );

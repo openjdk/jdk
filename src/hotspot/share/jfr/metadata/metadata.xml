@@ -558,6 +558,10 @@
     <Field type="ulong" contentType="bytes" name="used" label="Used" />
   </Event>
 
+  <Event name="JitRestart" category="Java Virtual Machine, Compiler" label="JIT restart" stackTrace="true" startTime="true" thread="true">
+    <Field type="int" name="freedMemory" label="Freed Memory" />
+  </Event>
+
   <Event name="Compilation" category="Java Virtual Machine, Compiler" label="Compilation" thread="true">
     <Field type="uint" name="compileId" label="Compilation Identifier" relation="CompileId" />
     <Field type="CompilerType" name="compiler" label="Compiler" />
