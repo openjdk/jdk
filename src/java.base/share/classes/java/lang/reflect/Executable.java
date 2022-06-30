@@ -382,7 +382,7 @@ public abstract sealed class Executable extends AccessibleObject
         // Need to copy the cached array to prevent users from messing
         // with it.  Since parameters are immutable, we can
         // shallow-copy.
-        return privateGetParameters().clone();
+        return parameterData().parameters.clone();
     }
 
     private Parameter[] synthesizeAllParams() {
@@ -421,9 +421,6 @@ public abstract sealed class Executable extends AccessibleObject
         }
     }
 
-    private Parameter[] privateGetParameters() {
-        return parameterData().parameters;
-    }
 
     boolean hasRealParameterData() {
         return parameterData().isReal;
