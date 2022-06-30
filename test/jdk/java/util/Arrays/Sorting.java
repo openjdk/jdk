@@ -139,7 +139,6 @@ public class Sorting {
 
     private void testAll() {
         testCore();
-        testNullArray();
 
         for (int length : lengths) {
             createData(length);
@@ -177,121 +176,6 @@ public class Sorting {
         sortingHelper.sort(new double[] {}, 0, 0);
     }
 
-    private void testNullArray() {
-        testNullIntArray();
-        testNullLongArray();
-        testNullByteArray();
-        testNullCharArray();
-        testNullShortArray();
-        testNullFloatArray();
-        testNullDoubleArray();
-    }
-
-    private void testNullIntArray() {
-        try {
-            sortingHelper.sort(null);
-        } catch (NullPointerException expected) {
-            try {
-                sortingHelper.sort(null, 0, 0);
-            } catch (NullPointerException expected2) {
-                return;
-            }
-            fail(sortingHelper + "(int[],fromIndex,toIndex) shouldn't " +
-                "catch null array");
-        }
-        fail(sortingHelper + "(int[]) shouldn't catch null array");
-    }
-
-    private void testNullLongArray() {
-        try {
-            sortingHelper.sort(null);
-        } catch (NullPointerException expected) {
-            try {
-                sortingHelper.sort(null, 0, 0);
-            } catch (NullPointerException expected2) {
-                return;
-            }
-            fail(sortingHelper + "(long[],fromIndex,toIndex) shouldn't " +
-                "catch null array");
-        }
-        fail(sortingHelper + "(long[]) shouldn't catch null array");
-    }
-
-    private void testNullByteArray() {
-        try {
-            sortingHelper.sort(null);
-        } catch (NullPointerException expected) {
-            try {
-                sortingHelper.sort(null, 0, 0);
-            } catch (NullPointerException expected2) {
-                return;
-            }
-            fail(sortingHelper + "(byte[],fromIndex,toIndex) shouldn't " +
-                "catch null array");
-        }
-        fail(sortingHelper + "(byte[]) shouldn't catch null array");
-    }
-
-    private void testNullCharArray() {
-        try {
-            sortingHelper.sort(null);
-        } catch (NullPointerException expected) {
-            try {
-                sortingHelper.sort(null, 0, 0);
-            } catch (NullPointerException expected2) {
-                return;
-            }
-            fail(sortingHelper + "(char[],fromIndex,toIndex) shouldn't " +
-                "catch null array");
-        }
-        fail(sortingHelper + "(char[]) shouldn't catch null array");
-    }
-
-    private void testNullShortArray() {
-        try {
-            sortingHelper.sort(null);
-        } catch (NullPointerException expected) {
-            try {
-                sortingHelper.sort(null, 0, 0);
-            } catch (NullPointerException expected2) {
-                return;
-            }
-            fail(sortingHelper + "(short[],fromIndex,toIndex) shouldn't " +
-                "catch null array");
-        }
-        fail(sortingHelper + "(short[]) shouldn't catch null array");
-    }
-
-    private void testNullFloatArray() {
-        try {
-            sortingHelper.sort(null);
-        } catch (NullPointerException expected) {
-            try {
-                sortingHelper.sort(null, 0, 0);
-            } catch (NullPointerException expected2) {
-                return;
-            }
-            fail(sortingHelper + "(float[],fromIndex,toIndex) shouldn't " +
-                "catch null array");
-        }
-        fail(sortingHelper + "(float[]) shouldn't catch null array");
-    }
-
-    private void testNullDoubleArray() {
-        try {
-            sortingHelper.sort(null);
-        } catch (NullPointerException expected) {
-            try {
-                sortingHelper.sort(null, 0, 0);
-            } catch (NullPointerException expected2) {
-                return;
-            }
-            fail(sortingHelper + "(double[],fromIndex,toIndex) shouldn't " +
-                "catch null array");
-        }
-        fail(sortingHelper + "(double[]) shouldn't catch null array");
-    }
-
     private void testSubArray(int length) {
         if (fix || length < 4) {
             return;
@@ -315,7 +199,7 @@ public class Sorting {
     private void testRange(int length) {
         for (int m = 1; m < length; m <<= 1) {
             for (int i = 1; i <= length; ++i) {
-                ((int[]) gold[0]) [i - 1] = i % m + m % i;
+                ((int[]) gold[0])[i - 1] = i % m + m % i;
             }
             convertData(length);
 
@@ -415,7 +299,7 @@ public class Sorting {
         for (int i = 5; i < test.length; ++i) {
             printTestName("Test negative zero -0.0", random, length, " " + getType(i));
 
-            NegativeZeroBuilder builder = NegativeZeroBuilder.values() [i - 5];
+            NegativeZeroBuilder builder = NegativeZeroBuilder.values()[i - 5];
             builder.build(test[i], random);
 
             sortingHelper.sort(test[i]);
@@ -463,7 +347,7 @@ public class Sorting {
                 printTestName("Test float-pointing sorting", random, length,
                     ", a = " + a + ", g = " + g + ", z = " + g +
                     ", n = " + g + ", p = " + g + ", " + getType(i));
-                FloatingPointBuilder builder = FloatingPointBuilder.values() [i - 5];
+                FloatingPointBuilder builder = FloatingPointBuilder.values()[i - 5];
                 builder.build(gold[i], a, g, g, g, g, random);
                 copy(test[i], gold[i]);
                 scramble(test[i], random);
@@ -1231,7 +1115,7 @@ public class Sorting {
         try {
             sortingHelper.sort(a, m + 1, m);
             fail(sortingHelper + " does not throw IllegalArgumentException " +
-                "as expected: fromIndex = " + (m + 1) + " toIndex = " + m);
+                "as expected: fromIndex = " + (m + 1) + ", toIndex = " + m);
         } catch (IllegalArgumentException iae) {
             try {
                 sortingHelper.sort(a, -m, a.length);
@@ -1251,7 +1135,7 @@ public class Sorting {
         try {
             sortingHelper.sort(a, m + 1, m);
             fail(sortingHelper + " does not throw IllegalArgumentException " +
-                "as expected: fromIndex = " + (m + 1) + " toIndex = " + m);
+                "as expected: fromIndex = " + (m + 1) + ", toIndex = " + m);
         } catch (IllegalArgumentException iae) {
             try {
                 sortingHelper.sort(a, -m, a.length);
@@ -1271,7 +1155,7 @@ public class Sorting {
         try {
             sortingHelper.sort(a, m + 1, m);
             fail(sortingHelper + " does not throw IllegalArgumentException " +
-                "as expected: fromIndex = " + (m + 1) + " toIndex = " + m);
+                "as expected: fromIndex = " + (m + 1) + ", toIndex = " + m);
         } catch (IllegalArgumentException iae) {
             try {
                 sortingHelper.sort(a, -m, a.length);
@@ -1291,7 +1175,7 @@ public class Sorting {
         try {
             sortingHelper.sort(a, m + 1, m);
             fail(sortingHelper + " does not throw IllegalArgumentException " +
-                "as expected: fromIndex = " + (m + 1) + " toIndex = " + m);
+                "as expected: fromIndex = " + (m + 1) + ", toIndex = " + m);
         } catch (IllegalArgumentException iae) {
             try {
                 sortingHelper.sort(a, -m, a.length);
@@ -1311,7 +1195,7 @@ public class Sorting {
         try {
             sortingHelper.sort(a, m + 1, m);
             fail(sortingHelper + " does not throw IllegalArgumentException " +
-                "as expected: fromIndex = " + (m + 1) + " toIndex = " + m);
+                "as expected: fromIndex = " + (m + 1) + ", toIndex = " + m);
         } catch (IllegalArgumentException iae) {
             try {
                 sortingHelper.sort(a, -m, a.length);
@@ -1331,7 +1215,7 @@ public class Sorting {
         try {
             sortingHelper.sort(a, m + 1, m);
             fail(sortingHelper + " does not throw IllegalArgumentException " +
-                "as expected: fromIndex = " + (m + 1) + " toIndex = " + m);
+                "as expected: fromIndex = " + (m + 1) + ", toIndex = " + m);
         } catch (IllegalArgumentException iae) {
             try {
                 sortingHelper.sort(a, -m, a.length);
@@ -1351,7 +1235,7 @@ public class Sorting {
         try {
             sortingHelper.sort(a, m + 1, m);
             fail(sortingHelper + " does not throw IllegalArgumentException " +
-                "as expected: fromIndex = " + (m + 1) + " toIndex = " + m);
+                "as expected: fromIndex = " + (m + 1) + ", toIndex = " + m);
         } catch (IllegalArgumentException iae) {
             try {
                 sortingHelper.sort(a, -m, a.length);
@@ -1415,11 +1299,11 @@ public class Sorting {
     }
 
     private void printTestName(String test, int length, String message) {
-        out.println( "[" + sortingHelper + "] '" + test + "' length = " + length + message);
+        out.println("[" + sortingHelper + "] '" + test + "' length = " + length + message);
     }
 
     private void printTestName(String test, TestRandom random, int length, String message) {
-        out.println( "[" + sortingHelper + "] '" + test +
+        out.println("[" + sortingHelper + "] '" + test +
             "' length = " + length + ", random = " + random + message);
     }
 

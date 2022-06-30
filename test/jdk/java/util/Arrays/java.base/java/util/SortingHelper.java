@@ -31,9 +31,9 @@ package java.util;
  *
  * @author Vladimir Yaroslavskiy
  *
- * @version 2020.06.14
+ * @version 2022.06.14
  *
- * @since 14 & 18
+ * @since 14 & 20
  */
 public enum SortingHelper {
 
