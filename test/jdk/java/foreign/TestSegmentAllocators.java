@@ -43,6 +43,7 @@ import java.nio.LongBuffer;
 import java.nio.ShortBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.IntStream;
@@ -138,6 +139,52 @@ public class TestSegmentAllocators {
     public void testBadUnboundedArenaSize() {
         SegmentAllocator.newNativeArena( -1, MemorySession.global());
     }
+
+    @Test(dataProvider = "allocators", expectedExceptions = IllegalArgumentException.class)
+    public void testBadAllocationSize(SegmentAllocator allocator) {
+        allocator.allocate(-1);
+    }
+
+    @Test(dataProvider = "allocators", expectedExceptions = IllegalArgumentException.class)
+    public void testBadAllocationAlignZero(SegmentAllocator allocator) {
+        allocator.allocate(1, 0);
+    }
+
+    @Test(dataProvider = "allocators", expectedExceptions = IllegalArgumentException.class)
+    public void testBadAllocationAlignNeg(SegmentAllocator allocator) {
+        allocator.allocate(1, -1);
+    }
+
+    @Test(dataProvider = "allocators", expectedExceptions = IllegalArgumentException.class)
+    public void testBadAllocationAlignNotPowerTwo(SegmentAllocator allocator) {
+        allocator.allocate(1, 3);
+    }
+
+    @Test
+    public void testArrayAllocateDelegation() {
+        AtomicInteger calls = new AtomicInteger();
+        SegmentAllocator allocator = new SegmentAllocator() {
+            @Override
+            public MemorySegment allocate(long bytesSize, long bytesAlignment) {
+                return null;
+            }
+
+            @Override
+            public MemorySegment allocateArray(MemoryLayout elementLayout, long count) {
+                calls.incrementAndGet();
+                return null;
+            };
+        };
+        allocator.allocateArray(ValueLayout.JAVA_BYTE);
+        allocator.allocateArray(ValueLayout.JAVA_SHORT);
+        allocator.allocateArray(ValueLayout.JAVA_CHAR);
+        allocator.allocateArray(ValueLayout.JAVA_INT);
+        allocator.allocateArray(ValueLayout.JAVA_FLOAT);
+        allocator.allocateArray(ValueLayout.JAVA_LONG);
+        allocator.allocateArray(ValueLayout.JAVA_DOUBLE);
+        assertEquals(calls.get(), 7);
+    }
+
 
     @Test(dataProvider = "arrayAllocations")
     public <Z> void testArray(AllocationFactory allocationFactory, ValueLayout layout, AllocationFunction<Object, ValueLayout> allocationFunction, ToArrayHelper<Z> arrayHelper) {
@@ -442,6 +489,15 @@ public class TestSegmentAllocators {
             private MemoryAddress[] wrap(long[] ints) {
                 return LongStream.of(ints).mapToObj(MemoryAddress::ofLong).toArray(MemoryAddress[]::new);
             }
+        };
+    }
+
+    @DataProvider(name = "allocators")
+    static Object[][] allocators() {
+        return new Object[][] {
+                { SegmentAllocator.implicitAllocator() },
+                { SegmentAllocator.newNativeArena(MemorySession.global()) },
+                { SegmentAllocator.prefixAllocator(MemorySegment.allocateNative(10, MemorySession.global())) },
         };
     }
 }

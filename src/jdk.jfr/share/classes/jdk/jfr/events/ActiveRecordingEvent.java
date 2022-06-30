@@ -40,8 +40,8 @@ import jdk.jfr.internal.Type;
 @StackTrace(false)
 public final class ActiveRecordingEvent extends AbstractJDKEvent {
 
-    // To be accessed when holding recorder lock
-    public static final ActiveRecordingEvent EVENT = new ActiveRecordingEvent();
+    // The order of these fields must be the same as the parameters in
+    // commit(... , long, String, String, String, long, long, long, long, long)
 
     @Label("Id")
     public long id;
@@ -71,4 +71,14 @@ public final class ActiveRecordingEvent extends AbstractJDKEvent {
     @Label("Recording Duration")
     @Timespan(Timespan.MILLISECONDS)
     public long recordingDuration;
+
+    public static boolean enabled() {
+        return false; // Generated
+    }
+
+    public static void commit(long timestamp, long duration, long id, String name,
+                              String destination, long maxAge, long flushInterval,
+                              long maxSize, long recordingStart, long recordingDuration) {
+        // Generated
+    }
 }

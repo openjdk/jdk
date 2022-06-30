@@ -27,8 +27,8 @@
 
 // os_windows.hpp included by os.hpp
 
+#include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
-#include "runtime/thread.hpp"
 
 inline bool os::uses_stack_guard_pages() {
   return true;

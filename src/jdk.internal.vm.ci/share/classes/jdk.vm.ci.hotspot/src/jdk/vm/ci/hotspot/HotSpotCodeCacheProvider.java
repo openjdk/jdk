@@ -136,7 +136,7 @@ public class HotSpotCodeCacheProvider implements CodeCacheProvider {
             resultInstalledCode = nmethod;
         }
 
-        int result = runtime.getCompilerToVM().installCode(target, (HotSpotCompiledCode) compiledCode, resultInstalledCode, failedSpeculationsAddress, speculations);
+        int result = runtime.getCompilerToVM().installCode(hsCompiledCode, resultInstalledCode, failedSpeculationsAddress, speculations);
         if (result != config.codeInstallResultOk) {
             String resultDesc = config.getCodeInstallResultDescription(result);
             if (hsCompiledNmethod != null) {

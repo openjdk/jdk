@@ -21,7 +21,6 @@
  * questions.
  */
 
-import java.io.PrintStream;
 /*
  * @test
  *
@@ -55,14 +54,7 @@ import java.io.PrintStream;
 public class mexit02 {
 
     static {
-        try {
-            System.loadLibrary("mexit02");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load mexit02 library");
-            System.err.println("java.library.path:"
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
+        System.loadLibrary("mexit02");
     }
 
     static volatile int result;

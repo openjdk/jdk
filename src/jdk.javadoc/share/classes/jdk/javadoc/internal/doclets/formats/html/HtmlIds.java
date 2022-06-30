@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,6 +132,19 @@ public class HtmlIds {
         return element == null || element.isUnnamed()
                 ? UNNAMED_PACKAGE_ANCHOR
                 : HtmlId.of(element.getQualifiedName().toString());
+    }
+
+    /**
+     * Returns an id for a package name.
+     *
+     * @param pkgName the package name
+     *
+     * @return the id
+     */
+    HtmlId forPackageName(String pkgName) {
+        return pkgName.isEmpty()
+                ? UNNAMED_PACKAGE_ANCHOR
+                : HtmlId.of(pkgName);
     }
 
     /**

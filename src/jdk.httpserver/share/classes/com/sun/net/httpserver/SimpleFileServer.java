@@ -42,8 +42,7 @@ import sun.net.httpserver.simpleserver.OutputFilter;
  * A simple HTTP file server and its components (intended for testing,
  * development and debugging purposes only).
  *
- * <p> A <a href="#server-impl">simple file server</a> is composed of three
- * components:
+ * <p> A simple file server is composed of three components:
  * <ul>
  *   <li> an {@link HttpServer HttpServer} that is bound to a given address, </li>
  *   <li> an {@link HttpHandler HttpHandler} that serves files from a given

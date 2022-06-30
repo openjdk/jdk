@@ -27,10 +27,12 @@
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/thread.inline.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/threadSMR.inline.hpp"
 #include "runtime/vmOperations.hpp"
 #include "services/threadIdTable.hpp"
@@ -716,7 +718,7 @@ JavaThread* ThreadsList::find_JavaThread_from_java_tid(jlong java_tid) const {
       if (tobj != NULL && java_tid == java_lang_Thread::thread_id(tobj)) {
         MutexLocker ml(Threads_lock);
         // Must be inside the lock to ensure that we don't add a thread to the table
-        // that has just passed the removal point in ThreadsSMRSupport::remove_thread()
+        // that has just passed the removal point in Threads::remove().
         if (!thread->is_exiting()) {
           ThreadIdTable::add_thread(java_tid, thread);
           return thread;
@@ -1000,12 +1002,6 @@ void ThreadsSMRSupport::release_stable_list_wake_up(bool is_nested) {
 }
 
 void ThreadsSMRSupport::remove_thread(JavaThread *thread) {
-
-  if (ThreadIdTable::is_initialized()) {
-    jlong tid = SharedRuntime::get_java_tid(thread);
-    ThreadIdTable::remove_thread(tid);
-  }
-
   ThreadsList *new_list = ThreadsList::remove_thread(ThreadsSMRSupport::get_java_thread_list(), thread);
   if (EnableThreadSMRStatistics) {
     ThreadsSMRSupport::inc_java_thread_list_alloc_cnt();

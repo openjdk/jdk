@@ -20,7 +20,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import java.io.PrintStream;
 
 /*
  * @test
@@ -46,17 +45,8 @@ import java.io.PrintStream;
 
 public class fieldacc04 {
 
-    final static int JCK_STATUS_BASE = 95;
-
     static {
-        try {
-            System.loadLibrary("fieldacc04");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load fieldacc04 library");
-            System.err.println("java.library.path:"
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
+        System.loadLibrary("fieldacc04");
     }
 
     static volatile int result;
