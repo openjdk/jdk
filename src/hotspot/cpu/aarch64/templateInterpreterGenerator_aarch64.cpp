@@ -908,7 +908,7 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
   __ ldr(local_0, Address(esp, 0));
   __ cbz(local_0, slow_path);
 
-    // Load the value of the referent field.
+  // Load the value of the referent field.
   const Address field_address(local_0, referent_offset);
   BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
   bs->load_at(_masm, IN_HEAP | ON_WEAK_OOP_REF, T_OBJECT, local_0, field_address, /*tmp1*/ rscratch2, /*tmp2*/ rscratch1);
