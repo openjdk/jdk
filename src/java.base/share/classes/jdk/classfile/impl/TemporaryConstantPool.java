@@ -156,7 +156,7 @@ public final class TemporaryConstantPool implements ConstantPoolBuilder {
 
     @Override
     public StringEntry stringEntry(Utf8Entry utf8) {
-        throw new UnsupportedOperationException();
+        return new ConcreteEntry.ConcreteStringEntry(this, -2, (ConcreteEntry.ConcreteUtf8Entry) utf8);
     }
 
     @Override

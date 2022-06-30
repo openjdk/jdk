@@ -74,19 +74,28 @@ public sealed interface MethodParameterInfo
 
     /**
      * {@return a method parameter description}
-     * @param name the method name
-     * @param flags the method access flags
+     * @param name the method parameter name
+     * @param flags the method parameter access flags
      */
-    static MethodParameterInfo of(Utf8Entry name, int flags) {
-        return new UnboundAttribute.UnboundMethodParameterInfo(Optional.ofNullable(name), flags);
+    static MethodParameterInfo of(Optional<Utf8Entry> name, int flags) {
+        return new UnboundAttribute.UnboundMethodParameterInfo(name, flags);
     }
 
     /**
      * {@return a method parameter description}
-     * @param name the method name
-     * @param flags the method access flags
+     * @param name the method parameter name
+     * @param flags the method parameter access flags
      */
-    static MethodParameterInfo of(String name, AccessFlag... flags) {
-        return of(name == null ? null : TemporaryConstantPool.INSTANCE.utf8Entry(name), Util.flagsToBits(AccessFlag.Location.METHOD_PARAMETER, flags));
+    static MethodParameterInfo of(Optional<String> name, AccessFlag... flags) {
+        return of(name.map(TemporaryConstantPool.INSTANCE::utf8Entry), Util.flagsToBits(AccessFlag.Location.METHOD_PARAMETER, flags));
+    }
+
+    /**
+     * {@return a method parameter description}
+     * @param name the method parameter name
+     * @param flags the method parameter access flags
+     */
+    static MethodParameterInfo ofParameter(Optional<String> name, int flags) {
+        return of(name.map(TemporaryConstantPool.INSTANCE::utf8Entry), flags);
     }
 }

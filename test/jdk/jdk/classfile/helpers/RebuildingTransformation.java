@@ -50,7 +50,7 @@ class RebuildingTransformation {
                             for (var fe : fm) {
                                 switch (fe) {
                                     case AccessFlags af -> fb.withFlags(af.flagsMask());
-                                    case ConstantValueAttribute a -> fb.with(ConstantValueAttribute.of(a.constant())); //missing ConstantValueAttribute factory method accepting ConstantDesc or individual types
+                                    case ConstantValueAttribute a -> fb.with(ConstantValueAttribute.of(a.constant().constantValue()));
                                     case DeprecatedAttribute a -> fb.with(DeprecatedAttribute.of());
                                     case RuntimeInvisibleAnnotationsAttribute a -> fb.with(RuntimeInvisibleAnnotationsAttribute.of(transformAnnotations(a.annotations())));
                                     case RuntimeInvisibleTypeAnnotationsAttribute a -> fb.with(RuntimeInvisibleTypeAnnotationsAttribute.of(transformTypeAnnotations(a.annotations(), null, null)));
@@ -121,7 +121,7 @@ class RebuildingTransformation {
                                     case DeprecatedAttribute a -> mb.with(DeprecatedAttribute.of());
                                     case ExceptionsAttribute a -> mb.with(ExceptionsAttribute.ofSymbols(a.exceptions().stream().map(ClassEntry::asSymbol).toArray(ClassDesc[]::new)));
                                     case MethodParametersAttribute a -> mb.with(MethodParametersAttribute.of(a.parameters().stream().map(mp ->
-                                            MethodParameterInfo.of(mp.name().map(Utf8Entry::stringValue).orElse(null), mp.flags().toArray(AccessFlag[]::new))).toArray(MethodParameterInfo[]::new))); //missing MethodParameterInfo factory method accepting String and int
+                                            MethodParameterInfo.ofParameter(mp.name().map(Utf8Entry::stringValue), mp.flagsMask())).toArray(MethodParameterInfo[]::new)));
                                     case RuntimeInvisibleAnnotationsAttribute a -> mb.with(RuntimeInvisibleAnnotationsAttribute.of(transformAnnotations(a.annotations())));
                                     case RuntimeInvisibleParameterAnnotationsAttribute a -> mb.with(RuntimeInvisibleParameterAnnotationsAttribute.of(a.parameterAnnotations().stream().map(pas -> List.of(transformAnnotations(pas))).toList()));
                                     case RuntimeInvisibleTypeAnnotationsAttribute a -> mb.with(RuntimeInvisibleTypeAnnotationsAttribute.of(transformTypeAnnotations(a.annotations(), null, null)));

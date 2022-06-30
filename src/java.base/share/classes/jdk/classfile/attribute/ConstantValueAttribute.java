@@ -24,10 +24,12 @@
  */
 package jdk.classfile.attribute;
 
+import java.lang.constant.ConstantDesc;
 import jdk.classfile.Attribute;
 import jdk.classfile.FieldElement;
 import jdk.classfile.constantpool.ConstantValueEntry;
 import jdk.classfile.impl.BoundAttribute;
+import jdk.classfile.impl.TemporaryConstantPool;
 import jdk.classfile.impl.UnboundAttribute;
 
 /**
@@ -52,5 +54,20 @@ public sealed interface ConstantValueAttribute
      */
     static ConstantValueAttribute of(ConstantValueEntry value) {
         return new UnboundAttribute.UnboundConstantValueAttribute(value);
+    }
+
+    /**
+     * {@return a {@code ConstantValue} attribute}
+     * @param value the constant value
+     */
+    static ConstantValueAttribute of(ConstantDesc value) {
+        return of(switch(value) {
+            case Integer i -> TemporaryConstantPool.INSTANCE.intEntry(i);
+            case Float f -> TemporaryConstantPool.INSTANCE.floatEntry(f);
+            case Long l -> TemporaryConstantPool.INSTANCE.longEntry(l);
+            case Double d -> TemporaryConstantPool.INSTANCE.doubleEntry(d);
+            case String s -> TemporaryConstantPool.INSTANCE.stringEntry(s);
+            default -> throw new IllegalArgumentException("Invalid ConstantValueAtrtibute value: " + value);
+        });
     }
 }

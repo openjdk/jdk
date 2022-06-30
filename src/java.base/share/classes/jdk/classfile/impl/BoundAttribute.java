@@ -388,7 +388,7 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
                 for (int i = 0; p < pEnd; p += 4, i++) {
                     Utf8Entry name = classReader.readUtf8Entry(p);
                     int accessFlags = classReader.readU2(p + 2);
-                    elements[i] = MethodParameterInfo.of(name, accessFlags);
+                    elements[i] = MethodParameterInfo.of(Optional.ofNullable(name), accessFlags);
                 }
                 parameters = List.of(elements);
             }
