@@ -872,10 +872,10 @@
     __ sve_whilele(p2, __ H, r11, r8);                 //       whilele p2.h, x11, x8
     __ sve_whilelo(p3, __ S, r7, r2);                  //       whilelo p3.s, x7, x2
     __ sve_whilels(p4, __ D, r17, r10);                //       whilels p4.d, x17, x10
-    __ sve_whilelt(p1, __ B, r1, r28);                 //       whilelt p1.b, w1, w28
-    __ sve_whilele(p2, __ H, r11, r8);                 //       whilele p2.h, w11, w8
-    __ sve_whilelo(p3, __ S, r7, r2);                  //       whilelo p3.s, w7, w2
-    __ sve_whilels(p4, __ D, r17, r10);                //       whilels p4.d, w17, w10
+    __ sve_whileltw(p1, __ B, r1, r28);                //       whilelt p1.b, w1, w28
+    __ sve_whilelew(p2, __ H, r11, r8);                //       whilele p2.h, w11, w8
+    __ sve_whilelow(p3, __ S, r7, r2);                 //       whilelo p3.s, w7, w2
+    __ sve_whilelsw(p4, __ D, r17, r10);               //       whilels p4.d, w17, w10
     __ sve_sel(z0, __ B, p0, z1, z2);                  //       sel     z0.b, p0, z1.b, z2.b
     __ sve_sel(z4, __ D, p0, z5, z6);                  //       sel     z4.d, p0, z5.d, z6.d
     __ sve_cmp(Assembler::EQ, p1, __ B, p0, z0, z1);   //       cmpeq   p1.b, p0/z, z0.b, z1.b
