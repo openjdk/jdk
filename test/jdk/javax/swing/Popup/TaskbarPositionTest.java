@@ -54,7 +54,6 @@ import javax.swing.event.PopupMenuEvent;
  * @test
  * @bug 4245587 4474813 4425878 4767478 8015599
  * @key headful
- * @author Mark Davidson
  * @summary Tests the location of the heavy weight popup portion of JComboBox,
  * JMenu and JPopupMenu.
  * @library ../regtesthelpers
@@ -105,7 +104,7 @@ public class TaskbarPositionTest implements ActionListener {
         screenBounds = new Rectangle(new Point(), toolkit.getScreenSize());
 
         // Place the frame near the bottom. This is a pretty wild guess.
-        frame.setLocation(0, (int) screenBounds.getHeight() - 2 * frame.getHeight());
+        frame.setLocation(0, screenBounds.y + screenBounds.height - frame.getHeight());
 
         // Reduce the screen bounds by the insets.
         GraphicsConfiguration gc = frame.getGraphicsConfiguration();
@@ -118,7 +117,6 @@ public class TaskbarPositionTest implements ActionListener {
             screenBounds.y += screenInsets.top;
         }
 
-        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 
@@ -347,7 +345,7 @@ public class TaskbarPositionTest implements ActionListener {
             // Popup from a mouse click.
             Point pt = new Point(2, 2);
             SwingUtilities.convertPointToScreen(pt, panel);
-            robot.mouseMove((int) pt.getX(), (int) pt.getY());
+            robot.mouseMove(pt.x, pt.y);
             robot.mousePress(InputEvent.BUTTON3_MASK);
             robot.mouseRelease(InputEvent.BUTTON3_MASK);
 
