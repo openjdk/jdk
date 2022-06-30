@@ -702,7 +702,7 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
   // was in the caller.  This is not strictly necessary, but unless we
   // do so the stack frame may have a garbage FP; this ensures a
   // correct call stack that we can always unwind.  The ANDR should be
-  // unnecessary because the sender SP in r13 is always aligned, but
+  // unnecessary because the sender SP in r19 is always aligned, but
   // it doesn't hurt.
   __ andr(sp, r19_sender_sp, -16);
 
