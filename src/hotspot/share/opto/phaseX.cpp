@@ -1861,6 +1861,24 @@ void PhaseCCP::analyze() {
             }
           }
         }
+        push_and(worklist, n, m);
+      }
+    }
+  }
+}
+
+// AndI/L::Value() optimizes patterns similar to (v << 2) & 3 to zero if they are bitwise disjoint.
+// Add the AndI/L nodes back to the worklist to re-apply Value() in case the shift value changed.
+void PhaseCCP::push_and(Unique_Node_List& worklist, const Node* parent, const Node* use) const {
+  uint use_op = use->Opcode();
+  if ((use_op == Op_LShiftI || use_op == Op_LShiftL)
+      && use->in(2) == parent) { // is shift value (right-hand side of LShift)
+    for (DUIterator_Fast imax, i = use->fast_outs(imax); i < imax; i++) {
+      Node* and_node = use->fast_out(i);
+      uint and_node_op = and_node->Opcode();
+      if ((and_node_op == Op_AndI || and_node_op == Op_AndL)
+          && and_node->bottom_type() != type(and_node)) {
+        worklist.push(and_node);
       }
     }
   }

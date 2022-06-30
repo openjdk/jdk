@@ -256,7 +256,7 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
     return JNI_ERR;
   }
 
-  if (set_agent_proc(agentProc, NULL) != NSK_TRUE) {
+  if (set_agent_proc(agentProc, NULL) != JNI_TRUE) {
     return JNI_ERR;
   }
 

@@ -199,7 +199,7 @@ header extends java/lang/Object implements com/sun/jdi/ObjectReference flags 601
 
 class name com/sun/jdi/ThreadReference
 header extends java/lang/Object implements com/sun/jdi/ObjectReference flags 601
-method name isVirtual descriptor ()Z flags 1 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;VIRTUAL_THREADS;)
+method name isVirtual descriptor ()Z flags 1 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;VIRTUAL_THREADS;,reflective=Ztrue)
 
 class name com/sun/jdi/Type
 header extends java/lang/Object implements com/sun/jdi/Mirror flags 601
@@ -389,11 +389,11 @@ header extends java/lang/Object implements com/sun/jdi/request/EventRequest flag
 
 class name com/sun/jdi/request/ThreadDeathRequest
 header extends java/lang/Object implements com/sun/jdi/request/EventRequest flags 601
-method name addPlatformThreadsOnlyFilter descriptor ()V flags 1 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;VIRTUAL_THREADS;)
+method name addPlatformThreadsOnlyFilter descriptor ()V flags 1 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;VIRTUAL_THREADS;,reflective=Ztrue)
 
 class name com/sun/jdi/request/ThreadStartRequest
 header extends java/lang/Object implements com/sun/jdi/request/EventRequest flags 601
-method name addPlatformThreadsOnlyFilter descriptor ()V flags 1 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;VIRTUAL_THREADS;)
+method name addPlatformThreadsOnlyFilter descriptor ()V flags 1 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;VIRTUAL_THREADS;,reflective=Ztrue)
 
 class name com/sun/jdi/request/VMDeathRequest
 header extends java/lang/Object implements com/sun/jdi/request/EventRequest flags 601

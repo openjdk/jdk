@@ -354,7 +354,7 @@ class os: AllStatic {
   static int    vm_allocation_granularity();
 
   // Reserves virtual memory.
-  static char*  reserve_memory(size_t bytes, bool executable = false, MEMFLAGS flags = mtOther);
+  static char*  reserve_memory(size_t bytes, bool executable = false, MEMFLAGS flags = mtNone);
 
   // Reserves virtual memory that starts at an address that is aligned to 'alignment'.
   static char*  reserve_memory_aligned(size_t size, size_t alignment, bool executable = false);

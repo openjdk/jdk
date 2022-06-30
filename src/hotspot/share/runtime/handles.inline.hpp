@@ -27,7 +27,7 @@
 
 #include "runtime/handles.hpp"
 
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 #include "oops/metadata.hpp"
 #include "oops/oop.hpp"
 

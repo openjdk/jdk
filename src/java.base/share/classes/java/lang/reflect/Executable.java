@@ -28,6 +28,7 @@ package java.lang.reflect;
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Set;
 import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
@@ -204,8 +205,24 @@ public abstract sealed class Executable extends AccessibleObject
     /**
      * {@return the Java language {@linkplain Modifier modifiers} for
      * the executable represented by this object}
+     * @see #accessFlags
      */
     public abstract int getModifiers();
+
+    /**
+     * {@return an unmodifiable set of the {@linkplain AccessFlag
+     * access flags} for the executable represented by this object,
+     * possibly empty}
+     *
+     * @see #getModifiers()
+     * @jvms 4.6 Methods
+     * @since 20
+     */
+    @Override
+    public Set<AccessFlag> accessFlags() {
+        return AccessFlag.maskToAccessFlags(getModifiers(),
+                                            AccessFlag.Location.METHOD);
+    }
 
     /**
      * Returns an array of {@code TypeVariable} objects that represent the
@@ -253,9 +270,7 @@ public abstract sealed class Executable extends AccessibleObject
      * @return The number of formal parameters for the executable this
      * object represents
      */
-    public int getParameterCount() {
-        throw new AbstractMethodError();
-    }
+    public abstract int getParameterCount();
 
     /**
      * Returns an array of {@code Type} objects that represent the
@@ -441,6 +456,8 @@ public abstract sealed class Executable extends AccessibleObject
     }
 
     private transient @Stable ParameterData parameterData;
+
+    record ParameterData(@Stable Parameter[] parameters, boolean isReal) {}
 
     private native Parameter[] getParameters0();
     native byte[] getTypeAnnotationBytes0();
@@ -773,7 +790,4 @@ public abstract sealed class Executable extends AccessibleObject
                 getGenericExceptionTypes(),
                 TypeAnnotation.TypeAnnotationTarget.THROWS);
     }
-
-    record ParameterData(@Stable Parameter[] parameters, boolean isReal) {}
-
 }

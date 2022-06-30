@@ -47,6 +47,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/osThread.hpp"
@@ -55,8 +56,8 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/threadCritical.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
 #include "services/attachListener.hpp"
 #include "services/memTracker.hpp"
@@ -1785,13 +1786,6 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool 
   }
 
   return NULL;
-}
-
-// Sleep forever; naked call to OS-specific sleep; use with CAUTION
-void os::infinite_sleep() {
-  while (true) {    // sleep forever ...
-    ::sleep(100);   // ... 100 seconds at a time
-  }
 }
 
 // Used to convert frequent JVM_Yield() to nops

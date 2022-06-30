@@ -83,7 +83,7 @@ typedef struct agent_data_t {
 int set_agent_proc(jvmtiStartFunction proc, void* arg) {
   agent_thread_proc = proc;
   agent_thread_arg = arg;
-  return NSK_TRUE;
+  return JNI_TRUE;
 }
 
 static agent_data_t agent_data;
@@ -107,7 +107,7 @@ int agent_wait_for_sync(jlong timeout) {
   static const int inc_timeout = 1000;
 
   jlong t = 0;
-  int result = NSK_TRUE;
+  int result = JNI_TRUE;
 
   RawMonitorLocker monitor_locker(agent_jvmti_env, agent_jni_env, agent_data.monitor);
 
@@ -132,7 +132,7 @@ int agent_wait_for_sync(jlong timeout) {
   if (agent_data.thread_state == WAITING) {
       COMPLAIN("No status sync occured for timeout: %" LL "d ms\n", timeout);
     set_agent_fail_status();
-    result = NSK_FALSE;
+    result = JNI_FALSE;
   }
 
   return result;
@@ -144,7 +144,7 @@ int agent_resume_sync() {
   RawMonitorLocker monitor_locker(agent_jvmti_env, agent_jni_env, agent_data.monitor);
 
   if (agent_data.thread_state == SUSPENDED) {
-    result = NSK_TRUE;
+    result = JNI_TRUE;
     agent_data.thread_state = RUNNABLE;
     /* SP5.2-n - notify suspend done */
     /* SP7.2-n - notify agent end */
@@ -153,10 +153,10 @@ int agent_resume_sync() {
   else {
     COMPLAIN("Debuggee was not suspended on status sync\n");
     set_agent_fail_status();
-    result = NSK_FALSE;
+    result = JNI_FALSE;
   }
 
-  return NSK_TRUE;
+  return JNI_TRUE;
 }
 
 /* ============================================================================= */
