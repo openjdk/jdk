@@ -144,8 +144,15 @@ private:
   // This version synchronizes with other calls to par_allocate_impl().
   inline HeapWord* par_allocate_impl(size_t min_word_size, size_t desired_word_size, size_t* actual_word_size);
 
+  // Return the address of the beginning of the block that contains "addr".
+  // "q" is a block boundary that is <= "addr"; "n" is the address of the
+  // next block (or the end of the HeapRegion.)
+  inline HeapWord* forward_to_block_containing_addr(HeapWord* q, HeapWord* n,
+                                                    const void* addr) const;
+
 public:
-  HeapWord* block_start(const void* p);
+  // Returns the address of the block reaching into or starting at addr.
+  HeapWord* block_start(const void* addr);
 
   void object_iterate(ObjectClosure* blk);
 
@@ -189,9 +196,7 @@ public:
   template<typename ApplyToMarkedClosure>
   inline void apply_to_marked_objects(G1CMBitMap* bitmap, ApplyToMarkedClosure* closure);
 
-  void update_bot() {
-    _bot_part.update();
-  }
+  void update_bot();
 
 private:
   // The remembered set for this region.

@@ -264,6 +264,18 @@ void HeapRegion::initialize(bool clear_space, bool mangle_space) {
   hr_clear(false /*clear_space*/);
 }
 
+void HeapRegion::update_bot() {
+  HeapWord* next_addr = bottom();
+  HeapWord* const limit = top();
+
+  HeapWord* prev_addr;
+  while (next_addr < limit) {
+    prev_addr = next_addr;
+    next_addr  = prev_addr + block_size(prev_addr);
+    _bot_part.update_for_block(prev_addr, next_addr);
+  }
+}
+
 void HeapRegion::report_region_type_change(G1HeapRegionTraceType::Type to) {
   HeapRegionTracer::send_region_type_change(_hrm_index,
                                             get_trace_type(),

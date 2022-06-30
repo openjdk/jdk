@@ -79,8 +79,30 @@ inline HeapWord* HeapRegion::par_allocate_impl(size_t min_word_size,
   } while (true);
 }
 
-inline HeapWord* HeapRegion::block_start(const void* p) {
-  return _bot_part.block_start(p);
+inline HeapWord* HeapRegion::forward_to_block_containing_addr(HeapWord* q, HeapWord* n,
+                                                              const void* addr) const {
+  while (n <= addr) {
+    // When addr is not covered by the block starting at q we need to
+    // step forward until we find the correct block. With the BOT
+    // being precise, we should never have to step through more than
+    // a single card.
+    _bot_part.assert_same_bot_entry(n, addr);
+    q = n;
+    assert(cast_to_oop(q)->klass_or_null() != nullptr,
+        "start of block must be an initialized object");
+    n += block_size(q);
+  }
+  assert(q <= addr, "wrong order for q and addr");
+  assert(addr < n, "wrong order for addr and n");
+  return q;
+}
+
+inline HeapWord* HeapRegion::block_start(const void* addr) {
+  HeapWord* q = _bot_part.block_start_reaching_into_card(addr);
+  // The returned address is the block that reaches into the card of addr. Walk
+  // the heap to get to the block reaching into addr.
+  HeapWord* n = q + block_size(q);
+  return forward_to_block_containing_addr(q, n, addr);
 }
 
 inline bool HeapRegion::is_obj_dead_with_size(const oop obj, const G1CMBitMap* const prev_bitmap, size_t* size) const {

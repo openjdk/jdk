@@ -79,19 +79,6 @@ G1BlockOffsetTablePart::G1BlockOffsetTablePart(G1BlockOffsetTable* array, HeapRe
 {
 }
 
-void G1BlockOffsetTablePart::update() {
-  HeapWord* next_addr = _hr->bottom();
-  HeapWord* const limit = _hr->top();
-
-  HeapWord* prev_addr;
-  while (next_addr < limit) {
-    prev_addr = next_addr;
-    next_addr  = prev_addr + block_size(prev_addr);
-    update_for_block(prev_addr, next_addr);
-  }
-  assert(next_addr == limit, "Should stop the scan at the limit.");
-}
-
 // Write the backskip value for each region.
 //
 //    offset
@@ -275,7 +262,7 @@ void G1BlockOffsetTablePart::verify() const {
       HeapWord* obj_end = card_address - entry;
       while (obj_end < card_address) {
         HeapWord* obj = obj_end;
-        size_t obj_size = block_size(obj);
+        size_t obj_size = _hr->block_size(obj);
         obj_end = obj + obj_size;
         guarantee(obj_end > obj && obj_end <= _hr->top(),
                   "Invalid object end. obj: " PTR_FORMAT " obj_size: " SIZE_FORMAT " obj_end: " PTR_FORMAT " top: " PTR_FORMAT,
