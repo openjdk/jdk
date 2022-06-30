@@ -111,6 +111,7 @@ public:
   uint32_t seqnum() const;
 
   ZGenerationId id() const;
+  ZGenerationIdOptional id_optional() const;
   bool is_young() const;
   bool is_old() const;
 

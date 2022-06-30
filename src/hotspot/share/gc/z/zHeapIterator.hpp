@@ -48,7 +48,6 @@ class ZHeapIterator : public ParallelObjectIteratorImpl {
 
 private:
   const bool                    _visit_weaks;
-  ZStatTimerDisable             _timer_disable;
   ZHeapIteratorBitMaps          _bitmaps;
   ZLock                         _bitmaps_lock;
   ZHeapIteratorQueues           _queues;

@@ -51,6 +51,10 @@ inline ZGenerationId ZGeneration::id() const {
   return _id;
 }
 
+inline ZGenerationIdOptional ZGeneration::id_optional() const {
+  return static_cast<ZGenerationIdOptional>(_id);
+}
+
 inline bool ZGeneration::is_young() const {
   return _id == ZGenerationId::young;
 }

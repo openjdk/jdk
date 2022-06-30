@@ -866,11 +866,6 @@ ZStatTimerWorker::ZStatTimerWorker(const ZStatPhase& phase) :
 }
 
 //
-// Stat timer
-//
-THREAD_LOCAL uint32_t ZStatTimerDisable::_active = 0;
-
-//
 // Stat sample/inc
 //
 void ZStatSample(const ZStatSampler& sampler, uint64_t value) {

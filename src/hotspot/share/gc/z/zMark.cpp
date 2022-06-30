@@ -35,6 +35,7 @@
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zBarrier.inline.hpp"
 #include "gc/z/zGeneration.inline.hpp"
+#include "gc/z/zGenerationId.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zLock.inline.hpp"
 #include "gc/z/zMark.inline.hpp"
@@ -768,8 +769,8 @@ public:
   ZMarkOldRootsTask(ZMark* mark) :
       ZTask("ZMarkOldRootsTask"),
       _mark(mark),
-      _roots_colored(),
-      _roots_uncolored(),
+      _roots_colored(ZGenerationIdOptional::old),
+      _roots_uncolored(ZGenerationIdOptional::old),
       _cl_colored(),
       _cld_cl(&_cl_colored),
       _thread_cl(),
@@ -820,8 +821,8 @@ public:
   ZMarkYoungRootsTask(ZMark* mark) :
       ZTask("ZMarkYoungRootsTask"),
       _mark(mark),
-      _roots_colored(),
-      _roots_uncolored(),
+      _roots_colored(ZGenerationIdOptional::young),
+      _roots_uncolored(ZGenerationIdOptional::young),
       _cl_colored(),
       _cld_cl(&_cl_colored),
       _thread_cl(),

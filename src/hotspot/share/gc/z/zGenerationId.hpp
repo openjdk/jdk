@@ -31,4 +31,10 @@ enum class ZGenerationId : uint8_t {
   old
 };
 
+enum class ZGenerationIdOptional : uint8_t {
+  young,
+  old,
+  none
+};
+
 #endif // SHARE_GC_Z_ZGENERATIONID_HPP

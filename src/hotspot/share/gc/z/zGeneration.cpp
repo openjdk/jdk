@@ -1335,8 +1335,8 @@ private:
 public:
   ZRemapRootsTask() :
       ZTask("ZRemapRootsTask"),
-      _roots_colored(),
-      _roots_uncolored(),
+      _roots_colored(ZGenerationIdOptional::old),
+      _roots_uncolored(ZGenerationIdOptional::old),
       _cl_colored(),
       _cld_cl(&_cl_colored),
       _thread_cl(),

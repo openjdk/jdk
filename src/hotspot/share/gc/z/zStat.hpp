@@ -294,40 +294,18 @@ public:
 //
 // Stat timer
 //
-class ZStatTimerDisable : public StackObj {
-private:
-  static THREAD_LOCAL uint32_t _active;
-
-public:
-  ZStatTimerDisable() {
-    _active++;
-  }
-
-  ~ZStatTimerDisable() {
-    _active--;
-  }
-
-  static bool is_active() {
-    return _active > 0;
-  }
-};
-
 class ZStatTimer : public StackObj {
 private:
-  const bool         _enabled;
   ConcurrentGCTimer* _gc_timer;
   const ZStatPhase&  _phase;
   const Ticks        _start;
 
 public:
   ZStatTimer(const ZStatPhase& phase, ConcurrentGCTimer* gc_timer) :
-      _enabled(!ZStatTimerDisable::is_active()),
       _gc_timer(gc_timer),
       _phase(phase),
       _start(Ticks::now()) {
-    if (_enabled) {
-      _phase.register_start(_gc_timer, _start);
-    }
+    _phase.register_start(_gc_timer, _start);
   }
 
   ZStatTimer(const ZStatSubPhase& phase) :
@@ -339,10 +317,8 @@ public:
   }
 
   ~ZStatTimer() {
-    if (_enabled) {
-      const Ticks end = Ticks::now();
-      _phase.register_end(_gc_timer, _start, end);
-    }
+    const Ticks end = Ticks::now();
+    _phase.register_end(_gc_timer, _start, end);
   }
 };
 

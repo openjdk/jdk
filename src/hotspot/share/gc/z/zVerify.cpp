@@ -26,6 +26,7 @@
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
 #include "gc/z/zAddress.inline.hpp"
+#include "gc/z/zGenerationId.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zNMethod.hpp"
 #include "gc/z/zPageAllocator.hpp"
@@ -294,7 +295,7 @@ void ZVerify::roots_strong(bool verify_after_old_mark) {
     ZVerifyColoredRootClosure cl(verify_after_old_mark);
     ZVerifyCLDClosure cld_cl(&cl);
 
-    ZRootsIteratorStrongColored roots_strong_colored;
+    ZRootsIteratorStrongColored roots_strong_colored(ZGenerationIdOptional::none);
     roots_strong_colored.apply(&cl,
                                &cld_cl);
   }
@@ -304,7 +305,7 @@ void ZVerify::roots_strong(bool verify_after_old_mark) {
     ZVerifyThreadClosure thread_cl(&cl);
     ZVerifyNMethodClosure nm_cl(&cl);
 
-    ZRootsIteratorStrongUncolored roots_strong_uncolored;
+    ZRootsIteratorStrongUncolored roots_strong_uncolored(ZGenerationIdOptional::none);
     roots_strong_uncolored.apply(&thread_cl,
                                  &nm_cl);
   }
@@ -315,7 +316,7 @@ void ZVerify::roots_weak() {
   assert(!ZResurrection::is_blocked(), "Invalid phase");
 
   ZVerifyColoredRootClosure cl(true /* verify_after_old_mark*/);
-  ZRootsIteratorWeakColored roots_weak_colored;
+  ZRootsIteratorWeakColored roots_weak_colored(ZGenerationIdOptional::none);
   roots_weak_colored.apply(&cl);
 }
 
@@ -386,7 +387,7 @@ void ZVerify::threads_start_processing() {
     }
   };
 
-  ZJavaThreadsIterator threads_iterator;
+  ZJavaThreadsIterator threads_iterator(ZGenerationIdOptional::none);
   StartProcessingClosure cl;
   threads_iterator.apply(&cl);
 }
@@ -410,7 +411,6 @@ void ZVerify::objects(bool verify_weaks) {
 
 void ZVerify::before_zoperation() {
   // Verify strong roots
-  ZStatTimerDisable disable;
   if (ZVerifyRoots) {
     roots_strong(false /* verify_after_old_mark */);
   }
@@ -418,7 +418,6 @@ void ZVerify::before_zoperation() {
 
 void ZVerify::after_mark() {
   // Verify all strong roots and strong references
-  ZStatTimerDisable disable;
   if (ZVerifyRoots) {
     roots_strong(true /* verify_after_old_mark */);
   }
@@ -433,7 +432,6 @@ void ZVerify::after_mark() {
 
 void ZVerify::after_weak_processing() {
   // Verify all roots and all references
-  ZStatTimerDisable disable;
   if (ZVerifyRoots) {
     roots_strong(true /* verify_after_old_mark */);
     roots_weak();

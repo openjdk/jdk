@@ -56,7 +56,7 @@ private:
 public:
   ZProcessWeakRootsTask() :
       ZTask("ZProcessWeakRootsTask"),
-      _roots_weak_colored() {}
+      _roots_weak_colored(ZGenerationIdOptional::old) {}
 
   ~ZProcessWeakRootsTask() {
     _roots_weak_colored.report_num_dead();

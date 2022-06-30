@@ -30,6 +30,7 @@
 #include "gc/shared/taskqueue.inline.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zCollectedHeap.hpp"
+#include "gc/z/zGenerationId.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zGranuleMap.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
@@ -58,7 +59,6 @@ private:
   ZHeapIteratorQueue* const      _queue;
   ZHeapIteratorArrayQueue* const _array_queue;
   const uint                     _worker_id;
-  ZStatTimerDisable              _timer_disable;
   ObjectClosure*                 _object_cl;
   OopFieldClosure*               _field_cl;
 
@@ -242,14 +242,13 @@ public:
 
 ZHeapIterator::ZHeapIterator(uint nworkers, bool visit_weaks) :
     _visit_weaks(visit_weaks),
-    _timer_disable(),
     _bitmaps(ZAddressOffsetMax),
     _bitmaps_lock(),
     _queues(nworkers),
     _array_queues(nworkers),
-    _roots_colored(),
-    _roots_uncolored(),
-    _roots_weak_colored(),
+    _roots_colored(ZGenerationIdOptional::none),
+    _roots_uncolored(ZGenerationIdOptional::none),
+    _roots_weak_colored(ZGenerationIdOptional::none),
     _terminator(nworkers, &_queues) {
 
   // Create queues
