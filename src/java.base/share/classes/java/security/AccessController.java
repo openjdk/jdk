@@ -73,8 +73,8 @@ import jdk.internal.vm.annotation.ReservedStackAccess;
  *
  * <p> If a requested access is allowed,
  * {@code checkPermission} returns quietly. If denied, an
- * AccessControlException is
- * thrown. AccessControlException can also be thrown if the requested
+ * {@code AccessControlException} is
+ * thrown. {@code AccessControlException} can also be thrown if the requested
  * permission is of an incorrect type or contains an invalid value.
  * Such information is given whenever possible.
  *
@@ -966,7 +966,7 @@ public final class AccessController {
     }
 
     /**
-     * Returns the AccessControl context. i.e., it gets
+     * Returns the {@code AccessControlContext}. i.e., it gets
      * the protection domains of all the callers on the stack,
      * starting at the first class with a non-null
      * {@code ProtectionDomain}.
@@ -980,7 +980,7 @@ public final class AccessController {
 
 
     /**
-     * Returns the "inherited" AccessControl context. This is the context
+     * Returns the "inherited" {@code AccessControlContext}. This is the context
      * that existed when the thread was created. Package private so
      * {@code AccessControlContext} can use it.
      */
@@ -990,7 +990,7 @@ public final class AccessController {
 
     /**
      * This method takes a "snapshot" of the current calling context, which
-     * includes the current Thread's inherited {@code AccessControlContext}
+     * includes the current thread's inherited {@code AccessControlContext}
      * and any limited privilege scope, and places it in an
      * {@code AccessControlContext} object.
      * This context may then be checked at a later point, possibly in another thread.
@@ -1018,9 +1018,9 @@ public final class AccessController {
      * specified permission should be allowed or denied, based on
      * the current {@code AccessControlContext} and security policy.
      * This method quietly returns if the access request
-     * is permitted, or throws an AccessControlException otherwise. The
-     * {@code getPermission} method of the AccessControlException returns the
-     * {@code perm} {@code Permission} object instance.
+     * is permitted, or throws an {@code AccessControlException} otherwise. The
+     * {@code getPermission} method of the {@code AccessControlException}
+     * returns the {@code Permission} object instance ({@code perm}}.
      *
      * @param perm the requested permission.
      *

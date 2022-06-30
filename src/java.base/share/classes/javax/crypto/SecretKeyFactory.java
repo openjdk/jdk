@@ -124,11 +124,11 @@ public class SecretKeyFactory {
      * Returns a {@code SecretKeyFactory} object that converts
      * secret keys of the specified algorithm.
      *
-     * <p> This method traverses the list of registered security Providers,
-     * starting with the most preferred Provider.
+     * <p> This method traverses the list of registered security providers,
+     * starting with the most preferred provider.
      * A new {@code SecretKeyFactory} object encapsulating the
      * {@code SecretKeyFactorySpi} implementation from the first
-     * Provider that supports the specified algorithm is returned.
+     * provider that supports the specified algorithm is returned.
      *
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
@@ -216,7 +216,7 @@ public class SecretKeyFactory {
      * secret keys of the specified algorithm.
      *
      * <p> A new {@code SecretKeyFactory} object encapsulating the
-     * {@code SecretKeyFactorySpi} implementation from the specified Provider
+     * {@code SecretKeyFactorySpi} implementation from the specified provider
      * object is returned.  Note that the specified provider object
      * does not have to be registered in the provider list.
      *

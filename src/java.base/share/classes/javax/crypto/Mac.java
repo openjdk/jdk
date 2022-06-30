@@ -241,7 +241,7 @@ public class Mac implements Cloneable {
      *
      * <p> A new {@code Mac} object encapsulating the
      * {@code MacSpi} implementation from the specified provider
-     * object is returned.  Note that the specified Provider object
+     * is returned.  Note that the specified provider
      * does not have to be registered in the provider list.
      *
      * @param algorithm the standard name of the requested MAC algorithm.

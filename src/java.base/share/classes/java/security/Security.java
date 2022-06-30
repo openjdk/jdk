@@ -1029,16 +1029,18 @@ public final class Security {
     /**
      * Returns a Set of {@code String} objects containing the names of all
      * available algorithms or types for the specified Java cryptographic
-     * service (e.g., Signature, MessageDigest, Cipher, Mac, KeyStore).
-     * Returns an empty Set if there is no provider that supports the
-     * specified service or if serviceName is {@code null}. For a complete list
-     * of Java cryptographic services, please see the
+     * service (e.g., {@code Signature}, {@code MessageDigest}, {@code Cipher},
+     * {@code Mac}, {@code KeyStore}).
+     * Returns an empty set if there is no provider that supports the
+     * specified service or if {@code serviceName} is {@code null}.
+     * For a complete list of Java cryptographic services, please see the
      * {@extLink security_guide_jca
      * Java Cryptography Architecture (JCA) Reference Guide}.
      * Note: the returned set is immutable.
      *
      * @param serviceName the name of the Java cryptographic
-     * service (e.g., Signature, MessageDigest, Cipher, Mac, KeyStore).
+     * service (e.g., {@code Signature}, {@code MessageDigest}, {@code Cipher},
+     * {@code Mac}, {@code KeyStore}).
      * Note: this parameter is case-insensitive.
      *
      * @return a Set of {@code String} objects containing the names of all

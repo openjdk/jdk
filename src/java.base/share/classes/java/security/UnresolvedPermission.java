@@ -64,7 +64,7 @@ import java.util.List;
  * Thus, an {@code UnresolvedPermission} is essentially a "placeholder"
  * containing information about the permission.
  *
- * <p>Later, when code calls AccessController.checkPermission
+ * <p>Later, when code calls {@link AccessController#checkPermission}
  * on a permission of a type that was previously unresolved,
  * but whose class has since been loaded, previously-unresolved
  * permissions of that type are "resolved". That is,
@@ -326,8 +326,8 @@ implements java.io.Serializable
      *
      * @param obj the object we are testing for equality with this object.
      *
-     * @return true if obj is an {@code UnresolvedPermission}, and has the same
-     * type (class) name, permission name, actions, and
+     * @return true if {@code obj} is an {@code UnresolvedPermission},
+     * and has the same type (class) name, permission name, actions, and
      * certificates as this object.
      */
     public boolean equals(Object obj) {
