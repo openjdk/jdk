@@ -271,11 +271,12 @@ public abstract class Provider extends Properties {
      * Check if this {@code Provider} instance has been configured.
      *
      * @implSpec
-     * The default implementation returns true.
+     * The default implementation returns {@code true}.
      * Subclasses should override this method if the {@code Provider} requires
      * an explicit {@code configure} call after being constructed.
      *
-     * @return true if no further configuration is needed, false otherwise.
+     * @return {@code true} if no further configuration is needed,
+     * {@code false} otherwise.
      *
      * @since 9
      */
@@ -858,9 +859,10 @@ public abstract class Provider extends Properties {
    /**
     * Reads the {@code ObjectInputStream} for the default serializable fields.
     * If the serialized field {@code versionStr} is found in the STREAM FIELDS,
-    * its String value will be used to populate both the version string and
-    * version number. If {@code versionStr} is not found, but {@code version}
-    * is, then its double value will be used to populate both fields.
+    * its {@code String} value will be used to populate both the version string
+    * and version number. If {@code versionStr} is not found, but
+    * {@code version} is, then its double value will be used to populate
+    * both fields.
     *
     * @param in the {@code ObjectInputStream} to read
     * @throws IOException if an I/O error occurs
@@ -1353,7 +1355,7 @@ public abstract class Provider extends Properties {
      *      if a security manager exists and its {@link
      *      java.lang.SecurityManager#checkSecurityAccess} method denies
      *      access to set property values.
-     * @throws NullPointerException if s is null
+     * @throws NullPointerException if s is {@code null}
      *
      * @since 1.5
      */
@@ -1629,7 +1631,7 @@ public abstract class Provider extends Properties {
      * an algorithm name, and the name of the class that implements the
      * service. Optionally, it also includes a list of alternate algorithm
      * names for this service (aliases) and attributes, which are a map of
-     * (name, value) String pairs.
+     * (name, value) {@code String} pairs.
      *
      * <p>This class defines the methods {@link #supportsParameter
      * supportsParameter()} and {@link #newInstance newInstance()}
@@ -2012,9 +2014,9 @@ public abstract class Provider extends Properties {
 
         /**
          * Test whether this Service can use the specified parameter.
-         * Returns false if this service cannot use the parameter. Returns
-         * true if this service can use the parameter, if a fast test is
-         * infeasible, or if the status is unknown.
+         * Returns {@code false} if this service cannot use the parameter.
+         * Returns {@code true} if this service can use the parameter,
+         * if a fast test is infeasible, or if the status is unknown.
          *
          * <p>The security provider framework uses this method with
          * some types of services to quickly exclude non-matching
@@ -2029,8 +2031,8 @@ public abstract class Provider extends Properties {
          *
          * @param parameter the parameter to test
          *
-         * @return false if this service cannot use the specified
-         * parameter; true if it can possibly use the parameter
+         * @return {@code false} if this service cannot use the specified
+         * parameter; {@code true} if it can possibly use the parameter
          *
          * @throws InvalidParameterException if the value of parameter is
          * invalid for this type of service or if this method cannot be
@@ -2149,9 +2151,9 @@ public abstract class Provider extends Properties {
         }
 
         /**
-         * Return a String representation of this service.
+         * Return a {@code String} representation of this service.
          *
-         * @return a String representation of this service.
+         * @return a {@code String} representation of this service.
          */
         public String toString() {
             String aString = aliases.isEmpty()

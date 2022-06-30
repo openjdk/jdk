@@ -46,7 +46,7 @@ extends GeneralSecurityException {
     /**
      * Constructs an {@code InvalidAlgorithmParameterException} with no detail
      * message.
-     * A detail message is a String that describes this particular
+     * A detail message is a {@code String} that describes this particular
      * exception.
      */
     public InvalidAlgorithmParameterException() {
@@ -56,7 +56,7 @@ extends GeneralSecurityException {
     /**
      * Constructs an {@code InvalidAlgorithmParameterException} with the
      * specified detail message.
-     * A detail message is a String that describes this
+     * A detail message is a {@code String} that describes this
      * particular exception.
      *
      * @param msg the detail message.

@@ -40,14 +40,15 @@ import javax.security.auth.Subject;
 public interface Principal {
 
     /**
-     * Compares this {@code Principal} to the specified object.  Returns true
+     * Compares this {@code Principal} to the specified object.
+     * Returns {@code true}
      * if the object passed in matches the {@code Principal} represented by
      * the implementation of this interface.
      *
      * @param another {@code Principal} to compare with.
      *
-     * @return true if the {@code Principal} passed in is the same as that
-     * encapsulated by this {@code Principal}, and false otherwise.
+     * @return {@code true} if the {@code Principal} passed in is the same as
+     * that encapsulated by this {@code Principal}, and {@code false} otherwise.
      */
     boolean equals(Object another);
 
@@ -73,11 +74,11 @@ public interface Principal {
     String getName();
 
     /**
-     * Returns true if the specified subject is implied by this
+     * Returns {@code true} if the specified subject is implied by this
      * {@code Principal}.
      *
      * @implSpec
-     * The default implementation of this method returns true if
+     * The default implementation of this method returns {@code true} if
      * {@code subject} is non-null and contains at least one
      * {@code Principal} that is equal to this {@code Principal}.
      *
@@ -85,7 +86,7 @@ public interface Principal {
      * necessary.
      *
      * @param subject the {@code Subject}
-     * @return true if {@code subject} is non-null and is
+     * @return {@code true} if {@code subject} is non-null and is
      *              implied by this {@code Principal}, or false otherwise.
      * @since 1.8
      */

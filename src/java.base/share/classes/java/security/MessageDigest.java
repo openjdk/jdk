@@ -55,7 +55,7 @@ import javax.crypto.SecretKey;
  *
  * <p>Implementations are free to implement the Cloneable interface.
  * Client applications can test cloneability by attempting cloning
- * and catching the CloneNotSupportedException:
+ * and catching the {@code CloneNotSupportedException}:
  *
  * <pre>{@code
  * MessageDigest md = MessageDigest.getInstance("SHA-256");
@@ -263,7 +263,7 @@ public abstract class MessageDigest extends MessageDigestSpi {
      *
      * <p> A new {@code MessageDigest} object encapsulating the
      * {@code MessageDigestSpi} implementation from the specified Provider
-     * object is returned.  Note that the specified Provider object
+     * object is returned.  Note that the specified provider object
      * does not have to be registered in the provider list.
      *
      * @param algorithm the name of the algorithm requested.
@@ -466,7 +466,7 @@ public abstract class MessageDigest extends MessageDigestSpi {
      *
      * @param digestb the other digest to compare.
      *
-     * @return true if the digests are equal, false otherwise.
+     * @return {@code true} if the digests are equal, {@code false} otherwise.
      */
     public static boolean isEqual(byte[] digesta, byte[] digestb) {
         if (digesta == digestb) return true;

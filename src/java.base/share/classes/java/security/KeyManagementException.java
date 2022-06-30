@@ -51,7 +51,7 @@ public class KeyManagementException extends KeyException {
 
     /**
      * Constructs a {@code KeyManagementException} with no detail message. A
-     * detail message is a String that describes this particular
+     * detail message is a {@code String} that describes this particular
      * exception.
      */
     public KeyManagementException() {
@@ -60,7 +60,7 @@ public class KeyManagementException extends KeyException {
 
     /**
      * Constructs a {@code KeyManagementException} with the specified detail
-     * message. A detail message is a String that describes this
+     * message. A detail message is a {@code String} that describes this
      * particular exception.
      *
      * @param msg the detail message.

@@ -81,7 +81,7 @@ public final class AllPermission extends Permission {
 
     /**
      * Checks if the specified permission is "implied" by
-     * this object. This method always returns true.
+     * this object. This method always returns {@code true}.
      *
      * @param p the permission to check against.
      *
@@ -202,7 +202,7 @@ final class AllPermissionCollection
      *
      * @param permission the {@code Permission} object to compare
      *
-     * @return always returns true.
+     * @return always returns {@code true}.
      */
 
     public boolean implies(Permission permission) {

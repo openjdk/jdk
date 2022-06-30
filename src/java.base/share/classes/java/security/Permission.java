@@ -49,8 +49,8 @@ package java.security;
  * Thus, this is not an equality test, but rather more of a
  * subset test.
  *
- * <P> {@code Permission} objects are similar to String objects in that they
- * are immutable once they have been created. Subclasses should not
+ * <P> {@code Permission} objects are similar to {@code String} objects
+ * in that they are immutable once they have been created. Subclasses should not
  * provide methods that can change the state of a permission
  * once it has been created.
  *
@@ -89,7 +89,7 @@ public abstract class Permission implements Guard, java.io.Serializable {
      * {@code SecurityManager.checkPermission} method is called,
      * passing this permission object as the permission to check.
      * Returns silently if access is granted. Otherwise, throws
-     * a SecurityException.
+     * a {@code SecurityException}.
      *
      * @param object the object being guarded (currently ignored).
      *
@@ -122,8 +122,8 @@ public abstract class Permission implements Guard, java.io.Serializable {
      *
      * @param permission the permission to check against.
      *
-     * @return true if the specified permission is implied by this object,
-     * false if not.
+     * @return {@code true} if the specified permission is implied by this
+     * object, {@code false} if not.
      */
 
     public abstract boolean implies(Permission permission);
@@ -136,7 +136,7 @@ public abstract class Permission implements Guard, java.io.Serializable {
      *
      * @param obj the object we are testing for equality with this object.
      *
-     * @return true if both {@code Permission} objects are equivalent.
+     * @return {@code true} if both {@code Permission} objects are equivalent.
      */
 
     public abstract boolean equals(Object obj);
@@ -178,8 +178,8 @@ public abstract class Permission implements Guard, java.io.Serializable {
     }
 
     /**
-     * Returns the actions as a String. This is abstract
-     * so subclasses can defer creating a String representation until
+     * Returns the actions as a {@code String}. This is abstract
+     * so subclasses can defer creating a {@code String} representation until
      * one is needed. Subclasses should always return actions in what they
      * consider to be their
      * canonical form. For example, two FilePermission objects created via

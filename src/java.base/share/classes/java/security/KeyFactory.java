@@ -234,7 +234,7 @@ public class KeyFactory {
      *
      * <p> A new {@code KeyFactory} object encapsulating the
      * {@code KeyFactorySpi} implementation from the specified Provider
-     * object is returned.  Note that the specified Provider object
+     * object is returned.  Note that the specified provider object
      * does not have to be registered in the provider list.
      *
      * @param algorithm the name of the requested key algorithm.
@@ -297,7 +297,7 @@ public class KeyFactory {
      * Update the active {@code KeyFactorySpi} of this class and return the next
      * implementation for failover. If no more implementations are
      * available, this method returns null. However, the active spi of
-     * this class is never set to null.
+     * this class is never set to {@code null}.
      */
     private KeyFactorySpi nextSpi(KeyFactorySpi oldSpi) {
         synchronized (lock) {

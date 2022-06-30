@@ -269,7 +269,7 @@ public abstract class SignatureSpi {
      * Both this default implementation and the SUN provider do not
      * return partial digests. If the value of this parameter is less
      * than the actual signature length, this method will throw a
-     * SignatureException.
+     * {@code SignatureException}.
      * This parameter is ignored if its value is greater than or equal to
      * the actual signature length.
      *
@@ -303,7 +303,7 @@ public abstract class SignatureSpi {
      *
      * @param sigBytes the signature bytes to be verified.
      *
-     * @return true if the signature was verified, false if not.
+     * @return {@code true} if the signature was verified, {@code false} if not.
      *
      * @throws    SignatureException if the engine is not
      * initialized properly, the passed-in signature is improperly
@@ -324,7 +324,7 @@ public abstract class SignatureSpi {
      * @param offset the offset to start from in the array of bytes.
      * @param length the number of bytes to use, starting at offset.
      *
-     * @return true if the signature was verified, false if not.
+     * @return {@code true} if the signature was verified, {@code false} if not.
      *
      * @throws    SignatureException if the engine is not
      * initialized properly, the passed-in signature is improperly

@@ -123,7 +123,8 @@ public final class CodeSigner implements Serializable {
      *
      * @param obj the object to test for equality with this object.
      *
-     * @return true if the objects are considered equal, false otherwise.
+     * @return {@code true} if the objects are considered equal,
+     * {@code false} otherwise.
      */
     public boolean equals(Object obj) {
         if ((!(obj instanceof CodeSigner that))) {

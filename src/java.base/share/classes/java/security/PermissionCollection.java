@@ -132,8 +132,8 @@ public abstract class PermissionCollection implements java.io.Serializable {
      *
      * @param permission the Permission object to compare.
      *
-     * @return true if "permission" is implied by the  permissions in
-     * the collection, false if not.
+     * @return {@code true} if "permission" is implied by the  permissions in
+     * the collection, {@code false} if not.
      */
     public abstract boolean implies(Permission permission);
 
@@ -187,8 +187,8 @@ public abstract class PermissionCollection implements java.io.Serializable {
      * <p>By default, the object is <i>not</i> readonly. It can be set to
      * readonly by a call to {@code setReadOnly}.
      *
-     * @return true if this {@code PermissionCollection} object is marked
-     * as readonly, false otherwise.
+     * @return {@code true} if this {@code PermissionCollection} object is
+     * marked as readonly, {@code false} otherwise.
      */
     public boolean isReadOnly() {
         return readOnly;

@@ -41,7 +41,7 @@ public class ProviderException extends RuntimeException {
 
     /**
      * Constructs a {@code ProviderException} with no detail message. A
-     * detail message is a String that describes this particular
+     * detail message is a {@code String} that describes this particular
      * exception.
      */
     public ProviderException() {
@@ -50,7 +50,7 @@ public class ProviderException extends RuntimeException {
 
     /**
      * Constructs a {@code ProviderException} with the specified detail
-     * message. A detail message is a String that describes this
+     * message. A detail message is a {@code String} that describes this
      * particular exception.
      *
      * @param s the detail message.

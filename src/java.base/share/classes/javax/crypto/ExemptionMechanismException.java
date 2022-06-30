@@ -40,8 +40,8 @@ public class ExemptionMechanismException extends GeneralSecurityException {
 
     /**
      * Constructs an {@code ExemptionMechanismException} with no detailed
-     * message. (A detailed message is a String that describes this particular
-     * exception.)
+     * message. (A detailed message is a {@code String} that describes this
+     * particular exception.)
      */
     public ExemptionMechanismException() {
         super();
@@ -49,7 +49,7 @@ public class ExemptionMechanismException extends GeneralSecurityException {
 
     /**
      * Constructs an {@code ExemptionMechanismException} with the specified
-     * detailed message. (A detailed message is a String that describes
+     * detailed message. (A detailed message is a {@code String}  that describes
      * this particular exception.)
      *
      * @param msg the detailed message.

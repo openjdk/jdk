@@ -57,7 +57,7 @@ import sun.security.util.Debug;
  * {@link #init(int, java.security.SecureRandom) init}
  * method in this {@code KeyGenerator} class that takes these two universally
  * shared types of arguments. There is also one that takes just a
- * {@code keysize} argument, and uses the SecureRandom implementation
+ * {@code keysize} argument, and uses the {@code SecureRandom} implementation
  * of the highest-priority installed provider as the source of randomness
  * (or a system-provided source of randomness if none of the installed
  * providers supply a SecureRandom implementation), and one that takes just a
@@ -204,11 +204,11 @@ public class KeyGenerator {
      * Returns a {@code KeyGenerator} object that generates secret keys
      * for the specified algorithm.
      *
-     * <p> This method traverses the list of registered security Providers,
-     * starting with the most preferred Provider.
+     * <p> This method traverses the list of registered security providers,
+     * starting with the most preferred provider.
      * A new {@code KeyGenerator} object encapsulating the
      * {@code KeyGeneratorSpi} implementation from the first
-     * Provider that supports the specified algorithm is returned.
+     * provider that supports the specified algorithm is returned.
      *
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
@@ -294,8 +294,8 @@ public class KeyGenerator {
      * for the specified algorithm.
      *
      * <p> A new {@code KeyGenerator} object encapsulating the
-     * {@code KeyGeneratorSpi} implementation from the specified Provider
-     * object is returned.  Note that the specified Provider object
+     * {@code KeyGeneratorSpi} implementation from the specified provider
+     * object is returned.  Note that the specified provider object
      * does not have to be registered in the provider list.
      *
      * @param algorithm the standard name of the requested key algorithm.
@@ -343,8 +343,8 @@ public class KeyGenerator {
     /**
      * Update the active spi of this class and return the next
      * implementation for failover. If no more implementations are
-     * available, this method returns null. However, the active spi of
-     * this class is never set to null.
+     * available, this method returns {@code null}. However, the active spi of
+     * this class is never set to {@code null}.
      */
     private KeyGeneratorSpi nextSpi(KeyGeneratorSpi oldSpi,
             boolean reinit) {

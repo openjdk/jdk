@@ -302,13 +302,13 @@ implements java.io.Serializable
     }
 
     /**
-     * This method always returns false for unresolved permissions.
+     * This method always returns {@code false} for unresolved permissions.
      * That is, an {@code UnresolvedPermission} is never considered to
      * imply another permission.
      *
      * @param p the permission to check against.
      *
-     * @return false.
+     * @return {@code false}.
      */
     public boolean implies(Permission p) {
         return false;

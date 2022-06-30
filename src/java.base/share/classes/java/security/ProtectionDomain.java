@@ -61,8 +61,9 @@ import sun.security.util.SecurityConstants;
 public class ProtectionDomain {
 
     /**
-     * If true, {@link #impliesWithAltFilePerm} will try to be compatible on
-     * FilePermission checking even if a 3rd-party Policy implementation is set.
+     * If {@code true}, {@link #impliesWithAltFilePerm} will try to be
+     * compatible on FilePermission checking even if a 3rd-party Policy
+     * implementation is set.
      */
     private static final boolean filePermCompatInPD =
             "true".equals(GetPropertyAction.privilegedGetProperty(
@@ -164,7 +165,8 @@ public class ProtectionDomain {
      * Permissions object.
      * <p>
      * The permissions granted to this domain are static, i.e.
-     * invoking the {@link #staticPermissionsOnly()} method returns true.
+     * invoking the {@link #staticPermissionsOnly()} method returns
+     * {@code true}.
      * They contain only the ones passed to this constructor and
      * the current Policy will not be consulted.
      *
@@ -281,11 +283,11 @@ public class ProtectionDomain {
     }
 
     /**
-     * Returns true if this domain contains only static permissions
+     * Returns {@code true} if this domain contains only static permissions
      * and does not check the current {@code Policy} at the time of
      * permission checking.
      *
-     * @return true if this domain contains only static permissions.
+     * @return {@code true} if this domain contains only static permissions.
      *
      * @since 9
      */
@@ -302,7 +304,7 @@ public class ProtectionDomain {
      * or it was bound to a dynamically mapped set of permissions.
      * <p>
      * If the {@link #staticPermissionsOnly()} method returns
-     * true, then the permission will only be checked against the
+     * {@code true}, then the permission will only be checked against the
      * PermissionCollection supplied at construction.
      * <p>
      * Otherwise, the permission will be checked against the combination
@@ -311,7 +313,7 @@ public class ProtectionDomain {
      *
      * @param perm the Permission object to check.
      *
-     * @return true if {@code perm} is implied by this ProtectionDomain.
+     * @return {@code true} if {@code perm} is implied by this ProtectionDomain.
      */
     @SuppressWarnings("removal")
     public boolean implies(Permission perm) {
@@ -401,7 +403,7 @@ public class ProtectionDomain {
     }
 
     /**
-     * Convert a {@code ProtectionDomain} to a String.
+     * Convert a {@code ProtectionDomain} to a {@code String}.
      */
     @Override public String toString() {
         String pals = "<no principals>";
@@ -442,7 +444,7 @@ public class ProtectionDomain {
     }
 
     /**
-     * Return true (merge policy permissions) in the following cases:
+     * Return {@code true} (merge policy permissions) in the following cases:
      *
      * . SecurityManager is {@code null}
      *

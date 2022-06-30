@@ -322,16 +322,17 @@ public abstract class Identity implements Principal, Serializable {
      * Tests for equality between the specified object and this
      * {@code Identity}.
      * This first tests to see if the entities actually refer to the same
-     * object, in which case it returns true. Next, it checks to see if
+     * object, in which case it returns {@code true}. Next, it checks to see if
      * the entities have the same name and the same scope. If they do,
-     * the method returns true. Otherwise, it calls
+     * the method returns {@code true}. Otherwise, it calls
      * {@link #identityEquals(Identity) identityEquals}, which subclasses should
      * override.
      *
      * @param identity the object to test for equality with this
      * {@code Identity}.
      *
-     * @return true if the objects are considered equal, false otherwise.
+     * @return {@code true} if the objects are considered equal,
+     * {@code false} otherwise.
      *
      * @see #identityEquals
      */
@@ -348,14 +349,14 @@ public abstract class Identity implements Principal, Serializable {
      * Tests for equality between the specified {@code Identity} and this
      * {@code Identity}.
      * This method should be overridden by subclasses to test for equality.
-     * The default behavior is to return true if the names and public keys
-     * are equal.
+     * The default behavior is to return {@code true} if the names and public
+     * keys are equal.
      *
      * @param identity the identity to test for equality with this
      * {@code identity}.
      *
-     * @return true if the identities are considered equal, false
-     * otherwise.
+     * @return {@code true} if the identities are considered equal,
+     * {@code false} otherwise.
      *
      * @see #equals
      */
@@ -423,7 +424,7 @@ public abstract class Identity implements Principal, Serializable {
      * @param detailed whether or not to provide detailed information.
      *
      * @return information about this {@code Identity}. If {@code detailed}
-     * is true, then this method returns more information than that
+     * is {@code true}, then this method returns more information than that
      * provided by the {@code toString} method without any arguments.
      *
      * @throws     SecurityException  if a security manager exists and its

@@ -86,10 +86,10 @@ public abstract class KeyPairGeneratorSpi {
      * abstract class. (For backwards compatibility, it cannot be abstract.)
      * It may be overridden by a provider to initialize the key pair
      * generator. Such an override
-     * is expected to throw an InvalidAlgorithmParameterException if
+     * is expected to throw an {@code InvalidAlgorithmParameterException} if
      * a parameter is inappropriate for this key pair generator.
      * If this method is not overridden, it always throws an
-     * UnsupportedOperationException.
+     * {@code UnsupportedOperationException}.
      *
      * @param params the parameter set used to generate the keys.
      *

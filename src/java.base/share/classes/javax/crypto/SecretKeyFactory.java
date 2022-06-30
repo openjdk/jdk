@@ -217,7 +217,7 @@ public class SecretKeyFactory {
      *
      * <p> A new {@code SecretKeyFactory} object encapsulating the
      * {@code SecretKeyFactorySpi} implementation from the specified Provider
-     * object is returned.  Note that the specified Provider object
+     * object is returned.  Note that the specified provider object
      * does not have to be registered in the provider list.
      *
      * @param algorithm the standard name of the requested secret-key

@@ -60,8 +60,8 @@ public interface AlgorithmConstraints {
      * @param parameters the algorithm parameters, or {@code null}
      *     if no additional parameters
      *
-     * @return true if the algorithm is permitted and can be used for all
-     *     the specified cryptographic primitives
+     * @return {@code true} if the algorithm is permitted and can be used for
+     *     all the specified cryptographic primitives
      *
      * @throws IllegalArgumentException if primitives or algorithm is
      *     {@code null} or empty
@@ -78,7 +78,7 @@ public interface AlgorithmConstraints {
      * @param primitives a set of cryptographic primitives
      * @param key the key
      *
-     * @return true if the key can be used for all the specified
+     * @return {@code true} if the key can be used for all the specified
      *     cryptographic primitives
      *
      * @throws IllegalArgumentException if primitives is {@code null}
@@ -96,7 +96,7 @@ public interface AlgorithmConstraints {
      * @param parameters the algorithm parameters, or {@code null}
      *     if no additional parameters
      *
-     * @return true if the key and the algorithm can be used for all the
+     * @return {@code true} if the key and the algorithm can be used for all the
      *     specified cryptographic primitives
      *
      * @throws IllegalArgumentException if primitives or algorithm is

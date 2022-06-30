@@ -79,11 +79,11 @@ public class CodeSource implements java.io.Serializable {
     private transient CertificateFactory factory = null;
 
     /**
-     * A String form of the URL for use as a key in HashMaps/Sets. The String
-     * form should behave in the same manner as the URL when compared for
-     * equality in a HashMap/Set, except that no nameservice lookup is done
-     * on the hostname (only string comparison), and the fragment is not
-     * considered.
+     * A {@code String} form of the URL for use as a key in HashMaps/Sets.
+     * The {@code String} form should behave in the same manner as the URL
+     * when compared for equality in a HashMap/Set, except that no nameservice
+     * lookup is done on the hostname (only string comparison), and the
+     * fragment is not considered.
      */
     private transient String locationNoFragString;
 
@@ -151,7 +151,8 @@ public class CodeSource implements java.io.Serializable {
      *
      * @param obj the object to test for equality with this object.
      *
-     * @return true if the objects are considered equal, false otherwise.
+     * @return {@code true} if the objects are considered equal,
+     * {@code false} otherwise.
      */
     @Override
     public boolean equals(Object obj) {
@@ -177,7 +178,8 @@ public class CodeSource implements java.io.Serializable {
     }
 
     /**
-     * Returns a String form of the URL for use as a key in HashMaps/Sets.
+     * Returns a {@code String} form of the URL for use as a key in
+     * HashMaps/Sets.
      */
     String getLocationNoFragString() {
         return locationNoFragString;
@@ -252,7 +254,8 @@ public class CodeSource implements java.io.Serializable {
      * {@code CodeSource}.
      * <p>
      * More specifically, this method makes the following checks.
-     * If any fail, it returns false. If they all succeed, it returns true.
+     * If any fail, it returns {@code false}. If they all succeed, it returns
+     * {@code true}.
      * <ul>
      * <li> <i>codesource</i> must not be null.
      * <li> If this object's certificates are not null, then all
@@ -315,8 +318,8 @@ public class CodeSource implements java.io.Serializable {
      *
      * @param codesource {@code CodeSource} to compare against.
      *
-     * @return true if the specified codesource is implied by this codesource,
-     * false if not.
+     * @return {@code true} if the specified codesource is implied by this
+     * codesource, {@code false} if not.
      */
     public boolean implies(CodeSource codesource)
     {
@@ -327,11 +330,11 @@ public class CodeSource implements java.io.Serializable {
     }
 
     /**
-     * Returns true if all the certs in this
+     * Returns {@code true} if all the certs in this
      * {@code CodeSource} are also in <i>that</i>.
      *
      * @param that the {@code CodeSource} to check against.
-     * @param strict if true then a strict equality match is performed.
+     * @param strict if {@code true} then a strict equality match is performed.
      *               Otherwise, a subset match is performed.
      */
     boolean matchCerts(CodeSource that, boolean strict)
@@ -385,7 +388,7 @@ public class CodeSource implements java.io.Serializable {
 
 
     /**
-     * Returns true if two CodeSource's have the "same" location.
+     * Returns {@code true} if two CodeSource's have the "same" location.
      *
      * @param that {@code CodeSource} to compare against
      */

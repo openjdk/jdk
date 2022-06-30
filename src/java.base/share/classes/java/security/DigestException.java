@@ -38,7 +38,7 @@ public class DigestException extends GeneralSecurityException {
 
     /**
      * Constructs a {@code DigestException} with no detail message.  (A
-     * detail message is a String that describes this particular
+     * detail message is a {@code String} that describes this particular
      * exception.)
      */
     public DigestException() {
@@ -47,7 +47,7 @@ public class DigestException extends GeneralSecurityException {
 
     /**
      * Constructs a {@code DigestException} with the specified detail
-     * message.  (A detail message is a String that describes this
+     * message.  (A detail message is a {@code String} that describes this
      * particular exception.)
      *
      * @param msg the detail message.

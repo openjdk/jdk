@@ -43,7 +43,7 @@ public class KeyException extends GeneralSecurityException {
 
     /**
      * Constructs a {@code KeyException} with no detail message. A detail
-     * message is a String that describes this particular exception.
+     * message is a {@code String} that describes this particular exception.
      */
     public KeyException() {
         super();
@@ -51,7 +51,7 @@ public class KeyException extends GeneralSecurityException {
 
     /**
      * Constructs a {@code KeyException} with the specified detail message.
-     * A detail message is a String that describes this particular
+     * A detail message is a {@code String} that describes this particular
      * exception.
      *
      * @param msg the detail message.

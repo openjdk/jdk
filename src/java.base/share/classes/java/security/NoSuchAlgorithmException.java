@@ -40,7 +40,7 @@ public class NoSuchAlgorithmException extends GeneralSecurityException {
 
     /**
      * Constructs a {@code NoSuchAlgorithmException} with no detail
-     * message. A detail message is a String that describes this
+     * message. A detail message is a {@code String} that describes this
      * particular exception.
      */
     public NoSuchAlgorithmException() {
@@ -49,7 +49,7 @@ public class NoSuchAlgorithmException extends GeneralSecurityException {
 
     /**
      * Constructs a {@code NoSuchAlgorithmException} with the specified
-     * detail message. A detail message is a String that describes
+     * detail message. A detail message is a {@code String} that describes
      * this particular exception, which may, for example, specify which
      * algorithm is not available.
      *

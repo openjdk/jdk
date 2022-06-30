@@ -352,7 +352,7 @@ public final class SecurityPermission extends BasicPermission {
     /**
      * Creates a new {@code SecurityPermission} object with the specified name.
      * The name is the symbolic name of the {@code SecurityPermission}, and the
-     * actions String is currently unused and should be {@code null}.
+     * actions {@code String} is currently unused and should be {@code null}.
      *
      * @param name the name of the {@code SecurityPermission}
      * @param actions should be {@code null}.

@@ -101,13 +101,13 @@ public class PrivilegedActionException extends Exception {
     };
 
     /**
-     * Reconstitutes the PrivilegedActionException instance from a stream
-     * and initialize the cause properly when deserializing from an older
+     * Reconstitutes the {@code PrivilegedActionException} instance from a
+     * stream and initialize the cause properly when deserializing from an older
      * version.
      *
      * <p>The getException and getCause method returns the private "exception"
-     * field in the older implementation and PrivilegedActionException::cause
-     * was set to null.
+     * field in the older implementation and
+     * {@code PrivilegedActionException::cause} was set to {@code null}.
      *
      * @param  s the {@code ObjectInputStream} from which data is read
      * @throws IOException if an I/O error occurs

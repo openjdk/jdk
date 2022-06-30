@@ -501,8 +501,8 @@ public abstract class Policy {
      * Returns a {@code Policy} object of the specified type.
      *
      * <p> A new {@code Policy} object encapsulating the
-     * {@code PolicySpi} implementation from the specified Provider
-     * object is returned.  Note that the specified Provider object
+     * {@code PolicySpi} implementation from the specified provider
+     * object is returned.  Note that the specified provider object
      * does not have to be registered in the provider list.
      *
      * @param type the specified Policy type.  See the Policy section in the
@@ -736,7 +736,7 @@ public abstract class Policy {
      * @param domain the ProtectionDomain to test
      * @param permission the Permission object to be tested for implication.
      *
-     * @return true if "permission" is a proper subset of a permission
+     * @return {@code true} if "permission" is a proper subset of a permission
      * granted to this ProtectionDomain.
      *
      * @see java.security.ProtectionDomain
@@ -880,8 +880,8 @@ public abstract class Policy {
          *
          * @param permission the Permission object to compare.
          *
-         * @return true if "permission" is implied by the permissions in
-         * the collection, false if not.
+         * @return {@code true} if "permission" is implied by the permissions in
+         * the collection, {@code false} if not.
          */
         @Override public boolean implies(Permission permission) {
             return perms.implies(permission);

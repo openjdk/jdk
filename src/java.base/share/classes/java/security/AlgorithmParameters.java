@@ -113,11 +113,11 @@ public class AlgorithmParameters {
     /**
      * Returns a parameter object for the specified algorithm.
      *
-     * <p> This method traverses the list of registered security Providers,
-     * starting with the most preferred Provider.
+     * <p> This method traverses the list of registered security providers,
+     * starting with the most preferred provider.
      * A new {@code AlgorithmParameters} object encapsulating the
      * {@code AlgorithmParametersSpi} implementation from the first
-     * Provider that supports the specified algorithm is returned.
+     * provider that supports the specified algorithm is returned.
      *
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
@@ -222,7 +222,7 @@ public class AlgorithmParameters {
      *
      * <p> A new {@code AlgorithmParameters} object encapsulating the
      * {@code AlgorithmParametersSpi} implementation from the specified
-     * Provider object is returned.  Note that the specified Provider object
+     * provider object is returned.  Note that the specified provider object
      * does not have to be registered in the provider list.
      *
      * <p>The returned parameter object must be initialized via a call to

@@ -410,7 +410,7 @@ public abstract class Signature extends SignatureSpi {
      *
      * <p> A new {@code Signature} object encapsulating the
      * {@code SignatureSpi} implementation from the specified Provider
-     * object is returned.  Note that the specified Provider object
+     * object is returned.  Note that the specified provider object
      * does not have to be registered in the provider list.
      *
      * @param algorithm the name of the algorithm requested.
@@ -778,7 +778,7 @@ public abstract class Signature extends SignatureSpi {
      *
      * @param signature the signature bytes to be verified.
      *
-     * @return true if the signature was verified, false if not.
+     * @return {@code true} if the signature was verified, {@code false} if not.
      *
      * @throws    SignatureException if this {@code Signature} object is not
      * initialized properly, the passed-in signature is improperly
@@ -808,7 +808,7 @@ public abstract class Signature extends SignatureSpi {
      * @param offset the offset to start from in the array of bytes.
      * @param length the number of bytes to use, starting at offset.
      *
-     * @return true if the signature was verified, false if not.
+     * @return {@code true} if the signature was verified, {@code false} if not.
      *
      * @throws    SignatureException if this {@code Signature} object is not
      * initialized properly, the passed-in signature is improperly

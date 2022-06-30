@@ -43,8 +43,8 @@ import java.lang.reflect.*;
  *
  * The jurisdiction policy file has the same syntax as JDK policy files except
  * that JCE has new permission classes called
- * <code>javax.crypto.CryptoPermission</code> and
- * <code>javax.crypto.CryptoAllPermission</code>.
+ * {@code javax.crypto.CryptoPermission} and
+ * {@code javax.crypto.CryptoAllPermission}.
  *
  * The format of a permission entry in the jurisdiction policy file is:
  *
@@ -75,16 +75,16 @@ final class CryptoPolicyParser {
     private boolean allPermEntryFound = false;
 
     /**
-     * Creates a <code>CryptoPolicyParser</code> object.
+     * Creates a {@code CryptoPolicyParser} object.
      */
     CryptoPolicyParser() {
         grantEntries = new Vector<>();
     }
 
     /**
-     * Reads a policy configuration using a <code>Reader</code> object. <p>
+     * Reads a policy configuration using a {@code Reader} object. <p>
      *
-     * @param policy the policy <code>Reader</code> object.
+     * @param policy the policy {@code Reader} object.
      *
      * @exception ParsingException if the policy configuration
      * contains a syntax error.
@@ -539,7 +539,7 @@ final class CryptoPolicyParser {
 
     /**
      * Each grant entry in the policy configuration file is represented by a
-     * <code>GrantEntry</code> object.
+     * {@code GrantEntry} object.
      * <p>
      * For example, the entry
      * <pre>
@@ -589,7 +589,7 @@ final class CryptoPolicyParser {
         }
 
         /**
-         * Enumerate all the permission entries in this <code>GrantEntry</code>.
+         * Enumerate all the permission entries in this {@code GrantEntry}.
          */
         Enumeration<CryptoPermissionEntry> permissionElements(){
             return permissionEntries.elements();
@@ -599,7 +599,7 @@ final class CryptoPolicyParser {
 
     /**
      * Each crypto permission entry in the policy configuration file is
-     * represented by a <code>CryptoPermissionEntry</code> object.
+     * represented by a {@code CryptoPermissionEntry} object.
      * <p>
      * For example, the entry
      * <pre>
@@ -693,7 +693,7 @@ final class CryptoPolicyParser {
         private static final long serialVersionUID = 7147241245566588374L;
 
         /**
-         * Constructs a <code>ParsingException</code> with the specified
+         * Constructs a {@code ParsingException} with the specified
          * detail message.
          * @param msg the detail message.
          */

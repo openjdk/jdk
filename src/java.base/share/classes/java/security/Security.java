@@ -876,7 +876,7 @@ public final class Security {
     }
 
     /*
-     * Returns true if the given provider satisfies
+     * Returns {@code true} if the given provider satisfies
      * the selection criterion key:value.
      */
     private static boolean isCriterionSatisfied(Provider prov,
@@ -935,8 +935,8 @@ public final class Security {
     }
 
     /*
-     * Returns true if the attribute is a standard attribute;
-     * otherwise, returns false.
+     * Returns {@code true} if the attribute is a standard attribute;
+     * otherwise, returns {@code false}.
      */
     private static boolean isStandardAttr(String attribute) {
         // For now, we just have two standard attributes:
@@ -948,8 +948,8 @@ public final class Security {
     }
 
     /*
-     * Returns true if the requested attribute value is supported;
-     * otherwise, returns false.
+     * Returns {@code true} if the requested attribute value is supported;
+     * otherwise, returns {@code false}.
      */
     private static boolean isConstraintSatisfied(String attribute,
                                                  String value,
@@ -1027,10 +1027,10 @@ public final class Security {
     }
 
     /**
-     * Returns a Set of Strings containing the names of all available
-     * algorithms or types for the specified Java cryptographic service
-     * (e.g., Signature, MessageDigest, Cipher, Mac, KeyStore). Returns
-     * an empty Set if there is no provider that supports the
+     * Returns a Set of {@code String} objects containing the names of all
+     * available algorithms or types for the specified Java cryptographic
+     * service (e.g., Signature, MessageDigest, Cipher, Mac, KeyStore).
+     * Returns an empty Set if there is no provider that supports the
      * specified service or if serviceName is {@code null}. For a complete list
      * of Java cryptographic services, please see the
      * {@extLink security_guide_jca
@@ -1041,9 +1041,9 @@ public final class Security {
      * service (e.g., Signature, MessageDigest, Cipher, Mac, KeyStore).
      * Note: this parameter is case-insensitive.
      *
-     * @return a Set of Strings containing the names of all available
-     * algorithms or types for the specified Java cryptographic service
-     * or an empty set if no provider supports the specified service.
+     * @return a Set of {@code String} objects containing the names of all
+     * available algorithms or types for the specified Java cryptographic
+     * service or an empty set if no provider supports the specified service.
      *
      * @since 1.4
      */

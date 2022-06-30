@@ -135,7 +135,7 @@ public abstract class BasicPermission extends Permission
     /**
      * Creates a new {@code BasicPermission} object with the specified name.
      * The name is the symbolic name of the {@code BasicPermission}, and the
-     * actions String is currently unused.
+     * actions {@code String} is currently unused.
      *
      * @param name the name of the {@code BasicPermission}.
      * @param actions ignored.
@@ -152,7 +152,7 @@ public abstract class BasicPermission extends Permission
      * Checks if the specified permission is "implied" by
      * this object.
      * <P>
-     * More specifically, this method returns true if:
+     * More specifically, this method returns {@code true} if:
      * <ul>
      * <li> {@code p}'s class is the same as this object's class, and
      * <li> {@code p}'s name equals or (in the case of wildcards)
@@ -162,8 +162,8 @@ public abstract class BasicPermission extends Permission
      *
      * @param p the permission to check against.
      *
-     * @return true if the passed permission is equal to or
-     * implied by this permission, false otherwise.
+     * @return {@code true} if the passed permission is equal to or
+     * implied by this permission, {@code false} otherwise.
      */
     @Override
     public boolean implies(Permission p) {
@@ -198,9 +198,9 @@ public abstract class BasicPermission extends Permission
      * and has the same name as this object.
      *
      * @param obj the object we are testing for equality with this object.
-     * @return true if {@code obj}'s class is the same as this object's class
-     *  and has the same name as this {@code BasicPermission} object,
-     *  false otherwise.
+     * @return {@code true} if {@code obj}'s class is the same as this
+     * object's class and has the same name as this {@code BasicPermission}
+     * object, {@code false} otherwise.
      */
     @Override
     public boolean equals(Object obj) {
@@ -399,8 +399,8 @@ final class BasicPermissionCollection
      *
      * @param permission the Permission object to compare
      *
-     * @return true if "permission" is a proper subset of a permission in
-     * the set, false if not.
+     * @return {@code true} if "permission" is a proper subset of a
+     * permission in the set, {@code false} if not.
      */
     @Override
     public boolean implies(Permission permission) {

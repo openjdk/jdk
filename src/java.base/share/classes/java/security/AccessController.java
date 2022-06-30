@@ -972,7 +972,7 @@ public final class AccessController {
      * {@code ProtectionDomain}.
      *
      * @return the access control context based on the current stack or
-     *         null if there was only privileged system code.
+     *         {@code null} if there was only privileged system code.
      */
 
     @SuppressWarnings("removal")

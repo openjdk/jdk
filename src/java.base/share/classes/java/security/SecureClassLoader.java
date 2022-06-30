@@ -44,7 +44,7 @@ public class SecureClassLoader extends ClassLoader {
 
     /*
      * Map that maps the CodeSource to a ProtectionDomain. The key is a
-     * CodeSourceKey class that uses a String instead of a URL to avoid
+     * CodeSourceKey class that uses a {@code String} instead of a URL to avoid
      * potential expensive name service lookups. This does mean that URLs that
      * are equivalent after nameservice lookup will be placed in separate
      * ProtectionDomains; however during policy enforcement these URLs will be

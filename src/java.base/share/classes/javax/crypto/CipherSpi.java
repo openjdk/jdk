@@ -224,7 +224,7 @@ public abstract class CipherSpi {
     public CipherSpi() {}
 
     /**
-     * Sets the mode of this {@code Cipher}.
+     * Sets the mode of this cipher.
      *
      * @param mode the cipher mode
      *
@@ -235,7 +235,7 @@ public abstract class CipherSpi {
         throws NoSuchAlgorithmException;
 
     /**
-     * Sets the padding mechanism of this {@code Cipher}.
+     * Sets the padding mechanism of this cipher.
      *
      * @param padding the padding mechanism
      *
@@ -285,7 +285,7 @@ public abstract class CipherSpi {
     protected abstract byte[] engineGetIV();
 
     /**
-     * Returns the parameters used with this {@code Cipher}.
+     * Returns the parameters used with this cipher.
      *
      * <p>The returned parameters may be the same that were used to initialize
      * this cipher, or may contain additional default or random parameter
@@ -298,10 +298,10 @@ public abstract class CipherSpi {
     protected abstract AlgorithmParameters engineGetParameters();
 
     /**
-     * Initializes this {@code Cipher} with a key and a source
+     * Initializes this {@code Cipher} object with a key and a source
      * of randomness.
      *
-     * <p>The {@code Cipher} is initialized for one of the following four
+     * <p>The {@code Cipher} object is initialized for one of the following four
      * operations:
      * encryption, decryption, key wrapping or key unwrapping, depending on
      * the value of {@code opmode}.
@@ -328,11 +328,11 @@ public abstract class CipherSpi {
      *
      * <p>Note that when a {@code Cipher} object is initialized, it loses all
      * previously-acquired state. In other words, initializing a {@code Cipher}
-     * is equivalent to creating a new instance of that {@code Cipher} and
-     * initializing it.
+     * object is equivalent to creating a new instance of that
+     * {@code Cipher} object and initializing it.
      *
-     * @param opmode the operation mode of this {@code Cipher} (this is one of
-     * the following:
+     * @param opmode the operation mode of this {@code Cipher} object
+     * (this is one of the following:
      * {@code ENCRYPT_MODE}, {@code DECRYPT_MODE},
      * {@code WRAP_MODE} or {@code UNWRAP_MODE})
      * @param key the encryption key
@@ -351,10 +351,10 @@ public abstract class CipherSpi {
         throws InvalidKeyException;
 
     /**
-     * Initializes this {@code Cipher} with a key, a set of
+     * Initializes this {@code Cipher} object with a key, a set of
      * algorithm parameters, and a source of randomness.
      *
-     * <p>The {@code Cipher} is initialized for one of the following four
+     * <p>The {@code Cipher} object is initialized for one of the following four
      * operations:
      * encryption, decryption, key wrapping or key unwrapping, depending on
      * the value of {@code opmode}.
@@ -381,11 +381,11 @@ public abstract class CipherSpi {
      *
      * <p>Note that when a {@code Cipher} object is initialized, it loses all
      * previously-acquired state. In other words, initializing a {@code Cipher}
-     * is equivalent to creating a new instance of that {@code Cipher} and
-     * initializing it.
+     * object is equivalent to creating a new instance of that
+     * {@code Cipher} and initializing it.
      *
-     * @param opmode the operation mode of this cipher (this is one of
-     * the following:
+     * @param opmode the operation mode of this {@code Cipher} object
+     * (this is one of the following:
      * {@code ENCRYPT_MODE}, {@code DECRYPT_MODE},
      * {@code WRAP_MODE}, or {@code UNWRAP_MODE})
      * @param key the encryption key
@@ -408,10 +408,10 @@ public abstract class CipherSpi {
         throws InvalidKeyException, InvalidAlgorithmParameterException;
 
     /**
-     * Initializes this {@code Cipher} with a key, a set of
+     * Initializes this {@code Cipher} object with a key, a set of
      * algorithm parameters, and a source of randomness.
      *
-     * <p>The {@code Cipher} is initialized for one of the following four
+     * <p>The {@code Cipher} object is initialized for one of the following four
      * operations:
      * encryption, decryption, key wrapping or key unwrapping, depending on
      * the value of {@code opmode}.
@@ -438,8 +438,8 @@ public abstract class CipherSpi {
      *
      * <p>Note that when a {@code Cipher} object is initialized, it loses all
      * previously-acquired state. In other words, initializing a {@code Cipher}
-     * is equivalent to creating a new instance of that {@code Cipher} and
-     * initializing it.
+     * object is equivalent to creating a new instance of that
+     * {@code Cipher} object and initializing it.
      *
      * @param opmode the operation mode of this {@code Cipher} (this is one of
      * the following:
@@ -466,7 +466,7 @@ public abstract class CipherSpi {
 
     /**
      * Continues a multiple-part encryption or decryption operation
-     * (depending on how this {@code Cipher} was initialized),
+     * (depending on how this {@code Cipher} object was initialized),
      * processing another data part.
      *
      * <p>The first {@code inputLen} bytes in the {@code input}
@@ -486,7 +486,7 @@ public abstract class CipherSpi {
 
     /**
      * Continues a multiple-part encryption or decryption operation
-     * (depending on how this {@code Cipher} was initialized),
+     * (depending on how this {@code Cipher} object was initialized),
      * processing another data part.
      *
      * <p>The first {@code inputLen} bytes in the {@code input}
@@ -517,7 +517,7 @@ public abstract class CipherSpi {
 
     /**
      * Continues a multiple-part encryption or decryption operation
-     * (depending on how this {@code Cipher} was initialized),
+     * (depending on how this {@code Cipher} object was initialized),
      * processing another data part.
      *
      * <p>All {@code input.remaining()} bytes starting at
@@ -559,7 +559,7 @@ public abstract class CipherSpi {
      * Encrypts or decrypts data in a single-part operation,
      * or finishes a multiple-part operation.
      * The data is encrypted or decrypted, depending on how this {@code Cipher}
-     * was initialized.
+     * object was initialized.
      *
      * <p>The first {@code inputLen} bytes in the {@code input}
      * buffer, starting at {@code inputOffset} inclusive, and any input
@@ -570,15 +570,15 @@ public abstract class CipherSpi {
      * case of decryption.
      * The result is stored in a new buffer.
      *
-     * <p>Upon finishing, this method resets this {@code Cipher} to the state
-     * it was in when previously initialized via a call to
+     * <p>Upon finishing, this method resets this {@code Cipher} object
+     * to the state it was in when previously initialized via a call to
      * {@code engineInit}.
      * That is, the object is reset and available to encrypt or decrypt
      * (depending on the operation mode that was specified in the call to
      * {@code engineInit}) more data.
      *
-     * <p>Note: if any exception is thrown, this {@code Cipher} may need to
-     * be reset before it can be used again.
+     * <p>Note: if any exception is thrown, this {@code Cipher} object
+     * may need to be reset before it can be used again.
      *
      * @param input the input buffer
      * @param inputOffset the offset in {@code input} where the input starts
@@ -591,9 +591,9 @@ public abstract class CipherSpi {
      * input length of the data processed by this cipher is not a multiple of
      * block size; or if this encryption algorithm is unable to
      * process the input data provided
-     * @throws BadPaddingException if this {@code Cipher} is in decryption mode,
-     * and (un)padding has been requested, but the decrypted data is not
-     * bounded by the appropriate padding bytes
+     * @throws BadPaddingException if this {@code Cipher} object is in
+     * decryption mode, and (un)padding has been requested, but the decrypted
+     * data is not bounded by the appropriate padding bytes
      * @throws AEADBadTagException if this {@code Cipher} is decrypting in an
      * AEAD mode (such as GCM or CCM), and the received authentication tag
      * does not match the calculated value
@@ -651,8 +651,8 @@ public abstract class CipherSpi {
      * @throws BadPaddingException if this {@code Cipher} is in decryption mode,
      * and (un)padding has been requested, but the decrypted data is not
      * bounded by the appropriate padding bytes
-     * @throws AEADBadTagException if this {@code Cipher} is decrypting in an
-     * AEAD mode (such as GCM or CCM), and the received authentication tag
+     * @throws AEADBadTagException if this {@code Cipher} object is decrypting
+     * in an AEAD mode (such as GCM or CCM), and the received authentication tag
      * does not match the calculated value
      */
     protected abstract int engineDoFinal(byte[] input, int inputOffset,
@@ -665,7 +665,7 @@ public abstract class CipherSpi {
      * Encrypts or decrypts data in a single-part operation,
      * or finishes a multiple-part operation.
      * The data is encrypted or decrypted, depending on how this {@code Cipher}
-     * was initialized.
+     * object was initialized.
      *
      * <p>All {@code input.remaining()} bytes starting at
      * {@code input.position()} are processed.
@@ -681,15 +681,15 @@ public abstract class CipherSpi {
      * <p>If {@code output.remaining()} bytes are insufficient to
      * hold the result, a {@code ShortBufferException} is thrown.
      *
-     * <p>Upon finishing, this method resets this {@code Cipher} to the state
-     * it was in when previously initialized via a call to
+     * <p>Upon finishing, this method resets this {@code Cipher} object
+     * to the state it was in when previously initialized via a call to
      * {@code engineInit}.
      * That is, the object is reset and available to encrypt or decrypt
      * (depending on the operation mode that was specified in the call to
      * {@code engineInit} more data.
      *
-     * <p>Note: if any exception is thrown, this {@code Cipher} may need to
-     * be reset before it can be used again.
+     * <p>Note: if any exception is thrown, this {@code Cipher} object
+     * may need to be reset before it can be used again.
      *
      * <p>Subclasses should consider overriding this method if they can
      * process ByteBuffers more efficiently than byte arrays.
@@ -706,11 +706,11 @@ public abstract class CipherSpi {
      * process the input data provided
      * @throws ShortBufferException if there is insufficient space in the
      * output buffer
-     * @throws BadPaddingException if this {@code Cipher} is in decryption mode,
-     * and (un)padding has been requested, but the decrypted data is not
-     * bounded by the appropriate padding bytes
-     * @throws AEADBadTagException if this {@code Cipher} is decrypting in an
-     * AEAD mode (such as GCM or CCM), and the received authentication tag
+     * @throws BadPaddingException if this {@code Cipher} object is in
+     * decryption mode, and (un)padding has been requested, but the decrypted
+     * data is not bounded by the appropriate padding bytes
+     * @throws AEADBadTagException if this {@code Cipher} object is decrypting
+     * in an AEAD mode (such as GCM or CCM), and the received authentication tag
      * does not match the calculated value
      *
      * @throws NullPointerException if either parameter is {@code null}
@@ -938,10 +938,10 @@ public abstract class CipherSpi {
      * @param offset the offset in {@code src} where the AAD input starts
      * @param len the number of AAD bytes
      *
-     * @throws IllegalStateException if this {@code Cipher} is in a wrong state
-     * (e.g., has not been initialized), does not accept AAD, or if
-     * operating in either GCM or CCM mode and one of the {@code update}
-     * methods has already been called for the active
+     * @throws IllegalStateException if this {@code Cipher} object is in
+     * a wrong state (e.g., has not been initialized), does not accept AAD,
+     * or if operating in either GCM or CCM mode and one of the
+     * {@code update} methods has already been called for the active
      * encryption/decryption operation
      * @throws UnsupportedOperationException if this method
      * has not been overridden by an implementation
@@ -971,10 +971,10 @@ public abstract class CipherSpi {
      *
      * @param src the buffer containing the AAD
      *
-     * @throws IllegalStateException if this {@code Cipher} is in a wrong state
-     * (e.g., has not been initialized), does not accept AAD, or if
-     * operating in either GCM or CCM mode and one of the {@code update}
-     * methods has already been called for the active
+     * @throws IllegalStateException if this {@code Cipher} object is in
+     * a wrong state (e.g., has not been initialized), does not accept AAD,
+     * or if operating in either GCM or CCM mode and one of the
+     * {@code update} methods has already been called for the active
      * encryption/decryption operation
      * @throws UnsupportedOperationException if this method
      * has not been overridden by an implementation

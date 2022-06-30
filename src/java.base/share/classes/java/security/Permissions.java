@@ -142,7 +142,7 @@ implements Serializable
     /**
      * Checks to see if this object's PermissionCollection for permissions of
      * the specified permission's class implies the permissions
-     * expressed in the <i>permission</i> object. Returns true if the
+     * expressed in the <i>permission</i> object. Returns {@code true} if the
      * combination of permissions in the appropriate PermissionCollection
      * (e.g., a FilePermissionCollection for a FilePermission) together
      * imply the specified permission.
@@ -158,13 +158,13 @@ implements Serializable
      * returned.
      *
      * <p>Additionally, if this PermissionCollection contains the
-     * AllPermission, this method will always return true.
+     * AllPermission, this method will always return {@code true}.
      *
      * @param permission the Permission object to check.
      *
-     * @return true if "permission" is implied by the permissions in the
+     * @return {@code true} if "permission" is implied by the permissions in the
      * PermissionCollection it
-     * belongs to, false if not.
+     * belongs to, {@code false} if not.
      */
     @Override
     public boolean implies(Permission permission) {
@@ -204,7 +204,7 @@ implements Serializable
      * the FilePermissionCollection
      * stored in this {@code Permissions} object will be returned.
      *
-     * If createEmpty is true,
+     * If createEmpty is {@code true},
      * this method creates a new PermissionCollection object for the specified
      * type of permission objects if one does not yet exist.
      * To do so, it first calls the {@code newPermissionCollection} method
@@ -215,7 +215,7 @@ implements Serializable
      * method is called.
      * If the call returns a PermissionCollection, that collection is stored
      * in this {@code Permissions} object. If the call returns {@code null} and
-     * createEmpty is true, then
+     * createEmpty is {@code true}, then
      * this method instantiates and stores a default PermissionCollection
      * that uses a hashtable to store its permission objects.
      *
@@ -223,10 +223,10 @@ implements Serializable
      * for unresolved permissions because of the overhead of determining the
      * PermissionCollection to use.
      *
-     * createEmpty should be set to false when this method is invoked from
-     * implies() because it incurs the additional overhead of creating and
-     * adding an empty PermissionCollection that will just return false.
-     * It should be set to true when invoked from add().
+     * createEmpty should be set to {@code false} when this method is invoked
+     * from implies() because it incurs the additional overhead of creating and
+     * adding an empty PermissionCollection that will just return {@code false}.
+     * It should be set to {@code true} when invoked from add().
      */
     private PermissionCollection getPermissionCollection(Permission p,
                                                          boolean createEmpty) {
@@ -532,8 +532,8 @@ implements Serializable
      *
      * @param permission the Permission object to compare
      *
-     * @return true if "permission" is a proper subset of a permission in
-     * the set, false if not.
+     * @return {@code true} if "permission" is a proper subset of a permission
+     * in the set, {@code false} if not.
      */
     @Override
     public boolean implies(Permission permission) {

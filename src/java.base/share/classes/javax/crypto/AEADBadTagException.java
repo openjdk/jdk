@@ -38,14 +38,14 @@ public class AEADBadTagException extends BadPaddingException {
     private static final long serialVersionUID = -488059093241685509L;
 
     /**
-     * Constructs an <code>AEADBadTagException</code> with no detail message.
+     * Constructs an {@code AEADBadTagException} with no detail message.
      */
     public AEADBadTagException() {
         super();
     }
 
     /**
-     * Constructs an <code>AEADBadTagException</code> with the specified
+     * Constructs an {@code AEADBadTagException} with the specified
      * detail message.
      *
      * @param msg the detail message.

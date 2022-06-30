@@ -373,7 +373,8 @@ public class KeyStore {
         /**
          * Determines if password has been cleared.
          *
-         * @return true if the password has been cleared, false otherwise
+         * @return {@code true} if the password has been cleared,
+         * {@code false} otherwise
          */
         public synchronized boolean isDestroyed() {
             return destroyed;
@@ -927,7 +928,7 @@ public class KeyStore {
      *
      * <p> A new {@code KeyStore} object encapsulating the
      * {@code KeyStoreSpi} implementation from the specified Provider
-     * object is returned.  Note that the specified Provider object
+     * object is returned.  Note that the specified provider object
      * does not have to be registered in the provider list.
      *
      * @param type the type of keystore.
@@ -1291,7 +1292,7 @@ public class KeyStore {
      *
      * @param alias the alias name
      *
-     * @return true if the alias exists, false otherwise
+     * @return {@code true} if the alias exists, {@code false} otherwise
      *
      * @throws    KeyStoreException if the keystore has not been initialized
      * (loaded).
@@ -1323,15 +1324,15 @@ public class KeyStore {
     }
 
     /**
-     * Returns true if the entry identified by the given alias
+     * Returns {@code true} if the entry identified by the given alias
      * was created by a call to {@code setKeyEntry},
      * or created by a call to {@code setEntry} with a
      * {@code PrivateKeyEntry} or a {@code SecretKeyEntry}.
      *
      * @param alias the alias for the keystore entry to be checked
      *
-     * @return true if the entry identified by the given alias is a
-     * key-related entry, false otherwise.
+     * @return {@code true} if the entry identified by the given alias is a
+     * key-related entry, {@code false} otherwise.
      *
      * @throws    KeyStoreException if the keystore has not been initialized
      * (loaded).
@@ -1346,15 +1347,15 @@ public class KeyStore {
     }
 
     /**
-     * Returns true if the entry identified by the given alias
+     * Returns {@code true} if the entry identified by the given alias
      * was created by a call to {@code setCertificateEntry},
      * or created by a call to {@code setEntry} with a
      * {@code TrustedCertificateEntry}.
      *
      * @param alias the alias for the keystore entry to be checked
      *
-     * @return true if the entry identified by the given alias contains a
-     * trusted certificate, false otherwise.
+     * @return {@code true} if the entry identified by the given alias
+     * contains a trusted certificate, {@code false} otherwise.
      *
      * @throws    KeyStoreException if the keystore has not been initialized
      * (loaded).
@@ -1619,9 +1620,9 @@ public class KeyStore {
      * @param alias the alias name
      * @param entryClass the entry class
      *
-     * @return true if the keystore {@code Entry} for the specified
+     * @return {@code true} if the keystore {@code Entry} for the specified
      *          {@code alias} is an instance or subclass of the
-     *          specified {@code entryClass}, false otherwise
+     *          specified {@code entryClass}, {@code false} otherwise
      *
      * @throws    NullPointerException if
      *          {@code alias} or {@code entryClass}
@@ -1958,8 +1959,8 @@ public class KeyStore {
          *
          * <p>Subsequent calls to {@link #getKeyStore} return the same object
          * as the initial call. If the initial call failed with a
-         * KeyStoreException, subsequent calls also throw a
-         * KeyStoreException.
+         * {@code KeyStoreException}, subsequent calls also throw a
+         * {@code KeyStoreException}.
          *
          * <p>The KeyStore is instantiated from {@code provider} if
          * non-null. Otherwise, all installed providers are searched.
@@ -2023,7 +2024,8 @@ public class KeyStore {
          *
          * <p>Subsequent calls to {@link #getKeyStore} return the same object
          * as the initial call. If the initial call failed with a
-         * KeyStoreException, subsequent calls also throw a KeyStoreException.
+         * {@code KeyStoreException}, subsequent calls also throw a
+         * {@code KeyStoreException}.
          *
          * <p>Calls to {@link #getProtectionParameter getProtectionParameter()}
          * will return a {@link KeyStore.PasswordProtection PasswordProtection}

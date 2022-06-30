@@ -423,8 +423,8 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
      * from the highest-priority installed provider or system-provided if none
      * of the installed providers supply one).
      * That {@code initialize} method always throws an
-     * UnsupportedOperationException if it is not overridden by the provider.
-     *
+     * {@code UnsupportedOperationException} if it is not overridden
+     * by the provider.
      * @param params the parameter set used to generate the keys.
      *
      * @throws    InvalidAlgorithmParameterException if the given parameters
@@ -449,8 +449,8 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
      * java.security.SecureRandom) initialize} method,
      * passing it {@code params} and {@code random}.
      * That {@code initialize}
-     * method always throws an
-     * UnsupportedOperationException if it is not overridden by the provider.
+     * method always throws an {@code UnsupportedOperationException}
+     * if it is not overridden by the provider.
      *
      * @param params the parameter set used to generate the keys.
      * @param random the source of randomness.

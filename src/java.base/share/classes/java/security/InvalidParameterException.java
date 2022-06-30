@@ -41,7 +41,7 @@ public class InvalidParameterException extends IllegalArgumentException {
 
     /**
      * Constructs an {@code InvalidParameterException} with no detail message.
-     * A detail message is a String that describes this particular
+     * A detail message is a {@code String} that describes this particular
      * exception.
      */
     public InvalidParameterException() {
@@ -50,7 +50,7 @@ public class InvalidParameterException extends IllegalArgumentException {
 
     /**
      * Constructs an {@code InvalidParameterException} with the specified
-     * detail message.  A detail message is a String that describes
+     * detail message.  A detail message is a {@code String} that describes
      * this particular exception.
      *
      * @param msg the detail message.

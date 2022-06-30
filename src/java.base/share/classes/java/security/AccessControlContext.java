@@ -55,7 +55,7 @@ import sun.security.util.SecurityConstants;
  * The {@code getContext} method takes a "snapshot"
  * of the current calling context, and places
  * it in an {@code AccessControlContext} object, which it returns.
- A sample call is the following:
+ * A sample call is the following:
  *
  * <pre>
  *   AccessControlContext acc = AccessController.getContext()
@@ -323,7 +323,7 @@ public final class AccessControlContext {
     }
 
     /**
-     * Returns true if this context is privileged.
+     * Returns {@code true} if this context is privileged.
      */
     boolean isPrivileged()
     {
@@ -392,7 +392,8 @@ public final class AccessControlContext {
      *
      * <p>
      * This method quietly returns if the access request
-     * is permitted, or throws a suitable AccessControlException otherwise.
+     * is permitted, or throws a suitable {@code AccessControlException}
+     * otherwise.
      *
      * @param perm the requested permission.
      *
@@ -759,9 +760,9 @@ public final class AccessControlContext {
      * {@code ProtectionDomain} objects as this context.
      *
      * @param obj the object we are testing for equality with this object.
-     * @return true if {@code obj} is an {@code AccessControlContext},
+     * @return {@code true} if {@code obj} is an {@code AccessControlContext},
      * and has the same set of {@code ProtectionDomain} objects as this context,
-     * false otherwise.
+     * {@code false} otherwise.
      */
     public boolean equals(Object obj) {
         if (obj == this)

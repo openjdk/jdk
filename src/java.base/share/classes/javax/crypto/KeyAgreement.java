@@ -569,7 +569,7 @@ public class KeyAgreement {
      * @param lastPhase flag which indicates whether this is the last
      * phase of this key agreement.
      *
-     * @return the (intermediate) key resulting from this phase, or null
+     * @return the (intermediate) key resulting from this phase, or {@code null}
      * if this phase does not yield a key
      *
      * @exception InvalidKeyException if the given key is inappropriate for

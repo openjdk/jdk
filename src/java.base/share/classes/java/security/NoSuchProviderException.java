@@ -40,7 +40,7 @@ public class NoSuchProviderException extends GeneralSecurityException {
 
     /**
      * Constructs a {@code NoSuchProviderException} with no detail message. A
-     * detail message is a String that describes this particular
+     * detail message is a {@code String} that describes this particular
      * exception.
      */
     public NoSuchProviderException() {
@@ -49,7 +49,7 @@ public class NoSuchProviderException extends GeneralSecurityException {
 
     /**
      * Constructs a {@code NoSuchProviderException} with the specified detail
-     * message. A detail message is a String that describes this
+     * message. A detail message is a {@code String} that describes this
      * particular exception.
      *
      * @param msg the detail message.

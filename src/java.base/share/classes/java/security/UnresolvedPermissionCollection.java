@@ -109,7 +109,7 @@ implements java.io.Serializable
     }
 
     /**
-     * always returns false for unresolved permissions
+     * always returns {@code false} for unresolved permissions
      *
      */
     @Override

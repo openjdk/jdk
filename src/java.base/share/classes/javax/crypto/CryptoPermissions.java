@@ -43,17 +43,17 @@ import java.io.IOException;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
- * This class contains <code>CryptoPermission</code> objects, organized into
+ * This class contains {@code CryptoPermission} objects, organized into
  * PermissionCollections according to algorithm names.
  *
- * <p>When the <code>add</code> method is called to add a
- * <code>CryptoPermission</code>, the <code>CryptoPermission</code> is stored in the
- * appropriate <code>PermissionCollection</code>. If no such
+ * <p>When the {@code add} method is called to add a
+ * {@code CryptoPermission}, the {@code CryptoPermission} is stored in the
+ * appropriate {@code PermissionCollection}. If no such
  * collection exists yet, the algorithm name associated with
- * the <code>CryptoPermission</code> object is
- * determined and the <code>newPermissionCollection</code> method
- * is called on the <code>CryptoPermission</code> or <code>CryptoAllPermission</code> class to
- * create the <code>PermissionCollection</code> and add it to the <code>Permissions</code> object.
+ * the {@code CryptoPermission} object is
+ * determined and the {@code newPermissionCollection} method
+ * is called on the {@code CryptoPermission} or {@code CryptoAllPermission} class to
+ * create the {@code PermissionCollection} and add it to the {@code Permissions} object.
  *
  * @see javax.crypto.CryptoPermission
  * @see java.security.PermissionCollection
@@ -82,8 +82,8 @@ implements Serializable {
     private transient ConcurrentHashMap<String,PermissionCollection> perms;
 
     /**
-     * Creates a new <code>CryptoPermissions</code> object containing
-     * no <code>CryptoPermissionCollection</code> objects.
+     * Creates a new {@code CryptoPermissions} object containing
+     * no {@code CryptoPermissionCollection} objects.
      */
     CryptoPermissions() {
         perms = new ConcurrentHashMap<>(7);
@@ -91,7 +91,7 @@ implements Serializable {
 
     /**
      * Populates the crypto policy from the specified
-     * InputStream into this <code>CryptoPermissions</code> object.
+     * InputStream into this {@code CryptoPermissions} object.
      *
      * @param in the InputStream to load from.
      *
@@ -110,9 +110,9 @@ implements Serializable {
     }
 
     /**
-     * Returns true if this <code>CryptoPermissions</code> object doesn't
-     * contain any <code>CryptoPermission</code> objects; otherwise, returns
-     * false.
+     * Returns {@code true} if this {@code CryptoPermissions} object doesn't
+     * contain any {@code CryptoPermission} objects; otherwise, returns
+     * {@code false}.
      */
     boolean isEmpty() {
         return perms.isEmpty();
@@ -120,16 +120,16 @@ implements Serializable {
 
     /**
      * Adds a permission object to the
-     * <code>PermissionCollection</code> for the algorithm returned by
-     * <code>(CryptoPermission)permission.getAlgorithm()</code>.
+     * {@code PermissionCollection} for the algorithm returned by
+     * {@code (CryptoPermission)permission.getAlgorithm()}.
      *
      * This method creates
-     * a new <code>PermissionCollection</code> object (and adds the
+     * a new {@code PermissionCollection} object (and adds the
      * permission to it) if an appropriate collection does not yet exist.
      *
-     * @param permission the <code>Permission</code> object to add.
+     * @param permission the {@code Permission} object to add.
      *
-     * @exception SecurityException if this <code>CryptoPermissions</code>
+     * @exception SecurityException if this {@code CryptoPermissions}
      * object is marked as readonly.
      *
      * @see isReadOnly
@@ -155,14 +155,14 @@ implements Serializable {
     }
 
     /**
-     * Checks if this object's <code>PermissionCollection</code> for permissions
+     * Checks if this object's {@code PermissionCollection} for permissions
      * of the specified permission's algorithm implies the specified
-     * permission. Returns true if the checking succeeded.
+     * permission. Returns {@code true} if the checking succeeded.
      *
-     * @param permission the <code>Permission</code> object to check.
+     * @param permission the {@code Permission} object to check.
      *
      * @return true if "permission" is implied by the permissions
-     * in the <code>PermissionCollection</code> it belongs to, false if not.
+     * in the {@code PermissionCollection} it belongs to, false if not.
      *
      */
     @Override
@@ -183,10 +183,10 @@ implements Serializable {
     }
 
     /**
-     * Returns an enumeration of all the <code>Permission</code> objects
+     * Returns an enumeration of all the {@code Permission} objects
      * in all the PermissionCollections in this
-     * <code>CryptoPermissions</code> object.
-     * @return an enumeration of all the <code>Permissions</code>.
+     * {@code CryptoPermissions} object.
+     * @return an enumeration of all the {@code Permissions}.
      */
     @Override
     public Enumeration<Permission> elements() {
@@ -196,12 +196,12 @@ implements Serializable {
     }
 
     /**
-     * Returns a <code>CryptoPermissions</code> object which
+     * Returns a {@code CryptoPermissions} object which
      * represents the minimum of the specified
-     * <code>CryptoPermissions</code> object and this
-     * <code>CryptoPermissions</code> object.
+     * {@code CryptoPermissions} object and this
+     * {@code CryptoPermissions} object.
      *
-     * @param other the <code>CryptoPermission</code>
+     * @param other the {@code CryptoPermission}
      * object to compare with this object.
      */
     CryptoPermissions getMinimum(CryptoPermissions other) {
@@ -293,13 +293,13 @@ implements Serializable {
     }
 
     /**
-     * Get the minimum of the two given <code>PermissionCollection</code>
-     * <code>thisPc</code> and <code>thatPc</code>.
+     * Get the minimum of the two given {@code PermissionCollection}
+     * {@code thisPc} and {@code thatPc}.
      *
-     * @param thisPc the first given <code>PermissionCollection</code>
+     * @param thisPc the first given {@code PermissionCollection}
      * object.
      *
-     * @param thatPc the second given <code>PermissionCollection</code>
+     * @param thatPc the second given {@code PermissionCollection}
      * object.
      */
     private CryptoPermission[] getMinimum(PermissionCollection thisPc,
@@ -344,18 +344,18 @@ implements Serializable {
     }
 
     /**
-     * Returns all the <code>CryptoPermission</code> objects in the given
-     * <code>PermissionCollection</code> object
-     * whose maximum keysize no greater than <code>maxKeySize</code>.
-     * For all <code>CryptoPermission</code> objects with a maximum keysize
-     * greater than <code>maxKeySize</code>, this method constructs a
-     * corresponding <code>CryptoPermission</code> object whose maximum
-     * keysize is set to <code>maxKeySize</code>, and includes that in
+     * Returns all the {@code CryptoPermission} objects in the given
+     * {@code PermissionCollection} object
+     * whose maximum keysize no greater than {@code maxKeySize}.
+     * For all {@code CryptoPermission} objects with a maximum keysize
+     * greater than {@code maxKeySize}, this method constructs a
+     * corresponding {@code CryptoPermission} object whose maximum
+     * keysize is set to {@code maxKeySize}, and includes that in
      * the result.
      *
      * @param maxKeySize the given maximum key size.
      *
-     * @param pc the given <code>PermissionCollection</code> object.
+     * @param pc the given {@code PermissionCollection} object.
      */
     private CryptoPermission[] getMinimum(int maxKeySize,
                                           PermissionCollection pc) {
@@ -388,9 +388,9 @@ implements Serializable {
     }
 
     /**
-     * Returns the <code>PermissionCollection</code> for the
-     * specified algorithm. Returns <code>null</code> if there
-     * isn't such a <code>PermissionCollection</code>.
+     * Returns the {@code PermissionCollection} for the
+     * specified algorithm. Returns {@code null} if there
+     * isn't such a {@code PermissionCollection}.
      *
      * @param alg the algorithm name.
      */
@@ -413,13 +413,13 @@ implements Serializable {
     }
 
     /**
-     * Returns the <code>PermissionCollection</code> for the algorithm
-     * associated with the specified <code>CryptoPermission</code>
-     * object. Creates such a <code>PermissionCollection</code>
-     * if such a <code>PermissionCollection</code> does not
+     * Returns the {@code PermissionCollection} for the algorithm
+     * associated with the specified {@code CryptoPermission}
+     * object. Creates such a {@code PermissionCollection}
+     * if such a {@code PermissionCollection} does not
      * exist yet.
      *
-     * @param cryptoPerm the <code>CryptoPermission</code> object.
+     * @param cryptoPerm the {@code CryptoPermission} object.
      */
     private PermissionCollection getPermissionCollection(
                                           CryptoPermission cryptoPerm) {

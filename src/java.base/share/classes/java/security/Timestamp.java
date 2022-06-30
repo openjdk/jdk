@@ -124,7 +124,8 @@ public final class Timestamp implements Serializable {
      *
      * @param obj the object to test for equality with this {@code Timestamp}.
      *
-     * @return true if the timestamps are considered equal, false otherwise.
+     * @return {@code true} if the timestamps are considered equal,
+     * {@code false} otherwise.
      */
     public boolean equals(Object obj) {
         if (this == obj) {

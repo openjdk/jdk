@@ -42,8 +42,8 @@ public class NoSuchPaddingException extends GeneralSecurityException {
     private static final long serialVersionUID = -4572885201200175466L;
 
     /**
-     * Constructs a <code>NoSuchPaddingException</code> with no detail
-     * message. A detail message is a String that describes this
+     * Constructs a {@code NoSuchPaddingException} with no detail
+     * message. A detail message is a {@code String} that describes this
      * particular exception.
      */
     public NoSuchPaddingException() {
@@ -51,7 +51,7 @@ public class NoSuchPaddingException extends GeneralSecurityException {
     }
 
     /**
-     * Constructs a <code>NoSuchPaddingException</code> with the specified
+     * Constructs a {@code NoSuchPaddingException} with the specified
      * detail message.
      *
      * @param msg the detail message.

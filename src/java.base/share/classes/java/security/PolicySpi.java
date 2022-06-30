@@ -35,7 +35,7 @@ package java.security;
  * <p> Subclass implementations of this abstract class must provide
  * a public constructor that takes a {@code Policy.Parameters}
  * object as an input parameter.  This constructor also must throw
- * an IllegalArgumentException if it does not understand the
+ * an {@code IllegalArgumentException} if it does not understand the
  * {@code Policy.Parameters} input.
  *
  *
@@ -63,7 +63,7 @@ public abstract class PolicySpi {
      * @param permission check whether this permission is granted to the
      *          specified domain.
      *
-     * @return boolean true if the permission is granted to the domain.
+     * @return boolean {@code true} if the permission is granted to the domain.
      */
     protected abstract boolean engineImplies
         (ProtectionDomain domain, Permission permission);

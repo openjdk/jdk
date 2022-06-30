@@ -41,8 +41,8 @@ public class BadPaddingException extends GeneralSecurityException {
     private static final long serialVersionUID = -5315033893984728443L;
 
     /**
-     * Constructs a <code>BadPaddingException</code> with no detail
-     * message. A detail message is a String that describes this
+     * Constructs a {@code BadPaddingException} with no detail
+     * message. A detail message is a {@code String} that describes this
      * particular exception.
      */
     public BadPaddingException() {
@@ -50,7 +50,7 @@ public class BadPaddingException extends GeneralSecurityException {
     }
 
     /**
-     * Constructs a <code>BadPaddingException</code> with the specified
+     * Constructs a {@code BadPaddingException} with the specified
      * detail message.
      *
      * @param msg the detail message.
