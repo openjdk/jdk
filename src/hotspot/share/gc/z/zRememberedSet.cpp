@@ -149,20 +149,26 @@ bool ZRememberedSetContainingIterator::next(ZRememberedSetContaining* containing
   BitMap::idx_t index;
 
   if (!is_null(_obj)) {
+    // We've already found a remset bit and likely owning object in the main
+    // iterator. Now use that information to skip having to search for the
+    // same object multiple times.
+
     if (_obj_remset_iter.next(&index)) {
       containing->_field_addr = to_addr(index);
       containing->_addr = _obj;
 
-      log_trace(gc, remset)("Remset Containing Obj  index: " PTR_FORMAT " base: " PTR_FORMAT " field: " PTR_FORMAT, index, untype(containing->_addr), untype(containing->_field_addr));
+      log_develop_trace(gc, remset)("Remset Containing Obj  index: " PTR_FORMAT " base: " PTR_FORMAT " field: " PTR_FORMAT, index, untype(containing->_addr), untype(containing->_field_addr));
 
-      _obj_remset_iter.reset(to_index(containing->_field_addr));
       return true;
     } else {
-      // No more remset bits in the obj
+      // No more remset bits in the scanned object
       _obj = zaddress_unsafe::null;
     }
   }
 
+  // At this point, we don't know where the nearest earlier object starts.
+  // Search for the next earlier remset bit, and then search for the likely
+  // owning object.
   if (_remset_iter.next(&index)) {
     containing->_field_addr = to_addr(index);
     containing->_addr = _page->find_base((volatile zpointer*)untype(containing->_field_addr));
@@ -173,15 +179,16 @@ bool ZRememberedSetContainingIterator::next(ZRememberedSetContaining* containing
     }
 
     // Found live object. Not necessarily the one that originally owned the remset bit.
+    const BitMap::idx_t obj_index = to_index(containing->_addr);
 
-    log_trace(gc, remset)("Remset Containing Main index: " PTR_FORMAT " base: " PTR_FORMAT " field: " PTR_FORMAT, index, untype(containing->_addr), untype(containing->_field_addr));
+    log_develop_trace(gc, remset)("Remset Containing Main index: " PTR_FORMAT " base: " PTR_FORMAT " field: " PTR_FORMAT, index, untype(containing->_addr), untype(containing->_field_addr));
 
     // Don't scan inside the object in the main iterator
-    _remset_iter.reset(to_index(containing->_addr));
+    _remset_iter.reset(obj_index);
 
     // Scan inside the object iterator
     _obj = containing->_addr;
-    _obj_remset_iter.reset(to_index(containing->_addr), to_index(containing->_field_addr));
+    _obj_remset_iter.reset(obj_index, index);
 
     return true;
   }

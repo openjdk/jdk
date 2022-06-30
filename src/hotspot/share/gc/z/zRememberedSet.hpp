@@ -35,6 +35,14 @@ struct ZRememberedSetContaining {
   zaddress_unsafe _addr;
 };
 
+// Iterates over all (object, oop fields) pairs where the field address has
+// been marked as remembered, and fill in that information in a
+// ZRememberedSetContaining
+//
+// Note that it's not guaranteed that _field_addr belongs to the recorded
+// _addr. The entry could denote a stale remembered set field and _addr could
+// just be the nearest object. The users are responsible for filtering that
+// out.
 class ZRememberedSetContainingIterator {
 private:
   ZPage* const          _page;
@@ -52,6 +60,8 @@ public:
   bool next(ZRememberedSetContaining* containing);
 };
 
+// Like ZRememberedSetContainingIterator, but with stale remembered set fields
+// filtered out.
 class ZRememberedSetContainingInLiveIterator {
 private:
   ZRememberedSetContainingIterator _iter;
