@@ -109,14 +109,34 @@ void ShenandoahUpdateRefsClosure::do_oop_work(T* p) {
 void ShenandoahUpdateRefsClosure::do_oop(oop* p)       { do_oop_work(p); }
 void ShenandoahUpdateRefsClosure::do_oop(narrowOop* p) { do_oop_work(p); }
 
-template <bool atomic, bool stable_thread>
-ShenandoahEvacuateUpdateRootClosureBase<atomic>::ShenandoahEvacuateUpdateRootClosureBase() :
+template <bool concurrent, bool stable_thread>
+ShenandoahEvacuateUpdateRootClosureBase<concurrent, stable_thread>::ShenandoahEvacuateUpdateRootClosureBase() :
   _heap(ShenandoahHeap::heap()), _thread(stable_thread ? Thread::current() : NULL) {
+}
+
+template <bool concurrent, bool stable_thread>
+void ShenandoahEvacuateUpdateRootClosureBase<concurrent, stable_thread>::do_oop(oop* p) {
+  if (concurrent) {
+    ShenandoahEvacOOMScope scope;
+    do_oop_work(p);
+  } else {
+    do_oop_work(p);
+  }
+}
+
+template <bool concurrent, bool stable_thread>
+void ShenandoahEvacuateUpdateRootClosureBase<concurrent, stable_thread>::do_oop(narrowOop* p) {
+  if (concurrent) {
+    ShenandoahEvacOOMScope scope;
+    do_oop_work(p);
+  } else {
+    do_oop_work(p);
+  }
 }
 
 template <bool atomic, bool stable_thread>
 template <class T>
-void ShenandoahEvacuateUpdateRootClosureBase<atomic>::do_oop_work(T* p) {
+void ShenandoahEvacuateUpdateRootClosureBase<atomic, stable_thread>::do_oop_work(T* p) {
   assert(_heap->is_concurrent_weak_root_in_progress() ||
          _heap->is_concurrent_strong_root_in_progress(),
          "Only do this in root processing phase");

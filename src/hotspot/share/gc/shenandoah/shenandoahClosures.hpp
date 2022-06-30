@@ -89,13 +89,15 @@ private:
   inline void do_oop_work(T* p);
 };
 
-template <bool atomic, bool stable_thread>
+template <bool concurrent, bool stable_thread>
 class ShenandoahEvacuateUpdateRootClosureBase : public ShenandoahOopClosureBase {
 protected:
   ShenandoahHeap* const _heap;
   Thread* const _thread;
 public:
   inline ShenandoahEvacuateUpdateRootClosureBase();
+  inline void do_oop(oop* p);
+  inline void do_oop(narrowOop* p);
 protected:
   template <class T>
   inline void do_oop_work(T* p);
