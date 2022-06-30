@@ -525,10 +525,11 @@ static int pipeline_res_mask_initializer(
         ndx+1, element_count, resource_mask);
 
     // "0x012345678, 0x012345678, 4294967295"
-    char* args = new char [37];
+    char* args = new char [36 + 1];
 
-    sprintf(args, "0x%x, 0x%x, %u",
+    int printed = sprintf(args, "0x%x, 0x%x, %u",
       resources_used, resources_used_exclusively, element_count);
+    assert(printed <= 36, "overflow");
 
     pipeline_res_args.addName(args);
   }
