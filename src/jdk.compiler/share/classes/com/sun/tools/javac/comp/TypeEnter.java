@@ -983,7 +983,7 @@ public class TypeEnter implements Completer {
                 List<JCVariableDecl> fields = TreeInfo.recordFields(tree);
                 memberEnter.memberEnter(fields, env);
                 for (JCVariableDecl field : fields) {
-                    sym.getRecordComponent(field, true,
+                    sym.createRecordComponent(field,
                             field.mods.annotations.isEmpty() ?
                                     List.nil() :
                                     new TreeCopier<JCTree>(make.at(field.pos)).copy(field.mods.annotations));
@@ -1229,10 +1229,37 @@ public class TypeEnter implements Completer {
                 memberEnter.memberEnter(equals, env);
             }
 
-            // fields can't be varargs, lets remove the flag
+            /** Some notes regarding the code below. Annotations applied to elements of a record header are propagated
+             *  to other elements which, when applicable, not explicitly declared by the user: the canonical constructor,
+             *  accessors, fields and record components. Of all these the only ones that can't be explicitly declared are
+             *  the fields and the record components.
+             *
+             *  Now given that annotations are propagated to all possible targets  regardless of applicability,
+             *  annotations not applicable to a given element should be removed. See Check::validateAnnotation. Once
+             *  annotations are removed we could lose the whole picture, that's why original annotations are stored in
+             *  the record component, see RecordComponent::originalAnnos, but there is no real AST representing a record
+             *  component so if there is an annotation processing round it could be that we need to reenter a record for
+             *  which we need to re-attribute its annotations. This is why one of the things the code below is doing is
+             *  copying the original annotations from the record component to the corresponding field, again this applies
+             *  only if APs are present.
+             *
+             *  We need to copy the annotations to the field so that annotations applicable only to the record component
+             *  can be attributed as if declared in the field and then stored in the metadata associated to the record
+             *  component.
+             */
             List<JCVariableDecl> recordFields = TreeInfo.recordFields(tree);
             for (JCVariableDecl field: recordFields) {
+                RecordComponent rec = tree.sym.getRecordComponent(field.sym);
+                TreeCopier<JCTree> tc = new TreeCopier<>(make.at(field.pos));
+                List<JCAnnotation> originalAnnos = tc.copy(rec.getOriginalAnnos());
+
                 field.mods.flags &= ~Flags.VARARGS;
+                if (originalAnnos.length() != field.mods.annotations.length()) {
+                    field.mods.annotations = originalAnnos;
+                    annotate.annotateLater(originalAnnos, env, field.sym, field.pos());
+                }
+
+                // also here
                 field.sym.flags_field &= ~Flags.VARARGS;
             }
             // now lets add the accessors
