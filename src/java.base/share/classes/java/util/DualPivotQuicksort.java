@@ -46,7 +46,7 @@ import java.util.concurrent.CountedCompleter;
  *
  * @version 2022.06.14
  *
- * @since 1.7 * 14 & 20
+ * @since 1.7 * 14 ^ 20
  */
 final class DualPivotQuicksort {
 

@@ -33,7 +33,7 @@ package java.util;
  *
  * @version 2022.06.14
  *
- * @since 14 & 20
+ * @since 14 ^ 20
  */
 public enum SortingHelper {
 
