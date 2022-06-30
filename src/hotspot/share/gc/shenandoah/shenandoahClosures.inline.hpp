@@ -109,18 +109,20 @@ void ShenandoahUpdateRefsClosure::do_oop_work(T* p) {
 void ShenandoahUpdateRefsClosure::do_oop(oop* p)       { do_oop_work(p); }
 void ShenandoahUpdateRefsClosure::do_oop(narrowOop* p) { do_oop_work(p); }
 
-template <bool atomic>
+template <bool atomic, bool stable_thread>
 ShenandoahEvacuateUpdateRootClosureBase<atomic>::ShenandoahEvacuateUpdateRootClosureBase() :
-  _heap(ShenandoahHeap::heap()) {
+  _heap(ShenandoahHeap::heap()), _thread(stable_thread ? Thread::current() : NULL) {
 }
 
-template <bool atomic>
+template <bool atomic, bool stable_thread>
 template <class T>
-void ShenandoahEvacuateUpdateRootClosureBase<atomic>::do_oop_work(T* p, Thread* t) {
+void ShenandoahEvacuateUpdateRootClosureBase<atomic>::do_oop_work(T* p) {
   assert(_heap->is_concurrent_weak_root_in_progress() ||
          _heap->is_concurrent_strong_root_in_progress(),
          "Only do this in root processing phase");
-  assert(t == Thread::current(), "Wrong thread");
+
+  Thread* thr = stable_thread ? _thread : Thread::current();
+  assert(thr == Thread::current(), "Wrong thread");
 
   T o = RawAccess<>::oop_load(p);
   if (! CompressedOops::is_null(o)) {
@@ -130,7 +132,7 @@ void ShenandoahEvacuateUpdateRootClosureBase<atomic>::do_oop_work(T* p, Thread* 
       shenandoah_assert_marked(p, obj);
       oop resolved = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
       if (resolved == obj) {
-        resolved = _heap->evacuate_object(obj, t);
+        resolved = _heap->evacuate_object(obj, thr);
       }
       if (atomic) {
         ShenandoahHeap::atomic_update_oop(resolved, p, o);
@@ -139,47 +141,6 @@ void ShenandoahEvacuateUpdateRootClosureBase<atomic>::do_oop_work(T* p, Thread* 
       }
     }
   }
-}
-
-ShenandoahEvacuateUpdateMetadataClosure::ShenandoahEvacuateUpdateMetadataClosure() :
-  ShenandoahEvacuateUpdateRootClosureBase<false>(), _thread(Thread::current()) {
-}
-
-void ShenandoahEvacuateUpdateMetadataClosure::do_oop(oop* p) {
-  do_oop_work(p, _thread);
-}
-
-void ShenandoahEvacuateUpdateMetadataClosure::do_oop(narrowOop* p) {
-  do_oop_work(p, _thread);
-}
-
-ShenandoahEvacuateUpdateRootsClosure::ShenandoahEvacuateUpdateRootsClosure() :
-  ShenandoahEvacuateUpdateRootClosureBase<true>() {
-}
-
-void ShenandoahEvacuateUpdateRootsClosure::do_oop(oop* p) {
-  ShenandoahEvacOOMScope scope;
-  do_oop_work(p, Thread::current());
-}
-
-void ShenandoahEvacuateUpdateRootsClosure::do_oop(narrowOop* p) {
-  ShenandoahEvacOOMScope scope;
-  do_oop_work(p, Thread::current());
-}
-
-ShenandoahContextEvacuateUpdateRootsClosure::ShenandoahContextEvacuateUpdateRootsClosure() :
-  ShenandoahEvacuateUpdateRootClosureBase<true>(),
-  _thread(Thread::current()) {
-}
-
-void ShenandoahContextEvacuateUpdateRootsClosure::do_oop(oop* p) {
-  ShenandoahEvacOOMScope scope;
-  do_oop_work(p, _thread);
-}
-
-void ShenandoahContextEvacuateUpdateRootsClosure::do_oop(narrowOop* p) {
-  ShenandoahEvacOOMScope scope;
-  do_oop_work(p, _thread);
 }
 
 template <bool CONCURRENT, typename IsAlive, typename KeepAlive>
