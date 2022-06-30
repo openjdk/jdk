@@ -66,6 +66,10 @@ ifeq ($(VERSION_BUILD), )
   VERSION_BUILD := 0
 endif
 
+ifeq ($(HOTSPOT_BUILD_TIME), )
+  HOTSPOT_BUILD_TIME := $(call EpochToISO8601, $(shell $(DATE) +"%s"))
+endif
+
 CFLAGS_VM_VERSION := \
     $(VERSION_CFLAGS) \
     -DHOTSPOT_VERSION_STRING='"$(VERSION_STRING)"' \
@@ -73,11 +77,8 @@ CFLAGS_VM_VERSION := \
     -DHOTSPOT_BUILD_USER='"$(USERNAME)"' \
     -DHOTSPOT_VM_DISTRO='"$(HOTSPOT_VM_DISTRO)"' \
     -DCPU='"$(OPENJDK_TARGET_CPU_VM_VERSION)"' \
+    -DHOTSPOT_BUILD_TIME='"$(HOTSPOT_BUILD_TIME)"' \
     #
-
-ifneq ($(HOTSPOT_BUILD_TIME), )
-  CFLAGS_VM_VERSION += -DHOTSPOT_BUILD_TIME='"$(HOTSPOT_BUILD_TIME)"'
-endif
 
 ################################################################################
 # Disabled warnings

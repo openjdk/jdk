@@ -501,6 +501,13 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         assert facadeRef.get() != null;
     }
 
+    // called when the facade is GC'ed.
+    // Just wakes up the selector to cleanup...
+    void facadeCleanup() {
+        SelectorManager selmgr = this.selmgr;
+        if (selmgr != null) selmgr.wakeupSelector();
+    }
+
     void onSubmitFailure(Runnable command, Throwable failure) {
         selmgr.abort(failure);
     }
@@ -733,7 +740,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         }
         @Override
         public boolean isFacadeReferenced() {
-            return reference.get() != null;
+            return !reference.refersTo(null);
         }
         @Override
         public boolean isSelectorAlive() { return isAlive.get(); }
@@ -759,8 +766,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     // Called by the SelectorManager thread to figure out whether it's time
     // to terminate.
     boolean isReferenced() {
-        HttpClient facade = facade();
-        return facade != null || referenceCount() > 0;
+        return !facadeRef.refersTo(null) || referenceCount() > 0;
     }
 
     /**
