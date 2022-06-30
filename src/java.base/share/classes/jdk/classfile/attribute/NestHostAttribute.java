@@ -25,10 +25,12 @@
 
 package jdk.classfile.attribute;
 
+import java.lang.constant.ClassDesc;
 import jdk.classfile.Attribute;
 import jdk.classfile.ClassElement;
 import jdk.classfile.constantpool.ClassEntry;
 import jdk.classfile.impl.BoundAttribute;
+import jdk.classfile.impl.TemporaryConstantPool;
 import jdk.classfile.impl.UnboundAttribute;
 
 /**
@@ -52,5 +54,13 @@ public sealed interface NestHostAttribute extends Attribute<NestHostAttribute>, 
      */
     static NestHostAttribute of(ClassEntry nestHost) {
         return new UnboundAttribute.UnboundNestHostAttribute(nestHost);
+    }
+
+    /**
+     * {@return a {@code NestHost} attribute}
+     * @param nestHost the host class of the nest
+     */
+    static NestHostAttribute of(ClassDesc nestHost) {
+        return of(TemporaryConstantPool.INSTANCE.classEntry(nestHost));
     }
 }

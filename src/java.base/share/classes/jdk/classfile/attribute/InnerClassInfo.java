@@ -88,9 +88,9 @@ sealed public interface InnerClassInfo
      * @param innerName the name of the inner class, if it is not anonymous
      * @param flags the inner class access flags
      */
-    static InnerClassInfo of(ClassEntry innerClass, ClassEntry outerClass,
-                             Utf8Entry innerName, int flags) {
-        return new UnboundAttribute.UnboundInnerClassInfo(innerClass, Optional.ofNullable(outerClass), Optional.ofNullable(innerName), flags);
+    static InnerClassInfo of(ClassEntry innerClass, Optional<ClassEntry> outerClass,
+                             Optional<Utf8Entry> innerName, int flags) {
+        return new UnboundAttribute.UnboundInnerClassInfo(innerClass, outerClass, innerName, flags);
     }
 
     /**
@@ -100,10 +100,10 @@ sealed public interface InnerClassInfo
      * @param innerName the name of the inner class, if it is not anonymous
      * @param flags the inner class access flags
      */
-    static InnerClassInfo of(ClassDesc innerClass, ClassDesc outerClass, String innerName, int flags) {
-        return new UnboundAttribute.UnboundInnerClassInfo(TemporaryConstantPool.INSTANCE.classEntry(TemporaryConstantPool.INSTANCE.utf8Entry(Util.toInternalName(innerClass))),
-                                      outerClass == null ? Optional.empty() : Optional.of(TemporaryConstantPool.INSTANCE.classEntry(TemporaryConstantPool.INSTANCE.utf8Entry(Util.toInternalName(outerClass)))),
-                                      innerName == null ? Optional.empty() : Optional.of(TemporaryConstantPool.INSTANCE.utf8Entry(innerName)),
+    static InnerClassInfo of(ClassDesc innerClass, Optional<ClassDesc> outerClass, Optional<String> innerName, int flags) {
+        return new UnboundAttribute.UnboundInnerClassInfo(TemporaryConstantPool.INSTANCE.classEntry(innerClass),
+                                                          outerClass.map(TemporaryConstantPool.INSTANCE::classEntry),
+                                                          innerName.map(TemporaryConstantPool.INSTANCE::utf8Entry),
                                                           flags);
     }
 
@@ -114,7 +114,7 @@ sealed public interface InnerClassInfo
      * @param innerName the name of the inner class, if it is not anonymous
      * @param flags the inner class access flags
      */
-    static InnerClassInfo of(ClassDesc innerClass, ClassDesc outerClass, String innerName, AccessFlag... flags) {
+    static InnerClassInfo of(ClassDesc innerClass, Optional<ClassDesc> outerClass, Optional<String> innerName, AccessFlag... flags) {
         return of(innerClass, outerClass, innerName, Util.flagsToBits(AccessFlag.Location.INNER_CLASS, flags));
     }
 }

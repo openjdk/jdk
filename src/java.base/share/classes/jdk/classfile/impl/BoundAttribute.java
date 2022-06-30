@@ -822,7 +822,7 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
                             : (Utf8Entry) classReader.entryByIndex(innerNameIndex);
                     int flags = classReader.readU2(p + 6);
                     p += 8;
-                    elements[i] = InnerClassInfo.of(innerClass, outerClass, innerName, flags);
+                    elements[i] = InnerClassInfo.of(innerClass, Optional.ofNullable(outerClass), Optional.ofNullable(innerName), flags);
                 }
                 classes = List.of(elements);
             }

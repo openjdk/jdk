@@ -24,13 +24,17 @@
  */
 package jdk.classfile.attribute;
 
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
 import java.util.Optional;
 
 import jdk.classfile.Attribute;
 import jdk.classfile.ClassElement;
 import jdk.classfile.constantpool.ClassEntry;
 import jdk.classfile.constantpool.NameAndTypeEntry;
+import jdk.classfile.constantpool.Utf8Entry;
 import jdk.classfile.impl.BoundAttribute;
+import jdk.classfile.impl.TemporaryConstantPool;
 import jdk.classfile.impl.UnboundAttribute;
 
 /**
@@ -57,12 +61,52 @@ public sealed interface EnclosingMethodAttribute
     Optional<NameAndTypeEntry> enclosingMethod();
 
     /**
+     * {@return the name of the enclosing method, if the class is
+     * immediately enclosed by a method or constructor}
+     */
+    default Optional<Utf8Entry> enclosingMethodName() {
+        return enclosingMethod().map(NameAndTypeEntry::name);
+    }
+
+    /**
+     * {@return the type of the enclosing method, if the class is
+     * immediately enclosed by a method or constructor}
+     */
+    default Optional<Utf8Entry> enclosingMethodType() {
+        return enclosingMethod().map(NameAndTypeEntry::type);
+    }
+
+    /**
+     * {@return the type of the enclosing method, if the class is
+     * immediately enclosed by a method or constructor}
+     */
+    default Optional<MethodTypeDesc> enclosingMethodTypeSymbol() {
+        return enclosingMethodType().map(n -> MethodTypeDesc.ofDescriptor(n.stringValue()));
+    }
+
+    /**
      * {@return an {@code EnclosingMethod} attribute}
      * @param className the class name
      * @param method the name and type of the enclosing method
      */
     static EnclosingMethodAttribute of(ClassEntry className,
-                                       NameAndTypeEntry method) {
-        return new UnboundAttribute.UnboundEnclosingMethodAttribute(className, method);
+                                       Optional<NameAndTypeEntry> method) {
+        return new UnboundAttribute.UnboundEnclosingMethodAttribute(className, method.orElse(null));
+    }
+
+    /**
+     * {@return an {@code EnclosingMethod} attribute}
+     * @param className the class name
+     * @param methodName the name of the enclosing method
+     * @param methodType the type of the enclosing method
+     */
+    static EnclosingMethodAttribute of(ClassDesc className,
+                                       Optional<String> methodName,
+                                       Optional<MethodTypeDesc> methodType) {
+        return new UnboundAttribute.UnboundEnclosingMethodAttribute(
+                        TemporaryConstantPool.INSTANCE.classEntry(className),
+                        methodName.isPresent() && methodType.isPresent()
+                                ? TemporaryConstantPool.INSTANCE.natEntry(methodName.get(), methodType.get())
+                                : null);
     }
 }

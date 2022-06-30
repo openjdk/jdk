@@ -29,6 +29,7 @@ import jdk.classfile.Attribute;
 import jdk.classfile.ClassElement;
 import jdk.classfile.constantpool.Utf8Entry;
 import jdk.classfile.impl.BoundAttribute;
+import jdk.classfile.impl.TemporaryConstantPool;
 import jdk.classfile.impl.UnboundAttribute;
 
 /**
@@ -54,5 +55,13 @@ public sealed interface CompilationIDAttribute
      */
     static CompilationIDAttribute of(Utf8Entry id) {
         return new UnboundAttribute.UnboundCompilationIDAttribute(id);
+    }
+
+    /**
+     * {@return a {@code CompilationID} attribute}
+     * @param id the compilation ID
+     */
+    static CompilationIDAttribute of(String id) {
+        return new UnboundAttribute.UnboundCompilationIDAttribute(TemporaryConstantPool.INSTANCE.utf8Entry(id));
     }
 }

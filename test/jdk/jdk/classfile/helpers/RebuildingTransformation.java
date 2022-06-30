@@ -136,13 +136,13 @@ class RebuildingTransformation {
                             }
                         });
                     }
-                    case CompilationIDAttribute a -> clb.with(CompilationIDAttribute.of(a.compilationId())); //missing attribute factory method accepting String
+                    case CompilationIDAttribute a -> clb.with(CompilationIDAttribute.of(a.compilationId().stringValue()));
                     case DeprecatedAttribute a -> clb.with(DeprecatedAttribute.of());
-                    case EnclosingMethodAttribute a -> clb.with(EnclosingMethodAttribute.of(a.enclosingClass(), a.enclosingMethod().orElse(null))); //missing attribute factory method accepting symbols
+                    case EnclosingMethodAttribute a -> clb.with(EnclosingMethodAttribute.of(a.enclosingClass().asSymbol(), a.enclosingMethodName().map(Utf8Entry::stringValue), a.enclosingMethodTypeSymbol()));
                     case InnerClassesAttribute a -> clb.with(InnerClassesAttribute.of(a.classes().stream().map(ici -> InnerClassInfo.of(
                             ici.innerClass().asSymbol(),
-                            ici.outerClass().map(ClassEntry::asSymbol).orElse(null),
-                            ici.innerName().map(Utf8Entry::stringValue).orElse(null),
+                            ici.outerClass().map(ClassEntry::asSymbol),
+                            ici.innerName().map(Utf8Entry::stringValue),
                             ici.flagsMask())).toArray(InnerClassInfo[]::new)));
                     case ModuleAttribute a -> clb.with(ModuleAttribute.of(a.moduleName().asSymbol(), mob -> {
                         mob.moduleFlags(a.moduleFlagsMask());
@@ -159,7 +159,7 @@ class RebuildingTransformation {
                     case ModulePackagesAttribute a -> clb.with(ModulePackagesAttribute.ofNames(a.packages().stream().map(PackageEntry::asSymbol).toArray(PackageDesc[]::new)));
                     case ModuleResolutionAttribute a -> clb.with(ModuleResolutionAttribute.of(a.resolutionFlags()));
                     case ModuleTargetAttribute a -> clb.with(ModuleTargetAttribute.of(a.targetPlatform().stringValue()));
-                    case NestHostAttribute a -> clb.with(NestHostAttribute.of(a.nestHost())); //missing attribute factory method accpeting ClassDesc
+                    case NestHostAttribute a -> clb.with(NestHostAttribute.of(a.nestHost().asSymbol()));
                     case NestMembersAttribute a -> clb.with(NestMembersAttribute.ofSymbols(a.nestMembers().stream().map(ClassEntry::asSymbol).toArray(ClassDesc[]::new)));
                     case PermittedSubclassesAttribute a -> clb.with(PermittedSubclassesAttribute.ofSymbols(a.permittedSubclasses().stream().map(ClassEntry::asSymbol).toArray(ClassDesc[]::new)));
                     case RecordAttribute a -> clb.with(RecordAttribute.of(a.components().stream().map(rci ->
@@ -179,7 +179,7 @@ class RebuildingTransformation {
                     case SignatureAttribute a -> clb.with(SignatureAttribute.of(a.asClassSignature()));
                     case SourceDebugExtensionAttribute a -> clb.with(SourceDebugExtensionAttribute.of(a.contents()));
                     case SourceFileAttribute a -> clb.with(SourceFileAttribute.of(a.sourceFile().stringValue()));
-                    case SourceIDAttribute a -> clb.with(SourceIDAttribute.of(a.sourceId()));  //missing attribute factory method accepting String
+                    case SourceIDAttribute a -> clb.with(SourceIDAttribute.of(a.sourceId().stringValue()));
                     case SyntheticAttribute a -> clb.with(SyntheticAttribute.of());
                     case CustomAttribute a -> throw new AssertionError("Unexpected custom attribute: " + a.attributeName());
                     case UnknownAttribute a -> throw new AssertionError("Unexpected unknown attribute: " + a.attributeName());

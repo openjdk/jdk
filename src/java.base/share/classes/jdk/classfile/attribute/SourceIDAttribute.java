@@ -30,6 +30,7 @@ import jdk.classfile.ClassElement;
 import jdk.classfile.ClassModel;
 import jdk.classfile.constantpool.Utf8Entry;
 import jdk.classfile.impl.BoundAttribute;
+import jdk.classfile.impl.TemporaryConstantPool;
 import jdk.classfile.impl.UnboundAttribute;
 
 /**
@@ -54,5 +55,13 @@ public sealed interface SourceIDAttribute
      */
     static SourceIDAttribute of(Utf8Entry sourceId) {
         return new UnboundAttribute.UnboundSourceIDAttribute(sourceId);
+    }
+
+    /**
+     * {@return a {@code SourceID} attribute}
+     * @param sourceId the source id
+     */
+    static SourceIDAttribute of(String sourceId) {
+        return of(TemporaryConstantPool.INSTANCE.utf8Entry(sourceId));
     }
 }
