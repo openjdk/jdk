@@ -94,6 +94,14 @@ public class RSAKeyFactory extends KeyFactorySpi {
         "true".equalsIgnoreCase(GetPropertyAction.privilegedGetProperty(
                 "sun.security.rsa.restrictRSAExponent", "true"));
 
+    public static final BigInteger MIN_EXPONENT_RANGE_VAL = new BigInteger("65537");
+    public static final BigInteger MAX_EXPONENT_RANGE_VAL = new BigInteger("2").pow(256);
+
+    // see NIST SP 800-56B section 6.2.1
+    private static final boolean requireExpRangeCheck =
+        "true".equalsIgnoreCase(GetPropertyAction.privilegedGetProperty(
+                "sun.security.rsa.requireRSAExponentRangeCheck", "false"));
+
     static RSAKeyFactory getInstance(KeyType type) {
         return new RSAKeyFactory(type);
     }
@@ -191,6 +199,16 @@ public class RSAKeyFactory extends KeyFactorySpi {
                 MAX_RESTRICTED_EXPLEN + " bits " +
                 " if modulus is greater than " +
                 MAX_MODLEN_RESTRICT_EXP + " bits");
+        }
+
+         // If a RSAPublicKey and proper flag is set, require a valid range of values for the public exponent, per NIST 800-56B
+        if (requireExpRangeCheck && (exponent != null) &&
+                 (exponent.compareTo(MIN_EXPONENT_RANGE_VAL) == -1 ||
+                         exponent.compareTo(MAX_EXPONENT_RANGE_VAL) != -1)) {
+            throw new InvalidKeyException("RSA exponents must be between " +
+                MIN_EXPONENT_RANGE_VAL + " and " + MAX_EXPONENT_RANGE_VAL +
+                " when the corresponding property is set");
+
         }
     }
 
