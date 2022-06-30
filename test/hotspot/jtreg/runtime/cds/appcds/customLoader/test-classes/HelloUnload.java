@@ -99,22 +99,11 @@ public class HelloUnload {
         ClassUnloadCommon.failIf(!wb.isClassAlive(className), "should be live here");
 
         if (doUnload) {
-            String loaderName = urlClassLoader.getName();
-            int loadedRefcount = wb.getSymbolRefcount(loaderName);
-            System.out.println("Refcount of symbol " + loaderName + " is " + loadedRefcount);
-
             urlClassLoader = null; c = null; o = null;
             ClassUnloadCommon.triggerUnloading();
             System.out.println("Is CustomLoadee alive? " + wb.isClassAlive(className));
             ClassUnloadCommon.failIf(wb.isClassAlive(className), "should have been unloaded");
 
-            int unloadedRefcount = wb.getSymbolRefcount(loaderName);
-            System.out.println("Refcount of symbol " + loaderName + " is " + unloadedRefcount);
-
-            // refcount of a permanent symbol will not be decremented
-            if (loadedRefcount != 65535) {
-                ClassUnloadCommon.failIf(unloadedRefcount != (loadedRefcount - 1), "Refcount must be decremented");
-            }
         }
     }
 }
