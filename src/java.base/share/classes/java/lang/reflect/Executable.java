@@ -431,7 +431,7 @@ public abstract sealed class Executable extends AccessibleObject
 
     private ParameterData parameterData() {
         ParameterData parameterData = this.parameterData;
-        if (parameterData != null){
+        if (parameterData != null) {
             return parameterData;
         }
 
