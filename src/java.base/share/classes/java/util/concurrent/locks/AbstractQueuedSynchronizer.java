@@ -430,7 +430,11 @@ public abstract class AbstractQueuedSynchronizer
      * Most of the above is performed by primary internal method
      * acquire, that is invoked in some way by all exported acquire
      * methods.  (It is usually easy for compilers to optimize
-     * call-site specializations when heavily used.)
+     * call-site specializations when heavily used.)  This method may
+     * be called by components that cannot be allowed to fail to
+     * acquire locks when encountering OutOfMemoryErrors, so it
+     * resorts to spin-waits with backoff if nodes cannot be
+     * allocated. Similarly for Condition waits.
      *
      * There are several arbitrary decisions about when and how to
      * check interrupts in both acquire and await before and/or after
@@ -564,9 +568,11 @@ public abstract class AbstractQueuedSynchronizer
 
     /** tries once to CAS a new dummy node for head */
     private void tryInitializeHead() {
-        Node h = new ExclusiveNode();
-        if (U.compareAndSetReference(this, HEAD, null, h))
-            tail = h;
+        if (tail == null) {
+            Node h = new ExclusiveNode();
+            if (U.compareAndSetReference(this, HEAD, null, h))
+                tail = h;
+        }
     }
 
     /**
@@ -638,14 +644,17 @@ public abstract class AbstractQueuedSynchronizer
         Thread current = Thread.currentThread();
         byte spins = 0, postSpins = 0;   // retries upon unpark of first thread
         boolean interrupted = false, first = false;
-        Node pred = null;                // predecessor of node when enqueued
+        Node t, pred = null;             // predecessor of node when enqueued
 
         /*
          * Repeatedly:
          *  Check if node now first
          *    if so, ensure head stable, else ensure valid predecessor
          *  if node is first or not yet enqueued, try acquiring
+         *  else if queue is not initialized, do so by attaching new header node
+         *     resort to spinwait on OOME trying to create node
          *  else if node not yet created, create it
+         *     resort to spinwait on OOME trying to create node
          *  else if not yet enqueued, try once to enqueue
          *  else if woken from park, retry (up to postSpins times)
          *  else if WAITING status not set, set and retry
@@ -688,18 +697,25 @@ public abstract class AbstractQueuedSynchronizer
                     return 1;
                 }
             }
-            if (node == null) {                 // allocate; retry before enqueue
-                if (shared)
-                    node = new SharedNode();
-                else
-                    node = new ExclusiveNode();
+            if ((t = tail) == null) {           // initialize queue
+                Node h = null;
+                try {
+                    h = new ExclusiveNode();
+                } catch (OutOfMemoryError oome) {
+                    return acquireOnOOME(shared, arg);
+                }
+                if (U.compareAndSetReference(this, HEAD, null, h))
+                    tail = h;
+            } else if (node == null) {          // allocate; retry before enqueue
+                try {
+                    node = (shared) ? new SharedNode() : new ExclusiveNode();
+                } catch (OutOfMemoryError oome) {
+                    return acquireOnOOME(shared, arg);
+                }
             } else if (pred == null) {          // try to enqueue
                 node.waiter = current;
-                Node t = tail;
                 node.setPrevRelaxed(t);         // avoid unnecessary fence
-                if (t == null)
-                    tryInitializeHead();
-                else if (!casTail(t, node))
+                if (!casTail(t, node))
                     node.setPrevRelaxed(null);  // back out
                 else
                     t.next = node;
@@ -723,6 +739,19 @@ public abstract class AbstractQueuedSynchronizer
             }
         }
         return cancelAcquire(node, interrupted, interruptible);
+    }
+
+    /**
+     * Spin-waits with backoff; used only upon OOME failures during acquire.
+     */
+    private int acquireOnOOME(boolean shared, int arg) {
+        for (long nanos = 1L;;) {
+            if (shared ? (tryAcquireShared(arg) >= 0) : tryAcquire(arg))
+                return 1;
+            U.park(false, nanos);               // must use Unsafe park to sleep
+            if (nanos < 1L << 30)               // max about 1 second
+                nanos <<= 1;
+        }
     }
 
     /**
@@ -1554,6 +1583,29 @@ public abstract class AbstractQueuedSynchronizer
         }
 
         /**
+         * Constructs objects needed for condition wait. On OOME,
+         * releases lock, sleeps, reacquires, and retries. This uses
+         * longer sleeps than the similar method acquireOnOOME because
+         * each attempt can throw.
+         */
+        private ConditionNode newConditionNode() {
+            for (long nanos = 1L << 20;;) {     // initially about 1ms
+                try {
+                    tryInitializeHead();        // ensure queue exists
+                    return new ConditionNode();
+                } catch (OutOfMemoryError oome) {
+                    int savedState = getState();
+                    boolean released = release(savedState);
+                    U.park(false, nanos);
+                    if (nanos < 1L << 30)       // max about 1 second
+                        nanos <<= 1;
+                    if (released)
+                        acquireOnOOME(false, savedState);
+                }
+            }
+        }
+
+        /**
          * Implements uninterruptible condition wait.
          * <ol>
          * <li>Save lock state returned by {@link #getState}.
@@ -1565,7 +1617,7 @@ public abstract class AbstractQueuedSynchronizer
          * </ol>
          */
         public final void awaitUninterruptibly() {
-            ConditionNode node = new ConditionNode();
+            ConditionNode node = newConditionNode();
             int savedState = enableWait(node);
             LockSupport.setCurrentBlocker(this); // for back-compatibility
             boolean interrupted = false, rejected = false;
@@ -1607,9 +1659,9 @@ public abstract class AbstractQueuedSynchronizer
          * </ol>
          */
         public final void await() throws InterruptedException {
+            ConditionNode node = newConditionNode();
             if (Thread.interrupted())
                 throw new InterruptedException();
-            ConditionNode node = new ConditionNode();
             int savedState = enableWait(node);
             LockSupport.setCurrentBlocker(this); // for back-compatibility
             boolean interrupted = false, cancelled = false, rejected = false;
@@ -1658,9 +1710,9 @@ public abstract class AbstractQueuedSynchronizer
          */
         public final long awaitNanos(long nanosTimeout)
                 throws InterruptedException {
+            ConditionNode node = newConditionNode();
             if (Thread.interrupted())
                 throw new InterruptedException();
-            ConditionNode node = new ConditionNode();
             int savedState = enableWait(node);
             long nanos = (nanosTimeout < 0L) ? 0L : nanosTimeout;
             long deadline = System.nanoTime() + nanos;
@@ -1702,9 +1754,9 @@ public abstract class AbstractQueuedSynchronizer
         public final boolean awaitUntil(Date deadline)
                 throws InterruptedException {
             long abstime = deadline.getTime();
+            ConditionNode node = newConditionNode();
             if (Thread.interrupted())
                 throw new InterruptedException();
-            ConditionNode node = new ConditionNode();
             int savedState = enableWait(node);
             boolean cancelled = false, interrupted = false;
             while (!canReacquire(node)) {
@@ -1743,9 +1795,9 @@ public abstract class AbstractQueuedSynchronizer
         public final boolean await(long time, TimeUnit unit)
                 throws InterruptedException {
             long nanosTimeout = unit.toNanos(time);
+            ConditionNode node = newConditionNode();
             if (Thread.interrupted())
                 throw new InterruptedException();
-            ConditionNode node = new ConditionNode();
             int savedState = enableWait(node);
             long nanos = (nanosTimeout < 0L) ? 0L : nanosTimeout;
             long deadline = System.nanoTime() + nanos;
