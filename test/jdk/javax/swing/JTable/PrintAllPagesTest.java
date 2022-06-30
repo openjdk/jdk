@@ -68,10 +68,10 @@ public class PrintAllPagesTest {
         });
 
         // add the test frame to dispose
-        PassFailJFrame.addTestFrame(f);
+        PassFailJFrame.addTestWindow(f);
 
         // Arrange the test instruction frame and test frame side by side
-        PassFailJFrame.positionTestFrame(f, PassFailJFrame.Position.HORIZONTAL);
+        PassFailJFrame.positionTestWindow(f, PassFailJFrame.Position.HORIZONTAL);
 
         SwingUtilities.invokeAndWait(() -> {
             try {

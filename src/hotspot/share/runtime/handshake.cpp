@@ -351,17 +351,12 @@ void Handshake::execute(HandshakeClosure* hs_cl, JavaThread* target) {
 }
 
 void Handshake::execute(HandshakeClosure* hs_cl, ThreadsListHandle* tlh, JavaThread* target) {
-  guarantee(target != nullptr, "must be");
-
-  JavaThread* current = JavaThread::current();
-  if (target == current) {
-    hs_cl->do_thread(target);
-    return;
-  }
-
-  HandshakeOperation op(hs_cl, target, current);
+  JavaThread* self = JavaThread::current();
+  HandshakeOperation op(hs_cl, target, Thread::current());
 
   jlong start_time_ns = os::javaTimeNanos();
+
+  guarantee(target != nullptr, "must be");
   if (tlh == nullptr) {
     guarantee(Thread::is_JavaThread_protected_by_TLH(target),
               "missing ThreadsListHandle in calling context.");
@@ -394,9 +389,9 @@ void Handshake::execute(HandshakeClosure* hs_cl, ThreadsListHandle* tlh, JavaThr
     hsy.add_result(pr);
     // Check for pending handshakes to avoid possible deadlocks where our
     // target is trying to handshake us.
-    if (SafepointMechanism::should_process(current)) {
+    if (SafepointMechanism::should_process(self)) {
       // Will not suspend here.
-      ThreadBlockInVM tbivm(current);
+      ThreadBlockInVM tbivm(self);
     }
     hsy.process();
   }

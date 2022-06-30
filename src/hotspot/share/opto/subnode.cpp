@@ -848,8 +848,12 @@ bool CmpUNode::is_index_range_check() const {
 Node *CmpINode::Ideal( PhaseGVN *phase, bool can_reshape ) {
   if (phase->type(in(2))->higher_equal(TypeInt::ZERO)) {
     switch (in(1)->Opcode()) {
+    case Op_CmpU3:              // Collapse a CmpU3/CmpI into a CmpU
+      return new CmpUNode(in(1)->in(1),in(1)->in(2));
     case Op_CmpL3:              // Collapse a CmpL3/CmpI into a CmpL
       return new CmpLNode(in(1)->in(1),in(1)->in(2));
+    case Op_CmpUL3:             // Collapse a CmpUL3/CmpI into a CmpUL
+      return new CmpULNode(in(1)->in(1),in(1)->in(2));
     case Op_CmpF3:              // Collapse a CmpF3/CmpI into a CmpF
       return new CmpFNode(in(1)->in(1),in(1)->in(2));
     case Op_CmpD3:              // Collapse a CmpD3/CmpI into a CmpD

@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/vmClasses.hpp"
 #include "compiler/oopMap.inline.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceStackChunkKlass.inline.hpp"

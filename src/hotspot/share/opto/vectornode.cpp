@@ -847,6 +847,7 @@ bool VectorNode::is_all_ones_vector(Node* n) {
   case Op_ReplicateS:
   case Op_ReplicateI:
   case Op_ReplicateL:
+  case Op_MaskAll:
     return is_con_M1(n->in(1));
   default:
     return false;
