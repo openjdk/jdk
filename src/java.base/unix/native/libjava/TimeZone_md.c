@@ -553,96 +553,22 @@ findJavaTZ_md(const char *java_home_dir)
 }
 
 /**
- * Used to calculate the offset between two tm structs.
- */
-static time_t
-calculateTimeOffset(struct tm tm1, struct tm tm2)
-{
-    time_t offset;
-    const int seconds_per_minute = 60;
-    const int seconds_per_hour = seconds_per_minute * 60;
-    const int seconds_per_day = seconds_per_hour * 24;
-    // The conversion of years and months is not important, as offset should never exceed a day.
-    const int seconds_per_month = seconds_per_day * 31;
-    const int seconds_per_year = seconds_per_month * 12;
-
-    // Apply mod to the result in order to normalize offset result to be under a day.
-    offset = ((tm1.tm_year - tm2.tm_year) * seconds_per_year +
-        (tm1.tm_mon - tm2.tm_mon) * seconds_per_month +
-        (tm1.tm_mday - tm2.tm_mday) * seconds_per_day +
-        (tm1.tm_hour - tm2.tm_hour) * seconds_per_hour +
-        (tm1.tm_min - tm2.tm_min) * seconds_per_minute) % seconds_per_day;
-    return offset;
-}
-
-/**
  * Returns a GMT-offset-based zone ID. (e.g., "GMT-08:00")
  */
-
-#if defined(MACOSX)
-
 char *
 getGMTOffsetID()
 {
-    time_t offset;
-    char sign, buf[32];
-    struct tm local_tm;
-    time_t clock;
-
-    clock = time(NULL);
-    if (localtime_r(&clock, &local_tm) == NULL) {
-        return strdup("GMT");
-    }
-    offset = (time_t)local_tm.tm_gmtoff;
-    if (offset == 0) {
-        return strdup("GMT");
-    }
-    if (offset > 0) {
-        sign = '+';
-    } else {
-        offset = -offset;
-        sign = '-';
-    }
-    sprintf(buf, (const char *)"GMT%c%02d:%02d",
-            sign, (int)(offset/3600), (int)((offset%3600)/60));
-    return strdup(buf);
-}
-
-#else
-
-char *
-getGMTOffsetID()
-{
-    time_t offset;
-    char sign, buf[32];
+    char buf[32];
+    char offset[6];
     struct tm localtm;
-    time_t clock;
-
-    clock = time(NULL);
+    time_t clock = time(NULL);
     if (localtime_r(&clock, &localtm) == NULL) {
         return strdup("GMT");
     }
 
-    struct tm gmt;
+    strftime(offset, 6, "%z", &localtm);
+    char gmt_offset[] = {offset[0], offset[1], offset[2], ':', offset[3], offset[4], '\0'};
 
-    if (gmtime_r(&clock, &gmt) == NULL) {
-        return strdup("GMT");
-    }
-
-    offset = calculateTimeOffset(localtm, gmt);
-
-    if (offset == 0) {
-        return strdup("GMT");
-    }
-
-    if (offset > 0) {
-        sign = '+';
-    } else {
-        offset = -offset;
-        sign = '-';
-    }
-    sprintf(buf, (const char *)"GMT%c%02d:%02d",
-            sign, (int)(offset/3600), (int)((offset%3600)/60));
+    sprintf(buf, (const char *)"GMT%s", gmt_offset);
     return strdup(buf);
 }
-#endif /* MACOSX */
