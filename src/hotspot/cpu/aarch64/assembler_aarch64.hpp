@@ -150,7 +150,7 @@ REGISTER_DECLARATION(Register, rlocals,   r24);
 REGISTER_DECLARATION(Register, rbcp,      r22);
 // Dispatch table base
 REGISTER_DECLARATION(Register, rdispatch, r21);
-// Java interpreter stack pointer
+// Java expression stack pointer
 REGISTER_DECLARATION(Register, esp,      r20);
 // Sender's SP while in interpreter
 REGISTER_DECLARATION(Register, r19_sender_sp, r19);
