@@ -142,8 +142,8 @@ REGISTER_DECLARATION(Register, rthread,   r28);
 REGISTER_DECLARATION(Register, rheapbase, r27);
 // constant pool cache
 REGISTER_DECLARATION(Register, rcpool,    r26);
-// monitors allocated on stack
-REGISTER_DECLARATION(Register, rmonitors, r25);
+// r25 is a callee-saved temp
+// REGISTER_DECLARATION(Register, unused, r25);
 // locals on stack
 REGISTER_DECLARATION(Register, rlocals,   r24);
 // bytecode pointer

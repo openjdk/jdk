@@ -191,14 +191,14 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     entry_point = __ pc();
     __ ldrd(v0, Address(esp));
     __ mov(sp, r19_sender_sp);
-    __ mov(r19, lr);
-    continuation = r19;  // The first callee-saved register
+    __ mov(r23, lr);
+    continuation = r23;  // The first free callee-saved register
     generate_transcendental_entry(kind, 1);
     break;
   case Interpreter::java_lang_math_pow :
     entry_point = __ pc();
-    __ mov(r19, lr);
-    continuation = r19;
+    __ mov(r23, lr);
+    continuation = r23;
     __ ldrd(v0, Address(esp, 2 * Interpreter::stackElementSize));
     __ ldrd(v1, Address(esp));
     __ mov(sp, r19_sender_sp);
@@ -1426,9 +1426,6 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ bind(no_oop);
   }
 
-  // Restore SP (drop native parameters area), to keep SP in sync with extended_sp in frame
-  // __ restore_sp_after_call();
-
   {
     Label no_reguard;
     __ lea(rscratch1, Address(rthread, in_bytes(JavaThread::stack_guard_state_offset())));
@@ -1526,7 +1523,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // remove frame anchor
   __ leave();
 
-  // resture sender sp
+  // restore sender sp
   __ mov(sp, esp);
 
   __ ret(lr);

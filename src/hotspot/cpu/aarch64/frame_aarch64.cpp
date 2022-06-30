@@ -676,6 +676,8 @@ void internal_pf(uintptr_t sp, uintptr_t fp, uintptr_t pc, uintptr_t bcx) {
   DESCRIBE_FP_OFFSET(interpreter_frame_last_sp);
   DESCRIBE_FP_OFFSET(interpreter_frame_method);
   DESCRIBE_FP_OFFSET(interpreter_frame_mdp);
+  DESCRIBE_FP_OFFSET(interpreter_frame_extended_sp);
+  DESCRIBE_FP_OFFSET(interpreter_frame_mirror);
   DESCRIBE_FP_OFFSET(interpreter_frame_cache);
   DESCRIBE_FP_OFFSET(interpreter_frame_locals);
   DESCRIBE_FP_OFFSET(interpreter_frame_bcp);

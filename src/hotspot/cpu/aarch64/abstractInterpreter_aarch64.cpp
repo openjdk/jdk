@@ -90,7 +90,7 @@ int AbstractInterpreter::size_activation(int max_stack,
   // for the callee's params we only need to account for the extra
   // locals.
   int size = overhead +
-         (callee_locals - callee_params) +
+         (callee_locals - callee_params) * Interpreter::stackElementWords +
          monitors * frame::interpreter_frame_monitor_size() +
          // On the top frame, at all times SP <= ESP, and SP is
          // 16-aligned.  We ensure this by adjusting SP on method
