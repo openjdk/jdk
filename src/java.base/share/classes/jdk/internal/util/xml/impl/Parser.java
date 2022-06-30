@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import jdk.internal.org.xml.sax.InputSource;
@@ -42,7 +43,11 @@ public abstract class Parser {
 
     public static final String FAULT = "";
     protected static final int BUFFSIZE_READER = 512;
+    // Initial buffer (mBuff) size
     protected static final int BUFFSIZE_PARSER = 128;
+    // Max buffer size
+    private static final int MAX_ARRAY_SIZE = 1024 << 16;
+
     /**
      * The end of stream character.
      */
@@ -525,6 +530,10 @@ public abstract class Parser {
         mPh = PH_DTD;  // DTD
         for (short st = 0; st >= 0;) {
             ch = getch();
+            // report error if EOS is reached while parsing the DTD
+            if (ch == EOS) {
+                panic(FAULT);
+            }
             switch (st) {
                 case 0:     // read the document type name
                     if (chtyp(ch) != ' ') {
@@ -1664,6 +1673,10 @@ public abstract class Parser {
         mBuffIdx = -1;
         for (short st = 0; st >= 0;) {
             ch = getch();
+            // report error if EOS is reached while parsing the DTD
+            if (ch == EOS) {
+                panic(FAULT);
+            }
             switch (st) {
                 case 0:     // the first '[' of the CDATA open
                     if (ch == '[') {
@@ -1871,7 +1884,7 @@ public abstract class Parser {
     }
 
     /**
-     * Resoves an entity.
+     * Resolves an entity.
      *
      * This method resolves built-in and character entity references. It is also
      * reports external entities to the application.
@@ -2529,7 +2542,7 @@ public abstract class Parser {
     }
 
     /**
-     * Reads a single or double quotted string in to the buffer.
+     * Reads a single or double quoted string into the buffer.
      *
      * This method resolves entities inside a string unless the parser parses
      * DTD.
@@ -2664,7 +2677,7 @@ public abstract class Parser {
      * @param ch The character to append to the buffer.
      * @param mode The normalization mode.
      */
-    private void bappend(char ch, char mode) {
+    private void bappend(char ch, char mode) throws Exception {
         //              This implements attribute value normalization as
         //              described in the XML specification [#3.3.3].
         switch (mode) {
@@ -2714,16 +2727,9 @@ public abstract class Parser {
      *
      * @param ch The character to append to the buffer.
      */
-    private void bappend(char ch) {
-        try {
-            mBuff[++mBuffIdx] = ch;
-        } catch (Exception exp) {
-            //          Double the buffer size
-            char buff[] = new char[mBuff.length << 1];
-            System.arraycopy(mBuff, 0, buff, 0, mBuff.length);
-            mBuff = buff;
-            mBuff[mBuffIdx] = ch;
-        }
+    private void bappend(char ch) throws Exception {
+        ensureCapacity(++mBuffIdx);
+        mBuff[mBuffIdx] = ch;
     }
 
     /**
@@ -2733,14 +2739,9 @@ public abstract class Parser {
      * @param cidx The character buffer (mChars) start index.
      * @param bidx The parser buffer (mBuff) start index.
      */
-    private void bcopy(int cidx, int bidx) {
+    private void bcopy(int cidx, int bidx) throws Exception {
         int length = mChIdx - cidx;
-        if ((bidx + length + 1) >= mBuff.length) {
-            //          Expand the buffer
-            char buff[] = new char[mBuff.length + length];
-            System.arraycopy(mBuff, 0, buff, 0, mBuff.length);
-            mBuff = buff;
-        }
+        ensureCapacity(bidx + length + 1);
         System.arraycopy(mChars, cidx, mBuff, bidx, length);
         mBuffIdx += length;
     }
@@ -3327,7 +3328,7 @@ public abstract class Parser {
     }
 
     /**
-     * Retrives the next character in the document.
+     * Retrieves the next character in the document.
      *
      * @return The next character in the document.
      */
@@ -3432,5 +3433,24 @@ public abstract class Parser {
         mDltd = pair;
 
         return next;
+    }
+
+    private void ensureCapacity(int minCapacity) throws Exception {
+        if (mBuff == null) {
+            int newCapacity = minCapacity > BUFFSIZE_PARSER ?
+                    minCapacity + BUFFSIZE_PARSER : BUFFSIZE_PARSER;
+            mBuff = new char[newCapacity];
+            return;
+        }
+
+        if (mBuff.length <= minCapacity) {
+            int size = mBuff.length << 1;
+            int newCapacity = size > minCapacity ? size : minCapacity + BUFFSIZE_PARSER;
+            if (newCapacity < 0 || newCapacity > MAX_ARRAY_SIZE) {
+                panic(FAULT);
+            }
+
+            mBuff = Arrays.copyOf(mBuff, newCapacity);
+        }
     }
 }
