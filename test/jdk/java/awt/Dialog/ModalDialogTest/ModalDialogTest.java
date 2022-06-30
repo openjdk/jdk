@@ -47,8 +47,6 @@ import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Deque;
-import java.util.concurrent.ConcurrentLinkedDeque;
 
 /*
  * @test
@@ -158,12 +156,10 @@ class WindowPanel extends Panel {
     private final Button frameButton;
     private final Button modalDialogButton;
 
-    static final Deque<Window> windowsList = new ConcurrentLinkedDeque<>();
-
     public static void buildAndShowWindow(Window win, Component top,
                                           TestPanel center, Component bottom) {
         final TextArea ta = TestPanel.ta;
-        windowsList.add(win);
+
         if (winListener == null) {
             winListener = new WindowListener() {
                 public void windowOpened(WindowEvent e) {
@@ -202,17 +198,21 @@ class WindowPanel extends Panel {
             };
         }
 
-         win.addWindowListener(winListener);
-         win.addFocusListener(focusListener);
-         if (!(win instanceof Frame)) {
-             Rectangle pBounds = win.getOwner().getBounds();
-             win.setLocation(pBounds.x, pBounds.y + pBounds.height);
-         }
-         win.add(top, BorderLayout.NORTH);
-         win.add(center, BorderLayout.CENTER);
-         win.add(bottom, BorderLayout.SOUTH);
-         win.pack();
-         win.setVisible(true);
+        win.addWindowListener(winListener);
+        win.addFocusListener(focusListener);
+
+        if (!(win instanceof Frame)) {
+            Rectangle pBounds = win.getOwner().getBounds();
+            win.setLocation(pBounds.x, pBounds.y + pBounds.height);
+        }
+
+        win.add(top, BorderLayout.NORTH);
+        win.add(center, BorderLayout.CENTER);
+        win.add(bottom, BorderLayout.SOUTH);
+        win.pack();
+        win.setVisible(true);
+
+        PassFailJFrame.addTestWindow(win);
     }
 
     public Window getParentWindow() {
@@ -310,9 +310,11 @@ public class ModalDialogTest {
         sb.append("""
             When the test is ready, one Root Frame is shown. The Frame has a
             "Heavy button", a blue lightweight component and a TextArea to
-            display message. The Root Frame has no owner.\n
+            display message. The Root Frame has no owner.
+
             \t *. Click button "New Frame" to show a new Frame, notice that this
-            \t Frame 1 has a Menu added. Verify that Menu is accessible.\n
+            \t Frame 1 has a Menu added. Verify that Menu is accessible.
+
             \t *. Now click button "New Modal Dialog" to bring up a modal dialog.
             """);
 
@@ -329,7 +331,8 @@ public class ModalDialogTest {
             \t whenever a Modal dialog is up, no mouse event can be generated for
             \t other windows.
             \t (All the events are printed in the TextArea in Root Window).
-            \t This tests the fix for 4124096.\n
+            \t This tests the fix for 4124096.
+
             Close the modal dialog before pressing fail/pass button.
             """);
 
@@ -348,8 +351,9 @@ public class ModalDialogTest {
             new WindowPanel()
         );
 
-        PassFailJFrame.addTestFrame(frame);
-        PassFailJFrame.positionTestFrame(frame, PassFailJFrame.Position.HORIZONTAL);
+        // adding only the root frame to be positioned
+        // w.r.t instruction frame
+        passFailJFrame.positionTestWindow(frame, PassFailJFrame.Position.HORIZONTAL);
         passFailJFrame.awaitAndCheck();
     }
 }
