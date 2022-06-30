@@ -409,10 +409,10 @@ RuntimeStub* RuntimeStub::new_runtime_stub(const char* stub_name,
                                            bool caller_must_gc_arguments)
 {
   RuntimeStub* stub = NULL;
+  unsigned int size = CodeBlob::allocation_size(cb, sizeof(RuntimeStub));
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    unsigned int size = CodeBlob::allocation_size(cb, sizeof(RuntimeStub));
     stub = new (size) RuntimeStub(stub_name, cb, size, frame_complete, frame_size, oop_maps, caller_must_gc_arguments);
   }
 
@@ -468,10 +468,10 @@ DeoptimizationBlob* DeoptimizationBlob::create(
   int        frame_size)
 {
   DeoptimizationBlob* blob = NULL;
+  unsigned int size = CodeBlob::allocation_size(cb, sizeof(DeoptimizationBlob));
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    unsigned int size = CodeBlob::allocation_size(cb, sizeof(DeoptimizationBlob));
     blob = new (size) DeoptimizationBlob(cb,
                                          size,
                                          oop_maps,
@@ -507,10 +507,10 @@ UncommonTrapBlob* UncommonTrapBlob::create(
   int        frame_size)
 {
   UncommonTrapBlob* blob = NULL;
+  unsigned int size = CodeBlob::allocation_size(cb, sizeof(UncommonTrapBlob));
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    unsigned int size = CodeBlob::allocation_size(cb, sizeof(UncommonTrapBlob));
     blob = new (size) UncommonTrapBlob(cb, size, oop_maps, frame_size);
   }
 
@@ -543,10 +543,10 @@ ExceptionBlob* ExceptionBlob::create(
   int         frame_size)
 {
   ExceptionBlob* blob = NULL;
+  unsigned int size = CodeBlob::allocation_size(cb, sizeof(ExceptionBlob));
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    unsigned int size = CodeBlob::allocation_size(cb, sizeof(ExceptionBlob));
     blob = new (size) ExceptionBlob(cb, size, oop_maps, frame_size);
   }
 
@@ -578,10 +578,10 @@ SafepointBlob* SafepointBlob::create(
   int         frame_size)
 {
   SafepointBlob* blob = NULL;
+  unsigned int size = CodeBlob::allocation_size(cb, sizeof(SafepointBlob));
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    unsigned int size = CodeBlob::allocation_size(cb, sizeof(SafepointBlob));
     blob = new (size) SafepointBlob(cb, size, oop_maps, frame_size);
   }
 

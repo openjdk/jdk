@@ -496,6 +496,7 @@ java/lang/invoke/LFCaching/LFGarbageCollectedTest.java          8078602 generic-
 java/lang/invoke/lambda/LambdaFileEncodingSerialization.java    8249079 linux-x64
 java/lang/invoke/RicochetTest.java                              8251969 generic-all
 java/lang/CompressExpandTest.java                               8287851 generic-all
+java/lang/ref/OOMEInReferenceHandler.java                       8066859 generic-all
 
 ############################################################################
 
@@ -752,6 +753,7 @@ jdk/jfr/event/os/TestThreadContextSwitches.java                 8247776 windows-
 jdk/jfr/startupargs/TestStartName.java                          8214685 windows-x64
 jdk/jfr/startupargs/TestStartDuration.java                      8214685 windows-x64
 jdk/jfr/jvm/TestWaste.java                                      8282427 generic-all
+jdk/jfr/api/consumer/recordingstream/TestOnEvent.java           8255404 linux-x64
 
 ############################################################################
 

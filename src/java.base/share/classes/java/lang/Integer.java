@@ -1500,6 +1500,7 @@ public final class Integer extends Number
      *         unsigned values
      * @since 1.8
      */
+    @IntrinsicCandidate
     public static int compareUnsigned(int x, int y) {
         return compare(x + MIN_VALUE, y + MIN_VALUE);
     }

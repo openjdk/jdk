@@ -38,9 +38,8 @@ import java.util.EnumSet;
  */
 public class SystemPropertyTaglet extends BaseTaglet {
 
-    SystemPropertyTaglet(){
-        super(DocTree.Kind.SYSTEM_PROPERTY, true, EnumSet.of(Location.CONSTRUCTOR, Location.METHOD, Location.FIELD,
-                Location.PACKAGE, Location.MODULE, Location.TYPE));
+    SystemPropertyTaglet() {
+        super(DocTree.Kind.SYSTEM_PROPERTY, true, EnumSet.allOf(Location.class));
     }
 
     @Override
