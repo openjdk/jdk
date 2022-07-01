@@ -54,7 +54,7 @@ public sealed interface MethodModel
     Utf8Entry methodType();
 
     /** {@return the method descriptor of this method, as a symbolic descriptor} */
-    default MethodTypeDesc descriptorSymbol() {
+    default MethodTypeDesc methodTypeSymbol() {
         return MethodTypeDesc.ofDescriptor(methodType().stringValue());
     }
 

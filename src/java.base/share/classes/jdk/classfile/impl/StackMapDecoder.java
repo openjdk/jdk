@@ -64,7 +64,7 @@ public class StackMapDecoder {
 
     static StackMapFrame initFrame(MethodModel method) {
         VerificationTypeInfo vtis[];
-        var mdesc = method.descriptorSymbol();
+        var mdesc = method.methodTypeSymbol();
         int i = 0;
         if (!method.flags().has(AccessFlag.STATIC)) {
             vtis = new VerificationTypeInfo[mdesc.parameterCount() + 1];

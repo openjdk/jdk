@@ -70,7 +70,7 @@ public class AdvancedTransformationsTest {
                 if (cle instanceof MethodModel mm) {
                     clb.transformMethod(mm, (mb, me) -> {
                         if (me instanceof CodeModel com) {
-                            var shifter = new CodeLocalsShifter(mm.flags(), mm.descriptorSymbol());
+                            var shifter = new CodeLocalsShifter(mm.flags(), mm.methodTypeSymbol());
                             shifter.addLocal(TypeKind.ReferenceType);
                             shifter.addLocal(TypeKind.LongType);
                             shifter.addLocal(TypeKind.IntType);
@@ -105,9 +105,9 @@ public class AdvancedTransformationsTest {
                                           .orElse(ClassHierarchyResolver.DEFAULT_CLASS_HIERARCHY_RESOLVER)
                     , null)); //System.out::print));
             remapped.fields().forEach(f -> f.findAttribute(Attributes.SIGNATURE).ifPresent(sa ->
-                    verifySignature(f.descriptorSymbol(), sa.asTypeSignature())));
+                    verifySignature(f.fieldTypeSymbol(), sa.asTypeSignature())));
             remapped.methods().forEach(m -> m.findAttribute(Attributes.SIGNATURE).ifPresent(sa -> {
-                    var md = m.descriptorSymbol();
+                    var md = m.methodTypeSymbol();
                     var ms = sa.asMethodSignature();
                     verifySignature(md.returnType(), ms.result());
                     var args = ms.arguments();
@@ -200,11 +200,11 @@ public class AdvancedTransformationsTest {
             target.forEachElement(cle -> {
                 CodeModel instrumentorCodeModel;
                 if (cle instanceof MethodModel mm && ((instrumentorCodeModel = instrumentorCodeMap.get(mm.methodName().stringValue() + mm.methodType().stringValue())) != null)) {
-                    clb.withMethod(mm.methodName().stringValue(), mm.descriptorSymbol(), mm.flags().flagsMask(),
+                    clb.withMethod(mm.methodName().stringValue(), mm.methodTypeSymbol(), mm.flags().flagsMask(),
                                    mb -> mm.forEachElement(me -> {
                         if (me instanceof CodeModel targetCodeModel) {
                             //instrumented methods are merged
-                            var instrumentorLocalsShifter = new CodeLocalsShifter(mm.flags(), mm.descriptorSymbol());
+                            var instrumentorLocalsShifter = new CodeLocalsShifter(mm.flags(), mm.methodTypeSymbol());
                             var instrumentorCodeRemapperAndShifter =
                                     instrumentorClassRemapper.codeTransform()
                                                              .andThen(instrumentorLocalsShifter);

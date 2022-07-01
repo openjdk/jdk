@@ -107,9 +107,9 @@ public sealed interface ClassRemapper {
             return (ClassBuilder clb, ClassElement cle) -> {
                 switch (cle) {
                     case FieldModel fm ->
-                        clb.withField(fm.fieldName().stringValue(), map(fm.descriptorSymbol()), fb -> fm.forEachElement(fieldTransform().resolve(fb).consumer()));
+                        clb.withField(fm.fieldName().stringValue(), map(fm.fieldTypeSymbol()), fb -> fm.forEachElement(fieldTransform().resolve(fb).consumer()));
                     case MethodModel mm ->
-                        clb.withMethod(mm.methodName().stringValue(), mapMethodDesc(mm.descriptorSymbol()), mm.flags().flagsMask(), mb -> mm.forEachElement(methodTransform().resolve(mb).consumer()));
+                        clb.withMethod(mm.methodName().stringValue(), mapMethodDesc(mm.methodTypeSymbol()), mm.flags().flagsMask(), mb -> mm.forEachElement(methodTransform().resolve(mb).consumer()));
                     case Superclass sc ->
                         clb.withSuperclass(map(sc.superclassEntry().asSymbol()));
                     case Interfaces ins ->

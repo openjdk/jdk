@@ -45,7 +45,7 @@ class RebuildingTransformation {
                     case Interfaces i -> clb.withInterfaceSymbols(i.interfaces().stream().map(ClassEntry::asSymbol).toArray(ClassDesc[]::new));
                     case ClassfileVersion v -> clb.withVersion(v.majorVersion(), v.minorVersion());
                     case FieldModel fm ->
-                        clb.withField(fm.fieldName().stringValue(), fm.descriptorSymbol(), fb -> {
+                        clb.withField(fm.fieldName().stringValue(), fm.fieldTypeSymbol(), fb -> {
                             for (var fe : fm) {
                                 switch (fe) {
                                     case AccessFlags af -> fb.withFlags(af.flagsMask());
@@ -55,7 +55,7 @@ class RebuildingTransformation {
                                     case RuntimeInvisibleTypeAnnotationsAttribute a -> fb.with(RuntimeInvisibleTypeAnnotationsAttribute.of(transformTypeAnnotations(a.annotations(), null, null)));
                                     case RuntimeVisibleAnnotationsAttribute a -> fb.with(RuntimeVisibleAnnotationsAttribute.of(transformAnnotations(a.annotations())));
                                     case RuntimeVisibleTypeAnnotationsAttribute a -> fb.with(RuntimeVisibleTypeAnnotationsAttribute.of(transformTypeAnnotations(a.annotations(), null, null)));
-                                    case SignatureAttribute a -> fb.with(SignatureAttribute.of(a.asTypeSignature()));
+                                    case SignatureAttribute a -> fb.with(SignatureAttribute.of(Signature.parseFrom(a.asTypeSignature().signatureString())));
                                     case SyntheticAttribute a -> fb.with(SyntheticAttribute.of());
                                     case CustomAttribute a -> throw new AssertionError("Unexpected custom attribute: " + a.attributeName());
                                     case UnknownAttribute a -> throw new AssertionError("Unexpected unknown attribute: " + a.attributeName());
@@ -63,7 +63,7 @@ class RebuildingTransformation {
                             }
                         });
                     case MethodModel mm -> {
-                        clb.withMethod(mm.methodName().stringValue(), mm.descriptorSymbol(), mm.flags().flagsMask(), mb -> {
+                        clb.withMethod(mm.methodName().stringValue(), mm.methodTypeSymbol(), mm.flags().flagsMask(), mb -> {
                             for (var me : mm) {
                                 switch (me) {
                                     case AccessFlags af -> mb.withFlags(af.flagsMask());
@@ -108,8 +108,8 @@ class RebuildingTransformation {
                                                 case LineNumber pi -> cob.lineNumber(pi.line());
                                                 case LocalVariable pi -> cob.localVariable(pi.slot(), pi.name().stringValue(), pi.typeSymbol(), labels.computeIfAbsent(pi.startScope(), l -> cob.newLabel()),
                                                         labels.computeIfAbsent(pi.endScope(), l -> cob.newLabel()));
-                                                case LocalVariableType pi -> cob.localVariableType(pi.slot(), pi.name().stringValue(), pi.signatureSymbol(), labels.computeIfAbsent(pi.startScope(), l -> cob.newLabel()),
-                                                        labels.computeIfAbsent(pi.endScope(), l -> cob.newLabel()));
+                                                case LocalVariableType pi -> cob.localVariableType(pi.slot(), pi.name().stringValue(), Signature.parseFrom(pi.signatureSymbol().signatureString()),
+                                                        labels.computeIfAbsent(pi.startScope(), l -> cob.newLabel()), labels.computeIfAbsent(pi.endScope(), l -> cob.newLabel()));
                                                 case RuntimeInvisibleTypeAnnotationsAttribute a -> cob.with(RuntimeInvisibleTypeAnnotationsAttribute.of(transformTypeAnnotations(a.annotations(), cob, labels)));
                                                 case RuntimeVisibleTypeAnnotationsAttribute a -> cob.with(RuntimeVisibleTypeAnnotationsAttribute.of(transformTypeAnnotations(a.annotations(), cob, labels)));
                                                 case CustomAttribute a -> throw new AssertionError("Unexpected custom attribute: " + a.attributeName());
@@ -127,7 +127,7 @@ class RebuildingTransformation {
                                     case RuntimeVisibleAnnotationsAttribute a -> mb.with(RuntimeVisibleAnnotationsAttribute.of(transformAnnotations(a.annotations())));
                                     case RuntimeVisibleParameterAnnotationsAttribute a -> mb.with(RuntimeVisibleParameterAnnotationsAttribute.of(a.parameterAnnotations().stream().map(pas -> List.of(transformAnnotations(pas))).toList()));
                                     case RuntimeVisibleTypeAnnotationsAttribute a -> mb.with(RuntimeVisibleTypeAnnotationsAttribute.of(transformTypeAnnotations(a.annotations(), null, null)));
-                                    case SignatureAttribute a -> mb.with(SignatureAttribute.of(a.asMethodSignature()));
+                                    case SignatureAttribute a -> mb.with(SignatureAttribute.of(MethodSignature.parseFrom(a.asMethodSignature().signatureString())));
                                     case SyntheticAttribute a -> mb.with(SyntheticAttribute.of());
                                     case CustomAttribute a -> throw new AssertionError("Unexpected custom attribute: " + a.attributeName());
                                     case UnknownAttribute a -> throw new AssertionError("Unexpected unknown attribute: " + a.attributeName());
@@ -168,14 +168,14 @@ class RebuildingTransformation {
                                         case RuntimeInvisibleTypeAnnotationsAttribute ritaa -> rcac.accept(RuntimeInvisibleTypeAnnotationsAttribute.of(transformTypeAnnotations(ritaa.annotations(), null, null)));
                                         case RuntimeVisibleAnnotationsAttribute rvaa -> rcac.accept(RuntimeVisibleAnnotationsAttribute.of(transformAnnotations(rvaa.annotations())));
                                         case RuntimeVisibleTypeAnnotationsAttribute rvtaa -> rcac.accept(RuntimeVisibleTypeAnnotationsAttribute.of(transformTypeAnnotations(rvtaa.annotations(), null, null)));
-                                        case SignatureAttribute sa -> rcac.accept(SignatureAttribute.of(sa.asTypeSignature()));
+                                        case SignatureAttribute sa -> rcac.accept(SignatureAttribute.of(Signature.parseFrom(sa.asTypeSignature().signatureString())));
                                         default -> throw new AssertionError("Unexpected record component attribute: " + rca.attributeName());
                                     }}).toArray(Attribute[]::new))).toArray(RecordComponentInfo[]::new)));
                     case RuntimeInvisibleAnnotationsAttribute a -> clb.with(RuntimeInvisibleAnnotationsAttribute.of(transformAnnotations(a.annotations())));
                     case RuntimeInvisibleTypeAnnotationsAttribute a -> clb.with(RuntimeInvisibleTypeAnnotationsAttribute.of(transformTypeAnnotations(a.annotations(), null, null)));
                     case RuntimeVisibleAnnotationsAttribute a -> clb.with(RuntimeVisibleAnnotationsAttribute.of(transformAnnotations(a.annotations())));
                     case RuntimeVisibleTypeAnnotationsAttribute a -> clb.with(RuntimeVisibleTypeAnnotationsAttribute.of(transformTypeAnnotations(a.annotations(), null, null)));
-                    case SignatureAttribute a -> clb.with(SignatureAttribute.of(a.asClassSignature()));
+                    case SignatureAttribute a -> clb.with(SignatureAttribute.of(ClassSignature.parseFrom(a.asClassSignature().signatureString())));
                     case SourceDebugExtensionAttribute a -> clb.with(SourceDebugExtensionAttribute.of(a.contents()));
                     case SourceFileAttribute a -> clb.with(SourceFileAttribute.of(a.sourceFile().stringValue()));
                     case SourceIDAttribute a -> clb.with(SourceIDAttribute.of(a.sourceId().stringValue()));

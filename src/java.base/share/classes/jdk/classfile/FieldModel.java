@@ -54,7 +54,7 @@ public sealed interface FieldModel
     Utf8Entry fieldType();
 
     /** {@return the field descriptor of this field, as a symbolic descriptor} */
-    default ClassDesc descriptorSymbol() {
+    default ClassDesc fieldTypeSymbol() {
         return ClassDesc.ofDescriptor(fieldType().stringValue());
     }
 }

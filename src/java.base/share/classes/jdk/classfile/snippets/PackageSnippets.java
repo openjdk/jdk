@@ -197,7 +197,7 @@ class PackageSnippets {
             classBuilder -> {
               for (ClassElement ce : classModel) {
                   if (ce instanceof MethodModel mm) {
-                      classBuilder.withMethod(mm.methodName().stringValue(), mm.descriptorSymbol(),
+                      classBuilder.withMethod(mm.methodName().stringValue(), mm.methodTypeSymbol(),
                                               mm.flags().flagsMask(),
                                               methodBuilder -> {
                                   for (MethodElement me : mm) {
