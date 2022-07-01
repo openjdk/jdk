@@ -132,7 +132,6 @@ typedef ZAttachedArray<ZForwarding, ZForwardingEntry> ZAttachedArrayForForwardin
   declare_toplevel_type(ZRelocate)                                                                   \
   declare_toplevel_type(ZPage)                                                                       \
   declare_toplevel_type(ZPageType)                                                                   \
-  declare_integer_type(Bytecodes::Code)                                                              \
   declare_toplevel_type(ZPageAllocator)                                                              \
   declare_toplevel_type(ZPageTable)                                                                  \
   declare_toplevel_type(ZAttachedArrayForForwarding)                                                 \
