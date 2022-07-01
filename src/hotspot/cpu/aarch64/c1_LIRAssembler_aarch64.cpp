@@ -2560,7 +2560,7 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   if (UseHeavyMonitors) {
     if (op->info() != NULL) {
       int null_check_offset = __ offset();
-      __ null_check(obj);
+      __ null_check(obj, -1);
       add_debug_info_for_null_check(null_check_offset, op->info());
     }
     __ b(*op->stub()->entry());
