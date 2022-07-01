@@ -43,8 +43,6 @@
  * @run main/othervm/native --enable-preview  -agentlib:thrstat03 thrstat03 5
  */
 
-import java.io.PrintStream;
-
 public class thrstat03 {
 
     static final int NOT_STARTED = 0;

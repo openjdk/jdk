@@ -28,8 +28,8 @@
 #include "runtime/semaphore.hpp"
 
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/osThread.hpp"
-#include "runtime/thread.hpp"
 
 inline void Semaphore::wait_with_safepoint_check(JavaThread* thread) {
   // Prepare to block and allow safepoints while blocked

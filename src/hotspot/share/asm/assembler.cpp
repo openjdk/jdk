@@ -30,8 +30,8 @@
 #include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"
 #include "runtime/icache.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
-#include "runtime/thread.hpp"
 
 
 // Implementation of AbstractAssembler

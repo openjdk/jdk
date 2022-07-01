@@ -25,7 +25,7 @@
  * RecordCompilationTests
  *
  * @test
- * @bug 8250629 8252307 8247352 8241151 8246774 8259025
+ * @bug 8250629 8252307 8247352 8241151 8246774 8259025 8288130
  * @summary Negative compilation tests, and positive compilation (smoke) tests for records
  * @library /lib/combo /tools/lib /tools/javac/lib
  * @modules
@@ -177,6 +177,23 @@ public class RecordCompilationTests extends CompilationTestCase {
         assertOK("@Deprecated record R(int x, int y) { }");
         assertOK("record R(@Deprecated int x, int y) { }");
         assertOK("record R<T>(T x, T y) { }");
+        assertOK(
+                """
+                record R<T>(T x) {
+                    public T x() {
+                        return this.x;
+                    }
+                }
+                """);
+        assertOK(
+                """
+                import java.util.List;
+                record R<T>(List<T> x) {
+                    public List<T> x() {
+                        return this.x;
+                    }
+                }
+                """);
     }
 
     public void testGoodMemberDeclarations() {
@@ -1261,9 +1278,8 @@ public class RecordCompilationTests extends CompilationTestCase {
         Assert.check(numberOfFieldRefs == 1);
     }
 
-    /*  check that fields are initialized in a canonical constructor in the same declaration order as the corresponding
-     *  record component
-     */
+    //  check that fields are initialized in a canonical constructor in the same declaration order as the corresponding
+    //  record component
     public void testCheckInitializationOrderInCompactConstructor() throws Exception {
         int putField1 = -1;
         int putField2 = -1;
@@ -1304,179 +1320,180 @@ public class RecordCompilationTests extends CompilationTestCase {
 
     public void testAcceptRecordId() {
         String[] previousOptions = getCompileOptions();
-        String[] testOptions = {/* no options */};
-        setCompileOptions(testOptions);
-        assertFail("compiler.err.illegal.start.of.type",
-                "class R {\n" +
-                "    record RR(int i) {\n" +
-                "        return null;\n" +
-                "    }\n" +
-                "    class record {}\n" +
-                "}");
-        setCompileOptions(previousOptions);
+        try {
+            String[] testOptions = {};
+            setCompileOptions(testOptions);
+            assertFail("compiler.err.illegal.start.of.type",
+                    "class R {\n" +
+                            "    record RR(int i) {\n" +
+                            "        return null;\n" +
+                            "    }\n" +
+                            "    class record {}\n" +
+                            "}");
+        } finally {
+            setCompileOptions(previousOptions);
+        }
     }
 
     public void testAnnos() throws Exception {
         String[] previousOptions = getCompileOptions();
-        String srcTemplate =
-                """
+        try {
+            String srcTemplate =
+                    """
                     import java.lang.annotation.*;
                     @Target({#TARGET})
                     @Retention(RetentionPolicy.RUNTIME)
                     @interface Anno { }
-
                     record R(@Anno String s) {}
-                """;
+                    """;
 
-        // testing several combinations, adding even more combinations won't add too much value
-        List<String> annoApplicableTargets = List.of(
-                "ElementType.FIELD",
-                "ElementType.METHOD",
-                "ElementType.PARAMETER",
-                "ElementType.RECORD_COMPONENT",
-                "ElementType.TYPE_USE",
-                "ElementType.TYPE_USE,ElementType.FIELD",
-                "ElementType.TYPE_USE,ElementType.METHOD",
-                "ElementType.TYPE_USE,ElementType.PARAMETER",
-                "ElementType.TYPE_USE,ElementType.RECORD_COMPONENT",
-                "ElementType.TYPE_USE,ElementType.FIELD,ElementType.METHOD",
-                "ElementType.TYPE_USE,ElementType.FIELD,ElementType.PARAMETER",
-                "ElementType.TYPE_USE,ElementType.FIELD,ElementType.RECORD_COMPONENT",
-                "ElementType.FIELD,ElementType.TYPE_USE",
-                "ElementType.FIELD,ElementType.CONSTRUCTOR",
-                "ElementType.FIELD,ElementType.LOCAL_VARIABLE",
-                "ElementType.FIELD,ElementType.ANNOTATION_TYPE",
-                "ElementType.FIELD,ElementType.PACKAGE",
-                "ElementType.FIELD,ElementType.TYPE_PARAMETER",
-                "ElementType.FIELD,ElementType.MODULE",
-                "ElementType.METHOD,ElementType.TYPE_USE",
-                "ElementType.PARAMETER,ElementType.TYPE_USE",
-                "ElementType.RECORD_COMPONENT,ElementType.TYPE_USE",
-                "ElementType.FIELD,ElementType.METHOD,ElementType.TYPE_USE",
-                "ElementType.FIELD,ElementType.PARAMETER,ElementType.TYPE_USE",
-                "ElementType.FIELD,ElementType.RECORD_COMPONENT,ElementType.TYPE_USE"
-        );
+            // testing several combinations, adding even more combinations won't add too much value
+            List<String> annoApplicableTargets = List.of(
+                    "ElementType.FIELD",
+                    "ElementType.METHOD",
+                    "ElementType.PARAMETER",
+                    "ElementType.RECORD_COMPONENT",
+                    "ElementType.TYPE_USE",
+                    "ElementType.TYPE_USE,ElementType.FIELD",
+                    "ElementType.TYPE_USE,ElementType.METHOD",
+                    "ElementType.TYPE_USE,ElementType.PARAMETER",
+                    "ElementType.TYPE_USE,ElementType.RECORD_COMPONENT",
+                    "ElementType.TYPE_USE,ElementType.FIELD,ElementType.METHOD",
+                    "ElementType.TYPE_USE,ElementType.FIELD,ElementType.PARAMETER",
+                    "ElementType.TYPE_USE,ElementType.FIELD,ElementType.RECORD_COMPONENT",
+                    "ElementType.FIELD,ElementType.TYPE_USE",
+                    "ElementType.FIELD,ElementType.CONSTRUCTOR",
+                    "ElementType.FIELD,ElementType.LOCAL_VARIABLE",
+                    "ElementType.FIELD,ElementType.ANNOTATION_TYPE",
+                    "ElementType.FIELD,ElementType.PACKAGE",
+                    "ElementType.FIELD,ElementType.TYPE_PARAMETER",
+                    "ElementType.FIELD,ElementType.MODULE",
+                    "ElementType.METHOD,ElementType.TYPE_USE",
+                    "ElementType.PARAMETER,ElementType.TYPE_USE",
+                    "ElementType.RECORD_COMPONENT,ElementType.TYPE_USE",
+                    "ElementType.FIELD,ElementType.METHOD,ElementType.TYPE_USE",
+                    "ElementType.FIELD,ElementType.PARAMETER,ElementType.TYPE_USE",
+                    "ElementType.FIELD,ElementType.RECORD_COMPONENT,ElementType.TYPE_USE"
+            );
 
-        String[] generalOptions = {
-                "-processor", Processor.class.getName(),
-                "-Atargets="
-        };
+            String[] generalOptions = {
+                    "-processor", Processor.class.getName(),
+                    "-Atargets="
+            };
 
-        for (String target : annoApplicableTargets) {
-            String code = srcTemplate.replaceFirst("#TARGET", target);
-            String[] testOptions = generalOptions.clone();
-            testOptions[testOptions.length - 1] = testOptions[testOptions.length - 1] + target;
-            setCompileOptions(testOptions);
+            for (String target : annoApplicableTargets) {
+                String code = srcTemplate.replaceFirst("#TARGET", target);
+                String[] testOptions = generalOptions.clone();
+                testOptions[testOptions.length - 1] = testOptions[testOptions.length - 1] + target;
+                setCompileOptions(testOptions);
 
-            File dir = assertOK(true, code);
+                File dir = assertOK(true, code);
 
-            ClassFile classFile = ClassFile.read(findClassFileOrFail(dir, "R.class"));
+                ClassFile classFile = ClassFile.read(findClassFileOrFail(dir, "R.class"));
 
-            // field first
-            Assert.check(classFile.fields.length == 1);
-            Field field = classFile.fields[0];
-            /* if FIELD is one of the targets then there must be a declaration annotation applied to the field, apart from
-             * the type annotation
-             */
-            if (target.contains("ElementType.FIELD")) {
-                checkAnno(classFile,
-                        (RuntimeAnnotations_attribute)findAttributeOrFail(
-                                field.attributes,
-                                RuntimeVisibleAnnotations_attribute.class),
-                        "Anno");
-            } else {
-                assertAttributeNotPresent(field.attributes, RuntimeVisibleAnnotations_attribute.class);
+                // field first
+                Assert.check(classFile.fields.length == 1);
+                Field field = classFile.fields[0];
+                // if FIELD is one of the targets then there must be a declaration annotation applied to the field, apart from
+                // the type annotation
+                if (target.contains("ElementType.FIELD")) {
+                    checkAnno(classFile,
+                            (RuntimeAnnotations_attribute) findAttributeOrFail(
+                                    field.attributes,
+                                    RuntimeVisibleAnnotations_attribute.class),
+                            "Anno");
+                } else {
+                    assertAttributeNotPresent(field.attributes, RuntimeVisibleAnnotations_attribute.class);
+                }
+
+                // lets check now for the type annotation
+                if (target.contains("ElementType.TYPE_USE")) {
+                    checkTypeAnno(
+                            classFile,
+                            (RuntimeVisibleTypeAnnotations_attribute) findAttributeOrFail(field.attributes, RuntimeVisibleTypeAnnotations_attribute.class),
+                            "FIELD",
+                            "Anno");
+                } else {
+                    assertAttributeNotPresent(field.attributes, RuntimeVisibleTypeAnnotations_attribute.class);
+                }
+
+                // checking for the annotation on the corresponding parameter of the canonical constructor
+                Method init = findMethodOrFail(classFile, "<init>");
+                // if PARAMETER is one of the targets then there must be a declaration annotation applied to the parameter, apart from
+                // the type annotation
+                if (target.contains("ElementType.PARAMETER")) {
+                    checkParameterAnno(classFile,
+                            (RuntimeVisibleParameterAnnotations_attribute) findAttributeOrFail(
+                                    init.attributes,
+                                    RuntimeVisibleParameterAnnotations_attribute.class),
+                            "Anno");
+                } else {
+                    assertAttributeNotPresent(init.attributes, RuntimeVisibleAnnotations_attribute.class);
+                }
+                // let's check now for the type annotation
+                if (target.contains("ElementType.TYPE_USE")) {
+                    checkTypeAnno(
+                            classFile,
+                            (RuntimeVisibleTypeAnnotations_attribute) findAttributeOrFail(init.attributes, RuntimeVisibleTypeAnnotations_attribute.class),
+                            "METHOD_FORMAL_PARAMETER", "Anno");
+                } else {
+                    assertAttributeNotPresent(init.attributes, RuntimeVisibleTypeAnnotations_attribute.class);
+                }
+
+                // checking for the annotation in the accessor
+                Method accessor = findMethodOrFail(classFile, "s");
+                // if METHOD is one of the targets then there must be a declaration annotation applied to the accessor, apart from
+                // the type annotation
+                if (target.contains("ElementType.METHOD")) {
+                    checkAnno(classFile,
+                            (RuntimeAnnotations_attribute) findAttributeOrFail(
+                                    accessor.attributes,
+                                    RuntimeVisibleAnnotations_attribute.class),
+                            "Anno");
+                } else {
+                    assertAttributeNotPresent(accessor.attributes, RuntimeVisibleAnnotations_attribute.class);
+                }
+                // let's check now for the type annotation
+                if (target.contains("ElementType.TYPE_USE")) {
+                    checkTypeAnno(
+                            classFile,
+                            (RuntimeVisibleTypeAnnotations_attribute) findAttributeOrFail(accessor.attributes, RuntimeVisibleTypeAnnotations_attribute.class),
+                            "METHOD_RETURN", "Anno");
+                } else {
+                    assertAttributeNotPresent(accessor.attributes, RuntimeVisibleTypeAnnotations_attribute.class);
+                }
+
+                // checking for the annotation in the Record attribute
+                Record_attribute record = (Record_attribute) findAttributeOrFail(classFile.attributes, Record_attribute.class);
+                Assert.check(record.component_count == 1);
+                // if RECORD_COMPONENT is one of the targets then there must be a declaration annotation applied to the
+                // field, apart from the type annotation
+                if (target.contains("ElementType.RECORD_COMPONENT")) {
+                    checkAnno(classFile,
+                            (RuntimeAnnotations_attribute) findAttributeOrFail(
+                                    record.component_info_arr[0].attributes,
+                                    RuntimeVisibleAnnotations_attribute.class),
+                            "Anno");
+                } else {
+                    assertAttributeNotPresent(record.component_info_arr[0].attributes, RuntimeVisibleAnnotations_attribute.class);
+                }
+                // lets check now for the type annotation
+                if (target.contains("ElementType.TYPE_USE")) {
+                    checkTypeAnno(
+                            classFile,
+                            (RuntimeVisibleTypeAnnotations_attribute) findAttributeOrFail(
+                                    record.component_info_arr[0].attributes,
+                                    RuntimeVisibleTypeAnnotations_attribute.class),
+                            "FIELD", "Anno");
+                } else {
+                    assertAttributeNotPresent(record.component_info_arr[0].attributes, RuntimeVisibleTypeAnnotations_attribute.class);
+                }
             }
 
-            // lets check now for the type annotation
-            if (target.contains("ElementType.TYPE_USE")) {
-                checkTypeAnno(
-                        classFile,
-                        (RuntimeVisibleTypeAnnotations_attribute)findAttributeOrFail(field.attributes, RuntimeVisibleTypeAnnotations_attribute.class),
-                        "FIELD",
-                        "Anno");
-            } else {
-                assertAttributeNotPresent(field.attributes, RuntimeVisibleTypeAnnotations_attribute.class);
-            }
-
-            // checking for the annotation on the corresponding parameter of the canonical constructor
-            Method init = findMethodOrFail(classFile, "<init>");
-            /* if PARAMETER is one of the targets then there must be a declaration annotation applied to the parameter, apart from
-             * the type annotation
-             */
-            if (target.contains("ElementType.PARAMETER")) {
-                checkParameterAnno(classFile,
-                        (RuntimeVisibleParameterAnnotations_attribute)findAttributeOrFail(
-                                init.attributes,
-                                RuntimeVisibleParameterAnnotations_attribute.class),
-                        "Anno");
-            } else {
-                assertAttributeNotPresent(init.attributes, RuntimeVisibleAnnotations_attribute.class);
-            }
-            // let's check now for the type annotation
-            if (target.contains("ElementType.TYPE_USE")) {
-                checkTypeAnno(
-                        classFile,
-                        (RuntimeVisibleTypeAnnotations_attribute) findAttributeOrFail(init.attributes, RuntimeVisibleTypeAnnotations_attribute.class),
-                        "METHOD_FORMAL_PARAMETER", "Anno");
-            } else {
-                assertAttributeNotPresent(init.attributes, RuntimeVisibleTypeAnnotations_attribute.class);
-            }
-
-            // checking for the annotation in the accessor
-            Method accessor = findMethodOrFail(classFile, "s");
-            /* if METHOD is one of the targets then there must be a declaration annotation applied to the accessor, apart from
-             * the type annotation
-             */
-            if (target.contains("ElementType.METHOD")) {
-                checkAnno(classFile,
-                        (RuntimeAnnotations_attribute)findAttributeOrFail(
-                                accessor.attributes,
-                                RuntimeVisibleAnnotations_attribute.class),
-                        "Anno");
-            } else {
-                assertAttributeNotPresent(accessor.attributes, RuntimeVisibleAnnotations_attribute.class);
-            }
-            // let's check now for the type annotation
-            if (target.contains("ElementType.TYPE_USE")) {
-                checkTypeAnno(
-                        classFile,
-                        (RuntimeVisibleTypeAnnotations_attribute)findAttributeOrFail(accessor.attributes, RuntimeVisibleTypeAnnotations_attribute.class),
-                        "METHOD_RETURN", "Anno");
-            } else {
-                assertAttributeNotPresent(accessor.attributes, RuntimeVisibleTypeAnnotations_attribute.class);
-            }
-
-            // checking for the annotation in the Record attribute
-            Record_attribute record = (Record_attribute)findAttributeOrFail(classFile.attributes, Record_attribute.class);
-            Assert.check(record.component_count == 1);
-            /* if RECORD_COMPONENT is one of the targets then there must be a declaration annotation applied to the
-             * field, apart from the type annotation
-             */
-            if (target.contains("ElementType.RECORD_COMPONENT")) {
-                checkAnno(classFile,
-                        (RuntimeAnnotations_attribute)findAttributeOrFail(
-                                record.component_info_arr[0].attributes,
-                                RuntimeVisibleAnnotations_attribute.class),
-                        "Anno");
-            } else {
-                assertAttributeNotPresent(record.component_info_arr[0].attributes, RuntimeVisibleAnnotations_attribute.class);
-            }
-            // lets check now for the type annotation
-            if (target.contains("ElementType.TYPE_USE")) {
-                checkTypeAnno(
-                        classFile,
-                        (RuntimeVisibleTypeAnnotations_attribute)findAttributeOrFail(
-                                record.component_info_arr[0].attributes,
-                                RuntimeVisibleTypeAnnotations_attribute.class),
-                        "FIELD", "Anno");
-            } else {
-                assertAttributeNotPresent(record.component_info_arr[0].attributes, RuntimeVisibleTypeAnnotations_attribute.class);
-            }
+            // let's reset the default compiler options for other tests
+        } finally {
+            setCompileOptions(previousOptions);
         }
-
-        // let's reset the default compiler options for other tests
-        setCompileOptions(previousOptions);
     }
 
     private void checkTypeAnno(ClassFile classFile,
@@ -1655,7 +1672,7 @@ public class RecordCompilationTests extends CompilationTestCase {
                     switch (method.getName(classFile.constant_pool)) {
                         case "toString", "equals", "hashCode" ->
                             Assert.check(method.access_flags.is(AccessFlags.ACC_PUBLIC) && method.access_flags.is(AccessFlags.ACC_FINAL));
-                        default -> { /* do nothing */ }
+                        default -> {}
                     }
             }
         }
@@ -1963,9 +1980,8 @@ public class RecordCompilationTests extends CompilationTestCase {
 
     public void testNoWarningForSerializableRecords() {
         if (!useAP) {
-            /* dont execute this test when the default annotation processor is on as it will fail due to
-             * spurious warnings
-             */
+            // dont execute this test when the default annotation processor is on as it will fail due to
+            // spurious warnings
             appendCompileOptions("-Werror", "-Xlint:serial");
             assertOK(
                     """

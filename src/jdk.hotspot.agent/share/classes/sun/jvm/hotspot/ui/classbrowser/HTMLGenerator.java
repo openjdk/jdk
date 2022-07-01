@@ -949,7 +949,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
       }
 
       public void endInstruction(long endPc) {
-         instrSize += endPc - pc;
+         instrSize += (int) (endPc - pc);
          if (genHTML) buf.br();
 
          if (nmethod != null) {

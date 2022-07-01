@@ -24,7 +24,9 @@
 
 #include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
+#include "cds/dumpTimeClassInfo.hpp"
 #include "cds/runTimeClassInfo.hpp"
+#include "classfile/systemDictionaryShared.hpp"
 
 void RunTimeClassInfo::init(DumpTimeClassInfo& info) {
   ArchiveBuilder* builder = ArchiveBuilder::current();

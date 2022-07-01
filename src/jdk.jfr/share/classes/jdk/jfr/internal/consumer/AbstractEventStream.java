@@ -85,6 +85,9 @@ public abstract class AbstractEventStream implements EventStream {
             synchronized (streamConfiguration) {
                 dispatcher = new Dispatcher(streamConfiguration);
                 streamConfiguration.setChanged(false);
+                if (Logger.shouldLog(LogTag.JFR_SYSTEM_STREAMING, LogLevel.DEBUG)) {
+                    Logger.log(LogTag.JFR_SYSTEM_STREAMING, LogLevel.DEBUG, dispatcher.toString());
+                }
             }
         }
         return dispatcher;
