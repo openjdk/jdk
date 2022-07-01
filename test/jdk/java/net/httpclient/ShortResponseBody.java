@@ -527,7 +527,8 @@ public abstract class ShortResponseBody {
 
                     String query = uriPath.getRawQuery();
                     if (query == null) {
-                        out.println("Request headers: [" + headers + "]");
+                        out.println("Unexpected request without query string received. Got headers: [" + headers + "]");
+                        out.println("Replying with 400 Bad Request");
                         writeResponse(s, BAD_REQUEST_RESPONSE, BAD_REQUEST_RESPONSE.length());
                         continue;
                     }
