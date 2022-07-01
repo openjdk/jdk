@@ -422,7 +422,9 @@ public class FileLoginModule implements LoginModule {
             cleanState();
             throw new LoginException ("Subject is read-only");
         }
-        subject.getPrincipals().remove(user);
+        if (user != null) {
+            subject.getPrincipals().remove(user);
+        }
 
         // clean out state
         cleanState();

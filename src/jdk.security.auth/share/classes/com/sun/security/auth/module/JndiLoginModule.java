@@ -471,11 +471,19 @@ public class JndiLoginModule implements LoginModule {
             cleanState();
             throw new LoginException ("Subject is Readonly");
         }
-        subject.getPrincipals().remove(userPrincipal);
-        subject.getPrincipals().remove(UIDPrincipal);
-        subject.getPrincipals().remove(GIDPrincipal);
-        for (int i = 0; i < supplementaryGroups.size(); i++) {
-            subject.getPrincipals().remove(supplementaryGroups.get(i));
+        if (userPrincipal != null) {
+            subject.getPrincipals().remove(userPrincipal);
+        }
+        if (UIDPrincipal != null) {
+            subject.getPrincipals().remove(UIDPrincipal);
+        }
+        if (GIDPrincipal != null) {
+            subject.getPrincipals().remove(GIDPrincipal);
+        }
+        if (supplementaryGroups != null) {
+            for (int i = 0; i < supplementaryGroups.size(); i++) {
+                subject.getPrincipals().remove(supplementaryGroups.get(i));
+            }
         }
 
 
