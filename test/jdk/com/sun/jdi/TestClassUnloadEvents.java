@@ -45,20 +45,23 @@ import java.io.*;
 
 public class TestClassUnloadEvents {
     static final String CLASS_NAME_PREFIX = "SampleClass__";
+    static final String CLASS_NAME_ALT_PREFIX = CLASS_NAME_PREFIX + "Alt__";
     static final int NUM_CLASSES = 10;
+    static final int NUM_ALT_CLASSES = NUM_CLASSES / 2;
+    static final int MAX_RETRY = 5;
 
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
             runDebuggee();
         } else {
-            for (int index = 0; index < 5; index ++) {
+            for (int index = 0; index < MAX_RETRY; index ++) {
                 if(runDebugger()) {
                     return;
                 }
             }
         }
 
-        System.out.println("No class unloading detected, result is inconclusive");
+        System.out.println("No class unloading detected after " + MAX_RETRY + " tries, result is inconclusive");
     }
 
     private static class TestClassLoader extends ClassLoader implements Opcodes {
@@ -91,7 +94,11 @@ public class TestClassUnloadEvents {
         ClassLoader loader = new TestClassLoader();
         for (int index = 0; index < NUM_CLASSES; index++) {
             try {
-                Class.forName(CLASS_NAME_PREFIX + index, true, loader);
+                if (index < NUM_ALT_CLASSES) {
+                    Class.forName(CLASS_NAME_ALT_PREFIX + index, true, loader);
+                } else {
+                    Class.forName(CLASS_NAME_PREFIX + index, true, loader);
+                }
             } catch (Exception e) {
                 throw new RuntimeException("Failed to create Sample class");
             }
@@ -103,7 +110,7 @@ public class TestClassUnloadEvents {
     // Check debuggee's output, see if class unloading actually
     // happened
     private static boolean classUnloadingOccurred(Process p) throws IOException {
-        final String infoClassUnloaded = "unloading class SampleClass__";
+        final String infoClassUnloaded = "unloading class " + CLASS_NAME_PREFIX;
         InputStreamReader reader = new InputStreamReader(p.getInputStream());
         StringBuffer sb = new StringBuffer();
         char[] buf = new char[1024];
@@ -117,6 +124,7 @@ public class TestClassUnloadEvents {
     private static boolean runDebugger() {
         System.out.println("Running debugger");
         HashSet<String> unloadedSampleClasses = new HashSet<>();
+        HashSet<String> unloadedSampleClasses_alt = new HashSet<>();
         VirtualMachine vm = null;
         try {
             vm = connectAndLaunchVM();
@@ -124,13 +132,44 @@ public class TestClassUnloadEvents {
             classUnloadRequest.addClassFilter(CLASS_NAME_PREFIX + "*");
             classUnloadRequest.enable();
 
+            ClassUnloadRequest classUnloadRequest_alt = vm.eventRequestManager().createClassUnloadRequest();
+            classUnloadRequest_alt.addClassFilter(CLASS_NAME_ALT_PREFIX + "*");
+            classUnloadRequest_alt.enable();
+
             EventSet eventSet = null;
             boolean exited = false;
             while (!exited && (eventSet = vm.eventQueue().remove()) != null) {
+                System.out.println("EventSet: " + eventSet);
                 for (Event event : eventSet) {
                     if (event instanceof ClassUnloadEvent) {
                         String className = ((ClassUnloadEvent)event).className();
-                        unloadedSampleClasses.add(className);
+
+                        // The unloaded class should always match CLASS_NAME_PREFIX.
+                        if (className.indexOf(CLASS_NAME_PREFIX) == -1) {
+                            throw new RuntimeException("FAILED: Unexpected unloaded class: " + className);
+                        }
+
+                        // Unloaded classes with ALT names should only occur on the classUnloadRequest_alt.
+                        if (event.request() == classUnloadRequest_alt) {
+                            unloadedSampleClasses_alt.add(className);
+                            if (className.indexOf(CLASS_NAME_ALT_PREFIX) == -1) {
+                                throw new RuntimeException("FAILED: non-alt class unload event for classUnloadRequest_alt.");
+                            }
+                        } else {
+                            unloadedSampleClasses.add(className);
+                        }
+
+                        // If the unloaded class matches the ALT prefix, then we should have
+                        // unload events in this EventSet for each of the two ClassUnloadRequesta.
+                        int expectedEventSetSize;
+                        if (className.indexOf(CLASS_NAME_ALT_PREFIX) != -1) {
+                            expectedEventSetSize = 2;
+                        } else {
+                            expectedEventSetSize = 1;
+                        }
+                        if (eventSet.size() != expectedEventSetSize) {
+                            throw new RuntimeException("FAILED: Unexpected eventSet size: " + eventSet.size());
+                        }
                     }
 
                     if (event instanceof VMDeathEvent) {
@@ -138,9 +177,9 @@ public class TestClassUnloadEvents {
                         break;
                     }
                 }
-                vm.resume();
+                eventSet.resume();
             }
-        } catch (Exception e) {
+        } catch (InterruptedException | VMCannotBeModifiedException | IOException | IllegalConnectorArgumentsException | VMStartException e) {
             e.printStackTrace();
         } finally {
             try {
@@ -156,10 +195,15 @@ public class TestClassUnloadEvents {
         if (unloadedSampleClasses.size() != NUM_CLASSES) {
             throw new RuntimeException("Wrong number of class unload events: expected " + NUM_CLASSES + " got " + unloadedSampleClasses.size());
         }
+        if (unloadedSampleClasses_alt.size() != NUM_ALT_CLASSES) {
+            throw new RuntimeException("Wrong number of alt class unload events: expected " + NUM_ALT_CLASSES + " got " + unloadedSampleClasses_alt.size());
+        }
         return true;
     }
 
-    private static VirtualMachine connectAndLaunchVM() throws Exception {
+    private static VirtualMachine connectAndLaunchVM() throws IOException,
+                                                              IllegalConnectorArgumentsException,
+                                                              VMStartException {
         LaunchingConnector launchingConnector = Bootstrap.virtualMachineManager().defaultConnector();
         Map<String, Connector.Argument> arguments = launchingConnector.defaultArguments();
         arguments.get("main").setValue(TestClassUnloadEvents.class.getName());
