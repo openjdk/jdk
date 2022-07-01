@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,10 @@
                                                                         \
   product(bool, UseContainerSupport, true,                              \
           "Enable detection and runtime container configuration support") \
+                                                                        \
+  product(bool, UseContainerCpuShares, false,                           \
+          "Include CPU shares in the CPU availability"                  \
+          " calculation.")                                              \
                                                                         \
   product(bool, PreferContainerQuotaForCPUCount, true,                  \
           "Calculate the container CPU availability based on the value" \
