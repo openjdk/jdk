@@ -71,8 +71,7 @@ private:
   static int compare_thread_stack_base(const SimpleThreadStackSite& s1, const SimpleThreadStackSite& s2);
   static SortedLinkedList<SimpleThreadStackSite, compare_thread_stack_base>* _simple_thread_stacks;
 public:
-  // Late phase initialization
-  static bool late_initialize(NMT_TrackingLevel level);
+  static bool initialize(NMT_TrackingLevel level);
   static bool transition(NMT_TrackingLevel from, NMT_TrackingLevel to);
 
   static void new_thread_stack(void* base, size_t size, const NativeCallStack& stack);
