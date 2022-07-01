@@ -365,7 +365,6 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   };
   static const char* verify_location_string(VerifyLocation location);
   void verify_during_pause(G1HeapVerifier::G1VerifyType type,
-                           VerifyOption vo,
                            VerifyLocation location);
 
   void finalize_marking();

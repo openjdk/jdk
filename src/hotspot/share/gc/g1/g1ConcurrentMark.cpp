@@ -630,6 +630,8 @@ private:
       // When calling this concurrent to the application, pb must already be reset, so
       // resetting it again does not hurt. At a safepoint, when we clear the bitmap,
       // we must reset pb to be consistent with the (then cleared) marks.
+      assert(!_suspendible || r->parsable_bottom_acquire() == r->bottom(),
+             "While concurrently clearing the bitmap, parsable bottom must already be reset.");
       r->reset_parsable_bottom();
 
       HeapWord* cur = r->bottom();
@@ -1063,7 +1065,6 @@ const char* G1ConcurrentMark::verify_location_string(VerifyLocation location) {
 }
 
 void G1ConcurrentMark::verify_during_pause(G1HeapVerifier::G1VerifyType type,
-                                           VerifyOption vo,
                                            VerifyLocation location) {
   G1HeapVerifier* verifier = _g1h->verifier();
 
@@ -1078,7 +1079,7 @@ void G1ConcurrentMark::verify_during_pause(G1HeapVerifier::G1VerifyType type,
     char buffer[BufLen];
 
     jio_snprintf(buffer, BufLen, "During GC (%s)", caller);
-    verifier->verify(type, vo, buffer);
+    verifier->verify(type, VerifyOption::G1UseConcMarking, buffer);
 
     // Only check bitmap in Remark, and not at After-Verification because the regions
     // already have their TAMS'es reset.
@@ -1233,7 +1234,7 @@ void G1ConcurrentMark::remark() {
 
   double start = os::elapsedTime();
 
-  verify_during_pause(G1HeapVerifier::G1VerifyRemark, VerifyOption::G1UseConcMarking, VerifyLocation::RemarkBefore);
+  verify_during_pause(G1HeapVerifier::G1VerifyRemark, VerifyLocation::RemarkBefore);
 
   {
     GCTraceTime(Debug, gc, phases) debug("Finalize Marking", _gc_timer_cm);
@@ -1294,7 +1295,7 @@ void G1ConcurrentMark::remark() {
 
     compute_new_sizes();
 
-    verify_during_pause(G1HeapVerifier::G1VerifyRemark, VerifyOption::G1UseConcMarking, VerifyLocation::RemarkAfter);
+    verify_during_pause(G1HeapVerifier::G1VerifyRemark, VerifyLocation::RemarkAfter);
 
     assert(!restart_for_overflow(), "sanity");
     // Completely reset the marking state (except bitmaps) since marking completed.
@@ -1303,7 +1304,7 @@ void G1ConcurrentMark::remark() {
     // We overflowed.  Restart concurrent marking.
     _restart_for_overflow = true;
 
-    verify_during_pause(G1HeapVerifier::G1VerifyRemark, VerifyOption::G1UseConcMarking, VerifyLocation::RemarkOverflow);
+    verify_during_pause(G1HeapVerifier::G1VerifyRemark, VerifyLocation::RemarkOverflow);
 
     // Clear the marking state because we will be restarting
     // marking due to overflowing the global mark stack.
@@ -1449,7 +1450,7 @@ void G1ConcurrentMark::cleanup() {
 
   double start = os::elapsedTime();
 
-  verify_during_pause(G1HeapVerifier::G1VerifyCleanup, VerifyOption::G1UseConcMarking, VerifyLocation::CleanupBefore);
+  verify_during_pause(G1HeapVerifier::G1VerifyCleanup, VerifyLocation::CleanupBefore);
 
   if (needs_remembered_set_rebuild()) {
     // Update the remset tracking information as well as marking all regions
@@ -1461,7 +1462,7 @@ void G1ConcurrentMark::cleanup() {
     log_debug(gc, phases)("No Remembered Sets to update after rebuild");
   }
 
-  verify_during_pause(G1HeapVerifier::G1VerifyCleanup, VerifyOption::G1UseConcMarking, VerifyLocation::CleanupAfter);
+  verify_during_pause(G1HeapVerifier::G1VerifyCleanup, VerifyLocation::CleanupAfter);
 
   // We need to make this be a "collection" so any collection pause that
   // races with it goes around and waits for Cleanup to finish.

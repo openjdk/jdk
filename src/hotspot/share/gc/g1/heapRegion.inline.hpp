@@ -356,7 +356,7 @@ HeapWord* HeapRegion::do_oops_on_memregion_in_humongous(MemRegion mr,
   }
 }
 
-template <class Closure, bool in_gc_pause>
+template <class Closure>
 inline HeapWord* HeapRegion::oops_on_memregion_iterate_in_unparsable(MemRegion mr, HeapWord* const pb, Closure* cl) {
   // Cache the boundaries of the area to scan in some locals.
   HeapWord* const start = mr.start();
@@ -433,7 +433,7 @@ inline HeapWord* HeapRegion::oops_on_memregion_iterate(MemRegion mr, Closure* cl
   if (obj_in_parsable_area(start, pb)) {
     cur = block_start(start, pb);
   } else {
-    cur = oops_on_memregion_iterate_in_unparsable<Closure, in_gc_pause>(mr, pb, cl);
+    cur = oops_on_memregion_iterate_in_unparsable<Closure>(mr, pb, cl);
     // We might have scanned beyond end at this point because of imprecise iteration.
     if (cur >= end) {
       return cur;

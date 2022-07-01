@@ -270,7 +270,7 @@ private:
   template <class Closure, bool in_gc_pause>
   inline HeapWord* oops_on_memregion_iterate(MemRegion mr, Closure* cl);
 
-  template <class Closure, bool in_gc_pause>
+  template <class Closure>
   inline HeapWord* oops_on_memregion_iterate_in_unparsable(MemRegion mr, HeapWord* pb, Closure* cl);
 
   // Iterate over the references covered by the given MemRegion in a humongous
