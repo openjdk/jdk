@@ -29,7 +29,7 @@ import jdk.classfile.Annotation;
 import jdk.classfile.AnnotationElement;
 import jdk.classfile.AnnotationValue;
 import jdk.classfile.ClassReader;
-import jdk.classfile.constantpool.AnnotationConstantValueEntry;
+import jdk.classfile.constantpool.*;
 import jdk.classfile.TypeAnnotation;
 import static jdk.classfile.Classfile.*;
 import static jdk.classfile.TypeAnnotation.TargetInfo.*;
@@ -58,8 +58,15 @@ class AnnotationReader {
         char tag = (char) classReader.readU1(p);
         ++p;
         return switch (tag) {
-            case 'B', 'C', 'D', 'F', 'I', 'J', 'S', 'Z' -> new AnnotationImpl.OfConstantImpl(tag, (AnnotationConstantValueEntry) classReader.readEntry(p));
-            case 's' -> new AnnotationImpl.OfConstantImpl(tag, classReader.readUtf8Entry(p));
+            case 'B' -> new AnnotationImpl.OfByteImpl((IntegerEntry)classReader.readEntry(p));
+            case 'C' -> new AnnotationImpl.OfCharacterImpl((IntegerEntry)classReader.readEntry(p));
+            case 'D' -> new AnnotationImpl.OfDoubleImpl((DoubleEntry)classReader.readEntry(p));
+            case 'F' -> new AnnotationImpl.OfFloatImpl((FloatEntry)classReader.readEntry(p));
+            case 'I' -> new AnnotationImpl.OfIntegerImpl((IntegerEntry)classReader.readEntry(p));
+            case 'J' -> new AnnotationImpl.OfLongImpl((LongEntry)classReader.readEntry(p));
+            case 'S' -> new AnnotationImpl.OfShortImpl((IntegerEntry)classReader.readEntry(p));
+            case 'Z' -> new AnnotationImpl.OfBooleanImpl((IntegerEntry)classReader.readEntry(p));
+            case 's' -> new AnnotationImpl.OfStringImpl(classReader.readUtf8Entry(p));
             case 'e' -> new AnnotationImpl.OfEnumImpl(classReader.readUtf8Entry(p), classReader.readUtf8Entry(p + 2));
             case 'c' -> new AnnotationImpl.OfClassImpl(classReader.readUtf8Entry(p));
             case '@' -> new AnnotationImpl.OfAnnotationImpl(readAnnotation(classReader, p));

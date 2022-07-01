@@ -25,8 +25,7 @@
 package jdk.classfile.impl;
 
 import jdk.classfile.*;
-import jdk.classfile.constantpool.AnnotationConstantValueEntry;
-import jdk.classfile.constantpool.Utf8Entry;
+import jdk.classfile.constantpool.*;
 
 import java.lang.constant.ConstantDesc;
 import java.util.List;
@@ -89,20 +88,150 @@ public final class AnnotationImpl implements Annotation {
         }
     }
 
-    public record OfConstantImpl(char tag, AnnotationConstantValueEntry constant)
-            implements AnnotationValue.OfConstant {
+    public sealed interface OfConstantImpl extends AnnotationValue.OfConstant
+            permits AnnotationImpl.OfStringImpl, AnnotationImpl.OfDoubleImpl,
+                    AnnotationImpl.OfFloatImpl, AnnotationImpl.OfLongImpl,
+                    AnnotationImpl.OfIntegerImpl, AnnotationImpl.OfShortImpl,
+                    AnnotationImpl.OfCharacterImpl, AnnotationImpl.OfByteImpl,
+                    AnnotationImpl.OfBooleanImpl {
 
         @Override
-        public void writeTo(BufWriter buf) {
+        default void writeTo(BufWriter buf) {
             buf.writeU1(tag());
-            buf.writeIndex(constant);
+            buf.writeIndex(constant());
         }
 
         @Override
-        public ConstantDesc constantValue() {
-            return constant.constantValue();
+        default ConstantDesc constantValue() {
+            return constant().constantValue();
         }
 
+    }
+
+    public record OfStringImpl(Utf8Entry constant)
+            implements AnnotationImpl.OfConstantImpl, AnnotationValue.OfString {
+
+        @Override
+        public char tag() {
+            return 's';
+        }
+
+        @Override
+        public String stringValue() {
+            return constant().stringValue();
+        }
+    }
+
+    public record OfDoubleImpl(DoubleEntry constant)
+            implements AnnotationImpl.OfConstantImpl, AnnotationValue.OfDouble {
+
+        @Override
+        public char tag() {
+            return 'D';
+        }
+
+        @Override
+        public double doubleValue() {
+            return constant().doubleValue();
+        }
+    }
+
+    public record OfFloatImpl(FloatEntry constant)
+            implements AnnotationImpl.OfConstantImpl, AnnotationValue.OfFloat {
+
+        @Override
+        public char tag() {
+            return 'F';
+        }
+
+        @Override
+        public float floatValue() {
+            return constant().floatValue();
+        }
+    }
+
+    public record OfLongImpl(LongEntry constant)
+            implements AnnotationImpl.OfConstantImpl, AnnotationValue.OfLong {
+
+        @Override
+        public char tag() {
+            return 'J';
+        }
+
+        @Override
+        public long longValue() {
+            return constant().longValue();
+        }
+    }
+
+    public record OfIntegerImpl(IntegerEntry constant)
+            implements AnnotationImpl.OfConstantImpl, AnnotationValue.OfInteger {
+
+        @Override
+        public char tag() {
+            return 'I';
+        }
+
+        @Override
+        public int intValue() {
+            return constant().intValue();
+        }
+    }
+
+    public record OfShortImpl(IntegerEntry constant)
+            implements AnnotationImpl.OfConstantImpl, AnnotationValue.OfShort {
+
+        @Override
+        public char tag() {
+            return 'S';
+        }
+
+        @Override
+        public short shortValue() {
+            return (short)constant().intValue();
+        }
+    }
+
+    public record OfCharacterImpl(IntegerEntry constant)
+            implements AnnotationImpl.OfConstantImpl, AnnotationValue.OfCharacter {
+
+        @Override
+        public char tag() {
+            return 'C';
+        }
+
+        @Override
+        public char charValue() {
+            return (char)constant().intValue();
+        }
+    }
+
+    public record OfByteImpl(IntegerEntry constant)
+            implements AnnotationImpl.OfConstantImpl, AnnotationValue.OfByte {
+
+        @Override
+        public char tag() {
+            return 'B';
+        }
+
+        @Override
+        public byte byteValue() {
+            return (byte)constant().intValue();
+        }
+    }
+
+    public record OfBooleanImpl(IntegerEntry constant)
+            implements AnnotationImpl.OfConstantImpl, AnnotationValue.OfBoolean {
+
+        @Override
+        public char tag() {
+            return 'Z';
+        }
+
+        @Override
+        public boolean booleanValue() {
+            return constant().intValue() == 1;
+        }
     }
 
     public record OfArrayImpl(List<AnnotationValue> values)

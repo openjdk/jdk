@@ -66,11 +66,78 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
 
     /** Models a constant-valued element */
     sealed interface OfConstant extends AnnotationValue
-            permits AnnotationImpl.OfConstantImpl {
+            permits AnnotationValue.OfString, AnnotationValue.OfDouble,
+                    AnnotationValue.OfFloat, AnnotationValue.OfLong,
+                    AnnotationValue.OfInteger, AnnotationValue.OfShort,
+                    AnnotationValue.OfCharacter, AnnotationValue.OfByte,
+                    AnnotationValue.OfBoolean, AnnotationImpl.OfConstantImpl {
         /** {@return the constant} */
         AnnotationConstantValueEntry constant();
         /** {@return the constant} */
         ConstantDesc constantValue();
+    }
+
+    /** Models a constant-valued element */
+    sealed interface OfString extends AnnotationValue.OfConstant
+            permits AnnotationImpl.OfStringImpl {
+        /** {@return the constant} */
+        String stringValue();
+    }
+
+    /** Models a constant-valued element */
+    sealed interface OfDouble extends AnnotationValue.OfConstant
+            permits AnnotationImpl.OfDoubleImpl {
+        /** {@return the constant} */
+        double doubleValue();
+    }
+
+    /** Models a constant-valued element */
+    sealed interface OfFloat extends AnnotationValue.OfConstant
+            permits AnnotationImpl.OfFloatImpl {
+        /** {@return the constant} */
+        float floatValue();
+    }
+
+    /** Models a constant-valued element */
+    sealed interface OfLong extends AnnotationValue.OfConstant
+            permits AnnotationImpl.OfLongImpl {
+        /** {@return the constant} */
+        long longValue();
+    }
+
+    /** Models a constant-valued element */
+    sealed interface OfInteger extends AnnotationValue.OfConstant
+            permits AnnotationImpl.OfIntegerImpl {
+        /** {@return the constant} */
+        int intValue();
+    }
+
+    /** Models a constant-valued element */
+    sealed interface OfShort extends AnnotationValue.OfConstant
+            permits AnnotationImpl.OfShortImpl {
+        /** {@return the constant} */
+        short shortValue();
+    }
+
+    /** Models a constant-valued element */
+    sealed interface OfCharacter extends AnnotationValue.OfConstant
+            permits AnnotationImpl.OfCharacterImpl {
+        /** {@return the constant} */
+        char charValue();
+    }
+
+    /** Models a constant-valued element */
+    sealed interface OfByte extends AnnotationValue.OfConstant
+            permits AnnotationImpl.OfByteImpl {
+        /** {@return the constant} */
+        byte byteValue();
+    }
+
+    /** Models a constant-valued element */
+    sealed interface OfBoolean extends AnnotationValue.OfConstant
+            permits AnnotationImpl.OfBooleanImpl {
+        /** {@return the constant} */
+        boolean booleanValue();
     }
 
     /** Models a class-valued element */
@@ -78,6 +145,11 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
             permits AnnotationImpl.OfClassImpl {
         /** {@return the class name} */
         Utf8Entry className();
+
+        /** {@return the class symbol} */
+        default ClassDesc classSymbol() {
+            return ClassDesc.ofDescriptor(className().stringValue());
+        }
     }
 
     /** Models an enum-valued element */
@@ -85,6 +157,11 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
             permits AnnotationImpl.OfEnumImpl {
         /** {@return the enum class name} */
         Utf8Entry className();
+
+        /** {@return the enum class symbol} */
+        default ClassDesc classSymbol() {
+            return ClassDesc.ofDescriptor(className().stringValue());
+        }
 
         /** {@return the enum constant name} */
         Utf8Entry constantName();
@@ -136,7 +213,7 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
      * @param value the string
      */
     static OfConstant ofString(Utf8Entry value) {
-        return new AnnotationImpl.OfConstantImpl('s', value);
+        return new AnnotationImpl.OfStringImpl(value);
     }
 
     /**
@@ -152,7 +229,7 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
      * @param value the double value
      */
     static OfConstant ofDouble(DoubleEntry value) {
-        return new AnnotationImpl.OfConstantImpl('D', value);
+        return new AnnotationImpl.OfDoubleImpl(value);
     }
 
     /**
@@ -168,7 +245,7 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
      * @param value the float value
      */
     static OfConstant ofFloat(FloatEntry value) {
-        return new AnnotationImpl.OfConstantImpl('F', value);
+        return new AnnotationImpl.OfFloatImpl(value);
     }
 
     /**
@@ -184,7 +261,7 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
      * @param value the long value
      */
     static OfConstant ofLong(LongEntry value) {
-        return new AnnotationImpl.OfConstantImpl('J', value);
+        return new AnnotationImpl.OfLongImpl(value);
     }
 
     /**
@@ -200,7 +277,7 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
      * @param value the int value
      */
     static OfConstant ofInt(IntegerEntry value) {
-        return new AnnotationImpl.OfConstantImpl('I', value);
+        return new AnnotationImpl.OfIntegerImpl(value);
     }
 
     /**
@@ -216,7 +293,7 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
      * @param value the short value
      */
     static OfConstant ofShort(IntegerEntry value) {
-        return new AnnotationImpl.OfConstantImpl('S', value);
+        return new AnnotationImpl.OfShortImpl(value);
     }
 
     /**
@@ -232,7 +309,7 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
      * @param value the char value
      */
     static OfConstant ofChar(IntegerEntry value) {
-        return new AnnotationImpl.OfConstantImpl('C', value);
+        return new AnnotationImpl.OfCharacterImpl(value);
     }
 
     /**
@@ -248,7 +325,7 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
      * @param value the byte value
      */
     static OfConstant ofByte(IntegerEntry value) {
-        return new AnnotationImpl.OfConstantImpl('B', value);
+        return new AnnotationImpl.OfByteImpl(value);
     }
 
     /**
@@ -264,7 +341,7 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
      * @param value the boolean value
      */
     static OfConstant ofBoolean(IntegerEntry value) {
-        return new AnnotationImpl.OfConstantImpl('Z', value);
+        return new AnnotationImpl.OfBooleanImpl(value);
     }
 
     /**

@@ -25,7 +25,6 @@
 package helpers;
 
 import java.lang.constant.ClassDesc;
-import java.lang.reflect.AccessFlag;
 import java.util.HashMap;
 import java.util.List;
 import jdk.classfile.*;
@@ -200,84 +199,43 @@ class RebuildingTransformation {
         return switch (av) {
             case AnnotationValue.OfAnnotation oa -> AnnotationValue.ofAnnotation(transformAnnotation(oa.annotation()));
             case AnnotationValue.OfArray oa -> AnnotationValue.ofArray(oa.values().stream().map(v -> transformAnnotationValue(v)).toArray(AnnotationValue[]::new));
-            case AnnotationValue.OfConstant oc -> //missing distinction between constant annotation value types
-                switch (oc.tag()) {
-                    case 's' -> AnnotationValue.of((String)oc.constantValue());
-                    case 'D' -> AnnotationValue.of((double)oc.constantValue());
-                    case 'F' -> AnnotationValue.of((float)oc.constantValue());
-                    case 'J' -> AnnotationValue.of((long)oc.constantValue());
-                    case 'I' -> AnnotationValue.of((int)oc.constantValue());
-                    case 'S' -> AnnotationValue.of((short)(int)oc.constantValue());
-                    case 'C' -> AnnotationValue.of((char)(int)oc.constantValue());
-                    case 'B' -> AnnotationValue.of((byte)(int)oc.constantValue());
-                    case 'Z' -> AnnotationValue.of(1 == (int)oc.constantValue());
-                    default ->  throw new AssertionError("Unexpected annotation value tag: " + oc.tag());
-                };
-            case AnnotationValue.OfClass oc -> AnnotationValue.ofClass(ClassDesc.ofDescriptor(oc.className().stringValue())); //missing AnnotationValue factory method accepting ClassDesc
-            case AnnotationValue.OfEnum oe -> AnnotationValue.ofEnum(ClassDesc.ofDescriptor(oe.className().stringValue()), oe.constantName().stringValue());  //missing AnnotationValue factory method accepting ClassDesc
+            case AnnotationValue.OfString v -> AnnotationValue.of(v.stringValue());
+            case AnnotationValue.OfDouble v -> AnnotationValue.of(v.doubleValue());
+            case AnnotationValue.OfFloat v -> AnnotationValue.of(v.floatValue());
+            case AnnotationValue.OfLong v -> AnnotationValue.of(v.longValue());
+            case AnnotationValue.OfInteger v -> AnnotationValue.of(v.intValue());
+            case AnnotationValue.OfShort v -> AnnotationValue.of(v.shortValue());
+            case AnnotationValue.OfCharacter v -> AnnotationValue.of(v.charValue());
+            case AnnotationValue.OfByte v -> AnnotationValue.of(v.byteValue());
+            case AnnotationValue.OfBoolean v -> AnnotationValue.of(v.booleanValue());
+            case AnnotationValue.OfClass oc -> AnnotationValue.of(oc.classSymbol());
+            case AnnotationValue.OfEnum oe -> AnnotationValue.ofEnum(oe.classSymbol(), oe.constantName().stringValue());
         };
     }
 
     static TypeAnnotation[] transformTypeAnnotations(List<TypeAnnotation> annotations, CodeBuilder cob, HashMap<Label, Label> labels) {
-        return annotations.stream().map(ta -> TypeAnnotation.of( //missing TypeAnnotation factory method accepting ClassDesc and AnnotationElement vararg
+        return annotations.stream().map(ta -> TypeAnnotation.of(
                         transformTargetInfo(ta.targetInfo(), cob, labels),
                         ta.targetPath().stream().map(tpc -> TypeAnnotation.TypePathComponent.of(tpc.typePathKind().tag(), tpc.typeArgumentIndex())).toList(),
-                        ta.className(),
+                        ta.classSymbol(),
                         ta.elements().stream().map(ae -> AnnotationElement.of(ae.name().stringValue(), transformAnnotationValue(ae.value()))).toList())).toArray(TypeAnnotation[]::new);
     }
 
     static TypeAnnotation.TargetInfo transformTargetInfo(TypeAnnotation.TargetInfo ti, CodeBuilder cob, HashMap<Label, Label> labels) {
-        return switch (ti) { //missing flat decompositions to individual target types
+        return switch (ti) {
             case TypeAnnotation.CatchTarget t -> TypeAnnotation.TargetInfo.ofExceptionParameter(t.exceptionTableIndex());
-            case TypeAnnotation.EmptyTarget t ->
-                switch (t.targetType()) {
-                    case FIELD -> TypeAnnotation.TargetInfo.ofField();
-                    case METHOD_RETURN -> TypeAnnotation.TargetInfo.ofMethodReturn();
-                    case METHOD_RECEIVER -> TypeAnnotation.TargetInfo.ofMethodReceiver();
-                    default ->  throw new AssertionError("Unexpected type annotation target type: " + t.targetType());
-                };
+            case TypeAnnotation.EmptyTarget t -> TypeAnnotation.TargetInfo.of(t.targetType());
             case TypeAnnotation.FormalParameterTarget t -> TypeAnnotation.TargetInfo.ofMethodFormalParameter(t.formalParameterIndex());
             case TypeAnnotation.SupertypeTarget t -> TypeAnnotation.TargetInfo.ofClassExtends(t.supertypeIndex());
             case TypeAnnotation.ThrowsTarget t -> TypeAnnotation.TargetInfo.ofThrows(t.throwsTargetIndex());
-            case TypeAnnotation.TypeParameterBoundTarget t ->
-                switch (t.targetType()) {
-                    case CLASS_TYPE_PARAMETER_BOUND -> TypeAnnotation.TargetInfo.ofClassTypeParameterBound(t.typeParameterIndex(), t.boundIndex());
-                    case METHOD_TYPE_PARAMETER_BOUND -> TypeAnnotation.TargetInfo.ofMethodTypeParameterBound(t.typeParameterIndex(), t.boundIndex());
-                    default ->  throw new AssertionError("Unexpected type annotation target type: " + t.targetType());
-                };
-            case TypeAnnotation.TypeParameterTarget t ->
-                switch (t.targetType()) {
-                    case CLASS_TYPE_PARAMETER -> TypeAnnotation.TargetInfo.ofClassTypeParameter(t.typeParameterIndex());
-                    case METHOD_TYPE_PARAMETER -> TypeAnnotation.TargetInfo.ofMethodTypeParameter(t.typeParameterIndex());
-                    default ->  throw new AssertionError("Unexpected type annotation target type: " + t.targetType());
-                };
-            case TypeAnnotation.LocalVarTarget t ->
-                switch (t.targetType()) {
-                    case LOCAL_VARIABLE -> TypeAnnotation.TargetInfo.ofLocalVariable(t.table().stream().map(lvti ->
+            case TypeAnnotation.TypeParameterBoundTarget t -> TypeAnnotation.TargetInfo.ofTypeParameterBound(t.targetType(), t.typeParameterIndex(), t.boundIndex());
+            case TypeAnnotation.TypeParameterTarget t -> TypeAnnotation.TargetInfo.ofTypeParameter(t.targetType(), t.typeParameterIndex());
+            case TypeAnnotation.LocalVarTarget t -> TypeAnnotation.TargetInfo.ofVariable(t.targetType(), t.table().stream().map(lvti ->
                             TypeAnnotation.LocalVarTargetInfo.of(labels.computeIfAbsent(lvti.startLabel(), l -> cob.newLabel()),
                             labels.computeIfAbsent(lvti.endLabel(), l -> cob.newLabel()), lvti.index())).toList());
-                    case RESOURCE_VARIABLE -> TypeAnnotation.TargetInfo.ofResourceVariable(t.table().stream().map(lvti ->
-                            TypeAnnotation.LocalVarTargetInfo.of(labels.computeIfAbsent(lvti.startLabel(), l -> cob.newLabel()),
-                            labels.computeIfAbsent(lvti.endLabel(), l -> cob.newLabel()), lvti.index())).toList());
-                    default ->  throw new AssertionError("Unexpected type annotation target type: " + t.targetType());
-                };
-            case TypeAnnotation.OffsetTarget t ->
-                switch (t.targetType()) {
-                    case INSTANCEOF -> TypeAnnotation.TargetInfo.ofInstanceofExpr(labels.computeIfAbsent(t.target(), l -> cob.newLabel()));
-                    case NEW -> TypeAnnotation.TargetInfo.ofNewExpr(labels.computeIfAbsent(t.target(), l -> cob.newLabel()));
-                    case CONSTRUCTOR_REFERENCE -> TypeAnnotation.TargetInfo.ofConstructorReference(labels.computeIfAbsent(t.target(), l -> cob.newLabel()));
-                    case METHOD_REFERENCE -> TypeAnnotation.TargetInfo.ofMethodReference(labels.computeIfAbsent(t.target(), l -> cob.newLabel()));
-                    default ->  throw new AssertionError("Unexpected type annotation target type: " + t.targetType());
-                };
-            case TypeAnnotation.TypeArgumentTarget t ->
-                switch (t.targetType()) {
-                    case CAST -> TypeAnnotation.TargetInfo.ofCastExpr(labels.computeIfAbsent(t.target(), l -> cob.newLabel()), t.typeArgumentIndex());
-                    case CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT -> TypeAnnotation.TargetInfo.ofConstructorInvocationTypeArgument(labels.computeIfAbsent(t.target(), l -> cob.newLabel()), t.typeArgumentIndex());
-                    case METHOD_INVOCATION_TYPE_ARGUMENT -> TypeAnnotation.TargetInfo.ofMethodInvocationTypeArgument(labels.computeIfAbsent(t.target(), l -> cob.newLabel()), t.typeArgumentIndex());
-                    case CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT -> TypeAnnotation.TargetInfo.ofConstructorReferenceTypeArgument(labels.computeIfAbsent(t.target(), l -> cob.newLabel()), t.typeArgumentIndex());
-                    case METHOD_REFERENCE_TYPE_ARGUMENT -> TypeAnnotation.TargetInfo.ofMethodReferenceTypeArgument(labels.computeIfAbsent(t.target(), l -> cob.newLabel()), t.typeArgumentIndex());
-                    default ->  throw new AssertionError("Unexpected type annotation target type: " + t.targetType());
-                };
+            case TypeAnnotation.OffsetTarget t -> TypeAnnotation.TargetInfo.ofOffset(t.targetType(), labels.computeIfAbsent(t.target(), l -> cob.newLabel()));
+            case TypeAnnotation.TypeArgumentTarget t -> TypeAnnotation.TargetInfo.ofTypeArgument(t.targetType(),
+                            labels.computeIfAbsent(t.target(), l -> cob.newLabel()), t.typeArgumentIndex());
         };
     }
 }
