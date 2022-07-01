@@ -117,8 +117,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/stack.inline.hpp"
 
-#include "runtime/threads.hpp"
-
 size_t G1CollectedHeap::_humongous_object_threshold_in_words = 0;
 
 // INVARIANTS/NOTES
@@ -2875,20 +2873,6 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
   // when we signal the G1ConcurrentMarkThread, the collector state has already
   // been reset for the next pause.
   bool should_start_concurrent_mark_operation = collector_state()->in_concurrent_start_gc();
-
-    class PrintStackClosure : public ThreadClosure {
-    public:
-      void do_thread(Thread* thread) {
-        if (!thread->is_Java_thread()) { return; }
-        LogTarget(Debug, gc) lt;
-        if (lt.is_enabled()) {
-          LogStream ls(lt);
-          ls.print_cr("%s", thread->name());
-          ((JavaThread*)thread)->print_stack_on(&ls);
-        }
-      }
-    } cl;
-    Threads::java_threads_do(&cl);
 
   // Perform the collection.
   G1YoungCollector collector(gc_cause(), target_pause_time_ms);
