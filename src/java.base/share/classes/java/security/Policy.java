@@ -45,9 +45,9 @@ import sun.security.util.SecurityConstants;
  * obtained by calling the {@code getPolicy} method.
  *
  * <p> If no {@code Policy} object has been installed in the runtime, a call to
- * {@code getPolicy} installs an instance of the default Policy
+ * {@code getPolicy} installs an instance of the default {@code Policy}
  * implementation (a default subclass implementation of this abstract class).
- * The default Policy implementation can be changed by setting the value
+ * The default {@code Policy} implementation can be changed by setting the value
  * of the {@code policy.provider} security property to the fully qualified
  * name of the desired {@code Policy} subclass implementation. The system
  * class loader is used to load this class.
@@ -62,8 +62,8 @@ import sun.security.util.SecurityConstants;
  * {@code implies} method when it needs to
  * determine whether executing code (encapsulated in a ProtectionDomain)
  * can perform SecurityManager-protected operations.  How a {@code Policy}
- * object retrieves its policy data is up to the Policy implementation itself.
- * The policy data may be stored, for example, in a flat ASCII file,
+ * object retrieves its policy data is up to the {@code Policy} implementation
+ * itself. The policy data may be stored, for example, in a flat ASCII file,
  * in a serialized binary file of the {@code Policy} class, or in a database.
  *
  * <p> The {@code refresh} method causes the policy object to
@@ -72,7 +72,7 @@ import sun.security.util.SecurityConstants;
  * calling {@code refresh} will cause it to re-read the configuration
  * policy files.  If a refresh operation is not supported, this method does
  * nothing.  Note that refreshed policy may not have an effect on classes
- * in a particular ProtectionDomain. This is dependent on the Policy
+ * in a particular ProtectionDomain. This is dependent on the policy
  * provider's implementation of the {@code implies}
  * method and its PermissionCollection caching strategy.
  *
@@ -365,10 +365,10 @@ public abstract class Policy {
      * Returns a Policy object of the specified type.
      *
      * <p> This method traverses the list of registered security providers,
-     * starting with the most preferred Provider.
+     * starting with the most preferred provider.
      * A new {@code Policy} object encapsulating the
      * {@code PolicySpi} implementation from the first
-     * Provider that supports the specified type is returned.
+     * provider that supports the specified type is returned.
      *
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
@@ -502,8 +502,8 @@ public abstract class Policy {
      *
      * <p> A new {@code Policy} object encapsulating the
      * {@code PolicySpi} implementation from the specified provider
-     * object is returned.  Note that the specified provider object
-     * does not have to be registered in the provider list.
+     * is returned.  Note that the specified provider does not
+     * have to be registered in the provider list.
      *
      * @param type the specified Policy type.  See the Policy section in the
      *    <a href=
@@ -514,7 +514,7 @@ public abstract class Policy {
      * @param params parameters for the {@code Policy}, which may be
      * {@code null}.
      *
-     * @param provider the Provider.
+     * @param provider the {@code Provider}.
      *
      * @return the new {@code Policy} object
      *
@@ -572,13 +572,13 @@ public abstract class Policy {
     }
 
     /**
-     * Return the Provider of this Policy.
+     * Return the {@code Provider} of this policy.
      *
-     * <p> This {@code Policy} instance will only have a Provider if it
+     * <p> This {@code Policy} instance will only have a provider if it
      * was obtained via a call to {@code Policy.getInstance}.
      * Otherwise this method returns {@code null}.
      *
-     * @return the Provider of this Policy, or {@code null}.
+     * @return the {@code Provider} of this policy, or {@code null}.
      *
      * @since 1.6
      */
@@ -587,13 +587,13 @@ public abstract class Policy {
     }
 
     /**
-     * Return the type of this Policy.
+     * Return the type of this {@code Policy}.
      *
      * <p> This {@code Policy} instance will only have a type if it
      * was obtained via a call to {@code Policy.getInstance}.
      * Otherwise this method returns {@code null}.
      *
-     * @return the type of this Policy, or {@code null}.
+     * @return the type of this {@code Policy}, or {@code null}.
      *
      * @since 1.6
      */
@@ -602,13 +602,13 @@ public abstract class Policy {
     }
 
     /**
-     * Return Policy parameters.
+     * Return {@code Policy} parameters.
      *
      * <p> This {@code Policy} instance will only have parameters if it
      * was obtained via a call to {@code Policy.getInstance}.
      * Otherwise this method returns {@code null}.
      *
-     * @return Policy parameters, or {@code null}.
+     * @return {@code Policy} parameters, or {@code null}.
      *
      * @since 1.6
      */

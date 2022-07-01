@@ -222,7 +222,7 @@ public class AlgorithmParameters {
      *
      * <p> A new {@code AlgorithmParameters} object encapsulating the
      * {@code AlgorithmParametersSpi} implementation from the specified
-     * provider object is returned.  Note that the specified provider object
+     * provider is returned.  Note that the specified provider
      * does not have to be registered in the provider list.
      *
      * <p>The returned parameter object must be initialized via a call to

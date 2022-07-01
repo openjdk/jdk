@@ -225,7 +225,7 @@ public abstract class Signature extends SignatureSpi {
      * starting with the most preferred Provider.
      * A new {@code Signature} object encapsulating the
      * {@code SignatureSpi} implementation from the first
-     * Provider that supports the specified algorithm is returned.
+     * provider that supports the specified algorithm is returned.
      *
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
@@ -409,9 +409,9 @@ public abstract class Signature extends SignatureSpi {
      * signature algorithm.
      *
      * <p> A new {@code Signature} object encapsulating the
-     * {@code SignatureSpi} implementation from the specified Provider
-     * object is returned.  Note that the specified provider object
-     * does not have to be registered in the provider list.
+     * {@code SignatureSpi} implementation from the specified provider
+     * is returned.  Note that the specified provider does not
+     * have to be registered in the provider list.
      *
      * @param algorithm the name of the algorithm requested.
      * See the Signature section in the <a href=

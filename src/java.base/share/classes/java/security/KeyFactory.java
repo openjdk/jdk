@@ -144,11 +144,11 @@ public class KeyFactory {
      * Returns a {@code KeyFactory} object that converts
      * public/private keys of the specified algorithm.
      *
-     * <p> This method traverses the list of registered security Providers,
-     * starting with the most preferred Provider.
+     * <p> This method traverses the list of registered security providers,
+     * starting with the most preferred provider.
      * A new {@code KeyFactory} object encapsulating the
      * {@code KeyFactorySpi} implementation from the first
-     * Provider that supports the specified algorithm is returned.
+     * provider that supports the specified algorithm is returned.
      *
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
@@ -233,9 +233,9 @@ public class KeyFactory {
      * public/private keys of the specified algorithm.
      *
      * <p> A new {@code KeyFactory} object encapsulating the
-     * {@code KeyFactorySpi} implementation from the specified Provider
-     * object is returned.  Note that the specified provider object
-     * does not have to be registered in the provider list.
+     * {@code KeyFactorySpi} implementation from the specified provider
+     * is returned.  Note that the specified provider does not
+     * have to be registered in the provider list.
      *
      * @param algorithm the name of the requested key algorithm.
      * See the KeyFactory section in the <a href=

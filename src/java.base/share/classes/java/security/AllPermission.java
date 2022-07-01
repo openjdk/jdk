@@ -70,7 +70,7 @@ public final class AllPermission extends Permission {
     /**
      * Creates a new {@code AllPermission} object. This
      * constructor exists for use by the {@code Policy} object
-     * to instantiate new Permission objects.
+     * to instantiate new {@code Permission} objects.
      *
      * @param name ignored
      * @param actions ignored.
@@ -126,7 +126,7 @@ public final class AllPermission extends Permission {
      * {@code AllPermission} objects.
      *
      * @return a new {@code PermissionCollection} suitable for
-     * storing AllPermission objects.
+     * storing {@code AllPermission} objects.
      */
     public PermissionCollection newPermissionCollection() {
         return new AllPermissionCollection();
@@ -136,7 +136,7 @@ public final class AllPermission extends Permission {
 
 /**
  * An {@code AllPermissionCollection} stores a collection
- * of AllPermission permissions. {@code AllPermission} objects
+ * of {@code AllPermission} permissions. {@code AllPermission} objects
  * must be stored in a manner that allows them to be inserted in any
  * order, but enable the implies function to evaluate the implies
  * method in an efficient (and consistent) manner.
@@ -160,12 +160,12 @@ final class AllPermissionCollection
     private static final long serialVersionUID = -4023755556366636806L;
 
     /**
-     * True if any AllPermissions have been added.
+     * True if any {@code AllPermissionCollection} objects have been added.
      */
     private boolean all_allowed;
 
     /**
-     * Create an empty AllPermissions object.
+     * Create an empty {@code AllPermissionCollection} object.
      *
      */
 
@@ -174,7 +174,7 @@ final class AllPermissionCollection
     }
 
     /**
-     * Adds a permission to the {@code AllPermissions} object.
+     * Adds a permission to the {@code AllPermissionCollection} object.
      * The key for the hash is {@code permission.path}.
      *
      * @param permission the {@code Permission} object to add.

@@ -40,33 +40,35 @@ import java.util.stream.StreamSupport;
  * <LI> enumerate all the permissions, using the {@code elements} method.
  * </UL>
  *
- * <p>When it is desirable to group together a number of Permission objects
- * of the same type, the {@code newPermissionCollection} method on that
- * particular type of Permission object should first be called. The default
- * behavior (from the Permission class) is to simply return {@code null}.
- * Subclasses of class Permission override the method if they need to store
- * their permissions in a particular {@code PermissionCollection} object
- * in order to provide the correct semantics when the
- * {@code PermissionCollection.implies} method is called.
+ * <p>When it is desirable to group together a number of {@code Permission}
+ * objects of the same type, the {@code newPermissionCollection} method on that
+ * particular type of {@code Permission} object should first be called. The
+ * default behavior (from the {@code Permission} class) is to simply return
+ * {@code null}. Subclasses of class {@code Permission} override the method if
+ * they need to store their permissions in a particular
+ * {@code PermissionCollection} object in order to provide the correct
+ * semantics when the {@code PermissionCollection.implies} method is called.
  * If a non-null value is returned, that {@code PermissionCollection} must be
  * used. If {@code null} is returned, then the caller of
  * {@code newPermissionCollection} is free to store permissions of the
  * given type in any {@code PermissionCollection} they choose
- * (one that uses a Hashtable, one that uses a Vector, etc.).
+ * (one that uses a {@code Hashtable}, one that uses a {@code Vector}, etc.).
  *
  * <p>The collection returned by the {@code Permission.newPermissionCollection}
- * method is a homogeneous collection, which stores only Permission
- * objects for a given Permission type.  A {@code PermissionCollection} may
- * also be heterogeneous.  For example, Permissions is a PermissionCollection
- * subclass that represents a collection of PermissionCollections.
+ * method is a homogeneous collection, which stores only {@code Permission}
+ * objects for a given permission type.  A {@code PermissionCollection} may
+ * also be heterogeneous.  For example, {@code Permissions} is a
+ * {@code PermissionCollection} subclass that represents a collection of
+ * {@code PermissionCollection} objects.
  * That is, its members are each a homogeneous {@code PermissionCollection}.
- * For example, a Permissions object might have a FilePermissionCollection
- * for all the FilePermission objects, a SocketPermissionCollection for all the
- * SocketPermission objects, and so on. Its {@code add} method adds a
+ * For example, a {@code Permission} object might have a
+ * {@code FilePermissionCollection} for all the {@code FilePermission} objects,
+ * a {@code SocketPermissionCollection} for all the {@code SocketPermission}
+ * objects, and so on. Its {@code add} method adds a
  * permission to the appropriate collection.
  *
  * <p>Whenever a permission is added to a heterogeneous
- * {@code PermissionCollection} such as Permissions, and the
+ * {@code PermissionCollection} such as {@code Permissions}, and the
  * {@code PermissionCollection} doesn't yet contain a
  * {@code PermissionCollection} of the specified permission's type, the
  * {@code PermissionCollection} should call
@@ -75,9 +77,10 @@ import java.util.stream.StreamSupport;
  * {@code newPermissionCollection}
  * returns {@code null}, the {@code PermissionCollection}
  * is free to store the permission in any type of {@code PermissionCollection}
- * it desires (one using a Hashtable, one using a Vector, etc.). For example,
- * the Permissions object uses a default {@code PermissionCollection}
- * implementation that stores the permission objects in a Hashtable.
+ * it desires (one using a {@code Hashtable}, one using a {@code Vector}, etc.).
+ * For example, the {@code Permissions} object uses a default
+ * {@code PermissionCollection} implementation that stores the permission
+ * objects in a {@code Hashtable}.
  *
  * <p> Subclass implementations of {@code PermissionCollection} should assume
  * that they may be called simultaneously from multiple threads,
@@ -127,10 +130,10 @@ public abstract class PermissionCollection implements java.io.Serializable {
 
     /**
      * Checks to see if the specified permission is implied by
-     * the collection of Permission objects held in this
+     * the collection of {@code Permission} objects held in this
      * {@code PermissionCollection}.
      *
-     * @param permission the Permission object to compare.
+     * @param permission the {@code Permission} object to compare.
      *
      * @return {@code true} if "permission" is implied by the  permissions in
      * the collection, {@code false} if not.
@@ -172,17 +175,17 @@ public abstract class PermissionCollection implements java.io.Serializable {
     /**
      * Marks this {@code PermissionCollection} object as "readonly". After
      * a {@code PermissionCollection} object
-     * is marked as readonly, no new Permission objects can be added to it
-     * using {@code add}.
+     * is marked as readonly, no new {@code Permission} objects
+     * can be added to it using {@code add}.
      */
     public void setReadOnly() {
         readOnly = true;
     }
 
     /**
-     * Returns true if this {@code PermissionCollection} object is marked
-     * as readonly. If it is readonly, no new Permission objects can be added
-     * to it using {@code add}.
+     * Returns {@code true} if this {@code PermissionCollection} object is
+     * marked as readonly. If it is readonly, no new {@code Permission}
+     * objects can be added to it using {@code add}.
      *
      * <p>By default, the object is <i>not</i> readonly. It can be set to
      * readonly by a call to {@code setReadOnly}.
@@ -207,8 +210,8 @@ public abstract class PermissionCollection implements java.io.Serializable {
      *
      * {@code super.toString} is a call to the {@code toString}
      * method of this
-     * object's superclass, which is Object. The result is
-     * this PermissionCollection's type name followed by this object's
+     * object's superclass, which is {@code Object}. The result is
+     * this collection's type name followed by this object's
      * hashcode, thus enabling clients to differentiate different
      * {@code PermissionCollection} objects, even if they contain the
      * same permissions.

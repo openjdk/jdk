@@ -146,7 +146,7 @@ public abstract class MessageDigest extends MessageDigestSpi {
      * starting with the most preferred Provider.
      * A new {@code MessageDigest} object encapsulating the
      * {@code MessageDigestSpi} implementation from the first
-     * Provider that supports the specified algorithm is returned.
+     * provider that supports the specified algorithm is returned.
      *
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
@@ -262,9 +262,9 @@ public abstract class MessageDigest extends MessageDigestSpi {
      * digest algorithm.
      *
      * <p> A new {@code MessageDigest} object encapsulating the
-     * {@code MessageDigestSpi} implementation from the specified Provider
-     * object is returned.  Note that the specified provider object
-     * does not have to be registered in the provider list.
+     * {@code MessageDigestSpi} implementation from the specified provider
+     * is returned.  Note that the specified provider does not
+     * have to be registered in the provider list.
      *
      * @param algorithm the name of the algorithm requested.
      * See the MessageDigest section in the <a href=
@@ -559,16 +559,16 @@ public abstract class MessageDigest extends MessageDigestSpi {
     /*
      * The following class allows providers to extend from
      * {@code MessageDigestSpi} rather than from {@code MessageDigest}.
-     * It represents a MessageDigest with an
+     * It represents a message digest with an
      * encapsulated, provider-supplied SPI object (of type MessageDigestSpi).
      * If the provider implementation is an instance of
-     * {@code MessageDigestSpi}, the getInstance() methods above return an
-     * instance of this class, with the SPI object encapsulated.
+     * {@code MessageDigestSpi}, the {@code getInstance()} methods
+     * above return an instance of this class, with the SPI object encapsulated.
      *
-     * Note: All SPI methods from the original MessageDigest class have been
-     * moved up the hierarchy into a new class (MessageDigestSpi), which has
-     * been interposed in the hierarchy between the API (MessageDigest)
-     * and its original parent (Object).
+     * Note: All SPI methods from the original {@code MessageDigest} class
+     * have been moved up the hierarchy into a new class
+     * ({@code MessageDigestSpi}), which has been interposed in the hierarchy
+     * between the API ({@code MessageDigest}) and its original parent (Object).
      */
 
     private static class Delegate extends MessageDigest

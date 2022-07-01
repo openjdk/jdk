@@ -245,9 +245,9 @@ public class AlgorithmParameterGenerator {
      * a set of parameters to be used with the specified algorithm.
      *
      * <p> A new {@code AlgorithmParameterGenerator} object encapsulating the
-     * {@code AlgorithmParameterGeneratorSpi} implementation from the provider
-     * object is returned.  Note that the specified provider object
-     * does not have to be registered in the provider list.
+     * {@code AlgorithmParameterGeneratorSpi} implementation from the specified
+     * provider is returned.  Note that the specified provider does not
+     * have to be registered in the provider list.
      *
      * @param algorithm the string name of the algorithm this
      * parameter generator is associated with.

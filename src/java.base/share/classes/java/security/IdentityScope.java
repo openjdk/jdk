@@ -35,7 +35,7 @@ import java.util.Properties;
  * optionally have a public key and associated certificates.
  *
  * <p>An {@code IdentityScope} can contain {@code Identity} objects of all
- * kinds, including Signers. All types of {@code Identity} objects can be
+ * kinds, including signers. All types of {@code Identity} objects can be
  * retrieved, added, and removed using the same methods. Note that it is
  * possible, and in fact expected, that different types of identity scopes will
  * apply different policies for their various operations on the
@@ -187,7 +187,8 @@ class IdentityScope extends Identity {
 
     /**
      * Retrieves the {@code Identity} whose name is the same as that of the
-     * specified principal. (Note: Identity implements Principal.)
+     * specified principal. (Note: {@code Identity} implements
+     * {@code Principal}.)
      *
      * @param principal the principal corresponding to the {@code Identity}
      * to be retrieved.

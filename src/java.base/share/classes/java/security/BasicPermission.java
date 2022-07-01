@@ -243,15 +243,15 @@ public abstract class BasicPermission extends Permission
 
     /**
      * Returns a new {@code PermissionCollection} object for storing
-     * BasicPermissions.
+     * {@code BasicPermission} objects.
      *
      * <p>{@code BasicPermission} objects must be stored in a manner
      * that allows them to be inserted in any order, but that also enables the
-     * {@code PermissionCollection} {@code implies} method
+     * {@link PermissionCollection#implies} method
      * to be implemented in an efficient (and consistent) manner.
      *
      * @return a new {@code PermissionCollection} object suitable for
-     * storing BasicPermissions.
+     * storing {@code BasicPermission} objects.
      */
     @Override
     public PermissionCollection newPermissionCollection() {
@@ -331,7 +331,7 @@ final class BasicPermissionCollection
     private boolean all_allowed;
 
     /**
-     * The class to which all BasicPermissions in this
+     * The class to which all {@code BasicPermission} objects in this
      * BasicPermissionCollection belong.
      *
      * @see #serialPersistentFields
@@ -349,15 +349,15 @@ final class BasicPermissionCollection
     }
 
     /**
-     * Adds a permission to the BasicPermissions. The key for the hash is
-     * permission.path.
+     * Adds a permission to the {@code BasicPermission} object.
+     * The key for the hash is permission.path.
      *
      * @param permission the {@code Permission} object to add.
      *
      * @throws    IllegalArgumentException   if the permission is not a
      *                                       {@code BasicPermission}, or if
      *                                       the permission is not of the
-     *                                       same Class as the other
+     *                                       same class as the other
      *                                       permissions in this collection.
      *
      * @throws    SecurityException   if this {@code BasicPermissionCollection}
@@ -371,7 +371,7 @@ final class BasicPermissionCollection
         if (isReadOnly())
             throw new SecurityException("attempt to add a Permission to a readonly PermissionCollection");
 
-        // make sure we only add new BasicPermissions of the same class
+        // make sure we only add new BasicPermission objects of the same class
         // Also check null for compatibility with deserialized form from
         // previous versions.
         if (permClass == null) {
@@ -471,16 +471,19 @@ final class BasicPermissionCollection
     // private Hashtable permissions;
     /**
      * @serialField permissions java.util.Hashtable
-     *    The BasicPermissions in this BasicPermissionCollection.
-     *    All BasicPermissions in the collection must belong to the same class.
-     *    The Hashtable is indexed by the BasicPermission name; the value
-     *    of the Hashtable entry is the permission.
+     *    The {@code BasicPermission} objects in this
+     *    {@code BasicPermissionCollection}.
+     *    All {@code BasicPermission} objects in the collection must belong
+     *    to the same class.
+     *    The Hashtable is indexed by the {@code BasicPermission} name;
+     *    the value of the Hashtable entry is the permission.
      * @serialField all_allowed boolean
-     *   This is set to {@code true} if this BasicPermissionCollection
-     *   contains a BasicPermission with '*' as its permission name.
+     *   This is set to {@code true} if this {@code BasicPermissionCollection}
+     *   contains a {@code BasicPermission} object
+     *   with '*' as its permission name.
      * @serialField permClass java.lang.Class
-     *   The class to which all BasicPermissions in this
-     *   BasicPermissionCollection belongs.
+     *   The class to which all {@code BasicPermission} objectss in this
+     *   {@code BasicPermissionCollection} belongs.
      */
     @java.io.Serial
     private static final ObjectStreamField[] serialPersistentFields = {
@@ -521,7 +524,7 @@ final class BasicPermissionCollection
 
     /**
      * readObject is called to restore the state of the
-     * BasicPermissionCollection from a stream.
+     * {@code BasicPermissionCollection} from a stream.
      *
      * @param  in the {@code ObjectInputStream} from which data is read
      * @throws IOException if an I/O error occurs

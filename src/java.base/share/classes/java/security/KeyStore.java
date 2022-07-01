@@ -382,7 +382,7 @@ public class KeyStore {
     }
 
     /**
-     * A ProtectionParameter encapsulating a CallbackHandler.
+     * A {@code ProtectionParameter} encapsulating a CallbackHandler.
      *
      * @since 1.5
      */
@@ -829,11 +829,11 @@ public class KeyStore {
     /**
      * Returns a {@code KeyStore} object of the specified type.
      *
-     * <p> This method traverses the list of registered security Providers,
-     * starting with the most preferred Provider.
+     * <p> This method traverses the list of registered security providers,
+     * starting with the most preferred provider.
      * A new {@code KeyStore} object encapsulating the
      * {@code KeyStoreSpi} implementation from the first
-     * Provider that supports the specified type is returned.
+     * provider that supports the specified type is returned.
      *
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
@@ -854,7 +854,7 @@ public class KeyStore {
      *
      * @return a keystore object of the specified type
      *
-     * @throws KeyStoreException if no {@code Provider} supports a
+     * @throws KeyStoreException if no provider supports a
      *         {@code KeyStoreSpi} implementation for the
      *         specified type
      *
@@ -927,7 +927,7 @@ public class KeyStore {
      * Returns a {@code KeyStore} object of the specified type.
      *
      * <p> A new {@code KeyStore} object encapsulating the
-     * {@code KeyStoreSpi} implementation from the specified Provider
+     * {@code KeyStoreSpi} implementation from the specified provider
      * object is returned.  Note that the specified provider object
      * does not have to be registered in the provider list.
      *
@@ -1504,7 +1504,7 @@ public class KeyStore {
     /**
      * Loads this keystore using the given {@code LoadStoreParameter}.
      *
-     * <p> Note that if this KeyStore has already been loaded, it is
+     * <p> Note that if this {@code KeyStore} has already been loaded, it is
      * reinitialized and loaded again from the given parameter.
      *
      * @param param the {@code LoadStoreParameter}
@@ -1663,14 +1663,14 @@ public class KeyStore {
      * <p>
      * This method traverses the list of registered security
      * {@linkplain Provider providers}, starting with the most
-     * preferred Provider.
+     * preferred provider.
      * For each {@link KeyStoreSpi} implementation supported by a
-     * Provider, it invokes the {@link
+     * provider, it invokes the {@link
      * KeyStoreSpi#engineProbe(InputStream) engineProbe} method to
      * determine if it supports the specified keystore.
      * A new {@code KeyStore} object is returned that encapsulates the
      * {@code KeyStoreSpi}
-     * implementation from the first Provider that supports the specified file.
+     * implementation from the first provider that supports the specified file.
      *
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
@@ -1680,7 +1680,7 @@ public class KeyStore {
      *
      * @return a keystore object loaded with keystore data
      *
-     * @throws KeyStoreException if no Provider supports a {@code KeyStoreSpi}
+     * @throws KeyStoreException if no provider supports a {@code KeyStoreSpi}
      *             implementation for the specified keystore file.
      * @throws IOException if there is an I/O or format problem with the
      *             keystore data, if a password is required but not given,
@@ -1719,14 +1719,14 @@ public class KeyStore {
      *
      * <p>
      * This method traverses the list of registered security {@linkplain
-     * Provider providers}, starting with the most preferred Provider.
+     * Provider providers}, starting with the most preferred provider.
      * For each {@link KeyStoreSpi} implementation supported by a
-     * Provider, it invokes the {@link
+     * provider, it invokes the {@link
      * KeyStoreSpi#engineProbe(InputStream) engineProbe} method to
      * determine if it supports the specified keystore.
      * A new {@code KeyStore} object is returned that encapsulates the
      * {@code KeyStoreSpi}
-     * implementation from the first Provider that supports the specified file.
+     * implementation from the first provider that supports the specified file.
      *
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
@@ -1737,7 +1737,7 @@ public class KeyStore {
      *
      * @return a keystore object loaded with keystore data
      *
-     * @throws KeyStoreException if no Provider supports a {@code KeyStoreSpi}
+     * @throws KeyStoreException if no provider supports a {@code KeyStoreSpi}
      *             implementation for the specified keystore file.
      * @throws IOException if there is an I/O or format problem with the
      *             keystore data. If the error is due to an incorrect
@@ -1845,7 +1845,7 @@ public class KeyStore {
      * instantiate and initialize a {@code KeyStore} object. That process is
      * triggered when the {@linkplain #getKeyStore} method is called.
      *
-     * <p>This makes it possible to decouple configuration from KeyStore
+     * <p>This makes it possible to decouple configuration from {@code KeyStore}
      * object creation and e.g. delay a password prompt until it is
      * needed.
      *
@@ -1859,57 +1859,58 @@ public class KeyStore {
         static final int MAX_CALLBACK_TRIES = 3;
 
         /**
-         * Construct a new Builder.
+         * Construct a new {@code Builder}.
          */
         protected Builder() {
             // empty
         }
 
         /**
-         * Returns the KeyStore described by this object.
+         * Returns the {@code KeyStore} described by this object.
          *
          * @return the {@code KeyStore} described by this object
          * @throws    KeyStoreException if an error occurred during the
-         *   operation, for example if the KeyStore could not be
+         *   operation, for example if the {@code KeyStore} could not be
          *   instantiated or loaded
          */
         public abstract KeyStore getKeyStore() throws KeyStoreException;
 
         /**
-         * Returns the ProtectionParameters that should be used to obtain
+         * Returns the {@code ProtectionParameter} that should be used to obtain
          * the {@link KeyStore.Entry Entry} with the given alias.
          * The {@code getKeyStore} method must be invoked before this
          * method may be called.
          *
-         * @return the ProtectionParameters that should be used to obtain
+         * @return the {@code ProtectionParameter} that should be used to obtain
          *   the {@link KeyStore.Entry Entry} with the given alias.
-         * @param alias the alias of the KeyStore entry
+         * @param alias the alias of the {@code KeyStore} entry
          * @throws NullPointerException if alias is {@code null}
          * @throws KeyStoreException if an error occurred during the
          *   operation
-         * @throws IllegalStateException if the getKeyStore method has
+         * @throws IllegalStateException if the {@code getKeyStore} method has
          *   not been invoked prior to calling this method
          */
         public abstract ProtectionParameter getProtectionParameter(String alias)
             throws KeyStoreException;
 
         /**
-         * Returns a new Builder that encapsulates the given KeyStore.
+         * Returns a new {@code Builder} that encapsulates the given
+         * {@code KeyStore}.
          * The {@linkplain #getKeyStore} method of the returned object
          * will return {@code keyStore}, the {@linkplain
          * #getProtectionParameter getProtectionParameter()} method will
          * return {@code protectionParameters}.
          *
          * <p> This is useful if an existing {@code KeyStore} object needs to be
-         * used with Builder-based APIs.
+         * used with builder-based APIs.
          *
-         * @return a new Builder object
-         * @param keyStore the KeyStore to be encapsulated
-         * @param protectionParameter the ProtectionParameter used to
-         *   protect the KeyStore entries
-         * @throws NullPointerException if keyStore or
-         *   protectionParameters is {@code null}
-         * @throws IllegalArgumentException if the keyStore has not been
+         * @return a new {@code Builder} object
+         * @param keyStore the {@code KeyStore} to be encapsulated
+         * @param protectionParameter the {@code ProtectionParameter} used to
+         *   protect the {@code KeyStore} entries
+         * @throws NullPointerException if {@code keyStore} or
+         *   {@code protectionParameter} is {@code null}
+         * @throws IllegalArgumentException if the {@code keyStore} has not been
          *   initialized
          */
         public static Builder newInstance(final KeyStore keyStore,
@@ -1943,10 +1944,10 @@ public class KeyStore {
         }
 
         /**
-         * Returns a new Builder object.
+         * Returns a new {@code Builder} object.
          *
          * <p>The first call to the {@link #getKeyStore} method on the returned
-         * builder will create a KeyStore of type {@code type} and call
+         * builder will create a {@code KeyStore} of type {@code type} and call
          * its {@link KeyStore#load load()} method.
          * The {@code inputStream} argument is constructed from
          * {@code file}.
@@ -1962,7 +1963,7 @@ public class KeyStore {
          * {@code KeyStoreException}, subsequent calls also throw a
          * {@code KeyStoreException}.
          *
-         * <p>The KeyStore is instantiated from {@code provider} if
+         * <p>The {@code KeyStore} is instantiated from {@code provider} if
          * non-null. Otherwise, all installed providers are searched.
          *
          * <p>Calls to {@link #getProtectionParameter getProtectionParameter()}
@@ -1974,12 +1975,13 @@ public class KeyStore {
          * within the {@link AccessControlContext} of the code invoking this
          * method.
          *
-         * @return a new Builder object
-         * @param type the type of KeyStore to be constructed
-         * @param provider the provider from which the KeyStore is to
+         * @return a new {@code Builder} object
+         * @param type the type of {@code KeyStore} to be constructed
+         * @param provider the provider from which the {@code KeyStore} is to
          *   be instantiated (or {@code null})
-         * @param file the File that contains the KeyStore data
-         * @param protection the ProtectionParameter securing the KeyStore data
+         * @param file the File that contains the {@code KeyStore} data
+         * @param protection the {@code ProtectionParameter} securing the
+         * {@code KeyStore} data
          * @throws NullPointerException if type, file or protection is
          * {@code null}
          * @throws IllegalArgumentException if protection is not an instance
@@ -2008,11 +2010,12 @@ public class KeyStore {
         }
 
         /**
-         * Returns a new Builder object.
+         * Returns a new {@code Builder} object.
          *
          * <p>The first call to the {@link #getKeyStore} method on the returned
-         * builder will create a KeyStore using {@code file} to detect the
-         * keystore type and then call its {@link KeyStore#load load()} method.
+         * builder will create a {@code KeyStore} using {@code file} to detect
+         * the keystore type and then call its {@link KeyStore#load load()}
+         * method.
          * It uses the same algorithm to determine the keystore type as
          * described in {@link KeyStore#getInstance(File, LoadStoreParameter)}.
          * The {@code inputStream} argument is constructed from {@code file}.
@@ -2036,9 +2039,10 @@ public class KeyStore {
          * within the {@link AccessControlContext} of the code invoking this
          * method.
          *
-         * @return a new Builder object
-         * @param file the File that contains the KeyStore data
-         * @param protection the ProtectionParameter securing the KeyStore data
+         * @return a new {@code Builder} object
+         * @param file the File that contains the {@code KeyStore} data
+         * @param protection the {@code ProtectionParameter} securing the
+         * {@code KeyStore} data
          * @throws NullPointerException if file or protection is {@code null}
          * @throws IllegalArgumentException if protection is not an instance
          *   of either PasswordProtection or CallbackHandlerProtection; or
@@ -2177,7 +2181,7 @@ public class KeyStore {
         }
 
         /**
-         * Returns a new Builder object.
+         * Returns a new {@code Builder} object.
          *
          * <p>Each call to the {@link #getKeyStore} method on the returned
          * builder will return a new {@code KeyStore} object of type
@@ -2187,7 +2191,7 @@ public class KeyStore {
          * {@code LoadStoreParameter} that encapsulates
          * {@code protection}.
          *
-         * <p>The KeyStore is instantiated from {@code provider} if
+         * <p>The {@code KeyStore} is instantiated from {@code provider} if
          * non-null. Otherwise, all installed providers are searched.
          *
          * <p>Calls to {@link #getProtectionParameter getProtectionParameter()}
@@ -2197,11 +2201,12 @@ public class KeyStore {
          * within the {@link AccessControlContext} of the code invoking this
          * method.
          *
-         * @return a new Builder object
-         * @param type the type of KeyStore to be constructed
-         * @param provider the provider from which the KeyStore is to
+         * @return a new {@code Builder} object
+         * @param type the type of {@code KeyStore} to be constructed
+         * @param provider the provider from which the {@code KeyStore} is to
          *   be instantiated (or {@code null})
-         * @param protection the ProtectionParameter securing the Keystore
+         * @param protection the {@code ProtectionParameter} securing the
+         * {@code Keystore}
          * @throws NullPointerException if type or protection is {@code null}
          */
         public static Builder newInstance(final String type,

@@ -198,7 +198,7 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
      * starting with the most preferred Provider.
      * A new {@code KeyPairGenerator} object encapsulating the
      * {@code KeyPairGeneratorSpi} implementation from the first
-     * Provider that supports the specified algorithm is returned.
+     * provider that supports the specified algorithm is returned.
      *
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
@@ -308,9 +308,9 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
      * key pairs for the specified algorithm.
      *
      * <p> A new {@code KeyPairGenerator} object encapsulating the
-     * {@code KeyPairGeneratorSpi} implementation from the specified Provider
-     * object is returned.  Note that the specified {@code Provider} object
-     * does not have to be registered in the provider list.
+     * {@code KeyPairGeneratorSpi} implementation from the specified provider
+     * is returned.  Note that the specified provider does not
+     * have to be registered in the provider list.
      *
      * @param algorithm the standard string name of the algorithm.
      * See the KeyPairGenerator section in the <a href=
