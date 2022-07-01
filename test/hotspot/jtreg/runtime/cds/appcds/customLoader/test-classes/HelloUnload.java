@@ -73,7 +73,7 @@ public class HelloUnload {
         }
 
         URLClassLoader urlClassLoader =
-            new URLClassLoader("HelloClassLoader" + System.currentTimeMillis(), urls, null);
+            new URLClassLoader("HelloClassLoader", urls, null);
         Class c = Class.forName(className, true, urlClassLoader);
         if (keepAlive) {
             keptC = c;
