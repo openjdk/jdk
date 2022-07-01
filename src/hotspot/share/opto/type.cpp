@@ -4844,9 +4844,13 @@ void TypeAryPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
     else if( _offset < header_size ) st->print("+%d", _offset);
     else {
       BasicType basic_elem_type = elem()->basic_type();
-      int array_base = arrayOopDesc::base_offset_in_bytes(basic_elem_type);
-      int elem_size = type2aelembytes(basic_elem_type);
-      st->print("[%d]", (_offset - array_base)/elem_size);
+      if (basic_elem_type == T_ILLEGAL) {
+        st->print("+any");
+      } else {
+        int array_base = arrayOopDesc::base_offset_in_bytes(basic_elem_type);
+        int elem_size = type2aelembytes(basic_elem_type);
+        st->print("[%d]", (_offset - array_base)/elem_size);
+      }
     }
   }
   st->print(" *");
