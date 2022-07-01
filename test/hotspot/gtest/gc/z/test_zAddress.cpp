@@ -58,10 +58,10 @@ protected:
     case RemappedYoung0: {
       switch (remapped_old) {
       case RemappedOld0:
-        color |= ZPointerRemapped00;
+        color |= ZPointer::remap_bits(ZPointerRemapped00);
         break;
       case RemappedOld1:
-        color |= ZPointerRemapped10;
+        color |= ZPointer::remap_bits(ZPointerRemapped10);
         break;
       default:
         EXPECT_TRUE(false);
@@ -71,10 +71,10 @@ protected:
     case RemappedYoung1: {
       switch (remapped_old) {
       case RemappedOld0:
-        color |= ZPointerRemapped01;
+        color |= ZPointer::remap_bits(ZPointerRemapped01);
         break;
       case RemappedOld1:
-        color |= ZPointerRemapped11;
+        color |= ZPointer::remap_bits(ZPointerRemapped11);
         break;
       default:
         EXPECT_TRUE(false);
@@ -148,11 +148,11 @@ protected:
   }
 
   static bool is_remapped_young_odd(uintptr_t bits) {
-    return bits & (ZPointerRemapped01 | ZPointerRemapped11);
+    return ZPointer::remap_bits(bits) & (ZPointerRemapped01 | ZPointerRemapped11);
   }
 
   static bool is_remapped_old_odd(uintptr_t bits) {
-    return bits & (ZPointerRemapped10 | ZPointerRemapped11);
+    return ZPointer::remap_bits(bits) & (ZPointerRemapped10 | ZPointerRemapped11);
   }
 
   static bool is_marked_young_odd(uintptr_t bits) {
