@@ -123,9 +123,8 @@ private:
   // Update BOT entries corresponding to the mem range [blk_start, blk_end).
   void update_for_block_work(HeapWord* blk_start, HeapWord* blk_end);
 
-  void check_all_cards(size_t left_card, size_t right_card) const;
+  void check_all_cards(size_t left_card, size_t right_card) const NOT_DEBUG_RETURN;
 
-public:
   static HeapWord* align_up_by_card_size(HeapWord* const addr) {
     return align_up(addr, BOTConstants::card_size());
   }
@@ -136,6 +135,11 @@ public:
     // strictly greater-than
     return obj_end > cur_card_boundary;
   }
+
+  void update_for_block(HeapWord* blk_start, size_t size) {
+    update_for_block(blk_start, blk_start + size);
+  }
+public:
 
   //  The elements of the array are initialized to zero.
   G1BlockOffsetTablePart(G1BlockOffsetTable* array, HeapRegion* hr);
@@ -152,10 +156,6 @@ public:
     if (is_crossing_card_boundary(blk_start, blk_end)) {
       update_for_block_work(blk_start, blk_end);
     }
-  }
-
-  void update_for_block(HeapWord* blk_start, size_t size) {
-    update_for_block(blk_start, blk_start + size);
   }
 
   void set_for_starts_humongous(HeapWord* obj_top, size_t fill_size);
