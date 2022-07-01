@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,14 @@
 
 package sun.security.timestamp;
 
-import java.io.BufferedInputStream;
 import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.URI;
 import java.net.HttpURLConnection;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import sun.security.util.Debug;
 
@@ -123,7 +124,7 @@ public class HttpTimestamper implements Timestamper {
 
         // Receive the reply
         byte[] replyBuffer = null;
-        try (var input = new BufferedInputStream(connection.getInputStream())) {
+        try (var input = connection.getInputStream()) {
             if (debug != null) {
                 String header = connection.getHeaderField(0);
                 debug.println(header);
