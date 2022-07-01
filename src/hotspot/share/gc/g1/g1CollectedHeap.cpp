@@ -117,6 +117,8 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/stack.inline.hpp"
 
+#include "runtime/threads.hpp"
+
 size_t G1CollectedHeap::_humongous_object_threshold_in_words = 0;
 
 // INVARIANTS/NOTES
@@ -983,7 +985,7 @@ void G1CollectedHeap::print_heap_after_full_collection() {
   }
 }
 
-void G1CollectedHeap::abort_concurrent_cycle() {
+bool G1CollectedHeap::abort_concurrent_cycle() {
   // If we start the compaction before the CM threads finish
   // scanning the root regions we might trip them over as we'll
   // be moving objects / updating references. So let's wait until
@@ -1000,7 +1002,7 @@ void G1CollectedHeap::abort_concurrent_cycle() {
 
   // Abandon current iterations of concurrent marking and concurrent
   // refinement, if any are in progress.
-  concurrent_mark()->concurrent_cycle_abort();
+  return concurrent_mark()->concurrent_cycle_abort();
 }
 
 void G1CollectedHeap::prepare_heap_for_full_collection() {
@@ -2873,6 +2875,20 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
   // when we signal the G1ConcurrentMarkThread, the collector state has already
   // been reset for the next pause.
   bool should_start_concurrent_mark_operation = collector_state()->in_concurrent_start_gc();
+
+    class PrintStackClosure : public ThreadClosure {
+    public:
+      void do_thread(Thread* thread) {
+        if (!thread->is_Java_thread()) { return; }
+        LogTarget(Debug, gc) lt;
+        if (lt.is_enabled()) {
+          LogStream ls(lt);
+          ls.print_cr("%s", thread->name());
+          ((JavaThread*)thread)->print_stack_on(&ls);
+        }
+      }
+    } cl;
+    Threads::java_threads_do(&cl);
 
   // Perform the collection.
   G1YoungCollector collector(gc_cause(), target_pause_time_ms);

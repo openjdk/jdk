@@ -2021,7 +2021,7 @@ void G1ConcurrentMark::print_stats() {
   }
 }
 
-void G1ConcurrentMark::concurrent_cycle_abort() {
+bool G1ConcurrentMark::concurrent_cycle_abort() {
   // We haven't started a concurrent cycle no need to do anything; we might have
   // aborted the marking because of shutting down though. In this case the marking
   // might have already completed the abort (leading to in_progress() below to
@@ -2032,12 +2032,7 @@ void G1ConcurrentMark::concurrent_cycle_abort() {
   // has been signalled is already rare), and this work should be negligible compared
   // to actual full gc work.
   if (!cm_thread()->in_progress() && !_g1h->concurrent_mark_is_terminating()) {
-    return;
-  }
-
-  {
-    GCTraceTime(Debug, gc) debug("Clear Bitmap");
-    clear_bitmap(_g1h->workers());
+    return false;
   }
 
   // Empty mark stack
@@ -2054,6 +2049,7 @@ void G1ConcurrentMark::concurrent_cycle_abort() {
   // the expected_active value from the SATB queue set.
   satb_mq_set.set_active_all_threads(false, /* new active value */
                                      satb_mq_set.is_active() /* expected_active */);
+  return true;
 }
 
 void G1ConcurrentMark::abort_marking_threads() {

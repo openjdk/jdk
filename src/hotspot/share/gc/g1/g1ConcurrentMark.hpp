@@ -502,7 +502,7 @@ public:
 
   void concurrent_cycle_start();
   // Abandon current marking iteration due to a Full GC.
-  void concurrent_cycle_abort();
+  bool concurrent_cycle_abort();
   void concurrent_cycle_end();
 
   // Notifies marking threads to abort. This is a best-effort notification. Does not

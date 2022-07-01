@@ -171,8 +171,13 @@ public:
 void G1FullCollector::prepare_collection() {
   _heap->policy()->record_full_collection_start();
 
-  _heap->abort_concurrent_cycle();
+  // Verification needs the bitmap, so we should clear the bitmap only later.
+  bool in_concurrent_cycle = _heap->abort_concurrent_cycle();
   _heap->verify_before_full_collection(scope()->is_explicit_gc());
+  if (in_concurrent_cycle) {
+    GCTraceTime(Debug, gc) debug("Clear Bitmap");
+    _heap->concurrent_mark()->clear_bitmap(_heap->workers());
+  }
 
   _heap->gc_prologue(true);
   _heap->retire_tlabs();
