@@ -507,15 +507,15 @@ void ClassLoader::trace_class_path(const char* msg, const char* name) {
 }
 
 void ClassLoader::setup_bootstrap_search_path(JavaThread* current) {
-  const char* sys_class_path = Arguments::get_sysclasspath();
-  assert(sys_class_path != NULL, "System boot class path must not be NULL");
+  const char* bootcp = Arguments::get_boot_class_path();
+  assert(bootcp != NULL, "System boot class path must not be NULL");
   if (PrintSharedArchiveAndExit) {
-    // Don't print sys_class_path - this is the bootcp of this current VM process, not necessarily
-    // the same as the bootcp of the shared archive.
+    // Don't print bootcp - this is the bootcp of this current VM process, not necessarily
+    // the same as the boot classpath of the shared archive.
   } else {
-    trace_class_path("bootstrap loader class path=", sys_class_path);
+    trace_class_path("bootstrap loader class path=", bootcp);
   }
-  setup_bootstrap_search_path_impl(current, sys_class_path);
+  setup_bootstrap_search_path_impl(current, bootcp);
 }
 
 #if INCLUDE_CDS

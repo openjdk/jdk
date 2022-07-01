@@ -62,7 +62,7 @@ struct LegacyGCLogging {
 // PathString is used as:
 //  - the underlying value for a SystemProperty
 //  - the path portion of an --patch-module module/path pair
-//  - the string that represents the system boot class path, Arguments::_system_boot_class_path.
+//  - the string that represents the system boot class path, Arguments::_boot_class_path.
 class PathString : public CHeapObj<mtArguments> {
  protected:
   char* _value;
@@ -308,7 +308,7 @@ class Arguments : AllStatic {
   // system boot class path string no longer contains the "prefix"
   // to the boot class path base piece as it did when
   // -Xbootclasspath/p was supported.
-  static PathString *_system_boot_class_path;
+  static PathString* _boot_class_path;
 
   // Set if a modular java runtime image is present vs. a build with exploded modules
   static bool _has_jimage;
@@ -601,19 +601,19 @@ class Arguments : AllStatic {
 
   // Set up the underlying pieces of the system boot class path
   static void add_patch_mod_prefix(const char *module_name, const char *path, bool* patch_mod_javabase);
-  static void set_sysclasspath(const char *value, bool has_jimage) {
+  static void set_boot_class_path(const char *value, bool has_jimage) {
     // During start up, set by os::set_boot_path()
-    assert(get_sysclasspath() == NULL, "System boot class path previously set");
-    _system_boot_class_path->set_value(value);
+    assert(get_boot_class_path() == NULL, "Boot class path previously set");
+    _boot_class_path->set_value(value);
     _has_jimage = has_jimage;
   }
   static void append_sysclasspath(const char *value) {
-    _system_boot_class_path->append_value(value);
+    _boot_class_path->append_value(value);
     _jdk_boot_class_path_append->append_value(value);
   }
 
   static GrowableArray<ModulePatchPath*>* get_patch_mod_prefix() { return _patch_mod_prefix; }
-  static char* get_sysclasspath() { return _system_boot_class_path->value(); }
+  static char* get_boot_class_path() { return _boot_class_path->value(); }
   static char* get_jdk_boot_class_path_append() { return _jdk_boot_class_path_append->value(); }
   static bool has_jimage() { return _has_jimage; }
 
