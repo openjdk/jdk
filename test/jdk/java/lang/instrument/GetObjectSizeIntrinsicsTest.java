@@ -304,7 +304,7 @@ public class GetObjectSizeIntrinsicsTest extends ASimpleInstrumentationTestCase 
     static final Boolean COMPRESSED_OOPS = WhiteBox.getWhiteBox().getBooleanVMFlag("UseCompressedOops");
     static final long REF_SIZE = (COMPRESSED_OOPS == null || COMPRESSED_OOPS == true) ? 4 : 8;
 
-    static final Long align = WhiteBox.getWhiteBox().getIntxVMFlag("ObjectAlignmentInBytes");
+    static final Long align = WhiteBox.getWhiteBox().getIntVMFlag("ObjectAlignmentInBytes");
     static final int OBJ_ALIGN = (align == null ? 8 : align.intValue());
 
     static final int SMALL_ARRAY_SIZE = 1024;
