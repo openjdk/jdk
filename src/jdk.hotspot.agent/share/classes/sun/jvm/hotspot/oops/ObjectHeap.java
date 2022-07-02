@@ -53,15 +53,15 @@ public class ObjectHeap {
 
   public ObjectHeap(TypeDataBase db) throws WrongTypeException {
     // Get commonly used sizes of basic types
-    oopSize     = VM.getVM().getOopSize();
-    byteSize    = db.getJByteType().getSize();
-    charSize    = db.getJCharType().getSize();
-    booleanSize = db.getJBooleanType().getSize();
-    intSize     = db.getJIntType().getSize();
-    shortSize   = db.getJShortType().getSize();
-    longSize    = db.getJLongType().getSize();
-    floatSize   = db.getJFloatType().getSize();
-    doubleSize  = db.getJDoubleType().getSize();
+    oopSize     = (int) VM.getVM().getOopSize();
+    byteSize    = (int) db.getJByteType().getSize();
+    charSize    = (int) db.getJCharType().getSize();
+    booleanSize = (int) db.getJBooleanType().getSize();
+    intSize     = (int) db.getJIntType().getSize();
+    shortSize   = (int) db.getJShortType().getSize();
+    longSize    = (int) db.getJLongType().getSize();
+    floatSize   = (int) db.getJFloatType().getSize();
+    doubleSize  = (int) db.getJDoubleType().getSize();
   }
 
   /** Comparison operation for oops, either or both of which may be null */
@@ -71,25 +71,25 @@ public class ObjectHeap {
   }
 
   // Cached sizes of basic types
-  private long oopSize;
-  private long byteSize;
-  private long charSize;
-  private long booleanSize;
-  private long intSize;
-  private long shortSize;
-  private long longSize;
-  private long floatSize;
-  private long doubleSize;
+  private final int oopSize;
+  private final int byteSize;
+  private final int charSize;
+  private final int booleanSize;
+  private final int intSize;
+  private final int shortSize;
+  private final int longSize;
+  private final int floatSize;
+  private final int doubleSize;
 
-  public long getOopSize()     { return oopSize;     }
-  public long getByteSize()    { return byteSize;    }
-  public long getCharSize()    { return charSize;    }
-  public long getBooleanSize() { return booleanSize; }
-  public long getIntSize()     { return intSize;     }
-  public long getShortSize()   { return shortSize;   }
-  public long getLongSize()    { return longSize;    }
-  public long getFloatSize()   { return floatSize;   }
-  public long getDoubleSize()  { return doubleSize;  }
+  public int getOopSize()     { return oopSize;     }
+  public int getByteSize()    { return byteSize;    }
+  public int getCharSize()    { return charSize;    }
+  public int getBooleanSize() { return booleanSize; }
+  public int getIntSize()     { return intSize;     }
+  public int getShortSize()   { return shortSize;   }
+  public int getLongSize()    { return longSize;    }
+  public int getFloatSize()   { return floatSize;   }
+  public int getDoubleSize()  { return doubleSize;  }
 
   /** an interface to filter objects while walking heap */
   public static interface ObjectFilter {

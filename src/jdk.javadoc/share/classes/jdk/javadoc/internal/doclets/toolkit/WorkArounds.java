@@ -500,22 +500,6 @@ public class WorkArounds {
         }
     }
 
-    // TODO: we need to eliminate this, as it is hacky.
-    /**
-     * Returns a representation of the package truncated to two levels.
-     * For instance if the given package represents foo.bar.baz will return
-     * a representation of foo.bar
-     * @param pkg the PackageElement
-     * @return an abbreviated PackageElement
-     */
-    public PackageElement getAbbreviatedPackageElement(PackageElement pkg) {
-        String parsedPackageName = utils.parsePackageName(pkg);
-        ModuleElement encl = (ModuleElement) pkg.getEnclosingElement();
-        return encl == null
-                ? utils.elementUtils.getPackageElement(parsedPackageName)
-                : ((JavacElements) utils.elementUtils).getPackageElement(encl, parsedPackageName);
-    }
-
     public boolean isPreviewAPI(Element el) {
         Symbol sym = (Symbol) el;
         return (sym.flags() & Flags.PREVIEW_API) != 0;
