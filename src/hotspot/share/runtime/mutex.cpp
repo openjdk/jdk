@@ -332,6 +332,7 @@ const char* Mutex::rank_name() const {
   return rank_name_internal(_rank);
 }
 
+
 void Mutex::assert_no_overlap(Rank orig, Rank adjusted, int adjust) {
   int i = 0;
   while (_ranks[i] < orig) i++;
