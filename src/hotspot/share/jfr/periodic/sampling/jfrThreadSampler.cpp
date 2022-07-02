@@ -40,6 +40,7 @@
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/semaphore.hpp"
+#include "runtime/threadCrashProtection.hpp"
 #include "runtime/threadSMR.hpp"
 
 enum JfrSampleType {
@@ -141,7 +142,7 @@ class OSThreadSampler : public os::SuspendedThreadTask {
   JfrTicks _suspend_time;
 };
 
-class OSThreadSamplerCallback : public os::CrashProtectionCallback {
+class OSThreadSamplerCallback : public CrashProtectionCallback {
  public:
   OSThreadSamplerCallback(OSThreadSampler& sampler, const os::SuspendedThreadTaskContext &context) :
     _sampler(sampler), _context(context) {
@@ -163,7 +164,7 @@ void OSThreadSampler::do_task(const os::SuspendedThreadTaskContext& context) {
 
   if (JfrOptionSet::sample_protection()) {
     OSThreadSamplerCallback cb(*this, context);
-    os::ThreadCrashProtection crash_protection;
+    ThreadCrashProtection crash_protection;
     if (!crash_protection.call(cb)) {
       log_error(jfr)("Thread method sampler crashed");
     }
@@ -204,7 +205,7 @@ void OSThreadSampler::take_sample() {
   run();
 }
 
-class JfrNativeSamplerCallback : public os::CrashProtectionCallback {
+class JfrNativeSamplerCallback : public CrashProtectionCallback {
  public:
   JfrNativeSamplerCallback(JfrThreadSampleClosure& closure, JavaThread* jt, JfrStackFrame* frames, u4 max_frames) :
     _closure(closure), _jt(jt), _thread_oop(jt->threadObj()), _stacktrace(frames, max_frames), _success(false) {
@@ -272,7 +273,7 @@ bool JfrThreadSampleClosure::sample_thread_in_java(JavaThread* thread, JfrStackF
 bool JfrThreadSampleClosure::sample_thread_in_native(JavaThread* thread, JfrStackFrame* frames, u4 max_frames) {
   JfrNativeSamplerCallback cb(*this, thread, frames, max_frames);
   if (JfrOptionSet::sample_protection()) {
-    os::ThreadCrashProtection crash_protection;
+    ThreadCrashProtection crash_protection;
     if (!crash_protection.call(cb)) {
       log_error(jfr)("Thread method sampler crashed for native");
     }
