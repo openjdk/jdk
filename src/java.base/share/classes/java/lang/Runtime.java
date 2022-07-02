@@ -83,9 +83,10 @@ public class Runtime {
      * until they finish.  Once this is done the virtual machine
      * {@linkplain #halt halts}.
      *
-     * <p> Invocations of this method block indefinitely. It is therefore
-     * inadvisable to invoke this method from a shutdown hook as it will
-     * cause deadlock.
+     * <p> If this method is invoked from more than one thread the status code
+     * of the first invocation will be used; the status codes from other invocations
+     * will be ignored. If this method is invoked from a shutdown hook the system
+     * will deadlock.
      *
      * <p> The {@link System#exit(int) System.exit} method is the
      * conventional and convenient means of invoking this method.
