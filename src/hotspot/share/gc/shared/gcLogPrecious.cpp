@@ -25,6 +25,7 @@
 #include "gc/shared/gcLogPrecious.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/os.hpp" // malloc
 #include "utilities/ostream.hpp"
 
 stringStream* GCLogPrecious::_lines = NULL;
@@ -67,7 +68,7 @@ void GCLogPrecious::vwrite_and_debug(LogTargetHandle log,
   {
     MutexLocker locker(_lock, Mutex::_no_safepoint_check_flag);
     vwrite_inner(log, format, args);
-    DEBUG_ONLY(debug_message = strdup(_temp->base()));
+    DEBUG_ONLY(debug_message = os::strdup(_temp->base()));
   }
 
   // report error outside lock scope, since report_vm_error will call print_on_error
