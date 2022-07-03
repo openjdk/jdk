@@ -1130,4 +1130,27 @@ public class Throwable implements Serializable {
         else
             return suppressedExceptions.toArray(EMPTY_THROWABLE_ARRAY);
     }
+
+    /**
+     * Throws a new Throwable if the given parameter
+     * evaluates to true. Otherwise, the method exits with no action.
+     *
+     * This allows for concise checking of preconditions at the start
+     * of a method. Also, if a child class of Throwable calls
+     * this method, then that child class will be the exception that
+     * is thrown rather than Throwable itself. For example,
+     * IllegalArgumentException.throwIf(3 > 2) will throw an
+     * IllegalArgumentException instead of a Throwable. This
+     * change is inspired by and in the same family of
+     * Objects.requireNonNull().
+     *
+     * @param  throwGuard the boolean expression which will trigger
+     *             an exception if it evaluates to true.
+     *
+     */
+    public void throwIf (boolean throwGuard) {
+        if (throwGuard) {
+            throw this;
+        }
+    }
 }
