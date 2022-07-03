@@ -117,4 +117,27 @@ public class RuntimeException extends Exception {
                                boolean writableStackTrace) {
         super(message, cause, enableSuppression, writableStackTrace);
     }
+
+    /**
+     * Throws a new RuntimeException if the given parameter
+     * evaluates to true. Otherwise, the method exits with no action.
+     *
+     * This allows for concise checking of preconditions at the start
+     * of a method. Also, if a child class of RuntimeException calls
+     * this method, then that child class will be the exception that
+     * is thrown rather than RuntimeException itself. For example,
+     * IllegalArgumentException.throwIf(3 > 2) will throw an
+     * IllegalArgumentException instead of a RuntimeException. This
+     * change is inspired by and in the same family of
+     * Objects.requireNonNull().
+     *
+     * @param  throwGuard the boolean expression which will trigger
+     *             an exception if it evaluates to true.
+     *
+     */
+    public void throwIf (boolean throwGuard) {
+        if (throwGuard) {
+            throw this;
+        }
+    }
 }
