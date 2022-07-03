@@ -130,6 +130,11 @@ public class Random implements RandomGenerator, java.io.Serializable {
         }
 
         @Override
+        public boolean isDeprecated() {
+            return generator.isDeprecated();
+        }
+
+        @Override
         public void nextBytes(byte[] bytes) {
             this.generator.nextBytes(bytes);
         }
@@ -145,8 +150,23 @@ public class Random implements RandomGenerator, java.io.Serializable {
         }
 
         @Override
+        public int nextInt(int origin, int bound) {
+            return generator.nextInt(origin, bound);
+        }
+
+        @Override
         public long nextLong() {
             return this.generator.nextLong();
+        }
+
+        @Override
+        public long nextLong(long bound) {
+            return generator.nextLong(bound);
+        }
+
+        @Override
+        public long nextLong(long origin, long bound) {
+            return generator.nextLong(origin, bound);
         }
 
         @Override
@@ -160,13 +180,43 @@ public class Random implements RandomGenerator, java.io.Serializable {
         }
 
         @Override
+        public float nextFloat(float bound) {
+            return generator.nextFloat(bound);
+        }
+
+        @Override
+        public float nextFloat(float origin, float bound) {
+            return generator.nextFloat(origin, bound);
+        }
+
+        @Override
         public double nextDouble() {
             return this.generator.nextDouble();
         }
 
         @Override
+        public double nextDouble(double bound) {
+            return generator.nextDouble(bound);
+        }
+
+        @Override
+        public double nextDouble(double origin, double bound) {
+            return generator.nextDouble(origin, bound);
+        }
+
+        @Override
+        public double nextExponential() {
+            return generator.nextExponential();
+        }
+
+        @Override
         public double nextGaussian() {
             return this.generator.nextGaussian();
+        }
+
+        @Override
+        public double nextGaussian(double mean, double stddev) {
+            return generator.nextGaussian(mean, stddev);
         }
 
         @Override
@@ -1066,7 +1116,7 @@ public class Random implements RandomGenerator, java.io.Serializable {
         return AbstractSpliteratorGenerator.doubles(this);
     }
 
-   /**
+    /**
      * Returns a stream producing the given {@code streamSize} number of
      * pseudorandom {@code double} values, each conforming to the given origin
      * (inclusive) and bound (exclusive).
@@ -1076,7 +1126,7 @@ public class Random implements RandomGenerator, java.io.Serializable {
      * @param randomNumberBound the bound (exclusive) of each random value
      * @return a stream of pseudorandom {@code double} values,
      *         each with the given origin (inclusive) and bound (exclusive)
-    * @throws IllegalArgumentException {@inheritDoc}
+     * @throws IllegalArgumentException {@inheritDoc}
      * @since 1.8
      */
     @Override
