@@ -37,7 +37,7 @@ abstract class AbstractWatchKey implements WatchKey {
     /**
      * Maximum size of event list (in the future this may be tunable)
      */
-    static final int MAX_EVENT_LIST_SIZE    = 512;
+    static final int MAX_EVENT_LIST_SIZE    = 8192;
 
     /**
      * Special event to signal overflow
