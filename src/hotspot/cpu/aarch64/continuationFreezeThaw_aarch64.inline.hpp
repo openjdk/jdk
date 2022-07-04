@@ -153,6 +153,7 @@ inline void FreezeBase::relativize_interpreted_frame_metadata(const frame& f, co
   *hf.addr_at(frame::interpreter_frame_locals_offset) = frame::sender_sp_offset + f.interpreter_frame_method()->max_locals() - 1;
 
   relativize_one(vfp, hfp, frame::interpreter_frame_initial_sp_offset); // == block_top == block_bottom
+  relativize_one(vfp, hfp, frame::interpreter_frame_extended_sp_offset);
 
   assert((hf.fp() - hf.unextended_sp()) == (f.fp() - f.unextended_sp()), "");
   assert(hf.unextended_sp() == (intptr_t*)hf.at(frame::interpreter_frame_last_sp_offset), "");
@@ -292,6 +293,7 @@ inline void ThawBase::derelativize_interpreted_frame_metadata(const frame& hf, c
 
   derelativize_one(vfp, frame::interpreter_frame_last_sp_offset);
   derelativize_one(vfp, frame::interpreter_frame_initial_sp_offset);
+  derelativize_one(vfp, frame::interpreter_frame_extended_sp_offset);
 }
 
 inline void ThawBase::set_interpreter_frame_bottom(const frame& f, intptr_t* bottom) {
