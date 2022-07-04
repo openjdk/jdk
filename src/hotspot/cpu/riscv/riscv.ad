@@ -1185,11 +1185,6 @@ int MachCallRuntimeNode::ret_addr_offset() {
   }
 }
 
-int MachCallNativeNode::ret_addr_offset() {
-  Unimplemented();
-  return -1;
-}
-
 //
 // Compute padding required for nodes which need alignment
 //
@@ -1818,6 +1813,10 @@ const bool Matcher::match_rule_supported(int opcode) {
   }
 
   return true; // Per default match rules are supported.
+}
+
+const bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
+  return match_rule_supported_vector(opcode, vlen, bt);
 }
 
 // Identify extra cases that we might want to provide match rules for vector nodes and
@@ -10561,9 +10560,8 @@ instruct ShouldNotReachHere() %{
   format %{ "#@ShouldNotReachHere" %}
 
   ins_encode %{
-    Assembler::CompressibleRegion cr(&_masm);
     if (is_reachable()) {
-      __ halt();
+      __ stop(_halt_reason);
     }
   %}
 

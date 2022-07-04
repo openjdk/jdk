@@ -23,14 +23,12 @@
 
 /**
  * @test
- * @bug 8167108 8266130 8282704 8283467
+ * @bug 8167108 8266130 8283467 8284632 8286830
  * @summary Stress test JVM/TI StopThread() at thread exit.
  * @requires vm.jvmti
- * @modules java.base/java.lang:open
  * @run main/othervm/native -agentlib:StopAtExit StopAtExit
  */
 
-import java.lang.reflect.Method;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -43,10 +41,6 @@ public class StopAtExit extends Thread {
     public CountDownLatch startSyncObj = new CountDownLatch(1);
 
     native static int stopThread(StopAtExit thr, Throwable exception);
-
-    public StopAtExit(ThreadGroup group, Runnable target) {
-        super(group, target);
-    }
 
     @Override
     public void run() {
@@ -78,24 +72,41 @@ public class StopAtExit extends Thread {
                 usage();
             }
         }
+        timeMax /= 2;  // Split time between the two sub-tests.
 
+        test(timeMax);
+
+        // Fire-up deamon that just creates new threads. This generates contention on
+        // Threads_lock while worker tries to exit, creating more places where target
+        // can be seen as handshake safe.
+        Thread threadCreator = new Thread() {
+            @Override
+            public void run() {
+                while (true) {
+                    Thread dummyThread = new Thread(() -> {});
+                    dummyThread.start();
+                    try {
+                        dummyThread.join();
+                    } catch(InterruptedException ie) {
+                    }
+                }
+            }
+        };
+        threadCreator.setDaemon(true);
+        threadCreator.start();
+        test(timeMax);
+    }
+
+    public static void test(int timeMax) {
         System.out.println("About to execute for " + timeMax + " seconds.");
 
         long count = 0;
-        long manualDestroyCnt = 0;
-        long manualTerminateCnt = 0;
         long start_time = System.currentTimeMillis();
         while (System.currentTimeMillis() < start_time + (timeMax * 1000)) {
             count++;
 
-            // Use my own ThreadGroup so the thread count is known and make
-            // it a daemon ThreadGroup so it is automatically destroyed when
-            // the thread is terminated.
-            ThreadGroup myTG = new ThreadGroup("myTG-" + count);
-            myTG.setDaemon(true);
-            Throwable myException = new ThreadDeath();
             int retCode;
-            StopAtExit thread = new StopAtExit(myTG, null);
+            StopAtExit thread = new StopAtExit();
             thread.start();
             try {
                 // Wait for the worker thread to get going.
@@ -103,7 +114,20 @@ public class StopAtExit extends Thread {
                 // Tell the worker thread to race to the exit and the
                 // JVM/TI StopThread() calls will come in during thread exit.
                 thread.exitSyncObj.countDown();
+                long inner_count = 0;
                 while (true) {
+                    inner_count++;
+
+                    // Throw RuntimeException before ThreadDeath since a
+                    // ThreadDeath can also be queued up when there's already
+                    // a non-ThreadDeath async execution queued up.
+                    Throwable myException;
+                    if ((inner_count % 1) == 1) {
+                        myException = new RuntimeException();
+                    } else {
+                        myException = new ThreadDeath();
+                    }
+
                     retCode = stopThread(thread, myException);
 
                     if (retCode == JVMTI_ERROR_THREAD_NOT_ALIVE) {
@@ -139,7 +163,7 @@ public class StopAtExit extends Thread {
             }
             // This JVM/TI StopThread() happens after the join() so it
             // should do nothing, but let's make sure.
-            retCode = stopThread(thread, myException);
+            retCode = stopThread(thread, new ThreadDeath());
 
             if (retCode != JVMTI_ERROR_THREAD_NOT_ALIVE) {
                 throw new RuntimeException("thread " + thread.getName()
@@ -150,48 +174,8 @@ public class StopAtExit extends Thread {
                                            JVMTI_ERROR_THREAD_NOT_ALIVE + ").");
             }
 
-            if (myTG.activeCount() != 0) {
-                // If the ThreadGroup still has a count, then the thread
-                // received the async exception while in exit() so we need
-                // to do a manual terminate.
-                manualTerminateCnt++;
-                try {
-                    threadTerminated(myTG, thread);
-                } catch (Exception e) {
-                    throw new Error("threadTerminated() threw unexpected: " + e);
-                }
-                int activeCount = myTG.activeCount();
-                if (activeCount != 0) {
-                    throw new Error("threadTerminated() did not clean up " +
-                                    "worker thread: count=" + activeCount);
-                }
-                if (!myTG.isDestroyed()) {
-                    throw new Error("threadTerminated() did not destroy " +
-                                    myTG.getName());
-                }
-            } else if (!myTG.isDestroyed()) {
-                // If the ThreadGroup does not have a count, but is not
-                // yet destroyed, then the thread received the async
-                // exception while the thread was in the later stages of
-                // its threadTerminated() call so we need to do a manual
-                // destroy.
-                manualDestroyCnt++;
-                try {
-                    myTG.destroy();
-                } catch (Exception e) {
-                    throw new Error("myTG.destroy() threw unexpected: " + e);
-                }
-            }
         }
 
-        if (manualDestroyCnt != 0) {
-            System.out.println("Manually destroyed ThreadGroup " +
-                               manualDestroyCnt + " times.");
-        }
-        if (manualTerminateCnt != 0) {
-            System.out.println("Manually terminated Thread " +
-                               manualTerminateCnt + " times.");
-        }
         System.out.println("Executed " + count + " loops in " + timeMax +
                            " seconds.");
 
@@ -200,13 +184,6 @@ public class StopAtExit extends Thread {
             // Exit with success in a non-JavaTest environment:
             System.exit(0);
         }
-    }
-
-    static void threadTerminated(ThreadGroup group, Thread thread) throws Exception {
-        // ThreadGroup.threadTerminated() is package private:
-        Method method = ThreadGroup.class.getDeclaredMethod("threadTerminated", Thread.class);
-        method.setAccessible(true);
-        method.invoke(group, thread);
     }
 
     public static void usage() {

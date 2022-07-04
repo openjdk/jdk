@@ -1727,6 +1727,19 @@ void PhaseChaitin::fixup_spills() {
           if( cisc->oper_input_base() > 1 && mach->oper_input_base() <= 1 ) {
             assert( cisc->oper_input_base() == 2, "Only adding one edge");
             cisc->ins_req(1,src);         // Requires a memory edge
+          } else {
+            // There is no space reserved for a memory edge before the inputs for
+            // instructions which have "stackSlotX" parameter instead of "memory".
+            // For example, "MoveF2I_stack_reg". We always need a memory edge from
+            // src to cisc, else we might schedule cisc before src, loading from a
+            // spill location before storing the spill. On some platforms, we land
+            // in this else case because mach->oper_input_base() > 1, i.e. we have
+            // multiple inputs. In some rare cases there are even multiple memory
+            // operands, before and after spilling.
+            // (e.g. spilling "addFPR24_reg_mem" to "addFPR24_mem_cisc")
+            // In either case, there is no space in the inputs for the memory edge
+            // so we add an additional precedence / memory edge.
+            cisc->add_prec(src);
           }
           block->map_node(cisc, j);          // Insert into basic block
           n->subsume_by(cisc, C); // Correct graph

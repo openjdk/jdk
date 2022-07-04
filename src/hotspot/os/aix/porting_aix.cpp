@@ -29,8 +29,8 @@
 #include "memory/allocation.inline.hpp"
 #include "misc_aix.hpp"
 #include "porting_aix.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 
@@ -702,7 +702,7 @@ void AixNativeCallstack::print_callstack_for_context(outputStream* st, const uco
     stack_size = stackbounds.size;
   }
 
-  st->print_cr("------ current frame:");
+  st->print_cr("Native frame:");
   st->print("iar:  " PTR64_FORMAT " ", p2i(cur_iar));
   print_info_for_pc(st, cur_iar, buf, buf_size, demangle);
   st->cr();

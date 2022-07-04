@@ -31,6 +31,7 @@
 #include "utilities/sizes.hpp"
 
 class VM_Version : public Abstract_VM_Version {
+  friend class VMStructs;
   friend class JVMCIVMStructs;
 
 protected:
@@ -46,6 +47,7 @@ protected:
   static int _icache_line_size;
   static int _initial_sve_vector_length;
   static bool _rop_protection;
+  static uintptr_t _pac_mask;
 
   static SpinWait _spin_wait;
 
@@ -107,7 +109,7 @@ public:
     decl(AES,           aes,           3)     \
     decl(PMULL,         pmull,         4)     \
     decl(SHA1,          sha1,          5)     \
-    decl(SHA2,          sha2,          6)     \
+    decl(SHA2,          sha256,        6)     \
     decl(CRC32,         crc32,         7)     \
     decl(LSE,           lse,           8)     \
     decl(DCPOP,         dcpop,         16)    \

@@ -199,9 +199,6 @@ int LIR_Assembler::initial_frame_size_in_bytes() const {
 
 
 int LIR_Assembler::emit_exception_handler() {
-  // TODO: ARM
-  __ nop(); // See comments in other ports
-
   address handler_base = __ start_a_stub(exception_handler_size());
   if (handler_base == NULL) {
     bailout("exception handler overflow");
@@ -1480,6 +1477,9 @@ void LIR_Assembler::cmove(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, L
 #else
           __ mov_double(result->as_double_reg(), c->as_jdouble(), acond);
 #endif // __SOFTFP__
+          break;
+        case T_METADATA:
+          __ mov_metadata(result->as_register(), c->as_metadata(), acond);
           break;
         default:
           ShouldNotReachHere();

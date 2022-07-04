@@ -639,11 +639,6 @@ int MachCallRuntimeNode::ret_addr_offset() {
   return 12 + MacroAssembler::call_far_patchable_ret_addr_offset();
 }
 
-int MachCallNativeNode::ret_addr_offset() {
-  Unimplemented();
-  return -1;
-}
-
 // Compute padding required for nodes which need alignment
 //
 // The addresses of the call instructions needs to be 4-byte aligned to
@@ -1508,6 +1503,10 @@ const bool Matcher::match_rule_supported(int opcode) {
   }
 
   return true; // Per default match rules are supported.
+}
+
+const bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
+  return match_rule_supported_vector(opcode, vlen, bt);
 }
 
 const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,18 +57,20 @@
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "runtime/continuation.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/sweeper.hpp"
 #include "runtime/task.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
@@ -431,7 +433,7 @@ void before_exit(JavaThread* thread) {
 
 #if INCLUDE_JVMCI
   if (EnableJVMCI) {
-    JVMCI::shutdown();
+    JVMCI::shutdown(thread);
   }
 #endif
 
@@ -442,7 +444,7 @@ void before_exit(JavaThread* thread) {
 
   EventThreadEnd event;
   if (event.should_commit()) {
-    event.set_thread(JFR_THREAD_ID(thread));
+    event.set_thread(JFR_JVM_THREAD_ID(thread));
     event.commit();
   }
 
@@ -608,7 +610,7 @@ void vm_perform_shutdown_actions() {
       JavaThread* jt = JavaThread::cast(thread);
       // Must always be walkable or have no last_Java_frame when in
       // thread_in_native
-      jt->frame_anchor()->make_walkable(jt);
+      jt->frame_anchor()->make_walkable();
       jt->set_thread_state(_thread_in_native);
     }
   }

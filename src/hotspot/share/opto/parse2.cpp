@@ -124,9 +124,9 @@ Node* Parse::array_addressing(BasicType type, int vals, const Type*& elemtype) {
     const Type* el = elemtype->make_ptr();
     if (el && el->isa_instptr()) {
       const TypeInstPtr* toop = el->is_instptr();
-      if (toop->klass()->as_instance_klass()->unique_concrete_subklass()) {
+      if (toop->instance_klass()->unique_concrete_subklass()) {
         // If we load from "AbstractClass[]" we must see "ConcreteSubClass".
-        const Type* subklass = Type::get_const_type(toop->klass());
+        const Type* subklass = Type::get_const_type(toop->instance_klass());
         elemtype = subklass->join_speculative(el);
       }
     }
@@ -143,13 +143,14 @@ Node* Parse::array_addressing(BasicType type, int vals, const Type*& elemtype) {
     if (C->log() != NULL)   C->log()->elem("observe that='!need_range_check'");
   }
 
-  ciKlass * arytype_klass = arytype->klass();
-  if ((arytype_klass != NULL) && (!arytype_klass->is_loaded())) {
+  if (!arytype->is_loaded()) {
     // Only fails for some -Xcomp runs
     // The class is unloaded.  We have to run this bytecode in the interpreter.
+    ciKlass* klass = arytype->unloaded_klass();
+
     uncommon_trap(Deoptimization::Reason_unloaded,
                   Deoptimization::Action_reinterpret,
-                  arytype->klass(), "!loaded array");
+                  klass, "!loaded array");
     return top();
   }
 
@@ -1585,10 +1586,14 @@ void Parse::adjust_map_after_if(BoolTest::mask btest, Node* c, float prob,
 
   if (path_is_suitable_for_uncommon_trap(prob)) {
     repush_if_args();
-    uncommon_trap(Deoptimization::Reason_unstable_if,
+    Node* call = uncommon_trap(Deoptimization::Reason_unstable_if,
                   Deoptimization::Action_reinterpret,
                   NULL,
                   (is_fallthrough ? "taken always" : "taken never"));
+
+    if (call != nullptr) {
+      C->record_unstable_if_trap(new UnstableIfTrap(call->as_CallStaticJava(), path));
+    }
     return;
   }
 

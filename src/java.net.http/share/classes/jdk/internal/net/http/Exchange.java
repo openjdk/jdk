@@ -26,7 +26,6 @@
 package jdk.internal.net.http;
 
 import java.io.IOException;
-import java.lang.System.Logger.Level;
 import java.net.InetSocketAddress;
 import java.net.ProxySelector;
 import java.net.URI;
@@ -458,8 +457,8 @@ final class Exchange<T> {
                             "Unable to handle 101 while waiting for 100");
                     return MinimalFuture.failedFuture(failed);
                 }
-                return exchImpl.readBodyAsync(this::ignoreBody, false, parentExecutor)
-                        .thenApply(v ->  r1);
+                exchImpl.expectContinueFailed(rcode);
+                return MinimalFuture.completedFuture(r1);
             }
         });
     }

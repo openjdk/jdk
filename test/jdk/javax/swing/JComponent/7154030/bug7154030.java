@@ -74,6 +74,8 @@ public class bug7154030 {
                 @Override
                 public void run() {
                     JDesktopPane desktop = new JDesktopPane();
+                    desktop.setBackground(Color.WHITE);
+                    desktop.setForeground(Color.BLACK);
                     button = new JButton("button");
                     frame = new JFrame();
                     frame.setUndecorated(true);

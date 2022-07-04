@@ -25,7 +25,7 @@
  * @bug 4052404 4052440 4084688 4092475 4101316 4105828 4107014 4107953 4110613
  * 4118587 4118595 4122371 4126371 4126880 4135316 4135752 4139504 4139940 4143951
  * 4147315 4147317 4147552 4335196 4778440 4940539 5010672 6475525 6544471 6627549
- * 6786276 7066203 7085757 8008577 8030696 8170840 8255086 8263202
+ * 6786276 7066203 7085757 8008577 8030696 8170840 8255086 8263202 8287868
  * @summary test Locales
  * @library /java/text/testlib
  * @modules jdk.localedata
@@ -33,7 +33,10 @@
  * @run main/othervm -Djava.locale.providers=COMPAT,SPI -Djava.locale.useOldISOCodes=true LocaleTest
  */
 /*
- *
+ * This file is available under and governed by the GNU General Public
+ * License version 2 only, as published by the Free Software Foundation.
+ * However, the following notice accompanied the original version of this
+ * file and, per its terms, should not be removed:
  *
  * (C) Copyright Taligent, Inc. 1996, 1997 - All Rights Reserved
  * (C) Copyright IBM Corp. 1996 - 1998 - All Rights Reserved
@@ -154,11 +157,11 @@ public class LocaleTest extends IntlTest {
         // display langage (French)
         {   "anglais",  "fran\u00e7ais",   "croate", "grec",    "norv\u00e9gien",    "italien", "xx" },
         // display country (French)
-        {   "Etats-Unis",    "France",   "Croatie",  "Gr\u00e8ce",   "Norv\u00e8ge", "",     "YY" },
+        {   "\u00c9tats-Unis",    "France",   "Croatie",  "Gr\u00e8ce",   "Norv\u00e8ge", "",     "YY" },
         // display variant (French)
         {   "",     "",     "",     "",     "",     "",    "" },
         // display name (French)
-        {   "anglais (Etats-Unis)", "fran\u00e7ais (France)", "croate (Croatie)", "grec (Gr\u00e8ce)", "norv\u00e9gien (Norv\u00e8ge,Nynorsk)", "italien", "xx (YY)" },
+        {   "anglais (\u00c9tats-Unis)", "fran\u00e7ais (France)", "croate (Croatie)", "grec (Gr\u00e8ce)", "norv\u00e9gien (Norv\u00e8ge,Nynorsk)", "italien", "xx (YY)" },
 
         // display langage (Croatian)
         {   "",  "", "hrvatski", "",    "", "", "xx" },
@@ -762,7 +765,7 @@ test commented out pending API-change approval
                                          "espagnol (Allemagne)",
                                         "Croatie",
                                         "Su\u00e8de",
-                                        "R\u00e9publique Dominicaine",
+                                        "R\u00e9publique dominicaine",
                                         "Belgique" };
         String[] spanishDisplayNames = { "alem\u00E1n (Canad\u00E1)",
                                          "japon\u00E9s (Sud\u00E1frica)",
@@ -1030,7 +1033,7 @@ test commented out pending API-change approval
             "Norwegian Nynorsk (Norway)"};
         String[] norwegianDisplayNames = {"norsk (Norge)",
             "norsk (Norge,bokm\u00e5l)", "norsk (Noreg,nynorsk)",
-            "bokm\u00e5l (Norge)", "nynorsk (Noreg)"};
+            "norsk bokm\u00e5l (Norge)", "norsk nynorsk (Noreg)"};
 
         for (int i = 0; i < locales.length; i++) {
             Locale loc = locales[i];

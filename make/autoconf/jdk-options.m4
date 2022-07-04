@@ -24,20 +24,6 @@
 #
 
 ###############################################################################
-# Check which variant of the JDK that we want to build.
-# Currently we have:
-#    normal:   standard edition
-# but the custom make system may add other variants
-#
-# Effectively the JDK variant gives a name to a specific set of
-# modules to compile into the JDK.
-AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_VARIANT],
-[
-  # Deprecated in JDK 12
-  UTIL_DEPRECATED_ARG_WITH([jdk-variant])
-])
-
-###############################################################################
 # Set the debug level
 #    release: no debug information, all optimizations, no asserts.
 #    optimized: no debug information, all optimizations, no asserts, HotSpot target is 'optimized'.
@@ -508,7 +494,7 @@ AC_DEFUN_ONCE([JDKOPT_ENABLE_DISABLE_FAILURE_HANDLER],
 [
   UTIL_ARG_ENABLE(NAME: jtreg-failure-handler, DEFAULT: auto,
       RESULT: BUILD_FAILURE_HANDLER,
-      DESC: [enable keeping of packaged modules in jdk image],
+      DESC: [enable building of the jtreg failure handler],
       DEFAULT_DESC: [enabled if jtreg is present],
       CHECKING_MSG: [if the jtreg failure handler should be built],
       CHECK_AVAILABLE: [
@@ -727,30 +713,9 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_REPRODUCIBLE_BUILD],
     fi
   fi
 
-  REPRODUCIBLE_BUILD_DEFAULT=$with_source_date_present
-
-  if test "x$OPENJDK_BUILD_OS" = xwindows && \
-      test "x$ALLOW_ABSOLUTE_PATHS_IN_OUTPUT" = xfalse; then
-    # To support banning absolute paths on Windows, we must use the -pathmap
-    # method, which requires reproducible builds.
-    REPRODUCIBLE_BUILD_DEFAULT=true
-  fi
-
-  UTIL_ARG_ENABLE(NAME: reproducible-build, DEFAULT: $REPRODUCIBLE_BUILD_DEFAULT,
-      RESULT: ENABLE_REPRODUCIBLE_BUILD,
-      DESC: [enable reproducible builds (not yet fully functional)],
-      DEFAULT_DESC: [enabled if --with-source-date is given or on Windows without absolute paths])
-
-  if test "x$OPENJDK_BUILD_OS" = xwindows && \
-      test "x$ALLOW_ABSOLUTE_PATHS_IN_OUTPUT" = xfalse && \
-      test "x$ENABLE_REPRODUCIBLE_BUILD" = xfalse; then
-    AC_MSG_NOTICE([On Windows it is not possible to combine  --disable-reproducible-build])
-    AC_MSG_NOTICE([with --disable-absolute-paths-in-output.])
-    AC_MSG_ERROR([Cannot continue])
-  fi
-
   AC_SUBST(SOURCE_DATE)
-  AC_SUBST(ENABLE_REPRODUCIBLE_BUILD)
   AC_SUBST(ISO_8601_FORMAT_STRING)
   AC_SUBST(SOURCE_DATE_ISO_8601)
+
+  UTIL_DEPRECATED_ARG_ENABLE(reproducible-build)
 ])

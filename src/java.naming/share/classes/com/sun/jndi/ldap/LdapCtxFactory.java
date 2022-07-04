@@ -189,6 +189,10 @@ public final class LdapCtxFactory implements ObjectFactory, InitialContextFactor
                     ctx = getLdapCtxFromUrl(
                             r.getDomainName(), url, new LdapURL(u), env);
                     return ctx;
+                } catch (AuthenticationException e) {
+                    // do not retry on a different endpoint to avoid blocking
+                    // the user if authentication credentials are wrong.
+                    throw e;
                 } catch (NamingException e) {
                     // try the next element
                     lastException = e;
@@ -241,6 +245,10 @@ public final class LdapCtxFactory implements ObjectFactory, InitialContextFactor
         for (String u : urls) {
             try {
                 return getUsingURL(u, env);
+            } catch (AuthenticationException e) {
+                // do not retry on a different URL to avoid blocking
+                // the user if authentication credentials are wrong.
+                throw e;
             } catch (NamingException e) {
                 ex = e;
             }

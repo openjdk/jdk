@@ -36,9 +36,9 @@
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/basicLock.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/thread.inline.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 // Implementation of InterpreterMacroAssembler
@@ -1064,6 +1064,8 @@ void InterpreterMacroAssembler::remove_activation(
 
   bind(unlock);
   unlock_object(robj);
+  dec_held_monitor_count();
+
   pop(state);
 
   // Check that for block-structured locking (i.e., that all locked
@@ -1108,6 +1110,7 @@ void InterpreterMacroAssembler::remove_activation(
       push(state);
       mov(robj, rmon);   // nop if robj and rmon are the same
       unlock_object(robj);
+      dec_held_monitor_count();
       pop(state);
 
       if (install_monitor_exception) {
@@ -1168,6 +1171,7 @@ void InterpreterMacroAssembler::remove_activation(
   leave();                           // remove frame anchor
   pop(ret_addr);                     // get return address
   mov(rsp, rbx);                     // set sp to sender sp
+  pop_cont_fastpath();
 }
 
 void InterpreterMacroAssembler::get_method_counters(Register method,

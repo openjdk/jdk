@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,14 +50,12 @@ import java.awt.image.BufferedImage;
 import static java.awt.image.BufferedImage.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.WeakHashMap;
 import javax.swing.border.Border;
 import javax.swing.plaf.UIResource;
@@ -565,7 +563,7 @@ ${UI_DEFAULT_INIT}
                 //type registered, then check to make sure c is of the
                 //right type;
                 Class<?> clazz = parts[partIndex].c;
-                if (clazz != null && clazz.isAssignableFrom(c.getClass())) {
+                if (clazz != null && clazz.isInstance(c)) {
                     //so far so good, recurse
                     return matches(c.getParent(), partIndex - 1);
                 } else if (clazz == null &&

@@ -25,16 +25,20 @@
 #include "precompiled.hpp"
 
 #include "jvm.h"
+#include "code/codeCache.hpp"
+#include "code/compiledMethod.hpp"
+#include "code/nativeInst.hpp"
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safefetch.hpp"
 #include "runtime/semaphore.inline.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/threadCrashProtection.hpp"
 #include "signals_posix.hpp"
 #include "utilities/events.hpp"
 #include "utilities/ostream.hpp"
@@ -581,7 +585,7 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
   // Handle JFR thread crash protection.
   //  Note: this may cause us to longjmp away. Do not use any code before this
   //  point which really needs any form of epilogue code running, eg RAII objects.
-  os::ThreadCrashProtection::check_crash_protection(sig, t);
+  ThreadCrashProtection::check_crash_protection(sig, t);
 
   bool signal_was_handled = false;
 
@@ -620,6 +624,31 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
       (sig == SIGPIPE || sig == SIGXFSZ)) {
     PosixSignals::chained_handler(sig, info, ucVoid);
     signal_was_handled = true; // unconditionally.
+  }
+
+  // Check for UD trap caused by NOP patching.
+  // If it is, patch return address to be deopt handler.
+  if (!signal_was_handled) {
+    address pc = os::Posix::ucontext_get_pc(uc);
+    assert(pc != NULL, "");
+    if (NativeDeoptInstruction::is_deopt_at(pc)) {
+      CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
+      if (cb != NULL && cb->is_compiled()) {
+        MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, t);) // can call PcDescCache::add_pc_desc
+        CompiledMethod* cm = cb->as_compiled_method();
+        assert(cm->insts_contains_inclusive(pc), "");
+        address deopt = cm->is_method_handle_return(pc) ?
+          cm->deopt_mh_handler_begin() :
+          cm->deopt_handler_begin();
+        assert(deopt != NULL, "");
+
+        frame fr = os::fetch_frame_from_context(uc);
+        cm->set_original_pc(&fr, pc);
+
+        os::Posix::ucontext_set_pc(uc, deopt);
+        signal_was_handled = true;
+      }
+    }
   }
 
   // Call platform dependent signal handler.
@@ -1569,7 +1598,22 @@ static void SR_handler(int sig, siginfo_t* siginfo, ucontext_t* context) {
   PosixSignals::unblock_error_signals();
 
   Thread* thread = Thread::current_or_null_safe();
-  assert(thread != NULL, "Missing current thread in SR_handler");
+
+  // The suspend/resume signal may have been sent from outside the process, deliberately or
+  // accidentally. In that case the receiving thread may not be attached to the VM. We handle
+  // that case by asserting (debug VM) resp. writing a diagnostic message to tty and
+  // otherwise ignoring the stray signal (release VMs).
+  // We print the siginfo as part of the diagnostics, which also contains the sender pid of
+  // the stray signal.
+  if (thread == nullptr) {
+    stringStream ss;
+    ss.print_raw("Non-attached thread received stray SR signal (");
+    os::print_siginfo(&ss, siginfo);
+    ss.print_raw(").");
+    assert(thread != NULL, "%s.", ss.base());
+    log_warning(os)("%s", ss.base());
+    return;
+  }
 
   // On some systems we have seen signal delivery get "stuck" until the signal
   // mask is changed as part of thread termination. Check that the current thread

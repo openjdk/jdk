@@ -366,9 +366,9 @@ public class HtmlDocletWriter {
         return !output.isEmpty();
     }
 
-    private Content getInlineTagOutput(Element element, DocTree holder, DocTree tree, TagletWriterImpl.Context context) {
+    private Content getInlineTagOutput(Element element, DocTree tree, TagletWriterImpl.Context context) {
         return getTagletWriterInstance(context)
-                .getInlineTagOutput(element, configuration.tagletManager, holder, tree);
+                .getInlineTagOutput(element, configuration.tagletManager, tree);
     }
 
     /**
@@ -978,11 +978,21 @@ public class HtmlDocletWriter {
         String tagName = ch.getTagName(see);
 
         String seeText = utils.normalizeNewlines(ch.getText(see)).toString();
+        String refText;
         List<? extends DocTree> label;
         switch (kind) {
-            case LINK, LINK_PLAIN ->
+            case LINK, LINK_PLAIN -> {
                 // {@link[plain] reference label...}
-                label = ((LinkTree) see).getLabel();
+                LinkTree lt = (LinkTree) see;
+                var linkRef = lt.getReference();
+                if (linkRef == null) {
+                    messages.warning(ch.getDocTreePath(see),"doclet.link.no_reference");
+                    return invalidTagOutput(resources.getText("doclet.tag.invalid_input", lt.toString()),
+                        Optional.empty());
+                }
+                refText = linkRef.toString();
+                label = lt.getLabel();
+            }
 
             case SEE -> {
                 List<? extends DocTree> ref = ((SeeTree) see).getReference();
@@ -998,6 +1008,7 @@ public class HtmlDocletWriter {
                     }
                     case REFERENCE -> {
                         // @see reference label...
+                        refText = ref.get(0).toString();
                         label = ref.subList(1, ref.size());
                     }
                     case ERRONEOUS -> {
@@ -1015,7 +1026,7 @@ public class HtmlDocletWriter {
 
         boolean isLinkPlain = kind == LINK_PLAIN;
         Content labelContent = plainOrCode(isLinkPlain,
-                commentTagsToContent(see, element, label, context));
+                commentTagsToContent(element, label, context));
 
         // The signature from the @see tag. We will output this text when a label is not specified.
         Content text = plainOrCode(isLinkPlain,
@@ -1054,10 +1065,12 @@ public class HtmlDocletWriter {
                             (labelContent.isEmpty() ? text : labelContent));
                 } else {
                     // No cross link found so print warning
-                    messages.warning(ch.getDocTreePath(see),
-                            "doclet.see.class_or_package_not_found",
-                            "@" + tagName,
-                            seeText);
+                    if (!configuration.isDocLintReferenceGroupEnabled()) {
+                        messages.warning(ch.getDocTreePath(see),
+                                "doclet.see.class_or_package_not_found",
+                                "@" + tagName,
+                                refText);
+                    }
                     return invalidTagOutput(resources.getText("doclet.tag.invalid", tagName),
                             Optional.of(labelContent.isEmpty() ? text: labelContent));
                 }
@@ -1107,9 +1120,11 @@ public class HtmlDocletWriter {
                         ch.getDocTreePath(see), "doclet.see.class_or_package_not_accessible",
                         tagName, utils.getFullyQualifiedName(containing));
                 } else {
-                    messages.warning(
-                        ch.getDocTreePath(see), "doclet.see.class_or_package_not_found",
-                        tagName, seeText);
+                    if (!configuration.isDocLintReferenceGroupEnabled()) {
+                        messages.warning(
+                                ch.getDocTreePath(see), "doclet.see.class_or_package_not_found",
+                                tagName, refText);
+                    }
                 }
             }
             if (configuration.currentTypeElement != containing) {
@@ -1370,13 +1385,15 @@ public class HtmlDocletWriter {
             return;
         }
         Content div;
-        Content result = commentTagsToContent(null, element, tags, first, inSummary);
-        if (depr) {
-            div = HtmlTree.DIV(HtmlStyle.deprecationComment, result);
-            target.add(div);
-        } else {
-            div = HtmlTree.DIV(HtmlStyle.block, result);
-            target.add(div);
+        Content result = commentTagsToContent(element, tags, first, inSummary);
+        if (!result.isEmpty()) {
+            if (depr) {
+                div = HtmlTree.DIV(HtmlStyle.deprecationComment, result);
+                target.add(div);
+            } else {
+                div = HtmlTree.DIV(HtmlStyle.block, result);
+                target.add(div);
+            }
         }
         if (tags.isEmpty()) {
             target.add(Entity.NO_BREAK_SPACE);
@@ -1407,65 +1424,56 @@ public class HtmlDocletWriter {
     private boolean commentRemoved = false;
 
     /**
-     * Converts inline tags and text to Content, expanding the
+     * Converts inline tags and text to content, expanding the
      * inline tags along the way.  Called wherever text can contain
      * an inline tag, such as in comments or in free-form text arguments
      * to block tags.
      *
-     * @param holderTag    specific tag where comment resides
-     * @param element    specific element where comment resides
-     * @param tags   array of text tags and inline tags (often alternating)
-               present in the text of interest for this element
-     * @param isFirstSentence  true if text is first sentence
+     * @param element         specific element where comment resides
+     * @param tags            list of text trees and inline tag trees (often alternating)
+     * @param isFirstSentence true if text is first sentence
      * @return a Content object
      */
-    public Content commentTagsToContent(DocTree holderTag,
-                                        Element element,
+    public Content commentTagsToContent(Element element,
                                         List<? extends DocTree> tags,
                                         boolean isFirstSentence)
     {
-        return commentTagsToContent(holderTag, element, tags, isFirstSentence, false);
+        return commentTagsToContent(element, tags, isFirstSentence, false);
     }
 
     /**
-     * Converts inline tags and text to text strings, expanding the
+     * Converts inline tags and text to content, expanding the
      * inline tags along the way.  Called wherever text can contain
      * an inline tag, such as in comments or in free-form text arguments
      * to block tags.
      *
-     * @param holderTag       specific tag where comment resides
      * @param element         specific element where comment resides
-     * @param trees           array of text tags and inline tags (often alternating)
-     *                        present in the text of interest for this element
+     * @param trees           list of text trees and inline tag trees (often alternating)
      * @param isFirstSentence true if text is first sentence
      * @param inSummary       if the comment tags are added into the summary section
      * @return a Content object
      */
-    public Content commentTagsToContent(DocTree holderTag,
-                                        Element element,
+    public Content commentTagsToContent(Element element,
                                         List<? extends DocTree> trees,
                                         boolean isFirstSentence,
                                         boolean inSummary) {
-        return commentTagsToContent(holderTag, element, trees,
+        return commentTagsToContent(element, trees,
                 new TagletWriterImpl.Context(isFirstSentence, inSummary));
     }
 
     /**
-     * Converts inline tags and text to text strings, expanding the
+     * Converts inline tags and text to content, expanding the
      * inline tags along the way.  Called wherever text can contain
      * an inline tag, such as in comments or in free-form text arguments
      * to block tags.
      *
-     * @param holderTag specific tag where comment resides
      * @param element   specific element where comment resides
      * @param trees     list of text trees and inline tag trees (often alternating)
-     *                  present in the text of interest for this element
      * @param context   the enclosing context for the trees
      *
      * @return a Content object
      */
-    public Content commentTagsToContent(DocTree holderTag,
-                                        Element element,
+    public Content commentTagsToContent(Element element,
                                         List<? extends DocTree> trees,
                                         TagletWriterImpl.Context context)
     {
@@ -1576,7 +1584,7 @@ public class HtmlDocletWriter {
 
                 @Override
                 public Boolean visitDocRoot(DocRootTree node, Content c) {
-                    Content docRootContent = getInlineTagOutput(element, holderTag, node, context);
+                    Content docRootContent = getInlineTagOutput(element, node, context);
                     if (c != null) {
                         c.add(docRootContent);
                     } else {
@@ -1606,7 +1614,9 @@ public class HtmlDocletWriter {
                         Matcher m = Pattern.compile("(?i)\\{@([a-z]+).*").matcher(body);
                         String tagName = m.matches() ? m.group(1) : null;
                         if (tagName == null) {
-                            messages.warning(dtp, "doclet.tag.invalid_input", body);
+                            if (!configuration.isDocLintSyntaxGroupEnabled()) {
+                                messages.warning(dtp, "doclet.tag.invalid_input", body);
+                            }
                             result.add(invalidTagOutput(resources.getText("doclet.tag.invalid_input", body),
                                     Optional.empty()));
                         } else {
@@ -1620,7 +1630,7 @@ public class HtmlDocletWriter {
 
                 @Override
                 public Boolean visitInheritDoc(InheritDocTree node, Content c) {
-                    Content output = getInlineTagOutput(element, holderTag, node, context);
+                    Content output = getInlineTagOutput(element, node, context);
                     result.add(output);
                     // if we obtained the first sentence successfully, nothing more to do
                     return (context.isFirstSentence && !output.isEmpty());
@@ -1628,7 +1638,7 @@ public class HtmlDocletWriter {
 
                 @Override
                 public Boolean visitIndex(IndexTree node, Content p) {
-                    Content output = getInlineTagOutput(element, holderTag, node, context);
+                    Content output = getInlineTagOutput(element, node, context);
                     if (output != null) {
                         result.add(output);
                     }
@@ -1643,7 +1653,7 @@ public class HtmlDocletWriter {
                         if (dtp != null) {
                             messages.warning(dtp, "doclet.see.nested_link", "{@" + node.getTagName() + "}");
                         }
-                        Content label = commentTagsToContent(node, element, node.getLabel(), context);
+                        Content label = commentTagsToContent(element, node.getLabel(), context);
                         if (label.isEmpty()) {
                             label = Text.of(node.getReference().getSignature());
                         }
@@ -1686,14 +1696,14 @@ public class HtmlDocletWriter {
 
                 @Override
                 public Boolean visitSummary(SummaryTree node, Content c) {
-                    Content output = getInlineTagOutput(element, holderTag, node, context);
+                    Content output = getInlineTagOutput(element, node, context);
                     result.add(output);
                     return false;
                 }
 
                 @Override
                 public Boolean visitSystemProperty(SystemPropertyTree node, Content p) {
-                    Content output = getInlineTagOutput(element, holderTag, node, context);
+                    Content output = getInlineTagOutput(element, node, context);
                     if (output != null) {
                         result.add(output);
                     }
@@ -1726,7 +1736,7 @@ public class HtmlDocletWriter {
 
                 @Override
                 protected Boolean defaultAction(DocTree node, Content c) {
-                    Content output = getInlineTagOutput(element, holderTag, node, context);
+                    Content output = getInlineTagOutput(element, node, context);
                     if (output != null) {
                         result.add(output);
                     }
@@ -2331,7 +2341,7 @@ public class HtmlDocletWriter {
                 case PACKAGE, MODULE ->
                         ((QualifiedNameable) forWhat).getQualifiedName();
                 case CONSTRUCTOR ->
-                        ((TypeElement) forWhat.getEnclosingElement()).getSimpleName();
+                        forWhat.getEnclosingElement().getSimpleName();
                 default -> forWhat.getSimpleName();
             }).toString();
             var nameCode = HtmlTree.CODE(Text.of(name));

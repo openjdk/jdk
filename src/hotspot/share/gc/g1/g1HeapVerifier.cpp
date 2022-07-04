@@ -51,9 +51,8 @@ private:
   G1CollectedHeap* _g1h;
   VerifyOption     _vo;
   bool             _failures;
+
 public:
-  // _vo == UsePrevMarking -> use "prev" marking information,
-  // _vo == UseFullMarking -> use "next" marking bitmap but no TAMS
   VerifyRootsClosure(VerifyOption vo) :
     _g1h(G1CollectedHeap::heap()),
     _vo(vo),
@@ -98,7 +97,7 @@ class G1VerifyCodeRootOopClosure: public OopClosure {
     }
 
     // Don't check the code roots during marking verification in a full GC
-    if (_vo == VerifyOption_G1UseFullMarking) {
+    if (_vo == VerifyOption::G1UseFullMarking) {
       return;
     }
 
@@ -203,9 +202,8 @@ private:
   size_t _live_bytes;
   HeapRegion *_hr;
   VerifyOption _vo;
+
 public:
-  // _vo == UsePrevMarking -> use "prev" marking information,
-  // _vo == UseFullMarking -> use "next" marking bitmap but no TAMS.
   VerifyObjsInRegionClosure(HeapRegion *hr, VerifyOption vo)
     : _live_bytes(0), _hr(hr), _vo(vo) {
     _g1h = G1CollectedHeap::heap();
@@ -221,7 +219,7 @@ public:
       // word), it may not be marked, or may have been marked
       // but has since became dead, or may have been allocated
       // since the last marking.
-      if (_vo == VerifyOption_G1UseFullMarking) {
+      if (_vo == VerifyOption::G1UseFullMarking) {
         guarantee(!_g1h->is_obj_dead(o), "Full GC marking and concurrent mark mismatch");
       }
 
@@ -352,15 +350,12 @@ void G1HeapVerifier::verify_archive_regions() {
 
 class VerifyRegionClosure: public HeapRegionClosure {
 private:
-  bool             _par;
   VerifyOption     _vo;
   bool             _failures;
+
 public:
-  // _vo == UsePrevMarking -> use "prev" marking information,
-  // _vo == UseFullMarking -> use "next" marking bitmap but no TAMS
-  VerifyRegionClosure(bool par, VerifyOption vo)
-    : _par(par),
-      _vo(vo),
+  VerifyRegionClosure(VerifyOption vo)
+    : _vo(vo),
       _failures(false) {}
 
   bool failures() {
@@ -372,9 +367,17 @@ public:
     guarantee(!r->is_young() || r->rem_set()->is_complete(), "Remembered set for Young region %u must be complete, is %s", r->hrm_index(), r->rem_set()->get_state_str());
     // Humongous and old regions regions might be of any state, so can't check here.
     guarantee(!r->is_free() || !r->rem_set()->is_tracked(), "Remembered set for free region %u must be untracked, is %s", r->hrm_index(), r->rem_set()->get_state_str());
-    // Verify that the continues humongous regions' remembered set state matches the
-    // one from the starts humongous region.
-    if (r->is_continues_humongous()) {
+
+    // For archive regions, verify there are no heap pointers to non-pinned regions.
+    if (r->is_closed_archive()) {
+      VerifyObjectInArchiveRegionClosure verify_oop_pointers(r, false);
+      r->object_iterate(&verify_oop_pointers);
+    } else if (r->is_open_archive()) {
+      VerifyObjsInRegionClosure verify_open_archive_oop(r, _vo);
+      r->object_iterate(&verify_open_archive_oop);
+    } else if (r->is_continues_humongous()) {
+      // Verify that the continues humongous regions' remembered set state
+      // matches the one from the starts humongous region.
       if (r->rem_set()->get_state_str() != r->humongous_start_region()->rem_set()->get_state_str()) {
          log_error(gc, verify)("Remset states differ: Region %u (%s) remset %s with starts region %u (%s) remset %s",
                                r->hrm_index(),
@@ -385,18 +388,7 @@ public:
                                r->humongous_start_region()->rem_set()->get_state_str());
          _failures = true;
       }
-    }
-    // For archive regions, verify there are no heap pointers to
-    // non-pinned regions. For all others, verify liveness info.
-    if (r->is_closed_archive()) {
-      VerifyObjectInArchiveRegionClosure verify_oop_pointers(r, false);
-      r->object_iterate(&verify_oop_pointers);
-      return true;
-    } else if (r->is_open_archive()) {
-      VerifyObjsInRegionClosure verify_open_archive_oop(r, _vo);
-      r->object_iterate(&verify_open_archive_oop);
-      return true;
-    } else if (!r->is_continues_humongous()) {
+    } else {
       bool failures = false;
       r->verify(_vo, &failures);
       if (failures) {
@@ -411,13 +403,15 @@ public:
         }
       }
     }
-    return false; // stop the region iteration if we hit a failure
+
+    // stop the region iteration if we hit a failure
+    return _failures;
   }
 };
 
-// This is the task used for parallel verification of the heap regions
+// This is the task used for verification of the heap regions
 
-class G1ParVerifyTask: public WorkerTask {
+class G1VerifyTask: public WorkerTask {
 private:
   G1CollectedHeap*  _g1h;
   VerifyOption      _vo;
@@ -425,10 +419,8 @@ private:
   HeapRegionClaimer _hrclaimer;
 
 public:
-  // _vo == UsePrevMarking -> use "prev" marking information,
-  // _vo == UseFullMarking -> use "next" marking bitmap but no TAMS
-  G1ParVerifyTask(G1CollectedHeap* g1h, VerifyOption vo) :
-      WorkerTask("Parallel verify task"),
+  G1VerifyTask(G1CollectedHeap* g1h, VerifyOption vo) :
+      WorkerTask("Verify task"),
       _g1h(g1h),
       _vo(vo),
       _failures(false),
@@ -439,7 +431,7 @@ public:
   }
 
   void work(uint worker_id) {
-    VerifyRegionClosure blk(true, _vo);
+    VerifyRegionClosure blk(_vo);
     _g1h->heap_region_par_iterate_from_worker_offset(&blk, &_hrclaimer, worker_id);
     if (blk.failures()) {
       _failures = true;
@@ -491,24 +483,12 @@ void G1HeapVerifier::verify(VerifyOption vo) {
   }
 
   log_debug(gc, verify)("HeapRegions");
-  if (GCParallelVerificationEnabled && ParallelGCThreads > 1) {
 
-    G1ParVerifyTask task(_g1h, vo);
-    _g1h->workers()->run_task(&task);
-    if (task.failures()) {
-      failures = true;
-    }
-
-  } else {
-    VerifyRegionClosure blk(false, vo);
-    _g1h->heap_region_iterate(&blk);
-    if (blk.failures()) {
-      failures = true;
-    }
-  }
-
-  if (failures) {
-    log_error(gc, verify)("Heap after failed verification (kind %d):", vo);
+  G1VerifyTask task(_g1h, vo);
+  _g1h->workers()->run_task(&task);
+  if (failures || task.failures()) {
+    log_error(gc, verify)("Heap after failed verification (kind %u):",
+                          static_cast<std::underlying_type_t<VerifyOption>>(vo));
     // It helps to have the per-region information in the output to
     // help us track down what went wrong. This is why we call
     // print_extended_on() instead of print_on().
@@ -516,8 +496,9 @@ void G1HeapVerifier::verify(VerifyOption vo) {
     ResourceMark rm;
     LogStream ls(log.error());
     _g1h->print_extended_on(&ls);
+
+    fatal("there should not have been any failures");
   }
-  guarantee(!failures, "there should not have been any failures");
 }
 
 // Heap region set verification
@@ -602,11 +583,11 @@ void G1HeapVerifier::verify(G1VerifyType type, VerifyOption vo, const char* msg)
 }
 
 void G1HeapVerifier::verify_before_gc(G1VerifyType type) {
-  verify(type, VerifyOption_G1UsePrevMarking, "Before GC");
+  verify(type, VerifyOption::G1UsePrevMarking, "Before GC");
 }
 
 void G1HeapVerifier::verify_after_gc(G1VerifyType type) {
-  verify(type, VerifyOption_G1UsePrevMarking, "After GC");
+  verify(type, VerifyOption::G1UsePrevMarking, "After GC");
 }
 
 
