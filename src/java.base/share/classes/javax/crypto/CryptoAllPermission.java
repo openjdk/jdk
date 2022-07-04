@@ -123,7 +123,7 @@ final class CryptoAllPermissionCollection extends PermissionCollection
     private boolean all_allowed;
 
     /**
-     * Create an empty {@code CryptoAllPermission/code> object.
+     * Create an empty {@code CryptoAllPermission} object.
      */
     CryptoAllPermissionCollection() {
         all_allowed = false;
