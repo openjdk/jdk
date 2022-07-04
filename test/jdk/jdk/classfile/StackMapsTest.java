@@ -44,6 +44,7 @@ import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
 import java.util.List;
 import java.lang.reflect.AccessFlag;
+import jdk.classfile.util.ClassPrinter;
 
 /**
  * StackMapsTest
@@ -155,6 +156,17 @@ public class StackMapsTest {
     @Test
     public void testPattern10() throws Exception {
         testTransformedStackMaps("/testdata/Pattern10.class");
+    }
+
+    @Test(expectedExceptions = VerifyError.class)
+    public void testFrameOutOfBytecodeRange() {
+        Classfile.parse(
+                Classfile.build(ClassDesc.of("TestClass"), clb ->
+                        clb.withMethodBody("frameOutOfRangeMethod", MethodTypeDesc.of(ConstantDescs.CD_void), 0, cob -> {
+                            var l = cob.newLabel();
+                            cob.goto_(l);//jump to the end of method body triggers invalid frame creation
+                            cob.labelBinding(l);
+                        })));
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)

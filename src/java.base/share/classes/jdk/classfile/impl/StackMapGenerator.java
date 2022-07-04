@@ -929,8 +929,8 @@ public final class StackMapGenerator {
         var offsets = new BitSet() {
             @Override
             public void set(int i) {
-                if (i < 0 || i > bytecode.capacity())
-                    generatorError("Branch offset out of bytecode range: " + i);
+                if (i < 0 || i >= bytecode.capacity())
+                    generatorError("Frame offset out of bytecode range");
                 super.set(i);
             }
         };
