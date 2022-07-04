@@ -153,4 +153,64 @@ public class BuilderBlockTest {
         assertEquals((Integer) fooMethod.invoke(null, 0), (Integer) 2);
 
     }
+
+    public void testAllocateLocal() {
+        Classfile.build(ClassDesc.of("Foo"), cb -> {
+            cb.withMethod("foo", MethodTypeDesc.ofDescriptor("(IJI)V"), Classfile.ACC_STATIC,
+                          mb -> mb.withCode(xb -> {
+                              int slot1 = xb.allocateLocal(TypeKind.IntType);
+                              int slot2 = xb.allocateLocal(TypeKind.LongType);
+                              int slot3 = xb.allocateLocal(TypeKind.IntType);
+
+                              assertEquals(slot1, 4);
+                              assertEquals(slot2, 5);
+                              assertEquals(slot3, 7);
+                          }));
+        });
+    }
+
+    public void testAllocateLocalBlock() {
+        Classfile.build(ClassDesc.of("Foo"), cb -> {
+            cb.withMethod("foo", MethodTypeDesc.ofDescriptor("(IJI)V"), Classfile.ACC_STATIC,
+                          mb -> mb.withCode(xb -> {
+                              xb.block(bb -> {
+                                  int slot1 = bb.allocateLocal(TypeKind.IntType);
+                                  int slot2 = bb.allocateLocal(TypeKind.LongType);
+                                  int slot3 = bb.allocateLocal(TypeKind.IntType);
+
+                                  assertEquals(slot1, 4);
+                                  assertEquals(slot2, 5);
+                                  assertEquals(slot3, 7);
+                              });
+                              int slot4 = xb.allocateLocal(TypeKind.IntType);
+                              assertEquals(slot4, 4);
+                          }));
+        });
+    }
+
+    public void testAllocateLocalIfThen() {
+        Classfile.build(ClassDesc.of("Foo"), cb -> {
+            cb.withMethod("foo", MethodTypeDesc.ofDescriptor("(IJI)V"), Classfile.ACC_STATIC,
+                          mb -> mb.withCode(xb -> {
+                              xb.iconst_0();
+                              xb.ifThenElse(bb -> {
+                                                int slot1 = bb.allocateLocal(TypeKind.IntType);
+                                                int slot2 = bb.allocateLocal(TypeKind.LongType);
+                                                int slot3 = bb.allocateLocal(TypeKind.IntType);
+
+                                                assertEquals(slot1, 4);
+                                                assertEquals(slot2, 5);
+                                                assertEquals(slot3, 7);
+                                            },
+                                            bb -> {
+                                                int slot1 = bb.allocateLocal(TypeKind.IntType);
+
+                                                assertEquals(slot1, 4);
+                                            });
+                              int slot4 = xb.allocateLocal(TypeKind.IntType);
+                              assertEquals(slot4, 4);
+                              xb.return_();
+                          }));
+        });
+    }
 }
