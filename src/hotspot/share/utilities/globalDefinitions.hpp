@@ -175,13 +175,13 @@ FORBID_C_FUNCTION(void* malloc(size_t size), "use os::malloc");
 FORBID_C_FUNCTION(void* calloc(size_t nmemb, size_t size), "use os::malloc and zero out manually");
 FORBID_C_FUNCTION(void free(void *ptr), "use os::free");
 FORBID_C_FUNCTION(void* realloc(void *ptr, size_t size), "use os::realloc");
-FORBID_C_FUNCTION(char* strdup(const char *s), "use os::realloc");
-FORBID_C_FUNCTION(char* strndup(const char *s, size_t n), "use os::strdup");
+FORBID_C_FUNCTION(char* strdup(const char *s), "use os::strdup");
+FORBID_C_FUNCTION(char* strndup(const char *s, size_t n), "don't use");
 FORBID_C_FUNCTION(int posix_memalign(void **memptr, size_t alignment, size_t size), "don't use");
 FORBID_C_FUNCTION(void* aligned_alloc(size_t alignment, size_t size), "don't use");
-FORBID_C_FUNCTION(char* realpath(const char* path, char* resolved_path), "don't use");
-FORBID_C_FUNCTION(char* get_current_dir_name(void), "don't use");
-FORBID_C_FUNCTION(char* getwd(char *buf), "don't use");
+FORBID_C_FUNCTION(char* realpath(const char* path, char* resolved_path), "use os::Posix::realpath");
+FORBID_C_FUNCTION(char* get_current_dir_name(void), "use os::get_current_directory()");
+FORBID_C_FUNCTION(char* getwd(char *buf), "use os::get_current_directory()");
 FORBID_C_FUNCTION(wchar_t* wcsdup(const wchar_t *s), "don't use");
 FORBID_C_FUNCTION(void* reallocf(void *ptr, size_t size), "don't use");
 
