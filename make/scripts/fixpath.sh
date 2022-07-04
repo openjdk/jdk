@@ -146,11 +146,14 @@ function import_path() {
   fi
 
   if [[ "$path" != "" ]]; then
-    if [[ ! -e "$path" && -e "$path.exe" ]]; then
-      path="$path.exe"
+    # Store current unix path
+    unixpath="$path"
+    # If $unixpath does not exist, add .exe (needed on WSL)
+    if [[ ! -e "$unixpath" ]]; then
+      unixpath="$unixpath.exe"
     fi
     # Now turn it into a windows path
-    winpath="$($PATHTOOL -w "$path" 2>/dev/null)"
+    winpath="$($PATHTOOL -w "$unixpath" 2>/dev/null)"
     if [[ $? -eq 0 ]]; then
       if [[ ! "$winpath" =~ ^"$ENVROOT"\\.*$ ]] ; then
         # If it is not in envroot, it's a generic windows path
@@ -159,21 +162,25 @@ function import_path() {
           # This monster of a command uses the %~s support from cmd.exe to
           # reliably convert to short paths on all winenvs.
           shortpath="$($CMD /q /c for %I in \( "$winpath" \) do echo %~sI 2>/dev/null | tr -d \\n\\r)"
-          path="$($PATHTOOL -u "$shortpath")"
-          # path is based on short name
+          unixpath="$($PATHTOOL -u "$shortpath")"
+          # unixpath is based on short name
         fi
         # Make it lower case
-        path="$(echo "$path" | tr '[:upper:]' '[:lower:]')"
+        path="$(echo "$unixpath" | tr '[:upper:]' '[:lower:]')"
       fi
     else
       # On WSL1, PATHTOOL will fail for files in envroot. If the unix path
       # exists, we assume that $path is a valid unix path.
 
       if [[ ! -e $path ]]; then
-        if [[ $QUIET != true ]]; then
-          echo fixpath: warning: Path "'"$path"'" does not exist >&2
+        if [[ -e $path.exe ]]; then
+          path="$path.exe"
+        else
+          if [[ $QUIET != true ]]; then
+            echo fixpath: warning: Path "'"$path"'" does not exist >&2
+          fi
+          # This is not a fatal error, maybe the path will be created later on
         fi
-        # This is not a fatal error, maybe the path will be created later on
       fi
     fi
   fi
