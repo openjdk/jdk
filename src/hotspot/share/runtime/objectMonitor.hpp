@@ -29,11 +29,10 @@
 #include "memory/padded.hpp"
 #include "oops/markWord.hpp"
 #include "oops/weakHandle.hpp"
-#include "runtime/os.hpp"
-#include "runtime/park.hpp"
 #include "runtime/perfDataTypes.hpp"
 
 class ObjectMonitor;
+class ParkEvent;
 
 // ObjectWaiter serves as a "proxy" or surrogate thread.
 // TODO-FIXME: Eliminate ObjectWaiter and use the thread-specific

@@ -2713,11 +2713,17 @@ bool size_fits_all_mem_uses(AddPNode* addp, int shift) {
   return true;
 }
 
-bool can_combine_with_imm(Node* binary_node, Node* replicate_node) {
-  if (UseSVE == 0 || !VectorNode::is_invariant_vector(replicate_node)){
+// Binary src (Replicate con)
+bool is_valid_sve_arith_imm_pattern(Node* n, Node* m) {
+  if (n == NULL || m == NULL) {
     return false;
   }
-  Node* imm_node = replicate_node->in(1);
+
+  if (UseSVE == 0 || !VectorNode::is_invariant_vector(m)) {
+    return false;
+  }
+
+  Node* imm_node = m->in(1);
   if (!imm_node->is_Con()) {
     return false;
   }
@@ -2727,11 +2733,11 @@ bool can_combine_with_imm(Node* binary_node, Node* replicate_node) {
     return false;
   }
 
-  switch (binary_node->Opcode()) {
+  switch (n->Opcode()) {
   case Op_AndV:
   case Op_OrV:
   case Op_XorV: {
-    Assembler::SIMD_RegVariant T = Assembler::elemType_to_regVariant(Matcher::vector_element_basic_type(binary_node));
+    Assembler::SIMD_RegVariant T = Assembler::elemType_to_regVariant(Matcher::vector_element_basic_type(n));
     uint64_t value = t->isa_long() ? (uint64_t)imm_node->get_long() : (uint64_t)imm_node->get_int();
     return Assembler::operand_valid_for_sve_logical_immediate(Assembler::regVariant_to_elemBits(T), value);
   }
@@ -2747,22 +2753,24 @@ bool can_combine_with_imm(Node* binary_node, Node* replicate_node) {
   }
 }
 
-bool is_vector_arith_imm_pattern(Node* n, Node* m) {
+// (XorV src (Replicate m1))
+// (XorVMask src (MaskAll m1))
+bool is_vector_bitwise_not_pattern(Node* n, Node* m) {
   if (n != NULL && m != NULL) {
-    return can_combine_with_imm(n, m);
+    return (n->Opcode() == Op_XorV || n->Opcode() == Op_XorVMask) &&
+           VectorNode::is_all_ones_vector(m);
   }
   return false;
 }
 
 // Should the matcher clone input 'm' of node 'n'?
 bool Matcher::pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
-  // ShiftV src (ShiftCntV con)
-  // Binary src (Replicate con)
-  if (is_vshift_con_pattern(n, m) || is_vector_arith_imm_pattern(n, m)) {
+  if (is_vshift_con_pattern(n, m) ||
+      is_vector_bitwise_not_pattern(n, m) ||
+      is_valid_sve_arith_imm_pattern(n, m)) {
     mstack.push(m, Visit);
     return true;
   }
-
   return false;
 }
 
@@ -4447,6 +4455,16 @@ operand immI_255()
 operand immI_65535()
 %{
   predicate(n->get_int() == 65535);
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immI_positive()
+%{
+  predicate(n->get_int() > 0);
   match(ConI);
 
   op_cost(0);

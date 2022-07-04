@@ -665,6 +665,10 @@ void Node::destruct(PhaseValues* phase) {
 
   if (is_SafePoint()) {
     as_SafePoint()->delete_replaced_nodes();
+
+    if (is_CallStaticJava()) {
+      compile->remove_unstable_if_trap(as_CallStaticJava(), false);
+    }
   }
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   bs->unregister_potential_barrier_node(this);

@@ -828,26 +828,42 @@ bool VectorNode::is_vector_shift_count(int opc) {
   }
 }
 
-static bool is_con_M1(Node* n) {
+static bool is_con(Node* n, long con) {
   if (n->is_Con()) {
     const Type* t = n->bottom_type();
-    if (t->isa_int() && t->is_int()->get_con() == -1) {
+    if (t->isa_int() && t->is_int()->get_con() == (int)con) {
       return true;
     }
-    if (t->isa_long() && t->is_long()->get_con() == -1) {
+    if (t->isa_long() && t->is_long()->get_con() == con) {
       return true;
     }
   }
   return false;
 }
 
+// Return true if every bit in this vector is 1.
 bool VectorNode::is_all_ones_vector(Node* n) {
   switch (n->Opcode()) {
   case Op_ReplicateB:
   case Op_ReplicateS:
   case Op_ReplicateI:
   case Op_ReplicateL:
-    return is_con_M1(n->in(1));
+  case Op_MaskAll:
+    return is_con(n->in(1), -1);
+  default:
+    return false;
+  }
+}
+
+// Return true if every bit in this vector is 0.
+bool VectorNode::is_all_zeros_vector(Node* n) {
+  switch (n->Opcode()) {
+  case Op_ReplicateB:
+  case Op_ReplicateS:
+  case Op_ReplicateI:
+  case Op_ReplicateL:
+  case Op_MaskAll:
+    return is_con(n->in(1), 0);
   default:
     return false;
   }
@@ -1773,6 +1789,95 @@ Node* ReverseVNode::Identity(PhaseGVN* phase) {
     }
   }
   return this;
+}
+
+Node* AndVNode::Identity(PhaseGVN* phase) {
+  // (AndV src (Replicate m1))   => src
+  // (AndVMask src (MaskAll m1)) => src
+  if (VectorNode::is_all_ones_vector(in(2))) {
+    return in(1);
+  }
+  // (AndV (Replicate zero) src)   => (Replicate zero)
+  // (AndVMask (MaskAll zero) src) => (MaskAll zero)
+  if (VectorNode::is_all_zeros_vector(in(1))) {
+    return in(1);
+  }
+  // The following transformations are only applied to
+  // the un-predicated operation, since the VectorAPI
+  // masked operation requires the unmasked lanes to
+  // save the same values in the first operand.
+  if (!is_predicated_vector()) {
+    // (AndV (Replicate m1) src)   => src
+    // (AndVMask (MaskAll m1) src) => src
+    if (VectorNode::is_all_ones_vector(in(1))) {
+      return in(2);
+    }
+    // (AndV src (Replicate zero))   => (Replicate zero)
+    // (AndVMask src (MaskAll zero)) => (MaskAll zero)
+    if (VectorNode::is_all_zeros_vector(in(2))) {
+      return in(2);
+    }
+  }
+
+  // (AndV src src)     => src
+  // (AndVMask src src) => src
+  if (in(1) == in(2)) {
+    return in(1);
+  }
+  return this;
+}
+
+Node* OrVNode::Identity(PhaseGVN* phase) {
+  // (OrV (Replicate m1) src)   => (Replicate m1)
+  // (OrVMask (MaskAll m1) src) => (MaskAll m1)
+  if (VectorNode::is_all_ones_vector(in(1))) {
+    return in(1);
+  }
+  // (OrV src (Replicate zero))   => src
+  // (OrVMask src (MaskAll zero)) => src
+  if (VectorNode::is_all_zeros_vector(in(2))) {
+    return in(1);
+  }
+  // The following transformations are only applied to
+  // the un-predicated operation, since the VectorAPI
+  // masked operation requires the unmasked lanes to
+  // save the same values in the first operand.
+  if (!is_predicated_vector()) {
+    // (OrV src (Replicate m1))   => (Replicate m1)
+    // (OrVMask src (MaskAll m1)) => (MaskAll m1)
+    if (VectorNode::is_all_ones_vector(in(2))) {
+      return in(2);
+    }
+    // (OrV (Replicate zero) src)   => src
+    // (OrVMask (MaskAll zero) src) => src
+    if (VectorNode::is_all_zeros_vector(in(1))) {
+      return in(2);
+    }
+  }
+
+  // (OrV src src)     => src
+  // (OrVMask src src) => src
+  if (in(1) == in(2)) {
+    return in(1);
+  }
+  return this;
+}
+
+Node* XorVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  // (XorV src src)      => (Replicate zero)
+  // (XorVMask src src)  => (MaskAll zero)
+  //
+  // The transformation is only applied to the un-predicated
+  // operation, since the VectorAPI masked operation requires
+  // the unmasked lanes to save the same values in the first
+  // operand.
+  if (!is_predicated_vector() && (in(1) == in(2))) {
+    BasicType bt = vect_type()->element_basic_type();
+    Node* zero = phase->transform(phase->zerocon(bt));
+    return VectorNode::scalar2vector(zero, length(), Type::get_const_basic_type(bt),
+                                     bottom_type()->isa_vectmask() != NULL);
+  }
+  return NULL;
 }
 
 #ifndef PRODUCT

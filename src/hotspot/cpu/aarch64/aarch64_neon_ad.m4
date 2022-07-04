@@ -2199,7 +2199,7 @@ instruct vsll$1$2_imm`'(vec$4 dst, vec$4 src, immI shift) %{
 %}')dnl
 dnl
 define(`VSRA_IMM', `
-instruct vsra$1$2_imm`'(vec$4 dst, vec$4 src, immI shift) %{
+instruct vsra$1$2_imm`'(vec$4 dst, vec$4 src, immI_positive shift) %{
   PREDICATE(`$1$2', $1, assert_not_var_shift(n))
   match(Set dst (RShiftV$2 src (RShiftCntV shift)));
   ins_cost(INSN_COST);
@@ -2221,7 +2221,7 @@ instruct vsra$1$2_imm`'(vec$4 dst, vec$4 src, immI shift) %{
 %}')dnl
 dnl
 define(`VSRL_IMM', `
-instruct vsrl$1$2_imm`'(vec$4 dst, vec$4 src, immI shift) %{
+instruct vsrl$1$2_imm`'(vec$4 dst, vec$4 src, immI_positive shift) %{
   PREDICATE(`$1$2', $1, assert_not_var_shift(n))
   match(Set dst (URShiftV$2 src (RShiftCntV shift)));
   ins_cost(INSN_COST);
@@ -2253,7 +2253,7 @@ instruct vsrl$1$2_imm`'(vec$4 dst, vec$4 src, immI shift) %{
 %}')dnl
 dnl
 define(`VSRLA_IMM', `
-instruct vsrla$1$2_imm`'(vec$4 dst, vec$4 src, immI shift) %{
+instruct vsrla$1$2_imm`'(vec$4 dst, vec$4 src, immI_positive shift) %{
   predicate(n->as_Vector()->length() == $1);
   match(Set dst (AddV$2 dst (URShiftV$2 src (RShiftCntV shift))));
   ins_cost(INSN_COST);
@@ -2277,7 +2277,7 @@ instruct vsrla$1$2_imm`'(vec$4 dst, vec$4 src, immI shift) %{
 %}')dnl
 dnl
 define(`VSRAA_IMM', `
-instruct vsraa$1$2_imm`'(vec$4 dst, vec$4 src, immI shift) %{
+instruct vsraa$1$2_imm`'(vec$4 dst, vec$4 src, immI_positive shift) %{
   predicate(n->as_Vector()->length() == $1);
   match(Set dst (AddV$2 dst (RShiftV$2 src (RShiftCntV shift))));
   ins_cost(INSN_COST);
