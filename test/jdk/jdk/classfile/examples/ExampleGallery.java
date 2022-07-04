@@ -272,8 +272,10 @@ public class ExampleGallery {
     public byte[] replaceIntegerConstant(ClassModel cm) {
         return cm.transform(ClassTransform.transformingMethodBodies((codeB, codeE) -> {
             switch (codeE) {
-                case ConstantInstruction ci
-                        && ci.constantValue() instanceof Integer i -> codeB.constantInstruction(i + 1);
+                case ConstantInstruction ci -> {
+                        if (ci.constantValue() instanceof Integer i) codeB.constantInstruction(i + 1);
+                        else codeB.with(codeE);
+                }
                 default -> codeB.with(codeE);
             }
         }));

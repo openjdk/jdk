@@ -28,10 +28,13 @@ import jdk.classfile.AnnotationElement;
 import jdk.classfile.ClassModel;
 import jdk.classfile.Classfile;
 import jdk.classfile.attribute.ModuleAttribute;
+import jdk.classfile.attribute.ModuleAttribute.ModuleAttributeBuilder;
 import jdk.classfile.attribute.ModuleMainClassAttribute;
 import jdk.classfile.attribute.ModulePackagesAttribute;
 import jdk.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import jdk.classfile.Attributes;
+import jdk.classfile.jdktypes.PackageDesc;
+import jdk.classfile.jdktypes.ModuleDesc;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
@@ -41,7 +44,6 @@ import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.util.List;
 import java.util.function.Consumer;
-import jdk.classfile.ModuleAttributeBuilder;
 
 public class ModuleExamples {
     private static final FileSystem JRT = FileSystems.getFileSystem(URI.create("jrt:/"));
@@ -52,7 +54,7 @@ public class ModuleExamples {
         System.out.println("Is JVMS $4.7 compatible module-info: " + cm.isModuleInfo());
 
         ModuleAttribute ma = cm.findAttribute(Attributes.MODULE).orElseThrow();
-        System.out.println("Module name: " + ma.moduleName().name().asString());
+        System.out.println("Module name: " + ma.moduleName().name().stringValue());
         System.out.println("Exports: " + ma.exports());
 
         ModuleMainClassAttribute mmca = cm.findAttribute(Attributes.MODULE_MAIN_CLASS).orElse(null);
@@ -64,16 +66,17 @@ public class ModuleExamples {
 
     @Test(expectedExceptions = RuntimeException.class)
     public void buildModuleFromScratch() {
-        String moduleName = "the.very.best.module";
+        var moduleName = ModuleDesc.of("the.very.best.module");
         int moduleFlags = 0;
 
         Consumer<ModuleAttributeBuilder> handler = (mb -> {mb
-                .exports("export.some.pkg", 0)
-                .exports("qualified.export.to" , 0, "to.first.pkg", "to.another.pkg");
+                .moduleFlags(moduleFlags)
+                .exports(PackageDesc.of("export.some.pkg"), 0)
+                .exports(PackageDesc.of("qualified.export.to") , 0, ModuleDesc.of("to.first.module"), ModuleDesc.of("to.another.module"));
         });
 
         // Build it
-        byte[] moduleInfo = Classfile.buildModule(ModuleAttribute.of(moduleName, moduleFlags, handler), List.of(), clb -> {
+        byte[] moduleInfo = Classfile.buildModule(ModuleAttribute.of(moduleName, handler), List.of(), clb -> {
 
                 // Add an annotation to the module
                 clb.with(RuntimeVisibleAnnotationsAttribute.of(Annotation.of(ClassDesc.ofDescriptor("Ljava/lang/Deprecated;"),

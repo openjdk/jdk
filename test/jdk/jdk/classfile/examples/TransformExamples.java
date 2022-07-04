@@ -47,7 +47,7 @@ public class TransformExamples {
     public byte[] deleteFieldsWithDollarInName(ClassModel cm) {
         return cm.transform((b, e) ->
                         {
-                            if (!(e instanceof FieldModel fm && fm.fieldName().asString().contains("$")))
+                            if (!(e instanceof FieldModel fm && fm.fieldName().stringValue().contains("$")))
                                 b.with(e);
                         });
     }
