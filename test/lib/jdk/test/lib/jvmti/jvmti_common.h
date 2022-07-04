@@ -36,9 +36,6 @@
 #include <unistd.h>
 #endif
 
-#define NSK_TRUE 1
-#define NSK_FALSE 0
-
 #define LOG(...) \
   { \
     printf(__VA_ARGS__); \
@@ -834,7 +831,7 @@ enable_events_notifications(jvmtiEnv* jvmti, JNIEnv* jni, jvmtiEventMode enable,
   for (int i = 0; i < size; i++) {
     check_jvmti_status(jni, jvmti->SetEventNotificationMode(enable, list[i], thread), "");
   }
-  return NSK_TRUE;
+  return JNI_TRUE;
 }
 
 void

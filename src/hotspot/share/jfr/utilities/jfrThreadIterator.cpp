@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "jfr/utilities/jfrThreadIterator.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/threadSMR.inline.hpp"
 
 static bool thread_inclusion_predicate(Thread* t) {

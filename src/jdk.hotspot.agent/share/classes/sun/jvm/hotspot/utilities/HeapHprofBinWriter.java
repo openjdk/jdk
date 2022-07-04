@@ -524,12 +524,12 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
             Assert.that(cd != null, "can not get class data for " + klass.getName().asString() + klass.getAddress());
         }
         List<Field> fields = cd.fields;
-        return (int) BYTE_SIZE + (int)OBJ_ID_SIZE * 2 + (int)INT_SIZE * 2 + getSizeForFields(fields);
+        return BYTE_SIZE + OBJ_ID_SIZE * 2 + INT_SIZE * 2 + getSizeForFields(fields);
     }
 
     private int calculateClassDumpRecordSize(Klass k) {
         // tag + javaMirror + DUMMY_STACK_TRACE_ID + super
-        int size = (int)BYTE_SIZE + (int)INT_SIZE + (int)OBJ_ID_SIZE * 2;
+        int size = BYTE_SIZE + INT_SIZE + OBJ_ID_SIZE * 2;
         if (k instanceof InstanceKlass ik) {
             List<Field> fields = getInstanceFields(ik);
             List<Field> declaredFields = ik.getImmediateFields();
@@ -592,7 +592,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
     private int calculatePrimitiveArrayDumpRecordSize(TypeArray array) throws IOException {
         int headerSize = getArrayHeaderSize(false);
         TypeArrayKlass tak = (TypeArrayKlass) array.getKlass();
-        final int type = (int) tak.getElementType();
+        final int type = tak.getElementType();
         final String typeName = tak.getElementTypeName();
         final long typeSize = getSizeForType(type);
         final int length = calculateArrayMaxLength(array.getLength(),
@@ -654,7 +654,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
     }
 
     // get the size in bytes for the requested type
-    private long getSizeForType(int type) throws IOException {
+    private int getSizeForType(int type) throws IOException {
         switch (type) {
             case TypeArrayKlass.T_BOOLEAN:
                 return BOOLEAN_SIZE;
@@ -680,8 +680,8 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
 
     private int getArrayHeaderSize(boolean isObjectAarray) {
         return isObjectAarray?
-            ((int) BYTE_SIZE + 2 * (int) INT_SIZE + 2 * (int) OBJ_ID_SIZE):
-            (2 * (int) BYTE_SIZE + 2 * (int) INT_SIZE + (int) OBJ_ID_SIZE);
+            (BYTE_SIZE + 2 * INT_SIZE + 2 * OBJ_ID_SIZE):
+            (2 * BYTE_SIZE + 2 * INT_SIZE + OBJ_ID_SIZE);
     }
 
     // Check if we need to truncate an array.
@@ -817,7 +817,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
 
     private void dumpStackTraces() throws IOException {
         // write a HPROF_TRACE record without any frames to be referenced as object alloc sites
-        writeHeader(HPROF_TRACE, 3 * (int)INT_SIZE );
+        writeHeader(HPROF_TRACE, 3 * INT_SIZE );
         out.writeInt(DUMMY_STACK_TRACE_ID);
         out.writeInt(0);                    // thread number
         out.writeInt(0);                    // frame count
@@ -848,7 +848,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
                 }
 
                 // write HPROF_TRACE record for one thread
-                writeHeader(HPROF_TRACE, 3 * (int)INT_SIZE + depth * (int)VM.getVM().getOopSize());
+                writeHeader(HPROF_TRACE, 3 * INT_SIZE + depth * OBJ_ID_SIZE);
                 int stackSerialNum = numThreads + DUMMY_STACK_TRACE_ID;
                 out.writeInt(stackSerialNum);      // stack trace serial number
                 out.writeInt(numThreads);          // thread serial number
@@ -872,7 +872,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         writeSymbol(m.getSignature());                         // method's signature
         writeSymbol(m.getMethodHolder().getSourceFileName());  // source file name
         // Then write FRAME descriptor
-        writeHeader(HPROF_FRAME, 4 * (int)VM.getVM().getOopSize() + 2 * (int)INT_SIZE);
+        writeHeader(HPROF_FRAME, 4 * OBJ_ID_SIZE + 2 * INT_SIZE);
         writeObjectID(frameSN);                                  // frame serial number
         writeSymbolID(m.getName());                              // method's name
         writeSymbolID(m.getSignature());                         // method's signature
@@ -882,7 +882,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
     }
 
     protected void writeJavaThread(JavaThread jt, int index) throws IOException {
-        int size = (int)BYTE_SIZE + (int)OBJ_ID_SIZE + (int)INT_SIZE * 2;
+        int size = BYTE_SIZE + OBJ_ID_SIZE + INT_SIZE * 2;
         writeHeapRecordPrologue(size);
         out.writeByte((byte) HPROF_GC_ROOT_THREAD_OBJ);
         writeObjectID(jt.getThreadObj());
@@ -904,7 +904,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
                                        Oop oop = objectHeap.newOop(oopHandle);
                                        // exclude JNI handles hotspot internal objects
                                        if (oop != null && isJavaVisible(oop)) {
-                                           int size = (int)BYTE_SIZE + (int)OBJ_ID_SIZE + (int)INT_SIZE * 2;
+                                           int size = BYTE_SIZE + OBJ_ID_SIZE + INT_SIZE * 2;
                                            writeHeapRecordPrologue(size);
                                            out.writeByte((byte) HPROF_GC_ROOT_JNI_LOCAL);
                                            writeObjectID(oop);
@@ -932,7 +932,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
         Oop oop = objectHeap.newOop(oopHandle);
         // exclude JNI handles of hotspot internal objects
         if (oop != null && isJavaVisible(oop)) {
-            int size = (int)BYTE_SIZE + (int)OBJ_ID_SIZE * 2;
+            int size = BYTE_SIZE + OBJ_ID_SIZE * 2;
             writeHeapRecordPrologue(size);
             out.writeByte((byte) HPROF_GC_ROOT_JNI_GLOBAL);
             writeObjectID(oop);
@@ -961,7 +961,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
     protected void writePrimitiveArray(TypeArray array) throws IOException {
         int headerSize = getArrayHeaderSize(false);
         TypeArrayKlass tak = (TypeArrayKlass) array.getKlass();
-        final int type = (int) tak.getElementType();
+        final int type = tak.getElementType();
         final String typeName = tak.getElementTypeName();
         final long typeSize = getSizeForType(type);
         final int length = calculateArrayMaxLength(array.getLength(),
@@ -1390,14 +1390,14 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
     private long DOUBLE_BASE_OFFSET;
     private long OBJECT_BASE_OFFSET;
 
-    private long BOOLEAN_SIZE;
-    private long BYTE_SIZE;
-    private long CHAR_SIZE;
-    private long SHORT_SIZE;
-    private long INT_SIZE;
-    private long LONG_SIZE;
-    private long FLOAT_SIZE;
-    private long DOUBLE_SIZE;
+    private int BOOLEAN_SIZE;
+    private int BYTE_SIZE;
+    private int CHAR_SIZE;
+    private int SHORT_SIZE;
+    private int INT_SIZE;
+    private int LONG_SIZE;
+    private int FLOAT_SIZE;
+    private int DOUBLE_SIZE;
 
     private static class ClassData {
         int instSize;

@@ -25,8 +25,8 @@
 #ifndef SHARE_CDS_CLASSLISTWRITER_HPP
 #define SHARE_CDS_CLASSLISTWRITER_HPP
 
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/ostream.hpp"
 
 class ClassFileStream;

@@ -78,6 +78,7 @@
 #include "runtime/handshake.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/jfieldIDWorkaround.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/os.inline.hpp"
@@ -85,7 +86,6 @@
 #include "runtime/perfData.hpp"
 #include "runtime/reflection.hpp"
 #include "runtime/synchronizer.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/threadIdentifier.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vframe.inline.hpp"
@@ -3517,26 +3517,26 @@ JVM_END
 
 JNIEXPORT void* JNICALL JVM_RawMonitorCreate(void) {
   VM_Exit::block_if_vm_exited();
-  return new os::PlatformMutex();
+  return new PlatformMutex();
 }
 
 
 JNIEXPORT void JNICALL  JVM_RawMonitorDestroy(void *mon) {
   VM_Exit::block_if_vm_exited();
-  delete ((os::PlatformMutex*) mon);
+  delete ((PlatformMutex*) mon);
 }
 
 
 JNIEXPORT jint JNICALL JVM_RawMonitorEnter(void *mon) {
   VM_Exit::block_if_vm_exited();
-  ((os::PlatformMutex*) mon)->lock();
+  ((PlatformMutex*) mon)->lock();
   return 0;
 }
 
 
 JNIEXPORT void JNICALL JVM_RawMonitorExit(void *mon) {
   VM_Exit::block_if_vm_exited();
-  ((os::PlatformMutex*) mon)->unlock();
+  ((PlatformMutex*) mon)->unlock();
 }
 
 
