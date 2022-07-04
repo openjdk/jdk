@@ -81,7 +81,7 @@ public class ZipfileSystemProviderDelegation {
         zipfs.close();
         Files.deleteIfExists(Paths.get(ZIP_FILE));
     }
-    
+
     @Benchmark
     public void existsWithEntry() {
         if (index >= entriesToTest) {
