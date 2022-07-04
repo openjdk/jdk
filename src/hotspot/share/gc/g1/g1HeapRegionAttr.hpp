@@ -142,6 +142,10 @@ class G1HeapRegionAttrBiasedMappedArray : public G1BiasedMappedArray<G1HeapRegio
     get_ref_by_index(index)->clear_humongous();
   }
 
+  bool is_humongous(uintptr_t index) {
+    return get_ref_by_index(index)->is_humongous();
+  }
+
   void set_remset_is_tracked(uintptr_t index, bool remset_is_tracked) {
     get_ref_by_index(index)->set_remset_is_tracked(remset_is_tracked);
   }
