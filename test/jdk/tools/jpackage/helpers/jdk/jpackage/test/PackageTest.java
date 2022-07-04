@@ -236,6 +236,8 @@ public final class PackageTest extends RunnablePackageTest {
                     return tempDir.resolve(fname + fa.getSuffix()).toAbsolutePath().normalize();
                 }).toList();
 
+                testFiles.forEach(toConsumer(Files::createFile));
+
                 if (TKit.isLinux()) {
                     testFiles.forEach(LinuxHelper::initFileAssociationsTestFile);
                 }
@@ -245,8 +247,7 @@ public final class PackageTest extends RunnablePackageTest {
         }
     }
 
-    PackageTest addHelloAppFileAssociationsVerifier(FileAssociations fa,
-            String... faLauncherDefaultArgs) {
+    PackageTest addHelloAppFileAssociationsVerifier(FileAssociations fa) {
 
         // Setup test app to have valid jpackage command line before
         // running check of type of environment.
@@ -273,14 +274,8 @@ public final class PackageTest extends RunnablePackageTest {
                         .resolve(HelloApp.OUTPUT_FILENAME);
                 Files.deleteIfExists(appOutput);
 
-                testRun.openFiles(testFiles);
+                List<String> expectedArgs = testRun.openFiles(testFiles);
                 TKit.waitForFileCreated(appOutput, 7);
-
-                List<String> expectedArgs = new ArrayList<>(List.of(
-                        faLauncherDefaultArgs));
-                testFiles.forEach(testFile -> {
-                    expectedArgs.add(testFile.toString());
-                });
 
                 // Wait a little bit after file has been created to
                 // make sure there are no pending writes into it.

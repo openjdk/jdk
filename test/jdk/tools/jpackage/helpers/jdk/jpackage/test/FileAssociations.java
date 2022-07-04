@@ -106,7 +106,16 @@ final public class FileAssociations {
 
     Iterable<TestRun> getTestRuns() {
         return Optional.ofNullable(testRuns).orElseGet(() -> {
-            return createTestRuns().addTestRunForFilenames("test").testRuns;
+            var builder = createTestRuns()
+                    .setCurrentInvocationType(InvocationType.DesktopOpenAssociatedFile)
+                    .addTestRunForFilenames("test_desktop_open_file");
+            if (TKit.isWindows()) {
+                builder.setCurrentInvocationType(InvocationType.WinCommandLine)
+                        .addTestRunForFilenames("test_cmd_line")
+                        .setCurrentInvocationType(InvocationType.WinDesktopOpenShortcut)
+                        .addTestRunForFilenames("test_desktop_open_shortcut");
+            }
+            return builder.testRuns;
         });
     }
 
@@ -119,16 +128,71 @@ final public class FileAssociations {
             return testFileNames;
         }
 
-        void openFiles(List<Path> testFiles) throws IOException {
-            switch (invocationType) {
-                case DesktopOpenAssociatedFile:
-                    TKit.trace(String.format("Use desktop to open [%s] file", testFiles.get(0)));
-                    Desktop.getDesktop().open(testFiles.get(0).toFile());
-                    break;
+        List<String> openFiles(List<Path> testFiles) throws IOException {
+            // current supported invocation types work only on single files
+            Path testFile = testFiles.get(0);
 
-                case WinCommandLine:
-                case WinDesktopOpenContextMenu:
-                    // TBD: implement
+            // To test unicode arguments on Windows manually:
+            // 1. add the following argument ("Hello" in Bulgarian) to the
+            //    additionalArgs list: "\u0417\u0434\u0440\u0430\u0432\u0435\u0439\u0442\u0435"
+            // 2. in Control Panel -> Region -> Administrative -> Language for non-Unicode programs
+            //    change the system locale to "Bulgarian (Bulgaria)"
+            // 3. reboot Windows and re-run the test
+
+            switch (invocationType) {
+                case DesktopOpenAssociatedFile: {
+                    TKit.trace(String.format("Use desktop to open [%s] file", testFile));
+                    Desktop.getDesktop().open(testFile.toFile());
+                    return List.of(testFile.toString());
+                }
+                case WinCommandLine: {
+                    List<String> additionalArgs = List.of("foo", "bar baz", "boo");
+                    TKit.trace(String.format("Use command line to open [%s] file", testFile));
+                    ArrayList<String> cmdLine = new ArrayList<>(List.of("cmd", "/c", testFile.toString()));
+                    cmdLine.addAll(additionalArgs);
+                    Executor.of(cmdLine.toArray(new String[0])).execute();
+                    ArrayList<String> expectedArgs = new ArrayList<>(List.of(testFile.toString()));
+                    expectedArgs.addAll(additionalArgs);
+                    return expectedArgs;
+                }
+                case WinDesktopOpenShortcut: {
+                    Path testDir = testFile.getParent();
+                    List<String> additionalArgs = List.of("foo", "bar baz", "boo");
+                    // create a shortcut and open it with desktop
+                    final Path createShortcutVbs = testDir.resolve("createShortcut.vbs");
+                    final Path shortcutLnk = testDir.resolve("shortcut.lnk");
+                    StringBuilder shortcutArgs = new StringBuilder();
+                    for (int i = 0; i < additionalArgs.size(); i++) {
+                        String arg = additionalArgs.get(i);
+                        if (arg.contains(" ")) {
+                            shortcutArgs.append(String.format("\"\"%s\"\"", arg));
+                        } else {
+                            shortcutArgs.append(arg);
+                        }
+                        if (i < additionalArgs.size() - 1) {
+                            shortcutArgs.append(" ");
+                        }
+                    }
+                    TKit.createTextFile(createShortcutVbs, List.of(
+                            "Dim sc, shell",
+                            "Set shell = WScript.CreateObject (\"WScript.Shell\")",
+                            String.format("Set sc = shell.CreateShortcut (\"%s\")", shortcutLnk),
+                            String.format("sc.TargetPath = \"\"\"%s\"\"\"", testFile),
+                            String.format("sc.Arguments = \"%s\"", shortcutArgs.toString()),
+                            String.format("sc.WorkingDirectory = \"\"\"%s\"\"\"", testDir),
+                            "sc.Save()"
+                    ));
+                    Executor.of("cscript", "/nologo", createShortcutVbs.toString()).execute();
+                    TKit.assertFileExists(shortcutLnk);
+                    TKit.trace(String.format("Use desktop to open [%s] file", shortcutLnk));
+                    Desktop.getDesktop().open(shortcutLnk.toFile());
+                    ArrayList<String> expectedArgs = new ArrayList<>(List.of(testFile.toString()));
+                    expectedArgs.addAll(additionalArgs);
+                    return expectedArgs;
+                }
+                default:
+                    throw new IllegalStateException(String.format(
+                            "Invalid invocationType: [%s]", invocationType));
             }
         }
 
@@ -175,7 +239,7 @@ final public class FileAssociations {
     public static enum InvocationType {
         DesktopOpenAssociatedFile,
         WinCommandLine,
-        WinDesktopOpenContextMenu
+        WinDesktopOpenShortcut
     }
 
     private Path file;
