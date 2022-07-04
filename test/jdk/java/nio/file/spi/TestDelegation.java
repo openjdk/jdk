@@ -73,41 +73,103 @@ public class TestDelegation {
     }
 
     /**
-     * DataProvider that is used by the test.  The DataProvider's elements are:
+     * DataProvider that is used to test Files::exists. The DataProvider's
+     * elements are:
      * <UL>
      *     <li>Path to validate</li>
      *     <li>Does the Path Exist</li>
+     * </UL>
+     * @return The test parameter data
+     */
+    @DataProvider
+    private Object[][] testExists() {
+        return new Object[][]{
+                {TEMP_DIRECTORY, true},
+                {FILE_THAT_EXISTS, true},
+                {NON_EXISTENT_FILE, false}
+        };
+    }
+
+    /**
+     * DataProvider that is used to test Files::isDirectory. The DataProvider's
+     * elements are:
+     * <UL>
+     *     <li>Path to validate</li>
      *     <li>Is the Path a Directory</li>
+     * </UL>
+     * @return The test parameter data
+     */
+    @DataProvider
+    private Object[][] testIsDirectory() {
+        return new Object[][]{
+                {TEMP_DIRECTORY, true},
+                {FILE_THAT_EXISTS, false},
+                {NON_EXISTENT_FILE, false}
+        };
+    }
+    /**
+     * DataProvider that is used to test Files::isRegularFile. The DataProvider's
+     * elements are:
+     * <UL>
+     *     <li>Path to validate</li>
      *     <li>Is the Path a regular file</li>
      * </UL>
      * @return The test parameter data
      */
     @DataProvider
-    private Object[][] testPaths() {
+    private Object[][] testIsRegularFile() {
         return new Object[][]{
-                {TEMP_DIRECTORY, true, true, false},
-                {FILE_THAT_EXISTS, true, false, true},
-                {NON_EXISTENT_FILE, false, false, false}
+                {TEMP_DIRECTORY, false},
+                {FILE_THAT_EXISTS, true},
+                {NON_EXISTENT_FILE, false}
         };
     }
 
     /**
-     * Validate that a FileSystemProvider's implementation of exists and
-     * readAttributesIfExists is delegated to.
+     * Validate that Files::exists delegates to the FileSystemProvider's
+     * implementation of exists.
      *
      * @param p      the path to the file to test
      * @param exists does the path exist
+     */
+    @Test(dataProvider = "testExists")
+    public void testExists(Path p, boolean exists) {
+        assertEquals(Files.exists(p), exists);
+        // We should only have called exists once
+        assertEquals(1, PROVIDER.findCall("exists").size());
+        assertEquals(0, PROVIDER.findCall("readAttributesIfExists").size());
+        PROVIDER.resetCalls();
+    }
+
+    /**
+     * Validate that Files::isDirectory delegates to the FileSystemProvider's
+     * implementation readAttributesIfExists.
+     *
+     * @param p      the path to the file to test
      * @param isDir  is the path a directory
+     */
+    @Test(dataProvider = "testIsDirectory")
+    public void testIsDirectory(Path p, boolean isDir) {
+        assertEquals(Files.isDirectory(p), isDir);
+        // We should only have called readAttributesIfExists once
+        assertEquals(0, PROVIDER.findCall("exists").size());
+        assertEquals(1, PROVIDER.findCall("readAttributesIfExists").size());
+        PROVIDER.resetCalls();
+    }
+
+    /**
+     * Validate that Files::isRegularFile delegates to the FileSystemProvider's
+     * implementation readAttributesIfExists.
+     *
+     * @param p      the path to the file to test
      * @param isFile is the path a regular file
      */
-    @Test(dataProvider = "testPaths")
-    public void testDelegation(Path p, boolean exists, boolean isDir,
-                               boolean isFile) {
-        assertEquals(Files.exists(p), exists);
-        assertEquals(Files.isDirectory(p), isDir);
+    @Test(dataProvider = "testIsRegularFile")
+    public void testIsRegularFile(Path p, boolean isFile) {
         assertEquals(Files.isRegularFile(p), isFile);
-        assertEquals(1, PROVIDER.findCall("exists").size());
-        assertEquals(2, PROVIDER.findCall("readAttributesIfExists").size());
+        // We should only have called readAttributesIfExists once
+        assertEquals(0, PROVIDER.findCall("exists").size());
+        assertEquals(1, PROVIDER.findCall("readAttributesIfExists").size());
         PROVIDER.resetCalls();
     }
 
