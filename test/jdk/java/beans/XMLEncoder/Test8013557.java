@@ -25,6 +25,7 @@
  * @test
  * @bug 8013557
  * @summary Tests beans with public fields
+ * @run main/othervm -Djava.security.manager=allow Test8013557
  * @author Sergey Malenkov
  */
 

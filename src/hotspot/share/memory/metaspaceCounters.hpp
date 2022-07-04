@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,28 +26,11 @@
 #ifndef SHARE_MEMORY_METASPACECOUNTERS_HPP
 #define SHARE_MEMORY_METASPACECOUNTERS_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 
-class MetaspacePerfCounters;
+// Perf Counters for Metaspace
 
-// Todo: clean up after jep387, see JDK-8251392
 class MetaspaceCounters: public AllStatic {
-  static MetaspacePerfCounters* _perf_counters;
-  static size_t used();
-  static size_t capacity();
-  static size_t max_capacity();
-
- public:
-  static void initialize_performance_counters();
-  static void update_performance_counters();
-};
-
-class CompressedClassSpaceCounters: public AllStatic {
-  static MetaspacePerfCounters* _perf_counters;
-  static size_t used();
-  static size_t capacity();
-  static size_t max_capacity();
-
  public:
   static void initialize_performance_counters();
   static void update_performance_counters();

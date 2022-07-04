@@ -59,7 +59,7 @@ import org.w3c.dom.ls.LSSerializer;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true test.auctionportal.UserController
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow test.auctionportal.UserController
  * @run testng/othervm test.auctionportal.UserController
  */
 @Listeners({jaxp.library.FilePolicy.class})

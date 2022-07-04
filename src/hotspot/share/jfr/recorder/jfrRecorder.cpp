@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@
 #include "jfr/recorder/storage/jfrStorage.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
 #include "jfr/recorder/stringpool/jfrStringPool.hpp"
+#include "jfr/support/jfrThreadLocal.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfr/writers/jfrJavaEventWriter.hpp"
 #include "logging/log.hpp"
@@ -196,7 +197,9 @@ bool JfrRecorder::on_create_vm_2() {
   if (is_cds_dump_requested()) {
     return true;
   }
-  Thread* const thread = Thread::current();
+  JavaThread* const thread = JavaThread::current();
+  JfrThreadLocal::assign_thread_id(thread, thread->jfr_thread_local());
+
   if (!JfrOptionSet::initialize(thread)) {
     return false;
   }
@@ -224,7 +227,7 @@ bool JfrRecorder::on_create_vm_2() {
 
 bool JfrRecorder::on_create_vm_3() {
   assert(JvmtiEnvBase::get_phase() == JVMTI_PHASE_LIVE, "invalid init sequence");
-  return Arguments::is_dumping_archive() || launch_command_line_recordings(Thread::current());
+  return Arguments::is_dumping_archive() || launch_command_line_recordings(JavaThread::current());
 }
 
 static bool _created = false;
@@ -408,7 +411,7 @@ void JfrRecorder::destroy_components() {
 }
 
 bool JfrRecorder::create_recorder_thread() {
-  return JfrRecorderThread::start(_checkpoint_manager, _post_box, Thread::current());
+  return JfrRecorderThread::start(_checkpoint_manager, _post_box, JavaThread::current());
 }
 
 void JfrRecorder::destroy() {

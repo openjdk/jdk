@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -36,10 +36,10 @@ import com.sun.org.apache.bcel.internal.util.ByteSequence;
  * mechanism entirely.
  *
  * @see
- * <a href="http://docs.oracle.com/javase/specs/jvms/se8/html/jvms-6.html#jvms-6.5.invokedynamic">
+ * <a href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-6.html#jvms-6.5.invokedynamic">
  * The invokedynamic instruction in The Java Virtual Machine Specification</a>
  * @since 6.0
- * @LastModified: Jan 2020
+ * @LastModified: May 2021
  */
 public class INVOKEDYNAMIC extends InvokeInstruction {
 

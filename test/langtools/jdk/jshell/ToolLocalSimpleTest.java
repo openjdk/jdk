@@ -85,23 +85,4 @@ public class ToolLocalSimpleTest extends ToolSimpleTest {
         );
     }
 
-    @Test
-    public void testRawString() {
-        // can't set --enable-preview for local, ignore
-    }
-
-    @Test
-    public void testSwitchExpression() {
-        // can't set --enable-preview for local, ignore
-    }
-
-    @Test
-    public void testSwitchExpressionCompletion() {
-        // can't set --enable-preview for local, ignore
-    }
-
-    @Override
-    public void testRecords() {
-        // can't set --enable-preview for local, ignore
-    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -682,8 +682,9 @@ public abstract class NumberFormat extends Format  {
      * The returned array represents the union of locales supported by the Java
      * runtime and by installed
      * {@link java.text.spi.NumberFormatProvider NumberFormatProvider} implementations.
-     * It must contain at least a {@code Locale} instance equal to
-     * {@link java.util.Locale#US Locale.US}.
+     * At a minimum, the returned array must contain a {@code Locale} instance equal to
+     * {@link Locale#ROOT Locale.ROOT} and a {@code Locale} instance equal to
+     * {@link Locale#US Locale.US}.
      *
      * @return An array of locales for which localized
      *         {@code NumberFormat} instances are available.
@@ -972,25 +973,14 @@ public abstract class NumberFormat extends Format  {
                                             Locale locale, Style formatStyle,
                                             int choice) {
         NumberFormatProvider provider = adapter.getNumberFormatProvider();
-        NumberFormat numberFormat = null;
-        switch (choice) {
-        case NUMBERSTYLE:
-            numberFormat = provider.getNumberInstance(locale);
-            break;
-        case PERCENTSTYLE:
-            numberFormat = provider.getPercentInstance(locale);
-            break;
-        case CURRENCYSTYLE:
-            numberFormat = provider.getCurrencyInstance(locale);
-            break;
-        case INTEGERSTYLE:
-            numberFormat = provider.getIntegerInstance(locale);
-            break;
-        case COMPACTSTYLE:
-            numberFormat = provider.getCompactNumberInstance(locale, formatStyle);
-            break;
-        }
-        return numberFormat;
+        return switch (choice) {
+            case NUMBERSTYLE   -> provider.getNumberInstance(locale);
+            case PERCENTSTYLE  -> provider.getPercentInstance(locale);
+            case CURRENCYSTYLE -> provider.getCurrencyInstance(locale);
+            case INTEGERSTYLE  -> provider.getIntegerInstance(locale);
+            case COMPACTSTYLE  -> provider.getCompactNumberInstance(locale, formatStyle);
+            default            -> null;
+        };
     }
 
     /**

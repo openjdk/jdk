@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,6 @@ module test {
     provides S4 with P4;
     provides S5 with P5;
     provides S6 with P6;
-    requires testng;
-    exports p to testng;
+    requires org.testng;
+    exports p to org.testng;
 }

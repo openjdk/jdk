@@ -44,6 +44,7 @@ final class LdapSearchEnumeration
     private Name startName;             // prefix of names of search results
     private LdapCtx.SearchArgs searchArgs = null;
 
+    @SuppressWarnings("removal")
     private final AccessControlContext acc = AccessController.getContext();
 
     LdapSearchEnumeration(LdapCtx homeCtx, LdapResult search_results,
@@ -59,6 +60,7 @@ final class LdapSearchEnumeration
         searchArgs = args;
     }
 
+    @SuppressWarnings("removal")
     @Override
     protected SearchResult createItem(String dn, Attributes attrs,
                                       Vector<Control> respCtls)

@@ -43,7 +43,7 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true test.astro.AstroTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow test.astro.AstroTest
  * @run testng/othervm test.astro.AstroTest
  * @summary run astro application, test xslt
  *

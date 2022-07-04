@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 
 #include "jfr/utilities/jfrSignal.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "runtime/atomic.hpp"
 
 #define BIT                                  1
@@ -55,6 +55,7 @@
 class JfrTraceIdEpoch : AllStatic {
   friend class JfrCheckpointManager;
  private:
+  static u2 _generation;
   static JfrSignal _tag_state;
   static bool _epoch_state;
   static bool _synchronizing;
@@ -67,12 +68,24 @@ class JfrTraceIdEpoch : AllStatic {
     return _epoch_state;
   }
 
-  static jlong epoch_address() {
-    return (jlong)&_epoch_state;
+  static address epoch_address() {
+    return (address)&_epoch_state;
+  }
+
+  static address epoch_generation_address() {
+    return (address)&_generation;
   }
 
   static u1 current() {
     return _epoch_state ? (u1)1 : (u1)0;
+  }
+
+  static u2 epoch_generation() {
+    return _generation;
+  }
+
+  static bool is_current_epoch_generation(u2 generation) {
+    return _generation == generation;
   }
 
   static u1 previous() {
@@ -108,11 +121,19 @@ class JfrTraceIdEpoch : AllStatic {
   }
 
   static bool has_changed_tag_state() {
+    return _tag_state.is_signaled_with_reset();
+  }
+
+  static bool has_changed_tag_state_no_reset() {
     return _tag_state.is_signaled();
   }
 
   static void set_changed_tag_state() {
     _tag_state.signal();
+  }
+
+  static address signal_address() {
+    return _tag_state.signaled_address();
   }
 };
 

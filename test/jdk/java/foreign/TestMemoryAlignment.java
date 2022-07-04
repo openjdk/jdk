@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,19 @@
 
 /*
  * @test
+ * @enablePreview
  * @run testng TestMemoryAlignment
  */
 
-import jdk.incubator.foreign.MemoryLayouts;
-import jdk.incubator.foreign.MemoryLayout;
-
-import jdk.incubator.foreign.GroupLayout;
-import jdk.incubator.foreign.MemoryLayout.PathElement;
-import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.SequenceLayout;
-import jdk.incubator.foreign.ValueLayout;
+import java.lang.foreign.GroupLayout;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemoryLayout.PathElement;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.MemorySession;
+import java.lang.foreign.SequenceLayout;
+import java.lang.foreign.ValueLayout;
 import java.lang.invoke.VarHandle;
+import java.nio.ByteOrder;
 import java.util.stream.LongStream;
 
 import org.testng.annotations.*;
@@ -44,12 +45,15 @@ public class TestMemoryAlignment {
 
     @Test(dataProvider = "alignments")
     public void testAlignedAccess(long align) {
-        ValueLayout layout = MemoryLayouts.BITS_32_BE;
+        ValueLayout layout = ValueLayout.JAVA_INT
+                .withBitAlignment(32)
+                .withOrder(ByteOrder.BIG_ENDIAN);
         assertEquals(layout.bitAlignment(), 32);
         ValueLayout aligned = layout.withBitAlignment(align);
         assertEquals(aligned.bitAlignment(), align); //unreasonable alignment here, to make sure access throws
-        VarHandle vh = aligned.varHandle(int.class);
-        try (MemorySegment segment = MemorySegment.allocateNative(aligned)) {
+        VarHandle vh = aligned.varHandle();
+        try (MemorySession session = MemorySession.openConfined()) {
+            MemorySegment segment = MemorySegment.allocateNative(aligned, session);
             vh.set(segment, -42);
             int val = (int)vh.get(segment);
             assertEquals(val, -42);
@@ -58,27 +62,30 @@ public class TestMemoryAlignment {
 
     @Test(dataProvider = "alignments")
     public void testUnalignedAccess(long align) {
-        ValueLayout layout = MemoryLayouts.BITS_32_BE;
+        ValueLayout layout = ValueLayout.JAVA_INT
+                .withBitAlignment(32)
+                .withOrder(ByteOrder.BIG_ENDIAN);
         assertEquals(layout.bitAlignment(), 32);
         ValueLayout aligned = layout.withBitAlignment(align);
-        MemoryLayout alignedGroup = MemoryLayout.ofStruct(MemoryLayouts.PAD_8, aligned);
+        MemoryLayout alignedGroup = MemoryLayout.structLayout(MemoryLayout.paddingLayout(8), aligned);
         assertEquals(alignedGroup.bitAlignment(), align);
-        VarHandle vh = aligned.varHandle(int.class);
-        try (MemorySegment segment = MemorySegment.allocateNative(alignedGroup)) {
+        VarHandle vh = aligned.varHandle();
+        try (MemorySession session = MemorySession.openConfined()) {
+            MemorySegment segment = MemorySegment.allocateNative(alignedGroup, session);
             vh.set(segment.asSlice(1L), -42);
             assertEquals(align, 8); //this is the only case where access is aligned
-        } catch (IllegalStateException ex) {
+        } catch (IllegalArgumentException ex) {
             assertNotEquals(align, 8); //if align != 8, access is always unaligned
         }
     }
 
     @Test(dataProvider = "alignments")
     public void testUnalignedPath(long align) {
-        MemoryLayout layout = MemoryLayouts.BITS_32_BE;
+        MemoryLayout layout = ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN);
         MemoryLayout aligned = layout.withBitAlignment(align).withName("value");
-        GroupLayout alignedGroup = MemoryLayout.ofStruct(MemoryLayouts.PAD_8, aligned);
+        GroupLayout alignedGroup = MemoryLayout.structLayout(MemoryLayout.paddingLayout(8), aligned);
         try {
-            alignedGroup.varHandle(int.class, PathElement.groupElement("value"));
+            alignedGroup.varHandle(PathElement.groupElement("value"));
             assertEquals(align, 8); //this is the only case where path is aligned
         } catch (UnsupportedOperationException ex) {
             assertNotEquals(align, 8); //if align != 8, path is always unaligned
@@ -87,10 +94,11 @@ public class TestMemoryAlignment {
 
     @Test(dataProvider = "alignments")
     public void testUnalignedSequence(long align) {
-        SequenceLayout layout = MemoryLayout.ofSequence(5, MemoryLayouts.BITS_32_BE.withBitAlignment(align));
+        SequenceLayout layout = MemoryLayout.sequenceLayout(5, ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN).withBitAlignment(align));
         try {
-            VarHandle vh = layout.varHandle(int.class, PathElement.sequenceElement());
-            try (MemorySegment segment = MemorySegment.allocateNative(layout)) {
+            VarHandle vh = layout.varHandle(PathElement.sequenceElement());
+            try (MemorySession session = MemorySession.openConfined()) {
+                MemorySegment segment = MemorySegment.allocateNative(layout, session);
                 for (long i = 0 ; i < 5 ; i++) {
                     vh.set(segment, i, -42);
                 }
@@ -102,18 +110,19 @@ public class TestMemoryAlignment {
 
     @Test
     public void testPackedAccess() {
-        ValueLayout vChar = MemoryLayouts.BITS_8_BE;
-        ValueLayout vShort = MemoryLayouts.BITS_16_BE;
-        ValueLayout vInt = MemoryLayouts.BITS_32_BE;
+        ValueLayout vChar = ValueLayout.JAVA_BYTE;
+        ValueLayout vShort = ValueLayout.JAVA_SHORT.withOrder(ByteOrder.BIG_ENDIAN);
+        ValueLayout vInt = ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN);
         //mimic pragma pack(1)
-        GroupLayout g = MemoryLayout.ofStruct(vChar.withBitAlignment(8).withName("a"),
+        GroupLayout g = MemoryLayout.structLayout(vChar.withBitAlignment(8).withName("a"),
                                vShort.withBitAlignment(8).withName("b"),
                                vInt.withBitAlignment(8).withName("c"));
         assertEquals(g.bitAlignment(), 8);
-        VarHandle vh_c = g.varHandle(byte.class, PathElement.groupElement("a"));
-        VarHandle vh_s = g.varHandle(short.class, PathElement.groupElement("b"));
-        VarHandle vh_i = g.varHandle(int.class, PathElement.groupElement("c"));
-        try (MemorySegment segment = MemorySegment.allocateNative(g)) {
+        VarHandle vh_c = g.varHandle(PathElement.groupElement("a"));
+        VarHandle vh_s = g.varHandle(PathElement.groupElement("b"));
+        VarHandle vh_i = g.varHandle(PathElement.groupElement("c"));
+        try (MemorySession session = MemorySession.openConfined()) {
+            MemorySegment segment = MemorySegment.allocateNative(g, session);
             vh_c.set(segment, Byte.MIN_VALUE);
             assertEquals(vh_c.get(segment), Byte.MIN_VALUE);
             vh_s.set(segment, Short.MIN_VALUE);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -39,7 +39,7 @@ import java.util.Map;
  *
  * @see com.sun.org.apache.bcel.internal.Repository
  *
- * @LastModified: Jan 2020
+ * @LastModified: May 2021
  */
 public class SyntheticRepository implements Repository {
 
@@ -60,7 +60,7 @@ public class SyntheticRepository implements Repository {
     public void storeClass(final JavaClass clazz) {
         loadedClasses.put(clazz.getClassName(), new SoftReference<>(clazz));
         clazz.setRepository(this);
-    }
+        }
 
     /**
      * Remove class from repository
@@ -78,7 +78,7 @@ public class SyntheticRepository implements Repository {
         final SoftReference<JavaClass> ref = loadedClasses.get(className);
         if (ref == null) {
             return null;
-        }
+}
         return ref.get();
     }
 

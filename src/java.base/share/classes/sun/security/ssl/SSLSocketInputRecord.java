@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -263,8 +263,7 @@ final class SSLSocketInputRecord extends InputRecord implements SSLRecord {
         } catch (BadPaddingException bpe) {
             throw bpe;
         } catch (GeneralSecurityException gse) {
-            throw (SSLProtocolException)(new SSLProtocolException(
-                    "Unexpected exception")).initCause(gse);
+            throw new SSLProtocolException("Unexpected exception", gse);
         }
 
         if (contentType != ContentType.HANDSHAKE.id &&

@@ -73,6 +73,26 @@
       <setting name="threshold" control="locking-threshold">20 ms</setting>
     </event>
 
+    <event name="jdk.VirtualThreadStart">
+      <setting name="enabled">false</setting>
+      <setting name="stackTrace">true</setting>
+    </event>
+
+    <event name="jdk.VirtualThreadEnd">
+      <setting name="enabled">false</setting>
+    </event>
+
+    <event name="jdk.VirtualThreadPinned">
+      <setting name="enabled">true</setting>
+      <setting name="stackTrace">true</setting>
+      <setting name="threshold">20 ms</setting>
+    </event>
+
+    <event name="jdk.VirtualThreadSubmitFailed">
+      <setting name="enabled">true</setting>
+      <setting name="stackTrace">true</setting>
+    </event>
+
     <event name="jdk.JavaMonitorEnter">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
@@ -96,22 +116,32 @@
       <setting name="stackTrace">true</setting>
     </event>
 
-    <event name="jdk.BiasedLockRevocation">
-      <setting name="enabled">true</setting>
-      <setting name="stackTrace">true</setting>
+    <event name="jdk.ContinuationFreeze">
+      <setting name="enabled">false</setting>
+      <setting name="stackTrace">false</setting>
       <setting name="threshold">0 ms</setting>
     </event>
 
-    <event name="jdk.BiasedLockSelfRevocation">
-      <setting name="enabled">true</setting>
-      <setting name="stackTrace">true</setting>
+    <event name="jdk.ContinuationThaw">
+      <setting name="enabled">false</setting>
+      <setting name="stackTrace">false</setting>
       <setting name="threshold">0 ms</setting>
     </event>
 
-    <event name="jdk.BiasedLockClassRevocation">
-      <setting name="enabled">true</setting>
-      <setting name="stackTrace">true</setting>
-      <setting name="threshold">0 ms</setting>
+    <event name="jdk.ContinuationFreezeYoung">
+      <setting name="enabled">false</setting>
+    </event>
+
+    <event name="jdk.ContinuationFreezeOld">
+      <setting name="enabled">false</setting>
+    </event>
+
+    <event name="jdk.ContinuationThawYoung">
+      <setting name="enabled">false</setting>
+    </event>
+
+    <event name="jdk.ContinuationThawOld">
+      <setting name="enabled">false</setting>
     </event>
 
     <event name="jdk.ReservedStackActivation">
@@ -346,6 +376,12 @@
       <setting name="threshold">0 ms</setting>
     </event>
 
+    <event name="jdk.SystemGC">
+      <setting name="enabled">true</setting>
+      <setting name="threshold">0 ms</setting>
+      <setting name="stackTrace">true</setting>
+    </event>
+
     <event name="jdk.ParallelOldGarbageCollection">
       <setting name="enabled" control="gc-enabled-normal">true</setting>
       <setting name="threshold">0 ms</setting>
@@ -552,6 +588,31 @@
     <event name="jdk.VirtualizationInformation">
      <setting name="enabled">true</setting>
      <setting name="period">beginChunk</setting>
+    </event>
+
+    <event name="jdk.ContainerConfiguration">
+      <setting name="enabled">true</setting>
+      <setting name="period">beginChunk</setting>
+    </event>
+
+    <event name="jdk.ContainerCPUUsage">
+      <setting name="enabled">true</setting>
+      <setting name="period">30 s</setting>
+    </event>
+
+    <event name="jdk.ContainerCPUThrottling">
+      <setting name="enabled">true</setting>
+      <setting name="period">30 s</setting>
+    </event>
+
+    <event name="jdk.ContainerMemoryUsage">
+      <setting name="enabled">true</setting>
+      <setting name="period">30 s</setting>
+    </event>
+
+    <event name="jdk.ContainerIOUsage">
+      <setting name="enabled">true</setting>
+      <setting name="period">30 s</setting>
     </event>
 
     <event name="jdk.CPUInformation">
@@ -792,6 +853,11 @@
       <setting name="enabled">true</setting>
       <setting name="threshold">1 s</setting>
       <setting name="stackTrace">true</setting>
+    </event>
+
+    <event name="jdk.FinalizerStatistics">
+      <setting name="enabled">true</setting>
+      <setting name="period">endChunk</setting>
     </event>
 
 

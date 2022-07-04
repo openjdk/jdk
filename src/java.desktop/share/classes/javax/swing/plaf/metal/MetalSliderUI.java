@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,6 +131,7 @@ public class MetalSliderUI extends BasicSliderUI {
         super( null );
     }
 
+    @SuppressWarnings("removal")
     private static Icon getHorizThumbIcon() {
         if (System.getSecurityManager() != null) {
             return SAFE_HORIZ_THUMB_ICON;
@@ -139,6 +140,7 @@ public class MetalSliderUI extends BasicSliderUI {
         }
     }
 
+    @SuppressWarnings("removal")
     private static Icon getVertThumbIcon() {
         if (System.getSecurityManager() != null) {
             return SAFE_VERT_THUMB_ICON;

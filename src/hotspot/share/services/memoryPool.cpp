@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "services/lowMemoryDetector.hpp"
 #include "services/management.hpp"
 #include "services/memoryManager.hpp"
@@ -188,8 +189,8 @@ MetaspacePool::MetaspacePool() :
   MemoryPool("Metaspace", NonHeap, 0, calculate_max_size(), true, false) { }
 
 MemoryUsage MetaspacePool::get_memory_usage() {
-  size_t committed = MetaspaceUtils::committed_bytes();
-  return MemoryUsage(initial_size(), used_in_bytes(), committed, max_size());
+  MetaspaceCombinedStats stats = MetaspaceUtils::get_combined_statistics();
+  return MemoryUsage(initial_size(), stats.used(), stats.committed(), max_size());
 }
 
 size_t MetaspacePool::used_in_bytes() {
@@ -209,6 +210,6 @@ size_t CompressedKlassSpacePool::used_in_bytes() {
 }
 
 MemoryUsage CompressedKlassSpacePool::get_memory_usage() {
-  size_t committed = MetaspaceUtils::committed_bytes(Metaspace::ClassType);
-  return MemoryUsage(initial_size(), used_in_bytes(), committed, max_size());
+  MetaspaceStats stats = MetaspaceUtils::get_statistics(Metaspace::ClassType);
+  return MemoryUsage(initial_size(), stats.used(), stats.committed(), max_size());
 }

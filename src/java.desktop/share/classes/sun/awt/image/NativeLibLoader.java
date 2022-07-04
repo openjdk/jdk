@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ class NativeLibLoader {
      * For now, we know it's done by the implementation, and we assume
      * that the name of the library is "awt".  -br.
      */
+    @SuppressWarnings("removal")
     static void loadLibraries() {
         java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Void>() {

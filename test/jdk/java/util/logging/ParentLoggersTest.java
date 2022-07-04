@@ -29,7 +29,7 @@
  * @author  ss45998
  *
  * @build ParentLoggersTest
- * @run main ParentLoggersTest
+ * @run main/othervm ParentLoggersTest
  */
 
 /*

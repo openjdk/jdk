@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,13 +118,14 @@ public class MetalLookAndFeel extends BasicLookAndFeel
      */
     static boolean isWindows() {
         if (!checkedWindows) {
+            @SuppressWarnings("removal")
             OSInfo.OSType osType = AccessController.doPrivileged(OSInfo.getOSTypeAction());
             if (osType == OSInfo.OSType.WINDOWS) {
                 isWindows = true;
+                @SuppressWarnings("removal")
                 String systemFonts = AccessController.doPrivileged(
                     new GetPropertyAction("swing.useSystemFontSettings"));
-                useSystemFonts = (systemFonts != null &&
-                               (Boolean.valueOf(systemFonts).booleanValue()));
+                useSystemFonts = Boolean.parseBoolean(systemFonts);
             }
             checkedWindows = true;
         }
@@ -1396,8 +1397,8 @@ public class MetalLookAndFeel extends BasicLookAndFeel
             "Tree.openIcon",(LazyValue) t -> MetalIconFactory.getTreeFolderIcon(),
             "Tree.closedIcon",(LazyValue) t -> MetalIconFactory.getTreeFolderIcon(),
             "Tree.leafIcon",(LazyValue) t -> MetalIconFactory.getTreeLeafIcon(),
-            "Tree.expandedIcon",(LazyValue) t -> MetalIconFactory.getTreeControlIcon(Boolean.valueOf(MetalIconFactory.DARK)),
-            "Tree.collapsedIcon",(LazyValue) t -> MetalIconFactory.getTreeControlIcon(Boolean.valueOf( MetalIconFactory.LIGHT )),
+            "Tree.expandedIcon",(LazyValue) t -> MetalIconFactory.getTreeControlIcon(MetalIconFactory.DARK),
+            "Tree.collapsedIcon",(LazyValue) t -> MetalIconFactory.getTreeControlIcon(MetalIconFactory.LIGHT),
 
             "Tree.line", primaryControl, // horiz lines
             "Tree.hash", primaryControl,  // legs
@@ -1635,6 +1636,7 @@ public class MetalLookAndFeel extends BasicLookAndFeel
             else {
                 // Create the default theme. We prefer Ocean, but will
                 // use DefaultMetalTheme if told to.
+                @SuppressWarnings("removal")
                 String theme = AccessController.doPrivileged(
                                new GetPropertyAction("swing.metalTheme"));
                 if ("steel".equals(theme)) {
@@ -2138,8 +2140,7 @@ public class MetalLookAndFeel extends BasicLookAndFeel
 
     /**
      * Returns a {@code LayoutStyle} implementing the Java look and feel
-     * design guidelines as specified at
-     * <a href="http://www.oracle.com/technetwork/java/hig-136467.html">http://www.oracle.com/technetwork/java/hig-136467.html</a>.
+     * design guidelines.
      *
      * @return LayoutStyle implementing the Java look and feel design
      *         guidelines

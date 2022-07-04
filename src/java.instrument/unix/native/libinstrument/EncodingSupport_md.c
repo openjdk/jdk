@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,7 @@ utfInitialize(void)
 {
     const char* codeset;
 
+#ifndef MACOSX
     /* Set the locale from the environment */
     (void)setlocale(LC_ALL, "");
 
@@ -69,22 +70,12 @@ utfInitialize(void)
         UTF_DEBUG(("NO codeset returned by nl_langinfo(CODESET)\n"));
         return;
     }
+#else /* MACOSX */
+    /* On Mac, platform string (i.e., sun.jnu.encoding value) is always UTF-8 */
+    codeset = "UTF-8";
+#endif
 
     UTF_DEBUG(("Codeset = %s\n", codeset));
-
-#ifdef MACOSX
-    /* On Mac, if US-ASCII, but with no env hints, use UTF-8 */
-    const char* env_lang = getenv("LANG");
-    const char* env_lc_all = getenv("LC_ALL");
-    const char* env_lc_ctype = getenv("LC_CTYPE");
-
-    if (strcmp(codeset,"US-ASCII") == 0 &&
-        (env_lang == NULL || strlen(env_lang) == 0) &&
-        (env_lc_all == NULL || strlen(env_lc_all) == 0) &&
-        (env_lc_ctype == NULL || strlen(env_lc_ctype) == 0)) {
-        codeset = "UTF-8";
-    }
-#endif
 
     /* If we don't need this, skip it */
     if (strcmp(codeset, "UTF-8") == 0 || strcmp(codeset, "utf8") == 0 ) {
@@ -101,22 +92,6 @@ utfInitialize(void)
     if ( iconvFromPlatform == (iconv_t)-1 ) {
         UTF_ERROR("Failed to complete iconv_open() setup");
     }
-}
-
-/*
- * Terminate all utf processing
- */
-static void
-utfTerminate(void)
-{
-    if ( iconvFromPlatform!=(iconv_t)-1 ) {
-        (void)iconv_close(iconvFromPlatform);
-    }
-    if ( iconvToPlatform!=(iconv_t)-1 ) {
-        (void)iconv_close(iconvToPlatform);
-    }
-    iconvToPlatform   = (iconv_t)-1;
-    iconvFromPlatform = (iconv_t)-1;
 }
 
 /*
@@ -176,18 +151,8 @@ utf8ToPlatform(char *utf8, int len, char *output, int outputMaxLen)
     return iconvConvert(iconvToPlatform, utf8, len, output, outputMaxLen);
 }
 
-/*
- * Convert Platform Encoding to UTF-8.
- *    Returns length or -1 if output overflows.
- */
-static int
-platformToUtf8(char *str, int len, char *output, int outputMaxLen)
-{
-    return iconvConvert(iconvFromPlatform, str, len, output, outputMaxLen);
-}
-
 int
-convertUft8ToPlatformString(char* utf8_str, int utf8_len, char* platform_str, int platform_len) {
+convertUtf8ToPlatformString(char* utf8_str, int utf8_len, char* platform_str, int platform_len) {
     if (iconvToPlatform ==  (iconv_t)-1) {
         utfInitialize();
     }

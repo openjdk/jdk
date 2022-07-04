@@ -61,8 +61,8 @@ import jdk.test.lib.RandomFactory;
  * @compile dnsprovider/TestDnsProvider.java
  * @run main/othervm LdapDnsProviderTest
  * @run main/othervm LdapDnsProviderTest nosm
- * @run main/othervm LdapDnsProviderTest smnodns
- * @run main/othervm LdapDnsProviderTest smdns
+ * @run main/othervm -Djava.security.manager=allow LdapDnsProviderTest smnodns
+ * @run main/othervm -Djava.security.manager=allow LdapDnsProviderTest smdns
  * @run main/othervm LdapDnsProviderTest nosmbaddns
  */
 

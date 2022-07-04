@@ -26,7 +26,8 @@
 #define SHARE_OOPS_FIELDSTREAMS_INLINE_HPP
 
 #include "oops/fieldStreams.hpp"
-#include "runtime/thread.inline.hpp"
+
+#include "runtime/javaThread.hpp"
 
 FieldStreamBase::FieldStreamBase(Array<u2>* fields, ConstantPool* constants, int start, int limit) : _fields(fields),
          _constants(constantPoolHandle(Thread::current(), constants)), _index(start) {

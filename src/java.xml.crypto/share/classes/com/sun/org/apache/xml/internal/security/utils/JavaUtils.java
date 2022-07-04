@@ -218,6 +218,7 @@ public final class JavaUtils {
      *    {@code SecurityPermission}
      */
     public static void checkRegisterPermission() {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(REGISTER_PERMISSION);

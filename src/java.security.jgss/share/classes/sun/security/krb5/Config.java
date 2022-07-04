@@ -104,7 +104,7 @@ public class Config {
 
     private static boolean DEBUG = sun.security.krb5.internal.Krb5.DEBUG;
 
-    // these are used for hexdecimal calculation.
+    // these are used for hexadecimal calculation.
     private static final int BASE16_0 = 1;
     private static final int BASE16_1 = 16;
     private static final int BASE16_2 = 16 * 16;
@@ -153,7 +153,6 @@ public class Config {
         }
         KdcComm.initStatic();
         EType.initStatic();
-        Checksum.initStatic();
         KrbAsReqBuilder.ReferralsState.initStatic();
     }
 
@@ -276,7 +275,7 @@ public class Config {
     /**
      * Gets the boolean value for the specified keys. Returns TRUE if the
      * string value is "yes", or "true", FALSE if "no", or "false", or null
-     * if otherwise or not defined. The comparision is case-insensitive.
+     * if otherwise or not defined. The comparison is case-insensitive.
      *
      * @param keys the keys, see {@link #get(String...)}
      * @return the boolean value, or null if there is no value defined or the
@@ -668,6 +667,7 @@ public class Config {
      * @param fileName the configuration file
      * @return normalized lines
      */
+    @SuppressWarnings("removal")
     private List<String> loadConfigFile(final String fileName)
             throws IOException, KrbException {
 
@@ -1173,6 +1173,7 @@ public class Config {
      * @throws KrbException where no realm can be located
      * @return the default realm, always non null
      */
+    @SuppressWarnings("removal")
     public String getDefaultRealm() throws KrbException {
         if (defaultRealm != null) {
             return defaultRealm;
@@ -1217,6 +1218,7 @@ public class Config {
      * @throws KrbException if there's no way to find KDC for the realm
      * @return the list of KDCs separated by a space, always non null
      */
+    @SuppressWarnings("removal")
     public String getKDCList(String realm) throws KrbException {
         if (realm == null) {
             realm = getDefaultRealm();
@@ -1369,6 +1371,7 @@ public class Config {
         return kdcs;
     }
 
+    @SuppressWarnings("removal")
     private boolean fileExists(String name) {
         return java.security.AccessController.doPrivileged(
                                 new FileExistsAction(name));

@@ -26,6 +26,7 @@
 package sun.security.ssl;
 
 import java.io.IOException;
+import java.net.SocketException;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -48,6 +49,7 @@ final class TransportContext implements ConnectionContext {
 
     // registered plaintext consumers
     final Map<Byte, SSLConsumer>    consumers;
+    @SuppressWarnings("removal")
     final AccessControlContext      acc;
 
     final SSLContextImpl            sslContext;
@@ -79,7 +81,6 @@ final class TransportContext implements ConnectionContext {
     // consume or produce any application or network data.
     boolean                         needHandshakeFinishedStatus = false;
     boolean                         hasDelegatedFinished = false;
-
 
     // negotiated security parameters
     SSLSessionImpl                  conSession;
@@ -133,6 +134,7 @@ final class TransportContext implements ConnectionContext {
                 inputRecord, outputRecord, false);
     }
 
+    @SuppressWarnings("removal")
     private TransportContext(SSLContextImpl sslContext, SSLTransport transport,
             SSLConfiguration sslConfig, InputRecord inputRecord,
             OutputRecord outputRecord, boolean isUnsureMode) {
@@ -382,7 +384,12 @@ final class TransportContext implements ConnectionContext {
 
         // invalidate the session
         if (conSession != null) {
-            conSession.invalidate();
+            // In the case of a low-layer transport error, we want to prevent
+            // the session from being invalidated since this is not a TLS-level
+            // error event.
+            if (!(cause instanceof SocketException)) {
+                conSession.invalidate();
+            }
         }
 
         if (handshakeContext != null &&
@@ -660,17 +667,20 @@ final class TransportContext implements ConnectionContext {
     // A separate thread is allocated to deliver handshake completion
     // events.
     private static class NotifyHandshake implements Runnable {
+        @SuppressWarnings("removal")
         private final Set<Map.Entry<HandshakeCompletedListener,
                 AccessControlContext>> targets;         // who gets notified
         private final HandshakeCompletedEvent event;    // the notification
 
         NotifyHandshake(
+                @SuppressWarnings("removal")
                 Map<HandshakeCompletedListener,AccessControlContext> listeners,
                 HandshakeCompletedEvent event) {
             this.targets = new HashSet<>(listeners.entrySet());     // clone
             this.event = event;
         }
 
+        @SuppressWarnings("removal")
         @Override
         public void run() {
             // Don't need to synchronize, as it only runs in one thread.

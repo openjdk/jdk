@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,14 +62,14 @@ class PeriodicTask: public CHeapObj<mtInternal> {
   friend class WatcherThread;
  public:
   PeriodicTask(size_t interval_time); // interval is in milliseconds of elapsed time
-  ~PeriodicTask();
+  virtual ~PeriodicTask();
 
   // Make the task active
   // For dynamic enrollment at the time T, the task will execute somewhere
   // between T and T + interval_time.
   void enroll();
 
-  // Make the task deactive
+  // Make the task inactivate
   void disenroll();
 
   void execute_if_pending(int delay_time) {

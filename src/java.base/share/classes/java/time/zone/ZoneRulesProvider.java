@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,26 +146,28 @@ public abstract class ZoneRulesProvider {
     static {
         // if the property java.time.zone.DefaultZoneRulesProvider is
         // set then its value is the class name of the default provider
-        final List<ZoneRulesProvider> loaded = new ArrayList<>();
-        AccessController.doPrivileged(new PrivilegedAction<>() {
-            public Object run() {
-                String prop = System.getProperty("java.time.zone.DefaultZoneRulesProvider");
-                if (prop != null) {
-                    try {
-                        Class<?> c = Class.forName(prop, true, ClassLoader.getSystemClassLoader());
-                        @SuppressWarnings("deprecation")
-                        ZoneRulesProvider provider = ZoneRulesProvider.class.cast(c.newInstance());
-                        registerProvider(provider);
-                        loaded.add(provider);
-                    } catch (Exception x) {
-                        throw new Error(x);
+        @SuppressWarnings("removal")
+        final List<ZoneRulesProvider> loaded =
+                AccessController.doPrivileged(new PrivilegedAction<List<ZoneRulesProvider>>() {
+                    public List<ZoneRulesProvider> run() {
+                        List<ZoneRulesProvider> result = new ArrayList<>();
+                        String prop = System.getProperty("java.time.zone.DefaultZoneRulesProvider");
+                        if (prop != null) {
+                            try {
+                                Class<?> c = Class.forName(prop, true, ClassLoader.getSystemClassLoader());
+                                @SuppressWarnings("deprecation")
+                                ZoneRulesProvider provider = ZoneRulesProvider.class.cast(c.newInstance());
+                                registerProvider(provider);
+                                result.add(provider);
+                            } catch (Exception x) {
+                                throw new Error(x);
+                            }
+                        } else {
+                            registerProvider(new TzdbZoneRulesProvider());
+                        }
+                        return result;
                     }
-                } else {
-                    registerProvider(new TzdbZoneRulesProvider());
-                }
-                return null;
-            }
-        });
+                });
 
         ServiceLoader<ZoneRulesProvider> sl = ServiceLoader.load(ZoneRulesProvider.class, ClassLoader.getSystemClassLoader());
         Iterator<ZoneRulesProvider> it = sl.iterator();

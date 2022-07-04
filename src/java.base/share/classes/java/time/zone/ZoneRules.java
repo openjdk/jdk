@@ -146,8 +146,7 @@ public final class ZoneRules implements Serializable {
     /**
      * The map of recent transitions.
      */
-    private final transient ConcurrentMap<Integer, ZoneOffsetTransition[]> lastRulesCache =
-                new ConcurrentHashMap<Integer, ZoneOffsetTransition[]>();
+    private final transient ConcurrentMap<Integer, ZoneOffsetTransition[]> lastRulesCache;
     /**
      * The zero-length long array.
      */
@@ -259,12 +258,18 @@ public final class ZoneRules implements Serializable {
         }
 
         // last rules
-        Object[] temp = lastRules.toArray();
-        ZoneOffsetTransitionRule[] rulesArray = Arrays.copyOf(temp, temp.length, ZoneOffsetTransitionRule[].class);
-        if (rulesArray.length > 16) {
-            throw new IllegalArgumentException("Too many transition rules");
+        if (lastRules.size() > 0) {
+            Object[] temp = lastRules.toArray();
+            ZoneOffsetTransitionRule[] rulesArray = Arrays.copyOf(temp, temp.length, ZoneOffsetTransitionRule[].class);
+            if (rulesArray.length > 16) {
+                throw new IllegalArgumentException("Too many transition rules");
+            }
+            this.lastRules = rulesArray;
+            this.lastRulesCache = new ConcurrentHashMap<>();
+        } else {
+            this.lastRules = EMPTY_LASTRULES;
+            this.lastRulesCache = null;
         }
-        this.lastRules = rulesArray;
     }
 
     /**
@@ -288,6 +293,7 @@ public final class ZoneRules implements Serializable {
         this.savingsInstantTransitions = savingsInstantTransitions;
         this.wallOffsets = wallOffsets;
         this.lastRules = lastRules;
+        this.lastRulesCache = (lastRules.length > 0) ? new ConcurrentHashMap<>() : null;
 
         if (savingsInstantTransitions.length == 0) {
             this.savingsLocalTransitions = EMPTY_LDT_ARRAY;
@@ -324,6 +330,7 @@ public final class ZoneRules implements Serializable {
         this.savingsLocalTransitions = EMPTY_LDT_ARRAY;
         this.wallOffsets = standardOffsets;
         this.lastRules = EMPTY_LASTRULES;
+        this.lastRulesCache = null;
     }
 
     /**
@@ -430,7 +437,10 @@ public final class ZoneRules implements Serializable {
     }
 
     /**
-     * Reads the state from the stream.
+     * Reads the state from the stream. The 1,024 limit to the lengths
+     * of stdTrans and savSize is intended to be the size well enough
+     * to accommodate the max number of transitions in current tzdb data
+     * (203 for Asia/Tehran).
      *
      * @param in  the input stream, not null
      * @return the created object, not null
@@ -438,6 +448,9 @@ public final class ZoneRules implements Serializable {
      */
     static ZoneRules readExternal(DataInput in) throws IOException, ClassNotFoundException {
         int stdSize = in.readInt();
+        if (stdSize > 1024) {
+            throw new InvalidObjectException("Too many transitions");
+        }
         long[] stdTrans = (stdSize == 0) ? EMPTY_LONG_ARRAY
                                          : new long[stdSize];
         for (int i = 0; i < stdSize; i++) {
@@ -448,6 +461,9 @@ public final class ZoneRules implements Serializable {
             stdOffsets[i] = Ser.readOffset(in);
         }
         int savSize = in.readInt();
+        if (savSize > 1024) {
+            throw new InvalidObjectException("Too many saving offsets");
+        }
         long[] savTrans = (savSize == 0) ? EMPTY_LONG_ARRAY
                                          : new long[savSize];
         for (int i = 0; i < savSize; i++) {
@@ -458,6 +474,9 @@ public final class ZoneRules implements Serializable {
             savOffsets[i] = Ser.readOffset(in);
         }
         int ruleSize = in.readByte();
+        if (ruleSize > 16) {
+            throw new InvalidObjectException("Too many transition rules");
+        }
         ZoneOffsetTransitionRule[] rules = (ruleSize == 0) ?
             EMPTY_LASTRULES : new ZoneOffsetTransitionRule[ruleSize];
         for (int i = 0; i < ruleSize; i++) {
@@ -955,11 +974,11 @@ public final class ZoneRules implements Serializable {
             doyEst = zeroDay - (365 * yearEst + yearEst / 4 - yearEst / 100 + yearEst / 400);
         }
         yearEst += adjust;  // reset any negative year
-        int marchDoy0 = (int) doyEst;
 
-        // convert march-based values back to january-based
-        int marchMonth0 = (marchDoy0 * 5 + 2) / 153;
-        yearEst += marchMonth0 / 10;
+        // convert march-based values back to january-based, adjust year
+        if (doyEst >= 306) {
+            yearEst++;
+        }
 
         // Cap to the max value
         return (int)Math.min(yearEst, Year.MAX_VALUE);

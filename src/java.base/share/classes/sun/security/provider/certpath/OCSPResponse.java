@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,6 +160,7 @@ public final class OCSPResponse {
      * value is negative, set the skew to the default.
      */
     private static int initializeClockSkew() {
+        @SuppressWarnings("removal")
         Integer tmp = java.security.AccessController.doPrivileged(
                 new GetIntegerAction("com.sun.security.ocsp.clockSkew"));
         if (tmp == null || tmp < 0) {
@@ -306,7 +307,7 @@ public final class OCSPResponse {
 
         // responses
         DerValue[] singleResponseDer = seqDerIn.getSequence(1);
-        singleResponseMap = new HashMap<>(singleResponseDer.length);
+        singleResponseMap = HashMap.newHashMap(singleResponseDer.length);
         if (debug != null) {
             debug.println("OCSP number of SingleResponses: "
                           + singleResponseDer.length);
@@ -637,7 +638,10 @@ public final class OCSPResponse {
 
         try {
             Signature respSignature = Signature.getInstance(sigAlgId.getName());
-            respSignature.initVerify(cert.getPublicKey());
+            SignatureUtil.initVerifyWithParam(respSignature,
+                    cert.getPublicKey(),
+                    SignatureUtil.getParamSpec(sigAlgId.getName(),
+                            sigAlgId.getEncodedParams()));
             respSignature.update(tbsResponseData);
 
             if (respSignature.verify(signature)) {
@@ -653,8 +657,8 @@ public final class OCSPResponse {
                 }
                 return false;
             }
-        } catch (InvalidKeyException | NoSuchAlgorithmException |
-                 SignatureException e)
+        } catch (InvalidAlgorithmParameterException | InvalidKeyException
+                | NoSuchAlgorithmException | SignatureException e)
         {
             throw new CertPathValidatorException(e);
         }
@@ -747,7 +751,7 @@ public final class OCSPResponse {
         parseExtensions(DerValue derVal) throws IOException {
         DerValue[] extDer = derVal.data.getSequence(3);
         Map<String, java.security.cert.Extension> extMap =
-                new HashMap<>(extDer.length);
+                HashMap.newHashMap(extDer.length);
 
         for (DerValue extDerVal : extDer) {
             Extension ext = new Extension(extDerVal);

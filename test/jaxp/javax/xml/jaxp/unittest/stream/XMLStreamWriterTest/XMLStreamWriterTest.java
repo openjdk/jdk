@@ -44,7 +44,7 @@ import org.w3c.dom.Document;
  * @test
  * @bug 6347190 8139584 8216408
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.XMLStreamWriterTest.XMLStreamWriterTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.XMLStreamWriterTest.XMLStreamWriterTest
  * @run testng/othervm stream.XMLStreamWriterTest.XMLStreamWriterTest
  * @summary Tests XMLStreamWriter.
  */

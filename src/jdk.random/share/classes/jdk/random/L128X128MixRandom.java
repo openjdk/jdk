@@ -136,7 +136,7 @@ public final class L128X128MixRandom extends AbstractSplittableWithBrineGenerato
     private final long ah, al;
 
     /**
-     * The per-instance state: sh and sl for the LCG; x0 and x1 for the xorshift.
+     * The per-instance state: sh and sl for the LCG; x0 and x1 for the XBG.
      * At least one of x0 and x1 must be nonzero.
      */
     private long sh, sl, x0, x1;
@@ -152,8 +152,8 @@ public final class L128X128MixRandom extends AbstractSplittableWithBrineGenerato
      * @param al low half of the additive parameter for the LCG
      * @param sh high half of the initial state for the LCG
      * @param sl low half of the initial state for the LCG
-     * @param x0 first word of the initial state for the xorshift generator
-     * @param x1 second word of the initial state for the xorshift generator
+     * @param x0 first word of the initial state for the XBG
+     * @param x1 second word of the initial state for the XBG
      */
     public L128X128MixRandom(long ah, long al, long sh, long sl, long x0, long x1) {
         // Force a to be odd.
@@ -248,21 +248,12 @@ public final class L128X128MixRandom extends AbstractSplittableWithBrineGenerato
        // Update the LCG subgenerator
         // The LCG is, in effect, s = ((1LL << 64) + ML) * s + a, if only we had 128-bit arithmetic.
         final long u = ML * sl;
-       // Note that Math.multiplyHigh computes the high half of the product of signed values,
-       // but what we need is the high half of the product of unsigned values; for this we use the
-       // formula "unsignedMultiplyHigh(a, b) = multiplyHigh(a, b) + ((a >> 63) & b) + ((b >> 63) & a)";
-       // in effect, each operand is added to the result iff the sign bit of the other operand is 1.
-       // (See Henry S. Warren, Jr., _Hacker's Delight_ (Second Edition), Addison-Wesley (2013),
-       // Section 8-3, p. 175; or see the First Edition, Addison-Wesley (2003), Section 8-3, p. 133.)
-       // If Math.unsignedMultiplyHigh(long, long) is ever implemented, the following line can become:
-       //         sh = (ML * sh) + Math.unsignedMultiplyHigh(ML, sl) + sl + ah;
-       // and this entire comment can be deleted.
-        sh = (ML * sh) + (Math.multiplyHigh(ML, sl) + ((ML >> 63) & sl) + ((sl >> 63) & ML)) + sl + ah;
+        sh = (ML * sh) + Math.unsignedMultiplyHigh(ML, sl) + sl + ah;
         sl = u + al;
         if (Long.compareUnsigned(sl, u) < 0) ++sh;  // Handle the carry propagation from low half to high half.
 
         long q0 = x0, q1 = x1;
-       // Update the Xorshift subgenerator
+       // Update the XBG subgenerator
         {   // xoroshiro128v1_0
             q1 ^= q0;
             q0 = Long.rotateLeft(q0, 24);

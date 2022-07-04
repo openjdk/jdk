@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@
 class MemoryBuffer;
 
 class GraphBuilder {
+  friend class JfrResolution;
  private:
   // Per-scope data. These are pushed and popped as we descend into
   // inlined methods. Currently in order to generate good code in the
@@ -373,12 +374,10 @@ class GraphBuilder {
   void pop_scope();
   void pop_scope_for_jsr();
 
-  void append_unsafe_get_obj(ciMethod* callee, BasicType t, bool is_volatile);
-  void append_unsafe_put_obj(ciMethod* callee, BasicType t, bool is_volatile);
-  void append_unsafe_get_raw(ciMethod* callee, BasicType t);
-  void append_unsafe_put_raw(ciMethod* callee, BasicType t);
+  void append_unsafe_get(ciMethod* callee, BasicType t, bool is_volatile);
+  void append_unsafe_put(ciMethod* callee, BasicType t, bool is_volatile);
   void append_unsafe_CAS(ciMethod* callee);
-  void append_unsafe_get_and_set_obj(ciMethod* callee, bool is_add);
+  void append_unsafe_get_and_set(ciMethod* callee, bool is_add);
   void append_char_access(ciMethod* callee, bool is_store);
 
   void print_inlining(ciMethod* callee, const char* msg, bool success = true);
@@ -389,8 +388,6 @@ class GraphBuilder {
 
   // Shortcuts to profiling control.
   bool is_profiling()          { return _compilation->is_profiling();          }
-  bool count_invocations()     { return _compilation->count_invocations();     }
-  bool count_backedges()       { return _compilation->count_backedges();       }
   bool profile_branches()      { return _compilation->profile_branches();      }
   bool profile_calls()         { return _compilation->profile_calls();         }
   bool profile_inlined_calls() { return _compilation->profile_inlined_calls(); }

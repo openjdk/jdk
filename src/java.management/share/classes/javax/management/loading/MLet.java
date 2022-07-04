@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,12 @@
 
 package javax.management.loading;
 
-// Java import
-import com.sun.jmx.defaults.JmxProperties;
-
 import com.sun.jmx.defaults.ServiceName;
 
 import com.sun.jmx.remote.util.EnvHelp;
 
 import java.io.Externalizable;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInput;
@@ -71,7 +67,6 @@ import javax.management.ReflectionException;
 
 import static com.sun.jmx.defaults.JmxProperties.MLET_LIB_DIR;
 import static com.sun.jmx.defaults.JmxProperties.MLET_LOGGER;
-import com.sun.jmx.defaults.ServiceName;
 import javax.management.ServiceNotFoundException;
 
 /**
@@ -184,6 +179,7 @@ public class MLet extends java.net.URLClassLoader
       * The reference to the MBean server.
       * @serial
       */
+     @SuppressWarnings("serial") // Type of field is not Serializable
      private MBeanServer server = null;
 
 
@@ -192,6 +188,7 @@ public class MLet extends java.net.URLClassLoader
       * class found at the specified URL.
       * @serial
       */
+     @SuppressWarnings("serial") // Type of field is not Serializable
      private List<MLetContent> mletList = new ArrayList<MLetContent>();
 
 
@@ -228,6 +225,7 @@ public class MLet extends java.net.URLClassLoader
      /**
       * objects maps from primitive classes to primitive object classes.
       */
+     @SuppressWarnings("serial") // Type of field is not Serializable
      private Map<String,Class<?>> primitiveClasses =
          new HashMap<String,Class<?>>(8) ;
      {
@@ -1226,13 +1224,7 @@ public class MLet extends java.net.URLClassLoader
                 Object serObject = ois.readObject();
                 ois.close();
                 return serObject;
-            } catch (IOException e) {
-                if (MLET_LOGGER.isLoggable(Level.DEBUG)) {
-                    MLET_LOGGER.log(Level.DEBUG,
-                            "Exception while deserializing " + filename, e);
-                }
-                throw e;
-            } catch (ClassNotFoundException e) {
+            } catch (IOException | ClassNotFoundException e) {
                 if (MLET_LOGGER.isLoggable(Level.DEBUG)) {
                     MLET_LOGGER.log(Level.DEBUG,
                             "Exception while deserializing " + filename, e);
@@ -1267,26 +1259,19 @@ public class MLet extends java.net.URLClassLoader
                 MLET_LOGGER.log(Level.DEBUG, "Got unexpected exception", e);
             }
         }
-        if (type.compareTo("java.lang.Boolean") == 0)
-             return Boolean.valueOf(param);
-        if (type.compareTo("java.lang.Byte") == 0)
-             return Byte.valueOf(param);
-        if (type.compareTo("java.lang.Short") == 0)
-             return Short.valueOf(param);
-        if (type.compareTo("java.lang.Long") == 0)
-             return Long.valueOf(param);
-        if (type.compareTo("java.lang.Integer") == 0)
-             return Integer.valueOf(param);
-        if (type.compareTo("java.lang.Float") == 0)
-             return Float.valueOf(param);
-        if (type.compareTo("java.lang.Double") == 0)
-             return Double.valueOf(param);
-        if (type.compareTo("java.lang.String") == 0)
-             return param;
-
-        return param;
+         return switch (type) {
+             case "java.lang.Boolean" -> Boolean.valueOf(param);
+             case "java.lang.Byte" -> Byte.valueOf(param);
+             case "java.lang.Short" -> Short.valueOf(param);
+             case "java.lang.Long" -> Long.valueOf(param);
+             case "java.lang.Integer" -> Integer.valueOf(param);
+             case "java.lang.Float" -> Float.valueOf(param);
+             case "java.lang.Double" -> Double.valueOf(param);
+             default -> param;
+         };
      }
 
+    @SuppressWarnings("removal")
     private synchronized void setMBeanServer(final MBeanServer server) {
         this.server = server;
         PrivilegedAction<ClassLoaderRepository> act =

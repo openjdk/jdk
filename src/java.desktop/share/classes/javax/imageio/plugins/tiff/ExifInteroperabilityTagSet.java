@@ -92,7 +92,7 @@ public final class ExifInteroperabilityTagSet extends TIFFTagSet {
      *
      * @return the {@code ExifInteroperabilityTagSet} instance.
      */
-    public synchronized static ExifInteroperabilityTagSet getInstance() {
+    public static synchronized ExifInteroperabilityTagSet getInstance() {
         if (theInstance == null) {
             initTags();
             theInstance = new ExifInteroperabilityTagSet();

@@ -82,7 +82,7 @@ public class TransformC14NExclusive extends TransformSpi {
 
             Canonicalizer20010315Excl c14n = getCanonicalizer();
 
-            if (os == null) {
+            if (os == null && (input.isOctetStream() || input.isElement() || input.isNodeSet())) {
                 try (ByteArrayOutputStream writer = new ByteArrayOutputStream()) {
                     c14n.engineCanonicalize(input, inclusiveNamespaces, writer, secureValidation);
                     writer.flush();

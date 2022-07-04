@@ -24,16 +24,19 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHCLOSURES_INLINE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHCLOSURES_INLINE_HPP
 
+#include "gc/shenandoah/shenandoahClosures.hpp"
+
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
-#include "gc/shenandoah/shenandoahClosures.hpp"
 #include "gc/shenandoah/shenandoahEvacOOMHandler.inline.hpp"
+#include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahNMethod.inline.hpp"
+#include "memory/iterator.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 
 ShenandoahForwardedIsAliveClosure::ShenandoahForwardedIsAliveClosure() :
   _mark_context(ShenandoahHeap::heap()->marking_context()) {
@@ -66,8 +69,12 @@ BoolObjectClosure* ShenandoahIsAliveSelector::is_alive_closure() {
          reinterpret_cast<BoolObjectClosure*>(&_alive_cl);
 }
 
+void ShenandoahOopClosureBase::do_nmethod(nmethod* nm) {
+  nm->run_nmethod_entry_barrier();
+}
+
 ShenandoahKeepAliveClosure::ShenandoahKeepAliveClosure() :
-  _bs(static_cast<ShenandoahBarrierSet*>(BarrierSet::barrier_set())) {
+  _bs(ShenandoahBarrierSet::barrier_set()) {
 }
 
 void ShenandoahKeepAliveClosure::do_oop(oop* p) {
@@ -160,7 +167,7 @@ void ShenandoahEvacuateUpdateRootsClosure::do_oop_work(T* p, Thread* t) {
       if (resolved == obj) {
         resolved = _heap->evacuate_object(obj, t);
       }
-      _heap->cas_oop(resolved, p, o);
+      ShenandoahHeap::atomic_update_oop(resolved, p, o);
     }
   }
 }
@@ -206,7 +213,7 @@ void ShenandoahCleanUpdateWeakOopsClosure<CONCURRENT, IsAlive, KeepAlive>::do_oo
       _keep_alive->do_oop(p);
     } else {
       if (CONCURRENT) {
-        Atomic::cmpxchg(p, obj, oop());
+        ShenandoahHeap::atomic_clear_oop(p, obj);
       } else {
         RawAccess<IS_NOT_NULL>::oop_store(p, oop());
       }
@@ -226,7 +233,7 @@ ShenandoahCodeBlobAndDisarmClosure::ShenandoahCodeBlobAndDisarmClosure(OopClosur
 
 void ShenandoahCodeBlobAndDisarmClosure::do_code_blob(CodeBlob* cb) {
   nmethod* const nm = cb->as_nmethod_or_null();
-  if (nm != NULL && nm->oops_do_try_claim()) {
+  if (nm != NULL) {
     assert(!ShenandoahNMethod::gc_data(nm)->is_unregistered(), "Should not be here");
     CodeBlobToOopClosure::do_code_blob(cb);
     _bs->disarm(nm);

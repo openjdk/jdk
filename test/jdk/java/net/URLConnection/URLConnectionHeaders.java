@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4143541 4147035 4244362
+ * @bug 4143541 4147035 4244362 8133686
  * @summary URLConnection cannot enumerate request properties,
  *          and URLConnection can neither get nor set multiple
  *          request properties w/ same key
@@ -104,7 +104,7 @@ public class URLConnectionHeaders {
 
             Map e = uc.getRequestProperties();
 
-            if (!((List)e.get("Cookie")).toString().equals("[cookie3, cookie2, cookie1]")) {
+            if (!((List)e.get("Cookie")).toString().equals("[cookie1, cookie2, cookie3]")) {
                 throw new RuntimeException("getRequestProperties fails");
             }
 

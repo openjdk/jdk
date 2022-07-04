@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary Tests <new> element
+ * @run main/othervm -Djava.security.manager=allow TestNew
  * @author Sergey Malenkov
  */
 

@@ -36,36 +36,7 @@ import java.lang.annotation.Target;
  * In the following example, a transaction event is defined with two
  * user-defined annotations, {@code @Severity} and {@code @TransactionId}.
  *
- * <pre>{@literal
- * @MetadataDefinition
- * @Label("Severity")
- * @Description("Value between 0 and 100 that indicates severity. 100 is most severe.")
- * @Retention(RetentionPolicy.RUNTIME)
- * @Target({ElementType.TYPE})
- * public @interface Severity {
- *     int value() default 50;
- * }
- *
- * @MetadataDefinition
- * @Label("Transaction Id")
- * @Relational
- * @Retention(RetentionPolicy.RUNTIME)
- * @Target({ElementType.FIELD})
- * public @interface TransactionId {
- * }
- *
- * @Severity(80)
- * @Label("Transaction Blocked")
- * class TransactionBlocked extends Event {
- *     @TransactionId
- *     @Label("Transaction")
- *     long transactionId1;
- *
- *     @TransactionId
- *     @Label("Transaction Blocker")
- *     long transactionId2;
- * }
- * }</pre>
+ * {@snippet class="Snippets" region="MetadataDefinitionOverview"}
  *
  * Adding {@code @MetadataDefinition} to the declaration of {@code @Severity} and {@code @TransactionId}
  * ensures the information is saved by Flight Recorder.

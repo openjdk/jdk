@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,6 +87,7 @@ import java.time.LocalTime;
 import java.time.Period;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.time.chrono.ChronoLocalDate;
 import java.time.chrono.ChronoLocalDateTime;
 import java.time.chrono.ChronoZonedDateTime;
@@ -133,6 +134,10 @@ final class Parsed implements TemporalAccessor {
      */
     ZoneId zone;
     /**
+     * The parsed zone name type.
+     */
+    int zoneNameType = DateTimeFormatterBuilder.ZoneTextPrinterParser.UNDEFINED;
+    /**
      * The parsed chronology.
      */
     Chronology chrono;
@@ -175,6 +180,7 @@ final class Parsed implements TemporalAccessor {
         Parsed cloned = new Parsed();
         cloned.fieldValues.putAll(this.fieldValues);
         cloned.zone = this.zone;
+        cloned.zoneNameType = this.zoneNameType;
         cloned.chrono = this.chrono;
         cloned.leapSecond = this.leapSecond;
         cloned.dayPeriod = this.dayPeriod;
@@ -354,10 +360,11 @@ final class Parsed implements TemporalAccessor {
     }
 
     private void resolveInstantFields0(ZoneId selectedZone) {
-        Instant instant = Instant.ofEpochSecond(fieldValues.remove(INSTANT_SECONDS));
+        Instant instant = Instant.ofEpochSecond(fieldValues.get(INSTANT_SECONDS));
         ChronoZonedDateTime<?> zdt = chrono.zonedDateTime(instant, selectedZone);
         updateCheckConflict(zdt.toLocalDate());
         updateCheckConflict(INSTANT_SECONDS, SECOND_OF_DAY, (long) zdt.toLocalTime().toSecondOfDay());
+        updateCheckConflict(INSTANT_SECONDS, OFFSET_SECONDS, (long) zdt.getOffset().getTotalSeconds());
     }
 
     //-----------------------------------------------------------------------
@@ -641,9 +648,9 @@ final class Parsed implements TemporalAccessor {
     }
 
     private void resolveInstant() {
-        // add instant seconds if we have date, time and zone
+        // add instant seconds (if not present) if we have date, time and zone
         // Offset (if present) will be given priority over the zone.
-        if (date != null && time != null) {
+        if (!fieldValues.containsKey(INSTANT_SECONDS) && date != null && time != null) {
             Long offsetSecs = fieldValues.get(OFFSET_SECONDS);
             if (offsetSecs != null) {
                 ZoneOffset offset = ZoneOffset.ofTotalSeconds(offsetSecs.intValue());
@@ -651,8 +658,12 @@ final class Parsed implements TemporalAccessor {
                 fieldValues.put(INSTANT_SECONDS, instant);
             } else {
                 if (zone != null) {
-                    long instant = date.atTime(time).atZone(zone).toEpochSecond();
-                    fieldValues.put(INSTANT_SECONDS, instant);
+                    var czdt = date.atTime(time).atZone(zone);
+                    if (zoneNameType == DateTimeFormatterBuilder.ZoneTextPrinterParser.STD ||
+                        zoneNameType == DateTimeFormatterBuilder.ZoneTextPrinterParser.GENERIC) {
+                        czdt = czdt.withLaterOffsetAtOverlap();
+                    }
+                    fieldValues.put(INSTANT_SECONDS, czdt.toEpochSecond());
                 }
             }
         }
@@ -717,6 +728,7 @@ final class Parsed implements TemporalAccessor {
         buf.append(fieldValues).append(',').append(chrono);
         if (zone != null) {
             buf.append(',').append(zone);
+            buf.append(',').append(zoneNameType);
         }
         if (date != null || time != null) {
             buf.append(" resolved to ");

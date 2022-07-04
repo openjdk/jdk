@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -190,7 +190,7 @@ bool VM_RedefineClasses::doit_prologue() {
     }
 
     oop mirror = JNIHandles::resolve_non_null(_class_defs[i].klass);
-    // classes for primitives, arrays, hidden and vm unsafe anonymous classes
+    // classes for primitives, arrays, and hidden classes
     // cannot be redefined.
     if (!is_modifiable_class(mirror)) {
       _res = JVMTI_ERROR_UNMODIFIABLE_CLASS;
@@ -333,9 +333,8 @@ bool VM_RedefineClasses::is_modifiable_class(oop klass_mirror) {
     return false;
   }
 
-  // Cannot redefine or retransform a hidden or an unsafe anonymous class.
-  if (InstanceKlass::cast(k)->is_hidden() ||
-      InstanceKlass::cast(k)->is_unsafe_anonymous()) {
+  // Cannot redefine or retransform a hidden class.
+  if (InstanceKlass::cast(k)->is_hidden()) {
     return false;
   }
   return true;
@@ -1223,7 +1222,7 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
 
 
 // Find new constant pool index value for old constant pool index value
-// by seaching the index map. Returns zero (0) if there is no mapped
+// by searching the index map. Returns zero (0) if there is no mapped
 // value for the old constant pool index.
 int VM_RedefineClasses::find_new_index(int old_index) {
   if (_index_map_count == 0) {
@@ -1249,7 +1248,7 @@ int VM_RedefineClasses::find_new_index(int old_index) {
 
 
 // Find new bootstrap specifier index value for old bootstrap specifier index
-// value by seaching the index map. Returns unused index (-1) if there is
+// value by searching the index map. Returns unused index (-1) if there is
 // no mapped value for the old bootstrap specifier index.
 int VM_RedefineClasses::find_new_operand_index(int old_index) {
   if (_operands_index_map_count == 0) {
@@ -1381,7 +1380,7 @@ jvmtiError VM_RedefineClasses::load_new_class_versions() {
     // load hook event.
     state->set_class_being_redefined(the_class, _class_load_kind);
 
-    Thread* THREAD = current;  // for exception processing
+    JavaThread* THREAD = current; // For exception macros.
     ExceptionMark em(THREAD);
     Handle protection_domain(THREAD, the_class->protection_domain());
     ClassLoadInfo cl_info(protection_domain);
@@ -1853,14 +1852,18 @@ jvmtiError VM_RedefineClasses::merge_cp_and_rewrite(
     return JVMTI_ERROR_INTERNAL;
   }
 
-  // Save fields from the old_cp.
-  merge_cp->copy_fields(old_cp());
-  scratch_cp->copy_fields(old_cp());
+  // Set dynamic constants attribute from the original CP.
+  if (old_cp->has_dynamic_constant()) {
+    scratch_cp->set_has_dynamic_constant();
+  }
 
   log_info(redefine, class, constantpool)("merge_cp_len=%d, index_map_len=%d", merge_cp_length, _index_map_count);
 
   if (_index_map_count == 0) {
     // there is nothing to map between the new and merged constant pools
+
+    // Copy attributes from scratch_cp to merge_cp
+    merge_cp->copy_fields(scratch_cp());
 
     if (old_cp->length() == scratch_cp->length()) {
       // The old and new constant pools are the same length and the
@@ -1914,6 +1917,9 @@ jvmtiError VM_RedefineClasses::merge_cp_and_rewrite(
     if (!rewrite_cp_refs(scratch_class)) {
       return JVMTI_ERROR_INTERNAL;
     }
+
+    // Copy attributes from scratch_cp to merge_cp (should be done after rewrite_cp_refs())
+    merge_cp->copy_fields(scratch_cp());
 
     // Replace the new constant pool with a shrunken copy of the
     // merged constant pool so now the rewritten bytecodes have
@@ -2109,7 +2115,7 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_methods(InstanceKlass* scratch_class
     return true;
   }
 
-  Thread* THREAD = Thread::current();  // For exception processing
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
   ExceptionMark em(THREAD);
 
   // rewrite constant pool references in the methods:
@@ -2264,21 +2270,6 @@ void VM_RedefineClasses::rewrite_cp_refs_in_method(methodHandle method,
         break;
     }
   } // end for each bytecode
-
-  // We also need to rewrite the parameter name indexes, if there is
-  // method parameter data present
-  if(method->has_method_parameters()) {
-    const int len = method->method_parameters_length();
-    MethodParametersElement* elem = method->method_parameters_start();
-
-    for (int i = 0; i < len; i++) {
-      const u2 cp_index = elem[i].name_cp_index;
-      const u2 new_cp_index = find_new_index(cp_index);
-      if (new_cp_index != 0) {
-        elem[i].name_cp_index = new_cp_index;
-      }
-    }
-  }
 } // end rewrite_cp_refs_in_method()
 
 
@@ -2939,7 +2930,6 @@ bool VM_RedefineClasses::skip_type_annotation_target(
 
     case 0x10:
     // kind: type in extends clause of class or interface declaration
-    //       (including the direct superclass of an unsafe anonymous class declaration),
     //       or in implements clause of interface declaration
     // location: ClassFile
 
@@ -3506,10 +3496,9 @@ void VM_RedefineClasses::rewrite_cp_refs_in_verification_type_info(
 } // end rewrite_cp_refs_in_verification_type_info()
 
 
-// Change the constant pool associated with klass scratch_class to
-// scratch_cp. If shrink is true, then scratch_cp_length elements
-// are copied from scratch_cp to a smaller constant pool and the
-// smaller constant pool is associated with scratch_class.
+// Change the constant pool associated with klass scratch_class to scratch_cp.
+// scratch_cp_length elements are copied from scratch_cp to a smaller constant pool
+// and the smaller constant pool is associated with scratch_class.
 void VM_RedefineClasses::set_new_constant_pool(
        ClassLoaderData* loader_data,
        InstanceKlass* scratch_class, constantPoolHandle scratch_cp,
@@ -3692,6 +3681,19 @@ void VM_RedefineClasses::set_new_constant_pool(
         }
       } // end for each local variable table entry
     } // end if there are local variable table entries
+
+    // Update constant pool indices in the method's method_parameters.
+    int mp_length = method->method_parameters_length();
+    if (mp_length > 0) {
+      MethodParametersElement* elem = method->method_parameters_start();
+      for (int j = 0; j < mp_length; j++) {
+        const int cp_index = elem[j].name_cp_index;
+        const int new_cp_index = find_new_index(cp_index);
+        if (new_cp_index != 0) {
+          elem[j].name_cp_index = (u2)new_cp_index;
+        }
+      }
+    }
 
     rewrite_cp_refs_in_stack_map_table(method);
   } // end for each method
@@ -4067,7 +4069,7 @@ void VM_RedefineClasses::transfer_old_native_function_registrations(InstanceKlas
   transfer.transfer_registrations(_matching_old_methods, _matching_methods_length);
 }
 
-// Deoptimize all compiled code that depends on this class.
+// Deoptimize all compiled code that depends on the classes redefined.
 //
 // If the can_redefine_classes capability is obtained in the onload
 // phase then the compiler has recorded all dependencies from startup.
@@ -4082,18 +4084,6 @@ void VM_RedefineClasses::transfer_old_native_function_registrations(InstanceKlas
 // subsequent calls to RedefineClasses need only throw away code
 // that depends on the class.
 //
-
-// First step is to walk the code cache for each class redefined and mark
-// dependent methods.  Wait until all classes are processed to deoptimize everything.
-void VM_RedefineClasses::mark_dependent_code(InstanceKlass* ik) {
-  assert_locked_or_safepoint(Compile_lock);
-
-  // All dependencies have been recorded from startup or this is a second or
-  // subsequent use of RedefineClasses
-  if (JvmtiExport::all_dependencies_are_recorded()) {
-    CodeCache::mark_for_evol_deoptimization(ik);
-  }
-}
 
 void VM_RedefineClasses::flush_dependent_code() {
   assert(SafepointSynchronize::is_at_safepoint(), "sanity check");
@@ -4219,9 +4209,6 @@ void VM_RedefineClasses::redefine_single_class(Thread* current, jclass the_jclas
   // Remove all breakpoints in methods of this class
   JvmtiBreakpoints& jvmti_breakpoints = JvmtiCurrentBreakpoints::get_jvmti_breakpoints();
   jvmti_breakpoints.clearall_in_class_at_safepoint(the_class);
-
-  // Mark all compiled code that depends on this class
-  mark_dependent_code(the_class);
 
   _old_methods = the_class->methods();
   _new_methods = scratch_class->methods();
@@ -4373,10 +4360,6 @@ void VM_RedefineClasses::redefine_single_class(Thread* current, jclass the_jclas
 
   // Leave arrays of jmethodIDs and itable index cache unchanged
 
-  // Copy the "source file name" attribute from new class version
-  the_class->set_source_file_name_index(
-    scratch_class->source_file_name_index());
-
   // Copy the "source debug extension" attribute from new class version
   the_class->set_source_debug_extension(
     scratch_class->source_debug_extension(),
@@ -4398,6 +4381,16 @@ void VM_RedefineClasses::redefine_single_class(Thread* current, jclass the_jclas
 
   swap_annotations(the_class, scratch_class);
 
+  // Replace minor version number of class file
+  u2 old_minor_version = the_class->constants()->minor_version();
+  the_class->constants()->set_minor_version(scratch_class->constants()->minor_version());
+  scratch_class->constants()->set_minor_version(old_minor_version);
+
+  // Replace major version number of class file
+  u2 old_major_version = the_class->constants()->major_version();
+  the_class->constants()->set_major_version(scratch_class->constants()->major_version());
+  scratch_class->constants()->set_major_version(old_major_version);
+
   // Replace CP indexes for class and name+type of enclosing method
   u2 old_class_idx  = the_class->enclosing_method_class_index();
   u2 old_method_idx = the_class->enclosing_method_method_index();
@@ -4407,6 +4400,9 @@ void VM_RedefineClasses::redefine_single_class(Thread* current, jclass the_jclas
   scratch_class->set_enclosing_method_indices(old_class_idx, old_method_idx);
 
   the_class->set_has_been_redefined();
+
+  // Scratch class is unloaded but still needs cleaning, and skipping for CDS.
+  scratch_class->set_is_scratch_class();
 
   // keep track of previous versions of this class
   the_class->add_previous_version(scratch_class, emcp_method_count);
@@ -4422,7 +4418,7 @@ void VM_RedefineClasses::redefine_single_class(Thread* current, jclass the_jclas
     the_class->oop_map_cache()->flush_obsolete_entries();
   }
 
-  increment_class_counter((InstanceKlass *)the_class);
+  increment_class_counter(the_class);
 
   if (EventClassRedefinition::is_enabled()) {
     EventClassRedefinition event;
@@ -4451,24 +4447,20 @@ void VM_RedefineClasses::redefine_single_class(Thread* current, jclass the_jclas
 
 // Increment the classRedefinedCount field in the specific InstanceKlass
 // and in all direct and indirect subclasses.
-void VM_RedefineClasses::increment_class_counter(InstanceKlass *ik) {
-  oop class_mirror = ik->java_mirror();
-  Klass* class_oop = java_lang_Class::as_Klass(class_mirror);
-  int new_count = java_lang_Class::classRedefinedCount(class_mirror) + 1;
-  java_lang_Class::set_classRedefinedCount(class_mirror, new_count);
+void VM_RedefineClasses::increment_class_counter(InstanceKlass* ik) {
+  for (ClassHierarchyIterator iter(ik); !iter.done(); iter.next()) {
+    // Only update instanceKlasses
+    Klass* sub = iter.klass();
+    if (sub->is_instance_klass()) {
+      oop class_mirror = InstanceKlass::cast(sub)->java_mirror();
+      Klass* class_oop = java_lang_Class::as_Klass(class_mirror);
+      int new_count = java_lang_Class::classRedefinedCount(class_mirror) + 1;
+      java_lang_Class::set_classRedefinedCount(class_mirror, new_count);
 
-  if (class_oop != _the_class) {
-    // _the_class count is printed at end of redefine_single_class()
-    log_debug(redefine, class, subclass)("updated count in subclass=%s to %d", ik->external_name(), new_count);
-  }
-
-  for (Klass *subk = ik->subklass(); subk != NULL;
-       subk = subk->next_sibling()) {
-    if (subk->is_instance_klass()) {
-      // Only update instanceKlasses
-      InstanceKlass *subik = InstanceKlass::cast(subk);
-      // recursively do subclasses of the current subclass
-      increment_class_counter(subik);
+      if (class_oop != _the_class) {
+        // _the_class count is printed at end of redefine_single_class()
+        log_debug(redefine, class, subclass)("updated count in subclass=%s to %d", ik->external_name(), new_count);
+      }
     }
   }
 }

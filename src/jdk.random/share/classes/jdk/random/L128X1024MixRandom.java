@@ -146,7 +146,7 @@ public final class L128X1024MixRandom extends AbstractSplittableWithBrineGenerat
     private final long ah, al;
 
     /**
-     * The per-instance state: sh and sl for the LCG; the array x for the xorshift;
+     * The per-instance state: sh and sl for the LCG; the array x for the XBG;
      * p is the rotating pointer into the array x.
      * At least one of the 16 elements of the array x must be nonzero.
      */
@@ -165,22 +165,22 @@ public final class L128X1024MixRandom extends AbstractSplittableWithBrineGenerat
      * @param al low half of the additive parameter for the LCG
      * @param sh high half of the initial state for the LCG
      * @param sl low half of the initial state for the LCG
-     * @param x0 first word of the initial state for the xorshift generator
-     * @param x1 second word of the initial state for the xorshift generator
-     * @param x2 third word of the initial state for the xorshift generator
-     * @param x3 fourth word of the initial state for the xorshift generator
-     * @param x4 fifth word of the initial state for the xorshift generator
-     * @param x5 sixth word of the initial state for the xorshift generator
-     * @param x6 seventh word of the initial state for the xorshift generator
-     * @param x7 eight word of the initial state for the xorshift generator
-     * @param x8 ninth word of the initial state for the xorshift generator
-     * @param x9 tenth word of the initial state for the xorshift generator
-     * @param x10 eleventh word of the initial state for the xorshift generator
-     * @param x11 twelfth word of the initial state for the xorshift generator
-     * @param x12 thirteenth word of the initial state for the xorshift generator
-     * @param x13 fourteenth word of the initial state for the xorshift generator
-     * @param x14 fifteenth word of the initial state for the xorshift generator
-     * @param x15 sixteenth word of the initial state for the xorshift generator
+     * @param x0 first word of the initial state for the XBG
+     * @param x1 second word of the initial state for the XBG
+     * @param x2 third word of the initial state for the XBG
+     * @param x3 fourth word of the initial state for the XBG
+     * @param x4 fifth word of the initial state for the XBG
+     * @param x5 sixth word of the initial state for the XBG
+     * @param x6 seventh word of the initial state for the XBG
+     * @param x7 eight word of the initial state for the XBG
+     * @param x8 ninth word of the initial state for the XBG
+     * @param x9 tenth word of the initial state for the XBG
+     * @param x10 eleventh word of the initial state for the XBG
+     * @param x11 twelfth word of the initial state for the XBG
+     * @param x12 thirteenth word of the initial state for the XBG
+     * @param x13 fourteenth word of the initial state for the XBG
+     * @param x14 fifteenth word of the initial state for the XBG
+     * @param x15 sixteenth word of the initial state for the XBG
      */
     public L128X1024MixRandom(long ah, long al, long sh, long sl,
                  long x0, long x1, long x2, long x3,
@@ -323,17 +323,7 @@ public final class L128X1024MixRandom extends AbstractSplittableWithBrineGenerat
        // Update the LCG subgenerator
         // The LCG is, in effect, s = ((1LL << 64) + ML) * s + a, if only we had 128-bit arithmetic.
         final long u = ML * sl;
-
-        // Note that Math.multiplyHigh computes the high half of the product of signed values,
-        // but what we need is the high half of the product of unsigned values; for this we use the
-        // formula "unsignedMultiplyHigh(a, b) = multiplyHigh(a, b) + ((a >> 63) & b) + ((b >> 63) & a)";
-        // in effect, each operand is added to the result iff the sign bit of the other operand is 1.
-        // (See Henry S. Warren, Jr., _Hacker's Delight_ (Second Edition), Addison-Wesley (2013),
-        // Section 8-3, p. 175; or see the First Edition, Addison-Wesley (2003), Section 8-3, p. 133.)
-        // If Math.unsignedMultiplyHigh(long, long) is ever implemented, the following line can become:
-        //         sh = (ML * sh) + Math.unsignedMultiplyHigh(ML, sl) + sl + ah;
-        // and this entire comment can be deleted.
-        sh = (ML * sh) + (Math.multiplyHigh(ML, sl) + ((ML >> 63) & sl) + ((sl >> 63) & ML)) + sl + ah;
+        sh = (ML * sh) + Math.unsignedMultiplyHigh(ML, sl) + sl + ah;
         sl = u + al;
         if (Long.compareUnsigned(sl, u) < 0) ++sh;  // Handle the carry propagation from low half to high half.
 

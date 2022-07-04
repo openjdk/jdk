@@ -170,8 +170,7 @@ JNIEXPORT jobject JNICALL Java_sun_security_pkcs11_Secmod_nssGetModuleList
     jobject jList, jModule;
     jmethodID jListConstructor, jAdd, jModuleConstructor;
     jstring jCommonName, jDllName;
-    jboolean jFIPS;
-    jint i;
+    jint i, jSlotID;
 
     if (getModuleList == NULL) {
         dprintf("-getmodulelist function not found\n");
@@ -204,7 +203,7 @@ JNIEXPORT jobject JNICALL Java_sun_security_pkcs11_Secmod_nssGetModuleList
         return NULL;
     }
     jModuleConstructor = (*env)->GetMethodID(env, jModuleClass, "<init>",
-        "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZI)V");
+        "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;II)V");
     if (jModuleConstructor == NULL) {
         return NULL;
     }
@@ -230,10 +229,15 @@ JNIEXPORT jobject JNICALL Java_sun_security_pkcs11_Secmod_nssGetModuleList
                 return NULL;
             }
         }
-        jFIPS = module->isFIPS;
         for (i = 0; i < module->slotCount; i++ ) {
+            jSlotID = module->slots[i]->slotID;
+            if (jDllName == NULL && jSlotID != NETSCAPE_SLOT_ID &&
+                    jSlotID != PRIVATE_KEY_SLOT_ID && jSlotID != FIPS_SLOT_ID) {
+                // Ignore unknown slot IDs in the NSS Internal Module. See JDK-8265462.
+                continue;
+            }
             jModule = (*env)->NewObject(env, jModuleClass, jModuleConstructor,
-                jLibDir, jDllName, jCommonName, jFIPS, i);
+                    jLibDir, jDllName, jCommonName, i, jSlotID);
             if (jModule == NULL) {
                 return NULL;
             }

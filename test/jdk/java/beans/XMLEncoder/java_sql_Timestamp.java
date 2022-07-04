@@ -25,6 +25,7 @@
  * @test
  * @bug 4733558 6471539
  * @summary Tests Timestamp encoding
+ * @run main/othervm -Djava.security.manager=allow java_sql_Timestamp
  * @author Sergey Malenkov
  * @modules java.desktop
  *          java.sql

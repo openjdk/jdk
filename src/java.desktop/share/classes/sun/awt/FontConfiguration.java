@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,6 @@ import java.util.Set;
 import java.util.Vector;
 import sun.font.CompositeFontDescriptor;
 import sun.font.SunFontManager;
-import sun.font.FontManagerFactory;
 import sun.font.FontUtilities;
 import sun.util.logging.PlatformLogger;
 
@@ -157,6 +156,7 @@ public abstract class FontConfiguration {
         short fontNameID = compFontNameIDs[0][0][0];
         short fileNameID = getComponentFileID(fontNameID);
         final String fileName = mapFileName(getComponentFileName(fileNameID));
+        @SuppressWarnings("removal")
         Boolean exists = java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Boolean>() {
                  public Boolean run() {
@@ -203,14 +203,12 @@ public abstract class FontConfiguration {
         getInstalledFallbackFonts(javaLib);
 
         if (f != null) {
-            try {
-                FileInputStream in = new FileInputStream(f.getPath());
+            try (FileInputStream in = new FileInputStream(f.getPath())) {
                 if (isProperties) {
                     loadProperties(in);
                 } else {
                     loadBinary(in);
                 }
-                in.close();
                 if (FontUtilities.debugFonts()) {
                     logger.config("Read logical font configuration from " + f);
                 }
@@ -849,7 +847,7 @@ public abstract class FontConfiguration {
             start = end + 1;
         }
         if (sequence.length() > start) {
-            parts.add(sequence.substring(start, sequence.length()));
+            parts.add(sequence.substring(start));
         }
         return parts;
     }
@@ -962,9 +960,12 @@ public abstract class FontConfiguration {
             return fc.newEncoder();
         }
 
-        if (!charsetName.startsWith("sun.awt.") && !charsetName.equals("default")) {
+        if (!charsetName.startsWith("sun.awt.") &&
+            !charsetName.equals("default") &&
+            !charsetName.startsWith("sun.font.")) {
             fc = Charset.forName(charsetName);
         } else {
+            @SuppressWarnings("removal")
             Class<?> fcc = AccessController.doPrivileged(new PrivilegedAction<Class<?>>() {
                     public Class<?> run() {
                         try {
@@ -1373,6 +1374,7 @@ public abstract class FontConfiguration {
 
         //This method will only be called during build time, do we
         //need do PrivilegedAction?
+        @SuppressWarnings("removal")
         String osName = java.security.AccessController.doPrivileged(
                             new java.security.PrivilegedAction<String>() {
             public String run() {

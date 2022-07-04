@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -314,6 +314,7 @@ protected:
   DCmdArgument<char*> _filename;
   DCmdArgument<bool>  _all;
   DCmdArgument<jlong> _gzip;
+  DCmdArgument<bool> _overwrite;
 public:
   HeapDumpDCmd(outputStream* output, bool heap);
   static const char* name() {
@@ -339,6 +340,7 @@ public:
 class ClassHistogramDCmd : public DCmdWithParser {
 protected:
   DCmdArgument<bool> _all;
+  DCmdArgument<jlong> _parallel_thread_num;
 public:
   ClassHistogramDCmd(outputStream* output, bool heap);
   static const char* name() {
@@ -369,7 +371,7 @@ public:
     return "VM.class_hierarchy";
   }
   static const char* description() {
-    return "Print a list of all loaded classes, indented to show the class hiearchy. "
+    return "Print a list of all loaded classes, indented to show the class hierarchy. "
            "The name of each class is followed by the ClassLoaderData* of its ClassLoader, "
            "or \"null\" if loaded by the bootstrap class loader.";
   }
@@ -856,6 +858,28 @@ public:
   virtual void execute(DCmdSource source, TRAPS);
 };
 
+class ClassesDCmd : public DCmdWithParser {
+protected:
+  DCmdArgument<bool> _verbose;
+public:
+  ClassesDCmd(outputStream* output, bool heap);
+  static const char* name() {
+    return "VM.classes";
+  }
+  static const char* description() {
+    return "Print all loaded classes";
+  }
+  static const char* impact() {
+      return "Medium: Depends on number of loaded classes.";
+  }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission",
+                        "monitor", NULL};
+    return p;
+  }
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
 #if INCLUDE_JVMTI
 class DebugOnCmdStartDCmd : public DCmd {
 public:
@@ -897,6 +921,32 @@ public:
                         "monitor", NULL};
     return p;
   }
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
+class ThreadDumpToFileDCmd : public DCmdWithParser {
+private:
+  void dumpToFile(Symbol* name, Symbol* signature, const char* path, bool overwrite, TRAPS);
+protected:
+  DCmdArgument<bool> _overwrite;
+  DCmdArgument<char*> _format;
+  DCmdArgument<char*> _filepath;
+public:
+  ThreadDumpToFileDCmd(outputStream *output, bool heap);
+  static const char *name() {
+    return "Thread.dump_to_file";
+  }
+  static const char *description() {
+    return "Dump threads, with stack traces, to a file in plain text or JSON format.";
+  }
+  static const char* impact() {
+    return "Medium: Depends on the number of threads.";
+  }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission", "monitor", NULL};
+    return p;
+  }
+  static int num_arguments();
   virtual void execute(DCmdSource source, TRAPS);
 };
 

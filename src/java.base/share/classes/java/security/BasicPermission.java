@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * <P>
  * The name for a BasicPermission is the name of the given permission
  * (for example, "exit",
- * "setFactory", "print.queueJob", etc). The naming
+ * "setFactory", "print.queueJob", etc.). The naming
  * convention follows the  hierarchical property naming convention.
  * An asterisk may appear by itself, or if immediately preceded by a "."
  * may appear at the end of the name, to signify a wildcard match.
@@ -364,27 +364,25 @@ final class BasicPermissionCollection
      */
     @Override
     public void add(Permission permission) {
-        if (! (permission instanceof BasicPermission))
+        if (!(permission instanceof BasicPermission basicPermission))
             throw new IllegalArgumentException("invalid permission: "+
                                                permission);
         if (isReadOnly())
             throw new SecurityException("attempt to add a Permission to a readonly PermissionCollection");
-
-        BasicPermission bp = (BasicPermission) permission;
 
         // make sure we only add new BasicPermissions of the same class
         // Also check null for compatibility with deserialized form from
         // previous versions.
         if (permClass == null) {
             // adding first permission
-            permClass = bp.getClass();
+            permClass = basicPermission.getClass();
         } else {
-            if (bp.getClass() != permClass)
+            if (basicPermission.getClass() != permClass)
                 throw new IllegalArgumentException("invalid permission: " +
                                                 permission);
         }
 
-        String canonName = bp.getCanonicalName();
+        String canonName = basicPermission.getCanonicalName();
         perms.put(canonName, permission);
 
         // No sync on all_allowed; staleness OK
@@ -405,13 +403,11 @@ final class BasicPermissionCollection
      */
     @Override
     public boolean implies(Permission permission) {
-        if (! (permission instanceof BasicPermission))
+        if (!(permission instanceof BasicPermission basicPermission))
             return false;
 
-        BasicPermission bp = (BasicPermission) permission;
-
         // random subclasses of BasicPermission do not imply each other
-        if (bp.getClass() != permClass)
+        if (basicPermission.getClass() != permClass)
             return false;
 
         // short circuit if the "*" Permission was added
@@ -422,7 +418,7 @@ final class BasicPermissionCollection
         // Check for full match first. Then work our way up the
         // path looking for matches on a.b..*
 
-        String path = bp.getCanonicalName();
+        String path = basicPermission.getCanonicalName();
         //System.out.println("check "+path);
 
         Permission x = perms.get(path);

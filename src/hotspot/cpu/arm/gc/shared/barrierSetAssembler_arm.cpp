@@ -26,7 +26,7 @@
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/universe.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 
 #define __ masm->
 
@@ -140,11 +140,6 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
 #endif
   default: Unimplemented();
   }
-}
-
-void BarrierSetAssembler::obj_equals(MacroAssembler* masm,
-                                     Register obj1, Register obj2) {
-  __ cmp(obj1, obj2);
 }
 
 // Puts address of allocated object into register `obj` and end of allocated object into register `obj_end`.

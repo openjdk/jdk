@@ -30,7 +30,7 @@
  * @key randomness
  * @modules jdk.crypto.cryptoki
  * @run main/othervm TestSignatures
- * @run main/othervm TestSignatures sm rsakeys.ks.policy
+ * @run main/othervm -Djava.security.manager=allow TestSignatures sm rsakeys.ks.policy
  */
 
 import java.io.File;

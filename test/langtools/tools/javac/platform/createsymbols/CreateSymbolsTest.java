@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8072480
+ * @bug 8072480 8277106
  * @summary Unit test for CreateSymbols
  * @modules java.compiler
  *          jdk.compiler/com.sun.tools.javac.api

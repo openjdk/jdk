@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,9 @@ package com.sun.net.httpserver;
 import java.io.IOException;
 import java.net.BindException;
 import java.net.InetSocketAddress;
+import java.util.Arrays;
+import java.util.Objects;
+
 import com.sun.net.httpserver.spi.HttpServerProvider;
 
 /**
@@ -90,6 +93,61 @@ public abstract class HttpsServer extends HttpServer {
     public static HttpsServer create(InetSocketAddress addr, int backlog) throws IOException {
         HttpServerProvider provider = HttpServerProvider.provider();
         return provider.createHttpsServer(addr, backlog);
+    }
+
+    /**
+     * Creates an {@code HttpsServer} instance with an initial context.
+     *
+     * <p> The server is created with an <i>initial context</i> that maps the
+     * URI {@code path} to the exchange {@code handler}. The initial context is
+     * created as if by an invocation of
+     * {@link HttpsServer#createContext(String) createContext(path)}. The
+     * {@code filters}, if any, are added to the initial context, in the order
+     * they are given. The returned server is not started so can be configured
+     * further if required.
+     *
+     * <p> The server instance will bind to the given
+     * {@link java.net.InetSocketAddress}.
+     *
+     * <p> A maximum backlog can also be specified. This is the maximum number
+     * of queued incoming connections to allow on the listening socket.
+     * Queued TCP connections exceeding this limit may be rejected by
+     * the TCP implementation. The HttpsServer is acquired from the currently
+     * installed {@link HttpServerProvider}.
+     *
+     * <p> The server must have an HttpsConfigurator established with
+     * {@link #setHttpsConfigurator(HttpsConfigurator)}.
+     *
+     * @param addr    the address to listen on, if {@code null} then
+     *                {@link #bind bind} must be called to set the address
+     * @param backlog the socket backlog. If this value is less than or
+     *                equal to zero, then a system default value is used
+     * @param path    the root URI path of the context, must be absolute
+     * @param handler the HttpHandler for the context
+     * @param filters the Filters for the context, optional
+     * @return the HttpsServer
+     * @throws BindException            if the server cannot bind to the address
+     * @throws IOException              if an I/O error occurs
+     * @throws IllegalArgumentException if path is invalid
+     * @throws NullPointerException     if any of: {@code path}, {@code handler},
+     *        {@code filters}, or any element of {@code filters}, are {@code null}
+     * @since 18
+     */
+    public static HttpsServer create(InetSocketAddress addr,
+                                    int backlog,
+                                    String path,
+                                    HttpHandler handler,
+                                    Filter... filters) throws IOException {
+        Objects.requireNonNull(path);
+        Objects.requireNonNull(handler);
+        Objects.requireNonNull(filters);
+        Arrays.stream(filters).forEach(Objects::requireNonNull);
+
+        HttpsServer server = HttpsServer.create(addr, backlog);
+        HttpContext context = server.createContext(path);
+        context.setHandler(handler);
+        Arrays.stream(filters).forEach(f -> context.getFilters().add(f));
+        return server;
     }
 
     /**

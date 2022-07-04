@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -266,12 +266,8 @@ class GraphKit : public Phase {
   JVMState* transfer_exceptions_into_jvms();
 
   // Helper to throw a built-in exception.
-  // Range checks take the offending index.
-  // Cast and array store checks take the offending class.
-  // Others do not take the optional argument.
-  // The JVMS must allow the bytecode to be re-executed
-  // via an uncommon trap.
-  void builtin_throw(Deoptimization::DeoptReason reason, Node* arg = NULL);
+  // The JVMS must allow the bytecode to be re-executed via an uncommon trap.
+  void builtin_throw(Deoptimization::DeoptReason reason);
 
   // Helper to check the JavaThread::_should_post_on_exceptions flag
   // and branch to an uncommon_trap if it is true (with the specified reason and must_throw)
@@ -343,6 +339,12 @@ class GraphKit : public Phase {
   Node* load_object_klass(Node* object);
   // Find out the length of an array.
   Node* load_array_length(Node* array);
+  // Cast array allocation's length as narrow as possible.
+  // If replace_length_in_map is true, replace length with CastIINode in map.
+  // This method is invoked after creating/moving ArrayAllocationNode or in load_array_length
+  Node* array_ideal_length(AllocateArrayNode* alloc,
+                           const TypeOopPtr* oop_type,
+                           bool replace_length_in_map);
 
 
   // Helper function to do a NULL pointer check or ZERO check based on type.
@@ -418,7 +420,7 @@ class GraphKit : public Phase {
 
   // Use the type profile to narrow an object type.
   Node* maybe_cast_profiled_receiver(Node* not_null_obj,
-                                     ciKlass* require_klass,
+                                     const TypeKlassPtr* require_klass,
                                      ciKlass* spec,
                                      bool safe_for_replace);
 
@@ -587,7 +589,7 @@ class GraphKit : public Phase {
   // Perform decorated accesses
 
   Node* access_store_at(Node* obj,   // containing obj
-                        Node* adr,   // actual adress to store val at
+                        Node* adr,   // actual address to store val at
                         const TypePtr* adr_type,
                         Node* val,
                         const Type* val_type,
@@ -595,13 +597,13 @@ class GraphKit : public Phase {
                         DecoratorSet decorators);
 
   Node* access_load_at(Node* obj,   // containing obj
-                       Node* adr,   // actual adress to load val at
+                       Node* adr,   // actual address to load val at
                        const TypePtr* adr_type,
                        const Type* val_type,
                        BasicType bt,
                        DecoratorSet decorators);
 
-  Node* access_load(Node* adr,   // actual adress to load val at
+  Node* access_load(Node* adr,   // actual address to load val at
                     const Type* val_type,
                     BasicType bt,
                     DecoratorSet decorators);
@@ -654,7 +656,7 @@ class GraphKit : public Phase {
                               Node* ctrl = NULL);
 
   // Return a load of array element at idx.
-  Node* load_array_element(Node* ctl, Node* ary, Node* idx, const TypeAryPtr* arytype);
+  Node* load_array_element(Node* ary, Node* idx, const TypeAryPtr* arytype, bool set_ctrl);
 
   //---------------- Dtrace support --------------------
   void make_dtrace_method_entry_exit(ciMethod* method, bool is_entry);
@@ -726,25 +728,25 @@ class GraphKit : public Phase {
   // The optional klass is the one causing the trap.
   // The optional reason is debug information written to the compile log.
   // Optional must_throw is the same as with add_safepoint_edges.
-  void uncommon_trap(int trap_request,
+  Node* uncommon_trap(int trap_request,
                      ciKlass* klass = NULL, const char* reason_string = NULL,
                      bool must_throw = false, bool keep_exact_action = false);
 
   // Shorthand, to avoid saying "Deoptimization::" so many times.
-  void uncommon_trap(Deoptimization::DeoptReason reason,
+  Node* uncommon_trap(Deoptimization::DeoptReason reason,
                      Deoptimization::DeoptAction action,
                      ciKlass* klass = NULL, const char* reason_string = NULL,
                      bool must_throw = false, bool keep_exact_action = false) {
-    uncommon_trap(Deoptimization::make_trap_request(reason, action),
+    return uncommon_trap(Deoptimization::make_trap_request(reason, action),
                   klass, reason_string, must_throw, keep_exact_action);
   }
 
   // Bail out to the interpreter and keep exact action (avoid switching to Action_none).
-  void uncommon_trap_exact(Deoptimization::DeoptReason reason,
+  Node* uncommon_trap_exact(Deoptimization::DeoptReason reason,
                            Deoptimization::DeoptAction action,
                            ciKlass* klass = NULL, const char* reason_string = NULL,
                            bool must_throw = false) {
-    uncommon_trap(Deoptimization::make_trap_request(reason, action),
+    return uncommon_trap(Deoptimization::make_trap_request(reason, action),
                   klass, reason_string, must_throw, /*keep_exact_action=*/true);
   }
 
@@ -777,16 +779,12 @@ class GraphKit : public Phase {
   public:
   // Helper function to round double arguments before a call
   void round_double_arguments(ciMethod* dest_method);
-  void round_double_result(ciMethod* dest_method);
 
   // rounding for strict float precision conformance
   Node* precision_rounding(Node* n);
 
   // rounding for strict double precision conformance
   Node* dprecision_rounding(Node* n);
-
-  // rounding for non-strict double stores
-  Node* dstore_rounding(Node* n);
 
   // Helper functions for fast/slow path codes
   Node* opt_iff(Node* region, Node* iff);
@@ -802,8 +800,6 @@ class GraphKit : public Phase {
   Node* sign_extend_byte(Node* in);
   Node* sign_extend_short(Node* in);
 
-  Node* make_native_call(const TypeFunc* call_type, uint nargs, ciNativeEntryPoint* nep);
-
   enum {  // flag values for make_runtime_call
     RC_NO_FP = 1,               // CallLeafNoFPNode
     RC_NO_IO = 2,               // do not hook IO edges
@@ -811,6 +807,7 @@ class GraphKit : public Phase {
     RC_MUST_THROW = 8,          // flag passed to add_safepoint_edges
     RC_NARROW_MEM = 16,         // input memory is same as output
     RC_UNCOMMON = 32,           // freq. expected to be like uncommon trap
+    RC_VECTOR = 64,             // CallLeafVectorNode
     RC_LEAF = 0                 // null value:  no flags set
   };
 

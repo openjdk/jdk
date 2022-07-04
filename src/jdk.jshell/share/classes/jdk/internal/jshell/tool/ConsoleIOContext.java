@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import java.io.InterruptedIOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.URI;
-import java.nio.charset.Charset;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -45,9 +44,15 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -63,6 +68,7 @@ import jdk.internal.org.jline.keymap.KeyMap;
 import jdk.internal.org.jline.reader.Binding;
 import jdk.internal.org.jline.reader.EOFError;
 import jdk.internal.org.jline.reader.EndOfFileException;
+import jdk.internal.org.jline.reader.Highlighter;
 import jdk.internal.org.jline.reader.History;
 import jdk.internal.org.jline.reader.LineReader;
 import jdk.internal.org.jline.reader.LineReader.Option;
@@ -79,20 +85,29 @@ import jdk.internal.org.jline.terminal.Attributes.LocalFlag;
 import jdk.internal.org.jline.terminal.Size;
 import jdk.internal.org.jline.terminal.Terminal;
 import jdk.internal.org.jline.terminal.TerminalBuilder;
+import jdk.internal.org.jline.utils.AttributedString;
+import jdk.internal.org.jline.utils.AttributedStringBuilder;
+import jdk.internal.org.jline.utils.AttributedStyle;
 import jdk.internal.org.jline.utils.Display;
 import jdk.internal.org.jline.utils.NonBlocking;
 import jdk.internal.org.jline.utils.NonBlockingInputStreamImpl;
 import jdk.internal.org.jline.utils.NonBlockingReader;
+import jdk.internal.org.jline.utils.OSUtils;
 import jdk.jshell.ExpressionSnippet;
 import jdk.jshell.Snippet;
 import jdk.jshell.Snippet.SubKind;
+import jdk.jshell.SourceCodeAnalysis.Attribute;
 import jdk.jshell.SourceCodeAnalysis.CompletionInfo;
+import jdk.jshell.SourceCodeAnalysis.Highlight;
 import jdk.jshell.VarSnippet;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 class ConsoleIOContext extends IOContext {
 
     private static final String HISTORY_LINE_PREFIX = "HISTORY_LINE_";
 
+    private final ExecutorService backgroundWork = Executors.newFixedThreadPool(1);
     final boolean allowIncompleteInputs;
     final JShellTool repl;
     final StopDetectingInputStream input;
@@ -103,8 +118,8 @@ class ConsoleIOContext extends IOContext {
 
     String prefix = "";
 
-    ConsoleIOContext(JShellTool repl, InputStream cmdin, PrintStream cmdout) throws Exception {
-        this.allowIncompleteInputs = Boolean.getBoolean("jshell.test.allow.incomplete.inputs");
+    ConsoleIOContext(JShellTool repl, InputStream cmdin, PrintStream cmdout,
+                     boolean interactive) throws Exception {
         this.repl = repl;
         Map<String, Object> variables = new HashMap<>();
         this.input = new StopDetectingInputStream(() -> repl.stop(),
@@ -116,79 +131,54 @@ class ConsoleIOContext extends IOContext {
             }
         };
         Terminal terminal;
-        if (System.getProperty("test.jdk") != null) {
-            terminal = new TestTerminal(nonBlockingInput, cmdout);
+        boolean allowIncompleteInputs = Boolean.getBoolean("jshell.test.allow.incomplete.inputs");
+        Consumer<LineReaderImpl> setupReader = r -> {};
+        boolean useComplexDeprecationHighlight = false;
+        if (cmdin != System.in) {
+            boolean enableHighlighter;
+            setupReader = r -> {};
+            if (System.getProperty("test.jdk") != null) {
+                terminal = new TestTerminal(nonBlockingInput, cmdout);
+                enableHighlighter = Boolean.getBoolean("test.enable.highlighter");
+            } else {
+                Size size = null;
+                terminal = new ProgrammaticInTerminal(nonBlockingInput, cmdout, interactive,
+                                                      size);
+                if (!interactive) {
+                    setupReader = setupReader.andThen(r -> r.unsetOpt(Option.BRACKETED_PASTE));
+                    allowIncompleteInputs = true;
+                }
+                enableHighlighter = interactive;
+            }
+            setupReader = setupReader.andThen(r -> r.option(Option.DISABLE_HIGHLIGHTER, !enableHighlighter));
             input.setInputStream(cmdin);
         } else {
             terminal = TerminalBuilder.builder().inputStreamWrapper(in -> {
                 input.setInputStream(in);
                 return nonBlockingInput;
             }).build();
+            useComplexDeprecationHighlight = !OSUtils.IS_WINDOWS;
         }
+        this.allowIncompleteInputs = allowIncompleteInputs;
         originalAttributes = terminal.getAttributes();
         Attributes noIntr = new Attributes(originalAttributes);
         noIntr.setControlChar(ControlChar.VINTR, 0);
         terminal.setAttributes(noIntr);
         terminal.enterRawMode();
-        LineReaderImpl reader = new LineReaderImpl(terminal, "jshell", variables) {
-            {
-                //jline can handle the CONT signal on its own, but (currently) requires sun.misc for it
-                try {
-                    Signal.handle(new Signal("CONT"), new Handler() {
-                        @Override public void handle(Signal sig) {
-                            try {
-                                handleSignal(jdk.internal.org.jline.terminal.Terminal.Signal.CONT);
-                            } catch (Exception ex) {
-                                ex.printStackTrace();
-                            }
-                        }
-                    });
-                } catch (IllegalArgumentException ignored) {
-                    //the CONT signal does not exist on this platform
-                }
-            }
-            CompletionState completionState = new CompletionState();
-            @Override
-            protected boolean doComplete(CompletionType lst, boolean useMenu, boolean prefix) {
-                return ConsoleIOContext.this.complete(completionState);
-            }
-            @Override
-            public Binding readBinding(KeyMap<Binding> keys, KeyMap<Binding> local) {
-                completionState.actionCount++;
-                return super.readBinding(keys, local);
-            }
-            @Override
-            protected boolean insertCloseParen() {
-                Object oldIndent = getVariable(INDENTATION);
-                try {
-                    setVariable(INDENTATION, 0);
-                    return super.insertCloseParen();
-                } finally {
-                    setVariable(INDENTATION, oldIndent);
-                }
-            }
-            @Override
-            protected boolean insertCloseSquare() {
-                Object oldIndent = getVariable(INDENTATION);
-                try {
-                    setVariable(INDENTATION, 0);
-                    return super.insertCloseSquare();
-                } finally {
-                    setVariable(INDENTATION, oldIndent);
-                }
-            }
-        };
+        LineReaderImpl reader = new JShellLineReader(terminal, "jshell", variables);
 
+        setupReader.accept(reader);
         reader.setOpt(Option.DISABLE_EVENT_EXPANSION);
 
         reader.setParser((line, cursor, context) -> {
-            if (!allowIncompleteInputs && !repl.isComplete(line)) {
+            if (!ConsoleIOContext.this.allowIncompleteInputs && !repl.isComplete(line)) {
                 int pendingBraces = countPendingOpenBraces(line);
                 throw new EOFError(cursor, cursor, line, null, pendingBraces, null);
             }
             return new ArgumentLine(line, cursor);
         });
 
+        reader.setHighlighter(new HighlighterImpl(useComplexDeprecationHighlight));
         reader.getKeyMaps().get(LineReader.MAIN)
               .bind((Widget) () -> fixes(), FIXES_SHORTCUT);
         reader.getKeyMaps().get(LineReader.MAIN)
@@ -230,7 +220,7 @@ class ConsoleIOContext extends IOContext {
         this.prefix = prefix;
         try {
             in.setVariable(LineReader.SECONDARY_PROMPT_PATTERN, continuationPrompt);
-            return in.readLine(firstLinePrompt);
+            return in.readLine(firstLine ? firstLinePrompt : continuationPrompt);
         } catch (UserInterruptException ex) {
             throw (InputInterruptedException) new InputInterruptedException().initCause(ex);
         } catch (EndOfFileException ex) {
@@ -280,6 +270,7 @@ class ConsoleIOContext extends IOContext {
             throw new IOException(ex);
         }
         input.shutdown();
+        backgroundWork.shutdown();
     }
 
     private Stream<String> toSplitEntries(String entry) {
@@ -1276,28 +1267,31 @@ class ConsoleIOContext extends IOContext {
         return in.getHistory();
     }
 
-    private static final class TestTerminal extends LineDisciplineTerminal {
+    private static class ProgrammaticInTerminal extends LineDisciplineTerminal {
 
-        private static final int DEFAULT_HEIGHT = 24;
+        protected static final int DEFAULT_HEIGHT = 24;
 
         private final NonBlockingReader inputReader;
+        private final Size bufferSize;
 
-        public TestTerminal(InputStream input, OutputStream output) throws Exception {
-            super("test", "ansi", output, Charset.forName("UTF-8"));
+        public ProgrammaticInTerminal(InputStream input, OutputStream output,
+                                       boolean interactive, Size size) throws Exception {
+            this(input, output, interactive ? "ansi" : "dumb",
+                 size != null ? size : new Size(80, DEFAULT_HEIGHT),
+                 size != null ? size
+                              : interactive ? new Size(80, DEFAULT_HEIGHT)
+                                            : new Size(Integer.MAX_VALUE - 1, DEFAULT_HEIGHT));
+        }
+
+        protected ProgrammaticInTerminal(InputStream input, OutputStream output,
+                                         String terminal, Size size, Size bufferSize) throws Exception {
+            super("non-system-in", terminal, output, UTF_8);
             this.inputReader = NonBlocking.nonBlocking(getName(), input, encoding());
             Attributes a = new Attributes(getAttributes());
             a.setLocalFlag(LocalFlag.ECHO, false);
             setAttributes(attributes);
-            int h = DEFAULT_HEIGHT;
-            try {
-                String hp = System.getProperty("test.terminal.height");
-                if (hp != null && !hp.isEmpty()) {
-                    h = Integer.parseInt(hp);
-                }
-            } catch (Throwable ex) {
-                // ignore
-            }
-            setSize(new Size(80, h));
+            setSize(size);
+            this.bufferSize = bufferSize;
         }
 
         @Override
@@ -1312,6 +1306,31 @@ class ConsoleIOContext extends IOContext {
             inputReader.close();
         }
 
+        @Override
+        public Size getBufferSize() {
+            return bufferSize;
+        }
+    }
+
+    private static final class TestTerminal extends ProgrammaticInTerminal {
+        private static Size computeSize() {
+            int h = DEFAULT_HEIGHT;
+            try {
+                String hp = System.getProperty("test.terminal.height");
+                if (hp != null && !hp.isEmpty() && System.getProperty("test.jdk") != null) {
+                    h = Integer.parseInt(hp);
+                }
+            } catch (Throwable ex) {
+                // ignore
+            }
+            return new Size(80, h);
+        }
+        public TestTerminal(InputStream input, OutputStream output) throws Exception {
+            this(input, output, computeSize());
+        }
+        private TestTerminal(InputStream input, OutputStream output, Size size) throws Exception {
+            super(input, output, "ansi", size, size);
+        }
     }
 
     private static final class CompletionState {
@@ -1322,4 +1341,149 @@ class ConsoleIOContext extends IOContext {
         public List<CompletionTask> todo = Collections.emptyList();
     }
 
+    private class HighlighterImpl implements Highlighter {
+
+        private final boolean useComplexDeprecationHighlight;
+        private List<UIHighlight> highlights;
+        private String prevBuffer;
+
+        public HighlighterImpl(boolean useComplexDeprecationHighlight) {
+            this.useComplexDeprecationHighlight = useComplexDeprecationHighlight;
+        }
+
+        @Override
+        public AttributedString highlight(LineReader reader, String buffer) {
+            AttributedStringBuilder builder = new AttributedStringBuilder();
+            List<UIHighlight> highlights;
+            synchronized (this) {
+                highlights = this.highlights;
+            }
+            int idx = 0;
+            if (highlights != null) {
+                for (UIHighlight h : highlights) {
+                    if (h.end <= buffer.length() && h.content.equals(buffer.substring(h.start, h.end))) {
+                        builder.append(buffer.substring(idx, h.start));
+                        builder.append(buffer.substring(h.start, h.end), h.style);
+                        idx = h.end;
+                    }
+                }
+            }
+            builder.append(buffer.substring(idx, buffer.length()));
+            synchronized (this) {
+                if (!buffer.equals(prevBuffer)) {
+                    prevBuffer = buffer;
+                    backgroundWork.submit(() -> {
+                        synchronized (HighlighterImpl.this) {
+                            if (!buffer.equals(prevBuffer)) {
+                                return ;
+                            }
+                        }
+                        List<UIHighlight> computedHighlights = new ArrayList<>();
+                        for (Highlight h : repl.analysis.highlights(buffer)) {
+                            computedHighlights.add(new UIHighlight(h.start(), h.end(), buffer.substring(h.start(), h.end()), toAttributedStyle(h.attributes())));
+                        }
+                        synchronized (HighlighterImpl.this) {
+                            if (buffer.equals(prevBuffer)) {
+                                HighlighterImpl.this.highlights = computedHighlights;
+                            }
+                        }
+                        ((JShellLineReader) reader).repaint();
+                    });
+                }
+            }
+            return builder.toAttributedString();
+        }
+
+        private AttributedStyle toAttributedStyle(Set<Attribute> attributes) {
+            AttributedStyle result = AttributedStyle.DEFAULT;
+            if (attributes.contains(Attribute.DECLARATION)) {
+                result = result.bold();
+            }
+            if (attributes.contains(Attribute.DEPRECATED)) {
+                result = useComplexDeprecationHighlight ? result.faint().italic()
+                                                        : result.inverse();
+            }
+            if (attributes.contains(Attribute.KEYWORD)) {
+                result = result.underline();
+            }
+            return result;
+        }
+
+        @Override
+        public void setErrorPattern(Pattern errorPattern) {
+        }
+
+        @Override
+        public void setErrorIndex(int errorIndex) {
+        }
+
+        record UIHighlight(int start, int end, String content, AttributedStyle style) {}
+    }
+
+    private class JShellLineReader extends LineReaderImpl {
+
+        public JShellLineReader(Terminal terminal, String appName, Map<String, Object> variables) {
+            super(terminal, appName, variables);
+            //jline can handle the CONT signal on its own, but (currently) requires sun.misc for it
+            try {
+                Signal.handle(new Signal("CONT"), new Handler() {
+                    @Override public void handle(Signal sig) {
+                        try {
+                            handleSignal(jdk.internal.org.jline.terminal.Terminal.Signal.CONT);
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
+                        }
+                    }
+                });
+            } catch (IllegalArgumentException ignored) {
+                //the CONT signal does not exist on this platform
+            }
+        }
+
+        CompletionState completionState = new CompletionState();
+
+        @Override
+        protected boolean doComplete(CompletionType lst, boolean useMenu, boolean prefix) {
+            return ConsoleIOContext.this.complete(completionState);
+        }
+
+        @Override
+        public Binding readBinding(KeyMap<Binding> keys, KeyMap<Binding> local) {
+            completionState.actionCount++;
+            return super.readBinding(keys, local);
+        }
+
+        @Override
+        protected boolean insertCloseParen() {
+            Object oldIndent = getVariable(INDENTATION);
+            try {
+                setVariable(INDENTATION, 0);
+                return super.insertCloseParen();
+            } finally {
+                setVariable(INDENTATION, oldIndent);
+            }
+        }
+
+        @Override
+        protected boolean insertCloseSquare() {
+            Object oldIndent = getVariable(INDENTATION);
+            try {
+                setVariable(INDENTATION, 0);
+                return super.insertCloseSquare();
+            } finally {
+                setVariable(INDENTATION, oldIndent);
+            }
+        }
+
+        void repaint() {
+            try {
+                lock.lock();
+                if (isReading()) {
+                    redisplay();
+                }
+            } finally {
+                lock.unlock();
+            }
+        }
+    }
 }

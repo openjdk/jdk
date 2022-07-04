@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,9 +85,6 @@ void ciFlags::print_member_flags(outputStream* st) {
   }
   if (is_abstract()) {
     st->print(",abstract");
-  }
-  if (is_strict()) {
-    st->print(",strict");
   }
 
 }

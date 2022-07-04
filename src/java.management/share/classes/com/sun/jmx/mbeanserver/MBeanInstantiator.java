@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -243,13 +243,7 @@ public class MBeanInstantiator {
             throw new ReflectionException(new
                 NoSuchMethodException("No constructor"),
                                           "No such constructor");
-        } catch (InstantiationException e) {
-            throw new ReflectionException(e,
-            "Exception thrown trying to invoke the MBean's empty constructor");
-        } catch (IllegalAccessException e) {
-            throw new ReflectionException(e,
-            "Exception thrown trying to invoke the MBean's empty constructor");
-        } catch (IllegalArgumentException e) {
+        } catch (InstantiationException | IllegalArgumentException | IllegalAccessException e) {
             throw new ReflectionException(e,
             "Exception thrown trying to invoke the MBean's empty constructor");
         }
@@ -308,11 +302,7 @@ public class MBeanInstantiator {
                 NoSuchMethodException("No such constructor found"),
                                           "No such constructor" );
         }
-        catch (InstantiationException e) {
-            throw new ReflectionException(e,
-                "Exception thrown trying to invoke the MBean's constructor");
-        }
-        catch (IllegalAccessException e) {
+        catch (InstantiationException | IllegalAccessException e) {
             throw new ReflectionException(e,
                 "Exception thrown trying to invoke the MBean's constructor");
         }
@@ -739,6 +729,7 @@ public class MBeanInstantiator {
                                              ObjectName objectName,
                                              String actions)
         throws SecurityException {
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             Permission perm = new MBeanPermission(classname,
@@ -767,7 +758,9 @@ public class MBeanInstantiator {
         permissions.add(new MBeanPermission("*", null, name, "getClassLoader"));
         ProtectionDomain protectionDomain = new ProtectionDomain(null, permissions);
         ProtectionDomain[] domains = {protectionDomain};
+        @SuppressWarnings("removal")
         AccessControlContext ctx = new AccessControlContext(domains);
+        @SuppressWarnings("removal")
         ClassLoader loader = AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
             public ClassLoader run() {
                 return clr.getClassLoader(name);

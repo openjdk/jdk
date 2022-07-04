@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,11 @@
  */
 package vm.compiler.coverage.parentheses.share;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.Field;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
-import jdk.internal.misc.Unsafe;
 
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
@@ -35,7 +36,7 @@ import java.util.List;
 
 /**
  * This class convert instructions sequence to java class file, load it to same JVM and then execute.
- * This class uses Unsafe.defineAnonymousClass for class loading
+ * This class uses hidden classes for class loading
  */
 public class HotspotInstructionsExecutor implements InstructionsExecutor {
 
@@ -54,8 +55,9 @@ public class HotspotInstructionsExecutor implements InstructionsExecutor {
         return (Integer) execMethod.invoke(null);
     }
 
-    private Class generateClass(List<Instruction> instructions) throws ClassNotFoundException {
-        String classNameForASM = "ExecClass";
+    private Class generateClass(List<Instruction> instructions) throws ReflectiveOperationException {
+        // Needs to be in the same package as the lookup class.
+        String classNameForASM = "vm/compiler/coverage/parentheses/share/ExecClass";
 
         ClassWriter cw = new ClassWriter(0);
         cw.visit(V1_1, ACC_PUBLIC, classNameForASM, null, "java/lang/Object", null);
@@ -71,10 +73,8 @@ public class HotspotInstructionsExecutor implements InstructionsExecutor {
         mw.visitMaxs(stackSize, 2);
         mw.visitEnd();
 
-        return getUnsafe().defineAnonymousClass(ClassWriter.class, cw.toByteArray(), NO_CP_PATCHES);
-    }
-
-    private static Unsafe getUnsafe() {
-        return Unsafe.getUnsafe();
+        Lookup lookup = MethodHandles.lookup();
+        Class<?> hc = lookup.defineHiddenClass(cw.toByteArray(), false).lookupClass();
+        return hc;
     }
 }

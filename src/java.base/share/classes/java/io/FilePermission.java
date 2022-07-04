@@ -179,7 +179,7 @@ public final class FilePermission extends Permission implements Serializable {
     private static final char WILD_CHAR = '*';
 
 //    public String toString() {
-//        StringBuffer sb = new StringBuffer();
+//        StringBuilder sb = new StringBuilder();
 //        sb.append("*** FilePermission on " + getName() + " ***");
 //        for (Field f : FilePermission.class.getDeclaredFields()) {
 //            if (!Modifier.isStatic(f.getModifiers())) {
@@ -308,6 +308,7 @@ public final class FilePermission extends Permission implements Serializable {
      * @param mask the actions mask to use.
      *
      */
+    @SuppressWarnings("removal")
     private void init(int mask) {
         if ((mask & ALL) != mask)
                 throw new IllegalArgumentException("invalid actions mask");

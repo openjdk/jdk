@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,13 @@
 
 /*
  * @test
- * @modules jdk.incubator.foreign/jdk.internal.foreign
- *
+ * @enablePreview
+ * @modules java.base/jdk.internal.foreign
  * @run testng TestLayoutEquality
  */
 
-import jdk.incubator.foreign.MemoryLayout;
-import jdk.incubator.foreign.ValueLayout;
+import java.lang.foreign.MemoryAddress;
+import java.lang.foreign.ValueLayout;
 import jdk.internal.foreign.PlatformLayouts;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -39,23 +39,32 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
+import static java.lang.foreign.ValueLayout.ADDRESS;
+import static java.lang.foreign.ValueLayout.JAVA_BOOLEAN;
+import static java.lang.foreign.ValueLayout.JAVA_BYTE;
+import static java.lang.foreign.ValueLayout.JAVA_CHAR;
+import static java.lang.foreign.ValueLayout.JAVA_DOUBLE;
+import static java.lang.foreign.ValueLayout.JAVA_FLOAT;
+import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
+import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 import static org.testng.Assert.*;
 
 public class TestLayoutEquality {
 
     @Test(dataProvider = "layoutConstants")
     public void testReconstructedEquality(ValueLayout layout) {
-        ValueLayout newLayout = MemoryLayout.ofValueBits(layout.bitSize(), layout.order());
+        ValueLayout newLayout = valueLayoutForCarrier(layout.carrier());
+        newLayout = newLayout.withBitAlignment(layout.bitAlignment());
+        newLayout = newLayout.withOrder(layout.order());
 
         // properties should be equal
         assertEquals(newLayout.bitSize(), layout.bitSize());
         assertEquals(newLayout.bitAlignment(), layout.bitAlignment());
         assertEquals(newLayout.name(), layout.name());
-        assertEquals(newLayout.attributes().toArray().length, 0);
-        assertEquals(layout.attributes().toArray().length, 1);
 
-        // but equals should return false, because one is a ValueLayout with a CLinker kind
-        assertNotEquals(newLayout, layout);
+        // layouts should be equals
+        assertEquals(newLayout, layout);
     }
 
     @DataProvider
@@ -76,4 +85,27 @@ public class TestLayoutEquality {
         }
     }
 
+    static ValueLayout valueLayoutForCarrier(Class<?> carrier) {
+        if (carrier == boolean.class) {
+            return JAVA_BOOLEAN;
+        } else if (carrier == char.class) {
+            return JAVA_CHAR;
+        } else if (carrier == byte.class) {
+            return JAVA_BYTE;
+        } else if (carrier == short.class) {
+            return JAVA_SHORT;
+        } else if (carrier == int.class) {
+            return JAVA_INT;
+        } else if (carrier == long.class) {
+            return JAVA_LONG;
+        } else if (carrier == float.class) {
+            return JAVA_FLOAT;
+        } else if (carrier == double.class) {
+            return JAVA_DOUBLE;
+        } else if (carrier == MemoryAddress.class) {
+            return ADDRESS;
+        } else {
+            throw new UnsupportedOperationException();
+        }
+    }
 }

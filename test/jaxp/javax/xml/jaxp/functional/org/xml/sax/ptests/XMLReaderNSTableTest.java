@@ -45,7 +45,7 @@ import org.xml.sax.XMLReader;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true org.xml.sax.ptests.XMLReaderNSTableTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow org.xml.sax.ptests.XMLReaderNSTableTest
  * @run testng/othervm org.xml.sax.ptests.XMLReaderNSTableTest
  */
 @Test

@@ -31,8 +31,8 @@
 #include "oops/array.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/hashtable.inline.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/resizeableResourceHash.hpp"
 #include <type_traits>
 
 // The metadata hierarchy is separate from the oop hierarchy
@@ -128,10 +128,7 @@ public:
     virtual ~Ref() {}
 
     address obj() const {
-      // In some rare cases (see CPSlot in constantPool.hpp) we store some flags in the lowest
-      // 2 bits of a MetaspaceObj pointer. Unmask these when manipulating the pointer.
-      uintx p = (uintx)*mpp();
-      return (address)(p & (~FLAG_MASK));
+      return *addr();
     }
 
     address* addr() const {
@@ -147,14 +144,6 @@ public:
     void* user_data()               { return _user_data; }
     void set_next(Ref* n)           { _next = n; }
     Ref* next() const               { return _next; }
-
-  private:
-    static const uintx FLAG_MASK = 0x03;
-
-    int flag_bits() const {
-      uintx p = (uintx)*mpp();
-      return (int)(p & FLAG_MASK);
-    }
   };
 
 private:
@@ -393,10 +382,11 @@ class UniqueMetaspaceClosure : public MetaspaceClosure {
 public:
   // Gets called the first time we discover an object.
   virtual bool do_unique_ref(Ref* ref, bool read_only) = 0;
-  UniqueMetaspaceClosure() : _has_been_visited(INITIAL_TABLE_SIZE) {}
+  UniqueMetaspaceClosure() : _has_been_visited(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE) {}
 
 private:
-  KVHashtable<address, bool, mtInternal> _has_been_visited;
+  ResizeableResourceHashtable<address, bool, ResourceObj::C_HEAP,
+                              mtClassShared> _has_been_visited;
 };
 
 #endif // SHARE_MEMORY_METASPACECLOSURE_HPP

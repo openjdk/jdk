@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,10 @@
 package java.io;
 
 import java.nio.channels.FileChannel;
+import java.util.Arrays;
+import jdk.internal.misc.Blocker;
+import jdk.internal.util.ArraysSupport;
 import sun.nio.ch.FileChannelImpl;
-
 
 /**
  * A {@code FileInputStream} obtains input bytes
@@ -62,6 +64,8 @@ import sun.nio.ch.FileChannelImpl;
  */
 public class FileInputStream extends InputStream
 {
+    private static final int DEFAULT_BUFFER_SIZE = 8192;
+
     /* File Descriptor - handle to the open file */
     private final FileDescriptor fd;
 
@@ -137,6 +141,7 @@ public class FileInputStream extends InputStream
      */
     public FileInputStream(File file) throws FileNotFoundException {
         String name = (file != null ? file.getPath() : null);
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkRead(name);
@@ -179,6 +184,7 @@ public class FileInputStream extends InputStream
      * @see        SecurityManager#checkRead(java.io.FileDescriptor)
      */
     public FileInputStream(FileDescriptor fdObj) {
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (fdObj == null) {
             throw new NullPointerException();
@@ -208,7 +214,12 @@ public class FileInputStream extends InputStream
      * @param name the name of the file
      */
     private void open(String name) throws FileNotFoundException {
-        open0(name);
+        long comp = Blocker.begin();
+        try {
+            open0(name);
+        } finally {
+            Blocker.end(comp);
+        }
     }
 
     /**
@@ -217,10 +228,16 @@ public class FileInputStream extends InputStream
      *
      * @return     the next byte of data, or {@code -1} if the end of the
      *             file is reached.
-     * @throws     IOException  if an I/O error occurs.
+     * @throws     IOException {@inheritDoc}
      */
+    @Override
     public int read() throws IOException {
-        return read0();
+        long comp = Blocker.begin();
+        try {
+            return read0();
+        } finally {
+            Blocker.end(comp);
+        }
     }
 
     private native int read0() throws IOException;
@@ -232,21 +249,27 @@ public class FileInputStream extends InputStream
      * @param     len the number of bytes that are written
      * @throws    IOException If an I/O error has occurred.
      */
-    private native int readBytes(byte b[], int off, int len) throws IOException;
+    private native int readBytes(byte[] b, int off, int len) throws IOException;
 
     /**
      * Reads up to {@code b.length} bytes of data from this input
      * stream into an array of bytes. This method blocks until some input
      * is available.
      *
-     * @param      b   the buffer into which the data is read.
+     * @param      b   {@inheritDoc}
      * @return     the total number of bytes read into the buffer, or
      *             {@code -1} if there is no more data because the end of
      *             the file has been reached.
      * @throws     IOException  if an I/O error occurs.
      */
-    public int read(byte b[]) throws IOException {
-        return readBytes(b, 0, b.length);
+    @Override
+    public int read(byte[] b) throws IOException {
+        long comp = Blocker.begin();
+        try {
+            return readBytes(b, 0, b.length);
+        } finally {
+            Blocker.end(comp);
+        }
     }
 
     /**
@@ -255,21 +278,142 @@ public class FileInputStream extends InputStream
      * blocks until some input is available; otherwise, no
      * bytes are read and {@code 0} is returned.
      *
-     * @param      b     the buffer into which the data is read.
-     * @param      off   the start offset in the destination array {@code b}
-     * @param      len   the maximum number of bytes read.
-     * @return     the total number of bytes read into the buffer, or
-     *             {@code -1} if there is no more data because the end of
-     *             the file has been reached.
-     * @throws     NullPointerException If {@code b} is {@code null}.
-     * @throws     IndexOutOfBoundsException If {@code off} is negative,
-     *             {@code len} is negative, or {@code len} is greater than
-     *             {@code b.length - off}
+     * @param      b     {@inheritDoc}
+     * @param      off   {@inheritDoc}
+     * @param      len   {@inheritDoc}
+     * @return     {@inheritDoc}
+     * @throws     NullPointerException {@inheritDoc}
+     * @throws     IndexOutOfBoundsException {@inheritDoc}
      * @throws     IOException  if an I/O error occurs.
      */
-    public int read(byte b[], int off, int len) throws IOException {
-        return readBytes(b, off, len);
+    @Override
+    public int read(byte[] b, int off, int len) throws IOException {
+        long comp = Blocker.begin();
+        try {
+            return readBytes(b, off, len);
+        } finally {
+            Blocker.end(comp);
+        }
     }
+
+    @Override
+    public byte[] readAllBytes() throws IOException {
+        long length = length();
+        long position = position();
+        long size = length - position;
+
+        if (length <= 0 || size <= 0)
+            return super.readAllBytes();
+
+        if (size > (long) Integer.MAX_VALUE) {
+            String msg =
+                String.format("Required array size too large for %s: %d = %d - %d",
+                    path, size, length, position);
+            throw new OutOfMemoryError(msg);
+        }
+
+        int capacity = (int)size;
+        byte[] buf = new byte[capacity];
+
+        int nread = 0;
+        int n;
+        for (;;) {
+            // read to EOF which may read more or less than initial size, e.g.,
+            // file is truncated while we are reading
+            while ((n = read(buf, nread, capacity - nread)) > 0)
+                nread += n;
+
+            // if last call to read() returned -1, we are done; otherwise,
+            // try to read one more byte and if that fails we're done too
+            if (n < 0 || (n = read()) < 0)
+                break;
+
+            // one more byte was read; need to allocate a larger buffer
+            capacity = Math.max(ArraysSupport.newLength(capacity,
+                                                        1,         // min growth
+                                                        capacity), // pref growth
+                                DEFAULT_BUFFER_SIZE);
+            buf = Arrays.copyOf(buf, capacity);
+            buf[nread++] = (byte)n;
+        }
+        return (capacity == nread) ? buf : Arrays.copyOf(buf, nread);
+    }
+
+    @Override
+    public byte[] readNBytes(int len) throws IOException {
+        if (len < 0)
+            throw new IllegalArgumentException("len < 0");
+        if (len == 0)
+            return new byte[0];
+
+        long length = length();
+        long position = position();
+        long size = length - position;
+
+        if (length <= 0 || size <= 0)
+            return super.readNBytes(len);
+
+        int capacity = (int)Math.min(len, size);
+        byte[] buf = new byte[capacity];
+
+        int remaining = capacity;
+        int nread = 0;
+        int n;
+        do {
+            n = read(buf, nread, remaining);
+            if (n > 0) {
+                nread += n;
+                remaining -= n;
+            } else if (n == 0) {
+                // Block until a byte is read or EOF is detected
+                byte b = (byte)read();
+                if (b == -1 )
+                    break;
+                buf[nread++] = b;
+                remaining--;
+            }
+        } while (n >= 0 && remaining > 0);
+        return (capacity == nread) ? buf : Arrays.copyOf(buf, nread);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public long transferTo(OutputStream out) throws IOException {
+        long transferred = 0L;
+        if (out instanceof FileOutputStream fos) {
+            FileChannel fc = getChannel();
+            long pos = fc.position();
+            transferred = fc.transferTo(pos, Long.MAX_VALUE, fos.getChannel());
+            long newPos = pos + transferred;
+            fc.position(newPos);
+            if (newPos >= fc.size()) {
+                return transferred;
+            }
+        }
+        return transferred + super.transferTo(out);
+    }
+
+    private long length() throws IOException {
+        long comp = Blocker.begin();
+        try {
+            return length0();
+        } finally {
+            Blocker.end(comp);
+        }
+    }
+    private native long length0() throws IOException;
+
+    private long position() throws IOException {
+        long comp = Blocker.begin();
+        try {
+            return position0();
+        } finally {
+            Blocker.end(comp);
+        }
+    }
+    private native long position0() throws IOException;
 
     /**
      * Skips over and discards {@code n} bytes of data from the
@@ -290,13 +434,19 @@ public class FileInputStream extends InputStream
      * backing file. Attempting to read from the stream after skipping past
      * the end will result in -1 indicating the end of the file.
      *
-     * @param      n   the number of bytes to be skipped.
+     * @param      n   {@inheritDoc}
      * @return     the actual number of bytes skipped.
      * @throws     IOException  if n is negative, if the stream does not
      *             support seek, or if an I/O error occurs.
      */
+    @Override
     public long skip(long n) throws IOException {
-        return skip0(n);
+        long comp = Blocker.begin();
+        try {
+            return skip0(n);
+        } finally {
+            Blocker.end(comp);
+        }
     }
 
     private native long skip0(long n) throws IOException;
@@ -318,8 +468,14 @@ public class FileInputStream extends InputStream
      * @throws     IOException  if this file input stream has been closed by calling
      *             {@code close} or an I/O error occurs.
      */
+    @Override
     public int available() throws IOException {
-        return available0();
+        long comp = Blocker.begin();
+        try {
+            return available0();
+        } finally {
+            Blocker.end(comp);
+        }
     }
 
     private native int available0() throws IOException;
@@ -339,10 +495,11 @@ public class FileInputStream extends InputStream
      * If cleanup of native resources is needed, other mechanisms such as
      * {@linkplain java.lang.ref.Cleaner} should be used.
      *
-     * @throws     IOException  if an I/O error occurs.
+     * @throws     IOException  {@inheritDoc}
      *
      * @revised 1.4
      */
+    @Override
     public void close() throws IOException {
         if (closed) {
             return;

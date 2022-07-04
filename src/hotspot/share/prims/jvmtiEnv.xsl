@@ -1,6 +1,6 @@
 <?xml version="1.0"?> 
 <!--
- Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -110,15 +110,13 @@ JvmtiEnv::</xsl:text>
   <xsl:choose>
     <xsl:when test="count(@impl)=0 or not(contains(@impl,'noconvert'))">
       <xsl:text>
-// Threads_lock NOT held, java_thread not protected by lock
-// java_thread - pre-checked</xsl:text>
+// java_thread - protected by ThreadsListHandle and pre-checked</xsl:text>
     </xsl:when>
     <xsl:otherwise>
       <xsl:text>
-// Threads_lock NOT held
 // </xsl:text>
       <xsl:value-of select="$name"/>
-      <xsl:text> - NOT pre-checked</xsl:text>
+      <xsl:text> - NOT protected by ThreadsListHandle and NOT pre-checked</xsl:text>
     </xsl:otherwise>
   </xsl:choose>
 </xsl:template>
@@ -132,7 +130,6 @@ JvmtiEnv::</xsl:text>
 <xsl:template match="jframeID" mode="advice">
   <xsl:param name="name"/>
   <xsl:text>
-// java_thread - unchecked 
 // depth - pre-checked as non-negative</xsl:text>
 </xsl:template>
 

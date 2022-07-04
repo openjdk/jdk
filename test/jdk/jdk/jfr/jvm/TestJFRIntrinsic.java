@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,29 +54,30 @@ import sun.hotspot.WhiteBox;
 import sun.hotspot.code.NMethod;
 
 public class TestJFRIntrinsic {
-
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
+    public Class<?> eventWriterClazz;
     public Object eventWriter;
 
+    TestJFRIntrinsic() throws Exception {
+        // the intrinsic is premised on this class being loaded already - the event writer object is massaged heavily before returning
+        eventWriterClazz = Class.forName("jdk.jfr.internal.event.EventWriter", true, TestJFRIntrinsic.class.getClassLoader());
+    }
+
     public static void main(String... args) throws Exception {
-        /*
-        Temporarily excluded until getClassId is reworked to accommodate epoch shift tagging
+        JVM.getJVM().createNativeJFR();
+        TestJFRIntrinsic ti = new TestJFRIntrinsic();
         Method classid = TestJFRIntrinsic.class.getDeclaredMethod("getClassIdIntrinsic",  Class.class);
         ti.runIntrinsicTest(classid);
-        */
-        TestJFRIntrinsic ti = new TestJFRIntrinsic();
         Method eventWriterMethod = TestJFRIntrinsic.class.getDeclaredMethod("getEventWriterIntrinsic", Class.class);
         ti.runIntrinsicTest(eventWriterMethod);
     }
 
-    /*
     public void getClassIdIntrinsic(Class<?> cls) {
         long exp = JVM.getClassId(cls);
         if (exp == 0) {
             throw new RuntimeException("Class id is zero");
         }
     }
-    */
 
     public void getEventWriterIntrinsic(Class<?> cls) {
         Object o = JVM.getEventWriter();

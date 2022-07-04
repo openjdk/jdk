@@ -26,6 +26,7 @@
 #define SHARE_GC_SHARED_LOCATIONPRINTER_INLINE_HPP
 
 #include "gc/shared/locationPrinter.hpp"
+
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
 

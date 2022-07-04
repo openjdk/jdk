@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -271,8 +271,7 @@ class sig_as_verification_types : public ResourceObj {
 
 // This hashtable is indexed by the Utf8 constant pool indexes pointed to
 // by constant pool (Interface)Method_refs' NameAndType signature entries.
-typedef ResourceHashtable<int, sig_as_verification_types*,
-                          primitive_hash<int>, primitive_equals<int>, 1007>
+typedef ResourceHashtable<int, sig_as_verification_types*, 1007>
                           method_signatures_table_type;
 
 // A new instance of this class is created for each class being verified
@@ -286,7 +285,7 @@ class ClassVerifier : public StackObj {
   Symbol* _exception_type;
   char* _message;
 
-  method_signatures_table_type* _method_signatures_table;
+  method_signatures_table_type _method_signatures_table;
 
   ErrorContext _error_context;  // contains information about an error
 
@@ -438,12 +437,8 @@ class ClassVerifier : public StackObj {
 
   Klass* load_class(Symbol* name, TRAPS);
 
-  method_signatures_table_type* method_signatures_table() const {
-    return _method_signatures_table;
-  }
-
-  void set_method_signatures_table(method_signatures_table_type* method_signatures_table) {
-    _method_signatures_table = method_signatures_table;
+  method_signatures_table_type* method_signatures_table() {
+    return &_method_signatures_table;
   }
 
   int change_sig_to_verificationType(

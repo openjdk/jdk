@@ -56,6 +56,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package jdk.internal.org.objectweb.asm.commons;
 
 import jdk.internal.org.objectweb.asm.AnnotationVisitor;
@@ -83,14 +84,14 @@ public class RecordComponentRemapper extends RecordComponentVisitor {
       */
     public RecordComponentRemapper(
             final RecordComponentVisitor recordComponentVisitor, final Remapper remapper) {
-        this(/* latest api = */ Opcodes.ASM8, recordComponentVisitor, remapper);
+        this(/* latest api = */ Opcodes.ASM9, recordComponentVisitor, remapper);
     }
 
     /**
       * Constructs a new {@link RecordComponentRemapper}.
       *
-      * @param api the ASM API version supported by this remapper. Must be {@link
-      *     jdk.internal.org.objectweb.asm.Opcodes#ASM8}.
+      * @param api the ASM API version supported by this remapper. Must be one of {@link
+      *     jdk.internal.org.objectweb.asm.Opcodes#ASM8} or {@link jdk.internal.org.objectweb.asm.Opcodes#ASM9}.
       * @param recordComponentVisitor the record component visitor this remapper must delegate to.
       * @param remapper the remapper to use to remap the types in the visited record component.
       */
@@ -104,7 +105,9 @@ public class RecordComponentRemapper extends RecordComponentVisitor {
     public AnnotationVisitor visitAnnotation(final String descriptor, final boolean visible) {
         AnnotationVisitor annotationVisitor =
                 super.visitAnnotation(remapper.mapDesc(descriptor), visible);
-        return annotationVisitor == null ? null : createAnnotationRemapper(annotationVisitor);
+        return annotationVisitor == null
+                ? null
+                : createAnnotationRemapper(descriptor, annotationVisitor);
     }
 
     @Override
@@ -112,7 +115,9 @@ public class RecordComponentRemapper extends RecordComponentVisitor {
             final int typeRef, final TypePath typePath, final String descriptor, final boolean visible) {
         AnnotationVisitor annotationVisitor =
                 super.visitTypeAnnotation(typeRef, typePath, remapper.mapDesc(descriptor), visible);
-        return annotationVisitor == null ? null : createAnnotationRemapper(annotationVisitor);
+        return annotationVisitor == null
+                ? null
+                : createAnnotationRemapper(descriptor, annotationVisitor);
     }
 
     /**
@@ -121,8 +126,25 @@ public class RecordComponentRemapper extends RecordComponentVisitor {
       *
       * @param annotationVisitor the AnnotationVisitor the remapper must delegate to.
       * @return the newly created remapper.
+      * @deprecated use {@link #createAnnotationRemapper(String, AnnotationVisitor)} instead.
       */
+    @Deprecated
     protected AnnotationVisitor createAnnotationRemapper(final AnnotationVisitor annotationVisitor) {
-        return new AnnotationRemapper(api, annotationVisitor, remapper);
+        return new AnnotationRemapper(api, /* descriptor = */ null, annotationVisitor, remapper);
+    }
+
+    /**
+      * Constructs a new remapper for annotations. The default implementation of this method returns a
+      * new {@link AnnotationRemapper}.
+      *
+      * @param descriptor the descriptor sof the visited annotation.
+      * @param annotationVisitor the AnnotationVisitor the remapper must delegate to.
+      * @return the newly created remapper.
+      */
+    protected AnnotationVisitor createAnnotationRemapper(
+            final String descriptor, final AnnotationVisitor annotationVisitor) {
+        return new AnnotationRemapper(api, descriptor, annotationVisitor, remapper)
+                .orDeprecatedValue(createAnnotationRemapper(annotationVisitor));
     }
 }
+

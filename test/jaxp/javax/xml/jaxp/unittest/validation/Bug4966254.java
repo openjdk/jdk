@@ -39,7 +39,7 @@ import util.DraconianErrorHandler;
  * @test
  * @bug 4966254
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.Bug4966254
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.Bug4966254
  * @run testng/othervm validation.Bug4966254
  * @summary Test validate(StreamSource) & validate(StreamSource,null) works instead of throws IOException.
  */

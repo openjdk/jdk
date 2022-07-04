@@ -25,9 +25,10 @@
 #ifndef SHARE_GC_SHARED_SPACEDECORATOR_INLINE_HPP
 #define SHARE_GC_SHARED_SPACEDECORATOR_INLINE_HPP
 
+#include "gc/shared/spaceDecorator.hpp"
+
 #include "gc/parallel/mutableSpace.hpp"
 #include "gc/shared/space.hpp"
-#include "gc/shared/spaceDecorator.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 inline HeapWord* GenSpaceMangler::top() const { return _sp->top(); }

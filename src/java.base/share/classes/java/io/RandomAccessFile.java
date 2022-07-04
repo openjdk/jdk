@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.nio.channels.FileChannel;
 
 import jdk.internal.access.JavaIORandomAccessFileAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.misc.Blocker;
 import sun.nio.ch.FileChannelImpl;
 
 
@@ -239,6 +240,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
                                                + "\" must be one of "
                                                + "\"r\", \"rw\", \"rws\","
                                                + " or \"rwd\"");
+        @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkRead(name);
@@ -338,9 +340,13 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @param mode the mode flags, a combination of the O_ constants
      *             defined above
      */
-    private void open(String name, int mode)
-        throws FileNotFoundException {
-        open0(name, mode);
+    private void open(String name, int mode) throws FileNotFoundException {
+        long comp = Blocker.begin();
+        try {
+            open0(name, mode);
+        } finally {
+            Blocker.end(comp);
+        }
     }
 
     // 'Read' primitives
@@ -361,7 +367,12 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      *                          end-of-file has been reached.
      */
     public int read() throws IOException {
-        return read0();
+        long comp = Blocker.begin();
+        try {
+            return read0();
+        } finally {
+            Blocker.end(comp);
+        }
     }
 
     private native int read0() throws IOException;
@@ -373,7 +384,16 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @param     len the number of bytes to read.
      * @throws    IOException If an I/O error has occurred.
      */
-    private native int readBytes(byte b[], int off, int len) throws IOException;
+    private int readBytes(byte[] b, int off, int len) throws IOException {
+        long comp = Blocker.begin();
+        try {
+            return readBytes0(b, off, len);
+        } finally {
+            Blocker.end(comp);
+        }
+    }
+
+    private native int readBytes0(byte[] b, int off, int len) throws IOException;
 
     /**
      * Reads up to {@code len} bytes of data from this file into an
@@ -400,7 +420,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      *             {@code len} is negative, or {@code len} is greater than
      *             {@code b.length - off}
      */
-    public int read(byte b[], int off, int len) throws IOException {
+    public int read(byte[] b, int off, int len) throws IOException {
         return readBytes(b, off, len);
     }
 
@@ -423,7 +443,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      *             or if some other I/O error occurs.
      * @throws     NullPointerException If {@code b} is {@code null}.
      */
-    public int read(byte b[]) throws IOException {
+    public int read(byte[] b) throws IOException {
         return readBytes(b, 0, b.length);
     }
 
@@ -440,7 +460,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      *              all the bytes.
      * @throws  IOException   if an I/O error occurs.
      */
-    public final void readFully(byte b[]) throws IOException {
+    public final void readFully(byte[] b) throws IOException {
         readFully(b, 0, b.length);
     }
 
@@ -462,7 +482,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      *                all the bytes.
      * @throws  IOException   if an I/O error occurs.
      */
-    public final void readFully(byte b[], int off, int len) throws IOException {
+    public final void readFully(byte[] b, int off, int len) throws IOException {
         int n = 0;
         do {
             int count = this.read(b, off + n, len - n);
@@ -518,7 +538,12 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws     IOException  if an I/O error occurs.
      */
     public void write(int b) throws IOException {
-        write0(b);
+        long comp = Blocker.begin();
+        try {
+            write0(b);
+        } finally {
+            Blocker.end(comp);
+        }
     }
 
     private native void write0(int b) throws IOException;
@@ -531,7 +556,16 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @param     len the number of bytes that are written
      * @throws    IOException If an I/O error has occurred.
      */
-    private native void writeBytes(byte b[], int off, int len) throws IOException;
+    private void writeBytes(byte[] b, int off, int len) throws IOException {
+        long comp = Blocker.begin();
+        try {
+            writeBytes0(b, off, len);
+        } finally {
+            Blocker.end(comp);
+        }
+    }
+
+    private native void writeBytes0(byte[] b, int off, int len) throws IOException;
 
     /**
      * Writes {@code b.length} bytes from the specified byte array
@@ -540,7 +574,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @param      b   the data.
      * @throws     IOException  if an I/O error occurs.
      */
-    public void write(byte b[]) throws IOException {
+    public void write(byte[] b) throws IOException {
         writeBytes(b, 0, b.length);
     }
 
@@ -552,8 +586,9 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @param      off   the start offset in the data.
      * @param      len   the number of bytes to write.
      * @throws     IOException  if an I/O error occurs.
+     * @throws     IndexOutOfBoundsException {@inheritDoc}
      */
-    public void write(byte b[], int off, int len) throws IOException {
+    public void write(byte[] b, int off, int len) throws IOException {
         writeBytes(b, off, len);
     }
 
@@ -585,8 +620,12 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     public void seek(long pos) throws IOException {
         if (pos < 0) {
             throw new IOException("Negative seek offset");
-        } else {
+        }
+        long comp = Blocker.begin();
+        try {
             seek0(pos);
+        } finally {
+            Blocker.end(comp);
         }
     }
 
@@ -598,7 +637,16 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @return     the length of this file, measured in bytes.
      * @throws     IOException  if an I/O error occurs.
      */
-    public native long length() throws IOException;
+    public long length() throws IOException {
+        long comp = Blocker.begin();
+        try {
+            return length0();
+        } finally {
+            Blocker.end(comp);
+        }
+    }
+
+    private native long length0() throws IOException;
 
     /**
      * Sets the length of this file.
@@ -619,7 +667,16 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws     IOException  If an I/O error occurs
      * @since      1.2
      */
-    public native void setLength(long newLength) throws IOException;
+    public void setLength(long newLength) throws IOException {
+        long comp = Blocker.begin();
+        try {
+            setLength0(newLength);
+        } finally {
+            Blocker.end(comp);
+        }
+    }
+
+    private native void setLength0(long newLength) throws IOException;
 
     /**
      * Closes this random access file stream and releases any system

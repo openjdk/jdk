@@ -26,7 +26,8 @@
 #define SHARE_GC_SHARED_GCLOCKER_INLINE_HPP
 
 #include "gc/shared/gcLocker.hpp"
-#include "runtime/thread.inline.hpp"
+
+#include "runtime/javaThread.inline.hpp"
 
 void GCLocker::lock_critical(JavaThread* thread) {
   if (!thread->in_critical()) {

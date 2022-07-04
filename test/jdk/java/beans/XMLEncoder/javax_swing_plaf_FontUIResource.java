@@ -25,6 +25,7 @@
  * @test
  * @bug 4951733 6402062
  * @summary Tests FontUIResource encoding
+ * @run main/othervm -Djava.security.manager=allow javax_swing_plaf_FontUIResource
  * @author Sergey Malenkov
  */
 

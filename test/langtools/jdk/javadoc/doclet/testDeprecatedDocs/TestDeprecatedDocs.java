@@ -267,11 +267,10 @@ public class TestDeprecatedDocs extends JavadocTester {
         checkOutput("deprecated-list.html", true,
                 """
                     <ul>
-                    <li><a href="#for-removal">For Removal</a></li>
+                    <li><a href="#for-removal">Terminally Deprecated</a></li>
                     <li><a href="#class">Classes</a></li>
                     <li><a href="#enum-class">Enum Classes</a></li>
-                    <li><a href="#exception">Exceptions</a></li>
-                    <li><a href="#error">Errors</a></li>
+                    <li><a href="#exception-class">Exception Classes</a></li>
                     <li><a href="#annotation-interface">Annotation Interfaces</a></li>
                     <li><a href="#field">Fields</a></li>
                     <li><a href="#method">Methods</a></li>
@@ -281,13 +280,13 @@ public class TestDeprecatedDocs extends JavadocTester {
                     </ul>""",
                 """
                     <div id="for-removal">
-                    <div class="caption"><span>For Removal</span></div>
+                    <div class="caption"><span>Terminally Deprecated Elements</span></div>
                     <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Element</div>
                     <div class="table-header col-last">Description</div>""",
                 """
                     <div id="enum-class">
-                    <div class="caption"><span>Enum Classes</span></div>
+                    <div class="caption"><span>Deprecated Enum Classes</span></div>
                     <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Enum Class</div>
                     <div class="table-header col-last">Description</div>
@@ -296,18 +295,22 @@ public class TestDeprecatedDocs extends JavadocTester {
                     <div class="deprecation-comment">enum_test1 passes.</div>
                     </div>""",
                 """
-                    <div id="exception">
-                    <div class="caption"><span>Exceptions</span></div>
+                    <div id="exception-class">
+                    <div class="caption"><span>Deprecated Exception Classes</span></div>
                     <div class="summary-table two-column-summary">
-                    <div class="table-header col-first">Exceptions</div>
+                    <div class="table-header col-first">Exception Class</div>
                     <div class="table-header col-last">Description</div>
-                    <div class="col-summary-item-name even-row-color"><a href="pkg/TestException.html" title="class in pkg">pkg.TestException</a></div>
+                    <div class="col-summary-item-name even-row-color"><a href="pkg/TestError.html" title="class in pkg">pkg.TestError</a></div>
                     <div class="col-last even-row-color">
+                    <div class="deprecation-comment">error_test1 passes.</div>
+                    </div>
+                    <div class="col-summary-item-name odd-row-color"><a href="pkg/TestException.html" title="class in pkg">pkg.TestException</a></div>
+                    <div class="col-last odd-row-color">
                     <div class="deprecation-comment">exception_test1 passes.</div>
                     </div>""",
                 """
                     <div id="field">
-                    <div class="caption"><span>Fields</span></div>
+                    <div class="caption"><span>Deprecated Fields</span></div>
                     <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Field</div>
                     <div class="table-header col-last">Description</div>
@@ -337,7 +340,7 @@ public class TestDeprecatedDocs extends JavadocTester {
                     </div>""",
                 """
                     <div id="method">
-                    <div class="caption"><span>Methods</span></div>
+                    <div class="caption"><span>Deprecated Methods</span></div>
                     <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Method</div>
                     <div class="table-header col-last">Description</div>
@@ -355,17 +358,17 @@ public class TestDeprecatedDocs extends JavadocTester {
                     <div class="col-last odd-row-color">
                     <div class="deprecation-comment">class_test5 passes. This is the second sentence of deprecated description for a method.</div>
                     </div>
-                    <div class="col-summary-item-name even-row-color"><a href="pkg/TestClass.html#overloadedMethod(int)">pkg.TestClass.overloadedMethod&#8203;(int)</a></div>
+                    <div class="col-summary-item-name even-row-color"><a href="pkg/TestClass.html#overloadedMethod(int)">pkg.TestClass.overloadedMethod<wbr>(int)</a></div>
                     <div class="col-last even-row-color">
                     <div class="deprecation-comment">class_test7 passes. Overloaded method 2.</div>
                     </div>
-                    <div class="col-summary-item-name odd-row-color"><a href="pkg/TestClass.html#overloadedMethod(java.lang.String)">pkg.TestClass.overloadedMethod&#8203;(String)</a></div>
+                    <div class="col-summary-item-name odd-row-color"><a href="pkg/TestClass.html#overloadedMethod(java.lang.String)">pkg.TestClass.overloadedMethod<wbr>(String)</a></div>
                     <div class="col-last odd-row-color">
                     <div class="deprecation-comment">class_test6 passes. Overloaded method 1.</div>
                     </div>""",
                 """
                     <div id="constructor">
-                    <div class="caption"><span>Constructors</span></div>
+                    <div class="caption"><span>Deprecated Constructors</span></div>
                     <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Constructor</div>
                     <div class="table-header col-last">Description</div>
@@ -375,7 +378,7 @@ public class TestDeprecatedDocs extends JavadocTester {
                     <div class="col-last odd-row-color">
                     <div class="deprecation-comment">class_test3 passes. This is the second sentence of deprecated description for a constructor.</div>
                     </div>
-                    <div class="col-summary-item-name even-row-color"><a href="pkg/TestClass.html#%3Cinit%3E(java.lang.String)">pkg.TestClass&#8203;(String)</a></div>
+                    <div class="col-summary-item-name even-row-color"><a href="pkg/TestClass.html#%3Cinit%3E(java.lang.String)">pkg.TestClass<wbr>(String)</a></div>
                     <div class="col-last even-row-color">
                     <div class="deprecation-comment">class_test4 passes. Overloaded constructor.</div>
                     </div>""");

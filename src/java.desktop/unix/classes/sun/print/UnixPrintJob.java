@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,7 +128,7 @@ public class UnixPrintJob implements CancelablePrintJob {
         mDestType = UnixPrintJob.DESTPRINTER;
         JobSheets js = (JobSheets)(service.
                                       getDefaultAttributeValue(JobSheets.class));
-        if (js != null && js.equals(JobSheets.NONE)) {
+        if (JobSheets.NONE.equals(js)) {
             mNoJobSheet = true;
         }
     }
@@ -366,8 +366,7 @@ public class UnixPrintJob implements CancelablePrintJob {
                  }
              }
 
-             if (customTray != null &&
-                 customTray instanceof CustomMediaTray) {
+             if (customTray != null) {
                  String choice = customTray.getChoiceName();
                  if (choice != null) {
                      mOptions += " InputSlot="+choice;
@@ -421,12 +420,9 @@ public class UnixPrintJob implements CancelablePrintJob {
                     }
                     return;
                 }
-            } catch (ClassCastException cce) {
+            } catch (ClassCastException | IOException e) {
                 notifyEvent(PrintJobEvent.JOB_FAILED);
-                throw new PrintException(cce);
-            } catch (IOException ioe) {
-                notifyEvent(PrintJobEvent.JOB_FAILED);
-                throw new PrintException(ioe);
+                throw new PrintException(e);
             }
         } else if (flavor.equals(DocFlavor.URL.GIF) ||
                    flavor.equals(DocFlavor.URL.JPEG) ||
@@ -505,12 +501,9 @@ public class UnixPrintJob implements CancelablePrintJob {
                     ((UnixPrintService)service).wakeNotifier();
                 }
                 return;
-            } catch (ClassCastException cce) {
+            } catch (ClassCastException | IOException e) {
                 notifyEvent(PrintJobEvent.JOB_FAILED);
-                throw new PrintException(cce);
-            } catch (IOException ioe) {
-                notifyEvent(PrintJobEvent.JOB_FAILED);
-                throw new PrintException(ioe);
+                throw new PrintException(e);
             }
         } else if (repClassName.equals("java.awt.print.Printable")) {
             try {
@@ -521,12 +514,9 @@ public class UnixPrintJob implements CancelablePrintJob {
                     ((UnixPrintService)service).wakeNotifier();
                 }
                 return;
-            } catch (ClassCastException cce) {
+            } catch (ClassCastException | IOException e) {
                 notifyEvent(PrintJobEvent.JOB_FAILED);
-                throw new PrintException(cce);
-            } catch (IOException ioe) {
-                notifyEvent(PrintJobEvent.JOB_FAILED);
-                throw new PrintException(ioe);
+                throw new PrintException(e);
             }
         } else {
             notifyEvent(PrintJobEvent.JOB_FAILED);
@@ -535,7 +525,8 @@ public class UnixPrintJob implements CancelablePrintJob {
 
         // now spool the print data.
         PrinterOpener po = new PrinterOpener();
-        java.security.AccessController.doPrivileged(po);
+        @SuppressWarnings("removal")
+        var dummy = java.security.AccessController.doPrivileged(po);
         if (po.pex != null) {
             throw po.pex;
         }
@@ -608,7 +599,8 @@ public class UnixPrintJob implements CancelablePrintJob {
 
         if (mDestType == UnixPrintJob.DESTPRINTER) {
             PrinterSpooler spooler = new PrinterSpooler();
-            java.security.AccessController.doPrivileged(spooler);
+            @SuppressWarnings("removal")
+            var dummy2 = java.security.AccessController.doPrivileged(spooler);
             if (spooler.pex != null) {
                 throw spooler.pex;
             }
@@ -803,6 +795,7 @@ public class UnixPrintJob implements CancelablePrintJob {
                         throw new PrintException(e);
                     }
                     // check write access
+                    @SuppressWarnings("removal")
                     SecurityManager security = System.getSecurityManager();
                     if (security != null) {
                       try {

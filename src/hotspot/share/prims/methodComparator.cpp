@@ -47,9 +47,9 @@ bool MethodComparator::methods_EMCP(Method* old_method, Method* new_method) {
 
   ConstantPool* old_cp = old_method->constants();
   ConstantPool* new_cp = new_method->constants();
-  Thread* THREAD = Thread::current();
-  BytecodeStream s_old(methodHandle(THREAD, old_method));
-  BytecodeStream s_new(methodHandle(THREAD, new_method));
+  Thread* current = Thread::current();
+  BytecodeStream s_old(methodHandle(current, old_method));
+  BytecodeStream s_new(methodHandle(current, new_method));
   Bytecodes::Code c_old, c_new;
 
   while ((c_old = s_old.next()) >= 0) {
@@ -279,8 +279,6 @@ bool MethodComparator::pool_constants_same(const int cpi_old, const int cpi_new,
     if (strcmp(old_cp->string_at_noresolve(cpi_old),
                new_cp->string_at_noresolve(cpi_new)) != 0)
       return false;
-    if (old_cp->is_pseudo_string_at(cpi_old) || new_cp->is_pseudo_string_at(cpi_new))
-      return (old_cp->is_pseudo_string_at(cpi_old) == new_cp->is_pseudo_string_at(cpi_new));
   } else if (tag_old.is_klass() || tag_old.is_unresolved_klass()) {
     // tag_old should be klass - 4881222
     if (! (tag_new.is_unresolved_klass() || tag_new.is_klass()))

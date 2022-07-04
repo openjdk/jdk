@@ -25,6 +25,7 @@
  * @test
  * @bug 4818598
  * @summary Tests MenuShortcut value encoding
+ * @run main/othervm -Djava.security.manager=allow java_awt_MenuShortcut
  * @author Sergey Malenkov
  */
 

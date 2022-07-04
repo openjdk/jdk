@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,16 +26,16 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "runtime/arguments.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
-#include "runtime/thread.inline.hpp"
 #include "services/heapDumperCompression.hpp"
 
 
 char const* FileWriter::open_writer() {
   assert(_fd < 0, "Must not already be open");
 
-  _fd = os::create_binary_file(_path, false);    // don't replace existing file
+  _fd = os::create_binary_file(_path, _overwrite);
 
   if (_fd < 0) {
     return os::strerror(errno);
@@ -45,7 +46,7 @@ char const* FileWriter::open_writer() {
 
 FileWriter::~FileWriter() {
   if (_fd >= 0) {
-    os::close(_fd);
+    ::close(_fd);
     _fd = -1;
   }
 }
@@ -54,7 +55,7 @@ char const* FileWriter::write_buf(char* buf, ssize_t size) {
   assert(_fd >= 0, "Must be open");
   assert(size > 0, "Must write at least one byte");
 
-  ssize_t n = (ssize_t) os::write(_fd, buf, (uint) size);
+  ssize_t n = os::write(_fd, buf, (uint) size);
 
   if (n <= 0) {
     return os::strerror(errno);
@@ -200,8 +201,7 @@ CompressionBackend::CompressionBackend(AbstractWriter* writer,
   _written(0),
   _writer(writer),
   _compressor(compressor),
-  _lock(new (std::nothrow) PaddedMonitor(Mutex::leaf, "HProf Compression Backend",
-    true, Mutex::_safepoint_check_never)) {
+  _lock(new (std::nothrow) PaddedMonitor(Mutex::nosafepoint, "HProfCompressionBackend_lock")) {
   if (_writer == NULL) {
     set_error("Could not allocate writer");
   } else if (_lock == NULL) {
@@ -237,61 +237,54 @@ CompressionBackend::~CompressionBackend() {
   delete _lock;
 }
 
-void CompressionBackend::deactivate() {
-  assert(_active, "Must be active");
-
-  MonitorLocker ml(_lock, Mutex::_no_safepoint_check_flag);
+void CompressionBackend::flush_buffer(MonitorLocker* ml) {
 
   // Make sure we write the last partially filled buffer.
   if ((_current != NULL) && (_current->_in_used > 0)) {
     _current->_id = _next_id++;
     _to_compress.add_last(_current);
     _current = NULL;
-    ml.notify_all();
+    ml->notify_all();
   }
 
-  // Wait for the threads to drain the compression work list.
+  // Wait for the threads to drain the compression work list and do some work yourself.
   while (!_to_compress.is_empty()) {
-    // If we have no threads, compress the current one itself.
-    if (_nr_of_threads == 0) {
-      MutexUnlocker mu(_lock, Mutex::_no_safepoint_check_flag);
-      thread_loop(true);
-    } else {
-      ml.wait();
-    }
+    do_foreground_work();
   }
+}
+
+void CompressionBackend::flush_buffer() {
+  assert(_active, "Must be active");
+
+  MonitorLocker ml(_lock, Mutex::_no_safepoint_check_flag);
+  flush_buffer(&ml);
+}
+
+void CompressionBackend::deactivate() {
+  assert(_active, "Must be active");
+
+  MonitorLocker ml(_lock, Mutex::_no_safepoint_check_flag);
+  flush_buffer(&ml);
 
   _active = false;
   ml.notify_all();
 }
 
-void CompressionBackend::thread_loop(bool single_run) {
-  // Register if this is a worker thread.
-  if (!single_run) {
+void CompressionBackend::thread_loop() {
+  {
     MonitorLocker ml(_lock, Mutex::_no_safepoint_check_flag);
     _nr_of_threads++;
   }
 
-  while (true) {
-    WriteWork* work = get_work();
-
-    if (work == NULL) {
-      assert(!single_run, "Should never happen for single thread");
-      MonitorLocker ml(_lock, Mutex::_no_safepoint_check_flag);
-      _nr_of_threads--;
-      assert(_nr_of_threads >= 0, "Too many threads finished");
-      ml.notify_all();
-
-      return;
-    } else {
-      do_compress(work);
-      finish_work(work);
-    }
-
-    if (single_run) {
-      return;
-    }
+  WriteWork* work;
+  while ((work = get_work()) != NULL) {
+    do_compress(work);
+    finish_work(work);
   }
+
+  MonitorLocker ml(_lock, Mutex::_no_safepoint_check_flag);
+  _nr_of_threads--;
+  assert(_nr_of_threads >= 0, "Too many threads finished");
 }
 
 void CompressionBackend::set_error(char const* new_error) {
@@ -363,6 +356,16 @@ void CompressionBackend::free_work_list(WorkList* list) {
   }
 }
 
+void CompressionBackend::do_foreground_work() {
+  assert(!_to_compress.is_empty(), "Must have work to do");
+  assert(_lock->owned_by_self(), "Must have the lock");
+
+  WriteWork* work = _to_compress.remove_first();
+  MutexUnlocker mu(_lock, Mutex::_no_safepoint_check_flag);
+  do_compress(work);
+  finish_work(work);
+}
+
 WriteWork* CompressionBackend::get_work() {
   MonitorLocker ml(_lock, Mutex::_no_safepoint_check_flag);
 
@@ -373,16 +376,39 @@ WriteWork* CompressionBackend::get_work() {
   return _to_compress.remove_first();
 }
 
-void CompressionBackend::get_new_buffer(char** buffer, size_t* used, size_t* max) {
+void CompressionBackend::flush_external_buffer(char* buffer, size_t used, size_t max) {
+  assert(buffer != NULL && used != 0 && max != 0, "Invalid data send to compression backend");
+  assert(_active == true, "Backend must be active when flushing external buffer");
+  char* buf;
+  size_t tmp_used = 0;
+  size_t tmp_max = 0;
+
+  MonitorLocker ml(_lock, Mutex::_no_safepoint_check_flag);
+  // First try current buffer. Use it if empty.
+  if (_current->_in_used == 0) {
+    buf = _current->_in;
+  } else {
+    // If current buffer is not clean, flush it.
+    MutexUnlocker ml(_lock, Mutex::_no_safepoint_check_flag);
+    get_new_buffer(&buf, &tmp_used, &tmp_max, true);
+  }
+  assert (_current->_in != NULL && _current->_in_max >= max &&
+          _current->_in_used == 0, "Invalid buffer from compression backend");
+  // Copy data to backend buffer.
+  memcpy(buf, buffer, used);
+
+  assert(_current->_in == buf, "Must be current");
+  _current->_in_used += used;
+}
+
+void CompressionBackend::get_new_buffer(char** buffer, size_t* used, size_t* max, bool force_reset) {
   if (_active) {
     MonitorLocker ml(_lock, Mutex::_no_safepoint_check_flag);
-
-    if (*used > 0) {
+    if (*used > 0 || force_reset) {
       _current->_in_used += *used;
-
       // Check if we do not waste more than _max_waste. If yes, write the buffer.
       // Otherwise return the rest of the buffer as the new buffer.
-      if (_current->_in_max - _current->_in_used <= _max_waste) {
+      if (_current->_in_max - _current->_in_used <= _max_waste || force_reset) {
         _current->_id = _next_id++;
         _to_compress.add_last(_current);
         _current = NULL;
@@ -391,7 +417,6 @@ void CompressionBackend::get_new_buffer(char** buffer, size_t* used, size_t* max
         *buffer = _current->_in + _current->_in_used;
         *used = 0;
         *max = _current->_in_max - _current->_in_used;
-
         return;
       }
     }
@@ -405,9 +430,7 @@ void CompressionBackend::get_new_buffer(char** buffer, size_t* used, size_t* max
           _unused.add_first(work);
         }
       } else if (!_to_compress.is_empty() && (_nr_of_threads == 0)) {
-        // If we have no threads, compress the current one itself.
-        MutexUnlocker mu(_lock, Mutex::_no_safepoint_check_flag);
-        thread_loop(true);
+        do_foreground_work();
       } else {
         ml.wait();
       }

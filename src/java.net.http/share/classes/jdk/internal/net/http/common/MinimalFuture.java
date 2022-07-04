@@ -42,7 +42,7 @@ public final class MinimalFuture<T> extends CompletableFuture<T> {
         U get() throws Throwable;
     }
 
-    private final static AtomicLong TOKENS = new AtomicLong();
+    private static final AtomicLong TOKENS = new AtomicLong();
     private final long id;
     private final Cancelable cancelable;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -628,9 +628,13 @@ public class TestModules extends JavadocTester {
                     <dd>JDK 9</dd>""",
                 """
                     <dt>See Also:</dt>
-                    <dd>"Test see tag",\s
-                    <a href="testpkgmdltags/TestClassInModuleTags.html" title="class in testpkgmdlta\
-                    gs"><code>TestClassInModuleTags</code></a></dd>""",
+                    <dd>
+                    <ul class="see-list">
+                    <li>"Test see tag"</li>
+                    <li><a href="testpkgmdltags/TestClassInModuleTags.html" title="class in testpkgmdlta\
+                    gs"><code>TestClassInModuleTags</code></a></li>
+                    </ul>
+                    </dd>""",
                 """
                     <dt>Regular Tag:</dt>
                     <dd>Just a regular simple tag.</dd>""",
@@ -1107,7 +1111,7 @@ public class TestModules extends JavadocTester {
         checkOutput("deprecated-list.html", found,
                 """
                     <ul>
-                    <li><a href="#for-removal">For Removal</a></li>
+                    <li><a href="#for-removal">Terminally Deprecated</a></li>
                     <li><a href="#module">Modules</a></li>
                     </ul>""",
                 """
@@ -1180,12 +1184,7 @@ public class TestModules extends JavadocTester {
                     her Modules</button>\
                     </div>
                     <div id="all-modules-table.tabpanel" role="tabpanel">
-                    <div class="summary-table two-column-summary" aria-labelledby="all-modules-table-tab0">""",
-                """
-                    var evenRowColor = "even-row-color";
-                    var oddRowColor = "odd-row-color";
-                    var tableTab = "table-tab";
-                    var activeTableTab = "active-table-tab";""");
+                    <div class="summary-table two-column-summary" aria-labelledby="all-modules-table-tab0">""");
         checkOutput("index.html", false,
                 """
                     <div class="overview-summary">
@@ -1266,12 +1265,7 @@ public class TestModules extends JavadocTester {
                     ackage Group 1</button>\
                     </div>
                     <div id="all-packages-table.tabpanel" role="tabpanel">
-                    <div class="summary-table two-column-summary" aria-labelledby="all-packages-table-tab0">""",
-                """
-                    var evenRowColor = "even-row-color";
-                    var oddRowColor = "odd-row-color";
-                    var tableTab = "table-tab";
-                    var activeTableTab = "active-table-tab";""");
+                    <div class="summary-table two-column-summary" aria-labelledby="all-packages-table-tab0">""");
     }
 
     void checkGroupOptionPackageOrdering() {
@@ -1392,20 +1386,19 @@ public class TestModules extends JavadocTester {
     void checkAllPkgsAllClasses(boolean found) {
         checkOutput("allclasses-index.html", true,
                 """
-                    <div class="table-tabs" role="tablist" aria-orientation="horizontal">\
-                    <button id="all-classes-table-tab0" role="tab" aria-selected="true" aria-control\
-                    s="all-classes-table.tabpanel" tabindex="0" onkeydown="switchTab(event)" onclick\
-                    ="show('all-classes-table', 'all-classes-table', 2)" class="active-table-tab">Al\
-                    l Classes</button>\
+                    <div class="table-tabs" role="tablist" aria-orientation="horizontal"><button id=\
+                    "all-classes-table-tab0" role="tab" aria-selected="true" aria-controls="all-clas\
+                    ses-table.tabpanel" tabindex="0" onkeydown="switchTab(event)" onclick="show('all\
+                    -classes-table', 'all-classes-table', 2)" class="active-table-tab">All Classes a\
+                    nd Interfaces</button>\
                     <button id="all-classes-table-tab2" role="tab" aria-selected="false" aria-contro\
                     ls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
                     ck="show('all-classes-table', 'all-classes-table-tab2', 2)" class="table-tab">Cl\
-                    ass Summary</button>\
+                    asses</button>\
                     <button id="all-classes-table-tab6" role="tab" aria-selected="false" aria-contro\
                     ls="all-classes-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" oncli\
                     ck="show('all-classes-table', 'all-classes-table-tab6', 2)" class="table-tab">An\
-                    notation Interfaces Summary</button>\
-                    </div>
+                    notation Interfaces</button></div>
                     """,
                 """
                     <div class="table-header col-first">Class</div>
@@ -1436,13 +1429,14 @@ public class TestModules extends JavadocTester {
                     <table summary="Package Summary table, listing packages, and an explanation">""");
         checkOutput("type-search-index.js", true,
                 """
-                    {"l":"All Classes","u":"allclasses-index.html"}""");
+                    {"l":"All Classes and Interfaces","u":"allclasses-index.html"}""");
         checkOutput("package-search-index.js", true,
                 """
                     {"l":"All Packages","u":"allpackages-index.html"}""");
         checkOutput("index-all.html", true,
                 """
-                    <br><a href="allclasses-index.html">All&nbsp;Classes</a><span class="vertical-se\
-                    parator">|</span><a href="allpackages-index.html">All&nbsp;Packages</a>""");
+                    <br><a href="allclasses-index.html">All&nbsp;Classes&nbsp;and&nbsp;Interfaces</a\
+                    ><span class="vertical-separator">|</span><a href="allpackages-index.html">All&n\
+                    bsp;Packages</a>""");
     }
 }

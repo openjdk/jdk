@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@
 
 // Forward declarations to be independent of the include structure.
 
-class Thread;
+class JavaThread;
 class Handle;
 class Symbol;
 class JavaCallArguments;
@@ -56,7 +56,7 @@ class methodHandle;
 
 // The ThreadShadow class is a helper class to access the _pending_exception
 // field of the Thread class w/o having access to the Thread's interface (for
-// include hierachy reasons).
+// include hierarchy reasons).
 
 class ThreadShadow: public CHeapObj<mtThread> {
   friend class VMStructs;
@@ -105,8 +105,8 @@ class ThreadShadow: public CHeapObj<mtThread> {
 // used directly if the macros below are insufficient.
 
 class Exceptions {
-  static bool special_exception(Thread *thread, const char* file, int line, Handle exception);
-  static bool special_exception(Thread* thread, const char* file, int line, Symbol* name, const char* message);
+  static bool special_exception(JavaThread* thread, const char* file, int line, Handle exception);
+  static bool special_exception(JavaThread* thread, const char* file, int line, Symbol* name, const char* message);
 
   // Count out of memory errors that are interesting in error diagnosis
   static volatile int _out_of_memory_error_java_heap_errors;
@@ -123,59 +123,57 @@ class Exceptions {
     unsafe_to_utf8 = 1
   } ExceptionMsgToUtf8Mode;
   // Throw exceptions: w/o message, w/ message & with formatted message.
-  static void _throw_oop(Thread* thread, const char* file, int line, oop exception);
-  static void _throw(Thread* thread, const char* file, int line, Handle exception, const char* msg = NULL);
+  static void _throw_oop(JavaThread* thread, const char* file, int line, oop exception);
+  static void _throw(JavaThread* thread, const char* file, int line, Handle exception, const char* msg = NULL);
 
-  static void _throw_msg(Thread* thread, const char* file, int line, Symbol* name, const char* message);
-  static void _throw_msg(Thread* thread, const char* file, int line, Symbol* name, const char* message,
+  static void _throw_msg(JavaThread* thread, const char* file, int line, Symbol* name, const char* message);
+  static void _throw_msg(JavaThread* thread, const char* file, int line, Symbol* name, const char* message,
                          Handle loader, Handle protection_domain);
 
-  static void _throw_msg_cause(Thread* thread, const char* file, int line, Symbol* name, const char* message, Handle h_cause);
-  static void _throw_msg_cause(Thread* thread, const char* file, int line, Symbol* name, const char* message, Handle h_cause,
+  static void _throw_msg_cause(JavaThread* thread, const char* file, int line, Symbol* name, const char* message, Handle h_cause);
+  static void _throw_msg_cause(JavaThread* thread, const char* file, int line, Symbol* name, const char* message, Handle h_cause,
                                Handle h_loader, Handle h_protection_domain);
 
-  static void _throw_cause(Thread* thread, const char* file, int line, Symbol* name, Handle h_cause);
-  static void _throw_cause(Thread* thread, const char* file, int line, Symbol* name, Handle h_cause,
+  static void _throw_cause(JavaThread* thread, const char* file, int line, Symbol* name, Handle h_cause);
+  static void _throw_cause(JavaThread* thread, const char* file, int line, Symbol* name, Handle h_cause,
                            Handle h_loader, Handle h_protection_domain);
 
-  static void _throw_args(Thread* thread, const char* file, int line,
+  static void _throw_args(JavaThread* thread, const char* file, int line,
                           Symbol* name, Symbol* signature,
                           JavaCallArguments* args);
 
   // There is no THROW... macro for this method. Caller should remember
   // to do a return after calling it.
-  static void fthrow(Thread* thread, const char* file, int line, Symbol* name,
+  static void fthrow(JavaThread* thread, const char* file, int line, Symbol* name,
                      const char* format, ...) ATTRIBUTE_PRINTF(5, 6);
 
   // Create and initialize a new exception
-  static Handle new_exception(Thread* thread, Symbol* name,
+  static Handle new_exception(JavaThread* thread, Symbol* name,
                               Symbol* signature, JavaCallArguments* args,
                               Handle loader, Handle protection_domain);
 
-  static Handle new_exception(Thread* thread, Symbol* name,
+  static Handle new_exception(JavaThread* thread, Symbol* name,
                               Symbol* signature, JavaCallArguments* args,
                               Handle cause,
                               Handle loader, Handle protection_domain);
 
-  static Handle new_exception(Thread* thread, Symbol* name,
+  static Handle new_exception(JavaThread* thread, Symbol* name,
                               Handle cause,
                               Handle loader, Handle protection_domain,
                               ExceptionMsgToUtf8Mode to_utf8_safe = safe_to_utf8);
 
-  static Handle new_exception(Thread* thread, Symbol* name,
+  static Handle new_exception(JavaThread* thread, Symbol* name,
                               const char* message, Handle cause,
                               Handle loader, Handle protection_domain,
                               ExceptionMsgToUtf8Mode to_utf8_safe = safe_to_utf8);
 
-  static Handle new_exception(Thread* thread, Symbol* name,
+  static Handle new_exception(JavaThread* thread, Symbol* name,
                               const char* message,
                               ExceptionMsgToUtf8Mode to_utf8_safe = safe_to_utf8);
 
-  static void throw_stack_overflow_exception(Thread* thread, const char* file, int line, const methodHandle& method);
+  static void throw_stack_overflow_exception(JavaThread* thread, const char* file, int line, const methodHandle& method);
 
-  static void throw_unsafe_access_internal_error(Thread* thread, const char* file, int line, const char* message);
-
-  static void wrap_dynamic_exception(bool is_indy, Thread* thread);
+  static void wrap_dynamic_exception(bool is_indy, JavaThread* thread);
 
   // Exception counting for error files of interesting exceptions that may have
   // caused a problem for the jvm
@@ -201,7 +199,7 @@ class Exceptions {
 // int this_function_may_trap(int x, float y, TRAPS)
 
 #define THREAD __the_thread__
-#define TRAPS  Thread* THREAD
+#define TRAPS  JavaThread* THREAD
 
 
 // The CHECK... macros should be used to pass along a THREAD reference and to check for pending
@@ -330,15 +328,15 @@ class Exceptions {
 
 class ExceptionMark {
  private:
-  Thread* _thread;
+  JavaThread* _thread;
   inline void check_no_pending_exception();
 
  public:
   ExceptionMark();
-  ExceptionMark(Thread* thread);
+  ExceptionMark(JavaThread* thread);
   ~ExceptionMark();
 
-  Thread* thread() {
+  JavaThread* thread() {
     return _thread;
   }
 };
@@ -351,6 +349,6 @@ class ExceptionMark {
 // which preserves pre-existing exceptions and does not allow new
 // exceptions.
 
-#define EXCEPTION_MARK                           ExceptionMark __em; Thread* THREAD = __em.thread();
+#define EXCEPTION_MARK                           ExceptionMark __em; JavaThread* THREAD = __em.thread();
 
 #endif // SHARE_UTILITIES_EXCEPTIONS_HPP

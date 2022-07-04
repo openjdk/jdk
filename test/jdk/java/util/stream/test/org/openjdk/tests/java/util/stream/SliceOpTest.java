@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8148250
+ * @bug 8148250 8265029
  */
 
 package org.openjdk.tests.java.util.stream;
@@ -355,5 +355,27 @@ public class SliceOpTest extends OpTestCase {
                                   .limit(n).toArray();
             assertEquals(LongStream.range(0, n).toArray(), actual);
         }
+    }
+
+    public void testSliceOpsSpliteratorPreservesSized() {
+        var parSpliterator = IntStream.range(0, 1000).parallel().skip(50).limit(800).spliterator();
+        assertTrue(parSpliterator.hasCharacteristics(Spliterator.SIZED));
+        assertTrue(parSpliterator.hasCharacteristics(Spliterator.SUBSIZED));
+        assertEquals(parSpliterator.getExactSizeIfKnown(), 800);
+        // Original spliterator is split to [0..499] and [500..999] parts
+        // due to skip+limit, we have [50..499] and [500..849]
+        var prefix = parSpliterator.trySplit();
+        assertNotNull(prefix);
+        assertTrue(parSpliterator.hasCharacteristics(Spliterator.SIZED));
+        assertTrue(parSpliterator.hasCharacteristics(Spliterator.SUBSIZED));
+        assertEquals(parSpliterator.getExactSizeIfKnown(), 350);
+        assertTrue(prefix.hasCharacteristics(Spliterator.SIZED));
+        assertTrue(prefix.hasCharacteristics(Spliterator.SUBSIZED));
+        assertEquals(prefix.getExactSizeIfKnown(), 450);
+
+        var seqSpliterator = IntStream.range(0, 1000).skip(50).limit(800).spliterator();
+        assertTrue(seqSpliterator.hasCharacteristics(Spliterator.SIZED));
+        assertTrue(seqSpliterator.hasCharacteristics(Spliterator.SUBSIZED));
+        assertEquals(seqSpliterator.getExactSizeIfKnown(), 800);
     }
 }

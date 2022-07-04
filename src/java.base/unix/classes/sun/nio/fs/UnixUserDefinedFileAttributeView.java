@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,6 +110,7 @@ abstract class UnixUserDefinedFileAttributeView
         }
     }
 
+    @SuppressWarnings("removal")
     @Override
     public List<String> list() throws IOException  {
         if (System.getSecurityManager() != null)
@@ -132,10 +133,11 @@ abstract class UnixUserDefinedFileAttributeView
                 null, "Unable to get list of extended attributes: " +
                 x.getMessage());
         } finally {
-            close(fd);
+            close(fd, e -> null);
         }
     }
 
+    @SuppressWarnings("removal")
     @Override
     public int size(String name) throws IOException  {
         if (System.getSecurityManager() != null)
@@ -155,10 +157,11 @@ abstract class UnixUserDefinedFileAttributeView
                 null, "Unable to get size of extended attribute '" + name +
                 "': " + x.getMessage());
         } finally {
-            close(fd);
+            close(fd, e -> null);
         }
     }
 
+    @SuppressWarnings("removal")
     @Override
     public int read(String name, ByteBuffer dst) throws IOException {
         if (System.getSecurityManager() != null)
@@ -218,10 +221,11 @@ abstract class UnixUserDefinedFileAttributeView
             throw new FileSystemException(file.getPathForExceptionMessage(),
                     null, "Error reading extended attribute '" + name + "': " + msg);
         } finally {
-            close(fd);
+            close(fd, e -> null);
         }
     }
 
+    @SuppressWarnings("removal")
     @Override
     public int write(String name, ByteBuffer src) throws IOException {
         if (System.getSecurityManager() != null)
@@ -279,10 +283,11 @@ abstract class UnixUserDefinedFileAttributeView
                     null, "Error writing extended attribute '" + name + "': " +
                     x.getMessage());
         } finally {
-            close(fd);
+            close(fd, e -> null);
         }
     }
 
+    @SuppressWarnings("removal")
     @Override
     public void delete(String name) throws IOException {
         if (System.getSecurityManager() != null)
@@ -300,7 +305,7 @@ abstract class UnixUserDefinedFileAttributeView
             throw new FileSystemException(file.getPathForExceptionMessage(),
                 null, "Unable to delete extended attribute '" + name + "': " + x.getMessage());
         } finally {
-            close(fd);
+            close(fd, e -> null);
         }
     }
 

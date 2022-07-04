@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,26 @@
 
 package jdk.test.failurehandler.action;
 
+import jdk.test.failurehandler.CoreInfoGatherer;
 import jdk.test.failurehandler.ProcessInfoGatherer;
 import jdk.test.failurehandler.EnvironmentInfoGatherer;
 import jdk.test.failurehandler.HtmlSection;
 import jdk.test.failurehandler.Utils;
 
+import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.zip.GZIPInputStream;
 
-public class ActionSet implements ProcessInfoGatherer, EnvironmentInfoGatherer {
+public class ActionSet implements ProcessInfoGatherer, EnvironmentInfoGatherer, CoreInfoGatherer {
     private static final String ENVIRONMENT_PROPERTY = "environment";
     private static final String ON_PID_PROPERTY = "onTimeout";
+    private static final String CORES_PROPERTY = "cores";
+
 
     private final ActionHelper helper;
 
@@ -46,6 +53,7 @@ public class ActionSet implements ProcessInfoGatherer, EnvironmentInfoGatherer {
     private final String name;
     private final List<SimpleAction> environmentActions;
     private final List<PatternAction> processActions;
+    private final List<PatternAction> coreActions;
 
 
     public ActionSet(ActionHelper helper, PrintWriter log, String name) {
@@ -55,6 +63,7 @@ public class ActionSet implements ProcessInfoGatherer, EnvironmentInfoGatherer {
         Properties p = Utils.getProperties(name);
         environmentActions = getSimpleActions(log, p, ENVIRONMENT_PROPERTY);
         processActions = getPatternActions(log, p, ON_PID_PROPERTY);
+        coreActions = getPatternActions(log, p, CORES_PROPERTY);
     }
 
     private List<SimpleAction> getSimpleActions(PrintWriter log, Properties p,
@@ -121,6 +130,13 @@ public class ActionSet implements ProcessInfoGatherer, EnvironmentInfoGatherer {
     public void gatherEnvironmentInfo(HtmlSection section) {
         for (SimpleAction action : environmentActions) {
             helper.runPatternAction(action, section);
+        }
+    }
+
+    @Override
+    public void gatherCoreInfo(HtmlSection section, Path core) {
+        for (PatternAction action : coreActions) {
+            helper.runPatternAction(action, section, core.toString());
         }
     }
 }

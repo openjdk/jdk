@@ -25,7 +25,19 @@
 #include "logging/logDecorators.hpp"
 #include "runtime/os.hpp"
 
+template <LogDecorators::Decorator d>
+struct AllBitmask {
+  // Use recursive template deduction to calculate the bitmask of all decorations.
+  static const uint _value = (1 << d) | AllBitmask<static_cast<LogDecorators::Decorator>(d + 1)>::_value;
+};
+
+template<>
+struct AllBitmask<LogDecorators::Count> {
+  static const uint _value = 0;
+};
+
 const LogDecorators LogDecorators::None = LogDecorators(0);
+const LogDecorators LogDecorators::All  = LogDecorators(AllBitmask<time_decorator>::_value);
 
 const char* LogDecorators::_name[][2] = {
 #define DECORATOR(n, a) {#n, #a},

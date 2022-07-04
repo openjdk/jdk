@@ -25,8 +25,9 @@
 #ifndef SHARE_GC_SHARED_OOPSTORAGEPARSTATE_INLINE_HPP
 #define SHARE_GC_SHARED_OOPSTORAGEPARSTATE_INLINE_HPP
 
-#include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageParState.hpp"
+
+#include "gc/shared/oopStorage.inline.hpp"
 #include "metaprogramming/conditional.hpp"
 #include "utilities/macros.hpp"
 

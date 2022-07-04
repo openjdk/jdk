@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,7 +127,7 @@ public class Timer extends NotificationBroadcasterSupport
      * Table containing all the timer notifications of this timer,
      * with the associated date, period and number of occurrences.
      */
-    final private Map<Integer,Object[]> timerTable =
+    private final Map<Integer,Object[]> timerTable =
         new HashMap<>();
 
     /**
@@ -162,7 +162,7 @@ public class Timer extends NotificationBroadcasterSupport
      * The notification counter ID.
      * Used to keep the max key value inserted into the timer table.
      */
-    volatile private int counterID = 0;
+    private volatile int counterID = 0;
 
     private java.util.Timer timer;
 

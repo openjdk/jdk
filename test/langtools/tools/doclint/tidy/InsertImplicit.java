@@ -5,7 +5,7 @@
  * @library ..
  * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
- * @run main DocLintTester -ref InsertImplicit.out InsertImplicit.java
+ * @run main DocLintTester -Xmsgs:all,-missing -ref InsertImplicit.out InsertImplicit.java
  */
 
 // tidy: Warning: inserting implicit <.*>

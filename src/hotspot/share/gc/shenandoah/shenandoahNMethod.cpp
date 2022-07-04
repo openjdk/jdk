@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2019, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,9 @@
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahNMethod.inline.hpp"
+#include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/continuation.hpp"
 
 ShenandoahNMethod::ShenandoahNMethod(nmethod* nm, GrowableArray<oop*>& oops, bool non_immediate_oops) :
   _nm(nm), _oops(NULL), _oops_count(0), _unregistered(false) {
@@ -159,14 +161,14 @@ void ShenandoahNMethod::heal_nmethod(nmethod* nm) {
     ShenandoahKeepAliveClosure cl;
     data->oops_do(&cl);
   } else if (heap->is_concurrent_weak_root_in_progress() ||
-             heap->is_concurrent_strong_root_in_progress()) {
+             heap->is_concurrent_strong_root_in_progress() ) {
     ShenandoahEvacOOMScope evac_scope;
     heal_nmethod_metadata(data);
   } else {
     // There is possibility that GC is cancelled when it arrives final mark.
     // In this case, concurrent root phase is skipped and degenerated GC should be
     // followed, where nmethods are disarmed.
-    assert(heap->cancelled_gc(), "What else?");
+    assert(heap->cancelled_gc() || Continuations::enabled(), "What else?");
   }
 }
 
@@ -271,13 +273,17 @@ void ShenandoahNMethodTable::register_nmethod(nmethod* nm) {
   assert(_index >= 0 && _index <= _list->size(), "Sanity");
 
   ShenandoahNMethod* data = ShenandoahNMethod::gc_data(nm);
-  ShenandoahReentrantLocker data_locker(data != NULL ? data->lock() : NULL);
 
   if (data != NULL) {
     assert(contain(nm), "Must have been registered");
     assert(nm == data->nm(), "Must be same nmethod");
+    // Prevent updating a nmethod while concurrent iteration is in progress.
+    wait_until_concurrent_iteration_done();
+    ShenandoahReentrantLocker data_locker(data->lock());
     data->update();
   } else {
+    // For a new nmethod, we can safely append it to the list, because
+    // concurrent iteration will not touch it.
     data = ShenandoahNMethod::for_nmethod(nm);
     assert(data != NULL, "Sanity");
     ShenandoahNMethod::attach_gc_data(nm, data);
@@ -382,11 +388,13 @@ void ShenandoahNMethodTable::rebuild(int size) {
 }
 
 ShenandoahNMethodTableSnapshot* ShenandoahNMethodTable::snapshot_for_iteration() {
+  assert(CodeCache_lock->owned_by_self(), "Must have CodeCache_lock held");
   _itr_cnt++;
   return new ShenandoahNMethodTableSnapshot(this);
 }
 
 void ShenandoahNMethodTable::finish_iteration(ShenandoahNMethodTableSnapshot* snapshot) {
+  assert(CodeCache_lock->owned_by_self(), "Must have CodeCache_lock held");
   assert(iteration_in_progress(), "Why we here?");
   assert(snapshot != NULL, "No snapshot");
   _itr_cnt--;
@@ -493,7 +501,7 @@ void ShenandoahNMethodTableSnapshot::parallel_blobs_do(CodeBlobClosure *f) {
 
   size_t max = (size_t)_limit;
   while (_claimed < max) {
-    size_t cur = Atomic::fetch_and_add(&_claimed, stride);
+    size_t cur = Atomic::fetch_and_add(&_claimed, stride, memory_order_relaxed);
     size_t start = cur;
     size_t end = MIN2(cur + stride, max);
     if (start >= max) break;
@@ -520,7 +528,7 @@ void ShenandoahNMethodTableSnapshot::concurrent_nmethods_do(NMethodClosure* cl) 
   ShenandoahNMethod** list = _list->list();
   size_t max = (size_t)_limit;
   while (_claimed < max) {
-    size_t cur = Atomic::fetch_and_add(&_claimed, stride);
+    size_t cur = Atomic::fetch_and_add(&_claimed, stride, memory_order_relaxed);
     size_t start = cur;
     size_t end = MIN2(cur + stride, max);
     if (start >= max) break;

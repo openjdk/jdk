@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -322,7 +322,7 @@ void Matcher::match( ) {
   find_shared( C->root() );
   find_shared( C->top() );
 
-  C->print_method(PHASE_BEFORE_MATCHING);
+  C->print_method(PHASE_BEFORE_MATCHING, 1);
 
   // Create new ideal node ConP #NULL even if it does exist in old space
   // to avoid false sharing if the corresponding mach node is not used.
@@ -434,6 +434,24 @@ static RegMask *init_input_masks( uint size, RegMask &ret_adr, RegMask &fp ) {
   return rms;
 }
 
+const int Matcher::scalable_predicate_reg_slots() {
+  assert(Matcher::has_predicated_vectors() && Matcher::supports_scalable_vector(),
+        "scalable predicate vector should be supported");
+  int vector_reg_bit_size = Matcher::scalable_vector_reg_size(T_BYTE) << LogBitsPerByte;
+  // We assume each predicate register is one-eighth of the size of
+  // scalable vector register, one mask bit per vector byte.
+  int predicate_reg_bit_size = vector_reg_bit_size >> 3;
+  // Compute number of slots which is required when scalable predicate
+  // register is spilled. E.g. if scalable vector register is 640 bits,
+  // predicate register is 80 bits, which is 2.5 * slots.
+  // We will round up the slot number to power of 2, which is required
+  // by find_first_set().
+  int slots = predicate_reg_bit_size & (BitsPerInt - 1)
+              ? (predicate_reg_bit_size >> LogBitsPerInt) + 1
+              : predicate_reg_bit_size >> LogBitsPerInt;
+  return round_up_power_of_2(slots);
+}
+
 #define NOF_STACK_MASKS (3*13)
 
 // Create the initial stack mask used by values spilling to the stack.
@@ -442,7 +460,7 @@ static RegMask *init_input_masks( uint size, RegMask &ret_adr, RegMask &fp ) {
 void Matcher::init_first_stack_mask() {
 
   // Allocate storage for spill masks as masks for the appropriate load type.
-  RegMask *rms = (RegMask*)C->comp_arena()->Amalloc_D(sizeof(RegMask) * NOF_STACK_MASKS);
+  RegMask *rms = (RegMask*)C->comp_arena()->AmallocWords(sizeof(RegMask) * NOF_STACK_MASKS);
 
   // Initialize empty placeholder masks into the newly allocated arena
   for (int i = 0; i < NOF_STACK_MASKS; i++) {
@@ -542,6 +560,8 @@ void Matcher::init_first_stack_mask() {
   if (Matcher::has_predicated_vectors()) {
     *idealreg2spillmask[Op_RegVectMask] = *idealreg2regmask[Op_RegVectMask];
      idealreg2spillmask[Op_RegVectMask]->OR(aligned_stack_mask);
+  } else {
+    *idealreg2spillmask[Op_RegVectMask] = RegMask::Empty;
   }
 
   if (Matcher::vector_size_supported(T_BYTE,4)) {
@@ -614,6 +634,21 @@ void Matcher::init_first_stack_mask() {
   if (Matcher::supports_scalable_vector()) {
     int k = 1;
     OptoReg::Name in = OptoReg::add(_in_arg_limit, -1);
+    if (Matcher::has_predicated_vectors()) {
+      // Exclude last input arg stack slots to avoid spilling vector register there,
+      // otherwise RegVectMask spills could stomp over stack slots in caller frame.
+      for (; (in >= init_in) && (k < scalable_predicate_reg_slots()); k++) {
+        scalable_stack_mask.Remove(in);
+        in = OptoReg::add(in, -1);
+      }
+
+      // For RegVectMask
+      scalable_stack_mask.clear_to_sets(scalable_predicate_reg_slots());
+      assert(scalable_stack_mask.is_AllStack(), "should be infinite stack");
+      *idealreg2spillmask[Op_RegVectMask] = *idealreg2regmask[Op_RegVectMask];
+      idealreg2spillmask[Op_RegVectMask]->OR(scalable_stack_mask);
+    }
+
     // Exclude last input arg stack slots to avoid spilling vector register there,
     // otherwise vector spills could stomp over stack slots in caller frame.
     for (; (in >= init_in) && (k < scalable_vector_reg_size(T_FLOAT)); k++) {
@@ -724,12 +759,10 @@ void Matcher::init_first_stack_mask() {
 }
 
 //---------------------------is_save_on_entry----------------------------------
-bool Matcher::is_save_on_entry( int reg ) {
+bool Matcher::is_save_on_entry(int reg) {
   return
     _register_save_policy[reg] == 'E' ||
-    _register_save_policy[reg] == 'A' || // Save-on-entry register?
-    // Also save argument registers in the trampolining stubs
-    (C->save_argument_registers() && is_spillable_arg(reg));
+    _register_save_policy[reg] == 'A'; // Save-on-entry register?
 }
 
 //---------------------------Fixup_Save_On_Entry-------------------------------
@@ -744,12 +777,6 @@ void Matcher::Fixup_Save_On_Entry( ) {
   // Find the procedure Start Node
   StartNode *start = C->start();
   assert( start, "Expect a start node" );
-
-  // Save argument registers in the trampolining stubs
-  if( C->save_argument_registers() )
-    for( i = 0; i < _last_Mach_Reg; i++ )
-      if( is_spillable_arg(i) )
-        soe_cnt++;
 
   // Input RegMask array shared by all Returns.
   // The type for doubles and longs has a count of 2, but
@@ -1039,7 +1066,7 @@ static void match_alias_type(Compile* C, Node* n, Node* m) {
     case Op_StrIndexOf:
     case Op_StrIndexOfChar:
     case Op_AryEq:
-    case Op_HasNegatives:
+    case Op_CountPositives:
     case Op_MemBarVolatile:
     case Op_MemBarCPUOrder: // %%% these ideals should have narrower adr_type?
     case Op_StrInflatedCopy:
@@ -1279,13 +1306,6 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
       mach_call_rt->_name = call->as_CallRuntime()->_name;
       mach_call_rt->_leaf_no_fp = call->is_CallLeafNoFP();
     }
-    else if( mcall->is_MachCallNative() ) {
-      MachCallNativeNode* mach_call_native = mcall->as_MachCallNative();
-      CallNativeNode* call_native = call->as_CallNative();
-      mach_call_native->_name = call_native->_name;
-      mach_call_native->_arg_regs = call_native->_arg_regs;
-      mach_call_native->_ret_regs = call_native->_ret_regs;
-    }
     msfpt = mcall;
   }
   // This is a non-call safepoint
@@ -1320,8 +1340,6 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
   // These are usually backing store for register arguments for varargs.
   if( call != NULL && call->is_CallRuntime() )
     out_arg_limit_per_call = OptoReg::add(out_arg_limit_per_call,C->varargs_C_out_slots_killed());
-  if( call != NULL && call->is_CallNative() )
-    out_arg_limit_per_call = OptoReg::add(out_arg_limit_per_call, call->as_CallNative()->_shadow_space_bytes);
 
 
   // Do the normal argument list (parameters) register masks
@@ -1373,16 +1391,27 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
     for( i = 0; i < argcnt; i++ ) {
       // Address of incoming argument mask to fill in
       RegMask *rm = &mcall->_in_rms[i+TypeFunc::Parms];
-      if( !parm_regs[i].first()->is_valid() &&
-          !parm_regs[i].second()->is_valid() ) {
+      VMReg first = parm_regs[i].first();
+      VMReg second = parm_regs[i].second();
+      if(!first->is_valid() &&
+         !second->is_valid()) {
         continue;               // Avoid Halves
       }
+      // Handle case where arguments are in vector registers.
+      if(call->in(TypeFunc::Parms + i)->bottom_type()->isa_vect()) {
+        OptoReg::Name reg_fst = OptoReg::as_OptoReg(first);
+        OptoReg::Name reg_snd = OptoReg::as_OptoReg(second);
+        assert (reg_fst <= reg_snd, "fst=%d snd=%d", reg_fst, reg_snd);
+        for (OptoReg::Name r = reg_fst; r <= reg_snd; r++) {
+          rm->Insert(r);
+        }
+      }
       // Grab first register, adjust stack slots and insert in mask.
-      OptoReg::Name reg1 = warp_outgoing_stk_arg(parm_regs[i].first(), begin_out_arg_area, out_arg_limit_per_call );
+      OptoReg::Name reg1 = warp_outgoing_stk_arg(first, begin_out_arg_area, out_arg_limit_per_call );
       if (OptoReg::is_valid(reg1))
         rm->Insert( reg1 );
       // Grab second register (if any), adjust stack slots and insert in mask.
-      OptoReg::Name reg2 = warp_outgoing_stk_arg(parm_regs[i].second(), begin_out_arg_area, out_arg_limit_per_call );
+      OptoReg::Name reg2 = warp_outgoing_stk_arg(second, begin_out_arg_area, out_arg_limit_per_call );
       if (OptoReg::is_valid(reg2))
         rm->Insert( reg2 );
     } // End of for all arguments
@@ -2025,7 +2054,7 @@ OptoReg::Name Matcher::find_receiver() {
   return OptoReg::as_OptoReg(regs.first());
 }
 
-bool Matcher::is_vshift_con_pattern(Node *n, Node *m) {
+bool Matcher::is_vshift_con_pattern(Node* n, Node* m) {
   if (n != NULL && m != NULL) {
     return VectorNode::is_vector_shift(n) &&
            VectorNode::is_vector_shift_count(m) && m->in(1)->is_Con();
@@ -2192,7 +2221,7 @@ bool Matcher::find_shared_visit(MStack& mstack, Node* n, uint opcode, bool& mem_
           n->outcnt() == 1 )            // Not already shared
         set_shared(n);                  // Force it to be a root
       break;
-    case Op_BoxLock:         // Cant match until we get stack-regs in ADLC
+    case Op_BoxLock:         // Can't match until we get stack-regs in ADLC
     case Op_IfFalse:
     case Op_IfTrue:
     case Op_MachProj:
@@ -2214,7 +2243,7 @@ bool Matcher::find_shared_visit(MStack& mstack, Node* n, uint opcode, bool& mem_
     case Op_StrIndexOf:
     case Op_StrIndexOfChar:
     case Op_AryEq:
-    case Op_HasNegatives:
+    case Op_CountPositives:
     case Op_StrInflatedCopy:
     case Op_StrCompressedCopy:
     case Op_EncodeISOArray:
@@ -2224,6 +2253,11 @@ bool Matcher::find_shared_visit(MStack& mstack, Node* n, uint opcode, bool& mem_
     case Op_FmaVF:
     case Op_MacroLogicV:
     case Op_LoadVectorMasked:
+    case Op_VectorCmpMasked:
+    case Op_CompressV:
+    case Op_CompressM:
+    case Op_ExpandV:
+    case Op_VectorLoadMask:
       set_shared(n); // Force result into register (it will be anyways)
       break;
     case Op_ConP: {  // Convert pointers above the centerline to NUL
@@ -2269,6 +2303,29 @@ bool Matcher::find_shared_visit(MStack& mstack, Node* n, uint opcode, bool& mem_
 }
 
 void Matcher::find_shared_post_visit(Node* n, uint opcode) {
+  if (n->is_predicated_vector()) {
+    // Restructure into binary trees for Matching.
+    if (n->req() == 4) {
+      n->set_req(1, new BinaryNode(n->in(1), n->in(2)));
+      n->set_req(2, n->in(3));
+      n->del_req(3);
+    } else if (n->req() == 5) {
+      n->set_req(1, new BinaryNode(n->in(1), n->in(2)));
+      n->set_req(2, new BinaryNode(n->in(3), n->in(4)));
+      n->del_req(4);
+      n->del_req(3);
+    } else if (n->req() == 6) {
+      Node* b3 = new BinaryNode(n->in(4), n->in(5));
+      Node* b2 = new BinaryNode(n->in(3), b3);
+      Node* b1 = new BinaryNode(n->in(2), b2);
+      n->set_req(2, b1);
+      n->del_req(5);
+      n->del_req(4);
+      n->del_req(3);
+    }
+    return;
+  }
+
   switch(opcode) {       // Handle some opcodes special
     case Op_StorePConditional:
     case Op_StoreIConditional:
@@ -2314,6 +2371,12 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
       n->set_req(1, pair1);
       Node* pair2 = new BinaryNode(n->in(2), n->in(3));
       n->set_req(2, pair2);
+      n->del_req(3);
+      break;
+    }
+    case Op_VectorCmpMasked: {
+      Node* pair1 = new BinaryNode(n->in(2), n->in(3));
+      n->set_req(2, pair1);
       n->del_req(3);
       break;
     }
@@ -2387,6 +2450,8 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
       break;
     }
     case Op_CopySignD:
+    case Op_SignumVF:
+    case Op_SignumVD:
     case Op_SignumF:
     case Op_SignumD: {
       Node* pair = new BinaryNode(n->in(2), n->in(3));
@@ -2402,8 +2467,18 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
       n->del_req(3);
       break;
     }
+    case Op_LoadVectorGatherMasked:
     case Op_StoreVectorScatter: {
       Node* pair = new BinaryNode(n->in(MemNode::ValueIn), n->in(MemNode::ValueIn+1));
+      n->set_req(MemNode::ValueIn, pair);
+      n->del_req(MemNode::ValueIn+1);
+      break;
+    }
+    case Op_StoreVectorScatterMasked: {
+      Node* pair = new BinaryNode(n->in(MemNode::ValueIn+1), n->in(MemNode::ValueIn+2));
+      n->set_req(MemNode::ValueIn+1, pair);
+      n->del_req(MemNode::ValueIn+2);
+      pair = new BinaryNode(n->in(MemNode::ValueIn), n->in(MemNode::ValueIn+1));
       n->set_req(MemNode::ValueIn, pair);
       n->del_req(MemNode::ValueIn+1);
       break;
@@ -2628,7 +2703,7 @@ MachOper* Matcher::specialize_vector_operand(MachNode* m, uint opnd_idx) {
     if (def->is_Mach()) {
       if (def->is_MachTemp() && Matcher::is_generic_vector(def->as_Mach()->_opnds[0])) {
         specialize_temp_node(def->as_MachTemp(), m, base_idx); // MachTemp node use site
-      } else if (is_generic_reg2reg_move(def->as_Mach())) {
+      } else if (is_reg2reg_move(def->as_Mach())) {
         def = def->in(1); // skip over generic reg-to-reg moves
       }
     }
@@ -2654,9 +2729,6 @@ void Matcher::specialize_generic_vector_operands() {
   assert(supports_generic_vector_operands, "sanity");
   ResourceMark rm;
 
-  if (C->max_vector_size() == 0) {
-    return; // no vector instructions or operands
-  }
   // Replace generic vector operands (vec/legVec) with concrete ones (vec[SDXYZ]/legVec[SDXYZ])
   // and remove reg-to-reg vector moves (MoveVec2Leg and MoveLeg2Vec).
   Unique_Node_List live_nodes;
@@ -2665,7 +2737,7 @@ void Matcher::specialize_generic_vector_operands() {
   while (live_nodes.size() > 0) {
     MachNode* m = live_nodes.pop()->isa_Mach();
     if (m != NULL) {
-      if (Matcher::is_generic_reg2reg_move(m)) {
+      if (Matcher::is_reg2reg_move(m)) {
         // Register allocator properly handles vec <=> leg moves using register masks.
         int opnd_idx = m->operand_index(1);
         Node* def = m->in(opnd_idx);
@@ -2679,6 +2751,39 @@ void Matcher::specialize_generic_vector_operands() {
   }
 }
 
+uint Matcher::vector_length(const Node* n) {
+  const TypeVect* vt = n->bottom_type()->is_vect();
+  return vt->length();
+}
+
+uint Matcher::vector_length(const MachNode* use, const MachOper* opnd) {
+  int def_idx = use->operand_index(opnd);
+  Node* def = use->in(def_idx);
+  return def->bottom_type()->is_vect()->length();
+}
+
+uint Matcher::vector_length_in_bytes(const Node* n) {
+  const TypeVect* vt = n->bottom_type()->is_vect();
+  return vt->length_in_bytes();
+}
+
+uint Matcher::vector_length_in_bytes(const MachNode* use, const MachOper* opnd) {
+  uint def_idx = use->operand_index(opnd);
+  Node* def = use->in(def_idx);
+  return def->bottom_type()->is_vect()->length_in_bytes();
+}
+
+BasicType Matcher::vector_element_basic_type(const Node* n) {
+  const TypeVect* vt = n->bottom_type()->is_vect();
+  return vt->element_basic_type();
+}
+
+BasicType Matcher::vector_element_basic_type(const MachNode* use, const MachOper* opnd) {
+  int def_idx = use->operand_index(opnd);
+  Node* def = use->in(def_idx);
+  return def->bottom_type()->is_vect()->element_basic_type();
+}
+
 #ifdef ASSERT
 bool Matcher::verify_after_postselect_cleanup() {
   assert(!C->failing(), "sanity");
@@ -2688,7 +2793,7 @@ bool Matcher::verify_after_postselect_cleanup() {
     for (uint i = 0; i < useful.size(); i++) {
       MachNode* m = useful.at(i)->isa_Mach();
       if (m != NULL) {
-        assert(!Matcher::is_generic_reg2reg_move(m), "no MoveVec nodes allowed");
+        assert(!Matcher::is_reg2reg_move(m), "no MoveVec nodes allowed");
         for (uint j = 0; j < m->num_opnds(); j++) {
           assert(!Matcher::is_generic_vector(m->_opnds[j]), "no generic vector operands allowed");
         }
@@ -2757,9 +2862,7 @@ bool Matcher::post_store_load_barrier(const Node* vmb) {
     }
 
     // Op_FastLock previously appeared in the Op_* list above.
-    // With biased locking we're no longer guaranteed that a monitor
-    // enter operation contains a serializing instruction.
-    if ((xop == Op_FastLock) && !UseBiasedLocking) {
+    if (xop == Op_FastLock) {
       return true;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -524,6 +524,34 @@ public abstract class DebuggerBase implements Debugger {
       Address interface */
   protected void invalidatePageCache(long startAddress, long numBytes) {
     cache.clear(startAddress, numBytes);
+  }
+
+  @Override
+  public String findSymbol(String symbol) {
+    Address addr = lookup(null, symbol);
+    if (addr == null && getOS().equals("win32")) {
+      // On win32 symbols are prefixed with the dll name. Do the user
+      // a favor and see if this is a symbol in jvm.dll or java.dll.
+      addr = lookup(null, "jvm!" + symbol);
+      if (addr == null) {
+        addr = lookup(null, "java!" + symbol);
+      }
+    }
+    if (addr == null) {
+      return null;
+    }
+    var builder = new StringBuilder(addr.toString());
+    var cdbg = getCDebugger();
+    var loadObject = cdbg.loadObjectContainingPC(addr);
+    // Print the shared library path and the offset of the symbol
+    if (loadObject != null) {
+      builder.append(": ").append(loadObject.getName());
+      long diff = addr.minus(loadObject.getBase());
+      if (diff != 0L) {
+        builder.append(" + 0x").append(Long.toHexString(diff));
+      }
+    }
+    return builder.toString();
   }
 
   public long getJBooleanSize() {

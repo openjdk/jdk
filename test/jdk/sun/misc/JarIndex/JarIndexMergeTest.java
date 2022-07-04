@@ -35,7 +35,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.LinkedList;
+import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 // implementation specific API
@@ -64,7 +64,7 @@ public class JarIndexMergeTest {
     static void assertFileResolved(JarIndex jarIndex2, String file,
                                    String jarName) {
         @SuppressWarnings("unchecked")
-        LinkedList<String> jarLists = (LinkedList<String>)jarIndex2.get(file);
+        List<String> jarLists = (List<String>)jarIndex2.get(file);
         if (jarLists == null || jarLists.size() == 0 ||
             !jarName.equals(jarLists.get(0))) {
             throw new RuntimeException(

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,13 @@
 
 /*
  * @test
+ * @enablePreview
  * @run testng TestReshape
  */
 
-import jdk.incubator.foreign.MemoryLayout;
-import jdk.incubator.foreign.MemoryLayouts;
-import jdk.incubator.foreign.SequenceLayout;
-
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.SequenceLayout;
+import java.lang.foreign.ValueLayout;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -43,7 +43,7 @@ public class TestReshape {
     @Test(dataProvider = "shapes")
     public void testReshape(MemoryLayout layout, long[] expectedShape) {
         long flattenedSize = LongStream.of(expectedShape).reduce(1L, Math::multiplyExact);
-        SequenceLayout seq_flattened = MemoryLayout.ofSequence(flattenedSize, layout);
+        SequenceLayout seq_flattened = MemoryLayout.sequenceLayout(flattenedSize, layout);
         assertDimensions(seq_flattened, flattenedSize);
         for (long[] shape : new Shape(expectedShape)) {
             SequenceLayout seq_shaped = seq_flattened.reshape(shape);
@@ -54,44 +54,26 @@ public class TestReshape {
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testInvalidReshape() {
-        SequenceLayout seq = MemoryLayout.ofSequence(4, MemoryLayouts.JAVA_INT);
+        SequenceLayout seq = MemoryLayout.sequenceLayout(4, ValueLayout.JAVA_INT);
         seq.reshape(3, 2);
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testBadReshapeInference() {
-        SequenceLayout seq = MemoryLayout.ofSequence(4, MemoryLayouts.JAVA_INT);
+        SequenceLayout seq = MemoryLayout.sequenceLayout(4, ValueLayout.JAVA_INT);
         seq.reshape(-1, -1);
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testBadReshapeParameterZero() {
-        SequenceLayout seq = MemoryLayout.ofSequence(4, MemoryLayouts.JAVA_INT);
+        SequenceLayout seq = MemoryLayout.sequenceLayout(4, ValueLayout.JAVA_INT);
         seq.reshape(0, 4);
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testBadReshapeParameterNegative() {
-        SequenceLayout seq = MemoryLayout.ofSequence(4, MemoryLayouts.JAVA_INT);
+        SequenceLayout seq = MemoryLayout.sequenceLayout(4, ValueLayout.JAVA_INT);
         seq.reshape(-2, 2);
-    }
-
-    @Test(expectedExceptions = UnsupportedOperationException.class)
-    public void testReshapeOnUnboundSequence() {
-        SequenceLayout seq = MemoryLayout.ofSequence(MemoryLayouts.JAVA_INT);
-        seq.reshape(3, 2);
-    }
-
-    @Test(expectedExceptions = UnsupportedOperationException.class)
-    public void testFlattenOnUnboundSequence() {
-        SequenceLayout seq = MemoryLayout.ofSequence(MemoryLayouts.JAVA_INT);
-        seq.flatten();
-    }
-
-    @Test(expectedExceptions = UnsupportedOperationException.class)
-    public void testFlattenOnUnboundNestedSequence() {
-        SequenceLayout seq = MemoryLayout.ofSequence(4, MemoryLayout.ofSequence(MemoryLayouts.JAVA_INT));
-        seq.flatten();
     }
 
     static void assertDimensions(SequenceLayout layout, long... dims) {
@@ -100,7 +82,7 @@ public class TestReshape {
             if (prev != null) {
                 layout = (SequenceLayout)prev.elementLayout();
             }
-            assertEquals(layout.elementCount().getAsLong(), dims[i]);
+            assertEquals(layout.elementCount(), dims[i]);
             prev = layout;
         }
     }
@@ -124,62 +106,62 @@ public class TestReshape {
         }
     }
 
-    static MemoryLayout POINT = MemoryLayout.ofStruct(
-            MemoryLayouts.JAVA_INT,
-            MemoryLayouts.JAVA_INT
+    static MemoryLayout POINT = MemoryLayout.structLayout(
+            ValueLayout.JAVA_INT,
+            ValueLayout.JAVA_INT
     );
 
     @DataProvider(name = "shapes")
     Object[][] shapes() {
         return new Object[][] {
-                { MemoryLayouts.JAVA_BYTE, new long[] { 256 } },
-                { MemoryLayouts.JAVA_BYTE, new long[] { 16, 16 } },
-                { MemoryLayouts.JAVA_BYTE, new long[] { 4, 4, 4, 4 } },
-                { MemoryLayouts.JAVA_BYTE, new long[] { 2, 8, 16 } },
-                { MemoryLayouts.JAVA_BYTE, new long[] { 16, 8, 2 } },
-                { MemoryLayouts.JAVA_BYTE, new long[] { 8, 16, 2 } },
+                { ValueLayout.JAVA_BYTE, new long[] { 256 } },
+                { ValueLayout.JAVA_BYTE, new long[] { 16, 16 } },
+                { ValueLayout.JAVA_BYTE, new long[] { 4, 4, 4, 4 } },
+                { ValueLayout.JAVA_BYTE, new long[] { 2, 8, 16 } },
+                { ValueLayout.JAVA_BYTE, new long[] { 16, 8, 2 } },
+                { ValueLayout.JAVA_BYTE, new long[] { 8, 16, 2 } },
 
-                { MemoryLayouts.JAVA_SHORT, new long[] { 256 } },
-                { MemoryLayouts.JAVA_SHORT, new long[] { 16, 16 } },
-                { MemoryLayouts.JAVA_SHORT, new long[] { 4, 4, 4, 4 } },
-                { MemoryLayouts.JAVA_SHORT, new long[] { 2, 8, 16 } },
-                { MemoryLayouts.JAVA_SHORT, new long[] { 16, 8, 2 } },
-                { MemoryLayouts.JAVA_SHORT, new long[] { 8, 16, 2 } },
+                { ValueLayout.JAVA_SHORT, new long[] { 256 } },
+                { ValueLayout.JAVA_SHORT, new long[] { 16, 16 } },
+                { ValueLayout.JAVA_SHORT, new long[] { 4, 4, 4, 4 } },
+                { ValueLayout.JAVA_SHORT, new long[] { 2, 8, 16 } },
+                { ValueLayout.JAVA_SHORT, new long[] { 16, 8, 2 } },
+                { ValueLayout.JAVA_SHORT, new long[] { 8, 16, 2 } },
 
-                { MemoryLayouts.JAVA_CHAR, new long[] { 256 } },
-                { MemoryLayouts.JAVA_CHAR, new long[] { 16, 16 } },
-                { MemoryLayouts.JAVA_CHAR, new long[] { 4, 4, 4, 4 } },
-                { MemoryLayouts.JAVA_CHAR, new long[] { 2, 8, 16 } },
-                { MemoryLayouts.JAVA_CHAR, new long[] { 16, 8, 2 } },
-                { MemoryLayouts.JAVA_CHAR, new long[] { 8, 16, 2 } },
+                { ValueLayout.JAVA_CHAR, new long[] { 256 } },
+                { ValueLayout.JAVA_CHAR, new long[] { 16, 16 } },
+                { ValueLayout.JAVA_CHAR, new long[] { 4, 4, 4, 4 } },
+                { ValueLayout.JAVA_CHAR, new long[] { 2, 8, 16 } },
+                { ValueLayout.JAVA_CHAR, new long[] { 16, 8, 2 } },
+                { ValueLayout.JAVA_CHAR, new long[] { 8, 16, 2 } },
 
-                { MemoryLayouts.JAVA_INT, new long[] { 256 } },
-                { MemoryLayouts.JAVA_INT, new long[] { 16, 16 } },
-                { MemoryLayouts.JAVA_INT, new long[] { 4, 4, 4, 4 } },
-                { MemoryLayouts.JAVA_INT, new long[] { 2, 8, 16 } },
-                { MemoryLayouts.JAVA_INT, new long[] { 16, 8, 2 } },
-                { MemoryLayouts.JAVA_INT, new long[] { 8, 16, 2 } },
+                { ValueLayout.JAVA_INT, new long[] { 256 } },
+                { ValueLayout.JAVA_INT, new long[] { 16, 16 } },
+                { ValueLayout.JAVA_INT, new long[] { 4, 4, 4, 4 } },
+                { ValueLayout.JAVA_INT, new long[] { 2, 8, 16 } },
+                { ValueLayout.JAVA_INT, new long[] { 16, 8, 2 } },
+                { ValueLayout.JAVA_INT, new long[] { 8, 16, 2 } },
 
-                { MemoryLayouts.JAVA_LONG, new long[] { 256 } },
-                { MemoryLayouts.JAVA_LONG, new long[] { 16, 16 } },
-                { MemoryLayouts.JAVA_LONG, new long[] { 4, 4, 4, 4 } },
-                { MemoryLayouts.JAVA_LONG, new long[] { 2, 8, 16 } },
-                { MemoryLayouts.JAVA_LONG, new long[] { 16, 8, 2 } },
-                { MemoryLayouts.JAVA_LONG, new long[] { 8, 16, 2 } },
+                { ValueLayout.JAVA_LONG, new long[] { 256 } },
+                { ValueLayout.JAVA_LONG, new long[] { 16, 16 } },
+                { ValueLayout.JAVA_LONG, new long[] { 4, 4, 4, 4 } },
+                { ValueLayout.JAVA_LONG, new long[] { 2, 8, 16 } },
+                { ValueLayout.JAVA_LONG, new long[] { 16, 8, 2 } },
+                { ValueLayout.JAVA_LONG, new long[] { 8, 16, 2 } },
 
-                { MemoryLayouts.JAVA_FLOAT, new long[] { 256 } },
-                { MemoryLayouts.JAVA_FLOAT, new long[] { 16, 16 } },
-                { MemoryLayouts.JAVA_FLOAT, new long[] { 4, 4, 4, 4 } },
-                { MemoryLayouts.JAVA_FLOAT, new long[] { 2, 8, 16 } },
-                { MemoryLayouts.JAVA_FLOAT, new long[] { 16, 8, 2 } },
-                { MemoryLayouts.JAVA_FLOAT, new long[] { 8, 16, 2 } },
+                { ValueLayout.JAVA_FLOAT, new long[] { 256 } },
+                { ValueLayout.JAVA_FLOAT, new long[] { 16, 16 } },
+                { ValueLayout.JAVA_FLOAT, new long[] { 4, 4, 4, 4 } },
+                { ValueLayout.JAVA_FLOAT, new long[] { 2, 8, 16 } },
+                { ValueLayout.JAVA_FLOAT, new long[] { 16, 8, 2 } },
+                { ValueLayout.JAVA_FLOAT, new long[] { 8, 16, 2 } },
 
-                { MemoryLayouts.JAVA_DOUBLE, new long[] { 256 } },
-                { MemoryLayouts.JAVA_DOUBLE, new long[] { 16, 16 } },
-                { MemoryLayouts.JAVA_DOUBLE, new long[] { 4, 4, 4, 4 } },
-                { MemoryLayouts.JAVA_DOUBLE, new long[] { 2, 8, 16 } },
-                { MemoryLayouts.JAVA_DOUBLE, new long[] { 16, 8, 2 } },
-                { MemoryLayouts.JAVA_DOUBLE, new long[] { 8, 16, 2 } },
+                { ValueLayout.JAVA_DOUBLE, new long[] { 256 } },
+                { ValueLayout.JAVA_DOUBLE, new long[] { 16, 16 } },
+                { ValueLayout.JAVA_DOUBLE, new long[] { 4, 4, 4, 4 } },
+                { ValueLayout.JAVA_DOUBLE, new long[] { 2, 8, 16 } },
+                { ValueLayout.JAVA_DOUBLE, new long[] { 16, 8, 2 } },
+                { ValueLayout.JAVA_DOUBLE, new long[] { 8, 16, 2 } },
 
                 { POINT, new long[] { 256 } },
                 { POINT, new long[] { 16, 16 } },

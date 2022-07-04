@@ -42,7 +42,7 @@ import org.w3c.dom.NodeList;
  * @test
  * @bug 6333993
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true dom.CR6333993Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow dom.CR6333993Test
  * @run testng/othervm dom.CR6333993Test
  * @summary Test NodeList.item(valid index) returns value after NodeList.item(NodeList.getLength()).
  */

@@ -40,7 +40,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * @test
  * @bug 4996446
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.Bug4996446
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.Bug4996446
  * @run testng/othervm validation.Bug4996446
  * @summary Test SchemaFactory can detect violations of the "Schema Component Constraint: Element Declarations Consistent".
  */

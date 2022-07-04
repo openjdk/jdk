@@ -25,12 +25,18 @@ import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.Window;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.util.concurrent.Callable;
 
+import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
@@ -103,24 +109,56 @@ public class bug7156657 {
         Rectangle popupRectangle = Util.invokeOnEDT(new Callable<Rectangle>() {
             @Override
             public Rectangle call() throws Exception {
-                return popupMenu.getBounds();
+                return new Rectangle(popupMenu.getLocationOnScreen(),
+                        popupMenu.getSize());
             }
         });
 
         BufferedImage redBackgroundCapture = robot.createScreenCapture(popupRectangle);
+        BufferedImage redFrame = robot.createScreenCapture(frame.getBounds());
 
         SwingUtilities.invokeAndWait(new Runnable() {
             @Override
             public void run() {
                 lowerFrame.getContentPane().setBackground(Color.GREEN);
+                lowerFrame.invalidate();
             }
         });
 
         robot.waitForIdle();
+        robot.delay(1000); // Give frame time to repaint
 
         BufferedImage greenBackgroundCapture = robot.createScreenCapture(popupRectangle);
+        BufferedImage greenFrame = robot.createScreenCapture(frame.getBounds());
 
         if (Util.compareBufferedImages(redBackgroundCapture, greenBackgroundCapture)) {
+            try {
+                GraphicsDevice[] devices = GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices();
+                for (int i = 0; i < devices.length; i++) {
+                    GraphicsConfiguration[] screens = devices[i].getConfigurations();
+                    for (int j = 0; j < screens.length; j++) {
+                        BufferedImage fullScreen = robot.createScreenCapture(screens[j].getBounds());
+                        if (screens[j].getBounds().intersects(popupRectangle)) {
+                            Graphics g = fullScreen.getGraphics();
+                            g.setColor(Color.CYAN);
+                            g.drawRect(popupRectangle.x - 1, popupRectangle.y - 1,
+                                    popupRectangle.width + 2, popupRectangle.height + 2);
+                            g.dispose();
+                        }
+                        ImageIO.write(fullScreen, "png", new File("dev" + i + "scr" + j + ".png"));
+                    }
+                }
+                ImageIO.write(redFrame, "png", new File("redframe.png"));
+                ImageIO.write(redBackgroundCapture, "png", new File("redbg.png"));
+                ImageIO.write(greenFrame, "png", new File("greenframe.png"));
+                ImageIO.write(greenBackgroundCapture, "png", new File("greenbg.png"));
+            } finally {
+                SwingUtilities.invokeAndWait(() -> {
+                    frame.dispose();
+                    lowerFrame.dispose();
+                });
+            }
+            robot.waitForIdle();
             throw new RuntimeException("The test failed");
         }
 
@@ -148,8 +186,8 @@ public class bug7156657 {
     private static JFrame createFrame() {
         JFrame result = new JFrame();
 
-        result.setLocation(0, 0);
         result.setSize(400, 300);
+        result.setLocationRelativeTo(null);
         result.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         result.setUndecorated(true);
 

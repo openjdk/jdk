@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Stream;
 
 import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.CallerSensitiveAdapter;
 import jdk.internal.reflect.Reflection;
 
 
@@ -147,6 +148,7 @@ public class DriverManager {
      */
     public static void setLogWriter(java.io.PrintWriter out) {
 
+        @SuppressWarnings("removal")
         SecurityManager sec = System.getSecurityManager();
         if (sec != null) {
             sec.checkPermission(SET_LOG_PERMISSION);
@@ -380,6 +382,7 @@ public class DriverManager {
             return;
         }
 
+        @SuppressWarnings("removal")
         SecurityManager sec = System.getSecurityManager();
         if (sec != null) {
             sec.checkPermission(DEREGISTER_DRIVER_PERMISSION);
@@ -497,6 +500,7 @@ public class DriverManager {
     @Deprecated(since="1.2")
     public static void setLogStream(java.io.PrintStream out) {
 
+        @SuppressWarnings("removal")
         SecurityManager sec = System.getSecurityManager();
         if (sec != null) {
             sec.checkPermission(SET_LOG_PERMISSION);
@@ -567,6 +571,7 @@ public class DriverManager {
      * Load the initial JDBC drivers by checking the System property
      * jdbc.drivers and then use the {@code ServiceLoader} mechanism
      */
+    @SuppressWarnings("removal")
     private static void ensureDriversInitialized() {
         if (driversInitialized) {
             return;
@@ -643,6 +648,7 @@ public class DriverManager {
 
 
     //  Worker method called by the public getConnection() methods.
+    @CallerSensitiveAdapter
     private static Connection getConnection(
         String url, java.util.Properties info, Class<?> caller) throws SQLException {
         /*

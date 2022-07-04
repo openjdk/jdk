@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,12 +38,9 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import static jdk.jpackage.internal.DesktopIntegration.*;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_RUNTIME_IMAGE;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
-import static jdk.jpackage.internal.StandardBundlerParam.RELEASE;
 import static jdk.jpackage.internal.StandardBundlerParam.VENDOR;
 import static jdk.jpackage.internal.StandardBundlerParam.DESCRIPTION;
 import static jdk.jpackage.internal.StandardBundlerParam.INSTALL_DIR;
@@ -53,6 +50,9 @@ abstract class LinuxPackageBundler extends AbstractBundler {
     LinuxPackageBundler(BundlerParamInfo<String> packageName) {
         this.packageName = packageName;
         appImageBundler = new LinuxAppBundler().setDependentTask(true);
+        customActions = List.of(new CustomActionInstance(
+                DesktopIntegration::create), new CustomActionInstance(
+                LinuxLaunchersAsServices::create));
     }
 
     @Override
@@ -148,14 +148,14 @@ abstract class LinuxPackageBundler extends AbstractBundler {
                 }
             }
 
-            desktopIntegration = DesktopIntegration.create(thePackage, params);
+            for (var ca : customActions) {
+                ca.init(thePackage, params);
+            }
 
             Map<String, String> data = createDefaultReplacementData(params);
-            if (desktopIntegration != null) {
-                data.putAll(desktopIntegration.create());
-            } else {
-                Stream.of(DESKTOP_COMMANDS_INSTALL, DESKTOP_COMMANDS_UNINSTALL,
-                        UTILITY_SCRIPTS).forEach(v -> data.put(v, ""));
+
+            for (var ca : customActions) {
+                data.putAll(ca.instance.create());
             }
 
             data.putAll(createReplacementData(params));
@@ -182,12 +182,10 @@ abstract class LinuxPackageBundler extends AbstractBundler {
 
         PlatformPackage thePackage = createMetaPackage(params);
 
-        final List<String> xdgUtilsPackage;
-        if (desktopIntegration != null) {
-            xdgUtilsPackage = desktopIntegration.requiredPackages();
-        } else {
-            xdgUtilsPackage = Collections.emptyList();
-        }
+        final List<String> caPackages = customActions.stream()
+                .map(ca -> ca.instance)
+                .map(ShellCustomAction::requiredPackages)
+                .flatMap(List::stream).toList();
 
         final List<String> neededLibPackages;
         if (withFindNeededPackages && Files.exists(thePackage.sourceRoot())) {
@@ -204,7 +202,7 @@ abstract class LinuxPackageBundler extends AbstractBundler {
 
         // Merge all package lists together.
         // Filter out empty names, sort and remove duplicates.
-        List<String> result = Stream.of(xdgUtilsPackage, neededLibPackages).flatMap(
+        List<String> result = Stream.of(caPackages, neededLibPackages).flatMap(
                 List::stream).filter(Predicate.not(String::isEmpty)).sorted().distinct().toList();
 
         Log.verbose(String.format("Required packages: %s", result));
@@ -220,7 +218,6 @@ abstract class LinuxPackageBundler extends AbstractBundler {
         data.put("APPLICATION_VENDOR", VENDOR.fetchFrom(params));
         data.put("APPLICATION_VERSION", VERSION.fetchFrom(params));
         data.put("APPLICATION_DESCRIPTION", DESCRIPTION.fetchFrom(params));
-        data.put("APPLICATION_RELEASE", RELEASE.fetchFrom(params));
 
         String defaultDeps = String.join(", ", getListOfNeededPackages(params));
         String customDeps = LINUX_PACKAGE_DEPENDENCIES.fetchFrom(params).strip();
@@ -346,7 +343,23 @@ abstract class LinuxPackageBundler extends AbstractBundler {
     private final BundlerParamInfo<String> packageName;
     private final Bundler appImageBundler;
     private boolean withFindNeededPackages;
-    private DesktopIntegration desktopIntegration;
+    private final List<CustomActionInstance> customActions;
+
+    private static final class CustomActionInstance {
+
+        CustomActionInstance(ShellCustomActionFactory factory) {
+            this.factory = factory;
+        }
+
+        void init(PlatformPackage thePackage, Map<String, ? super Object> params)
+                throws IOException {
+            instance = factory.create(thePackage, params);
+            Objects.requireNonNull(instance);
+        }
+
+        private final ShellCustomActionFactory factory;
+        ShellCustomAction instance;
+    }
 
     private static final BundlerParamInfo<String> LINUX_PACKAGE_DEPENDENCIES =
             new StandardBundlerParam<>(

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8157000 8192850 8182765 8223607 8261976
+ * @bug 8157000 8192850 8182765 8223607 8261976 8281376
  * @summary  test the behavior of --override-methods option
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -347,7 +347,7 @@ public class TestOverrideMethods  extends JavadocTester {
                     <div class="block">This is Base::m5.</div>
                     </div>
                     <div class="col-first odd-row-color method-summary-table method-summary-table-ta\
-                    b2 method-summary-table-tab4"><code>java.lang.Object</code></div>
+                    b2 method-summary-table-tab4"><code>final java.lang.Object</code></div>
                     <div class="col-second odd-row-color method-summary-table method-summary-table-t\
                     ab2 method-summary-table-tab4"><code><a href="#m6()" class="member-name-link">m6\
                     </a>()</code></div>
@@ -409,10 +409,10 @@ public class TestOverrideMethods  extends JavadocTester {
                     annotation interface in pkg7">@A</a>
                     </span><span class="return-type"><a href="A.html" title="annotation interface in\
                      pkg7">@A</a> java.lang.Iterable&lt;java.lang.String&gt;</span>&nbsp;<span class\
-                    ="element-name">m1</span>&#8203;<span class="parameters">(java.lang.Class&lt;? e\
-                    xtends java.lang.CharSequence&gt;&nbsp;p1,
+                    ="element-name">m1</span><wbr><span class="parameters">(java.lang.Class&lt;? ext\
+                    ends java.lang.CharSequence&gt;&nbsp;p1,
                      int[]&nbsp;p2)</span></div>
-                    <div class="block"><span class="descfrm-type-label">Description copied from inte\
+                    <div class="block"><span class="description-from-type-label">Description copied from inte\
                     rface:&nbsp;<code><a href="AnnotatedBase.html#m1(java.lang.Class,int%5B%5D)">Ann\
                     otatedBase</a></code></span></div>
                     <div class="block">This is AnnotatedBase::m1.</div>
@@ -434,10 +434,10 @@ public class TestOverrideMethods  extends JavadocTester {
                     annotation interface in pkg7">@A</a>
                     </span><span class="return-type"><a href="A.html" title="annotation interface in\
                      pkg7">@A</a> java.lang.Iterable&lt;java.lang.String&gt;</span>&nbsp;<span class\
-                    ="element-name">m1</span>&#8203;<span class="parameters">(java.lang.Class&lt;? e\
-                    xtends java.lang.CharSequence&gt;&nbsp;p1,
+                    ="element-name">m1</span><wbr><span class="parameters">(java.lang.Class&lt;? ext\
+                    ends java.lang.CharSequence&gt;&nbsp;p1,
                      int[]&nbsp;p2)</span></div>
-                    <div class="block"><span class="descfrm-type-label">Description copied from inte\
+                    <div class="block"><span class="description-from-type-label">Description copied from inte\
                     rface:&nbsp;<code><a href="AnnotatedBase.html#m1(java.lang.Class,int%5B%5D)">Ann\
                     otatedBase</a></code></span></div>
                     <div class="block">This is AnnotatedBase::m1.</div>
@@ -457,10 +457,10 @@ public class TestOverrideMethods  extends JavadocTester {
                 """
                     <div class="member-signature"><span class="return-type">java.lang.Iterable&lt;<a\
                      href="A.html" title="annotation interface in pkg7">@A</a> java.lang.String&gt;<\
-                    /span>&nbsp;<span class="element-name">m1</span>&#8203;<span class="parameters">\
-                    (java.lang.Class&lt;? extends java.lang.CharSequence&gt;&nbsp;p1,
+                    /span>&nbsp;<span class="element-name">m1</span><wbr><span class="parameters">(j\
+                    ava.lang.Class&lt;? extends java.lang.CharSequence&gt;&nbsp;p1,
                      int[]&nbsp;p2)</span></div>
-                    <div class="block"><span class="descfrm-type-label">Description copied from inte\
+                    <div class="block"><span class="description-from-type-label">Description copied from inte\
                     rface:&nbsp;<code><a href="AnnotatedBase.html#m1(java.lang.Class,int%5B%5D)">Ann\
                     otatedBase</a></code></span></div>
                     <div class="block">This is AnnotatedBase::m1.</div>
@@ -479,12 +479,12 @@ public class TestOverrideMethods  extends JavadocTester {
         checkOutput("pkg7/AnnotatedSub5.html", true,
                 """
                     <div class="member-signature"><span class="return-type">java.lang.Iterable&lt;ja\
-                    va.lang.String&gt;</span>&nbsp;<span class="element-name">m1</span>&#8203;<span \
-                    class="parameters">(<a href="A.html" title="annotation interface in pkg7">@A</a>
+                    va.lang.String&gt;</span>&nbsp;<span class="element-name">m1</span><wbr><span cl\
+                    ass="parameters">(<a href="A.html" title="annotation interface in pkg7">@A</a>
                      <a href="A.html" title="annotation interface in pkg7">@A</a> java.lang.Class&lt\
                     ;? extends java.lang.CharSequence&gt;&nbsp;p1,
                      int[]&nbsp;p2)</span></div>
-                    <div class="block"><span class="descfrm-type-label">Description copied from inte\
+                    <div class="block"><span class="description-from-type-label">Description copied from inte\
                     rface:&nbsp;<code><a href="AnnotatedBase.html#m1(java.lang.Class,int%5B%5D)">Ann\
                     otatedBase</a></code></span></div>
                     <div class="block">This is AnnotatedBase::m1.</div>
@@ -503,11 +503,11 @@ public class TestOverrideMethods  extends JavadocTester {
         checkOutput("pkg7/AnnotatedSub6.html", true,
                 """
                     <div class="member-signature"><span class="return-type">java.lang.Iterable&lt;ja\
-                    va.lang.String&gt;</span>&nbsp;<span class="element-name">m1</span>&#8203;<span \
-                    class="parameters">(java.lang.Class&lt;<a href="A.html" title="annotation interf\
-                    ace in pkg7">@A</a> ? extends java.lang.CharSequence&gt;&nbsp;p1,
+                    va.lang.String&gt;</span>&nbsp;<span class="element-name">m1</span><wbr><span cl\
+                    ass="parameters">(java.lang.Class&lt;<a href="A.html" title="annotation interfac\
+                    e in pkg7">@A</a> ? extends java.lang.CharSequence&gt;&nbsp;p1,
                      int[]&nbsp;p2)</span></div>
-                    <div class="block"><span class="descfrm-type-label">Description copied from inte\
+                    <div class="block"><span class="description-from-type-label">Description copied from inte\
                     rface:&nbsp;<code><a href="AnnotatedBase.html#m1(java.lang.Class,int%5B%5D)">Ann\
                     otatedBase</a></code></span></div>
                     <div class="block">This is AnnotatedBase::m1.</div>
@@ -526,11 +526,11 @@ public class TestOverrideMethods  extends JavadocTester {
         checkOutput("pkg7/AnnotatedSub7.html", true,
                 """
                     <div class="member-signature"><span class="return-type">java.lang.Iterable&lt;ja\
-                    va.lang.String&gt;</span>&nbsp;<span class="element-name">m1</span>&#8203;<span \
-                    class="parameters">(java.lang.Class&lt;? extends <a href="A.html" title="annotat\
-                    ion interface in pkg7">@A</a> java.lang.CharSequence&gt;&nbsp;p1,
+                    va.lang.String&gt;</span>&nbsp;<span class="element-name">m1</span><wbr><span cl\
+                    ass="parameters">(java.lang.Class&lt;? extends <a href="A.html" title="annotatio\
+                    n interface in pkg7">@A</a> java.lang.CharSequence&gt;&nbsp;p1,
                      int[]&nbsp;p2)</span></div>
-                    <div class="block"><span class="descfrm-type-label">Description copied from inte\
+                    <div class="block"><span class="description-from-type-label">Description copied from inte\
                     rface:&nbsp;<code><a href="AnnotatedBase.html#m1(java.lang.Class,int%5B%5D)">Ann\
                     otatedBase</a></code></span></div>
                     <div class="block">This is AnnotatedBase::m1.</div>
@@ -549,12 +549,11 @@ public class TestOverrideMethods  extends JavadocTester {
         checkOutput("pkg7/AnnotatedSub8.html", true,
                 """
                     <div class="member-signature"><span class="return-type">java.lang.Iterable&lt;ja\
-                    va.lang.String&gt;</span>&nbsp;<span class="element-name">m1</span>&#8203;<span \
-                    class="parameters">(java.lang.Class&lt;? extends java.lang.CharSequence&gt;&nbsp\
-                    ;p1,
+                    va.lang.String&gt;</span>&nbsp;<span class="element-name">m1</span><wbr><span cl\
+                    ass="parameters">(java.lang.Class&lt;? extends java.lang.CharSequence&gt;&nbsp;p1,
                      int <a href="A.html" title="annotation interface in pkg7">@A</a> []&nbsp;p2)</s\
                     pan></div>
-                    <div class="block"><span class="descfrm-type-label">Description copied from inte\
+                    <div class="block"><span class="description-from-type-label">Description copied from inte\
                     rface:&nbsp;<code><a href="AnnotatedBase.html#m1(java.lang.Class,int%5B%5D)">Ann\
                     otatedBase</a></code></span></div>
                     <div class="block">This is AnnotatedBase::m1.</div>
@@ -569,5 +568,94 @@ public class TestOverrideMethods  extends JavadocTester {
                     <dt>Returns:</dt>
                     <dd>something</dd>
                     </dl>""");
+    }
+
+    @Test
+    public void testPolymorphicDetail() {
+        javadoc("-d", "out-polymorphic-detail",
+                "-sourcepath", testSrc,
+                "--override-methods=detail",
+                "pkg8");
+
+        checkExit(Exit.OK);
+
+        checkOutput("pkg8/C.html", true,
+                """
+                    <dt>Overrides:</dt>
+                    <dd><code><a href="P.html#m1()">m1</a></code>&nbsp;in class&nbsp;\
+                    <code><a href="P.html" title="class in pkg8">P</a></code></dd>""");
+
+        checkOutput("pkg8/C.html", true,
+                """
+                    <dt>Overrides:</dt>
+                    <dd><code><a href="P.html#m2()">m2</a></code>&nbsp;in class&nbsp;\
+                    <code><a href="P.html" title="class in pkg8">P</a></code></dd>""");
+
+        checkOutput("pkg8/C.html", true,
+                """
+                    <dt>Overrides:</dt>
+                    <dd><code><a href="P.html#m3()">m3</a></code>&nbsp;in class&nbsp;\
+                    <code><a href="P.html" title="class in pkg8">P</a></code></dd>""");
+    }
+
+    @Test // results should be the same as that of "detail"
+    public void testPolymorphicDefault() {
+        javadoc("-d", "out-polymorphic-default",
+                "-sourcepath", testSrc,
+                "pkg8");
+
+        checkExit(Exit.OK);
+
+        checkOutput("pkg8/C.html", true,
+                """
+                    <dt>Overrides:</dt>
+                    <dd><code><a href="P.html#m1()">m1</a></code>&nbsp;in class&nbsp;\
+                    <code><a href="P.html" title="class in pkg8">P</a></code></dd>""");
+
+        checkOutput("pkg8/C.html", true,
+                """
+                    <dt>Overrides:</dt>
+                    <dd><code><a href="P.html#m2()">m2</a></code>&nbsp;in class&nbsp;\
+                    <code><a href="P.html" title="class in pkg8">P</a></code></dd>""");
+
+        checkOutput("pkg8/C.html", true,
+                """
+                    <dt>Overrides:</dt>
+                    <dd><code><a href="P.html#m3()">m3</a></code>&nbsp;in class&nbsp;\
+                    <code><a href="P.html" title="class in pkg8">P</a></code></dd>""");
+    }
+
+    @Test
+    public void testPolymorphicSummary() {
+        javadoc("-d", "out-polymorphic-summary",
+                "-sourcepath", testSrc,
+                "--override-methods=summary",
+                "pkg8");
+
+        checkExit(Exit.OK);
+
+        checkOutput("pkg8/C.html", true,
+                """
+                    <dt>Overrides:</dt>
+                    <dd><code><a href="GP.html#m1()">m1</a></code>&nbsp;in class&nbsp;\
+                    <code><a href="GP.html" title="class in pkg8">GP</a></code></dd>""");
+
+        checkOutput("pkg8/C.html", true,
+                """
+                    <dt>Overrides:</dt>
+                    <dd><code><a href="GP.html#m2()">m2</a></code>&nbsp;in class&nbsp;\
+                    <code><a href="GP.html" title="class in pkg8">GP</a></code></dd>""");
+
+        checkOutput("pkg8/C.html", true,
+                """
+                    <dt>Overrides:</dt>
+                    <dd><code><a href="GP.html#m3()">m3</a></code>&nbsp;in class&nbsp;\
+                    <code><a href="GP.html" title="class in pkg8">GP</a></code></dd>""");
+
+        checkOutput("pkg8/C.html", false,
+                """
+                    <dt>Overrides:</dt>
+                    <dd><code><a href="GP.html#m1()">m1</a></code>&nbsp;in class&nbsp;\
+                    <code><a href="P.html" title="class in pkg8">P</a></code></dd>""");
     }
 }

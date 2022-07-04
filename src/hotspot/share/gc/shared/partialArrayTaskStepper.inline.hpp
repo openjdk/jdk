@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_GC_SHARED_PARTIALARRAYTASKSTEPPER_INLINE_HPP
 
 #include "gc/shared/partialArrayTaskStepper.hpp"
+
 #include "oops/arrayOop.hpp"
 #include "runtime/atomic.hpp"
 
@@ -88,8 +89,8 @@ PartialArrayTaskStepper::next_impl(int length,
   // Compute number of pending tasks, including this one.  The maximum number
   // of tasks is a function of task_num (N) and _task_fanout (F).
   //   1    : current task
-  //   N    : number of preceeding tasks
-  //   F*N  : maximum created for preceeding tasks
+  //   N    : number of preceding tasks
+  //   F*N  : maximum created for preceding tasks
   // => F*N - N + 1 : maximum number of tasks
   // => (F-1)*N + 1
   assert(_task_limit > 0, "precondition");

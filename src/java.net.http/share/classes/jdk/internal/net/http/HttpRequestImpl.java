@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,6 @@ import java.net.http.HttpRequest;
 
 import jdk.internal.net.http.common.HttpHeadersBuilder;
 import jdk.internal.net.http.common.Utils;
-import jdk.internal.net.http.websocket.OpeningHandshake;
 import jdk.internal.net.http.websocket.WebSocketRequest;
 
 import static jdk.internal.net.http.common.Utils.ALLOWED_HEADERS;
@@ -62,12 +61,14 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
     final boolean secure;
     final boolean expectContinue;
     private volatile boolean isWebSocket;
+    @SuppressWarnings("removal")
     private volatile AccessControlContext acc;
     private final Duration timeout;  // may be null
     private final Optional<HttpClient.Version> version;
 
     private static String userAgent() {
         PrivilegedAction<String> pa = () -> System.getProperty("java.version");
+        @SuppressWarnings("removal")
         String version = AccessController.doPrivileged(pa);
         return "Java-http-client/" + version;
     }
@@ -123,7 +124,7 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
             checkTimeout(timeout);
             this.systemHeadersBuilder = new HttpHeadersBuilder();
         }
-        if (!userHeaders.firstValue("User-Agent").isPresent()) {
+        if (userHeaders.firstValue("User-Agent").isEmpty()) {
             this.systemHeadersBuilder.setHeader("User-Agent", USER_AGENT);
         }
         this.uri = requestURI;
@@ -181,7 +182,7 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
         this.userHeaders = other.userHeaders;
         this.isWebSocket = other.isWebSocket;
         this.systemHeadersBuilder = new HttpHeadersBuilder();
-        if (!userHeaders.firstValue("User-Agent").isPresent()) {
+        if (userHeaders.firstValue("User-Agent").isEmpty()) {
             this.systemHeadersBuilder.setHeader("User-Agent", USER_AGENT);
         }
         this.uri = uri;
@@ -214,7 +215,7 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
         this.systemHeadersBuilder.map().putAll(headers.systemHeaders().map());
         this.userHeaders = headers.userHeaders();
         this.uri = URI.create("socket://" + authority.getHostString() + ":"
-                              + Integer.toString(authority.getPort()) + "/");
+                              + authority.getPort() + "/");
         this.proxy = null;
         this.requestPublisher = null;
         this.authority = authority;
@@ -368,6 +369,7 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
         systemHeadersBuilder.setHeader(name, value);
     }
 
+    @SuppressWarnings("removal")
     InetSocketAddress getAddress() {
         URI uri = uri();
         if (uri == null) {

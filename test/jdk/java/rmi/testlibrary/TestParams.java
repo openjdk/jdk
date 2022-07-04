@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,14 +39,8 @@ public class TestParams {
     /** name of default security policy for test JVM */
     public static final String defaultPolicy;
 
-    /** name of default security policy for RMID */
-    public static final String defaultRmidPolicy;
-
     /** name of default security policy for RegistryVM */
     public static final String defaultRegistryPolicy;
-
-    /** name of default security policy for activation groups */
-    public static final String defaultGroupPolicy;
 
     /** name of default security manager */
     public static final String defaultSecurityManager;
@@ -69,17 +63,14 @@ public class TestParams {
         }
         defaultPolicy = dp;
 
-        defaultRmidPolicy =
-            testSrc + File.separatorChar + "rmid.security.policy";
-
         defaultRegistryPolicy =
             testSrc + File.separatorChar + "registry.security.policy";
 
-        defaultGroupPolicy =
-            testSrc + File.separatorChar + "group.security.policy";
-
-        defaultSecurityManager = TestLibrary.getProperty(
-            "java.security.manager", "java.lang.SecurityManager");
+        String tmp = TestLibrary.getProperty("java.security.manager", null);
+        if (tmp == null || tmp.equals("allow")) {
+            tmp = "java.lang.SecurityManager";
+        }
+        defaultSecurityManager = tmp;
 
         testVmOpts = TestLibrary.getProperty("test.vm.opts", "");
 

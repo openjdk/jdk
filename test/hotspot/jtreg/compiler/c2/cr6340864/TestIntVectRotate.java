@@ -37,12 +37,22 @@ package compiler.c2.cr6340864;
 
 public class TestIntVectRotate {
   private static final int ARRLEN = 997;
+  private static final int REPCOUNT = 16;
   private static final int ITERS  = 11000;
   private static final int ADD_INIT = Integer.MAX_VALUE-500;
   private static final int VALUE = 15;
   private static final int SHIFT = 32;
   private static final int SHIFT_LT_IMM8 = -128;
   private static final int SHIFT_GT_IMM8 = 128;
+
+  private static final int [] rolRes = {
+    15, 32, 68, 144, 304, 640, 1344, 2816, 5888, 12288, 25600, 53248, 110592, 229376, 475136, 983040
+  };
+
+  private static final int [] rorRes = {
+    15, 8, 1073741828, 1073741826, 805306369, -1610612736, 1409286144, 738197504, 385875968, 201326592,
+    104857600, 54525952, 28311552, 14680064, 7602176, 3932160
+  };
 
   public static void main(String args[]) {
     System.out.println("Testing Integer Rotate vectors");
@@ -58,12 +68,16 @@ public class TestIntVectRotate {
 
   static int[] a0 = new int[ARRLEN];
   static int[] a1 = new int[ARRLEN];
+  static int[] a2 = new int[ARRLEN];
+  static int[] a3 = new int[ARRLEN];
 
   static void test() {
     // Initialize
     for (int i=0; i<ARRLEN; i++) {
       int val = (int)(ADD_INIT+i);
       a1[i] = val;
+      a2[i] = (i & (REPCOUNT-1)) + VALUE;
+      a3[i] = i & (REPCOUNT-1);
     }
     System.out.println("Warmup");
     for (int i=0; i<ITERS; i++) {
@@ -93,6 +107,9 @@ public class TestIntVectRotate {
       test_rolv(a0, a1, -SHIFT);
       test_rorc_on(a0, a1);
       test_rorv(a0, a1, -SHIFT);
+
+      test_rolv_vec(a0, a2, a3);
+      test_rorv_vec(a0, a2, a3);
     }
   }
 
@@ -188,7 +205,14 @@ public class TestIntVectRotate {
     for (int i=0; i<ARRLEN; i++) {
       errn += verify("test_rolv_on: ", i, a0[i], (int)(((int)(ADD_INIT+i)<<(-SHIFT)) | (int)(ADD_INIT+i)>>>SHIFT));
     }
-
+    test_rolv_vec(a0, a2, a3);
+    for (int i=0; i<ARRLEN; i++) {
+      errn += verify("test_rolv_vec: ", i, a0[i], rolRes[i & (REPCOUNT-1)]);
+    }
+    test_rorv_vec(a0, a2, a3);
+    for (int i=0; i<ARRLEN; i++) {
+      errn += verify("test_rorv_vec: ", i, a0[i], rorRes[i & (REPCOUNT-1)]);
+    }
     test_rorc_on(a0, a1);
     for (int i=0; i<ARRLEN; i++) {
       errn += verify("test_rorc_on: ", i, a0[i], (int)(((int)(ADD_INIT+i)>>>(-SHIFT)) | (int)(ADD_INIT+i)<<SHIFT));
@@ -358,6 +382,20 @@ public class TestIntVectRotate {
     }
     end = System.currentTimeMillis();
     System.out.println("test_rorv_on: " + (end - start));
+
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test_rorv_vec(a0, a2, a3);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_rorv_vec: " + (end - start));
+
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test_rolv_vec(a0, a2, a3);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_rolv_vec: " + (end - start));
   }
 
   static void test_rolc(int[] a0, int[] a1) {
@@ -383,6 +421,19 @@ public class TestIntVectRotate {
       a0[i] = (int)(Integer.rotateLeft(a1[i], (-SHIFT)));
     }
   }
+
+  static void test_rolv_vec(int[] a0, int[] a1, int [] a2) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = (int)(Integer.rotateLeft(a1[i], a2[i]));
+    }
+  }
+
+  static void test_rorv_vec(int[] a0, int[] a1, int [] a2) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = (int)(Integer.rotateRight(a1[i], a2[i]));
+    }
+  }
+
 
   static void test_rolv(int[] a0, int[] a1, int shift) {
     for (int i = 0; i < a0.length; i+=1) {

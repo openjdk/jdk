@@ -25,8 +25,9 @@
 #ifndef SHARE_GC_G1_HEAPREGIONSET_INLINE_HPP
 #define SHARE_GC_G1_HEAPREGIONSET_INLINE_HPP
 
-#include "gc/g1/g1NUMA.hpp"
 #include "gc/g1/heapRegionSet.hpp"
+
+#include "gc/g1/g1NUMA.hpp"
 
 inline void HeapRegionSetBase::add(HeapRegion* hr) {
   check_mt_safety();

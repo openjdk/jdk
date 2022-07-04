@@ -26,7 +26,7 @@
 /* @test
  * @bug 8229785
  * @summary Test MethodType.fromMethodDescriptorString with security manager
- * @run main/othervm test.java.lang.invoke.MethodTypeSecurityManager
+ * @run main/othervm -Djava.security.manager=allow test.java.lang.invoke.MethodTypeSecurityManager
  * @run main/othervm/policy=getclassloader.policy test.java.lang.invoke.MethodTypeSecurityManager access
  */
 

@@ -71,6 +71,7 @@ public class TestPermission {
     public void runTest() throws Exception {
         int exitValue = executeTestJava("--module-path", MODS_DIR.toString(),
                                         "--add-modules", "m1",
+                                        "-Djava.security.manager=allow",
                                         "-m", "test/jdk.test.Main")
                             .outputTo(System.out)
                             .errorTo(System.out)

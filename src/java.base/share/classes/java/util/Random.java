@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,15 +27,13 @@ package java.util;
 
 import java.io.*;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.random.RandomGenerator;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
-import jdk.internal.util.random.RandomSupport.AbstractSpliteratorGenerator;
-import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
-import jdk.internal.util.random.RandomSupport.RandomIntsSpliterator;
-import jdk.internal.util.random.RandomSupport.RandomLongsSpliterator;
-import jdk.internal.util.random.RandomSupport.RandomDoublesSpliterator;
+import jdk.internal.util.random.RandomSupport.*;
+
 import static jdk.internal.util.random.RandomSupport.*;
 
 import jdk.internal.misc.Unsafe;
@@ -79,14 +77,220 @@ import jdk.internal.misc.Unsafe;
  * @author  Frank Yellin
  * @since   1.0
  */
-@SuppressWarnings("exports")
 @RandomGeneratorProperties(
         name = "Random",
         i = 48, j = 0, k = 0,
         equidistribution = 0
 )
-public class Random extends AbstractSpliteratorGenerator
-        implements java.io.Serializable {
+public class Random implements RandomGenerator, java.io.Serializable {
+
+    /**
+     * Class used to wrap a {@link java.util.random.RandomGenerator} to
+     * {@link java.util.Random}.
+     */
+
+    @SuppressWarnings("serial")
+    private static final class RandomWrapper extends Random implements RandomGenerator {
+        private final RandomGenerator generator;
+        //randomToWrap must never be null
+        private RandomWrapper(RandomGenerator randomToWrap) {
+            super(null);
+            this.generator = randomToWrap;
+        }
+
+        /**
+         * Throws {@code NotSerializableException}.
+         *
+         * @param s the object input stream
+         * @throws NotSerializableException always
+         */
+        @Serial
+        private void readObject(ObjectInputStream s) throws NotSerializableException {
+            throw new NotSerializableException("not serializable");
+        }
+
+        /**
+         * Throws {@code NotSerializableException}.
+         *
+         * @param s the object output stream
+         * @throws NotSerializableException always
+         */
+        @Serial
+        private void writeObject(ObjectOutputStream s) throws NotSerializableException {
+            throw new NotSerializableException("not serializable");
+        }
+
+        /**
+         * setSeed does not exist in {@link java.util.random.RandomGenerator} so can't
+         * use it.
+         */
+        @Override
+        public void setSeed(long seed) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean isDeprecated() {
+            return generator.isDeprecated();
+        }
+
+        @Override
+        public void nextBytes(byte[] bytes) {
+            this.generator.nextBytes(bytes);
+        }
+
+        @Override
+        public int nextInt() {
+            return this.generator.nextInt();
+        }
+
+        @Override
+        public int nextInt(int bound) {
+            return this.generator.nextInt(bound);
+        }
+
+        @Override
+        public int nextInt(int origin, int bound) {
+            return generator.nextInt(origin, bound);
+        }
+
+        @Override
+        public long nextLong() {
+            return this.generator.nextLong();
+        }
+
+        @Override
+        public long nextLong(long bound) {
+            return generator.nextLong(bound);
+        }
+
+        @Override
+        public long nextLong(long origin, long bound) {
+            return generator.nextLong(origin, bound);
+        }
+
+        @Override
+        public boolean nextBoolean() {
+            return this.generator.nextBoolean();
+        }
+
+        @Override
+        public float nextFloat() {
+            return this.generator.nextFloat();
+        }
+
+        @Override
+        public float nextFloat(float bound) {
+            return generator.nextFloat(bound);
+        }
+
+        @Override
+        public float nextFloat(float origin, float bound) {
+            return generator.nextFloat(origin, bound);
+        }
+
+        @Override
+        public double nextDouble() {
+            return this.generator.nextDouble();
+        }
+
+        @Override
+        public double nextDouble(double bound) {
+            return generator.nextDouble(bound);
+        }
+
+        @Override
+        public double nextDouble(double origin, double bound) {
+            return generator.nextDouble(origin, bound);
+        }
+
+        @Override
+        public double nextExponential() {
+            return generator.nextExponential();
+        }
+
+        @Override
+        public double nextGaussian() {
+            return this.generator.nextGaussian();
+        }
+
+        @Override
+        public double nextGaussian(double mean, double stddev) {
+            return generator.nextGaussian(mean, stddev);
+        }
+
+        @Override
+        public IntStream ints(long streamSize) {
+            return this.generator.ints(streamSize);
+        }
+
+        @Override
+        public IntStream ints() {
+            return this.generator.ints();
+        }
+
+        @Override
+        public IntStream ints(long streamSize, int randomNumberOrigin, int randomNumberBound) {
+            return this.generator.ints(streamSize, randomNumberOrigin, randomNumberBound);
+        }
+
+        @Override
+        public IntStream ints(int randomNumberOrigin, int randomNumberBound) {
+            return this.generator.ints(randomNumberOrigin, randomNumberBound);
+        }
+
+        @Override
+        public LongStream longs(long streamSize) {
+            return this.generator.longs(streamSize);
+        }
+
+        @Override
+        public LongStream longs() {
+            return this.generator.longs();
+        }
+
+        @Override
+        public LongStream longs(long streamSize, long randomNumberOrigin, long randomNumberBound) {
+            return this.generator.longs(streamSize, randomNumberOrigin, randomNumberBound);
+        }
+
+        @Override
+        public LongStream longs(long randomNumberOrigin, long randomNumberBound) {
+            return this.generator.longs(randomNumberOrigin, randomNumberBound);
+        }
+
+        @Override
+        public DoubleStream doubles(long streamSize) {
+            return this.generator.doubles(streamSize);
+        }
+
+        @Override
+        public DoubleStream doubles() {
+            return this.generator.doubles();
+        }
+
+        @Override
+        public DoubleStream doubles(long streamSize, double randomNumberOrigin, double randomNumberBound) {
+            return this.generator.doubles(streamSize, randomNumberOrigin, randomNumberBound);
+        }
+
+        @Override
+        public DoubleStream doubles(double randomNumberOrigin, double randomNumberBound) {
+            return this.generator.doubles(randomNumberOrigin, randomNumberBound);
+        }
+
+        //This method should never be reached unless done by reflection so we should throw when tried
+        @Override
+        protected int next(int bits) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String toString() {
+            return "RandomWrapper[" + generator + "]";
+        }
+    }
+
     /** use serialVersionUID from JDK 1.1 for interoperability */
     @java.io.Serial
     static final long serialVersionUID = 3905348978240129619L;
@@ -102,7 +306,8 @@ public class Random extends AbstractSpliteratorGenerator
     private static final long addend = 0xBL;
     private static final long mask = (1L << 48) - 1;
 
-    private static final double DOUBLE_UNIT = 0x1.0p-53; // 1.0 / (1L << 53)
+    private static final double DOUBLE_UNIT = 0x1.0p-53; // 1.0 / (1L << Double.PRECISION)
+    private static final float FLOAT_UNIT = 0x1.0p-24f; // 1.0f / (1 << Float.PRECISION)
 
     /**
      * Creates a new random number generator. This constructor sets
@@ -111,6 +316,10 @@ public class Random extends AbstractSpliteratorGenerator
      */
     public Random() {
         this(seedUniquifier() ^ System.nanoTime());
+    }
+
+    private Random(Void unused) {
+        this.seed = null;
     }
 
     private static long seedUniquifier() {
@@ -156,23 +365,40 @@ public class Random extends AbstractSpliteratorGenerator
     }
 
     /**
-     * Sets the seed of this random number generator using a single
-     * {@code long} seed. The general contract of {@code setSeed} is
-     * that it alters the state of this random number generator object
-     * so as to be in exactly the same state as if it had just been
-     * created with the argument {@code seed} as a seed. The method
-     * {@code setSeed} is implemented by class {@code Random} by
-     * atomically updating the seed to
+     * Returns an instance of {@code Random} that delegates method calls to the {@link RandomGenerator}
+     * argument. If the generator is an instance of {@code Random}, it is returned. Otherwise, this method
+     * returns an instance of {@code Random} that delegates all methods except {@code setSeed} to the generator.
+     * The returned instance's {@code setSeed} method always throws {@link UnsupportedOperationException}.
+     * The returned instance is not serializable.
+     *
+     * @param generator the {@code RandomGenerator} calls are delegated to
+     * @return the delegating {@code Random} instance
+     * @throws NullPointerException if generator is null
+     * @since 19
+     */
+    public static Random from(RandomGenerator generator) {
+        Objects.requireNonNull(generator);
+        if (generator instanceof Random rand)
+            return rand;
+
+        return new RandomWrapper(generator);
+    }
+
+    /**
+     * Sets or updates the seed of this random number generator using the
+     * provided {@code long} seed value (optional operation).
+     *
+     * @implSpec
+     * The implementation in this class alters the state of this random number
+     * generator so that it is in the same state as if it had just been created with
+     * {@link #Random(long) new Random(seed)}. It atomically updates the seed to
      *  <pre>{@code (seed ^ 0x5DEECE66DL) & ((1L << 48) - 1)}</pre>
-     * and clearing the {@code haveNextNextGaussian} flag used by {@link
-     * #nextGaussian}.
+     * and clears the {@code haveNextNextGaussian} flag used by {@link #nextGaussian}.
+     * Note that this uses only 48 bits of the given seed value.
      *
-     * <p>The implementation of {@code setSeed} by class {@code Random}
-     * happens to use only 48 bits of the given seed. In general, however,
-     * an overriding method may use all 64 bits of the {@code long}
-     * argument as a seed value.
-     *
-     * @param seed the initial seed
+     * @param seed the seed value
+     * @throws UnsupportedOperationException if the {@code setSeed}
+     *         operation is not supported by this random number generator
      */
     public synchronized void setSeed(long seed) {
         this.seed.set(initialScramble(seed));
@@ -180,21 +406,26 @@ public class Random extends AbstractSpliteratorGenerator
     }
 
     /**
-     * Generates the next pseudorandom number. Subclasses should
-     * override this, as this is used by all other methods.
-     *
-     * <p>The general contract of {@code next} is that it returns an
-     * {@code int} value and if the argument {@code bits} is between
+     * Generates the next pseudorandom number. This method returns an
+     * {@code int} value such that, if the argument {@code bits} is between
      * {@code 1} and {@code 32} (inclusive), then that many low-order
      * bits of the returned value will be (approximately) independently
      * chosen bit values, each of which is (approximately) equally
-     * likely to be {@code 0} or {@code 1}. The method {@code next} is
-     * implemented by class {@code Random} by atomically updating the seed to
+     * likely to be {@code 0} or {@code 1}.
+     *
+     * @apiNote
+     * The other random-producing methods in this class are implemented
+     * in terms of this method, so subclasses can override just this
+     * method to provide a different source of pseudorandom numbers for
+     * the entire class.
+     *
+     * @implSpec
+     * The implementation in this class atomically updates the seed to
      *  <pre>{@code (seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1)}</pre>
-     * and returning
+     * and returns
      *  <pre>{@code (int)(seed >>> (48 - bits))}.</pre>
      *
-     * This is a linear congruential pseudorandom number generator, as
+     * <p>This is a linear congruential pseudorandom number generator, as
      * defined by D. H. Lehmer and described by Donald E. Knuth in
      * <cite>The Art of Computer Programming, Volume 2, Third edition:
      * Seminumerical Algorithms</cite>, section 3.2.1.
@@ -418,12 +649,12 @@ public class Random extends AbstractSpliteratorGenerator
      * low-order bit of the significand would be 0 than that it would be 1.]
      *
      * @return the next pseudorandom, uniformly distributed {@code float}
-     *         value between {@code 0.0} and {@code 1.0} from this
+     *         value between {@code 0.0f} and {@code 1.0f} from this
      *         random number generator's sequence
      */
     @Override
     public float nextFloat() {
-        return next(24) / ((float)(1 << 24));
+        return next(Float.PRECISION) * FLOAT_UNIT;
     }
 
     /**
@@ -464,7 +695,7 @@ public class Random extends AbstractSpliteratorGenerator
      */
     @Override
     public double nextDouble() {
-        return (((long)(next(26)) << 27) + next(27)) * DOUBLE_UNIT;
+        return (((long)(next(Double.PRECISION - 27)) << 27) + next(27)) * DOUBLE_UNIT;
     }
 
     private double nextNextGaussian;
@@ -615,32 +846,6 @@ public class Random extends AbstractSpliteratorGenerator
         unsafe.putReferenceVolatile(this, seedOffset, new AtomicLong(seedVal));
     }
 
-    // Methods required by class AbstractSpliteratorGenerator
-
-    /**
-     * @hidden
-     */
-    @Override
-    public Spliterator.OfInt makeIntsSpliterator(long index, long fence, int origin, int bound) {
-        return new RandomIntsSpliterator(this, index, fence, origin, bound);
-    }
-
-    /**
-     * @hidden
-     */
-    @Override
-    public Spliterator.OfLong makeLongsSpliterator(long index, long fence, long origin, long bound) {
-        return new RandomLongsSpliterator(this, index, fence, origin, bound);
-    }
-
-    /**
-     * @hidden
-     */
-    @Override
-    public Spliterator.OfDouble makeDoublesSpliterator(long index, long fence, double origin, double bound) {
-        return new RandomDoublesSpliterator(this, index, fence, origin, bound);
-    }
-
     /**
      * Returns a stream producing the given {@code streamSize} number of
      * pseudorandom {@code int} values.
@@ -656,7 +861,7 @@ public class Random extends AbstractSpliteratorGenerator
      */
     @Override
     public IntStream ints(long streamSize) {
-        return super.ints(streamSize);
+        return AbstractSpliteratorGenerator.ints(this, streamSize);
     }
 
     /**
@@ -674,7 +879,7 @@ public class Random extends AbstractSpliteratorGenerator
      */
     @Override
     public IntStream ints() {
-        return super.ints();
+        return AbstractSpliteratorGenerator.ints(this);
     }
 
     /**
@@ -711,7 +916,7 @@ public class Random extends AbstractSpliteratorGenerator
      */
     @Override
     public IntStream ints(long streamSize, int randomNumberOrigin, int randomNumberBound) {
-        return super.ints(streamSize, randomNumberOrigin, randomNumberBound);
+        return AbstractSpliteratorGenerator.ints(this, streamSize, randomNumberOrigin, randomNumberBound);
     }
 
     /**
@@ -749,7 +954,7 @@ public class Random extends AbstractSpliteratorGenerator
      */
     @Override
     public IntStream ints(int randomNumberOrigin, int randomNumberBound) {
-        return super.ints(randomNumberOrigin, randomNumberBound);
+        return AbstractSpliteratorGenerator.ints(this, randomNumberOrigin, randomNumberBound);
     }
 
     /**
@@ -767,7 +972,7 @@ public class Random extends AbstractSpliteratorGenerator
      */
     @Override
     public LongStream longs(long streamSize) {
-        return super.longs(streamSize);
+        return AbstractSpliteratorGenerator.longs(this, streamSize);
     }
 
     /**
@@ -785,7 +990,7 @@ public class Random extends AbstractSpliteratorGenerator
      */
     @Override
     public LongStream longs() {
-        return super.longs();
+        return AbstractSpliteratorGenerator.longs(this);
     }
 
     /**
@@ -827,7 +1032,7 @@ public class Random extends AbstractSpliteratorGenerator
      */
     @Override
     public LongStream longs(long streamSize, long randomNumberOrigin, long randomNumberBound) {
-        return super.longs(streamSize, randomNumberOrigin, randomNumberBound);
+        return AbstractSpliteratorGenerator.longs(this, streamSize, randomNumberOrigin, randomNumberBound);
     }
 
     /**
@@ -870,7 +1075,7 @@ public class Random extends AbstractSpliteratorGenerator
      */
     @Override
     public LongStream longs(long randomNumberOrigin, long randomNumberBound) {
-        return super.longs(randomNumberOrigin, randomNumberBound);
+        return AbstractSpliteratorGenerator.longs(this, randomNumberOrigin, randomNumberBound);
     }
 
     /**
@@ -889,7 +1094,7 @@ public class Random extends AbstractSpliteratorGenerator
      */
     @Override
     public DoubleStream doubles(long streamSize) {
-        return super.doubles(streamSize);
+        return AbstractSpliteratorGenerator.doubles(this, streamSize);
     }
 
     /**
@@ -908,57 +1113,32 @@ public class Random extends AbstractSpliteratorGenerator
      */
     @Override
     public DoubleStream doubles() {
-        return super.doubles();
+        return AbstractSpliteratorGenerator.doubles(this);
     }
 
-   /**
+    /**
      * Returns a stream producing the given {@code streamSize} number of
      * pseudorandom {@code double} values, each conforming to the given origin
      * (inclusive) and bound (exclusive).
-     *
-     * <p>A pseudorandom {@code double} value is generated as if it's the result
-     * of calling the following method with the origin and bound:
-     * <pre> {@code
-     * double nextDouble(double origin, double bound) {
-     *   double r = nextDouble();
-     *   r = r * (bound - origin) + origin;
-     *   if (r >= bound) // correct for rounding
-     *     r = Math.nextDown(bound);
-     *   return r;
-     * }}</pre>
      *
      * @param streamSize the number of values to generate
      * @param randomNumberOrigin the origin (inclusive) of each random value
      * @param randomNumberBound the bound (exclusive) of each random value
      * @return a stream of pseudorandom {@code double} values,
      *         each with the given origin (inclusive) and bound (exclusive)
-     * @throws IllegalArgumentException if {@code streamSize} is less than zero,
-     *         or {@code randomNumberOrigin} is not finite,
-     *         or {@code randomNumberBound} is not finite, or {@code randomNumberOrigin}
-     *         is greater than or equal to {@code randomNumberBound}
+     * @throws IllegalArgumentException {@inheritDoc}
      * @since 1.8
      */
     @Override
     public DoubleStream doubles(long streamSize, double randomNumberOrigin, double randomNumberBound) {
-        return super.doubles(streamSize, randomNumberOrigin, randomNumberBound);
+        return AbstractSpliteratorGenerator.doubles(this, streamSize, randomNumberOrigin, randomNumberBound);
     }
 
     /**
      * Returns an effectively unlimited stream of pseudorandom {@code
      * double} values, each conforming to the given origin (inclusive) and bound
      * (exclusive).
-     *
-     * <p>A pseudorandom {@code double} value is generated as if it's the result
-     * of calling the following method with the origin and bound:
-     * <pre> {@code
-     * double nextDouble(double origin, double bound) {
-     *   double r = nextDouble();
-     *   r = r * (bound - origin) + origin;
-     *   if (r >= bound) // correct for rounding
-     *     r = Math.nextDown(bound);
-     *   return r;
-     * }}</pre>
-     *
+
      * @implNote This method is implemented to be equivalent to {@code
      * doubles(Long.MAX_VALUE, randomNumberOrigin, randomNumberBound)}.
      *
@@ -966,12 +1146,11 @@ public class Random extends AbstractSpliteratorGenerator
      * @param randomNumberBound the bound (exclusive) of each random value
      * @return a stream of pseudorandom {@code double} values,
      *         each with the given origin (inclusive) and bound (exclusive)
-     * @throws IllegalArgumentException if {@code randomNumberOrigin}
-     *         is greater than or equal to {@code randomNumberBound}
+     * @throws IllegalArgumentException {@inheritDoc}
      * @since 1.8
      */
     @Override
     public DoubleStream doubles(double randomNumberOrigin, double randomNumberBound) {
-        return super.doubles(randomNumberOrigin, randomNumberBound);
+        return AbstractSpliteratorGenerator.doubles(this, randomNumberOrigin, randomNumberBound);
     }
 }

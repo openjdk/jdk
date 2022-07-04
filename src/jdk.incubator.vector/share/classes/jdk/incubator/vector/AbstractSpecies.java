@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,11 @@
  */
 package jdk.incubator.vector;
 
+import java.lang.foreign.MemorySegment;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
-import java.nio.ByteOrder;
 import java.lang.reflect.Array;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.function.Function;
 import java.util.function.IntUnaryOperator;
@@ -205,7 +206,19 @@ abstract class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSupport.V
 
     @Override
     @ForceInline
+    public final long loopBound(long length) {
+        return VectorIntrinsics.roundDown(length, laneCount);
+    }
+
+    @Override
+    @ForceInline
     public final VectorMask<E> indexInRange(int offset, int limit) {
+        return maskAll(true).indexInRange(offset, limit);
+    }
+
+    @Override
+    @ForceInline
+    public final VectorMask<E> indexInRange(long offset, long limit) {
         return maskAll(true).indexInRange(offset, limit);
     }
 
@@ -349,9 +362,9 @@ abstract class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSupport.V
 
     @ForceInline
     @Override
-    public final Vector<E> fromByteArray(byte[] a, int offset, ByteOrder bo) {
+    public final Vector<E> fromMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
         return dummyVector()
-            .fromByteArray0(a, offset)
+            .fromMemorySegment0(ms, offset)
             .maybeSwap(bo);
     }
 

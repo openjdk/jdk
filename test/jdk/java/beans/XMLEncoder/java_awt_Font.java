@@ -25,6 +25,7 @@
  * @test
  * @bug 4951733 6402062
  * @summary Tests Font encoding
+ * @run main/othervm -Djava.security.manager=allow java_awt_Font
  * @author Sergey Malenkov
  */
 

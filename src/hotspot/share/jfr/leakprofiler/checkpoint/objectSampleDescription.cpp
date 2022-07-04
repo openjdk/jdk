@@ -32,7 +32,7 @@
 #include "jfr/recorder/checkpoint/jfrCheckpointWriter.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 #include "utilities/ostream.hpp"
 
 static Symbol* symbol_size = NULL;
@@ -164,7 +164,7 @@ void ObjectSampleDescription::write_class_name() {
 
   if (k->is_instance_klass()) {
     const InstanceKlass* ik = InstanceKlass::cast(k);
-    if (ik->is_unsafe_anonymous() || ik->is_hidden()) {
+    if (ik->is_hidden()) {
       return;
     }
     const Symbol* name = ik->name();

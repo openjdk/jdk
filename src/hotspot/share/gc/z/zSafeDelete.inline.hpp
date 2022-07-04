@@ -24,8 +24,9 @@
 #ifndef SHARE_GC_Z_ZSAFEDELETE_INLINE_HPP
 #define SHARE_GC_Z_ZSAFEDELETE_INLINE_HPP
 
-#include "gc/z/zArray.inline.hpp"
 #include "gc/z/zSafeDelete.hpp"
+
+#include "gc/z/zArray.inline.hpp"
 #include "metaprogramming/isArray.hpp"
 #include "utilities/debug.hpp"
 

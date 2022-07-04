@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,9 +41,6 @@ import java.util.StringJoiner;
 import java.util.function.BiConsumer;
 
 import static java.io.ObjectStreamConstants.STREAM_MAGIC;
-import static java.io.ObjectStreamConstants.TC_BLOCKDATA;
-import static java.io.ObjectStreamConstants.TC_BLOCKDATALONG;
-import static java.io.ObjectStreamConstants.TC_ENDBLOCKDATA;
 import static java.io.ObjectStreamConstants.TC_MAX;
 import static java.io.ObjectStreamConstants.TC_NULL;
 import static java.io.ObjectStreamConstants.baseWireHandle;

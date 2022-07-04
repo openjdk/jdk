@@ -595,8 +595,9 @@ MTLBlitLoops_Blit(JNIEnv *env,
             }
 
 #ifdef TRACE_BLIT
-            J2dTraceImpl(J2D_TRACE_VERBOSE, JNI_FALSE,
-                    "MTLBlitLoops_Blit [tx=%d, xf=%d, AC=%s]: bdst=%s, src=%p (%dx%d) O=%d premul=%d | (%d, %d, %d, %d)->(%1.2f, %1.2f, %1.2f, %1.2f)",
+            J2dTraceImpl(J2D_TRACE_VERBOSE, JNI_TRUE,
+                    "MTLBlitLoops_Blit srctype=%d [tx=%d, xf=%d, AC=%s]: bdst=%s, src=%p (%dx%d) O=%d premul=%d | (%d, "
+                    "%d, %d, %d)->(%1.2f, %1.2f, %1.2f, %1.2f)", srctype,
                     texture, xform, [mtlc getCompositeDescription].cString,
                     getSurfaceDescription(dstOps).cString, srcOps,
                     sx2 - sx1, sy2 - sy1,
@@ -701,9 +702,6 @@ MTLBlitLoops_SurfaceToSwBlit(JNIEnv *env, MTLContext *mtlc,
             pDst = PtrPixelsRow(pDst, dstx, dstInfo.pixelStride);
             pDst = PtrPixelsRow(pDst, dsty, dstInfo.scanStride);
 
-            // Metal texture is (0,0) at left-top
-            srcx = srcOps->xOffset + srcx;
-            srcy = srcOps->yOffset + srcy;
             NSUInteger byteLength = w * h * 4; // NOTE: assume that src format is MTLPixelFormatBGRA8Unorm
 
             // Create MTLBuffer (or use static)

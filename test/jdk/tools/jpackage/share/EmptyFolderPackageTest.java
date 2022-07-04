@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@ import java.nio.file.Path;
 import jdk.jpackage.internal.ApplicationLayout;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
-import jdk.jpackage.test.TKit;
+import jdk.jpackage.test.Annotations.Test;
 
 /**
  * Tests generation of packages with input folder containing empty folders.
@@ -41,30 +41,30 @@ import jdk.jpackage.test.TKit;
  * @build jdk.jpackage.test.*
  * @build EmptyFolderPackageTest
  * @modules jdk.jpackage/jdk.jpackage.internal
- * @run main/othervm/timeout=720 -Xmx512m EmptyFolderPackageTest
+ * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
+ *  --jpt-run=EmptyFolderPackageTest
  */
 public class EmptyFolderPackageTest {
 
-    public static void main(String[] args) throws Exception {
-        TKit.run(args, () -> {
-            new PackageTest().configureHelloApp()
-                    .addInitializer(cmd -> {
-                        Path input = cmd.inputDir();
-                        EmptyFolderBase.createDirStrcture(input);
-                    })
-                    .addInstallVerifier(cmd -> {
-                        if (cmd.packageType() == PackageType.WIN_MSI) {
-                            if (cmd.isPackageUnpacked("Not running file "
-                                    + "structure check for empty folders")) {
-                                return;
-                            }
+    @Test
+    public static void test() throws Exception {
+        new PackageTest().configureHelloApp()
+                .addInitializer(cmd -> {
+                    Path input = cmd.inputDir();
+                    EmptyFolderBase.createDirStrcture(input);
+                })
+                .addInstallVerifier(cmd -> {
+                    if (cmd.packageType() == PackageType.WIN_MSI) {
+                        if (cmd.isPackageUnpacked("Not running file "
+                                + "structure check for empty folders")) {
+                            return;
                         }
+                    }
 
-                        ApplicationLayout appLayout = cmd.appLayout();
-                        Path appDir = appLayout.appDirectory();
-                        EmptyFolderBase.validateDirStrcture(appDir);
-                    })
-                    .run();
-        });
+                    ApplicationLayout appLayout = cmd.appLayout();
+                    Path appDir = appLayout.appDirectory();
+                    EmptyFolderBase.validateDirStrcture(appDir);
+                })
+                .run();
     }
 }

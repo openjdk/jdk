@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
  * {@link RandomGeneratorFactory#create()} is used for random seed
  * construction. Example;
  *
- * <pre>{@code
+ * {@snippet :
  *    RandomGeneratorFactory<RandomGenerator> factory = RandomGeneratorFactory.of("Random");
  *
  *     for (int i = 0; i < 10; i++) {
@@ -76,7 +76,7 @@ import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
  *             System.out.println(random.nextDouble());
  *         }).start();
  *     }
- * }</pre>
+ * }
  *
  * RandomGeneratorFactory also provides methods describing the attributes (or properties)
  * of a generator and can be used to select random number generator
@@ -87,16 +87,19 @@ import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
  * {@link RandomGenerator RandomGenerators}
  * with the highest number of state bits.
  *
- * <pre>{@code
+ * {@snippet :
  *     RandomGeneratorFactory<RandomGenerator> best = RandomGeneratorFactory.all()
- *         .sorted(Comparator.comparingInt(RandomGenerator::stateBits).reversed())
+ *         .filter(rgf -> !rgf.name().equals("SecureRandom")) // SecureRandom has MAX_VALUE stateBits.
+ *         .sorted(Comparator.comparingInt(RandomGeneratorFactory<RandomGenerator>::stateBits).reversed())
  *         .findFirst()
  *         .orElse(RandomGeneratorFactory.of("Random"));
  *     System.out.println(best.name() + " in " + best.group() + " was selected");
  *
  *     RandomGenerator rng = best.create();
  *     System.out.println(rng.nextLong());
- * }</pre>
+ * }
+ *
+ * @param <T> type of created random generator
  *
  * @since 17
  *
@@ -284,6 +287,7 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
                 if (ctor == null) {
                     PrivilegedExceptionAction<Constructor<?>[]> ctorAction = randomGeneratorClass::getConstructors;
                     try {
+                        @SuppressWarnings("removal")
                         Constructor<?>[] ctors = AccessController.doPrivileged(ctorAction);
 
                         Constructor<T> tmpCtor = null;
@@ -371,34 +375,9 @@ public final class RandomGeneratorFactory<T extends RandomGenerator> {
     }
 
     /**
-     * Returns a stream of matching Providers.
-     *
-     * @param category  {@link RandomGenerator} sub-interface class to filter
-     * @param <T>       {@link RandomGenerator} sub-interface return type
-     *
-     * RandomGenerators that are marked as deprecated or are not properly configured are not included in the result.
-     *
-     * @implSpec Availability is determined by RandomGeneratorFactory using the service provider API
-     * to locate implementations of the RandomGenerator interface.
-     *
-     * @return Stream of matching {@link RandomGeneratorFactory RandomGeneratorFactory(s)}.
-     *
-     * @hidden
-     */
-    public static <T extends RandomGenerator> Stream<RandomGeneratorFactory<T>> all(Class<T> category) {
-        Map<String, Provider<? extends RandomGenerator>> fm = getFactoryMap();
-        return fm.values()
-                 .stream()
-                 .filter(p -> isSubclass(category, p) &&
-                              !p.type().isAnnotationPresent(Deprecated.class) &&
-                              p.type().isAnnotationPresent(RandomGeneratorProperties.class))
-                 .map(RandomGeneratorFactory::new);
-    }
-
-    /**
      * Returns a non-empty stream of available {@link RandomGeneratorFactory RandomGeneratorFactory(s)}.
      *
-     * RandomGenerators that are marked as deprecated or are not properly configured are not included in the result.
+     * RandomGenerators that are marked as deprecated are not included in the result.
      *
      * @implSpec Availability is determined by RandomGeneratorFactory using the service provider API
      * to locate implementations of the RandomGenerator interface.

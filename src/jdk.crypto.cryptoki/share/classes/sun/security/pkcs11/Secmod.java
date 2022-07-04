@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,6 +72,15 @@ public final class Secmod {
     private static final String SOFTTOKEN_LIB_NAME = "softokn3";
 
     private static final String TRUST_LIB_NAME = "nssckbi";
+
+    // Slot IDs - defined in j2secmod.h on the native side
+    // Values obtained from NSS's pkcs11i.h header
+
+    private static final int NETSCAPE_SLOT_ID = 0x1;
+
+    private static final int PRIVATE_KEY_SLOT_ID = 0x2;
+
+    private static final int FIPS_SLOT_ID = 0x3;
 
     // handle to be passed to the native code, 0 means not initialized
     private long nssHandle;
@@ -392,20 +401,21 @@ public final class Secmod {
         private Map<Bytes,TrustAttributes> trust;
 
         Module(String libraryDir, String libraryName, String commonName,
-                boolean fips, int slot) {
+                int slotIndex, int slotId) {
             ModuleType type;
 
             if ((libraryName == null) || (libraryName.length() == 0)) {
                 // must be softtoken
                 libraryName = System.mapLibraryName(SOFTTOKEN_LIB_NAME);
-                if (fips == false) {
-                    type = (slot == 0) ? ModuleType.CRYPTO : ModuleType.KEYSTORE;
-                } else {
+                if (slotId == NETSCAPE_SLOT_ID) {
+                    type = ModuleType.CRYPTO;
+                } else if (slotId == PRIVATE_KEY_SLOT_ID) {
+                    type = ModuleType.KEYSTORE;
+                } else if (slotId == FIPS_SLOT_ID) {
                     type = ModuleType.FIPS;
-                    if (slot != 0) {
-                        throw new RuntimeException
-                            ("Slot index should be 0 for FIPS slot");
-                    }
+                } else {
+                    throw new RuntimeException("Unexpected slot ID " + slotId +
+                            " in the NSS Internal Module");
                 }
             } else {
                 if (libraryName.endsWith(System.mapLibraryName(TRUST_LIB_NAME))
@@ -426,7 +436,7 @@ public final class Secmod {
             }
             this.libraryName = libraryFile.getPath();
             this.commonName = commonName;
-            this.slot = slot;
+            this.slot = slotIndex;
             this.type = type;
             initConfiguration();
         }

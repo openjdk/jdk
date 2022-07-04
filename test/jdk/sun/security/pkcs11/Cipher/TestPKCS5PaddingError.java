@@ -29,7 +29,7 @@
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
  * @run main/othervm TestPKCS5PaddingError
- * @run main/othervm TestPKCS5PaddingError sm
+ * @run main/othervm -Djava.security.manager=allow TestPKCS5PaddingError sm
  */
 
 import java.security.AlgorithmParameters;

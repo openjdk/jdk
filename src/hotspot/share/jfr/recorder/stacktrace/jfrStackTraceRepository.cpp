@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,14 +146,14 @@ size_t JfrStackTraceRepository::clear(JfrStackTraceRepository& repo) {
   return processed;
 }
 
-traceid JfrStackTraceRepository::record(Thread* thread, int skip /* 0 */) {
-  assert(thread == Thread::current(), "invariant");
-  JfrThreadLocal* const tl = thread->jfr_thread_local();
+traceid JfrStackTraceRepository::record(Thread* current_thread, int skip /* 0 */) {
+  assert(current_thread == Thread::current(), "invariant");
+  JfrThreadLocal* const tl = current_thread->jfr_thread_local();
   assert(tl != NULL, "invariant");
   if (tl->has_cached_stack_trace()) {
     return tl->cached_stack_trace_id();
   }
-  if (!thread->is_Java_thread() || thread->is_hidden_from_external_view() || tl->is_excluded()) {
+  if (!current_thread->is_Java_thread() || current_thread->is_hidden_from_external_view()) {
     return 0;
   }
   JfrStackFrame* frames = tl->stackframes();
@@ -163,12 +163,12 @@ traceid JfrStackTraceRepository::record(Thread* thread, int skip /* 0 */) {
   }
   assert(frames != NULL, "invariant");
   assert(tl->stackframes() == frames, "invariant");
-  return instance().record_for(thread->as_Java_thread(), skip, frames, tl->stackdepth());
+  return instance().record(JavaThread::cast(current_thread), skip, frames, tl->stackdepth());
 }
 
-traceid JfrStackTraceRepository::record_for(JavaThread* thread, int skip, JfrStackFrame *frames, u4 max_frames) {
+traceid JfrStackTraceRepository::record(JavaThread* current_thread, int skip, JfrStackFrame *frames, u4 max_frames) {
   JfrStackTrace stacktrace(frames, max_frames);
-  return stacktrace.record_safe(thread, skip) ? add(instance(), stacktrace) : 0;
+  return stacktrace.record(current_thread, skip) ? add(instance(), stacktrace) : 0;
 }
 traceid JfrStackTraceRepository::add(JfrStackTraceRepository& repo, const JfrStackTrace& stacktrace) {
   traceid tid = repo.add_trace(stacktrace);
@@ -184,13 +184,14 @@ traceid JfrStackTraceRepository::add(const JfrStackTrace& stacktrace) {
   return add(instance(), stacktrace);
 }
 
-void JfrStackTraceRepository::record_for_leak_profiler(JavaThread* thread, int skip /* 0 */) {
-  assert(thread != NULL, "invariant");
-  JfrThreadLocal* const tl = thread->jfr_thread_local();
+void JfrStackTraceRepository::record_for_leak_profiler(JavaThread* current_thread, int skip /* 0 */) {
+  assert(current_thread != NULL, "invariant");
+  assert(current_thread == Thread::current(), "invariant");
+  JfrThreadLocal* const tl = current_thread->jfr_thread_local();
   assert(tl != NULL, "invariant");
   assert(!tl->has_cached_stack_trace(), "invariant");
   JfrStackTrace stacktrace(tl->stackframes(), tl->stackdepth());
-  stacktrace.record_safe(thread, skip);
+  stacktrace.record(current_thread, skip);
   const unsigned int hash = stacktrace.hash();
   if (hash != 0) {
     tl->set_cached_stack_trace_id(add(leak_profiler_instance(), stacktrace), hash);
@@ -199,6 +200,7 @@ void JfrStackTraceRepository::record_for_leak_profiler(JavaThread* thread, int s
 
 traceid JfrStackTraceRepository::add_trace(const JfrStackTrace& stacktrace) {
   MutexLocker lock(JfrStacktrace_lock, Mutex::_no_safepoint_check_flag);
+  assert(stacktrace._nr_of_frames > 0, "invariant");
   const size_t index = stacktrace._hash % TABLE_SIZE;
   const JfrStackTrace* table_entry = _table[index];
 

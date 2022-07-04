@@ -25,10 +25,10 @@
 #ifndef SHARE_OOPS_ARRAY_INLINE_HPP
 #define SHARE_OOPS_ARRAY_INLINE_HPP
 
-#include "memory/allocation.hpp"
-#include "memory/metaspace.hpp"
 #include "oops/array.hpp"
 
+#include "memory/allocation.hpp"
+#include "memory/metaspace.hpp"
 
 template <typename T>
 inline void* Array<T>::operator new(size_t size, ClassLoaderData* loader_data, int length, TRAPS) throw() {

@@ -56,7 +56,7 @@ public class TestTypeParameters extends JavadocTester {
         checkOutput("pkg/C.html", true,
                 """
                     <div class="col-first odd-row-color method-summary-table method-summary-table-ta\
-                    b2 method-summary-table-tab4"><code>&lt;W extends java.lang.String,&#8203;
+                    b2 method-summary-table-tab4"><code>&lt;W extends java.lang.String,<wbr>
                     V extends java.util.List&gt;<br>java.lang.Object</code></div>""",
                 "<code>&lt;T&gt;&nbsp;java.lang.Object</code>");
 

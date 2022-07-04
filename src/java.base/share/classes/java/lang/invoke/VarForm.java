@@ -49,8 +49,8 @@ final class VarForm {
     final @Stable MemberName[] memberName_table;
 
     VarForm(Class<?> implClass, Class<?> receiver, Class<?> value, Class<?>... intermediate) {
-        this.methodType_table = new MethodType[VarHandle.AccessType.values().length];
-        this.memberName_table = new MemberName[VarHandle.AccessMode.values().length];
+        this.methodType_table = new MethodType[VarHandle.AccessType.COUNT];
+        this.memberName_table = new MemberName[VarHandle.AccessMode.COUNT];
         this.implClass = implClass;
         if (receiver == null) {
             initMethodTypes(value, intermediate);
@@ -64,7 +64,7 @@ final class VarForm {
 
     // Used by IndirectVarHandle
     VarForm(Class<?> value, Class<?>[] coordinates) {
-        this.methodType_table = new MethodType[VarHandle.AccessType.values().length];
+        this.methodType_table = new MethodType[VarHandle.AccessType.COUNT];
         this.memberName_table = null;
         this.implClass = null;
         initMethodTypes(value, coordinates);
@@ -109,9 +109,14 @@ final class VarForm {
 
     @ForceInline
     final MemberName getMemberName(int mode) {
-        MemberName mn = getMemberNameOrNull(mode);
+        // Can be simplified by calling getMemberNameOrNull, but written in this
+        // form to improve interpreter/coldpath performance.
+        MemberName mn = memberName_table[mode];
         if (mn == null) {
-            throw new UnsupportedOperationException();
+            mn = resolveMemberName(mode);
+            if (mn == null) {
+                throw new UnsupportedOperationException();
+            }
         }
         return mn;
     }

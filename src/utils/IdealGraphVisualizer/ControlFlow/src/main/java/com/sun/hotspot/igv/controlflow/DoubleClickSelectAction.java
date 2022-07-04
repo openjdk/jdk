@@ -28,6 +28,7 @@ import java.awt.event.MouseEvent;
 import org.netbeans.api.visual.action.SelectProvider;
 import org.netbeans.api.visual.action.WidgetAction;
 import org.netbeans.api.visual.widget.Widget;
+import org.openide.util.Utilities;
 
 /**
  * Selection action that acts on double-click only. Does not support aiming.
@@ -42,6 +43,10 @@ public class DoubleClickSelectAction extends WidgetAction.LockedAdapter {
         this.provider = provider;
     }
 
+    protected int getModifierMask () {
+        return Utilities.isMac() ? MouseEvent.META_DOWN_MASK : MouseEvent.CTRL_DOWN_MASK;
+    }
+
     protected boolean isLocked() {
         return false;
     }
@@ -49,7 +54,7 @@ public class DoubleClickSelectAction extends WidgetAction.LockedAdapter {
     @Override
     public State mousePressed(Widget widget, WidgetMouseEvent event) {
         if (event.getClickCount() >= 2 && (event.getButton() == MouseEvent.BUTTON1 || event.getButton() == MouseEvent.BUTTON2)) {
-            boolean invert = (event.getModifiersEx() & MouseEvent.CTRL_DOWN_MASK) != 0;
+            boolean invert = (event.getModifiersEx() & getModifierMask()) != 0;
             Point point = event.getPoint();
             if (provider.isSelectionAllowed(widget, point, invert)) {
                 provider.select(widget, point, invert);

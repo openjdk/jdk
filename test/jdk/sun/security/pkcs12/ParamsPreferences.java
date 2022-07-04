@@ -35,7 +35,7 @@ import static sun.security.util.KnownOIDs.*;
 
 /*
  * @test
- * @bug 8076190 8242151 8153005
+ * @bug 8076190 8242151 8153005 8266293
  * @library /test/lib
  * @modules java.base/sun.security.pkcs
  *          java.base/sun.security.util
@@ -192,6 +192,15 @@ public class ParamsPreferences {
                         "keystore.pkcs12.keyProtectionAlgorithm", "PBEWithSHA1AndRC2_40"),
                 PBES2, HmacSHA256, AES_256$CBC$NoPadding, 10000,
                 PBEWithSHA1AndRC4_40, 10000,
+                SHA_256, 10000);
+
+        // 8266293
+        test(c++,
+                Map.of("keystore.pkcs12.keyProtectionAlgorithm", "PBEWithMD5AndDES",
+                        "keystore.pkcs12.certProtectionAlgorithm", "PBEWithMD5AndDES"),
+                Map.of(),
+                PBEWithMD5AndDES, 10000,
+                PBEWithMD5AndDES, 10000,
                 SHA_256, 10000);
     }
 

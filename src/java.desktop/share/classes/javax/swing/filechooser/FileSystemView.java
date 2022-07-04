@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package javax.swing.filechooser;
 
 import java.awt.Image;
+import java.awt.image.AbstractMultiResolutionImage;
 import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -64,7 +65,6 @@ import sun.awt.shell.ShellFolder;
 // PENDING(jeff) - need to provide a specification for
 // how Mac/OS2/BeOS/etc file systems can modify FileSystemView
 // to handle their particular type of file system.
-
 public abstract class FileSystemView {
 
     static FileSystemView windowsFileSystemView = null;
@@ -225,7 +225,7 @@ public abstract class FileSystemView {
      * Icon for a file, directory, or folder as it would be displayed in
      * a system file browser. Example from Windows: the "M:\" directory
      * displays a CD-ROM icon.
-     *
+     * <p>
      * The default implementation gets information from the ShellFolder class.
      *
      * @param f a <code>File</code> object
@@ -252,6 +252,67 @@ public abstract class FileSystemView {
             return new ImageIcon(img, sf.getFolderType());
         } else {
             return UIManager.getIcon(f.isDirectory() ? "FileView.directoryIcon" : "FileView.fileIcon");
+        }
+    }
+
+   /**
+    * Returns an icon for a file, directory, or folder as it would be displayed
+    * in a system file browser for the requested size.
+    * <p>
+    * Example: <pre>
+    *     FileSystemView fsv = FileSystemView.getFileSystemView();
+    *     Icon icon = fsv.getSystemIcon(new File("application.exe"), 64, 64);
+    *     JLabel label = new JLabel(icon);
+    * </pre>
+    *
+    * @implSpec The available icons may be platform specific and so the
+    * available sizes determined by the platform. Therefore an exact match
+    * for the requested size may not be possible.
+    *
+    * The icon returned may be a multi-resolution icon image,
+    * which allows better support for High DPI environments
+    * with different scaling factors.
+    *
+    * @param f a {@code File} object for which the icon will be retrieved
+    * @param width width of the icon in user coordinate system.
+    * @param height height of the icon in user coordinate system.
+    * @return an icon as it would be displayed by a native file chooser
+    * or null for a non-existent or inaccessible file.
+    * @throws IllegalArgumentException if an invalid parameter such
+    * as a negative size or a null file reference is passed.
+    * @see JFileChooser#getIcon
+    * @see AbstractMultiResolutionImage
+    * @see FileSystemView#getSystemIcon(File)
+    * @since 17
+    */
+    public Icon getSystemIcon(File f, int width, int height) {
+        if (height < 1 || width < 1) {
+            throw new IllegalArgumentException("Icon size can not be below 1");
+        }
+
+        if (f == null) {
+            throw new IllegalArgumentException("The file reference should not be null");
+        }
+
+        if(!f.exists()) {
+            return null;
+        }
+
+        ShellFolder sf;
+
+        try {
+            sf = ShellFolder.getShellFolder(f);
+        } catch (FileNotFoundException e) {
+            return null;
+        }
+
+        Image img = sf.getIcon(width, height);
+
+        if (img != null) {
+            return new ImageIcon(img, sf.getFolderType());
+        } else {
+            return UIManager.getIcon(f.isDirectory() ? "FileView.directoryIcon"
+                    : "FileView.fileIcon");
         }
     }
 
@@ -286,13 +347,14 @@ public abstract class FileSystemView {
     }
 
     /**
+     * Returns a <code>File</code> object which is normally constructed with <code>new
+     * File(parent, fileName)</code> except when the parent and child are both
+     * special folders, in which case the <code>File</code> is a wrapper containing
+     * a ShellFolder object.
      *
      * @param parent a <code>File</code> object representing a directory or special folder
      * @param fileName a name of a file or folder which exists in <code>parent</code>
-     * @return a File object. This is normally constructed with <code>new
-     * File(parent, fileName)</code> except when parent and child are both
-     * special folders, in which case the <code>File</code> is a wrapper containing
-     * a <code>ShellFolder</code> object.
+     * @return a File object.
      * @since 1.4
      */
     public File getChild(File parent, String fileName) {
@@ -762,7 +824,7 @@ class UnixFileSystemView extends FileSystemView {
     public boolean isComputerNode(File dir) {
         if (dir != null) {
             String parent = dir.getParent();
-            if (parent != null && parent.equals("/net")) {
+            if ("/net".equals(parent)) {
                 return true;
             }
         }
@@ -861,6 +923,7 @@ class WindowsFileSystemView extends FileSystemView {
     }
 
     public boolean isFloppyDrive(final File dir) {
+        @SuppressWarnings("removal")
         String path = AccessController.doPrivileged(new PrivilegedAction<String>() {
             public String run() {
                 return dir.getAbsolutePath();

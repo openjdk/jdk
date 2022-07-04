@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -303,7 +303,7 @@ public class RemoteDebuggerClient extends DebuggerBase implements JVMDebugger {
 
   public long getAddressValue(Address addr) throws DebuggerException {
     if (addr == null) return 0;
-    return ((RemoteAddress) addr).getValue();
+    return addr.asLongValue();
   }
 
   public Address newAddress(long value) {
@@ -387,7 +387,7 @@ public class RemoteDebuggerClient extends DebuggerBase implements JVMDebugger {
        return remoteDebugger.getThreadHashCode(id, false);
     } catch (RemoteException e) {
     }
-    return (int) id;
+    return Long.hashCode(id);
   }
 
   public ThreadProxy getThreadForIdentifierAddress(Address addr) {
@@ -422,5 +422,10 @@ public class RemoteDebuggerClient extends DebuggerBase implements JVMDebugger {
     } catch (RemoteException e) {
       throw new DebuggerException(e);
     }
+  }
+
+  @Override
+  public String findSymbol(String symbol) {
+    return execCommandOnServer("findsym", Map.of("symbol", symbol));
   }
 }

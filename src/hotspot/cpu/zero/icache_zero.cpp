@@ -24,7 +24,7 @@
  */
 
 #include "precompiled.hpp"
-#include "assembler_zero.inline.hpp"
+#include "asm/assembler.inline.hpp"
 #include "runtime/icache.hpp"
 
 void ICacheStubGenerator::generate_icache_flush(

@@ -25,9 +25,12 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHHEAP_INLINE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHHEAP_INLINE_HPP
 
+#include "gc/shenandoah/shenandoahHeap.hpp"
+
 #include "classfile/javaClasses.inline.hpp"
 #include "gc/shared/markBitMap.inline.hpp"
 #include "gc/shared/threadLocalAllocBuffer.inline.hpp"
+#include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
@@ -35,7 +38,6 @@
 #include "gc/shenandoah/shenandoahCollectionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahForwarding.inline.hpp"
 #include "gc/shenandoah/shenandoahWorkGroup.hpp"
-#include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahControlThread.hpp"
@@ -44,8 +46,8 @@
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/prefetch.inline.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -63,11 +65,11 @@ inline bool ShenandoahHeap::has_forwarded_objects() const {
   return _gc_state.is_set(HAS_FORWARDED);
 }
 
-inline WorkGang* ShenandoahHeap::workers() const {
+inline WorkerThreads* ShenandoahHeap::workers() const {
   return _workers;
 }
 
-inline WorkGang* ShenandoahHeap::safepoint_workers() {
+inline WorkerThreads* ShenandoahHeap::safepoint_workers() {
   return _safepoint_workers;
 }
 
@@ -131,29 +133,110 @@ inline void ShenandoahHeap::conc_update_with_forwarded(T* p) {
 
       // Either we succeed in updating the reference, or something else gets in our way.
       // We don't care if that is another concurrent GC update, or another mutator update.
-      // We only check that non-NULL store still updated with non-forwarded reference.
-      oop witness = cas_oop(fwd, p, obj);
-      shenandoah_assert_not_forwarded_except(p, witness, (witness == NULL) || (witness == obj));
+      atomic_update_oop(fwd, p, obj);
     }
   }
 }
 
-inline oop ShenandoahHeap::cas_oop(oop n, oop* addr, oop c) {
+// Atomic updates of heap location. This is only expected to work with updating the same
+// logical object with its forwardee. The reason why we need stronger-than-relaxed memory
+// ordering has to do with coordination with GC barriers and mutator accesses.
+//
+// In essence, stronger CAS access is required to maintain the transitive chains that mutator
+// accesses build by themselves. To illustrate this point, consider the following example.
+//
+// Suppose "o" is the object that has a field "x" and the reference to "o" is stored
+// to field at "addr", which happens to be Java volatile field. Normally, the accesses to volatile
+// field at "addr" would be matched with release/acquire barriers. This changes when GC moves
+// the object under mutator feet.
+//
+// Thread 1 (Java)
+//         // --- previous access starts here
+//         ...
+//   T1.1: store(&o.x, 1, mo_relaxed)
+//   T1.2: store(&addr, o, mo_release) // volatile store
+//
+//         // --- new access starts here
+//         // LRB: copy and install the new copy to fwdptr
+//   T1.3: var copy = copy(o)
+//   T1.4: cas(&fwd, t, copy, mo_release) // pointer-mediated publication
+//         <access continues>
+//
+// Thread 2 (GC updater)
+//   T2.1: var f = load(&fwd, mo_{consume|acquire}) // pointer-mediated acquisition
+//   T2.2: cas(&addr, o, f, mo_release) // this method
+//
+// Thread 3 (Java)
+//   T3.1: var o = load(&addr, mo_acquire) // volatile read
+//   T3.2: if (o != null)
+//   T3.3:   var r = load(&o.x, mo_relaxed)
+//
+// r is guaranteed to contain "1".
+//
+// Without GC involvement, there is synchronizes-with edge from T1.2 to T3.1,
+// which guarantees this. With GC involvement, when LRB copies the object and
+// another thread updates the reference to it, we need to have the transitive edge
+// from T1.4 to T2.1 (that one is guaranteed by forwarding accesses), plus the edge
+// from T2.2 to T3.1 (which is brought by this CAS).
+//
+// Note that we do not need to "acquire" in these methods, because we do not read the
+// failure witnesses contents on any path, and "release" is enough.
+//
+
+inline void ShenandoahHeap::atomic_update_oop(oop update, oop* addr, oop compare) {
   assert(is_aligned(addr, HeapWordSize), "Address should be aligned: " PTR_FORMAT, p2i(addr));
-  return (oop) Atomic::cmpxchg(addr, c, n);
+  Atomic::cmpxchg(addr, compare, update, memory_order_release);
 }
 
-inline oop ShenandoahHeap::cas_oop(oop n, narrowOop* addr, narrowOop c) {
+inline void ShenandoahHeap::atomic_update_oop(oop update, narrowOop* addr, narrowOop compare) {
   assert(is_aligned(addr, sizeof(narrowOop)), "Address should be aligned: " PTR_FORMAT, p2i(addr));
-  narrowOop val = CompressedOops::encode(n);
-  return CompressedOops::decode(Atomic::cmpxchg(addr, c, val));
+  narrowOop u = CompressedOops::encode(update);
+  Atomic::cmpxchg(addr, compare, u, memory_order_release);
 }
 
-inline oop ShenandoahHeap::cas_oop(oop n, narrowOop* addr, oop c) {
+inline void ShenandoahHeap::atomic_update_oop(oop update, narrowOop* addr, oop compare) {
   assert(is_aligned(addr, sizeof(narrowOop)), "Address should be aligned: " PTR_FORMAT, p2i(addr));
-  narrowOop cmp = CompressedOops::encode(c);
-  narrowOop val = CompressedOops::encode(n);
-  return CompressedOops::decode(Atomic::cmpxchg(addr, cmp, val));
+  narrowOop c = CompressedOops::encode(compare);
+  narrowOop u = CompressedOops::encode(update);
+  Atomic::cmpxchg(addr, c, u, memory_order_release);
+}
+
+inline bool ShenandoahHeap::atomic_update_oop_check(oop update, oop* addr, oop compare) {
+  assert(is_aligned(addr, HeapWordSize), "Address should be aligned: " PTR_FORMAT, p2i(addr));
+  return (oop) Atomic::cmpxchg(addr, compare, update, memory_order_release) == compare;
+}
+
+inline bool ShenandoahHeap::atomic_update_oop_check(oop update, narrowOop* addr, narrowOop compare) {
+  assert(is_aligned(addr, sizeof(narrowOop)), "Address should be aligned: " PTR_FORMAT, p2i(addr));
+  narrowOop u = CompressedOops::encode(update);
+  return (narrowOop) Atomic::cmpxchg(addr, compare, u, memory_order_release) == compare;
+}
+
+inline bool ShenandoahHeap::atomic_update_oop_check(oop update, narrowOop* addr, oop compare) {
+  assert(is_aligned(addr, sizeof(narrowOop)), "Address should be aligned: " PTR_FORMAT, p2i(addr));
+  narrowOop c = CompressedOops::encode(compare);
+  narrowOop u = CompressedOops::encode(update);
+  return CompressedOops::decode(Atomic::cmpxchg(addr, c, u, memory_order_release)) == compare;
+}
+
+// The memory ordering discussion above does not apply for methods that store NULLs:
+// then, there is no transitive reads in mutator (as we see NULLs), and we can do
+// relaxed memory ordering there.
+
+inline void ShenandoahHeap::atomic_clear_oop(oop* addr, oop compare) {
+  assert(is_aligned(addr, HeapWordSize), "Address should be aligned: " PTR_FORMAT, p2i(addr));
+  Atomic::cmpxchg(addr, compare, oop(), memory_order_relaxed);
+}
+
+inline void ShenandoahHeap::atomic_clear_oop(narrowOop* addr, oop compare) {
+  assert(is_aligned(addr, sizeof(narrowOop)), "Address should be aligned: " PTR_FORMAT, p2i(addr));
+  narrowOop cmp = CompressedOops::encode(compare);
+  Atomic::cmpxchg(addr, cmp, narrowOop(), memory_order_relaxed);
+}
+
+inline void ShenandoahHeap::atomic_clear_oop(narrowOop* addr, narrowOop compare) {
+  assert(is_aligned(addr, sizeof(narrowOop)), "Address should be aligned: " PTR_FORMAT, p2i(addr));
+  Atomic::cmpxchg(addr, compare, narrowOop(), memory_order_relaxed);
 }
 
 inline bool ShenandoahHeap::cancelled_gc() const {
@@ -252,6 +335,8 @@ inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
 
   // Try to install the new forwarding pointer.
   oop copy_val = cast_to_oop(copy);
+  ContinuationGCSupport::relativize_stack_chunk(copy_val);
+
   oop result = ShenandoahForwarding::try_update_forwardee(p, copy_val);
   if (result == copy_val) {
     // Successfully evacuated. Our copy is now the public one!
@@ -375,7 +460,7 @@ inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, 
     // touch anything in oop, while it still being prefetched to get enough
     // time for prefetch to work. This is why we try to scan the bitmap linearly,
     // disregarding the object size. However, since we know forwarding pointer
-    // preceeds the object, we can skip over it. Once we cannot trust the bitmap,
+    // precedes the object, we can skip over it. Once we cannot trust the bitmap,
     // there is no point for prefetching the oop contents, as oop->size() will
     // touch it prematurely.
 
@@ -431,7 +516,7 @@ inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, 
     oop obj = cast_to_oop(cs);
     assert(oopDesc::is_oop(obj), "sanity");
     assert(ctx->is_marked(obj), "object expected to be marked");
-    int size = obj->size();
+    size_t size = obj->size();
     cl->do_object(obj);
     cs += size;
   }

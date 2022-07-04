@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiUtil.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "utilities/exceptions.hpp"
 
 static const size_t ERROR_MSG_BUFFER_SIZE = 256;
@@ -98,7 +98,7 @@ extern "C" void JNICALL jfr_on_class_file_load_hook(jvmtiEnv *jvmti_env,
 static jclass* create_classes_array(jint classes_count, TRAPS) {
   assert(classes_count > 0, "invariant");
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(THREAD));
-  ThreadInVMfromNative tvmfn(THREAD->as_Java_thread());
+  ThreadInVMfromNative tvmfn(THREAD);
   jclass* const classes = NEW_RESOURCE_ARRAY_IN_THREAD_RETURN_NULL(THREAD, jclass, classes_count);
   if (NULL == classes) {
     char error_buffer[ERROR_MSG_BUFFER_SIZE];
@@ -115,7 +115,7 @@ static jclass* create_classes_array(jint classes_count, TRAPS) {
 static void log_and_throw(jvmtiError error, TRAPS) {
   if (!HAS_PENDING_EXCEPTION) {
     DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(THREAD));
-    ThreadInVMfromNative tvmfn(THREAD->as_Java_thread());
+    ThreadInVMfromNative tvmfn(THREAD);
     const char base_error_msg[] = "JfrJvmtiAgent::retransformClasses failed: ";
     size_t length = sizeof base_error_msg; // includes terminating null
     const char* const jvmti_error_name = JvmtiUtil::error_name(error);
@@ -136,7 +136,7 @@ static void check_exception_and_log(JNIEnv* env, TRAPS) {
   if (env->ExceptionOccurred()) {
     // array index out of bound
     DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(THREAD));
-    ThreadInVMfromNative tvmfn(THREAD->as_Java_thread());
+    ThreadInVMfromNative tvmfn(THREAD);
     log_error(jfr, system)("GetObjectArrayElement threw an exception");
     return;
   }
@@ -165,7 +165,7 @@ void JfrJvmtiAgent::retransform_classes(JNIEnv* env, jobjectArray classes_array,
   }
   {
     // inspecting the oop/klass requires a thread transition
-    ThreadInVMfromNative transition(THREAD->as_Java_thread());
+    ThreadInVMfromNative transition(THREAD);
     for (jint i = 0; i < classes_count; ++i) {
       jclass clz = classes[i];
       if (!JdkJfrEvent::is_a(clz)) {
@@ -187,7 +187,6 @@ static bool register_callbacks(JavaThread* jt) {
   jvmtiEventCallbacks callbacks;
   /* Set callbacks */
   memset(&callbacks, 0, sizeof(callbacks));
-  callbacks.ClassFileLoadHook = jfr_on_class_file_load_hook;
   const jvmtiError jvmti_ret_code = jfr_jvmti_env->SetEventCallbacks(&callbacks, sizeof(callbacks));
   check_jvmti_error(jfr_jvmti_env, jvmti_ret_code, "SetEventCallbacks");
   return jvmti_ret_code == JVMTI_ERROR_NONE;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,11 +128,6 @@ class PerfMemory : AllStatic {
     static void delete_memory_region();
 
   public:
-    enum PerfMemoryMode {
-      PERF_MODE_RO = 0,
-      PERF_MODE_RW = 1
-    };
-
     static char* alloc(size_t size);
     static char* start() { return _start; }
     static char* end() { return _end; }
@@ -148,8 +143,7 @@ class PerfMemory : AllStatic {
 
     // methods for attaching to and detaching from the PerfData
     // memory segment of another JVM process on the same system.
-    static void attach(const char* user, int vmid, PerfMemoryMode mode,
-                       char** addrp, size_t* size, TRAPS);
+    static void attach(int vmid, char** addrp, size_t* size, TRAPS);
     static void detach(char* addr, size_t bytes);
 
     static void initialize();

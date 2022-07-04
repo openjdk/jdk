@@ -300,6 +300,9 @@ public interface Spliterator<T> {
      * Spliterator is {@link #ORDERED} the action is performed on the
      * next element in encounter order.  Exceptions thrown by the
      * action are relayed to the caller.
+     * <p>
+     * Subsequent behavior of a spliterator is unspecified if the action throws
+     * an exception.
      *
      * @param action The action
      * @return {@code false} if no remaining elements existed
@@ -314,6 +317,9 @@ public interface Spliterator<T> {
      * throws an exception.  If this Spliterator is {@link #ORDERED}, actions
      * are performed in encounter order.  Exceptions thrown by the action
      * are relayed to the caller.
+     * <p>
+     * Subsequent behavior of a spliterator is unspecified if the action throws
+     * an exception.
      *
      * @implSpec
      * The default implementation repeatedly invokes {@link #tryAdvance} until
@@ -613,6 +619,9 @@ public interface Spliterator<T> {
          * Spliterator is {@link #ORDERED} the action is performed on the
          * next element in encounter order.  Exceptions thrown by the
          * action are relayed to the caller.
+         * <p>
+         * Subsequent behavior of a spliterator is unspecified if the action throws
+         * an exception.
          *
          * @param action The action
          * @return {@code false} if no remaining elements existed
@@ -628,6 +637,9 @@ public interface Spliterator<T> {
          * action throws an exception.  If this Spliterator is {@link #ORDERED},
          * actions are performed in encounter order.  Exceptions thrown by the
          * action are relayed to the caller.
+         * <p>
+         * Subsequent behavior of a spliterator is unspecified if the action throws
+         * an exception.
          *
          * @implSpec
          * The default implementation repeatedly invokes {@link #tryAdvance}

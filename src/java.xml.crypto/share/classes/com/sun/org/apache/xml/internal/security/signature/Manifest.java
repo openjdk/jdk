@@ -63,6 +63,7 @@ public class Manifest extends SignatureElementProxy {
     private static final com.sun.org.slf4j.internal.Logger LOG =
         com.sun.org.slf4j.internal.LoggerFactory.getLogger(Manifest.class);
 
+    @SuppressWarnings("removal")
     private static Integer referenceCount =
         AccessController.doPrivileged(
             (PrivilegedAction<Integer>) () -> Integer.parseInt(System.getProperty("com.sun.org.apache.xml.internal.security.maxReferences",

@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary Tests <array> element
+ * @run main/othervm -Djava.security.manager=allow TestArray
  * @author Sergey Malenkov
  */
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,11 @@ import java.util.concurrent.TimeUnit;
 class PollingWatchService
     extends AbstractWatchService
 {
+    // Wait between polling thread creation and first poll (seconds)
+    private static final int POLLING_INIT_DELAY = 1;
+    // Default time between polls (seconds)
+    private static final int DEFAULT_POLLING_INTERVAL = 2;
+
     // map of registrations
     private final Map<Object, PollingWatchKey> map = new HashMap<>();
 
@@ -82,6 +87,7 @@ class PollingWatchService
     /**
      * Register the given file with this watch service
      */
+    @SuppressWarnings("removal")
     @Override
     WatchKey register(final Path path,
                       WatchEvent.Kind<?>[] events,
@@ -89,7 +95,7 @@ class PollingWatchService
          throws IOException
     {
         // check events - CCE will be thrown if there are invalid elements
-        final Set<WatchEvent.Kind<?>> eventSet = new HashSet<>(events.length);
+        final Set<WatchEvent.Kind<?>> eventSet = HashSet.newHashSet(events.length);
         for (WatchEvent.Kind<?> event: events) {
             // standard events
             if (event == StandardWatchEventKinds.ENTRY_CREATE ||
@@ -114,7 +120,7 @@ class PollingWatchService
             throw new IllegalArgumentException("No events to register");
 
         // Extended modifiers may be used to specify the sensitivity level
-        int sensitivity = 10;
+        int sensitivity = DEFAULT_POLLING_INTERVAL;
         if (modifiers.length > 0) {
             for (WatchEvent.Modifier modifier: modifiers) {
                 if (modifier == null)
@@ -194,6 +200,7 @@ class PollingWatchService
 
     }
 
+    @SuppressWarnings("removal")
     @Override
     void implClose() throws IOException {
         synchronized (map) {
@@ -245,6 +252,7 @@ class PollingWatchService
      * directory and queue keys when entries are added, modified, or deleted.
      */
     private class PollingWatchKey extends AbstractWatchKey {
+
         private final Object fileKey;
 
         // current event set
@@ -303,10 +311,10 @@ class PollingWatchService
                 // update the events
                 this.events = events;
 
-                // create the periodic task
+                // create the periodic task with initialDelay set to the specified constant
                 Runnable thunk = new Runnable() { public void run() { poll(); }};
                 this.poller = scheduledExecutor
-                    .scheduleAtFixedRate(thunk, period, period, TimeUnit.SECONDS);
+                    .scheduleAtFixedRate(thunk, POLLING_INIT_DELAY, period, TimeUnit.SECONDS);
             }
         }
 

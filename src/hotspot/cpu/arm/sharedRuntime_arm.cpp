@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "asm/assembler.hpp"
-#include "assembler_arm.inline.hpp"
+#include "asm/assembler.inline.hpp"
 #include "code/debugInfoRec.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
@@ -103,11 +102,11 @@ public:
   };
 
   // all regs but Rthread (R10), FP (R7 or R11), SP and PC
-  // (altFP_7_11 is the one amoung R7 and R11 which is not FP)
+  // (altFP_7_11 is the one among R7 and R11 which is not FP)
 #define SAVED_BASE_REGS (RegisterSet(R0, R6) | RegisterSet(R8, R9) | RegisterSet(R12) | R14 | altFP_7_11)
 
 
-  //  When LR may be live in the nmethod from which we are comming
+  //  When LR may be live in the nmethod from which we are coming
   //  then lr_saved is true, the return address is saved before the
   //  call to save_live_register by the caller and LR contains the
   //  live value.
@@ -353,6 +352,13 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
     }
   }
   return slot;
+}
+
+int SharedRuntime::vector_calling_convention(VMRegPair *regs,
+                                             uint num_bits,
+                                             uint total_args_passed) {
+  Unimplemented();
+  return 0;
 }
 
 int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
@@ -744,8 +750,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                                                 int compile_id,
                                                 BasicType* in_sig_bt,
                                                 VMRegPair* in_regs,
-                                                BasicType ret_type,
-                                                address critical_entry) {
+                                                BasicType ret_type) {
   if (method->is_method_handle_intrinsic()) {
     vmIntrinsics::ID iid = method->intrinsic_id();
     intptr_t start = (intptr_t)__ pc();
@@ -771,20 +776,17 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   // Usage of Rtemp should be OK since scratched by native call
 
-  bool is_static = method->is_static();
+  bool method_is_static = method->is_static();
 
   const int total_in_args = method->size_of_parameters();
-  int total_c_args = total_in_args + 1;
-  if (is_static) {
-    total_c_args++;
-  }
+  int total_c_args = total_in_args + (method_is_static ? 2 : 1);
 
   BasicType* out_sig_bt = NEW_RESOURCE_ARRAY(BasicType, total_c_args);
   VMRegPair* out_regs   = NEW_RESOURCE_ARRAY(VMRegPair, total_c_args);
 
   int argc = 0;
   out_sig_bt[argc++] = T_ADDRESS;
-  if (is_static) {
+  if (method_is_static) {
     out_sig_bt[argc++] = T_OBJECT;
   }
 
@@ -856,11 +858,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     assert(markWord::unlocked_value == 1, "adjust this code");
     __ tbz(Rtemp, exact_log2(markWord::unlocked_value), slow_case);
 
-    if (UseBiasedLocking) {
-      assert(is_power_of_2(markWord::biased_lock_bit_in_place), "adjust this code");
-      __ tbnz(Rtemp, exact_log2(markWord::biased_lock_bit_in_place), slow_case);
-    }
-
     __ bics(Rtemp, Rtemp, ~markWord::hash_mask_in_place);
     __ mov(R0, AsmOperand(Rtemp, lsr, markWord::hash_shift), ne);
     __ bx(LR, ne);
@@ -880,7 +877,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   OopMapSet* oop_maps = new OopMapSet();
   OopMap* map = new OopMap(stack_slots * 2, 0 /* arg_slots*/);
-  const int extra_args = is_static ? 2 : 1;
+  const int extra_args = method_is_static ? 2 : 1;
   int receiver_offset = -1;
   int fp_regs_in_arguments = 0;
 
@@ -903,7 +900,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
         int offset = oop_handle_offset * VMRegImpl::stack_slot_size;
         __ str(src->as_Register(), Address(SP, offset));
         map->set_oop(VMRegImpl::stack2reg(oop_handle_offset));
-        if ((i == 0) && (!is_static)) {
+        if ((i == 0) && (!method_is_static)) {
           receiver_offset = offset;
         }
         oop_handle_offset += VMRegImpl::slots_per_word;
@@ -1115,7 +1112,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   // Get Klass mirror
   int klass_offset = -1;
-  if (is_static) {
+  if (method_is_static) {
     klass_offset = oop_handle_offset * VMRegImpl::stack_slot_size;
     __ mov_oop(Rtemp, JNIHandles::make_local(method->method_holder()->java_mirror()));
     __ add(c_rarg1, SP, klass_offset);
@@ -1145,18 +1142,12 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   const Register disp_hdr    = altFP_7_11;
   const Register tmp         = R8;
 
-  Label slow_lock, slow_lock_biased, lock_done, fast_lock;
+  Label slow_lock, lock_done, fast_lock;
   if (method->is_synchronized()) {
     // The first argument is a handle to sync object (a class or an instance)
     __ ldr(sync_obj, Address(R1));
     // Remember the handle for the unlocking code
     __ mov(sync_handle, R1);
-
-    __ resolve(IS_NOT_NULL, sync_obj);
-
-    if(UseBiasedLocking) {
-      __ biased_locking_enter(sync_obj, tmp, disp_hdr/*scratched*/, false, Rtemp, lock_done, slow_lock_biased);
-    }
 
     const Register mark = tmp;
     // On MP platforms the next load could return a 'stale' value if the memory location has been modified by another thread.
@@ -1176,8 +1167,9 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // -2- test (hdr - SP) if the low two bits are 0
     __ sub(Rtemp, mark, SP, eq);
     __ movs(Rtemp, AsmOperand(Rtemp, lsr, exact_log2(os::vm_page_size())), eq);
-    // If still 'eq' then recursive locking OK: set displaced header to 0
-    __ str(Rtemp, Address(disp_hdr, BasicLock::displaced_header_offset_in_bytes()), eq);
+    // If still 'eq' then recursive locking OK
+    // set to zero if recursive lock, set to non zero otherwise (see discussion in JDK-8267042)
+    __ str(Rtemp, Address(disp_hdr, BasicLock::displaced_header_offset_in_bytes()));
     __ b(lock_done, eq);
     __ b(slow_lock);
 
@@ -1238,14 +1230,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   if (method->is_synchronized()) {
     __ ldr(sync_obj, Address(sync_handle));
 
-    __ resolve(IS_NOT_NULL, sync_obj);
-
-    if(UseBiasedLocking) {
-      __ biased_locking_exit(sync_obj, Rtemp, unlock_done);
-      // disp_hdr may not have been saved on entry with biased locking
-      __ sub(disp_hdr, FP, lock_slot_fp_offset);
-    }
-
     // See C1_MacroAssembler::unlock_object() for more comments
     __ ldr(R2, Address(disp_hdr, BasicLock::displaced_header_offset_in_bytes()));
     __ cbz(R2, unlock_done);
@@ -1301,11 +1285,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   if (method->is_synchronized()) {
     // Locking slow case
-    if(UseBiasedLocking) {
-      __ bind(slow_lock_biased);
-      __ sub(disp_hdr, FP, lock_slot_fp_offset);
-    }
-
     __ bind(slow_lock);
 
     push_param_registers(masm, fp_regs_in_arguments);
@@ -1349,7 +1328,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                                      vep_offset,
                                      frame_complete,
                                      stack_slots / VMRegImpl::slots_per_word,
-                                     in_ByteSize(is_static ? klass_offset : receiver_offset),
+                                     in_ByteSize(method_is_static ? klass_offset : receiver_offset),
                                      in_ByteSize(lock_slot_offset * VMRegImpl::stack_slot_size),
                                      oop_maps);
 }
@@ -1888,13 +1867,3 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
 
   return RuntimeStub::new_runtime_stub(name, &buffer, frame_complete, frame_size_words, oop_maps, true);
 }
-
-#ifdef COMPILER2
-RuntimeStub* SharedRuntime::make_native_invoker(address call_target,
-                                                int shadow_space_bytes,
-                                                const GrowableArray<VMReg>& input_registers,
-                                                const GrowableArray<VMReg>& output_registers) {
-  Unimplemented();
-  return nullptr;
-}
-#endif

@@ -65,9 +65,7 @@ public class T8258662 extends TestRunner {
         new JavacTask(tb)
                 .sources(code)
                 .classpath(".")
-                .options("--enable-preview", "-source",  Integer.toString(Runtime.version().feature()))
-                .run()
-                .writeAll();
+                .run();
     }
 
 }

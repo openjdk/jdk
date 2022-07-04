@@ -34,10 +34,7 @@ public class Thread extends VMObject {
   private static long tlabFieldOffset;
 
   private static CIntegerField suspendFlagsField;
-  // Thread::SuspendFlags enum constants
-  private static int HAS_ASYNC_EXCEPTION;
 
-  private static AddressField activeHandlesField;
   private static AddressField currentPendingMonitorField;
   private static AddressField currentWaitingMonitorField;
 
@@ -52,16 +49,15 @@ public class Thread extends VMObject {
   }
 
   private static synchronized void initialize(TypeDataBase db) {
-    Type type = db.lookupType("Thread");
+    Type typeThread = db.lookupType("Thread");
+    Type typeJavaThread = db.lookupType("JavaThread");
 
-    suspendFlagsField = type.getCIntegerField("_suspend_flags");
-    HAS_ASYNC_EXCEPTION = db.lookupIntConstant("Thread::_has_async_exception").intValue();
+    suspendFlagsField = typeJavaThread.getCIntegerField("_suspend_flags");
 
-    tlabFieldOffset    = type.getField("_tlab").getOffset();
-    activeHandlesField = type.getAddressField("_active_handles");
-    currentPendingMonitorField = type.getAddressField("_current_pending_monitor");
-    currentWaitingMonitorField = type.getAddressField("_current_waiting_monitor");
-    allocatedBytesField = type.getJLongField("_allocated_bytes");
+    tlabFieldOffset    = typeThread.getField("_tlab").getOffset();
+    currentPendingMonitorField = typeJavaThread.getAddressField("_current_pending_monitor");
+    currentWaitingMonitorField = typeJavaThread.getAddressField("_current_waiting_monitor");
+    allocatedBytesField = typeThread.getJLongField("_allocated_bytes");
   }
 
   public Thread(Address addr) {
@@ -72,20 +68,8 @@ public class Thread extends VMObject {
     return (int) suspendFlagsField.getValue(addr);
   }
 
-  public boolean hasAsyncException() {
-    return (suspendFlags() & HAS_ASYNC_EXCEPTION) != 0;
-  }
-
   public ThreadLocalAllocBuffer tlab() {
     return new ThreadLocalAllocBuffer(addr.addOffsetTo(tlabFieldOffset));
-  }
-
-  public JNIHandleBlock activeHandles() {
-    Address a = activeHandlesField.getAddress(addr);
-    if (a == null) {
-      return null;
-    }
-    return new JNIHandleBlock(a);
   }
 
   public long allocatedBytes() {

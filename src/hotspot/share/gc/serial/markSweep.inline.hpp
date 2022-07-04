@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,21 +25,35 @@
 #ifndef SHARE_GC_SERIAL_MARKSWEEP_INLINE_HPP
 #define SHARE_GC_SERIAL_MARKSWEEP_INLINE_HPP
 
-#include "classfile/classLoaderData.inline.hpp"
 #include "gc/serial/markSweep.hpp"
+
+#include "classfile/classLoaderData.inline.hpp"
+#include "classfile/javaClasses.inline.hpp"
+#include "code/nmethod.hpp"
+#include "gc/shared/continuationGCSupport.inline.hpp"
+#include "gc/serial/serialStringDedup.hpp"
 #include "memory/universe.hpp"
-#include "oops/markWord.inline.hpp"
+#include "oops/markWord.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
+#include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/align.hpp"
 #include "utilities/stack.inline.hpp"
 
 inline void MarkSweep::mark_object(oop obj) {
+  if (StringDedup::is_enabled() &&
+      java_lang_String::is_instance(obj) &&
+      SerialStringDedup::is_candidate_from_mark(obj)) {
+    _string_dedup_requests->add(obj);
+  }
+
   // some marks may contain information we need to preserve so we store them away
   // and overwrite the mark.  We'll restore it at the end of markSweep.
   markWord mark = obj->mark();
   obj->set_mark(markWord::prototype().set_marked());
+
+  ContinuationGCSupport::transform_stack_chunk(obj);
 
   if (obj->mark_must_be_preserved(mark)) {
     preserve_mark(obj, mark);
@@ -72,6 +86,8 @@ inline void MarkAndPushClosure::do_oop(oop* p)               { do_oop_work(p); }
 inline void MarkAndPushClosure::do_oop(narrowOop* p)         { do_oop_work(p); }
 inline void MarkAndPushClosure::do_klass(Klass* k)           { MarkSweep::follow_klass(k); }
 inline void MarkAndPushClosure::do_cld(ClassLoaderData* cld) { MarkSweep::follow_cld(cld); }
+inline void MarkAndPushClosure::do_method(Method* m)         { m->record_gc_epoch(); }
+inline void MarkAndPushClosure::do_nmethod(nmethod* nm)      { nm->follow_nmethod(this); }
 
 template <class T> inline void MarkSweep::adjust_pointer(T* p) {
   T heap_oop = RawAccess<>::oop_load(p);
@@ -79,15 +95,8 @@ template <class T> inline void MarkSweep::adjust_pointer(T* p) {
     oop obj = CompressedOops::decode_not_null(heap_oop);
     assert(Universe::heap()->is_in(obj), "should be in heap");
 
-    oop new_obj = cast_to_oop(obj->mark().decode_pointer());
-
-    assert(new_obj != NULL ||                      // is forwarding ptr?
-           obj->mark() == markWord::prototype() || // not gc marked?
-           (UseBiasedLocking && obj->mark().has_bias_pattern()),
-           // not gc marked?
-           "should be forwarded");
-
-    if (new_obj != NULL) {
+    if (obj->is_forwarded()) {
+      oop new_obj = obj->forwardee();
       assert(is_object_aligned(new_obj), "oop must be aligned");
       RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
     }
@@ -100,7 +109,7 @@ inline void AdjustPointerClosure::do_oop(oop* p)       { do_oop_work(p); }
 inline void AdjustPointerClosure::do_oop(narrowOop* p) { do_oop_work(p); }
 
 
-inline int MarkSweep::adjust_pointers(oop obj) {
+inline size_t MarkSweep::adjust_pointers(oop obj) {
   return obj->oop_iterate_size(&MarkSweep::adjust_pointer_closure);
 }
 

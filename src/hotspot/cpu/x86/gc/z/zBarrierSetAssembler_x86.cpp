@@ -193,7 +193,8 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
                                     Address dst,
                                     Register src,
                                     Register tmp1,
-                                    Register tmp2) {
+                                    Register tmp2,
+                                    Register tmp3) {
   BLOCK_COMMENT("ZBarrierSetAssembler::store_at {");
 
   // Verify oop store
@@ -211,7 +212,7 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
   }
 
   // Store value
-  BarrierSetAssembler::store_at(masm, decorators, type, dst, src, tmp1, tmp2);
+  BarrierSetAssembler::store_at(masm, decorators, type, dst, src, tmp1, tmp2, tmp3);
 
   BLOCK_COMMENT("} ZBarrierSetAssembler::store_at");
 }
@@ -452,7 +453,7 @@ private:
 
   void opmask_register_save(KRegister reg) {
     _spill_offset -= 8;
-    __ kmovql(Address(rsp, _spill_offset), reg);
+    __ kmov(Address(rsp, _spill_offset), reg);
   }
 
   void gp_register_restore(Register reg) {
@@ -461,10 +462,14 @@ private:
   }
 
   void opmask_register_restore(KRegister reg) {
-    __ kmovql(reg, Address(rsp, _spill_offset));
+    __ kmov(reg, Address(rsp, _spill_offset));
     _spill_offset += 8;
   }
 
+// Register is a class, but it would be assigned numerical value.
+// "0" is assigned for rax. Thus we need to ignore -Wnonnull.
+PRAGMA_DIAG_PUSH
+PRAGMA_NONNULL_IGNORED
   void initialize(ZLoadBarrierStubC2* stub) {
     // Create mask of caller saved registers that need to
     // be saved/restored if live
@@ -540,6 +545,7 @@ private:
     // Stack pointer must be 16 bytes aligned for the call
     _spill_offset = _spill_size = align_up(xmm_spill_size + gp_spill_size + opmask_spill_size + arg_spill_size, 16);
   }
+PRAGMA_DIAG_POP
 
 public:
   ZSaveLiveRegisters(MacroAssembler* masm, ZLoadBarrierStubC2* stub) :

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,9 +45,7 @@ import vm.runtime.defmeth.shared.data.method.result.IntResult;
 import vm.runtime.defmeth.shared.data.method.result.ThrowExResult;
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
+import java.lang.reflect.*;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -75,7 +73,7 @@ public class ReflectionTest extends AbstractReflectionTest {
         private CallMethod call;
         private Object receiver;
 
-        private Method targetMethod;
+        private Executable targetMethod;
         private Object[] values;
 
         private Tester tester;
@@ -106,41 +104,46 @@ public class ReflectionTest extends AbstractReflectionTest {
                 throws IllegalAccessException, InstantiationException, ClassNotFoundException, NoSuchMethodException {
             Class<?> staticClass = resolve(call.staticClass());
 
-            String methodName = call.methodName();
-            Class[] paramTypes = paramType(call.methodDesc());
-
-            if (tester.getTestPrivateMethod() != true) {
-                targetMethod = staticClass.getMethod(methodName, paramTypes);
+            if (call.isConstructorCall()) {
+                targetMethod = staticClass.getDeclaredConstructor();
             } else {
-                try {
-                    targetMethod = staticClass.getDeclaredMethod(methodName, paramTypes);
-                } catch (NoSuchMethodException nsme) {}
+                String methodName = call.methodName();
+                Class[] paramTypes = paramType(call.methodDesc());
 
-                Class clazz = staticClass.getSuperclass();
-                while ((targetMethod == null) && (clazz != null)) {
+                if (tester.getTestPrivateMethod() != true) {
+                    targetMethod = staticClass.getMethod(methodName, paramTypes);
+                } else {
                     try {
-                        targetMethod = clazz.getDeclaredMethod(methodName, paramTypes);
+                        targetMethod = staticClass.getDeclaredMethod(methodName, paramTypes);
                     } catch (NoSuchMethodException nsme) {}
-                    clazz = clazz.getSuperclass();
+
+                    Class clazz = staticClass.getSuperclass();
+                    while ((targetMethod == null) && (clazz != null)) {
+                        try {
+                            targetMethod = clazz.getDeclaredMethod(methodName, paramTypes);
+                        } catch (NoSuchMethodException nsme) {}
+                        clazz = clazz.getSuperclass();
+                    }
+                }
+
+                // Check reflection info for Class.getMethod(...)
+                checkReflectionInfo((Method)targetMethod);
+
+                // Prepare receiver after resolving target method, because it can throw instantiation exception
+                if (call.invokeInsn() != CallMethod.Invoke.STATIC) {
+                    Class<?> receiverClass = resolve(call.receiverClass());
+                    receiver = receiverClass.newInstance();
+                } else {
+                    // receiver == null; Method.invoke ignores first argument when static method is called
+                }
+
+                // Check reflection info for Class.getDeclaredMethod(...)
+                try {
+                    Method m = staticClass.getDeclaredMethod(methodName, paramTypes);
+                    checkReflectionInfo(m);
+                } catch (NoSuchMethodException e) {
                 }
             }
-
-            // Check reflection info for Class.getMethod(...)
-            checkReflectionInfo(targetMethod);
-
-            // Prepare receiver after resolving target method, because it can throw instantiation exception
-            if (call.invokeInsn() != CallMethod.Invoke.STATIC) {
-                Class<?> receiverClass = resolve(call.receiverClass());
-                receiver = receiverClass.newInstance();
-            } else {
-                // receiver == null; Method.invoke ignores first argument when static method is called
-            }
-
-            // Check reflection info for Class.getDeclaredMethod(...)
-            try {
-                Method m = staticClass.getDeclaredMethod(methodName, paramTypes);
-                checkReflectionInfo(m);
-            } catch (NoSuchMethodException e) {}
 
             values = values(call.params());
         }
@@ -237,11 +240,23 @@ public class ReflectionTest extends AbstractReflectionTest {
             }
         }
 
+        private Object invokeInTestContext(Constructor m, Object... args)
+                throws InvocationTargetException {
+            Class<?> context = cl.getTestContext();
+            try {
+                // Invoke target method from TestContext using TestContext.invoke(Constructor, Object...)
+                Method invoker = context.getDeclaredMethod("invoke", Constructor.class, Object[].class);
+                return invoker.invoke(null, m, args);
+            } catch (NoSuchMethodException | IllegalAccessException e) {
+                throw new TestFailure("Exception during reflection invocation", e.getCause());
+            }
+        }
+
         @Override
         public void visitResultInt(IntResult res) {
             try {
                 prepareForInvocation();
-                int result = (int) invokeInTestContext(targetMethod, receiver, values);
+                int result = (int) invokeInTestContext((Method)targetMethod, receiver, values);
                 TestUtils.assertEquals(res.getExpected(), result);
             } catch (TestFailure e) {
                 throw e; // no need to wrap test exception
@@ -293,8 +308,13 @@ public class ReflectionTest extends AbstractReflectionTest {
             String expectedExcName = res.getExc().name();
             try {
                 prepareForInvocation(); // can throw an exception expected by a test
-                invokeInTestContext(targetMethod, receiver, values);
-
+                if (targetMethod instanceof Method) {
+                    invokeInTestContext((Method)targetMethod, receiver, values);
+                } else if (targetMethod instanceof Constructor) {
+                    invokeInTestContext((Constructor)targetMethod, receiver, values);
+                } else {
+                    throw new InternalError("Unknown target: " + targetMethod);
+                }
                 throw new TestFailure("No exception was thrown: " + expectedExcName);
             } catch (IllegalAccessException | IllegalArgumentException | ClassNotFoundException e) {
                 throw new TestFailure("Exception during reflection invocation", e.getCause());
@@ -309,7 +329,13 @@ public class ReflectionTest extends AbstractReflectionTest {
         public void visitResultIgnore() {
             try {
                 prepareForInvocation();
-                invokeInTestContext(targetMethod, receiver, values);
+                if (targetMethod instanceof Method) {
+                    invokeInTestContext((Method)targetMethod, receiver, values);
+                } else if (targetMethod instanceof Constructor) {
+                    invokeInTestContext((Constructor)targetMethod, receiver, values);
+                } else {
+                    throw new InternalError("Unknown target: " + targetMethod);
+                }
             } catch (Exception e) {
                 throw new TestFailure("Unexpected exception", e);
             }

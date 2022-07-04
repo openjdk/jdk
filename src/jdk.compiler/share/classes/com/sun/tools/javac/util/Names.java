@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,7 @@ public class Names {
     public final Name transitive;
     public final Name uses;
     public final Name open;
+    public final Name when;
     public final Name with;
     public final Name yield;
 
@@ -119,9 +120,11 @@ public class Names {
     // package names
     public final Name java;
     public final Name java_lang;
+    public final Name jdk_internal_javac;
 
     // module names
     public final Name java_base;
+    public final Name jdk_unsupported;
 
     // attribute names
     public final Name Annotation;
@@ -215,6 +218,10 @@ public class Names {
     public final Name permits;
     public final Name sealed;
 
+    // pattern switches
+    public final Name typeSwitch;
+    public final Name enumSwitch;
+
     public final Name.Table table;
 
     public Names(Context context) {
@@ -243,6 +250,7 @@ public class Names {
         transitive = fromString("transitive");
         uses = fromString("uses");
         open = fromString("open");
+        when = fromString("when");
         with = fromString("with");
         yield = fromString("yield");
 
@@ -294,9 +302,11 @@ public class Names {
         // package names
         java = fromString("java");
         java_lang = fromString("java.lang");
+        jdk_internal_javac = fromString("jdk.internal.javac");
 
         // module names
         java_base = fromString("java.base");
+        jdk_unsupported = fromString("jdk.unsupported");
 
         // attribute names
         Annotation = fromString("Annotation");
@@ -384,6 +394,10 @@ public class Names {
         // sealed types
         permits = fromString("permits");
         sealed = fromString("sealed");
+
+        // pattern switches
+        typeSwitch = fromString("typeSwitch");
+        enumSwitch = fromString("enumSwitch");
     }
 
     protected Name.Table createTable(Options options) {

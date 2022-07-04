@@ -26,7 +26,7 @@
  * @bug 8003147
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @compile -g Bug8003147TestClass.java
- * @run testng/othervm -DrunSecMngr=true parsers.Bug8003147Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow parsers.Bug8003147Test
  * @run testng/othervm parsers.Bug8003147Test
  * @summary Test port fix for BCEL bug 39695.
  */

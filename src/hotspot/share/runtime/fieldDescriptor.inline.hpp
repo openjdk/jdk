@@ -26,6 +26,7 @@
 #define SHARE_RUNTIME_FIELDDESCRIPTOR_INLINE_HPP
 
 #include "runtime/fieldDescriptor.hpp"
+
 #include "runtime/handles.inline.hpp"
 #include "runtime/signature.hpp"
 

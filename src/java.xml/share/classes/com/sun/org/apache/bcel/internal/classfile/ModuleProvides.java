@@ -36,9 +36,9 @@ import com.sun.org.apache.bcel.internal.Const;
  */
 public final class ModuleProvides implements Cloneable, Node {
 
-    private final int provides_index;  // points to CONSTANT_Class_info
-    private final int provides_with_count;
-    private final int[] provides_with_index;  // points to CONSTANT_Class_info
+    private final int providesIndex;  // points to CONSTANT_Class_info
+    private final int providesWithCount;
+    private final int[] providesWithIndex;  // points to CONSTANT_Class_info
 
 
     /**
@@ -48,11 +48,11 @@ public final class ModuleProvides implements Cloneable, Node {
      * @throws IOException if an I/O Exception occurs in readUnsignedShort
      */
     ModuleProvides(final DataInput file) throws IOException {
-        provides_index = file.readUnsignedShort();
-        provides_with_count = file.readUnsignedShort();
-        provides_with_index = new int[provides_with_count];
-        for (int i = 0; i < provides_with_count; i++) {
-            provides_with_index[i] = file.readUnsignedShort();
+        providesIndex = file.readUnsignedShort();
+        providesWithCount = file.readUnsignedShort();
+        providesWithIndex = new int[providesWithCount];
+        for (int i = 0; i < providesWithCount; i++) {
+            providesWithIndex[i] = file.readUnsignedShort();
         }
     }
 
@@ -78,9 +78,9 @@ public final class ModuleProvides implements Cloneable, Node {
      * @throws IOException if an I/O Exception occurs in writeShort
      */
     public void dump( final DataOutputStream file ) throws IOException {
-        file.writeShort(provides_index);
-        file.writeShort(provides_with_count);
-        for (final int entry : provides_with_index) {
+        file.writeShort(providesIndex);
+        file.writeShort(providesWithCount);
+        for (final int entry : providesWithIndex) {
             file.writeShort(entry);
         }
     }
@@ -91,7 +91,7 @@ public final class ModuleProvides implements Cloneable, Node {
      */
     @Override
     public String toString() {
-        return "provides(" + provides_index + ", " + provides_with_count + ", ...)";
+        return "provides(" + providesIndex + ", " + providesWithCount + ", ...)";
     }
 
 
@@ -100,10 +100,10 @@ public final class ModuleProvides implements Cloneable, Node {
      */
     public String toString( final ConstantPool constant_pool ) {
         final StringBuilder buf = new StringBuilder();
-        final String interface_name = constant_pool.constantToString(provides_index, Const.CONSTANT_Class);
+        final String interface_name = constant_pool.constantToString(providesIndex, Const.CONSTANT_Class);
         buf.append(Utility.compactClassName(interface_name, false));
-        buf.append(", with(").append(provides_with_count).append("):\n");
-        for (final int index : provides_with_index) {
+        buf.append(", with(").append(providesWithCount).append("):\n");
+        for (final int index : providesWithIndex) {
             final String class_name = constant_pool.getConstantString(index, Const.CONSTANT_Class);
             buf.append("      ").append(Utility.compactClassName(class_name, false)).append("\n");
         }

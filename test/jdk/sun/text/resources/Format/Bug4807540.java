@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import java.util.Calendar;
 public class Bug4807540 {
 
     public static void main(String[] args) {
-        Locale si = new Locale("sl", "si");
+        Locale si = Locale.of("sl", "si");
 
         String expected = "30.4.2008";
         DateFormat dfSi = DateFormat.getDateInstance (DateFormat.MEDIUM, si);

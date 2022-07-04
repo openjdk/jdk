@@ -1,4 +1,4 @@
-Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
 DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
 This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ keep classloader alive.
           "plain",
           "reflection",
           "jni",
-          "anonymous_classloader".
+          "hidden_classloader".
   - classloaders that we expect to live can be referenced in several ways.
       This behavior can be adjusted with flag "-keepRefMode" that has valid options:
 	  "strong_reference" for starighforward keeping strong reference,

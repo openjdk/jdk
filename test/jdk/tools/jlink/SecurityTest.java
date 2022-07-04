@@ -26,7 +26,7 @@
  * @summary Test JlinkPermission
  * @author Jean-Francois Denise
  * @modules jdk.jlink/jdk.tools.jlink.internal
- * @run main/othervm SecurityTest
+ * @run main/othervm -Djava.security.manager=allow SecurityTest
  */
 
 import java.security.AccessControlException;

@@ -63,6 +63,21 @@ public class WinInstallerUiTest {
         for (var withDirChooser : List.of(Boolean.TRUE, Boolean.FALSE)) {
             for (var withLicense : List.of(Boolean.TRUE, Boolean.FALSE)) {
                 for (var withShortcutPrompt : List.of(Boolean.TRUE, Boolean.FALSE)) {
+                    if (!withDirChooser && !withLicense && !withShortcutPrompt) {
+                        // Duplicates SimplePackageTest
+                        continue;
+                    }
+
+                    if (withDirChooser && !withLicense && !withShortcutPrompt) {
+                        // Duplicates WinDirChooserTest
+                        continue;
+                    }
+
+                    if (!withDirChooser && withLicense && !withShortcutPrompt) {
+                        // Duplicates LicenseTest
+                        continue;
+                    }
+
                     data.add(new Object[]{withDirChooser, withLicense,
                         withShortcutPrompt});
                 }

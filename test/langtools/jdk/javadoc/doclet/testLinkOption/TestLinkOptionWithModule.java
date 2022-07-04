@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8205593 8240169
+ * @bug 8205593 8240169 8274639
  * @summary Javadoc -link makes broken links if module name matches package name
  * @library /tools/lib ../../lib
  * @modules
@@ -71,6 +71,7 @@ public class TestLinkOptionWithModule extends JavadocTester {
                 "--module", "com.ex1");
 
         javadoc("-d", out2.toString(),
+                "-Werror", "-Xdoclint:-missing",
                 "--module-source-path", moduleSrc.toString(),
                 "--module", "com.ex2",
                 "-link", "../" + out1.getFileName());
@@ -109,13 +110,14 @@ public class TestLinkOptionWithModule extends JavadocTester {
                 "-subpackages", "com.ex1");
 
         javadoc("-d", out2.toString(),
+                "--link-modularity-mismatch", "warn",
                 "--module-source-path", moduleSrc.toString(),
                 "--module", "com.ex2",
                 "-link", "../" + out1.getFileName());
 
         checkExit(Exit.OK);
         checkOutput(Output.OUT, true,
-                "The code being documented uses modules but the packages defined "
+                "warning: The code being documented uses modules but the packages defined "
                 + "in ../out3a/ are in the unnamed module");
         checkOutput("com.ex2/com/ex2/B.html", true,
                 """
@@ -137,13 +139,62 @@ public class TestLinkOptionWithModule extends JavadocTester {
 
         checkExit(Exit.OK);
         checkOutput(Output.OUT, true,
-                "The code being documented uses packages in the unnamed module, but the packages defined "
+                "warning: The code being documented uses packages in the unnamed module, but the packages defined "
                 + "in ../out4a/ are in named modules");
         checkOutput("com/ex2/B.html", true,
                 """
                     <a href="../../../out4a/com.ex1/com/ex1/A.html" title="class or interface in com.ex1" class="external-link">A</a>""");
     }
 
+    @Test
+    public void testModuleLinkedToPackageNoWarning(Path base) throws Exception {
+        Path out1 = base.resolve("out5a"), out2 = base.resolve("out5b");
+
+        javadoc("-d", out1.toString(),
+                "-sourcepath", packageSrc.toString(),
+                "-subpackages", "com.ex1");
+
+        javadoc("-d", out2.toString(),
+                "--link-modularity-mismatch", "info",
+                "-Werror", "-Xdoclint:-missing",
+                "--module-source-path", moduleSrc.toString(),
+                "--module", "com.ex2",
+                "-link", "../" + out1.getFileName());
+
+        checkExit(Exit.OK);
+        checkOutput(Output.OUT, true,
+                "The code being documented uses modules but the packages defined "
+                        + "in ../out5a/ are in the unnamed module");
+        checkOutput("com.ex2/com/ex2/B.html", true,
+                """
+                    <a href="../../../../out5a/com/ex1/A.html" title="class or interface in com.ex1" class="external-link">A</a>""");
+    }
+
+    @Test
+    public void testPackageLinkedToModuleNoWarning(Path base) throws Exception {
+        Path out1 = base.resolve("out6a"), out2 = base.resolve("out6b");
+
+        javadoc("-d", out1.toString(),
+                "--module-source-path", moduleSrc.toString(),
+                "--module", "com.ex1");
+
+        javadoc("-d", out2.toString(),
+                "--link-modularity-mismatch", "info",
+                "-quiet",  // should not print modularity mismatch info
+                "-Werror", "-Xdoclint:-missing",
+                "-sourcepath", packageSrc.toString(),
+                "-subpackages", "com.ex2",
+                "-link", "../" + out1.getFileName());
+
+        checkExit(Exit.OK);
+        // Modularity mismatch diagnostic should not be printed because we're runnning with -quiet option
+        checkOutput(Output.OUT, false,
+                "The code being documented uses packages in the unnamed module, but the packages defined "
+                        + "in ../out6a/ are in named modules");
+        checkOutput("com/ex2/B.html", true,
+                """
+                    <a href="../../../out6a/com.ex1/com/ex1/A.html" title="class or interface in com.ex1" class="external-link">A</a>""");
+    }
 
     void initModulesAndPackages() throws Exception{
         new ModuleBuilder(tb, "com.ex1")

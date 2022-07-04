@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,24 +128,27 @@
  * <h2>Choosing a Random Number Generator Algorithm</h2>
  *
  * <p> There are three groups of random number generator algorithm provided
- * in Java; Legacy group, LXM group and Xoroshiro/Xoshiro group.
+ * in Java: the Legacy group, the LXM group, and the Xoroshiro/Xoshiro group.
  *
  * <p> The legacy group includes random number generators that existed
- * before JDK 17; Random, ThreadLocalRandom, SplittableRandom and
- * SecureRandom. Random (LCG) is the weakest of available algorithms and it
+ * before JDK 17: Random, ThreadLocalRandom, SplittableRandom, and
+ * SecureRandom. Random (LCG) is the weakest of the available algorithms, and it
  * is recommended that users migrate to newer algorithms. If an application
  * requires a random number generator algorithm that is cryptographically
  * secure, then it should continue to use an instance of the class {@link
  * java.security.SecureRandom}.
  *
- * <p> The algorithms in the LXM group use a similar algorithm. The parameters
- * of the algorithm can be found in algorithm name. The numbers indicate the
- * number of bits in the lower and upper state bits respectively. Mix indicates
- * the algorithm uses mix congruency. StarStar indicates use a double
- * multiplier.
+ * <p> The algorithms in the LXM group are similar to each other. The parameters
+ * of each algorithm can be found in the algorithm name. The number after "L" indicates the
+ * number of state bits for the LCG subgenerator, and the number after "X" indicates the
+ * number of state bits for the XBG subgenerator. "Mix" indicates that
+ * the algorithm uses an 8-operation bit-mixing function; "StarStar" indicates use
+ * of a 3-operation bit-scrambler.
  *
- * <p> The algorithms in the Xoroshiro/Xoshiro are more traditional algorithms
- * where the number in the name indicates the period.
+ * <p> The algorithms in the Xoroshiro/Xoshiro group are more traditional algorithms
+ * (see David Blackman and Sebastiano Vigna, "Scrambled Linear Pseudorandom
+ * Number Generators," ACM Transactions on Mathematical Software, 2021);
+ * the number in the name indicates the number of state bits.
  *
  * <p> For applications (such as physical simulation, machine learning, and
  * games) that do not require a cryptographically secure algorithm, this package
@@ -209,7 +212,7 @@
  *
  * These algorithms [in the table below] must be found with the current version
  * of Java SE. A particular JDK implementation may recognize additional
- * algorithms; check the JDK's documentation for details. The set of algorithm
+ * algorithms; check the JDK's documentation for details. The set of algorithms
  * required by Java SE may be updated by changes to the Java SE specification.
  * Over time, new algorithms may be added and old algorithms may be removed.
  * <p>In addition, as another life-cycle phase, an algorithm may be {@linkplain
@@ -220,7 +223,7 @@
  * lifetime of a particular Java SE release. Changing the deprecation status of
  * an algorithm is <em>not</em> a specification change.
  *
- * <table style="padding:0px 20px 0px 0px">
+ * <table class="striped">
  *  <caption>Available Algorithms</caption>
  *  <thead>
  *  <tr>
@@ -233,95 +236,95 @@
  *  </thead>
  *  <tbody>
  *  <tr>
- *      <td style="text-align:left">L128X1024MixRandom</td>
+ *      <th scope="row" style="text-align:left">L128X1024MixRandom</th>
  *      <td style="text-align:left">LXM</td>
- *      <td style="text-align:left">BigInteger.ONE.shiftLeft(N*64).subtract(BigInteger.ONE).shiftLeft(128)</td>
+ *      <td style="text-align:left">BigInteger.ONE.shiftLeft(1024).subtract(BigInteger.ONE).shiftLeft(128)</td>
  *      <td style="text-align:right">1152</td>
  *      <td style="text-align:right">1</td>
  *  </tr>
  *  <tr>
- *      <td style="text-align:left">L128X128MixRandom</td>
+ *      <th scope="row" style="text-align:left">L128X128MixRandom</th>
  *      <td style="text-align:left">LXM</td>
  *      <td style="text-align:left">BigInteger.ONE.shiftLeft(128).subtract(BigInteger.ONE).shiftLeft(128)</td>
  *      <td style="text-align:right">256</td>
  *      <td style="text-align:right">1</td>
  *  </tr>
  *  <tr>
- *      <td style="text-align:left">L128X256MixRandom</td>
+ *      <th scope="row" style="text-align:left">L128X256MixRandom</th>
  *      <td style="text-align:left">LXM</td>
  *      <td style="text-align:left">BigInteger.ONE.shiftLeft(256).subtract(BigInteger.ONE).shiftLeft(128)</td>
  *      <td style="text-align:right">384</td>
  *      <td style="text-align:right">1</td>
  *  </tr>
  *  <tr>
- *      <td style="text-align:left">L32X64MixRandom</td>
+ *      <th scope="row" style="text-align:left">L32X64MixRandom</th>
  *      <td style="text-align:left">LXM</td>
  *      <td style="text-align:left">BigInteger.ONE.shiftLeft(64).subtract(BigInteger.ONE).shiftLeft(32)</td>
  *      <td style="text-align:right">96</td>
  *      <td style="text-align:right">1</td>
  *  </tr>
  *  <tr>
- *      <td style="text-align:left">L64X1024MixRandom</td>
+ *      <th scope="row" style="text-align:left">L64X1024MixRandom</th>
  *      <td style="text-align:left">LXM</td>
- *      <td style="text-align:left">BigInteger.ONE.shiftLeft(N*64).subtract(BigInteger.ONE).shiftLeft(64)</td>
+ *      <td style="text-align:left">BigInteger.ONE.shiftLeft(1024).subtract(BigInteger.ONE).shiftLeft(64)</td>
  *      <td style="text-align:right">1088</td>
  *      <td style="text-align:right">16</td>
  *  </tr>
  *  <tr>
- *      <td style="text-align:left">L64X128MixRandom</td>
+ *      <th scope="row" style="text-align:left">L64X128MixRandom</th>
  *      <td style="text-align:left">LXM</td>
  *      <td style="text-align:left">BigInteger.ONE.shiftLeft(128).subtract(BigInteger.ONE).shiftLeft(64)</td>
  *      <td style="text-align:right">192</td>
- *      <td style="text-align:right">1</td>
+ *      <td style="text-align:right">2</td>
  *  </tr>
  *  <tr>
- *      <td style="text-align:left">L64X128StarStarRandom</td>
+ *      <th scope="row" style="text-align:left">L64X128StarStarRandom</th>
  *      <td style="text-align:left">LXM</td>
  *      <td style="text-align:left">BigInteger.ONE.shiftLeft(128).subtract(BigInteger.ONE).shiftLeft(64)</td>
  *      <td style="text-align:right">192</td>
- *      <td style="text-align:right">1</td>
+ *      <td style="text-align:right">2</td>
  *  </tr>
  *  <tr>
- *      <td style="text-align:left">L64X256MixRandom</td>
+ *      <th scope="row" style="text-align:left">L64X256MixRandom</th>
  *      <td style="text-align:left">LXM</td>
  *      <td style="text-align:left">BigInteger.ONE.shiftLeft(256).subtract(BigInteger.ONE).shiftLeft(64)</td>
  *      <td style="text-align:right">320</td>
  *      <td style="text-align:right">4</td>
  *  </tr>
  *  <tr>
- *      <td style="text-align:left">Random</td>
+ *      <th scope="row" style="text-align:left">Random</th>
  *      <td style="text-align:left">Legacy</td>
  *      <td style="text-align:left">BigInteger.ONE.shiftLeft(48)</td>
  *      <td style="text-align:right">48</td>
  *      <td style="text-align:right">0</td>
  *  </tr>
  *  <tr>
- *      <td style="text-align:left">SplittableRandom</td>
+ *      <th scope="row" style="text-align:left">SplittableRandom</th>
  *      <td style="text-align:left">Legacy</td>
  *      <td style="text-align:left">BigInteger.ONE.shiftLeft(64)</td>
  *      <td style="text-align:right">64</td>
  *      <td style="text-align:right">1</td>
  *  </tr>
  *  <tr>
- *      <td style="text-align:left">ThreadLocalRandom <sup>*</sup></td>
+ *      <th scope="row" style="text-align:left">ThreadLocalRandom <sup>*</sup></th>
  *      <td style="text-align:left">Legacy</td>
  *      <td style="text-align:left">BigInteger.ONE.shiftLeft(64)</td>
  *      <td style="text-align:right">64</td>
  *      <td style="text-align:right">1</td>
  *  </tr>
  *  <tr>
- *      <td style="text-align:left">Xoroshiro128PlusPlus</td>
+ *      <th scope="row" style="text-align:left">Xoroshiro128PlusPlus</th>
  *      <td style="text-align:left">Xoroshiro</td>
  *      <td style="text-align:left">BigInteger.ONE.shiftLeft(128).subtract(BigInteger.ONE)</td>
  *      <td style="text-align:right">128</td>
- *      <td style="text-align:right">2</td>
+ *      <td style="text-align:right">1</td>
  *  </tr>
  *  <tr>
- *      <td style="text-align:left">Xoshiro256PlusPlus</td>
+ *      <th scope="row" style="text-align:left">Xoshiro256PlusPlus</th>
  *      <td style="text-align:left">Xoshiro</td>
  *      <td style="text-align:left">BigInteger.ONE.shiftLeft(256).subtract(BigInteger.ONE)</td>
  *      <td style="text-align:right">256</td>
- *      <td style="text-align:right">4</td>
+ *      <td style="text-align:right">3</td>
  *  </tr>
  *  </tbody>
  * </table>
@@ -344,18 +347,18 @@
  * supported by the interface {@link RandomGenerator.JumpableGenerator}.
  * Sometimes it is desirable to support two levels of jumping (by long distances
  * and by <i>really</i> long distances); this strategy is supported by the
- * interface {@link RandomGenerator.LeapableGenerator}. There is also an interface
+ * interface {@link RandomGenerator.LeapableGenerator}. In this package,
+ * implementations of this interface include "Xoroshiro128PlusPlus" and
+ * "Xoshiro256PlusPlus". There is also an interface
  * {@link RandomGenerator.ArbitrarilyJumpableGenerator} for algorithms that allow
- * jumping along the state cycle by any user-specified distance. In this package,
- * implementations of these interfaces include
- * "Xoroshiro128PlusPlus", and
- * "Xoshiro256PlusPlus".
+ * jumping along the state cycle by any user-specified distance; there are currently
+ * no implementations of this interface in this package.
  *
  * <p> A more recent category of "splittable" pseudorandom generator algorithms
  * uses a large family of state cycles and makes some attempt to ensure that
  * distinct instances use different state cycles; but even if two instances
  * "accidentally" use the same state cycle, they are highly likely to traverse
- * different regions parts of that shared state cycle. This strategy is
+ * different regions of that shared state cycle. This strategy is
  * supported by the interface {@link RandomGenerator.SplittableGenerator}.
  * In this package, implementations of this interface include
  * "L32X64MixRandom",
@@ -373,27 +376,34 @@
  *
  * The structure of the central nextLong (or nextInt) method of an LXM
  * algorithm follows a suggestion in December 2017 by Sebastiano Vigna
- * that using one LCG subgenerator and one xor-based subgenerator (rather
- * than two LCG subgenerators) would provide a longer period, superior
+ * that using one Linear Congruential Generator (LCG) as a first subgenerator
+ * and one Xor-Based Generator (XBG) as a second subgenerator (rather
+ * than using two LCG subgenerators) would provide a longer period, superior
  * equidistribution, scalability, and better quality.  Each of the
  * specific implementations here combines one of the best currently known
- * xor-based generators (xoroshiro or xoshiro, described by Blackman and
- * Vigna in "Scrambled Linear Pseudorandom Number Generators", ACM
- * Trans. Math. Softw., 2021) with an LCG that uses one of the best
+ * XBG algorithms (xoroshiro128 or xoshiro256, described by Blackman and
+ * Vigna in "Scrambled Linear Pseudorandom Number Generators", <i>ACM Transactions
+ * on Mathematical Software</i>, 2021) with an LCG that uses one of the best
  * currently known multipliers (found by a search for better multipliers
- * in 2019 by Steele and Vigna), and then applies a mixing function
- * identified by Doug Lea. Testing has confirmed that the LXM algorithm
- * is far superior in quality to the SplitMix algorithm (2014) used by
- * SplittableRandom.
+ * in 2019 by Steele and Vigna, described in "Computationally Easy, Spectrally
+ * Good Multipliers for Congruential Pseudorandom Number Generators",
+ * <i>Software: Practice and Experience</i> (2021), doi:10.1002/spe.3030),
+ * and then applies either a mixing function identified by Doug Lea or
+ * or a simple scrambler proposed by Blackman and Vigna. Testing has
+ * confirmed that the LXM algorithm is far superior in quality to the
+ * SplitMix algorithm (2014) used by {@code SplittableRandom}
+ * (see Steele and Vigna, "LXM: Better Splittable Pseudorandom Number
+ * Generators (and Almost as Fast)", <i>Proc. 2021 ACM OOPSLA Conference</i>).
  *
- * Each class with a name of the form {@code L}<i>p</i>{@code X}<i>q</i>{@code
- * SomethingRandom} uses some specific member of the LXM family of random number
- * algorithms; "LXM" is short for "LCG, Xorshift, Mixing function". Every LXM
- * generator consists of two subgenerators; one is an LCG (Linear Congruential
- * Generator) and the other is an Xorshift generator. Each output of an LXM
+ * Each class with a name of the form
+ * {@code L}<i>p</i>{@code X}<i>q</i>{@code SomethingRandom}
+ * uses some specific member of the LXM family of random number
+ * algorithms; "LXM" is short for "LCG, XBG, Mixer". Every LXM
+ * generator has two subgenerators; one is an LCG (Linear Congruential
+ * Generator) and the other is an XBG (Xor-Based Generator). Each output of an LXM
  * generator is the result of combining state from the LCG with state from the
- * Xorshift generator by using a Mixing function (and then the state of the LCG
- * and the state of the Xorshift generator are advanced).
+ * XBG using a Mixing function (and then the state of the LCG
+ * and the state of the XBG are advanced).
  *
  * <p> The LCG subgenerator has an update step of the form {@code s = m*s + a},
  * where {@code s}, {@code m}, and {@code a} are all binary integers of the same
@@ -406,10 +416,11 @@
  * {@code s} is 128 bits, then we use the name "{@code sh}" below to refer to
  * the high half of {@code s}, that is, the high-order 64 bits of {@code s}.)
  *
- * <p> The Xorshift subgenerator can in principle be any one of a wide variety
- * of xorshift algorithms; in this package it is always either
+ * <p> The XBG subgenerator can in principle be any one of a wide variety
+ * of XBG algorithms; in this package it is always either
  * {@code xoroshiro128}, {@code xoshiro256}, or {@code xoroshiro1024}, in each
- * case without any final scrambler such as "+" or "**". Its state consists of
+ * case without any final scrambler (such as "+" or "**") because LXM uses
+ * a separate Mixer later in the process. The XBG state consists of
  * some fixed number of {@code int} or {@code long} fields, generally named
  * {@code x0}, {@code x1}, and so on, which can take on any values provided that
  * they are not all zero. The collective total size of these fields is <i>q</i>
@@ -427,7 +438,7 @@
  *
  * <p> Generally speaking, among the "{@code L}<i>p</i>{@code X}<i>q</i>"
  * generators, the memory required for an instance is 2<i>p</i>+<i>q</i> bits.
- * (If <i>q</i> is 1024 or larger, the Xorshift state is represented as an
+ * (If <i>q</i> is 1024 or larger, the XBG state is represented as an
  * array, so additional bits are needed for the array object header, and another
  * 32 bits are used for an array index.)
  *
@@ -460,7 +471,7 @@
  * 1-bit), and equidistribution property for each of the specific LXM algorithms
  * used in this package.
  *
- * <table style="padding:0px 20px 0px 0px">
+ * <table class="striped">
  * <caption>Algorithm Properties</caption>
  * <thead>
  *   <tr><th style="text-align:left">Implementation</th>
@@ -470,42 +481,42 @@
  *       <th style="text-align:left">{@link RandomGenerator#nextLong nextLong()} values are</th></tr>
  * </thead>
  * <tbody>
- *   <tr><td style="text-align:left">"L32X64MixRandom"</td>
+ *   <tr><th scope="row" style="text-align:left">"L32X64MixRandom"</th>
  *       <td style="text-align:right">2<sup>32</sup>(2<sup>64</sup>&minus;1)</td>
  *       <td style="text-align:right">96 bits</td>
  *       <td style="text-align:right">32 bits</td>
  *       <td style="text-align:left"></td></tr>
- *   <tr><td style="text-align:left">"L64X128StarStarRandom"</td>
+ *   <tr><th scope="row" style="text-align:left">"L64X128StarStarRandom"</th>
  *       <td style="text-align:right">2<sup>64</sup>(2<sup>128</sup>&minus;1)</td>
  *       <td style="text-align:right">192 bits</td>
  *       <td style="text-align:right">64 bits</td>
  *       <td style="text-align:left">2-equidistributed and exactly equidistributed</td></tr>
- *   <tr><td style="text-align:left">"L64X128MixRandom"</td>
+ *   <tr><th scope="row" style="text-align:left">"L64X128MixRandom"</th>
  *       <td style="text-align:right">2<sup>64</sup>(2<sup>128</sup>&minus;1)</td>
  *       <td style="text-align:right">192 bits</td>
  *       <td style="text-align:right">64 bits</td>
  *       <td style="text-align:left">2-equidistributed and exactly equidistributed</td></tr>
- *   <tr><td style="text-align:left">"L64X256MixRandom"</td>
+ *   <tr><th scope="row" style="text-align:left">"L64X256MixRandom"</th>
  *       <td style="text-align:right">2<sup>64</sup>(2<sup>256</sup>&minus;1)</td>
  *       <td style="text-align:right">320 bits</td>
  *       <td style="text-align:right">64 bits</td>
  *       <td style="text-align:left">4-equidistributed and exactly equidistributed</td></tr>
- *   <tr><td style="text-align:left">"L64X1024MixRandom"</td>
+ *   <tr><th scope="row" style="text-align:left">"L64X1024MixRandom"</th>
  *       <td style="text-align:right">2<sup>64</sup>(2<sup>1024</sup>&minus;1)</td>
  *       <td style="text-align:right">1088 bits</td>
  *       <td style="text-align:right">64 bits</td>
  *       <td style="text-align:left">16-equidistributed and exactly equidistributed</td></tr>
- *   <tr><td style="text-align:left">"L128X128MixRandom"</td>
+ *   <tr><th scope="row" style="text-align:left">"L128X128MixRandom"</th>
  *       <td style="text-align:right">2<sup>128</sup>(2<sup>128</sup>&minus;1)</td>
  *       <td style="text-align:right">256 bits</td>
  *       <td style="text-align:right">128 bits</td>
  *       <td style="text-align:left">exactly equidistributed</td></tr>
- *   <tr><td style="text-align:left">"L128X256MixRandom"</td>
+ *   <tr><th scope="row" style="text-align:left">"L128X256MixRandom"</th>
  *       <td style="text-align:right">2<sup>128</sup>(2<sup>256</sup>&minus;1)</td>
  *       <td style="text-align:right">384 bits</td>
  *       <td style="text-align:right">128 bits</td>
  *       <td style="text-align:left">exactly equidistributed</td></tr>
- *   <tr><td style="text-align:left">"L128X1024MixRandom"</td>
+ *   <tr><th scope="row" style="text-align:left">"L128X1024MixRandom"</th>
  *       <td style="text-align:right">2<sup>128</sup>(2<sup>1024</sup>&minus;1)</td>
  *       <td style="text-align:right">1152 bits</td>
  *       <td style="text-align:right">128 bits</td>
@@ -545,7 +556,7 @@
  * 2<sup>64</sup>(2<sup>256</sup>&minus;1) such subsequences, and each
  * subsequence, which consists of 4 64-bit values, can have one of
  * 2<sup>256</sup> values. Of those 2<sup>256</sup> subsequence values, nearly
- * all of them (2<sup>256</sup>%minus;2<sup>64</sup>) occur 2<sup>64</sup> times
+ * all of them (2<sup>256</sup>&minus;2<sup>64</sup>) occur 2<sup>64</sup> times
  * over the course of the entire cycle, and the other 2<sup>64</sup> subsequence
  * values occur only 2<sup>64</sup>&minus;1 times. So the ratio of the
  * probability of getting any specific one of the less common subsequence values
@@ -560,7 +571,7 @@
  * 4-equidistributed (but not exactly 4-equidistributed).
  *
  * <p> The next table gives the LCG multiplier value, the name of the specific
- * Xorshift algorithm used, the specific numeric parameters for that Xorshift
+ * XBG algorithm used, the specific numeric parameters for that XBG
  * algorithm, and the mixing function for each of the specific LXM algorithms
  * used in this package. (Note that the multiplier used for the 128-bit LCG
  * cases is 65 bits wide, so the constant {@code 0x1d605bbb58c8abbfdL} shown in
@@ -569,56 +580,56 @@
  * missing 1-bit is handled through special coding of the multiply-add algorithm
  * used in the LCG.)
  *
- * <table style="padding:0px 20px 0px 0px">
+ * <table class="striped">
  * <caption>LXM Multipliers</caption>
  * <thead>
  *   <tr><th style="text-align:left">Implementation</th>
  *       <th style="text-align:right">LCG multiplier {@code m}</th>
- *       <th style="text-align:left">Xorshift algorithm</th>
- *       <th style="text-align:left">Xorshift parameters</th>
+ *       <th style="text-align:left">XBG algorithm</th>
+ *       <th style="text-align:left">XBG parameters</th>
  *       <th style="text-align:left">Mixing function</th></tr>
  * </thead>
  * <tbody>
- *   <tr><td style="text-align:left">"L32X64MixRandom"</td>
+ *   <tr><th scope="row" style="text-align:left">"L32X64MixRandom"</th>
  *       <td style="text-align:right">{@code 0xadb4a92d}</td>
  *       <td style="text-align:left">{@code xoroshiro64}, version 1.0</td>
  *       <td style="text-align:left">{@code (26, 9, 13)}</td>
  *       <td style="text-align:left">mixLea32{@code (s+x0)}</td></tr>
- *   <tr><td style="text-align:left">"L64X128StarStarRandom" </td>
+ *   <tr><th scope="row" style="text-align:left">"L64X128StarStarRandom" </th>
  *       <td style="text-align:right">{@code 0xd1342543de82ef95L}</td>
  *       <td style="text-align:left">{@code xoroshiro128}, version 1.0</td>
  *       <td style="text-align:left">{@code (24, 16, 37)}</td>
  *       <td style="text-align:left">{@code Long.rotateLeft((s+x0)* 5, 7) * 9}</td></tr>
- *   <tr><td style="text-align:left">"L64X128MixRandom"</td>
+ *   <tr><th scope="row" style="text-align:left">"L64X128MixRandom"</th>
  *       <td style="text-align:right">{@code 0xd1342543de82ef95L}</td>
  *       <td style="text-align:left">{@code xoroshiro128}, version 1.0</td>
  *       <td style="text-align:left">{@code (24, 16, 37)}</td>
- *       <td style="text-align:left">mixLea32{@code (s+x0)}</td></tr>
- *   <tr><td style="text-align:left">"L64X256MixRandom"</td>
+ *       <td style="text-align:left">mixLea64{@code (s+x0)}</td></tr>
+ *   <tr><th scope="row" style="text-align:left">"L64X256MixRandom"</th>
  *       <td style="text-align:right">{@code 0xd1342543de82ef95L}</td>
  *       <td style="text-align:left">{@code xoshiro256}, version 1.0</td>
  *       <td style="text-align:left">{@code (17, 45)}</td>
- *       <td style="text-align:left">mixLea32{@code (s+x0)}</td></tr>
- *   <tr><td style="text-align:left">"L64X1024MixRandom"</td>
+ *       <td style="text-align:left">mixLea64{@code (s+x0)}</td></tr>
+ *   <tr><th scope="row" style="text-align:left">"L64X1024MixRandom"</th>
  *       <td style="text-align:right">{@code 0xd1342543de82ef95L}</td>
  *       <td style="text-align:left">{@code xoroshiro1024}, version 1.0</td>
  *       <td style="text-align:left">{@code (25, 27, 36)}</td>
- *       <td style="text-align:left">mixLea32{@code (s+x0)}</td></tr>
- *   <tr><td style="text-align:left">"L128X128MixRandom"</td>
+ *       <td style="text-align:left">mixLea64{@code (s+x0)}</td></tr>
+ *   <tr><th scope="row" style="text-align:left">"L128X128MixRandom"</th>
  *       <td style="text-align:right">{@code 0x1d605bbb58c8abbfdL}</td>
  *       <td style="text-align:left">{@code xoroshiro128}, version 1.0</td>
  *       <td style="text-align:left">{@code (24, 16, 37)}</td>
- *       <td style="text-align:left">mixLea32{@code (sh+x0)}</td></tr>
- *   <tr><td style="text-align:left">"L128X256MixRandom"</td>
+ *       <td style="text-align:left">mixLea64{@code (sh+x0)}</td></tr>
+ *   <tr><th scope="row" style="text-align:left">"L128X256MixRandom"</th>
  *       <td style="text-align:right">{@code 0x1d605bbb58c8abbfdL}</td>
  *       <td style="text-align:left">{@code xoshiro256}, version 1.0</td>
  *       <td style="text-align:left">{@code (17, 45)}</td>
- *       <td style="text-align:left">mixLea32{@code (sh+x0)}</td></tr>
- *   <tr><td style="text-align:left">"L128X1024MixRandom"</td>
+ *       <td style="text-align:left">mixLea64{@code (sh+x0)}</td></tr>
+ *   <tr><th scope="row" style="text-align:left">"L128X1024MixRandom"</th>
  *       <td style="text-align:right">{@code 0x1d605bbb58c8abbfdL}</td>
  *       <td style="text-align:left">{@code xoroshiro1024}, version 1.0</td>
  *       <td style="text-align:left">{@code (25, 27, 36)}</td>
- *       <td style="text-align:left">mixLea32{@code (sh+x0)}</td></tr>
+ *       <td style="text-align:left">mixLea64{@code (sh+x0)}</td></tr>
  * </tbody>
  * </table>
  *

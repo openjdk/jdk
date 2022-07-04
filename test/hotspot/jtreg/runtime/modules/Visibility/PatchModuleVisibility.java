@@ -26,6 +26,7 @@
  * @summary Ensure that a newly introduced java.base package placed within the --patch-module
  *          directory is considered part of the boot loader's visibility boundary
  * @requires !(os.family == "windows")
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

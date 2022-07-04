@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageSet.hpp"
@@ -53,7 +54,8 @@ static const size_t GROW_HINT = 32;
 static const size_t ResolvedMethodTableSizeLog = 10;
 
 unsigned int method_hash(const Method* method) {
-  unsigned int hash = method->klass_name()->identity_hash();
+  unsigned int hash = method->method_holder()->class_loader_data()->identity_hash();
+  hash = (hash * 31) ^ method->klass_name()->identity_hash();
   hash = (hash * 31) ^ method->name()->identity_hash();
   hash = (hash * 31) ^ method->signature()->identity_hash();
   return hash;
@@ -79,11 +81,11 @@ class ResolvedMethodTableConfig : public AllStatic {
   }
 
   // We use default allocation/deallocation but counted
-  static void* allocate_node(size_t size, Value const& value) {
+  static void* allocate_node(void* context, size_t size, Value const& value) {
     ResolvedMethodTable::item_added();
     return AllocateHeap(size, mtClass);
   }
-  static void free_node(void* memory, Value const& value) {
+  static void free_node(void* context, void* memory, Value const& value) {
     value.release(ResolvedMethodTable::_oop_storage);
     FreeHeap(memory);
     ResolvedMethodTable::item_removed();

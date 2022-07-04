@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,16 @@ public class A<T, E extends Exception> {
      */
     public void otherMethod(Map<String, ?> list, double d) {}
 
+    /**
+     * Here's a generic link: {@link A<Object, RuntimeException>.Inner}
+     */
+    public void overriddenMethod() {}
+
+    /**
+     * @see A<String, java.lang.RuntimeException>.Inner
+     * @see A<A<String, java.lang.RuntimeException>.Inner, A.SomeException>
+     */
+    class Inner {}
 
 }
 

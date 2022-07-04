@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Utility class to determine if a service can be found on the
@@ -86,7 +88,7 @@ class ServiceProxy {
         BufferedReader r = null;
         try {
             in = u.openStream();
-            r = new BufferedReader(new InputStreamReader(in, "utf-8"));
+            r = new BufferedReader(new InputStreamReader(in, UTF_8));
             int lc = 1;
             String ln;
             while ((ln = r.readLine()) != null) {

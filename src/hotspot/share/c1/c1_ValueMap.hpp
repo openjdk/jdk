@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,7 +116,6 @@ class ValueMap: public CompilationResourceObj {
   void kill_memory();
   void kill_field(ciField* field, bool all_offsets);
   void kill_array(ValueType* type);
-  void kill_exception();
   void kill_map(ValueMap* map);
   void kill_all();
 
@@ -154,11 +153,9 @@ class ValueNumberingVisitor: public InstructionVisitor {
   void do_MonitorEnter   (MonitorEnter*    x) { kill_memory(); }
   void do_MonitorExit    (MonitorExit*     x) { kill_memory(); }
   void do_Invoke         (Invoke*          x) { kill_memory(); }
-  void do_UnsafePutRaw   (UnsafePutRaw*    x) { kill_memory(); }
-  void do_UnsafePutObject(UnsafePutObject* x) { kill_memory(); }
-  void do_UnsafeGetAndSetObject(UnsafeGetAndSetObject* x) { kill_memory(); }
-  void do_UnsafeGetRaw   (UnsafeGetRaw*    x) { /* nothing to do */ }
-  void do_UnsafeGetObject(UnsafeGetObject* x) {
+  void do_UnsafePut      (UnsafePut*       x) { kill_memory(); }
+  void do_UnsafeGetAndSet(UnsafeGetAndSet* x) { kill_memory(); }
+  void do_UnsafeGet      (UnsafeGet*       x) {
     if (x->is_volatile()) { // the JMM requires this
       kill_memory();
     }
@@ -167,7 +164,12 @@ class ValueNumberingVisitor: public InstructionVisitor {
 
   void do_Phi            (Phi*             x) { /* nothing to do */ }
   void do_Local          (Local*           x) { /* nothing to do */ }
-  void do_Constant       (Constant*        x) { /* nothing to do */ }
+  void do_Constant       (Constant*        x) {
+    if (x->kills_memory()) {
+      assert(x->can_trap(), "already linked");
+      kill_memory();
+    }
+  }
   void do_LoadField      (LoadField*       x) {
     if (x->is_init_point() ||         // getstatic is an initialization point so treat it as a wide kill
         x->field()->is_volatile()) {  // the JMM requires this
@@ -194,7 +196,6 @@ class ValueNumberingVisitor: public InstructionVisitor {
   void do_BlockBegin     (BlockBegin*      x) { /* nothing to do */ }
   void do_Goto           (Goto*            x) { /* nothing to do */ }
   void do_If             (If*              x) { /* nothing to do */ }
-  void do_IfInstanceOf   (IfInstanceOf*    x) { /* nothing to do */ }
   void do_TableSwitch    (TableSwitch*     x) { /* nothing to do */ }
   void do_LookupSwitch   (LookupSwitch*    x) { /* nothing to do */ }
   void do_Return         (Return*          x) { /* nothing to do */ }

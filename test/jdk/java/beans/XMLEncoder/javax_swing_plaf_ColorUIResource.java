@@ -25,6 +25,7 @@
  * @test
  * @bug 6402062 6487891
  * @summary Tests ColorUIResource encoding
+ * @run main/othervm -Djava.security.manager=allow javax_swing_plaf_ColorUIResource
  * @author Sergey Malenkov
  */
 

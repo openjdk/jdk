@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -191,8 +191,6 @@ public class EventQueue {
         return eventLog;
     }
 
-    private static boolean fxAppThreadIsDispatchThread;
-
     static {
         AWTAccessor.setEventQueueAccessor(
             new AWTAccessor.EventQueueAccessor() {
@@ -229,14 +227,15 @@ public class EventQueue {
                     return eventQueue.getMostRecentEventTimeImpl();
                 }
             });
-        AccessController.doPrivileged(new PrivilegedAction<Object>() {
-            public Object run() {
-                fxAppThreadIsDispatchThread =
-                        "true".equals(System.getProperty("javafx.embed.singleThread"));
-                return null;
-            }
-        });
     }
+
+    @SuppressWarnings("removal")
+    private static boolean fxAppThreadIsDispatchThread =
+            AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
+                public Boolean run() {
+                    return "true".equals(System.getProperty("javafx.embed.singleThread"));
+                }
+            });
 
     /**
      * Initializes a new instance of {@code EventQueue}.
@@ -545,7 +544,7 @@ public class EventQueue {
      * returns it.  This method will block until an event has
      * been posted by another thread.
      * @return the next {@code AWTEvent}
-     * @exception InterruptedException
+     * @throws InterruptedException
      *            if any thread has interrupted this thread
      */
     public AWTEvent getNextEvent() throws InterruptedException {
@@ -733,8 +732,11 @@ public class EventQueue {
             }
         };
 
+        @SuppressWarnings("removal")
         final AccessControlContext stack = AccessController.getContext();
+        @SuppressWarnings("removal")
         final AccessControlContext srcAcc = getAccessControlContextFrom(src);
+        @SuppressWarnings("removal")
         final AccessControlContext eventAcc = event.getAccessControlContext();
         if (srcAcc == null) {
             javaSecurityAccess.doIntersectionPrivilege(action, stack, eventAcc);
@@ -749,6 +751,7 @@ public class EventQueue {
         }
     }
 
+    @SuppressWarnings("removal")
     private static AccessControlContext getAccessControlContextFrom(Object src) {
         return src instanceof Component ?
             ((Component)src).getAccessControlContext() :
@@ -943,7 +946,7 @@ public class EventQueue {
      * Warning: To avoid deadlock, do not declare this method
      * synchronized in a subclass.
      *
-     * @exception EmptyStackException if no previous push was made
+     * @throws EmptyStackException if no previous push was made
      *  on this {@code EventQueue}
      * @see      java.awt.EventQueue#push
      * @since           1.2
@@ -1328,9 +1331,9 @@ public class EventQueue {
      *                  synchronously in the
      *                  {@link #isDispatchThread event dispatch thread}
      *                  of {@link Toolkit#getSystemEventQueue the system EventQueue}
-     * @exception       InterruptedException  if any thread has
+     * @throws       InterruptedException  if any thread has
      *                  interrupted this thread
-     * @exception       InvocationTargetException  if an throwable is thrown
+     * @throws       InvocationTargetException  if an throwable is thrown
      *                  when running {@code runnable}
      * @see             #invokeLater
      * @see             Toolkit#getSystemEventQueue

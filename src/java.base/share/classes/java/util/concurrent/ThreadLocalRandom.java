@@ -50,12 +50,10 @@ import java.util.random.RandomGenerator;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
+import jdk.internal.access.JavaUtilConcurrentTLRAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.random.RandomSupport;
-import jdk.internal.util.random.RandomSupport.AbstractSpliteratorGenerator;
-import jdk.internal.util.random.RandomSupport.RandomIntsSpliterator;
-import jdk.internal.util.random.RandomSupport.RandomLongsSpliterator;
-import jdk.internal.util.random.RandomSupport.RandomDoublesSpliterator;
-import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
+import jdk.internal.util.random.RandomSupport.*;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
 
@@ -97,7 +95,7 @@ import jdk.internal.misc.VM;
         i = 64, j = 0, k = 0,
         equidistribution = 1
 )
-public class ThreadLocalRandom extends Random {
+public final class ThreadLocalRandom extends Random {
     /*
      * This class implements the java.util.Random API (and subclasses
      * Random) using a single static instance that accesses 64 bits of
@@ -222,7 +220,7 @@ public class ThreadLocalRandom extends Random {
     final long nextSeed() {
         Thread t; long r; // read and update per-thread seed
         U.putLong(t = Thread.currentThread(), SEED,
-                  r = U.getLong(t, SEED) + (t.getId() << 1) + GOLDEN_GAMMA);
+                  r = U.getLong(t, SEED) + (t.threadId() << 1) + GOLDEN_GAMMA);
         return r;
     }
 
@@ -307,7 +305,7 @@ public class ThreadLocalRandom extends Random {
     }
 
     static final void setInheritedAccessControlContext(Thread thread,
-                                                       AccessControlContext acc) {
+                                                       @SuppressWarnings("removal") AccessControlContext acc) {
         U.putReferenceRelease(thread, INHERITEDACCESSCONTROLCONTEXT, acc);
     }
 
@@ -396,54 +394,25 @@ public class ThreadLocalRandom extends Random {
     /** The common ThreadLocalRandom */
     private static final ThreadLocalRandom instance = new ThreadLocalRandom();
 
-    private static final class ThreadLocalRandomProxy extends Random {
-        @java.io.Serial
-        static final long serialVersionUID = 0L;
-
-
-        static final AbstractSpliteratorGenerator proxy = new ThreadLocalRandomProxy();
-
-
-        public int nextInt() {
-            return ThreadLocalRandom.current().nextInt();
-        }
-
-        public long nextLong() {
-            return ThreadLocalRandom.current().nextLong();
-        }
-    }
-
-    // Methods required by class AbstractSpliteratorGenerator
-    /**
-     * @hidden
-     */
-    @Override
-    public Spliterator.OfInt makeIntsSpliterator(long index, long fence, int origin, int bound) {
-        return new RandomIntsSpliterator(ThreadLocalRandomProxy.proxy, index, fence, origin, bound);
-    }
-
-    /**
-     * @hidden
-     */
-    @Override
-    public Spliterator.OfLong makeLongsSpliterator(long index, long fence, long origin, long bound) {
-        return new RandomLongsSpliterator(ThreadLocalRandomProxy.proxy, index, fence, origin, bound);
-    }
-
-    /**
-     * @hidden
-     */
-    @Override
-    public Spliterator.OfDouble makeDoublesSpliterator(long index, long fence, double origin, double bound) {
-        return new RandomDoublesSpliterator(ThreadLocalRandomProxy.proxy, index, fence, origin, bound);
-    }
-
     /**
      * The next seed for default constructors.
      */
     private static final AtomicLong seeder
         = new AtomicLong(RandomSupport.mixMurmur64(System.currentTimeMillis()) ^
                          RandomSupport.mixMurmur64(System.nanoTime()));
+
+    // used by ExtentLocal
+    private static class Access {
+        static {
+            SharedSecrets.setJavaUtilConcurrentTLRAccess(
+                new JavaUtilConcurrentTLRAccess() {
+                    public int nextSecondaryThreadLocalRandomSeed() {
+                        return nextSecondarySeed();
+                    }
+                }
+            );
+        }
+    }
 
     // at end of <clinit> to survive static initialization circularity
     static {
@@ -454,6 +423,19 @@ public class ThreadLocalRandom extends Random {
             for (int i = 1; i < 8; ++i)
                 s = (s << 8) | ((long)seedBytes[i] & 0xffL);
             seeder.set(s);
+        }
+    }
+
+    @SuppressWarnings("serial")
+    private static final class ThreadLocalRandomProxy extends Random {
+        static final Random PROXY = new ThreadLocalRandomProxy();
+
+        public int nextInt() {
+            return ThreadLocalRandom.current().nextInt();
+        }
+
+        public long nextLong() {
+            return ThreadLocalRandom.current().nextLong();
         }
     }
 
@@ -579,7 +561,7 @@ public class ThreadLocalRandom extends Random {
      */
     @Override
     public IntStream ints(long streamSize) {
-        return super.ints(streamSize);
+        return AbstractSpliteratorGenerator.ints(ThreadLocalRandomProxy.PROXY, streamSize);
     }
 
     /**
@@ -590,7 +572,7 @@ public class ThreadLocalRandom extends Random {
      */
     @Override
     public IntStream ints() {
-        return super.ints();
+        return AbstractSpliteratorGenerator.ints(ThreadLocalRandomProxy.PROXY);
     }
 
     /**
@@ -600,7 +582,7 @@ public class ThreadLocalRandom extends Random {
      */
     @Override
     public IntStream ints(long streamSize, int randomNumberOrigin, int randomNumberBound) {
-        return super.ints(streamSize, randomNumberOrigin, randomNumberBound);
+        return AbstractSpliteratorGenerator.ints(ThreadLocalRandomProxy.PROXY, streamSize, randomNumberOrigin, randomNumberBound);
     }
 
     /**
@@ -612,7 +594,7 @@ public class ThreadLocalRandom extends Random {
      */
     @Override
     public IntStream ints(int randomNumberOrigin, int randomNumberBound) {
-        return super.ints(randomNumberOrigin, randomNumberBound);
+        return AbstractSpliteratorGenerator.ints(ThreadLocalRandomProxy.PROXY, randomNumberOrigin, randomNumberBound);
     }
 
     /**
@@ -622,7 +604,7 @@ public class ThreadLocalRandom extends Random {
      */
     @Override
     public LongStream longs(long streamSize) {
-        return super.longs(streamSize);
+        return AbstractSpliteratorGenerator.longs(ThreadLocalRandomProxy.PROXY, streamSize);
     }
 
     /**
@@ -633,7 +615,7 @@ public class ThreadLocalRandom extends Random {
      */
     @Override
     public LongStream longs() {
-        return super.longs();
+        return AbstractSpliteratorGenerator.longs(ThreadLocalRandomProxy.PROXY);
     }
 
     /**
@@ -643,7 +625,7 @@ public class ThreadLocalRandom extends Random {
      */
     @Override
     public LongStream longs(long streamSize, long randomNumberOrigin, long randomNumberBound) {
-        return super.longs(streamSize, randomNumberOrigin, randomNumberBound);
+        return AbstractSpliteratorGenerator.longs(ThreadLocalRandomProxy.PROXY, streamSize, randomNumberOrigin, randomNumberBound);
     }
 
     /**
@@ -655,7 +637,7 @@ public class ThreadLocalRandom extends Random {
      */
     @Override
     public LongStream longs(long randomNumberOrigin, long randomNumberBound) {
-        return super.longs(randomNumberOrigin, randomNumberBound);
+        return AbstractSpliteratorGenerator.longs(ThreadLocalRandomProxy.PROXY, randomNumberOrigin, randomNumberBound);
     }
 
     /**
@@ -665,7 +647,7 @@ public class ThreadLocalRandom extends Random {
      */
     @Override
     public DoubleStream doubles(long streamSize) {
-        return super.doubles(streamSize);
+        return AbstractSpliteratorGenerator.doubles(ThreadLocalRandomProxy.PROXY, streamSize);
     }
 
     /**
@@ -676,7 +658,7 @@ public class ThreadLocalRandom extends Random {
      */
     @Override
     public DoubleStream doubles() {
-        return super.doubles();
+        return AbstractSpliteratorGenerator.doubles(ThreadLocalRandomProxy.PROXY);
     }
 
     /**
@@ -686,7 +668,7 @@ public class ThreadLocalRandom extends Random {
      */
     @Override
     public DoubleStream doubles(long streamSize, double randomNumberOrigin, double randomNumberBound) {
-        return super.doubles(streamSize, randomNumberOrigin, randomNumberBound);
+        return AbstractSpliteratorGenerator.doubles(ThreadLocalRandomProxy.PROXY, streamSize, randomNumberOrigin, randomNumberBound);
     }
 
     /**
@@ -698,7 +680,7 @@ public class ThreadLocalRandom extends Random {
      */
     @Override
     public DoubleStream doubles(double randomNumberOrigin, double randomNumberBound) {
-        return super.doubles(randomNumberOrigin, randomNumberBound);
+        return AbstractSpliteratorGenerator.doubles(ThreadLocalRandomProxy.PROXY, randomNumberOrigin, randomNumberBound);
     }
 
 }

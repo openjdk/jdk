@@ -33,7 +33,7 @@
 #include "memory/allocation.hpp"
 
 class ShenandoahMarkRefsSuperClosure;
-class WorkGang;
+class WorkerThreads;
 
 static const size_t reference_type_count = REF_PHANTOM + 1;
 typedef size_t Counters[reference_type_count];
@@ -82,12 +82,10 @@ private:
   Counters _encountered_count;
   Counters _discovered_count;
   Counters _enqueued_count;
+  NONCOPYABLE(ShenandoahRefProcThreadLocal);
 
 public:
   ShenandoahRefProcThreadLocal();
-
-  ShenandoahRefProcThreadLocal(const ShenandoahRefProcThreadLocal&) = delete; // non construction-copyable
-  ShenandoahRefProcThreadLocal& operator=(const ShenandoahRefProcThreadLocal&) = delete; // non copyable
 
   void reset();
 
@@ -181,7 +179,7 @@ public:
 
   bool discover_reference(oop obj, ReferenceType type) override;
 
-  void process_references(ShenandoahPhaseTimings::Phase phase, WorkGang* workers, bool concurrent);
+  void process_references(ShenandoahPhaseTimings::Phase phase, WorkerThreads* workers, bool concurrent);
 
   const ReferenceProcessorStats& reference_process_stats() { return _stats; }
 

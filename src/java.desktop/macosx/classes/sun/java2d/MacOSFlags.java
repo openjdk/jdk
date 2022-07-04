@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,6 +83,7 @@ public class MacOSFlags {
         return false;
     }
 
+    @SuppressWarnings("removal")
     private static void initJavaFlags() {
         java.security.AccessController.doPrivileged(
                 (PrivilegedAction<Object>) () -> {
@@ -90,11 +91,7 @@ public class MacOSFlags {
                     PropertyState metalState = getBooleanProp("sun.java2d.metal", PropertyState.UNSPECIFIED);
 
                     // Handle invalid combinations to use the default rendering pipeline
-                    // Current default rendering pipeline is Metal
-                    // (The default can be changed to OpenGL in future just by toggling two states in this if condition block)
-                    // ---------------------------------------------------------------------
-                    // TODO : Revert default rendering pipeline to OpenGL
-                    // ---------------------------------------------------------------------
+                    // The default rendering pipeline is Metal
                     if ((oglState == PropertyState.UNSPECIFIED && metalState == PropertyState.UNSPECIFIED) ||
                         (oglState == PropertyState.DISABLED && metalState == PropertyState.DISABLED) ||
                         (oglState == PropertyState.ENABLED && metalState == PropertyState.ENABLED)) {

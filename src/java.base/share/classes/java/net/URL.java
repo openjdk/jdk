@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ import java.util.ServiceLoader;
 
 import jdk.internal.access.JavaNetURLAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.misc.ThreadTracker;
 import jdk.internal.misc.VM;
 import sun.net.util.IPAddressUtil;
 import sun.security.util.SecurityConstants;
@@ -431,6 +432,7 @@ public final class URL implements java.io.Serializable {
     public URL(String protocol, String host, int port, String file,
                URLStreamHandler handler) throws MalformedURLException {
         if (handler != null) {
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 // check for permission to specify a handler
@@ -602,6 +604,7 @@ public final class URL implements java.io.Serializable {
 
         // Check for permission to specify a handler
         if (handler != null) {
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 checkSpecifyHandler(sm);
@@ -721,7 +724,7 @@ public final class URL implements java.io.Serializable {
         String protocol = uri.getScheme();
 
         // In general we need to go via Handler.parseURL, but for the jrt
-        // protocol we enforce that the Handler is not overrideable and can
+        // protocol we enforce that the Handler is not overridable and can
         // optimize URI to URL conversion.
         //
         // Case-sensitive comparison for performance; malformed protocols will
@@ -770,7 +773,7 @@ public final class URL implements java.io.Serializable {
     /*
      * Checks for permission to specify a stream handler.
      */
-    private void checkSpecifyHandler(SecurityManager sm) {
+    private void checkSpecifyHandler(@SuppressWarnings("removal") SecurityManager sm) {
         sm.checkPermission(SecurityConstants.SPECIFY_HANDLER_PERMISSION);
     }
 
@@ -1129,6 +1132,7 @@ public final class URL implements java.io.Serializable {
 
         // Create a copy of Proxy as a security measure
         Proxy p = proxy == Proxy.NO_PROXY ? Proxy.NO_PROXY : sun.net.ApplicationProxy.create(proxy);
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (p.type() != Proxy.Type.DIRECT && sm != null) {
             InetSocketAddress epoint = (InetSocketAddress) p.address();
@@ -1224,6 +1228,7 @@ public final class URL implements java.io.Serializable {
             if (factory != null) {
                 throw new Error("factory already defined");
             }
+            @SuppressWarnings("removal")
             SecurityManager security = System.getSecurityManager();
             if (security != null) {
                 security.checkSetFactory();
@@ -1338,14 +1343,24 @@ public final class URL implements java.io.Serializable {
         };
     }
 
-    // Thread-local gate to prevent recursive provider lookups
-    private static ThreadLocal<Object> gate = new ThreadLocal<>();
+    private static class ThreadTrackHolder {
+        static final ThreadTracker TRACKER = new ThreadTracker();
+    }
 
+    private static Object tryBeginLookup() {
+        return ThreadTrackHolder.TRACKER.tryBegin();
+    }
+
+    private static void endLookup(Object key) {
+        ThreadTrackHolder.TRACKER.end(key);
+    }
+
+    @SuppressWarnings("removal")
     private static URLStreamHandler lookupViaProviders(final String protocol) {
-        if (gate.get() != null)
+        Object key = tryBeginLookup();
+        if (key == null) {
             throw new Error("Circular loading of URL stream handler providers detected");
-
-        gate.set(gate);
+        }
         try {
             return AccessController.doPrivileged(
                 new PrivilegedAction<>() {
@@ -1361,7 +1376,7 @@ public final class URL implements java.io.Serializable {
                     }
                 });
         } finally {
-            gate.set(null);
+            endLookup(key);
         }
     }
 
@@ -1757,7 +1772,7 @@ final class UrlDeserializedState {
 
     String reconstituteUrlString() {
 
-        // pre-compute length of StringBuffer
+        // pre-compute length of StringBuilder
         int len = protocol.length() + 1;
         if (authority != null && !authority.isEmpty())
             len += 2 + authority.length();

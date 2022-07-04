@@ -26,7 +26,32 @@
 #define SHARE_GC_SERIAL_TENUREDGENERATION_INLINE_HPP
 
 #include "gc/serial/tenuredGeneration.hpp"
+
 #include "gc/shared/space.inline.hpp"
+
+inline size_t TenuredGeneration::capacity() const {
+  return space()->capacity();
+}
+
+inline size_t TenuredGeneration::used() const {
+  return space()->used();
+}
+
+inline size_t TenuredGeneration::free() const {
+  return space()->free();
+}
+
+inline MemRegion TenuredGeneration::used_region() const {
+  return space()->used_region();
+}
+
+inline bool TenuredGeneration::is_in(const void* p) const {
+  return space()->is_in(p);
+}
+
+inline CompactibleSpace* TenuredGeneration::first_compaction_space() const {
+  return space();
+}
 
 HeapWord* TenuredGeneration::allocate(size_t word_size,
                                                  bool is_tlab) {

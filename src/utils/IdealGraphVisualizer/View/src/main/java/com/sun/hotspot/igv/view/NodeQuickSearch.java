@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import com.sun.hotspot.igv.data.Properties.RegexpPropertyMatcher;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
 import com.sun.hotspot.igv.settings.Settings;
 import com.sun.hotspot.igv.util.LookupHistory;
-import java.util.Collections;
+import com.sun.hotspot.igv.util.StringUtils;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -135,11 +135,10 @@ public class NodeQuickSearch implements SearchProvider {
                 }
 
                 // Rank the matches.
-                Collections.sort(matches,
-                                 (InputNode a, InputNode b) ->
-                                 compareByRankThenNumVal(rawValue,
-                                                         a.getProperties().get(name),
-                                                         b.getProperties().get(name)));
+                matches.sort((InputNode a, InputNode b) ->
+                        compareByRankThenNumVal(rawValue,
+                                a.getProperties().get(name),
+                                b.getProperties().get(name)));
 
                 // Single matches
                 for (final InputNode n : matches) {
@@ -216,24 +215,16 @@ public class NodeQuickSearch implements SearchProvider {
     /**
      * Rank a match by splitting the property into words. Full matches of a word
      * rank highest, followed by partial matches at the word start, followed by
-     * the rest of matches in increasing size of the partially matched word, for
-     * example:
-     *
-     *   rank("5", "5 AddI")   = 1 (full match of first word)
-     *   rank("5", "554 MulI") = 2 (start match of first word)
-     *   rank("5", "25 AddL")  = 3 (middle match of first word with excess 1)
-     *   rank("5", "253 AddL") = 4 (middle match of first word with excess 2)
+     * the rest of matches in increasing size of the partially matched word. See
+     * examples in class StringUtils.
      */
     private int rankMatch(String qry, String prop) {
         String query = qry.toLowerCase();
         String property = prop.toLowerCase();
         for (String component : property.split("\\W+")) {
-            if (component.equals(query)) {
-                return 1;
-            } else if (component.startsWith(query)) {
-                return 2;
-            } else if (component.contains(query)) {
-                return component.length() - query.length() + 2;
+            int rank = StringUtils.rankMatch(query, component);
+            if (rank != Integer.MAX_VALUE) {
+                return rank;
             }
         }
         return Integer.MAX_VALUE;

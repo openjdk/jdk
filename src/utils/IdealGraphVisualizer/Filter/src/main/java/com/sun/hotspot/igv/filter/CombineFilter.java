@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ public class CombineFilter extends AbstractFilter {
                         InputSlot slot = null;
 
                         for (InputSlot s : succ.getInputSlots()) {
-                            for (Connection c : s.getConnections()) {
+                            for (FigureConnection c : s.getConnections()) {
                                 if (c.getOutputSlot().getFigure() == f) {
                                     slot = s;
                                 }
@@ -85,6 +85,7 @@ public class CombineFilter extends AbstractFilter {
                         } else {
                             assert slot != null;
                             slot.setText(f.getProperties().get("dump_spec"));
+                            slot.setColor(f.getColor());
                             if (f.getProperties().get("short_name") != null) {
                                 slot.setShortName(f.getProperties().get("short_name"));
                             } else {
@@ -96,8 +97,8 @@ public class CombineFilter extends AbstractFilter {
                         }
 
                         for (InputSlot s : f.getInputSlots()) {
-                            for (Connection c : s.getConnections()) {
-                                Connection newConn = diagram.createConnection(slot, c.getOutputSlot(), c.getLabel(), c.getType());
+                            for (FigureConnection c : s.getConnections()) {
+                                FigureConnection newConn = diagram.createConnection(slot, c.getOutputSlot(), c.getLabel());
                                 newConn.setColor(c.getColor());
                                 newConn.setStyle(c.getStyle());
                             }
@@ -114,7 +115,7 @@ public class CombineFilter extends AbstractFilter {
 
                                 OutputSlot oldSlot = null;
                                 for (OutputSlot s : f.getOutputSlots()) {
-                                    for (Connection c : s.getConnections()) {
+                                    for (FigureConnection c : s.getConnections()) {
                                         if (c.getInputSlot().getFigure() == succ) {
                                             oldSlot = s;
                                         }
@@ -139,6 +140,7 @@ public class CombineFilter extends AbstractFilter {
                                     }
                                 } else {
                                     slot.setText(succ.getProperties().get("dump_spec"));
+                                    slot.setColor(succ.getColor());
                                     if (succ.getProperties().get("short_name") != null) {
                                         slot.setShortName(succ.getProperties().get("short_name"));
                                     } else {
@@ -153,8 +155,8 @@ public class CombineFilter extends AbstractFilter {
                                         }
                                     }
                                 }
-                                for (Connection c : nextSlot.getConnections()) {
-                                    Connection newConn = diagram.createConnection(c.getInputSlot(), slot, c.getLabel(), c.getType());
+                                for (FigureConnection c : nextSlot.getConnections()) {
+                                    FigureConnection newConn = diagram.createConnection(c.getInputSlot(), slot, c.getLabel());
                                     newConn.setColor(c.getColor());
                                     newConn.setStyle(c.getStyle());
                                 }

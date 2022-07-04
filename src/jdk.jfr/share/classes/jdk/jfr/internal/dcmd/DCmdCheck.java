@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package jdk.jfr.internal.dcmd;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -36,9 +35,6 @@ import java.util.StringJoiner;
 import jdk.jfr.EventType;
 import jdk.jfr.Recording;
 import jdk.jfr.SettingDescriptor;
-import jdk.jfr.internal.LogLevel;
-import jdk.jfr.internal.LogTag;
-import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.Utils;
 
 /**
@@ -46,27 +42,12 @@ import jdk.jfr.internal.Utils;
  *
  */
 final class DCmdCheck extends AbstractDCmd {
-    /**
-     * Execute JFR.check
-     *
-     * @param recordingText name or id of the recording to check, or
-     *        {@code null} to show a list of all recordings.
-     *
-     * @param verbose if event settings should be included.
-     *
-     * @return result output
-     *
-     * @throws DCmdException if the check could not be completed.
-     */
-    public String[] execute(String recordingText, Boolean verbose) throws DCmdException {
-        executeInternal(recordingText, verbose);
-        return getResult();
-    }
 
-    private void executeInternal(String name, Boolean verbose) throws DCmdException {
-        if (Logger.shouldLog(LogTag.JFR_DCMD, LogLevel.DEBUG)) {
-            Logger.log(LogTag.JFR_DCMD, LogLevel.DEBUG, "Executing DCmdCheck: name=" + name + ", verbose=" + verbose);
-        }
+    @Override
+    protected void execute(ArgumentParser parser) throws DCmdException {
+        parser.checkUnknownArguments();
+        Boolean verbose = parser.getOption("verbose");
+        String name = parser.getOption("name");
 
         if (verbose == null) {
             verbose = Boolean.FALSE;
@@ -153,12 +134,45 @@ final class DCmdCheck extends AbstractDCmd {
     private static List<EventType> sortByEventPath(Collection<EventType> events) {
         List<EventType> sorted = new ArrayList<>();
         sorted.addAll(events);
-        Collections.sort(sorted, new Comparator<EventType>() {
-            @Override
-            public int compare(EventType e1, EventType e2) {
-                return e1.getName().compareTo(e2.getName());
-            }
-        });
+        sorted.sort(Comparator.comparing(EventType::getName));
         return sorted;
+    }
+
+    @Override
+    public String[] printHelp() {
+            // 0123456789001234567890012345678900123456789001234567890012345678900123456789001234567890
+        return """
+               Syntax : JFR.check [options]
+
+               Options:
+
+                 name     (Optional) Name of the flight recording. (STRING, no default value)
+
+                 verbose  (Optional) Flag for printing the event settings for the recording
+                          (BOOLEAN, false)
+
+               Options must be specified using the <key> or <key>=<value> syntax.
+
+               Example usage:
+
+                $ jcmd <pid> JFR.check
+                $ jcmd <pid> JFR.check verbose=true
+                $ jcmd <pid> JFR.check name=1
+                $ jcmd <pid> JFR.check name=benchmark
+                $ jcmd <pid> JFR.check name=2 verbose=true
+
+               """.lines().toArray(String[]::new);
+    }
+
+    @Override
+    public Argument[] getArgumentInfos() {
+        return new Argument[] {
+            new Argument("name",
+                "Recording name, e.g. \\\"My Recording\\\" or omit to see all recordings",
+                "STRING", false, null, false),
+            new Argument("verbose",
+                "Print event settings for the recording(s)","BOOLEAN",
+                false, "false", false)
+        };
     }
 }

@@ -26,6 +26,7 @@
 #define SHARE_OOPS_METHOD_INLINE_HPP
 
 #include "oops/method.hpp"
+
 #include "runtime/atomic.hpp"
 
 inline address Method::from_compiled_entry() const {
@@ -82,5 +83,10 @@ inline void CompressedLineNumberWriteStream::write_pair(int bci, int line) {
 }
 
 inline bool Method::has_compiled_code() const { return code() != NULL; }
+
+inline bool Method::is_empty_method() const {
+  return  code_size() == 1
+      && *code_base() == Bytecodes::_return;
+}
 
 #endif // SHARE_OOPS_METHOD_INLINE_HPP

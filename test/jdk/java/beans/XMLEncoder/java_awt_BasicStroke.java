@@ -25,6 +25,7 @@
  * @test
  * @bug 4358979
  * @summary Tests BasicStroke encoding
+ * @run main/othervm -Djava.security.manager=allow java_awt_BasicStroke
  * @author Sergey Malenkov
  */
 

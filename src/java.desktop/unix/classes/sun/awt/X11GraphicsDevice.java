@@ -41,6 +41,7 @@ import java.util.HashSet;
 import sun.awt.util.ThreadGroupUtils;
 import sun.java2d.SunGraphicsEnvironment;
 import sun.java2d.loops.SurfaceType;
+import sun.awt.X11.XToolkit;
 import sun.java2d.opengl.GLXGraphicsConfig;
 import sun.java2d.pipe.Region;
 import sun.java2d.xr.XRGraphicsConfig;
@@ -63,7 +64,6 @@ public final class X11GraphicsDevice extends GraphicsDevice
 
     private static AWTPermission fullScreenExclusivePermission;
     private static Boolean xrandrExtSupported;
-    private final Object configLock = new Object();
     private SunDisplayChanger topLevels = new SunDisplayChanger();
     private DisplayMode origDisplayMode;
     private boolean shutdownHookRegistered;
@@ -150,8 +150,11 @@ public final class X11GraphicsDevice extends GraphicsDevice
     @Override
     public GraphicsConfiguration[] getConfigurations() {
         if (configs == null) {
-            synchronized (configLock) {
+            XToolkit.awtLock();
+            try {
                 makeConfigurations();
+            } finally {
+                XToolkit.awtUnlock();
             }
         }
         return configs.clone();
@@ -238,8 +241,11 @@ public final class X11GraphicsDevice extends GraphicsDevice
     @Override
     public GraphicsConfiguration getDefaultConfiguration() {
         if (defaultConfig == null) {
-            synchronized (configLock) {
+            XToolkit.awtLock();
+            try {
                 makeDefaultConfiguration();
+            } finally {
+                XToolkit.awtUnlock();
             }
         }
         return defaultConfig;
@@ -315,6 +321,7 @@ public final class X11GraphicsDevice extends GraphicsDevice
     public boolean isFullScreenSupported() {
         boolean fsAvailable = isXrandrExtensionSupported();
         if (fsAvailable) {
+            @SuppressWarnings("removal")
             SecurityManager security = System.getSecurityManager();
             if (security != null) {
                 if (fullScreenExclusivePermission == null) {
@@ -422,6 +429,7 @@ public final class X11GraphicsDevice extends GraphicsDevice
         return modes.toArray(retArray);
     }
 
+    @SuppressWarnings("removal")
     @Override
     public synchronized void setDisplayMode(DisplayMode dm) {
         if (!isDisplayChangeSupported()) {
@@ -569,6 +577,8 @@ public final class X11GraphicsDevice extends GraphicsDevice
     }
 
     public void invalidate(X11GraphicsDevice device) {
+        assert XToolkit.isAWTLockHeldByCurrentThread();
+
         screen = device.screen;
     }
 }

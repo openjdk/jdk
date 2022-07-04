@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,20 +116,31 @@ public enum KnownOIDs {
     AES_128$CBC$NoPadding("2.16.840.1.101.3.4.1.2", "AES_128/CBC/NoPadding"),
     AES_128$OFB$NoPadding("2.16.840.1.101.3.4.1.3", "AES_128/OFB/NoPadding"),
     AES_128$CFB$NoPadding("2.16.840.1.101.3.4.1.4", "AES_128/CFB/NoPadding"),
-    AESWRAP_128("2.16.840.1.101.3.4.1.5"),
+    AES_128$KW$NoPadding("2.16.840.1.101.3.4.1.5", "AES_128/KW/NoPadding",
+            "AESWrap_128"),
     AES_128$GCM$NoPadding("2.16.840.1.101.3.4.1.6", "AES_128/GCM/NoPadding"),
+    AES_128$KWP$NoPadding("2.16.840.1.101.3.4.1.8", "AES_128/KWP/NoPadding",
+            "AESWrapPad_128"),
+
     AES_192$ECB$NoPadding("2.16.840.1.101.3.4.1.21", "AES_192/ECB/NoPadding"),
     AES_192$CBC$NoPadding("2.16.840.1.101.3.4.1.22", "AES_192/CBC/NoPadding"),
     AES_192$OFB$NoPadding("2.16.840.1.101.3.4.1.23", "AES_192/OFB/NoPadding"),
     AES_192$CFB$NoPadding("2.16.840.1.101.3.4.1.24", "AES_192/CFB/NoPadding"),
-    AESWRAP_192("2.16.840.1.101.3.4.1.25"),
+    AES_192$KW$NoPadding("2.16.840.1.101.3.4.1.25", "AES_192/KW/NoPadding",
+            "AESWrap_192"),
     AES_192$GCM$NoPadding("2.16.840.1.101.3.4.1.26", "AES_192/GCM/NoPadding"),
+    AES_192$KWP$NoPadding("2.16.840.1.101.3.4.1.28", "AES_192/KWP/NoPadding",
+            "AESWrapPad_192"),
+
     AES_256$ECB$NoPadding("2.16.840.1.101.3.4.1.41", "AES_256/ECB/NoPadding"),
     AES_256$CBC$NoPadding("2.16.840.1.101.3.4.1.42", "AES_256/CBC/NoPadding"),
     AES_256$OFB$NoPadding("2.16.840.1.101.3.4.1.43", "AES_256/OFB/NoPadding"),
     AES_256$CFB$NoPadding("2.16.840.1.101.3.4.1.44", "AES_256/CFB/NoPadding"),
-    AESWRAP_256("2.16.840.1.101.3.4.1.45"),
+    AES_256$KW$NoPadding("2.16.840.1.101.3.4.1.45", "AES_256/KW/NoPadding",
+            "AESWrap_256"),
     AES_256$GCM$NoPadding("2.16.840.1.101.3.4.1.46", "AES_256/GCM/NoPadding"),
+    AES_256$KWP$NoPadding("2.16.840.1.101.3.4.1.48", "AES_256/KWP/NoPadding",
+            "AESWrapPad_256"),
 
     // hashAlgs 2.16.840.1.101.3.4.2.*
     SHA_256("2.16.840.1.101.3.4.2.1", "SHA-256", "SHA256"),
@@ -257,7 +268,7 @@ public enum KnownOIDs {
     HmacSHA512$256("1.2.840.113549.2.13", "HmacSHA512/256"),
 
     // encryptionAlgs 1.2.840.113549.3.*
-    RC2$CBC$PKCS5Padding("1.2.840.113549.3.2", "RC2/CBC/PKCS5Padding"),
+    RC2$CBC$PKCS5Padding("1.2.840.113549.3.2", "RC2/CBC/PKCS5Padding", "RC2"),
     ARCFOUR("1.2.840.113549.3.4", "ARCFOUR", "RC4"),
     DESede$CBC$NoPadding("1.2.840.113549.3.7", "DESede/CBC/NoPadding"),
     RC5$CBC$PKCS5Padding("1.2.840.113549.3.9", "RC5/CBC/PKCS5Padding"),
@@ -416,7 +427,9 @@ public enum KnownOIDs {
     SkipIPAddress("1.3.6.1.4.1.42.2.11.2.1"),
     JAVASOFT_JDKKeyProtector("1.3.6.1.4.1.42.2.17.1.1"),
     JAVASOFT_JCEKeyProtector("1.3.6.1.4.1.42.2.19.1"),
-    MICROSOFT_ExportApproved("1.3.6.1.4.1.311.10.3.3");
+    MICROSOFT_ExportApproved("1.3.6.1.4.1.311.10.3.3"),
+
+    Blowfish("1.3.6.1.4.1.3029.1.1.2");
 
     private String stdName;
     private String oid;

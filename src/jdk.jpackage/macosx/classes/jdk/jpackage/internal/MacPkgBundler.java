@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,23 +34,27 @@ import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.ResourceBundle;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamWriter;
 
 import static jdk.jpackage.internal.StandardBundlerParam.CONFIG_ROOT;
 import static jdk.jpackage.internal.StandardBundlerParam.TEMP_ROOT;
-import static jdk.jpackage.internal.StandardBundlerParam.VERBOSE;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.LICENSE_FILE;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
+import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
 import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEYCHAIN;
 import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEY_USER;
-import static jdk.jpackage.internal.MacAppImageBuilder.APP_STORE;
+import static jdk.jpackage.internal.StandardBundlerParam.APP_STORE;
 import static jdk.jpackage.internal.MacAppImageBuilder.MAC_CF_BUNDLE_IDENTIFIER;
 import static jdk.jpackage.internal.OverridableResource.createResource;
+import static jdk.jpackage.internal.StandardBundlerParam.RESOURCE_DIR;
 
 public class MacPkgBundler extends MacBaseInstallerBundler {
 
@@ -59,11 +63,6 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
 
     private static final String DEFAULT_BACKGROUND_IMAGE = "background_pkg.png";
     private static final String DEFAULT_PDF = "product-def.plist";
-
-    private static final String TEMPLATE_PREINSTALL_SCRIPT =
-            "preinstall.template";
-    private static final String TEMPLATE_POSTINSTALL_SCRIPT =
-            "postinstall.template";
 
     private static final BundlerParamInfo<Path> PACKAGES_ROOT =
             new StandardBundlerParam<>(
@@ -170,6 +169,16 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
                 APP_NAME.fetchFrom(params) + "-app.pkg");
     }
 
+    private Path getPackages_ServicesPackage(Map<String, ? super Object> params) {
+        return PACKAGES_ROOT.fetchFrom(params).resolve(
+                APP_NAME.fetchFrom(params) + "-services.pkg");
+    }
+
+    private Path getPackages_SupportPackage(Map<String, ? super Object> params) {
+        return PACKAGES_ROOT.fetchFrom(params).resolve(
+                APP_NAME.fetchFrom(params) + "-support.pkg");
+    }
+
     private Path getConfig_DistributionXMLFile(
             Map<String, ? super Object> params) {
         return CONFIG_ROOT.fetchFrom(params).resolve("distribution.dist");
@@ -189,17 +198,16 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
                 APP_NAME.fetchFrom(params) + "-background-darkAqua.png");
     }
 
-    private Path getScripts_PreinstallFile(Map<String, ? super Object> params) {
-        return SCRIPTS_DIR.fetchFrom(params).resolve("preinstall");
-    }
-
-    private Path getScripts_PostinstallFile(
-            Map<String, ? super Object> params) {
-        return SCRIPTS_DIR.fetchFrom(params).resolve("postinstall");
-    }
-
     private String getAppIdentifier(Map<String, ? super Object> params) {
         return MAC_CF_BUNDLE_IDENTIFIER.fetchFrom(params);
+    }
+
+    private String getServicesIdentifier(Map<String, ? super Object> params) {
+        return MAC_CF_BUNDLE_IDENTIFIER.fetchFrom(params) + ".services";
+    }
+
+    private String getSupportIdentifier(Map<String, ? super Object> params) {
+        return MAC_CF_BUNDLE_IDENTIFIER.fetchFrom(params) + ".support";
     }
 
     private void preparePackageScripts(Map<String, ? super Object> params)
@@ -214,22 +222,35 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
         data.put("INSTALL_LOCATION", getInstallDir(params, false));
         data.put("APP_LOCATION", appLocation.toString());
 
-        createResource(TEMPLATE_PREINSTALL_SCRIPT, params)
-                .setCategory(I18N.getString("resource.pkg-preinstall-script"))
+        MacPkgInstallerScripts.createAppScripts()
+                .setResourceDir(RESOURCE_DIR.fetchFrom(params))
                 .setSubstitutionData(data)
-                .saveToFile(getScripts_PreinstallFile(params));
-        getScripts_PreinstallFile(params).toFile().setExecutable(true, false);
-
-        createResource(TEMPLATE_POSTINSTALL_SCRIPT, params)
-                .setCategory(I18N.getString("resource.pkg-postinstall-script"))
-                .setSubstitutionData(data)
-                .saveToFile(getScripts_PostinstallFile(params));
-        getScripts_PostinstallFile(params).toFile().setExecutable(true, false);
+                .saveInFolder(SCRIPTS_DIR.fetchFrom(params));
     }
 
-    private static String URLEncoding(String pkgName) throws URISyntaxException {
-        URI uri = new URI(null, null, pkgName, null);
-        return uri.toASCIIString();
+    private void addPackageToInstallerGuiScript(XMLStreamWriter xml,
+            String pkgId, String pkgName, String pkgVersion) throws IOException,
+            XMLStreamException {
+        xml.writeStartElement("pkg-ref");
+        xml.writeAttribute("id", pkgId);
+        xml.writeEndElement(); // </pkg-ref>
+        xml.writeStartElement("choice");
+        xml.writeAttribute("id", pkgId);
+        xml.writeAttribute("visible", "false");
+        xml.writeStartElement("pkg-ref");
+        xml.writeAttribute("id", pkgId);
+        xml.writeEndElement(); // </pkg-ref>
+        xml.writeEndElement(); // </choice>
+        xml.writeStartElement("pkg-ref");
+        xml.writeAttribute("id", pkgId);
+        xml.writeAttribute("version", pkgVersion);
+        xml.writeAttribute("onConclusion", "none");
+        try {
+            xml.writeCharacters(new URI(null, null, pkgName, null).toASCIIString());
+        } catch (URISyntaxException ex) {
+            throw new RuntimeException(ex);
+        }
+        xml.writeEndElement(); // </pkg-ref>
     }
 
     private void prepareDistributionXMLFile(Map<String, ? super Object> params)
@@ -276,44 +297,42 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
              * Note that the content of the distribution file
              * below is generated by productbuild --synthesize
              */
-            String appId = getAppIdentifier(params);
 
-            xml.writeStartElement("pkg-ref");
-            xml.writeAttribute("id", appId);
-            xml.writeEndElement(); // </pkg-ref>
+            Map<String, Path> pkgs = new LinkedHashMap<>();
+
+            pkgs.put(getAppIdentifier(params), getPackages_AppPackage(params));
+            if (withServicesPkg(params)) {
+                pkgs.put(getServicesIdentifier(params),
+                        getPackages_ServicesPackage(params));
+                pkgs.put(getSupportIdentifier(params),
+                        getPackages_SupportPackage(params));
+            }
+
+            for (var pkg : pkgs.entrySet()) {
+                addPackageToInstallerGuiScript(xml, pkg.getKey(),
+                        pkg.getValue().getFileName().toString(),
+                        VERSION.fetchFrom(params));
+            }
+
             xml.writeStartElement("options");
             xml.writeAttribute("customize", "never");
             xml.writeAttribute("require-scripts", "false");
+            xml.writeAttribute("hostArchitectures",
+                    Platform.isArmMac() ? "arm64" : "x86_64");
             xml.writeEndElement(); // </options>
             xml.writeStartElement("choices-outline");
             xml.writeStartElement("line");
             xml.writeAttribute("choice", "default");
-            xml.writeStartElement("line");
-            xml.writeAttribute("choice", appId);
-            xml.writeEndElement(); // </line>
+            for (var pkgId : pkgs.keySet()) {
+                xml.writeStartElement("line");
+                xml.writeAttribute("choice", pkgId);
+                xml.writeEndElement(); // </line>
+            }
             xml.writeEndElement(); // </line>
             xml.writeEndElement(); // </choices-outline>
             xml.writeStartElement("choice");
             xml.writeAttribute("id", "default");
             xml.writeEndElement(); // </choice>
-            xml.writeStartElement("choice");
-            xml.writeAttribute("id", appId);
-            xml.writeAttribute("visible", "false");
-            xml.writeStartElement("pkg-ref");
-            xml.writeAttribute("id", appId);
-            xml.writeEndElement(); // </pkg-ref>
-            xml.writeEndElement(); // </choice>
-            xml.writeStartElement("pkg-ref");
-            xml.writeAttribute("id", appId);
-            xml.writeAttribute("version", VERSION.fetchFrom(params));
-            xml.writeAttribute("onConclusion", "none");
-            try {
-                xml.writeCharacters(URLEncoding(
-                        getPackages_AppPackage(params).getFileName().toString()));
-            } catch (URISyntaxException ex) {
-                throw new IOException(ex);
-            }
-            xml.writeEndElement(); // </pkg-ref>
 
             xml.writeEndElement(); // </installer-gui-script>
         });
@@ -381,23 +400,27 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
     // will be included as well. It does have "--filter" option which use regex
     // to exclude files/folder, but it will overwrite default one which excludes
     // based on doc "any .svn or CVS directories, and any .DS_Store files".
-    // So easy aproach will be to copy user provided app-image into temp folder
+    // So easy approach will be to copy user provided app-image into temp folder
     // if root path contains other files.
     private String getRoot(Map<String, ? super Object> params,
             Path appLocation) throws IOException {
         Path rootDir = appLocation.getParent() == null ?
                 Path.of(".") : appLocation.getParent();
 
-        Path[] list = Files.list(rootDir).toArray(Path[]::new);
-        if (list != null) { // Should not happend
-            // We should only have app image and/or .DS_Store
-            if (list.length == 1) {
-                return rootDir.toString();
-            } else if (list.length == 2) {
-                // Check case with app image and .DS_Store
-                if (list[0].toString().toLowerCase().endsWith(".ds_store") ||
-                    list[1].toString().toLowerCase().endsWith(".ds_store")) {
-                    return rootDir.toString(); // Only app image and .DS_Store
+        // Not needed for runtime installer and it might break runtime installer
+        // if parent does not have any other files
+        if (!StandardBundlerParam.isRuntimeInstaller(params)) {
+            try (var fileList = Files.list(rootDir)) {
+                Path[] list = fileList.toArray(Path[]::new);
+                // We should only have app image and/or .DS_Store
+                if (list.length == 1) {
+                    return rootDir.toString();
+                } else if (list.length == 2) {
+                    // Check case with app image and .DS_Store
+                    if (list[0].toString().toLowerCase().endsWith(".ds_store") ||
+                        list[1].toString().toLowerCase().endsWith(".ds_store")) {
+                        return rootDir.toString(); // Only app image and .DS_Store
+                    }
                 }
             }
         }
@@ -427,6 +450,81 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
         return newRoot.toString();
     }
 
+    private boolean withServicesPkg(Map<String, Object> params) {
+        try {
+            return !APP_STORE.fetchFrom(params)
+                    && MacLaunchersAsServices.create(params, null) != null;
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private void createServicesPkg(Map<String, Object> params) throws
+            IOException {
+        Path root = TEMP_ROOT.fetchFrom(params).resolve("services");
+
+        Path srcRoot = root.resolve("src");
+
+        var services = MacLaunchersAsServices.create(params, srcRoot);
+
+        Path scriptsDir = root.resolve("scripts");
+
+        var data = services.create();
+        data.put("SERVICES_PACKAGE_ID", getServicesIdentifier(params));
+
+        MacPkgInstallerScripts.createServicesScripts()
+                .setResourceDir(RESOURCE_DIR.fetchFrom(params))
+                .setSubstitutionData(data)
+                .saveInFolder(scriptsDir);
+
+        var pb = new ProcessBuilder("/usr/bin/pkgbuild",
+                "--root",
+                srcRoot.toString(),
+                "--install-location",
+                "/",
+                "--scripts",
+                scriptsDir.toString(),
+                "--identifier",
+                getServicesIdentifier(params),
+                getPackages_ServicesPackage(params).toAbsolutePath().toString());
+        IOUtils.exec(pb, false, null, true, Executor.INFINITE_TIMEOUT);
+
+        createSupportPkg(params, data);
+    }
+
+    private void createSupportPkg(Map<String, Object> params,
+            Map<String, String> servicesSubstitutionData) throws IOException {
+        Path root = TEMP_ROOT.fetchFrom(params).resolve("support");
+
+        Path srcRoot = root.resolve("src");
+
+        var enqouter = Enquoter.forShellLiterals().setEnquotePredicate(str -> true);
+
+        Map<String, String> data = new HashMap<>(servicesSubstitutionData);
+        data.put("APP_INSTALLATION_FOLDER", enqouter.applyTo(Path.of(
+                getInstallDir(params, false), APP_NAME.fetchFrom(params)
+                + ".app").toString()));
+        data.put("SUPPORT_INSTALLATION_FOLDER", enqouter.applyTo(Path.of(
+                "/Library/Application Support", APP_NAME.fetchFrom(params)).toString()));
+
+        new ShellScriptResource("uninstall.command")
+                .setResource(createResource("uninstall.command.template", params)
+                        .setCategory(I18N.getString("resource.pkg-uninstall-script"))
+                        .setPublicName("uninstaller")
+                        .setSubstitutionData(data))
+                .saveInFolder(srcRoot.resolve(APP_NAME.fetchFrom(params)));
+
+        var pb = new ProcessBuilder("/usr/bin/pkgbuild",
+                "--root",
+                srcRoot.toString(),
+                "--install-location",
+                "/Library/Application Support",
+                "--identifier",
+                getSupportIdentifier(params),
+                getPackages_SupportPackage(params).toAbsolutePath().toString());
+        IOUtils.exec(pb, false, null, true, Executor.INFINITE_TIMEOUT);
+    }
+
     private Path createPKG(Map<String, ? super Object> params,
             Path outdir, Path appLocation) {
         // generic find attempt
@@ -434,6 +532,10 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
             Path appPKG = getPackages_AppPackage(params);
 
             String root = getRoot(params, appLocation);
+
+            if (withServicesPkg(params)) {
+                createServicesPkg(params);
+            }
 
             // Generate default CPL file
             Path cpl = CONFIG_ROOT.fetchFrom(params).resolve("cpl.plist");
@@ -445,7 +547,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
                     "--analyze",
                     cpl.toAbsolutePath().toString());
 
-            IOUtils.exec(pb);
+            IOUtils.exec(pb, false, null, true, Executor.INFINITE_TIMEOUT);
 
             patchCPLFile(cpl);
 
@@ -461,7 +563,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
                         "--identifier",
                          MAC_CF_BUNDLE_IDENTIFIER.fetchFrom(params),
                         appPKG.toAbsolutePath().toString());
-                IOUtils.exec(pb);
+                IOUtils.exec(pb, false, null, true, Executor.INFINITE_TIMEOUT);
             } else {
                 preparePackageScripts(params);
                 pb = new ProcessBuilder("/usr/bin/pkgbuild",
@@ -477,7 +579,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
                         "--identifier",
                          MAC_CF_BUNDLE_IDENTIFIER.fetchFrom(params),
                         appPKG.toAbsolutePath().toString());
-                IOUtils.exec(pb);
+                IOUtils.exec(pb, false, null, true, Executor.INFINITE_TIMEOUT);
             }
 
             // build final package
@@ -493,7 +595,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
             commandLine.add(CONFIG_ROOT.fetchFrom(params).toAbsolutePath().toString());
 
             // maybe sign
-            if (Optional.ofNullable(MacAppImageBuilder.
+            if (Optional.ofNullable(
                     SIGN_BUNDLE.fetchFrom(params)).orElse(Boolean.TRUE)) {
                 if (Platform.getMajorVersion() > 10 ||
                     (Platform.getMajorVersion() == 10 &&
@@ -535,7 +637,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
             commandLine.add(finalPKG.toAbsolutePath().toString());
 
             pb = new ProcessBuilder(commandLine);
-            IOUtils.exec(pb);
+            IOUtils.exec(pb, false, null, true, Executor.INFINITE_TIMEOUT);
 
             return finalPKG;
         } catch (Exception ignored) {
@@ -597,7 +699,7 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
             }
 
             // reject explicitly set sign to true and no valid signature key
-            if (Optional.ofNullable(MacAppImageBuilder.
+            if (Optional.ofNullable(
                     SIGN_BUNDLE.fetchFrom(params)).orElse(Boolean.FALSE)) {
                 String signingIdentity =
                         DEVELOPER_ID_INSTALLER_SIGNING_KEY.fetchFrom(params);

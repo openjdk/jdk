@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
 
 public class CDS {
@@ -66,7 +65,7 @@ public class CDS {
     }
 
     /**
-      * Is sharing enabled via the UseSharedSpaces flag.
+      * Is sharing enabled.
       */
     public static boolean isSharingEnabled() {
         return isSharingEnabled;
@@ -224,7 +223,7 @@ public class CDS {
                     prt.println(line);
                 }
             } catch (IOException e) {
-                throw new RuntimeException("IOExeption happens during drain stream to file " +
+                throw new RuntimeException("IOException happens during drain stream to file " +
                                            fileName + ": " + e.getMessage());
             }}).start();
         return fileName;
@@ -232,15 +231,11 @@ public class CDS {
 
     private static String[] excludeFlags = {
          "-XX:DumpLoadedClassList=",
-         "-XX:+DumpSharedSpaces",
-         "-XX:+DynamicDumpSharedSpaces",
          "-XX:+RecordDynamicDumpInfo",
          "-Xshare:",
          "-XX:SharedClassListFile=",
          "-XX:SharedArchiveFile=",
-         "-XX:ArchiveClassesAtExit=",
-         "-XX:+UseSharedSpaces",
-         "-XX:+RequireSharedSpaces"};
+         "-XX:ArchiveClassesAtExit="};
     private static boolean containsExcludedFlags(String testStr) {
        for (String e : excludeFlags) {
            if (testStr.contains(e)) {
@@ -254,24 +249,29 @@ public class CDS {
     * called from jcmd VM.cds to dump static or dynamic shared archive
     * @param isStatic true for dump static archive or false for dynnamic archive.
     * @param fileName user input archive name, can be null.
+    * @return The archive name if successfully dumped.
     */
-    private static void dumpSharedArchive(boolean isStatic, String fileName) throws Exception {
+    private static String dumpSharedArchive(boolean isStatic, String fileName) throws Exception {
+        String cwd = new File("").getAbsolutePath(); // current dir used for printing message.
         String currentPid = String.valueOf(ProcessHandle.current().pid());
-        String archiveFile =  fileName != null ? fileName :
+        String archiveFileName =  fileName != null ? fileName :
             "java_pid" + currentPid + (isStatic ? "_static.jsa" : "_dynamic.jsa");
 
-        // delete if archive file aready exists
-        File fileArchive = new File(archiveFile);
-        if (fileArchive.exists()) {
-            fileArchive.delete();
+        String tempArchiveFileName = archiveFileName + ".temp";
+        File tempArchiveFile = new File(tempArchiveFileName);
+        // The operation below may cause exception if the file or its dir is protected.
+        if (!tempArchiveFile.exists()) {
+            tempArchiveFile.createNewFile();
         }
+        tempArchiveFile.delete();
+
         if (isStatic) {
-            String listFile = archiveFile + ".classlist";
-            File fileList = new File(listFile);
-            if (fileList.exists()) {
-                fileList.delete();
+            String listFileName = archiveFileName + ".classlist";
+            File listFile = new File(listFileName);
+            if (listFile.exists()) {
+                listFile.delete();
             }
-            dumpClassList(listFile);
+            dumpClassList(listFileName);
             String jdkHome = System.getProperty("java.home");
             String classPath = System.getProperty("java.class.path");
             List<String> cmds = new ArrayList<String>();
@@ -280,8 +280,8 @@ public class CDS {
             cmds.add(classPath);
             cmds.add("-Xlog:cds");
             cmds.add("-Xshare:dump");
-            cmds.add("-XX:SharedClassListFile=" + listFile);
-            cmds.add("-XX:SharedArchiveFile=" + archiveFile);
+            cmds.add("-XX:SharedClassListFile=" + listFileName);
+            cmds.add("-XX:SharedArchiveFile=" + tempArchiveFileName);
 
             // All runtime args.
             String[] vmArgs = VM.getRuntimeArguments();
@@ -296,31 +296,41 @@ public class CDS {
             Process proc = Runtime.getRuntime().exec(cmds.toArray(new String[0]));
 
             // Drain stdout/stderr to files in new threads.
-            String stdOutFile = drainOutput(proc.getInputStream(), proc.pid(), "stdout", cmds);
-            String stdErrFile = drainOutput(proc.getErrorStream(), proc.pid(), "stderr", cmds);
+            String stdOutFileName = drainOutput(proc.getInputStream(), proc.pid(), "stdout", cmds);
+            String stdErrFileName = drainOutput(proc.getErrorStream(), proc.pid(), "stderr", cmds);
 
             proc.waitFor();
             // done, delete classlist file.
-            if (fileList.exists()) {
-                fileList.delete();
-            }
+            listFile.delete();
+
             // Check if archive has been successfully dumped. We won't reach here if exception happens.
             // Throw exception if file is not created.
-            if (!fileArchive.exists()) {
-                throw new RuntimeException("Archive file " + archiveFile +
+            if (!tempArchiveFile.exists()) {
+                throw new RuntimeException("Archive file " + tempArchiveFileName +
                                            " is not created, please check stdout file " +
-                                            stdOutFile + " or stderr file " +
-                                            stdErrFile + " for more detail");
+                                            cwd + File.separator + stdOutFileName + " or stderr file " +
+                                            cwd + File.separator + stdErrFileName + " for more detail");
             }
         } else {
-            dumpDynamicArchive(archiveFile);
-            if (!fileArchive.exists()) {
-                throw new RuntimeException("Archive file " + archiveFile +
-                                           " is not created, please check process " +
+            dumpDynamicArchive(tempArchiveFileName);
+            if (!tempArchiveFile.exists()) {
+                throw new RuntimeException("Archive file " + tempArchiveFileName +
+                                           " is not created, please check current working directory " +
+                                           cwd  + " for process " +
                                            currentPid + " output for more detail");
             }
         }
-        // Everyting goes well, print out the file name.
-        System.out.println((isStatic ? "Static" : " Dynamic") + " dump to file " + archiveFile);
+        // Override the existing archive file
+        File archiveFile = new File(archiveFileName);
+        if (archiveFile.exists()) {
+            archiveFile.delete();
+        }
+        if (!tempArchiveFile.renameTo(archiveFile)) {
+            throw new RuntimeException("Cannot rename temp file " + tempArchiveFileName + " to archive file" + archiveFileName);
+        }
+        // Everything goes well, print out the file name.
+        String archiveFilePath = new File(archiveFileName).getAbsolutePath();
+        System.out.println("The process was attached by jcmd and dumped a " + (isStatic ? "static" : "dynamic") + " archive " + archiveFilePath);
+        return archiveFilePath;
     }
 }

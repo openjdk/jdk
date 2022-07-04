@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,30 @@ public class WinShortcutPromptTest {
         for (var withStartMenuShortcut : List.of(Boolean.TRUE, Boolean.FALSE)) {
             for (var withDesktopShortcut : List.of(Boolean.TRUE, Boolean.FALSE)) {
                 for (var withShortcutPrompt : List.of(Boolean.TRUE, Boolean.FALSE)) {
+                    if (withShortcutPrompt && withStartMenuShortcut
+                            && withDesktopShortcut) {
+                        // Duplicates WinInstallerUiTestWithShortcutPromptTest (WinInstallerUiTest(withShortcutPrompt=true))
+                        continue;
+                    }
+
+                    if (!withShortcutPrompt && !withStartMenuShortcut
+                            && !withDesktopShortcut) {
+                        // Duplicates SimplePackageTest
+                        continue;
+                    }
+
+                    if (!withShortcutPrompt && !withStartMenuShortcut
+                            && withDesktopShortcut) {
+                        // Duplicates WinShortcutTest
+                        continue;
+                    }
+
+                    if (!withShortcutPrompt && withStartMenuShortcut
+                            && !withDesktopShortcut) {
+                        // Duplicates WinMenuTest
+                        continue;
+                    }
+
                     data.add(new Object[]{withStartMenuShortcut,
                         withDesktopShortcut, withShortcutPrompt});
                 }
@@ -98,13 +122,13 @@ public class WinShortcutPromptTest {
         StringBuilder sb = new StringBuilder(cmd.name());
         sb.append("With");
         if (withShortcutPrompt) {
-            sb.append("ShortcutPrompt");
+            sb.append("P");
         }
         if (withStartMenuShortcut) {
-            sb.append("StartMenu");
+            sb.append("M");
         }
         if (withDesktopShortcut) {
-            sb.append("Desktop");
+            sb.append("D");
         }
         cmd.setArgumentValue("--name", sb.toString());
     }

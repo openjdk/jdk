@@ -25,11 +25,12 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHPARALLELCLEANING_INLINE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHPARALLELCLEANING_INLINE_HPP
 
+#include "gc/shenandoah/shenandoahParallelCleaning.hpp"
+
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
-#include "gc/shenandoah/shenandoahParallelCleaning.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/safepoint.hpp"
 
 template<typename IsAlive, typename KeepAlive>
@@ -37,10 +38,9 @@ ShenandoahParallelWeakRootsCleaningTask<IsAlive, KeepAlive>::ShenandoahParallelW
                                                                                                      IsAlive* is_alive,
                                                                                                      KeepAlive* keep_alive,
                                                                                                      uint num_workers) :
-  AbstractGangTask("Shenandoah Weak Root Cleaning"),
+  WorkerTask("Shenandoah Weak Root Cleaning"),
   _phase(phase),
   _weak_processing_task(num_workers),
-  _dedup_roots(phase),
   _is_alive(is_alive),
   _keep_alive(keep_alive) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
@@ -57,7 +57,6 @@ void ShenandoahParallelWeakRootsCleaningTask<IsAlive, KeepAlive>::work(uint work
     ShenandoahWorkerTimingsTracker x(_phase, ShenandoahPhaseTimings::VMWeakRoots, worker_id);
     _weak_processing_task.work<IsAlive, KeepAlive>(worker_id, _is_alive, _keep_alive);
   }
-  _dedup_roots.oops_do(_is_alive, _keep_alive, worker_id);
 }
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHPARALLELCLEANING_INLINE_HPP

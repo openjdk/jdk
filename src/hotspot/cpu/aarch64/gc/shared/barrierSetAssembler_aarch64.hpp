@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,13 +47,6 @@ public:
   virtual void store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                         Address dst, Register val, Register tmp1, Register tmp2);
 
-  virtual void obj_equals(MacroAssembler* masm,
-                          Register obj1, Register obj2);
-
-  virtual void resolve(MacroAssembler* masm, DecoratorSet decorators, Register obj) {
-    // Default implementation does not need to do anything.
-  }
-
   virtual void try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
                                              Register obj, Register tmp, Label& slowpath);
 
@@ -75,9 +68,14 @@ public:
   );
   virtual void barrier_stubs_init() {}
 
+  virtual bool nmethod_code_patching() { return true; }
+
   virtual void nmethod_entry_barrier(MacroAssembler* masm);
   virtual void c2i_entry_barrier(MacroAssembler* masm);
 
+  static address patching_epoch_addr();
+  static void clear_patching_epoch();
+  static void increment_patching_epoch();
 };
 
 #endif // CPU_AARCH64_GC_SHARED_BARRIERSETASSEMBLER_AARCH64_HPP

@@ -26,6 +26,7 @@
  * @bug 6402062 6487891
  * @summary Tests ScrollPane encoding
  * @key headful
+ * @run main/othervm -Djava.security.manager=allow java_awt_ScrollPane
  * @author Sergey Malenkov
  */
 

@@ -41,7 +41,7 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true transform.SourceTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.SourceTest
  * @run testng/othervm transform.SourceTest
  * @summary Test Sources.
  */

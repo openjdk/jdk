@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -227,6 +227,12 @@ public class TreeMaker implements JCTree.Factory {
         return tree;
     }
 
+    public JCVariableDecl VarDef(JCModifiers mods, Name name, JCExpression vartype, JCExpression init, boolean declaredUsingVar) {
+        JCVariableDecl tree = new JCVariableDecl(mods, name, vartype, init, null, declaredUsingVar);
+        tree.pos = pos;
+        return tree;
+    }
+
     public JCVariableDecl ReceiverVarDef(JCModifiers mods, JCExpression name, JCExpression vartype) {
         JCVariableDecl tree = new JCVariableDecl(mods, name, vartype);
         tree.pos = pos;
@@ -285,9 +291,9 @@ public class TreeMaker implements JCTree.Factory {
         return tree;
     }
 
-    public JCCase Case(CaseTree.CaseKind caseKind, List<JCExpression> pats,
+    public JCCase Case(CaseTree.CaseKind caseKind, List<JCCaseLabel> labels,
                        List<JCStatement> stats, JCTree body) {
-        JCCase tree = new JCCase(caseKind, pats, stats, body);
+        JCCase tree = new JCCase(caseKind, labels, stats, body);
         tree.pos = pos;
         return tree;
     }
@@ -478,6 +484,37 @@ public class TreeMaker implements JCTree.Factory {
 
     public JCBindingPattern BindingPattern(JCVariableDecl var) {
         JCBindingPattern tree = new JCBindingPattern(var);
+        tree.pos = pos;
+        return tree;
+    }
+
+    public JCDefaultCaseLabel DefaultCaseLabel() {
+        JCDefaultCaseLabel tree = new JCDefaultCaseLabel();
+        tree.pos = pos;
+        return tree;
+    }
+
+    public JCConstantCaseLabel ConstantCaseLabel(JCExpression expr) {
+        JCConstantCaseLabel tree = new JCConstantCaseLabel(expr);
+        tree.pos = pos;
+        return tree;
+    }
+
+    public JCPatternCaseLabel PatternCaseLabel(JCPattern pat, JCExpression guard) {
+        JCPatternCaseLabel tree = new JCPatternCaseLabel(pat, guard);
+        tree.pos = pos;
+        return tree;
+    }
+
+    public JCParenthesizedPattern ParenthesizedPattern(JCPattern pattern) {
+        JCParenthesizedPattern tree = new JCParenthesizedPattern(pattern);
+        tree.pos = pos;
+        return tree;
+    }
+
+    public JCRecordPattern RecordPattern(JCExpression deconstructor, List<JCPattern> nested,
+                                         JCVariableDecl var) {
+        JCRecordPattern tree = new JCRecordPattern(deconstructor, nested, var);
         tree.pos = pos;
         return tree;
     }
@@ -996,7 +1033,7 @@ public class TreeMaker implements JCTree.Factory {
             new JCMethodDecl(
                 Modifiers(m.flags(), Annotations(m.getRawAttributes())),
                 m.name,
-                Type(mtype.getReturnType()),
+                m.name != names.init ? Type(mtype.getReturnType()) : null,
                 TypeParams(mtype.getTypeArguments()),
                 null, // receiver type
                 Params(mtype.getParameterTypes(), m),
@@ -1028,8 +1065,8 @@ public class TreeMaker implements JCTree.Factory {
         return VarDef(new VarSymbol(PARAMETER, name, argtype, owner), null);
     }
 
-    /** Create a a list of value parameter trees x0, ..., xn from a list of
-     *  their types and an their owner.
+    /** Create a list of value parameter trees x0, ..., xn from a list of
+     *  their types and their owner.
      */
     public List<JCVariableDecl> Params(List<Type> argtypes, Symbol owner) {
         ListBuffer<JCVariableDecl> params = new ListBuffer<>();

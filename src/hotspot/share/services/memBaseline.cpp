@@ -25,8 +25,9 @@
 
 #include "classfile/classLoaderDataGraph.inline.hpp"
 #include "memory/allocation.hpp"
+#include "memory/metaspaceUtils.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/thread.inline.hpp"
 #include "services/memBaseline.hpp"
 #include "services/memTracker.hpp"
 
@@ -144,11 +145,10 @@ class VirtualMemoryAllocationWalker : public VirtualMemoryWalker {
 };
 
 
-bool MemBaseline::baseline_summary() {
+void MemBaseline::baseline_summary() {
   MallocMemorySummary::snapshot(&_malloc_memory_snapshot);
   VirtualMemorySummary::snapshot(&_virtual_memory_snapshot);
-  MetaspaceSnapshot::snapshot(_metaspace_snapshot);
-  return true;
+  _metaspace_stats = MetaspaceUtils::get_combined_statistics();
 }
 
 bool MemBaseline::baseline_allocation_sites() {
@@ -185,15 +185,12 @@ bool MemBaseline::baseline_allocation_sites() {
   return true;
 }
 
-bool MemBaseline::baseline(bool summaryOnly) {
+void MemBaseline::baseline(bool summaryOnly) {
   reset();
 
   _instance_class_count = ClassLoaderDataGraph::num_instance_classes();
   _array_class_count = ClassLoaderDataGraph::num_array_classes();
-
-  if (!baseline_summary()) {
-    return false;
-  }
+  baseline_summary();
 
   _baseline_type = Summary_baselined;
 
@@ -204,7 +201,6 @@ bool MemBaseline::baseline(bool summaryOnly) {
     _baseline_type = Detail_baselined;
   }
 
-  return true;
 }
 
 int compare_allocation_site(const VirtualMemoryAllocationSite& s1,

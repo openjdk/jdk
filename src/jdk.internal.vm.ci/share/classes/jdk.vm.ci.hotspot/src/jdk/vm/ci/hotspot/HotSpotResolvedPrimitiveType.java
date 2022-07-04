@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 package jdk.vm.ci.hotspot;
 
 import static java.util.Objects.requireNonNull;
+import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Modifier;
@@ -81,11 +82,11 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
     }
 
     @Override
-    public HotSpotResolvedObjectType getArrayClass() {
+    HotSpotResolvedObjectTypeImpl getArrayType() {
         if (kind == JavaKind.Void) {
             return null;
         }
-        return super.getArrayClass();
+        return runtime().compilerToVm.getArrayType(getJavaKind().getTypeChar(), null);
     }
 
     @Override
@@ -177,11 +178,6 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
     public boolean isAssignableFrom(ResolvedJavaType other) {
         assert other != null;
         return other.equals(this);
-    }
-
-    @Override
-    public ResolvedJavaType getHostClass() {
-        return null;
     }
 
     @Override

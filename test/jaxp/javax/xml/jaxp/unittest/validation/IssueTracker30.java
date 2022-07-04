@@ -41,7 +41,7 @@ import org.xml.sax.SAXParseException;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.IssueTracker30
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.IssueTracker30
  * @run testng/othervm validation.IssueTracker30
  * @summary Test maxOccurs validation.
  */

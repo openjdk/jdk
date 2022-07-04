@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ class ZAddress {
     }
 
     static boolean is_weak_bad(Address value) {
-        return (as_long(value) & ZGlobals.ZAddressWeakBadMask()) != 0;
+        return (as_long(value) & ZGlobals.ZAddressWeakBadMask()) != 0L;
     }
 
     static boolean is_weak_good(Address value) {
@@ -52,18 +52,26 @@ class ZAddress {
     }
 
     static long offset(Address address) {
-        return as_long(address) & ZGlobals.ZAddressOffsetMask;
-    }
-
-    static Address address(long value) {
-        return ZUtils.longToAddress(value);
+        return as_long(address) & ZGlobals.ZAddressOffsetMask();
     }
 
     static Address good(Address value) {
-        return address(offset(value) | ZGlobals.ZAddressGoodMask());
+        return VM.getVM().getDebugger().newAddress(offset(value) | ZGlobals.ZAddressGoodMask());
     }
 
     static Address good_or_null(Address value) {
         return is_null(value) ? value : good(value);
+    }
+
+    private static boolean isPowerOf2(long value) {
+        return (value != 0L) && ((value & (value - 1)) == 0L);
+    }
+
+    static boolean isIn(Address addr) {
+        long value = as_long(addr);
+        if (!isPowerOf2(value & ~ZGlobals.ZAddressOffsetMask())) {
+            return false;
+        }
+        return (value & (ZGlobals.ZAddressMetadataMask() & ~ZGlobals.ZAddressMetadataFinalizable())) != 0L;
     }
 }

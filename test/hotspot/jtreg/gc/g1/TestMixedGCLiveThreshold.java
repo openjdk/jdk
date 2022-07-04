@@ -24,14 +24,36 @@
 package gc.g1;
 
 /*
- * @test TestMixedGCLiveThreshold
- * @summary Test G1MixedGCLiveThresholdPercent. Fill up a region to at least 1/3 region-size,
- * the region should not be selected for mixed GC cycle if liveness is above threshold.
+ * @test id=0percent
+ * @summary Test G1MixedGCLiveThresholdPercent=0. Fill up a region to at least 33 percent,
+ * the region should not be selected for mixed GC cycle.
  * @requires vm.gc.G1
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
- * @run driver gc.g1.TestMixedGCLiveThreshold
+ * @run driver gc.g1.TestMixedGCLiveThreshold 0 false
+ */
+
+/*
+ * @test id=25percent
+ * @summary Test G1MixedGCLiveThresholdPercent=25. Fill up a region to at least 33 percent,
+ * the region should not be selected for mixed GC cycle.
+ * @requires vm.gc.G1
+ * @library /test/lib
+ * @build sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver gc.g1.TestMixedGCLiveThreshold 25 false
+ */
+
+/*
+ * @test id=100percent
+ * @summary Test G1MixedGCLiveThresholdPercent=100. Fill up a region to at least 33 percent,
+ * the region should be selected for mixed GC cycle.
+ * @requires vm.gc.G1
+ * @library /test/lib
+ * @build sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver gc.g1.TestMixedGCLiveThreshold 100 true
  */
 
 import java.util.ArrayList;
@@ -48,14 +70,9 @@ public class TestMixedGCLiveThreshold {
     private static final String pattern = "Remembered Set Tracking update regions total ([0-9]+), selected ([0-9]+)$";
 
     public static void main(String[] args) throws Exception {
-        // -XX:G1MixedGCLiveThresholdPercent=0
-        testMixedGCLiveThresholdPercent(0, false);
-
-        // -XX:G1MixedGCLiveThresholdPercent=25
-        testMixedGCLiveThresholdPercent(25, false);
-
-        // -XX:G1MixedGCLiveThresholdPercent=100
-        testMixedGCLiveThresholdPercent(100, true);
+        int liveThresholdPercent = Integer.parseInt(args[0]);
+        boolean expectRebuild = Boolean.parseBoolean(args[1]);
+        testMixedGCLiveThresholdPercent(liveThresholdPercent, expectRebuild);
     }
 
     private static void testMixedGCLiveThresholdPercent(int liveThresholdPercent, boolean expectedRebuild) throws Exception {
@@ -71,6 +88,7 @@ public class TestMixedGCLiveThreshold {
                              " no regions should be selected")
                             );
         output.shouldHaveExitValue(0);
+        output.reportDiagnosticSummary();
     }
 
     private static OutputAnalyzer testWithMixedGCLiveThresholdPercent(int percent) throws Exception {
@@ -81,6 +99,8 @@ public class TestMixedGCLiveThreshold {
                                        "-XX:+UnlockDiagnosticVMOptions",
                                        "-XX:+UnlockExperimentalVMOptions",
                                        "-XX:+WhiteBoxAPI",
+                                       // Parallel full gc can distribute live objects into different regions.
+                                       "-XX:ParallelGCThreads=1",
                                        "-Xlog:gc+remset+tracking=trace",
                                        "-Xms10M",
                                        "-Xmx10M"});

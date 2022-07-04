@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,7 +93,7 @@ public class CtwRunner {
         errors = new ArrayList<>();
 
         if (start.endsWith("%") && stop.endsWith("%")) {
-            int startPercentage = Integer.parseInt(start.substring(0, start.length() - 1));;
+            int startPercentage = Integer.parseInt(start.substring(0, start.length() - 1));
             int stopPercentage = Integer.parseInt(stop.substring(0, stop.length() - 1));
             if (startPercentage < 0 || startPercentage > 100 ||
                 stopPercentage < 0 || stopPercentage > 100) {
@@ -291,7 +291,7 @@ public class CtwRunner {
                     "-XX:+StressIGVN",
                     "-XX:+StressCCP",
                     // StressSeed is uint
-                    "-XX:StressSeed=" + Math.abs(rng.nextLong()),
+                    "-XX:StressSeed=" + Math.abs(rng.nextInt()),
                     // CTW entry point
                     CompileTheWorld.class.getName(),
                     target));

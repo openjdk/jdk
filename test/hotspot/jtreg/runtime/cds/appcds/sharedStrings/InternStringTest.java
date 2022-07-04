@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,10 +38,12 @@ public class InternStringTest {
         // All string literals are shared.
         String shared1 = "LiveOak";
         String interned1 = shared1.intern();
-        if (wb.areSharedStringsIgnored() || wb.isShared(interned1)) {
-            System.out.println(passed_output1);
-        } else {
-            throw new RuntimeException("Failed: String is not shared.");
+        if (wb.areSharedStringsMapped()) {
+            if (wb.isSharedInternedString(interned1)) {
+                System.out.println(passed_output1);
+            } else {
+                throw new RuntimeException("Failed: String is not shared.");
+            }
         }
 
         // Test 2: shared_string1.intern() == shared_string2.intern()
@@ -58,10 +60,12 @@ public class InternStringTest {
             String a = "X" + latin1Sup.substring(1);
             String b = a.intern();
 
-            if (wb.areSharedStringsIgnored() || wb.isShared(b)) {
-                System.out.println(passed_output3);
-            } else {
-                throw new RuntimeException("Failed: expected shared string with latin1-supplement chars.");
+            if (wb.areSharedStringsMapped()) {
+                if (wb.isSharedInternedString(b)) {
+                    System.out.println(passed_output3);
+                } else {
+                    throw new RuntimeException("Failed: expected shared string with latin1-supplement chars.");
+                }
             }
         }
 
@@ -69,10 +73,12 @@ public class InternStringTest {
         {
             String a = "X" + nonWestern.substring(1);
             String b = a.intern();
-            if (wb.areSharedStringsIgnored() || wb.isShared(b)) {
-                System.out.println(passed_output4);
-            } else {
-                throw new RuntimeException("Failed: expected shared string with non-western chars.");
+            if (wb.areSharedStringsMapped()) {
+                if (wb.isSharedInternedString(b)) {
+                    System.out.println(passed_output4);
+                } else {
+                    throw new RuntimeException("Failed: expected shared string with non-western chars.");
+                }
             }
         }
     }

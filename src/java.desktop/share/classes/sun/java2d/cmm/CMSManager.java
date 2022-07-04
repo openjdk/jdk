@@ -46,6 +46,7 @@ public final class CMSManager {
         }
 
         GetPropertyAction gpa = new GetPropertyAction("sun.java2d.cmm");
+        @SuppressWarnings("removal")
         String cmmProviderClass = AccessController.doPrivileged(gpa);
         CMMServiceProvider provider = null;
         if (cmmProviderClass != null) {
@@ -67,6 +68,7 @@ public final class CMSManager {
         }
 
         gpa = new GetPropertyAction("sun.java2d.cmm.trace");
+        @SuppressWarnings("removal")
         String cmmTrace = AccessController.doPrivileged(gpa);
         if (cmmTrace != null) {
             cmmImpl = new CMMTracer(cmmImpl);

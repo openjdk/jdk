@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,31 +25,21 @@
 #define SHARE_GC_Z_ZDIRECTOR_HPP
 
 #include "gc/shared/concurrentGCThread.hpp"
-#include "gc/shared/gcCause.hpp"
 #include "gc/z/zMetronome.hpp"
+
+class ZDriver;
 
 class ZDirector : public ConcurrentGCThread {
 private:
-  static const double one_in_1000;
-
-  const size_t _relocation_headroom;
-  ZMetronome   _metronome;
-
-  void sample_allocation_rate() const;
-
-  bool rule_timer() const;
-  bool rule_warmup() const;
-  bool rule_allocation_rate() const;
-  bool rule_proactive() const;
-  bool rule_high_usage() const;
-  GCCause::Cause make_gc_decision() const;
+  ZDriver* const _driver;
+  ZMetronome     _metronome;
 
 protected:
   virtual void run_service();
   virtual void stop_service();
 
 public:
-  ZDirector();
+  ZDirector(ZDriver* driver);
 };
 
 #endif // SHARE_GC_Z_ZDIRECTOR_HPP

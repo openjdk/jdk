@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,11 +48,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
  * Builds the summary for a given class.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class ClassBuilder extends AbstractBuilder {
 
@@ -65,11 +60,6 @@ public class ClassBuilder extends AbstractBuilder {
      * The doclet specific writer.
      */
     private final ClassWriter writer;
-
-    /**
-     * The content tree for the class documentation.
-     */
-    private Content contentTree;
 
     private final Utils utils;
 
@@ -86,13 +76,8 @@ public class ClassBuilder extends AbstractBuilder {
         this.writer = writer;
         this.utils = configuration.utils;
         switch (typeElement.getKind()) {
-            case ENUM:
-                setEnumDocumentation(typeElement);
-                break;
-
-            case RECORD:
-                setRecordDocumentation(typeElement);
-                break;
+            case ENUM   -> setEnumDocumentation(typeElement);
+            case RECORD -> setRecordDocumentation(typeElement);
         }
     }
 
@@ -113,159 +98,147 @@ public class ClassBuilder extends AbstractBuilder {
         buildClassDoc();
     }
 
-     /**
-      * Handles the {@literal <TypeElement>} tag.
-      *
-      * @throws DocletException if there is a problem while building the documentation
-      */
-     protected void buildClassDoc() throws DocletException {
-        String key;
-         switch (typeElement.getKind()) {
-             case INTERFACE:
-                 key = "doclet.Interface";
-                 break;
-             case ENUM:
-                 key = "doclet.Enum";
-                 break;
-             case RECORD:
-                 key = "doclet.RecordClass";
-                 break;
-             case ANNOTATION_TYPE:
-                 key = "doclet.AnnotationType";
-                 break;
-             case CLASS:
-                 key = "doclet.Class";
-                 break;
-             default:
-                 throw new IllegalStateException(typeElement.getKind() + " " + typeElement);
-         }
-        Content contentTree = writer.getHeader(resources.getText(key) + " "
+    /**
+     * Handles the {@literal <TypeElement>} tag.
+     *
+     * @throws DocletException if there is a problem while building the documentation
+     */
+    protected void buildClassDoc() throws DocletException {
+        String key = switch (typeElement.getKind()) {
+            case INTERFACE       -> "doclet.Interface";
+            case ENUM            -> "doclet.Enum";
+            case RECORD          -> "doclet.RecordClass";
+            case ANNOTATION_TYPE -> "doclet.AnnotationType";
+            case CLASS           -> "doclet.Class";
+            default -> throw new IllegalStateException(typeElement.getKind() + " " + typeElement);
+        };
+        Content content = writer.getHeader(resources.getText(key) + " "
                 + utils.getSimpleName(typeElement));
-        Content classContentTree = writer.getClassContentHeader();
+        Content classContent = writer.getClassContentHeader();
 
-        buildClassTree(classContentTree);
-        buildClassInfo(classContentTree);
-        buildMemberSummary(classContentTree);
-        buildMemberDetails(classContentTree);
+        buildClassTree(classContent);
+        buildClassInfo(classContent);
+        buildMemberSummary(classContent);
+        buildMemberDetails(classContent);
 
-        writer.addClassContentTree(classContentTree);
+        writer.addClassContent(classContent);
         writer.addFooter();
-        writer.printDocument(contentTree);
+        writer.printDocument(content);
         copyDocFiles();
     }
 
-     /**
-      * Build the class tree documentation.
-      *
-      * @param classContentTree the content tree to which the documentation will be added
-      */
-    protected void buildClassTree(Content classContentTree) {
-        writer.addClassTree(classContentTree);
+    /**
+     * Build the class inheritance tree documentation.
+     *
+     * @param classContent the content to which the documentation will be added
+     */
+    protected void buildClassTree(Content classContent) {
+        writer.addClassTree(classContent);
     }
 
     /**
-     * Build the class information tree documentation.
+     * Build the class information documentation.
      *
-     * @param classContentTree the content tree to which the documentation will be added
+     * @param target the content to which the documentation will be added
      * @throws DocletException if there is a problem while building the documentation
      */
-    protected void buildClassInfo(Content classContentTree) throws DocletException {
-        Content classInfoTree = new ContentBuilder();
-        buildParamInfo(classInfoTree);
-        buildSuperInterfacesInfo(classInfoTree);
-        buildImplementedInterfacesInfo(classInfoTree);
-        buildSubClassInfo(classInfoTree);
-        buildSubInterfacesInfo(classInfoTree);
-        buildInterfaceUsageInfo(classInfoTree);
-        buildNestedClassInfo(classInfoTree);
-        buildFunctionalInterfaceInfo(classInfoTree);
-        buildClassSignature(classInfoTree);
-        buildDeprecationInfo(classInfoTree);
-        buildClassDescription(classInfoTree);
-        buildClassTagInfo(classInfoTree);
+    protected void buildClassInfo(Content target) throws DocletException {
+        Content c = new ContentBuilder();
+        buildParamInfo(c);
+        buildSuperInterfacesInfo(c);
+        buildImplementedInterfacesInfo(c);
+        buildSubClassInfo(c);
+        buildSubInterfacesInfo(c);
+        buildInterfaceUsageInfo(c);
+        buildNestedClassInfo(c);
+        buildFunctionalInterfaceInfo(c);
+        buildClassSignature(c);
+        buildDeprecationInfo(c);
+        buildClassDescription(c);
+        buildClassTagInfo(c);
 
-        classContentTree.add(writer.getClassInfo(classInfoTree));
+        target.add(writer.getClassInfo(c));
     }
 
     /**
      * Build the type parameters and state components of this class.
      *
-     * @param classInfoTree the content tree to which the documentation will be added
+     * @param target the content to which the documentation will be added
      */
-    protected void buildParamInfo(Content classInfoTree) {
-        writer.addParamInfo(classInfoTree);
+    protected void buildParamInfo(Content target) {
+        writer.addParamInfo(target);
     }
 
     /**
-     * If this is an interface, list all super interfaces.
+     * If this is an interface, list all superinterfaces.
      *
-     * @param classInfoTree the content tree to which the documentation will be added
+     * @param target the content to which the documentation will be added
      */
-    protected void buildSuperInterfacesInfo(Content classInfoTree) {
-        writer.addSuperInterfacesInfo(classInfoTree);
+    protected void buildSuperInterfacesInfo(Content target) {
+        writer.addSuperInterfacesInfo(target);
     }
 
     /**
      * If this is a class, list all interfaces implemented by this class.
      *
-     * @param classInfoTree the content tree to which the documentation will be added
+     * @param target the content to which the documentation will be added
      */
-    protected void buildImplementedInterfacesInfo(Content classInfoTree) {
-        writer.addImplementedInterfacesInfo(classInfoTree);
+    protected void buildImplementedInterfacesInfo(Content target) {
+        writer.addImplementedInterfacesInfo(target);
     }
 
     /**
-     * List all the classes extend this one.
+     * List all the classes that extend this one.
      *
-     * @param classInfoTree the content tree to which the documentation will be added
+     * @param target the content to which the documentation will be added
      */
-    protected void buildSubClassInfo(Content classInfoTree) {
-        writer.addSubClassInfo(classInfoTree);
+    protected void buildSubClassInfo(Content target) {
+        writer.addSubClassInfo(target);
     }
 
     /**
      * List all the interfaces that extend this one.
      *
-     * @param classInfoTree the content tree to which the documentation will be added
+     * @param target the content to which the documentation will be added
      */
-    protected void buildSubInterfacesInfo(Content classInfoTree) {
-        writer.addSubInterfacesInfo(classInfoTree);
+    protected void buildSubInterfacesInfo(Content target) {
+        writer.addSubInterfacesInfo(target);
     }
 
     /**
      * If this is an interface, list all classes that implement this interface.
      *
-     * @param classInfoTree the content tree to which the documentation will be added
+     * @param target the content to which the documentation will be added
      */
-    protected void buildInterfaceUsageInfo(Content classInfoTree) {
-        writer.addInterfaceUsageInfo(classInfoTree);
+    protected void buildInterfaceUsageInfo(Content target) {
+        writer.addInterfaceUsageInfo(target);
     }
 
     /**
      * If this is an functional interface, display appropriate message.
      *
-     * @param classInfoTree the content tree to which the documentation will be added
+     * @param target the content to which the documentation will be added
      */
-    protected void buildFunctionalInterfaceInfo(Content classInfoTree) {
-        writer.addFunctionalInterfaceInfo(classInfoTree);
+    protected void buildFunctionalInterfaceInfo(Content target) {
+        writer.addFunctionalInterfaceInfo(target);
     }
 
     /**
      * If this class is deprecated, build the appropriate information.
      *
-     * @param classInfoTree the content tree to which the documentation will be added
+     * @param target the content to which the documentation will be added
      */
-    protected void buildDeprecationInfo(Content classInfoTree) {
-        writer.addClassDeprecationInfo(classInfoTree);
+    protected void buildDeprecationInfo(Content target) {
+        writer.addClassDeprecationInfo(target);
     }
 
     /**
      * If this is an inner class or interface, list the enclosing class or interface.
      *
-     * @param classInfoTree the content tree to which the documentation will be added
+     * @param target the content to which the documentation will be added
      */
-    protected void buildNestedClassInfo(Content classInfoTree) {
-        writer.addNestedClassInfo(classInfoTree);
+    protected void buildNestedClassInfo(Content target) {
+        writer.addNestedClassInfo(target);
     }
 
     /**
@@ -273,7 +246,7 @@ public class ClassBuilder extends AbstractBuilder {
      *
      * @throws DocFileIOException if there is a problem while copying the files
      */
-     private void copyDocFiles() throws DocletException {
+    private void copyDocFiles() throws DocletException {
         PackageElement containingPackage = utils.containingPackage(typeElement);
         if ((configuration.packages == null ||
             !configuration.packages.contains(containingPackage)) &&
@@ -287,71 +260,70 @@ public class ClassBuilder extends AbstractBuilder {
             docFilesHandler.copyDocFiles();
             containingPackagesSeen.add(containingPackage);
         }
-     }
+    }
 
     /**
      * Build the signature of the current class.
      *
-     * @param classInfoTree the content tree to which the documentation will be added
+     * @param target the content to which the documentation will be added
      */
-    protected void buildClassSignature(Content classInfoTree) {
-        writer.addClassSignature(utils.modifiersToString(typeElement, true), classInfoTree);
+    protected void buildClassSignature(Content target) {
+        writer.addClassSignature(target);
     }
 
     /**
      * Build the class description.
      *
-     * @param classInfoTree the content tree to which the documentation will be added
+     * @param target the content to which the documentation will be added
      */
-    protected void buildClassDescription(Content classInfoTree) {
-       writer.addClassDescription(classInfoTree);
+    protected void buildClassDescription(Content target) {
+        writer.addClassDescription(target);
     }
 
     /**
      * Build the tag information for the current class.
      *
-     * @param classInfoTree the content tree to which the documentation will be added
+     * @param target the content to which the documentation will be added
      */
-    protected void buildClassTagInfo(Content classInfoTree) {
-       writer.addClassTagInfo(classInfoTree);
+    protected void buildClassTagInfo(Content target) {
+        writer.addClassTagInfo(target);
     }
 
     /**
      * Build the member summary contents of the page.
      *
-     * @param classContentTree the content tree to which the documentation will be added
+     * @param classContent the content to which the documentation will be added
      * @throws DocletException if there is a problem while building the documentation
      */
-    protected void buildMemberSummary(Content classContentTree) throws DocletException {
+    protected void buildMemberSummary(Content classContent) throws DocletException {
         Content summariesList = writer.getSummariesList();
         builderFactory.getMemberSummaryBuilder(writer).build(summariesList);
-        classContentTree.add(writer.getMemberSummaryTree(summariesList));
+        classContent.add(writer.getMemberSummary(summariesList));
     }
 
     /**
      * Build the member details contents of the page.
      *
-     * @param classContentTree the content tree to which the documentation will be added
+     * @param classContent the content to which the documentation will be added
      * @throws DocletException if there is a problem while building the documentation
      */
-    protected void buildMemberDetails(Content classContentTree) throws DocletException {
+    protected void buildMemberDetails(Content classContent) throws DocletException {
         Content detailsList = writer.getDetailsList();
 
         buildEnumConstantsDetails(detailsList);
         buildPropertyDetails(detailsList);
         buildFieldDetails(detailsList);
         buildConstructorDetails(detailsList);
-        buildAnnotationTypeRequiredMemberDetails(detailsList);
-        buildAnnotationTypeOptionalMemberDetails(detailsList);
+        buildAnnotationTypeMemberDetails(detailsList);
         buildMethodDetails(detailsList);
 
-        classContentTree.add(writer.getMemberDetailsTree(detailsList));
+        classContent.add(writer.getMemberDetails(detailsList));
     }
 
     /**
      * Build the enum constants documentation.
      *
-     * @param detailsList the content tree to which the documentation will be added
+     * @param detailsList the content to which the documentation will be added
      * @throws DocletException if there is a problem while building the documentation
      */
     protected void buildEnumConstantsDetails(Content detailsList) throws DocletException {
@@ -361,7 +333,7 @@ public class ClassBuilder extends AbstractBuilder {
     /**
      * Build the field documentation.
      *
-     * @param detailsList the content tree to which the documentation will be added
+     * @param detailsList the content to which the documentation will be added
      * @throws DocletException if there is a problem while building the documentation
      */
     protected void buildFieldDetails(Content detailsList) throws DocletException {
@@ -371,7 +343,7 @@ public class ClassBuilder extends AbstractBuilder {
     /**
      * Build the property documentation.
      *
-     * @param detailsList the content tree to which the documentation will be added
+     * @param detailsList the content to which the documentation will be added
      * @throws DocletException if there is a problem while building the documentation
      */
     public void buildPropertyDetails( Content detailsList) throws DocletException {
@@ -381,7 +353,7 @@ public class ClassBuilder extends AbstractBuilder {
     /**
      * Build the constructor documentation.
      *
-     * @param detailsList the content tree to which the documentation will be added
+     * @param detailsList the content to which the documentation will be added
      * @throws DocletException if there is a problem while building the documentation
      */
     protected void buildConstructorDetails(Content detailsList) throws DocletException {
@@ -391,7 +363,7 @@ public class ClassBuilder extends AbstractBuilder {
     /**
      * Build the method documentation.
      *
-     * @param detailsList the content tree to which the documentation will be added
+     * @param detailsList the content to which the documentation will be added
      * @throws DocletException if there is a problem while building the documentation
      */
     protected void buildMethodDetails(Content detailsList) throws DocletException {
@@ -401,23 +373,12 @@ public class ClassBuilder extends AbstractBuilder {
     /**
      * Build the annotation type optional member documentation.
      *
-     * @param memberDetailsTree the content tree to which the documentation will be added
+     * @param target the content to which the documentation will be added
      * @throws DocletException if there is a problem building the documentation
      */
-    protected void buildAnnotationTypeOptionalMemberDetails(Content memberDetailsTree)
+    protected void buildAnnotationTypeMemberDetails(Content target)
             throws DocletException {
-        builderFactory.getAnnotationTypeOptionalMemberBuilder(writer).build(memberDetailsTree);
-    }
-
-    /**
-     * Build the annotation type required member documentation.
-     *
-     * @param memberDetailsTree the content tree to which the documentation will be added
-     * @throws DocletException if there is a problem building the documentation
-     */
-    protected void buildAnnotationTypeRequiredMemberDetails(Content memberDetailsTree)
-            throws DocletException {
-        builderFactory.getAnnotationTypeRequiredMemberBuilder(writer).build(memberDetailsTree);
+        builderFactory.getAnnotationTypeMemberBuilder(writer).build(target);
     }
 
     /**
@@ -450,7 +411,6 @@ public class ClassBuilder extends AbstractBuilder {
      * @param elem the record element
      */
 
-    @SuppressWarnings("preview")
     private void setRecordDocumentation(TypeElement elem) {
         CommentUtils cmtUtils = configuration.cmtUtils;
         Set<Name> componentNames = elem.getRecordComponents().stream()
@@ -468,7 +428,10 @@ public class ClassBuilder extends AbstractBuilder {
             }
         }
 
-        for (VariableElement ve : utils.getFields(elem)) {
+        var fields = utils.isSerializable(elem)
+                ? utils.getFieldsUnfiltered(elem)
+                : utils.getFields(elem);
+        for (VariableElement ve : fields) {
             // The fields for the record component cannot be declared by the
             // user and so cannot have any pre-existing comment.
             Name name = ve.getSimpleName();

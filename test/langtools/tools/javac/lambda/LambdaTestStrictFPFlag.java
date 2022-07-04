@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
  * @bug 8046060
  * @summary Different results of floating point multiplication for lambda code block
  * @modules jdk.jdeps/com.sun.tools.classfile
+ * @compile -source 16 -target 16 LambdaTestStrictFPFlag.java
+ * @run main LambdaTestStrictFPFlag
  */
 
 import java.io.*;

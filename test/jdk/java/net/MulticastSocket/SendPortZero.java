@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,8 +48,7 @@ import static org.testng.Assert.assertThrows;
  * @bug 8243408
  * @summary Check that MulticastSocket throws expected
  *          Exception when sending a DatagramPacket with port 0
- * @run testng SendPortZero
- * @run testng/othervm -Djdk.net.usePlainDatagramSocketImpl SendPortZero
+ * @run testng/othervm -Djava.security.manager=allow SendPortZero
  */
 
 public class SendPortZero {

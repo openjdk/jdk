@@ -42,7 +42,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 6384805
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true transform.Bug6384805
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.Bug6384805
  * @run testng/othervm transform.Bug6384805
  * @summary Test XSLTC can parse XML namespace when nodeset is created within a template.
  */

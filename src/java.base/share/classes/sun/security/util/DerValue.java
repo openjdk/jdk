@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,10 @@ import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.util.*;
 
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.nio.charset.StandardCharsets.US_ASCII;
+import static java.nio.charset.StandardCharsets.UTF_16BE;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Represents a single DER-encoded value.  DER encoding rules are a subset
@@ -287,7 +290,7 @@ public class DerValue {
     }
 
     /**
-     * Wraps an DerOutputStream. All bytes currently written
+     * Wraps a DerOutputStream. All bytes currently written
      * into the stream will become the content of the newly
      * created DerValue.
      *
@@ -296,10 +299,38 @@ public class DerValue {
      *
      * @param tag the tag
      * @param out the DerOutputStream
-     * @returns a new DerValue using out as its content
+     * @return a new DerValue using out as its content
      */
     public static DerValue wrap(byte tag, DerOutputStream out) {
         return new DerValue(tag, out.buf(), 0, out.size(), false);
+    }
+
+    /**
+     * Wraps a byte array as a single DerValue.
+     *
+     * Attention: no cloning is made.
+     *
+     * @param buf the byte array containing the DER-encoded datum
+     * @return a new DerValue
+     */
+    public static DerValue wrap(byte[] buf)
+            throws IOException {
+        return wrap(buf, 0, buf.length);
+    }
+
+    /**
+     * Wraps a byte array as a single DerValue.
+     *
+     * Attention: no cloning is made.
+     *
+     * @param buf the byte array containing the DER-encoded datum
+     * @param offset where the encoded datum starts inside {@code buf}
+     * @param len length of bytes to parse inside {@code buf}
+     * @return a new DerValue
+     */
+    public static DerValue wrap(byte[] buf, int offset, int len)
+            throws IOException {
+        return new DerValue(buf, offset, len, true, false);
     }
 
     /**
@@ -686,7 +717,7 @@ public class DerValue {
         byte[] retval = Arrays.copyOfRange(buffer, start + 1, end);
         if (numOfPadBits != 0) {
             // get rid of the padding bits
-            retval[end - start - 2] &= (0xff << numOfPadBits);
+            retval[end - start - 2] &= (byte)((0xff << numOfPadBits));
         }
         data.pos = data.end; // Compatibility. Reach end.
         return retval;
@@ -1226,7 +1257,7 @@ public class DerValue {
      * @param startLen estimated number of sub-values
      * @return the sub-values in an array
      */
-    DerValue[] subs(byte expectedTag, int startLen) throws IOException {
+    public DerValue[] subs(byte expectedTag, int startLen) throws IOException {
         if (expectedTag != 0 && expectedTag != tag) {
             throw new IOException("Not the correct tag");
         }

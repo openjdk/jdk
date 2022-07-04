@@ -48,7 +48,7 @@ import org.xml.sax.XMLReader;
  * @test
  * @bug 6946312
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.Bug6946312Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.Bug6946312Test
  * @run testng/othervm validation.Bug6946312Test
  * @summary Test XML parser shall callback to ContentHandler when receiving characters data.
  */

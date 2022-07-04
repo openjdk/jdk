@@ -57,7 +57,7 @@ import org.xml.sax.ext.DefaultHandler2;
  * @test
  * @bug 7057778
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true sax.Bug7057778Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow sax.Bug7057778Test
  * @run testng/othervm sax.Bug7057778Test
  * @summary Test the file can be deleted after SAXParser.parse(File, DefaultHandler).
  */

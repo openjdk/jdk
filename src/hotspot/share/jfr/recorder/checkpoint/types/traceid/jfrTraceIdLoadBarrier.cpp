@@ -27,7 +27,7 @@
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdKlassQueue.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "jfr/utilities/jfrEpochQueue.inline.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 
 // The queue instance used by the load barrier to enqueue tagged Klass'es.
@@ -67,4 +67,12 @@ void JfrTraceIdLoadBarrier::enqueue(const Klass* klass) {
 void JfrTraceIdLoadBarrier::do_klasses(klass_callback callback, bool previous_epoch) {
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
   klass_queue().iterate(callback, previous_epoch);
+}
+
+JfrBuffer* JfrTraceIdLoadBarrier::get_enqueue_buffer(Thread* thread) {
+  return klass_queue().get_enqueue_buffer(thread);
+}
+
+JfrBuffer* JfrTraceIdLoadBarrier::renew_enqueue_buffer(size_t size, Thread* thread) {
+  return klass_queue().renew_enqueue_buffer(size, thread);
 }

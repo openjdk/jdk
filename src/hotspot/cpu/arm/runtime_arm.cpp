@@ -24,8 +24,7 @@
 
 #include "precompiled.hpp"
 #ifdef COMPILER2
-#include "asm/assembler.hpp"
-#include "assembler_arm.inline.hpp"
+#include "asm/assembler.inline.hpp"
 #include "code/vmreg.hpp"
 #include "compiler/oopMap.hpp"
 #include "interpreter/interpreter.hpp"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,10 +32,11 @@ package java.security;
  *
  * @since 1.6
  */
+@SuppressWarnings("removal")
 public class URIParameter implements
         Policy.Parameters, javax.security.auth.login.Configuration.Parameters {
 
-    private java.net.URI uri;
+    private final java.net.URI uri;
 
     /**
      * Constructs a URIParameter with the URI pointing to

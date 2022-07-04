@@ -25,10 +25,11 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHFORWARDING_INLINE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHFORWARDING_INLINE_HPP
 
-#include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahForwarding.hpp"
-#include "oops/markWord.inline.hpp"
-#include "runtime/thread.hpp"
+
+#include "gc/shenandoah/shenandoahAsserts.hpp"
+#include "oops/markWord.hpp"
+#include "runtime/javaThread.hpp"
 
 inline oop ShenandoahForwarding::get_forwardee_raw(oop obj) {
   shenandoah_assert_in_heap(NULL, obj);

@@ -44,4 +44,13 @@ public interface PooledConnectionFactory {
      */
     public abstract PooledConnection createPooledConnection(PoolCallback pcb)
         throws NamingException;
+
+    /**
+     * Creates a pooled connection.
+     * @param pcb callback responsible for removing and releasing the pooled
+     * connection from the pool.
+     * @param timeout the connection timeout
+     */
+    public abstract PooledConnection createPooledConnection(PoolCallback pcb, long timeout)
+        throws NamingException;
 };

@@ -25,10 +25,10 @@
 
 package sun.font;
 
-import java.awt.Font;
 import java.awt.font.GlyphVector;
-import java.awt.font.FontRenderContext;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import sun.java2d.SurfaceData;
 import sun.java2d.loops.FontInfo;
 
 /*
@@ -52,7 +52,7 @@ import sun.java2d.loops.FontInfo;
  *     GlyphList gl = GlyphList.getInstance();
  *     try {
  *         gl.setFromString(info, str, x, y);
- *         int strbounds[] = gl.getBounds();
+ *         gl.startGlyphIteration();
  *         int numglyphs = gl.getNumGlyphs();
  *         for (int i = 0; i < numglyphs; i++) {
  *             gl.setGlyphIndex(i);
@@ -155,6 +155,7 @@ public final class GlyphList {
     private static final GlyphList reusableGL = new GlyphList();
     private static final AtomicBoolean inUse = new AtomicBoolean();
 
+    private ColorGlyphSurfaceData glyphSurfaceData;
 
     void ensureCapacity(int len) {
       /* Note len must not be -ve! only setFromChars should be capable
@@ -276,13 +277,9 @@ public final class GlyphList {
         glyphindex = -1;
     }
 
-    public int[] getBounds() {
-        /* We co-opt the 5 element array that holds per glyph metrics in order
-         * to return the bounds. So a caller must copy the data out of the
-         * array before calling any other methods on this GlyphList
-         */
+    public void startGlyphIteration() {
         if (glyphindex >= 0) {
-            throw new InternalError("calling getBounds after setGlyphIndex");
+            throw new InternalError("glyph iteration restarted");
         }
         if (metrics == null) {
             metrics = new int[5];
@@ -291,7 +288,18 @@ public final class GlyphList {
          * Add 0.5f for consistent rounding to pixel position. */
         gposx = x + 0.5f;
         gposy = y + 0.5f;
-        fillBounds(metrics);
+    }
+
+    /*
+     * Must be called after 'startGlyphIteration'.
+     * Returns overall bounds for glyphs starting from the next glyph
+     * in iteration till the glyph with specified index.
+     * The underlying storage for bounds is shared with metrics,
+     * so this method (and the array it returns) shouldn't be used between
+     * 'setGlyphIndex' call and matching 'getMetrics' call.
+     */
+    public int[] getBounds(int endGlyphIndex) {
+        fillBounds(metrics, endGlyphIndex);
         return metrics;
     }
 
@@ -436,7 +444,7 @@ public final class GlyphList {
     /* We re-do all this work as we iterate through the glyphs
      * but it seems unavoidable without re-working the Java TextRenderers.
      */
-    private void fillBounds(int[] bounds) {
+    private void fillBounds(int[] bounds, int endGlyphIndex) {
         /* Faster to access local variables in the for loop? */
         int xOffset = StrikeCache.topLeftXOffset;
         int yOffset = StrikeCache.topLeftYOffset;
@@ -445,7 +453,8 @@ public final class GlyphList {
         int xAdvOffset = StrikeCache.xAdvanceOffset;
         int yAdvOffset = StrikeCache.yAdvanceOffset;
 
-        if (len == 0) {
+        int startGlyphIndex = glyphindex + 1;
+        if (startGlyphIndex >= endGlyphIndex) {
             bounds[0] = bounds[1] = bounds[2] = bounds[3] = 0;
             return;
         }
@@ -453,12 +462,12 @@ public final class GlyphList {
         bx0 = by0 = Float.POSITIVE_INFINITY;
         bx1 = by1 = Float.NEGATIVE_INFINITY;
 
-        int posIndex = 0;
-        float glx = x + 0.5f;
-        float gly = y + 0.5f;
+        int posIndex = startGlyphIndex<<1;
+        float glx = gposx;
+        float gly = gposy;
         char gw, gh;
         float gx, gy, gx0, gy0, gx1, gy1;
-        for (int i=0; i<len; i++) {
+        for (int i=startGlyphIndex; i<endGlyphIndex; i++) {
             if (images[i] == 0L) {
                 continue;
             }
@@ -490,5 +499,25 @@ public final class GlyphList {
         bounds[1] = (int)Math.floor(by0);
         bounds[2] = (int)Math.floor(bx1);
         bounds[3] = (int)Math.floor(by1);
+    }
+
+    public static boolean canContainColorGlyphs() {
+        return FontUtilities.isMacOSX;
+    }
+
+    public boolean isColorGlyph(int glyphIndex) {
+        int width = StrikeCache.unsafe.getChar(images[glyphIndex] +
+                                               StrikeCache.widthOffset);
+        int rowBytes = StrikeCache.unsafe.getChar(images[glyphIndex] +
+                                                  StrikeCache.rowBytesOffset);
+        return rowBytes == width * 4;
+    }
+
+    public SurfaceData getColorGlyphData() {
+        if (glyphSurfaceData == null) {
+            glyphSurfaceData = new ColorGlyphSurfaceData();
+        }
+        glyphSurfaceData.setCurrentGlyph(images[glyphindex]);
+        return glyphSurfaceData;
     }
 }

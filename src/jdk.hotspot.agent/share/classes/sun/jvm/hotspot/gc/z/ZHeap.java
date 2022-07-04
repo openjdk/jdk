@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,8 @@ public class ZHeap extends VMObject {
 
     private static long pageAllocatorFieldOffset;
     private static long pageTableFieldOffset;
+    private static long forwardingTableFieldOffset;
+    private static long relocateFieldOffset;
 
     static {
         VM.registerVMInitializedObserver((o, d) -> initialize(VM.getVM().getTypeDataBase()));
@@ -49,6 +51,8 @@ public class ZHeap extends VMObject {
 
         pageAllocatorFieldOffset = type.getAddressField("_page_allocator").getOffset();
         pageTableFieldOffset = type.getAddressField("_page_table").getOffset();
+        forwardingTableFieldOffset = type.getAddressField("_forwarding_table").getOffset();
+        relocateFieldOffset = type.getAddressField("_relocate").getOffset();
     }
 
     public ZHeap(Address addr) {
@@ -62,6 +66,14 @@ public class ZHeap extends VMObject {
 
     ZPageTable pageTable() {
         return (ZPageTable)VMObjectFactory.newObject(ZPageTable.class, addr.addOffsetTo(pageTableFieldOffset));
+    }
+
+    ZForwardingTable forwardingTable() {
+        return VMObjectFactory.newObject(ZForwardingTable.class, addr.addOffsetTo(forwardingTableFieldOffset));
+    }
+
+    ZRelocate relocate() {
+        return VMObjectFactory.newObject(ZRelocate.class, addr.addOffsetTo(relocateFieldOffset));
     }
 
     public long maxCapacity() {
@@ -80,14 +92,30 @@ public class ZHeap extends VMObject {
         return pageTable().is_relocating(o);
     }
 
-    Address forward_object(Address addr) {
-        ZPage page = pageTable().get(addr);
-        return page.forward_object(addr);
+    Address relocate_object(Address addr) {
+        ZForwarding forwarding = forwardingTable().get(addr);
+        if (forwarding == null) {
+            return ZAddress.good(addr);
+        }
+        return relocate().relocateObject(forwarding, ZAddress.good(addr));
     }
 
-    Address relocate_object(Address addr) {
-        ZPage page = pageTable().get(addr);
-        return page.relocate_object(addr);
+    public boolean isIn(Address addr) {
+        if (ZAddress.isIn(addr)) {
+            ZPage page = pageTable().get(addr);
+            if (page != null) {
+                return page.isIn(addr);
+            }
+        }
+        return false;
+    }
+
+    public Address remapObject(Address o) {
+        ZForwarding forwarding = forwardingTable().get(addr);
+        if (forwarding == null) {
+            return ZAddress.good(o);
+        }
+        return relocate().forwardObject(forwarding, ZAddress.good(o));
     }
 
     public void printOn(PrintStream tty) {

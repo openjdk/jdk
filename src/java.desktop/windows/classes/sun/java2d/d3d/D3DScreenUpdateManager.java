@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,6 +91,7 @@ public class D3DScreenUpdateManager extends ScreenUpdateManager
      */
     private HashMap<D3DWindowSurfaceData, GDIWindowSurfaceData> gdiSurfaces;
 
+    @SuppressWarnings("removal")
     public D3DScreenUpdateManager() {
         done = false;
         AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
@@ -257,7 +258,7 @@ public class D3DScreenUpdateManager extends ScreenUpdateManager
     {
         if (!done && sd instanceof D3DWindowSurfaceData) {
             D3DWindowSurfaceData d3dw = (D3DWindowSurfaceData)sd;
-            if (!d3dw.isSurfaceLost() || validate(d3dw)) {
+            if (!d3dw.isSurfaceLost() || validate(d3dw, false)) {
                 trackScreenSurface(d3dw);
                 return new SunGraphics2D(sd, fgColor, bgColor, font);
             }
@@ -344,6 +345,7 @@ public class D3DScreenUpdateManager extends ScreenUpdateManager
      * If the update thread hasn't yet been created, it will be;
      * otherwise it is awaken
      */
+    @SuppressWarnings("removal")
     private synchronized void startUpdateThread() {
         if (screenUpdater == null) {
             screenUpdater = AccessController.doPrivileged((PrivilegedAction<Thread>) () -> {
@@ -450,7 +452,7 @@ public class D3DScreenUpdateManager extends ScreenUpdateManager
                         } finally {
                             rq.unlock();
                         }
-                    } else if (!validate(sd)) {
+                    } else if (!validate(sd, true)) {
                         // it is possible that the validation may never
                         // succeed, we need to detect this and replace
                         // the d3dw surface with gdi; the replacement of
@@ -472,7 +474,7 @@ public class D3DScreenUpdateManager extends ScreenUpdateManager
      * @return true if surface wasn't lost or if restoration was successful,
      * false otherwise
      */
-    private boolean validate(D3DWindowSurfaceData sd) {
+    private boolean validate(D3DWindowSurfaceData sd, boolean postEvent) {
         if (sd.isSurfaceLost()) {
             try {
                 sd.restoreSurface();
@@ -489,7 +491,9 @@ public class D3DScreenUpdateManager extends ScreenUpdateManager
                 sd.markClean();
                 // since the surface was successfully restored we need to
                 // repaint whole window to repopulate the back-buffer
-                repaintPeerTarget(sd.getPeer());
+                if (postEvent) {
+                    repaintPeerTarget(sd.getPeer());
+                }
             } catch (InvalidPipeException ipe) {
                 return false;
             }

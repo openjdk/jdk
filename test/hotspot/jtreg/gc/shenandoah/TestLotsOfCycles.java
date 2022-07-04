@@ -23,7 +23,7 @@
  */
 
 /*
- * @test TestLotsOfCycles
+ * @test id=passive
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm/timeout=480 -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
@@ -40,7 +40,7 @@
  */
 
 /*
- * @test TestLotsOfCycles
+ * @test id=aggressive
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm/timeout=480 -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
@@ -62,7 +62,7 @@
  */
 
 /*
- * @test TestLotsOfCycles
+ * @test id=adaptive
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm/timeout=480 -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
@@ -72,7 +72,7 @@
  */
 
 /*
- * @test TestLotsOfCycles
+ * @test id=static
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm/timeout=480 -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
@@ -82,7 +82,7 @@
  */
 
 /*
- * @test TestLotsOfCycles
+ * @test id=compact
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm/timeout=480 -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
@@ -92,7 +92,7 @@
  */
 
 /*
- * @test TestLotsOfCycles
+ * @test id=iu-aggressive
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm/timeout=480 -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
@@ -114,7 +114,7 @@
  */
 
 /*
- * @test TestLotsOfCycles
+ * @test id=iu
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm/timeout=480 -Xmx16m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions

@@ -28,6 +28,8 @@ package com.sun.hotspot.igv.data.serialization;
 import com.sun.hotspot.igv.data.*;
 import java.io.*;
 import java.nio.channels.Channels;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import org.junit.*;
@@ -67,18 +69,14 @@ public class ParserTest {
     }
 
     private void test(GraphDocument document, String xmlString) {
+        InputStream in = new ByteArrayInputStream(xmlString.getBytes(UTF_8));
         try {
-            InputStream in = new ByteArrayInputStream(xmlString.getBytes("UTF-8"));
-            try {
-                Parser parser = new Parser(Channels.newChannel(in));
-                parser.setInvokeLater(false);
-                final GraphDocument parsedDocument = parser.parse();
-                Util.assertGraphDocumentEquals(document, parsedDocument);
-            } catch (IOException ex) {
-                fail(ex.toString());
-            }
-        } catch (UnsupportedEncodingException ex) {
-            Exceptions.printStackTrace(ex);
+            Parser parser = new Parser(Channels.newChannel(in));
+            parser.setInvokeLater(false);
+            final GraphDocument parsedDocument = parser.parse();
+            Util.assertGraphDocumentEquals(document, parsedDocument);
+        } catch (IOException ex) {
+            fail(ex.toString());
         }
     }
 

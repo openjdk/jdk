@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 
+import jdk.test.lib.Platform;
+
 import nsk.share.test.LazyIntArrayToString;
 import nsk.share.test.TestUtils;
 import vm.mlvm.meth.share.transform.v2.MHArrayEnvelopeTFPair;
@@ -68,45 +70,66 @@ public class MHTransformationGen {
 
     private static final boolean USE_THROW_CATCH = false; // Test bugs
 
-    private static final Optional<MemoryPoolMXBean> NON_SEGMENTED_CODE_CACHE_POOL;
-    private static final Optional<MemoryPoolMXBean> NON_NMETHODS_POOL;
-    private static final Optional<MemoryPoolMXBean> PROFILED_NMETHODS_POOL;
-    private static final Optional<MemoryPoolMXBean> NON_PROFILED_NMETHODS_POOL ;
+    /**
+     * The class is used for periodical checks if a code-cache consuming operation
+     * could be executed (i.e. if code cache has enought free space for a typical operation).
+     */
+    private static class CodeCacheMonitor {
 
-    // Limit numbers are arbitrary, feel free to change if arguably necessary
-    private static final int NON_SEGMENTED_CACHE_ALLOWANCE = 2_000_000;
-    private static final int SEGMENTED_CACHE_ALLOWANCE = 1_000_000;
+        private static final Optional<MemoryPoolMXBean> NON_SEGMENTED_CODE_CACHE_POOL;
+        private static final Optional<MemoryPoolMXBean> NON_NMETHODS_POOL;
+        private static final Optional<MemoryPoolMXBean> PROFILED_NMETHODS_POOL;
+        private static final Optional<MemoryPoolMXBean> NON_PROFILED_NMETHODS_POOL;
 
-    static {
-        var pools = ManagementFactory.getMemoryPoolMXBeans();
-        NON_SEGMENTED_CODE_CACHE_POOL = pools.stream()
-            .filter(pool -> pool.getName().equals("CodeCache")).findFirst();
-        NON_NMETHODS_POOL = pools.stream()
-            .filter(pool -> pool.getName().equals("CodeHeap 'non-nmethods'")).findFirst();
-        PROFILED_NMETHODS_POOL = pools.stream()
-            .filter(pool -> pool.getName().equals("CodeHeap 'profiled nmethods'")).findFirst();
-        NON_PROFILED_NMETHODS_POOL = pools.stream()
-            .filter(pool -> pool.getName().equals("CodeHeap 'non-profiled nmethods'")).findFirst();
-    }
+        // Trial runs show up that maximal increase in code cache consumption between checks (for one
+        // cycle/tree build in MHTransformationGen::createSequence), falls within the following intervals:
+        //
+        // | Threads number | Without Xcomp | With Xcomp |
+        // |----------------|---------------|------------|
+        // |       1        |   100-200 K   |  400-500 K |
+        // |      10        |    1 - 2 M    |    5-6 M   |
+        //
+        // Those numbers are approximate (since trees are generated randomly and the total consumption
+        // between checks depends on how threads are aligned - for example, if all threads finish up their
+        // cycles approximately at one time, the consumption increase will be the highest, like with a
+        // resonance's amplitude)
+        // The 10 threads is chosen as it is a typical number for multi-threaded tests.
+        //
+        // Based on these numbers, values of 10 M for Xcomp and 5 M for non-Xcomp, were suggested.
+        private static final int NON_SEGMENTED_CACHE_ALLOWANCE = Platform.isComp() ? 10_000_000 : 5_000_000;
+        private static final int SEGMENTED_CACHE_ALLOWANCE = Platform.isComp() ? 10_000_000 : 5_000_000;
+
+        static {
+            var pools = ManagementFactory.getMemoryPoolMXBeans();
+            NON_SEGMENTED_CODE_CACHE_POOL = pools.stream()
+                .filter(pool -> pool.getName().equals("CodeCache")).findFirst();
+            NON_NMETHODS_POOL = pools.stream()
+                .filter(pool -> pool.getName().equals("CodeHeap 'non-nmethods'")).findFirst();
+            PROFILED_NMETHODS_POOL = pools.stream()
+                .filter(pool -> pool.getName().equals("CodeHeap 'profiled nmethods'")).findFirst();
+            NON_PROFILED_NMETHODS_POOL = pools.stream()
+                .filter(pool -> pool.getName().equals("CodeHeap 'non-profiled nmethods'")).findFirst();
+        }
+
+        public static final boolean isCodeCacheEffectivelyFull() {
+            var result = new Object() { boolean value = false; };
+
+            BiConsumer<MemoryPoolMXBean, Integer> check = (pool, limit) -> {
+                var usage = pool.getUsage();
+                result.value |= usage.getMax() - usage.getUsed() < limit;
+            };
+
+            NON_SEGMENTED_CODE_CACHE_POOL.ifPresent(pool -> check.accept(pool, NON_SEGMENTED_CACHE_ALLOWANCE));
+            NON_NMETHODS_POOL.ifPresent(pool -> check.accept(pool, SEGMENTED_CACHE_ALLOWANCE));
+            PROFILED_NMETHODS_POOL.ifPresent(pool -> check.accept(pool, SEGMENTED_CACHE_ALLOWANCE));
+            NON_PROFILED_NMETHODS_POOL.ifPresent(pool -> check.accept(pool, SEGMENTED_CACHE_ALLOWANCE));
+
+            return result.value;
+        }
+    };
 
     public static class ThrowCatchTestException extends Throwable {
         private static final long serialVersionUID = -6749961303738648241L;
-    }
-
-    private static final boolean isCodeCacheEffectivelyFull() {
-        var result = new Object() { boolean value = false; };
-
-        BiConsumer<MemoryPoolMXBean, Integer> check = (pool, limit) -> {
-            var usage = pool.getUsage();
-            result.value |= usage.getMax() - usage.getUsed() < limit;
-        };
-
-        NON_SEGMENTED_CODE_CACHE_POOL.ifPresent(pool -> check.accept(pool, NON_SEGMENTED_CACHE_ALLOWANCE));
-        NON_NMETHODS_POOL.ifPresent(pool -> check.accept(pool, SEGMENTED_CACHE_ALLOWANCE));
-        PROFILED_NMETHODS_POOL.ifPresent(pool -> check.accept(pool, SEGMENTED_CACHE_ALLOWANCE));
-        NON_PROFILED_NMETHODS_POOL.ifPresent(pool -> check.accept(pool, SEGMENTED_CACHE_ALLOWANCE));
-
-        return result.value;
     }
 
     @SuppressWarnings("unused")
@@ -131,7 +154,7 @@ public class MHTransformationGen {
 
         final int cyclesToBuild = nextInt(MAX_CYCLES);
         for ( int i = 0; i < cyclesToBuild; i++) {
-            if (isCodeCacheEffectivelyFull()) {
+            if (CodeCacheMonitor.isCodeCacheEffectivelyFull()) {
                 Env.traceNormal("Not enought code cache to build up MH sequences anymore. " +
                         " Has only been able to achieve " + i + " out of " + cyclesToBuild);
                 break;

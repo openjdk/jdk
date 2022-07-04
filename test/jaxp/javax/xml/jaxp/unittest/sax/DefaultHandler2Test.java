@@ -45,7 +45,7 @@ import org.xml.sax.helpers.XMLReaderFactory;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true sax.DefaultHandler2Test
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow sax.DefaultHandler2Test
  * @run testng/othervm sax.DefaultHandler2Test
  * @summary Test DefaultHandler2.
  */

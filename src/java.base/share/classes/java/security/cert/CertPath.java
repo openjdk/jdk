@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,7 +123,7 @@ public abstract class CertPath implements Serializable {
     private static final long serialVersionUID = 6068470306649138683L;
 
     /** The type of certificates in this chain. */
-    private String type;
+    private final transient String type;
 
     /**
      * Creates a {@code CertPath} of the specified type.
@@ -181,16 +181,9 @@ public abstract class CertPath implements Serializable {
         if (this == other)
             return true;
 
-        if (! (other instanceof CertPath))
-            return false;
-
-        CertPath otherCP = (CertPath) other;
-        if (! otherCP.getType().equals(type))
-            return false;
-
-        List<? extends Certificate> thisCertList = this.getCertificates();
-        List<? extends Certificate> otherCertList = otherCP.getCertificates();
-        return(thisCertList.equals(otherCertList));
+        return other instanceof CertPath that
+                && that.getType().equals(this.type)
+                && this.getCertificates().equals(that.getCertificates());
     }
 
     /**
@@ -277,9 +270,11 @@ public abstract class CertPath implements Serializable {
 
     /**
      * Replaces the {@code CertPath} to be serialized with a
-     * {@code CertPathRep} object.
+     * {@link CertPathRep CertPathRep} object containing the
+     * {@code Certificate} type and encoded bytes of the {@code CertPath}.
      *
-     * @return the {@code CertPathRep} to be serialized
+     * @return a {@code CertPathRep} containing the {@code Certificate} type
+     *         and encoded bytes of the {@code CertPath}
      *
      * @throws ObjectStreamException if a {@code CertPathRep} object
      * representing this certification path could not be created
@@ -306,16 +301,16 @@ public abstract class CertPath implements Serializable {
         @java.io.Serial
         private static final long serialVersionUID = 3015633072427920915L;
 
-        /** The Certificate type */
-        private String type;
-        /** The encoded form of the cert path */
-        private byte[] data;
+        /** The type of {@code Certificate}s in the {@code CertPath}. */
+        private final String type;
+        /** The encoded form of the {@code CertPath}. */
+        private final byte[] data;
 
         /**
          * Creates a {@code CertPathRep} with the specified
          * type and encoded form of a certification path.
          *
-         * @param type the standard name of a {@code CertPath} type
+         * @param type the standard name of a {@code Certificate} type
          * @param data the encoded form of the certification path
          */
         protected CertPathRep(String type, byte[] data) {
@@ -324,11 +319,12 @@ public abstract class CertPath implements Serializable {
         }
 
         /**
-         * Returns a {@code CertPath} constructed from the type and data.
+         * Returns a {@code CertPath} constructed from the type and data of
+         * this {@code CertPathRep}.
          *
          * @return the resolved {@code CertPath} object
          *
-         * @throws ObjectStreamException if a {@code CertPath} could not
+         * @throws ObjectStreamException if a {@code CertPath} object could not
          * be constructed
          */
         @java.io.Serial

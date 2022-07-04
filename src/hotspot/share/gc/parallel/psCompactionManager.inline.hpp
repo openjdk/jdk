@@ -25,11 +25,13 @@
 #ifndef SHARE_GC_PARALLEL_PSCOMPACTIONMANAGER_INLINE_HPP
 #define SHARE_GC_PARALLEL_PSCOMPACTIONMANAGER_INLINE_HPP
 
+#include "gc/parallel/psCompactionManager.hpp"
+
 #include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "gc/parallel/parMarkBitMap.hpp"
-#include "gc/parallel/psCompactionManager.hpp"
 #include "gc/parallel/psParallelCompact.inline.hpp"
+#include "gc/parallel/psStringDedup.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/arrayOop.hpp"
@@ -107,6 +109,12 @@ inline void ParCompactionManager::mark_and_push(T* p) {
 
     if (mark_bitmap()->is_unmarked(obj) && PSParallelCompact::mark_obj(obj)) {
       push(obj);
+
+      if (StringDedup::is_enabled() &&
+          java_lang_String::is_instance(obj) &&
+          psStringDedup::is_candidate_from_mark(obj)) {
+        _string_dedup_requests.add(obj);
+      }
     }
   }
 }
@@ -118,6 +126,9 @@ inline void ParCompactionManager::follow_klass(Klass* klass) {
 
 inline void ParCompactionManager::FollowStackClosure::do_void() {
   _compaction_manager->follow_marking_stacks();
+  if (_terminator != nullptr) {
+    steal_marking_work(*_terminator, _worker_id);
+  }
 }
 
 template <typename T>

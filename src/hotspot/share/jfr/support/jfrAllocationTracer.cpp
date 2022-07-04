@@ -26,11 +26,11 @@
 #include "jfr/leakprofiler/leakProfiler.hpp"
 #include "jfr/support/jfrAllocationTracer.hpp"
 #include "jfr/support/jfrObjectAllocationSample.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 
-JfrAllocationTracer::JfrAllocationTracer(const Klass* klass, HeapWord* obj, size_t alloc_size, bool outside_tlab, Thread* thread) {
+JfrAllocationTracer::JfrAllocationTracer(const Klass* klass, HeapWord* obj, size_t alloc_size, bool outside_tlab, JavaThread* thread) {
   if (LeakProfiler::is_running()) {
-    LeakProfiler::sample(obj, alloc_size, thread->as_Java_thread());
+    LeakProfiler::sample(obj, alloc_size, thread);
   }
   JfrObjectAllocationSample::send_event(klass, alloc_size, outside_tlab, thread);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,10 +96,6 @@ private:
   // Free list for pinch nodes.
   Node_List _pinch_free_list;
 
-  // Latency from the beginning of the containing basic block (base 1)
-  // for each node.
-  unsigned short *_node_latency;
-
   // Number of uses of this node within the containing basic block.
   short *_uses;
 
@@ -161,10 +157,6 @@ public:
 
   // Do the scheduling
   void DoScheduling();
-
-  // Compute the local latencies walking forward over the list of
-  // nodes for a basic block
-  void ComputeLocalLatenciesForward(const Block *bb);
 
   // Compute the register antidependencies within a basic block
   void ComputeRegisterAntidependencies(Block *bb);
@@ -332,6 +324,8 @@ void PhaseOutput::perform_mach_node_analysis() {
   bs->late_barrier_analysis();
 
   pd_perform_mach_node_analysis();
+
+  C->print_method(CompilerPhaseType::PHASE_MACHANALYSIS, 4);
 }
 
 // Convert Nodes to instruction bits and pass off to the VM
@@ -501,6 +495,9 @@ void PhaseOutput::compute_loop_first_inst_sizes() {
 // The architecture description provides short branch variants for some long
 // branch instructions. Replace eligible long branches with short branches.
 void PhaseOutput::shorten_branches(uint* blk_starts) {
+
+  Compile::TracePhase tp("shorten branches", &timers[_t_shortenBranches]);
+
   // Compute size of each block, method size, and relocation information size
   uint nblocks  = C->cfg()->number_of_blocks();
 
@@ -819,12 +816,11 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
 
     ObjectValue* sv = sv_for_node_id(objs, spobj->_idx);
     if (sv == NULL) {
-      ciKlass* cik = t->is_oopptr()->klass();
+      ciKlass* cik = t->is_oopptr()->exact_klass();
       assert(cik->is_instance_klass() ||
              cik->is_array_klass(), "Not supported allocation.");
-      ScopeValue* klass_sv = new ConstantOopWriteValue(cik->java_mirror()->constant_encoding());
-      sv = spobj->is_auto_box() ? new AutoBoxObjectValue(spobj->_idx, klass_sv)
-                                    : new ObjectValue(spobj->_idx, klass_sv);
+      sv = new ObjectValue(spobj->_idx,
+                           new ConstantOopWriteValue(cik->java_mirror()->constant_encoding()));
       set_sv_for_object_node(objs, sv);
 
       uint first_ind = spobj->first_index(sfpt->jvms());
@@ -864,7 +860,7 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
       array->append(new ConstantIntValue((jint)0));
       array->append(new_loc_value( C->regalloc(), regnum, Location::lng ));
     } else if ( t->base() == Type::RawPtr ) {
-      // jsr/ret return address which must be restored into a the full
+      // jsr/ret return address which must be restored into the full
       // width 64-bit stack slot.
       array->append(new_loc_value( C->regalloc(), regnum, Location::lng ));
     }
@@ -1000,7 +996,6 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
 
   int safepoint_pc_offset = current_offset;
   bool is_method_handle_invoke = false;
-  bool is_opt_native = false;
   bool return_oop = false;
   bool has_ea_local_in_scope = sfn->_has_ea_local_in_scope;
   bool arg_escape = false;
@@ -1019,8 +1014,6 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
         is_method_handle_invoke = true;
       }
       arg_escape = mcall->as_MachCallJava()->_arg_escape;
-    } else if (mcall->is_MachCallNative()) {
-      is_opt_native = true;
     }
 
     // Check if a call returns an object.
@@ -1093,12 +1086,11 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
         scval = PhaseOutput::sv_for_node_id(objs, spobj->_idx);
         if (scval == NULL) {
           const Type *t = spobj->bottom_type();
-          ciKlass* cik = t->is_oopptr()->klass();
+          ciKlass* cik = t->is_oopptr()->exact_klass();
           assert(cik->is_instance_klass() ||
                  cik->is_array_klass(), "Not supported allocation.");
-          ScopeValue* klass_sv = new ConstantOopWriteValue(cik->java_mirror()->constant_encoding());
-          ObjectValue* sv = spobj->is_auto_box() ? new AutoBoxObjectValue(spobj->_idx, klass_sv)
-                                        : new ObjectValue(spobj->_idx, klass_sv);
+          ObjectValue* sv = new ObjectValue(spobj->_idx,
+                                            new ConstantOopWriteValue(cik->java_mirror()->constant_encoding()));
           PhaseOutput::set_sv_for_object_node(objs, sv);
 
           uint first_ind = spobj->first_index(youngest_jvms);
@@ -1150,7 +1142,6 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
       jvms->should_reexecute(),
       rethrow_exception,
       is_method_handle_invoke,
-      is_opt_native,
       return_oop,
       has_ea_local_in_scope,
       arg_escape,
@@ -1266,21 +1257,6 @@ void PhaseOutput::estimate_buffer_size(int& const_req) {
   // Compute prolog code size
   _method_size = 0;
   _frame_slots = OptoReg::reg2stack(C->matcher()->_old_SP) + C->regalloc()->_framesize;
-#if defined(IA64) && !defined(AIX)
-  if (save_argument_registers()) {
-    // 4815101: this is a stub with implicit and unknown precision fp args.
-    // The usual spill mechanism can only generate stfd's in this case, which
-    // doesn't work if the fp reg to spill contains a single-precision denorm.
-    // Instead, we hack around the normal spill mechanism using stfspill's and
-    // ldffill's in the MachProlog and MachEpilog emit methods.  We allocate
-    // space here for the fp arg regs (f8-f15) we're going to thusly spill.
-    //
-    // If we ever implement 16-byte 'registers' == stack slots, we can
-    // get rid of this hack and have SpillCopy generate stfspill/ldffill
-    // instead of stfd/stfs/ldfd/ldfs.
-    _frame_slots += 8*(16/BytesPerInt);
-  }
-#endif
   assert(_frame_slots >= 0 && _frame_slots < 1000000, "sanity check");
 
   if (C->has_mach_constant_base_node()) {
@@ -1375,6 +1351,8 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
 
   // Compute the size of first NumberOfLoopInstrToAlign instructions at head
   // of a loop. It is used to determine the padding for loop alignment.
+  Compile::TracePhase tp("fill buffer", &timers[_t_fillBuffer]);
+
   compute_loop_first_inst_sizes();
 
   // Create oopmap set.
@@ -1880,6 +1858,19 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
   if (C->print_assembly()) {
     ttyLocker ttyl;  // keep the following output all in one block
     if (!VMThread::should_terminate()) {  // test this under the tty lock
+      // print_metadata and dump_asm may safepoint which makes us loose the ttylock.
+      // We call them first and write to a stringStream, then we retake the lock to
+      // make sure the end tag is coherent, and that xmlStream->pop_tag is done thread safe.
+      ResourceMark rm;
+      stringStream method_metadata_str;
+      if (C->method() != NULL) {
+        C->method()->print_metadata(&method_metadata_str);
+      }
+      stringStream dump_asm_str;
+      dump_asm_on(&dump_asm_str, node_offsets, node_offset_limit);
+
+      NoSafepointVerifier nsv;
+      ttyLocker ttyl2;
       // This output goes directly to the tty, not the compiler log.
       // To enable tools to match it up with the compilation activity,
       // be sure to tag this tty output with the compile ID.
@@ -1889,19 +1880,15 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
       }
       if (C->method() != NULL) {
         tty->print_cr("----------------------- MetaData before Compile_id = %d ------------------------", C->compile_id());
-        C->method()->print_metadata();
+        tty->print_raw(method_metadata_str.as_string());
       } else if (C->stub_name() != NULL) {
         tty->print_cr("----------------------------- RuntimeStub %s -------------------------------", C->stub_name());
       }
       tty->cr();
       tty->print_cr("------------------------ OptoAssembly for Compile_id = %d -----------------------", C->compile_id());
-      dump_asm(node_offsets, node_offset_limit);
+      tty->print_raw(dump_asm_str.as_string());
       tty->print_cr("--------------------------------------------------------------------------------");
       if (xtty != NULL) {
-        // print_metadata and dump_asm above may safepoint which makes us loose the ttylock.
-        // Retake lock too make sure the end tag is coherent, and that xmlStream->pop_tag is done
-        // thread safe
-        ttyLocker ttyl2;
         xtty->tail("opto_assembly");
       }
     }
@@ -2037,7 +2024,6 @@ Scheduling::Scheduling(Arena *arena, Compile &compile)
   _node_bundling_base = NEW_ARENA_ARRAY(compile.comp_arena(), Bundle, node_max);
 
   // Allocate space for fixed-size arrays
-  _node_latency    = NEW_ARENA_ARRAY(arena, unsigned short, node_max);
   _uses            = NEW_ARENA_ARRAY(arena, short,          node_max);
   _current_latency = NEW_ARENA_ARRAY(arena, unsigned short, node_max);
 
@@ -2045,7 +2031,6 @@ Scheduling::Scheduling(Arena *arena, Compile &compile)
   for (uint i = 0; i < node_max; i++) {
     ::new (&_node_bundling_base[i]) Bundle();
   }
-  memset(_node_latency,       0, node_max * sizeof(unsigned short));
   memset(_uses,               0, node_max * sizeof(short));
   memset(_current_latency,    0, node_max * sizeof(unsigned short));
 
@@ -2118,8 +2103,12 @@ void PhaseOutput::ScheduleAndBundle() {
     return;
 
   // Scheduling code works only with pairs (8 bytes) maximum.
-  if (C->max_vector_size() > 8)
+  // And when the scalable vector register is used, we may spill/unspill
+  // the whole reg regardless of the max vector size.
+  if (C->max_vector_size() > 8 ||
+      (C->max_vector_size() > 0 && Matcher::supports_scalable_vector())) {
     return;
+  }
 
   Compile::TracePhase tp("isched", &timers[_t_instrSched]);
 
@@ -2133,67 +2122,26 @@ void PhaseOutput::ScheduleAndBundle() {
 #ifndef PRODUCT
   if (C->trace_opto_output()) {
     tty->print("\n---- After ScheduleAndBundle ----\n");
-    for (uint i = 0; i < C->cfg()->number_of_blocks(); i++) {
-      tty->print("\nBB#%03d:\n", i);
-      Block* block = C->cfg()->get_block(i);
-      for (uint j = 0; j < block->number_of_nodes(); j++) {
-        Node* n = block->get_node(j);
-        OptoReg::Name reg = C->regalloc()->get_reg_first(n);
-        tty->print(" %-6s ", reg >= 0 && reg < REG_COUNT ? Matcher::regName[reg] : "");
-        n->dump();
-      }
-    }
+    print_scheduling();
   }
 #endif
 }
 
-// Compute the latency of all the instructions.  This is fairly simple,
-// because we already have a legal ordering.  Walk over the instructions
-// from first to last, and compute the latency of the instruction based
-// on the latency of the preceding instruction(s).
-void Scheduling::ComputeLocalLatenciesForward(const Block *bb) {
 #ifndef PRODUCT
-  if (_cfg->C->trace_opto_output())
-    tty->print("# -> ComputeLocalLatenciesForward\n");
-#endif
-
-  // Walk over all the schedulable instructions
-  for( uint j=_bb_start; j < _bb_end; j++ ) {
-
-    // This is a kludge, forcing all latency calculations to start at 1.
-    // Used to allow latency 0 to force an instruction to the beginning
-    // of the bb
-    uint latency = 1;
-    Node *use = bb->get_node(j);
-    uint nlen = use->len();
-
-    // Walk over all the inputs
-    for ( uint k=0; k < nlen; k++ ) {
-      Node *def = use->in(k);
-      if (!def)
-        continue;
-
-      uint l = _node_latency[def->_idx] + use->latency(k);
-      if (latency < l)
-        latency = l;
+// Separated out so that it can be called directly from debugger
+void PhaseOutput::print_scheduling() {
+  for (uint i = 0; i < C->cfg()->number_of_blocks(); i++) {
+    tty->print("\nBB#%03d:\n", i);
+    Block* block = C->cfg()->get_block(i);
+    for (uint j = 0; j < block->number_of_nodes(); j++) {
+      Node* n = block->get_node(j);
+      OptoReg::Name reg = C->regalloc()->get_reg_first(n);
+      tty->print(" %-6s ", reg >= 0 && reg < REG_COUNT ? Matcher::regName[reg] : "");
+      n->dump();
     }
-
-    _node_latency[use->_idx] = latency;
-
-#ifndef PRODUCT
-    if (_cfg->C->trace_opto_output()) {
-      tty->print("# latency %4d: ", latency);
-      use->dump();
-    }
-#endif
   }
-
-#ifndef PRODUCT
-  if (_cfg->C->trace_opto_output())
-    tty->print("# <- ComputeLocalLatenciesForward\n");
+}
 #endif
-
-} // end ComputeLocalLatenciesForward
 
 // See if this node fits into the present instruction bundle
 bool Scheduling::NodeFitsInBundle(Node *n) {
@@ -2770,9 +2718,6 @@ void Scheduling::DoScheduling() {
     ComputeRegisterAntidependencies(bb);
     if (C->failing())  return;  // too many D-U pinch points
 
-    // Compute intra-bb latencies for the nodes
-    ComputeLocalLatenciesForward(bb);
-
     // Compute the usage within the block, and set the list of all nodes
     // in the block that have no uses within the block.
     ComputeUseCount(bb);
@@ -2920,6 +2865,16 @@ static void add_prec_edge_from_to( Node *from, Node *to ) {
 void Scheduling::anti_do_def( Block *b, Node *def, OptoReg::Name def_reg, int is_def ) {
   if( !OptoReg::is_valid(def_reg) ) // Ignore stores & control flow
     return;
+
+  if (OptoReg::is_reg(def_reg)) {
+    VMReg vmreg = OptoReg::as_VMReg(def_reg);
+    if (vmreg->is_reg() && !vmreg->is_concrete() && !vmreg->prev()->is_concrete()) {
+      // This is one of the high slots of a vector register.
+      // ScheduleAndBundle already checked there are no live wide
+      // vectors in this method so it can be safely ignored.
+      return;
+    }
+  }
 
   Node *pinch = _reg_node[def_reg]; // Get pinch point
   if ((pinch == NULL) || _cfg->get_block_for_node(pinch) != b || // No pinch-point yet?
@@ -3356,8 +3311,7 @@ void PhaseOutput::install() {
   if (!C->should_install_code()) {
     return;
   } else if (C->stub_function() != NULL) {
-    install_stub(C->stub_name(),
-                 C->save_argument_registers());
+    install_stub(C->stub_name());
   } else {
     install_code(C->method(),
                  C->entry_bci(),
@@ -3404,16 +3358,16 @@ void PhaseOutput::install_code(ciMethod*         target,
                                      compiler,
                                      has_unsafe_access,
                                      SharedRuntime::is_wide_vector(C->max_vector_size()),
-                                     C->rtm_state(),
-                                     C->native_invokers());
+                                     C->has_monitors(),
+                                     0,
+                                     C->rtm_state());
 
     if (C->log() != NULL) { // Print code cache state into compiler log
       C->log()->code_cache_state();
     }
   }
 }
-void PhaseOutput::install_stub(const char* stub_name,
-                               bool        caller_must_gc_arguments) {
+void PhaseOutput::install_stub(const char* stub_name) {
   // Entry point will be accessed using stub_entry_point();
   if (code_buffer() == NULL) {
     Matcher::soft_match_failure();
@@ -3432,7 +3386,7 @@ void PhaseOutput::install_stub(const char* stub_name,
                                                       // _code_offsets.value(CodeOffsets::Frame_Complete),
                                                       frame_size_in_words(),
                                                       oop_map_set(),
-                                                      caller_must_gc_arguments);
+                                                      false);
       assert(rs != NULL && rs->is_runtime_stub(), "sanity check");
 
       C->set_stub_entry_point(rs->entry_point());

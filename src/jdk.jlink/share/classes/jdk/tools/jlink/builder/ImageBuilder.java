@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.io.DataOutputStream;
 import java.util.Properties;
 
 import jdk.tools.jlink.internal.ExecutableImage;
+import jdk.tools.jlink.internal.Platform;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ResourcePool;
 
@@ -74,4 +75,13 @@ public interface ImageBuilder {
      * @throws PluginException
      */
     public ExecutableImage getExecutableImage();
+
+    /**
+     * Gets the platform of the image.
+     *
+     * @return {@code Platform} object representing the platform of the image
+     */
+    public default Platform getTargetPlatform() {
+        return Platform.UNKNOWN;
+    }
 }

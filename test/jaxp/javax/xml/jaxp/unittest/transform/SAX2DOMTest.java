@@ -48,7 +48,7 @@ import org.xml.sax.helpers.XMLFilterImpl;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true transform.SAX2DOMTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.SAX2DOMTest
  * @run testng/othervm transform.SAX2DOMTest
  * @summary Test Transforming from SAX to DOM.
  */

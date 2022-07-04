@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,8 @@ import java.util.Hashtable;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.cert.*;
+import java.util.Objects;
+
 import sun.net.util.URLUtil;
 import sun.security.util.IOUtils;
 
@@ -78,7 +80,7 @@ public class CodeSource implements java.io.Serializable {
 
     /**
      * A String form of the URL for use as a key in HashMaps/Sets. The String
-     * form should be behave in the same manner as the URL when compared for
+     * form should behave in the same manner as the URL when compared for
      * equality in a HashMap/Set, except that no nameservice lookup is done
      * on the hostname (only string comparison), and the fragment is not
      * considered.
@@ -157,22 +159,9 @@ public class CodeSource implements java.io.Serializable {
             return true;
 
         // objects types must be equal
-        if (!(obj instanceof CodeSource))
-            return false;
-
-        CodeSource cs = (CodeSource) obj;
-
-        // URLs must match
-        if (location == null) {
-            // if location is null, then cs.location must be null as well
-            if (cs.location != null) return false;
-        } else {
-            // if location is not null, then it must equal cs.location
-            if (!location.equals(cs.location)) return false;
-        }
-
-        // certs must match
-        return matchCerts(cs, true);
+        return (obj instanceof CodeSource other)
+                && Objects.equals(location, other.location)
+                && matchCerts(other, true);
     }
 
     /**
@@ -222,7 +211,7 @@ public class CodeSource implements java.io.Serializable {
                     signers[i].getSignerCertPath().getCertificates());
             }
             certs = certChains.toArray(
-                        new java.security.cert.Certificate[certChains.size()]);
+                    new java.security.cert.Certificate[0]);
             return certs.clone();
 
         } else {
@@ -341,7 +330,7 @@ public class CodeSource implements java.io.Serializable {
      *
      * @param that the CodeSource to check against.
      * @param strict if true then a strict equality match is performed.
-     *               Otherwise a subset match is performed.
+     *               Otherwise, a subset match is performed.
      */
     boolean matchCerts(CodeSource that, boolean strict)
     {
@@ -472,9 +461,7 @@ public class CodeSource implements java.io.Serializable {
                 if (that.sp == null) {
                     that.sp = new SocketPermission(thatHost, "resolve");
                 }
-                if (!this.sp.implies(that.sp)) {
-                    return false;
-                }
+                return this.sp.implies(that.sp);
             }
         }
         // everything matches
@@ -581,7 +568,7 @@ public class CodeSource implements java.io.Serializable {
             // we know of 3 different cert types: X.509, PGP, SDSI, which
             // could all be present in the stream at the same time
             cfs = new Hashtable<>(3);
-            certList = new ArrayList<>(size > 20 ? 20 : size);
+            certList = new ArrayList<>(Math.min(size, 20));
         } else if (size < 0) {
             throw new IOException("size cannot be negative");
         }
@@ -676,7 +663,7 @@ public class CodeSource implements java.io.Serializable {
             if (signers.isEmpty()) {
                 return null;
             } else {
-                return signers.toArray(new CodeSigner[signers.size()]);
+                return signers.toArray(new CodeSigner[0]);
             }
 
         } catch (CertificateException e) {

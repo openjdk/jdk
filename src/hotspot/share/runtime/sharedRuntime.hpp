@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 #include "code/vmreg.hpp"
 #include "interpreter/bytecodeTracer.hpp"
 #include "interpreter/linkResolver.hpp"
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "memory/resourceArea.hpp"
 #include "utilities/hashtable.hpp"
 #include "utilities/macros.hpp"
@@ -271,8 +271,9 @@ class SharedRuntime: AllStatic {
   static void register_finalizer(JavaThread* thread, oopDesc* obj);
 
   // dtrace notifications
-  static int dtrace_object_alloc(oopDesc* o, int size);
-  static int dtrace_object_alloc_base(Thread* thread, oopDesc* o, int size);
+  static int dtrace_object_alloc(oopDesc* o);
+  static int dtrace_object_alloc(Thread* thread, oopDesc* o);
+  static int dtrace_object_alloc(Thread* thread, oopDesc* o, size_t size);
   static int dtrace_method_entry(JavaThread* thread, Method* m);
   static int dtrace_method_exit(JavaThread* thread, Method* m);
 
@@ -281,7 +282,7 @@ class SharedRuntime: AllStatic {
   static jlong get_java_tid(Thread* thread);
 
 
-  // used by native wrappers to reenable yellow if overflow happened in native code
+  // used by native wrappers to re-enable yellow if overflow happened in native code
   static void reguard_yellow_pages();
 
   // Fill in the "X cannot be cast to a Y" message for ClassCastException
@@ -379,7 +380,9 @@ class SharedRuntime: AllStatic {
   static int c_calling_convention(const BasicType *sig_bt, VMRegPair *regs, VMRegPair *regs2,
                                   int total_args_passed);
 
-  static size_t trampoline_size();
+  static int vector_calling_convention(VMRegPair *regs,
+                                       uint num_bits,
+                                       uint total_args_passed);
 
   // Generate I2C and C2I adapters. These adapters are simple argument marshalling
   // blobs. Unlike adapters in the tiger and earlier releases the code in these
@@ -469,15 +472,13 @@ class SharedRuntime: AllStatic {
   // returns.
   //
   // The wrapper may contain special-case code if the given method
-  // is a JNI critical method, or a compiled method handle adapter,
-  // such as _invokeBasic, _linkToVirtual, etc.
+  // is a compiled method handle adapter, such as _invokeBasic, _linkToVirtual, etc.
   static nmethod* generate_native_wrapper(MacroAssembler* masm,
                                           const methodHandle& method,
                                           int compile_id,
                                           BasicType* sig_bt,
                                           VMRegPair* regs,
-                                          BasicType ret_type,
-                                          address critical_entry);
+                                          BasicType ret_type);
 
   // A compiled caller has just called the interpreter, but compiled code
   // exists.  Patch the caller so he no longer calls into the interpreter.
@@ -486,6 +487,7 @@ class SharedRuntime: AllStatic {
 
   // Slow-path Locking and Unlocking
   static void complete_monitor_locking_C(oopDesc* obj, BasicLock* lock, JavaThread* current);
+  static void complete_monitor_locking_C_inc_held_monitor_count(oopDesc* obj, BasicLock* lock, JavaThread* current);
   static void complete_monitor_unlocking_C(oopDesc* obj, BasicLock* lock, JavaThread* current);
 
   // Resolving of calls
@@ -506,13 +508,6 @@ class SharedRuntime: AllStatic {
 
   static address handle_unsafe_access(JavaThread* thread, address next_pc);
 
-#ifdef COMPILER2
-  static RuntimeStub* make_native_invoker(address call_target,
-                                          int shadow_space_bytes,
-                                          const GrowableArray<VMReg>& input_registers,
-                                          const GrowableArray<VMReg>& output_registers);
-#endif
-
 #ifndef PRODUCT
 
   // Collect and print inline cache miss statistics
@@ -524,7 +519,6 @@ class SharedRuntime: AllStatic {
   static void trace_ic_miss(address at);
 
  public:
-  static int _throw_null_ctr;                    // throwing a null-pointer exception
   static int _ic_miss_ctr;                       // total # of IC misses
   static int _wrong_method_ctr;
   static int _resolve_static_ctr;
@@ -545,7 +539,7 @@ class SharedRuntime: AllStatic {
 
   static int _new_instance_ctr;            // 'new' object requires GC
   static int _new_array_ctr;               // 'new' array requires GC
-  static int _multi1_ctr, _multi2_ctr, _multi3_ctr, _multi4_ctr, _multi5_ctr;
+  static int _multi2_ctr, _multi3_ctr, _multi4_ctr, _multi5_ctr;
   static int _find_handler_ctr;            // find exception handler
   static int _rethrow_ctr;                 // rethrow exception
   static int _mon_enter_stub_ctr;          // monitor enter stub
@@ -620,6 +614,7 @@ class SharedRuntime: AllStatic {
 
 class AdapterHandlerEntry : public BasicHashtableEntry<mtCode> {
   friend class AdapterHandlerTable;
+  friend class AdapterHandlerLibrary;
 
  private:
   AdapterFingerPrint* _fingerprint;
@@ -642,7 +637,6 @@ class AdapterHandlerEntry : public BasicHashtableEntry<mtCode> {
     _c2i_unverified_entry = c2i_unverified_entry;
     _c2i_no_clinit_check_entry = c2i_no_clinit_check_entry;
 #ifdef ASSERT
-    _saved_code = NULL;
     _saved_code_length = 0;
 #endif
   }
@@ -670,7 +664,7 @@ class AdapterHandlerEntry : public BasicHashtableEntry<mtCode> {
 #ifdef ASSERT
   // Used to verify that code generated for shared adapters is equivalent
   void save_code   (unsigned char* code, int length);
-  bool compare_code(unsigned char* code, int length);
+  bool compare_code(AdapterHandlerEntry* other);
 #endif
 
   //virtual void print_on(outputStream* st) const;  DO NOT USE
@@ -678,13 +672,24 @@ class AdapterHandlerEntry : public BasicHashtableEntry<mtCode> {
 };
 
 class AdapterHandlerLibrary: public AllStatic {
+  friend class SharedRuntime;
  private:
   static BufferBlob* _buffer; // the temporary code buffer in CodeCache
   static AdapterHandlerTable* _adapters;
   static AdapterHandlerEntry* _abstract_method_handler;
+  static AdapterHandlerEntry* _no_arg_handler;
+  static AdapterHandlerEntry* _int_arg_handler;
+  static AdapterHandlerEntry* _obj_arg_handler;
+  static AdapterHandlerEntry* _obj_int_arg_handler;
+  static AdapterHandlerEntry* _obj_obj_arg_handler;
+
   static BufferBlob* buffer_blob();
   static void initialize();
-
+  static AdapterHandlerEntry* create_adapter(AdapterBlob*& new_adapter,
+                                             int total_args_passed,
+                                             BasicType* sig_bt,
+                                             bool allocate_code_blob);
+  static AdapterHandlerEntry* get_simple_adapter(const methodHandle& method);
  public:
 
   static AdapterHandlerEntry* new_entry(AdapterFingerPrint* fingerprint,

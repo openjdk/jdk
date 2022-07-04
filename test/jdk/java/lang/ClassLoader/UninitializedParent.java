@@ -26,7 +26,7 @@
  * @bug 6636650
  * @summary Uninitialized class loaders should not be a parent of other
  *          class loaders.
- * @run main/othervm UninitializedParent
+ * @run main/othervm -Djava.security.manager=allow UninitializedParent
  */
 
 

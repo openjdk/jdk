@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, NTT DATA.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -41,7 +41,7 @@ import jdk.test.lib.SA.SATestUtils;
  * @modules jdk.hotspot.agent/sun.jvm.hotspot
  *          jdk.hotspot.agent/sun.jvm.hotspot.oops
  *          jdk.hotspot.agent/sun.jvm.hotspot.runtime
- * @run main TestObjectMonitorIterate
+ * @run driver TestObjectMonitorIterate
  */
 
 public class TestObjectMonitorIterate {
@@ -59,8 +59,12 @@ public class TestObjectMonitorIterate {
 
             while (itr.hasNext()) {
                 ObjectMonitor mon = (ObjectMonitor)itr.next();
-                Oop oop = heap.newOop(mon.object());
-                System.out.println("Monitor found: " + oop.getKlass().getName().asString());
+                if (mon.object() == null) {
+                    System.out.println("Monitor found: object is null");
+                } else {
+                    Oop oop = heap.newOop(mon.object());
+                    System.out.println("Monitor found: " + oop.getKlass().getName().asString());
+                }
             }
         } finally {
             agent.detach();

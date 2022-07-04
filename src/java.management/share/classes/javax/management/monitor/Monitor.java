@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -171,9 +171,11 @@ public abstract class Monitor
     /**
      * AccessControlContext of the Monitor.start() caller.
      */
+    @SuppressWarnings("removal")
     private static final AccessControlContext noPermissionsACC =
             new AccessControlContext(
             new ProtectionDomain[] {new ProtectionDomain(null, null)});
+    @SuppressWarnings("removal")
     private volatile AccessControlContext acc = noPermissionsACC;
 
     /**
@@ -200,6 +202,7 @@ public abstract class Monitor
     private static final int maximumPoolSize;
     static {
         final String maximumPoolSizeSysProp = "jmx.x.monitor.maximum.pool.size";
+        @SuppressWarnings("removal")
         final String maximumPoolSizeStr = AccessController.doPrivileged(
             new GetPropertyAction(maximumPoolSizeSysProp));
         if (maximumPoolSizeStr == null ||
@@ -693,6 +696,7 @@ public abstract class Monitor
     /**
      * Starts the monitor.
      */
+    @SuppressWarnings("removal")
     void doStart() {
             MONITOR_LOGGER.log(Level.TRACE, "start the monitor");
 
@@ -1200,45 +1204,15 @@ public abstract class Monitor
                 MONITOR_LOGGER.log(Level.TRACE, msg);
                 MONITOR_LOGGER.log(Level.TRACE, anf_ex::toString);
             }
-        } catch (MBeanException mb_ex) {
+        } catch (MBeanException | ReflectionException| IOException | RuntimeException e) {
             if (isAlreadyNotified(o, RUNTIME_ERROR_NOTIFIED))
                 return;
             else {
                 notifType = RUNTIME_ERROR;
                 setAlreadyNotified(o, index, RUNTIME_ERROR_NOTIFIED, an);
-                msg = mb_ex.getMessage() == null ? "" : mb_ex.getMessage();
+                msg = e.getMessage() == null ? "" : e.getMessage();
                 MONITOR_LOGGER.log(Level.TRACE, msg);
-                MONITOR_LOGGER.log(Level.TRACE, mb_ex::toString);
-            }
-        } catch (ReflectionException ref_ex) {
-            if (isAlreadyNotified(o, RUNTIME_ERROR_NOTIFIED)) {
-                return;
-            } else {
-                notifType = RUNTIME_ERROR;
-                setAlreadyNotified(o, index, RUNTIME_ERROR_NOTIFIED, an);
-                msg = ref_ex.getMessage() == null ? "" : ref_ex.getMessage();
-                MONITOR_LOGGER.log(Level.TRACE, msg);
-                MONITOR_LOGGER.log(Level.TRACE, ref_ex::toString);
-            }
-        } catch (IOException io_ex) {
-            if (isAlreadyNotified(o, RUNTIME_ERROR_NOTIFIED))
-                return;
-            else {
-                notifType = RUNTIME_ERROR;
-                setAlreadyNotified(o, index, RUNTIME_ERROR_NOTIFIED, an);
-                msg = io_ex.getMessage() == null ? "" : io_ex.getMessage();
-                MONITOR_LOGGER.log(Level.TRACE, msg);
-                MONITOR_LOGGER.log(Level.TRACE, io_ex::toString);
-            }
-        } catch (RuntimeException rt_ex) {
-            if (isAlreadyNotified(o, RUNTIME_ERROR_NOTIFIED))
-                return;
-            else {
-                notifType = RUNTIME_ERROR;
-                setAlreadyNotified(o, index, RUNTIME_ERROR_NOTIFIED, an);
-                msg = rt_ex.getMessage() == null ? "" : rt_ex.getMessage();
-                MONITOR_LOGGER.log(Level.TRACE, msg);
-                MONITOR_LOGGER.log(Level.TRACE, rt_ex::toString);
+                MONITOR_LOGGER.log(Level.TRACE, e::toString);
             }
         }
 
@@ -1496,6 +1470,7 @@ public abstract class Monitor
             // System.getSecurityManager() is used, else the group of the thread
             // instantiating this MonitorTask, i.e. the group of the thread that
             // calls "Monitor.start()".
+            @SuppressWarnings("removal")
             SecurityManager s = System.getSecurityManager();
             ThreadGroup group = (s != null) ? s.getThreadGroup() :
                 Thread.currentThread().getThreadGroup();
@@ -1534,6 +1509,7 @@ public abstract class Monitor
             return executor.submit(this);
         }
 
+        @SuppressWarnings("removal")
         public void run() {
             final ScheduledFuture<?> sf;
             final AccessControlContext ac;
@@ -1592,6 +1568,7 @@ public abstract class Monitor
         static final String nameSuffix = "]";
 
         public DaemonThreadFactory(String poolName) {
+            @SuppressWarnings("removal")
             SecurityManager s = System.getSecurityManager();
             group = (s != null) ? s.getThreadGroup() :
                                   Thread.currentThread().getThreadGroup();

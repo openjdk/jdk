@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @run testng/othervm
  *      -Djdk.internal.httpclient.debug=true
  *      -Djdk.internal.httpclient.websocket.debug=true
+ *      -Djdk.httpclient.sendBufferSize=8192
  *       PendingTextPingClose
  */
 
@@ -38,8 +39,6 @@ import java.nio.CharBuffer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import static java.net.http.HttpClient.Builder.NO_PROXY;
-import static java.net.http.HttpClient.newBuilder;
 
 public class PendingTextPingClose extends PendingOperations {
 
@@ -51,8 +50,9 @@ public class PendingTextPingClose extends PendingOperations {
     public void pendingTextPingClose(boolean last) throws Exception {
         repeatable(() -> {
             server = Support.notReadingServer();
+            server.setReceiveBufferSize(1024);
             server.open();
-            webSocket = newBuilder().proxy(NO_PROXY).build().newWebSocketBuilder()
+            webSocket = httpClient().newWebSocketBuilder()
                     .buildAsync(server.getURI(), new WebSocket.Listener() { })
                     .join();
             CharBuffer data = CharBuffer.allocate(65536);
@@ -61,7 +61,8 @@ public class PendingTextPingClose extends PendingOperations {
                 System.out.printf("begin cycle #%s at %s%n", i, start);
                 cfText = webSocket.sendText(data, last);
                 try {
-                    cfText.get(MAX_WAIT_SEC, TimeUnit.SECONDS);
+                    if (!cfText.isDone()) System.gc();
+                    cfText.get(waitSec, TimeUnit.SECONDS);
                     data.clear();
                 } catch (TimeoutException e) {
                     break;
@@ -75,17 +76,16 @@ public class PendingTextPingClose extends PendingOperations {
             assertFails(ISE, webSocket.sendBinary(ByteBuffer.allocate(0), true));
             assertFails(ISE, webSocket.sendBinary(ByteBuffer.allocate(0), false));
             cfPing = webSocket.sendPing(ByteBuffer.allocate(125));
-            assertHangs(cfPing);
             assertFails(ISE, webSocket.sendPing(ByteBuffer.allocate(125)));
             assertFails(ISE, webSocket.sendPong(ByteBuffer.allocate(125)));
             cfClose = webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "ok");
-            assertHangs(cfClose);
+            assertAllHang(cfPing, cfClose);
             assertNotDone(cfText);
+            webSocket.abort();
+            assertFails(IOE, cfText);
+            assertFails(IOE, cfPing);
+            assertFails(IOE, cfClose);
             return null;
         }, () -> cfText.isDone());
-        webSocket.abort();
-        assertFails(IOE, cfText);
-        assertFails(IOE, cfPing);
-        assertFails(IOE, cfClose);
     }
 }

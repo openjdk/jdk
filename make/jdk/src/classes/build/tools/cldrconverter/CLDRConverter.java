@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,6 +114,7 @@ public class CLDRConverter {
         ResourceBundle.Control.getControl(ResourceBundle.Control.FORMAT_DEFAULT);
 
     private static Set<String> AVAILABLE_TZIDS;
+    static int copyrightYear;
     private static String zoneNameTempFile;
     private static String tzDataDir;
     private static final Map<String, String> canonicalTZMap = new HashMap<>();
@@ -217,6 +218,10 @@ public class CLDRConverter {
                         verbose = true;
                         break;
 
+                    case "-year":
+                        copyrightYear = Integer.parseInt(args[++i]);
+                        break;
+
                     case "-zntempfile":
                         zoneNameTempFile = args[++i];
                         break;
@@ -235,7 +240,7 @@ public class CLDRConverter {
                     }
                 }
             } catch (RuntimeException e) {
-                severe("unknown or imcomplete arg(s): " + currentArg);
+                severe("unknown or incomplete arg(s): " + currentArg);
                 usage();
                 System.exit(1);
             }
@@ -258,6 +263,10 @@ public class CLDRConverter {
 
         if (BASE_LOCALES.isEmpty()) {
             setupBaseLocales("en-US");
+        }
+
+        if (copyrightYear == 0) {
+            copyrightYear = ZonedDateTime.now(ZoneId.of("America/Los_Angeles")).getYear();
         }
 
         bundleGenerator = new ResourceBundleGenerator();
@@ -292,6 +301,7 @@ public class CLDRConverter {
                 + "\t-basemodule    generates bundles that go into java.base module%n"
                 + "\t-baselocales loc(,loc)*      locales that go into the base module%n"
                 + "\t-o dir         output directory (default: ./build/gensrc)%n"
+                + "\t-year year     copyright year in output%n"
                 + "\t-zntempfile    template file for java.time.format.ZoneName.java%n"
                 + "\t-tzdatadir     tzdata directory for java.time.format.ZoneName.java%n"
                 + "\t-utf8          use UTF-8 rather than \\uxxxx (for debug)%n");
@@ -536,7 +546,6 @@ public class CLDRConverter {
             Map<String, Object> targetMap = bundle.getTargetMap();
             EnumSet<Bundle.Type> bundleTypes = bundle.getBundleTypes();
             var id = bundle.getID();
-            var javaId = bundle.getJavaID();
 
             if (bundle.isRoot()) {
                 // Add DateTimePatternChars because CLDR no longer supports localized patterns.
@@ -548,31 +557,31 @@ public class CLDRConverter {
             if (bundleTypes.contains(Bundle.Type.LOCALENAMES)) {
                 Map<String, Object> localeNamesMap = extractLocaleNames(targetMap, id);
                 if (!localeNamesMap.isEmpty() || bundle.isRoot()) {
-                    bundleGenerator.generateBundle("util", "LocaleNames", javaId, true, localeNamesMap, BundleType.OPEN);
+                    bundleGenerator.generateBundle("util", "LocaleNames", id, true, localeNamesMap, BundleType.OPEN);
                 }
             }
             if (bundleTypes.contains(Bundle.Type.CURRENCYNAMES)) {
                 Map<String, Object> currencyNamesMap = extractCurrencyNames(targetMap, id, bundle.getCurrencies());
                 if (!currencyNamesMap.isEmpty() || bundle.isRoot()) {
-                    bundleGenerator.generateBundle("util", "CurrencyNames", javaId, true, currencyNamesMap, BundleType.OPEN);
+                    bundleGenerator.generateBundle("util", "CurrencyNames", id, true, currencyNamesMap, BundleType.OPEN);
                 }
             }
             if (bundleTypes.contains(Bundle.Type.TIMEZONENAMES)) {
                 Map<String, Object> zoneNamesMap = extractZoneNames(targetMap, id);
                 if (!zoneNamesMap.isEmpty() || bundle.isRoot()) {
-                    bundleGenerator.generateBundle("util", "TimeZoneNames", javaId, true, zoneNamesMap, BundleType.TIMEZONE);
+                    bundleGenerator.generateBundle("util", "TimeZoneNames", id, true, zoneNamesMap, BundleType.TIMEZONE);
                 }
             }
             if (bundleTypes.contains(Bundle.Type.CALENDARDATA)) {
                 Map<String, Object> calendarDataMap = extractCalendarData(targetMap, id);
                 if (!calendarDataMap.isEmpty() || bundle.isRoot()) {
-                    bundleGenerator.generateBundle("util", "CalendarData", javaId, true, calendarDataMap, BundleType.PLAIN);
+                    bundleGenerator.generateBundle("util", "CalendarData", id, true, calendarDataMap, BundleType.PLAIN);
                 }
             }
             if (bundleTypes.contains(Bundle.Type.FORMATDATA)) {
                 Map<String, Object> formatDataMap = extractFormatData(targetMap, id);
                 if (!formatDataMap.isEmpty() || bundle.isRoot()) {
-                    bundleGenerator.generateBundle("text", "FormatData", javaId, true, formatDataMap, BundleType.PLAIN);
+                    bundleGenerator.generateBundle("text", "FormatData", id, true, formatDataMap, BundleType.PLAIN);
                 }
             }
 
@@ -838,20 +847,24 @@ public class CLDRConverter {
         "DateTimePatternChars",
         "PluralRules",
         "DayPeriodRules",
+        "DateFormatItemInputRegions.allowed",
+        "DateFormatItemInputRegions.preferred",
     };
+
+    static final Set<String> availableSkeletons = new HashSet<>();
 
     private static Map<String, Object> extractFormatData(Map<String, Object> map, String id) {
         Map<String, Object> formatData = new LinkedHashMap<>();
         for (CalendarType calendarType : CalendarType.values()) {
-            if (calendarType == CalendarType.GENERIC) {
-                continue;
-            }
             String prefix = calendarType.keyElementName();
-            for (String element : FORMAT_DATA_ELEMENTS) {
-                String key = prefix + element;
-                copyIfPresent(map, "java.time." + key, formatData);
-                copyIfPresent(map, key, formatData);
-            }
+            Arrays.stream(FORMAT_DATA_ELEMENTS)
+                .forEach(elem -> {
+                    var key = prefix + elem;
+                    copyIfPresent(map, "java.time." + key, formatData);
+                    copyIfPresent(map, key, formatData);
+                });
+            availableSkeletons.forEach(s ->
+                copyIfPresent(map, prefix + "DateFormatItem." + s, formatData));
         }
 
         for (String key : map.keySet()) {
@@ -859,9 +872,6 @@ public class CLDRConverter {
             if (key.startsWith(CLDRConverter.LOCALE_TYPE_PREFIX_CA)) {
                 String type = key.substring(CLDRConverter.LOCALE_TYPE_PREFIX_CA.length());
                 for (CalendarType calendarType : CalendarType.values()) {
-                    if (calendarType == CalendarType.GENERIC) {
-                        continue;
-                    }
                     if (type.equals(calendarType.lname())) {
                         Object value = map.get(key);
                         String dataKey = key.replace(LOCALE_TYPE_PREFIX_CA,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -326,6 +326,7 @@ public class Enter extends JCTree.Visitor {
             JCPackageDecl pd = tree.getPackage();
             if (pd != null) {
                 tree.packge = pd.packge = syms.enterPackage(tree.modle, TreeInfo.fullName(pd.pid));
+                setPackageSymbols.scan(pd);
                 if (   pd.annotations.nonEmpty()
                     || pkginfoOpt == PkgInfo.ALWAYS
                     || tree.docComments != null) {
@@ -375,8 +376,8 @@ public class Enter extends JCTree.Visitor {
                 Name name = names.package_info;
                 ClassSymbol c = syms.enterClass(tree.modle, name, tree.packge);
                 c.flatname = names.fromString(tree.packge + "." + name);
-                c.sourcefile = tree.sourcefile;
-            c.completer = Completer.NULL_COMPLETER;
+                c.classfile = c.sourcefile = tree.sourcefile;
+                c.completer = Completer.NULL_COMPLETER;
                 c.members_field = WriteableScope.create(c);
                 tree.packge.package_info = c;
                 tree.packge.sourcefile = tree.sourcefile;
@@ -389,6 +390,31 @@ public class Enter extends JCTree.Visitor {
         log.useSource(prev);
         result = null;
     }
+        //where:
+        //set package Symbols to the package expression:
+        private final TreeScanner setPackageSymbols = new TreeScanner() {
+            Symbol currentPackage;
+
+            @Override
+            public void visitIdent(JCIdent tree) {
+                tree.sym = currentPackage;
+                tree.type = currentPackage.type;
+            }
+
+            @Override
+            public void visitSelect(JCFieldAccess tree) {
+                tree.sym = currentPackage;
+                tree.type = currentPackage.type;
+                currentPackage = currentPackage.owner;
+                super.visitSelect(tree);
+            }
+
+            @Override
+            public void visitPackageDef(JCPackageDecl tree) {
+                currentPackage = tree.packge;
+                scan(tree.pid);
+            }
+        };
 
     @Override
     public void visitClassDef(JCClassDecl tree) {
@@ -469,7 +495,7 @@ public class Enter extends JCTree.Visitor {
         // Fill out class fields.
         c.completer = Completer.NULL_COMPLETER; // do not allow the initial completer linger on.
         c.flags_field = chk.checkFlags(tree.pos(), tree.mods.flags, c, tree);
-        c.sourcefile = env.toplevel.sourcefile;
+        c.classfile = c.sourcefile = env.toplevel.sourcefile;
         c.members_field = WriteableScope.create(c);
         c.clearAnnotationMetadata();
 

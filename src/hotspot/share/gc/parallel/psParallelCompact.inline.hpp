@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,12 @@
 #ifndef SHARE_GC_PARALLEL_PSPARALLELCOMPACT_INLINE_HPP
 #define SHARE_GC_PARALLEL_PSPARALLELCOMPACT_INLINE_HPP
 
+#include "gc/parallel/psParallelCompact.hpp"
+
 #include "gc/parallel/parallelScavengeHeap.hpp"
 #include "gc/parallel/parMarkBitMap.inline.hpp"
-#include "gc/parallel/psParallelCompact.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/continuationGCSupport.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/klass.hpp"
@@ -96,9 +98,10 @@ inline void PSParallelCompact::check_new_location(HeapWord* old_addr, HeapWord* 
 #endif // ASSERT
 
 inline bool PSParallelCompact::mark_obj(oop obj) {
-  const int obj_size = obj->size();
+  const size_t obj_size = obj->size();
   if (mark_bitmap()->mark_obj(obj, obj_size)) {
     _summary_data.add_obj(obj, obj_size);
+    ContinuationGCSupport::transform_stack_chunk(obj);
     return true;
   } else {
     return false;
@@ -125,9 +128,7 @@ inline void PSParallelCompact::adjust_pointer(T* p, ParCompactionManager* cm) {
 
 class PCAdjustPointerClosure: public BasicOopIterateClosure {
 public:
-  PCAdjustPointerClosure(ParCompactionManager* cm) {
-    verify_cm(cm);
-    _cm = cm;
+  PCAdjustPointerClosure(ParCompactionManager* cm) : _cm(cm) {
   }
   template <typename T> void do_oop_nv(T* p) { PSParallelCompact::adjust_pointer(p, _cm); }
   virtual void do_oop(oop* p)                { do_oop_nv(p); }
@@ -136,8 +137,6 @@ public:
   virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS; }
 private:
   ParCompactionManager* _cm;
-
-  static void verify_cm(ParCompactionManager* cm) NOT_DEBUG_RETURN;
 };
 
 #endif // SHARE_GC_PARALLEL_PSPARALLELCOMPACT_INLINE_HPP

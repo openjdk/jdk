@@ -39,7 +39,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 6537167
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true transform.Bug6537167
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.Bug6537167
  * @run testng/othervm transform.Bug6537167
  * @summary Test transforming for particular xsl files.
  */

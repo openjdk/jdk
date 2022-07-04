@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,10 +46,12 @@
 import org.junit.Test;
 
 import java.io.File;
+import java.nio.file.Path;
 
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.Platform;
 
 public class MethodHandlesAsCollectorTest {
     @Test
@@ -68,20 +70,17 @@ public class MethodHandlesAsCollectorTest {
         String appJar = JarBuilder.build("MH", new File(classDir), null);
         String classList = testClassName + ".list";
         String archiveName = testClassName + ".jsa";
+        // Disable VerifyDpendencies when running with debug build because
+        // the test requires a lot more time to execute with the option enabled.
+        String verifyOpt =
+            Platform.isDebugBuild() ? "-XX:-VerifyDependencies" : "-showversion";
 
-        String[] classPaths = javaClassPath.split(File.pathSeparator);
-        String junitJar = null;
-        for (String path : classPaths) {
-            if (path.endsWith("junit.jar")) {
-                junitJar = path;
-                break;
-            }
-        }
+        String junitJar = Path.of(Test.class.getProtectionDomain().getCodeSource().getLocation().toURI()).toString();
 
         String jars = appJar + ps + junitJar;
 
         // dump class list
-        CDSTestUtils.dumpClassList(classList, "-cp", jars, mainClass,
+        CDSTestUtils.dumpClassList(classList, "-cp", jars, verifyOpt, mainClass,
                                    testPackageName + "." + testClassName);
 
         // create archive with the class list
@@ -94,7 +93,7 @@ public class MethodHandlesAsCollectorTest {
 
         // run with archive
         CDSOptions runOpts = (new CDSOptions())
-            .addPrefix("-cp", jars, "-Xlog:class+load,cds=debug")
+            .addPrefix("-cp", jars, "-Xlog:class+load,cds=debug", verifyOpt)
             .setArchiveName(archiveName)
             .setUseVersion(false)
             .addSuffix(mainClass, testPackageName + "." + testClassName);

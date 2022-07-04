@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -672,7 +672,7 @@ public class AutoTestOnTop {
         } catch (Exception e) {
             error("Test failed: stage#" + stageNum + "action #" + actNum + ": " + msgCase + ": " + msgAction +
                                ": setAlwaysOnTop(" + value + ") called at state " + msgVisibility +
-                               " threw exeption " + e);
+                               " threw exception " + e);
         }
     }
 
@@ -685,7 +685,7 @@ public class AutoTestOnTop {
         } catch (Exception e) {
             error("Test failed: stage #" + stageNum + ", action # " + actNum + ": " + msgCase + ": " + msgAction +
                                ": isAlwaysOnTop() called at state " + msgVisibility +
-                               " threw exeption " + e);
+                               " threw exception " + e);
         }
         return result;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -235,7 +235,7 @@ public abstract class Signature extends SignatureSpi {
      * {@code jdk.security.provider.preferred}
      * {@link Security#getProperty(String) Security} property to determine
      * the preferred provider order for the specified algorithm. This
-     * may be different than the order of providers returned by
+     * may be different from the order of providers returned by
      * {@link Security#getProviders() Security.getProviders()}.
      *
      * @param algorithm the standard name of the algorithm requested.
@@ -264,7 +264,7 @@ public abstract class Signature extends SignatureSpi {
             list = GetInstance.getServices("Signature", algorithm);
         }
         Iterator<Service> t = list.iterator();
-        if (t.hasNext() == false) {
+        if (!t.hasNext()) {
             throw new NoSuchAlgorithmException
                 (algorithm + " Signature not available");
         }
@@ -305,18 +305,17 @@ public abstract class Signature extends SignatureSpi {
 
     static {
         signatureInfo = new ConcurrentHashMap<>();
-        Boolean TRUE = Boolean.TRUE;
         // pre-initialize with values for our SignatureSpi implementations
-        signatureInfo.put("sun.security.provider.DSA$RawDSA", TRUE);
-        signatureInfo.put("sun.security.provider.DSA$SHA1withDSA", TRUE);
-        signatureInfo.put("sun.security.rsa.RSASignature$MD2withRSA", TRUE);
-        signatureInfo.put("sun.security.rsa.RSASignature$MD5withRSA", TRUE);
-        signatureInfo.put("sun.security.rsa.RSASignature$SHA1withRSA", TRUE);
-        signatureInfo.put("sun.security.rsa.RSASignature$SHA256withRSA", TRUE);
-        signatureInfo.put("sun.security.rsa.RSASignature$SHA384withRSA", TRUE);
-        signatureInfo.put("sun.security.rsa.RSASignature$SHA512withRSA", TRUE);
-        signatureInfo.put("sun.security.rsa.RSAPSSSignature", TRUE);
-        signatureInfo.put("sun.security.pkcs11.P11Signature", TRUE);
+        signatureInfo.put("sun.security.provider.DSA$RawDSA", true);
+        signatureInfo.put("sun.security.provider.DSA$SHA1withDSA", true);
+        signatureInfo.put("sun.security.rsa.RSASignature$MD2withRSA", true);
+        signatureInfo.put("sun.security.rsa.RSASignature$MD5withRSA", true);
+        signatureInfo.put("sun.security.rsa.RSASignature$SHA1withRSA", true);
+        signatureInfo.put("sun.security.rsa.RSASignature$SHA256withRSA", true);
+        signatureInfo.put("sun.security.rsa.RSASignature$SHA384withRSA", true);
+        signatureInfo.put("sun.security.rsa.RSASignature$SHA512withRSA", true);
+        signatureInfo.put("sun.security.rsa.RSAPSSSignature", true);
+        signatureInfo.put("sun.security.pkcs11.P11Signature", true);
     }
 
     private static boolean isSpi(Service s) {
@@ -333,8 +332,8 @@ public abstract class Signature extends SignatureSpi {
                 // so it is a "real" Spi if it is an
                 // instance of SignatureSpi but not Signature
                 boolean r = (instance instanceof SignatureSpi)
-                                && (instance instanceof Signature == false);
-                if ((debug != null) && (r == false)) {
+                                && (!(instance instanceof Signature));
+                if ((debug != null) && (!r)) {
                     debug.println("Not a SignatureSpi " + className);
                     debug.println("Delayed provider selection may not be "
                         + "available for algorithm " + s.getAlgorithm());
@@ -518,11 +517,11 @@ public abstract class Signature extends SignatureSpi {
      * of this call.
      *
      * @param publicKey the public key of the identity whose signature is
-     * going to be verified.
-     * @param params the parameters used for verifying this signature.
+     * going to be verified
+     * @param params the parameters used for verifying this signature object
      *
-     * @throws    InvalidKeyException if the key is invalid.
-     * @throws    InvalidAlgorithmParameterException if the params is invalid.
+     * @throws    InvalidKeyException if the key is invalid
+     * @throws    InvalidAlgorithmParameterException if the params is invalid
      */
     final void initVerify(PublicKey publicKey, AlgorithmParameterSpec params)
             throws InvalidKeyException, InvalidAlgorithmParameterException {
@@ -541,18 +540,17 @@ public abstract class Signature extends SignatureSpi {
         // we should check whether it has a Key Usage
         // extension marked as critical.
         //if (cert instanceof java.security.cert.X509Certificate) {
-        if (cert instanceof X509Certificate) {
+        if (cert instanceof X509Certificate xcert) {
             // Check whether the cert has a key usage extension
             // marked as a critical extension.
             // The OID for KeyUsage extension is 2.5.29.15.
-            X509Certificate c = (X509Certificate)cert;
-            Set<String> critSet = c.getCriticalExtensionOIDs();
+            Set<String> critSet = xcert.getCriticalExtensionOIDs();
 
             if (critSet != null && !critSet.isEmpty()
                 && critSet.contains(KnownOIDs.KeyUsage.value())) {
-                boolean[] keyUsageInfo = c.getKeyUsage();
+                boolean[] keyUsageInfo = xcert.getKeyUsage();
                 // keyUsageInfo[0] is for digitalSignature.
-                if ((keyUsageInfo != null) && (keyUsageInfo[0] == false))
+                if ((keyUsageInfo != null) && (!keyUsageInfo[0]))
                     throw new InvalidKeyException("Wrong key usage");
             }
         }
@@ -599,13 +597,13 @@ public abstract class Signature extends SignatureSpi {
      * {@code InvalidKeyException} is thrown.
      *
      * @param certificate the certificate of the identity whose signature is
-     * going to be verified.
-     * @param params the parameters used for verifying this signature.
+     * going to be verified
+     * @param params the parameters used for verifying this signature object
      *
      * @throws    InvalidKeyException  if the public key in the certificate
      * is not encoded properly or does not include required  parameter
-     * information or cannot be used for digital signature purposes.
-     * @throws    InvalidAlgorithmParameterException if the params is invalid.
+     * information or cannot be used for digital signature purposes
+     * @throws    InvalidAlgorithmParameterException if the params is invalid
      *
      * @since 13
      */
@@ -648,9 +646,9 @@ public abstract class Signature extends SignatureSpi {
      * of this call.
      *
      * @param privateKey the private key of the identity whose signature
-     * is going to be generated.
+     * is going to be generated
      *
-     * @param random the source of randomness for this signature.
+     * @param random the source of randomness for this signature object
      *
      * @throws    InvalidKeyException if the key is invalid.
      */
@@ -671,11 +669,11 @@ public abstract class Signature extends SignatureSpi {
      * of this call.
      *
      * @param privateKey the private key of the identity whose signature
-     * is going to be generated.
-     * @param params the parameters used for generating signature.
-     * @param random the source of randomness for this signature.
+     * is going to be generated
+     * @param params the parameters used for generating signature
+     * @param random the source of randomness for this signature object
      *
-     * @throws    InvalidKeyException if the key is invalid.
+     * @throws    InvalidKeyException if the key is invalid
      * @throws    InvalidAlgorithmParameterException if the params is invalid
      */
     final void initSign(PrivateKey privateKey,
@@ -948,18 +946,12 @@ public abstract class Signature extends SignatureSpi {
      * @return a string representation of this signature object.
      */
     public String toString() {
-        String initState = "";
-        switch (state) {
-        case UNINITIALIZED:
-            initState = "<not initialized>";
-            break;
-        case VERIFY:
-            initState = "<initialized for verifying>";
-            break;
-        case SIGN:
-            initState = "<initialized for signing>";
-            break;
-        }
+        String initState = switch (state) {
+            case UNINITIALIZED -> "<not initialized>";
+            case VERIFY        -> "<initialized for verifying>";
+            case SIGN          -> "<initialized for signing>";
+            default -> "";
+        };
         return "Signature object: " + getAlgorithm() + initState;
     }
 
@@ -969,16 +961,16 @@ public abstract class Signature extends SignatureSpi {
      * which it is possible to set the various parameters of this object.
      * A parameter may be any settable parameter for the algorithm, such as
      * a parameter size, or a source of random bits for signature generation
-     * (if appropriate), or an indication of whether or not to perform
+     * (if appropriate), or an indication of whether to perform
      * a specific but optional computation. A uniform algorithm-specific
      * naming scheme for each parameter is desirable but left unspecified
      * at this time.
      *
-     * @param param the string identifier of the parameter.
-     * @param value the parameter value.
+     * @param param the string identifier of the parameter
+     * @param value the parameter value
      *
      * @throws    InvalidParameterException if {@code param} is an
-     * invalid parameter for this signature algorithm engine,
+     * invalid parameter for this signature object,
      * the parameter is already set
      * and cannot be set again, a security exception occurs, and so on.
      *
@@ -995,12 +987,12 @@ public abstract class Signature extends SignatureSpi {
     }
 
     /**
-     * Initializes this signature engine with the specified parameter set.
+     * Initializes this signature object with the specified parameter values.
      *
-     * @param params the parameters
+     * @param params the parameter values
      *
-     * @throws    InvalidAlgorithmParameterException if the given parameters
-     * are inappropriate for this signature engine
+     * @throws InvalidAlgorithmParameterException if the given parameter values
+     * are inappropriate for this signature object
      *
      * @see #getParameters
      */
@@ -1012,17 +1004,20 @@ public abstract class Signature extends SignatureSpi {
     /**
      * Returns the parameters used with this signature object.
      *
-     * <p> If this signature has been initialized with parameters
-     * (by calling {@link #setParameter(AlgorithmParameterSpec)} or
-     * {@link #setParameter(String, Object)}) and the underlying signature
-     * implementation supports returning the parameters as
-     * {@code AlgorithmParameters}, this method returns the same parameters.
-     * If the parameters were not set, this method may return a combination
-     * of default and randomly generated parameter values if the
-     * underlying signature implementation supports it and can successfully
-     * generate them. Otherwise, {@code null} is returned.
+     * <p>The returned parameters may be the same that were used to initialize
+     * this signature object, or may contain additional default or random
+     * parameter values used by the underlying signature scheme. If the required
+     * parameters were not supplied and can be generated by the signature
+     * object, the generated parameters are returned; otherwise {@code null} is
+     * returned.
      *
-     * @return the parameters used with this signature, or {@code null}
+     * <p>However, if the signature scheme does not support returning
+     * the parameters as {@code AlgorithmParameters}, {@code null} is always
+     * returned.
+     *
+     * @return the parameters used with this signature object, or {@code null}
+     * @throws UnsupportedOperationException if the provider does not support
+     * this method
      *
      * @see #setParameter(AlgorithmParameterSpec)
      * @since 1.4
@@ -1037,7 +1032,7 @@ public abstract class Signature extends SignatureSpi {
      * get the various parameters of this object. A parameter may be any
      * settable parameter for the algorithm, such as a parameter size, or
      * a source of random bits for signature generation (if appropriate),
-     * or an indication of whether or not to perform a specific but optional
+     * or an indication of whether to perform a specific but optional
      * computation. A uniform algorithm-specific naming scheme for each
      * parameter is desirable but left unspecified at this time.
      *
@@ -1153,13 +1148,12 @@ public abstract class Signature extends SignatureSpi {
         public Object clone() throws CloneNotSupportedException {
             chooseFirstProvider();
             if (sigSpi instanceof Cloneable) {
-                // Because 'algorithm' and 'provider' are private
-                // members of our supertype, we must perform a cast to
-                // access them.
+                // Because 'algorithm' is private member of our supertype,
+                // we must perform a cast to access it.
                 Signature that = new CloneableDelegate(
                    (SignatureSpi)sigSpi.clone(),
                    ((Signature)this).algorithm);
-                that.provider = ((Signature)this).provider;
+                that.provider = this.provider;
                 return that;
             } else {
                 throw new CloneNotSupportedException();
@@ -1178,7 +1172,7 @@ public abstract class Signature extends SignatureSpi {
                 }
             } else {
                 Object o = s.newInstance(null);
-                if (o instanceof SignatureSpi == false) {
+                if (!(o instanceof SignatureSpi)) {
                     throw new NoSuchAlgorithmException
                         ("Not a SignatureSpi: " + o.getClass().getName());
                 }
@@ -1223,7 +1217,7 @@ public abstract class Signature extends SignatureSpi {
                     } else {
                         s = serviceIterator.next();
                     }
-                    if (isSpi(s) == false) {
+                    if (!isSpi(s)) {
                         continue;
                     }
                     try {
@@ -1265,11 +1259,11 @@ public abstract class Signature extends SignatureSpi {
                         s = serviceIterator.next();
                     }
                     // if provider says it does not support this key, ignore it
-                    if (key != null && s.supportsParameter(key) == false) {
+                    if (key != null && !s.supportsParameter(key)) {
                         continue;
                     }
                     // if instance is not a SignatureSpi, ignore it
-                    if (isSpi(s) == false) {
+                    if (!isSpi(s)) {
                         continue;
                     }
                     try {
@@ -1318,26 +1312,13 @@ public abstract class Signature extends SignatureSpi {
                 AlgorithmParameterSpec params, SecureRandom random)
                 throws InvalidKeyException, InvalidAlgorithmParameterException {
             switch (type) {
-            case I_PUB:
-                spi.engineInitVerify((PublicKey)key);
-                break;
-            case I_PUB_PARAM:
-                spi.engineInitVerify((PublicKey)key, params);
-                break;
-            case I_PRIV:
-                spi.engineInitSign((PrivateKey)key);
-                break;
-            case I_PRIV_SR:
-                spi.engineInitSign((PrivateKey)key, random);
-                break;
-            case I_PRIV_PARAM_SR:
-                spi.engineInitSign((PrivateKey)key, params, random);
-                break;
-            case S_PARAM:
-                spi.engineSetParameter(params);
-                break;
-            default:
-                throw new AssertionError("Internal error: " + type);
+                case I_PUB           -> spi.engineInitVerify((PublicKey) key);
+                case I_PUB_PARAM     -> spi.engineInitVerify((PublicKey) key, params);
+                case I_PRIV          -> spi.engineInitSign((PrivateKey) key);
+                case I_PRIV_SR       -> spi.engineInitSign((PrivateKey) key, random);
+                case I_PRIV_PARAM_SR -> spi.engineInitSign((PrivateKey) key, params, random);
+                case S_PARAM         -> spi.engineSetParameter(params);
+                default -> throw new AssertionError("Internal error: " + type);
             }
         }
 
@@ -1528,9 +1509,7 @@ public abstract class Signature extends SignatureSpi {
         protected byte[] engineSign() throws SignatureException {
             try {
                 return cipher.doFinal();
-            } catch (IllegalBlockSizeException e) {
-                throw new SignatureException("doFinal() failed", e);
-            } catch (BadPaddingException e) {
+            } catch (IllegalBlockSizeException | BadPaddingException e) {
                 throw new SignatureException("doFinal() failed", e);
             }
         }

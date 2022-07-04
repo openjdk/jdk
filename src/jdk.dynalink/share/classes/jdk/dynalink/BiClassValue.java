@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@ final class BiClassValue<T> {
      * creates the association from a type Class object to its BiClassValues'.
      * @param <T> the type of the values
      */
-    private final static class BiClassValues<T> {
+    private static final class BiClassValues<T> {
         // These will be used for compareAndExchange on forward and reverse fields.
         private static final VarHandle FORWARD;
         private static final VarHandle REVERSE;
@@ -201,9 +201,11 @@ final class BiClassValue<T> {
         }
     }
 
+    @SuppressWarnings("removal")
     private static final AccessControlContext GET_CLASS_LOADER_CONTEXT =
         AccessControlContextFactory.createAccessControlContext("getClassLoader");
 
+    @SuppressWarnings("removal")
     private static RetentionDirection getRetentionDirection(Class<?> from, Class<?> to) {
         return AccessController.doPrivileged((PrivilegedAction<RetentionDirection>) () -> {
             final ClassLoader cl1 = from.getClassLoader();

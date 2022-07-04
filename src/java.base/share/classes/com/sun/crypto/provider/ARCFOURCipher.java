@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,8 @@ import javax.crypto.*;
  * @since   1.5
  * @author  Andreas Sterbenz
  */
-public final class ARCFOURCipher extends CipherSpi {
+public sealed class ARCFOURCipher extends CipherSpi
+        permits PKCS12PBECipherCore.PBEWithSHA1AndRC4 {
 
     // state array S, 256 entries. The entries are 8-bit, but we use an int[]
     // because int arithmetic is much faster than in Java than bytes.
@@ -179,14 +180,16 @@ public final class ARCFOURCipher extends CipherSpi {
         init(opmode, key);
     }
 
-    // init method. Check opmode and key, then call init(byte[]).
+    // init method. Check key, then call init(byte[]).
     private void init(int opmode, Key key) throws InvalidKeyException {
+
+        // Cipher.init() already checks opmode to be:
+        // ENCRYPT_MODE/DECRYPT_MODE/WRAP_MODE/UNWRAP_MODE
+
         if (lastKey != null) {
             Arrays.fill(lastKey, (byte)0);
         }
-        if ((opmode < Cipher.ENCRYPT_MODE) || (opmode > Cipher.UNWRAP_MODE)) {
-            throw new InvalidKeyException("Unknown opmode: " + opmode);
-        }
+
         lastKey = getEncodedKey(key);
         init(lastKey);
     }

@@ -139,8 +139,8 @@ public class TestOldGenCollectionUsage {
         if (newCollectionCount <= collectionCount) {
             throw new RuntimeException("No new collection");
         }
-        if (newCollectionTime <= collectionTime) {
-            throw new RuntimeException("Collector has not run some more");
+        if (newCollectionTime < collectionTime) {
+            throw new RuntimeException("Collection time ran backwards");
         }
 
         System.out.println("Test passed.");

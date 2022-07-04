@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,15 @@
  * questions.
  */
 
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+
 import java.io.IOException;
 import java.io.OutputStream;
-import org.testng.annotations.AfterGroups;
-import org.testng.annotations.BeforeGroups;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.fail;
 
 /*
  * @test
@@ -38,13 +41,9 @@ public class NullOutputStream {
     private static OutputStream openStream;
     private static OutputStream closedStream;
 
-    @BeforeGroups(groups="open")
-    public static void openStream() {
+    @BeforeClass
+    public static void setup() {
         openStream = OutputStream.nullOutputStream();
-    }
-
-    @BeforeGroups(groups="closed")
-    public static void openAndCloseStream() {
         closedStream = OutputStream.nullOutputStream();
         try {
            closedStream.close();
@@ -53,7 +52,7 @@ public class NullOutputStream {
         }
     }
 
-    @AfterGroups(groups="open")
+    @AfterClass
     public static void closeStream() {
         try {
             openStream.close();
@@ -62,13 +61,13 @@ public class NullOutputStream {
         }
     }
 
-    @Test(groups="open")
+    @Test
     public static void testOpen() {
         assertNotNull(openStream,
             "OutputStream.nullOutputStream() returned null");
     }
 
-    @Test(groups="open")
+    @Test
     public static void testWrite() {
         try {
             openStream.write(62832);
@@ -77,7 +76,7 @@ public class NullOutputStream {
         }
     }
 
-    @Test(groups="open")
+    @Test
     public static void testWriteBII() {
         try {
             openStream.write(new byte[] {(byte)6}, 0, 1);
@@ -86,7 +85,7 @@ public class NullOutputStream {
         }
     }
 
-    @Test(groups="closed")
+    @Test
     public static void testWriteClosed() {
         try {
             closedStream.write(62832);
@@ -95,7 +94,7 @@ public class NullOutputStream {
         }
     }
 
-    @Test(groups="closed")
+    @Test
     public static void testWriteBIIClosed() {
         try {
             closedStream.write(new byte[] {(byte)6}, 0, 1);

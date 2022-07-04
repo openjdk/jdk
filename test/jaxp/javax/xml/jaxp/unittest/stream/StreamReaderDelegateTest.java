@@ -44,7 +44,7 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.StreamReaderDelegateTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.StreamReaderDelegateTest
  * @run testng/othervm stream.StreamReaderDelegateTest
  * @summary Test StreamReaderDelegate.
  */

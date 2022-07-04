@@ -29,7 +29,7 @@
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
  * @run main/othervm TestKeyFactory
- * @run main/othervm TestKeyFactory sm
+ * @run main/othervm -Djava.security.manager=allow TestKeyFactory sm
  */
 
 import java.security.Key;

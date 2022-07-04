@@ -38,7 +38,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8077931
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true catalog.UriFamilyTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow catalog.UriFamilyTest
  * @run testng/othervm catalog.UriFamilyTest
  * @summary Get matched URIs from uri, rewriteURI, uriSuffix and delegateURI
  *          entries. It tests the resolution priorities among the uri family

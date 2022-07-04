@@ -25,6 +25,7 @@
 
 package sun.java2d.pipe;
 
+import sun.awt.SunHints;
 import sun.java2d.SunGraphics2D;
 import sun.font.GlyphList;
 
@@ -37,8 +38,7 @@ public class AATextRenderer extends GlyphListLoopPipe
     implements LoopBasedPipe
 {
    protected void drawGlyphList(SunGraphics2D sg2d, GlyphList gl) {
-       sg2d.loops.drawGlyphListAALoop.DrawGlyphListAA(sg2d, sg2d.surfaceData,
-                                                      gl);
+       drawGlyphList(sg2d, gl, SunHints.INTVAL_TEXT_ANTIALIAS_ON);
    }
 
 }

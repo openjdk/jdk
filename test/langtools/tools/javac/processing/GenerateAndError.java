@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import java.util.*;
 
 import javax.annotation.processing.*;
 import javax.lang.model.element.*;
-import javax.tools.Diagnostic.Kind;
+
 
 public class GenerateAndError extends JavacTestingAbstractProcessor {
     int round = 0;
@@ -50,7 +50,7 @@ public class GenerateAndError extends JavacTestingAbstractProcessor {
             } catch (IOException ex) {
                 throw new IllegalStateException(ex);
             }
-            processingEnv.getMessager().printMessage(Kind.ERROR, "error");
+            processingEnv.getMessager().printError("error");
         }
         return false;
     }

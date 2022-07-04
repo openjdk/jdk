@@ -27,7 +27,7 @@
  * with a security manager when instantialing RBClassLoader (internal
  * classloader).
  * @modules java.xml
- * @run main/othervm Bug6359330
+ * @run main/othervm -Djava.security.manager=allow Bug6359330
  */
 
 import javax.xml.parsers.SAXParser;

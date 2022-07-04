@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -189,6 +189,7 @@ public class URLJarFile extends JarFile {
      * Given a URL, retrieves a JAR file, caches it to disk, and creates a
      * cached JAR file object.
      */
+     @SuppressWarnings("removal")
      private static JarFile retrieve(final URL url, final URLJarFileCloseController closeController) throws IOException {
         /*
          * See if interface is set, then call retrieve function of the class
@@ -238,7 +239,7 @@ public class URLJarFile extends JarFile {
     }
 
     /*
-     * Set the call back interface to call retrive function in sun.plugin
+     * Set the call back interface to call retrieve function in sun.plugin
      * package if plugin is running.
      */
     public static void setCallBack(URLJarFileCallBack cb)

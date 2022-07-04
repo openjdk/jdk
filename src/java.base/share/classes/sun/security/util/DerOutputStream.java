@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,10 @@ import java.util.Comparator;
 import java.util.Arrays;
 import java.util.Locale;
 
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.nio.charset.StandardCharsets.US_ASCII;
+import static java.nio.charset.StandardCharsets.UTF_16BE;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Output stream marshaling DER-encoded data.  This is eventually provided
@@ -378,7 +381,7 @@ extends ByteArrayOutputStream implements DerEncoder {
     private static ByteArrayTagOrder tagOrder = new ByteArrayTagOrder();
 
     /**
-     * Marshals a the contents of a set on the output stream with the
+     * Marshals the contents of a set on the output stream with the
      * encodings of its sorted in increasing order.
      *
      * @param order the order to use when sorting encodings of components.

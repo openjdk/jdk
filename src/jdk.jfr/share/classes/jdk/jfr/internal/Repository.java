@@ -80,7 +80,8 @@ public final class Repository {
         }
     }
 
-    synchronized RepositoryChunk newChunk(ZonedDateTime timestamp) {
+    synchronized RepositoryChunk newChunk() {
+        ZonedDateTime timestamp = ZonedDateTime.now();
         try {
             if (!SecuritySupport.existDirectory(repository)) {
                 this.repository = createRepository(baseLocation);
@@ -93,7 +94,7 @@ public final class Repository {
                 chunkFilename = ChunkFilename.newPriviliged(repository.toPath());
             }
             String filename = chunkFilename.next(timestamp.toLocalDateTime());
-            return new RepositoryChunk(new SafePath(filename), timestamp.toInstant());
+            return new RepositoryChunk(new SafePath(filename));
         } catch (Exception e) {
             String errorMsg = String.format("Could not create chunk in repository %s, %s: %s", repository, e.getClass(), e.getMessage());
             Logger.log(LogTag.JFR, LogLevel.ERROR, errorMsg);

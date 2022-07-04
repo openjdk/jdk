@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import java.net.URL;
 //        then try to define HttpExchange in child (app) loader => fail.
 //     3. no LinkageError should be throw when linking a class that does not override/implement any
 //        methods.
-class LoaderConstraintsApp {
+public class LoaderConstraintsApp {
     static void defineHttpExchangeWithAppLoader() throws Exception {
         Unsafe unsafe = Unsafe.getUnsafe();
         URL url = new URL("jrt://modules/jdk.httpserver/com/sun/net/httpserver/HttpExchange.class");

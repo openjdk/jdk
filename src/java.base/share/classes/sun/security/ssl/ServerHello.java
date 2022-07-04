@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -560,9 +560,6 @@ final class ServerHello {
 
                 setUpPskKD(shc,
                         shc.resumingSession.consumePreSharedKey());
-
-                // The session can't be resumed again---remove it from cache
-                sessionCache.remove(shc.resumingSession.getSessionId());
             }
 
             // update the responders
@@ -1208,8 +1205,7 @@ final class ServerHello {
             hc.handshakeKeyDerivation =
                     new SSLSecretDerivation(hc, earlySecret);
         } catch  (GeneralSecurityException gse) {
-            throw (SSLHandshakeException) new SSLHandshakeException(
-                "Could not generate secret").initCause(gse);
+            throw new SSLHandshakeException("Could not generate secret", gse);
         }
     }
 

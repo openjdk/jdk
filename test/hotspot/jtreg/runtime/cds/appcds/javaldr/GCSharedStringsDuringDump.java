@@ -27,7 +27,7 @@
  * @summary Similar to GCDuringDumping.java, this test adds the -XX:SharedArchiveConfigFile
  *          option for testing the interaction with GC and shared strings.
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
- * @requires vm.cds.archived.java.heap
+ * @requires vm.cds.write.archived.java.heap
  * @requires vm.jvmti
  * @build sun.hotspot.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
@@ -45,6 +45,10 @@ import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.helpers.ClassFileInstaller;
 
 public class GCSharedStringsDuringDump {
+    static {
+        // EpsilonGC will run out of memory.
+        CDSOptions.disableRuntimePrefixForEpsilonGC();
+    }
     public static String appClasses[] = {
         GCSharedStringsDuringDumpWb.class.getName(),
     };

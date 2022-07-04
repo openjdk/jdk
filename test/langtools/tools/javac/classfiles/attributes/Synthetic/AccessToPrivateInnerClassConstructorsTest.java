@@ -44,14 +44,11 @@
                 "<init>(AccessToPrivateInnerClassConstructorsTest)",
                 "<init>(AccessToPrivateInnerClassConstructorsTest, " +
                        "AccessToPrivateInnerClassConstructorsTest$1)"},
-        expectedNumberOfSyntheticFields = 1,
         expectedNumberOfSyntheticMethods = 0)
 @ExpectedClass(className = "AccessToPrivateInnerClassConstructorsTest$1Local",
-        expectedMethods = {"<init>(AccessToPrivateInnerClassConstructorsTest)"},
-        expectedNumberOfSyntheticFields = 1)
+        expectedMethods = {"<init>(AccessToPrivateInnerClassConstructorsTest)"})
 @ExpectedClass(className = "AccessToPrivateInnerClassConstructorsTest$2Local",
-        expectedMethods = {"<init>(AccessToPrivateInnerClassConstructorsTest)"},
-        expectedNumberOfSyntheticFields = 1)
+        expectedMethods = {"<init>(AccessToPrivateInnerClassConstructorsTest)"})
 public class AccessToPrivateInnerClassConstructorsTest {
 
     public static void main(String... args) {

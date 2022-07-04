@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package jdk.internal.util.random;
 import java.lang.annotation.*;
 import java.math.BigInteger;
 import java.util.Objects;
+import java.util.Random;
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
 import java.util.function.IntConsumer;
@@ -50,8 +51,6 @@ import java.util.stream.StreamSupport;
  * internal package it is not intended for general use.
  *
  * @since 17
- * @hidden
- *
  */
 public class RandomSupport {
     /**
@@ -146,7 +145,7 @@ public class RandomSupport {
      * @throws IllegalArgumentException if {@code bound} fails to be positive and finite
      */
     public static void checkBound(float bound) {
-        if (!(bound > 0.0 && bound < Float.POSITIVE_INFINITY)) {
+        if (!(0.0f < bound && bound < Float.POSITIVE_INFINITY)) {
             throw new IllegalArgumentException(BAD_FLOATING_BOUND);
         }
     }
@@ -159,7 +158,7 @@ public class RandomSupport {
      * @throws IllegalArgumentException if {@code bound} fails to be positive and finite
      */
     public static void checkBound(double bound) {
-        if (!(bound > 0.0 && bound < Double.POSITIVE_INFINITY)) {
+        if (!(0.0 < bound && bound < Double.POSITIVE_INFINITY)) {
             throw new IllegalArgumentException(BAD_FLOATING_BOUND);
         }
     }
@@ -196,11 +195,13 @@ public class RandomSupport {
      * @param origin the least value (inclusive) in the range
      * @param bound  the upper bound (exclusive) of the range
      *
-     * @throws IllegalArgumentException if {@code origin} is not finite, {@code bound} is not finite,
-     *                                  or {@code bound - origin} is not finite
+     * @throws IllegalArgumentException if {@code origin} is not finite,
+     *          or {@code bound} is not finite, or {@code origin}
+     *          is greater than or equal to {@code bound}
      */
     public static void checkRange(float origin, float bound) {
-        if (!(origin < bound && (bound - origin) < Float.POSITIVE_INFINITY)) {
+        if (!(Float.NEGATIVE_INFINITY < origin && origin < bound &&
+                bound < Float.POSITIVE_INFINITY)) {
             throw new IllegalArgumentException(BAD_RANGE);
         }
     }
@@ -211,11 +212,13 @@ public class RandomSupport {
      * @param origin the least value (inclusive) in the range
      * @param bound  the upper bound (exclusive) of the range
      *
-     * @throws IllegalArgumentException if {@code origin} is not finite, {@code bound} is not finite,
-     *                                  or {@code bound - origin} is not finite
+     * @throws IllegalArgumentException if {@code origin} is not finite,
+     *          or {@code bound} is not finite, or {@code origin}
+     *          is greater than or equal to {@code bound}
      */
     public static void checkRange(double origin, double bound) {
-        if (!(origin < bound && (bound - origin) < Double.POSITIVE_INFINITY)) {
+        if (!(Double.NEGATIVE_INFINITY < origin && origin < bound &&
+                bound < Double.POSITIVE_INFINITY)) {
             throw new IllegalArgumentException(BAD_RANGE);
         }
     }
@@ -266,7 +269,7 @@ public class RandomSupport {
         final int m = Math.min(seed.length, n << 3);
         // Distribute seed bytes into the words to be formed.
         for (int j = 0; j < m; j++) {
-            result[j>>3] = (result[j>>3] << 8) | seed[j];
+            result[j>>3] = (result[j>>3] << 8) | (seed[j] & 0xFF);
         }
         // If there aren't enough seed bytes for all the words we need,
         // use a SplitMix-style PRNG to fill in the rest.
@@ -344,8 +347,8 @@ public class RandomSupport {
      * This is the form of {@link RandomGenerator#nextLong() nextLong}() used by
      * a {@link LongStream} {@link Spliterator} and by the public method
      * {@link RandomGenerator#nextLong(long, long) nextLong}(origin, bound). If
-     * {@code origin} is greater than {@code bound}, then this method simply
-     * calls the unbounded version of
+     * {@code origin} is greater than or equal to {@code bound},
+     * then this method simply calls the unbounded version of
      * {@link RandomGenerator#nextLong() nextLong}(), choosing pseudorandomly
      * from among all 2<sup>64</sup> possible {@code long} values}, and
      * otherwise uses one or more calls to
@@ -509,8 +512,8 @@ public class RandomSupport {
      * This is the form of {@link RandomGenerator#nextInt() nextInt}() used by
      * an {@link IntStream} {@link Spliterator} and by the public method
      * {@link RandomGenerator#nextInt(int, int) nextInt}(origin, bound). If
-     * {@code origin} is greater than {@code bound}, then this method simply
-     * calls the unbounded version of
+     * {@code origin} is greater than or equal to {@code bound},
+     * then this method simply calls the unbounded version of
      * {@link RandomGenerator#nextInt() nextInt}(), choosing pseudorandomly
      * from among all 2<sup>64</sup> possible {@code int} values}, and otherwise
      * uses one or more calls to {@link RandomGenerator#nextInt() nextInt}() to
@@ -605,8 +608,8 @@ public class RandomSupport {
      * used by a {@link DoubleStream} {@link Spliterator} and by the public
      * method
      * {@link RandomGenerator#nextDouble(double, double) nextDouble}(origin, bound).
-     * If {@code origin} is greater than {@code bound}, then this method simply
-     * calls the unbounded version of
+     * {@code origin} is greater than or equal to {@code bound},
+     * then this method simply calls the unbounded version of
      * {@link RandomGenerator#nextDouble() nextDouble}(), and otherwise scales
      * and translates the result of a call to
      * {@link RandomGenerator#nextDouble() nextDouble}() so that it lies between
@@ -644,9 +647,15 @@ public class RandomSupport {
     public static double boundedNextDouble(RandomGenerator rng, double origin, double bound) {
         double r = rng.nextDouble();
         if (origin < bound) {
-            r = r * (bound - origin) + origin;
+            if (bound - origin < Double.POSITIVE_INFINITY) {
+                r = r * (bound - origin) + origin;
+            } else {
+                /* avoids overflow at the cost of 3 more multiplications */
+                double halfOrigin = 0.5 * origin;
+                r = (r * (0.5 * bound - halfOrigin) + halfOrigin) * 2.0;
+            }
             if (r >= bound)  // may need to correct a rounding problem
-                r = Double.longBitsToDouble(Double.doubleToLongBits(bound) - 1);
+                r = Math.nextDown(bound);
         }
         return r;
     }
@@ -678,7 +687,7 @@ public class RandomSupport {
         double r = rng.nextDouble();
         r = r * bound;
         if (r >= bound)  // may need to correct a rounding problem
-            r = Double.longBitsToDouble(Double.doubleToLongBits(bound) - 1);
+            r = Math.nextDown(bound);
         return r;
     }
 
@@ -687,8 +696,8 @@ public class RandomSupport {
      * by a {@link Stream<Float>} {@link Spliterator} (if there were any) and by
      * the public method
      * {@link RandomGenerator#nextFloat(float, float) nextFloat}(origin, bound).
-     * If {@code origin} is greater than {@code bound}, then this method simply
-     * calls the unbounded version of
+     * {@code origin} is greater than or equal to {@code bound},
+     * then this method simply calls the unbounded version of
      * {@link RandomGenerator#nextFloat() nextFloat}(), and otherwise scales and
      * translates the result of a call to
      * {@link RandomGenerator#nextFloat() nextFloat}() so that it lies between
@@ -716,9 +725,15 @@ public class RandomSupport {
     public static float boundedNextFloat(RandomGenerator rng, float origin, float bound) {
         float r = rng.nextFloat();
         if (origin < bound) {
-            r = r * (bound - origin) + origin;
+            if (bound - origin < Float.POSITIVE_INFINITY) {
+                r = r * (bound - origin) + origin;
+            } else {
+                /* avoids overflow at the cost of 3 more multiplications */
+                float halfOrigin = 0.5f * origin;
+                r = (r * (0.5f * bound - halfOrigin) + halfOrigin) * 2.0f;
+            }
             if (r >= bound) // may need to correct a rounding problem
-                r = Float.intBitsToFloat(Float.floatToIntBits(bound) - 1);
+                r = Math.nextDown(bound);
         }
         return r;
     }
@@ -750,12 +765,13 @@ public class RandomSupport {
         float r = rng.nextFloat();
         r = r * bound;
         if (r >= bound) // may need to correct a rounding problem
-            r = Float.intBitsToFloat(Float.floatToIntBits(bound) - 1);
+            r = Math.nextDown(bound);
         return r;
     }
 
     // The following decides which of two strategies initialSeed() will use.
     private static boolean secureRandomSeedRequested() {
+        @SuppressWarnings("removal")
         String pp = java.security.AccessController.doPrivileged(
                 new sun.security.action.GetPropertyAction(
                         "java.util.secureRandomSeed"));
@@ -952,7 +968,7 @@ public class RandomSupport {
      */
     public static class RandomIntsSpliterator extends RandomSupport.RandomSpliterator
             implements Spliterator.OfInt {
-        final AbstractSpliteratorGenerator generatingGenerator;
+        final RandomGenerator generatingGenerator;
         final int origin;
         final int bound;
 
@@ -965,7 +981,7 @@ public class RandomSupport {
          * @param origin the (inclusive) lower bound on the pseudorandom values to be generated
          * @param bound the (exclusive) upper bound on the pseudorandom values to be generated
          */
-        public RandomIntsSpliterator(AbstractSpliteratorGenerator generatingGenerator,
+        public RandomIntsSpliterator(RandomGenerator generatingGenerator,
                                      long index, long fence, int origin, int bound) {
             super(index, fence);
             this.generatingGenerator = generatingGenerator;
@@ -1010,7 +1026,7 @@ public class RandomSupport {
      */
     public static class RandomLongsSpliterator extends RandomSupport.RandomSpliterator
             implements Spliterator.OfLong {
-        final AbstractSpliteratorGenerator generatingGenerator;
+        final RandomGenerator generatingGenerator;
         final long origin;
         final long bound;
 
@@ -1023,7 +1039,7 @@ public class RandomSupport {
          * @param origin the (inclusive) lower bound on the pseudorandom values to be generated
          * @param bound the (exclusive) upper bound on the pseudorandom values to be generated
          */
-        public RandomLongsSpliterator(AbstractSpliteratorGenerator generatingGenerator,
+        public RandomLongsSpliterator(RandomGenerator generatingGenerator,
                                       long index, long fence, long origin, long bound) {
             super(index, fence);
             this.generatingGenerator = generatingGenerator;
@@ -1068,7 +1084,7 @@ public class RandomSupport {
      */
     public static class RandomDoublesSpliterator extends RandomSupport.RandomSpliterator
             implements Spliterator.OfDouble {
-        final AbstractSpliteratorGenerator generatingGenerator;
+        final RandomGenerator generatingGenerator;
         final double origin;
         final double bound;
 
@@ -1081,7 +1097,7 @@ public class RandomSupport {
          * @param origin the (inclusive) lower bound on the pseudorandom values to be generated
          * @param bound the (exclusive) upper bound on the pseudorandom values to be generated
          */
-        public RandomDoublesSpliterator(AbstractSpliteratorGenerator generatingGenerator,
+        public RandomDoublesSpliterator(RandomGenerator generatingGenerator,
                                         long index, long fence, double origin, double bound) {
             super(index, fence);
             this.generatingGenerator = generatingGenerator;
@@ -1186,10 +1202,10 @@ public class RandomSupport {
                 // For the exponential distribution, every overhang is convex.
                 final double[] X = DoubleZigguratTables.exponentialX;
                 final double[] Y = DoubleZigguratTables.exponentialY;
-                for (;; U1 = (rng.nextLong() >>> 1)) {
+                // At this point, the high-order bits of U1 have not been used yet,
+                // but we need the value in U1 to be positive.
+                for (U1 = (U1 >>> 1);; U1 = (rng.nextLong() >>> 1)) {
                     long U2 = (rng.nextLong() >>> 1);
-                    // Compute the actual x-coordinate of the randomly chosen point.
-                    double x = (X[j] * 0x1.0p63) + ((X[j-1] - X[j]) * (double)U1);
                     // Does the point lie below the curve?
                     long Udiff = U2 - U1;
                     if (Udiff < 0) {
@@ -1200,11 +1216,13 @@ public class RandomSupport {
                         U2 = U1;
                         U1 -= Udiff;
                     }
+                    // Compute the actual x-coordinate of the randomly chosen point.
+                    double x = (X[j] * 0x1.0p63) + ((X[j-1] - X[j]) * (double)U1);
                     if (Udiff >= DoubleZigguratTables.exponentialConvexMargin) {
                         return x + extra;   // The chosen point is way below the curve; accept it.
                     }
                     // Compute the actual y-coordinate of the randomly chosen point.
-                    double y = (Y[j] * 0x1.0p63) + ((Y[j] - Y[j-1]) * (double)U2);
+                    double y = (Y[j] * 0x1.0p63) + ((Y[j-1] - Y[j]) * (double)U2);
                     // Now see how that y-coordinate compares to the curve
                     if (y <= Math.exp(-x)) {
                         return x + extra;   // The chosen point is below the curve; accept it.
@@ -1323,7 +1341,7 @@ public class RandomSupport {
                     continue;   // The chosen point is way above the curve; reject it.
                 }
                 // Compute the actual y-coordinate of the randomly chosen point.
-                double y = (Y[j] * 0x1.0p63) + ((Y[j] - Y[j-1]) * (double)U2);
+                double y = (Y[j] * 0x1.0p63) + ((Y[j-1] - Y[j]) * (double)U2);
                 // Now see how that y-coordinate compares to the curve
                 if (y <= Math.exp(-0.5*x*x)) {
                     break;   // The chosen point is below the curve; accept it.
@@ -1348,8 +1366,6 @@ public class RandomSupport {
         } else if (j < DoubleZigguratTables.normalInflectionIndex) {   // Convex overhang
             for (;; U1 = (rng.nextLong() >>> 1)) {
                 long U2 = (rng.nextLong() >>> 1);
-                // Compute the actual x-coordinate of the randomly chosen point.
-                x = (X[j] * 0x1.0p63) + ((X[j-1] - X[j]) * (double)U1);
                 // Does the point lie below the curve?
                 long Udiff = U2 - U1;
                 if (Udiff < 0) {
@@ -1360,11 +1376,13 @@ public class RandomSupport {
                     U2 = U1;
                     U1 -= Udiff;
                 }
+                // Compute the actual x-coordinate of the randomly chosen point.
+                x = (X[j] * 0x1.0p63) + ((X[j-1] - X[j]) * (double)U1);
                 if (Udiff >= DoubleZigguratTables.normalConvexMargin) {
                     break;   // The chosen point is way below the curve; accept it.
                 }
                 // Compute the actual y-coordinate of the randomly chosen point.
-                double y = (Y[j] * 0x1.0p63) + ((Y[j] - Y[j-1]) * (double)U2);
+                double y = (Y[j] * 0x1.0p63) + ((Y[j-1] - Y[j]) * (double)U2);
                 // Now see how that y-coordinate compares to the curve
                 if (y <= Math.exp(-0.5*x*x)) break; // The chosen point is below the curve; accept it.
                 // Otherwise, we reject this sample and have to try again.
@@ -1384,7 +1402,7 @@ public class RandomSupport {
                     continue;   // The chosen point is way above the curve; reject it.
                 }
                 // Compute the actual y-coordinate of the randomly chosen point.
-                double y = (Y[j] * 0x1.0p63) + ((Y[j] - Y[j-1]) * (double)U2);
+                double y = (Y[j] * 0x1.0p63) + ((Y[j-1] - Y[j]) * (double)U2);
                 // Now see how that y-coordinate compares to the curve
                 if (y <= Math.exp(-0.5*x*x)) {
                     break;   // The chosen point is below the curve; accept it.
@@ -1398,24 +1416,19 @@ public class RandomSupport {
     /**
      * This class overrides the stream-producing methods (such as
      * {@link RandomGenerator#ints() ints}()) in class {@link RandomGenerator}
-     * to provide {@link Spliterator}-based implmentations that support
+     * to provide {@link Spliterator}-based implementations that support
      * potentially parallel execution.
      *
      * <p> To implement a pseudorandom number generator, the programmer needs
      * only to extend this class and provide implementations for the methods
      * {@link RandomGenerator#nextInt() nextInt}(),
      * {@link RandomGenerator#nextLong() nextLong}(),
-     * {@link AbstractSpliteratorGenerator#makeIntsSpliterator(long, long, int, int) makeIntsSpliterator}(index, fence, origin, bound),
-     * {@link AbstractSpliteratorGenerator#makeLongsSpliterator(long, long, long, long) makeLongsSpliterator}(index, fence, origin, bound),
-     * and
-     * {@link AbstractSpliteratorGenerator#makeDoublesSpliterator(long, long, double, double) makeDoublesSpliterator}(index, fence, origin, bound).
      *
      * <p> This class is not public; it provides shared code to the public
      * classes {@link AbstractSplittableGenerator}, and
      * {@link AbstractArbitrarilyJumpableGenerator}.
      *
      * @since 17
-     * @hidden
      */
     public abstract static class AbstractSpliteratorGenerator implements RandomGenerator {
         /*
@@ -1425,74 +1438,11 @@ public class RandomSupport {
          * satisfy the interface RandomGenerator.  An implementation of this
          * interface need only extend this class and provide implementations
          * of six methods: nextInt, nextLong, and nextDouble (the versions
-         * that take no arguments) and makeIntsSpliterator,
-         * makeLongsSpliterator, and makeDoublesSpliterator.
+         * that take no arguments).
          *
          * File organization: First the non-public abstract methods needed
          * to create spliterators, then the main public methods.
          */
-
-        /**
-         * Explicit constructor.
-         */
-        protected AbstractSpliteratorGenerator() {
-        }
-
-        /**
-         * Create an instance of {@link Spliterator.OfInt} that for each
-         * traversal position between the specified index (inclusive) and the
-         * specified fence (exclusive) generates a pseudorandomly chosen
-         * {@code int} value between the specified origin (inclusive) and the
-         * specified bound (exclusive).
-         *
-         * @param index the (inclusive) lower bound on traversal positions
-         * @param fence the (exclusive) upper bound on traversal positions
-         * @param origin the (inclusive) lower bound on the pseudorandom values to be generated
-         * @param bound the (exclusive) upper bound on the pseudorandom values to be generated
-         *
-         * @return an instance of {@link Spliterator.OfInt}
-         *
-         * @hidden
-         */
-        public abstract Spliterator.OfInt makeIntsSpliterator(long index, long fence, int origin, int bound);
-
-        /**
-         * Create an instance of {@link Spliterator.OfLong} that for each
-         * traversal position between the specified index (inclusive) and the
-         * specified fence (exclusive) generates a pseudorandomly chosen
-         * {@code long} value between the specified origin (inclusive) and the
-         * specified bound (exclusive).
-         *
-         * @param index the (inclusive) lower bound on traversal positions
-         * @param fence the (exclusive) upper bound on traversal positions
-         * @param origin the (inclusive) lower bound on the pseudorandom values to be generated
-         * @param bound the (exclusive) upper bound on the pseudorandom values to be generated
-         *
-         * @return an instance of {@link Spliterator.OfLong}
-         *
-         * @hidden
-         */
-        public abstract Spliterator.OfLong makeLongsSpliterator(long index, long fence, long origin, long bound);
-
-        /**
-         * Create an instance of {@link Spliterator.OfDouble} that for each
-         * traversal position between the specified index (inclusive) and the
-         * specified fence (exclusive) generates a pseudorandomly chosen
-         * {@code double} value between the specified origin (inclusive) and the
-         * specified bound (exclusive).
-         *
-         * @param index the (inclusive) lower bound on traversal positions
-         * @param fence the (exclusive) upper bound on traversal positions
-         * @param origin the (inclusive) lower bound on the pseudorandom values to be generated
-         * @param bound the (exclusive) upper bound on the pseudorandom values to be generated
-         *
-         * @return an instance of {@link Spliterator.OfDouble}
-         *
-         * @hidden
-         */
-        public abstract Spliterator.OfDouble makeDoublesSpliterator(long index, long fence, double origin, double bound);
-
-        /* ---------------- public methods ---------------- */
 
         // stream methods, coded in a way intended to better isolate for
         // maintenance purposes the small differences across forms.
@@ -1509,79 +1459,116 @@ public class RandomSupport {
             return StreamSupport.doubleStream(srng, false);
         }
 
-        @Override
+        /* ---------------- public static methods ---------------- */
+
+       public static IntStream ints(RandomGenerator gen, long streamSize) {
+            RandomSupport.checkStreamSize(streamSize);
+            return intStream(new RandomIntsSpliterator(gen, 0L, streamSize, Integer.MAX_VALUE, 0));
+        }
+
+        public static IntStream ints(RandomGenerator gen) {
+            return intStream(new RandomIntsSpliterator(gen, 0L, Long.MAX_VALUE, Integer.MAX_VALUE, 0));
+        }
+
+        public static IntStream ints(RandomGenerator gen, long streamSize, int randomNumberOrigin, int randomNumberBound) {
+            RandomSupport.checkStreamSize(streamSize);
+            RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
+            return intStream(new RandomIntsSpliterator(gen, 0L, streamSize, randomNumberOrigin, randomNumberBound));
+        }
+
+        public static IntStream ints(RandomGenerator gen, int randomNumberOrigin, int randomNumberBound) {
+            RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
+            return intStream(new RandomIntsSpliterator(gen, 0L, Long.MAX_VALUE, randomNumberOrigin, randomNumberBound));
+        }
+
+        public static LongStream longs(RandomGenerator gen, long streamSize) {
+            RandomSupport.checkStreamSize(streamSize);
+            return longStream(new RandomLongsSpliterator(gen, 0L, streamSize, Long.MAX_VALUE, 0L));
+        }
+
+        public static LongStream longs(RandomGenerator gen) {
+            return longStream(new RandomLongsSpliterator(gen, 0L, Long.MAX_VALUE, Long.MAX_VALUE, 0L));
+        }
+
+        public static LongStream longs(RandomGenerator gen, long streamSize, long randomNumberOrigin, long randomNumberBound) {
+            RandomSupport.checkStreamSize(streamSize);
+            RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
+            return longStream(new RandomLongsSpliterator(gen, 0L, streamSize, randomNumberOrigin, randomNumberBound));
+        }
+
+        public static LongStream longs(RandomGenerator gen, long randomNumberOrigin, long randomNumberBound) {
+            RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
+            return longStream(new RandomLongsSpliterator(gen, 0L, Long.MAX_VALUE, randomNumberOrigin, randomNumberBound));
+        }
+
+        public static DoubleStream doubles(RandomGenerator gen, long streamSize) {
+            RandomSupport.checkStreamSize(streamSize);
+            return doubleStream(new RandomDoublesSpliterator(gen, 0L, streamSize, Double.MAX_VALUE, 0.0));
+        }
+
+        public static DoubleStream doubles(RandomGenerator gen) {
+            return doubleStream(new RandomDoublesSpliterator(gen, 0L, Long.MAX_VALUE, Double.MAX_VALUE, 0.0));
+        }
+
+        public static DoubleStream doubles(RandomGenerator gen, long streamSize, double randomNumberOrigin, double randomNumberBound) {
+            RandomSupport.checkStreamSize(streamSize);
+            RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
+            return doubleStream(new RandomDoublesSpliterator(gen, 0L, streamSize, randomNumberOrigin, randomNumberBound));
+        }
+
+        public static DoubleStream doubles(RandomGenerator gen, double randomNumberOrigin, double randomNumberBound) {
+            RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
+            return doubleStream(new RandomDoublesSpliterator(gen, 0L, Long.MAX_VALUE, randomNumberOrigin, randomNumberBound));
+        }
+
+        /* ---------------- public instance methods ---------------- */
+
         public IntStream ints(long streamSize) {
-            RandomSupport.checkStreamSize(streamSize);
-            return intStream(makeIntsSpliterator(0L, streamSize, Integer.MAX_VALUE, 0));
+            return ints(this, streamSize);
         }
 
-        @Override
         public IntStream ints() {
-            return intStream(makeIntsSpliterator(0L, Long.MAX_VALUE, Integer.MAX_VALUE, 0));
+            return ints(this);
         }
 
-        @Override
         public IntStream ints(long streamSize, int randomNumberOrigin, int randomNumberBound) {
-            RandomSupport.checkStreamSize(streamSize);
-            RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
-            return intStream(makeIntsSpliterator(0L, streamSize, randomNumberOrigin, randomNumberBound));
+            return ints(this, streamSize, randomNumberOrigin, randomNumberBound);
         }
 
-        @Override
         public IntStream ints(int randomNumberOrigin, int randomNumberBound) {
-            RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
-            return intStream(makeIntsSpliterator(0L, Long.MAX_VALUE, randomNumberOrigin, randomNumberBound));
+            return ints(this, randomNumberOrigin, randomNumberBound);
         }
 
-        @Override
         public LongStream longs(long streamSize) {
-            RandomSupport.checkStreamSize(streamSize);
-            return longStream(makeLongsSpliterator(0L, streamSize, Long.MAX_VALUE, 0L));
+            return longs(this, streamSize);
         }
 
-        @Override
         public LongStream longs() {
-            return longStream(makeLongsSpliterator(0L, Long.MAX_VALUE, Long.MAX_VALUE, 0L));
+            return longs(this);
         }
 
-        @Override
-        public LongStream longs(long streamSize, long randomNumberOrigin,
-                                long randomNumberBound) {
-            RandomSupport.checkStreamSize(streamSize);
-            RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
-            return longStream(makeLongsSpliterator(0L, streamSize, randomNumberOrigin, randomNumberBound));
+        public LongStream longs(long streamSize, long randomNumberOrigin,long randomNumberBound) {
+            return longs(this, streamSize, randomNumberOrigin, randomNumberBound);
         }
 
-        @Override
         public LongStream longs(long randomNumberOrigin, long randomNumberBound) {
-            RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
-            return StreamSupport.longStream
-                    (makeLongsSpliterator(0L, Long.MAX_VALUE, randomNumberOrigin, randomNumberBound),
-                            false);
+            return longs(this, randomNumberOrigin, randomNumberBound);
         }
 
-        @Override
         public DoubleStream doubles(long streamSize) {
-            RandomSupport.checkStreamSize(streamSize);
-            return doubleStream(makeDoublesSpliterator(0L, streamSize, Double.MAX_VALUE, 0.0));
+            return doubles(this, streamSize);
         }
 
-        @Override
         public DoubleStream doubles() {
-            return doubleStream(makeDoublesSpliterator(0L, Long.MAX_VALUE, Double.MAX_VALUE, 0.0));
+            return doubles(this);
         }
 
-        @Override
         public DoubleStream doubles(long streamSize, double randomNumberOrigin, double randomNumberBound) {
-            RandomSupport.checkStreamSize(streamSize);
-            RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
-            return doubleStream(makeDoublesSpliterator(0L, streamSize, randomNumberOrigin, randomNumberBound));
+            return doubles(this, streamSize, randomNumberOrigin, randomNumberBound);
         }
 
-        @Override
         public DoubleStream doubles(double randomNumberOrigin, double randomNumberBound) {
-            RandomSupport.checkRange(randomNumberOrigin, randomNumberBound);
-            return doubleStream(makeDoublesSpliterator(0L, Long.MAX_VALUE, randomNumberOrigin, randomNumberBound));
+            return doubles(this, randomNumberOrigin, randomNumberBound);
         }
 
     }
@@ -1636,7 +1623,6 @@ public class RandomSupport {
      * admits a more efficient implementation.
      *
      * @since 17
-     * @hidden
      */
     public abstract static class AbstractArbitrarilyJumpableGenerator
             extends AbstractSpliteratorGenerator implements RandomGenerator.ArbitrarilyJumpableGenerator {
@@ -1659,20 +1645,6 @@ public class RandomSupport {
          * Explicit constructor.
          */
         protected AbstractArbitrarilyJumpableGenerator() {
-        }
-
-        // Methods required by class AbstractSpliteratorGenerator
-
-        public Spliterator.OfInt makeIntsSpliterator(long index, long fence, int origin, int bound) {
-            return new RandomIntsSpliterator(this, index, fence, origin, bound);
-        }
-
-        public Spliterator.OfLong makeLongsSpliterator(long index, long fence, long origin, long bound) {
-            return new RandomLongsSpliterator(this, index, fence, origin, bound);
-        }
-
-        public Spliterator.OfDouble makeDoublesSpliterator(long index, long fence, double origin, double bound) {
-            return new RandomDoublesSpliterator(this, index, fence, origin, bound);
         }
 
         // Similar methods used by this class
@@ -2078,7 +2050,6 @@ public class RandomSupport {
      * admits a more efficient implementation.
      *
      * @since 17
-     * @hidden
      */
     public abstract static class AbstractSplittableGenerator extends AbstractSpliteratorGenerator implements SplittableGenerator {
 
@@ -2101,18 +2072,6 @@ public class RandomSupport {
          * Explicit constructor.
          */
         protected AbstractSplittableGenerator() {
-        }
-
-        public Spliterator.OfInt makeIntsSpliterator(long index, long fence, int origin, int bound) {
-            return new RandomIntsSpliterator(this, index, fence, origin, bound);
-        }
-
-        public Spliterator.OfLong makeLongsSpliterator(long index, long fence, long origin, long bound) {
-            return new RandomLongsSpliterator(this, index, fence, origin, bound);
-        }
-
-        public Spliterator.OfDouble makeDoublesSpliterator(long index, long fence, double origin, double bound) {
-            return new RandomDoublesSpliterator(this, index, fence, origin, bound);
         }
 
         Spliterator<SplittableGenerator> makeSplitsSpliterator(long index, long fence, SplittableGenerator source) {
@@ -2151,6 +2110,8 @@ public class RandomSupport {
         @Override
         public Stream<SplittableGenerator> splits(long streamSize, SplittableGenerator source) {
             RandomSupport.checkStreamSize(streamSize);
+            Objects.requireNonNull(source, "source should be non-null");
+
             return StreamSupport.stream(makeSplitsSpliterator(0L, streamSize, source), false);
         }
 
@@ -2382,7 +2343,6 @@ public class RandomSupport {
      * admits a more efficient implementation.
      *
      * @since 17
-     * @hidden
      */
     public abstract static class AbstractSplittableWithBrineGenerator
             extends AbstractSplittableGenerator {
@@ -2438,7 +2398,7 @@ public class RandomSupport {
             long bits = nextLong();
             long multiplier = (1L << SALT_SHIFT) - 1;
             long salt = multiplier << (64 - SALT_SHIFT);
-            while ((salt & multiplier) != 0) {
+            while ((salt & multiplier) == 0) {
                 long digit = Math.multiplyHigh(bits, multiplier);
                 salt = (salt >>> SALT_SHIFT) | (digit << (64 - SALT_SHIFT));
                 bits *= multiplier;

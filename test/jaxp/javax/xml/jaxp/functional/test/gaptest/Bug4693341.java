@@ -50,7 +50,7 @@ import org.xml.sax.SAXException;
  * @test
  * @bug 4693341
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true test.gaptest.Bug4693341
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow test.gaptest.Bug4693341
  * @run testng/othervm test.gaptest.Bug4693341
  * @summary test transforming to stream with external dtd
  */

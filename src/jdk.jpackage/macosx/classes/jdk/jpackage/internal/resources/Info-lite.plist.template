@@ -33,5 +33,7 @@
   <string>DEPLOY_BUNDLE_COPYRIGHT</string>DEPLOY_FILE_ASSOCIATIONS
   <key>NSHighResolutionCapable</key>
   <string>true</string>
+  <key>NSMicrophoneUsageDescription</key>
+  <string>The application DEPLOY_LAUNCHER_NAME is requesting access to the microphone.</string>
  </dict>
 </plist>

@@ -29,8 +29,8 @@
 #include "gc/shared/taskqueue.hpp"
 #include "logging/log.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/thread.hpp"
 
 TaskTerminator::DelayContext::DelayContext() {
   _yield_count = 0;
@@ -72,13 +72,12 @@ TaskTerminator::TaskTerminator(uint n_threads, TaskQueueSetSuper* queue_set) :
   _n_threads(n_threads),
   _queue_set(queue_set),
   _offered_termination(0),
-  _blocker(Mutex::leaf, "TaskTerminator", false, Monitor::_safepoint_check_never),
+  _blocker(Mutex::nosafepoint, "TaskTerminator_lock"),
   _spin_master(NULL) { }
 
 TaskTerminator::~TaskTerminator() {
   if (_offered_termination != 0) {
     assert(_offered_termination == _n_threads, "Must be terminated or aborted");
-    assert_queue_set_empty();
   }
 
   assert(_spin_master == NULL, "Should have been reset");

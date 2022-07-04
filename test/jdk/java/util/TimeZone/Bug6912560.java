@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 6912560
- * @run main/othervm Bug6912560
+ * @run main/othervm -Djava.security.manager=allow Bug6912560
  * @summary Make sure that file path canonicalization in
  * sun.util.calendar.ZoneInfoFile works with the default security
  * manager.

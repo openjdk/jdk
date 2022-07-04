@@ -22,7 +22,7 @@
  */
 
 /**
- * @test TestNullCheck
+ * @test
  * @summary implicit null check on brooks pointer must not cause crash
  * @requires vm.gc.Shenandoah
  * @requires vm.bits == "64"

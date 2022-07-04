@@ -50,7 +50,7 @@ import org.xml.sax.SAXException;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true stream.XMLStreamWriterTest.DomUtilTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow stream.XMLStreamWriterTest.DomUtilTest
  * @run testng/othervm stream.XMLStreamWriterTest.DomUtilTest
  * @summary Test XMLStreamWriter writes a soap message.
  */

@@ -79,7 +79,7 @@ import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
         name = "L64X128StarStarRandom",
         group = "LXM",
         i = 128, j = 1, k = 64,
-        equidistribution = 1
+        equidistribution = 2
 )
 public final class L64X128StarStarRandom extends AbstractSplittableWithBrineGenerator {
 
@@ -135,7 +135,7 @@ public final class L64X128StarStarRandom extends AbstractSplittableWithBrineGene
     private final long a;
 
     /**
-     * The per-instance state: s for the LCG; x0 and x1 for the xorshift.
+     * The per-instance state: s for the LCG; x0 and x1 for the XBG.
      * At least one of x0 and x1 must be nonzero.
      */
     private long s, x0, x1;
@@ -149,8 +149,8 @@ public final class L64X128StarStarRandom extends AbstractSplittableWithBrineGene
      *
      * @param a additive parameter for the LCG
      * @param s initial state for the LCG
-     * @param x0 first word of the initial state for the xorshift generator
-     * @param x1 second word of the initial state for the xorshift generator
+     * @param x0 first word of the initial state for the XBG
+     * @param x1 second word of the initial state for the XBG
      */
     public L64X128StarStarRandom(long a, long s, long x0, long x1) {
         // Force a to be odd.
@@ -238,7 +238,7 @@ public final class L64X128StarStarRandom extends AbstractSplittableWithBrineGene
        // Update the LCG subgenerator
         s = M * s + a;
 
-       // Update the Xorshift subgenerator
+       // Update the XBG subgenerator
         long q0 = x0, q1 = x1;
         {   // xoroshiro128v1_0
             q1 ^= q0;

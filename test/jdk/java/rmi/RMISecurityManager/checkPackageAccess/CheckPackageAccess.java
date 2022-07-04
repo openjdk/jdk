@@ -31,7 +31,7 @@
  * "accessClassInPackage.*").
  * @author Peter Jones
  *
- * @run main/othervm CheckPackageAccess
+ * @run main/othervm -Djava.security.manager=allow CheckPackageAccess
  */
 
 import java.rmi.RMISecurityManager;

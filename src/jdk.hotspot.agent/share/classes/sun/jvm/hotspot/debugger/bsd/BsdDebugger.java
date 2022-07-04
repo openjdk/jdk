@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,6 @@ public interface BsdDebugger extends JVMDebugger {
   public BsdOopHandle readCompOopHandle(long address) throws DebuggerException;
   public long[]       getThreadIntegerRegisterSet(long unique_thread_id) throws DebuggerException;
   public long         getAddressValue(Address addr) throws DebuggerException;
-  public Address      newAddress(long value) throws DebuggerException;
 
   // For BsdCDebugger
   public List<ThreadProxy> getThreadList();

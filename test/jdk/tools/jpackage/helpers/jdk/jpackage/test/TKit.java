@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,9 @@
  */
 package jdk.jpackage.test;
 
-import java.io.BufferedReader;
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
@@ -48,6 +47,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -100,20 +100,6 @@ final public class TKit {
         throw throwUnknownPlatformError();
     }).get();
 
-    public static void run(String args[], ThrowingRunnable testBody) {
-        if (currentTest != null) {
-            throw new IllegalStateException(
-                    "Unexpeced nested or concurrent Test.run() call");
-        }
-
-        TestInstance test = new TestInstance(testBody);
-        ThrowingRunnable.toRunnable(() -> runTests(List.of(test))).run();
-        test.rethrowIfSkipped();
-        if (!test.passed()) {
-            throw new RuntimeException();
-        }
-    }
-
     static void withExtraLogStream(ThrowingRunnable action) {
         if (extraLogStream != null) {
             ThrowingRunnable.toRunnable(action).run();
@@ -130,7 +116,7 @@ final public class TKit {
     static void runTests(List<TestInstance> tests) {
         if (currentTest != null) {
             throw new IllegalStateException(
-                    "Unexpeced nested or concurrent Test.run() call");
+                    "Unexpected nested or concurrent Test.run() call");
         }
 
         withExtraLogStream(() -> {
@@ -194,29 +180,20 @@ final public class TKit {
         return (OS.contains("mac"));
     }
 
+    public static boolean isArmMac() {
+        return (isOSX() && "aarch64".equals(System.getProperty("os.arch")));
+    }
+
     public static boolean isLinux() {
         return ((OS.contains("nix") || OS.contains("nux")));
     }
 
-    public static boolean isUbuntu() {
+    public static boolean isLinuxAPT() {
         if (!isLinux()) {
             return false;
         }
-        File releaseFile = new File("/etc/os-release");
-        if (releaseFile.exists()) {
-            try (BufferedReader lineReader = new BufferedReader(new FileReader(releaseFile))) {
-                String lineText = null;
-                while ((lineText = lineReader.readLine()) != null) {
-                    if (lineText.indexOf("NAME=\"Ubuntu") != -1) {
-                        lineReader.close();
-                        return true;
-                    }
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        return false;
+        File aptFile = new File("/usr/bin/apt-get");
+        return aptFile.exists();
     }
 
     private static String addTimestamp(String msg) {
@@ -263,6 +240,13 @@ final public class TKit {
         ThrowingRunnable.toRunnable(() -> Files.write(propsFilename,
                 props.stream().map(e -> String.join("=", e.getKey(),
                 e.getValue())).peek(TKit::trace).collect(Collectors.toList()))).run();
+        trace("Done");
+    }
+
+    public static void traceFileContents(Path path, String label) throws IOException {
+        assertFileExists(path);
+        trace(String.format("Dump [%s] %s...", path, label));
+        Files.readAllLines(path).forEach(TKit::trace);
         trace("Done");
     }
 
@@ -785,6 +769,34 @@ final public class TKit {
                     "Actual list is longer than expected by %d elements",
                     expected.size() - actual.size()), msg));
         }
+    }
+
+    /**
+     * Creates a directory by creating all nonexistent parent directories first
+     * just like java.nio.file.Files#createDirectories() and returns
+     * java.io.Closeable that will delete all created nonexistent parent
+     * directories.
+     */
+    public static Closeable createDirectories(Path dir) throws IOException {
+        Objects.requireNonNull(dir);
+
+        Collection<Path> dirsToDelete = new ArrayList<>();
+
+        Path curDir = dir;
+        while (!Files.exists(curDir)) {
+            dirsToDelete.add(curDir);
+            curDir = curDir.getParent();
+        }
+        Files.createDirectories(dir);
+
+        return new Closeable() {
+            @Override
+            public void close() throws IOException {
+                for (var dirToDelete : dirsToDelete) {
+                    Files.deleteIfExists(dirToDelete);
+                }
+            }
+        };
     }
 
     public final static class TextStreamVerifier {

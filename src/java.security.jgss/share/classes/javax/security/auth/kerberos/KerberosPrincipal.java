@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import sun.security.util.*;
 public final class KerberosPrincipal
     implements java.security.Principal, java.io.Serializable {
 
+    @Serial
     private static final long serialVersionUID = -7374788026156829911L;
 
     //name types
@@ -106,7 +107,7 @@ public final class KerberosPrincipal
      *
      * <p>If the input name does not contain a realm, the default realm
      * is used. The default realm can be specified either in a Kerberos
-     * configuration file or via the {@systemProperty java.security.krb5.realm}
+     * configuration file or via the {@code java.security.krb5.realm}
      * system property. For more information, see the
      * {@extLink security_guide_jgss_tutorial Kerberos Requirements}.
      *
@@ -155,7 +156,7 @@ public final class KerberosPrincipal
      *
      * <p>If the input name does not contain a realm, the default realm
      * is used. The default realm can be specified either in a Kerberos
-     * configuration file or via the {@systemProperty java.security.krb5.realm}
+     * configuration file or via the {@code java.security.krb5.realm}
      * system property. For more information, see the
      * {@extLink security_guide_jgss_tutorial Kerberos Requirements}.
      *
@@ -190,7 +191,7 @@ public final class KerberosPrincipal
 
     public KerberosPrincipal(String name, int nameType) {
 
-        PrincipalName krb5Principal = null;
+        PrincipalName krb5Principal;
 
         try {
             // Appends the default realm if it is missing
@@ -200,6 +201,7 @@ public final class KerberosPrincipal
         }
 
         if (krb5Principal.isRealmDeduced() && !Realm.AUTODEDUCEREALM) {
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 try {
@@ -273,6 +275,7 @@ public final class KerberosPrincipal
      *          Realm in their DER-encoded form as specified in Section 5.2.2 of
      *          <a href=http://www.ietf.org/rfc/rfc4120.txt> RFC4120</a>.
      */
+    @Serial
     private void writeObject(ObjectOutputStream oos)
             throws IOException {
 
@@ -293,6 +296,7 @@ public final class KerberosPrincipal
      * @throws IOException if an I/O error occurs
      * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
+    @Serial
     private void readObject(ObjectInputStream ois)
             throws IOException, ClassNotFoundException {
         byte[] asn1EncPrincipal = (byte [])ois.readObject();

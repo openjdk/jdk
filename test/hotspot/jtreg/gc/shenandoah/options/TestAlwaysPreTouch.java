@@ -23,7 +23,7 @@
  */
 
 /*
- * @test TestAlwaysPreTouch
+ * @test
  * @summary Check that Shenandoah's AlwaysPreTouch does not fire asserts
  * @requires vm.gc.Shenandoah
  *

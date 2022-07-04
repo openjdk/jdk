@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,9 +50,6 @@ import javax.lang.model.util.Types;
  * hierarchy since an implementation may choose to have a single
  * object implement multiple {@code TypeMirror} subinterfaces.
  *
- * @author Joseph D. Darcy
- * @author Scott Seligman
- * @author Peter von der Ah&eacute;
  * @see Element
  * @see Types
  * @jls 4.1 The Kinds of Types and Values
@@ -149,7 +146,7 @@ public interface TypeMirror extends javax.lang.model.AnnotatedConstruct {
      * <p>Note that any annotations returned by this method are type
      * annotations.
      *
-     * @since 8
+     * @since 1.8
      */
     @Override
     List<? extends AnnotationMirror> getAnnotationMirrors();
@@ -160,7 +157,7 @@ public interface TypeMirror extends javax.lang.model.AnnotatedConstruct {
      * <p>Note that any annotation returned by this method is a type
      * annotation.
      *
-     * @since 8
+     * @since 1.8
      */
     @Override
     <A extends Annotation> A getAnnotation(Class<A> annotationType);
@@ -171,7 +168,7 @@ public interface TypeMirror extends javax.lang.model.AnnotatedConstruct {
      * <p>Note that any annotations returned by this method are type
      * annotations.
      *
-     * @since 8
+     * @since 1.8
      */
     @Override
     <A extends Annotation> A[] getAnnotationsByType(Class<A> annotationType);

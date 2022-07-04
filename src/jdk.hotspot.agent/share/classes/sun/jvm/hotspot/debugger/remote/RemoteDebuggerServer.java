@@ -181,20 +181,23 @@ public class RemoteDebuggerServer extends UnicastRemoteObject
 
   @Override
   public String execCommandOnServer(String command, Map<String, Object> options) throws RemoteException {
-    ByteArrayOutputStream bout = new ByteArrayOutputStream();
-    try (var out = new PrintStream(bout)) {
-      if (command.equals("pmap")) {
-        (new PMap(debugger)).run(out, debugger);
-      } else if (command.equals("pstack")) {
-        PStack pstack = new PStack(debugger);
-        pstack.setVerbose(false);
-        pstack.setConcurrentLocks((boolean)options.get("concurrentLocks"));
-        pstack.run(out, debugger);
-      } else {
-        throw new DebuggerException(command + " is not supported in this debugger");
+    if (command.equals("findsym")) {
+      return debugger.findSymbol((String)options.get("symbol"));
+    } else {
+      ByteArrayOutputStream bout = new ByteArrayOutputStream();
+      try (var out = new PrintStream(bout)) {
+        if (command.equals("pmap")) {
+          (new PMap(debugger)).run(out, debugger);
+        } else if (command.equals("pstack")) {
+          PStack pstack = new PStack(debugger);
+          pstack.setVerbose(false);
+          pstack.setConcurrentLocks((boolean)options.get("concurrentLocks"));
+          pstack.run(out, debugger);
+        } else {
+          throw new DebuggerException(command + " is not supported in this debugger");
+        }
       }
+      return bout.toString();
     }
-
-    return bout.toString();
   }
 }

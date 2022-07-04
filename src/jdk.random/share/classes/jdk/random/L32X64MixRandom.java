@@ -134,7 +134,7 @@ public final class L32X64MixRandom extends AbstractSplittableWithBrineGenerator 
     private final int a;
 
     /**
-     * The per-instance state: s for the LCG; x0 and x1 for the xorshift.
+     * The per-instance state: s for the LCG; x0 and x1 for the XBG.
      * At least one of x0 and x1 must be nonzero.
      */
     private int s, x0, x1;
@@ -148,13 +148,15 @@ public final class L32X64MixRandom extends AbstractSplittableWithBrineGenerator 
      *
      * @param a additive parameter for the LCG
      * @param s initial state for the LCG
-     * @param x0 first word of the initial state for the xorshift generator
-     * @param x1 second word of the initial state for the xorshift generator
+     * @param x0 first word of the initial state for the XBG
+     * @param x1 second word of the initial state for the XBG
      */
     public L32X64MixRandom(int a, int s, int x0, int x1) {
         // Force a to be odd.
         this.a = a | 1;
         this.s = s;
+        this.x0 = x0;
+        this.x1 = x1;
         // If x0 and x1 are both zero, we must choose nonzero values.
         if ((x0 | x1) == 0) {
        int v = s;
@@ -235,7 +237,7 @@ public final class L32X64MixRandom extends AbstractSplittableWithBrineGenerator 
        // Update the LCG subgenerator
         s = M * s + a;
 
-       // Update the Xorshift subgenerator
+       // Update the XBG subgenerator
         int q0 = x0, q1 = x1;
         {   // xoroshiro64
             q1 ^= q0;

@@ -25,6 +25,7 @@
  * @test
  * @bug 8159262
  * @summary Test differing scenarios where a module's readability list and a package's exportability list should be walked
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @compile ../AccessCheck/ModuleLibrary.java

@@ -25,6 +25,7 @@
  * @test
  * @bug 6405175 6487891
  * @summary Tests OverlayLayout encoding
+ * @run main/othervm -Djava.security.manager=allow javax_swing_OverlayLayout
  * @author Sergey Malenkov
  */
 

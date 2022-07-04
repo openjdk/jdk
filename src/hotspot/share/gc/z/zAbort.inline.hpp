@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZABORT_INLINE_HPP
 
 #include "gc/z/zAbort.hpp"
+
 #include "runtime/atomic.hpp"
 
 inline bool ZAbort::should_abort() {

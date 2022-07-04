@@ -25,6 +25,8 @@
 #ifndef OS_LINUX_OS_LINUX_INLINE_HPP
 #define OS_LINUX_OS_LINUX_INLINE_HPP
 
+// os_linux.hpp included by os.hpp
+
 #include "runtime/os.hpp"
 #include "os_posix.inline.hpp"
 

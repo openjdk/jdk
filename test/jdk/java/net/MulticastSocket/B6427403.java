@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
  * @bug 6427403
  * @summary java.net.MulticastSocket.joinGroup() reports 'socket closed'
  * @run main B6427403
- * @run main/othervm -Djdk.net.usePlainDatagramSocketImpl B6427403
  */
 import java.net.*;
 import java.io.*;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,13 +33,13 @@ public class LockStringValueTest {
         String s = "LiveOak";
         WhiteBox wb = WhiteBox.getWhiteBox();
 
-        if (wb.areSharedStringsIgnored()) {
-            System.out.println("The shared strings are ignored");
+        if (!wb.areSharedStringsMapped()) {
+            System.out.println("The shared strings are not mapped");
             System.out.println("LockStringValueTest: PASS");
             return;
         }
 
-        if (!wb.isShared(s)) {
+        if (!wb.isSharedInternedString(s)) {
             throw new RuntimeException("LockStringValueTest Failed: String is not shared.");
         }
 

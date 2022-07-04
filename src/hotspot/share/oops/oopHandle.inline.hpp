@@ -25,8 +25,9 @@
 #ifndef SHARE_OOPS_OOPHANDLE_INLINE_HPP
 #define SHARE_OOPS_OOPHANDLE_INLINE_HPP
 
-#include "oops/access.inline.hpp"
 #include "oops/oopHandle.hpp"
+
+#include "oops/access.inline.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 
 inline oop OopHandle::resolve() const {
@@ -47,7 +48,7 @@ inline OopHandle::OopHandle(OopStorage* storage, oop obj) :
 }
 
 inline void OopHandle::release(OopStorage* storage) {
-  if (peek() != NULL) {
+  if (_obj != NULL) {
     // Clear the OopHandle first
     NativeAccess<>::oop_store(_obj, (oop)NULL);
     storage->release(_obj);

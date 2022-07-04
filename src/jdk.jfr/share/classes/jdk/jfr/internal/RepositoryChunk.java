@@ -43,15 +43,14 @@ final class RepositoryChunk {
     };
 
     private final SafePath chunkFile;
-    private final Instant startTime;
     private final RandomAccessFile unFinishedRAF;
 
     private Instant endTime = null; // unfinished
+    private Instant startTime;
     private int refCount = 0;
     private long size;
 
-    RepositoryChunk(SafePath path, Instant startTime) throws Exception {
-        this.startTime = startTime;
+    RepositoryChunk(SafePath path) throws Exception {
         this.chunkFile = path;
         this.unFinishedRAF = SecuritySupport.createRandomAccessFile(chunkFile);
     }
@@ -75,6 +74,10 @@ final class RepositoryChunk {
 
     public Instant getStartTime() {
         return startTime;
+    }
+
+    public void setStartTime(Instant timestamp) {
+        this.startTime = timestamp;
     }
 
     public Instant getEndTime() {
@@ -126,20 +129,6 @@ final class RepositoryChunk {
             Logger.log(LogTag.JFR_SYSTEM, LogLevel.DEBUG, "Release chunk " + toString() + " ref count now " + refCount);
         }
         if (refCount == 0) {
-            destroy();
-        }
-    }
-
-    @Override
-    @SuppressWarnings("deprecation")
-    protected void finalize() {
-        boolean destroy = false;
-        synchronized (this) {
-            if (refCount > 0) {
-                destroy = true;
-            }
-        }
-        if (destroy) {
             destroy();
         }
     }

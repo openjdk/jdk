@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,6 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
     /* define doc flavors for text types in the default encoding of
      * this platform since we can always read those.
      */
-    private static String encoding = "ISO8859_1";
     private static DocFlavor textByteFlavor;
 
     private static DocFlavor[] supportedDocFlavors = null;
@@ -146,10 +145,9 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
       "| grep -E '^[ 0-9a-zA-Z_-]*@' | awk '{print $4}'"
     };
 
-    static {
-        encoding = java.security.AccessController.doPrivileged(
+    @SuppressWarnings("removal")
+    private static String encoding = java.security.AccessController.doPrivileged(
             new sun.security.action.GetPropertyAction("file.encoding"));
-    }
 
     /* let's try to support a few of these */
     private static final Class<?>[] serviceAttrCats = {
@@ -420,6 +418,7 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
     }
 
     public DocPrintJob createPrintJob() {
+      @SuppressWarnings("removal")
       SecurityManager security = System.getSecurityManager();
       if (security != null) {
         security.checkPrintJobAccess();

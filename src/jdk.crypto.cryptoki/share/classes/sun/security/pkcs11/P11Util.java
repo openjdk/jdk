@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,12 @@
 
 package sun.security.pkcs11;
 
+import java.lang.ref.Cleaner;
 import java.math.BigInteger;
 import java.security.*;
+
+import sun.security.pkcs11.wrapper.PKCS11Exception;
+import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.*;
 
 /**
  * Collection of static utility methods.
@@ -35,6 +39,9 @@ import java.security.*;
  * @since   1.5
  */
 public final class P11Util {
+
+    // A cleaner, shared within this module.
+    public static final Cleaner cleaner = Cleaner.create();
 
     private static Object LOCK = new Object();
 
@@ -80,6 +87,7 @@ public final class P11Util {
         return p;
     }
 
+    @SuppressWarnings("removal")
     private static Provider getProvider(Provider p, String providerName,
             String className) {
         if (p != null) {
@@ -186,4 +194,22 @@ public final class P11Util {
         return sb.toString();
     }
 
+    // returns true if successfully cancelled
+    static boolean trySessionCancel(Token token, Session session, long flags)
+            throws ProviderException {
+        if (token.p11.getVersion().major == 3) {
+            try {
+                token.p11.C_SessionCancel(session.id(), flags);
+                return true;
+            } catch (PKCS11Exception e) {
+                // return false for CKR_OPERATION_CANCEL_FAILED, so callers
+                // can cancel in the pre v3.0 way, i.e. by finishing off the
+                // current operation
+                if (!e.match(CKR_OPERATION_CANCEL_FAILED)) {
+                    throw new ProviderException("cancel failed", e);
+                }
+            }
+        }
+        return false;
+    }
 }

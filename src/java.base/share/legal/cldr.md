@@ -1,4 +1,4 @@
-## Unicode Common Local Data Repository (CLDR) v39
+## Unicode Common Local Data Repository (CLDR) v41
 
 ### CLDR License
 
@@ -19,7 +19,7 @@ THE DATA FILES OR SOFTWARE.
 
 COPYRIGHT AND PERMISSION NOTICE
 
-Copyright © 1991-2021 Unicode, Inc. All rights reserved.
+Copyright © 1991-2022 Unicode, Inc. All rights reserved.
 Distributed under the Terms of Use in https://www.unicode.org/copyright.html.
 
 Permission is hereby granted, free of charge, to any person obtaining
@@ -58,7 +58,7 @@ Unicode® Copyright and Terms of Use
 For the general privacy policy governing access to this site, see the  Unicode Privacy Policy.
 
 Unicode Copyright
-Copyright © 1991-2021 Unicode, Inc. All rights reserved.
+Copyright © 1991-2022 Unicode, Inc. All rights reserved.
 Definitions
 Unicode Data Files ("DATA FILES") include all data files under the directories:
 https://www.unicode.org/Public/

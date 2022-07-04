@@ -28,6 +28,7 @@
  * @summary Test range check for constant array and NewMultiArray is removed properly
  * @author Hui Shi
  *
+ * @requires vm.flagless
  * @requires vm.debug == true & vm.compiler1.enabled
  *
  * @library /test/lib
@@ -49,6 +50,7 @@ public class TestRangeCheckEliminated {
             "-XX:TieredStopAtLevel=1",
             "-XX:+TraceRangeCheckElimination",
             "-XX:-BackgroundCompilation",
+            "-XX:CompileThreshold=500",
             test_constant_array.class.getName()
          };
 
@@ -68,6 +70,7 @@ public class TestRangeCheckEliminated {
             "-XX:TieredStopAtLevel=1",
             "-XX:+TraceRangeCheckElimination",
             "-XX:-BackgroundCompilation",
+            "-XX:CompileThreshold=500",
             test_multi_constant_array.class.getName()
         };
 
@@ -87,6 +90,7 @@ public class TestRangeCheckEliminated {
             "-XX:TieredStopAtLevel=1",
             "-XX:+TraceRangeCheckElimination",
             "-XX:-BackgroundCompilation",
+            "-XX:CompileThreshold=500",
             test_multi_new_array.class.getName()
          };
 

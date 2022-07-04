@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,10 @@
 #ifndef SHARE_UTILITIES_BITMAP_INLINE_HPP
 #define SHARE_UTILITIES_BITMAP_INLINE_HPP
 
+#include "utilities/bitMap.hpp"
+
 #include "runtime/atomic.hpp"
 #include "utilities/align.hpp"
-#include "utilities/bitMap.hpp"
 #include "utilities/count_trailing_zeros.hpp"
 
 inline void BitMap::set_bit(idx_t bit) {
@@ -209,7 +210,7 @@ inline BitMap::idx_t BitMap::get_next_bit_impl(idx_t l_index, idx_t r_index) con
       // Flipped and shifted first word is zero.  Word search through
       // aligned up r_index for a non-zero flipped word.
       idx_t limit = aligned_right
-        ? to_words_align_down(r_index) // Miniscule savings when aligned.
+        ? to_words_align_down(r_index) // Minuscule savings when aligned.
         : to_words_align_up(r_index);
       while (++index < limit) {
         cword = map(index) ^ flip;
@@ -242,7 +243,8 @@ BitMap::get_next_one_offset_aligned_right(idx_t l_offset, idx_t r_offset) const 
   return get_next_bit_impl<find_ones_flip, true>(l_offset, r_offset);
 }
 
-inline bool BitMap::iterate(BitMapClosure* cl, idx_t beg, idx_t end) {
+template <typename BitMapClosureType>
+inline bool BitMap::iterate(BitMapClosureType* cl, idx_t beg, idx_t end) {
   for (idx_t index = beg; true; ++index) {
     index = get_next_one_offset(index, end);
     if (index >= end) {
@@ -253,7 +255,8 @@ inline bool BitMap::iterate(BitMapClosure* cl, idx_t beg, idx_t end) {
   }
 }
 
-inline bool BitMap::iterate(BitMapClosure* cl) {
+template <typename BitMapClosureType>
+inline bool BitMap::iterate(BitMapClosureType* cl) {
   return iterate(cl, 0, size());
 }
 

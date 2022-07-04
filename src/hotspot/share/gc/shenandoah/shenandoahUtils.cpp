@@ -111,9 +111,7 @@ ShenandoahConcurrentPhase::~ShenandoahConcurrentPhase() {
 
 ShenandoahTimingsTracker::ShenandoahTimingsTracker(ShenandoahPhaseTimings::Phase phase) :
   _timings(ShenandoahHeap::heap()->phase_timings()), _phase(phase) {
-  assert(!Thread::current()->is_Worker_thread() &&
-              (Thread::current()->is_VM_thread() ||
-               Thread::current()->is_ConcurrentGC_thread()),
+  assert(Thread::current()->is_VM_thread() || Thread::current()->is_ConcurrentGC_thread(),
           "Must be set by these threads");
   _parent_phase = _current_phase;
   _current_phase = phase;
@@ -148,10 +146,8 @@ ShenandoahGCWorkerPhase::~ShenandoahGCWorkerPhase() {
   _timings->record_workers_end(_phase);
 }
 
-ShenandoahWorkerSession::ShenandoahWorkerSession(uint worker_id) : _worker_id(worker_id) {
-  Thread* thr = Thread::current();
-  assert(ShenandoahThreadLocalData::worker_id(thr) == ShenandoahThreadLocalData::INVALID_WORKER_ID, "Already set");
-  ShenandoahThreadLocalData::set_worker_id(thr, worker_id);
+ShenandoahWorkerSession::ShenandoahWorkerSession(uint worker_id) {
+  assert(worker_id == WorkerThread::worker_id(), "Wrong worker id");
 }
 
 ShenandoahConcurrentWorkerSession::~ShenandoahConcurrentWorkerSession() {
@@ -159,12 +155,5 @@ ShenandoahConcurrentWorkerSession::~ShenandoahConcurrentWorkerSession() {
 }
 
 ShenandoahParallelWorkerSession::~ShenandoahParallelWorkerSession() {
-  _event.commit(GCId::current(), _worker_id, ShenandoahPhaseTimings::phase_name(ShenandoahGCPhase::current_phase()));
-}
-ShenandoahWorkerSession::~ShenandoahWorkerSession() {
-#ifdef ASSERT
-  Thread* thr = Thread::current();
-  assert(ShenandoahThreadLocalData::worker_id(thr) != ShenandoahThreadLocalData::INVALID_WORKER_ID, "Must be set");
-  ShenandoahThreadLocalData::set_worker_id(thr, ShenandoahThreadLocalData::INVALID_WORKER_ID);
-#endif
+  _event.commit(GCId::current(), WorkerThread::worker_id(), ShenandoahPhaseTimings::phase_name(ShenandoahGCPhase::current_phase()));
 }

@@ -23,7 +23,7 @@
  */
 
 /*
- * @test TestSmallHeap
+ * @test
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC         TestSmallHeap

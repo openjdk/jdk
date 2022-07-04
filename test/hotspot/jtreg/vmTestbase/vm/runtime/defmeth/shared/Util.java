@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,19 +136,10 @@ public class Util {
 
         classFile = classFile.clone();
 
-        // FIXME: workaround for V1_7 limiation of current ASM
-        // Artificially downgrade
-        if (classFile[7] == 52) {
-            System.out.println("WARNING: downgraded major verson from 52 to 0");
-            classFile[7] = 0;
-        }
-
-         jdk.internal.org.objectweb.asm.ClassReader cr =
+        jdk.internal.org.objectweb.asm.ClassReader cr =
                 new  jdk.internal.org.objectweb.asm.ClassReader(classFile);
 
-        cr.accept(new  jdk.internal.org.objectweb.asm.util.TraceClassVisitor(new PrintWriter(System.out)),
-                flags);
-
+        cr.accept(new  jdk.internal.org.objectweb.asm.util.TraceClassVisitor(new PrintWriter(System.out)), flags);
     }
 
     /**
@@ -160,22 +151,12 @@ public class Util {
     public static void asmifyClassFile(byte[] classFile) {
         int flags =  jdk.internal.org.objectweb.asm.ClassReader.SKIP_DEBUG;
 
-        // FIXME: workaround for V1_7 limiation of current ASM
-        // Artificially downgrade
-        if (classFile[7] == 52) {
-            // Need to patch the bytecode, so make a copy of the class file
-            classFile = classFile.clone();
-
-            System.out.println("WARNING: downgraded major verson from 52 to 0");
-            classFile[7] = 0;
-        }
-
-         jdk.internal.org.objectweb.asm.ClassReader cr =
+        jdk.internal.org.objectweb.asm.ClassReader cr =
                 new  jdk.internal.org.objectweb.asm.ClassReader(classFile);
 
         //cr.accept(new TraceClassVisitor(new PrintWriter(System.out)), flags);
-        cr.accept(new  jdk.internal.org.objectweb.asm.util.TraceClassVisitor(null,
-                        new  jdk.internal.org.objectweb.asm.util.ASMifier(),
+        cr.accept(new jdk.internal.org.objectweb.asm.util.TraceClassVisitor(null,
+                        new jdk.internal.org.objectweb.asm.util.ASMifier(),
                         new PrintWriter(System.out)), flags);
     }
 

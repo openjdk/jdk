@@ -4,7 +4,7 @@
  * @summary doclint needs to check for valid usage of at-value tag
  * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
- * @run main DocLintTester -ref ValueTest.out ValueTest.java
+ * @run main DocLintTester -Xmsgs:all,-missing -ref ValueTest.out ValueTest.java
  */
 
 /** */
@@ -65,4 +65,16 @@ public class ValueTest {
 
     /** invalid enum constant: {@value Thread.State#NEW} */
     public int badEnum;
+
+    /** valid: {@value %04x} */
+    public static final int maxShort = 65535;
+
+    /** valid: {@value "%5.2f"} */
+    public static final double pi = 3.14159265358979323846;
+
+    /** invalid format: {@value %%04x} */
+    public static final int f3 = 0;
+
+    /** invalid format: {@value "04x"} */
+    public static final int f4 = 0;
 }

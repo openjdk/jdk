@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,7 +153,7 @@ final class MemberName implements Member, Cloneable {
             } else if (type instanceof Object[] typeInfo) {
                 Class<?>[] ptypes = (Class<?>[]) typeInfo[1];
                 Class<?> rtype = (Class<?>) typeInfo[0];
-                MethodType res = MethodType.makeImpl(rtype, ptypes, true);
+                MethodType res = MethodType.methodType(rtype, ptypes, true);
                 type = res;
             }
             // Make sure type is a MethodType for racing threads.
@@ -313,20 +313,22 @@ final class MemberName implements Member, Cloneable {
     /*non-public*/
     boolean referenceKindIsConsistentWith(int originalRefKind) {
         int refKind = getReferenceKind();
-        if (refKind == originalRefKind)  return true;
-        switch (originalRefKind) {
-        case REF_invokeInterface:
-            // Looking up an interface method, can get (e.g.) Object.hashCode
-            assert(refKind == REF_invokeVirtual ||
-                   refKind == REF_invokeSpecial) : this;
-            return true;
-        case REF_invokeVirtual:
-        case REF_newInvokeSpecial:
-            // Looked up a virtual, can get (e.g.) final String.hashCode.
-            assert(refKind == REF_invokeSpecial) : this;
-            return true;
+        if (refKind == originalRefKind) return true;
+        if (getClass().desiredAssertionStatus()) {
+            switch (originalRefKind) {
+                case REF_invokeInterface -> {
+                    // Looking up an interface method, can get (e.g.) Object.hashCode
+                    assert (refKind == REF_invokeVirtual || refKind == REF_invokeSpecial) : this;
+                }
+                case REF_invokeVirtual, REF_newInvokeSpecial -> {
+                    // Looked up a virtual, can get (e.g.) final String.hashCode.
+                    assert (refKind == REF_invokeSpecial) : this;
+                }
+                default -> {
+                    assert (false) : this + " != " + MethodHandleNatives.refKindName((byte) originalRefKind);
+                }
+            }
         }
-        assert(false) : this+" != "+MethodHandleNatives.refKindName((byte)originalRefKind);
         return true;
     }
     private boolean staticIsConsistent() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,7 @@ public final class ResponseBodyHandlers {
     public static class PathBodyHandler implements BodyHandler<Path>{
         private final Path file;
         private final List<OpenOption> openOptions;  // immutable list
+        @SuppressWarnings("removal")
         private final AccessControlContext acc;
         private final FilePermission filePermission;
 
@@ -77,6 +78,7 @@ public final class ResponseBodyHandlers {
         public static PathBodyHandler create(Path file,
                                              List<OpenOption> openOptions) {
             FilePermission filePermission = null;
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 try {
@@ -90,13 +92,14 @@ public final class ResponseBodyHandlers {
             }
 
             assert filePermission == null || filePermission.getActions().equals("write");
+            @SuppressWarnings("removal")
             var acc = sm != null ? AccessController.getContext() : null;
             return new PathBodyHandler(file, openOptions, acc, filePermission);
         }
 
         private PathBodyHandler(Path file,
                                 List<OpenOption> openOptions,
-                                AccessControlContext acc,
+                                @SuppressWarnings("removal") AccessControlContext acc,
                                 FilePermission filePermission) {
             this.file = file;
             this.openOptions = openOptions;
@@ -160,6 +163,7 @@ public final class ResponseBodyHandlers {
     public static class FileDownloadBodyHandler implements BodyHandler<Path> {
         private final Path directory;
         private final List<OpenOption> openOptions;
+        @SuppressWarnings("removal")
         private final AccessControlContext acc;
         private final FilePermission[] filePermissions;  // may be null
 
@@ -181,6 +185,7 @@ public final class ResponseBodyHandlers {
             }
 
             FilePermission filePermissions[] = null;
+            @SuppressWarnings("removal")
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 FilePermission writePermission = new FilePermission(fn, "write");
@@ -205,13 +210,14 @@ public final class ResponseBodyHandlers {
 
             assert filePermissions == null || (filePermissions[0].getActions().equals("write")
                     && filePermissions[1].getActions().equals("write"));
+            @SuppressWarnings("removal")
             var acc = sm != null ? AccessController.getContext() : null;
             return new FileDownloadBodyHandler(directory, openOptions, acc, filePermissions);
         }
 
         private FileDownloadBodyHandler(Path directory,
                                        List<OpenOption> openOptions,
-                                       AccessControlContext acc,
+                                       @SuppressWarnings("removal") AccessControlContext acc,
                                        FilePermission... filePermissions) {
             this.directory = directory;
             this.openOptions = openOptions;

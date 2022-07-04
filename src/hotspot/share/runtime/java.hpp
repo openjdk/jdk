@@ -25,6 +25,7 @@
 #ifndef SHARE_RUNTIME_JAVA_HPP
 #define SHARE_RUNTIME_JAVA_HPP
 
+#include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class Handle;
@@ -140,35 +141,35 @@ class JDK_Version {
     return _java_version;
   }
   static void set_java_version(const char* version) {
-    _java_version = version;
+    _java_version = os::strdup(version);
   }
 
   static const char* runtime_name() {
     return _runtime_name;
   }
   static void set_runtime_name(const char* name) {
-    _runtime_name = name;
+    _runtime_name = os::strdup(name);
   }
 
   static const char* runtime_version() {
     return _runtime_version;
   }
   static void set_runtime_version(const char* version) {
-    _runtime_version = version;
+    _runtime_version = os::strdup(version);
   }
 
   static const char* runtime_vendor_version() {
     return _runtime_vendor_version;
   }
   static void set_runtime_vendor_version(const char* vendor_version) {
-    _runtime_vendor_version = vendor_version;
+    _runtime_vendor_version = os::strdup(vendor_version);
   }
 
   static const char* runtime_vendor_vm_bug_url() {
     return _runtime_vendor_vm_bug_url;
   }
   static void set_runtime_vendor_vm_bug_url(const char* vendor_vm_bug_url) {
-    _runtime_vendor_vm_bug_url = vendor_vm_bug_url;
+    _runtime_vendor_vm_bug_url = os::strdup(vendor_vm_bug_url);
   }
 
 };

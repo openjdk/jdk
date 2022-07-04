@@ -26,6 +26,7 @@
 #define SHARE_OOPS_COMPILEDICHOLDER_INLINE_HPP
 
 #include "oops/compiledICHolder.hpp"
+
 #include "oops/klass.inline.hpp"
 
 inline bool CompiledICHolder::is_loader_alive() {

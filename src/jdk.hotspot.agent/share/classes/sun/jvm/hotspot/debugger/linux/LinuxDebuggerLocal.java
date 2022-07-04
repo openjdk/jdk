@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,7 +98,7 @@ public class LinuxDebuggerLocal extends DebuggerBase implements LinuxDebugger {
 
     // native methods
 
-    private native static void init0()
+    private static native void init0()
                                 throws DebuggerException;
     private native void setSAAltRoot0(String altroot);
     private native void attach0(int pid)
@@ -115,7 +115,7 @@ public class LinuxDebuggerLocal extends DebuggerBase implements LinuxDebugger {
                                 throws DebuggerException;
     private native byte[] readBytesFromProcess0(long address, long numBytes)
                                 throws DebuggerException;
-    public native static int  getAddressSize() ;
+    public static native int  getAddressSize() ;
 
     @Override
     public native String demangle(String sym);
@@ -582,7 +582,7 @@ public class LinuxDebuggerLocal extends DebuggerBase implements LinuxDebugger {
     /** From the LinuxDebugger interface */
     public long getAddressValue(Address addr) {
       if (addr == null) return 0;
-      return ((LinuxAddress) addr).getValue();
+      return addr.asLongValue();
     }
 
     /** From the LinuxDebugger interface */

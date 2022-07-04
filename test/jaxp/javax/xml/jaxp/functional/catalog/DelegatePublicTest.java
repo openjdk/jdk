@@ -38,7 +38,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8077931
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true catalog.DelegatePublicTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow catalog.DelegatePublicTest
  * @run testng/othervm catalog.DelegatePublicTest
  * @summary Get matched URIs from DelegatePublic entries.
  */

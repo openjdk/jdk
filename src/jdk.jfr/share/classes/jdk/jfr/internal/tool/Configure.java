@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,22 +32,23 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Deque;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import jdk.jfr.internal.SecuritySupport;
 import jdk.jfr.internal.SecuritySupport.SafePath;
 import jdk.jfr.internal.jfc.JFC;
 import jdk.jfr.internal.jfc.model.AbortException;
 import jdk.jfr.internal.jfc.model.JFCModel;
+import jdk.jfr.internal.jfc.model.JFCModelException;
 import jdk.jfr.internal.jfc.model.SettingsLog;
 import jdk.jfr.internal.jfc.model.UserInterface;
 import jdk.jfr.internal.jfc.model.XmlInput;
 
 final class Configure extends Command {
-    private final List<SafePath> inputFiles = new ArrayList<>();
+    private final List<String> inputFiles = new ArrayList<>();
 
     @Override
     public List<String> getOptionSyntax() {
@@ -86,7 +87,7 @@ final class Configure extends Command {
         stream.println("                          (default.jfc). If 'none' is specified, the new");
         stream.println("                          configuration starts empty.");
         stream.println();
-        stream.println("  --ouput <file>          The filename of the generated output file. If not");
+        stream.println("  --output <file>         The filename of the generated output file. If not");
         stream.println("                          specified, the filename custom.jfc will be used.");
         stream.println();
         stream.println("  option=value            The option value to modify. For available options,");
@@ -100,13 +101,8 @@ final class Configure extends Command {
         stream.println("The whitespace delimiter can be omitted for timespan values, i.e. 20ms. For");
         stream.println("more information about the settings syntax, see Javadoc of the jdk.jfr package.");
         ensureInputFiles();
-        for (SafePath path : inputFiles) {
-            try {
-                String name = path.toPath().getFileName().toString();
-                displayParameters(stream, path, name);
-            } catch (InvalidPathException | ParseException | IOException e) {
-                stream.println("Unable read options for " + path + " " + e.getMessage());
-            }
+        for (String name : inputFiles) {
+            displayParameters(stream, name);
         }
         stream.println();
         stream.println("To run interactive configuration wizard:");
@@ -126,14 +122,19 @@ final class Configure extends Command {
         stream.println("  jfr configure --input none +Hello#enabled=true --output minimal.jfc");
     }
 
-    private void displayParameters(PrintStream stream, SafePath path, String name) throws ParseException, IOException {
-        JFCModel parameters = new JFCModel(path);
+    private void displayParameters(PrintStream stream, String name) {
         stream.println();
         stream.println("Options for " + name + ":");
         stream.println();
-        for (XmlInput input : parameters.getInputs()) {
-            stream.println("  " + input.getOptionSyntax());
-            stream.println();
+        try {
+            SafePath path = JFC.createSafePath(name);
+            JFCModel parameters = JFCModel.create(path, l -> stream.println("Warning! " + l));
+            for (XmlInput input : parameters.getInputs()) {
+                stream.println("  " + input.getOptionSyntax());
+                stream.println();
+            }
+        } catch (JFCModelException | InvalidPathException | ParseException | IOException e) {
+            stream.println(JFC.formatException("  Could not", e, name)); // indented
         }
     }
 
@@ -153,7 +154,7 @@ final class Configure extends Command {
             }
             if (acceptOption(options, "--input")) {
                 String value = options.pop();
-                inputFiles.addAll(makeSafePathList(value));
+                inputFiles.addAll(Arrays.asList(value.split(",")));
             }
             if (acceptOption(options, "--output")) {
                 if (output != null) {
@@ -190,15 +191,22 @@ final class Configure extends Command {
     }
 
     private void configure(boolean interactive, boolean log, SafePath output, Map<String, String> options) throws UserDataException {
+        UserInterface ui = new UserInterface();
+        if (log) {
+            SettingsLog.enable();
+        }
+        JFCModel model = new JFCModel(l -> ui.println("Warning! " + l));
+        model.setLabel("Custom");
+        for (String input : inputFiles) {
+            try {
+                model.parse(JFC.createSafePath(input));
+            } catch (InvalidPathException | IOException | JFCModelException | ParseException e) {
+                throw new UserDataException(JFC.formatException("could not", e, input));
+            }
+        }
         try {
             if (output == null) {
                 output = new SafePath(Path.of("custom.jfc"));
-            }
-            UserInterface ui = new UserInterface();
-            JFCModel model = new JFCModel(inputFiles);
-            model.setLabel("Custom");
-            if (log) {
-                SettingsLog.enable();
             }
             for (var option : options.entrySet()) {
                 model.configure(option.getKey(), option.getValue());
@@ -227,41 +235,12 @@ final class Configure extends Command {
             throw new UserDataException("could not find file: " + ffe.getMessage());
         } catch (IOException ioe) {
             throw new UserDataException("i/o error: " + ioe.getMessage());
-        } catch (ParseException pe) {
-            pe.printStackTrace();
-            throw new UserDataException("parsing error: " + pe.getMessage());
         }
-    }
-
-    private List<SafePath> makeSafePathList(String value) {
-        List<SafePath> paths = new ArrayList<>();
-        for (String name : value.split(",")) {
-            paths.add(makeSafePath(name));
-        }
-        return paths;
-    }
-
-    private SafePath makeSafePath(String path) {
-        for (SafePath predefined : SecuritySupport.getPredefinedJFCFiles()) {
-            try {
-                String name = JFC.nameFromPath(predefined.toPath());
-                if (name.equals(path) || (name + ".jfc").equals(path)) {
-                    return predefined;
-                }
-            } catch (IOException e) {
-                throw new InternalError("Error in predefined .jfc file", e);
-            }
-        }
-        return new SafePath(path);
     }
 
     private void ensureInputFiles() throws InternalError {
         if (inputFiles.isEmpty()) {
-            for (SafePath predefined : SecuritySupport.getPredefinedJFCFiles()) {
-                if (predefined.toString().endsWith("default.jfc")) {
-                    inputFiles.add(predefined);
-                }
-            }
+            inputFiles.add("default.jfc");
         }
     }
 

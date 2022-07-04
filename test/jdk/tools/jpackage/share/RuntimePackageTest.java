@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,16 @@ import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.LinuxHelper;
+import static jdk.jpackage.test.TKit.assertTrue;
+import static jdk.jpackage.test.TKit.assertFalse;
 
 /**
  * Test --runtime-image parameter.
@@ -121,6 +125,23 @@ public class RuntimePackageTest {
 
             assertFileListEmpty(srcRuntime, "Missing");
             assertFileListEmpty(dstRuntime, "Unexpected");
+        })
+        .forTypes(PackageType.LINUX_DEB)
+        .addInstallVerifier(cmd -> {
+            String installDir = cmd.getArgumentValue("--install-dir", () -> "/opt");
+            Path copyright = Path.of("/usr/share/doc",
+                    LinuxHelper.getPackageName(cmd), "copyright");
+            boolean withCopyright = LinuxHelper.getPackageFiles(cmd).anyMatch(
+                    Predicate.isEqual(copyright));
+            if (installDir.startsWith("/usr/") || installDir.equals("/usr")) {
+                assertTrue(withCopyright, String.format(
+                        "Check the package delivers [%s] copyright file",
+                        copyright));
+            } else {
+                assertFalse(withCopyright, String.format(
+                        "Check the package doesn't deliver [%s] copyright file",
+                        copyright));
+            }
         });
     }
 
@@ -130,6 +151,7 @@ public class RuntimePackageTest {
             final Path prefsDir = Path.of(".systemPrefs");
             return files.map(root::relativize)
                     .filter(x -> !x.startsWith(prefsDir))
+                    .filter(x -> !x.endsWith(".DS_Store"))
                     .collect(Collectors.toSet());
         }
     }

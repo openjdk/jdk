@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,26 +25,24 @@
 #include "precompiled.hpp"
 
 #include "jvm.h"
+#include "code/codeCache.hpp"
+#include "code/compiledMethod.hpp"
+#include "code/nativeInst.hpp"
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
 #include "runtime/osThread.hpp"
+#include "runtime/safefetch.hpp"
 #include "runtime/semaphore.inline.hpp"
-#include "runtime/stubRoutines.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/threadCrashProtection.hpp"
 #include "signals_posix.hpp"
 #include "utilities/events.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/vmError.hpp"
-
-#ifdef ZERO
-// See stubGenerator_zero.cpp
-#include <setjmp.h>
-extern sigjmp_buf* get_jmp_buf_for_continuation();
-#endif
 
 #include <signal.h>
 
@@ -407,7 +405,7 @@ static bool call_chained_handler(struct sigaction *actp, int sig,
     return false;
   } else if (actp->sa_handler != SIG_IGN) {
     if ((actp->sa_flags & SA_NODEFER) == 0) {
-      // automaticlly block the signal
+      // automatically block the signal
       sigaddset(&(actp->sa_mask), sig);
     }
 
@@ -562,6 +560,11 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
 {
   assert(info != NULL && ucVoid != NULL, "sanity");
 
+  if (sig == BREAK_SIGNAL) {
+    assert(!ReduceSignalUsage, "Should not happen with -Xrs/-XX:+ReduceSignalUsage");
+    return true; // ignore it
+  }
+
   // Note: it's not uncommon that JNI code uses signal/sigset to install,
   // then restore certain signal handler (e.g. to temporarily block SIGPIPE,
   // or have a SIGILL handler when detecting CPU type). When that happens,
@@ -582,7 +585,7 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
   // Handle JFR thread crash protection.
   //  Note: this may cause us to longjmp away. Do not use any code before this
   //  point which really needs any form of epilogue code running, eg RAII objects.
-  os::ThreadCrashProtection::check_crash_protection(sig, t);
+  ThreadCrashProtection::check_crash_protection(sig, t);
 
   bool signal_was_handled = false;
 
@@ -594,25 +597,26 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
   }
 #endif
 
+  // Extract pc from context. Note that for certain signals and certain
+  // architectures the pc in ucontext_t will point *after* the offending
+  // instruction. In those cases, use siginfo si_addr instead.
+  address pc = NULL;
+  if (uc != NULL) {
+    if (S390_ONLY(sig == SIGILL || sig == SIGFPE) NOT_S390(false)) {
+      pc = (address)info->si_addr;
+    } else if (ZERO_ONLY(true) NOT_ZERO(false)) {
+      // Non-arch-specific Zero code does not really know the pc.
+      // This can be alleviated by making arch-specific os::Posix::ucontext_get_pc
+      // available for Zero for known architectures. But for generic Zero
+      // code, it would still remain unknown.
+      pc = NULL;
+    } else {
+      pc = os::Posix::ucontext_get_pc(uc);
+    }
+  }
+
   if (!signal_was_handled) {
-    // Handle SafeFetch access.
-#ifndef ZERO
-    if (uc != NULL) {
-      address pc = os::Posix::ucontext_get_pc(uc);
-      if (StubRoutines::is_safefetch_fault(pc)) {
-        os::Posix::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));
-        signal_was_handled = true;
-      }
-    }
-#else
-    // See JDK-8076185
-    if (sig == SIGSEGV || sig == SIGBUS) {
-      sigjmp_buf* const pjb = get_jmp_buf_for_continuation();
-      if (pjb) {
-        siglongjmp(*pjb, 1);
-      }
-    }
-#endif // ZERO
+    signal_was_handled = handle_safefetch(sig, pc, uc);
   }
 
   // Ignore SIGPIPE and SIGXFSZ (4229104, 6499219).
@@ -620,6 +624,31 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
       (sig == SIGPIPE || sig == SIGXFSZ)) {
     PosixSignals::chained_handler(sig, info, ucVoid);
     signal_was_handled = true; // unconditionally.
+  }
+
+  // Check for UD trap caused by NOP patching.
+  // If it is, patch return address to be deopt handler.
+  if (!signal_was_handled) {
+    address pc = os::Posix::ucontext_get_pc(uc);
+    assert(pc != NULL, "");
+    if (NativeDeoptInstruction::is_deopt_at(pc)) {
+      CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
+      if (cb != NULL && cb->is_compiled()) {
+        MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, t);) // can call PcDescCache::add_pc_desc
+        CompiledMethod* cm = cb->as_compiled_method();
+        assert(cm->insts_contains_inclusive(pc), "");
+        address deopt = cm->is_method_handle_return(pc) ?
+          cm->deopt_mh_handler_begin() :
+          cm->deopt_handler_begin();
+        assert(deopt != NULL, "");
+
+        frame fr = os::fetch_frame_from_context(uc);
+        cm->set_original_pc(&fr, pc);
+
+        os::Posix::ucontext_set_pc(uc, deopt);
+        signal_was_handled = true;
+      }
+    }
   }
 
   // Call platform dependent signal handler.
@@ -637,22 +666,6 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
 
   // Invoke fatal error handling.
   if (!signal_was_handled && abort_if_unrecognized) {
-    // Extract pc from context for the error handler to display.
-    address pc = NULL;
-    if (uc != NULL) {
-      // prepare fault pc address for error reporting.
-      if (S390_ONLY(sig == SIGILL || sig == SIGFPE) NOT_S390(false)) {
-        pc = (address)info->si_addr;
-      } else if (ZERO_ONLY(true) NOT_ZERO(false)) {
-        // Non-arch-specific Zero code does not really know the pc.
-        // This can be alleviated by making arch-specific os::Posix::ucontext_get_pc
-        // available for Zero for known architectures. But for generic Zero
-        // code, it would still remain unknown.
-        pc = NULL;
-      } else {
-        pc = os::Posix::ucontext_get_pc(uc);
-      }
-    }
     // For Zero, we ignore the crash context, because:
     //  a) The crash would be in C++ interpreter code, so context is not really relevant;
     //  b) Generic Zero code would not be able to parse it, so when generic error
@@ -1145,7 +1158,11 @@ void os::print_siginfo(outputStream* os, const void* si0) {
     os->print(", si_addr: " PTR_FORMAT, p2i(si->si_addr));
 #ifdef SIGPOLL
   } else if (sig == SIGPOLL) {
-    os->print(", si_band: %ld", si->si_band);
+    // siginfo_t.si_band is defined as "long", and it is so in most
+    // implementations. But SPARC64 glibc has a bug: si_band is "int".
+    // Cast si_band to "long" to prevent format specifier mismatch.
+    // See: https://sourceware.org/bugzilla/show_bug.cgi?id=23821
+    os->print(", si_band: %ld", (long) si->si_band);
 #endif
   }
 }
@@ -1193,7 +1210,7 @@ int os::get_signal_number(const char* signal_name) {
   return -1;
 }
 
-void set_signal_handler(int sig) {
+void set_signal_handler(int sig, bool do_check = true) {
   // Check for overwrite.
   struct sigaction oldAct;
   sigaction(sig, (struct sigaction*)NULL, &oldAct);
@@ -1235,9 +1252,11 @@ void set_signal_handler(int sig) {
   }
 #endif
 
-  // Save handler setup for later checking
-  vm_handlers.set(sig, &sigAct);
-  do_check_signal_periodically[sig] = true;
+  // Save handler setup for possible later checking
+  if (do_check) {
+    vm_handlers.set(sig, &sigAct);
+  }
+  do_check_signal_periodically[sig] = do_check;
 
   int ret = sigaction(sig, &sigAct, &oldAct);
   assert(ret == 0, "check");
@@ -1275,7 +1294,12 @@ void install_signal_handlers() {
   set_signal_handler(SIGFPE);
   PPC64_ONLY(set_signal_handler(SIGTRAP);)
   set_signal_handler(SIGXFSZ);
-
+  if (!ReduceSignalUsage) {
+    // This is just for early initialization phase. Intercepting the signal here reduces the risk
+    // that an attach client accidentally forces HotSpot to quit prematurely. We skip the periodic
+    // check because late initialization will overwrite it to UserHandler.
+    set_signal_handler(BREAK_SIGNAL, false);
+  }
 #if defined(__APPLE__)
   // lldb (gdb) installs both standard BSD signal handlers, and mach exception
   // handlers. By replacing the existing task exception handler, we disable lldb's mach
@@ -1542,8 +1566,6 @@ void PosixSignals::hotspot_sigmask(Thread* thread) {
 //    - Forte Analyzer: AsyncGetCallTrace()
 //    - StackBanging: get_frame_at_stack_banging_point()
 
-sigset_t SR_sigset;
-
 static void resume_clear_context(OSThread *osthread) {
   osthread->set_ucontext(NULL);
   osthread->set_siginfo(NULL);
@@ -1576,7 +1598,22 @@ static void SR_handler(int sig, siginfo_t* siginfo, ucontext_t* context) {
   PosixSignals::unblock_error_signals();
 
   Thread* thread = Thread::current_or_null_safe();
-  assert(thread != NULL, "Missing current thread in SR_handler");
+
+  // The suspend/resume signal may have been sent from outside the process, deliberately or
+  // accidentally. In that case the receiving thread may not be attached to the VM. We handle
+  // that case by asserting (debug VM) resp. writing a diagnostic message to tty and
+  // otherwise ignoring the stray signal (release VMs).
+  // We print the siginfo as part of the diagnostics, which also contains the sender pid of
+  // the stray signal.
+  if (thread == nullptr) {
+    stringStream ss;
+    ss.print_raw("Non-attached thread received stray SR signal (");
+    os::print_siginfo(&ss, siginfo);
+    ss.print_raw(").");
+    assert(thread != NULL, "%s.", ss.base());
+    log_warning(os)("%s", ss.base());
+    return;
+  }
 
   // On some systems we have seen signal delivery get "stuck" until the signal
   // mask is changed as part of thread termination. Check that the current thread
@@ -1659,14 +1696,11 @@ int SR_initialize() {
   assert(PosixSignals::SR_signum > SIGSEGV && PosixSignals::SR_signum > SIGBUS,
          "SR_signum must be greater than max(SIGSEGV, SIGBUS), see 4355769");
 
-  sigemptyset(&SR_sigset);
-  sigaddset(&SR_sigset, PosixSignals::SR_signum);
-
   // Set up signal handler for suspend/resume
   act.sa_flags = SA_RESTART|SA_SIGINFO;
   act.sa_handler = (void (*)(int)) SR_handler;
 
-  // SR_signum is blocked by default.
+  // SR_signum is blocked when the handler runs.
   pthread_sigmask(SIG_BLOCK, NULL, &act.sa_mask);
   remove_error_signals_from_set(&(act.sa_mask));
 

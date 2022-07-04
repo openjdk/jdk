@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -560,22 +560,13 @@ public abstract class BreakIterator implements Cloneable
 
     private static BreakIterator createBreakInstance(LocaleProviderAdapter adapter, Locale locale, int type) {
         BreakIteratorProvider breakIteratorProvider = adapter.getBreakIteratorProvider();
-        BreakIterator iterator = null;
-        switch (type) {
-        case CHARACTER_INDEX:
-            iterator = breakIteratorProvider.getCharacterInstance(locale);
-            break;
-        case WORD_INDEX:
-            iterator = breakIteratorProvider.getWordInstance(locale);
-            break;
-        case LINE_INDEX:
-            iterator = breakIteratorProvider.getLineInstance(locale);
-            break;
-        case SENTENCE_INDEX:
-            iterator = breakIteratorProvider.getSentenceInstance(locale);
-            break;
-        }
-        return iterator;
+        return switch (type) {
+            case CHARACTER_INDEX -> breakIteratorProvider.getCharacterInstance(locale);
+            case WORD_INDEX      -> breakIteratorProvider.getWordInstance(locale);
+            case LINE_INDEX      -> breakIteratorProvider.getLineInstance(locale);
+            case SENTENCE_INDEX  -> breakIteratorProvider.getSentenceInstance(locale);
+            default              -> null;
+        };
     }
 
     /**
@@ -585,8 +576,9 @@ public abstract class BreakIterator implements Cloneable
      * The returned array represents the union of locales supported by the Java
      * runtime and by installed
      * {@link java.text.spi.BreakIteratorProvider BreakIteratorProvider} implementations.
-     * It must contain at least a {@code Locale}
-     * instance equal to {@link java.util.Locale#US Locale.US}.
+     * At a minimum, the returned array must contain a {@code Locale} instance equal to
+     * {@link Locale#ROOT Locale.ROOT} and a {@code Locale} instance equal to
+     * {@link Locale#US Locale.US}.
      *
      * @return An array of locales for which localized
      *         {@code BreakIterator} instances are available.

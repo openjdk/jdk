@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -24,19 +24,18 @@
 
 /*
  * @test
+ * @enablePreview
  * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
- * @modules jdk.incubator.foreign/jdk.internal.foreign
- * @run testng/othervm -Dforeign.restricted=permit TestNative
+ * @run testng/othervm --enable-native-access=ALL-UNNAMED TestNative
  */
 
-import jdk.incubator.foreign.CLinker;
-import jdk.incubator.foreign.MemoryAccess;
-import jdk.incubator.foreign.MemoryAddress;
-import jdk.incubator.foreign.MemoryLayout;
-import jdk.incubator.foreign.MemoryLayout.PathElement;
-import jdk.incubator.foreign.MemoryLayouts;
-import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.SequenceLayout;
+import java.lang.foreign.MemoryAddress;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemoryLayout.PathElement;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.MemorySession;
+import java.lang.foreign.SequenceLayout;
+import java.lang.foreign.ValueLayout;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -54,49 +53,50 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import static jdk.incubator.foreign.MemorySegment.*;
+
+import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static org.testng.Assert.*;
 
-public class TestNative {
+public class TestNative extends NativeTestHelper {
 
-    static SequenceLayout bytes = MemoryLayout.ofSequence(100,
-            MemoryLayouts.JAVA_BYTE.withOrder(ByteOrder.nativeOrder())
+    static SequenceLayout bytes = MemoryLayout.sequenceLayout(100,
+            ValueLayout.JAVA_BYTE.withOrder(ByteOrder.nativeOrder())
     );
 
-    static SequenceLayout chars = MemoryLayout.ofSequence(100,
-            MemoryLayouts.JAVA_CHAR.withOrder(ByteOrder.nativeOrder())
+    static SequenceLayout chars = MemoryLayout.sequenceLayout(100,
+            ValueLayout.JAVA_CHAR.withOrder(ByteOrder.nativeOrder())
     );
 
-    static SequenceLayout shorts = MemoryLayout.ofSequence(100,
-            MemoryLayouts.JAVA_SHORT.withOrder(ByteOrder.nativeOrder())
+    static SequenceLayout shorts = MemoryLayout.sequenceLayout(100,
+            ValueLayout.JAVA_SHORT.withOrder(ByteOrder.nativeOrder())
     );
 
-    static SequenceLayout ints = MemoryLayout.ofSequence(100,
-            MemoryLayouts.JAVA_INT.withOrder(ByteOrder.nativeOrder())
+    static SequenceLayout ints = MemoryLayout.sequenceLayout(100,
+            JAVA_INT.withOrder(ByteOrder.nativeOrder())
     );
 
-    static SequenceLayout floats = MemoryLayout.ofSequence(100,
-            MemoryLayouts.JAVA_FLOAT.withOrder(ByteOrder.nativeOrder())
+    static SequenceLayout floats = MemoryLayout.sequenceLayout(100,
+            ValueLayout.JAVA_FLOAT.withOrder(ByteOrder.nativeOrder())
     );
 
-    static SequenceLayout longs = MemoryLayout.ofSequence(100,
-            MemoryLayouts.JAVA_LONG.withOrder(ByteOrder.nativeOrder())
+    static SequenceLayout longs = MemoryLayout.sequenceLayout(100,
+            ValueLayout.JAVA_LONG.withOrder(ByteOrder.nativeOrder())
     );
 
-    static SequenceLayout doubles = MemoryLayout.ofSequence(100,
-            MemoryLayouts.JAVA_DOUBLE.withOrder(ByteOrder.nativeOrder())
+    static SequenceLayout doubles = MemoryLayout.sequenceLayout(100,
+            ValueLayout.JAVA_DOUBLE.withOrder(ByteOrder.nativeOrder())
     );
 
-    static VarHandle byteHandle = bytes.varHandle(byte.class, PathElement.sequenceElement());
-    static VarHandle charHandle = chars.varHandle(char.class, PathElement.sequenceElement());
-    static VarHandle shortHandle = shorts.varHandle(short.class, PathElement.sequenceElement());
-    static VarHandle intHandle = ints.varHandle(int.class, PathElement.sequenceElement());
-    static VarHandle floatHandle = floats.varHandle(float.class, PathElement.sequenceElement());
-    static VarHandle longHandle = doubles.varHandle(long.class, PathElement.sequenceElement());
-    static VarHandle doubleHandle = longs.varHandle(double.class, PathElement.sequenceElement());
+    static VarHandle byteHandle = bytes.varHandle(PathElement.sequenceElement());
+    static VarHandle charHandle = chars.varHandle(PathElement.sequenceElement());
+    static VarHandle shortHandle = shorts.varHandle(PathElement.sequenceElement());
+    static VarHandle intHandle = ints.varHandle(PathElement.sequenceElement());
+    static VarHandle floatHandle = floats.varHandle(PathElement.sequenceElement());
+    static VarHandle longHandle = longs.varHandle(PathElement.sequenceElement());
+    static VarHandle doubleHandle = doubles.varHandle(PathElement.sequenceElement());
 
     static void initBytes(MemorySegment base, SequenceLayout seq, BiConsumer<MemorySegment, Long> handleSetter) {
-        for (long i = 0; i < seq.elementCount().getAsLong() ; i++) {
+        for (long i = 0; i < seq.elementCount() ; i++) {
             handleSetter.accept(base, i);
         }
     }
@@ -106,7 +106,7 @@ public class TestNative {
                                               Function<ByteBuffer, Z> bufferFactory,
                                               BiFunction<Z, Integer, Object> nativeBufferExtractor,
                                               BiFunction<Long, Integer, Object> nativeRawExtractor) {
-        long nelems = layout.elementCount().getAsLong();
+        long nelems = layout.elementCount();
         ByteBuffer bb = base.asByteBuffer();
         Z z = bufferFactory.apply(bb);
         for (long i = 0 ; i < nelems ; i++) {
@@ -143,17 +143,10 @@ public class TestNative {
 
     public static native long getCapacity(Buffer buffer);
 
-    public static MemoryAddress allocate(int size) {
-        return CLinker.allocateMemoryRestricted(size);
-    }
-
-    public static void free(MemoryAddress addr) {
-        CLinker.freeMemoryRestricted(addr);
-    }
-
     @Test(dataProvider="nativeAccessOps")
     public void testNativeAccess(Consumer<MemorySegment> checker, Consumer<MemorySegment> initializer, SequenceLayout seq) {
-        try (MemorySegment segment = MemorySegment.allocateNative(seq)) {
+        try (MemorySession session = MemorySession.openConfined()) {
+            MemorySegment segment = MemorySegment.allocateNative(seq, session);
             initializer.accept(segment);
             checker.accept(segment);
         }
@@ -162,7 +155,8 @@ public class TestNative {
     @Test(dataProvider="buffers")
     public void testNativeCapacity(Function<ByteBuffer, Buffer> bufferFunction, int elemSize) {
         int capacity = (int)doubles.byteSize();
-        try (MemorySegment segment = MemorySegment.allocateNative(doubles)) {
+        try (MemorySession session = MemorySession.openConfined()) {
+            MemorySegment segment = MemorySegment.allocateNative(doubles, session);
             ByteBuffer bb = segment.asByteBuffer();
             Buffer buf = bufferFunction.apply(bb);
             int expected = capacity / elemSize;
@@ -173,43 +167,40 @@ public class TestNative {
 
     @Test
     public void testDefaultAccessModes() {
-        MemoryAddress addr = allocate(12);
-        MemorySegment mallocSegment = addr.asSegmentRestricted(12, () -> free(addr), null);
-        try (MemorySegment segment = mallocSegment) {
-            assertTrue(segment.hasAccessModes(ALL_ACCESS));
-            assertEquals(segment.accessModes(), ALL_ACCESS);
+        MemoryAddress addr = allocateMemory(12);
+        try (MemorySession session = MemorySession.openConfined()) {
+            session.addCloseAction(() -> freeMemory(addr));
+            MemorySegment mallocSegment = MemorySegment.ofAddress(addr, 12, session);
+            assertFalse(mallocSegment.isReadOnly());
         }
     }
 
     @Test
-    public void testDefaultAccessModesEverthing() {
-        MemorySegment everything = MemorySegment.ofNativeRestricted();
-        assertTrue(everything.hasAccessModes(READ | WRITE));
-        assertEquals(everything.accessModes(), READ | WRITE);
-    }
-
-    @Test
     public void testMallocSegment() {
-        MemoryAddress addr = allocate(12);
-        MemorySegment mallocSegment = addr.asSegmentRestricted(12, () -> free(addr), null);
-        assertEquals(mallocSegment.byteSize(), 12);
-        mallocSegment.close(); //free here
-        assertTrue(!mallocSegment.isAlive());
+        MemoryAddress addr = allocateMemory(12);
+        MemorySegment mallocSegment = null;
+        try (MemorySession session = MemorySession.openConfined()) {
+            session.addCloseAction(() -> freeMemory(addr));
+            mallocSegment = MemorySegment.ofAddress(addr, 12, session);
+            assertEquals(mallocSegment.byteSize(), 12);
+            //free here
+        }
+        assertTrue(!mallocSegment.session().isAlive());
     }
 
     @Test
-    public void testEverythingSegment() {
-        MemoryAddress addr = allocate(4);
-        MemorySegment everything = MemorySegment.ofNativeRestricted();
-        MemoryAccess.setIntAtOffset(everything, addr.toRawLongValue(), 42);
-        assertEquals(MemoryAccess.getIntAtOffset(everything, addr.toRawLongValue()), 42);
-        free(addr);
+    public void testAddressAccess() {
+        MemoryAddress addr = allocateMemory(4);
+        addr.set(JAVA_INT, 0, 42);
+        assertEquals(addr.get(JAVA_INT, 0), 42);
+        freeMemory(addr);
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testBadResize() {
-        try (MemorySegment segment = MemorySegment.allocateNative(4)) {
-            segment.address().asSegmentRestricted(0);
+        try (MemorySession session = MemorySession.openConfined()) {
+            MemorySegment segment = MemorySegment.allocateNative(4, 1, session);
+            MemorySegment.ofAddress(segment.address(), -1, MemorySession.global());
         }
     }
 

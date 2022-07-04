@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,8 @@
 
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.PackageTest;
-import jdk.jpackage.test.TKit;
+import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.JPackageCommand;
 
 
 /**
@@ -47,28 +48,57 @@ import jdk.jpackage.test.TKit;
  * @build jdk.jpackage.test.*
  * @build ReleaseTest
  * @requires (os.family == "linux")
+ * @requires (jpackage.test.SQETest == null)
  * @modules jdk.jpackage/jdk.jpackage.internal
- * @run main/othervm/timeout=360 -Xmx512m ReleaseTest
+ * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
+ *  --jpt-run=ReleaseTest
  */
+
+/*
+ * @test
+ * @summary jpackage with --linux-app-release
+ * @library ../helpers
+ * @key jpackagePlatformPackage
+ * @build jdk.jpackage.test.*
+ * @build ReleaseTest
+ * @requires (os.family == "linux")
+ * @requires (jpackage.test.SQETest != null)
+ * @modules jdk.jpackage/jdk.jpackage.internal
+ * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
+ *  --jpt-run=ReleaseTest.test
+ */
+
 public class ReleaseTest {
 
-    public static void main(String[] args) {
+    @Test
+    public static void test() {
         final String RELEASE = "Rc3";
 
-        TKit.run(args, () -> {
-            new PackageTest()
-            .forTypes(PackageType.LINUX)
-            .configureHelloApp()
-            .addInitializer(cmd -> {
-                cmd.addArguments("--linux-app-release", RELEASE);
-            })
-            .forTypes(PackageType.LINUX_RPM)
-            .addBundlePropertyVerifier("Release", RELEASE)
-            .forTypes(PackageType.LINUX_DEB)
-            .addBundlePropertyVerifier("Version", propValue -> {
-                return propValue.endsWith("-" + RELEASE);
-            }, "ends with")
-            .run();
-        });
+        new PackageTest()
+                .forTypes(PackageType.LINUX)
+                .configureHelloApp()
+                .addInitializer(cmd -> {
+                    cmd.addArguments("--linux-app-release", RELEASE);
+                })
+                .forTypes(PackageType.LINUX_RPM)
+                .addBundlePropertyVerifier("Release", RELEASE)
+                .forTypes(PackageType.LINUX_DEB)
+                .addBundlePropertyVerifier("Version", propValue -> {
+                    return propValue.endsWith("-" + RELEASE);
+                }, "ends with")
+                .run();
+    }
+
+    @Test
+    public static void testNoExplitRelease() {
+        new PackageTest()
+                .forTypes(PackageType.LINUX)
+                .configureHelloApp()
+                .addInitializer(JPackageCommand::setFakeRuntime)
+                .forTypes(PackageType.LINUX_RPM)
+                .addBundlePropertyVerifier("Release", "1")
+                .forTypes(PackageType.LINUX_DEB)
+                .addBundlePropertyVerifier("Version", "1.0")
+                .run();
     }
 }

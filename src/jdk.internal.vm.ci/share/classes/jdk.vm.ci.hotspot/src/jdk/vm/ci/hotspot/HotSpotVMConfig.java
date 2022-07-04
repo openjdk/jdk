@@ -75,7 +75,6 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
 
     final int hubOffset = getFieldOffset("oopDesc::_metadata._klass", Integer.class, "Klass*");
 
-    final int prototypeMarkWordOffset = getFieldOffset("Klass::_prototype_header", Integer.class, "markWord");
     final int subklassOffset = getFieldOffset("Klass::_subklass", Integer.class, "Klass*");
     final int superOffset = getFieldOffset("Klass::_super", Integer.class, "Klass*");
     final int nextSiblingOffset = getFieldOffset("Klass::_next_sibling", Integer.class, "Klass*");
@@ -98,7 +97,7 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int vtableEntrySize = getFieldValue("CompilerToVM::Data::sizeof_vtableEntry", Integer.class, "int");
     final int vtableEntryMethodOffset = getFieldOffset("vtableEntry::_method", Integer.class, "Method*");
 
-    final int instanceKlassInitStateOffset = getFieldOffset("InstanceKlass::_init_state", Integer.class, "u1");
+    final int instanceKlassInitStateOffset = getFieldOffset("InstanceKlass::_init_state", Integer.class, "InstanceKlass::ClassState");
     final int instanceKlassConstantsOffset = getFieldOffset("InstanceKlass::_constants", Integer.class, "ConstantPool*");
     final int instanceKlassFieldsOffset = getFieldOffset("InstanceKlass::_fields", Integer.class, "Array<u2>*");
     final int instanceKlassAnnotationsOffset = getFieldOffset("InstanceKlass::_annotations", Integer.class, "Annotations*");
@@ -109,7 +108,6 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int instanceKlassStateLinked = getConstant("InstanceKlass::linked", Integer.class);
     final int instanceKlassStateFullyInitialized = getConstant("InstanceKlass::fully_initialized", Integer.class);
     final int instanceKlassStateBeingInitialized = getConstant("InstanceKlass::being_initialized", Integer.class);
-    final int instanceKlassMiscIsUnsafeAnonymous = getConstant("InstanceKlass::_misc_is_unsafe_anonymous", Integer.class);
 
     final int annotationsFieldAnnotationsOffset = getFieldOffset("Annotations::_fields_annotations", Integer.class, "Array<AnnotationArray*>*");
     final int fieldsAnnotationsBaseOffset = getFieldValue("CompilerToVM::Data::_fields_annotations_base_offset", Integer.class, "int");
@@ -153,7 +151,7 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     /**
      * See {@code markWord::prototype()}.
      */
-    long arrayPrototypeMarkWord() {
+    long prototypeMarkWord() {
         return markWordNoHashInPlace | markWordNoLockInPlace;
     }
 
@@ -338,7 +336,7 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int deoptReasonLoopLimitCheck = getConstant("Deoptimization::Reason_loop_limit_check", Integer.class);
     final int deoptReasonAliasing = getConstant("Deoptimization::Reason_aliasing", Integer.class);
     final int deoptReasonTransferToInterpreter = getConstant("Deoptimization::Reason_transfer_to_interpreter", Integer.class);
-    final int deoptReasonOSROffset = getConstant("Deoptimization::Reason_LIMIT", Integer.class);
+    final int deoptReasonOSROffset = getConstant("Deoptimization::Reason_TRAP_HISTORY_LENGTH", Integer.class);
 
     final int deoptActionNone = getConstant("Deoptimization::Action_none", Integer.class);
     final int deoptActionMaybeRecompile = getConstant("Deoptimization::Action_maybe_recompile", Integer.class);
@@ -363,6 +361,8 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int codeInstallResultDependenciesFailed = getConstant("JVMCI::dependencies_failed", Integer.class);
     final int codeInstallResultCacheFull = getConstant("JVMCI::cache_full", Integer.class);
     final int codeInstallResultCodeTooLarge = getConstant("JVMCI::code_too_large", Integer.class);
+    final int codeInstallResultNMethodReclaimed = getConstant("JVMCI::nmethod_reclaimed", Integer.class);
+    final int codeInstallResultFirstPermanentBailout = getConstant("JVMCI::first_permanent_bailout", Integer.class);
 
     String getCodeInstallResultDescription(int codeInstallResult) {
         if (codeInstallResult == codeInstallResultOk) {
@@ -376,6 +376,9 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
         }
         if (codeInstallResult == codeInstallResultCodeTooLarge) {
             return "code is too large";
+        }
+        if (codeInstallResult == codeInstallResultNMethodReclaimed) {
+            return "nmethod reclaimed";
         }
         assert false : codeInstallResult;
         return "unknown";

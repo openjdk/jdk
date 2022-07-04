@@ -49,7 +49,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 5049592 5041845 5048932 5064587 5040542 5049531 5049528
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true javax.xml.datatype.ptests.XMLGregorianCalendarTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow javax.xml.datatype.ptests.XMLGregorianCalendarTest
  * @run testng/othervm javax.xml.datatype.ptests.XMLGregorianCalendarTest
  * @summary Class containing the test cases for XMLGregorianCalendar
  */

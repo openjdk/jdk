@@ -22,6 +22,4 @@
  */
 
 // key: compiler.err.class.in.module.cant.extend.sealed.in.diff.module
-// key: compiler.note.preview.plural
-// key: compiler.note.preview.recompile
-// options: --add-reads mSealed=mSub --enable-preview -source ${jdk.version}
+// options: --add-reads mSealed=mSub

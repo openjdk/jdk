@@ -55,8 +55,8 @@ import static org.testng.Assert.assertThrows;
  * @build jdk.test.lib.net.IPSupport
  * @summary Check that DatagramChannel throws expected Exception when sending to
  *          port 0
- * @run testng/othervm SendPortZero
- * @run testng/othervm -Djava.net.preferIPv4Stack=true SendPortZero
+ * @run testng/othervm -Djava.security.manager=allow SendPortZero
+ * @run testng/othervm -Djava.security.manager=allow -Djava.net.preferIPv4Stack=true SendPortZero
  */
 
 public class SendPortZero {

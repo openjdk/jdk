@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8192988
+ * @bug 8192988 8266220
  * @summary keytool should support -storepasswd for pkcs12 keystores
  * @library /test/lib
  * @build jdk.test.lib.SecurityTools
@@ -134,6 +134,21 @@ public class PKCS12Passwd {
                 .shouldHaveExitValue(0);
 
         check("jks", "newpass", "newerpass");
+
+        // A password-less keystore
+        ktFull("-keystore nopass -genkeypair -keyalg EC "
+                + "-storepass changeit -alias no -dname CN=no "
+                + "-J-Dkeystore.pkcs12.certProtectionAlgorithm=NONE "
+                + "-J-Dkeystore.pkcs12.macAlgorithm=NONE")
+                .shouldHaveExitValue(0);
+
+        ktFull("-keystore nopass -list")
+                .shouldHaveExitValue(0)
+                .shouldNotContain("Enter keystore password:");
+
+        ktFull("-keystore nopass -list -storetype pkcs12")
+                .shouldHaveExitValue(0)
+                .shouldNotContain("Enter keystore password:");
     }
 
     // Makes sure we can load entries in a keystore

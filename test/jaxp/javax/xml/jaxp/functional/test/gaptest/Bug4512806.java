@@ -41,7 +41,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 4512806
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true test.gaptest.Bug4512806
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow test.gaptest.Bug4512806
  * @run testng/othervm test.gaptest.Bug4512806
  * @summary test transformer.setOutputProperties(null)
  */

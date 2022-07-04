@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,15 @@
 #ifndef SHARE_OOPS_OBJARRAYKLASS_INLINE_HPP
 #define SHARE_OOPS_OBJARRAYKLASS_INLINE_HPP
 
+#include "oops/objArrayKlass.hpp"
+
 #include "memory/memRegion.hpp"
-#include "memory/iterator.hpp"
 #include "oops/arrayKlass.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/klass.hpp"
-#include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "utilities/devirtualizer.inline.hpp"
 #include "utilities/macros.hpp"
 
 template <typename T, class OopClosureType>

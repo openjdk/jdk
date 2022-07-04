@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,6 +117,7 @@ class TempFileHelper {
         }
 
         // loop generating random names until file or directory can be created
+        @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         for (;;) {
             Path f;

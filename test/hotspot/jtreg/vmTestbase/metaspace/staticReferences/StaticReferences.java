@@ -38,11 +38,11 @@
  *      -Xbootclasspath/a:.
  *      -XX:+UnlockDiagnosticVMOptions
  *      -XX:+WhiteBoxAPI
- *      metaspace.staticReferences.StaticReferences
+ *      StaticReferences
  */
 
-package metaspace.staticReferences;
-
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.ref.WeakReference;
 import java.lang.ref.Reference;
 import java.lang.reflect.Field;
@@ -59,13 +59,12 @@ import nsk.share.test.ExecutionController;
 import nsk.share.test.Stresser;
 import nsk.share.test.TestBase;
 import nsk.share.test.Tests;
-import jdk.internal.misc.Unsafe;
 import vm.share.gc.TriggerUnloadingHelper;
 import vm.share.gc.TriggerUnloadingWithWhiteBox;
 
 /**
  * Test checks that static fields will be initialized in new loaded class. Test performs in loop the following routine:
- * 1.) Load class either by regular classloader or by Unsafe.defineAnonymousClass.
+ * 1.) Load class either by regular classloader or by defineHiddenClass.
  * 2.) Trigger unloading. Class must be alive. Next step will check that static fields were not lost.
  * 3.) Change static fields.
  * 4.) Unload class.
@@ -96,10 +95,6 @@ public class StaticReferences extends GCTestBase {
         Tests.runTest(new StaticReferences(), args);
     }
 
-    private static Unsafe getUnsafe() {
-        return Unsafe.getUnsafe();
-    }
-
         @Override
     public void run() {
         random = new Random(runParams.getSeed());
@@ -123,10 +118,10 @@ public class StaticReferences extends GCTestBase {
 
         // Core of test
         for (byte[] classBytecode : bytecodeList) {
-            boolean anonymous = random.nextBoolean();
+            boolean hidden = random.nextBoolean();
 
             log.info("Load class first time");
-            Class clazz = loadClass(classBytecode, anonymous);
+            Class clazz = loadClass(classBytecode, hidden);
 
             log.info("Trigger unloading");
             triggerUnloadingHelper.triggerUnloading(stresser);
@@ -155,7 +150,7 @@ public class StaticReferences extends GCTestBase {
             }
 
             log.info("Load class second time");
-            clazz = loadClass(classBytecode, anonymous);
+            clazz = loadClass(classBytecode, hidden);
 
             log.info("check fields reinitialized");
             checkStaticFields(clazz);
@@ -164,11 +159,17 @@ public class StaticReferences extends GCTestBase {
         }
     }
 
-        private Class loadClass(byte[] classBytecode,
-                        boolean anonymous) {
+        private Class loadClass(byte[] classBytecode, boolean hidden) {
                 Class clazz;
-                if (anonymous) {
-                        clazz = getUnsafe().defineAnonymousClass(StaticReferences.class, classBytecode, NO_CP_PATCHES);
+                if (hidden) {
+                    Lookup lookup = MethodHandles.lookup();
+                    try {
+                        clazz = lookup.defineHiddenClass(classBytecode, false).lookupClass();
+                    } catch (IllegalAccessException e) {
+                        e.printStackTrace();
+                        throw new RuntimeException(
+                            "Lookup.defineHiddenClass failed: " + e.getMessage());
+                    }
                 } else {
                         OneUsageClassloader classloader = new OneUsageClassloader();
                         clazz = classloader.define(classBytecode);

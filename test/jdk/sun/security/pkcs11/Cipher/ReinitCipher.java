@@ -30,7 +30,7 @@
  * @key randomness
  * @modules jdk.crypto.cryptoki
  * @run main/othervm ReinitCipher
- * @run main/othervm ReinitCipher sm
+ * @run main/othervm -Djava.security.manager=allow ReinitCipher sm
  */
 
 import java.security.Provider;

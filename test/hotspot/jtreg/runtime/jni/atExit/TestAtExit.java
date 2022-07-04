@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import jdk.test.lib.process.ProcessTools;
  *          atexit handler fails as expected without crashing.
  *
  * @library /test/lib
- * @run main/othervm/native TestAtExit
+ * @run main/native TestAtExit
  */
 
 public class TestAtExit {

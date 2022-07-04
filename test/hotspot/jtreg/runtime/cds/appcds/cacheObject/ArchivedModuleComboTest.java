@@ -25,7 +25,7 @@
 /*
  * @test
  * @summary Test archived system module sub-graph and verify objects are archived.
- * @requires vm.cds.archived.java.heap
+ * @requires vm.cds.write.archived.java.heap
  * @library /test/jdk/lib/testlibrary /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @build sun.hotspot.WhiteBox
  * @compile CheckArchivedModuleApp.java

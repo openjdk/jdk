@@ -30,12 +30,13 @@
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
 
 #include "logging/log.hpp"
+#include "runtime/threads.hpp"
 
-ShenandoahWorkerScope::ShenandoahWorkerScope(WorkGang* workers, uint nworkers, const char* msg, bool check) :
+ShenandoahWorkerScope::ShenandoahWorkerScope(WorkerThreads* workers, uint nworkers, const char* msg, bool check) :
   _workers(workers) {
   assert(msg != NULL, "Missing message");
 
-  _n_workers = _workers->update_active_workers(nworkers);
+  _n_workers = _workers->set_active_workers(nworkers);
   assert(_n_workers <= nworkers, "Must be");
 
   log_info(gc, task)("Using %u of %u workers for %s",
@@ -51,10 +52,10 @@ ShenandoahWorkerScope::~ShenandoahWorkerScope() {
     "Active workers can not be changed within this scope");
 }
 
-ShenandoahPushWorkerScope::ShenandoahPushWorkerScope(WorkGang* workers, uint nworkers, bool check) :
+ShenandoahPushWorkerScope::ShenandoahPushWorkerScope(WorkerThreads* workers, uint nworkers, bool check) :
   _old_workers(workers->active_workers()),
   _workers(workers) {
-  _n_workers = _workers->update_active_workers(nworkers);
+  _n_workers = _workers->set_active_workers(nworkers);
   assert(_n_workers <= nworkers, "Must be");
 
   // bypass concurrent/parallel protocol check for non-regular paths, e.g. verifier, etc.
@@ -67,15 +68,13 @@ ShenandoahPushWorkerScope::~ShenandoahPushWorkerScope() {
   assert(_workers->active_workers() == _n_workers,
     "Active workers can not be changed within this scope");
   // Restore old worker value
-  uint nworkers = _workers->update_active_workers(_old_workers);
+  uint nworkers = _workers->set_active_workers(_old_workers);
   assert(nworkers == _old_workers, "Must be able to restore");
 }
 
-AbstractGangWorker* ShenandoahWorkGang::install_worker(uint which) {
-  AbstractGangWorker* worker = WorkGang::install_worker(which);
+void ShenandoahWorkerThreads::on_create_worker(WorkerThread* worker) {
   ShenandoahThreadLocalData::create(worker);
   if (_initialize_gclab) {
     ShenandoahThreadLocalData::initialize_gclab(worker);
   }
-  return worker;
 }

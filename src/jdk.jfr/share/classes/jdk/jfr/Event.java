@@ -31,27 +31,7 @@ package jdk.jfr;
  * <p>
  * The following example shows how to implement an {@code Event} class.
  *
- * <pre>{@literal
- * import jdk.jfr.Event;
- * import jdk.jfr.Description;
- * import jdk.jfr.Label;
- *
- * public class Example {
- *
- *   @Label("Hello World")
- *   @Description("Helps programmer getting started")
- *   static class HelloWorld extends Event {
- *       @Label("Message")
- *       String message;
- *   }
- *
- *   public static void main(String... args) {
- *       HelloWorld event = new HelloWorld();
- *       event.message = "hello, world!";
- *       event.commit();
- *   }
- * }
- * }</pre>
+ * {@snippet class="Snippets" region="EventOverview"}
  * <p>
  * After an event is allocated and its field members are populated, it can be
  * written to the Flight Recorder system by using the {@link #commit()} method.

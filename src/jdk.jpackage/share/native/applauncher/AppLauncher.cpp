@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,10 +91,26 @@ tstring findJvmLib(const CfgFile& cfgFile, const tstring& defaultRuntimePath,
 }
 } // namespace
 
+bool AppLauncher::libEnvVariableContainsAppDir() const {
+    tstring value = SysInfo::getEnvVariable(std::nothrow,
+            libEnvVarName, tstring());
+#ifdef _WIN32
+    value = tstrings::toLower(value);
+#endif
+
+    const tstring_array tokens = tstrings::split(value,
+            tstring(1, FileUtils::pathSeparator));
+    return tokens.end() != std::find(tokens.begin(), tokens.end(),
+#ifdef _WIN32
+        tstrings::toLower(appDirPath)
+#else
+        appDirPath
+#endif
+    );
+}
+
 Jvm* AppLauncher::createJvmLauncher() const {
-    const tstring cfgFilePath = FileUtils::mkpath()
-        << appDirPath << FileUtils::stripExeSuffix(
-            FileUtils::basename(launcherPath)) + _T(".cfg");
+    const tstring cfgFilePath = getCfgFilePath();
 
     LOG_TRACE(tstrings::any() << "Launcher config file path: \""
             << cfgFilePath << "\"");
@@ -114,12 +130,16 @@ Jvm* AppLauncher::createJvmLauncher() const {
 
     std::unique_ptr<Jvm> jvm(new Jvm());
 
+    if (!libEnvVariableContainsAppDir()) {
+        (*jvm).addEnvVariable(libEnvVarName, SysInfo::getEnvVariable(
+                std::nothrow, libEnvVarName)
+                + FileUtils::pathSeparator
+                + appDirPath);
+    }
+
     (*jvm)
         .setPath(findJvmLib(cfgFile, defaultRuntimePath, jvmLibNames))
-        .addArgument(launcherPath)
-        .addArgument(_T("-Djava.library.path=")
-            + appDirPath + FileUtils::pathSeparator
-            + FileUtils::dirname(launcherPath));
+        .addArgument(launcherPath);
 
     if (initJvmFromCmdlineOnly) {
         tstring_array::const_iterator argIt = args.begin();
@@ -137,4 +157,21 @@ Jvm* AppLauncher::createJvmLauncher() const {
 
 void AppLauncher::launch() const {
     std::unique_ptr<Jvm>(createJvmLauncher())->launch();
+}
+
+
+tstring AppLauncher::getCfgFilePath() const {
+    tstring_array::const_iterator it = cfgFileLookupDirs.begin();
+    tstring_array::const_iterator end = cfgFileLookupDirs.end();
+    const tstring cfgFileName = FileUtils::stripExeSuffix(
+            FileUtils::basename(launcherPath)) + _T(".cfg");
+    for (; it != end; ++it) {
+        const tstring cfgFilePath = FileUtils::mkpath() << *it << cfgFileName;
+        LOG_TRACE(tstrings::any() << "Check [" << cfgFilePath << "] file exit");
+        if (FileUtils::isFileExists(cfgFilePath)) {
+            return cfgFilePath;
+        }
+    }
+
+    return FileUtils::mkpath() << appDirPath << cfgFileName;
 }

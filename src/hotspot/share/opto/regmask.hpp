@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,7 @@ class RegMask {
   // requirement is internal to the allocator, and independent of any
   // particular platform.
   enum { SlotsPerLong = 2,
-         SlotsPerVecA = 8,
+         SlotsPerVecA = RISCV_ONLY(4) NOT_RISCV(8),
          SlotsPerVecS = 1,
          SlotsPerVecD = 2,
          SlotsPerVecX = 4,
@@ -357,6 +357,7 @@ class RegMask {
 #endif
 
   static const RegMask Empty;   // Common empty mask
+  static const RegMask All;     // Common all mask
 
   static bool can_represent(OptoReg::Name reg) {
     // NOTE: -1 in computation reflects the usage of the last

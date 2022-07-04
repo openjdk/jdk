@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,7 +148,6 @@
                                                                             \
   product(uint, ConcGCThreads, 0,                                           \
           "Number of threads concurrent gc will use")                       \
-          constraint(ConcGCThreadsConstraintFunc,AfterErgo)                 \
                                                                             \
   product(bool, AlwaysTenure, false,                                        \
           "Always tenure objects in eden (ParallelGC only)")                \
@@ -209,7 +208,7 @@
           "Maximum size of marking stack")                                  \
           range(1, (max_jint - 1))                                          \
                                                                             \
-  product(size_t, MarkStackSize, NOT_LP64(32*K) LP64_ONLY(4*M),             \
+  product(size_t, MarkStackSize, NOT_LP64(64*K) LP64_ONLY(4*M),             \
           "Size of marking stack")                                          \
           constraint(MarkStackSizeConstraintFunc,AfterErgo)                 \
           range(1, (max_jint - 1))                                          \
@@ -504,10 +503,6 @@
           "How far ahead to prefetch scan area (<= 0 means off)")           \
           range(-1, max_jint)                                               \
                                                                             \
-  product(intx, PrefetchFieldsAhead, -1,                                    \
-          "How many fields ahead to prefetch in oop scan (<= 0 means off)") \
-          range(-1, max_jint)                                               \
-                                                                            \
   product(bool, VerifyDuringStartup, false, DIAGNOSTIC,                     \
           "Verify memory system before executing any Java code "            \
           "during VM initialization")                                       \
@@ -524,8 +519,12 @@
   product(bool, VerifyDuringGC, false, DIAGNOSTIC,                          \
           "Verify memory system during GC (between phases)")                \
                                                                             \
-  product(bool, VerifyArchivedFields, trueInDebug, DIAGNOSTIC,              \
-          "Verify memory when archived oop fields are loaded from CDS)")    \
+  product(int, VerifyArchivedFields, 0, DIAGNOSTIC,                         \
+          "Verify memory when archived oop fields are loaded from CDS; "    \
+          "0: No check; "                                                   \
+          "1: Basic verification with VM_Verify (no side effects); "        \
+          "2: Detailed verification by forcing a GC (with side effects)")   \
+          range(0, 2)                                                       \
                                                                             \
   product(ccstrlist, VerifyGCType, "", DIAGNOSTIC,                          \
              "GC type(s) to verify when Verify*GC is enabled."              \
@@ -537,10 +536,7 @@
           "in a comma separated string. Sub-systems are: "                  \
           "threads, heap, symbol_table, string_table, codecache, "          \
           "dictionary, classloader_data_graph, metaspace, jni_handles, "    \
-          "codecache_oops")                                                 \
-                                                                            \
-  product(bool, GCParallelVerificationEnabled, true, DIAGNOSTIC,            \
-          "Enable parallel memory system verification")                     \
+          "codecache_oops, resolved_method_table, stringdedup")             \
                                                                             \
   product(bool, DeferInitialCardMark, false, DIAGNOSTIC,                    \
           "When +ReduceInitialCardMarks, explicitly defer any that "        \
@@ -689,9 +685,13 @@
   product(uintx, GCDrainStackTargetSize, 64,                                \
           "Number of entries we will try to leave on the stack "            \
           "during parallel gc")                                             \
-          range(0, max_juint)
-
-// end of GC_FLAGS
+          range(0, max_juint)                                               \
+                                                                            \
+  product(uint, GCCardSizeInBytes, 512,                                     \
+          "Card table entry size (in bytes) for card based collectors")     \
+          range(128, NOT_LP64(512) LP64_ONLY(1024))                         \
+          constraint(GCCardSizeInBytesConstraintFunc,AtParse)
+  // end of GC_FLAGS
 
 DECLARE_FLAGS(GC_FLAGS)
 

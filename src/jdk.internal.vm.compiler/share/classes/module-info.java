@@ -23,35 +23,19 @@
  * questions.
  */
 
+/**
+  * JVMCI compiler implementation for the JVM.
+  *
+  * This is an empty and upgradeable module that is a placeholder for an
+  * external implementation of a JVMCI compiler. It must be upgradeable so
+  * that it can be replaced when jlinking a new JDK image without failing
+  * the hash check for the qualified exports in jdk.internal.vm.ci's
+  * module descriptor.
+  *
+  * @moduleGraph
+  * @since 9
+  */
+
 module jdk.internal.vm.compiler {
-    requires java.instrument;
-    requires java.management;
     requires jdk.internal.vm.ci;
-    requires jdk.management;
-    requires jdk.unsupported;   // sun.misc.Unsafe is used
-
-    uses org.graalvm.compiler.code.DisassemblerProvider;
-    uses org.graalvm.compiler.core.match.MatchStatementSet;
-    uses org.graalvm.compiler.debug.DebugHandlersFactory;
-    uses org.graalvm.compiler.debug.TTYStreamProvider;
-    uses org.graalvm.compiler.hotspot.CompilerConfigurationFactory;
-    uses org.graalvm.compiler.hotspot.HotSpotBackendFactory;
-    uses org.graalvm.compiler.hotspot.HotSpotCodeCacheListener;
-    uses org.graalvm.compiler.hotspot.HotSpotGraalManagementRegistration;
-    uses org.graalvm.compiler.nodes.graphbuilderconf.GeneratedPluginFactory;
-    uses org.graalvm.compiler.phases.common.jmx.HotSpotMBeanOperationProvider;
-    uses org.graalvm.compiler.serviceprovider.JMXService;
-
-    exports jdk.internal.vm.compiler.collections        to jdk.internal.vm.compiler.management;
-    exports org.graalvm.compiler.core.common            to
-        jdk.internal.vm.compiler.management;
-    exports org.graalvm.compiler.debug                  to
-        jdk.internal.vm.compiler.management;
-    exports org.graalvm.compiler.hotspot                to
-        jdk.internal.vm.compiler.management;
-    exports org.graalvm.compiler.options                to
-        jdk.internal.vm.compiler.management;
-    exports org.graalvm.compiler.phases.common.jmx      to jdk.internal.vm.compiler.management;
-    exports org.graalvm.compiler.serviceprovider        to
-        jdk.internal.vm.compiler.management;
 }

@@ -338,6 +338,16 @@ Java_sun_nio_ch_FileDispatcherImpl_closeIntFD(JNIEnv *env, jclass clazz, jint fd
     closeFileDescriptor(env, fd);
 }
 
+JNIEXPORT jboolean JNICALL
+Java_sun_nio_ch_FileDispatcherImpl_canTransferToFromOverlappedMap0(JNIEnv *env, jclass clazz)
+{
+#ifdef MACOSX
+    return JNI_FALSE;
+#else
+    return JNI_TRUE;
+#endif
+}
+
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_FileDispatcherImpl_setDirect0(JNIEnv *env, jclass clazz,
                                            jobject fdo)

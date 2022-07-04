@@ -27,6 +27,8 @@
 #ifndef OS_CPU_BSD_AARCH64_ATOMIC_BSD_AARCH64_HPP
 #define OS_CPU_BSD_AARCH64_ATOMIC_BSD_AARCH64_HPP
 
+#include "utilities/debug.hpp"
+
 // Implementation of class atomic
 // Note that memory_order_conservative requires a full barrier after atomic stores.
 // See https://patchwork.kernel.org/patch/3575821/
@@ -64,17 +66,40 @@ inline T Atomic::PlatformCmpxchg<byte_size>::operator()(T volatile* dest,
                                                         T exchange_value,
                                                         atomic_memory_order order) const {
   STATIC_ASSERT(byte_size == sizeof(T));
-  if (order == memory_order_relaxed) {
+  if (order == memory_order_conservative) {
     T value = compare_value;
+    FULL_MEM_BARRIER;
     __atomic_compare_exchange(dest, &value, &exchange_value, /*weak*/false,
                               __ATOMIC_RELAXED, __ATOMIC_RELAXED);
+    FULL_MEM_BARRIER;
     return value;
   } else {
+    STATIC_ASSERT (
+       // The modes that align with C++11 are intended to
+       // follow the same semantics.
+       memory_order_relaxed == __ATOMIC_RELAXED &&
+       memory_order_acquire == __ATOMIC_ACQUIRE &&
+       memory_order_release == __ATOMIC_RELEASE &&
+       memory_order_acq_rel == __ATOMIC_ACQ_REL &&
+       memory_order_seq_cst == __ATOMIC_SEQ_CST);
+
+    // Some sanity checking on the memory order. It makes no
+    // sense to have a release operation for a store that never
+    // happens.
+    int failure_memory_order;
+    switch (order) {
+    case memory_order_release:
+      failure_memory_order = memory_order_relaxed; break;
+    case memory_order_acq_rel:
+      failure_memory_order = memory_order_acquire; break;
+    default:
+      failure_memory_order = order;
+    }
+    assert(failure_memory_order <= order, "must be");
+
     T value = compare_value;
-    FULL_MEM_BARRIER;
     __atomic_compare_exchange(dest, &value, &exchange_value, /*weak*/false,
-                              __ATOMIC_RELAXED, __ATOMIC_RELAXED);
-    FULL_MEM_BARRIER;
+                              order, failure_memory_order);
     return value;
   }
 }

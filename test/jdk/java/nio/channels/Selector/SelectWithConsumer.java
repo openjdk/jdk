@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,14 @@
  */
 
 /* @test
+ * @summary Unit test for Selector.select/selectNow(Consumer)
  * @bug 8199433 8208780
  * @run testng SelectWithConsumer
- * @summary Unit test for Selector select(Consumer), select(Consumer,long) and
- *          selectNow(Consumer)
+ */
+
+/* @test
+ * @requires (os.family == "windows")
+ * @run testng/othervm -Djava.nio.channels.spi.SelectorProvider=sun.nio.ch.WindowsSelectorProvider SelectWithConsumer
  */
 
 import java.io.Closeable;

@@ -26,7 +26,7 @@ package validation;
  * @test
  * @bug 8080907
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true validation.AnyElementTest
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.AnyElementTest
  * @run testng/othervm validation.AnyElementTest
  * @summary Test processContents attribute of any element
  */

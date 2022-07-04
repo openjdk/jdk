@@ -113,7 +113,7 @@ public class ModuleExportsAnalyzer extends DepsAnalyzer {
                     .distinct()
                     .forEach(m -> {
                         if (internalPkgs.containsKey(m)) {
-                            internalPkgs.get(m).stream()
+                            internalPkgs.get(m)
                                 .forEach(pn -> writer.format("   %s/%s%s", m, pn, separator));
                         } else {
                             writer.format("   %s%s", m, separator);

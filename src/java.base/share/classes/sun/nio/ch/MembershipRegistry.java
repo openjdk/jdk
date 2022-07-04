@@ -30,7 +30,7 @@ import java.net.NetworkInterface;
 import java.nio.channels.MembershipKey;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -94,7 +94,7 @@ class MembershipRegistry {
             keys = groups.get(group);
         }
         if (keys == null) {
-            keys = new LinkedList<>();
+            keys = new ArrayList<>();
             groups.put(group, keys);
         }
         keys.add(key);

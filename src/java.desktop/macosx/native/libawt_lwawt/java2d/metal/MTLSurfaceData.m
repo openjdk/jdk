@@ -28,20 +28,11 @@
 #import "sun_java2d_metal_MTLSurfaceData.h"
 
 #import "jni_util.h"
-#import "MTLRenderQueue.h"
 #import "MTLGraphicsConfig.h"
 #import "MTLSurfaceData.h"
-#import "ThreadUtilities.h"
 #include "jlong.h"
 
-/**
- * The following methods are implemented in the windowing system (i.e. GLX
- * and WGL) source files.
- */
-extern jlong MTLSD_GetNativeConfigInfo(BMTLSDOps *bmtlsdo);
-extern jboolean MTLSD_InitMTLWindow(JNIEnv *env, BMTLSDOps *bmtlsdo);
-extern void MTLSD_DestroyMTLSurface(JNIEnv *env, BMTLSDOps *bmtlsdo);
-
+jboolean MTLSD_InitMTLWindow(JNIEnv *env, BMTLSDOps *bmtlsdo);
 void MTLSD_SetNativeDimensions(JNIEnv *env, BMTLSDOps *bmtlsdo, jint w, jint h);
 
 static jboolean MTLSurfaceData_initTexture(BMTLSDOps *bmtlsdo, jboolean isOpaque, jboolean rtt, jint width, jint height) {
@@ -68,11 +59,11 @@ static jboolean MTLSurfaceData_initTexture(BMTLSDOps *bmtlsdo, jboolean isOpaque
 
         MTLContext* ctx = mtlsdo->configInfo->context;
 
-        width = (width <= MaxTextureSize) ? width : 0;
-        height = (height <= MaxTextureSize) ? height : 0;
+        width = (width <= MTL_GPU_FAMILY_MAC_TXT_SIZE) ? width : 0;
+        height = (height <= MTL_GPU_FAMILY_MAC_TXT_SIZE) ? height : 0;
 
         J2dTraceLn3(J2D_TRACE_VERBOSE, "  desired texture dimensions: w=%d h=%d max=%d",
-                width, height, MaxTextureSize);
+                width, height, MTL_GPU_FAMILY_MAC_TXT_SIZE);
 
         // if either dimension is 0, we cannot allocate a texture with the
         // requested dimensions
@@ -91,24 +82,15 @@ static jboolean MTLSurfaceData_initTexture(BMTLSDOps *bmtlsdo, jboolean isOpaque
         stencilDataDescriptor.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead;
         stencilDataDescriptor.storageMode = MTLStorageModePrivate;
         bmtlsdo->pStencilData = [ctx.device newTextureWithDescriptor:stencilDataDescriptor];
-        bmtlsdo->pAAStencilData = [ctx.device newTextureWithDescriptor:textureDescriptor];
-        bmtlsdo->pStencilDataBuf = [ctx.device newBufferWithLength:width*height options:MTLResourceStorageModePrivate];
-        bmtlsdo->pAAStencilDataBuf = [ctx.device newBufferWithLength:width*height*4 options:MTLResourceStorageModePrivate];
-
 
         MTLTextureDescriptor *stencilTextureDescriptor =
             [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatStencil8 width:width height:height mipmapped:NO];
         stencilTextureDescriptor.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead | MTLTextureUsageShaderWrite;
         stencilTextureDescriptor.storageMode = MTLStorageModePrivate;
         bmtlsdo->pStencilTexture = [ctx.device newTextureWithDescriptor:stencilTextureDescriptor];
-
         bmtlsdo->isOpaque = isOpaque;
-        bmtlsdo->xOffset = 0;
-        bmtlsdo->yOffset = 0;
         bmtlsdo->width = width;
         bmtlsdo->height = height;
-        bmtlsdo->textureWidth = width;
-        bmtlsdo->textureHeight = height;
         bmtlsdo->drawableType = rtt ? MTLSD_RT_TEXTURE : MTLSD_TEXTURE;
 
         J2dTraceLn6(J2D_TRACE_VERBOSE, "MTLSurfaceData_initTexture: w=%d h=%d bp=%p [tex=%p] opaque=%d rtt=%d", width, height, bmtlsdo, bmtlsdo->pTexture, isOpaque, rtt);
@@ -187,7 +169,7 @@ MTLSD_Delete(JNIEnv *env, BMTLSDOps *bmtlsdo)
 {
     J2dTraceLn3(J2D_TRACE_VERBOSE, "MTLSD_Delete: type=%d %p [tex=%p]", bmtlsdo->drawableType, bmtlsdo, bmtlsdo->pTexture);
     if (bmtlsdo->drawableType == MTLSD_WINDOW) {
-        MTLSD_DestroyMTLSurface(env, bmtlsdo);
+        bmtlsdo->drawableType = MTLSD_UNDEFINED;
     } else if (
             bmtlsdo->drawableType == MTLSD_RT_TEXTURE
             || bmtlsdo->drawableType == MTLSD_TEXTURE
@@ -196,9 +178,6 @@ MTLSD_Delete(JNIEnv *env, BMTLSDOps *bmtlsdo)
         [(NSObject *)bmtlsdo->pTexture release];
         [(NSObject *)bmtlsdo->pStencilTexture release];
         [(NSObject *)bmtlsdo->pStencilData release];
-        [(NSObject *)bmtlsdo->pStencilDataBuf release];
-        [(NSObject *)bmtlsdo->pAAStencilData release];
-        [(NSObject *)bmtlsdo->pAAStencilDataBuf release];
         bmtlsdo->pTexture = NULL;
         bmtlsdo->drawableType = MTLSD_UNDEFINED;
     }
@@ -262,18 +241,6 @@ MTLSD_Unlock(JNIEnv *env,
     JNU_ThrowInternalError(env, "MTLSD_Unlock not implemented!");
 }
 
-/**
- * This function disposes of any native windowing system resources associated
- * with this surface.
- */
-void
-MTLSD_DestroyMTLSurface(JNIEnv *env, BMTLSDOps * bmtlsdo)
-{
-    J2dTraceLn(J2D_TRACE_ERROR, "MTLSD_DestroyMTLSurface not implemented!");
-    JNI_COCOA_ENTER(env);
-    bmtlsdo->drawableType = MTLSD_UNDEFINED;
-    JNI_COCOA_EXIT(env);
-}
 
 /**
  * This function initializes a native window surface and caches the window
@@ -354,10 +321,8 @@ Java_sun_java2d_metal_MTLSurfaceData_initOps
     bmtlsdo->sdOps.GetRasInfo         = MTLSD_GetRasInfo;
     bmtlsdo->sdOps.Unlock             = MTLSD_Unlock;
     bmtlsdo->sdOps.Dispose            = MTLSD_Dispose;
-
     bmtlsdo->drawableType = MTLSD_UNDEFINED;
-    bmtlsdo->xOffset = xoff;
-    bmtlsdo->yOffset = yoff;
+
     bmtlsdo->isOpaque = isOpaque;
 
     mtlsdo->peerData = (AWTView *)jlong_to_ptr(pPeerData);

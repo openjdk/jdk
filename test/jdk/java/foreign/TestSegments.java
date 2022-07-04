@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -23,103 +23,70 @@
 
 /*
  * @test
+ * @enablePreview
  * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
- * @run testng/othervm -Xmx4G -XX:MaxDirectMemorySize=1M TestSegments
+ * @run testng/othervm -Xmx4G -XX:MaxDirectMemorySize=1M --enable-native-access=ALL-UNNAMED TestSegments
  */
 
-import jdk.incubator.foreign.MappedMemorySegments;
-import jdk.incubator.foreign.MemoryLayout;
-import jdk.incubator.foreign.MemoryLayouts;
-import jdk.incubator.foreign.MemorySegment;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.MemorySession;
+import java.lang.foreign.ValueLayout;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import java.io.File;
-import java.io.IOException;
 import java.lang.invoke.VarHandle;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.channels.FileChannel;
-import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.IntFunction;
-import java.util.function.LongFunction;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
-import static jdk.incubator.foreign.MemorySegment.*;
+
+import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static org.testng.Assert.*;
 
 public class TestSegments {
 
     @Test(dataProvider = "badSizeAndAlignments", expectedExceptions = IllegalArgumentException.class)
     public void testBadAllocateAlign(long size, long align) {
-        MemorySegment.allocateNative(size, align);
+        MemorySegment.allocateNative(size, align, MemorySession.openImplicit());
     }
 
-    @Test(dataProvider = "badLayouts", expectedExceptions = UnsupportedOperationException.class)
-    public void testBadAllocateLayout(MemoryLayout layout) {
-        MemorySegment.allocateNative(layout);
+    @Test
+    public void testZeroLengthNativeSegment() {
+        try (MemorySession session = MemorySession.openConfined()) {
+            var segment = MemorySegment.allocateNative(0, session);
+            assertEquals(segment.byteSize(), 0);
+            MemoryLayout seq = MemoryLayout.sequenceLayout(0, JAVA_INT);
+            segment = MemorySegment.allocateNative(seq, session);
+            assertEquals(segment.byteSize(), 0);
+            assertEquals(segment.address().toRawLongValue() % seq.byteAlignment(), 0);
+            segment = MemorySegment.allocateNative(0, 4, session);
+            assertEquals(segment.byteSize(), 0);
+            assertEquals(segment.address().toRawLongValue() % 4, 0);
+            segment = MemorySegment.ofAddress(segment.address(), 0, session);
+            assertEquals(segment.byteSize(), 0);
+            assertEquals(segment.address().toRawLongValue() % 4, 0);
+        }
     }
 
     @Test(expectedExceptions = { OutOfMemoryError.class,
                                  IllegalArgumentException.class })
     public void testAllocateTooBig() {
-        MemorySegment.allocateNative(Long.MAX_VALUE);
-    }
-
-    @Test(dataProvider = "segmentOperations")
-    public void testOpOutsideConfinement(SegmentMember member) throws Throwable {
-        try (MemorySegment segment = MemorySegment.allocateNative(4)) {
-            AtomicBoolean failed = new AtomicBoolean(false);
-            Thread t = new Thread(() -> {
-                try {
-                    Object o = member.method.invoke(segment, member.params);
-                } catch (ReflectiveOperationException ex) {
-                    throw new IllegalStateException(ex);
-                }
-            });
-            t.setUncaughtExceptionHandler((thread, ex) -> failed.set(true));
-            t.start();
-            t.join();
-            assertEquals(failed.get(), member.isConfined());
-        }
-    }
-
-    @Test(dataProvider = "segmentOperations")
-    public void testOpAfterClose(SegmentMember member) throws Throwable {
-        MemorySegment segment = MemorySegment.allocateNative(4);
-        segment.close();
-        try {
-            Object o = member.method.invoke(segment, member.params);
-            assertFalse(member.isConfined());
-        } catch (InvocationTargetException ex) {
-            assertTrue(member.isConfined());
-            Throwable target = ex.getTargetException();
-            assertTrue(target instanceof NullPointerException ||
-                          target instanceof UnsupportedOperationException ||
-                          target instanceof IllegalStateException);
-        }
+        MemorySegment.allocateNative(Long.MAX_VALUE, MemorySession.openImplicit());
     }
 
     @Test(expectedExceptions = OutOfMemoryError.class)
     public void testNativeAllocationTooBig() {
-        try (MemorySegment segment = MemorySegment.allocateNative(1024 * 1024 * 8 * 2)) { // 2M
-            // do nothing
-        }
+        MemorySegment segment = MemorySegment.allocateNative(1024 * 1024 * 8 * 2, MemorySession.openImplicit()); // 2M
     }
 
     @Test
     public void testNativeSegmentIsZeroed() {
-        VarHandle byteHandle = MemoryLayout.ofSequence(MemoryLayouts.JAVA_BYTE)
-                .varHandle(byte.class, MemoryLayout.PathElement.sequenceElement());
-        try (MemorySegment segment = MemorySegment.allocateNative(1000)) {
+        VarHandle byteHandle = ValueLayout.JAVA_BYTE.arrayElementVarHandle();
+        try (MemorySession session = MemorySession.openConfined()) {
+            MemorySegment segment = MemorySegment.allocateNative(1000, 1, session);
             for (long i = 0 ; i < segment.byteSize() ; i++) {
                 assertEquals(0, (byte)byteHandle.get(segment, i));
             }
@@ -128,9 +95,9 @@ public class TestSegments {
 
     @Test
     public void testSlices() {
-        VarHandle byteHandle = MemoryLayout.ofSequence(MemoryLayouts.JAVA_BYTE)
-                .varHandle(byte.class, MemoryLayout.PathElement.sequenceElement());
-        try (MemorySegment segment = MemorySegment.allocateNative(10)) {
+        VarHandle byteHandle = ValueLayout.JAVA_BYTE.arrayElementVarHandle();
+        try (MemorySession session = MemorySession.openConfined()) {
+            MemorySegment segment = MemorySegment.allocateNative(10, 1, session);
             //init
             for (byte i = 0 ; i < segment.byteSize() ; i++) {
                 byteHandle.set(segment, (long)i, i);
@@ -147,28 +114,68 @@ public class TestSegments {
         }
     }
 
-    @Test(dataProvider = "segmentFactories")
-    public void testAccessModesOfFactories(Supplier<MemorySegment> memorySegmentSupplier) {
-        try (MemorySegment segment = memorySegmentSupplier.get()) {
-            assertTrue(segment.hasAccessModes(ALL_ACCESS));
-            assertEquals(segment.accessModes(), ALL_ACCESS);
+    @Test
+    public void testEqualsOffHeap() {
+        try (MemorySession session = MemorySession.openConfined()) {
+            MemorySegment segment = MemorySegment.allocateNative(100, session);
+            assertEquals(segment, segment.asReadOnly());
+            assertEquals(segment, segment.asSlice(0, 100));
+            assertNotEquals(segment, segment.asSlice(10, 90));
+            assertNotEquals(segment, segment.asSlice(0, 90));
+            assertEquals(segment, MemorySegment.ofAddress(segment.address(), 100, session.asNonCloseable()));
+            assertNotEquals(segment, MemorySegment.ofAddress(segment.address(), 100, MemorySession.global()));
+            MemorySegment segment2 = MemorySegment.allocateNative(100, session);
+            assertNotEquals(segment, segment2);
         }
     }
 
-    @Test(dataProvider = "accessModes")
-    public void testAccessModes(int accessModes) {
-        int[] arr = new int[1];
-        for (AccessActions action : AccessActions.values()) {
-            MemorySegment segment = MemorySegment.ofArray(arr);
-            MemorySegment restrictedSegment = segment.withAccessModes(accessModes);
-            assertEquals(restrictedSegment.accessModes(), accessModes);
-            boolean shouldFail = !restrictedSegment.hasAccessModes(action.accessMode);
-            try {
-                action.run(restrictedSegment);
-                assertFalse(shouldFail);
-            } catch (UnsupportedOperationException ex) {
-                assertTrue(shouldFail);
-            }
+    @Test
+    public void testEqualsOnHeap() {
+        MemorySegment segment = MemorySegment.ofArray(new byte[100]);
+        assertEquals(segment, segment.asReadOnly());
+        assertEquals(segment, segment.asSlice(0, 100));
+        assertNotEquals(segment, segment.asSlice(10, 90));
+        assertNotEquals(segment, segment.asSlice(0, 90));
+        MemorySegment segment2 = MemorySegment.ofArray(new byte[100]);
+        assertNotEquals(segment, segment2);
+    }
+
+    @Test(expectedExceptions = IndexOutOfBoundsException.class)
+    public void testSmallSegmentMax() {
+        long offset = (long)Integer.MAX_VALUE + (long)Integer.MAX_VALUE + 2L + 6L; // overflows to 6 when casted to int
+        MemorySegment memorySegment = MemorySegment.allocateNative(10, MemorySession.openImplicit());
+        memorySegment.get(JAVA_INT, offset);
+    }
+
+    @Test(expectedExceptions = IndexOutOfBoundsException.class)
+    public void testSmallSegmentMin() {
+        long offset = ((long)Integer.MIN_VALUE * 2L) + 6L; // underflows to 6 when casted to int
+        MemorySegment memorySegment = MemorySegment.allocateNative(10, MemorySession.openImplicit());
+        memorySegment.get(JAVA_INT, offset);
+    }
+
+    @Test
+    public void testSegmentOOBMessage() {
+        try {
+            var segment = MemorySegment.allocateNative(10, MemorySession.global());
+            segment.getAtIndex(ValueLayout.JAVA_INT, 2);
+        } catch (IndexOutOfBoundsException ex) {
+            assertTrue(ex.getMessage().contains("Out of bound access"));
+            assertTrue(ex.getMessage().contains("offset = 8"));
+            assertTrue(ex.getMessage().contains("length = 4"));
+        }
+    }
+
+    @Test(dataProvider = "segmentFactories")
+    public void testAccessModesOfFactories(Supplier<MemorySegment> segmentSupplier) {
+        MemorySegment segment = segmentSupplier.get();
+        assertFalse(segment.isReadOnly());
+        tryClose(segment);
+    }
+
+    static void tryClose(MemorySegment segment) {
+        if (segment.session().isCloseable()) {
+            segment.session().close();
         }
     }
 
@@ -182,102 +189,135 @@ public class TestSegments {
                 () -> MemorySegment.ofArray(new int[] { 1, 2, 3, 4 }),
                 () -> MemorySegment.ofArray(new long[] { 1l, 2l, 3l, 4l } ),
                 () -> MemorySegment.ofArray(new short[] { 1, 2, 3, 4 } ),
-                () -> MemorySegment.allocateNative(4),
-                () -> MemorySegment.allocateNative(4, 8),
-                () -> MemorySegment.allocateNative(MemoryLayout.ofValueBits(32, ByteOrder.nativeOrder()))
+                () -> MemorySegment.allocateNative(4, MemorySession.openImplicit()),
+                () -> MemorySegment.allocateNative(4, 8, MemorySession.openImplicit()),
+                () -> MemorySegment.allocateNative(JAVA_INT, MemorySession.openImplicit()),
+                () -> MemorySegment.allocateNative(4, MemorySession.openImplicit()),
+                () -> MemorySegment.allocateNative(4, 8, MemorySession.openImplicit()),
+                () -> MemorySegment.allocateNative(JAVA_INT, MemorySession.openImplicit())
+
         );
         return l.stream().map(s -> new Object[] { s }).toArray(Object[][]::new);
     }
 
+    static class SegmentFactory {
+        final MemorySession session;
+        final Function<MemorySession, MemorySegment> segmentFunc;
+
+        SegmentFactory(MemorySession session, Function<MemorySession, MemorySegment> segmentFunc) {
+            this.session = session;
+            this.segmentFunc = segmentFunc;
+        }
+
+        public void tryClose() {
+            if (session.isCloseable()) {
+                session.close();
+            }
+        }
+
+        public MemorySegment segment() {
+            return segmentFunc.apply(session);
+        }
+
+        static SegmentFactory ofArray(Supplier<MemorySegment> segmentSupplier) {
+            return new SegmentFactory(MemorySession.global(), (_ignored) -> segmentSupplier.get());
+        }
+
+        static SegmentFactory ofImplicitSession(Function<MemorySession, MemorySegment> segmentFunc) {
+            return new SegmentFactory(MemorySession.openImplicit(), segmentFunc);
+        }
+    }
+
     @Test(dataProvider = "segmentFactories")
-    public void testFill(Supplier<MemorySegment> memorySegmentSupplier) {
-        VarHandle byteHandle = MemoryLayout.ofSequence(MemoryLayouts.JAVA_BYTE)
-                .varHandle(byte.class, MemoryLayout.PathElement.sequenceElement());
+    public void testFill(Supplier<MemorySegment> segmentSupplier) {
+        VarHandle byteHandle = ValueLayout.JAVA_BYTE.arrayElementVarHandle();
 
         for (byte value : new byte[] {(byte) 0xFF, (byte) 0x00, (byte) 0x45}) {
-            try (MemorySegment segment = memorySegmentSupplier.get()) {
-                segment.fill(value);
-                for (long l = 0; l < segment.byteSize(); l++) {
-                    assertEquals((byte) byteHandle.get(segment, l), value);
-                }
+            MemorySegment segment = segmentSupplier.get();
+            segment.fill(value);
+            for (long l = 0; l < segment.byteSize(); l++) {
+                assertEquals((byte) byteHandle.get(segment, l), value);
+            }
 
-                // fill a slice
-                var sliceSegment = segment.asSlice(1, segment.byteSize() - 2).fill((byte) ~value);
-                for (long l = 0; l < sliceSegment.byteSize(); l++) {
-                    assertEquals((byte) byteHandle.get(sliceSegment, l), ~value);
-                }
-                // assert enclosing slice
-                assertEquals((byte) byteHandle.get(segment, 0L), value);
-                for (long l = 1; l < segment.byteSize() - 2; l++) {
-                    assertEquals((byte) byteHandle.get(segment, l), (byte) ~value);
-                }
-                assertEquals((byte) byteHandle.get(segment, segment.byteSize() - 1L), value);
+            // fill a slice
+            var sliceSegment = segment.asSlice(1, segment.byteSize() - 2).fill((byte) ~value);
+            for (long l = 0; l < sliceSegment.byteSize(); l++) {
+                assertEquals((byte) byteHandle.get(sliceSegment, l), ~value);
+            }
+            // assert enclosing slice
+            assertEquals((byte) byteHandle.get(segment, 0L), value);
+            for (long l = 1; l < segment.byteSize() - 2; l++) {
+                assertEquals((byte) byteHandle.get(segment, l), (byte) ~value);
+            }
+            assertEquals((byte) byteHandle.get(segment, segment.byteSize() - 1L), value);
+            tryClose(segment);
+        }
+    }
+
+    @Test(dataProvider = "segmentFactories")
+    public void testFillClosed(Supplier<MemorySegment> segmentSupplier) {
+        MemorySegment segment = segmentSupplier.get();
+        tryClose(segment);
+        if (!segment.session().isAlive()) {
+            try {
+                segment.fill((byte) 0xFF);
+                fail();
+            } catch (IllegalStateException ex) {
+                assertTrue(true);
             }
         }
     }
 
-    @Test(dataProvider = "segmentFactories", expectedExceptions = IllegalStateException.class)
-    public void testFillClosed(Supplier<MemorySegment> memorySegmentSupplier) {
-        MemorySegment segment = memorySegmentSupplier.get();
-        segment.close();
-        segment.fill((byte) 0xFF);
+    @Test(dataProvider = "segmentFactories")
+    public void testNativeSegments(Supplier<MemorySegment> segmentSupplier) {
+        MemorySegment segment = segmentSupplier.get();
+        try {
+            segment.address();
+            assertTrue(segment.isNative());
+        } catch (UnsupportedOperationException exception) {
+            assertFalse(segment.isNative());
+        }
+        tryClose(segment);
     }
 
     @Test(dataProvider = "segmentFactories", expectedExceptions = UnsupportedOperationException.class)
-    public void testFillIllegalAccessMode(Supplier<MemorySegment> memorySegmentSupplier) {
-        try (MemorySegment segment = memorySegmentSupplier.get()) {
-            segment.withAccessModes(segment.accessModes() & ~WRITE).fill((byte) 0xFF);
-        }
+    public void testFillIllegalAccessMode(Supplier<MemorySegment> segmentSupplier) {
+        MemorySegment segment = segmentSupplier.get();
+        segment.asReadOnly().fill((byte) 0xFF);
+        tryClose(segment);
     }
 
     @Test(dataProvider = "segmentFactories")
-    public void testFillThread(Supplier<MemorySegment> memorySegmentSupplier) throws Exception {
-        try (MemorySegment segment = memorySegmentSupplier.get()) {
-            AtomicReference<RuntimeException> exception = new AtomicReference<>();
-            Runnable action = () -> {
-                try {
-                    segment.fill((byte) 0xBA);
-                } catch (RuntimeException e) {
-                    exception.set(e);
-                }
-            };
-            Thread thread = new Thread(action);
-            thread.start();
-            thread.join();
+    public void testFillThread(Supplier<MemorySegment> segmentSupplier) throws Exception {
+        MemorySegment segment = segmentSupplier.get();
+        AtomicReference<RuntimeException> exception = new AtomicReference<>();
+        Runnable action = () -> {
+            try {
+                segment.fill((byte) 0xBA);
+            } catch (RuntimeException e) {
+                exception.set(e);
+            }
+        };
+        Thread thread = new Thread(action);
+        thread.start();
+        thread.join();
 
+        if (segment.session().ownerThread() != null) {
             RuntimeException e = exception.get();
             if (!(e instanceof IllegalStateException)) {
                 throw e;
             }
+        } else {
+            assertNull(exception.get());
         }
+        tryClose(segment);
     }
 
     @Test
     public void testFillEmpty() {
         MemorySegment.ofArray(new byte[] { }).fill((byte) 0xFF);
         MemorySegment.ofArray(new byte[2]).asSlice(0, 0).fill((byte) 0xFF);
-        MemorySegment.ofByteBuffer(ByteBuffer.allocateDirect(0)).fill((byte) 0xFF);
-    }
-
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testWithAccessModesBadUnsupportedMode() {
-        int[] arr = new int[1];
-        MemorySegment segment = MemorySegment.ofArray(arr);
-        segment.withAccessModes((1 << AccessActions.values().length) + 1);
-    }
-
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testBadWithAccessModesBadStrongerMode() {
-        int[] arr = new int[1];
-        MemorySegment segment = MemorySegment.ofArray(arr).withAccessModes(READ);
-        segment.withAccessModes(WRITE);
-    }
-
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testBadHasAccessModes() {
-        int[] arr = new int[1];
-        MemorySegment segment = MemorySegment.ofArray(arr);
-        segment.hasAccessModes((1 << AccessActions.values().length) + 1);
+        MemorySegment.ofBuffer(ByteBuffer.allocateDirect(0)).fill((byte) 0xFF);
     }
 
     @Test(dataProvider = "heapFactories")
@@ -287,6 +327,18 @@ public class TestSegments {
         assertTrue(segment.byteSize() > 0);
     }
 
+    @Test
+    public void testSegmentAccessorWithWrappedLifetime() {
+        MemorySession session = MemorySession.openConfined();
+        MemorySession publicSession = session.asNonCloseable();
+        assertEquals(session, publicSession);
+        MemorySegment segment = publicSession.allocate(100);
+        assertThrows(UnsupportedOperationException.class, publicSession::close);
+        assertThrows(UnsupportedOperationException.class, segment.session()::close);
+        session.close();
+        assertFalse(publicSession.isAlive());
+    }
+
     @DataProvider(name = "badSizeAndAlignments")
     public Object[][] sizesAndAlignments() {
         return new Object[][] {
@@ -294,166 +346,6 @@ public class TestSegments {
                 { 1, 15 },
                 { 1, -15 }
         };
-    }
-
-    @DataProvider(name = "badLayouts")
-    public Object[][] layouts() {
-        SizedLayoutFactory[] layoutFactories = SizedLayoutFactory.values();
-        Object[][] values = new Object[layoutFactories.length * 2][2];
-        for (int i = 0; i < layoutFactories.length ; i++) {
-            values[i * 2] = new Object[] { MemoryLayout.ofStruct(layoutFactories[i].make(7), MemoryLayout.ofPaddingBits(9)) }; // good size, bad align
-            values[(i * 2) + 1] = new Object[] { layoutFactories[i].make(15).withBitAlignment(16) }; // bad size, good align
-        }
-        return values;
-    }
-
-    enum SizedLayoutFactory {
-        VALUE_BE(size -> MemoryLayout.ofValueBits(size, ByteOrder.BIG_ENDIAN)),
-        VALUE_LE(size -> MemoryLayout.ofValueBits(size, ByteOrder.LITTLE_ENDIAN)),
-        PADDING(MemoryLayout::ofPaddingBits);
-
-        private final LongFunction<MemoryLayout> factory;
-
-        SizedLayoutFactory(LongFunction<MemoryLayout> factory) {
-            this.factory = factory;
-        }
-
-        MemoryLayout make(long size) {
-            return factory.apply(size);
-        }
-    }
-
-    @DataProvider(name = "segmentOperations")
-    static Object[][] segmentMembers() {
-        List<SegmentMember> members = new ArrayList<>();
-        for (Method m : MemorySegment.class.getDeclaredMethods()) {
-            //skip defaults, statics and method declared in j.l.Object
-            if (m.isDefault() ||
-                    m.getDeclaringClass().equals(Object.class) ||
-                    (m.getModifiers() & Modifier.STATIC) != 0) continue;
-            Object[] args = Stream.of(m.getParameterTypes())
-                    .map(TestSegments::defaultValue)
-                    .toArray();
-            members.add(new SegmentMember(m, args));
-        }
-        return members.stream().map(ms -> new Object[] { ms }).toArray(Object[][]::new);
-    }
-
-    static class SegmentMember {
-        final Method method;
-        final Object[] params;
-
-        final static List<String> CONFINED_NAMES = List.of(
-                "address",
-                "close",
-                "share",
-                "handoff",
-                "registerCleaner",
-                "fill",
-                "spliterator",
-                "copyFrom",
-                "mismatch",
-                "toByteArray",
-                "toCharArray",
-                "toShortArray",
-                "toIntArray",
-                "toFloatArray",
-                "toLongArray",
-                "toDoubleArray"
-        );
-
-        public SegmentMember(Method method, Object[] params) {
-            this.method = method;
-            this.params = params;
-        }
-
-        boolean isConfined() {
-            return CONFINED_NAMES.contains(method.getName());
-        }
-
-        @Override
-        public String toString() {
-            return method.getName();
-        }
-    }
-
-    static Object defaultValue(Class<?> c) {
-        if (c.isPrimitive()) {
-            if (c == char.class) {
-                return (char)0;
-            } else if (c == boolean.class) {
-                return false;
-            } else if (c == byte.class) {
-                return (byte)0;
-            } else if (c == short.class) {
-                return (short)0;
-            } else if (c == int.class) {
-                return 0;
-            } else if (c == long.class) {
-                return 0L;
-            } else if (c == float.class) {
-                return 0f;
-            } else if (c == double.class) {
-                return 0d;
-            } else {
-                throw new IllegalStateException();
-            }
-        } else {
-            return null;
-        }
-    }
-
-    @DataProvider(name = "accessModes")
-    public Object[][] accessModes() {
-        int nActions = AccessActions.values().length;
-        Object[][] results = new Object[1 << nActions][];
-        for (int accessModes = 0 ; accessModes < results.length ; accessModes++) {
-            results[accessModes] = new Object[] { accessModes };
-        }
-        return results;
-    }
-
-    enum AccessActions {
-        SHARE(MemorySegment.SHARE) {
-            @Override
-            void run(MemorySegment segment) {
-                segment.share();
-            }
-        },
-        CLOSE(MemorySegment.CLOSE) {
-            @Override
-            void run(MemorySegment segment) {
-                segment.close();
-            }
-        },
-        READ(MemorySegment.READ) {
-            @Override
-            void run(MemorySegment segment) {
-                INT_HANDLE.get(segment);
-            }
-        },
-        WRITE(MemorySegment.WRITE) {
-            @Override
-            void run(MemorySegment segment) {
-                INT_HANDLE.set(segment, 42);
-            }
-        },
-        HANDOFF(MemorySegment.HANDOFF) {
-            @Override
-            void run(MemorySegment segment) {
-                segment.handoff(new Thread());
-            }
-        };
-
-        final int accessMode;
-
-        static VarHandle INT_HANDLE = MemoryLayouts.JAVA_INT.varHandle(int.class);
-
-        AccessActions(int accessMode) {
-            this.accessMode = accessMode;
-        }
-
-        abstract void run(MemorySegment segment);
     }
 
     @DataProvider(name = "heapFactories")

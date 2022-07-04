@@ -38,7 +38,7 @@ import org.testng.annotations.Test;
  * @test
  * @bug 4515047
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true test.gaptest.Bug4515047
+ * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow test.gaptest.Bug4515047
  * @run testng/othervm test.gaptest.Bug4515047
  * @summary test transform an empty dom source
  */

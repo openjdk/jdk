@@ -29,7 +29,6 @@ import java.util.*;
 import sun.jvm.hotspot.classfile.ClassLoaderData;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.memory.*;
-import sun.jvm.hotspot.memory.Dictionary;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.utilities.*;
@@ -61,6 +60,7 @@ public class InstanceKlass extends Klass {
   // ClassState constants
   private static int CLASS_STATE_ALLOCATED;
   private static int CLASS_STATE_LOADED;
+  private static int CLASS_STATE_BEING_LINKED;
   private static int CLASS_STATE_LINKED;
   private static int CLASS_STATE_BEING_INITIALIZED;
   private static int CLASS_STATE_FULLY_INITIALIZED;
@@ -70,7 +70,6 @@ public class InstanceKlass extends Klass {
   private static int MISC_REWRITTEN;
   private static int MISC_HAS_NONSTATIC_FIELDS;
   private static int MISC_SHOULD_VERIFY_CLASS;
-  private static int MISC_IS_UNSAFE_ANONYMOUS;
   private static int MISC_IS_CONTENDED;
   private static int MISC_HAS_NONSTATIC_CONCRETE_METHODS;
   private static int MISC_DECLARES_NONSTATIC_CONCRETE_METHODS;
@@ -120,6 +119,7 @@ public class InstanceKlass extends Klass {
     // read ClassState constants
     CLASS_STATE_ALLOCATED = db.lookupIntConstant("InstanceKlass::allocated").intValue();
     CLASS_STATE_LOADED = db.lookupIntConstant("InstanceKlass::loaded").intValue();
+    CLASS_STATE_BEING_LINKED = db.lookupIntConstant("InstanceKlass::being_linked").intValue();
     CLASS_STATE_LINKED = db.lookupIntConstant("InstanceKlass::linked").intValue();
     CLASS_STATE_BEING_INITIALIZED = db.lookupIntConstant("InstanceKlass::being_initialized").intValue();
     CLASS_STATE_FULLY_INITIALIZED = db.lookupIntConstant("InstanceKlass::fully_initialized").intValue();
@@ -128,7 +128,6 @@ public class InstanceKlass extends Klass {
     MISC_REWRITTEN                    = db.lookupIntConstant("InstanceKlass::_misc_rewritten").intValue();
     MISC_HAS_NONSTATIC_FIELDS         = db.lookupIntConstant("InstanceKlass::_misc_has_nonstatic_fields").intValue();
     MISC_SHOULD_VERIFY_CLASS          = db.lookupIntConstant("InstanceKlass::_misc_should_verify_class").intValue();
-    MISC_IS_UNSAFE_ANONYMOUS          = db.lookupIntConstant("InstanceKlass::_misc_is_unsafe_anonymous").intValue();
     MISC_IS_CONTENDED                 = db.lookupIntConstant("InstanceKlass::_misc_is_contended").intValue();
     MISC_HAS_NONSTATIC_CONCRETE_METHODS      = db.lookupIntConstant("InstanceKlass::_misc_has_nonstatic_concrete_methods").intValue();
     MISC_DECLARES_NONSTATIC_CONCRETE_METHODS = db.lookupIntConstant("InstanceKlass::_misc_declares_nonstatic_concrete_methods").intValue();
@@ -187,6 +186,7 @@ public class InstanceKlass extends Klass {
   public static class ClassState {
      public static final ClassState ALLOCATED    = new ClassState("allocated");
      public static final ClassState LOADED       = new ClassState("loaded");
+     public static final ClassState BEING_LINKED = new ClassState("beingLinked");
      public static final ClassState LINKED       = new ClassState("linked");
      public static final ClassState BEING_INITIALIZED      = new ClassState("beingInitialized");
      public static final ClassState FULLY_INITIALIZED    = new ClassState("fullyInitialized");
@@ -210,6 +210,8 @@ public class InstanceKlass extends Klass {
         return ClassState.ALLOCATED;
      } else if (state == CLASS_STATE_LOADED) {
         return ClassState.LOADED;
+     } else if (state == CLASS_STATE_BEING_LINKED) {
+        return ClassState.BEING_LINKED;
      } else if (state == CLASS_STATE_LINKED) {
         return ClassState.LINKED;
      } else if (state == CLASS_STATE_BEING_INITIALIZED) {
@@ -283,18 +285,11 @@ public class InstanceKlass extends Klass {
     if (isInterface()) {
       size += wordLength;
     }
-    if (isUnsafeAnonymous()) {
-      size += wordLength;
-    }
     return alignSize(size);
   }
 
   private int getMiscFlags() {
     return (int) miscFlags.getValue(this);
-  }
-
-  public boolean isUnsafeAnonymous() {
-    return (getMiscFlags() & MISC_IS_UNSAFE_ANONYMOUS) != 0;
   }
 
   public static long getHeaderSize() { return headerSize; }

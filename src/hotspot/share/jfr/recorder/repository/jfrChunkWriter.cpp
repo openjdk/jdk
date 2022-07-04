@@ -207,7 +207,7 @@ int64_t JfrChunkWriter::write_chunk_header_checkpoint(bool flushpoint) {
   const u4 checkpoint_size = current_offset() - event_size_offset;
   write_padded_at_offset<u4>(checkpoint_size, event_size_offset);
   set_last_checkpoint_offset(event_size_offset);
-  const size_t sz_written = size_written();
+  const int64_t sz_written = size_written();
   write_be_at_offset(sz_written, chunk_size_offset);
   return sz_written;
 }
@@ -254,7 +254,7 @@ int64_t JfrChunkWriter::last_checkpoint_offset() const {
 
 int64_t JfrChunkWriter::current_chunk_start_nanos() const {
   assert(_chunk != NULL, "invariant");
-  return this->is_valid() ? _chunk->start_nanos() : invalid_time;
+  return _chunk->start_nanos();
 }
 
 void JfrChunkWriter::set_last_checkpoint_offset(int64_t offset) {
