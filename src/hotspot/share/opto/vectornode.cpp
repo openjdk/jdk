@@ -1265,7 +1265,7 @@ ReductionNode* ReductionNode::make(int opc, Node *ctrl, Node* n1, Node* n2, Basi
 }
 
 Node* ReductionNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  const TypeVect* vt = this->in(2)->bottom_type()->is_vect();
+  const TypeVect* vt = vect_type();
   if (Matcher::vector_needs_partial_operations(this, vt)) {
     return VectorNode::try_to_gen_masked_vector(phase, this, vt);
   }
@@ -1688,7 +1688,7 @@ Node* VectorMaskOpNode::make(Node* mask, const Type* ty, int mopc) {
 }
 
 Node* VectorMaskOpNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  const TypeVect* vt = this->in(1)->bottom_type()->is_vect();
+  const TypeVect* vt = vect_type();
   if (Matcher::vector_needs_partial_operations(this, vt)) {
     return VectorNode::try_to_gen_masked_vector(phase, this, vt);
   }

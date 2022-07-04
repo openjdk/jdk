@@ -182,9 +182,11 @@ public:
 class ReductionNode : public Node {
  private:
   const Type* _bottom_type;
+  const TypeVect* _vect_type;
  public:
   ReductionNode(Node *ctrl, Node* in1, Node* in2) : Node(ctrl, in1, in2),
-               _bottom_type(Type::get_const_basic_type(in1->bottom_type()->basic_type())) {}
+               _bottom_type(Type::get_const_basic_type(in1->bottom_type()->basic_type())),
+               _vect_type(in2->bottom_type()->is_vect()) {}
 
   static ReductionNode* make(int opc, Node *ctrl, Node* in1, Node* in2, BasicType bt);
   static int  opcode(int opc, BasicType bt);
@@ -193,6 +195,10 @@ class ReductionNode : public Node {
 
   virtual const Type* bottom_type() const {
     return _bottom_type;
+  }
+
+  virtual const TypeVect* vect_type() const {
+    return _vect_type;
   }
 
   virtual uint ideal_reg() const {
@@ -1013,22 +1019,23 @@ class VectorMaskGenNode : public TypeNode {
 
 //------------------------------VectorMaskOpNode-----------------------------------
 class VectorMaskOpNode : public TypeNode {
+ private:
+  int _mopc;
+  const TypeVect* _vect_type;
  public:
   VectorMaskOpNode(Node* mask, const Type* ty, int mopc):
-    TypeNode(ty, 2), _mopc(mopc) {
-    assert(Matcher::has_predicated_vectors() || mask->bottom_type()->is_vect()->element_basic_type() == T_BOOLEAN, "");
+    TypeNode(ty, 2), _mopc(mopc), _vect_type(mask->bottom_type()->is_vect()) {
+    assert(Matcher::has_predicated_vectors() || _vect_type->element_basic_type() == T_BOOLEAN, "");
     init_req(1, mask);
   }
 
+  virtual const TypeVect* vect_type() { return _vect_type; }
   virtual int Opcode() const;
   virtual  uint  size_of() const { return sizeof(VectorMaskOpNode); }
   virtual uint  ideal_reg() const { return Op_RegI; }
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   int get_mask_Opcode() const { return _mopc;}
   static Node* make(Node* mask, const Type* ty, int mopc);
-
-  private:
-    int _mopc;
 };
 
 class VectorMaskTrueCountNode : public VectorMaskOpNode {
