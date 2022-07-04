@@ -49,7 +49,7 @@ public sealed interface StackMapTableAttribute
     /**
      * {@return the initial frame}
      */
-    StackMapFrame initFrame();
+    StackMapFrame.Full initFrame();
 
     /**
      * The possible types for a stack slot.
@@ -144,16 +144,44 @@ public sealed interface StackMapTableAttribute
      * A stack map frame.
      */
     sealed interface StackMapFrame
-            permits StackMapDecoder.StackMapFrameImpl {
+            permits StackMapFrame.Same, StackMapFrame.Same1, StackMapFrame.Append, StackMapFrame.Chop, StackMapFrame.Full {
 
         int frameType();
         FrameKind frameKind();
         int offsetDelta();
-        List<VerificationTypeInfo> declaredLocals();
-        List<VerificationTypeInfo> declaredStack();
-
         int absoluteOffset();
         List<VerificationTypeInfo> effectiveLocals();
         List<VerificationTypeInfo> effectiveStack();
+
+        sealed interface Same extends StackMapFrame permits StackMapDecoder.StackMapFrameSameImpl {
+
+            boolean extended();
+        }
+        sealed interface Same1 extends StackMapFrame permits StackMapDecoder.StackMapFrameSame1Impl {
+
+            boolean extended();
+
+            VerificationTypeInfo declaredStack();
+        }
+
+        sealed interface Append extends StackMapFrame permits StackMapDecoder.StackMapFrameAppendImpl {
+
+            List<VerificationTypeInfo> declaredLocals();
+        }
+
+        sealed interface Chop extends StackMapFrame permits StackMapDecoder.StackMapFrameChopImpl {
+
+            List<VerificationTypeInfo> choppedLocals();
+        }
+
+        sealed interface Full extends StackMapFrame permits StackMapDecoder.StackMapFrameFullImpl {
+
+            default List<VerificationTypeInfo> declaredStack() {
+                return effectiveStack();
+            }
+            default List<VerificationTypeInfo> declaredLocals() {
+                return effectiveLocals();
+            }
+        }
     }
 }

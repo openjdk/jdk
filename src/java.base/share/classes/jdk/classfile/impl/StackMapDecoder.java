@@ -53,16 +53,16 @@ public class StackMapDecoder {
 
     private final ClassReader classReader;
     private final int pos;
-    private final StackMapFrame initFrame;
+    private final StackMapFrame.Full initFrame;
     private int p;
 
-    StackMapDecoder(ClassReader classReader, int pos, StackMapFrame initFrame) {
+    StackMapDecoder(ClassReader classReader, int pos, StackMapFrame.Full initFrame) {
         this.classReader = classReader;
         this.pos = pos;
         this.initFrame = initFrame;
     }
 
-    static StackMapFrame initFrame(MethodModel method) {
+    static StackMapFrame.Full initFrame(MethodModel method) {
         VerificationTypeInfo vtis[];
         var mdesc = method.methodTypeSymbol();
         int i = 0;
@@ -87,45 +87,47 @@ public class StackMapDecoder {
                 default -> new StackMapDecoder.ObjectVerificationTypeInfoImpl(TemporaryConstantPool.INSTANCE.classEntry(arg));
             };
         }
-        return new StackMapFrameImpl(FULL, FrameKind.FULL_FRAME, -1, -1, List.of(vtis), List.of(), List.of(vtis), List.of());
+        return new StackMapFrameFullImpl(FULL, FrameKind.FULL_FRAME, -1, -1, List.of(vtis), List.of());
     }
 
     List<StackMapFrame> entries() {
         p = pos;
-        var frame = initFrame;
+        StackMapFrame frame = initFrame;
         var entries = new StackMapFrame[u2()];
         for (int ei = 0; ei < entries.length; ei++) {
             int frameType = classReader.readU1(p++);
             if (frameType < 64) {
-                frame = new StackMapFrameImpl(frameType, FrameKind.SAME,
+                frame = new StackMapFrameSameImpl(frameType, FrameKind.SAME,
                         frameType, frame.absoluteOffset() + frameType + 1,
-                        List.of(), List.of(),
+                        false,
                         frame.effectiveLocals(), List.of());
             } else if (frameType < 128) {
-                var stack = List.of(readVerificationTypeInfo());
-                frame = new StackMapFrameImpl(frameType, FrameKind.SAME_LOCALS_1_STACK_ITEM,
+                var stack = readVerificationTypeInfo();
+                frame = new StackMapFrameSame1Impl(frameType, FrameKind.SAME_LOCALS_1_STACK_ITEM,
                         frameType - 64, frame.absoluteOffset() + frameType - 63,
-                        List.of(), stack,
-                        frame.effectiveLocals(), stack);
+                        false,
+                        stack,
+                        frame.effectiveLocals(), List.of(stack));
             } else {
                 if (frameType < SAME_LOCALS_1_STACK_ITEM_EXTENDED)
                     throw new IllegalArgumentException("Invalid stackmap frame type: " + frameType);
                 int offsetDelta = u2();
                 if (frameType == SAME_LOCALS_1_STACK_ITEM_EXTENDED) {
-                    var stack = List.of(readVerificationTypeInfo());
-                    frame = new StackMapFrameImpl(frameType, FrameKind.SAME_LOCALS_1_STACK_ITEM_EXTENDED,
+                    var stack = readVerificationTypeInfo();
+                    frame = new StackMapFrameSame1Impl(frameType, FrameKind.SAME_LOCALS_1_STACK_ITEM_EXTENDED,
                             offsetDelta, frame.absoluteOffset() + offsetDelta + 1,
-                            List.of(), stack,
-                            frame.effectiveLocals(), stack);
+                            true,
+                            stack,
+                            frame.effectiveLocals(), List.of(stack));
                 } else if (frameType < SAME_EXTENDED) {
-                    frame = new StackMapFrameImpl(frameType, FrameKind.CHOP,
+                    frame = new StackMapFrameChopImpl(frameType, FrameKind.CHOP,
                             offsetDelta, frame.absoluteOffset() + offsetDelta + 1,
-                            List.of(), List.of(),
+                            frame.effectiveLocals().subList(frame.effectiveLocals().size() + frameType - SAME_EXTENDED, frame.effectiveLocals().size()),
                             frame.effectiveLocals().subList(0, frame.effectiveLocals().size() + frameType - SAME_EXTENDED), List.of());
                 } else if (frameType == SAME_EXTENDED) {
-                    frame = new StackMapFrameImpl(frameType, FrameKind.SAME_FRAME_EXTENDED,
+                    frame = new StackMapFrameSameImpl(frameType, FrameKind.SAME_FRAME_EXTENDED,
                             offsetDelta, frame.absoluteOffset() + offsetDelta + 1,
-                            List.of(), List.of(),
+                            true,
                             frame.effectiveLocals(), List.of());
                 } else if (frameType < SAME_EXTENDED + 4) {
                     int actSize = frame.effectiveLocals().size();
@@ -133,9 +135,9 @@ public class StackMapDecoder {
                     for (int i = actSize; i < locals.length; i++)
                         locals[i] = readVerificationTypeInfo();
                     var locList = List.of(locals);
-                    frame = new StackMapFrameImpl(frameType, FrameKind.APPEND,
+                    frame = new StackMapFrameAppendImpl(frameType, FrameKind.APPEND,
                             offsetDelta, frame.absoluteOffset() + offsetDelta + 1,
-                            locList.subList(actSize, locList.size()), List.of(),
+                            locList.subList(actSize, locList.size()),
                             locList, List.of());
                 } else {
                     var locals = new VerificationTypeInfo[u2()];
@@ -146,9 +148,8 @@ public class StackMapDecoder {
                         stack[i] = readVerificationTypeInfo();
                     var locList = List.of(locals);
                     var stackList = List.of(stack);
-                    frame = new StackMapFrameImpl(frameType, FrameKind.FULL_FRAME,
+                    frame = new StackMapFrameFullImpl(frameType, FrameKind.FULL_FRAME,
                             offsetDelta, frame.absoluteOffset() + offsetDelta + 1,
-                            locList, stackList,
                             locList, stackList);
                 }
             }
@@ -219,14 +220,53 @@ public class StackMapDecoder {
         return v;
     }
 
-    public static record StackMapFrameImpl(int frameType,
+    public static record StackMapFrameSameImpl(int frameType,
         FrameKind frameKind,
         int offsetDelta,
         int absoluteOffset,
-        List<VerificationTypeInfo> declaredLocals,
-        List<VerificationTypeInfo> declaredStack,
+        boolean extended,
         List<VerificationTypeInfo> effectiveLocals,
         List<VerificationTypeInfo> effectiveStack)
-            implements StackMapFrame {
+            implements StackMapFrame.Same {
+    }
+
+    public static record StackMapFrameSame1Impl(int frameType,
+                                               FrameKind frameKind,
+                                               int offsetDelta,
+                                               int absoluteOffset,
+                                               boolean extended,
+                                               VerificationTypeInfo declaredStack,
+                                               List<VerificationTypeInfo> effectiveLocals,
+                                               List<VerificationTypeInfo> effectiveStack)
+            implements StackMapFrame.Same1 {
+    }
+
+    public static record StackMapFrameAppendImpl(int frameType,
+                                                 FrameKind frameKind,
+                                                 int offsetDelta,
+                                                 int absoluteOffset,
+                                                 List<VerificationTypeInfo> declaredLocals,
+                                                 List<VerificationTypeInfo> effectiveLocals,
+                                                 List<VerificationTypeInfo> effectiveStack)
+            implements StackMapFrame.Append {
+    }
+
+    public static record StackMapFrameChopImpl(int frameType,
+                                                 FrameKind frameKind,
+                                                 int offsetDelta,
+                                                 int absoluteOffset,
+                                                 List<VerificationTypeInfo> choppedLocals,
+                                                 List<VerificationTypeInfo> effectiveLocals,
+                                                 List<VerificationTypeInfo> effectiveStack)
+            implements StackMapFrame.Chop {
+    }
+
+    public static record StackMapFrameFullImpl(int frameType,
+                                               FrameKind frameKind,
+                                               int offsetDelta,
+                                               int absoluteOffset,
+                                               List<VerificationTypeInfo> effectiveLocals,
+                                               List<VerificationTypeInfo> effectiveStack)
+            implements StackMapFrame.Full {
     }
 }

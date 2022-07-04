@@ -230,7 +230,7 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
             implements StackMapTableAttribute {
         final MethodModel method;
         List<StackMapFrame> entries = null;
-        StackMapFrame initFrame = null;
+        StackMapFrame.Full initFrame = null;
 
         public BoundStackMapTableAttribute(CodeModel code, ClassReader cf, AttributeMapper<StackMapTableAttribute> mapper, int pos) {
             super(cf, mapper, pos);
@@ -238,7 +238,7 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
         }
 
         @Override
-        public StackMapFrame initFrame() {
+        public StackMapFrame.Full initFrame() {
             if (initFrame == null)
                 initFrame = StackMapDecoder.initFrame(method);
             return initFrame;
