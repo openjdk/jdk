@@ -1743,7 +1743,7 @@ jvmtiEnv *jvmti;
       <origin>new</origin>
       <capabilities>
         <required id="can_suspend"></required>
-        <required id="can_support_virtual_threads"></required>
+        <required id="can_support_virtual_threads">Can support virtual threads</required>
       </capabilities>
       <parameters>
         <param id="except_count">
@@ -1871,7 +1871,7 @@ jvmtiEnv *jvmti;
       <origin>new</origin>
       <capabilities>
         <required id="can_suspend"></required>
-        <required id="can_support_virtual_threads"></required>
+        <required id="can_support_virtual_threads">Can support virtual threads</required>
       </capabilities>
       <parameters>
         <param id="except_count">
@@ -10611,7 +10611,7 @@ myInit() {
           <functionlink id="ResumeAllVirtualThreads"></functionlink>,
           and the following events can be enabled:
           <eventlink id="VirtualThreadStart"></eventlink>,
-          <eventlink id="VirtualThreadEnd"></eventlink>,
+          <eventlink id="VirtualThreadEnd"></eventlink>.
         </description>
       </capabilityfield>
     </capabilitiestypedef>

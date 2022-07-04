@@ -1314,11 +1314,11 @@ static void gen_continuation_enter(MacroAssembler* masm,
 
   Label L_thaw, L_exit;
 
-  // If continuation, call to thaw. Otherwise, resolve the call and exit.
+  // If isContinue, call to thaw. Otherwise, call Continuation.enter(Continuation c, boolean isContinue)
   __ testptr(reg_is_cont, reg_is_cont);
   __ jccb(Assembler::notZero, L_thaw);
 
-  // --- Resolve path
+  // --- call Continuation.enter(Continuation c, boolean isContinue)
 
   // Make sure the call is patchable
   __ align(BytesPerWord, __ offset() + NativeCall::displacement_offset);
@@ -1330,7 +1330,10 @@ static void gen_continuation_enter(MacroAssembler* masm,
     fatal("CodeCache is full at gen_continuation_enter");
   }
 
-  // Call the resolve stub
+  // The call needs to be resolved. There's a special case for this in
+  // SharedRuntime::find_callee_info_helper() which calls
+  // LinkResolver::resolve_continuation_enter() which resolves the call to
+  // Continuation.enter(Continuation c, boolean isContinue).
   AddressLiteral resolve(SharedRuntime::get_resolve_static_call_stub(),
                          relocInfo::static_call_type);
   __ call(resolve);

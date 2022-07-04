@@ -240,11 +240,11 @@ int dtrace_waited_probe(ObjectMonitor* monitor, Handle obj, Thread* thr) {
 }
 
 static const int NINFLATIONLOCKS = 256;
-static os::PlatformMutex* gInflationLocks[NINFLATIONLOCKS];
+static PlatformMutex* gInflationLocks[NINFLATIONLOCKS];
 
 void ObjectSynchronizer::initialize() {
   for (int i = 0; i < NINFLATIONLOCKS; i++) {
-    gInflationLocks[i] = new os::PlatformMutex();
+    gInflationLocks[i] = new PlatformMutex();
   }
   // Start the ceiling with the estimate for one thread.
   set_in_use_list_ceiling(AvgMonitorsPerThreadEstimate);

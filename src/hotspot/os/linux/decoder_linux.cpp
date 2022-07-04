@@ -23,6 +23,7 @@
  */
 
 #include "jvm.h"
+#include "runtime/os.hpp"
 #include "utilities/decoder_elf.hpp"
 #include "utilities/elfFile.hpp"
 
