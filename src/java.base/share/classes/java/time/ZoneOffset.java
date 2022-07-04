@@ -424,17 +424,11 @@ public final class ZoneOffset
             throw new DateTimeException("Zone offset not in valid range: -18:00 to +18:00");
         }
         if (totalSeconds % (15 * SECONDS_PER_MINUTE) == 0) {
-            Integer totalSecs = totalSeconds;
-            ZoneOffset result = SECONDS_CACHE.get(totalSecs);
-            if (result == null) {
-                result = new ZoneOffset(totalSeconds);
-                ZoneOffset prev = SECONDS_CACHE.putIfAbsent(totalSecs, result);
-                if (prev != null) {
-                    result = prev;
-                }
+            return SECONDS_CACHE.computeIfAbsent(totalSeconds, totalSecs -> {
+                ZoneOffset result = new ZoneOffset(totalSecs);
                 ID_CACHE.putIfAbsent(result.getId(), result);
-            }
-            return result;
+                return result;
+            });
         } else {
             return new ZoneOffset(totalSeconds);
         }
