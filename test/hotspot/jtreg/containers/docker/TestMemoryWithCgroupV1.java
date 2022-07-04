@@ -90,7 +90,9 @@ public class TestMemoryWithCgroupV1 {
                         "Memory and Swap Limit has been reset to " + expectedResetLimit + " because swappiness is 0")
                 .shouldContain("Memory & Swap Limit: " + expectedLimit);
         } catch (RuntimeException ex) {
-            out.shouldMatch("Memory and Swap Limit is: [0-9]+");
+            System.out.println("Expected Memory and Swap Limit output missing.");
+            System.out.println("Check the cgroup_enable=memory swapaccount setting of your system.");
+            throw ex;
         }
     }
 
