@@ -814,12 +814,10 @@ final class P11Cipher extends CipherSpi {
                 if (paddingObj != null) {
                     int startOff = 0;
                     if (reqBlockUpdates) {
-                        // padding is added to data in padBuffer
-                        // unless padBuffer is already full in which case
-                        // EncryptUpdate is performed and whole new padding
-                        // block is created
+                        // call C_EncryptUpdate first if the padBuffer is full
+                        // to make room for padding bytes
                         if (padBufferLen == padBuffer.length) {
-                            k += token.p11.C_EncryptUpdate(session.id(),
+                            k = token.p11.C_EncryptUpdate(session.id(),
                                 0, padBuffer, 0, padBufferLen,
                                 0, out, outOfs, outLen);
                         } else {
@@ -912,12 +910,10 @@ final class P11Cipher extends CipherSpi {
                 if (paddingObj != null) {
                     int startOff = 0;
                     if (reqBlockUpdates) {
-                        // padding is added to data in padBuffer
-                        // unless padBuffer is already full in which case
-                        // EncryptUpdate is performed and whole new padding
-                        // block is created
+                        // call C_EncryptUpdate first if the padBuffer is full
+                        // to make room for padding bytes
                         if (padBufferLen == padBuffer.length) {
-                            k += token.p11.C_EncryptUpdate(session.id(),
+                            k = token.p11.C_EncryptUpdate(session.id(),
                                 0, padBuffer, 0, padBufferLen,
                                 outAddr, outArray, outOfs, outLen);
                         } else {

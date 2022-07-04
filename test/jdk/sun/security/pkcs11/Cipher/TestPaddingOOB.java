@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8289301
- * @summary P11Cipher should not throw OOB exception during padding
+ * @summary P11Cipher should not throw OOB exception during padding when "reqBlockUpdates" == true
  * @library /test/lib ..
  * @run main/othervm TestPaddingOOB
  */
@@ -58,13 +58,13 @@ public class TestPaddingOOB extends PKCS11Test {
         int off = c.update(plainArr, 0, 1, encArr, 0);
         off += c.doFinal(plainArr, 1, plainArr.length - 1, encArr, off);
         if (off != 2 * bs) {
-            throw new Exception("Unexpected encrypted size (array)");
+            throw new Exception("Unexpected encrypted size (array): " + off);
         }
         c.init(Cipher.DECRYPT_MODE, key);
         byte[] plainArr2 = new byte[c.getOutputSize(encArr.length)];
         off = c.doFinal(encArr, 0, encArr.length, plainArr2, 0);
         if (off != bs) {
-            throw new Exception("Unexpected decrypted size (array)");
+            throw new Exception("Unexpected decrypted size (array): " + off);
         }
         if (!Arrays.equals(plainArr, Arrays.copyOfRange(plainArr2, 0, off))) {
             throw new Exception("Invalid decrypted data (array)");
@@ -82,14 +82,14 @@ public class TestPaddingOOB extends PKCS11Test {
         plainBuf.limit(bs);
         off += c.doFinal(plainBuf, encBuf);
         if (off != 2 * bs) {
-            throw new Exception("Unexpected encrypted size (buffer)");
+            throw new Exception("Unexpected encrypted size (buffer): " + off);
         }
         encBuf.flip();
         c.init(Cipher.DECRYPT_MODE, key);
         ByteBuffer plainBuf2 = ByteBuffer.allocate(c.getOutputSize(encBuf.limit()));
         off = c.doFinal(encBuf, plainBuf2);
         if (off != bs) {
-            throw new Exception("Unexpected decrypted size (buffer)");
+            throw new Exception("Unexpected decrypted size (buffer): " + off);
         }
         plainBuf2.flip();
         plainBuf2.get(plainArr2, 0, off);
