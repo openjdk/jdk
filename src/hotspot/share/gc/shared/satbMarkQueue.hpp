@@ -140,10 +140,6 @@ public:
 
   void flush_queue(SATBMarkQueue& queue);
 
-  // When active, add obj to queue by calling enqueue_known_active.
-  void enqueue(SATBMarkQueue& queue, oop obj) {
-    if (queue.is_active()) enqueue_known_active(queue, obj);
-  }
   // Add obj to queue.  This qset and the queue must be active.
   void enqueue_known_active(SATBMarkQueue& queue, oop obj);
   virtual void filter(SATBMarkQueue& queue) = 0;
