@@ -27,8 +27,8 @@
 #include "code/codeHeapState.hpp"
 #include "compiler/compileBroker.hpp"
 #include "oops/klass.inline.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/sweeper.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 // -------------------------
@@ -262,11 +262,6 @@ static unsigned int    used_topSizeBlocks = 0;
 
 static struct SizeDistributionElement*  SizeDistributionArray = NULL;
 
-// nMethod temperature (hotness) indicators.
-static int                     avgTemp    = 0;
-static int                     maxTemp    = 0;
-static int                     minTemp    = 0;
-
 static unsigned int  latest_compilation_id   = 0;
 static volatile bool initialization_complete = false;
 
@@ -328,9 +323,6 @@ void CodeHeapState::get_HeapStatGlobals(outputStream* out, const char* heapName)
     alloc_topSizeBlocks   = CodeHeapStatArray[ix].alloc_topSizeBlocks;
     used_topSizeBlocks    = CodeHeapStatArray[ix].used_topSizeBlocks;
     SizeDistributionArray = CodeHeapStatArray[ix].SizeDistributionArray;
-    avgTemp               = CodeHeapStatArray[ix].avgTemp;
-    maxTemp               = CodeHeapStatArray[ix].maxTemp;
-    minTemp               = CodeHeapStatArray[ix].minTemp;
   } else {
     StatArray             = NULL;
     seg_size              = 0;
@@ -350,9 +342,6 @@ void CodeHeapState::get_HeapStatGlobals(outputStream* out, const char* heapName)
     alloc_topSizeBlocks   = 0;
     used_topSizeBlocks    = 0;
     SizeDistributionArray = NULL;
-    avgTemp               = 0;
-    maxTemp               = 0;
-    minTemp               = 0;
   }
 }
 
@@ -376,9 +365,6 @@ void CodeHeapState::set_HeapStatGlobals(outputStream* out, const char* heapName)
     CodeHeapStatArray[ix].alloc_topSizeBlocks   = alloc_topSizeBlocks;
     CodeHeapStatArray[ix].used_topSizeBlocks    = used_topSizeBlocks;
     CodeHeapStatArray[ix].SizeDistributionArray = SizeDistributionArray;
-    CodeHeapStatArray[ix].avgTemp               = avgTemp;
-    CodeHeapStatArray[ix].maxTemp               = maxTemp;
-    CodeHeapStatArray[ix].minTemp               = minTemp;
   }
 }
 
@@ -700,11 +686,7 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
     HeapBlock*   maxFreeBlock  = NULL;
     bool         insane        = false;
 
-    int64_t hotnessAccumulator = 0;
     unsigned int n_methods     = 0;
-    avgTemp       = 0;
-    minTemp       = (int)(res_size > M ? (res_size/M)*2 : 1);
-    maxTemp       = -minTemp;
 
     for (HeapBlock *h = heap->first_block(); h != NULL && !insane; h = heap->next_block(h)) {
       unsigned int hb_len     = (unsigned int)h->length();  // despite being size_t, length can never overflow an unsigned int.
@@ -758,7 +740,6 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
         if (cbType != noType) {
           const char* blob_name  = nullptr;
           unsigned int nm_size   = 0;
-          int temperature        = 0;
           nmethod*  nm = cb->as_nmethod_or_null();
           if (nm != NULL) { // no is_readable check required, nm = (nmethod*)cb.
             ResourceMark rm;
@@ -784,11 +765,7 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
             switch (cbType) {
               case nMethod_inuse: { // only for executable methods!!!
                 // space for these cbs is accounted for later.
-                temperature = nm->hotness_counter();
-                hotnessAccumulator += temperature;
                 n_methods++;
-                maxTemp = (temperature > maxTemp) ? temperature : maxTemp;
-                minTemp = (temperature < minTemp) ? temperature : minTemp;
                 break;
               }
               case nMethod_notused:
@@ -802,14 +779,6 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
                 nBlocks_notentr++;
                 aliveSpace     += hb_bytelen;
                 notentrSpace   += hb_bytelen;
-                break;
-              case nMethod_unloaded:
-                nBlocks_unloaded++;
-                unloadedSpace  += hb_bytelen;
-                break;
-              case nMethod_dead:
-                nBlocks_dead++;
-                deadSpace      += hb_bytelen;
                 break;
               default:
                 break;
@@ -828,7 +797,6 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
               TopSizeArray[0].len         = hb_len;
               TopSizeArray[0].index       = tsbStopper;
               TopSizeArray[0].nm_size     = nm_size;
-              TopSizeArray[0].temperature = temperature;
               TopSizeArray[0].compiler    = cType;
               TopSizeArray[0].level       = comp_lvl;
               TopSizeArray[0].type        = cbType;
@@ -846,7 +814,6 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
               TopSizeArray[used_topSizeBlocks].len         = hb_len;
               TopSizeArray[used_topSizeBlocks].index       = tsbStopper;
               TopSizeArray[used_topSizeBlocks].nm_size     = nm_size;
-              TopSizeArray[used_topSizeBlocks].temperature = temperature;
               TopSizeArray[used_topSizeBlocks].compiler    = cType;
               TopSizeArray[used_topSizeBlocks].level       = comp_lvl;
               TopSizeArray[used_topSizeBlocks].type        = cbType;
@@ -889,7 +856,6 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
                       TopSizeArray[i].len         = hb_len;
                       TopSizeArray[i].index       = used_topSizeBlocks;
                       TopSizeArray[i].nm_size     = nm_size;
-                      TopSizeArray[i].temperature = temperature;
                       TopSizeArray[i].compiler    = cType;
                       TopSizeArray[i].level       = comp_lvl;
                       TopSizeArray[i].type        = cbType;
@@ -931,7 +897,6 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
                           TopSizeArray[j].len         = hb_len;
                           TopSizeArray[j].index       = tsbStopper; // already set!!
                           TopSizeArray[i].nm_size     = nm_size;
-                          TopSizeArray[i].temperature = temperature;
                           TopSizeArray[j].compiler    = cType;
                           TopSizeArray[j].level       = comp_lvl;
                           TopSizeArray[j].type        = cbType;
@@ -947,7 +912,6 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
                           TopSizeArray[i].len         = hb_len;
                           TopSizeArray[i].index       = j;
                           TopSizeArray[i].nm_size     = nm_size;
-                          TopSizeArray[i].temperature = temperature;
                           TopSizeArray[i].compiler    = cType;
                           TopSizeArray[i].level       = comp_lvl;
                           TopSizeArray[i].type        = cbType;
@@ -999,18 +963,6 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
               StatArray[ix_beg].level     = comp_lvl;
               StatArray[ix_beg].compiler  = cType;
               break;
-            case nMethod_alive:
-              StatArray[ix_beg].tx_count++;
-              StatArray[ix_beg].tx_space += (unsigned short)hb_len;
-              StatArray[ix_beg].tx_age    = StatArray[ix_beg].tx_age < compile_id ? compile_id : StatArray[ix_beg].tx_age;
-              StatArray[ix_beg].level     = comp_lvl;
-              StatArray[ix_beg].compiler  = cType;
-              break;
-            case nMethod_dead:
-            case nMethod_unloaded:
-              StatArray[ix_beg].dead_count++;
-              StatArray[ix_beg].dead_space += (unsigned short)hb_len;
-              break;
             default:
               // must be a stub, if it's not a dead or alive nMethod
               nBlocks_stub++;
@@ -1055,29 +1007,7 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
               StatArray[ix_end].level     = comp_lvl;
               StatArray[ix_end].compiler  = cType;
               break;
-            case nMethod_alive:
-              StatArray[ix_beg].tx_count++;
-              StatArray[ix_beg].tx_space += (unsigned short)beg_space;
-              StatArray[ix_beg].tx_age    = StatArray[ix_beg].tx_age < compile_id ? compile_id : StatArray[ix_beg].tx_age;
-
-              StatArray[ix_end].tx_count++;
-              StatArray[ix_end].tx_space += (unsigned short)end_space;
-              StatArray[ix_end].tx_age    = StatArray[ix_end].tx_age < compile_id ? compile_id : StatArray[ix_end].tx_age;
-
-              StatArray[ix_beg].level     = comp_lvl;
-              StatArray[ix_beg].compiler  = cType;
-              StatArray[ix_end].level     = comp_lvl;
-              StatArray[ix_end].compiler  = cType;
-              break;
-            case nMethod_dead:
-            case nMethod_unloaded:
-              StatArray[ix_beg].dead_count++;
-              StatArray[ix_beg].dead_space += (unsigned short)beg_space;
-              StatArray[ix_end].dead_count++;
-              StatArray[ix_end].dead_space += (unsigned short)end_space;
-              break;
             default:
-              // must be a stub, if it's not a dead or alive nMethod
               nBlocks_stub++;
               stubSpace   += hb_bytelen;
               StatArray[ix_beg].stub_count++;
@@ -1101,18 +1031,6 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
                 }
                 StatArray[ix].level     = comp_lvl;
                 StatArray[ix].compiler  = cType;
-                break;
-              case nMethod_alive:
-                StatArray[ix].tx_count++;
-                StatArray[ix].tx_space += (unsigned short)(granule_size>>log2_seg_size);
-                StatArray[ix].tx_age    = StatArray[ix].tx_age < compile_id ? compile_id : StatArray[ix].tx_age;
-                StatArray[ix].level     = comp_lvl;
-                StatArray[ix].compiler  = cType;
-                break;
-              case nMethod_dead:
-              case nMethod_unloaded:
-                StatArray[ix].dead_count++;
-                StatArray[ix].dead_space += (unsigned short)(granule_size>>log2_seg_size);
                 break;
               default:
                 // must be a stub, if it's not a dead or alive nMethod
@@ -1150,22 +1068,6 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
       ast->print_cr("latest allocated compilation id = %d", latest_compilation_id);
       ast->print_cr("highest observed compilation id = %d", highest_compilation_id);
       ast->print_cr("Building TopSizeList iterations = %ld", total_iterations);
-      ast->cr();
-
-      int             reset_val = NMethodSweeper::hotness_counter_reset_val();
-      double reverse_free_ratio = (res_size > size) ? (double)res_size/(double)(res_size-size) : (double)res_size;
-      printBox(ast, '-', "Method hotness information at time of this analysis", NULL);
-      ast->print_cr("Highest possible method temperature:          %12d", reset_val);
-      ast->print_cr("Threshold for method to be considered 'cold': %12.3f", -reset_val + reverse_free_ratio * NmethodSweepActivity);
-      if (n_methods > 0) {
-        avgTemp = hotnessAccumulator/n_methods;
-        ast->print_cr("min. hotness = %6d", minTemp);
-        ast->print_cr("avg. hotness = %6d", avgTemp);
-        ast->print_cr("max. hotness = %6d", maxTemp);
-      } else {
-        avgTemp = 0;
-        ast->print_cr("No hotness data available");
-      }
       BUFFEREDSTREAM_FLUSH("\n")
 
       // This loop is intentionally printing directly to "out".
@@ -1420,14 +1322,8 @@ void CodeHeapState::print_usedSpace(outputStream* out, CodeHeap* heap) {
           //---<  compiler information  >---
           ast->fill_to(56);
           ast->print("%5s %3d", compTypeName[TopSizeArray[i].compiler], TopSizeArray[i].level);
-          //---<  method temperature  >---
-          ast->fill_to(67);
-          ast->print("%5d", TopSizeArray[i].temperature);
           //---<  name and signature  >---
           ast->fill_to(67+6);
-          if (TopSizeArray[i].type == nMethod_dead) {
-            ast->print(" zombie method ");
-          }
           ast->print("%s", TopSizeArray[i].blob_name);
         } else {
           //---<  block size in hex  >---
@@ -2310,7 +2206,6 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
           ResourceMark rm;
           //---<  collect all data to locals as quickly as possible  >---
           unsigned int total_size = nm->total_size();
-          int          hotness    = nm->hotness_counter();
           bool         get_name   = (cbType == nMethod_inuse) || (cbType == nMethod_notused);
           //---<  nMethod size in hex  >---
           ast->print(PTR32_FORMAT, total_size);
@@ -2318,16 +2213,10 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
           //---<  compiler information  >---
           ast->fill_to(51);
           ast->print("%5s %3d", compTypeName[StatArray[ix].compiler], StatArray[ix].level);
-          //---<  method temperature  >---
-          ast->fill_to(62);
-          ast->print("%5d", hotness);
           //---<  name and signature  >---
           ast->fill_to(62+6);
           ast->print("%s", blobTypeName[cbType]);
           ast->fill_to(82+6);
-          if (cbType == nMethod_dead) {
-            ast->print("%14s", " zombie method");
-          }
 
           if (get_name) {
             Symbol* methName  = method->name();
@@ -2534,12 +2423,9 @@ CodeHeapState::blobType CodeHeapState::get_cbType(CodeBlob* cb) {
     if (holding_required_locks()) {
       nmethod*  nm = cb->as_nmethod_or_null();
       if (nm != NULL) { // no is_readable check required, nm = (nmethod*)cb.
-        if (nm->is_zombie())        return nMethod_dead;
-        if (nm->is_unloaded())      return nMethod_unloaded;
         if (nm->is_in_use())        return nMethod_inuse;
-        if (nm->is_alive() && !(nm->is_not_entrant()))   return nMethod_notused;
-        if (nm->is_alive())         return nMethod_alive;
-        return nMethod_dead;
+        if (!nm->is_not_entrant())  return nMethod_notused;
+        return nMethod_notentrant;
       }
     }
   }
@@ -2558,7 +2444,7 @@ bool CodeHeapState::blob_access_is_safe(CodeBlob* this_blob) {
 // make sure the nmethod at hand (and the linked method) is not garbage.
 bool CodeHeapState::nmethod_access_is_safe(nmethod* nm) {
   Method* method = (nm == NULL) ? NULL : nm->method(); // nm->method() was found to be uninitialized, i.e. != NULL, but invalid.
-  return (nm != NULL) && (method != NULL) && nm->is_alive() && (method->signature() != NULL);
+  return (nm != NULL) && (method != NULL) && (method->signature() != NULL);
 }
 
 bool CodeHeapState::holding_required_locks() {

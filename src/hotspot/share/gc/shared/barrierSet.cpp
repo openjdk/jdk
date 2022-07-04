@@ -55,12 +55,10 @@ static BarrierSetNMethod* select_barrier_set_nmethod(BarrierSetNMethod* barrier_
   if (barrier_set_nmethod != NULL) {
     // The GC needs nmethod entry barriers to do concurrent GC
     return barrier_set_nmethod;
-  } else if (Continuations::enabled()) {
-    // The GC needs nmethod entry barriers to deal with continuations
-    return new BarrierSetNMethod();
   } else {
-    // The GC does not need nmethod entry barriers
-    return NULL;
+    // The GC needs nmethod entry barriers to deal with continuations
+    // and code cache unloading
+    return new BarrierSetNMethod();
   }
 }
 
@@ -77,10 +75,8 @@ BarrierSet::BarrierSet(BarrierSetAssembler* barrier_set_assembler,
 }
 
 void BarrierSet::on_thread_attach(Thread* thread) {
-  if (Continuations::enabled()) {
-    BarrierSetNMethod* bs_nm = barrier_set_nmethod();
-    thread->set_nmethod_disarm_value(bs_nm->disarmed_value());
-  }
+  BarrierSetNMethod* bs_nm = barrier_set_nmethod();
+  thread->set_nmethod_disarm_value(bs_nm->disarmed_value());
 }
 
 // Called from init.cpp

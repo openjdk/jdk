@@ -160,7 +160,7 @@ address NativeCall::destination() const {
   address destination = instruction_address() + displacement();
 
   // Do we use a trampoline stub for this call?
-  CodeBlob* cb = CodeCache::find_blob_unsafe(addr);   // Else we get assertion if nmethod is zombie.
+  CodeBlob* cb = CodeCache::find_blob(addr);
   assert(cb && cb->is_nmethod(), "sanity");
   nmethod *nm = (nmethod *)cb;
   if (nm->stub_contains(destination) && is_NativeCallTrampolineStub_at(destination)) {
@@ -471,7 +471,7 @@ bool NativeInstruction::is_stop() {
 //-------------------------------------------------------------------
 
 // MT-safe inserting of a jump over a jump or a nop (used by
-// nmethod::make_not_entrant_or_zombie)
+// nmethod::make_not_entrant)
 
 void NativeJump::patch_verified_entry(address entry, address verified_entry, address dest) {
 

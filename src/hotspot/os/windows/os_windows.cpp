@@ -2678,7 +2678,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
     if (exception_code == EXCEPTION_IN_PAGE_ERROR) {
       CompiledMethod* nm = NULL;
       if (in_java) {
-        CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
+        CodeBlob* cb = CodeCache::find_blob(pc);
         nm = (cb != NULL) ? cb->as_compiled_method_or_null() : NULL;
       }
 
@@ -2728,7 +2728,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
       // Check for UD trap caused by NOP patching.
       // If it is, patch return address to be deopt handler.
       if (NativeDeoptInstruction::is_deopt_at(pc)) {
-        CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
+        CodeBlob* cb = CodeCache::find_blob(pc);
         if (cb != NULL && cb->is_compiled()) {
           CompiledMethod* cm = cb->as_compiled_method();
           frame fr = os::fetch_frame_from_context((void*)exceptionInfo->ContextRecord);

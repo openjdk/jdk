@@ -73,8 +73,8 @@ bool BarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
   LoadPhantomOopClosure cl;
   nm->oops_do(&cl);
 
-  // CodeCache sweeper support
-  nm->mark_as_maybe_on_continuation();
+  // CodeCache unloading support
+  nm->mark_as_maybe_on_stack();
 
   disarm(nm);
 

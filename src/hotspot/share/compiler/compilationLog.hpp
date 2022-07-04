@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,20 +22,31 @@
  *
  */
 
-package sun.jvm.hotspot.runtime;
+#ifndef SHARE_COMPILER_COMPILATIONLOG_HPP
+#define SHARE_COMPILER_COMPILATIONLOG_HPP
 
-import java.io.*;
-import java.util.*;
-import sun.jvm.hotspot.debugger.*;
-import sun.jvm.hotspot.types.*;
+#include "utilities/events.hpp"
 
-public class CodeCacheSweeperThread extends JavaThread {
-  public CodeCacheSweeperThread(Address addr) {
-    super(addr);
-  }
+class CompileTask;
+class JavaThread;
+class nmethod;
 
-  public boolean isJavaThread() { return false; }
-  public boolean isHiddenFromExternalView() { return true; }
-  public boolean isCodeCacheSweeperThread() { return true; }
+class CompilationLog : public StringEventLog {
+private:
+  static CompilationLog* _log;
 
-}
+  CompilationLog();
+
+public:
+
+  void log_compile(JavaThread* thread, CompileTask* task);
+  void log_nmethod(JavaThread* thread, nmethod* nm);
+  void log_failure(JavaThread* thread, CompileTask* task, const char* reason, const char* retry_message);
+  void log_metaspace_failure(const char* reason);
+
+  static void init();
+  static CompilationLog* log() { return _log; }
+  using StringEventLog::log;
+};
+
+#endif // SHARE_COMPILER_COMPILATIONLOG_HPP

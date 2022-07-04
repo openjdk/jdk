@@ -27,6 +27,7 @@
 #include "classfile/resolutionErrors.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
+#include "code/codeCache.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/interpreter.hpp"
@@ -46,7 +47,6 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/continuation.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/vm_version.hpp"
@@ -697,7 +697,7 @@ void ConstantPoolCache::initialize(const intArray& inverse_index_map,
 
 // Record the GC marking cycle when redefined vs. when found in the loom stack chunks.
 void ConstantPoolCache::record_gc_epoch() {
-  _gc_epoch = Continuations::gc_epoch();
+  _gc_epoch = CodeCache::gc_epoch();
 }
 
 void ConstantPoolCache::verify_just_initialized() {

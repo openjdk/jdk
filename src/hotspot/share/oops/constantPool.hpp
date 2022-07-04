@@ -206,7 +206,7 @@ class ConstantPool : public Metadata {
   // can't be removed from the set of previous versions saved in the instance
   // class.
   bool on_stack() const;
-  bool is_maybe_on_continuation_stack() const;
+  bool is_maybe_on_stack() const;
   void set_on_stack(const bool value);
 
   // Faster than MetaspaceObj::is_shared() - used by set_on_stack()

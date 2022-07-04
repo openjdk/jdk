@@ -175,7 +175,7 @@ bool NativeInstruction::is_sigill_zombie_not_entrant() {
   // One-sided error of is_illegal tolerable here
   // (see implementation of is_illegal() for details).
 
-  CodeBlob* cb = CodeCache::find_blob_unsafe(addr_at(0));
+  CodeBlob* cb = CodeCache::find_blob(addr_at(0));
   if (cb == NULL || !cb->is_nmethod()) {
     return false;
   }

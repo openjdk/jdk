@@ -635,7 +635,7 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
     address pc = os::Posix::ucontext_get_pc(uc);
     assert(pc != NULL, "");
     if (NativeDeoptInstruction::is_deopt_at(pc)) {
-      CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
+      CodeBlob* cb = CodeCache::find_blob(pc);
       if (cb != NULL && cb->is_compiled()) {
         MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, t);) // can call PcDescCache::add_pc_desc
         CompiledMethod* cm = cb->as_compiled_method();

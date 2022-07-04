@@ -483,7 +483,7 @@ void* CodeHeap::find_start(void* p) const {
 
 // Find block which contains the passed pointer.
 // Same as find_start(p), but with additional safety net.
-CodeBlob* CodeHeap::find_blob_unsafe(void* start) const {
+CodeBlob* CodeHeap::find_blob(void* start) const {
   CodeBlob* result = (CodeBlob*)CodeHeap::find_start(start);
   return (result != NULL && result->blob_contains((address)start)) ? result : NULL;
 }

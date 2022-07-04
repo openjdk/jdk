@@ -124,7 +124,7 @@ address NativeCall::destination() const {
   address destination = MacroAssembler::target_addr_for_insn(instruction_address());
 
   // Do we use a trampoline stub for this call?
-  CodeBlob* cb = CodeCache::find_blob_unsafe(addr);   // Else we get assertion if nmethod is zombie.
+  CodeBlob* cb = CodeCache::find_blob(addr);
   assert(cb && cb->is_nmethod(), "sanity");
   nmethod *nm = (nmethod *)cb;
   if (nm != NULL && nm->stub_contains(destination) && is_NativeCallTrampolineStub_at(destination)) {

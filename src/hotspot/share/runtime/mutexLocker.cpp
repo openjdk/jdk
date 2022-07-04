@@ -66,7 +66,6 @@ Mutex*   SymbolArena_lock             = NULL;
 Monitor* StringDedup_lock             = NULL;
 Mutex*   StringDedupIntern_lock       = NULL;
 Monitor* CodeCache_lock               = NULL;
-Monitor* CodeSweeper_lock             = NULL;
 Mutex*   MethodData_lock              = NULL;
 Mutex*   TouchedMethodLog_lock        = NULL;
 Mutex*   RetData_lock                 = NULL;
@@ -96,7 +95,6 @@ Monitor* InitCompleted_lock           = NULL;
 Monitor* BeforeExit_lock              = NULL;
 Monitor* Notify_lock                  = NULL;
 Mutex*   ExceptionCache_lock          = NULL;
-Mutex*   NMethodSweeperStats_lock     = NULL;
 #ifndef PRODUCT
 Mutex*   FullGCALot_lock              = NULL;
 #endif
@@ -321,7 +319,6 @@ void mutex_init() {
 
   def(ContinuationRelativize_lock  , PaddedMonitor, nosafepoint-3);
   def(CodeHeapStateAnalytics_lock  , PaddedMutex  , safepoint);
-  def(NMethodSweeperStats_lock     , PaddedMutex  , nosafepoint);
   def(ThreadsSMRDelete_lock        , PaddedMonitor, nosafepoint-3); // Holds ConcurrentHashTableResize_lock
   def(ThreadIdTableCreate_lock     , PaddedMutex  , safepoint);
   def(SharedDecoder_lock           , PaddedMutex  , tty-1);
@@ -350,7 +347,6 @@ void mutex_init() {
   defl(VtableStubs_lock            , PaddedMutex  , CompiledIC_lock);  // Also holds DumpTimeTable_lock
   defl(CodeCache_lock              , PaddedMonitor, VtableStubs_lock);
   defl(CompiledMethod_lock         , PaddedMutex  , CodeCache_lock);
-  defl(CodeSweeper_lock            , PaddedMonitor, CompiledMethod_lock);
 
   defl(Threads_lock                , PaddedMonitor, CompileThread_lock, true);
   defl(Heap_lock                   , PaddedMonitor, MultiArray_lock);

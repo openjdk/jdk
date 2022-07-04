@@ -70,7 +70,7 @@ int DependencyContext::mark_dependent_nmethods(DepChange& changes) {
     nmethod* nm = b->get_nmethod();
     // since dependencies aren't removed until an nmethod becomes a zombie,
     // the dependency list may contain nmethods which aren't alive.
-    if (b->count() > 0 && nm->is_alive() && !nm->is_marked_for_deoptimization() && nm->check_dependency_on(changes)) {
+    if (b->count() > 0 && !nm->is_marked_for_deoptimization() && nm->check_dependency_on(changes)) {
       if (TraceDependencies) {
         ResourceMark rm;
         tty->print_cr("Marked for deoptimization");
@@ -214,7 +214,7 @@ int DependencyContext::remove_all_dependents() {
   int removed = 0;
   while (b != NULL) {
     nmethod* nm = b->get_nmethod();
-    if (b->count() > 0 && nm->is_alive() && !nm->is_marked_for_deoptimization()) {
+    if (b->count() > 0 && !nm->is_marked_for_deoptimization()) {
       nm->mark_for_deoptimization();
       marked++;
     }

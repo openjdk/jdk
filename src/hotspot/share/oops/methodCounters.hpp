@@ -39,7 +39,6 @@ class MethodCounters : public Metadata {
   InvocationCounter _backedge_counter;           // Incremented before each backedge taken - used to trigger frequency-based optimizations
   jlong             _prev_time;                   // Previous time the rate was acquired
   float             _rate;                        // Events (invocation and backedge counter increments) per millisecond
-  int               _nmethod_age;
   int               _invoke_mask;                 // per-method Tier0InvokeNotifyFreqLog
   int               _backedge_mask;               // per-method Tier0BackedgeNotifyFreqLog
   int               _prev_event_count;            // Total number of events saved at previous callback
@@ -121,24 +120,6 @@ class MethodCounters : public Metadata {
   // invocation counter
   InvocationCounter* invocation_counter() { return &_invocation_counter; }
   InvocationCounter* backedge_counter()   { return &_backedge_counter; }
-
-  int nmethod_age() {
-    return _nmethod_age;
-  }
-  void set_nmethod_age(int age) {
-    _nmethod_age = age;
-  }
-  void reset_nmethod_age() {
-    set_nmethod_age(HotMethodDetectionLimit);
-  }
-
-  static bool is_nmethod_hot(int age)       { return age <= 0; }
-  static bool is_nmethod_warm(int age)      { return age < HotMethodDetectionLimit; }
-  static bool is_nmethod_age_unset(int age) { return age > HotMethodDetectionLimit; }
-
-  static ByteSize nmethod_age_offset() {
-    return byte_offset_of(MethodCounters, _nmethod_age);
-  }
 
   static ByteSize invocation_counter_offset()    {
     return byte_offset_of(MethodCounters, _invocation_counter);

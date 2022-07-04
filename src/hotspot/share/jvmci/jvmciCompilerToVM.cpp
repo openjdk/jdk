@@ -936,15 +936,14 @@ C2V_VMENTRY_0(jint, installCode0, (JNIEnv *env, jobject,
   timer->add_nanoseconds(serialization_ns);
   TraceTime install_time("installCode", timer);
 
-  nmethodLocker nmethod_handle;
   CodeInstaller installer(JVMCIENV);
+
   JVMCI::CodeInstallResult result = installer.install(compiler,
       compiled_code_buffer,
       with_type_info,
       compiled_code_handle,
       object_pool_handle,
       cb,
-      nmethod_handle,
       installed_code_handle,
       (FailedSpeculation**)(address) failed_speculations_address,
       speculations,
@@ -997,8 +996,7 @@ C2V_VMENTRY_NULL(jobject, disassembleCodeBlob, (JNIEnv* env, jobject, jobject in
   }
 
   JVMCIObject installedCodeObject = JVMCIENV->wrap(installedCode);
-  nmethodLocker locker;
-  CodeBlob* cb = JVMCIENV->get_code_blob(installedCodeObject, locker);
+  CodeBlob* cb = JVMCIENV->get_code_blob(installedCodeObject);
   if (cb == NULL) {
     return NULL;
   }
@@ -1012,12 +1010,6 @@ C2V_VMENTRY_NULL(jobject, disassembleCodeBlob, (JNIEnv* env, jobject, jobject in
   int bufferSize = cb->code_size() * 20 + 1024;
   char* buffer = NEW_RESOURCE_ARRAY(char, bufferSize);
   stringStream st(buffer, bufferSize);
-  if (cb->is_nmethod()) {
-    nmethod* nm = (nmethod*) cb;
-    if (!nm->is_alive()) {
-      return NULL;
-    }
-  }
   Disassembler::decode(cb, &st);
   if (st.size() <= 0) {
     return NULL;
@@ -1043,8 +1035,7 @@ C2V_VMENTRY_NULL(jobject, executeHotSpotNmethod, (JNIEnv* env, jobject, jobject 
   HandleMark hm(THREAD);
 
   JVMCIObject nmethod_mirror = JVMCIENV->wrap(hs_nmethod);
-  nmethodLocker locker;
-  nmethod* nm = JVMCIENV->get_nmethod(nmethod_mirror, locker);
+  nmethod* nm = JVMCIENV->get_nmethod(nmethod_mirror);
   if (nm == NULL || !nm->is_in_use()) {
     JVMCI_THROW_NULL(InvalidInstalledCodeException);
   }
@@ -2514,12 +2505,11 @@ C2V_VMENTRY_0(jlong, translate, (JNIEnv* env, jobject, jobject obj_handle, jbool
     Handle constant = thisEnv->asConstant(obj, JVMCI_CHECK_0);
     result = peerEnv->get_object_constant(constant());
   } else if (thisEnv->isa_HotSpotNmethod(obj)) {
-    nmethodLocker locker;
-    nmethod* nm = JVMCIENV->get_nmethod(obj, locker);
-    if (nm != NULL) {
-      JVMCINMethodData* data = nm->jvmci_nmethod_data();
-      if (data != NULL) {
-        if (peerEnv->is_hotspot()) {
+    if (peerEnv->is_hotspot()) {
+      nmethod* nm = JVMCIENV->get_nmethod(obj);
+      if (nm != NULL) {
+        JVMCINMethodData* data = nm->jvmci_nmethod_data();
+        if (data != NULL) {
           // Only the mirror in the HotSpot heap is accessible
           // through JVMCINMethodData
           oop nmethod_mirror = data->get_nmethod_mirror(nm, /* phantom_ref */ true);
@@ -2529,6 +2519,7 @@ C2V_VMENTRY_0(jlong, translate, (JNIEnv* env, jobject, jobject obj_handle, jbool
         }
       }
     }
+
     if (result.is_null()) {
       JVMCIObject methodObject = thisEnv->get_HotSpotNmethod_method(obj);
       methodHandle mh(THREAD, thisEnv->asMethod(methodObject));
@@ -2538,6 +2529,7 @@ C2V_VMENTRY_0(jlong, translate, (JNIEnv* env, jobject, jobject obj_handle, jbool
       const char* cstring = name_string.is_null() ? NULL : thisEnv->as_utf8_string(name_string);
       // Create a new HotSpotNmethod instance in the peer runtime
       result = peerEnv->new_HotSpotNmethod(mh, cstring, isDefault, compileIdSnapshot, JVMCI_CHECK_0);
+      nmethod* nm = JVMCIENV->get_nmethod(obj);
       if (result.is_null()) {
         // exception occurred (e.g. OOME) creating a new HotSpotNmethod
       } else if (nm == NULL) {
@@ -2589,20 +2581,22 @@ C2V_VMENTRY_NULL(jobject, unhand, (JNIEnv* env, jobject, jlong obj_handle))
 C2V_VMENTRY(void, updateHotSpotNmethod, (JNIEnv* env, jobject, jobject code_handle))
   JVMCIObject code = JVMCIENV->wrap(code_handle);
   // Execute this operation for the side effect of updating the InstalledCode state
-  nmethodLocker locker;
-  JVMCIENV->get_nmethod(code, locker);
+  JVMCIENV->get_nmethod(code);
 }
 
 C2V_VMENTRY_NULL(jbyteArray, getCode, (JNIEnv* env, jobject, jobject code_handle))
   JVMCIObject code = JVMCIENV->wrap(code_handle);
-  nmethodLocker locker;
-  CodeBlob* cb = JVMCIENV->get_code_blob(code, locker);
+  CodeBlob* cb = JVMCIENV->get_code_blob(code);
   if (cb == NULL) {
     return NULL;
   }
+  // Make a resource copy of code before the allocation causes a safepoint
   int code_size = cb->code_size();
+  jbyte* code_bytes = NEW_RESOURCE_ARRAY(jbyte, code_size);
+  memcpy(code_bytes, (jbyte*) cb->code_begin(), code_size);
+
   JVMCIPrimitiveArray result = JVMCIENV->new_byteArray(code_size, JVMCI_CHECK_NULL);
-  JVMCIENV->copy_bytes_from((jbyte*) cb->code_begin(), result, 0, code_size);
+  JVMCIENV->copy_bytes_from(code_bytes, result, 0, code_size);
   return JVMCIENV->get_jbyteArray(result);
 }
 

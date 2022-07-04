@@ -2213,15 +2213,15 @@ int ConstantPool::copy_cpool_bytes(int cpool_size,
 
 #undef DBG
 
-bool ConstantPool::is_maybe_on_continuation_stack() const {
-  // This method uses the similar logic as nmethod::is_maybe_on_continuation_stack()
+bool ConstantPool::is_maybe_on_stack() const {
+  // This method uses the similar logic as nmethod::is_maybe_on_stack()
   if (!Continuations::enabled()) {
     return false;
   }
 
   // If the condition below is true, it means that the nmethod was found to
   // be alive the previous completed marking cycle.
-  return cache()->gc_epoch() >= Continuations::previous_completed_gc_marking_cycle();
+  return cache()->gc_epoch() >= CodeCache::previous_completed_gc_marking_cycle();
 }
 
 // For redefinition, if any methods found in loom stack chunks, the gc_epoch is
@@ -2236,7 +2236,7 @@ bool ConstantPool::on_stack() const {
     return false;
   }
 
-  return is_maybe_on_continuation_stack();
+  return is_maybe_on_stack();
 }
 
 void ConstantPool::set_on_stack(const bool value) {
