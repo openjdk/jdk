@@ -5539,7 +5539,7 @@ void get_thread_handle_for_extended_context(HANDLE* h,
 
 // Thread sampling implementation
 //
-void os::SuspendedThreadTask::internal_do_task() {
+void SuspendedThreadTask::internal_do_task() {
   CONTEXT    ctxt;
   HANDLE     h = NULL;
 

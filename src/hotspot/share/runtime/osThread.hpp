@@ -29,7 +29,7 @@
 #include "runtime/handles.hpp"
 #include "runtime/javaFrameAnchor.hpp"
 #include "runtime/objectMonitor.hpp"
-#include "runtime/os.hpp"
+#include "runtime/suspend.hpp"
 #include "utilities/macros.hpp"
 
 class Monitor;
