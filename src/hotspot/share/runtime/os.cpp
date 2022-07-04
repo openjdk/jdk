@@ -736,7 +736,7 @@ void  os::free(void *memblock) {
   // If NMT is enabled, this checks for heap overwrites, then de-accounts the old block.
   void* const old_outer_ptr = MemTracker::record_free(memblock);
 
-  ALLOW_C_FUNCTION(::realloc, ::free(old_outer_ptr);)
+  ALLOW_C_FUNCTION(::free, ::free(old_outer_ptr);)
 }
 
 void os::init_random(unsigned int initval) {
