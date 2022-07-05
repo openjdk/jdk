@@ -83,12 +83,11 @@ public class Runtime {
      * until they finish.  Once this is done the virtual machine
      * {@linkplain #halt halts}.
      *
-     * <p> Shutdown is serialized such that only one invocation will run
-     * shutdown hooks and terminate the VM with the given status code. That
-     * invocation may be initiated via platform specific signal handlers. All
-     * other invocations will block indefinitely, and their supplied exit
-     * statuses will be ignored. If this method is invoked from a shutdown hook
-     * the system will deadlock.
+     * <p> Invocations of this method are serialized such that only one
+     * invocation will actually proceed with the shutdown sequence and
+     * terminate the VM with the given status code. All other invocations
+     * will block indefinitely. If this method is invoked from a shutdown
+     * hook the system will deadlock.
      *
      * <p> The {@link System#exit(int) System.exit} method is the
      * conventional and convenient means of invoking this method.
