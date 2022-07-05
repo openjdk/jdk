@@ -40,7 +40,7 @@
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/semaphore.hpp"
-#include "runtime/suspend.hpp"
+#include "runtime/suspendedThreadTask.hpp"
 #include "runtime/threadCrashProtection.hpp"
 #include "runtime/threadSMR.hpp"
 

@@ -24,25 +24,9 @@
 
 #include "precompiled.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/suspend.hpp"
+#include "runtime/suspendedThreadTask.hpp"
 
 void SuspendedThreadTask::run() {
   internal_do_task();
   _done = true;
 }
-
-#ifndef _WINDOWS
-/* try to switch state from state "from" to state "to"
- * returns the state set after the method is complete
- */
-SuspendResume::State SuspendResume::switch_state(SuspendResume::State from,
-                                                 SuspendResume::State to)
-{
-  SuspendResume::State result = Atomic::cmpxchg(&_state, from, to);
-  if (result == from) {
-    // success
-    return to;
-  }
-  return result;
-}
-#endif

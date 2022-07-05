@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,37 +22,10 @@
  *
  */
 
-#ifndef SHARE_RUNTIME_SUSPEND_HPP
-#define SHARE_RUNTIME_SUSPEND_HPP
+#ifndef OS_POSIX_SUSPENDRESUME_POSIX_HPP
+#define OS_POSIX_SUSPENDRESUME_POSIX_HPP
 
-class Thread;
-
-class SuspendedThreadTaskContext {
-public:
-  SuspendedThreadTaskContext(Thread* thread, void *ucontext) : _thread(thread), _ucontext(ucontext) {}
-  Thread* thread() const { return _thread; }
-  void* ucontext() const { return _ucontext; }
-private:
-  Thread* _thread;
-  void* _ucontext;
-};
-
-class SuspendedThreadTask {
-public:
-  SuspendedThreadTask(Thread* thread) : _thread(thread), _done(false) {}
-  void run();
-  bool is_done() { return _done; }
-  virtual void do_task(const SuspendedThreadTaskContext& context) = 0;
-protected:
-  ~SuspendedThreadTask() {}
-private:
-  void internal_do_task();
-  Thread* _thread;
-  bool _done;
-};
-
-#ifndef _WINDOWS
-// Suspend/resume support
+// Suspend/resume support for POSIX platforms
 // Protocol:
 //
 // a thread starts in SR_RUNNING
@@ -118,6 +91,5 @@ public:
     return _state == SR_SUSPENDED;
   }
 };
-#endif // !WINDOWS
 
-#endif // SHARE_RUNTIME_SUSPEND_HPP
+#endif // OS_POSIX_SUSPENDRESUME_POSIX_HPP
