@@ -362,8 +362,6 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
                            char jrepath[], jint so_jrepath,
                            char jvmpath[], jint so_jvmpath,
                            char jvmcfg[],  jint so_jvmcfg) {
-    jboolean jvmpathExists;
-
     /* Compute/set the name of the executable */
     SetExecname(*pargv);
 
@@ -547,7 +545,6 @@ GetJREPath(char *path, jint pathsize, jboolean speculative)
 jboolean
 LoadJavaVM(const char *jvmpath, InvocationFunctions *ifn)
 {
-    Dl_info dlinfo;
     void *libjvm;
 
     JLI_TraceLauncher("JVM path is %s\n", jvmpath);

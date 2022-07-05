@@ -237,9 +237,9 @@ static uid_t getUID(pid_t pid) {
  * into the Info object.
  */
 void os_getCmdlineAndUserInfo(JNIEnv *env, jobject jinfo, pid_t pid) {
-    int mib[3], maxargs, nargs, i;
+    int mib[3], maxargs, nargs;
     size_t size;
-    char *args, *cp, *sp, *np;
+    char *args, *cp;
 
     // Get the UID first. This is done here because it is cheap to do it here
     // on other platforms like Linux/Solaris/AIX where the uid comes from the

@@ -168,7 +168,6 @@ Java_sun_net_spi_DefaultProxySelector_getSystemProxies(JNIEnv *env,
 {
     CFDictionaryRef proxyDicRef = NULL;
     CFURLRef        urlRef = NULL;
-    bool proxyFound = false;
     jobjectArray proxyArray = NULL;
     const char *cproto;
     const char *chost;
