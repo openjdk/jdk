@@ -241,67 +241,81 @@ int MacroAssembler::pd_patch_instruction_size(address branch, address target) {
     }
     // adrp
     case 0b1000: {
-      if (Instruction_aarch64::extract(insn, 28, 24) == 0b10000) {
-        // PC-rel. addressing
-        offset = target-branch;
-        int shift = Instruction_aarch64::extract(insn, 31, 31);
-        if (shift) {
-          uint64_t dest = (uint64_t)target;
-          uint64_t pc_page = (uint64_t)branch >> 12;
-          uint64_t adr_page = (uint64_t)target >> 12;
-          unsigned offset_lo = dest & 0xfff;
-          offset = adr_page - pc_page;
+      assert(Instruction_aarch64::extract(insn, 28, 24) == 0b10000, "must be");
+      // PC-rel. addressing
+      offset = target-branch;
+      int shift = Instruction_aarch64::extract(insn, 31, 31);
+      if (shift) {
+        uint64_t dest = (uint64_t)target;
+        uint64_t pc_page = (uint64_t)branch >> 12;
+        uint64_t adr_page = (uint64_t)target >> 12;
+        unsigned offset_lo = dest & 0xfff;
+        offset = adr_page - pc_page;
 
-          // We handle 4 types of PC-relative addressing
-          //   1 - adrp    Rx, target_page
-          //       ldr/str Ry, [Rx, #offset_in_page]
-          //   2 - adrp    Rx, target_page
-          //       add     Ry, Rx, #offset_in_page
-          //   3 - adrp    Rx, target_page (page aligned reloc, offset == 0)
-          //       movk    Rx, #imm16<<32
-          //   4 - adrp    Rx, target_page (page aligned reloc, offset == 0)
-          // In the first 3 cases we must check that Rx is the same in the adrp and the
-          // subsequent ldr/str, add or movk instruction. Otherwise we could accidentally end
-          // up treating a type 4 relocation as a type 1, 2 or 3 just because it happened
-          // to be followed by a random unrelated ldr/str, add or movk instruction.
-          //
-          unsigned insn2 = ((unsigned*)branch)[1];
-          if (Instruction_aarch64::extract(insn2, 29, 24) == 0b111001 &&
-              Instruction_aarch64::extract(insn, 4, 0) ==
-              Instruction_aarch64::extract(insn2, 9, 5)) {
-            // Load/store register (unsigned immediate)
-            unsigned size = Instruction_aarch64::extract(insn2, 31, 30);
-            Instruction_aarch64::patch(branch + sizeof (unsigned),
-                                       21, 10, offset_lo >> size);
-            guarantee(((dest >> size) << size) == dest, "misaligned target");
-            instructions = 2;
-          } else if (Instruction_aarch64::extract(insn2, 31, 22) == 0b1001000100 &&
-                     Instruction_aarch64::extract(insn, 4, 0) ==
-                     Instruction_aarch64::extract(insn2, 4, 0)) {
-            // add (immediate)
-            Instruction_aarch64::patch(branch + sizeof (unsigned),
-                                       21, 10, offset_lo);
-            instructions = 2;
-          } else if (Instruction_aarch64::extract(insn2, 31, 21) == 0b11110010110 &&
-                     Instruction_aarch64::extract(insn, 4, 0) ==
-                     Instruction_aarch64::extract(insn2, 4, 0)) {
-            // movk #imm16<<32
-            Instruction_aarch64::patch(branch + 4, 20, 5, (uint64_t)target >> 32);
-            uintptr_t dest = ((uintptr_t)target & 0xffffffffULL) | ((uintptr_t)branch & 0xffff00000000ULL);
-            uintptr_t pc_page = (uintptr_t)branch >> 12;
-            uintptr_t adr_page = (uintptr_t)dest >> 12;
-            offset = adr_page - pc_page;
-            instructions = 2;
-          } else {
+        // We handle 3 types of PC-relative addressing
+        //   1 - adrp    Rx, target_page
+        //       ldr/str Ry, [Rx, #offset_in_page]
+        //   2 - adrp    Rx, target_page
+        //       add     Ry, Rx, #offset_in_page
+        //   3 - adrp    Rx, target_page (page aligned reloc, offset == 0)
+        //       movk    Rx, #imm16<<32
+        //
+        unsigned insn2 = ((unsigned*)branch)[1];
+        uint32_t secondary = dispatchGroup(insn2);
+
+        switch (secondary) {
+          // load/store
+          case 0b1100: {
+            if (Instruction_aarch64::extract(insn2, 29, 24) == 0b111001 &&
+                Instruction_aarch64::extract(insn, 4, 0) ==
+                Instruction_aarch64::extract(insn2, 9, 5)) {
+              // Load/store register (unsigned immediate)
+              unsigned size = Instruction_aarch64::extract(insn2, 31, 30);
+              Instruction_aarch64::patch(branch + sizeof (unsigned),
+                                         21, 10, offset_lo >> size);
+              guarantee(((dest >> size) << size) == dest, "misaligned target");
+              instructions = 2;
+              break;
+            }
             ShouldNotReachHere();
           }
+          case 0b1000: {
+            // immediate
+            if (Instruction_aarch64::extract(insn2, 31, 22) == 0b1001000100 &&
+                Instruction_aarch64::extract(insn, 4, 0) ==
+                Instruction_aarch64::extract(insn2, 4, 0)) {
+              // add (immediate)
+              Instruction_aarch64::patch(branch + sizeof (unsigned),
+                                         21, 10, offset_lo);
+              instructions = 2;
+              break;
+            }
+            ShouldNotReachHere();
+          }
+          case 0b1001: {
+            // mov[zk]
+            if (Instruction_aarch64::extract(insn2, 31, 21) == 0b11110010110 &&
+                Instruction_aarch64::extract(insn, 4, 0) ==
+                Instruction_aarch64::extract(insn2, 4, 0)) {
+              // movk #imm16<<32
+              Instruction_aarch64::patch(branch + 4, 20, 5, (uint64_t)target >> 32);
+              uintptr_t dest = ((uintptr_t)target & 0xffffffffULL) | ((uintptr_t)branch & 0xffff00000000ULL);
+              uintptr_t pc_page = (uintptr_t)branch >> 12;
+              uintptr_t adr_page = (uintptr_t)dest >> 12;
+              offset = adr_page - pc_page;
+              instructions = 2;
+              break;
+            }
+            ShouldNotReachHere();
+          }
+          default:
+            ShouldNotReachHere();
         }
-
-        int offset_lo = offset & 3;
-        offset >>= 2;
-        Instruction_aarch64::spatch(branch, 23, 5, offset);
-        Instruction_aarch64::patch(branch, 30, 29, offset_lo);
       }
+      int offset_lo = offset & 3;
+      offset >>= 2;
+      Instruction_aarch64::spatch(branch, 23, 5, offset);
+      Instruction_aarch64::patch(branch, 30, 29, offset_lo);
       break;
     }
     // immediate constant
