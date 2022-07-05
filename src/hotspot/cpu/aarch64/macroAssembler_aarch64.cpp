@@ -266,47 +266,41 @@ int MacroAssembler::pd_patch_instruction_size(address target_insn, address value
         switch (secondary) {
           // load/store
           case 0b1100: {
-            if (Instruction_aarch64::extract(insn2, 29, 24) == 0b111001 &&
-                Instruction_aarch64::extract(insn, 4, 0) ==
-                Instruction_aarch64::extract(insn2, 9, 5)) {
-              // Load/store register (unsigned immediate)
-              unsigned size = Instruction_aarch64::extract(insn2, 31, 30);
-              Instruction_aarch64::patch(target_insn + sizeof (unsigned),
-                                         21, 10, offset_lo >> size);
-              guarantee(((dest >> size) << size) == dest, "misaligned target");
-              instructions = 2;
-              break;
-            }
-            ShouldNotReachHere();
+            assert(Instruction_aarch64::extract(insn2, 29, 24) == 0b111001 &&
+                   Instruction_aarch64::extract(insn, 4, 0) ==
+                   Instruction_aarch64::extract(insn2, 9, 5), "must be");
+            // Load/store register (unsigned immediate)
+            unsigned size = Instruction_aarch64::extract(insn2, 31, 30);
+            Instruction_aarch64::patch(target_insn + sizeof (unsigned),
+                                       21, 10, offset_lo >> size);
+            guarantee(((dest >> size) << size) == dest, "misaligned target");
+            instructions = 2;
+            break;
           }
           case 0b1000: {
             // immediate
-            if (Instruction_aarch64::extract(insn2, 31, 22) == 0b1001000100 &&
-                Instruction_aarch64::extract(insn, 4, 0) ==
-                Instruction_aarch64::extract(insn2, 4, 0)) {
-              // add (immediate)
-              Instruction_aarch64::patch(target_insn + sizeof (unsigned),
-                                         21, 10, offset_lo);
-              instructions = 2;
-              break;
-            }
-            ShouldNotReachHere();
+            assert(Instruction_aarch64::extract(insn2, 31, 22) == 0b1001000100 &&
+                   Instruction_aarch64::extract(insn, 4, 0) ==
+                   Instruction_aarch64::extract(insn2, 4, 0), "must be");
+            // add (immediate)
+            Instruction_aarch64::patch(target_insn + sizeof (unsigned),
+                                       21, 10, offset_lo);
+            instructions = 2;
+            break;
           }
           case 0b1001: {
             // mov[zk]
-            if (Instruction_aarch64::extract(insn2, 31, 21) == 0b11110010110 &&
-                Instruction_aarch64::extract(insn, 4, 0) ==
-                Instruction_aarch64::extract(insn2, 4, 0)) {
-              // movk #imm16<<32
-              Instruction_aarch64::patch(target_insn + 4, 20, 5, (uint64_t)value >> 32);
-              uintptr_t dest = ((uintptr_t)value & 0xffffffffULL) | ((uintptr_t)target_insn & 0xffff00000000ULL);
-              uintptr_t pc_page = (uintptr_t)target_insn >> 12;
-              uintptr_t adr_page = (uintptr_t)dest >> 12;
-              offset = adr_page - pc_page;
-              instructions = 2;
-              break;
-            }
-            ShouldNotReachHere();
+            assert(Instruction_aarch64::extract(insn2, 31, 21) == 0b11110010110 &&
+                   Instruction_aarch64::extract(insn, 4, 0) ==
+                   Instruction_aarch64::extract(insn2, 4, 0), "must be");
+            // movk #imm16<<32
+            Instruction_aarch64::patch(target_insn + 4, 20, 5, (uint64_t)value >> 32);
+            uintptr_t dest = ((uintptr_t)value & 0xffffffffULL) | ((uintptr_t)target_insn & 0xffff00000000ULL);
+            uintptr_t pc_page = (uintptr_t)target_insn >> 12;
+            uintptr_t adr_page = (uintptr_t)dest >> 12;
+            offset = adr_page - pc_page;
+            instructions = 2;
+            break;
           }
           default:
             ShouldNotReachHere();
