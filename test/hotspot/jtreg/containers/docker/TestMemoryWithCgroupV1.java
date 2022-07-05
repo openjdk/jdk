@@ -91,7 +91,7 @@ public class TestMemoryWithCgroupV1 {
                 .shouldContain("Memory & Swap Limit: " + expectedLimit);
         } catch (RuntimeException ex) {
             System.out.println("Expected Memory and Swap Limit output missing.");
-            System.out.println("Check the cgroup_enable=memory swapaccount setting of your system.");
+            System.out.println("You may need to add 'cgroup_enable=memory swapaccount=1' to the Linux kernel boot parameters.");
             throw ex;
         }
     }
