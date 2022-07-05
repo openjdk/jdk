@@ -24,50 +24,67 @@
 package gc.g1;
 
 /*
- * @test TestVerificationCycle
+ * @test TestVerificationInConcurrentCycle
  * @requires vm.gc.G1
- * @summary Basic testing of various verification during the G1 GC cycle.
+ * @summary Basic testing of various GC pause verification during the G1 concurrent cycle.
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm
  *   -Xbootclasspath/a:.
  *   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *   -XX:+VerifyBeforeGC -XX:+VerifyDuringGC -XX:+VerifyAfterGC -XX:+G1VerifyBitmaps -XX:+G1VerifyRSetsDuringFullGC -XX:+G1VerifyHeapRegionCodeRoots -XX:+VerifyRememberedSets -XX:+VerifyObjectStartArray
- *   gc.g1.TestVerificationCycle
+ *   -XX:+VerifyBeforeGC -XX:+VerifyDuringGC -XX:+VerifyAfterGC
+ *   -XX:+G1VerifyBitmaps -XX:+G1VerifyRSetsDuringFullGC -XX:+G1VerifyHeapRegionCodeRoots
+ *   -XX:+VerifyRememberedSets -XX:+VerifyObjectStartArray
+ *   gc.g1.TestVerificationInConcurrentCycle
  */
 
 import sun.hotspot.WhiteBox;
 import sun.hotspot.gc.GC;
 
-public class TestVerificationCycle {
+public class TestVerificationInConcurrentCycle {
 
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
 
     // All testN() assume initial state is idle, and restore that state.
 
-    private static void testAbortAt(String fullGCAt) throws Exception {
+    private static void testFullGCAt(String at) throws Exception {
         System.out.println("testSimpleCycle");
         try {
             // Run one cycle.
-            WB.concurrentGCRunTo(fullGCAt);
-            WB.youngGC();
+            WB.concurrentGCRunTo(at);
             WB.fullGC();
         } finally {
             WB.concurrentGCRunToIdle();
         }
     }
 
+    private static void testYoungGCAt(String at) throws Exception {
+        System.out.println("testSimpleCycle");
+        try {
+            // Run one cycle.
+            WB.concurrentGCRunTo(at);
+            WB.youngGC();
+        } finally {
+            WB.concurrentGCRunToIdle();
+        }
+    }
+
+    private static void testGCAt(String at) throws Exception {
+        testYoungGCAt(at);
+        testFullGCAt(at);
+    }
+
     private static void test() throws Exception {
         try {
             System.out.println("taking control");
             WB.concurrentGCAcquireControl();
-            testAbortAt(WB.AFTER_MARKING_STARTED);
-            testAbortAt(WB.BEFORE_MARKING_COMPLETED);
-            testAbortAt(WB.G1_AFTER_REBUILD_STARTED);
-            testAbortAt(WB.G1_BEFORE_REBUILD_COMPLETED);
-            testAbortAt(WB.G1_AFTER_CLEANUP_STARTED);
-            testAbortAt(WB.G1_BEFORE_CLEANUP_COMPLETED);
+            testGCAt(WB.AFTER_MARKING_STARTED);
+            testGCAt(WB.BEFORE_MARKING_COMPLETED);
+            testGCAt(WB.G1_AFTER_REBUILD_STARTED);
+            testGCAt(WB.G1_BEFORE_REBUILD_COMPLETED);
+            testGCAt(WB.G1_AFTER_CLEANUP_STARTED);
+            testGCAt(WB.G1_BEFORE_CLEANUP_COMPLETED);
         } finally {
             System.out.println("releasing control");
             WB.concurrentGCReleaseControl();
