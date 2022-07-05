@@ -32,8 +32,9 @@
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/init.hpp"
+#include "runtime/javaThread.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/thread.hpp"
 
 G1ConcurrentRefineThread::G1ConcurrentRefineThread(G1ConcurrentRefine* cr, uint worker_id) :
   ConcurrentGCThread(),

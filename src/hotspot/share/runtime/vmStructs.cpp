@@ -91,6 +91,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/monitorDeflationThread.hpp"
 #include "runtime/notificationThread.hpp"
@@ -101,7 +102,6 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vframeArray.hpp"
 #include "runtime/vmStructs.hpp"
@@ -1708,11 +1708,13 @@
   declare_c2_type(CmpNode, SubNode)                                       \
   declare_c2_type(CmpINode, CmpNode)                                      \
   declare_c2_type(CmpUNode, CmpNode)                                      \
+  declare_c2_type(CmpU3Node, CmpUNode)                                    \
   declare_c2_type(CmpPNode, CmpNode)                                      \
   declare_c2_type(CmpNNode, CmpNode)                                      \
   declare_c2_type(CmpLNode, CmpNode)                                      \
   declare_c2_type(CmpULNode, CmpNode)                                     \
   declare_c2_type(CmpL3Node, CmpLNode)                                    \
+  declare_c2_type(CmpUL3Node, CmpULNode)                                  \
   declare_c2_type(CmpFNode, CmpNode)                                      \
   declare_c2_type(CmpF3Node, CmpFNode)                                    \
   declare_c2_type(CmpDNode, CmpNode)                                      \

@@ -124,7 +124,6 @@ import static javax.lang.model.element.ElementKind.*;
 import static javax.lang.model.type.TypeKind.*;
 
 import static com.sun.source.doctree.DocTree.Kind.*;
-import static jdk.javadoc.internal.doclets.toolkit.builders.ConstantsSummaryBuilder.MAX_CONSTANT_VALUE_INDEX_LENGTH;
 
 /**
  * Utilities Class for Doclets.
@@ -903,22 +902,6 @@ public class Utils {
                     : configuration.workArounds.searchClass(encl, className);
         }
         return searchResult;
-    }
-
-    /**
-     * Parse the package name.  We only want to display package name up to
-     * 2 levels.
-     */
-    public String parsePackageName(PackageElement p) {
-        String pkgname = p.isUnnamed() ? "" : getPackageName(p);
-        int index = -1;
-        for (int j = 0; j < MAX_CONSTANT_VALUE_INDEX_LENGTH; j++) {
-            index = pkgname.indexOf(".", index + 1);
-        }
-        if (index != -1) {
-            pkgname = pkgname.substring(0, index);
-        }
-        return pkgname;
     }
 
     /**

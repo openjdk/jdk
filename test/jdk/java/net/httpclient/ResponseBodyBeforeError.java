@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @summary Tests that all response body is delivered to the BodySubscriber
  *          before an abortive error terminates the flow
+ * @modules java.net.http/jdk.internal.net.http.common
  * @library /test/lib
  * @build jdk.test.lib.net.SimpleSSLContext
  * @run testng/othervm ResponseBodyBeforeError
@@ -59,6 +60,8 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocketFactory;
+
+import static java.lang.System.err;
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpResponse.BodyHandlers.ofString;
@@ -177,6 +180,7 @@ public class ResponseBodyBeforeError {
     }
 
     static final int ITERATION_COUNT = 3;
+    static final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
 
     @Test(dataProvider = "uris")
     void testSynchronousAllRequestBody(String url,
@@ -186,24 +190,34 @@ public class ResponseBodyBeforeError {
     {
         out.print("---\n");
         HttpClient client = null;
-        for (int i=0; i< ITERATION_COUNT; i++) {
-            if (!sameClient || client == null)
-                client = HttpClient.newBuilder()
-                        .proxy(NO_PROXY)
-                        .sslContext(sslContext)
-                        .build();
-            HttpRequest request = HttpRequest.newBuilder(URI.create(url)).build();
-            CustomBodySubscriber bs = new CustomBodySubscriber();
-            try {
-                HttpResponse<String> response = client.send(request, r -> bs);
-                String body = response.body();
-                out.println(response + ": " + body);
-                fail("UNEXPECTED RESPONSE: " + response);
-            } catch (IOException expected) {
-                String pm = bs.receivedAsString();
-                out.println("partial body received: " + pm);
-                assertEquals(pm, expectedPatrialBody);
+        try {
+            for (int i = 0; i < ITERATION_COUNT; i++) {
+                if (!sameClient || client == null) {
+                    client = HttpClient.newBuilder()
+                            .proxy(NO_PROXY)
+                            .sslContext(sslContext)
+                            .build();
+                    TRACKER.track(client);
+                    System.gc();
+                }
+                HttpRequest request = HttpRequest.newBuilder(URI.create(url)).build();
+                CustomBodySubscriber bs = new CustomBodySubscriber();
+                try {
+                    HttpResponse<String> response = client.send(request, r -> bs);
+                    String body = response.body();
+                    out.println(response + ": " + body);
+                    fail("UNEXPECTED RESPONSE: " + response);
+                } catch (IOException expected) {
+                    String pm = bs.receivedAsString();
+                    out.println("partial body received: " + pm);
+                    assertEquals(pm, expectedPatrialBody);
+                }
             }
+        } finally {
+            client = null;
+            System.gc();
+            var error = TRACKER.checkShutdown(1000);
+            if (error != null) throw error;
         }
     }
 
@@ -215,28 +229,38 @@ public class ResponseBodyBeforeError {
     {
         out.print("---\n");
         HttpClient client = null;
-        for (int i=0; i< ITERATION_COUNT; i++) {
-            if (!sameClient || client == null)
-                client = HttpClient.newBuilder()
-                        .proxy(NO_PROXY)
-                        .sslContext(sslContext)
-                        .build();
-            HttpRequest request = HttpRequest.newBuilder(URI.create(url)).build();
-            CustomBodySubscriber bs = new CustomBodySubscriber();
-            try {
-                HttpResponse<String> response = client.sendAsync(request, r -> bs).get();
-                String body = response.body();
-                out.println(response + ": " + body);
-                fail("UNEXPECTED RESPONSE: " + response);
-            } catch (ExecutionException ee) {
-                if (ee.getCause() instanceof IOException) {
-                    String pm = bs.receivedAsString();
-                    out.println("partial body received: " + pm);
-                    assertEquals(pm, expectedPatrialBody);
-                } else {
-                    throw ee;
+        try {
+            for (int i = 0; i < ITERATION_COUNT; i++) {
+                if (!sameClient || client == null) {
+                    client = HttpClient.newBuilder()
+                            .proxy(NO_PROXY)
+                            .sslContext(sslContext)
+                            .build();
+                    System.gc();
+                    TRACKER.track(client);
+                }
+                HttpRequest request = HttpRequest.newBuilder(URI.create(url)).build();
+                CustomBodySubscriber bs = new CustomBodySubscriber();
+                try {
+                    HttpResponse<String> response = client.sendAsync(request, r -> bs).get();
+                    String body = response.body();
+                    out.println(response + ": " + body);
+                    fail("UNEXPECTED RESPONSE: " + response);
+                } catch (ExecutionException ee) {
+                    if (ee.getCause() instanceof IOException) {
+                        String pm = bs.receivedAsString();
+                        out.println("partial body received: " + pm);
+                        assertEquals(pm, expectedPatrialBody);
+                    } else {
+                        throw ee;
+                    }
                 }
             }
+        } finally {
+            client = null;
+            System.gc();
+            var error = TRACKER.checkShutdown(1000);
+            if (error != null) throw error;
         }
     }
 

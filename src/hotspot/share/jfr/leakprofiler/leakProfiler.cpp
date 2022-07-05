@@ -31,7 +31,7 @@
 #include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/vmThread.hpp"
 
 bool LeakProfiler::is_running() {
