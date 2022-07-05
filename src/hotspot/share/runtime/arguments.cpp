@@ -391,7 +391,7 @@ void Arguments::init_system_properties() {
 
   // Set up _boot_class_path which is not a property but
   // relies heavily on argument processing and the jdk.boot.class.path.append
-  // property. It is used to store the underlying system boot class path.
+  // property. It is used to store the underlying boot class path.
   _boot_class_path = new PathString(NULL);
 
   PropertyList_add(&_system_properties, new SystemProperty("java.vm.specification.name",
