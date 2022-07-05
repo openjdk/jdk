@@ -551,12 +551,6 @@
       <setting name="enabled" control="compiler-enabled-failure">false</setting>
     </event>
 
-    <event name="jdk.JitRestart">
-      <setting name="enabled" control="compiler-enabled">true</setting>
-      <setting name="threshold">0 ms</setting>
-      <setting name="stackTrace">true</setting>
-    </event>
-
     <event name="jdk.CodeSweeperConfiguration">
       <setting name="enabled" control="compiler-enabled">true</setting>
       <setting name="period">beginChunk</setting>
