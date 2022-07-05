@@ -325,6 +325,13 @@ public class ManagementFactory {
         "java.lang:type=MemoryPool";
 
     /**
+     * String representation of the
+     * {@code ObjectName} for the {@link ContainerMXBean}.
+     */
+    public static final String CONTAINER_MXBEAN_NAME =
+            "java.lang:type=Container";
+
+    /**
      * Returns the managed bean for the class loading system of
      * the Java virtual machine.
      *

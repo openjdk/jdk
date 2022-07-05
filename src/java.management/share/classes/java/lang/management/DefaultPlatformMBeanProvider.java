@@ -34,6 +34,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.management.ObjectName;
+
+import jdk.internal.platform.Container;
+import jdk.internal.platform.Metrics;
 import sun.management.ManagementFactoryHelper;
 import sun.management.spi.PlatformMBeanProvider;
 
@@ -453,6 +456,35 @@ class DefaultPlatformMBeanProvider extends PlatformMBeanProvider {
 
         });
 
+
+        if (ManagementFactoryHelper.isContainerAvailable()) {
+            initMBeanList.add(new PlatformComponent<ContainerMXBean>() {
+                private final Set<String> containerMXBeanInterfaceNames
+                        = Collections.singleton("java.lang.management.ContainerMXBean");
+
+                @Override
+                public Set<Class<? extends ContainerMXBean>> mbeanInterfaces() {
+                    return Collections.singleton(ContainerMXBean.class);
+                }
+
+                @Override
+                public Set<String> mbeanInterfaceNames() {
+                    return containerMXBeanInterfaceNames;
+                }
+
+                @Override
+                public String getObjectNamePattern() {
+                    return ManagementFactory.CONTAINER_MXBEAN_NAME;
+                }
+
+                @Override
+                public Map<String, ContainerMXBean> nameToMBeanMap() {
+                    return Collections.singletonMap(
+                            ManagementFactory.CONTAINER_MXBEAN_NAME,
+                            ManagementFactoryHelper.getContainerMXBean());
+                }
+            });
+        }
         initMBeanList.trimToSize();
         return initMBeanList;
     }

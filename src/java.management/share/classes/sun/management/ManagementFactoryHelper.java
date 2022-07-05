@@ -42,6 +42,7 @@ import java.security.PrivilegedExceptionAction;
 
 import jdk.internal.misc.VM;
 import jdk.internal.misc.VM.BufferPool;
+import jdk.internal.platform.Container;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -83,6 +84,7 @@ public class ManagementFactoryHelper {
     private static RuntimeImpl         runtimeMBean = null;
     private static CompilationImpl     compileMBean = null;
     private static BaseOperatingSystemImpl osMBean = null;
+    private static ContainerImpl containerMBean = null;
 
     public static synchronized ClassLoadingMXBean getClassLoadingMXBean() {
         if (classMBean == null) {
@@ -163,8 +165,19 @@ public class ManagementFactoryHelper {
         }
     }
 
+    public static synchronized ContainerMXBean getContainerMXBean() {
+        if (containerMBean == null) {
+            containerMBean = new ContainerImpl();
+        }
+        return containerMBean;
+    }
+
     public static boolean isPlatformLoggingMXBeanAvailable() {
         return LoggingMXBeanAccess.isAvailable();
+    }
+
+    public static boolean isContainerAvailable() {
+        return Container.metrics() != null;
     }
 
     /**

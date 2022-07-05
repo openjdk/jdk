@@ -230,6 +230,7 @@ module java.base {
         jdk.internal.jvmstat;
     exports jdk.internal.platform to
         jdk.management,
+        java.management,
         jdk.jfr;
     exports jdk.internal.ref to
         java.desktop,
