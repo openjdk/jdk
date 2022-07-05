@@ -529,7 +529,6 @@ Java_sun_nio_ch_Net_setIntOption0(JNIEnv *env, jclass clazz, jobject fdo,
                                   jboolean mayNeedConversion, jint level,
                                   jint opt, jint arg, jboolean isIPv6)
 {
-    int result;
     struct linger linger;
     u_char carg;
     void *parg;

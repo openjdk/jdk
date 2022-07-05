@@ -119,7 +119,6 @@ collapse(char *path)
     int nc;
     char **ix;
     int i, j;
-    char *p, *q;
 
     nc = collapsible(names);
     if (nc < 2) return;         /* Nothing to do */

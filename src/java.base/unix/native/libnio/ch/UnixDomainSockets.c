@@ -184,7 +184,6 @@ Java_sun_nio_ch_UnixDomainSockets_localAddress0(JNIEnv *env, jclass clazz, jobje
 {
     struct sockaddr_un sa;
     socklen_t sa_len = sizeof(struct sockaddr_un);
-    int port;
     if (getsockname(fdval(env, fdo), (struct sockaddr *)&sa, &sa_len) < 0) {
         handleSocketError(env, errno);
         return NULL;

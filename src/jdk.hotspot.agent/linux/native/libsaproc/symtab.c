@@ -292,7 +292,6 @@ static struct symtab* build_symtab_from_build_id(Elf64_Nhdr *note)
 // try to open an associated debuginfo file
 static struct symtab* build_symtab_internal(int fd, const char *filename, bool try_debuginfo) {
   ELF_EHDR ehdr;
-  char *names = NULL;
   struct symtab* symtab = NULL;
 
   // Reading of elf header
@@ -307,7 +306,6 @@ static struct symtab* build_symtab_internal(int fd, const char *filename, bool t
   ELF_SHDR* shbuf = NULL;
   ELF_SHDR* cursct = NULL;
   ELF_PHDR* phbuf = NULL;
-  ELF_PHDR* phdr = NULL;
   int sym_section = SHT_DYNSYM;
 
   uintptr_t baseaddr = (uintptr_t)-1;
@@ -550,7 +548,6 @@ uintptr_t search_symbol(struct symtab* symtab, uintptr_t base,
     return rslt;
   }
 
-quit:
   free(item.key);
   return (uintptr_t) NULL;
 }

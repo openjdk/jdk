@@ -220,7 +220,6 @@ bool read_eh_frame(struct ps_prochandle* ph, lib_info* lib) {
   ELF_SHDR* shbuf = NULL;
   ELF_SHDR* sh = NULL;
   char* strtab = NULL;
-  void* result = NULL;
   int cnt;
 
   current_pos = lseek(lib->fd, (off_t)0L, SEEK_CUR);

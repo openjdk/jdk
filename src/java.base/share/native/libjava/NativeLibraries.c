@@ -191,7 +191,6 @@ JNIEXPORT void JNICALL
 Java_jdk_internal_loader_NativeLibraries_unload
 (JNIEnv *env, jclass cls, jstring name, jboolean isBuiltin, jlong address)
 {
-    const char *onUnloadSymbols[] = JNI_ONUNLOAD_SYMBOLS;
     void *handle;
     JNI_OnUnload_t JNI_OnUnload;
     const char *cname;
@@ -254,7 +253,6 @@ Java_jdk_internal_loader_NativeLibraries_findBuiltinLib
     size_t len;
     jstring lib;
     void *ret;
-    const char *onLoadSymbols[] = JNI_ONLOAD_SYMBOLS;
 
     if (name == NULL) {
         JNU_ThrowInternalError(env, "NULL filename for native library");

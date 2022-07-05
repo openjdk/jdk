@@ -62,7 +62,6 @@ static const char** const_extra_jargs = NULL;
 static const char* const_progname = "java";
 static const char** const_jargs = NULL;
 static const char** const_extra_jargs = NULL;
-static const char* const_appclasspath[] = { NULL };
 #endif /* JAVA_ARGS */
 
 #ifdef LAUNCHER_NAME

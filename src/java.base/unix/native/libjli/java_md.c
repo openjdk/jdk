@@ -298,7 +298,6 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
                            char jvmcfg[],  jint so_jvmcfg) {
 
     char * jvmtype = NULL;
-    int argc = *pargc;
     char **argv = *pargv;
 
 #ifdef SETENV_REQUIRED

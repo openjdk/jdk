@@ -237,7 +237,6 @@ static jobjectArray getProxyByGConf(JNIEnv *env, const char* cproto,
     }
 
     if (use_proxy) {
-        jstring jhost;
         char *noproxyfor;
         char *s;
 

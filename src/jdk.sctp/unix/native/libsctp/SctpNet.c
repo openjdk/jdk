@@ -496,7 +496,6 @@ int mapSocketOption
 JNIEXPORT void JNICALL Java_sun_nio_ch_sctp_SctpNet_setIntOption0
   (JNIEnv *env, jclass klass, jint fd, jint opt, int arg) {
     int klevel, kopt;
-    int result;
     struct linger linger;
     void *parg;
     int arglen;

@@ -156,7 +156,6 @@ Java_sun_security_pkcs11_wrapper_PKCS11_getNativeKeyInfo
     jbyte* nativeKeyInfoArrayRawCkAttributesPtr = NULL;
     jbyte* nativeKeyInfoArrayRawDataPtr = NULL;
     CK_MECHANISM_PTR ckpMechanism = NULL;
-    char iv[16] = {0x0};
     CK_ULONG ckWrappedKeyLength = 0U;
     jbyte* wrappedKeySizeWrappedKeyArrayPtr = NULL;
     CK_BYTE_PTR wrappedKeyBufferPtr = NULL;
@@ -419,7 +418,6 @@ Java_sun_security_pkcs11_wrapper_PKCS11_createNativeKey
     jbyte* wrappedKeySizePtr = NULL;
     unsigned int i = 0U;
     CK_MECHANISM_PTR ckpMechanism = NULL;
-    char iv[16] = {0x0};
     CK_ULONG ckWrappedKeyLength = 0UL;
     CK_FUNCTION_LIST_PTR ckpFunctions = getFunctionList(env, obj);
 

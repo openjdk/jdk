@@ -71,9 +71,6 @@ void shutItDown() {
  * - the data strings for fields in ChildStuff
  */
 void initChildStuff (int fdin, int fdout, ChildStuff *c) {
-    int n;
-    int argvBytes, nargv, envvBytes, nenvv;
-    int dirlen;
     char *buf;
     SpawnInfo sp;
     int bufsize, offset=0;
@@ -132,7 +129,6 @@ void initChildStuff (int fdin, int fdout, ChildStuff *c) {
 
 int main(int argc, char *argv[]) {
     ChildStuff c;
-    int t;
     struct stat buf;
     /* argv[0] contains the fd number to read all the child info */
     int r, fdin, fdout;
