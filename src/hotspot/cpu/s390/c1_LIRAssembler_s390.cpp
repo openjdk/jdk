@@ -2722,9 +2722,8 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   Register lock = op->lock_opr()->as_register();
   if (UseHeavyMonitors) {
     if (op->info() != NULL) {
-      int null_check_offset = __ offset();
+      add_debug_info_for_null_check_here(op->info());
       __ null_check(obj);
-      add_debug_info_for_null_check(null_check_offset, op->info());
     }
     __ branch_optimized(Assembler::bcondAlways, *op->stub()->entry());
   } else if (op->code() == lir_lock) {

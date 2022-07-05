@@ -2698,9 +2698,8 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
       //       slow locking code is the same in either case which simplifies
       //       debugging.
       if (op->info() != NULL) {
-        int null_check_offset = __ offset();
+        add_debug_info_for_null_check_here(op->info());
         __ null_check(obj);
-        add_debug_info_for_null_check(null_check_offset, op->info());
       }
       __ b(*op->stub()->entry());
     }
