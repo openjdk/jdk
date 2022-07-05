@@ -146,7 +146,7 @@ public final class Utils {
     }
 
     public static MemorySegment toCString(byte[] bytes, SegmentAllocator allocator) {
-        MemorySegment addr = allocator.allocate(bytes.length + 1, 1L);
+        MemorySegment addr = allocator.allocate(bytes.length + 1);
         copy(addr, bytes);
         return addr;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,37 +22,43 @@
  *
  */
 
-#ifndef SHARE_RUNTIME_SEMAPHORE_HPP
-#define SHARE_RUNTIME_SEMAPHORE_HPP
+#ifndef OS_WINDOWS_MUTEX_WINDOWS_HPP
+#define OS_WINDOWS_MUTEX_WINDOWS_HPP
 
 #include "memory/allocation.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-#if defined(LINUX) || defined(AIX)
-# include "semaphore_posix.hpp"
-#else
-# include OS_HEADER(semaphore)
-#endif
+// Platform specific implementations that underpin VM Mutex/Monitor classes.
+// Note that CRITICAL_SECTION supports recursive locking, while the semantics
+// of the VM Mutex class does not. It is up to the Mutex class to hide this
+// difference in behaviour.
 
-class JavaThread;
+class PlatformMutex : public CHeapObj<mtSynchronizer> {
+  NONCOPYABLE(PlatformMutex);
 
-// Implements the limited, platform independent Semaphore API.
-class Semaphore : public CHeapObj<mtSynchronizer> {
-  SemaphoreImpl _impl;
-
-  NONCOPYABLE(Semaphore);
+ protected:
+  CRITICAL_SECTION   _mutex; // Native mutex for locking
 
  public:
-  Semaphore(uint value = 0) : _impl(value) {}
-  ~Semaphore() {}
-
-  void signal(uint count = 1) { _impl.signal(count); }
-
-  void wait()                 { _impl.wait(); }
-
-  bool trywait()              { return _impl.trywait(); }
-
-  void wait_with_safepoint_check(JavaThread* thread);
+  PlatformMutex();
+  ~PlatformMutex();
+  void lock();
+  void unlock();
+  bool try_lock();
 };
 
-#endif // SHARE_RUNTIME_SEMAPHORE_HPP
+class PlatformMonitor : public PlatformMutex {
+ private:
+  CONDITION_VARIABLE _cond;  // Native condition variable for blocking
+  NONCOPYABLE(PlatformMonitor);
+
+ public:
+  PlatformMonitor();
+  ~PlatformMonitor();
+  int wait(jlong millis);
+  void notify();
+  void notify_all();
+};
+
+#endif // OS_WINDOWS_MUTEX_WINDOWS_HPP
