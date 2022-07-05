@@ -90,6 +90,7 @@ class CodeBlob {
 
 protected:
 
+  // order fields from large to small to minimize padding between fields
   address    _code_begin;
   address    _code_end;
   address    _content_begin;                     // address to where content region begins (this includes consts, insts, stubs)
