@@ -182,11 +182,6 @@ static inline uint32_t dispatchGroup(uint32_t insn) {
   return Instruction_aarch64::extract(insn, 28, 25);
 }
 
-
-#ifdef ASSERT
-int totals[5];
-#endif
-
 // Patch any kind of instruction; there may be several instructions.
 // Return the total length (in bytes) of the instructions.
 int MacroAssembler::pd_patch_instruction_size(address target_insn, address value) {
@@ -200,35 +195,23 @@ int MacroAssembler::pd_patch_instruction_size(address target_insn, address value
   switch(dispatch) {
     case 0b001010:
     case 0b001011: {
-#ifdef ASSERT
-      totals[1]++;
-#endif
       assert(Instruction_aarch64::extract(insn, 30, 26) == 0b00101, "must be");
       // Unconditional branch (immediate)
       Instruction_aarch64::spatch(target_insn, 25, 0, offset);
       break;
     }
     case 0b101010: {
-#ifdef ASSERT
-      totals[1]++;
-#endif
       assert(Instruction_aarch64::extract(insn, 31, 25) == 0b0101010, "must be");
       // Conditional branch (immediate)
       Instruction_aarch64::spatch(target_insn, 23, 5, offset);
       break;
     }
     case 0b011010: {
-#ifdef ASSERT
-      totals[1]++;
-#endif
       // Compare & branch (immediate)
       Instruction_aarch64::spatch(target_insn, 23, 5, offset);
       break;
     }
     case 0b011011: {
-#ifdef ASSERT
-      totals[1]++;
-#endif
       // Test & branch (immediate)
       Instruction_aarch64::spatch(target_insn, 18, 5, offset);
       break;
@@ -241,9 +224,6 @@ int MacroAssembler::pd_patch_instruction_size(address target_insn, address value
         // load/store
         case 0b1100:
         case 0b1110: {
-#ifdef ASSERT
-          totals[0]++;
-#endif
           if ((Instruction_aarch64::extract(insn, 29, 24) & 0b111011) == 0b011000) {
             // Load register (literal)
             Instruction_aarch64::spatch(target_insn, 23, 5, offset);
@@ -254,16 +234,14 @@ int MacroAssembler::pd_patch_instruction_size(address target_insn, address value
           }
           break;
         }
-          // adr/adrp
+        // adr/adrp
         case 0b1000: {
-#ifdef ASSERT
-          totals[2]++;
-#endif
           assert(Instruction_aarch64::extract(insn, 28, 24) == 0b10000, "must be");
           // PC-rel. addressing
           offset = value-target_insn;
           int shift = Instruction_aarch64::extract(insn, 31, 31);
           if (shift) {
+            instructions = 2;
             uint64_t dest = (uint64_t)value;
             uint64_t pc_page = (uint64_t)target_insn >> 12;
             uint64_t adr_page = (uint64_t)value >> 12;
@@ -292,7 +270,6 @@ int MacroAssembler::pd_patch_instruction_size(address target_insn, address value
                 Instruction_aarch64::patch(target_insn + sizeof (unsigned),
                                            21, 10, offset_lo >> size);
                 guarantee(((dest >> size) << size) == dest, "misaligned target");
-                instructions = 2;
                 break;
               }
               case 0b1000: {
@@ -303,7 +280,6 @@ int MacroAssembler::pd_patch_instruction_size(address target_insn, address value
                 // add (immediate)
                 Instruction_aarch64::patch(target_insn + sizeof (unsigned),
                                            21, 10, offset_lo);
-                instructions = 2;
                 break;
               }
               case 0b1001: {
@@ -317,7 +293,6 @@ int MacroAssembler::pd_patch_instruction_size(address target_insn, address value
                 uintptr_t pc_page = (uintptr_t)target_insn >> 12;
                 uintptr_t adr_page = (uintptr_t)dest >> 12;
                 offset = adr_page - pc_page;
-                instructions = 2;
                 break;
               }
               default:
@@ -328,14 +303,10 @@ int MacroAssembler::pd_patch_instruction_size(address target_insn, address value
           offset >>= 2;
           Instruction_aarch64::spatch(target_insn, 23, 5, offset);
           Instruction_aarch64::patch(target_insn, 30, 29, offset_lo);
-          assert(target_addr_for_insn(target_insn) == value, "should be");
           break;
         }
-          // immediate constant
+        // immediate constant
         case 0b1001: {
-#ifdef ASSERT
-          totals[3]++;
-#endif
           assert(Instruction_aarch64::extract(insn, 31, 21) == 0b11010010100, "must be");
           uint64_t dest = (uint64_t)value;
           // Move wide constant
