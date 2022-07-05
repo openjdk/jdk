@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.InvalidPathException;
+import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -227,6 +228,12 @@ public class DeployParams {
                 }
             } catch (IOException ioe) {
                 throw new PackagerException(ioe);
+            }
+        }
+        if (Platform.isWindows()) {
+            Path rootPath = Path.of(root).toAbsolutePath();
+            if (rootPath.toString().length() > 240) {
+                Log.verbose(MessageFormat.format(I18N.getString("MSG_BuildRootTooLong"), rootPath));
             }
         }
 
