@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,8 @@ import java.nio.file.Paths;
 
 public class LibraryFromCache {
     public static void main(String[] args) throws IOException {
+        System.out.println("os.version = " + System.getProperty("os.version"));
+
         String libname = args[0];
         if (!systemHasLibrary(libname)) {
             System.out.println("Test skipped. Library " + libname + " not found");

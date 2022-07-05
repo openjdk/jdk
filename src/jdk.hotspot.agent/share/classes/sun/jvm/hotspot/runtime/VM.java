@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -975,7 +975,7 @@ public class VM {
   public int getObjectAlignmentInBytes() {
     if (objectAlignmentInBytes == 0) {
         Flag flag = getCommandLineFlag("ObjectAlignmentInBytes");
-        objectAlignmentInBytes = (flag == null) ? 8 : (int)flag.getIntx();
+        objectAlignmentInBytes = (flag == null) ? 8 : (int)flag.getInt();
     }
     return objectAlignmentInBytes;
   }

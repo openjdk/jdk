@@ -21,8 +21,6 @@
  * questions.
  */
 
-import java.io.PrintStream;
-
 /*
  * @test
  *
@@ -39,6 +37,7 @@ import java.io.PrintStream;
  *     The test reproduced the bug on winNT 1.0fcs-E build.
  *     Ported from JVMDI test /nsk/regression/b4248826.
  *
+ * @requires vm.continuations
  * @library /test/lib
  * @compile --enable-preview -source ${jdk.version} mentry02.java
  * @run main/othervm/native --enable-preview -agentlib:mentry02 mentry02
@@ -47,18 +46,10 @@ import java.io.PrintStream;
 
 public class mentry02 {
 
-    final static int JCK_STATUS_BASE = 95;
     final static int MAX_LOOP = 100;
 
     static {
-        try {
-            System.loadLibrary("mentry02");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load mentry02 library");
-            System.err.println("java.library.path:"
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
+        System.loadLibrary("mentry02");
     }
 
     static volatile int result;

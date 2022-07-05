@@ -38,6 +38,7 @@
  * COMMENTS
  *     Ported from JVMDI.
  *
+ * @requires vm.continuations
  * @library /test/lib
  * @compile --enable-preview -source ${jdk.version} framepop01a.java
  * @run main/othervm/native --enable-preview -agentlib:framepop01 framepop01
@@ -46,14 +47,7 @@
 public class framepop01 {
 
     static {
-        try {
-            System.loadLibrary("framepop01");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load framepop01 library");
-            System.err.println("java.library.path:"
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
+        System.loadLibrary("framepop01");
     }
 
     static volatile int result;

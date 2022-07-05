@@ -29,8 +29,8 @@
 #include "memory/allocation.inline.hpp"
 #include "misc_aix.hpp"
 #include "porting_aix.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 

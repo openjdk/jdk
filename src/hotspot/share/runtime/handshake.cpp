@@ -32,11 +32,11 @@
 #include "runtime/atomic.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/task.hpp"
-#include "runtime/thread.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/formatBuffer.hpp"
@@ -499,6 +499,16 @@ bool HandshakeState::has_async_exception_operation(bool ThreadDeath_only) {
     return _queue.peek(async_exception_filter) != NULL;
   } else {
     return _queue.peek(is_ThreadDeath_filter) != NULL;
+  }
+}
+
+void HandshakeState::clean_async_exception_operation() {
+  while (has_async_exception_operation(/* ThreadDeath_only */ false)) {
+    MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
+    HandshakeOperation* op;
+    op = _queue.peek(async_exception_filter);
+    remove_op(op);
+    delete op;
   }
 }
 
