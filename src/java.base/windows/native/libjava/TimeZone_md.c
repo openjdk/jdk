@@ -406,7 +406,6 @@ static int getWinTimeZone(char *winZoneName)
 static char *matchJavaTZ(const char *java_home_dir, char *tzName)
 {
     int line;
-    int IDmatched = 0;
     FILE *fp;
     char *javaTZName = NULL;
     char *items[TZ_NITEMS];

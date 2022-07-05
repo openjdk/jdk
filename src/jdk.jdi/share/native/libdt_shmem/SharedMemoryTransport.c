@@ -185,7 +185,6 @@ JNIEXPORT jlong JNICALL Java_com_sun_tools_jdi_SharedMemoryTransportService_star
 {
     const char *addrChars = NULL;
     jint rc;
-    jstring retAddress = NULL;
     SharedMemoryTransport *transport = NULL;
 
 

@@ -199,7 +199,6 @@ static char* normalizePath(const char* path, int len, int off) {
 char* normalize(char* path) {
     int n = (int)strlen(path);
     int i;
-    char c = 0;
     int prev = 0;
     for (i = 0; i < n; i++) {
         char c = path[i];

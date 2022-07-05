@@ -834,7 +834,6 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByIndex0
 JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_boundInetAddress0
     (JNIEnv *env, jclass cls, jobject iaObj)
 {
-    jobject netifObj = NULL;
     DWORD i;
 
     int family = getInetAddress_family(env, iaObj);

@@ -417,7 +417,6 @@ Java_java_lang_ProcessHandleImpl_00024Info_info0(JNIEnv *env,
                                                  jobject jinfo,
                                                  jlong jpid) {
     DWORD pid = (DWORD)jpid;
-    int ret = 0;
     HANDLE handle =
         OpenProcess(THREAD_QUERY_INFORMATION | PROCESS_QUERY_LIMITED_INFORMATION,
                     FALSE, pid);
