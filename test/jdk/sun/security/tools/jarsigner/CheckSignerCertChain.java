@@ -76,7 +76,7 @@ public class CheckSignerCertChain {
                 "-sigalg SHA256withRSA " +
                 "-verbose" +
                 " a.jar e1")
-                .shouldContain("Signature algorithm: SHA1withRSA (weak), 2048-bit key")
+                .shouldContain("Signature algorithm: SHA1withRSA (disabled), 2048-bit key")
                 // For trusted cert, warning should be generated for its weak 1024-bit
                 // key, but not for its SHA1withRSA algorithm.
                 .shouldContain("Signature algorithm: SHA1withRSA, 1024-bit key (weak)")
@@ -87,7 +87,7 @@ public class CheckSignerCertChain {
 
         SecurityTools.jarsigner("-verify -certs signeda.jar " +
                 "-keystore caks -storepass changeit -verbose -debug")
-                .shouldContain("Signature algorithm: SHA1withRSA (weak), 2048-bit key")
+                .shouldContain("Signature algorithm: SHA1withRSA (disabled), 2048-bit key")
                 // For trusted cert, warning should be generated for its weak 1024-bit
                 // key, but not for its SHA1withRSA algorithm.
                 .shouldContain("Signature algorithm: SHA1withRSA, 1024-bit key (weak)")
