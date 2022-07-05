@@ -26,10 +26,8 @@
 #include "asm/assembler.hpp"
 #include "code/vmreg.hpp"
 
-VMRegImpl all_VMRegs[ConcreteRegisterImpl::number_of_registers + 1];
-
 // First VMReg value that could refer to a stack slot
-VMReg VMRegImpl::stack0 = VMRegImpl::stack_0();
+VMReg VMRegImpl::stack0 = (VMReg)(intptr_t)((ConcreteRegisterImpl::number_of_registers + 7) & ~7);
 
 // VMRegs are 4 bytes wide on all platforms
 const int VMRegImpl::stack_slot_size = 4;
