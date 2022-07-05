@@ -311,6 +311,7 @@ public class TagletManager {
         if (tagName == null || locations == null) {
             return;
         }
+        // remove + put in both branches below move the tag to the back of the map's ordering
         Taglet tag = allTaglets.remove(tagName);
         if (tag == null || header != null) {
             allTaglets.put(tagName, new SimpleTaglet(tagName, header, locations));
