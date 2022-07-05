@@ -285,7 +285,28 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                             return null;
                         }
                     },
-                    (s, p) -> Path.of(s)
+                    (s, p) -> {
+                        // note: experimental impl
+                        Path buildRootLong = Path.of(s).normalize().toAbsolutePath();
+                        if (buildRootLong.toString().length() <= 240) {
+                            return buildRootLong;
+                        }
+                        if (!Files.exists(buildRootLong)) {
+                            try {
+                                Files.createDirectories(buildRootLong);
+                            } catch (IOException e) {
+                                return null;
+                            }
+                        }
+                        String longPathPrefix = "\\\\?\\";
+                        String buildRootShort = getShortPath( longPathPrefix + buildRootLong.toString());
+                        Log.verbose("buildRootLong: [" + buildRootLong + "]");
+                        Log.verbose("buildRootShort: [" + buildRootShort + "]");
+                        if (buildRootShort.isEmpty()) {
+                            return buildRootLong;
+                        }
+                        return Path.of(buildRootShort.substring(longPathPrefix.length()));
+                    }
             );
 
     public static final StandardBundlerParam<Path> CONFIG_ROOT =
@@ -647,4 +668,10 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
 
         return appVersion;
     }
+
+    // todo: move to Windows-specific place
+    static {
+        System.loadLibrary("jpackage");
+    }
+    private static native String getShortPath(String longPath);
 }
