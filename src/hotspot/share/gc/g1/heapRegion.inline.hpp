@@ -189,7 +189,7 @@ inline void HeapRegion::reset_skip_compacting_after_full_gc() {
   _marked_bytes = used();
   _garbage_bytes = 0;
 
-  _top_at_mark_start = bottom();
+  set_top_at_mark_start(bottom());
 
   reset_after_full_gc_common();
 }
@@ -267,6 +267,14 @@ inline void HeapRegion::update_bot_for_obj(HeapWord* obj_start, size_t obj_size)
   _bot_part.update_for_block(obj_start, obj_end);
 }
 
+inline HeapWord* HeapRegion::top_at_mark_start() const {
+  return Atomic::load(&_top_at_mark_start);
+}
+
+inline void HeapRegion::set_top_at_mark_start(HeapWord* value) {
+  Atomic::store(&_top_at_mark_start, value);
+}
+
 inline HeapWord* HeapRegion::parsable_bottom() const {
   assert(!is_init_completed() || SafepointSynchronize::is_at_safepoint(), "only during initialization or safepoint");
   return _parsable_bottom;
@@ -283,7 +291,7 @@ inline void HeapRegion::reset_parsable_bottom() {
 inline void HeapRegion::note_start_of_marking() {
   assert(!is_closed_archive() || top_at_mark_start() == bottom(), "CA region's TAMS must always be at bottom");
   if (!is_closed_archive()) {
-    _top_at_mark_start = top();
+    set_top_at_mark_start(top());
   }
   _gc_efficiency = -1.0;
 }
@@ -292,16 +300,26 @@ inline void HeapRegion::note_end_of_marking(size_t marked_bytes) {
   assert_at_safepoint();
 
   _marked_bytes = marked_bytes;
-  _garbage_bytes = byte_size(bottom(), _top_at_mark_start) - _marked_bytes;
+  _garbage_bytes = byte_size(bottom(), top_at_mark_start()) - _marked_bytes;
 
   if (needs_scrubbing()) {
-    _parsable_bottom = _top_at_mark_start;
+    _parsable_bottom = top_at_mark_start();
   }
-  _top_at_mark_start = bottom();
 }
 
 inline void HeapRegion::note_end_of_scrubbing() {
   reset_parsable_bottom();
+}
+
+inline void HeapRegion::note_end_of_clearing() {
+  // We do not need a release store here because
+  //
+  // - if this method is called during concurrent bitmap clearing, we do not read
+  // the bitmap any more for live/dead information (we do not read the bitmap at
+  // all at that point).
+  // - otherwise we reclaim regions only during GC and we do not read tams and the
+  // bitmap concurrently.
+  set_top_at_mark_start(bottom());
 }
 
 inline bool HeapRegion::in_collection_set() const {

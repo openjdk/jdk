@@ -627,13 +627,6 @@ private:
         return true;
       }
 
-      // When calling this concurrent to the application, pb must already be reset, so
-      // resetting it again does not hurt. At a safepoint, when we clear the bitmap,
-      // we must reset pb to be consistent with the (then cleared) marks.
-      assert(!_suspendible || r->parsable_bottom_acquire() == r->bottom(),
-             "While concurrently clearing the bitmap, parsable bottom must already be reset.");
-      r->reset_parsable_bottom();
-
       HeapWord* cur = r->bottom();
       HeapWord* const end = region_clear_limit(r);
 
@@ -659,6 +652,8 @@ private:
         }
       }
       assert(cur >= end, "Must have completed iteration over the bitmap for region %u.", r->hrm_index());
+
+      r->note_end_of_clearing();
 
       return false;
     }
@@ -1881,13 +1876,13 @@ void G1ConcurrentMark::flush_all_task_caches() {
                        hits, misses, percent_of(hits, sum));
 }
 
-void G1ConcurrentMark::clear_range_in_bitmap(MemRegion mr) {
+void G1ConcurrentMark::clear_bitmap_for_region(HeapRegion* hr) {
   assert_at_safepoint();
-  _mark_bitmap.clear_range(mr);
+  _mark_bitmap.clear_range(MemRegion(hr->bottom(), hr->end()));
+  hr->note_end_of_clearing();
 }
 
-HeapRegion*
-G1ConcurrentMark::claim_region(uint worker_id) {
+HeapRegion* G1ConcurrentMark::claim_region(uint worker_id) {
   // "checkpoint" the finger
   HeapWord* finger = _finger;
 

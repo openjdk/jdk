@@ -230,7 +230,7 @@ private:
   // word until the top and/or end of the region, and is the part
   // of the region for which no marking was done, i.e. objects may
   // have been allocated in this part since the last mark phase.
-  HeapWord* _top_at_mark_start;
+  HeapWord* volatile _top_at_mark_start;
 
   // The area above this limit is fully parsable. This limit
   // is equal to bottom except from Remark and until the region has been
@@ -247,7 +247,7 @@ private:
   size_t _marked_bytes;    // Bytes known to be live via last completed marking.
 
   void init_top_at_mark_start() {
-    _top_at_mark_start = bottom();
+    set_top_at_mark_start(bottom());
     _parsable_bottom = bottom();
     _garbage_bytes = 0;
     _marked_bytes = 0;
@@ -356,7 +356,8 @@ public:
   }
 
   // Get the start of the unmarked area in this region.
-  HeapWord* top_at_mark_start() const { return _top_at_mark_start; }
+  HeapWord* top_at_mark_start() const;
+  void set_top_at_mark_start(HeapWord* value);
 
   // Retrieve parsable bottom; since it may be modified concurrently, outside a
   // safepoint the _acquire method must be used.
@@ -378,6 +379,9 @@ public:
 
   // Notify the region that scrubbing has completed.
   inline void note_end_of_scrubbing();
+
+  // Notify the region that the (corresponding) bitmap has been cleared.
+  inline void note_end_of_clearing();
 
   // During the concurrent scrubbing phase, can there be any areas with unloaded
   // classes or dead objects in this region?

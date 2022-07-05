@@ -282,12 +282,12 @@ void HeapRegion::note_self_forwarding_removal_start(bool during_concurrent_start
   if (during_concurrent_start) {
     // Self-forwarding marks all objects. Adjust TAMS so that these marks are
     // below it.
-    _top_at_mark_start = top();
+    set_top_at_mark_start(top());
   } else {
     // Outside of the mixed phase all regions that had an evacuation failure must
     // be young regions, and their TAMS is always bottom. Similarly, before the
     // start of the mixed phase, we scrubbed and reset TAMS to bottom.
-    assert(_top_at_mark_start == bottom(), "must be");
+    assert(top_at_mark_start() == bottom(), "must be");
   }
 }
 

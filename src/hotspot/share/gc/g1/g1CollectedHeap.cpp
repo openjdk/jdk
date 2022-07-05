@@ -1025,7 +1025,7 @@ void G1CollectedHeap::verify_before_full_collection(bool explicit_gc) {
   }
   _verifier->verify_region_sets_optional();
   _verifier->verify_before_gc(G1HeapVerifier::G1VerifyFull);
-  _verifier->verify_bitmap_clear(false /* above_tams_only */);
+  _verifier->verify_bitmap_clear(true /* above_tams_only */);
 }
 
 void G1CollectedHeap::prepare_heap_for_mutators() {
@@ -2958,8 +2958,7 @@ void G1CollectedHeap::record_obj_copy_mem_stats() {
 }
 
 void G1CollectedHeap::clear_bitmap_for_region(HeapRegion* hr) {
-  MemRegion mr(hr->bottom(), hr->end());
-  concurrent_mark()->clear_range_in_bitmap(mr);
+  concurrent_mark()->clear_bitmap_for_region(hr);
 }
 
 void G1CollectedHeap::free_region(HeapRegion* hr, FreeRegionList* free_list) {
