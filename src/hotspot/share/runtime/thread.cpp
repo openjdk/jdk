@@ -794,6 +794,10 @@ void JavaThread::set_threadOopHandles(oop p) {
 }
 
 oop JavaThread::threadObj() const {
+  Thread* current = Thread::current_or_null_safe();
+  assert(current != nullptr, "cannot be called by a detached thread");
+  guarantee(current != this || JavaThread::cast(current)->is_oop_safe(),
+            "current cannot touch oops after its GC barrier is detached.");
   return _threadObj.resolve();
 }
 
@@ -2144,9 +2148,15 @@ void JavaThread::print_name_on_error(outputStream* st, char *buf, int buflen) co
 // JavaThread::print() is that we can't grab lock or allocate memory.
 void JavaThread::print_on_error(outputStream* st, char *buf, int buflen) const {
   st->print("%s \"%s\"", type_name(), get_thread_name_string(buf, buflen));
-  oop thread_obj = threadObj();
-  if (thread_obj != NULL) {
-    if (java_lang_Thread::is_daemon(thread_obj)) st->print(" daemon");
+  Thread* current = Thread::current_or_null_safe();
+  assert(current != nullptr, "cannot be called by a detached thread");
+  if (!current->is_Java_thread() || JavaThread::cast(current)->is_oop_safe()) {
+    // Only access threadObj() if current thread is not a JavaThread
+    // or if it is a JavaThread that can safely access oops.
+    oop thread_obj = threadObj();
+    if (thread_obj != nullptr) {
+      if (java_lang_Thread::is_daemon(thread_obj)) st->print(" daemon");
+    }
   }
   st->print(" [");
   st->print("%s", _get_thread_state_name(_thread_state));
@@ -2205,23 +2215,43 @@ const char* JavaThread::name() const  {
 // descriptive string if there is no set name.
 const char* JavaThread::get_thread_name_string(char* buf, int buflen) const {
   const char* name_str;
-  oop thread_obj = threadObj();
-  if (thread_obj != NULL) {
-    oop name = java_lang_Thread::name(thread_obj);
-    if (name != NULL) {
-      if (buf == NULL) {
-        name_str = java_lang_String::as_utf8_string(name);
+#ifdef ASSERT
+  Thread* current = Thread::current_or_null_safe();
+  assert(current != nullptr, "cannot be called by a detached thread");
+  if (!current->is_Java_thread() || JavaThread::cast(current)->is_oop_safe()) {
+    // Only access threadObj() if current thread is not a JavaThread
+    // or if it is a JavaThread that can safely access oops.
+#endif
+    oop thread_obj = threadObj();
+    if (thread_obj != NULL) {
+      oop name = java_lang_Thread::name(thread_obj);
+      if (name != NULL) {
+        if (buf == NULL) {
+          name_str = java_lang_String::as_utf8_string(name);
+        } else {
+          name_str = java_lang_String::as_utf8_string(name, buf, buflen);
+        }
+      } else if (is_attaching_via_jni()) { // workaround for 6412693 - see 6404306
+        name_str = "<no-name - thread is attaching>";
       } else {
-        name_str = java_lang_String::as_utf8_string(name, buf, buflen);
+        name_str = "<un-named>";
       }
-    } else if (is_attaching_via_jni()) { // workaround for 6412693 - see 6404306
-      name_str = "<no-name - thread is attaching>";
     } else {
-      name_str = "<un-named>";
+      name_str = Thread::name();
     }
+#ifdef ASSERT
   } else {
-    name_str = Thread::name();
+    // Current JavaThread has exited...
+    if (current == this) {
+      // ... and is asking about itself:
+      name_str = "<no-name - current JavaThread has exited>";
+    } else {
+      // ... and it can't safely determine this JavaThread's name so
+      // use the default thread name.
+      name_str = Thread::name();
+    }
   }
+#endif
   assert(name_str != NULL, "unexpected NULL thread name");
   return name_str;
 }

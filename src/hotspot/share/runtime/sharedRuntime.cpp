@@ -997,9 +997,6 @@ JRT_END
 
 jlong SharedRuntime::get_java_tid(Thread* thread) {
   if (thread != NULL && thread->is_Java_thread()) {
-    Thread* current = Thread::current();
-    guarantee(current != thread || JavaThread::cast(thread)->is_oop_safe(),
-              "current cannot touch oops after its GC barrier is detached.");
     oop obj = JavaThread::cast(thread)->threadObj();
     return (obj == NULL) ? 0 : java_lang_Thread::thread_id(obj);
   }
