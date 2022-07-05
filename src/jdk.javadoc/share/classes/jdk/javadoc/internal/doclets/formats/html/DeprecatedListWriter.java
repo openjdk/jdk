@@ -121,7 +121,7 @@ public class DeprecatedListWriter extends SummaryListWriter<DeprecatedAPIListBui
     protected void addComments(Element e, Content desc) {
         List<? extends DeprecatedTree> tags = utils.getDeprecatedTrees(e);
         if (!tags.isEmpty()) {
-            addInlineDeprecatedComment(e, tags.get(0), desc);
+            addInlineComment(e, tags.get(0), desc);
         } else {
             desc.add(Text.EMPTY);
         }
