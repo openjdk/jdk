@@ -43,21 +43,6 @@ public class Extensions {
         return Optional.of(s);
     }
 
-    @Test
-    public static void exceptions() {
-        Path path = Path.of("file.ext");
-
-        Assert.assertThrows(NullPointerException.class,
-                            () -> {path.hasExtension(null);});
-
-        Assert.assertThrows(NullPointerException.class,
-                            () -> {path.replaceExtension(null);});
-        Assert.assertThrows(IllegalArgumentException.class,
-                            () -> {path.replaceExtension(".leading");});
-        Assert.assertThrows(IllegalArgumentException.class,
-                            () -> {path.replaceExtension("trailing.");});
-    }
-
     /**
      * Returns path name string and expected extension pairs.
      *
@@ -92,6 +77,9 @@ public class Extensions {
             {"music.mp3",      of("mp3")},
             {"video.mp4",      of("mp4")},
             {"document.txt",   of("txt")},
+            {"x.zip",          of("zip")},
+            {"y.gzip",         of("gzip")},
+            {"z.jar",          of("jar")},
         };
         return pairs;
     }
