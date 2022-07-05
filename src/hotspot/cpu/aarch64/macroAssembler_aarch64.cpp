@@ -184,10 +184,10 @@ static inline uint32_t dispatchGroup(uint32_t insn) {
 
 // Patch any kind of instruction; there may be several instructions.
 // Return the total length (in bytes) of the instructions.
-int MacroAssembler::pd_patch_instruction_size(address branch, address target) {
+int MacroAssembler::pd_patch_instruction_size(address branch, address value) {
   int instructions = 1;
-  assert((uint64_t)target < (1ull << 48), "48-bit overflow in address constant");
-  intptr_t offset = (target - branch) >> 2;
+  assert((uint64_t)value < (1ull << 48), "48-bit overflow in address constant");
+  intptr_t offset = (value - branch) >> 2;
   unsigned insn = *(unsigned*)branch;
   uint32_t dispatch = dispatchGroup(insn);
   switch(dispatch) {
@@ -200,7 +200,7 @@ int MacroAssembler::pd_patch_instruction_size(address branch, address target) {
         break;
       } else {
         // nothing to do
-        assert(target == 0, "did not expect to relocate target for polling page load");
+        assert(value == 0, "did not expect to relocate target for polling page load");
       }
       break;
     }
@@ -243,12 +243,12 @@ int MacroAssembler::pd_patch_instruction_size(address branch, address target) {
     case 0b1000: {
       assert(Instruction_aarch64::extract(insn, 28, 24) == 0b10000, "must be");
       // PC-rel. addressing
-      offset = target-branch;
+      offset = value-branch;
       int shift = Instruction_aarch64::extract(insn, 31, 31);
       if (shift) {
-        uint64_t dest = (uint64_t)target;
+        uint64_t dest = (uint64_t)value;
         uint64_t pc_page = (uint64_t)branch >> 12;
-        uint64_t adr_page = (uint64_t)target >> 12;
+        uint64_t adr_page = (uint64_t)value >> 12;
         unsigned offset_lo = dest & 0xfff;
         offset = adr_page - pc_page;
 
@@ -298,8 +298,8 @@ int MacroAssembler::pd_patch_instruction_size(address branch, address target) {
                 Instruction_aarch64::extract(insn, 4, 0) ==
                 Instruction_aarch64::extract(insn2, 4, 0)) {
               // movk #imm16<<32
-              Instruction_aarch64::patch(branch + 4, 20, 5, (uint64_t)target >> 32);
-              uintptr_t dest = ((uintptr_t)target & 0xffffffffULL) | ((uintptr_t)branch & 0xffff00000000ULL);
+              Instruction_aarch64::patch(branch + 4, 20, 5, (uint64_t)value >> 32);
+              uintptr_t dest = ((uintptr_t)value & 0xffffffffULL) | ((uintptr_t)branch & 0xffff00000000ULL);
               uintptr_t pc_page = (uintptr_t)branch >> 12;
               uintptr_t adr_page = (uintptr_t)dest >> 12;
               offset = adr_page - pc_page;
@@ -321,14 +321,14 @@ int MacroAssembler::pd_patch_instruction_size(address branch, address target) {
     // immediate constant
     case 0b1001: {
       assert(Instruction_aarch64::extract(insn, 31, 21) == 0b11010010100, "must be");
-      uint64_t dest = (uint64_t)target;
+      uint64_t dest = (uint64_t)value;
       // Move wide constant
       assert(nativeInstruction_at(branch+4)->is_movk(), "wrong insns in patch");
       assert(nativeInstruction_at(branch+8)->is_movk(), "wrong insns in patch");
       Instruction_aarch64::patch(branch, 20, 5, dest & 0xffff);
       Instruction_aarch64::patch(branch+4, 20, 5, (dest >>= 16) & 0xffff);
       Instruction_aarch64::patch(branch+8, 20, 5, (dest >>= 16) & 0xffff);
-      assert(target_addr_for_insn(branch) == target, "should be");
+      assert(target_addr_for_insn(branch) == value, "should be");
       instructions = 3;
       break;
     }
