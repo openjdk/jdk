@@ -22,6 +22,7 @@
  */
 
 import org.testng.annotations.BeforeClass;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -46,13 +47,13 @@ import static org.testng.AssertJUnit.assertEquals;
 public class TestDelegation {
 
     // Non-existent Path to be used by the test
-    private Path NON_EXISTENT_FILE;
+    private Path nonExistentFile;
     // Path to Temp directory used by the test
-    private Path TEMP_DIRECTORY;
+    private Path tempDirectory;
     // Valid file Path used by the test
-    private Path FILE_THAT_EXISTS;
+    private Path fileThatExists;
     // The FileSystemProvider used by the test
-    private MyProvider PROVIDER;
+    private MyProvider myProvider;
 
 
     /**
@@ -63,13 +64,13 @@ public class TestDelegation {
      */
     @BeforeClass
     public void setup() throws IOException {
-        PROVIDER = new MyProvider();
-        FileSystem fs = PROVIDER.getFileSystem(URI.create("/"));
+        myProvider = new MyProvider();
+        FileSystem fs = myProvider.getFileSystem(URI.create("/"));
         // Path to Current Working Directory
         Path cwd = fs.getPath(".");
-        TEMP_DIRECTORY = Files.createTempDirectory(cwd, "tmp");
-        FILE_THAT_EXISTS = Files.createFile(TEMP_DIRECTORY.resolve("file"));
-        NON_EXISTENT_FILE = TEMP_DIRECTORY.resolve("doesNotExist");
+        tempDirectory = Files.createTempDirectory(cwd, "tmp");
+        fileThatExists = Files.createFile(tempDirectory.resolve("file"));
+        nonExistentFile = tempDirectory.resolve("doesNotExist");
     }
 
     /**
@@ -84,9 +85,9 @@ public class TestDelegation {
     @DataProvider
     private Object[][] testExists() {
         return new Object[][]{
-                {TEMP_DIRECTORY, true},
-                {FILE_THAT_EXISTS, true},
-                {NON_EXISTENT_FILE, false}
+                {tempDirectory, true},
+                {fileThatExists, true},
+                {nonExistentFile, false}
         };
     }
 
@@ -102,9 +103,9 @@ public class TestDelegation {
     @DataProvider
     private Object[][] testIsDirectory() {
         return new Object[][]{
-                {TEMP_DIRECTORY, true},
-                {FILE_THAT_EXISTS, false},
-                {NON_EXISTENT_FILE, false}
+                {tempDirectory, true},
+                {fileThatExists, false},
+                {nonExistentFile, false}
         };
     }
     /**
@@ -119,10 +120,18 @@ public class TestDelegation {
     @DataProvider
     private Object[][] testIsRegularFile() {
         return new Object[][]{
-                {TEMP_DIRECTORY, false},
-                {FILE_THAT_EXISTS, true},
-                {NON_EXISTENT_FILE, false}
+                {tempDirectory, false},
+                {fileThatExists, true},
+                {nonExistentFile, false}
         };
+    }
+
+    /**
+     * Clear our Map prior to each test run
+     */
+    @BeforeMethod
+    public void resetParams() {
+        myProvider.resetCalls();
     }
 
     /**
@@ -136,9 +145,8 @@ public class TestDelegation {
     public void testExists(Path p, boolean exists) {
         assertEquals(Files.exists(p), exists);
         // We should only have called exists once
-        assertEquals(1, PROVIDER.findCall("exists").size());
-        assertEquals(0, PROVIDER.findCall("readAttributesIfExists").size());
-        PROVIDER.resetCalls();
+        assertEquals(1, myProvider.findCall("exists").size());
+        assertEquals(0, myProvider.findCall("readAttributesIfExists").size());
     }
 
     /**
@@ -152,9 +160,8 @@ public class TestDelegation {
     public void testIsDirectory(Path p, boolean isDir) {
         assertEquals(Files.isDirectory(p), isDir);
         // We should only have called readAttributesIfExists once
-        assertEquals(0, PROVIDER.findCall("exists").size());
-        assertEquals(1, PROVIDER.findCall("readAttributesIfExists").size());
-        PROVIDER.resetCalls();
+        assertEquals(0, myProvider.findCall("exists").size());
+        assertEquals(1, myProvider.findCall("readAttributesIfExists").size());
     }
 
     /**
@@ -168,9 +175,8 @@ public class TestDelegation {
     public void testIsRegularFile(Path p, boolean isFile) {
         assertEquals(Files.isRegularFile(p), isFile);
         // We should only have called readAttributesIfExists once
-        assertEquals(0, PROVIDER.findCall("exists").size());
-        assertEquals(1, PROVIDER.findCall("readAttributesIfExists").size());
-        PROVIDER.resetCalls();
+        assertEquals(0, myProvider.findCall("exists").size());
+        assertEquals(1, myProvider.findCall("readAttributesIfExists").size());
     }
 
     /**
