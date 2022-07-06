@@ -66,7 +66,20 @@ public class Text extends Content {
 
     @Override
     public int charCount() {
-        return string.length();
+        return charCount(string);
+    }
+
+    static int charCount(CharSequence cs) {
+        int count = 0;
+        for (int i = 0; i < cs.length(); i++) {
+            // Windows uses "\r\n" as line separator while UNIX uses "\n".
+            // Skip the "\r" to get consistent results across platforms.
+            if (cs.charAt(i) == '\r' && (i + 1 < cs.length()) && cs.charAt(i + 1) == '\n') {
+                i++;
+            }
+            count++;
+        }
+        return count;
     }
 
     @Override

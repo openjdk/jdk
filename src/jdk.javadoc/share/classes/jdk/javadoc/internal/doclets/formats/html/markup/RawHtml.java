@@ -152,9 +152,12 @@ public class RawHtml extends Content {
                             count++;
                             break;
                         case '\r':
-                        case '\n':
                             // Windows uses "\r\n" as line separator while UNIX uses "\n".
-                            // Ignore line separators to get consistent results across platforms.
+                            // Skip the "\r" to get consistent results across platforms.
+                            if (i + 1 < htmlText.length() && htmlText.charAt(i + 1) == '\n') {
+                                i++;
+                            }
+                            count++;
                             break;
                         default:
                             count++;

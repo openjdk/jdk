@@ -74,7 +74,7 @@ public class TextBuilder extends Content {
 
     @Override
     public int charCount() {
-        return stringBuilder.length();
+        return Text.charCount(stringBuilder);
     }
 
     @Override
