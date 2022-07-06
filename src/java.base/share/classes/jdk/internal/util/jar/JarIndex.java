@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ public class JarIndex {
 
     /**
      * The hash map that maintains mappings from
-     * package/classe/resource to jar file list(s)
+     * package/class/resource to jar file list(s)
      */
     private final HashMap<String, List<String>> indexMap;
 
@@ -263,9 +263,8 @@ public class JarIndex {
                 bw.write(jar + "\n");
                 List<String> jarlist = jarMap.get(jar);
                 if (jarlist != null) {
-                    Iterator<String> listitr = jarlist.iterator();
-                    while(listitr.hasNext()) {
-                        bw.write(listitr.next() + "\n");
+                    for (String s : jarlist) {
+                        bw.write(s + "\n");
                     }
                 }
                 bw.write("\n");
@@ -320,14 +319,10 @@ public class JarIndex {
      *
      */
     public void merge(JarIndex toIndex, String path) {
-        Iterator<Map.Entry<String, List<String>>> itr = indexMap.entrySet().iterator();
-        while(itr.hasNext()) {
-            Map.Entry<String, List<String>> e = itr.next();
+        for (Map.Entry<String, List<String>> e : indexMap.entrySet()) {
             String packageName = e.getKey();
             List<String> from_list = e.getValue();
-            Iterator<String> listItr = from_list.iterator();
-            while(listItr.hasNext()) {
-                String jarName = listItr.next();
+            for (String jarName : from_list) {
                 if (path != null) {
                     jarName = path.concat(jarName);
                 }

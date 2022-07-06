@@ -270,8 +270,7 @@ public class TestDeprecatedDocs extends JavadocTester {
                     <li><a href="#for-removal">Terminally Deprecated</a></li>
                     <li><a href="#class">Classes</a></li>
                     <li><a href="#enum-class">Enum Classes</a></li>
-                    <li><a href="#exception">Exceptions</a></li>
-                    <li><a href="#error">Errors</a></li>
+                    <li><a href="#exception-class">Exception Classes</a></li>
                     <li><a href="#annotation-interface">Annotation Interfaces</a></li>
                     <li><a href="#field">Fields</a></li>
                     <li><a href="#method">Methods</a></li>
@@ -296,13 +295,17 @@ public class TestDeprecatedDocs extends JavadocTester {
                     <div class="deprecation-comment">enum_test1 passes.</div>
                     </div>""",
                 """
-                    <div id="exception">
-                    <div class="caption"><span>Deprecated Exceptions</span></div>
+                    <div id="exception-class">
+                    <div class="caption"><span>Deprecated Exception Classes</span></div>
                     <div class="summary-table two-column-summary">
-                    <div class="table-header col-first">Exceptions</div>
+                    <div class="table-header col-first">Exception Class</div>
                     <div class="table-header col-last">Description</div>
-                    <div class="col-summary-item-name even-row-color"><a href="pkg/TestException.html" title="class in pkg">pkg.TestException</a></div>
+                    <div class="col-summary-item-name even-row-color"><a href="pkg/TestError.html" title="class in pkg">pkg.TestError</a></div>
                     <div class="col-last even-row-color">
+                    <div class="deprecation-comment">error_test1 passes.</div>
+                    </div>
+                    <div class="col-summary-item-name odd-row-color"><a href="pkg/TestException.html" title="class in pkg">pkg.TestException</a></div>
+                    <div class="col-last odd-row-color">
                     <div class="deprecation-comment">exception_test1 passes.</div>
                     </div>""",
                 """

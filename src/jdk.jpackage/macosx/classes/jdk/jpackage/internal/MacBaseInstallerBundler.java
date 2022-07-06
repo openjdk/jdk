@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
 
 public abstract class MacBaseInstallerBundler extends AbstractBundler {
 
-    public final BundlerParamInfo<Path> APP_IMAGE_TEMP_ROOT =
+    private final BundlerParamInfo<Path> APP_IMAGE_TEMP_ROOT =
             new StandardBundlerParam<>(
             "mac.app.imageRoot",
             Path.class,
@@ -95,7 +95,7 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
             },
             (s, p) -> s);
 
-    protected static String getInstallDir(
+    static String getInstallDir(
             Map<String, ? super Object>  params, boolean defaultOnly) {
         String returnValue = INSTALL_DIR.fetchFrom(params);
         if (defaultOnly && returnValue != null) {
@@ -140,14 +140,9 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
                     SIGN_BUNDLE.fetchFrom(params)).orElse(Boolean.FALSE)) {
                 // if signing bundle with app-image, warn user if app-image
                 // is not already signed.
-                try {
-                    if (!(AppImageFile.load(applicationImage).isSigned())) {
-                        Log.info(MessageFormat.format(I18N.getString(
-                                 "warning.unsigned.app.image"), getID()));
-                    }
-                } catch (IOException ioe) {
-                    // Ignore - In case of a forign or tampered with app-image,
-                    // user is notified of this when the name is extracted.
+                if (!(AppImageFile.load(applicationImage).isSigned())) {
+                    Log.info(MessageFormat.format(I18N.getString(
+                            "warning.unsigned.app.image"), getID()));
                 }
             }
         } else {
@@ -156,15 +151,25 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
     }
 
     protected Path prepareAppBundle(Map<String, ? super Object> params)
-            throws PackagerException {
+            throws PackagerException, IOException {
+        Path appDir;
+        Path appImageRoot = APP_IMAGE_TEMP_ROOT.fetchFrom(params);
         Path predefinedImage =
                 StandardBundlerParam.getPredefinedAppImage(params);
         if (predefinedImage != null) {
-            return predefinedImage;
+            appDir = appImageRoot.resolve(APP_NAME.fetchFrom(params) + ".app");
+            IOUtils.copyRecursive(predefinedImage, appDir);
+        } else {
+            appDir = appImageBundler.execute(params, appImageRoot);
         }
-        Path appImageRoot = APP_IMAGE_TEMP_ROOT.fetchFrom(params);
 
-        return appImageBundler.execute(params, appImageRoot);
+        if (!StandardBundlerParam.isRuntimeInstaller(params)) {
+            new PackageFile(APP_NAME.fetchFrom(params)).save(
+                    ApplicationLayout.macAppImage().resolveAt(appDir));
+           Files.deleteIfExists(AppImageFile.getPathInAppImage(appDir));
+        }
+
+        return appDir;
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1140,7 +1140,7 @@ static NSObject *sAttributeNamesLOCK = nil;
 
 - (BOOL)accessibilityIsSizeAttributeSettable
 {
-    // SIZE is settable in windows if [self styleMask] & NSResizableWindowMask - but windows are heavyweight so we're ok here
+    // SIZE is settable in windows if [self styleMask] & NSWindowStyleMaskResizable - but windows are heavyweight so we're ok here
     // SIZE is settable in columns if [[self tableValue] allowsColumnResizing - haven't dealt with columns yet
     return NO;
 }
@@ -1380,6 +1380,7 @@ static NSObject *sAttributeNamesLOCK = nil;
 
 - (id)accessibilityHitTest:(NSPoint)point withEnv:(JNIEnv *)env
 {
+    GET_CACCESSIBILITY_CLASS_RETURN(nil);
     DECLARE_CLASS_RETURN(jc_Container, "java/awt/Container", nil);
     DECLARE_STATIC_METHOD_RETURN(jm_accessibilityHitTest, sjc_CAccessibility, "accessibilityHitTest",
                                  "(Ljava/awt/Container;FF)Ljavax/accessibility/Accessible;", nil);
@@ -1514,54 +1515,6 @@ JNI_COCOA_ENTER(env);
     [ThreadUtilities performOnMainThread:@selector(postTitleChanged) on:(JavaComponentAccessibility*)jlong_to_ptr(element) withObject:nil waitUntilDone:NO];
 JNI_COCOA_EXIT(env);
  }
-
-/*
- * Class:     sun_lwawt_macosx_CAccessible
- * Method:    menuOpened
- * Signature: (I)V
- */
-JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CAccessible_menuOpened
-(JNIEnv *env, jclass jklass, jlong element)
-{
-JNI_COCOA_ENTER(env);
-    [ThreadUtilities performOnMainThread:@selector(postMenuOpened)
-                     on:(JavaComponentAccessibility *)jlong_to_ptr(element)
-                     withObject:nil
-                     waitUntilDone:NO];
-JNI_COCOA_EXIT(env);
-}
-
-/*
- * Class:     sun_lwawt_macosx_CAccessible
- * Method:    menuClosed
- * Signature: (I)V
- */
-JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CAccessible_menuClosed
-(JNIEnv *env, jclass jklass, jlong element)
-{
-JNI_COCOA_ENTER(env);
-    [ThreadUtilities performOnMainThread:@selector(postMenuClosed)
-                     on:(JavaComponentAccessibility *)jlong_to_ptr(element)
-                     withObject:nil
-                     waitUntilDone:NO];
-JNI_COCOA_EXIT(env);
-}
-
-/*
- * Class:     sun_lwawt_macosx_CAccessible
- * Method:    menuItemSelected
- * Signature: (I)V
- */
-JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CAccessible_menuItemSelected
-(JNIEnv *env, jclass jklass, jlong element)
-{
-JNI_COCOA_ENTER(env);
-    [ThreadUtilities performOnMainThread:@selector(postMenuItemSelected)
-                     on:(JavaComponentAccessibility *)jlong_to_ptr(element)
-                     withObject:nil
-                     waitUntilDone:NO];
-JNI_COCOA_EXIT(env);
-}
 
 /*
  * Class:     sun_lwawt_macosx_CAccessible

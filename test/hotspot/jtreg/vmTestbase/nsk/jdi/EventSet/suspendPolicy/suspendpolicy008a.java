@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 package nsk.jdi.EventSet.suspendPolicy;
 
 import nsk.share.*;
-import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 
 /**
@@ -54,13 +53,13 @@ public class suspendpolicy008a {
 
     //====================================================== test program
 
-    static Threadsuspendpolicy008a thread0 = null;
-    static Threadsuspendpolicy008a thread1 = null;
-    static Threadsuspendpolicy008a thread2 = null;
-    static Threadsuspendpolicy008a thread3 = null;
-    static Threadsuspendpolicy008a thread4 = null;
-    static Threadsuspendpolicy008a thread5 = null;
-    static Threadsuspendpolicy008a thread6 = null;
+    static Thread thread0 = null;
+    static Thread thread1 = null;
+    static Thread thread2 = null;
+    static Thread thread3 = null;
+    static Thread thread4 = null;
+    static Thread thread5 = null;
+    static Thread thread6 = null;
 
     //------------------------------------------------------ common section
 
@@ -105,47 +104,47 @@ public class suspendpolicy008a {
     //------------------------------------------------------  section tested
 
                     case 0:
-                            thread0 = new Threadsuspendpolicy008a("thread0");
+                            thread0 = JDIThreadFactory.newThread(new Threadsuspendpolicy008a("thread0"));
                             methodForCommunication();
 
                             threadStart(thread0);
 
-                            thread1 = new Threadsuspendpolicy008a("thread1");
+                            thread1 = JDIThreadFactory.newThread(new Threadsuspendpolicy008a("thread1"));
                             methodForCommunication();
                             break;
 
                     case 1:
                             threadStart(thread1);
 
-                            thread2 = new Threadsuspendpolicy008a("thread2");
+                            thread2 = JDIThreadFactory.newThread(new Threadsuspendpolicy008a("thread2"));
                             methodForCommunication();
                             break;
 
                     case 2:
                             threadStart(thread2);
 
-                            thread3 = new Threadsuspendpolicy008a("thread3");
+                            thread3 = JDIThreadFactory.newThread(new Threadsuspendpolicy008a("thread3"));
                             methodForCommunication();
                             break;
 
                     case 3:
                             threadStart(thread3);
 
-                            thread4 = new Threadsuspendpolicy008a("thread4");
+                            thread4 = JDIThreadFactory.newThread(new Threadsuspendpolicy008a("thread4"));
                             methodForCommunication();
                             break;
 
                     case 4:
                             threadStart(thread4);
 
-                            thread5 = new Threadsuspendpolicy008a("thread5");
+                            thread5 = JDIThreadFactory.newThread(new Threadsuspendpolicy008a("thread5"));
                             methodForCommunication();
                             break;
 
                     case 5:
                             threadStart(thread5);
 
-                            thread6 = new Threadsuspendpolicy008a("thread6");
+                            thread6 = JDIThreadFactory.newThread(new Threadsuspendpolicy008a("thread6"));
                             methodForCommunication();
                             break;
 
@@ -180,21 +179,18 @@ public class suspendpolicy008a {
         return PASSED;
     }
 
-    static class Threadsuspendpolicy008a extends Thread {
-
-        String tName = null;
+    static class Threadsuspendpolicy008a extends NamedTask {
 
         public Threadsuspendpolicy008a(String threadName) {
             super(threadName);
-            tName = threadName;
         }
 
         public void run() {
-            log1("  'run': enter  :: threadName == " + tName);
+            log1("  'run': enter  :: threadName == " + getName());
             synchronized (waitnotifyObj) {
                     waitnotifyObj.notify();
             }
-            log1("  'run': exit   :: threadName == " + tName);
+            log1("  'run': exit   :: threadName == " + getName());
             return;
         }
     }

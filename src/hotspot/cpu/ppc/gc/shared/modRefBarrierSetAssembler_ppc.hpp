@@ -57,6 +57,10 @@ public:
                         Register base, RegisterOrConstant ind_or_offs, Register val,
                         Register tmp1, Register tmp2, Register tmp3,
                         MacroAssembler::PreservationLevel preservation_level);
+
+  virtual void resolve_jobject(MacroAssembler* masm, Register value,
+                               Register tmp1, Register tmp2,
+                               MacroAssembler::PreservationLevel preservation_level);
 };
 
 #endif // CPU_PPC_GC_SHARED_MODREFBARRIERSETASSEMBLER_PPC_HPP

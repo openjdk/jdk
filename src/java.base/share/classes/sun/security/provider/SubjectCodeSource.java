@@ -384,9 +384,7 @@ class SubjectCodeSource extends CodeSource implements java.io.Serializable {
             }
         }
         if (principals != null) {
-            ListIterator<PrincipalEntry> li = principals.listIterator();
-            while (li.hasNext()) {
-                PrincipalEntry pppe = li.next();
+            for (PrincipalEntry pppe : principals) {
                 returnMe = returnMe + ResourcesMgr.getAuthResourceString("NEWLINE") +
                         pppe.getPrincipalClass() + " " +
                         pppe.getPrincipalName();

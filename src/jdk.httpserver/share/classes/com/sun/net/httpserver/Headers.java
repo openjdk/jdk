@@ -25,6 +25,7 @@
 
 package com.sun.net.httpserver;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -33,6 +34,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.stream.Collectors;
+import sun.net.httpserver.UnmodifiableHeaders;
 
 /**
  * HTTP request and response headers are represented by this class which
@@ -65,6 +68,14 @@ import java.util.function.BiFunction;
  *     value given overwriting any existing values in the value list.
  * </ul>
  *
+ * <p> An instance of {@code Headers} is either <i>mutable</i> or <i>immutable</i>.
+ * A <i>mutable headers</i> allows to add, remove, or modify header names and
+ * values, e.g. the instance returned by {@link HttpExchange#getResponseHeaders()}.
+ * An <i>immutable headers</i> disallows any modification to header names or
+ * values, e.g. the instance returned by {@link HttpExchange#getRequestHeaders()}.
+ * The mutator methods for an immutable headers instance unconditionally throw
+ * {@code UnsupportedOperationException}.
+ *
  * <p> All methods in this class reject {@code null} values for keys and values.
  * {@code null} keys will never be present in HTTP request or response headers.
  * @since 1.6
@@ -77,6 +88,25 @@ public class Headers implements Map<String,List<String>> {
      * Creates an empty instance of {@code Headers}.
      */
     public Headers() {map = new HashMap<>(32);}
+
+    /**
+     * Creates a mutable {@code Headers} from the given {@code headers} with
+     * the same header names and values.
+     *
+     * @param headers a map of header names and values
+     * @throws NullPointerException if {@code headers} or any of its names or
+     *                              values are null, or if any value contains
+     *                              null.
+     * @since 18
+     */
+    public Headers(Map<String,List<String>> headers) {
+        Objects.requireNonNull(headers);
+        var h = headers.entrySet().stream()
+                .collect(Collectors.toUnmodifiableMap(
+                        Entry::getKey, e -> new LinkedList<>(e.getValue())));
+        map = new HashMap<>(32);
+        this.putAll(h);
+    }
 
     /**
      * Normalize the key by converting to following form.
@@ -253,5 +283,56 @@ public class Headers implements Map<String,List<String>> {
         sb.append(map.toString());
         sb.append(" }");
         return sb.toString();
+    }
+
+    /**
+     * Returns an immutable {@code Headers} with the given name value pairs as
+     * its set of headers.
+     *
+     * <p> The supplied {@code String} instances must alternate as header names
+     * and header values. To add several values to the same name, the same name
+     * must be supplied with each new value. If the supplied {@code headers} is
+     * empty, then an empty {@code Headers} is returned.
+     *
+     * @param headers the list of name value pairs
+     * @return an immutable headers with the given name value pairs
+     * @throws NullPointerException     if {@code headers} or any of its
+     *                                  elements are null.
+     * @throws IllegalArgumentException if the number of supplied strings is odd.
+     * @since 18
+     */
+    public static Headers of(String... headers) {
+        Objects.requireNonNull(headers);
+        if (headers.length == 0) {
+            return new UnmodifiableHeaders(new Headers());
+        }
+        if (headers.length % 2 != 0) {
+            throw new IllegalArgumentException("wrong number, %d, of elements"
+                    .formatted(headers.length));
+        }
+        Arrays.stream(headers).forEach(Objects::requireNonNull);
+
+        var h = new Headers();
+        for (int i = 0; i < headers.length; i += 2) {
+            String name  = headers[i];
+            String value = headers[i + 1];
+            h.add(name, value);
+        }
+        return new UnmodifiableHeaders(h);
+    }
+
+    /**
+     * Returns an immutable {@code Headers} from the given {@code headers} with
+     * the same header names and values.
+     *
+     * @param headers a map of header names and values
+     * @return an immutable headers
+     * @throws NullPointerException if {@code headers} or any of its names or
+     *                              values are null, or if any value contains
+     *                              null.
+     * @since 18
+     */
+    public static Headers of(Map<String,List<String>> headers) {
+        return new UnmodifiableHeaders(new Headers(headers));
     }
 }

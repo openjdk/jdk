@@ -34,7 +34,6 @@ import java.awt.image.WritableRaster;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.Vector;
 
 public abstract class SimpleRenderedImage implements RenderedImage {
@@ -282,13 +281,7 @@ public abstract class SimpleRenderedImage implements RenderedImage {
             return null;
         }
 
-        // Copy the strings from the Vector over to a String array.
-        String[] prefixNames = new String[names.size()];
-        int count = 0;
-        for (Iterator<String> it = names.iterator(); it.hasNext(); ) {
-            prefixNames[count++] = it.next();
-        }
-
+        String[] prefixNames = names.toArray(new String[0]);
         return prefixNames;
     }
 

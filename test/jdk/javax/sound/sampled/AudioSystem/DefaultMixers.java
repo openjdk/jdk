@@ -38,6 +38,7 @@ import com.sun.media.sound.JDK13Services;
 
 /**
  * @test
+ * @key sound
  * @bug 4776511
  * @summary RFE: Setting the default MixerProvider. Test the retrieving of lines
  *          with defaut mixer properties.

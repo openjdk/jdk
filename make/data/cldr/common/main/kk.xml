@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -25,7 +25,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ada">адангме тілі</language>
 			<language type="ady">адыгей тілі</language>
 			<language type="af">африкаанс тілі</language>
-			<language type="agq">агхем тілі</language>
+			<language type="agq">агем тілі</language>
 			<language type="ain">айну тілі</language>
 			<language type="ak">акан тілі</language>
 			<language type="ale">алеут тілі</language>
@@ -91,6 +91,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="de_CH">швейцариялық әдеби неміс тілі</language>
 			<language type="dgr">догриб тілі</language>
 			<language type="dje">зарма тілі</language>
+			<language type="doi" draft="contributed">Догри</language>
 			<language type="dsb">төменгі лужица тілі</language>
 			<language type="dua">дуала тілі</language>
 			<language type="dv">дивехи тілі</language>
@@ -311,6 +312,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="quc">киче тілі</language>
 			<language type="rap">рапануй тілі</language>
 			<language type="rar">раротонган тілі</language>
+			<language type="rhg" draft="contributed">рохинджа</language>
 			<language type="rm">романш тілі</language>
 			<language type="rn">рунди тілі</language>
 			<language type="ro">румын тілі</language>
@@ -919,21 +921,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>G y 'ж'. d MMMM, EEEE</pattern>
+							<datetimeSkeleton>GyMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>G y 'ж'. d MMMM</pattern>
+							<datetimeSkeleton>GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>G dd.MM.y</pattern>
+							<datetimeSkeleton>GyMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>GGGGG dd.MM.y</pattern>
+							<datetimeSkeleton>GGGGGyMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -972,6 +978,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">G y 'ж'.</dateFormatItem>
+						<dateFormatItem id="GyMd" draft="contributed">d/M/y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMM">G y 'ж'. MMM</dateFormatItem>
 						<dateFormatItem id="GyMMMd">G y 'ж'. d MMM</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">G y 'ж'. d MMM, E</dateFormatItem>
@@ -1410,21 +1417,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>y 'ж'. d MMMM, EEEE</pattern>
+							<datetimeSkeleton>yMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>y 'ж'. d MMMM</pattern>
+							<datetimeSkeleton>yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>y 'ж'. dd MMM</pattern>
+							<datetimeSkeleton>yMMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>dd.MM.yy</pattern>
+							<datetimeSkeleton>yyMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -1432,21 +1443,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<timeFormatLength type="full">
 						<timeFormat>
 							<pattern>HH:mm:ss zzzz</pattern>
+							<datetimeSkeleton>HHmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
 							<pattern>HH:mm:ss z</pattern>
+							<datetimeSkeleton>HHmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
 							<pattern>HH:mm:ss</pattern>
+							<datetimeSkeleton>HHmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
 							<pattern>HH:mm</pattern>
+							<datetimeSkeleton>HHmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
@@ -1485,6 +1500,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">G y 'ж'.</dateFormatItem>
+						<dateFormatItem id="GyMd" draft="contributed">dd-MM-GGGGG y</dateFormatItem>
 						<dateFormatItem id="GyMMM">G y 'ж'. MMM</dateFormatItem>
 						<dateFormatItem id="GyMMMd">G y 'ж'. d MMM</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">G y 'ж'. d MMM, E</dateFormatItem>
@@ -4473,6 +4489,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Екатеринбург жазғы уақыты</daylight>
 				</long>
 			</metazone>
+			<metazone type="Yukon">
+				<long>
+					<standard draft="contributed">Юкон уақыты</standard>
+				</long>
+			</metazone>
 		</timeZoneNames>
 	</dates>
 	<numbers>
@@ -4815,14 +4836,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Қытай юані (офшор)</displayName>
 				<displayName count="one">Қытай юані (офшор)</displayName>
 				<displayName count="other">Қытай юані (офшор)</displayName>
-				<symbol draft="contributed">CNH</symbol>
+				<symbol>CNH</symbol>
 			</currency>
 			<currency type="CNY">
 				<displayName>Қытай юані</displayName>
 				<displayName count="one">Қытай юані</displayName>
 				<displayName count="other">Қытай юані</displayName>
 				<symbol>CN¥</symbol>
-				<symbol alt="narrow" draft="contributed">¥</symbol>
+				<symbol alt="narrow">¥</symbol>
 			</currency>
 			<currency type="COP">
 				<displayName>Колумбия песосы</displayName>
@@ -4943,7 +4964,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">Грузия лариі</displayName>
 				<displayName count="other">Грузия лариі</displayName>
 				<symbol>GEL</symbol>
-				<symbol alt="variant" draft="contributed">₾</symbol>
 			</currency>
 			<currency type="GHS">
 				<displayName>Гана седиі</displayName>
@@ -5166,6 +5186,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other">Либерия доллары</displayName>
 				<symbol>LRD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
+			</currency>
+			<currency type="LSL">
+				<displayName draft="contributed">Лесото лотиі</displayName>
+				<displayName count="one" draft="contributed">Лесото лотиі</displayName>
+				<displayName count="other" draft="contributed">Лесото лотиі</displayName>
+				<symbol draft="contributed">ЛСЛ</symbol>
 			</currency>
 			<currency type="LTL">
 				<displayName>Литва литы</displayName>
@@ -5891,6 +5917,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} миллимоль/литр</unitPattern>
 				<unitPattern count="other">{0} миллимоль/литр</unitPattern>
 			</unit>
+			<unit type="concentr-item">
+				<displayName draft="contributed">элемент</displayName>
+				<unitPattern count="one" draft="contributed">{0} элемент</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} элемент</unitPattern>
+			</unit>
 			<unit type="concentr-permillion">
 				<displayName>миллиондық үлес</displayName>
 				<unitPattern count="one">{0} миллиондық үлес</unitPattern>
@@ -6132,6 +6163,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ньютон</displayName>
 				<unitPattern count="one">{0} ньютон</unitPattern>
 				<unitPattern count="other">{0} ньютон</unitPattern>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName draft="contributed">киловатт-сағат/100 километр</displayName>
+				<unitPattern count="one" draft="contributed">{0} киловатт-сағат/100 километр</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} киловатт-сағат/100 километр</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>гигагерц</displayName>
@@ -6913,6 +6949,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ммоль/л</unitPattern>
 				<unitPattern count="other">{0} ммоль/л</unitPattern>
 			</unit>
+			<unit type="concentr-item">
+				<displayName draft="contributed">элемент</displayName>
+				<unitPattern count="one" draft="contributed">{0} элемент</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} элемент</unitPattern>
+			</unit>
 			<unit type="concentr-permillion">
 				<displayName>ppm</displayName>
 				<unitPattern count="one">{0} ppm</unitPattern>
@@ -7154,6 +7195,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Н</displayName>
 				<unitPattern count="one">{0} Н</unitPattern>
 				<unitPattern count="other">{0} Н</unitPattern>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName draft="contributed">кВт-сағ/100 км</displayName>
+				<unitPattern count="one" draft="contributed">{0} кВт-сағ/100 км</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} кВт-сағ/100 км</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>ГГц</displayName>
@@ -7853,6 +7899,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} фут²</unitPattern>
 				<unitPattern count="other">{0} фут²</unitPattern>
 			</unit>
+			<unit type="concentr-item">
+				<displayName draft="contributed">элемент</displayName>
+				<unitPattern count="one" draft="contributed">{0} элемент</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} элемент</unitPattern>
+			</unit>
 			<unit type="concentr-percent">
 				<displayName>%</displayName>
 				<unitPattern count="one">{0}%</unitPattern>
@@ -7902,6 +7953,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>мс</displayName>
 				<unitPattern count="one">{0} мс</unitPattern>
 				<unitPattern count="other">{0} мс</unitPattern>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName draft="contributed">кВт-сағ/100 км</displayName>
+				<unitPattern count="one" draft="contributed">{0} кВт-сағ/100 км</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} кВт-сағ/100 км</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>км</displayName>

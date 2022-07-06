@@ -51,7 +51,8 @@ public:
 
   // We also canonicalize the Node, moving constants to the right input,
   // and flatten expressions (so that 1+x+2 becomes x+3).
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  Node* IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt);
 
   // Compute a new Type for this node.  Basically we just do the pre-check,
   // then call the virtual add() to set the type.
@@ -74,10 +75,6 @@ public:
   // Supplied function to return the multiplicative opcode
   virtual int min_opcode() const = 0;
 
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return false;
-  }
   static AddNode* make(Node* in1, Node* in2, BasicType bt);
 };
 
@@ -92,12 +89,9 @@ public:
   virtual const Type *bottom_type() const { return TypeInt::INT; }
   int max_opcode() const { return Op_MaxI; }
   int min_opcode() const { return Op_MinI; }
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual Node* Identity(PhaseGVN* phase);
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return bt == T_INT;
-  }
+
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
@@ -112,12 +106,9 @@ public:
   virtual const Type *bottom_type() const { return TypeLong::LONG; }
   int max_opcode() const { return Op_MaxL; }
   int min_opcode() const { return Op_MinL; }
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual Node* Identity(PhaseGVN* phase);
-  virtual bool operates_on(BasicType bt, bool signed_int) const {
-    assert(bt == T_INT || bt == T_LONG, "unsupported");
-    return bt == T_LONG;
-  }
+
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 

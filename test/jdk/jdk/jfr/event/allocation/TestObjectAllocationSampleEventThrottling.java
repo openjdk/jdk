@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@ import jdk.jfr.consumer.RecordedEvent;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Platform;
+import sun.hotspot.WhiteBox;
 
 /**
  * @test
@@ -39,15 +41,22 @@ import jdk.test.lib.Asserts;
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib
-*  @run main/othervm -XX:+UseTLAB -XX:TLABSize=2k -XX:-ResizeTLAB jdk.jfr.event.allocation.TestObjectAllocationSampleEventThrottling
+ * @build sun.hotspot.WhiteBox
+ *
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ *                   -XX:+UseTLAB -XX:TLABSize=2k -XX:-ResizeTLAB
+ *                   jdk.jfr.event.allocation.TestObjectAllocationSampleEventThrottling
  */
 
 public class TestObjectAllocationSampleEventThrottling {
     private static final String EVENT_NAME = EventNames.ObjectAllocationSample;
 
-    private static final int BYTE_ARRAY_OVERHEAD = 16; // Extra bytes used by a byte array
-    private static final int OBJECT_SIZE = 100 * 1024;
-    private static final int OBJECT_SIZE_ALT = OBJECT_SIZE + 8; // Object size in case of disabled CompressedOops
+    private static final Boolean COMPRESSED_CLASS_PTRS = WhiteBox.getWhiteBox().getBooleanVMFlag("UseCompressedClassPointers");
+
+    private static final int BYTE_ARRAY_OVERHEAD = (Platform.is64bit() && !COMPRESSED_CLASS_PTRS) ? 24 : 16;
+    private static final int OBJECT_SIZE = 128 * 1024;
+
     private static final int OBJECTS_TO_ALLOCATE = 100;
     private static final String BYTE_ARRAY_CLASS_NAME = new byte[0].getClass().getName();
     private static int eventCount;

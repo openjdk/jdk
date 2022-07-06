@@ -31,7 +31,7 @@ package sun.security.krb5.internal;
 
 import sun.security.krb5.*;
 import sun.security.util.*;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.io.IOException;
 import java.math.BigInteger;
 
@@ -173,33 +173,32 @@ public class Authenticator {
      * @exception IOException if an I/O error occurs while reading encoded data.
      */
     public byte[] asn1Encode() throws Asn1Exception, IOException {
-        Vector<DerValue> v = new Vector<>();
+        ArrayList<DerValue> v = new ArrayList<>();
         DerOutputStream temp = new DerOutputStream();
         temp.putInteger(BigInteger.valueOf(authenticator_vno));
-        v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte) 0x00), temp.toByteArray()));
-        v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte) 0x01), cname.getRealm().asn1Encode()));
-        v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte) 0x02), cname.asn1Encode()));
+        v.add(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte) 0x00), temp.toByteArray()));
+        v.add(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte) 0x01), cname.getRealm().asn1Encode()));
+        v.add(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte) 0x02), cname.asn1Encode()));
         if (cksum != null) {
-            v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte) 0x03), cksum.asn1Encode()));
+            v.add(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte) 0x03), cksum.asn1Encode()));
         }
         temp = new DerOutputStream();
         temp.putInteger(BigInteger.valueOf(cusec));
-        v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte) 0x04), temp.toByteArray()));
-        v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte) 0x05), ctime.asn1Encode()));
+        v.add(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte) 0x04), temp.toByteArray()));
+        v.add(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte) 0x05), ctime.asn1Encode()));
         if (subKey != null) {
-            v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte) 0x06), subKey.asn1Encode()));
+            v.add(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte) 0x06), subKey.asn1Encode()));
         }
         if (seqNumber != null) {
             temp = new DerOutputStream();
             // encode as an unsigned integer (UInt32)
             temp.putInteger(BigInteger.valueOf(seqNumber.longValue()));
-            v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte) 0x07), temp.toByteArray()));
+            v.add(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte) 0x07), temp.toByteArray()));
         }
         if (authorizationData != null) {
-            v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte) 0x08), authorizationData.asn1Encode()));
+            v.add(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte) 0x08), authorizationData.asn1Encode()));
         }
-        DerValue[] der = new DerValue[v.size()];
-        v.copyInto(der);
+        DerValue[] der = v.toArray(new DerValue[0]);
         temp = new DerOutputStream();
         temp.putSequence(der);
         DerOutputStream out = new DerOutputStream();

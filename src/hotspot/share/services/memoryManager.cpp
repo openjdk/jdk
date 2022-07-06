@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "services/lowMemoryDetector.hpp"
 #include "services/management.hpp"
 #include "services/memoryManager.hpp"
@@ -174,8 +175,7 @@ GCMemoryManager::GCMemoryManager(const char* name, const char* gc_end_message) :
   MemoryManager(name), _gc_end_message(gc_end_message) {
   _num_collections = 0;
   _last_gc_stat = NULL;
-  _last_gc_lock = new Mutex(Mutex::leaf, "_last_gc_lock",
-                            Mutex::_safepoint_check_never);
+  _last_gc_lock = new Mutex(Mutex::nosafepoint, "GCMemoryManager_lock");
   _current_gc_stat = NULL;
   _num_gc_threads = 1;
   _notification_enabled = false;

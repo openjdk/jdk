@@ -152,14 +152,8 @@
     return range;
   }
 
-  static int get_num_caller_save_xmms(void) {
-    int num_caller_save_xmm_regs = nof_caller_save_xmm_regs;
-#ifdef _LP64
-    if (UseAVX < 3) {
-      num_caller_save_xmm_regs = num_caller_save_xmm_regs / 2;
-    }
-#endif
-    return num_caller_save_xmm_regs;
+  static int get_num_caller_save_xmms() {
+    return XMMRegisterImpl::available_xmm_registers();
   }
 
   static int nof_caller_save_cpu_regs() { return adjust_reg_range(pd_nof_caller_save_cpu_regs_frame_map); }

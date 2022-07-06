@@ -37,6 +37,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/align.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 void C1_MacroAssembler::inline_cache_check(Register receiver, Register iCache) {
@@ -86,8 +87,8 @@ void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_by
 }
 
 
-void C1_MacroAssembler::verified_entry() {
-  if (C1Breakpoint) illtrap();
+void C1_MacroAssembler::verified_entry(bool breakAtEntry) {
+  if (breakAtEntry) illtrap();
   // build frame
 }
 

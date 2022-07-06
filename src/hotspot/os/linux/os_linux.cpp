@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +50,7 @@
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/osThread.hpp"
@@ -56,8 +58,8 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/threadCritical.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vm_version.hpp"
@@ -71,6 +73,7 @@
 #include "utilities/events.hpp"
 #include "utilities/elfFile.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/vmError.hpp"
@@ -171,8 +174,6 @@ os::Linux::mallinfo_func_t os::Linux::_mallinfo = NULL;
 os::Linux::mallinfo2_func_t os::Linux::_mallinfo2 = NULL;
 #endif // __GLIBC__
 
-static jlong initial_time_count=0;
-
 static int clock_tics_per_sec = 100;
 
 // If the VM might have been created on the primordial thread, we need to resolve the
@@ -260,7 +261,7 @@ bool os::Linux::get_tick_information(CPUPerfTicks* pticks, int which_logical_cpu
 
   memset(pticks, 0, sizeof(CPUPerfTicks));
 
-  if ((fh = fopen("/proc/stat", "r")) == NULL) {
+  if ((fh = os::fopen("/proc/stat", "r")) == NULL) {
     return false;
   }
 
@@ -308,19 +309,6 @@ bool os::Linux::get_tick_information(CPUPerfTicks* pticks, int which_logical_cpu
   return true;
 }
 
-// Return true if user is running as root.
-
-bool os::have_special_privileges() {
-  static bool init = false;
-  static bool privileges = false;
-  if (!init) {
-    privileges = (getuid() != geteuid()) || (getgid() != getegid());
-    init = true;
-  }
-  return privileges;
-}
-
-
 #ifndef SYS_gettid
 // i386: 224, ia64: 1105, amd64: 186, sparc: 143
   #ifdef __ia64__
@@ -367,7 +355,7 @@ void os::Linux::initialize_system_info() {
     pid_t pid = os::Linux::gettid();
     char fname[32];
     jio_snprintf(fname, sizeof(fname), "/proc/%d", pid);
-    FILE *fp = fopen(fname, "r");
+    FILE *fp = os::fopen(fname, "r");
     if (fp == NULL) {
       unsafe_chroot_detected = true;
     } else {
@@ -465,7 +453,7 @@ void os::init_system_properties_values() {
   // Where to look for native libraries.
   //
   // Note: Due to a legacy implementation, most of the library path
-  // is set in the launcher. This was to accomodate linking restrictions
+  // is set in the launcher. This was to accommodate linking restrictions
   // on legacy Linux implementations (which are no longer supported).
   // Eventually, all the library path setting will be done here.
   //
@@ -801,7 +789,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   assert(thread->osthread() == NULL, "caller responsible");
 
   // Allocate the OSThread object
-  OSThread* osthread = new OSThread(NULL, NULL);
+  OSThread* osthread = new OSThread();
   if (osthread == NULL) {
     return false;
   }
@@ -821,11 +809,11 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
 
   // Calculate stack size if it's not specified by caller.
   size_t stack_size = os::Posix::get_initial_stack_size(thr_type, req_stack_size);
-  // In glibc versions prior to 2.7 the guard size mechanism
+  // In glibc versions prior to 2.27 the guard size mechanism
   // is not implemented properly. The posix standard requires adding
   // the size of the guard pages to the stack size, instead Linux
   // takes the space out of 'stacksize'. Thus we adapt the requested
-  // stack_size by the size of the guard pages to mimick proper
+  // stack_size by the size of the guard pages to mimic proper
   // behaviour. However, be careful not to end up with a size
   // of zero due to overflow. Don't add the guard page in that case.
   size_t guard_size = os::Linux::default_guard_size(thr_type);
@@ -930,7 +918,7 @@ bool os::create_attached_thread(JavaThread* thread) {
 #endif
 
   // Allocate the OSThread object
-  OSThread* osthread = new OSThread(NULL, NULL);
+  OSThread* osthread = new OSThread();
 
   if (osthread == NULL) {
     return false;
@@ -1042,7 +1030,7 @@ bool os::is_primordial_thread(void) {
 
 // Find the virtual memory area that contains addr
 static bool find_vma(address addr, address* vma_low, address* vma_high) {
-  FILE *fp = fopen("/proc/self/maps", "r");
+  FILE *fp = os::fopen("/proc/self/maps", "r");
   if (fp) {
     address low, high;
     while (!feof(fp)) {
@@ -1154,7 +1142,7 @@ void os::Linux::capture_initial_stack(size_t max_size) {
     char stat[2048];
     int statlen;
 
-    fp = fopen("/proc/self/stat", "r");
+    fp = os::fopen("/proc/self/stat", "r");
     if (fp) {
       statlen = fread(stat, 1, 2047, fp);
       stat[statlen] = '\0';
@@ -1279,22 +1267,6 @@ void os::Linux::capture_initial_stack(size_t max_size) {
 
 ////////////////////////////////////////////////////////////////////////////////
 // time support
-
-// Time since start-up in seconds to a fine granularity.
-double os::elapsedTime() {
-  return ((double)os::elapsed_counter()) / os::elapsed_frequency(); // nanosecond resolution
-}
-
-jlong os::elapsed_counter() {
-  return javaTimeNanos() - initial_time_count;
-}
-
-jlong os::elapsed_frequency() {
-  return NANOSECS_PER_SEC; // nanosecond resolution
-}
-
-bool os::supports_vtime() { return true; }
-
 double os::elapsedVTime() {
   struct rusage usage;
   int retval = getrusage(RUSAGE_THREAD, &usage);
@@ -1330,42 +1302,6 @@ void os::Linux::fast_thread_clock_init() {
     _supports_fast_thread_cpu_time = true;
     _pthread_getcpuclockid = pthread_getcpuclockid_func;
   }
-}
-
-// Return the real, user, and system times in seconds from an
-// arbitrary fixed point in the past.
-bool os::getTimesSecs(double* process_real_time,
-                      double* process_user_time,
-                      double* process_system_time) {
-  struct tms ticks;
-  clock_t real_ticks = times(&ticks);
-
-  if (real_ticks == (clock_t) (-1)) {
-    return false;
-  } else {
-    double ticks_per_second = (double) clock_tics_per_sec;
-    *process_user_time = ((double) ticks.tms_utime) / ticks_per_second;
-    *process_system_time = ((double) ticks.tms_stime) / ticks_per_second;
-    *process_real_time = ((double) real_ticks) / ticks_per_second;
-
-    return true;
-  }
-}
-
-
-char * os::local_time_string(char *buf, size_t buflen) {
-  struct tm t;
-  time_t long_time;
-  time(&long_time);
-  localtime_r(&long_time, &t);
-  jio_snprintf(buf, buflen, "%d-%02d-%02d %02d:%02d:%02d",
-               t.tm_year + 1900, t.tm_mon + 1, t.tm_mday,
-               t.tm_hour, t.tm_min, t.tm_sec);
-  return buf;
-}
-
-struct tm* os::localtime_pd(const time_t* clock, struct tm*  res) {
-  return localtime_r(clock, res);
 }
 
 // thread_id is kernel thread id (similar to Solaris LWP id)
@@ -1694,7 +1630,11 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     {EM_PARISC,      EM_PARISC,  ELFCLASS32, ELFDATA2MSB, (char*)"PARISC"},
     {EM_68K,         EM_68K,     ELFCLASS32, ELFDATA2MSB, (char*)"M68k"},
     {EM_AARCH64,     EM_AARCH64, ELFCLASS64, ELFDATA2LSB, (char*)"AARCH64"},
-    {EM_RISCV,       EM_RISCV,   ELFCLASS64, ELFDATA2LSB, (char*)"RISC-V"},
+#ifdef _LP64
+    {EM_RISCV,       EM_RISCV,   ELFCLASS64, ELFDATA2LSB, (char*)"RISCV64"},
+#else
+    {EM_RISCV,       EM_RISCV,   ELFCLASS32, ELFDATA2LSB, (char*)"RISCV32"},
+#endif
     {EM_LOONGARCH,   EM_LOONGARCH, ELFCLASS64, ELFDATA2LSB, (char*)"LoongArch"},
   };
 
@@ -1809,10 +1749,10 @@ void * os::Linux::dlopen_helper(const char *filename, char *ebuf,
       ::strncpy(ebuf, error_report, ebuflen-1);
       ebuf[ebuflen-1]='\0';
     }
-    Events::log(NULL, "Loading shared library %s failed, %s", filename, error_report);
+    Events::log_dll_message(NULL, "Loading shared library %s failed, %s", filename, error_report);
     log_info(os)("shared library load of %s failed, %s", filename, error_report);
   } else {
-    Events::log(NULL, "Loaded shared library %s", filename);
+    Events::log_dll_message(NULL, "Loaded shared library %s", filename);
     log_info(os)("shared library load of %s was successful", filename);
   }
   return result;
@@ -1848,13 +1788,16 @@ void * os::Linux::dll_load_in_vmthread(const char *filename, char *ebuf,
   return result;
 }
 
-void* os::dll_lookup(void* handle, const char* name) {
-  void* res = dlsym(handle, name);
-  return res;
-}
+const char* os::Linux::dll_path(void* lib) {
+  struct link_map *lmap;
+  const char* l_path = NULL;
+  assert(lib != NULL, "dll_path parameter must not be NULL");
 
-void* os::get_default_process_handle() {
-  return (void*)::dlopen(NULL, RTLD_LAZY);
+  int res_dli = ::dlinfo(lib, RTLD_DI_LINKMAP, &lmap);
+  if (res_dli == 0) {
+    l_path = lmap->l_name;
+  }
+  return l_path;
 }
 
 static bool _print_ascii_file(const char* filename, outputStream* st, const char* hdr = NULL) {
@@ -2080,7 +2023,7 @@ static void parse_os_info_helper(FILE* fp, char* distro, size_t length, bool get
 }
 
 static void parse_os_info(char* distro, size_t length, const char* file) {
-  FILE* fp = fopen(file, "r");
+  FILE* fp = os::fopen(file, "r");
   if (fp != NULL) {
     // if suse format, print out first line
     bool get_first_line = (strcmp(file, "/etc/SuSE-release") == 0);
@@ -2141,7 +2084,7 @@ void os::Linux::print_system_memory_info(outputStream* st) {
 }
 
 bool os::Linux::query_process_memory_info(os::Linux::meminfo_t* info) {
-  FILE* f = ::fopen("/proc/self/status", "r");
+  FILE* f = os::fopen("/proc/self/status", "r");
   const int num_values = sizeof(os::Linux::meminfo_t) / sizeof(size_t);
   int num_found = 0;
   char buf[256];
@@ -2168,6 +2111,34 @@ bool os::Linux::query_process_memory_info(os::Linux::meminfo_t* info) {
   return false;
 }
 
+#ifdef __GLIBC__
+// For Glibc, print a one-liner with the malloc tunables.
+// Most important and popular is MALLOC_ARENA_MAX, but we are
+// thorough and print them all.
+static void print_glibc_malloc_tunables(outputStream* st) {
+  static const char* var[] = {
+      // the new variant
+      "GLIBC_TUNABLES",
+      // legacy variants
+      "MALLOC_CHECK_", "MALLOC_TOP_PAD_", "MALLOC_PERTURB_",
+      "MALLOC_MMAP_THRESHOLD_", "MALLOC_TRIM_THRESHOLD_",
+      "MALLOC_MMAP_MAX_", "MALLOC_ARENA_TEST", "MALLOC_ARENA_MAX",
+      NULL};
+  st->print("glibc malloc tunables: ");
+  bool printed = false;
+  for (int i = 0; var[i] != NULL; i ++) {
+    const char* const val = ::getenv(var[i]);
+    if (val != NULL) {
+      st->print("%s%s=%s", (printed ? ", " : ""), var[i], val);
+      printed = true;
+    }
+  }
+  if (!printed) {
+    st->print("(default)");
+  }
+}
+#endif // __GLIBC__
+
 void os::Linux::print_process_memory_info(outputStream* st) {
 
   st->print_cr("Process Memory:");
@@ -2190,30 +2161,37 @@ void os::Linux::print_process_memory_info(outputStream* st) {
     st->print_cr("Could not open /proc/self/status to get process memory related information");
   }
 
-  // Print glibc outstanding allocations.
-  // (note: there is no implementation of mallinfo for muslc)
+  // glibc only:
+  // - Print outstanding allocations using mallinfo
+  // - Print glibc tunables
 #ifdef __GLIBC__
   size_t total_allocated = 0;
+  size_t free_retained = 0;
   bool might_have_wrapped = false;
   if (_mallinfo2 != NULL) {
     struct glibc_mallinfo2 mi = _mallinfo2();
-    total_allocated = mi.uordblks;
+    total_allocated = mi.uordblks + mi.hblkhd;
+    free_retained = mi.fordblks;
   } else if (_mallinfo != NULL) {
-    // mallinfo is an old API. Member names mean next to nothing and, beyond that, are int.
-    // So values may have wrapped around. Still useful enough to see how much glibc thinks
-    // we allocated.
+    // mallinfo is an old API. Member names mean next to nothing and, beyond that, are 32-bit signed.
+    // So for larger footprints the values may have wrapped around. We try to detect this here: if the
+    // process whole resident set size is smaller than 4G, malloc footprint has to be less than that
+    // and the numbers are reliable.
     struct glibc_mallinfo mi = _mallinfo();
-    total_allocated = (size_t)(unsigned)mi.uordblks;
+    total_allocated = (size_t)(unsigned)mi.uordblks + (size_t)(unsigned)mi.hblkhd;
+    free_retained = (size_t)(unsigned)mi.fordblks;
     // Since mallinfo members are int, glibc values may have wrapped. Warn about this.
     might_have_wrapped = (info.vmrss * K) > UINT_MAX && (info.vmrss * K) > (total_allocated + UINT_MAX);
   }
   if (_mallinfo2 != NULL || _mallinfo != NULL) {
-    st->print_cr("C-Heap outstanding allocations: " SIZE_FORMAT "K%s",
-                 total_allocated / K,
+    st->print_cr("C-Heap outstanding allocations: " SIZE_FORMAT "K, retained: " SIZE_FORMAT "K%s",
+                 total_allocated / K, free_retained / K,
                  might_have_wrapped ? " (may have wrapped)" : "");
   }
-#endif // __GLIBC__
-
+  // Tunables
+  print_glibc_malloc_tunables(st);
+  st->cr();
+#endif
 }
 
 bool os::Linux::print_ld_preload_file(outputStream* st) {
@@ -2250,7 +2228,11 @@ bool os::Linux::print_container_info(outputStream* st) {
   int i = OSContainer::active_processor_count();
   st->print("active_processor_count: ");
   if (i > 0) {
-    st->print_cr("%d", i);
+    if (ActiveProcessorCount > 0) {
+      st->print_cr("%d, but overridden by -XX:ActiveProcessorCount %d", i, ActiveProcessorCount);
+    } else {
+      st->print_cr("%d", i);
+    }
   } else {
     st->print_cr("not supported");
   }
@@ -2279,47 +2261,15 @@ bool os::Linux::print_container_info(outputStream* st) {
     st->print_cr("%s", i == OSCONTAINER_ERROR ? "not supported" : "no shares");
   }
 
-  jlong j = OSContainer::memory_limit_in_bytes();
-  st->print("memory_limit_in_bytes: ");
-  if (j > 0) {
-    st->print_cr(JLONG_FORMAT, j);
-  } else {
-    st->print_cr("%s", j == OSCONTAINER_ERROR ? "not supported" : "unlimited");
-  }
+  OSContainer::print_container_helper(st, OSContainer::memory_limit_in_bytes(), "memory_limit_in_bytes");
+  OSContainer::print_container_helper(st, OSContainer::memory_and_swap_limit_in_bytes(), "memory_and_swap_limit_in_bytes");
+  OSContainer::print_container_helper(st, OSContainer::memory_soft_limit_in_bytes(), "memory_soft_limit_in_bytes");
+  OSContainer::print_container_helper(st, OSContainer::memory_usage_in_bytes(), "memory_usage_in_bytes");
+  OSContainer::print_container_helper(st, OSContainer::memory_max_usage_in_bytes(), "memory_max_usage_in_bytes");
 
-  j = OSContainer::memory_and_swap_limit_in_bytes();
-  st->print("memory_and_swap_limit_in_bytes: ");
-  if (j > 0) {
-    st->print_cr(JLONG_FORMAT, j);
-  } else {
-    st->print_cr("%s", j == OSCONTAINER_ERROR ? "not supported" : "unlimited");
-  }
+  OSContainer::print_version_specific_info(st);
 
-  j = OSContainer::memory_soft_limit_in_bytes();
-  st->print("memory_soft_limit_in_bytes: ");
-  if (j > 0) {
-    st->print_cr(JLONG_FORMAT, j);
-  } else {
-    st->print_cr("%s", j == OSCONTAINER_ERROR ? "not supported" : "unlimited");
-  }
-
-  j = OSContainer::OSContainer::memory_usage_in_bytes();
-  st->print("memory_usage_in_bytes: ");
-  if (j > 0) {
-    st->print_cr(JLONG_FORMAT, j);
-  } else {
-    st->print_cr("%s", j == OSCONTAINER_ERROR ? "not supported" : "unlimited");
-  }
-
-  j = OSContainer::OSContainer::memory_max_usage_in_bytes();
-  st->print("memory_max_usage_in_bytes: ");
-  if (j > 0) {
-    st->print_cr(JLONG_FORMAT, j);
-  } else {
-    st->print_cr("%s", j == OSCONTAINER_ERROR ? "not supported" : "unlimited");
-  }
-
-  j = OSContainer::OSContainer::pids_max();
+  jlong j = OSContainer::pids_max();
   st->print("maximum number of tasks: ");
   if (j > 0) {
     st->print_cr(JLONG_FORMAT, j);
@@ -2327,7 +2277,7 @@ bool os::Linux::print_container_info(outputStream* st) {
     st->print_cr("%s", j == OSCONTAINER_ERROR ? "not supported" : "unlimited");
   }
 
-  j = OSContainer::OSContainer::pids_current();
+  j = OSContainer::pids_current();
   st->print("current number of tasks: ");
   if (j > 0) {
     st->print_cr(JLONG_FORMAT, j);
@@ -2388,7 +2338,7 @@ void os::print_memory_info(outputStream* st) {
 static bool print_model_name_and_flags(outputStream* st, char* buf, size_t buflen) {
 #if defined(IA32) || defined(AMD64)
   // Other platforms have less repetitive cpuinfo files
-  FILE *fp = fopen("/proc/cpuinfo", "r");
+  FILE *fp = os::fopen("/proc/cpuinfo", "r");
   if (fp) {
     bool model_name_printed = false;
     while (!feof(fp)) {
@@ -2492,7 +2442,7 @@ const char* search_string = "Processor";
 
 // Parses the cpuinfo file for string representing the model name.
 void os::get_summary_cpu_info(char* cpuinfo, size_t length) {
-  FILE* fp = fopen("/proc/cpuinfo", "r");
+  FILE* fp = os::fopen("/proc/cpuinfo", "r");
   if (fp != NULL) {
     while (!feof(fp)) {
       char buf[256];
@@ -2535,6 +2485,8 @@ void os::get_summary_cpu_info(char* cpuinfo, size_t length) {
   strncpy(cpuinfo, "IA64", length);
 #elif defined(PPC)
   strncpy(cpuinfo, "PPC64", length);
+#elif defined(RISCV)
+  strncpy(cpuinfo, LP64_ONLY("RISCV64") NOT_LP64("RISCV32"), length);
 #elif defined(S390)
   strncpy(cpuinfo, "S390", length);
 #elif defined(SPARC)
@@ -3627,7 +3579,7 @@ static void set_coredump_filter(CoredumpFilterBit bit) {
   FILE *f;
   long cdm;
 
-  if ((f = fopen("/proc/self/coredump_filter", "r+")) == NULL) {
+  if ((f = os::fopen("/proc/self/coredump_filter", "r+")) == NULL) {
     return;
   }
 
@@ -3666,7 +3618,7 @@ static size_t scan_default_large_page_size() {
   // If we can't determine the value (e.g. /proc is not mounted, or the text
   // format has been changed), we'll set largest page size to 0
 
-  FILE *fp = fopen("/proc/meminfo", "r");
+  FILE *fp = os::fopen("/proc/meminfo", "r");
   if (fp) {
     while (!feof(fp)) {
       int x = 0;
@@ -4011,23 +3963,14 @@ char* os::Linux::reserve_memory_special_shm(size_t bytes, size_t alignment,
   return addr;
 }
 
-static void warn_on_commit_special_failure(char* req_addr, size_t bytes,
+static void log_on_commit_special_failure(char* req_addr, size_t bytes,
                                            size_t page_size, int error) {
   assert(error == ENOMEM, "Only expect to fail if no memory is available");
 
-  bool warn_on_failure = UseLargePages &&
-      (!FLAG_IS_DEFAULT(UseLargePages) ||
-       !FLAG_IS_DEFAULT(UseHugeTLBFS) ||
-       !FLAG_IS_DEFAULT(LargePageSizeInBytes));
-
-  if (warn_on_failure) {
-    char msg[128];
-    jio_snprintf(msg, sizeof(msg), "Failed to reserve and commit memory. req_addr: "
-                                   PTR_FORMAT " bytes: " SIZE_FORMAT " page size: "
-                                   SIZE_FORMAT " (errno = %d).",
-                                   req_addr, bytes, page_size, error);
-    warning("%s", msg);
-  }
+  log_info(pagesize)("Failed to reserve and commit memory with given page size. req_addr: " PTR_FORMAT
+                     " size: " SIZE_FORMAT "%s, page size: " SIZE_FORMAT "%s, (errno = %d)",
+                     p2i(req_addr), byte_size_in_exact_unit(bytes), exact_unit_for_byte_size(bytes),
+                     byte_size_in_exact_unit(page_size), exact_unit_for_byte_size(page_size), error);
 }
 
 bool os::Linux::commit_memory_special(size_t bytes,
@@ -4049,7 +3992,7 @@ bool os::Linux::commit_memory_special(size_t bytes,
   char* addr = (char*)::mmap(req_addr, bytes, prot, flags, -1, 0);
 
   if (addr == MAP_FAILED) {
-    warn_on_commit_special_failure(req_addr, bytes, page_size, errno);
+    log_on_commit_special_failure(req_addr, bytes, page_size, errno);
     return false;
   }
 
@@ -4078,7 +4021,7 @@ char* os::Linux::reserve_memory_special_huge_tlbfs(size_t bytes,
 
   // We only end up here when at least 1 large page can be used.
   // If the size is not a multiple of the large page size, we
-  // will mix the type of pages used, but in a decending order.
+  // will mix the type of pages used, but in a descending order.
   // Start off by reserving a range of the given size that is
   // properly aligned. At this point no pages are committed. If
   // a requested address is given it will be used and it must be
@@ -4224,13 +4167,6 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool 
   return NULL;
 }
 
-// Sleep forever; naked call to OS-specific sleep; use with CAUTION
-void os::infinite_sleep() {
-  while (true) {    // sleep forever ...
-    ::sleep(100);   // ... 100 seconds at a time
-  }
-}
-
 // Used to convert frequent JVM_Yield() to nops
 bool os::dont_yield() {
   return DontYieldALot;
@@ -4344,7 +4280,7 @@ int os::Linux::get_namespace_pid(int vmid) {
   int retpid = -1;
 
   snprintf(fname, sizeof(fname), "/proc/%d/status", vmid);
-  FILE *fp = fopen(fname, "r");
+  FILE *fp = os::fopen(fname, "r");
 
   if (fp) {
     int pid, nspid;
@@ -4444,8 +4380,6 @@ void os::init(void) {
   check_pax();
 
   os::Posix::init();
-
-  initial_time_count = javaTimeNanos();
 }
 
 // To install functions for atexit system call
@@ -4548,7 +4482,7 @@ jint os::init_2(void) {
   }
 
   // Check and sets minimum stack sizes against command line options
-  if (Posix::set_minimum_stack_sizes() == JNI_ERR) {
+  if (set_minimum_stack_sizes() == JNI_ERR) {
     return JNI_ERR;
   }
 
@@ -4658,7 +4592,8 @@ static int _cpu_count(const cpu_set_t* cpus) {
 // dynamic check - see 6515172 for details.
 // If anything goes wrong we fallback to returning the number of online
 // processors - which can be greater than the number available to the process.
-int os::Linux::active_processor_count() {
+static int get_active_processor_count() {
+  // Note: keep this function, with its CPU_xx macros, *outside* the os namespace (see JDK-8289477).
   cpu_set_t cpus;  // can represent at most 1024 (CPU_SETSIZE) processors
   cpu_set_t* cpus_p = &cpus;
   int cpus_size = sizeof(cpu_set_t);
@@ -4728,6 +4663,10 @@ int os::Linux::active_processor_count() {
 
   assert(cpu_count > 0 && cpu_count <= os::processor_count(), "sanity check");
   return cpu_count;
+}
+
+int os::Linux::active_processor_count() {
+  return get_active_processor_count();
 }
 
 // Determine the active processor count from one of
@@ -4894,25 +4833,6 @@ bool os::message_box(const char* title, const char* message) {
   return buf[0] == 'y' || buf[0] == 'Y';
 }
 
-// Is a (classpath) directory empty?
-bool os::dir_is_empty(const char* path) {
-  DIR *dir = NULL;
-  struct dirent *ptr;
-
-  dir = opendir(path);
-  if (dir == NULL) return true;
-
-  // Scan the directory
-  bool result = true;
-  while (result && (ptr = readdir(dir)) != NULL) {
-    if (strcmp(ptr->d_name, ".") != 0 && strcmp(ptr->d_name, "..") != 0) {
-      result = false;
-    }
-  }
-  closedir(dir);
-  return result;
-}
-
 // This code originates from JDK's sysOpen and open64_w
 // from src/solaris/hpi/src/system_md.c
 
@@ -5007,35 +4927,6 @@ jlong os::current_file_offset(int fd) {
 // move file pointer to the specified offset
 jlong os::seek_to_file_offset(int fd, jlong offset) {
   return (jlong)::lseek64(fd, (off64_t)offset, SEEK_SET);
-}
-
-// This code originates from JDK's sysAvailable
-// from src/solaris/hpi/src/native_threads/src/sys_api_td.c
-
-int os::available(int fd, jlong *bytes) {
-  jlong cur, end;
-  int mode;
-  struct stat64 buf64;
-
-  if (::fstat64(fd, &buf64) >= 0) {
-    mode = buf64.st_mode;
-    if (S_ISCHR(mode) || S_ISFIFO(mode) || S_ISSOCK(mode)) {
-      int n;
-      if (::ioctl(fd, FIONREAD, &n) >= 0) {
-        *bytes = n;
-        return 1;
-      }
-    }
-  }
-  if ((cur = ::lseek64(fd, 0L, SEEK_CUR)) == -1) {
-    return 0;
-  } else if ((end = ::lseek64(fd, 0L, SEEK_END)) == -1) {
-    return 0;
-  } else if (::lseek64(fd, cur, SEEK_SET) == -1) {
-    return 0;
-  }
-  *bytes = end - cur;
-  return 1;
 }
 
 // Map a block of memory.
@@ -5155,7 +5046,7 @@ static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
   FILE *fp;
 
   snprintf(proc_name, 64, "/proc/self/task/%d/stat", tid);
-  fp = fopen(proc_name, "r");
+  fp = os::fopen(proc_name, "r");
   if (fp == NULL) return -1;
   statlen = fread(stat, 1, 2047, fp);
   stat[statlen] = '\0';
@@ -5208,27 +5099,6 @@ bool os::is_thread_cpu_time_supported() {
 // so just return the system wide load average.
 int os::loadavg(double loadavg[], int nelem) {
   return ::getloadavg(loadavg, nelem);
-}
-
-void os::pause() {
-  char filename[MAX_PATH];
-  if (PauseAtStartupFile && PauseAtStartupFile[0]) {
-    jio_snprintf(filename, MAX_PATH, "%s", PauseAtStartupFile);
-  } else {
-    jio_snprintf(filename, MAX_PATH, "./vm.paused.%d", current_process_id());
-  }
-
-  int fd = ::open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0666);
-  if (fd != -1) {
-    struct stat buf;
-    ::close(fd);
-    while (::stat(filename, &buf) == 0) {
-      (void)::poll(NULL, 0, 100);
-    }
-  } else {
-    jio_fprintf(stderr,
-                "Could not open pause file '%s', continuing immediately.\n", filename);
-  }
 }
 
 // Get the default path to the core file
@@ -5458,21 +5328,20 @@ bool os::supports_map_sync() {
 }
 
 void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {
+  // Note: all ranges are "[..)"
   unsigned long long start = (unsigned long long)addr;
   unsigned long long end = start + bytes;
-  FILE* f = ::fopen("/proc/self/maps", "r");
+  FILE* f = os::fopen("/proc/self/maps", "r");
   int num_found = 0;
   if (f != NULL) {
-    st->print("Range [%llx-%llx) contains: ", start, end);
+    st->print_cr("Range [%llx-%llx) contains: ", start, end);
     char line[512];
     while(fgets(line, sizeof(line), f) == line) {
-      unsigned long long a1 = 0;
-      unsigned long long a2 = 0;
-      if (::sscanf(line, "%llx-%llx", &a1, &a2) == 2) {
+      unsigned long long segment_start = 0;
+      unsigned long long segment_end = 0;
+      if (::sscanf(line, "%llx-%llx", &segment_start, &segment_end) == 2) {
         // Lets print out every range which touches ours.
-        if ((a1 >= start && a1 < end) || // left leg in
-            (a2 >= start && a2 < end) || // right leg in
-            (a1 < start && a2 >= end)) { // superimposition
+        if (segment_start < end && segment_end > start) {
           num_found ++;
           st->print("%s", line); // line includes \n
         }
@@ -5480,7 +5349,7 @@ void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {
     }
     ::fclose(f);
     if (num_found == 0) {
-      st->print("nothing.");
+      st->print_cr("nothing.");
     }
     st->cr();
   }

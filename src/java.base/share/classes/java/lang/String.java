@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -230,7 +230,7 @@ public final class String
      *
      * A String instance is written into an ObjectOutputStream according to
      * <a href="{@docRoot}/../specs/serialization/protocol.html#stream-elements">
-     * Object Serialization Specification, Section 6.2, "Stream Elements"</a>
+     * <cite>Java Object Serialization Specification</cite>, Section 6.2, "Stream Elements"</a>
      */
     @java.io.Serial
     private static final ObjectStreamField[] serialPersistentFields =
@@ -261,6 +261,7 @@ public final class String
         this.value = original.value;
         this.coder = original.coder;
         this.hash = original.hash;
+        this.hashIsZero = original.hashIsZero;
     }
 
     /**
@@ -366,9 +367,8 @@ public final class String
      *
      * @deprecated This method does not properly convert bytes into characters.
      * As of JDK&nbsp;1.1, the preferred way to do this is via the
-     * {@code String} constructors that take a {@link
-     * java.nio.charset.Charset}, charset name, or that use the platform's
-     * default charset.
+     * {@code String} constructors that take a {@link Charset}, charset name,
+     * or that use the {@link Charset#defaultCharset() default charset}.
      *
      * @param  ascii
      *         The bytes to be converted to characters
@@ -428,9 +428,8 @@ public final class String
      *
      * @deprecated  This method does not properly convert bytes into
      * characters.  As of JDK&nbsp;1.1, the preferred way to do this is via the
-     * {@code String} constructors that take a {@link
-     * java.nio.charset.Charset}, charset name, or that use the platform's
-     * default charset.
+     * {@code String} constructors that take a {@link Charset}, charset name,
+     * or that use the {@link Charset#defaultCharset() default charset}.
      *
      * @param  ascii
      *         The bytes to be converted to characters
@@ -526,52 +525,58 @@ public final class String
             this.value = "".value;
             this.coder = "".coder;
         } else if (charset == UTF_8.INSTANCE) {
-            if (COMPACT_STRINGS && !StringCoding.hasNegatives(bytes, offset, length)) {
-                this.value = Arrays.copyOfRange(bytes, offset, offset + length);
-                this.coder = LATIN1;
-            } else {
+            if (COMPACT_STRINGS) {
+                int dp = StringCoding.countPositives(bytes, offset, length);
+                if (dp == length) {
+                    this.value = Arrays.copyOfRange(bytes, offset, offset + length);
+                    this.coder = LATIN1;
+                    return;
+                }
                 int sl = offset + length;
-                int dp = 0;
-                byte[] dst = null;
-                if (COMPACT_STRINGS) {
-                    dst = new byte[length];
-                    while (offset < sl) {
-                        int b1 = bytes[offset];
-                        if (b1 >= 0) {
-                            dst[dp++] = (byte)b1;
+                byte[] dst = new byte[length];
+                if (dp > 0) {
+                    System.arraycopy(bytes, offset, dst, 0, dp);
+                    offset += dp;
+                }
+                while (offset < sl) {
+                    int b1 = bytes[offset++];
+                    if (b1 >= 0) {
+                        dst[dp++] = (byte)b1;
+                        continue;
+                    }
+                    if ((b1 & 0xfe) == 0xc2 && offset < sl) { // b1 either 0xc2 or 0xc3
+                        int b2 = bytes[offset];
+                        if (b2 < -64) { // continuation bytes are always negative values in the range -128 to -65
+                            dst[dp++] = (byte)decode2(b1, b2);
                             offset++;
                             continue;
                         }
-                        if ((b1 == (byte)0xc2 || b1 == (byte)0xc3) &&
-                                offset + 1 < sl) {
-                            int b2 = bytes[offset + 1];
-                            if (!isNotContinuation(b2)) {
-                                dst[dp++] = (byte)decode2(b1, b2);
-                                offset += 2;
-                                continue;
-                            }
-                        }
-                        // anything not a latin1, including the repl
-                        // we have to go with the utf16
-                        break;
                     }
-                    if (offset == sl) {
-                        if (dp != dst.length) {
-                            dst = Arrays.copyOf(dst, dp);
-                        }
-                        this.value = dst;
-                        this.coder = LATIN1;
-                        return;
+                    // anything not a latin1, including the REPL
+                    // we have to go with the utf16
+                    offset--;
+                    break;
+                }
+                if (offset == sl) {
+                    if (dp != dst.length) {
+                        dst = Arrays.copyOf(dst, dp);
                     }
+                    this.value = dst;
+                    this.coder = LATIN1;
+                    return;
                 }
-                if (dp == 0 || dst == null) {
-                    dst = new byte[length << 1];
-                } else {
-                    byte[] buf = new byte[length << 1];
-                    StringLatin1.inflate(dst, 0, buf, 0, dp);
-                    dst = buf;
-                }
+                byte[] buf = new byte[length << 1];
+                StringLatin1.inflate(dst, 0, buf, 0, dp);
+                dst = buf;
                 dp = decodeUTF8_UTF16(bytes, offset, sl, dst, dp, true);
+                if (dp != length) {
+                    dst = Arrays.copyOf(dst, dp << 1);
+                }
+                this.value = dst;
+                this.coder = UTF16;
+            } else { // !COMPACT_STRINGS
+                byte[] dst = new byte[length << 1];
+                int dp = decodeUTF8_UTF16(bytes, offset, offset + length, dst, 0, true);
                 if (dp != length) {
                     dst = Arrays.copyOf(dst, dp << 1);
                 }
@@ -662,7 +667,13 @@ public final class String
                 offset = 0;
             }
 
-            int caLen = decodeWithDecoder(cd, ca, bytes, offset, length);
+            int caLen;
+            try {
+                caLen = decodeWithDecoder(cd, ca, bytes, offset, length);
+            } catch (CharacterCodingException x) {
+                // Substitution is enabled, so this shouldn't happen
+                throw new Error(x);
+            }
             if (COMPACT_STRINGS) {
                 byte[] bs = StringUTF16.compress(ca, 0, caLen);
                 if (bs != null) {
@@ -684,42 +695,43 @@ public final class String
         if (length == 0) {
             return "";
         }
-        if (COMPACT_STRINGS && !StringCoding.hasNegatives(bytes, offset, length)) {
-            return new String(Arrays.copyOfRange(bytes, offset, offset + length), LATIN1);
-        } else {
+        int dp;
+        byte[] dst;
+        if (COMPACT_STRINGS) {
+            dp = StringCoding.countPositives(bytes, offset, length);
             int sl = offset + length;
-            int dp = 0;
-            byte[] dst = null;
-            if (COMPACT_STRINGS) {
-                dst = new byte[length];
-                while (offset < sl) {
-                    int b1 = bytes[offset];
-                    if (b1 >= 0) {
-                        dst[dp++] = (byte) b1;
+            if (dp == length) {
+                return new String(Arrays.copyOfRange(bytes, offset, offset + length), LATIN1);
+            }
+            dst = new byte[length];
+            System.arraycopy(bytes, offset, dst, 0, dp);
+            offset += dp;
+            while (offset < sl) {
+                int b1 = bytes[offset++];
+                if (b1 >= 0) {
+                    dst[dp++] = (byte)b1;
+                    continue;
+                }
+                if ((b1 & 0xfe) == 0xc2 && offset < sl) { // b1 either 0xc2 or 0xc3
+                    int b2 = bytes[offset];
+                    if (b2 < -64) { // continuation bytes are always negative values in the range -128 to -65
+                        dst[dp++] = (byte)decode2(b1, b2);
                         offset++;
                         continue;
                     }
-                    if ((b1 == (byte) 0xc2 || b1 == (byte) 0xc3) &&
-                            offset + 1 < sl) {
-                        int b2 = bytes[offset + 1];
-                        if (!isNotContinuation(b2)) {
-                            dst[dp++] = (byte) decode2(b1, b2);
-                            offset += 2;
-                            continue;
-                        }
-                    }
-                    // anything not a latin1, including the REPL
-                    // we have to go with the utf16
-                    break;
                 }
-                if (offset == sl) {
-                    if (dp != dst.length) {
-                        dst = Arrays.copyOf(dst, dp);
-                    }
-                    return new String(dst, LATIN1);
-                }
+                // anything not a latin1, including the REPL
+                // we have to go with the utf16
+                offset--;
+                break;
             }
-            if (dp == 0 || dst == null) {
+            if (offset == sl) {
+                if (dp != dst.length) {
+                    dst = Arrays.copyOf(dst, dp);
+                }
+                return new String(dst, LATIN1);
+            }
+            if (dp == 0) {
                 dst = new byte[length << 1];
             } else {
                 byte[] buf = new byte[length << 1];
@@ -727,11 +739,14 @@ public final class String
                 dst = buf;
             }
             dp = decodeUTF8_UTF16(bytes, offset, sl, dst, dp, false);
-            if (dp != length) {
-                dst = Arrays.copyOf(dst, dp << 1);
-            }
-            return new String(dst, UTF16);
+        } else { // !COMPACT_STRINGS
+            dst = new byte[length << 1];
+            dp = decodeUTF8_UTF16(bytes, offset, offset + length, dst, 0, false);
         }
+        if (dp != length) {
+            dst = Arrays.copyOf(dst, dp << 1);
+        }
+        return new String(dst, UTF16);
     }
 
     static String newStringNoRepl(byte[] src, Charset cs) throws CharacterCodingException {
@@ -784,7 +799,13 @@ public final class String
                 System.getSecurityManager() != null) {
             src = Arrays.copyOf(src, len);
         }
-        int caLen = decodeWithDecoder(cd, ca, src, 0, src.length);
+        int caLen;
+        try {
+            caLen = decodeWithDecoder(cd, ca, src, 0, src.length);
+        } catch (CharacterCodingException x) {
+            // throw via IAE
+            throw new IllegalArgumentException(x);
+        }
         if (COMPACT_STRINGS) {
             byte[] bs = StringUTF16.compress(ca, 0, caLen);
             if (bs != null) {
@@ -838,7 +859,8 @@ public final class String
         CharsetEncoder ce = cs.newEncoder();
         int len = val.length >> coder;  // assume LATIN1=0/UTF16=1;
         int en = scale(len, ce.maxBytesPerChar());
-        if (ce instanceof ArrayEncoder ae) {
+        // fastpath with ArrayEncoder implies `doReplace`.
+        if (doReplace && ce instanceof ArrayEncoder ae) {
             // fastpath for ascii compatible
             if (coder == LATIN1 &&
                     ae.isASCIICompatible() &&
@@ -848,10 +870,6 @@ public final class String
             byte[] ba = new byte[en];
             if (len == 0) {
                 return ba;
-            }
-            if (doReplace) {
-                ce.onMalformedInput(CodingErrorAction.REPLACE)
-                        .onUnmappableCharacter(CodingErrorAction.REPLACE);
             }
 
             int blen = (coder == LATIN1) ? ae.encodeFromLatin1(val, 0, len, ba)
@@ -1022,17 +1040,15 @@ public final class String
      */
     /* package-private */
     static int decodeASCII(byte[] sa, int sp, char[] da, int dp, int len) {
-        if (!StringCoding.hasNegatives(sa, sp, len)) {
-            StringLatin1.inflate(sa, sp, da, dp, len);
-            return len;
-        } else {
-            int start = sp;
-            int end = sp + len;
-            while (sp < end && sa[sp] >= 0) {
-                da[dp++] = (char) sa[sp++];
+        int count = StringCoding.countPositives(sa, sp, len);
+        while (count < len) {
+            if (sa[sp + count] < 0) {
+                break;
             }
-            return sp - start;
+            count++;
         }
+        StringLatin1.inflate(sa, sp, da, dp, count);
+        return count;
     }
 
     private static boolean isNotContinuation(int b) {
@@ -1197,21 +1213,16 @@ public final class String
         return dp;
     }
 
-    private static int decodeWithDecoder(CharsetDecoder cd, char[] dst, byte[] src, int offset, int length) {
+    private static int decodeWithDecoder(CharsetDecoder cd, char[] dst, byte[] src, int offset, int length)
+                                            throws CharacterCodingException {
         ByteBuffer bb = ByteBuffer.wrap(src, offset, length);
         CharBuffer cb = CharBuffer.wrap(dst, 0, dst.length);
-        try {
-            CoderResult cr = cd.decode(bb, cb, true);
-            if (!cr.isUnderflow())
-                cr.throwException();
-            cr = cd.flush(cb);
-            if (!cr.isUnderflow())
-                cr.throwException();
-        } catch (CharacterCodingException x) {
-            // Substitution is always enabled,
-            // so this shouldn't happen
-            throw new Error(x);
-        }
+        CoderResult cr = cd.decode(bb, cb, true);
+        if (!cr.isUnderflow())
+            cr.throwException();
+        cr = cd.flush(cb);
+        if (!cr.isUnderflow())
+            cr.throwException();
         return cb.position();
     }
 
@@ -1285,14 +1296,17 @@ public final class String
         int sp = 0;
         int sl = val.length >> 1;
         byte[] dst = new byte[sl * 3];
-        char c;
-        while (sp < sl && (c = StringUTF16.getChar(val, sp)) < '\u0080') {
+        while (sp < sl) {
             // ascii fast loop;
+            char c = StringUTF16.getChar(val, sp);
+            if (c >= '\u0080') {
+                break;
+            }
             dst[dp++] = (byte)c;
             sp++;
         }
         while (sp < sl) {
-            c = StringUTF16.getChar(val, sp++);
+            char c = StringUTF16.getChar(val, sp++);
             if (c < 0x80) {
                 dst[dp++] = (byte)c;
             } else if (c < 0x800) {
@@ -1385,9 +1399,9 @@ public final class String
 
     /**
      * Constructs a new {@code String} by decoding the specified subarray of
-     * bytes using the platform's default charset.  The length of the new
-     * {@code String} is a function of the charset, and hence may not be equal
-     * to the length of the subarray.
+     * bytes using the {@link Charset#defaultCharset() default charset}.
+     * The length of the new {@code String} is a function of the charset,
+     * and hence may not be equal to the length of the subarray.
      *
      * <p> The behavior of this constructor when the given bytes are not valid
      * in the default charset is unspecified.  The {@link
@@ -1415,9 +1429,9 @@ public final class String
 
     /**
      * Constructs a new {@code String} by decoding the specified array of bytes
-     * using the platform's default charset.  The length of the new {@code
-     * String} is a function of the charset, and hence may not be equal to the
-     * length of the byte array.
+     * using the {@link Charset#defaultCharset() default charset}. The length
+     * of the new {@code String} is a function of the charset, and hence may not
+     * be equal to the length of the byte array.
      *
      * <p> The behavior of this constructor when the given bytes are not valid
      * in the default charset is unspecified.  The {@link
@@ -1693,7 +1707,8 @@ public final class String
      *
      * @deprecated  This method does not properly convert characters into
      * bytes.  As of JDK&nbsp;1.1, the preferred way to do this is via the
-     * {@link #getBytes()} method, which uses the platform's default charset.
+     * {@link #getBytes()} method, which uses the {@link Charset#defaultCharset()
+     * default charset}.
      *
      * @param  srcBegin
      *         Index of the first character in the string to copy
@@ -1780,7 +1795,8 @@ public final class String
 
     /**
      * Encodes this {@code String} into a sequence of bytes using the
-     * platform's default charset, storing the result into a new byte array.
+     * {@link Charset#defaultCharset() default charset}, storing the result
+     * into a new byte array.
      *
      * <p> The behavior of this method when this string cannot be encoded in
      * the default charset is unspecified.  The {@link
@@ -3244,7 +3260,7 @@ public final class String
             icoder |= delimiter.coder();
         }
         // assert len > 0L; // max: (long) Integer.MAX_VALUE << 32
-        // following loop wil add max: (long) Integer.MAX_VALUE * Integer.MAX_VALUE to len
+        // following loop will add max: (long) Integer.MAX_VALUE * Integer.MAX_VALUE to len
         // so len can overflow at most once
         for (int i = 0; i < size; i++) {
             var el = elements[i];
@@ -3329,10 +3345,10 @@ public final class String
      * Converts all of the characters in this {@code String} to lower
      * case using the rules of the given {@code Locale}.  Case mapping is based
      * on the Unicode Standard version specified by the {@link java.lang.Character Character}
-     * class. Since case mappings are not always 1:1 char mappings, the resulting
-     * {@code String} may be a different length than the original {@code String}.
+     * class. Since case mappings are not always 1:1 char mappings, the resulting {@code String}
+     * and this {@code String} may differ in length.
      * <p>
-     * Examples of lowercase  mappings are in the following table:
+     * Examples of lowercase mappings are in the following table:
      * <table class="plain">
      * <caption style="display:none">Lowercase mapping examples showing language code of locale, upper case, lower case, and description</caption>
      * <thead>
@@ -3386,7 +3402,7 @@ public final class String
 
     /**
      * Converts all of the characters in this {@code String} to lower
-     * case using the rules of the default locale. This is equivalent to calling
+     * case using the rules of the default locale. This method is equivalent to
      * {@code toLowerCase(Locale.getDefault())}.
      * <p>
      * <b>Note:</b> This method is locale sensitive, and may produce unexpected
@@ -3411,11 +3427,10 @@ public final class String
      * Converts all of the characters in this {@code String} to upper
      * case using the rules of the given {@code Locale}. Case mapping is based
      * on the Unicode Standard version specified by the {@link java.lang.Character Character}
-     * class. Since case mappings are not always 1:1 char mappings, the resulting
-     * {@code String} may be a different length than the original {@code String}.
+     * class. Since case mappings are not always 1:1 char mappings, the resulting {@code String}
+     * and this {@code String} may differ in length.
      * <p>
-     * Examples of locale-sensitive and 1:M case mappings are in the following table.
-     *
+     * Examples of locale-sensitive and 1:M case mappings are in the following table:
      * <table class="plain">
      * <caption style="display:none">Examples of locale-sensitive and 1:M case mappings. Shows Language code of locale, lower case, upper case, and description.</caption>
      * <thead>
@@ -4510,7 +4525,8 @@ public final class String
             this.coder = LATIN1;
             this.value = Arrays.copyOfRange(val, 0, length);
         } else {
-            if (COMPACT_STRINGS) {
+            // only try to compress val if some characters were deleted.
+            if (COMPACT_STRINGS && asb.maybeLatin1) {
                 byte[] buf = StringUTF16.compress(val, 0, length);
                 if (buf != null) {
                     this.coder = LATIN1;

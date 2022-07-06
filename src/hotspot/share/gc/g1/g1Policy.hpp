@@ -269,9 +269,10 @@ private:
   // Manage time-to-mixed tracking.
   void update_time_to_mixed_tracking(G1GCPauseType gc_type, double start, double end);
   // Record the given STW pause with the given start and end times (in s).
-  void record_pause(G1GCPauseType gc_type, double start, double end);
-
-  bool should_update_gc_stats();
+  void record_pause(G1GCPauseType gc_type,
+                    double start,
+                    double end,
+                    bool evacuation_failure = false);
 
   void update_gc_pause_time_ratios(G1GCPauseType gc_type, double start_sec, double end_sec);
 
@@ -303,7 +304,7 @@ public:
 
   // Record the start and end of the young gc pause.
   void record_young_gc_pause_start();
-  void record_young_gc_pause_end();
+  void record_young_gc_pause_end(bool evacuation_failed);
 
   bool need_to_start_conc_mark(const char* source, size_t alloc_word_size = 0);
 
@@ -313,7 +314,7 @@ public:
 
   // Record the start and end of the actual collection part of the evacuation pause.
   void record_young_collection_start();
-  void record_young_collection_end(bool concurrent_operation_is_full_mark);
+  void record_young_collection_end(bool concurrent_operation_is_full_mark, bool evacuation_failure);
 
   // Record the start and end of a full collection.
   void record_full_collection_start();
@@ -330,8 +331,7 @@ public:
   void record_concurrent_mark_cleanup_start();
   void record_concurrent_mark_cleanup_end(bool has_rebuilt_remembered_sets);
 
-  bool next_gc_should_be_mixed(const char* true_action_str,
-                               const char* false_action_str) const;
+  bool next_gc_should_be_mixed(const char* no_candidates_str) const;
 
   // Amount of allowed waste in bytes in the collection set.
   size_t allowed_waste_in_collection_set() const;
@@ -381,7 +381,7 @@ public:
   // This must be called at the very beginning of an evacuation pause.
   void decide_on_concurrent_start_pause();
 
-  size_t young_list_target_length() const { return _young_list_target_length; }
+  uint young_list_target_length() const { return _young_list_target_length; }
 
   bool should_allocate_mutator_region() const;
 

@@ -116,7 +116,7 @@ public class DOMTransform extends DOMStructure implements Transform {
         Document ownerDoc = DOMUtils.getOwnerDocument(parent);
 
         Element transformElem = null;
-        if (parent.getLocalName().equals("Transforms")) {
+        if ("Transforms".equals(parent.getLocalName())) {
             transformElem = DOMUtils.createElement(ownerDoc, "Transform",
                                                    XMLSignature.XMLNS,
                                                    dsPrefix);

@@ -162,15 +162,15 @@ public abstract class IIOParam {
      * @param sourceRegion a {@code Rectangle} specifying the
      * source region of interest, or {@code null}.
      *
-     * @exception IllegalArgumentException if
+     * @throws IllegalArgumentException if
      * {@code sourceRegion} is non-{@code null} and either
      * {@code sourceRegion.x} or {@code sourceRegion.y} is
      * negative.
-     * @exception IllegalArgumentException if
+     * @throws IllegalArgumentException if
      * {@code sourceRegion} is non-{@code null} and either
      * {@code sourceRegion.width} or
      * {@code sourceRegion.height} is negative or 0.
-     * @exception IllegalStateException if subsampling is such that
+     * @throws IllegalStateException if subsampling is such that
      * this region will have a subsampled width or height of zero.
      *
      * @see #getSourceRegion
@@ -290,10 +290,10 @@ public abstract class IIOParam {
      * within the region, or within the image if no region is set.
      * @param subsamplingYOffset the horizontal offset of the first subsample
      * within the region, or within the image if no region is set.
-     * @exception IllegalArgumentException if either period is
+     * @throws IllegalArgumentException if either period is
      * negative or 0, or if either grid offset is negative or greater than
      * the corresponding period.
-     * @exception IllegalStateException if the source region is such that
+     * @throws IllegalStateException if the source region is such that
      * the subsampled output would contain no pixels.
      */
     public void setSourceSubsampling(int sourceXSubsampling,
@@ -413,7 +413,7 @@ public abstract class IIOParam {
      * @param sourceBands an array of integer band indices to be
      * used.
      *
-     * @exception IllegalArgumentException if {@code sourceBands}
+     * @throws IllegalArgumentException if {@code sourceBands}
      * contains a negative or duplicate value.
      *
      * @see #getSourceBands
@@ -537,7 +537,7 @@ public abstract class IIOParam {
      * @param destinationOffset the offset in the destination, as a
      * {@code Point}.
      *
-     * @exception IllegalArgumentException if
+     * @throws IllegalArgumentException if
      * {@code destinationOffset} is {@code null}.
      *
      * @see #getDestinationOffset
@@ -658,7 +658,7 @@ public abstract class IIOParam {
      *
      * @return {@code true} if the controller completed normally.
      *
-     * @exception IllegalStateException if there is no controller
+     * @throws IllegalStateException if there is no controller
      * currently installed.
      *
      * @see IIOParamController

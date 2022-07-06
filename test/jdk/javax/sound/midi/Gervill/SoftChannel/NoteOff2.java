@@ -56,7 +56,7 @@ public class NoteOff2 {
         assertEquals(v[0].active, true);
         channel.noteOff(60);
         soft.read(1);
-        v = soft.synth.getVoiceStatus();;
+        v = soft.synth.getVoiceStatus();
         assertEquals(v[0].active, false);
 
         soft.close();

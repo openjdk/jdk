@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,7 +146,7 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
    * Conversely, for cgroups v2 (unified hierarchy), cpu, cpuacct, cpuset, memory
    * controllers must have hierarchy ID 0 and the unified controller mounted.
    */
-  cgroups = fopen(proc_cgroups, "r");
+  cgroups = os::fopen(proc_cgroups, "r");
   if (cgroups == NULL) {
     log_debug(os, container)("Can't open %s, %s", proc_cgroups, os::strerror(errno));
     *flags = INVALID_CGROUPS_GENERIC;
@@ -214,7 +214,7 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
    *  - on a cgroups v1 system, collect info for mapping
    *    the host mount point to the local one via /proc/self/mountinfo below.
    */
-  cgroup = fopen(proc_self_cgroup, "r");
+  cgroup = os::fopen(proc_self_cgroup, "r");
   if (cgroup == NULL) {
     log_debug(os, container)("Can't open %s, %s",
                              proc_self_cgroup, os::strerror(errno));
@@ -260,7 +260,13 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
       }
     }
     if (is_cgroupsV2) {
+      // On some systems we have mixed cgroups v1 and cgroups v2 controllers (e.g. freezer on cg1 and
+      // all relevant controllers on cg2). Only set the cgroup path when we see a hierarchy id of 0.
+      if (hierarchy_id != 0) {
+        continue;
+      }
       for (int i = 0; i < CG_INFO_LENGTH; i++) {
+        assert(cg_infos[i]._cgroup_path == NULL, "cgroup path must only be set once");
         cg_infos[i]._cgroup_path = os::strdup(cgroup_path);
       }
     }
@@ -269,7 +275,7 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
 
   // Find various mount points by reading /proc/self/mountinfo
   // mountinfo format is documented at https://www.kernel.org/doc/Documentation/filesystems/proc.txt
-  mntinfo = fopen(proc_self_mountinfo, "r");
+  mntinfo = os::fopen(proc_self_mountinfo, "r");
   if (mntinfo == NULL) {
       log_debug(os, container)("Can't open %s, %s",
                                proc_self_mountinfo, os::strerror(errno));
@@ -495,7 +501,12 @@ int CgroupSubsystem::active_processor_count() {
   cpu_count = limit_count = os::Linux::active_processor_count();
   int quota  = cpu_quota();
   int period = cpu_period();
-  int share  = cpu_shares();
+
+  // It's not a good idea to use cpu_shares() to limit the number
+  // of CPUs used by the JVM. See JDK-8281181.
+  // UseContainerCpuShares and PreferContainerQuotaForCPUCount are
+  // deprecated and will be removed in the next JDK release.
+  int share  = UseContainerCpuShares ? cpu_shares() : -1;
 
   if (quota > -1 && period > 0) {
     quota_count = ceilf((float)quota / (float)period);

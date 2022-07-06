@@ -37,6 +37,8 @@ typedef uint64_t (*aarch64_atomic_stub_t)(volatile void *ptr, uint64_t arg1, uin
 // Pointers to stubs
 extern aarch64_atomic_stub_t aarch64_atomic_fetch_add_4_impl;
 extern aarch64_atomic_stub_t aarch64_atomic_fetch_add_8_impl;
+extern aarch64_atomic_stub_t aarch64_atomic_fetch_add_4_relaxed_impl;
+extern aarch64_atomic_stub_t aarch64_atomic_fetch_add_8_relaxed_impl;
 extern aarch64_atomic_stub_t aarch64_atomic_xchg_4_impl;
 extern aarch64_atomic_stub_t aarch64_atomic_xchg_8_impl;
 extern aarch64_atomic_stub_t aarch64_atomic_cmpxchg_1_impl;

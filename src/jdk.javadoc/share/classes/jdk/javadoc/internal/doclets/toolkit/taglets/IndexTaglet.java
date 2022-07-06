@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,11 +34,10 @@ import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 
 /**
- * An inline Taglet used to index word or a phrase.
+ * An inline taglet used to index a word or a phrase.
  * The enclosed text is interpreted as not containing HTML markup or
  * nested javadoc tags.
  */
-
 public class IndexTaglet extends BaseTaglet {
 
     IndexTaglet() {

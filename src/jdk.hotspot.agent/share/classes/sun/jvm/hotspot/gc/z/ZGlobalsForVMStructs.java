@@ -47,7 +47,7 @@ class ZGlobalsForVMStructs extends VMObject {
         VM.registerVMInitializedObserver((o, d) -> initialize(VM.getVM().getTypeDataBase()));
     }
 
-    static private synchronized void initialize(TypeDataBase db) {
+    private static synchronized void initialize(TypeDataBase db) {
         Type type = db.lookupType("ZGlobalsForVMStructs");
 
         ZGlobalPhaseField = type.getAddressField("_ZGlobalPhase");

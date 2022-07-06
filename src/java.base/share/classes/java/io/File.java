@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,8 +175,9 @@ public class File
 
     /**
      * Check if the file has an invalid path. Currently, the inspection of
-     * a file path is very limited, and it only covers Nul character check.
-     * Returning true means the path is definitely invalid/garbage. But
+     * a file path is very limited, and it only covers Nul character check
+     * unless further checking is explicitly enabled by a system property.
+     * Returning true means the path is definitely invalid/garbage, but
      * returning false does not guarantee that the path is valid.
      *
      * @return true if the file path is invalid.
@@ -184,8 +185,7 @@ public class File
     final boolean isInvalid() {
         PathStatus s = status;
         if (s == null) {
-            s = (this.path.indexOf('\u0000') < 0) ? PathStatus.CHECKED
-                                                  : PathStatus.INVALID;
+            s = fs.isInvalid(this) ? PathStatus.INVALID : PathStatus.CHECKED;
             status = s;
         }
         return s == PathStatus.INVALID;
@@ -220,7 +220,7 @@ public class File
      * string for convenience.  This string contains a single character, namely
      * {@link #separatorChar}.
      */
-    public static final String separator = "" + separatorChar;
+    public static final String separator = String.valueOf(separatorChar);
 
     /**
      * The system-dependent path-separator character.  This field is
@@ -239,7 +239,7 @@ public class File
      * for convenience.  This string contains a single character, namely
      * {@link #pathSeparatorChar}.
      */
-    public static final String pathSeparator = "" + pathSeparatorChar;
+    public static final String pathSeparator = String.valueOf(pathSeparatorChar);
 
 
     /* -- Constructors -- */
@@ -2012,7 +2012,7 @@ public class File
 
             int prefixLength = prefix.length();
             int nusLength = nus.length();
-            int suffixLength = suffix.length();;
+            int suffixLength = suffix.length();
 
             String name;
             int nameMax = fs.getNameMax(dir.getPath());

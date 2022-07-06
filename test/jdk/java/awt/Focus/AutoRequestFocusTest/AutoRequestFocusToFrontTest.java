@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -202,26 +202,22 @@ public class AutoRequestFocusToFrontTest {
         //      Focused frame is excluded from modality.
         ////////////////////////////////////////////////
 
-        if (!"sun.awt.motif.MToolkit".equals(toolkitClassName)) {
-            recreateGUI();
-            auxFrame.setModalExclusionType(Dialog.ModalExclusionType.APPLICATION_EXCLUDE);
+        recreateGUI();
+        auxFrame.setModalExclusionType(Dialog.ModalExclusionType.APPLICATION_EXCLUDE);
 
-            Test.setWindows(modalDialog, modalDialog, new Window[] {modalDialog, frame3});
-            Test.test("Test stage 6.1 in progress", modalDlgButton);
-        }
+        Test.setWindows(modalDialog, modalDialog, new Window[] {modalDialog, frame3});
+        Test.test("Test stage 6.1 in progress", modalDlgButton);
 
 
         // 6.2. Owner Frame (with owned modal Dialog).
         //      Focused frame is excluded from modality.
         ////////////////////////////////////////////////
 
-        if (!"sun.awt.motif.MToolkit".equals(toolkitClassName)) {
-            recreateGUI();
-            auxFrame.setModalExclusionType(Dialog.ModalExclusionType.APPLICATION_EXCLUDE);
+        recreateGUI();
+        auxFrame.setModalExclusionType(Dialog.ModalExclusionType.APPLICATION_EXCLUDE);
 
-            Test.setWindows(frame3, modalDialog, new Window[] {modalDialog, frame3});
-            Test.test("Test stage 6.2 in progress", modalDlgButton, true);
-        }
+        Test.setWindows(frame3, modalDialog, new Window[] {modalDialog, frame3});
+        Test.test("Test stage 6.2 in progress", modalDlgButton, true);
 
         ///////////////////////////////////////////////////
         // 7. Calling setVisible(true) for the shown Frame.
@@ -422,4 +418,3 @@ class TestFailedException extends RuntimeException {
         super("Test failed: " + msg);
     }
 }
-

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,8 @@
 
 #include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
-#include "cds/dumpTimeClassInfo.hpp"
+#include "cds/dumpTimeClassInfo.inline.hpp"
+#include "cds/runTimeClassInfo.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/systemDictionaryShared.hpp"
@@ -45,6 +46,7 @@ DumpTimeClassInfo DumpTimeClassInfo::clone() {
   clone._verifier_constraints = NULL;
   clone._verifier_constraint_flags = NULL;
   clone._loader_constraints = NULL;
+  clone._enum_klass_static_fields = NULL;
   int clone_num_verifier_constraints = num_verifier_constraints();
   if (clone_num_verifier_constraints > 0) {
     clone._verifier_constraints = new (ResourceObj::C_HEAP, mtClass) GrowableArray<DTVerifierConstraint>(clone_num_verifier_constraints, mtClass);
@@ -61,7 +63,14 @@ DumpTimeClassInfo DumpTimeClassInfo::clone() {
       clone._loader_constraints->append(_loader_constraints->at(i));
     }
   }
+  assert(_enum_klass_static_fields == NULL, "This should not happen with jcmd VM.cds dumping");
   return clone;
+}
+
+size_t DumpTimeClassInfo::runtime_info_bytesize() const {
+  return RunTimeClassInfo::byte_size(_klass, num_verifier_constraints(),
+                                     num_loader_constraints(),
+                                     num_enum_klass_static_fields());
 }
 
 void DumpTimeClassInfo::add_verification_constraint(InstanceKlass* k, Symbol* name,
@@ -144,6 +153,18 @@ void DumpTimeClassInfo::record_linking_constraint(Symbol* name, Handle loader1, 
   }
 }
 
+void DumpTimeClassInfo::add_enum_klass_static_field(int archived_heap_root_index) {
+  if (_enum_klass_static_fields == NULL) {
+    _enum_klass_static_fields = new (ResourceObj::C_HEAP, mtClass) GrowableArray<int>(20, mtClass);
+  }
+  _enum_klass_static_fields->append(archived_heap_root_index);
+}
+
+int DumpTimeClassInfo::enum_klass_static_field(int which_field) {
+  assert(_enum_klass_static_fields != NULL, "must be");
+  return _enum_klass_static_fields->at(which_field);
+}
+
 bool DumpTimeClassInfo::is_builtin() {
   return SystemDictionaryShared::is_builtin(_klass);
 }
@@ -172,7 +193,7 @@ class CountClassByCategory : StackObj {
   DumpTimeSharedClassTable* _table;
 public:
   CountClassByCategory(DumpTimeSharedClassTable* table) : _table(table) {}
-  bool do_entry(InstanceKlass* k, DumpTimeClassInfo& info) {
+  void do_entry(InstanceKlass* k, DumpTimeClassInfo& info) {
     if (!info.is_excluded()) {
       if (info.is_builtin()) {
         _table->inc_builtin_count();
@@ -180,7 +201,6 @@ public:
         _table->inc_unregistered_count();
       }
     }
-    return true; // keep on iterating
   }
 };
 
@@ -188,5 +208,5 @@ void DumpTimeSharedClassTable::update_counts() {
   _builtin_count = 0;
   _unregistered_count = 0;
   CountClassByCategory counter(this);
-  iterate(&counter);
+  iterate_all_live_classes(&counter);
 }

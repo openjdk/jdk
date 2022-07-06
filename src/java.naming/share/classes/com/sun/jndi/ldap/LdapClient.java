@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package com.sun.jndi.ldap;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Vector;
 import java.util.Hashtable;
@@ -312,7 +313,7 @@ public final class LdapClient implements PooledConnection {
      * @param auth The authentication mechanism
      *
      */
-    synchronized public LdapResult ldapBind(String dn, byte[]toServer,
+    public synchronized LdapResult ldapBind(String dn, byte[]toServer,
         Control[] bindCtls, String auth, boolean pauseAfterReceipt)
         throws java.io.IOException, NamingException {
 
@@ -477,7 +478,7 @@ public final class LdapClient implements PooledConnection {
         }
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings("removal")
     protected void finalize() {
         if (debug > 0) System.err.println("LdapClient: finalize " + this);
         forceClose(pooled);
@@ -486,7 +487,7 @@ public final class LdapClient implements PooledConnection {
     /*
      * Used by connection pooling to close physical connection.
      */
-    synchronized public void closeConnection() {
+    public synchronized void closeConnection() {
         forceClose(false); // this is a pool callback so no need to clean pool
     }
 
@@ -759,9 +760,9 @@ public final class LdapClient implements PooledConnection {
                                    Hashtable<String, Boolean> binaryAttrs) {
         String id = attrid.toLowerCase(Locale.ENGLISH);
 
-        return ((id.indexOf(";binary") != -1) ||
+        return id.contains(";binary") ||
             defaultBinaryAttrs.containsKey(id) ||
-            ((binaryAttrs != null) && (binaryAttrs.containsKey(id))));
+            ((binaryAttrs != null) && (binaryAttrs.containsKey(id)));
     }
 
     // package entry point; used by Connection
@@ -1577,15 +1578,15 @@ public final class LdapClient implements PooledConnection {
 
 
     private void notifyUnsolicited(Object e) {
-        Vector<LdapCtx> unsolicitedCopy;
+        ArrayList<LdapCtx> unsolicitedCopy;
         synchronized (unsolicited) {
-            unsolicitedCopy = new Vector<>(unsolicited);
+            unsolicitedCopy = new ArrayList<>(unsolicited);
             if (e instanceof NamingException) {
                 unsolicited.setSize(0);  // no more listeners after exception
             }
         }
         for (int i = 0; i < unsolicitedCopy.size(); i++) {
-            unsolicitedCopy.elementAt(i).fireUnsolicited(e);
+            unsolicitedCopy.get(i).fireUnsolicited(e);
         }
     }
 

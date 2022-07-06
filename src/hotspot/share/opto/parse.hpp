@@ -46,6 +46,7 @@ class InlineTree : public ResourceObj {
   Compile*    C;                  // cache
   JVMState*   _caller_jvms;       // state of caller
   ciMethod*   _method;            // method being called by the caller_jvms
+  bool        _late_inline;       // method is inlined incrementally
   InlineTree* _caller_tree;
   uint        _count_inline_bcs;  // Accumulated count of inlined bytecodes
   const int   _max_inline_level;  // the maximum inline level for this sub-tree (may be adjusted)
@@ -75,10 +76,13 @@ protected:
   bool        should_inline(ciMethod* callee_method,
                             ciMethod* caller_method,
                             int caller_bci,
+                            NOT_PRODUCT_ARG(bool& should_delay)
                             ciCallProfile& profile);
   bool        should_not_inline(ciMethod* callee_method,
                                 ciMethod* caller_method,
-                                JVMState* jvms);
+                                int caller_bci,
+                                NOT_PRODUCT_ARG(bool& should_delay)
+                                ciCallProfile& profile);
   bool        is_not_reached(ciMethod* callee_method,
                              ciMethod* caller_method,
                              int caller_bci,
@@ -110,6 +114,10 @@ public:
   // The call_method is the dest_method for a special or static invocation.
   // The call_method is an optimized virtual method candidate otherwise.
   bool ok_to_inline(ciMethod *call_method, JVMState* caller_jvms, ciCallProfile& profile, bool& should_delay);
+
+  void set_late_inline() {
+    _late_inline = true;
+  }
 
   // Information about inlined method
   JVMState*   caller_jvms()       const { return _caller_jvms; }
@@ -593,6 +601,43 @@ class Parse : public GraphKit {
   void dump();
   void dump_bci(int bci);
 #endif
+};
+
+// Specialized uncommon_trap of unstable_if. C2 uses next_bci of path to update the live locals of it.
+class UnstableIfTrap {
+  CallStaticJavaNode* const _unc;
+  bool _modified;            // modified locals based on next_bci()
+  int _next_bci;
+
+public:
+  UnstableIfTrap(CallStaticJavaNode* call, Parse::Block* path): _unc(call), _modified(false) {
+    assert(_unc != NULL && Deoptimization::trap_request_reason(_unc->uncommon_trap_request()) == Deoptimization::Reason_unstable_if,
+          "invalid uncommon_trap call!");
+    _next_bci = path != nullptr ? path->start() : -1;
+  }
+
+  // The starting point of the pruned block, where control goes when
+  // deoptimization does happen.
+  int next_bci() const {
+    return _next_bci;
+  }
+
+  bool modified() const {
+    return _modified;
+  }
+
+  void set_modified() {
+    _modified = true;
+  }
+
+  CallStaticJavaNode* uncommon_trap() const {
+    return _unc;
+  }
+
+  inline void* operator new(size_t x) throw() {
+    Compile* C = Compile::current();
+    return C->comp_arena()->AmallocWords(x);
+  }
 };
 
 #endif // SHARE_OPTO_PARSE_HPP

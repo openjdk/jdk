@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,10 +119,9 @@ import java.util.Arrays;
  * <h3> Special IPv6 address </h3>
  *
  * <blockquote>
- * <table class="borderless">
- * <caption style="display:none">Description of IPv4-mapped address</caption>
- * <tr><th style="vertical-align:top; padding-right:2px"><i>IPv4-mapped address</i></th>
- *         <td>Of the form ::ffff:w.x.y.z, this IPv6 address is used to
+ * <dl>
+ *   <dt>IPv4-mapped address</dt>
+ *         <dd>Of the form ::ffff:w.x.y.z, this IPv6 address is used to
  *         represent an IPv4 address. It allows the native program to
  *         use the same address data structure and also the same
  *         socket when communicating with both IPv4 and IPv6 nodes.
@@ -132,12 +131,13 @@ import java.util.Arrays;
  *         return an IPv4-mapped address.  These classes can take an
  *         IPv4-mapped address as input, both in byte array and text
  *         representation. However, it will be converted into an IPv4
- *         address.</td></tr>
- * </table></blockquote>
+ *         address.</dd>
+ * </dl>
+ * </blockquote>
  *
  * <h3><a id="scoped">Textual representation of IPv6 scoped addresses</a></h3>
  *
- * <p> The textual representation of IPv6 addresses as described above can be
+ * <p>The textual representation of IPv6 addresses as described above can be
  * extended to specify IPv6 scoped addresses. This extension to the basic
  * addressing architecture is described in [draft-ietf-ipngwg-scoping-arch-04.txt].
  *
@@ -387,7 +387,7 @@ class Inet6Address extends InetAddress {
         holder6 = new Inet6AddressHolder();
         try {
             initif (hostName, addr, null);
-        } catch (UnknownHostException e) {} /* cant happen if ifname is null */
+        } catch (UnknownHostException e) {} /* can't happen if ifname is null */
     }
 
     Inet6Address (String hostName, byte[] addr, NetworkInterface nif)
@@ -592,10 +592,6 @@ class Inet6Address extends InetAddress {
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException {
         NetworkInterface scope_ifname = null;
-
-        if (getClass().getClassLoader() != null) {
-            throw new SecurityException ("invalid address type");
-        }
 
         ObjectInputStream.GetField gf = s.readFields();
         byte[] ipaddress = (byte[])gf.get("ipaddress", new byte[0]);

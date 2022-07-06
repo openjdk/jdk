@@ -80,7 +80,7 @@ void MacroAssembler::updateBytesAdler32(Register init_d, Register data, Register
       cmpptr(data, end);
       jcc(Assembler::aboveEqual, SKIP_LOOP_1A);
 
-      align(32);
+      align32();
       bind(SLOOP1A);
       vbroadcastf128(ydata, Address(data, 0), Assembler::AVX_256bit);
       addptr(data, CHUNKSIZE);
@@ -178,7 +178,7 @@ void MacroAssembler::updateBytesAdler32(Register init_d, Register data, Register
       movdl(rax, xb);
       addl(b_d, rax);
 
-      align(32);
+      align32();
       bind(FINAL_LOOP);
       movzbl(rax, Address(data, 0)); //movzx   eax, byte[data]
       addl(a_d, rax);

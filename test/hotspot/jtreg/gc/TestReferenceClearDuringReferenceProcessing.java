@@ -23,9 +23,22 @@
 
 package gc;
 
-/* @test
+/* @test id=Shenandoah
  * @bug 8256517
- * @requires vm.gc.Z | vm.gc.Shenandoah
+ * @requires vm.gc.Shenandoah
+ * @requires vm.gc != "null"
+ * @library /test/lib
+ * @build sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run main/othervm
+ *      -Xbootclasspath/a:.
+ *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *      gc.TestReferenceClearDuringReferenceProcessing
+ */
+
+/* @test id=Z
+ * @bug 8256517
+ * @requires vm.gc.Z
  * @requires vm.gc != "null"
  * @library /test/lib
  * @build sun.hotspot.WhiteBox

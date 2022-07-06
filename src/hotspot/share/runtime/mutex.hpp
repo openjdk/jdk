@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,13 @@
 
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/os.hpp"
+
+#if defined(LINUX) || defined(AIX) || defined(BSD)
+# include "mutex_posix.hpp"
+#else
+# include OS_HEADER(mutex)
+#endif
+
 
 // A Mutex/Monitor is a simple wrapper around a native lock plus condition
 // variable that supports lock ownership tracking, lock ranking for deadlock
@@ -39,23 +45,47 @@
 // The underlying PlatformMutex may support recursive locking but this is not exposed
 // and we account for that possibility in try_lock.
 
+// A thread is not allowed to safepoint while holding a mutex whose rank
+// is nosafepoint or lower.
+
 class Mutex : public CHeapObj<mtSynchronizer> {
 
  public:
   // Special low level locks are given names and ranges avoid overlap.
-  enum lock_types {
+  enum class Rank {
        event,
        service        = event          +   6,
        stackwatermark = service        +   3,
        tty            = stackwatermark +   3,
-       special        = tty            +   3,
-       oopstorage     = special        +   3,
-       leaf           = oopstorage     +  10,
-       safepoint      = leaf           +  10,
-       barrier        = safepoint      +   1,
-       nonleaf        = barrier        +   1,
-       max_nonleaf    = nonleaf        + 900
+       oopstorage     = tty            +   3,
+       nosafepoint    = oopstorage     +   6,
+       safepoint      = nosafepoint    +  20
   };
+
+  // want C++later "using enum" directives.
+  static const Rank event          = Rank::event;
+  static const Rank service        = Rank::service;
+  static const Rank stackwatermark = Rank::stackwatermark;
+  static const Rank tty            = Rank::tty;
+  static const Rank oopstorage     = Rank::oopstorage;
+  static const Rank nosafepoint    = Rank::nosafepoint;
+  static const Rank safepoint      = Rank::safepoint;
+
+  static void assert_no_overlap(Rank orig, Rank adjusted, int adjust);
+
+  friend Rank operator-(Rank base, int adjust) {
+    Rank result = static_cast<Rank>(static_cast<int>(base) - adjust);
+    DEBUG_ONLY(assert_no_overlap(base, result, adjust));
+    return result;
+  }
+
+  friend constexpr bool operator<(Rank lhs, Rank rhs) {
+    return static_cast<int>(lhs) < static_cast<int>(rhs);
+  }
+
+  friend constexpr bool operator>(Rank lhs, Rank rhs)  { return rhs < lhs; }
+  friend constexpr bool operator<=(Rank lhs, Rank rhs) { return !(lhs > rhs); }
+  friend constexpr bool operator>=(Rank lhs, Rank rhs) { return !(lhs < rhs); }
 
  private:
   // The _owner field is only set by the current thread, either to itself after it has acquired
@@ -65,7 +95,7 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   void raw_set_owner(Thread* new_owner) { Atomic::store(&_owner, new_owner); }
 
  protected:                              // Monitor-Mutex metadata
-  os::PlatformMonitor _lock;             // Native monitor implementation
+  PlatformMonitor _lock;                 // Native monitor implementation
   const char* _name;                     // Name of mutex/monitor
 
   // Debugging fields for naming, deadlock detection, etc. (some only used in debug mode)
@@ -73,7 +103,7 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   bool    _allow_vm_block;
 #endif
 #ifdef ASSERT
-  int     _rank;                 // rank (to avoid/detect potential deadlocks)
+  Rank    _rank;                 // rank (to avoid/detect potential deadlocks)
   Mutex*  _next;                 // Used by a Thread to link up owned locks
   Thread* _last_owner;           // the last thread to own the lock
   bool _skip_rank_check;         // read only by owner when doing rank checks
@@ -87,7 +117,8 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   }
 
  public:
-  int    rank() const          { return _rank; }
+  Rank   rank() const          { return _rank; }
+  const char*  rank_name() const;
   Mutex* next()  const         { return _next; }
   void   set_next(Mutex *next) { _next = next; }
 #endif // ASSERT
@@ -107,10 +138,10 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   // the safepoint protocol when acquiring locks.
 
   // Each lock can be acquired by only JavaThreads, only NonJavaThreads, or shared between
-  // Java and NonJavaThreads. When the lock is initialized with _safepoint_check_always,
+  // Java and NonJavaThreads. When the lock is initialized with rank > nosafepoint,
   // that means that whenever the lock is acquired by a JavaThread, it will verify that
   // it is done with a safepoint check. In corollary, when the lock is initialized with
-  // _safepoint_check_never, that means that whenever the lock is acquired by a JavaThread
+  // rank <= nosafepoint, that means that whenever the lock is acquired by a JavaThread
   // it will verify that it is done without a safepoint check.
 
   // TODO: Locks that are shared between JavaThreads and NonJavaThreads
@@ -128,26 +159,11 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   static const SafepointCheckFlag _no_safepoint_check_flag =
     SafepointCheckFlag::_no_safepoint_check_flag;
 
-  enum class SafepointCheckRequired {
-    _safepoint_check_never,       // Mutexes with this value will cause errors
-                                  // when acquired by a JavaThread with a safepoint check.
-    _safepoint_check_always       // Mutexes with this value will cause errors
-                                  // when acquired by a JavaThread without a safepoint check.
-  };
-  // Bring the enumerator names into class scope.
-  static const SafepointCheckRequired _safepoint_check_never =
-    SafepointCheckRequired::_safepoint_check_never;
-  static const SafepointCheckRequired _safepoint_check_always =
-    SafepointCheckRequired::_safepoint_check_always;
-
-  NOT_PRODUCT(SafepointCheckRequired _safepoint_check_required;)
-
  public:
-  Mutex(int rank, const char *name, SafepointCheckRequired safepoint_check_required, bool allow_vm_block);
+  Mutex(Rank rank, const char *name, bool allow_vm_block);
 
-  Mutex(int rank, const char *name, SafepointCheckRequired safepoint_check_required) :
-    Mutex(rank, name, safepoint_check_required,
-          safepoint_check_required == _safepoint_check_never ? true : false) {}
+  Mutex(Rank rank, const char *name) :
+    Mutex(rank, name, rank > nosafepoint ? false : true) {}
 
   ~Mutex();
 
@@ -182,17 +198,17 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   void print_on_error(outputStream* st) const;
   #ifndef PRODUCT
     void print_on(outputStream* st) const;
-    void print() const                      { print_on(::tty); }
+    void print() const;
   #endif
 };
 
 class Monitor : public Mutex {
  public:
-  Monitor(int rank, const char *name, SafepointCheckRequired safepoint_check_required, bool allow_vm_block)  :
-    Mutex(rank, name, safepoint_check_required, allow_vm_block) {}
+  Monitor(Rank rank, const char *name, bool allow_vm_block)  :
+    Mutex(rank, name, allow_vm_block) {}
 
-  Monitor(int rank, const char *name, SafepointCheckRequired safepoint_check_required) :
-    Mutex(rank, name, safepoint_check_required) {}
+  Monitor(Rank rank, const char *name) :
+    Mutex(rank, name) {}
   // default destructor
 
   // Wait until monitor is notified (or times out).
@@ -212,10 +228,8 @@ class PaddedMutex : public Mutex {
   };
   char _padding[PADDING_LEN];
 public:
-  PaddedMutex(int rank, const char *name, SafepointCheckRequired safepoint_check_required, bool allow_vm_block) :
-    Mutex(rank, name, safepoint_check_required, allow_vm_block) {};
-  PaddedMutex(int rank, const char *name, SafepointCheckRequired safepoint_check_required) :
-    Mutex(rank, name, safepoint_check_required) {};
+  PaddedMutex(Rank rank, const char *name, bool allow_vm_block) : Mutex(rank, name, allow_vm_block) {};
+  PaddedMutex(Rank rank, const char *name) : Mutex(rank, name) {};
 };
 
 class PaddedMonitor : public Monitor {
@@ -225,10 +239,8 @@ class PaddedMonitor : public Monitor {
   };
   char _padding[PADDING_LEN];
  public:
-  PaddedMonitor(int rank, const char *name, SafepointCheckRequired safepoint_check_required, bool allow_vm_block) :
-    Monitor(rank, name, safepoint_check_required, allow_vm_block) {};
-  PaddedMonitor(int rank, const char *name, SafepointCheckRequired safepoint_check_required) :
-    Monitor(rank, name, safepoint_check_required) {};
+  PaddedMonitor(Rank rank, const char *name, bool allow_vm_block) : Monitor(rank, name, allow_vm_block) {};
+  PaddedMonitor(Rank rank, const char *name) : Monitor(rank, name) {};
 };
 
 #endif // SHARE_RUNTIME_MUTEX_HPP

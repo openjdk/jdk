@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,19 @@
  */
 
 /* @test
- * @bug 4429043 4493595 6332756 6709457 7146506
+ * @bug 4429043 4493595 5041655 6332756 6709457 7146506
  * @summary Test FileChannel file locking
  */
 
-import java.io.*;
-import java.nio.channels.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStreamReader;
+import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
+import java.nio.channels.OverlappingFileLockException;
+import java.util.Random;
 import static java.nio.file.StandardOpenOption.*;
 
 /**
@@ -126,12 +133,23 @@ public class Lock {
     static void test2(File blah, boolean b) throws Exception {
         try (RandomAccessFile raf = new RandomAccessFile(blah, "rw")) {
             FileChannel channel = raf.getChannel();
-            FileLock lock;
-            if (b)
-                lock = channel.lock();
-            else
-                lock = channel.tryLock();
-            lock.release();
+            try (FileLock lock = b ? channel.lock() : channel.tryLock()) {
+            }
+
+            Random rnd = new Random(System.currentTimeMillis());
+            long position = rnd.nextInt(Integer.MAX_VALUE);
+            long expectedSize = Long.MAX_VALUE - position;
+
+            for (boolean shared : new boolean[] {false, true}) {
+                try (FileLock lock = b ? channel.lock(position, 0, false) :
+                    channel.tryLock(position, 0, false)) {
+                    if(lock.size() != expectedSize)
+                        throw new RuntimeException("Lock size " + lock.size() +
+                            " != " + expectedSize +
+                            " for position " + position + " of " +
+                            (shared ? "exclusive" : "shared") + " lock");
+                }
+            }
         }
     }
 

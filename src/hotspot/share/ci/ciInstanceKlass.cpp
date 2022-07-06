@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
 #include "ci/ciInstanceKlass.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "classfile/javaClasses.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
@@ -63,7 +62,6 @@ ciInstanceKlass::ciInstanceKlass(Klass* k) :
   _has_finalizer = access_flags.has_finalizer();
   _has_subklass = flags().is_final() ? subklass_false : subklass_unknown;
   _init_state = ik->init_state();
-  _nonstatic_field_size = ik->nonstatic_field_size();
   _has_nonstatic_fields = ik->has_nonstatic_fields();
   _has_nonstatic_concrete_methods = ik->has_nonstatic_concrete_methods();
   _is_hidden = ik->is_hidden();
@@ -88,7 +86,7 @@ ciInstanceKlass::ciInstanceKlass(Klass* k) :
     (void)CURRENT_ENV->get_object(holder);
   }
 
-  Thread *thread = Thread::current();
+  JavaThread *thread = JavaThread::current();
   if (ciObjectFactory::is_initialized()) {
     _loader = JNIHandles::make_local(thread, ik->class_loader());
     _protection_domain = JNIHandles::make_local(thread,
@@ -101,6 +99,8 @@ ciInstanceKlass::ciInstanceKlass(Klass* k) :
     _protection_domain = JNIHandles::make_global(h_protection_domain);
     _is_shared = true;
   }
+
+  _has_trusted_loader = compute_has_trusted_loader();
 
   // Lazy fields get filled in only upon request.
   _super  = NULL;
@@ -123,7 +123,6 @@ ciInstanceKlass::ciInstanceKlass(ciSymbol* name,
 {
   assert(name->char_at(0) != JVM_SIGNATURE_ARRAY, "not an instance klass");
   _init_state = (InstanceKlass::ClassState)0;
-  _nonstatic_field_size = -1;
   _has_nonstatic_fields = false;
   _nonstatic_fields = NULL;
   _has_injected_fields = -1;
@@ -135,6 +134,7 @@ ciInstanceKlass::ciInstanceKlass(ciSymbol* name,
   _super = NULL;
   _java_mirror = NULL;
   _field_cache = NULL;
+  _has_trusted_loader = compute_has_trusted_loader();
 }
 
 
@@ -281,31 +281,6 @@ bool ciInstanceKlass::is_boxed_value_offset(int offset) const {
   BasicType bt = box_klass_type();
   return is_java_primitive(bt) &&
          (offset == java_lang_boxing_object::value_offset(bt));
-}
-
-static bool is_klass_initialized(Symbol* klass_name) {
-  VM_ENTRY_MARK;
-  InstanceKlass* ik = SystemDictionary::find_instance_klass(klass_name, Handle(), Handle());
-  return ik != nullptr && ik->is_initialized();
-}
-
-bool ciInstanceKlass::is_box_cache_valid() const {
-  BasicType box_type = box_klass_type();
-
-  if (box_type != T_OBJECT) {
-    switch(box_type) {
-      case T_INT:     return is_klass_initialized(java_lang_Integer_IntegerCache::symbol());
-      case T_CHAR:    return is_klass_initialized(java_lang_Character_CharacterCache::symbol());
-      case T_SHORT:   return is_klass_initialized(java_lang_Short_ShortCache::symbol());
-      case T_BYTE:    return is_klass_initialized(java_lang_Byte_ByteCache::symbol());
-      case T_LONG:    return is_klass_initialized(java_lang_Long_LongCache::symbol());
-      case T_BOOLEAN:
-      case T_FLOAT:
-      case T_DOUBLE:  return true;
-      default:;
-    }
-  }
-  return false;
 }
 
 // ------------------------------------------------------------------
@@ -496,9 +471,6 @@ int ciInstanceKlass::compute_nonstatic_fields() {
   }
   assert(!is_java_lang_Object(), "bootstrap OK");
 
-  // Size in bytes of my fields, including inherited fields.
-  int fsize = nonstatic_field_size() * heapOopSize;
-
   ciInstanceKlass* super = this->super();
   GrowableArray<ciField*>* super_fields = NULL;
   if (super != NULL && super->has_nonstatic_fields()) {
@@ -599,6 +571,15 @@ bool ciInstanceKlass::has_object_fields() const {
     );
 }
 
+bool ciInstanceKlass::compute_has_trusted_loader() {
+  ASSERT_IN_VM;
+  oop loader_oop = loader();
+  if (loader_oop == NULL) {
+    return true; // bootstrap class loader
+  }
+  return java_lang_ClassLoader::is_trusted_loader(loader_oop);
+}
+
 // ------------------------------------------------------------------
 // ciInstanceKlass::find_method
 //
@@ -638,8 +619,10 @@ bool ciInstanceKlass::is_leaf_type() {
 ciInstanceKlass* ciInstanceKlass::implementor() {
   ciInstanceKlass* impl = _implementor;
   if (impl == NULL) {
-    // Go into the VM to fetch the implementor.
-    {
+    if (is_shared()) {
+      impl = this; // assume a well-known interface never has a unique implementor
+    } else {
+      // Go into the VM to fetch the implementor.
       VM_ENTRY_MARK;
       MutexLocker ml(Compile_lock);
       Klass* k = get_instanceKlass()->implementor();
@@ -653,9 +636,7 @@ ciInstanceKlass* ciInstanceKlass::implementor() {
       }
     }
     // Memoize this result.
-    if (!is_shared()) {
-      _implementor = impl;
-    }
+    _implementor = impl;
   }
   return impl;
 }
@@ -707,7 +688,7 @@ class StaticFinalFieldPrinter : public FieldClosure {
             assert(fd->field_type() == T_OBJECT, "");
             if (value->is_a(vmClasses::String_klass())) {
               const char* ascii_value = java_lang_String::as_quoted_ascii(value);
-              _out->print("\"%s\"", (ascii_value != NULL) ? ascii_value : "");
+              _out->print_cr("\"%s\"", (ascii_value != NULL) ? ascii_value : "");
             } else {
               const char* klass_name  = value->klass()->name()->as_quoted_ascii();
               _out->print_cr("%s", klass_name);
@@ -737,6 +718,19 @@ const char *ciInstanceKlass::replay_name() const {
   return CURRENT_ENV->replay_name(get_instanceKlass());
 }
 
+void ciInstanceKlass::dump_replay_instanceKlass(outputStream* out, InstanceKlass* ik) {
+  if (ik->is_hidden()) {
+    const char *name = CURRENT_ENV->dyno_name(ik);
+    if (name != NULL) {
+      out->print_cr("instanceKlass %s # %s", name, ik->name()->as_quoted_ascii());
+    } else {
+      out->print_cr("# instanceKlass %s", ik->name()->as_quoted_ascii());
+    }
+  } else {
+    out->print_cr("instanceKlass %s", ik->name()->as_quoted_ascii());
+  }
+}
+
 void ciInstanceKlass::dump_replay_data(outputStream* out) {
   ResourceMark rm;
 
@@ -748,16 +742,7 @@ void ciInstanceKlass::dump_replay_data(outputStream* out) {
   while (sub != NULL) {
     if (sub->is_instance_klass()) {
       InstanceKlass *isub = InstanceKlass::cast(sub);
-      if (isub->is_hidden()) {
-        const char *name = CURRENT_ENV->dyno_name(isub);
-        if (name != NULL) {
-          out->print_cr("instanceKlass %s # %s", name, sub->name()->as_quoted_ascii());
-        } else {
-          out->print_cr("# instanceKlass %s", sub->name()->as_quoted_ascii());
-        }
-      } else {
-        out->print_cr("instanceKlass %s", sub->name()->as_quoted_ascii());
-      }
+      dump_replay_instanceKlass(out, isub);
     }
     sub = sub->next_sibling();
   }

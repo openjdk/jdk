@@ -111,11 +111,11 @@ public class DoubleByte {
         Arrays.fill(B2C_UNMAPPABLE, UNMAPPABLE_DECODING);
     }
 
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+
     public static class Decoder extends CharsetDecoder
                                 implements DelegatableDecoder, ArrayDecoder
     {
-        private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
-
         final char[][] b2c;
         final char[] b2cSB;
         final int b2Min;
@@ -601,6 +601,11 @@ public class DoubleByte {
             int dl = dst.arrayOffset() + dst.limit();
 
             try {
+                if (isASCIICompatible) {
+                    int n = JLA.encodeASCII(sa, sp, da, dp, Math.min(dl - dp, sl - sp));
+                    sp += n;
+                    dp += n;
+                }
                 while (sp < sl) {
                     char c = sa[sp];
                     int bb = encodeChar(c);
@@ -681,7 +686,11 @@ public class DoubleByte {
         public int encode(char[] src, int sp, int len, byte[] dst) {
             int dp = 0;
             int sl = sp + len;
-            int dl = dst.length;
+            if (isASCIICompatible) {
+                int n = JLA.encodeASCII(src, sp, dst, dp, len);
+                sp += n;
+                dp += n;
+            }
             while (sp < sl) {
                 char c = src[sp++];
                 int bb = encodeChar(c);

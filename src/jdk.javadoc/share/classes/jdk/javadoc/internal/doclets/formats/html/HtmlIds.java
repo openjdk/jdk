@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,12 +83,13 @@ public class HtmlIds {
     static final HtmlId FOR_REMOVAL = HtmlId.of("for-removal");
     static final HtmlId HELP_NAVIGATION = HtmlId.of("help-navigation");
     static final HtmlId HELP_PAGES = HtmlId.of("help-pages");
-    static final HtmlId HELP_SEARCH = HtmlId.of("help-search");
     static final HtmlId METHOD_DETAIL = HtmlId.of("method-detail");
     static final HtmlId METHOD_SUMMARY = HtmlId.of("method-summary");
     static final HtmlId METHOD_SUMMARY_TABLE = HtmlId.of("method-summary-table");
     static final HtmlId MODULES = HtmlId.of("modules-summary");
     static final HtmlId MODULE_DESCRIPTION = HtmlId.of("module-description");
+    static final HtmlId NAVBAR_SUB_LIST = HtmlId.of("navbar-sub-list");
+    static final HtmlId NAVBAR_TOGGLE_BUTTON = HtmlId.of("navbar-toggle-button");
     static final HtmlId NAVBAR_TOP = HtmlId.of("navbar-top");
     static final HtmlId NAVBAR_TOP_FIRSTROW = HtmlId.of("navbar-top-firstrow");
     static final HtmlId NESTED_CLASS_SUMMARY = HtmlId.of("nested-class-summary");
@@ -131,6 +132,19 @@ public class HtmlIds {
         return element == null || element.isUnnamed()
                 ? UNNAMED_PACKAGE_ANCHOR
                 : HtmlId.of(element.getQualifiedName().toString());
+    }
+
+    /**
+     * Returns an id for a package name.
+     *
+     * @param pkgName the package name
+     *
+     * @return the id
+     */
+    HtmlId forPackageName(String pkgName) {
+        return pkgName.isEmpty()
+                ? UNNAMED_PACKAGE_ANCHOR
+                : HtmlId.of(pkgName);
     }
 
     /**
@@ -415,8 +429,7 @@ public class HtmlIds {
             case INTERFACE -> "interface";
             case CLASS -> "class";
             case ENUM -> "enum-class";
-            case EXCEPTION -> "exception";
-            case ERROR -> "error";
+            case EXCEPTION_CLASS -> "exception-class";
             case ANNOTATION_TYPE -> "annotation-interface";
             case FIELD -> "field";
             case METHOD -> "method";
@@ -441,6 +454,8 @@ public class HtmlIds {
             case FIELDS -> FIELD_SUMMARY;
             case CONSTRUCTORS -> CONSTRUCTOR_SUMMARY;
             case METHODS -> METHOD_SUMMARY;
+            // We generate separate summaries for optional and required annotation members
+            case ANNOTATION_TYPE_MEMBER -> throw new IllegalArgumentException("unsupported member kind");
             case ANNOTATION_TYPE_MEMBER_OPTIONAL -> ANNOTATION_TYPE_OPTIONAL_ELEMENT_SUMMARY;
             case ANNOTATION_TYPE_MEMBER_REQUIRED -> ANNOTATION_TYPE_REQUIRED_ELEMENT_SUMMARY;
             case PROPERTIES -> PROPERTY_SUMMARY;

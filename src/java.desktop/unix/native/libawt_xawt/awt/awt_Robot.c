@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -334,7 +334,7 @@ Java_sun_awt_X11_XRobotPeer_getRGBPixelsImpl( JNIEnv *env,
     if (useGtk) {
         gtk->gdk_threads_enter();
         gtk_failed = gtk->get_drawable_data(env, pixelArray, x, y, width,
-                                            height, jwidth, dx, dy, 1);
+                                            height, jwidth, dx, dy);
         gtk->gdk_threads_leave();
     }
 

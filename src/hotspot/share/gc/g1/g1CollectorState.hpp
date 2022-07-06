@@ -98,7 +98,7 @@ public:
 
   // Phase getters
   bool in_young_only_phase() const { return _in_young_only_phase && !_in_full_gc; }
-  bool in_mixed_phase() const { return !in_young_only_phase() && !_in_full_gc; }
+  bool in_mixed_phase() const { return !_in_young_only_phase && !_in_full_gc; }
 
   // Specific pauses
   bool in_young_gc_before_mixed() const { return _in_young_gc_before_mixed; }

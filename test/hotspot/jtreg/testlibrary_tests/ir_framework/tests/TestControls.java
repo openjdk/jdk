@@ -35,13 +35,13 @@ import java.util.regex.Pattern;
 
 /*
  * @test
- * @requires vm.debug == true & vm.compMode != "Xint" & vm.compiler2.enabled & vm.flagless
+ * @requires vm.debug == true & vm.compMode != "Xint" & vm.compiler1.enabled & vm.compiler2.enabled & vm.flagless
  * @summary Test if compilation control annotaions are handled correctly in the framework.
  *          This test partly runs directly the test VM which normally does and should not happen in user tests.
  * @library /test/lib /
  * @build sun.hotspot.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -DSkipWhiteBoxInstall=true -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
+ * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
  *                   -Xbatch -XX:+WhiteBoxAPI ir_framework.tests.TestControls
  */
 

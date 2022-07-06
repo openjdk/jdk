@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -33,7 +33,7 @@
 //                   retrieve with MetaspaceUtils::get_statistics(MetadataType) for either class space
 //                   or non-class space
 //
-// - MetaspaceCombinedStats: keeps reserved, committed and used byte counters, seperately for both class- and non-class-space;
+// - MetaspaceCombinedStats: keeps reserved, committed and used byte counters, separately for both class- and non-class-space;
 //                      retrieve with MetaspaceUtils::get_combined_statistics()
 
 // (Note: just for NMT these objects need to be mutable)

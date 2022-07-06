@@ -104,7 +104,7 @@ define SetupBuildDemoBody
   ifneq ($$($1_SRC_SUB_DIR), )
     $1_MAIN_SRC := $$($1_SRC_BASE)/$$($1_SRC_SUB_DIR)
   else
-    # for allmost all
+    # for almost all
     $1_MAIN_SRC := $$($1_SRC_BASE)
   endif
 

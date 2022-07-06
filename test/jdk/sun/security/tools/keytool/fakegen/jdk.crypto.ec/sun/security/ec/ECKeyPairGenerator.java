@@ -71,7 +71,7 @@ public final class ECKeyPairGenerator extends KeyPairGeneratorSpi {
                 break;
             default:
                 throw new AssertionError("SunEC ECKeyPairGenerator" +
-                    "has been patched. Key size " + keySize +
+                    " has been patched. Key size " + keySize +
                     " is not supported");
         }
         ECParameterSpec ecParams = ECUtil.getECParameterSpec(null, keySize);

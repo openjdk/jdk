@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,8 +40,6 @@ import java.nio.charset.UnsupportedCharsetException;
 import java.nio.channels.spi.AbstractInterruptibleChannel;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
-import sun.nio.ch.ChannelInputStream;
-import sun.nio.ch.ChannelOutputStream;
 import sun.nio.cs.StreamDecoder;
 import sun.nio.cs.StreamEncoder;
 
@@ -69,9 +67,12 @@ public final class Channels {
     /**
      * Constructs a stream that reads bytes from the given channel.
      *
-     * <p> The {@code read} methods of the resulting stream will throw an
-     * {@link IllegalBlockingModeException} if invoked while the underlying
-     * channel is in non-blocking mode.  The stream will not be buffered, and
+     * <p> The {@code read} and {@code transferTo} methods of the resulting stream
+     * will throw an {@link IllegalBlockingModeException} if invoked while the
+     * underlying channel is in non-blocking mode. The {@code transferTo} method
+     * will also throw an {@code IllegalBlockingModeException} if invoked to
+     * transfer bytes to an output stream that writes to an underlying channel in
+     * non-blocking mode.  The stream will not be buffered, and
      * it will not support the {@link InputStream#mark mark} or {@link
      * InputStream#reset reset} methods.  The stream will be safe for access by
      * multiple concurrent threads.  Closing the stream will in turn cause the
@@ -84,7 +85,7 @@ public final class Channels {
      */
     public static InputStream newInputStream(ReadableByteChannel ch) {
         Objects.requireNonNull(ch, "ch");
-        return new ChannelInputStream(ch);
+        return sun.nio.ch.Streams.of(ch);
     }
 
     /**
@@ -103,7 +104,7 @@ public final class Channels {
      */
     public static OutputStream newOutputStream(WritableByteChannel ch) {
         Objects.requireNonNull(ch, "ch");
-        return new ChannelOutputStream(ch);
+        return sun.nio.ch.Streams.of(ch);
     }
 
     /**
@@ -294,6 +295,9 @@ public final class Channels {
         public int read(ByteBuffer dst) throws IOException {
             if (!isOpen()) {
                 throw new ClosedChannelException();
+            }
+            if (dst.isReadOnly()) {
+                throw new IllegalArgumentException();
             }
 
             int len = dst.remaining();

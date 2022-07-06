@@ -62,6 +62,8 @@ public class DifferentHeapSizes {
         JarBuilder.getOrCreateHelloJar();
         String appJar = TestCommon.getTestJar("hello.jar");
         String appClasses[] = TestCommon.list("Hello");
+        WhiteBox wb = WhiteBox.getWhiteBox();
+        boolean useCompressedOops = wb.getBooleanVMFlag("UseCompressedOops");
 
         for (Scenario s : scenarios) {
             String dumpXmx = "-Xmx" + s.dumpSize + "m";
@@ -71,7 +73,7 @@ public class DifferentHeapSizes {
                 String runXmx = "-Xmx" + runSize + "m";
                 CDSTestUtils.Result result = TestCommon.run("-cp", appJar, "-showversion",
                         "-Xlog:cds", runXmx, DEDUP, "Hello");
-                if (runSize < 32768) {
+                if (runSize < 32768 || !useCompressedOops) {
                     result
                         .assertNormalExit("Hello World")
                         .assertNormalExit(out -> {
@@ -88,7 +90,7 @@ public class DifferentHeapSizes {
 
         // Test various settings of -XX:HeapBaseMinAddress that would trigger
         // "CDS heap data need to be relocated because the desired range ... is outside of the heap"
-        long default_base = WhiteBox.getWhiteBox().getSizeTVMFlag("HeapBaseMinAddress").longValue();
+        long default_base = wb.getSizeTVMFlag("HeapBaseMinAddress").longValue();
         long M = 1024 * 1024;
         long bases[] = new long[] {
             /* dump xmx */   /* run xmx */   /* dump base */             /* run base */

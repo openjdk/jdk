@@ -73,10 +73,13 @@ class markWord {
  public:
   explicit markWord(uintptr_t value) : _value(value) {}
 
-  markWord() { /* uninitialized */}
+  markWord() = default;         // Doesn't initialize _value.
 
   // It is critical for performance that this class be trivially
   // destructable, copyable, and assignable.
+  ~markWord() = default;
+  markWord(const markWord&) = default;
+  markWord& operator=(const markWord&) = default;
 
   static markWord from_pointer(void* ptr) {
     return markWord((uintptr_t)ptr);
@@ -173,7 +176,7 @@ class markWord {
     return (BasicLock*) value();
   }
   bool has_monitor() const {
-    return ((value() & monitor_value) != 0);
+    return ((value() & lock_mask_in_place) == monitor_value);
   }
   ObjectMonitor* monitor() const {
     assert(has_monitor(), "check");

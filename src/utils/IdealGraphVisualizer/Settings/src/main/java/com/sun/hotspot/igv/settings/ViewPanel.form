@@ -28,7 +28,7 @@
           <Group type="102" alignment="0" attributes="0">
               <EmptySpace max="-2" attributes="0"/>
               <Component id="jPanel1" min="-2" max="-2" attributes="0"/>
-              <EmptySpace pref="153" max="32767" attributes="0"/>
+              <EmptySpace pref="29" max="32767" attributes="0"/>
           </Group>
       </Group>
     </DimensionLayout>
@@ -46,19 +46,17 @@
                       <Component id="jLabel3" alignment="0" min="-2" max="-2" attributes="0"/>
                       <Component id="jLabel2" alignment="0" min="-2" max="-2" attributes="0"/>
                       <Component id="jLabel4" alignment="0" min="-2" max="-2" attributes="0"/>
+                      <Component id="jLabel5" alignment="0" min="-2" max="-2" attributes="0"/>
                   </Group>
                   <EmptySpace min="-2" pref="39" max="-2" attributes="0"/>
-                  <Group type="103" groupAlignment="0" attributes="0">
-                      <Group type="103" alignment="0" groupAlignment="0" max="-2" attributes="0">
-                          <Component id="nodeShortTextField" max="32767" attributes="0"/>
-                          <Component id="jScrollPane1" pref="365" max="32767" attributes="0"/>
-                      </Group>
-                      <Group type="103" alignment="0" groupAlignment="1" max="-2" attributes="0">
-                          <Component id="nodeWidthSpinner" alignment="0" pref="100" max="32767" attributes="0"/>
-                          <Component id="portSpinner" alignment="0" max="32767" attributes="0"/>
-                      </Group>
+                  <Group type="103" groupAlignment="0" max="-2" attributes="0">
+                      <Component id="nodeShortTextField" max="32767" attributes="0"/>
+                      <Component id="jScrollPane1" pref="470" max="32767" attributes="0"/>
+                      <Component id="portSpinner" alignment="0" max="32767" attributes="0"/>
+                      <Component id="nodeTinyTextField" alignment="0" max="32767" attributes="0"/>
+                      <Component id="defaultViewComboBox" alignment="0" max="32767" attributes="0"/>
                   </Group>
-                  <EmptySpace pref="439" max="32767" attributes="0"/>
+                  <EmptySpace max="32767" attributes="0"/>
               </Group>
           </Group>
         </DimensionLayout>
@@ -77,8 +75,13 @@
                   </Group>
                   <EmptySpace pref="27" max="32767" attributes="0"/>
                   <Group type="103" groupAlignment="3" attributes="0">
-                      <Component id="nodeWidthSpinner" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="jLabel5" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="nodeTinyTextField" alignment="3" min="-2" max="-2" attributes="0"/>
+                  </Group>
+                  <EmptySpace min="-2" pref="27" max="-2" attributes="0"/>
+                  <Group type="103" groupAlignment="3" attributes="0">
                       <Component id="jLabel2" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="defaultViewComboBox" alignment="3" min="-2" max="-2" attributes="0"/>
                   </Group>
                   <EmptySpace pref="27" max="32767" attributes="0"/>
                   <Group type="103" groupAlignment="3" attributes="0">
@@ -97,7 +100,7 @@
         </Component>
         <Component class="javax.swing.JLabel" name="jLabel2">
           <Properties>
-            <Property name="text" type="java.lang.String" value="Node Width"/>
+            <Property name="text" type="java.lang.String" value="Default View"/>
           </Properties>
         </Component>
         <Component class="javax.swing.JSpinner" name="portSpinner">
@@ -118,8 +121,6 @@
             </Component>
           </SubComponents>
         </Container>
-        <Component class="javax.swing.JSpinner" name="nodeWidthSpinner">
-        </Component>
         <Component class="javax.swing.JLabel" name="jLabel3">
           <Properties>
             <Property name="text" type="java.lang.String" value="Network Port"/>
@@ -139,6 +140,37 @@
           </Properties>
           <AuxValues>
             <AuxValue name="JavaCodeGenerator_SerializeTo" type="java.lang.String" value="ViewPanel_nodeShortTextField"/>
+          </AuxValues>
+        </Component>
+        <Component class="javax.swing.JLabel" name="jLabel5">
+          <Properties>
+            <Property name="text" type="java.lang.String" value="Tiny Node Text"/>
+          </Properties>
+        </Component>
+        <Component class="javax.swing.JTextField" name="nodeTinyTextField">
+          <Properties>
+            <Property name="background" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
+              <Color blue="ff" green="ff" red="ff" type="rgb"/>
+            </Property>
+            <Property name="toolTipText" type="java.lang.String" value="Single-line format string for node input lists. Properties are specified with brackets  (example: &quot;[idx]&quot;)."/>
+          </Properties>
+          <AuxValues>
+            <AuxValue name="JavaCodeGenerator_SerializeTo" type="java.lang.String" value="ViewPanel_nodeTinyTextField"/>
+          </AuxValues>
+        </Component>
+        <Component class="javax.swing.JComboBox" name="defaultViewComboBox">
+          <Properties>
+            <Property name="model" type="javax.swing.ComboBoxModel" editor="org.netbeans.modules.form.editors2.ComboBoxModelEditor">
+              <StringArray count="3">
+                <StringItem index="0" value="Sea of nodes"/>
+                <StringItem index="1" value="Clustered sea of nodes"/>
+                <StringItem index="2" value="Control-flow graph"/>
+              </StringArray>
+            </Property>
+            <Property name="toolTipText" type="java.lang.String" value="View shown by default when a graph is opened."/>
+          </Properties>
+          <AuxValues>
+            <AuxValue name="JavaCodeGenerator_TypeParameters" type="java.lang.String" value="&lt;String&gt;"/>
           </AuxValues>
         </Component>
       </SubComponents>

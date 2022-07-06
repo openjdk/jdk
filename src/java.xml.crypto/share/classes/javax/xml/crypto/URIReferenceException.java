@@ -61,6 +61,7 @@ public class URIReferenceException extends Exception {
      * The {@code URIReference} that was being dereferenced
      * when the exception was thrown, or {@code null} if not specified.
      */
+    @SuppressWarnings("serial") // Type of field is not Serializable
     private URIReference uriReference;
 
     /**

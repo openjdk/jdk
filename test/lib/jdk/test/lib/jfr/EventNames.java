@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,6 +88,7 @@ public class EventNames {
     public static final String RedefineClasses = PREFIX + "RedefineClasses";
     public static final String RetransformClasses = PREFIX + "RetransformClasses";
     public static final String ClassRedefinition = PREFIX + "ClassRedefinition";
+    public static final String FinalizerStatistics = PREFIX + "FinalizerStatistics";
 
     // This event is hard to test
     public final static String ReservedStackActivation = PREFIX + "ReservedStackActivation";
@@ -198,6 +199,10 @@ public class EventNames {
     public final static String SecurityProperty = PREFIX + "SecurityPropertyModification";
     public final static String DirectBufferStatistics = PREFIX + "DirectBufferStatistics";
     public final static String Deserialization = PREFIX + "Deserialization";
+    public static final String VirtualThreadStart = PREFIX + "VirtualThreadStart";
+    public static final String VirtualThreadEnd = PREFIX + "VirtualThreadEnd";
+    public static final String VirtualThreadPinned = PREFIX + "VirtualThreadPinned";
+    public static final String VirtualThreadSubmitFailed = PREFIX + "VirtualThreadSubmitFailed";
 
     // Containers
     public static final String ContainerConfiguration = PREFIX + "ContainerConfiguration";

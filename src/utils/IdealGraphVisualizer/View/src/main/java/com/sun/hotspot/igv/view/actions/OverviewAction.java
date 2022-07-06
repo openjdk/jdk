@@ -40,7 +40,7 @@ public class OverviewAction extends AbstractAction {
 
     public OverviewAction() {
         putValue(AbstractAction.SMALL_ICON, new ImageIcon(ImageUtilities.loadImage(iconResource())));
-        putValue(Action.SHORT_DESCRIPTION, "Show satellite view of whole graph");
+        putValue(Action.SHORT_DESCRIPTION, "Show satellite view of whole graph (hold S-KEY)");
         setState(false);
     }
 

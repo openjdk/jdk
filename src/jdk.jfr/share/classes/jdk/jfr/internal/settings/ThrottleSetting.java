@@ -91,9 +91,5 @@ public final class ThrottleSetting extends JDKSettingControl {
     public String getValue() {
         return value;
     }
-
-    public static boolean isType(long typeId) {
-        return ThrottleSetting.typeId == typeId;
-    }
 }
 

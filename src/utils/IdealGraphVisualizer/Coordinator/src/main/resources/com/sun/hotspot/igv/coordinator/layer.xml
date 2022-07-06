@@ -1,15 +1,43 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE filesystem PUBLIC "-//NetBeans//DTD Filesystem 1.2//EN" "http://www.netbeans.org/dtds/filesystem-1_2.dtd">
 <filesystem>
+    <folder name="Shortcuts">
+        <file name="D-Z.shadow">
+            <attr name="originalFile" stringvalue="Actions/Edit/org-openide-actions-UndoAction.instance"/>
+        </file>
+        <file name="DS-Z.shadow">
+            <attr name="originalFile" stringvalue="Actions/Edit/org-openide-actions-RedoAction.instance"/>
+        </file>
+        <file name="D-Y.shadow">
+            <attr name="originalFile" stringvalue="Actions/Edit/org-openide-actions-RedoAction.instance"/>
+        </file>
+        <file name="D-BACK_SPACE.shadow">
+            <attr name="originalFile" stringvalue="Actions/File/com-sun-hotspot-igv-coordinator-actions-RemoveAction.instance"/>
+        </file>
+        <file name="D-DELETE.shadow">
+            <attr name="originalFile" stringvalue="Actions/File/com-sun-hotspot-igv-coordinator-actions-RemoveAction.instance"/>
+        </file>
+        <file name="DS-W.shadow">
+            <attr name="originalFile" stringvalue="Actions/File/com-sun-hotspot-igv-coordinator-actions-RemoveAllAction.instance"/>
+        </file>
+    </folder>
     <folder name="Actions">
         <folder name="File">
             <file name="com-sun-hotspot-igv-coordinator-actions-SaveAsAction.instance"/>
             <file name="com-sun-hotspot-igv-coordinator-actions-SaveAllAction.instance"/>
             <file name="com-sun-hotspot-igv-coordinator-actions-ImportAction.instance"/>
-        </folder>
-        <folder name="Edit">
             <file name="com-sun-hotspot-igv-coordinator-actions-RemoveAction.instance"/>
             <file name="com-sun-hotspot-igv-coordinator-actions-RemoveAllAction.instance"/>
+        </folder>
+        <folder name="Edit">
+            <file name="org-openide-actions-UndoAction.instance">
+                <attr name="instanceCreate" methodvalue="org.openide.actions.UndoRedoAction.create"/>
+                <attr name="undo" boolvalue="true"/>
+            </file>
+            <file name="org-openide-actions-RedoAction.instance">
+                <attr name="instanceCreate" methodvalue="org.openide.actions.UndoRedoAction.create"/>
+                <attr name="redo" boolvalue="true"/>
+            </file>
         </folder>
         <folder name="Window">
             <file name="com-sun-hotspot-igv-coordinator-actions-OutlineAction.instance"/>
@@ -44,14 +72,13 @@
                 <attr name="position" intvalue="350"/>
             </file>
             <file name="com-sun-hotspot-igv-coordinator-actions-RemoveAction.shadow">
-                <attr name="originalFile" stringvalue="Actions/Edit/com-sun-hotspot-igv-coordinator-actions-RemoveAction.instance"/>
+                <attr name="originalFile" stringvalue="Actions/File/com-sun-hotspot-igv-coordinator-actions-RemoveAction.instance"/>
                 <attr name="position" intvalue="400"/>
             </file>
             <file name="com-sun-hotspot-igv-coordinator-actions-RemoveAllAction.shadow">
-                <attr name="originalFile" stringvalue="Actions/Edit/com-sun-hotspot-igv-coordinator-actions-RemoveAllAction.instance"/>
+                <attr name="originalFile" stringvalue="Actions/File/com-sun-hotspot-igv-coordinator-actions-RemoveAllAction.instance"/>
                 <attr name="position" intvalue="500"/>
             </file>
-            
             <!-- Hidden menu entries from other modules -->
             <file name="org-netbeans-modules-editor-ExportHtmlAction.shadow_hidden"/>
             <file name="org-netbeans-modules-openfile-OpenFileAction.shadow_hidden"/>
@@ -71,6 +98,14 @@
         </folder>
         
         <folder name="Edit">
+            <file name="org-openide-actions-UndoAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/Edit/org-openide-actions-UndoAction.instance"/>
+                <attr name="position" intvalue="100"/>
+            </file>
+            <file name="org-openide-actions-RedoAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/Edit/org-openide-actions-RedoAction.instance"/>
+                <attr name="position" intvalue="150"/>
+            </file>
             <!-- Hidden menu entries from other modules -->
             <file name="Separator1.instance_hidden"/>
             <file name="Separator2.instance_hidden"/>
@@ -104,6 +139,7 @@
             <file name="org-netbeans-core-actions-LogAction.shadow_hidden"/>
             <file name="org-netbeans-core-multiview-EditorsAction.instance_hidden"/>
             <file name="org-netbeans-core-windows-actions-ToolbarsListAction.instance_hidden"/>
+            <file name="org-netbeans-core-windows-actions-ToolbarsListAction.shadow_hidden"/>
             <file name="org-netbeans-modules-editor-NbCodeFoldingAction.instance_hidden"/>
             <file name="org-netbeans-modules-project-ui-SyncEditorWithViewsAction.shadow_hidden"/>
             <file name="org-netbeans-modules-versioning-ShowTextAnnotationsAction.shadow_hidden"/>
@@ -114,34 +150,21 @@
         </folder>
         
         <!-- Hidden menus -->
+        <folder name="Tools_hidden"/>
         <folder name="GoTo_hidden"/>
         <folder name="Source_hidden"/>
         <folder name="Refactoring_hidden"/>
         <folder name="BuildProject_hidden"/>
         <folder name="RunProject_hidden"/>
         <folder name="Versioning_hidden"/>
-        
-        <folder name="Tools">
-            <!-- Hidden menu entries from other modules -->
-            <file name="LibrariesCustomizerAction.shadow_hidden"/>
-            <file name="PaletteManager_hidden"/>
-            <file name="Separator1.instance_hidden"/>
-            <file name="Separator2.instance_hidden"/>
-            <file name="ServerManagerAction3.shadow_hidden"/>
-            <file name="VariablesCustomizerAction.shadow_hidden"/>
-            <file name="org-netbeans-modules-autoupdate-ui-actions-PluginManagerAction.shadow_hidden"/>
-            <file name="org-netbeans-modules-templates-actions-TemplatesAction.shadow_hidden"/>
-            <file name="org-netbeans-modules-options-OptionsWindowAction-separatorBefore.instance_hidden"/>
-            <file name="org-netbeans-modules-xml-catalog-CatalogAction.shadow_hidden"/>
-            <file name="org-openide-actions-ToolsAction.shadow_hidden"/>
-        </folder>
-        
+
         <folder name="Window">
             <file name="OutlineAction.shadow">
                 <attr name="originalFile" stringvalue="Actions/Window/com-sun-hotspot-igv-coordinator-actions-OutlineAction.instance"/>
             </file>
-            
             <!-- Hidden menu entries from other modules -->
+            <file name="Web_hidden"/>
+            <file name="org-netbeans-modules-tasks-ui-DashboardTopComponent.shadow_hidden"/>
             <file name="Debug_hidden"/>
             <file name="Navigator_hidden"/>
             <file name="Other_hidden"/>

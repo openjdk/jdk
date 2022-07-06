@@ -1,6 +1,5 @@
-
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,6 +76,7 @@ public:
   GrowableArray<DTVerifierConstraint>* _verifier_constraints;
   GrowableArray<char>*                 _verifier_constraint_flags;
   GrowableArray<DTLoaderConstraint>*   _loader_constraints;
+  GrowableArray<int>*                  _enum_klass_static_fields;
 
   DumpTimeClassInfo() {
     _klass = NULL;
@@ -92,28 +92,38 @@ public:
     _verifier_constraints = NULL;
     _verifier_constraint_flags = NULL;
     _loader_constraints = NULL;
+    _enum_klass_static_fields = NULL;
   }
 
   void add_verification_constraint(InstanceKlass* k, Symbol* name,
          Symbol* from_name, bool from_field_is_protected, bool from_is_array, bool from_is_object);
   void record_linking_constraint(Symbol* name, Handle loader1, Handle loader2);
-
+  void add_enum_klass_static_field(int archived_heap_root_index);
+  int  enum_klass_static_field(int which_field);
   bool is_builtin();
 
-  int num_verifier_constraints() {
-    if (_verifier_constraint_flags != NULL) {
-      return _verifier_constraint_flags->length();
-    } else {
+private:
+  template <typename T>
+  static int array_length_or_zero(GrowableArray<T>* array) {
+    if (array == NULL) {
       return 0;
+    } else {
+      return array->length();
     }
   }
 
-  int num_loader_constraints() {
-    if (_loader_constraints != NULL) {
-      return _loader_constraints->length();
-    } else {
-      return 0;
-    }
+public:
+
+  int num_verifier_constraints() const {
+    return array_length_or_zero(_verifier_constraint_flags);
+  }
+
+  int num_loader_constraints() const {
+    return array_length_or_zero(_loader_constraints);
+  }
+
+  int num_enum_klass_static_fields() const {
+    return array_length_or_zero(_enum_klass_static_fields);
   }
 
   void metaspace_pointers_do(MetaspaceClosure* it) {
@@ -135,8 +145,7 @@ public:
   }
 
   bool is_excluded() {
-    // _klass may become NULL due to DynamicArchiveBuilder::set_to_null
-    return _excluded || _failed_verification || _klass == NULL;
+    return _excluded || _failed_verification;
   }
 
   // Was this class loaded while JvmtiExport::is_early_phase()==true
@@ -152,11 +161,13 @@ public:
   void set_failed_verification()                    { _failed_verification = true; }
   InstanceKlass* nest_host() const                  { return _nest_host; }
   void set_nest_host(InstanceKlass* nest_host)      { _nest_host = nest_host; }
+
   DumpTimeClassInfo clone();
+  size_t runtime_info_bytesize() const;
 };
 
-
-inline unsigned DumpTimeSharedClassTable_hash(InstanceKlass* const& k) {
+template <typename T>
+inline unsigned DumpTimeSharedClassTable_hash(T* const& k) {
   if (DumpSharedSpaces) {
     // Deterministic archive contents
     uintx delta = k->name() - MetaspaceShared::symbol_rs_base();
@@ -164,17 +175,19 @@ inline unsigned DumpTimeSharedClassTable_hash(InstanceKlass* const& k) {
   } else {
     // Deterministic archive is not possible because classes can be loaded
     // in multiple threads.
-    return primitive_hash<InstanceKlass*>(k);
+    return primitive_hash<T*>(k);
   }
 }
 
-class DumpTimeSharedClassTable: public ResourceHashtable<
+using DumpTimeSharedClassTableBaseType = ResourceHashtable<
   InstanceKlass*,
   DumpTimeClassInfo,
   15889, // prime number
   ResourceObj::C_HEAP,
   mtClassShared,
-  &DumpTimeSharedClassTable_hash>
+  &DumpTimeSharedClassTable_hash>;
+
+class DumpTimeSharedClassTable: public DumpTimeSharedClassTableBaseType
 {
   int _builtin_count;
   int _unregistered_count;
@@ -194,6 +207,18 @@ public:
       return _unregistered_count;
     }
   }
+
+  template<class ITER> void iterate_all_live_classes(ITER* iter) const;
+  template<typename Function> void iterate_all_live_classes(Function function) const;
+
+private:
+  // It's unsafe to iterate on classes whose loader is dead.
+  // Declare these private and don't implement them. This forces users of
+  // DumpTimeSharedClassTable to use the iterate_all_live_classes() methods
+  // instead.
+  template<class ITER> void iterate(ITER* iter) const;
+  template<typename Function> void iterate(Function function) const;
+  template<typename Function> void iterate_all(Function function) const;
 };
 
 #endif // SHARED_CDS_DUMPTIMESHAREDCLASSINFO_HPP

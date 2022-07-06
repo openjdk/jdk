@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -289,7 +289,9 @@ public abstract class KeyStoreSpi {
      * integrity with the given password.
      *
      * @param stream the output stream to which this keystore is written.
-     * @param password the password to generate the keystore integrity check
+     * @param password the password to generate the keystore integrity check.
+     *                 May be {@code null} if the keystore does not support
+     *                 or require an integrity check.
      *
      * @throws    IOException if there was an I/O problem with data
      * @throws    NoSuchAlgorithmException if the appropriate data integrity
@@ -378,7 +380,7 @@ public abstract class KeyStoreSpi {
      * <p>
      * If {@code KeyStore.LoadStoreParameter} is {@code null} then
      * the password parameter will also be {@code null}.
-     * Otherwise the {@code KeyStore.ProtectionParameter} of
+     * Otherwise, the {@code KeyStore.ProtectionParameter} of
      * {@code KeyStore.LoadStoreParameter} must be either a
      * {@code KeyStore.PasswordProtection} or a
      * {@code KeyStore.CallbackHandlerProtection} that supports
@@ -413,7 +415,7 @@ public abstract class KeyStoreSpi {
                 CertificateException {
 
         if (param == null) {
-            engineLoad((InputStream)null, (char[])null);
+            engineLoad(null, (char[])null);
             return;
         }
 
@@ -442,7 +444,30 @@ public abstract class KeyStoreSpi {
                 + " be PasswordProtection or CallbackHandlerProtection");
         }
         engineLoad(stream, password);
-        return;
+    }
+
+    /**
+     * Retrieves the attributes associated with the given alias.
+     *
+     * @implSpec
+     * The default implementation returns an empty {@code Set}.
+     * {@code KeyStoreSpi} implementations that support attributes
+     * should override this method.
+     *
+     * @param alias the alias name
+     * @return an unmodifiable {@code Set} of attributes. This set is
+     *      empty if the given alias does not exist or there are no
+     *      attributes associated with the alias. This set may also be
+     *      empty for {@code PrivateKeyEntry} or {@code SecretKeyEntry}
+     *      entries that contain protected attributes. These protected
+     *      attributes should be populated into the result returned by
+     *      {@link #engineGetEntry} and can be retrieved by calling
+     *      the {@link Entry#getAttributes} method.
+     *
+     * @since 18
+     */
+    public Set<Entry.Attribute> engineGetAttributes(String alias) {
+        return Collections.emptySet();
     }
 
     /**
@@ -584,8 +609,7 @@ public abstract class KeyStoreSpi {
                 engineSetKeyEntry
                     (alias,
                     ((KeyStore.SecretKeyEntry)entry).getSecretKey(),
-                    pProtect.getPassword(),
-                    (Certificate[])null);
+                    pProtect.getPassword(), null);
                 return;
             }
         }

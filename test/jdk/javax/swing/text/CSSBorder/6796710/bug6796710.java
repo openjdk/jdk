@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
  */
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.image.BufferedImage;
@@ -72,6 +73,7 @@ public class bug6796710 {
     private static JFrame frame;
 
     private static JPanel pnBottom;
+    private static final int COLOR_TOLERANCE = 5;
 
     public static void main(String[] args) throws Exception {
         robot = new Robot();
@@ -126,13 +128,48 @@ public class bug6796710 {
         Thread.sleep(1000);
 
         BufferedImage pnBottomImage = getPnBottomImage();
-        if (!Util.compareBufferedImages(bufferedImage, pnBottomImage)) {
+        if (!compareBufferedImages(bufferedImage, pnBottomImage)) {
             ImageIO.write(bufferedImage, "png", new File("bufferedImage.png"));
             ImageIO.write(pnBottomImage, "png", new File("pnBottomImage.png"));
             throw new RuntimeException("The test failed");
         }
 
         System.out.println("The test bug6796710 passed.");
+    }
+
+    public static boolean compareBufferedImages(BufferedImage bufferedImage0, BufferedImage bufferedImage1) {
+        int width = bufferedImage0.getWidth();
+        int height = bufferedImage0.getHeight();
+
+        if (width != bufferedImage1.getWidth() || height != bufferedImage1.getHeight()) {
+            return false;
+        }
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                Color bufCol0 = new Color(bufferedImage0.getRGB(x, y));
+                Color bufCol1 = new Color(bufferedImage1.getRGB(x, y));
+
+                int red1 = bufCol0.getRed();
+                int blue1 = bufCol0.getBlue();
+                int green1 = bufCol0.getGreen();
+
+                int red2 = bufCol1.getRed();
+                int blue2 = bufCol1.getBlue();
+                int green2 = bufCol1.getGreen();
+
+                if ((Math.abs(red1 - red2) > COLOR_TOLERANCE) ||
+                    (Math.abs(green1 - green2) > COLOR_TOLERANCE) ||
+                    (Math.abs(blue1 - blue2) > COLOR_TOLERANCE)) {
+                        System.out.println("x "+ x + " y " + y +
+                            " rgb1: " + bufCol0 +
+                            " rgb2: " + bufCol1);
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 
     private static BufferedImage getPnBottomImage() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,13 +37,13 @@
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/synchronizer.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
@@ -96,8 +96,8 @@ void VMOperationTimeoutTask::disarm() {
 //------------------------------------------------------------------------------------------------------------------
 // Implementation of VMThread stuff
 
-static VM_None    safepointALot_op("SafepointALot");
-static VM_Cleanup cleanup_op;
+static VM_SafepointALot safepointALot_op;
+static VM_Cleanup       cleanup_op;
 
 bool              VMThread::_should_terminate   = false;
 bool              VMThread::_terminated         = false;
@@ -128,8 +128,7 @@ void VMThread::create() {
     assert(_timeout_task == NULL, "sanity");
   }
 
-  _terminate_lock = new Monitor(Mutex::safepoint, "VMThread::_terminate_lock",
-                                Monitor::_safepoint_check_never);
+  _terminate_lock = new Monitor(Mutex::nosafepoint, "VMThreadTerminate_lock");
 
   if (UsePerfData) {
     // jvmstat performance counters
@@ -140,7 +139,7 @@ void VMThread::create() {
   }
 }
 
-VMThread::VMThread() : NamedThread() {
+VMThread::VMThread() : NamedThread(), _is_running(false) {
   set_name("VM Thread");
 }
 
@@ -148,15 +147,15 @@ void VMThread::destroy() {
   _vm_thread = NULL;      // VM thread is gone
 }
 
-static VM_None halt_op("Halt");
+static VM_Halt halt_op;
 
 void VMThread::run() {
   assert(this == vm_thread(), "check");
 
-  // Notify_lock wait checks on active_handles() to rewait in
+  // Notify_lock wait checks on is_running() to rewait in
   // case of spurious wakeup, it should wait on the last
   // value set prior to the notify
-  this->set_active_handles(JNIHandleBlock::allocate_block());
+  Atomic::store(&_is_running, true);
 
   {
     MutexLocker ml(Notify_lock);
@@ -383,10 +382,10 @@ void VMThread::wait_until_executed(VM_Operation* op) {
 
 static void self_destruct_if_needed() {
   // Support for self destruction
-  if ((SelfDestructTimer != 0) && !VMError::is_error_reported() &&
-      (os::elapsedTime() > (double)SelfDestructTimer * 60.0)) {
+  if ((SelfDestructTimer != 0.0) && !VMError::is_error_reported() &&
+      (os::elapsedTime() > SelfDestructTimer * 60.0)) {
     tty->print_cr("VM self-destructed");
-    exit(-1);
+    os::exit(-1);
   }
 }
 

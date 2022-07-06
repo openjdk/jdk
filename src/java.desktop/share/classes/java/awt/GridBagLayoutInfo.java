@@ -36,7 +36,7 @@ import java.io.Serial;
  * @see       java.awt.GridBagConstraints
  * @since 1.6
  */
-public class GridBagLayoutInfo implements java.io.Serializable {
+public final class GridBagLayoutInfo implements java.io.Serializable {
 
     /**
      * Use serialVersionUID from JDK 1.6 for interoperability.

@@ -75,24 +75,28 @@ template <MEMFLAGS F> void BasicHashtable<F>::free_buckets() {
 }
 
 // Default overload, for types that are uninteresting.
-template<typename T> static int literal_size(T) { return 0; }
+template<typename T> static size_t literal_size(T) { return 0; }
 
-static int literal_size(Symbol *symbol) {
+static size_t literal_size(Symbol *symbol) {
   return symbol->size() * HeapWordSize;
 }
 
-static int literal_size(oop obj) {
+static size_t literal_size(oop obj) {
   if (obj == NULL) {
     return 0;
-  } else if (obj->klass() == vmClasses::String_klass()) {
-    // This may overcount if String.value arrays are shared.
-    return (obj->size() + java_lang_String::value(obj)->size()) * HeapWordSize;
-  } else {
-    return obj->size();
   }
+
+  size_t word_size = obj->size();
+
+  if (obj->klass() == vmClasses::String_klass()) {
+    // This may overcount if String.value arrays are shared.
+    word_size += java_lang_String::value(obj)->size();
+  }
+
+  return word_size * HeapWordSize;
 }
 
-static int literal_size(WeakHandle v) {
+static size_t literal_size(WeakHandle v) {
   return literal_size(v.peek());
 }
 
@@ -175,7 +179,7 @@ template <MEMFLAGS F> bool BasicHashtable<F>::maybe_grow(int max_size, int load_
 
 template <class T, MEMFLAGS F> TableStatistics Hashtable<T, F>::statistics_calculate(T (*literal_load_barrier)(HashtableEntry<T, F>*)) {
   NumberSeq summary;
-  int literal_bytes = 0;
+  size_t literal_bytes = 0;
   for (int i = 0; i < this->table_size(); ++i) {
     int count = 0;
     for (HashtableEntry<T, F>* e = this->bucket(i);

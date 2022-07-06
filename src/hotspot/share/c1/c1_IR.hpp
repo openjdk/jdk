@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -232,23 +232,21 @@ class IRScopeDebugInfo: public CompilationResourceObj {
   //Whether we should reexecute this bytecode for deopt
   bool should_reexecute();
 
-  void record_debug_info(DebugInformationRecorder* recorder, int pc_offset, bool topmost, bool is_method_handle_invoke = false) {
+  void record_debug_info(DebugInformationRecorder* recorder, int pc_offset, bool reexecute, bool is_method_handle_invoke = false) {
     if (caller() != NULL) {
       // Order is significant:  Must record caller first.
-      caller()->record_debug_info(recorder, pc_offset, false/*topmost*/);
+      caller()->record_debug_info(recorder, pc_offset, false/*reexecute*/);
     }
     DebugToken* locvals = recorder->create_scope_values(locals());
     DebugToken* expvals = recorder->create_scope_values(expressions());
     DebugToken* monvals = recorder->create_monitor_values(monitors());
     // reexecute allowed only for the topmost frame
-    bool reexecute = topmost ? should_reexecute() : false;
     bool return_oop = false; // This flag will be ignored since it used only for C2 with escape analysis.
     bool rethrow_exception = false;
-    bool is_opt_native = false;
     bool has_ea_local_in_scope = false;
     bool arg_escape = false;
     recorder->describe_scope(pc_offset, methodHandle(), scope()->method(), bci(),
-                             reexecute, rethrow_exception, is_method_handle_invoke, is_opt_native, return_oop,
+                             reexecute, rethrow_exception, is_method_handle_invoke, return_oop,
                              has_ea_local_in_scope, arg_escape, locvals, expvals, monvals);
   }
 };
@@ -264,6 +262,7 @@ class CodeEmitInfo: public CompilationResourceObj {
   ValueStack*       _stack;                      // used by deoptimization (contains also monitors
   bool              _is_method_handle_invoke;    // true if the associated call site is a MethodHandle call site.
   bool              _deoptimize_on_exception;
+  bool              _force_reexecute;            // force the reexecute flag on, used for patching stub
 
   FrameMap*     frame_map() const                { return scope()->compilation()->frame_map(); }
   Compilation*  compilation() const              { return scope()->compilation(); }
@@ -290,7 +289,11 @@ class CodeEmitInfo: public CompilationResourceObj {
   bool     is_method_handle_invoke() const { return _is_method_handle_invoke;     }
   void set_is_method_handle_invoke(bool x) {        _is_method_handle_invoke = x; }
 
+  bool     force_reexecute() const         { return _force_reexecute;             }
+  void     set_force_reexecute()           { _force_reexecute = true;             }
+
   int interpreter_frame_size() const;
+
 };
 
 
@@ -338,7 +341,10 @@ class IR: public CompilationResourceObj {
   // debugging
   static void print(BlockBegin* start, bool cfg_only, bool live_only = false) PRODUCT_RETURN;
   void print(bool cfg_only, bool live_only = false)                           PRODUCT_RETURN;
-  void verify()                                                               PRODUCT_RETURN;
+
+  void expand_with_neighborhood(BlockList& blocks)                          NOT_DEBUG_RETURN;
+  void verify_local(BlockList&)                                             NOT_DEBUG_RETURN;
+  void verify()                                                             NOT_DEBUG_RETURN;
 };
 
 

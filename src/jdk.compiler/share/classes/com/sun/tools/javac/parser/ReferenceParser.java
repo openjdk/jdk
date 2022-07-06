@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,16 @@ import com.sun.source.tree.Tree;
 import com.sun.source.util.TreeScanner;
 import com.sun.tools.javac.parser.Tokens.TokenKind;
 import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.util.DiagnosticSource;
+import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Name;
+
+import javax.tools.JavaFileObject;
+import java.util.Locale;
+import java.util.Queue;
 
 /**
  *  A utility class to parse a string in a doc comment containing a
@@ -71,8 +77,11 @@ public class ReferenceParser {
      */
     public static class ParseException extends Exception {
         private static final long serialVersionUID = 0;
-        ParseException(String message) {
+        final int pos;
+
+        ParseException(int pos, String message) {
             super(message);
+            this.pos = pos;
         }
     }
 
@@ -100,106 +109,157 @@ public class ReferenceParser {
         Name member;
         List<JCTree> paramTypes;
 
-        Log.DeferredDiagnosticHandler deferredDiagnosticHandler
-                = new Log.DeferredDiagnosticHandler(fac.log);
+        Log.DeferredDiagnosticHandler dh = new Log.DeferredDiagnosticHandler(fac.log);
 
         try {
             int slash = sig.indexOf("/");
-            int hash = sig.indexOf("#", slash + 1);
+            int afterSlash = slash + 1;
+            int hash = sig.indexOf("#", afterSlash);
+            int afterHash = hash + 1;
             int lparen = sig.indexOf("(", Math.max(slash, hash) + 1);
-            if (slash > -1) {
-                moduleName = parseModule(sig.substring(0, slash));
-            } else {
-                moduleName = null;
-            }
-            if (slash > 0 && sig.length() == slash + 1) {
+            int afterLparen = lparen + 1;
+
+            moduleName = switch (slash) {
+                case -1 -> null;
+                case 0 -> throw new ParseException(0, "dc.ref.syntax.error");
+                default -> parseModule(sig, 0, slash, dh);
+            };
+
+            if (slash > 0 && sig.length() == afterSlash) {
                 qualExpr = null;
                 member = null;
             } else if (hash == -1) {
                 if (lparen == -1) {
-                    qualExpr = parseType(sig.substring(slash + 1));
+                    qualExpr = parseType(sig, afterSlash, sig.length(), dh);
                     member = null;
                 } else {
                     qualExpr = null;
-                    member = parseMember(sig.substring(slash + 1, lparen));
+                    member = parseMember(sig, afterSlash, lparen, dh);
                 }
             } else {
-                qualExpr = (hash == slash + 1) ? null : parseType(sig.substring(slash + 1, hash));
-                if (lparen == -1)
-                    member = parseMember(sig.substring(hash + 1));
-                else
-                    member = parseMember(sig.substring(hash + 1, lparen));
+                qualExpr = (hash == afterSlash) ? null : parseType(sig, afterSlash, hash, dh);
+                if (lparen == -1) {
+                    member = parseMember(sig, afterHash, sig.length(), dh);
+                } else {
+                    member = parseMember(sig, afterHash, lparen, dh);
+                }
             }
 
-            if (lparen < 0) {
+            if (lparen == -1) {
                 paramTypes = null;
             } else {
                 int rparen = sig.indexOf(")", lparen);
-                if (rparen != sig.length() - 1)
-                    throw new ParseException("dc.ref.bad.parens");
-                paramTypes = parseParams(sig.substring(lparen + 1, rparen));
+                if (rparen != sig.length() - 1) {
+                    throw new ParseException(rparen, "dc.ref.bad.parens");
+                }
+                paramTypes = parseParams(sig, afterLparen, rparen, dh);
             }
 
-            if (!deferredDiagnosticHandler.getDiagnostics().isEmpty())
-                throw new ParseException("dc.ref.syntax.error");
+            assert dh.getDiagnostics().isEmpty();
 
         } finally {
-            fac.log.popDiagnosticHandler(deferredDiagnosticHandler);
+            fac.log.popDiagnosticHandler(dh);
         }
 
         return new Reference(moduleName, qualExpr, member, paramTypes);
     }
 
-    private JCTree.JCExpression parseModule(String s) throws ParseException {
-        JavacParser p = fac.newParser(s, false, false, false);
-        JCTree.JCExpression expr = p.qualident(false);
-        if (p.token().kind != TokenKind.EOF)
-            throw new ParseException("dc.ref.unexpected.input");
-        return expr;
+    private JCTree.JCExpression parseModule(String sig, int beginIndex, int endIndex, Log.DeferredDiagnosticHandler dh) throws ParseException {
+        String s = sig.substring(beginIndex, endIndex);
+        JavaFileObject prev = fac.log.useSource(null);
+        try {
+            JavacParser p = fac.newParser(s, false, false, false);
+            JCTree.JCExpression expr = p.qualident(false);
+            if (p.token().kind != TokenKind.EOF) {
+                throw new ParseException(beginIndex + p.token().pos, "dc.ref.unexpected.input");
+            }
+            checkDiags(dh, beginIndex);
+            return expr;
+        } finally {
+            fac.log.useSource(prev);
+        }
     }
 
-    private JCTree parseType(String s) throws ParseException {
-        JavacParser p = fac.newParser(s, false, false, false);
-        JCTree tree = p.parseType();
-        if (p.token().kind != TokenKind.EOF)
-            throw new ParseException("dc.ref.unexpected.input");
-        return tree;
+    private JCTree parseType(String sig, int beginIndex, int endIndex, Log.DeferredDiagnosticHandler dh) throws ParseException {
+        String s = sig.substring(beginIndex, endIndex);
+        JavaFileObject prev = fac.log.useSource(null);
+        try {
+            JavacParser p = fac.newParser(s, false, false, false);
+            JCTree tree = p.parseType();
+            if (p.token().kind != TokenKind.EOF) {
+                throw new ParseException(beginIndex + p.token().pos, "dc.ref.unexpected.input");
+            }
+            checkDiags(dh, beginIndex);
+            return tree;
+        } finally {
+            fac.log.useSource(prev);
+        }
     }
 
-    private Name parseMember(String s) throws ParseException {
-        JavacParser p = fac.newParser(s, false, false, false);
-        Name name = p.ident();
-        if (p.token().kind != TokenKind.EOF)
-            throw new ParseException("dc.ref.unexpected.input");
-        return name;
+    private Name parseMember(String sig, int beginIndex, int endIndex, Log.DeferredDiagnosticHandler dh) throws ParseException {
+        String s = sig.substring(beginIndex, endIndex);
+        JavaFileObject prev = fac.log.useSource(null);
+        try {
+            JavacParser p = fac.newParser(s, false, false, false);
+            Name name = p.ident();
+            if (p.token().kind != TokenKind.EOF) {
+                throw new ParseException(beginIndex + p.token().pos, "dc.ref.unexpected.input");
+            }
+            checkDiags(dh, beginIndex);
+            return name;
+        } finally {
+            fac.log.useSource(prev);
+        }
     }
 
-    private List<JCTree> parseParams(String s) throws ParseException {
-        if (s.trim().isEmpty())
+    private List<JCTree> parseParams(String sig, int beginIndex, int endIndex, Log.DeferredDiagnosticHandler dh) throws ParseException {
+        String s = sig.substring(beginIndex, endIndex);
+        if (s.isBlank()) {
             return List.nil();
-
-        JavacParser p = fac.newParser(s.replace("...", "[]"), false, false, false);
-        ListBuffer<JCTree> paramTypes = new ListBuffer<>();
-        paramTypes.add(p.parseType());
-
-        if (p.token().kind == TokenKind.IDENTIFIER)
-            p.nextToken();
-
-        while (p.token().kind == TokenKind.COMMA) {
-            p.nextToken();
-            paramTypes.add(p.parseType());
-
-            if (p.token().kind == TokenKind.IDENTIFIER)
-                p.nextToken();
         }
 
-        if (p.token().kind != TokenKind.EOF)
-            throw new ParseException("dc.ref.unexpected.input");
+        JavaFileObject prev = fac.log.useSource(null);
+        try {
+            JavacParser p = fac.newParser(s.replace("...", "[]"), false, false, false);
+            ListBuffer<JCTree> paramTypes = new ListBuffer<>();
+            paramTypes.add(p.parseType());
 
-        if (new TypeAnnotationFinder().scan(paramTypes, null) != null)
-            throw new ParseException("dc.ref.annotations.not.allowed");
+            if (p.token().kind == TokenKind.IDENTIFIER) {
+                p.nextToken();
+            }
 
-        return paramTypes.toList();
+            while (p.token().kind == TokenKind.COMMA) {
+                p.nextToken();
+                paramTypes.add(p.parseType());
+
+                if (p.token().kind == TokenKind.IDENTIFIER) {
+                    p.nextToken();
+                }
+            }
+
+            if (p.token().kind != TokenKind.EOF) {
+                throw new ParseException(p.token().pos, "dc.ref.unexpected.input");
+            }
+
+            Tree typeAnno = new TypeAnnotationFinder().scan(paramTypes, null);
+            if (typeAnno != null) {
+                int annoPos = ((JCTree) typeAnno).getStartPosition();
+                throw new ParseException(beginIndex + annoPos, "dc.ref.annotations.not.allowed");
+            }
+
+            checkDiags(dh, beginIndex);
+
+            return paramTypes.toList();
+        } finally {
+            fac.log.useSource(prev);
+        }
+    }
+
+    private void checkDiags(Log.DeferredDiagnosticHandler h, int offset) throws ParseException {
+        JCDiagnostic d = h.getDiagnostics().peek();
+        if (d != null) {
+            throw new ParseException(offset + ((int) d.getPosition()), "dc.ref.syntax.error");
+        }
     }
 
     static class TypeAnnotationFinder extends TreeScanner<Tree, Void> {

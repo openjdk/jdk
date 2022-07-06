@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,8 @@
 
 class ReferenceProcessor;
 class DataLayout;
+class Method;
+class nmethod;
 class SerialOldTracer;
 class STWGCTimer;
 
@@ -144,7 +146,7 @@ class MarkSweep : AllStatic {
   static void adjust_marks();   // Adjust the pointers in the preserved marks table
   static void restore_marks();  // Restore the marks that we saved in preserve_mark
 
-  static int adjust_pointers(oop obj);
+  static size_t adjust_pointers(oop obj);
 
   static void follow_stack();   // Empty marking stack.
 
@@ -181,6 +183,8 @@ public:
   virtual bool do_metadata() { return true; }
   virtual void do_klass(Klass* k);
   virtual void do_cld(ClassLoaderData* cld);
+  virtual void do_method(Method* m);
+  virtual void do_nmethod(nmethod* nm);
 
   void set_ref_discoverer(ReferenceDiscoverer* rd) {
     set_ref_discoverer_internal(rd);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@
 //                ^ increment on lookup()
 // and not
 //    Symbol* G = lookup()
-//              ^ increment on assignmnet
+//              ^ increment on assignment
 // The reference count must be decremented manually when the copy of the
 // pointer G is destroyed.
 //
@@ -155,7 +155,7 @@ class Symbol : public MetaspaceObj {
   // Returns the largest size symbol we can safely hold.
   static int max_length() { return max_symbol_length; }
   unsigned identity_hash() const {
-    unsigned addr_bits = (unsigned)((uintptr_t)this >> (LogBytesPerWord + 3));
+    unsigned addr_bits = (unsigned)((uintptr_t)this >> LogBytesPerWord);
     return ((unsigned)extract_hash(_hash_and_refcount) & 0xffff) |
            ((addr_bits ^ (length() << 8) ^ (( _body[0] << 8) | _body[1])) << 16);
   }
@@ -261,7 +261,7 @@ class Symbol : public MetaspaceObj {
   // 'java.lang.Object[][]'.
   void print_as_signature_external_return_type(outputStream *os);
   // Treating the symbol as a signature, print the parameter types
-  // seperated by ', ' to the outputStream.  Prints external names as
+  // separated by ', ' to the outputStream.  Prints external names as
   //  'double' or 'java.lang.Object[][]'.
   void print_as_signature_external_parameters(outputStream *os);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,12 +35,7 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
- *  Encapsulates information about a link.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
+ * Encapsulates information about a link.
  */
 public abstract class LinkInfo {
 
@@ -93,9 +88,7 @@ public abstract class LinkInfo {
     public boolean skipPreview;
 
     /**
-     * Returns an empty instance of a content object.
-     *
-     * @return an empty instance of a content object.
+     * {@return a new instance of a content object}
      */
     protected abstract Content newContent();
 

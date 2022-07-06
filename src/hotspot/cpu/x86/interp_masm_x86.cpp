@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,9 +36,9 @@
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/basicLock.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/thread.inline.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 // Implementation of InterpreterMacroAssembler
@@ -181,7 +181,7 @@ void InterpreterMacroAssembler::profile_return_type(Register mdp, Register ret, 
 
       // If we don't profile all invoke bytecodes we must make sure
       // it's a bytecode we indeed profile. We can't go back to the
-      // begining of the ProfileData we intend to update to check its
+      // beginning of the ProfileData we intend to update to check its
       // type because we're right after it and we don't known its
       // length
       Label do_profile;
@@ -967,7 +967,7 @@ void InterpreterMacroAssembler::narrow(Register result) {
 //
 // Apply stack watermark barrier.
 // Unlock the receiver if this is a synchronized method.
-// Unlock any Java monitors from syncronized blocks.
+// Unlock any Java monitors from synchronized blocks.
 // Remove the activation from the stack.
 //
 // If there are locked Java monitors
@@ -1064,6 +1064,8 @@ void InterpreterMacroAssembler::remove_activation(
 
   bind(unlock);
   unlock_object(robj);
+  dec_held_monitor_count();
+
   pop(state);
 
   // Check that for block-structured locking (i.e., that all locked
@@ -1108,6 +1110,7 @@ void InterpreterMacroAssembler::remove_activation(
       push(state);
       mov(robj, rmon);   // nop if robj and rmon are the same
       unlock_object(robj);
+      dec_held_monitor_count();
       pop(state);
 
       if (install_monitor_exception) {
@@ -1168,6 +1171,7 @@ void InterpreterMacroAssembler::remove_activation(
   leave();                           // remove frame anchor
   pop(ret_addr);                     // get return address
   mov(rsp, rbx);                     // set sp to sender sp
+  pop_cont_fastpath();
 }
 
 void InterpreterMacroAssembler::get_method_counters(Register method,
@@ -1972,19 +1976,18 @@ void InterpreterMacroAssembler::verify_FPU(int stack_depth, TosState state) {
 #endif
 }
 
-// Jump if ((*counter_addr += increment) & mask) satisfies the condition.
-void InterpreterMacroAssembler::increment_mask_and_jump(Address counter_addr,
-                                                        int increment, Address mask,
-                                                        Register scratch, bool preloaded,
-                                                        Condition cond, Label* where) {
-  if (!preloaded) {
-    movl(scratch, counter_addr);
-  }
-  incrementl(scratch, increment);
+// Jump if ((*counter_addr += increment) & mask) == 0
+void InterpreterMacroAssembler::increment_mask_and_jump(Address counter_addr, Address mask,
+                                                        Register scratch, Label* where) {
+  // This update is actually not atomic and can lose a number of updates
+  // under heavy contention, but the alternative of using the (contended)
+  // atomic update here penalizes profiling paths too much.
+  movl(scratch, counter_addr);
+  incrementl(scratch, InvocationCounter::count_increment);
   movl(counter_addr, scratch);
   andl(scratch, mask);
   if (where != NULL) {
-    jcc(cond, *where);
+    jcc(Assembler::zero, *where);
   }
 }
 

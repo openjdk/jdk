@@ -59,6 +59,9 @@
 #define SIGNATURE_EXCEPTION "java/security/SignatureException"
 #define OUT_OF_MEMORY_ERROR "java/lang/OutOfMemoryError"
 
+#define KEYSTORE_LOCATION_CURRENTUSER  0
+#define KEYSTORE_LOCATION_LOCALMACHINE 1
+
 #define SS_CHECK(Status) \
         if (Status != ERROR_SUCCESS) { \
             ThrowException(env, SIGNATURE_EXCEPTION, Status); \
@@ -84,7 +87,7 @@ DEF_STATIC_JNI_OnLoad
 
 void showProperty(NCRYPT_HANDLE hKey);
 
-void dump(LPSTR title, PBYTE data, DWORD len)
+void dump(LPCSTR title, PBYTE data, DWORD len)
 {
     if (trace) {
         printf("==== %s ====\n", title);
@@ -386,10 +389,10 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_PRNG_generateSeed
 /*
  * Class:     sun_security_mscapi_CKeyStore
  * Method:    loadKeysOrCertificateChains
- * Signature: (Ljava/lang/String;)V
+ * Signature: (Ljava/lang/String;I)V
  */
 JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateChains
-  (JNIEnv *env, jobject obj, jstring jCertStoreName)
+  (JNIEnv *env, jobject obj, jstring jCertStoreName, jint jCertStoreLocation)
 {
     /**
      * Certificate in cert store has enhanced key usage extension
@@ -407,7 +410,6 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
     char* pszNameString = NULL; // certificate's friendly name
     DWORD cchNameString = 0;
 
-
     __try
     {
         // Open a system certificate store.
@@ -415,8 +417,20 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
             == NULL) {
             __leave;
         }
-        if ((hCertStore = ::CertOpenSystemStore(NULL, pszCertStoreName))
-            == NULL) {
+
+        if (jCertStoreLocation == KEYSTORE_LOCATION_CURRENTUSER) {
+            hCertStore = ::CertOpenSystemStore(NULL, pszCertStoreName);
+        }
+        else if (jCertStoreLocation == KEYSTORE_LOCATION_LOCALMACHINE) {
+            hCertStore = ::CertOpenStore(CERT_STORE_PROV_SYSTEM_A, 0, NULL,
+                CERT_SYSTEM_STORE_LOCAL_MACHINE, pszCertStoreName);
+        }
+        else {
+            PP("jCertStoreLocation is not a valid value");
+            __leave;
+        }
+
+        if (hCertStore == NULL) {
 
             ThrowException(env, KEYSTORE_EXCEPTION, GetLastError());
             __leave;
@@ -469,7 +483,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
             PP("--------------------------");
             // Check if private key available - client authentication certificate
             // must have private key available.
-            HCRYPTPROV hCryptProv = NULL;
+            HCRYPTPROV_OR_NCRYPT_KEY_HANDLE hCryptProv = NULL;
             DWORD dwKeySpec = 0;
             HCRYPTKEY hUserKey = NULL;
             BOOL bCallerFreeProv = FALSE;
@@ -533,7 +547,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_loadKeysOrCertificateC
             // Build certificate chain by using system certificate store.
             // Add cert chain into collection for any key usage.
             //
-            if (GetCertificateChain(OID_EKU_ANY, pCertContext, &pCertChainContext))
+            if (GetCertificateChain((LPSTR)OID_EKU_ANY, pCertContext, &pCertChainContext))
             {
                 for (DWORD i = 0; i < pCertChainContext->cChain; i++)
                 {
@@ -1267,7 +1281,7 @@ void showProperty(NCRYPT_HANDLE hKey) {
     BCryptBuffer bb;
     bb.BufferType = NCRYPTBUFFER_PKCS_SECRET;
     bb.cbBuffer = 18;
-    bb.pvBuffer = L"changeit";
+    bb.pvBuffer = (LPWSTR)L"changeit";
     BCryptBufferDesc bbd;
     bbd.ulVersion = 0;
     bbd.cBuffers = 1;
@@ -1799,6 +1813,16 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_removeCertificate
     }
 }
 
+JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_removeCngKey
+  (JNIEnv *env, jobject clazz, jlong k)
+{
+    SECURITY_STATUS ss;
+    ss = ::NCryptDeleteKey((NCRYPT_KEY_HANDLE)k, 0);
+    if (ss != ERROR_SUCCESS) {
+        ThrowException(env, KEY_EXCEPTION, ss);
+    }
+}
+
 /*
  * Class:     sun_security_mscapi_CKeyStore
  * Method:    destroyKeyContainer
@@ -1918,6 +1942,69 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_CRSACipher_encryptDecrypt
     {
         if (pData)
             delete [] pData;
+    }
+
+    return result;
+}
+
+/*
+ * Class:     sun_security_mscapi_CRSACipher
+ * Method:    cngEncryptDecrypt
+ * Signature: ([BIJZ)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_CRSACipher_cngEncryptDecrypt
+  (JNIEnv *env, jclass clazz, jbyteArray jData, jint jDataSize, jlong hKey,
+   jboolean doEncrypt)
+{
+    SECURITY_STATUS ss;
+    jbyteArray result = NULL;
+    jbyte* pData = NULL;
+    DWORD dwDataLen = jDataSize;
+    DWORD dwBufLen = env->GetArrayLength(jData);
+    __try
+    {
+        // Copy data from Java buffer to native buffer
+        pData = new (env) jbyte[dwBufLen];
+        if (pData == NULL) {
+            __leave;
+        }
+        env->GetByteArrayRegion(jData, 0, dwBufLen, pData);
+
+        if (doEncrypt == JNI_TRUE) {
+            // encrypt
+            ss = ::NCryptEncrypt((NCRYPT_KEY_HANDLE) hKey,
+                    (PBYTE)pData, dwDataLen,
+                    0,
+                    (PBYTE)pData, dwBufLen,
+                    &dwBufLen, NCRYPT_PAD_PKCS1_FLAG);
+            if (ss != ERROR_SUCCESS) {
+                ThrowException(env, KEY_EXCEPTION, ss);
+                __leave;
+            }
+        } else {
+            // decrypt
+            ss = ::NCryptDecrypt((NCRYPT_KEY_HANDLE) hKey,
+                    (PBYTE)pData, dwDataLen,
+                    0,
+                    (PBYTE)pData, dwBufLen,
+                    &dwBufLen, NCRYPT_PAD_PKCS1_FLAG);
+            if (ss != ERROR_SUCCESS) {
+                ThrowException(env, KEY_EXCEPTION, ss);
+                __leave;
+            }
+        }
+        // Create new byte array
+        if ((result = env->NewByteArray(dwBufLen)) == NULL) {
+            __leave;
+        }
+
+        // Copy data from native buffer to Java buffer
+        env->SetByteArrayRegion(result, 0, dwBufLen, (jbyte*) pData);
+    }
+    __finally {
+        if (pData) {
+            delete [] pData;
+        }
     }
 
     return result;

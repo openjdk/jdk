@@ -33,7 +33,7 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 public class TestMS950 {
-    // Data is listed from make/data/charsetmapping/MS950.map
+    // Data is listed from src/java.base/share/data/charsetmapping/MS950.map
     private final static String[] MS950B2C = new String[] {
         "0xF9FA  0x256D",
         "0xF9FB  0x256E",

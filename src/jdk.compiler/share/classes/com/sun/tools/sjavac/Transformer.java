@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import com.sun.tools.sjavac.pubapi.PubApi;
  * The transform interface is used to transform content inside a package, from one form to another.
  * Usually the output form is an unpredictable number of output files. (eg class files)
  * but can also be an unpredictable number of generated source files (eg idl2java)
- * or a single predictable output file (eg when copying,cleaning or compiling a properties file).
+ * or a single predictable output file (eg when copying, cleaning or compiling a properties file).
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.

@@ -320,6 +320,17 @@ public:
     return min;
   }
 
+  void truncate_to(int idx) {
+    for (int i = 0, j = idx; j < length(); i++, j++) {
+      at_put(i, at(j));
+    }
+    trunc_to(length() - idx);
+  }
+
+  void truncate_from(int idx) {
+    trunc_to(idx);
+  }
+
   size_t data_size_in_bytes() const {
     return _len * sizeof(E);
   }

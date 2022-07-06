@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -257,7 +257,7 @@ class NativeMovConstReg: public NativeInstruction {
   // Patch the code stream and oop pool.
   void set_data(intptr_t x);
 
-  // Patch narrow oop constants. Use this also for narrow klass.
+  // Patch narrow oop constants.
   void set_narrow_oop(narrowOop data, CodeBlob *code = NULL);
 
   void verify() NOT_DEBUG_RETURN;
@@ -500,6 +500,37 @@ class NativeMovRegMem: public NativeInstruction {
     NativeMovRegMem* test = (NativeMovRegMem*)address;
     DEBUG_ONLY( test->verify(); )
     return test;
+  }
+};
+
+class NativePostCallNop: public NativeInstruction {
+public:
+  bool check() const { Unimplemented(); return false; }
+  int displacement() const { return 0; }
+  void patch(jint diff) { Unimplemented(); }
+  void make_deopt() { Unimplemented(); }
+};
+
+inline NativePostCallNop* nativePostCallNop_at(address address) {
+  // Unimplemented();
+  return NULL;
+}
+
+class NativeDeoptInstruction: public NativeInstruction {
+public:
+  address instruction_address() const       { Unimplemented(); return NULL; }
+  address next_instruction_address() const  { Unimplemented(); return NULL; }
+
+  void  verify() { Unimplemented(); }
+
+  static bool is_deopt_at(address instr) {
+    // Unimplemented();
+    return false;
+  }
+
+  // MT-safe patching
+  static void insert(address code_pos) {
+    Unimplemented();
   }
 };
 
