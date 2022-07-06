@@ -32,12 +32,18 @@ import java.util.List;
 import jdk.jfr.Event;
 import jdk.jfr.FlightRecorder;
 import jdk.jfr.Recording;
+import jdk.vm.ci.meta.MetaAccessProvider;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ConstantPool;
+import jdk.vm.ci.runtime.JVMCI;
 
 /**
  * @test TestGetEventWriter
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib
+ * @modules jdk.internal.vm.ci/jdk.vm.ci.meta
+ *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *
  * @compile PlaceholderEventWriter.java
  * @compile PlaceholderEventWriterFactory.java
@@ -50,6 +56,9 @@ import jdk.jfr.Recording;
  * @compile StaticCommitEvent.java
  *
  * @run main/othervm jdk.jfr.jvm.TestGetEventWriter
+ *
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -Dtest.jvmci=true --add-exports=jdk.jfr/jdk.jfr.internal.event=ALL-UNNAMED
+ *      jdk.jfr.jvm.TestGetEventWriter
  *
  * @run main/othervm/timeout=300 -Xint -XX:+UseInterpreter -Dinterpreted=true
  *      jdk.jfr.jvm.TestGetEventWriter
@@ -90,6 +99,52 @@ public class TestGetEventWriter {
         testNonEvent();
     }
 
+    private static ResolvedJavaMethod findCommitMethod(MetaAccessProvider metaAccess, Class<?> eventClass) {
+        for (Method m : eventClass.getMethods()) {
+            if (m.getName().toLowerCase().contains("commit")) {
+                return metaAccess.lookupJavaMethod(m);
+            }
+        }
+        throw new AssertionError("could not find commit method in " + eventClass);
+    }
+
+    // Factor out test.jvmci system property check to reduce unecessary work in -Xcomp.
+    private static void maybeCheckJVMCI(Class<?> eventClass) throws Throwable {
+        if (!Boolean.getBoolean("test.jvmci")) {
+            return;
+        }
+        checkJVMCI(eventClass);
+    }
+
+    /**
+     * Checks that JVMCI prevents unblessed access to {@code EventWriterFactory.getEventWriter(long)}.
+     */
+    private static void checkJVMCI(Class<?> eventClass) throws Throwable {
+        MetaAccessProvider metaAccess = JVMCI.getRuntime().getHostJVMCIBackend().getMetaAccess();
+        ResolvedJavaMethod commit = findCommitMethod(metaAccess, eventClass);
+        ConstantPool cp = commit.getConstantPool();
+
+        // Search for first INVOKESTATIC instruction in commit method which is expected
+        // to be the call to jdk.jfr.internal.event.EventWriterFactory.getEventWriter(long).
+        final int INVOKESTATIC = 184;
+        byte[] code = commit.getCode();
+        for (int bci = 0; bci < code.length; bci++) {
+            int b = code[bci] & 0xff;
+            if (b == INVOKESTATIC) {
+                int cpi = ((code[bci + 1] & 0xff) << 8) | (code[bci + 2] & 0xff);
+                try {
+                    cp.lookupMethod(cpi, 184, commit);
+                    throw new AssertionError("Expected IllegalAccessError");
+                } catch (IllegalAccessError e) {
+                }
+
+                // Ignore all subsequent instructions
+                return;
+            }
+        }
+        throw new AssertionError("did not find INVOKESTATIC in " + commit.format("%H.%n(%p)"));
+    }
+
     // The class does not inherit jdk.jfr.Event and, as such, does not implement the
     // API. It has its own stand-alone "commit()V", which is not an override, that
     // attempts to resolve and link against EventWriterFactory. This user implementation
@@ -101,6 +156,7 @@ public class TestGetEventWriter {
             throw new RuntimeException("Should not reach here");
         } catch (IllegalAccessError iae) {
             // OK, as expected
+            maybeCheckJVMCI(e.getClass());
             return;
         }
     }
@@ -115,6 +171,7 @@ public class TestGetEventWriter {
             throw new RuntimeException("Should not reach here");
         } catch (IllegalAccessError iae) {
             // OK, as expected
+            maybeCheckJVMCI(e.getClass());
             return;
         }
     }
@@ -134,6 +191,7 @@ public class TestGetEventWriter {
             throw new RuntimeException("Should not reach here");
         } catch (IllegalAccessError iae) {
             // OK, as expected
+            maybeCheckJVMCI(e.getClass());
         }
         try {
             FlightRecorder.register(e.getClass());
@@ -154,6 +212,7 @@ public class TestGetEventWriter {
             throw new RuntimeException("Should not reach here");
         } catch (IllegalAccessError iae) {
             // OK, as expected
+            maybeCheckJVMCI(e.getClass());
             return;
         }
     }
@@ -170,6 +229,7 @@ public class TestGetEventWriter {
             throw new RuntimeException("Should not reach here");
         } catch (IllegalAccessError iae) {
             // OK, as expected
+            maybeCheckJVMCI(e.getClass());
         }
         // Instrumentation added.
         FlightRecorder.register(e.getClass().asSubclass(Event.class));
@@ -187,6 +247,7 @@ public class TestGetEventWriter {
             throw new RuntimeException("Should not reach here");
         } catch (IllegalAccessError iae) {
             // OK, as expected
+            maybeCheckJVMCI(e.getClass());
         }
     }
 
