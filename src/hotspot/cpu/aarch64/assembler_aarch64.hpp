@@ -142,16 +142,18 @@ REGISTER_DECLARATION(Register, rthread,   r28);
 REGISTER_DECLARATION(Register, rheapbase, r27);
 // constant pool cache
 REGISTER_DECLARATION(Register, rcpool,    r26);
-// monitors allocated on stack
-REGISTER_DECLARATION(Register, rmonitors, r25);
+// r25 is a callee-saved temp
+// REGISTER_DECLARATION(Register, unused, r25);
 // locals on stack
 REGISTER_DECLARATION(Register, rlocals,   r24);
 // bytecode pointer
 REGISTER_DECLARATION(Register, rbcp,      r22);
 // Dispatch table base
 REGISTER_DECLARATION(Register, rdispatch, r21);
-// Java stack pointer
+// Java expression stack pointer
 REGISTER_DECLARATION(Register, esp,      r20);
+// Sender's SP while in interpreter
+REGISTER_DECLARATION(Register, r19_sender_sp, r19);
 
 // Preserved predicate register with all elements set TRUE.
 REGISTER_DECLARATION(PRegister, ptrue, p7);

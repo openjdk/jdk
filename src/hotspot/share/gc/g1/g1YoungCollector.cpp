@@ -383,12 +383,10 @@ class G1PrepareEvacuationTask : public WorkerTask {
 
       uint index = hr->hrm_index();
       if (humongous_region_is_candidate(hr)) {
-        _g1h->set_humongous_reclaim_candidate(index, true);
         _g1h->register_humongous_region_with_region_attr(index);
         _worker_humongous_candidates++;
         // We will later handle the remembered sets of these regions.
       } else {
-        _g1h->set_humongous_reclaim_candidate(index, false);
         _g1h->register_region_with_region_attr(hr);
       }
       log_debug(gc, humongous)("Humongous region %u (object size %zu @ " PTR_FORMAT ") remset %zu code roots %zu marked %d reclaim candidate %d type array %d",

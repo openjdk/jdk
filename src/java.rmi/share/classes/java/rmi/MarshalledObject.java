@@ -213,8 +213,7 @@ public final class MarshalledObject<T> implements Serializable {
         if (obj == this)
             return true;
 
-        if (obj != null && obj instanceof MarshalledObject) {
-            MarshalledObject<?> other = (MarshalledObject<?>) obj;
+        if (obj instanceof MarshalledObject<?> other) {
 
             // if either is a ref to null, both must be
             if (objBytes == null || other.objBytes == null)
