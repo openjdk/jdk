@@ -512,6 +512,14 @@ bool ShenandoahHeuristics::in_generation(ShenandoahHeapRegion* region) {
           || (_generation->generation_mode() == OLD && region->affiliation() == OLD_GENERATION));
 }
 
+size_t ShenandoahHeuristics::min_free_threshold() {
+  size_t min_free_threshold =
+      _generation->generation_mode() == GenerationMode::OLD
+          ? ShenandoahOldMinFreeThreshold
+          : ShenandoahMinFreeThreshold;
+  return _generation->soft_max_capacity() / 100 * min_free_threshold;
+}
+
 void ShenandoahHeuristics::save_last_live_memory(size_t live_memory) {
   _live_memory_penultimate_cycle = _live_memory_last_cycle;
   _live_memory_last_cycle = live_memory;

@@ -49,7 +49,7 @@ bool ShenandoahStaticHeuristics::should_start_gc() {
   size_t soft_tail = max_capacity - capacity;
   available = (available > soft_tail) ? (available - soft_tail) : 0;
 
-  size_t threshold_available = capacity / 100 * ShenandoahMinFreeThreshold;
+  size_t threshold_available = min_free_threshold();
 
   if (available < threshold_available) {
     log_info(gc)("Trigger: Free (" SIZE_FORMAT "%s) is below minimum threshold (" SIZE_FORMAT "%s)",

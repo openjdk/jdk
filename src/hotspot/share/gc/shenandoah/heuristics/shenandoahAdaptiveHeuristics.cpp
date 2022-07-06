@@ -273,7 +273,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   double rate = _allocation_rate.sample(allocated);
   _last_trigger = OTHER;
 
-  size_t min_threshold = capacity / 100 * ShenandoahMinFreeThreshold;
+  size_t min_threshold = min_free_threshold();
 
   if (allocation_headroom < min_threshold) {
     log_info(gc)("Trigger (%s): Free (" SIZE_FORMAT "%s) is below minimum threshold (" SIZE_FORMAT "%s)",
