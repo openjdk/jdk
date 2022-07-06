@@ -146,7 +146,7 @@ public:
 
   // Returns the address of the start of the block reaching into the card containing
   // "addr".
-  inline HeapWord* block_start_reaching_into_card(const void* addr);
+  inline HeapWord* block_start_reaching_into_card(const void* addr) const;
 
   void update_for_block(HeapWord* blk_start, HeapWord* blk_end) {
     if (is_crossing_card_boundary(blk_start, blk_end)) {

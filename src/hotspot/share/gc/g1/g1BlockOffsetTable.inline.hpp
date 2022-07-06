@@ -40,7 +40,7 @@ inline void G1BlockOffsetTablePart::assert_same_bot_entry(const void* n, const v
 }
 #endif
 
-inline HeapWord* G1BlockOffsetTablePart::block_start_reaching_into_card(const void* addr) {
+inline HeapWord* G1BlockOffsetTablePart::block_start_reaching_into_card(const void* addr) const {
   assert(addr >= _hr->bottom() && addr < _hr->top(), "invalid address");
 
 #ifdef ASSERT
