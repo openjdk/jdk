@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
 #include "code/codeCache.hpp"
 #include "compiler/disassembler.hpp"
 #include "oops/oop.inline.hpp"
-#include "prims/forte.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 
@@ -126,7 +125,6 @@ StubCodeMark::~StubCodeMark() {
   _cdesc->set_disp(uint(head - base));
 #endif
   _cgen->stub_epilog(_cdesc);
-  Forte::register_stub(_cdesc->name(), _cdesc->begin(), _cdesc->end());
 
   if (JvmtiExport::should_post_dynamic_code_generated()) {
     JvmtiExport::post_dynamic_code_generated(_cdesc->name(), _cdesc->begin(), _cdesc->end());

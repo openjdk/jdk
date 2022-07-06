@@ -28,7 +28,6 @@
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
-#include "prims/forte.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaCalls.hpp"
@@ -69,9 +68,6 @@ enum {
 //-------------------------------------------------------
 
 // Native interfaces for use by Forte tools.
-
-
-#if !defined(IA64)
 
 class vframeStreamForte : public vframeStreamCommon {
  public:
@@ -659,46 +655,7 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
   thread->set_in_asgct(false);
 }
 
-
-#ifndef _WINDOWS
-// Support for the Forte(TM) Performance Tools collector.
-//
-// The method prototype is derived from libcollector.h. For more
-// information, please see the libcollect man page.
-
-// Method to let libcollector know about a dynamically loaded function.
-// Because it is weakly bound, the calls become NOP's when the library
-// isn't present.
-#ifdef __APPLE__
-// XXXDARWIN: Link errors occur even when __attribute__((weak_import))
-// is added
-#define collector_func_load(x0,x1,x2,x3,x4,x5,x6) ((void) 0)
-#else
-void    collector_func_load(char* name,
-                            void* null_argument_1,
-                            void* null_argument_2,
-                            void *vaddr,
-                            int size,
-                            int zero_argument,
-                            void* null_argument_3);
-#pragma weak collector_func_load
-#define collector_func_load(x0,x1,x2,x3,x4,x5,x6) \
-        ( collector_func_load ? collector_func_load(x0,x1,x2,x3,x4,x5,x6),(void)0 : (void)0 )
-#endif // __APPLE__
-#endif // !_WINDOWS
-
 } // end extern "C"
-#endif // !IA64
-
-void Forte::register_stub(const char* name, address start, address end) {
-#if !defined(_WINDOWS) && !defined(IA64)
-  assert(pointer_delta(end, start, sizeof(jbyte)) < INT_MAX,
-         "Code size exceeds maximum range");
-
-  collector_func_load((char*)name, NULL, NULL, start,
-    pointer_delta(end, start, sizeof(jbyte)), 0, NULL);
-#endif // !_WINDOWS && !IA64
-}
 
 #else // INCLUDE_JVMTI
 extern "C" {

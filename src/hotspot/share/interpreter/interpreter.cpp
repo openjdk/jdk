@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@
 #include "oops/methodData.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
-#include "prims/forte.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/handles.inline.hpp"
@@ -140,11 +139,6 @@ void interpreter_init_code() {
 #endif // PRODUCT
   // need to hit every safepoint in order to call zapping routine
   // register the interpreter
-  Forte::register_stub(
-    "Interpreter",
-    AbstractInterpreter::code()->code_start(),
-    AbstractInterpreter::code()->code_end()
-  );
 
   // notify JVMTI profiler
   if (JvmtiExport::should_post_dynamic_code_generated()) {
