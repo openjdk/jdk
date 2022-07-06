@@ -277,6 +277,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_fp_range_check(vmIntrinsics::ID id);
   bool inline_number_methods(vmIntrinsics::ID id);
   bool inline_bitshuffle_methods(vmIntrinsics::ID id);
+  bool inline_compare_unsigned(vmIntrinsics::ID id);
   bool inline_divmod_methods(vmIntrinsics::ID id);
   bool inline_reference_get();
   bool inline_reference_refersTo0(bool is_phantom);

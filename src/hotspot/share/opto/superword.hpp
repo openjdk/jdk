@@ -518,6 +518,7 @@ class SuperWord : public ResourceObj {
   int data_size(Node* s);
   // Extend packset by following use->def and def->use links from pack members.
   void extend_packlist();
+  int adjust_alignment_for_type_conversion(Node* s, Node* t, int align);
   // Extend the packset by visiting operand definitions of nodes in pack p
   bool follow_use_defs(Node_List* p);
   // Extend the packset by visiting uses of nodes in pack p
@@ -571,6 +572,10 @@ class SuperWord : public ResourceObj {
   void bb_insert_after(Node* n, int pos);
   // Compute max depth for expressions from beginning of block
   void compute_max_depth();
+  // Return the longer type for type-conversion node and return illegal type for other nodes.
+  BasicType longer_type_for_conversion(Node* n);
+  // Find the longest type in def-use chain for packed nodes, and then compute the max vector size.
+  int max_vector_size_in_def_use_chain(Node* n);
   // Compute necessary vector element type for expressions
   void compute_vector_element_type();
   // Are s1 and s2 in a pack pair and ordered as s1,s2?

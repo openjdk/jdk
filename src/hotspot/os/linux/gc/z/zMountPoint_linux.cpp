@@ -38,7 +38,7 @@
 ZMountPoint::ZMountPoint(const char* filesystem, const char** preferred_mountpoints) {
   if (AllocateHeapAt != NULL) {
     // Use specified path
-    _path = strdup(AllocateHeapAt);
+    _path = os::strdup(AllocateHeapAt, mtGC);
   } else {
     // Find suitable path
     _path = find_mountpoint(filesystem, preferred_mountpoints);
@@ -46,7 +46,7 @@ ZMountPoint::ZMountPoint(const char* filesystem, const char** preferred_mountpoi
 }
 
 ZMountPoint::~ZMountPoint() {
-  free(_path);
+  os::free(_path);
   _path = NULL;
 }
 
@@ -61,11 +61,11 @@ char* ZMountPoint::get_mountpoint(const char* line, const char* filesystem) cons
       strcmp(line_filesystem, filesystem) != 0 ||
       access(line_mountpoint, R_OK|W_OK|X_OK) != 0) {
     // Not a matching or accessible filesystem
-    free(line_mountpoint);
+    os::free(line_mountpoint);
     line_mountpoint = NULL;
   }
 
-  free(line_filesystem);
+  os::free(line_filesystem);
 
   return line_mountpoint;
 }
@@ -88,14 +88,14 @@ void ZMountPoint::get_mountpoints(const char* filesystem, ZArray<char*>* mountpo
     }
   }
 
-  free(line);
+  os::free(line);
   fclose(fd);
 }
 
 void ZMountPoint::free_mountpoints(ZArray<char*>* mountpoints) const {
   ZArrayIterator<char*> iter(mountpoints);
   for (char* mountpoint; iter.next(&mountpoint);) {
-    free(mountpoint);
+    os::free(mountpoint);
   }
   mountpoints->clear();
 }
@@ -109,7 +109,7 @@ char* ZMountPoint::find_preferred_mountpoint(const char* filesystem,
     for (const char** preferred = preferred_mountpoints; *preferred != NULL; preferred++) {
       if (!strcmp(mountpoint, *preferred)) {
         // Preferred mount point found
-        return strdup(mountpoint);
+        return os::strdup(mountpoint, mtGC);
       }
     }
   }
@@ -135,7 +135,7 @@ char* ZMountPoint::find_mountpoint(const char* filesystem, const char** preferre
     log_error_p(gc)("Failed to find an accessible %s filesystem", filesystem);
   } else if (mountpoints.length() == 1) {
     // One mount point found
-    path = strdup(mountpoints.at(0));
+    path = os::strdup(mountpoints.at(0), mtGC);
   } else {
     // More than one mount point found
     path = find_preferred_mountpoint(filesystem, &mountpoints, preferred_mountpoints);

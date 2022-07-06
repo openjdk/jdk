@@ -83,6 +83,7 @@ gc/stress/gclocker/TestGCLockerWithParallel.java 8180622 generic-all
 gc/stress/gclocker/TestGCLockerWithG1.java 8180622 generic-all
 gc/stress/TestJNIBlockFullGC/TestJNIBlockFullGC.java 8192647 generic-all
 gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java 8241293 macosx-x64
+gc/stress/TestStressG1Humongous.java 8286554 windows-x64
 
 #############################################################################
 
@@ -110,6 +111,7 @@ serviceability/sa/sadebugd/DebugdConnectTest.java 8239062,8270326 macosx-x64,mac
 serviceability/sa/TestRevPtrsForInvokeDynamic.java 8241235 generic-all
 
 serviceability/jvmti/ModuleAwareAgents/ThreadStart/MAAThreadStart.java 8225354 windows-all
+serviceability/jvmti/vthread/GetSetLocalTest/GetSetLocalTest.java 8286836 generic-all
 serviceability/dcmd/gc/RunFinalizationTest.java 8227120 linux-all,windows-x64
 
 serviceability/sa/ClhsdbCDSCore.java 8269982,8267433 macosx-aarch64,macosx-x64
@@ -119,8 +121,6 @@ serviceability/sa/ClhsdbPmap.java#core 8269982,8267433 macosx-aarch64,macosx-x64
 serviceability/sa/ClhsdbPstack.java#core 8269982,8267433 macosx-aarch64,macosx-x64
 serviceability/sa/TestJmapCore.java 8269982,8267433 macosx-aarch64,macosx-x64
 serviceability/sa/TestJmapCoreMetaspace.java 8269982,8267433 macosx-aarch64,macosx-x64
-
-serviceability/jvmti/vthread/VThreadNotifyFramePopTest/VThreadNotifyFramePopTest.java 8288214 generic-all
 
 #############################################################################
 
@@ -135,7 +135,6 @@ serviceability/jvmti/vthread/VThreadNotifyFramePopTest/VThreadNotifyFramePopTest
 
 #############################################################################
 
-vmTestbase/nsk/monitoring/MemoryPoolMBean/isCollectionUsageThresholdExceeded/isexceeded003/TestDescription.java 8153598 generic-all
 vmTestbase/nsk/monitoring/MemoryPoolMBean/isUsageThresholdExceeded/isexceeded001/TestDescription.java 8198668 generic-all
 vmTestbase/nsk/monitoring/MemoryPoolMBean/isUsageThresholdExceeded/isexceeded002/TestDescription.java 8153598 generic-all
 vmTestbase/nsk/monitoring/MemoryPoolMBean/isUsageThresholdExceeded/isexceeded003/TestDescription.java 8198668 generic-all

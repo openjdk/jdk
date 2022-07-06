@@ -535,6 +535,9 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_expand_i:
   case vmIntrinsics::_expand_l:                 return inline_bitshuffle_methods(intrinsic_id());
 
+  case vmIntrinsics::_compareUnsigned_i:
+  case vmIntrinsics::_compareUnsigned_l:        return inline_compare_unsigned(intrinsic_id());
+
   case vmIntrinsics::_divideUnsigned_i:
   case vmIntrinsics::_divideUnsigned_l:
   case vmIntrinsics::_remainderUnsigned_i:
@@ -2241,6 +2244,22 @@ bool LibraryCallKit::inline_bitshuffle_methods(vmIntrinsics::ID id) {
     case vmIntrinsics::_expand_i:    n = new ExpandBitsNode(argument(0),  argument(1), TypeInt::INT); break;
     case vmIntrinsics::_compress_l:  n = new CompressBitsNode(argument(0), argument(2), TypeLong::LONG); break;
     case vmIntrinsics::_expand_l:    n = new ExpandBitsNode(argument(0), argument(2), TypeLong::LONG); break;
+    default:  fatal_unexpected_iid(id);  break;
+  }
+  set_result(_gvn.transform(n));
+  return true;
+}
+
+//--------------------------inline_number_methods-----------------------------
+// inline int Integer.compareUnsigned(int, int)
+// inline int    Long.compareUnsigned(long, long)
+bool LibraryCallKit::inline_compare_unsigned(vmIntrinsics::ID id) {
+  Node* arg1 = argument(0);
+  Node* arg2 = (id == vmIntrinsics::_compareUnsigned_l) ? argument(2) : argument(1);
+  Node* n = NULL;
+  switch (id) {
+    case vmIntrinsics::_compareUnsigned_i:   n = new CmpU3Node(arg1, arg2);  break;
+    case vmIntrinsics::_compareUnsigned_l:   n = new CmpUL3Node(arg1, arg2); break;
     default:  fatal_unexpected_iid(id);  break;
   }
   set_result(_gvn.transform(n));

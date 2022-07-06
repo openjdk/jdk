@@ -50,6 +50,10 @@ public class PrimitiveConstant implements JavaConstant, SerializableConstant {
         return JavaConstant.forIntegerKind(JavaKind.fromPrimitiveOrVoidTypeChar(kind), i);
     }
 
+    public long getRawValue() {
+        return primitive;
+    }
+
     @Override
     public JavaKind getJavaKind() {
         return kind;

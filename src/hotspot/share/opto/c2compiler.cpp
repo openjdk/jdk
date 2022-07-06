@@ -275,6 +275,12 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_reverseBytes_l:
     if (!Matcher::match_rule_supported(Op_ReverseBytesL)) return false;
     break;
+  case vmIntrinsics::_compareUnsigned_i:
+    if (!Matcher::match_rule_supported(Op_CmpU3)) return false;
+    break;
+  case vmIntrinsics::_compareUnsigned_l:
+    if (!Matcher::match_rule_supported(Op_CmpUL3)) return false;
+    break;
   case vmIntrinsics::_divideUnsigned_i:
     if (!Matcher::match_rule_supported(Op_UDivI)) return false;
     break;

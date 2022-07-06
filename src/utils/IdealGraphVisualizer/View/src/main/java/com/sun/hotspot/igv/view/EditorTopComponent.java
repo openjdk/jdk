@@ -42,6 +42,7 @@ import com.sun.hotspot.igv.util.RangeSlider;
 import com.sun.hotspot.igv.settings.Settings;
 import com.sun.hotspot.igv.view.actions.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.awt.event.HierarchyBoundsListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.KeyEvent;
@@ -91,6 +92,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public final class EditorTopComponent extends TopComponent implements PropertyChangeListener {
 
     private DiagramViewer scene;
+    private Toolbar toolBar;
     private InstanceContent content;
     private InstanceContent graphContent;
     private EnableSeaLayoutAction seaLayoutAction;
@@ -109,6 +111,16 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     private RangeSlider rangeSlider;
     private JToggleButton overviewButton;
     private JToggleButton hideDuplicatesButton;
+
+    private static final Component quicksearch;
+    static {
+        Action searchAction = Utilities.actionsForPath("Actions/Search").get(0);
+        quicksearch = ((Presenter.Toolbar) searchAction).getToolbarPresenter();
+        Dimension preferredSize = quicksearch.getPreferredSize();
+        preferredSize = new Dimension((int) preferredSize.getWidth() * 2, (int) preferredSize.getHeight());
+        quicksearch.setMinimumSize(preferredSize); // necessary for GTK LAF
+        quicksearch.setPreferredSize(preferredSize);
+    }
     private static final String PREFERRED_ID = "EditorTopComponent";
     private static final String SATELLITE_STRING = "satellite";
     private static final String SCENE_STRING = "scene";
@@ -171,30 +183,33 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         setToolTipText(NbBundle.getMessage(EditorTopComponent.class, "HINT_EditorTopComponent"));
 
         Action[] actions = new Action[]{
-            PrevDiagramAction.get(PrevDiagramAction.class),
-            NextDiagramAction.get(NextDiagramAction.class),
-            null,
-            ExtractAction.get(ExtractAction.class),
-            ShowAllAction.get(HideAction.class),
-            ShowAllAction.get(ShowAllAction.class),
-            null,
-            ZoomInAction.get(ZoomInAction.class),
-            ZoomOutAction.get(ZoomOutAction.class),
+                PrevDiagramAction.get(PrevDiagramAction.class),
+                NextDiagramAction.get(NextDiagramAction.class),
+                null,
+                ShrinkDiffAction.get(ShrinkDiffAction.class),
+                ExpandDiffAction.get(ExpandDiffAction.class),
+                null,
+                ExtractAction.get(ExtractAction.class),
+                ShowAllAction.get(HideAction.class),
+                ShowAllAction.get(ShowAllAction.class),
+                null,
+                ZoomOutAction.get(ZoomOutAction.class),
+                ZoomInAction.get(ZoomInAction.class),
         };
 
 
         Action[] actionsWithSelection = new Action[]{
-            ExtractAction.get(ExtractAction.class),
-            ShowAllAction.get(HideAction.class),
-            null,
-            ExpandPredecessorsAction.get(ExpandPredecessorsAction.class),
-            ExpandSuccessorsAction.get(ExpandSuccessorsAction.class)
+                ExtractAction.get(ExtractAction.class),
+                ShowAllAction.get(HideAction.class),
+                null,
+                ExpandPredecessorsAction.get(ExpandPredecessorsAction.class),
+                ExpandSuccessorsAction.get(ExpandSuccessorsAction.class)
         };
 
         initComponents();
 
         ToolbarPool.getDefault().setPreferredIconSize(16);
-        Toolbar toolBar = new Toolbar();
+        toolBar = new Toolbar();
         Border b = (Border) UIManager.get("Nb.Editor.Toolbar.border"); //NOI18N
         toolBar.setBorder(b);
         JPanel container = new JPanel();
@@ -233,15 +248,18 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
             doc.getChangedEvent().addListener(d -> closeOnRemovedOrEmptyGroup());
         }
 
-        toolBar.add(NextDiagramAction.get(NextDiagramAction.class));
         toolBar.add(PrevDiagramAction.get(PrevDiagramAction.class));
+        toolBar.add(NextDiagramAction.get(NextDiagramAction.class));
+        toolBar.addSeparator();
+        toolBar.add(ShrinkDiffAction.get(ShrinkDiffAction.class));
+        toolBar.add(ExpandDiffAction.get(ExpandDiffAction.class));
         toolBar.addSeparator();
         toolBar.add(ExtractAction.get(ExtractAction.class));
         toolBar.add(ShowAllAction.get(HideAction.class));
         toolBar.add(ShowAllAction.get(ShowAllAction.class));
         toolBar.addSeparator();
-        toolBar.add(ShowAllAction.get(ZoomInAction.class));
         toolBar.add(ShowAllAction.get(ZoomOutAction.class));
+        toolBar.add(ShowAllAction.get(ZoomInAction.class));
 
         toolBar.addSeparator();
         ButtonGroup layoutButtons = new ButtonGroup();
@@ -294,8 +312,12 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         hideDuplicatesAction.addPropertyChangeListener(this);
 
         toolBar.addSeparator();
-        toolBar.add(UndoAction.get(UndoAction.class));
-        toolBar.add(RedoAction.get(RedoAction.class));
+        UndoAction undoAction = UndoAction.get(UndoAction.class);
+        undoAction.putValue(Action.SHORT_DESCRIPTION, "Undo");
+        toolBar.add(undoAction);
+        RedoAction redoAction = RedoAction.get(RedoAction.class);
+        redoAction.putValue(Action.SHORT_DESCRIPTION, "Redo");
+        toolBar.add(redoAction);
 
         toolBar.addSeparator();
         ButtonGroup interactionButtons = new ButtonGroup();
@@ -315,20 +337,30 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         selectionModeAction.addPropertyChangeListener(this);
 
         toolBar.add(Box.createHorizontalGlue());
-        Action action = Utilities.actionsForPath("QuickSearchShadow").get(0);
-        Component quicksearch = ((Presenter.Toolbar) action).getToolbarPresenter();
-        try {
-            // (aw) workaround for disappearing search bar due to reparenting one shared component instance.
-            quicksearch = (Component) quicksearch.getClass().getConstructor(KeyStroke.class).newInstance(new Object[]{null});
-        } catch (ReflectiveOperationException | IllegalArgumentException | SecurityException e) {
-        }
-        Dimension preferredSize = quicksearch.getPreferredSize();
-        preferredSize = new Dimension((int) preferredSize.getWidth() * 2, (int) preferredSize.getHeight());
-        quicksearch.setMinimumSize(preferredSize); // necessary for GTK LAF
-        quicksearch.setPreferredSize(preferredSize);
         toolBar.add(quicksearch);
 
         centerPanel = new JPanel();
+        centerPanel.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(
+                KeyStroke.getKeyStroke(KeyEvent.VK_S, 0, false), "showSatellite");
+        centerPanel.getActionMap().put("showSatellite",
+                new AbstractAction("showSatellite") {
+                    @Override public void actionPerformed(ActionEvent e) {
+                        EditorTopComponent.this.overviewButton.setSelected(true);
+                        EditorTopComponent.this.overviewAction.setState(true);
+                    }
+                });
+        centerPanel.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(
+                KeyStroke.getKeyStroke(KeyEvent.VK_S, 0, true), "showScene");
+        centerPanel.getActionMap().put("showScene",
+                new AbstractAction("showScene") {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        EditorTopComponent.this.overviewButton.setSelected(false);
+                        EditorTopComponent.this.overviewAction.setState(false);
+                    }
+                });
+
+
         this.add(centerPanel, BorderLayout.CENTER);
         cardLayout = new CardLayout();
         centerPanel.setLayout(cardLayout);
@@ -337,9 +369,6 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         satelliteComponent = scene.createSatelliteView();
         satelliteComponent.setSize(200, 200);
         centerPanel.add(SATELLITE_STRING, satelliteComponent);
-
-        // TODO: Fix the hot key for entering the satellite view
-        this.addKeyListener(keyListener);
 
         scene.getComponent().addHierarchyBoundsListener(new HierarchyBoundsListener() {
 
@@ -368,28 +397,6 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
 
         updateDisplayName();
     }
-    private KeyListener keyListener = new KeyListener() {
-
-        @Override
-        public void keyTyped(KeyEvent e) {
-        }
-
-        @Override
-        public void keyPressed(KeyEvent e) {
-            if (e.getKeyCode() == KeyEvent.VK_S) {
-                EditorTopComponent.this.overviewButton.setSelected(true);
-                EditorTopComponent.this.overviewAction.setState(true);
-            }
-        }
-
-        @Override
-        public void keyReleased(KeyEvent e) {
-            if (e.getKeyCode() == KeyEvent.VK_S) {
-                EditorTopComponent.this.overviewButton.setSelected(false);
-                EditorTopComponent.this.overviewAction.setState(false);
-            }
-        }
-    };
 
     public DiagramViewModel getDiagramModel() {
         return rangeSliderModel;
@@ -433,14 +440,7 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     }
 
     public static EditorTopComponent getActive() {
-        Set<? extends Mode> modes = WindowManager.getDefault().getModes();
-        for (Mode m : modes) {
-            TopComponent tc = m.getSelectedTopComponent();
-            if (tc instanceof EditorTopComponent) {
-                return (EditorTopComponent) tc;
-            }
-        }
-        return null;
+        return (EditorTopComponent) EditorTopComponent.getRegistry().getActivated();
     }
 
     /** This method is called from within the constructor to
@@ -668,6 +668,7 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
 
     @Override
     protected void componentShowing() {
+        toolBar.add(quicksearch);
         super.componentShowing();
         scene.componentShowing();
     }
