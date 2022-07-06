@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
 #include "oops/klass.inline.hpp"
 #include "oops/klassVtable.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/forte.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -69,6 +70,7 @@ void* VtableStub::operator new(size_t size, int code_size) throw() {
     }
     _chunk = blob->content_begin();
     _chunk_end = _chunk + bytes;
+    Forte::register_stub("vtable stub", _chunk, _chunk_end);
     align_chunk();
   }
   assert(_chunk + real_size <= _chunk_end, "bad allocation");

@@ -51,6 +51,7 @@
 #include "oops/method.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/forte.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "prims/nativeLookup.hpp"
@@ -2683,14 +2684,20 @@ extern "C" void unexpected_adapter_call() {
 }
 
 static void post_adapter_creation(const AdapterBlob* new_adapter, const AdapterHandlerEntry* entry) {
-  if (JvmtiExport::should_post_dynamic_code_generated()) {
+  if (Forte::is_enabled() || JvmtiExport::should_post_dynamic_code_generated()) {
     char blob_id[256];
     jio_snprintf(blob_id,
                  sizeof(blob_id),
                  "%s(%s)",
                  new_adapter->name(),
                  entry->fingerprint()->as_string());
-    JvmtiExport::post_dynamic_code_generated(blob_id, new_adapter->content_begin(), new_adapter->content_end());
+    if (Forte::is_enabled()) {
+      Forte::register_stub(blob_id, new_adapter->content_begin(), new_adapter->content_end());
+    }
+
+    if (JvmtiExport::should_post_dynamic_code_generated()) {
+      JvmtiExport::post_dynamic_code_generated(blob_id, new_adapter->content_begin(), new_adapter->content_end());
+    }
   }
 }
 
