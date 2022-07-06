@@ -45,7 +45,7 @@ public class TestOptionPaneStackOverflow
                                   replace('\0','\n');
             SwingUtilities.invokeAndWait(() -> {
                 frame = new JFrame();
-	        JOptionPane optionPane = new JOptionPane();
+                JOptionPane optionPane = new JOptionPane();
                 dialog = optionPane.createDialog(frame, null);
                 optionPane.setMessage(message);
             });
