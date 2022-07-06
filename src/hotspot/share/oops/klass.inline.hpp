@@ -47,7 +47,7 @@ inline bool Klass::is_non_strong_hidden() const {
 // This returns false if the Klass is unloaded, or about to be unloaded because the holder of
 // the CLD is strongly reachable.
 // The return value of this function may change from true to false after a safepoint. So the caller
-// of this function must ensure that a safepoint doesn't happen when interpreting the return value.
+// of this function must ensure that a safepoint doesn't happen while interpreting the return value.
 inline bool Klass::is_loader_alive() const {
   return class_loader_data()->is_alive();
 }
