@@ -61,11 +61,11 @@ char* ZMountPoint::get_mountpoint(const char* line, const char* filesystem) cons
       strcmp(line_filesystem, filesystem) != 0 ||
       access(line_mountpoint, R_OK|W_OK|X_OK) != 0) {
     // Not a matching or accessible filesystem
-    os::free(line_mountpoint);
+    ALLOW_C_FUNCTION(::free, ::free(line_mountpoint);) // *not* os::free
     line_mountpoint = NULL;
   }
 
-  os::free(line_filesystem);
+  ALLOW_C_FUNCTION(::free, ::free(line_filesystem);) // *not* os::free
 
   return line_mountpoint;
 }
@@ -88,14 +88,14 @@ void ZMountPoint::get_mountpoints(const char* filesystem, ZArray<char*>* mountpo
     }
   }
 
-  os::free(line);
+  ALLOW_C_FUNCTION(::free, ::free(line);) // *not* os::free
   fclose(fd);
 }
 
 void ZMountPoint::free_mountpoints(ZArray<char*>* mountpoints) const {
   ZArrayIterator<char*> iter(mountpoints);
   for (char* mountpoint; iter.next(&mountpoint);) {
-    os::free(mountpoint);
+    ALLOW_C_FUNCTION(::free, ::free(mountpoint);) // *not* os::free
   }
   mountpoints->clear();
 }
