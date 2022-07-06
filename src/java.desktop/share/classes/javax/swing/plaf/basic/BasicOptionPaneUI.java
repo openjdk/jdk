@@ -455,29 +455,32 @@ public class BasicOptionPaneUI extends OptionPaneUI {
                 nll = 1;
             }
             if (nl >= 0) {
-                // break up newlines
-                if (nl == 0) {
-                    @SuppressWarnings("serial") // anonymous class
-                    JPanel breakPanel = new JPanel() {
-                        public Dimension getPreferredSize() {
-                            Font       f = getFont();
+                try {
+                    // break up newlines
+                    if (nl == 0) {
+                        @SuppressWarnings("serial") // anonymous class
+                                JPanel breakPanel = new JPanel() {
+                            public Dimension getPreferredSize() {
+                                Font f = getFont();
 
-                            if (f != null) {
-                                return new Dimension(1, f.getSize() + 2);
+                                if (f != null) {
+                                    return new Dimension(1, f.getSize() + 2);
+                                }
+                                return new Dimension(0, 0);
                             }
-                            return new Dimension(0, 0);
-                        }
-                    };
-                    breakPanel.setName("OptionPane.break");
-                    addMessageComponents(container, cons, breakPanel, maxll,
-                                         true);
-                } else {
-                    addMessageComponents(container, cons, s.substring(0, nl),
-                                      maxll, false);
+                        };
+                        breakPanel.setName("OptionPane.break");
+                        addMessageComponents(container, cons, breakPanel, maxll,
+                                true);
+                    } else {
+                        addMessageComponents(container, cons, s.substring(0, nl),
+                                maxll, false);
+                    }
+                    addMessageComponents(container, cons, s.substring(nl + nll), maxll,
+                            false);
+                } catch (StackOverflowError e) {
+                    return;
                 }
-                addMessageComponents(container, cons, s.substring(nl + nll), maxll,
-                                  false);
-
             } else if (len > maxll) {
                 Container c = Box.createVerticalBox();
                 c.setName("OptionPane.verticalBox");
