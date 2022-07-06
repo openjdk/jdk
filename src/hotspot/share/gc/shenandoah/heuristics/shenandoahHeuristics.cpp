@@ -123,7 +123,6 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
 
   ShenandoahMarkingContext* const ctx = _generation->complete_marking_context();
 
-  size_t remnant_available = 0;
   for (size_t i = 0; i < num_regions; i++) {
     ShenandoahHeapRegion* region = heap->get_region(i);
     if (!in_generation(region)) {
@@ -149,7 +148,7 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
         // This is our candidate for later consideration.
         candidates[cand_idx]._region = region;
         if (collection_set->is_preselected(i)) {
-          // If regions is presected, we know mode()->is_generational() and region->age() >= InitialTenuringThreshold)
+          // If region is preselected, we know mode()->is_generational() and region->age() >= InitialTenuringThreshold)
 
           // TODO: Deprecate and/or refine ShenandoahTenuredRegionUsageBias.  If we preselect the regions, we can just
           // set garbage to "max" value, which is the region size rather than doing this extra work to bias selection.

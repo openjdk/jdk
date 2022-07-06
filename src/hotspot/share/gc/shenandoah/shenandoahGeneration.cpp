@@ -256,10 +256,11 @@ void  ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) 
     size_t old_evacuation_reserve = 0;
     size_t num_regions = heap->num_regions();
     size_t consumed_by_advance_promotion = 0;
-    bool preselected_regions[num_regions];
+    bool* preselected_regions = NEW_C_HEAP_ARRAY(bool, num_regions, mtGC);
     for (unsigned int i = 0; i < num_regions; i++) {
       preselected_regions[i] = false;
     }
+
     if (heap->mode()->is_generational()) {
       ShenandoahGeneration* old_generation = heap->old_generation();
       ShenandoahYoungGeneration* young_generation = heap->young_generation();
@@ -445,8 +446,9 @@ void  ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) 
     // GC is evacuating and updating references.
 
     collection_set->establish_preselected(preselected_regions);
-    _heuristics->choose_collection_set(heap->collection_set(), heap->old_heuristics());
+    _heuristics->choose_collection_set(collection_set, heap->old_heuristics());
     collection_set->abandon_preselected();
+    FREE_C_HEAP_ARRAY(bool, preselected_regions);
 
     // At this point, young_generation->available() knows about recently discovered immediate garbage.  We also
     // know the composition of the chosen collection set.

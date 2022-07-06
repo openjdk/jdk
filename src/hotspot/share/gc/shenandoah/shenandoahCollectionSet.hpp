@@ -119,7 +119,7 @@ public:
 
   void establish_preselected(bool *preselected) { _preselected_regions = preselected; }
   void abandon_preselected() { _preselected_regions = nullptr; }
-  bool is_preselected(int region_idx) { return (_preselected_regions != nullptr) && _preselected_regions[region_idx]; }
+  bool is_preselected(size_t region_idx) { return (_preselected_regions != nullptr) && _preselected_regions[region_idx]; }
 
   bool has_old_regions() const { return _has_old_regions; }
   size_t used()          const { return _used; }
