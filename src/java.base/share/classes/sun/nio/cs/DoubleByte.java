@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -287,6 +287,18 @@ public class DoubleByte {
                 return UNMAPPABLE_DECODING;
             return  b2c[b1][b2 - b2Min];
         }
+
+        public static char[] toSB(char[] b2cSB_DB, boolean isEBCDIC) {
+            char[] b2cSB = new char[0x100];
+            System.arraycopy(b2cSB_DB, 0, b2cSB, 128, 128);
+            System.arraycopy(b2cSB_DB, 128, b2cSB, 0, 128);
+            if (isEBCDIC) {
+                b2cSB[0x8e] = 0xe;
+                b2cSB[0x8f] = 0xf;
+            }
+            return b2cSB;
+        }
+
     }
 
     // IBM_EBCDIC_DBCS
@@ -1114,6 +1126,27 @@ public class DoubleByte {
                  dst[dp++] = SI;
             }
             return dp;
+        }
+    }
+
+    public static class Encoder_SB extends Encoder {
+        private boolean isEBCDIC = false;
+
+        public Encoder_SB(Charset cs, byte[] repl,
+                          char[] c2b, char[] c2bIndex,
+                          boolean isEBCDIC) {
+            super(cs, 1.0f, 1.0f, repl, c2b, c2bIndex, false);
+            this.isEBCDIC = isEBCDIC;
+        }
+
+        public int encodeChar(char ch) {
+            int bb = super.encodeChar(ch);
+            if (bb == UNMAPPABLE_ENCODING
+                && isEBCDIC
+                && (ch == 0x0e || ch == 0x0f)) {
+                return (int) ch;
+            }
+            return bb < 0x100 ? bb : UNMAPPABLE_ENCODING;
         }
     }
 

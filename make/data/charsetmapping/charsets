@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -1006,6 +1006,22 @@ charset x-IBM935 IBM935
     alias   ibm-935
     alias   935
 
+charset x-IBM836 IBM836
+    package sun.nio.cs.ext
+    type    template
+    alias   cp836
+    alias   ibm836
+    alias   836
+    alias   ibm-836
+
+charset x-IBM837 IBM837 # EBCDIC DBCS-only Simplified Chinese
+    package sun.nio.cs.ext
+    type    template
+    alias   cp837
+    alias   ibm837
+    alias   837
+    alias   ibm-837
+
 charset x-IBM937 IBM937
     package sun.nio.cs.ext
     type    ebcdic
@@ -1016,6 +1032,14 @@ charset x-IBM937 IBM937
     alias   ibm937
     alias   ibm-937
     alias   937
+
+charset x-IBM835 IBM835 # EBCDIC DBCS-only Traditional Chinese
+    package sun.nio.cs.ext
+    type    template
+    alias   cp835
+    alias   ibm835
+    alias   835
+    alias   ibm-835
 
 charset x-IBM856 IBM856
     package sun.nio.cs.ext
@@ -1501,6 +1525,14 @@ charset x-IBM939 IBM939
     alias   ibm939
     alias   ibm-939
     alias   939
+
+charset x-IBM1027 IBM1027
+    package sun.nio.cs.ext
+    type    template
+    alias   cp1027
+    alias   ibm1027
+    alias   1027
+    alias   ibm-1027
 
 charset x-IBM933 IBM933
     package sun.nio.cs.ext
