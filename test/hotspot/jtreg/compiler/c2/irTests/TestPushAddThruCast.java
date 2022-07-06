@@ -64,7 +64,6 @@ public class TestPushAddThruCast {
         if (res != i * 2 + 1) {
             throw new RuntimeException("incorrect result: " + res);
         }
-
     }
 
     @Test
