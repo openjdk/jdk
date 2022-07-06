@@ -708,7 +708,7 @@ void MacroAssembler::emit_static_call_stub() {
   isb();
   mov_metadata(rmethod, (Metadata*)NULL);
 
-  // Jump to the entry point of the i2c stub.
+  // Jump to the entry point of the c2i stub.
   movptr(rscratch1, 0);
   br(rscratch1);
 }
