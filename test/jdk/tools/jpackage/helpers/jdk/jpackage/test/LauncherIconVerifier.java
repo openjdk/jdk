@@ -28,7 +28,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Optional;
 
 public final class LauncherIconVerifier {
@@ -136,18 +135,16 @@ public final class LauncherIconVerifier {
 
         private Path extractIconFromExecutable(Path outputDir, Path executable,
                 String label) {
-            Path psScript = outputDir.resolve(label + ".ps1");
             Path extractedIcon = outputDir.resolve(label + ".bmp");
-            TKit.createTextFile(psScript, List.of(
+            String script = String.join(";",
                     "[System.Reflection.Assembly]::LoadWithPartialName('System.Drawing')",
                     String.format(
-                            "[System.Drawing.Icon]::ExtractAssociatedIcon(\"%s\").ToBitmap().Save(\"%s\", [System.Drawing.Imaging.ImageFormat]::Bmp)",
+                            "[System.Drawing.Icon]::ExtractAssociatedIcon('%s').ToBitmap().Save('%s', [System.Drawing.Imaging.ImageFormat]::Bmp)",
                             executable.toAbsolutePath().normalize(),
-                            extractedIcon.toAbsolutePath().normalize()),
-                    "exit 0"));
+                            extractedIcon.toAbsolutePath().normalize()));
 
-            Executor.of("powershell", "-NoLogo", "-NoProfile", "-File",
-                    psScript.toAbsolutePath().normalize().toString()).execute();
+            Executor.of("powershell", "-NoLogo", "-NoProfile", "-Command",
+                    script).execute();
 
             return extractedIcon;
         }

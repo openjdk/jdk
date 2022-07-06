@@ -42,41 +42,27 @@
  * @run main/othervm/native -agentlib:framecnt02 framecnt02
  */
 
-import java.io.PrintStream;
-
 public class framecnt02 {
 
     native static void checkFrames(Thread thr, int thr_num);
     native static int getRes();
 
     static {
-        try {
-            System.loadLibrary("framecnt02");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load framecnt02 library");
-            System.err.println("java.library.path:"
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
+        System.loadLibrary("framecnt02");
     }
-
-    final static int JCK_STATUS_BASE = 95;
 
     static int flag = 0;
 
     public static void main(String args[]) {
 
-
-        // produce JCK-like exit status.
-        System.exit(run(args, System.out) + JCK_STATUS_BASE);
-    }
-
-    public static int run(String argv[], PrintStream ref) {
         Thread currThread = Thread.currentThread();
         framecnt02a tested_thread_thr1 = new framecnt02a();
         checkFrames(tested_thread_thr1, 1);
         checkFrames(currThread, 0);
-        return getRes();
+        int result = getRes();
+        if (result != 0) {
+            throw new RuntimeException("check failed with result " + result);
+        }
     }
 }
 

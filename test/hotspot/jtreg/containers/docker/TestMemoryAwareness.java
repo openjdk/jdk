@@ -114,9 +114,8 @@ public class TestMemoryAwareness {
     private static void testOOM(String dockerMemLimit, int sizeToAllocInMb) throws Exception {
         Common.logNewTestCase("OOM");
 
-        // add "--memory-swappiness 0" so as to disable anonymous page swapping.
         DockerRunOptions opts = Common.newOpts(imageName, "AttemptOOM")
-            .addDockerOpts("--memory", dockerMemLimit, "--memory-swappiness", "0", "--memory-swap", dockerMemLimit);
+            .addDockerOpts("--memory", dockerMemLimit, "--memory-swap", dockerMemLimit);
         opts.classParams.add("" + sizeToAllocInMb);
 
         // make sure we avoid inherited Xmx settings from the jtreg vmoptions

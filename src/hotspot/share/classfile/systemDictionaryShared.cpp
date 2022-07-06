@@ -73,19 +73,13 @@
 #include "utilities/resourceHash.hpp"
 #include "utilities/stringUtils.hpp"
 
+SystemDictionaryShared::ArchiveInfo SystemDictionaryShared::_static_archive;
+SystemDictionaryShared::ArchiveInfo SystemDictionaryShared::_dynamic_archive;
+
 DumpTimeSharedClassTable* SystemDictionaryShared::_dumptime_table = NULL;
 DumpTimeSharedClassTable* SystemDictionaryShared::_cloned_dumptime_table = NULL;
 DumpTimeLambdaProxyClassDictionary* SystemDictionaryShared::_dumptime_lambda_proxy_class_dictionary = NULL;
 DumpTimeLambdaProxyClassDictionary* SystemDictionaryShared::_cloned_dumptime_lambda_proxy_class_dictionary = NULL;
-// SystemDictionaries in the base layer static archive
-RunTimeSharedDictionary SystemDictionaryShared::_builtin_dictionary;
-RunTimeSharedDictionary SystemDictionaryShared::_unregistered_dictionary;
-// SystemDictionaries in the top layer dynamic archive
-RunTimeSharedDictionary SystemDictionaryShared::_dynamic_builtin_dictionary;
-RunTimeSharedDictionary SystemDictionaryShared::_dynamic_unregistered_dictionary;
-
-LambdaProxyClassDictionary SystemDictionaryShared::_lambda_proxy_class_dictionary;
-LambdaProxyClassDictionary SystemDictionaryShared::_dynamic_lambda_proxy_class_dictionary;
 
 DEBUG_ONLY(bool SystemDictionaryShared::_no_class_loading_should_happen = false;)
 bool SystemDictionaryShared::_dump_in_progress = false;
@@ -127,7 +121,9 @@ InstanceKlass* SystemDictionaryShared::lookup_from_stream(Symbol* class_name,
     return NULL;
   }
 
-  const RunTimeClassInfo* record = find_record(&_unregistered_dictionary, &_dynamic_unregistered_dictionary, class_name);
+  const RunTimeClassInfo* record = find_record(&_static_archive._unregistered_dictionary,
+                                               &_dynamic_archive._unregistered_dictionary,
+                                               class_name);
   if (record == NULL) {
     return NULL;
   }
@@ -843,10 +839,9 @@ InstanceKlass* SystemDictionaryShared::get_shared_lambda_proxy_class(InstanceKla
   MutexLocker ml(CDSLambda_lock, Mutex::_no_safepoint_check_flag);
   LambdaProxyClassKey key(caller_ik, invoked_name, invoked_type,
                           method_type, member_method, instantiated_method_type);
-  const RunTimeLambdaProxyClassInfo* info = _lambda_proxy_class_dictionary.lookup(&key, key.hash(), 0);
+  const RunTimeLambdaProxyClassInfo* info = _static_archive.lookup_lambda_proxy_class(&key);
   if (info == NULL) {
-    // Try lookup from the dynamic lambda proxy class dictionary.
-    info = _dynamic_lambda_proxy_class_dictionary.lookup(&key, key.hash(), 0);
+    info = _dynamic_archive.lookup_lambda_proxy_class(&key);
   }
   InstanceKlass* proxy_klass = NULL;
   if (info != NULL) {
@@ -1303,15 +1298,14 @@ void SystemDictionaryShared::write_dictionary(RunTimeSharedDictionary* dictionar
 }
 
 void SystemDictionaryShared::write_to_archive(bool is_static_archive) {
-  if (is_static_archive) {
-    write_dictionary(&_builtin_dictionary, true);
-    write_dictionary(&_unregistered_dictionary, false);
-  } else {
-    write_dictionary(&_dynamic_builtin_dictionary, true);
-    write_dictionary(&_dynamic_unregistered_dictionary, false);
+  ArchiveInfo* archive = get_archive(is_static_archive);
+
+  if (_dumptime_table != NULL) {
+    write_dictionary(&archive->_builtin_dictionary, true);
+    write_dictionary(&archive->_unregistered_dictionary, false);
   }
   if (_dumptime_lambda_proxy_class_dictionary != NULL) {
-    write_lambda_proxy_class_dictionary(&_lambda_proxy_class_dictionary);
+    write_lambda_proxy_class_dictionary(&archive->_lambda_proxy_class_dictionary);
   }
 }
 
@@ -1324,22 +1318,11 @@ void SystemDictionaryShared::adjust_lambda_proxy_class_dictionary() {
 
 void SystemDictionaryShared::serialize_dictionary_headers(SerializeClosure* soc,
                                                           bool is_static_archive) {
-  FileMapInfo *dynamic_mapinfo = FileMapInfo::dynamic_info();
-  if (is_static_archive) {
-    _builtin_dictionary.serialize_header(soc);
-    _unregistered_dictionary.serialize_header(soc);
-    if (dynamic_mapinfo == NULL || DynamicDumpSharedSpaces || (dynamic_mapinfo != NULL && UseSharedSpaces)) {
-      _lambda_proxy_class_dictionary.serialize_header(soc);
-    }
-  } else {
-    _dynamic_builtin_dictionary.serialize_header(soc);
-    _dynamic_unregistered_dictionary.serialize_header(soc);
-    if (DynamicDumpSharedSpaces) {
-      _lambda_proxy_class_dictionary.serialize_header(soc);
-    } else {
-      _dynamic_lambda_proxy_class_dictionary.serialize_header(soc);
-    }
-  }
+  ArchiveInfo* archive = get_archive(is_static_archive);
+
+  archive->_builtin_dictionary.serialize_header(soc);
+  archive->_unregistered_dictionary.serialize_header(soc);
+  archive->_lambda_proxy_class_dictionary.serialize_header(soc);
 }
 
 void SystemDictionaryShared::serialize_vm_classes(SerializeClosure* soc) {
@@ -1384,7 +1367,9 @@ SystemDictionaryShared::find_record(RunTimeSharedDictionary* static_dict, RunTim
 }
 
 InstanceKlass* SystemDictionaryShared::find_builtin_class(Symbol* name) {
-  const RunTimeClassInfo* record = find_record(&_builtin_dictionary, &_dynamic_builtin_dictionary, name);
+  const RunTimeClassInfo* record = find_record(&_static_archive._builtin_dictionary,
+                                               &_dynamic_archive._builtin_dictionary,
+                                               name);
   if (record != NULL) {
     assert(!record->_klass->is_hidden(), "hidden class cannot be looked up by name");
     assert(check_alignment(record->_klass), "Address not aligned");
@@ -1456,56 +1441,51 @@ public:
   }
 };
 
-void SystemDictionaryShared::print_on(const char* prefix,
-                                      RunTimeSharedDictionary* builtin_dictionary,
-                                      RunTimeSharedDictionary* unregistered_dictionary,
-                                      LambdaProxyClassDictionary* lambda_dictionary,
-                                      outputStream* st) {
+void SystemDictionaryShared::ArchiveInfo::print_on(const char* prefix,
+                                                   outputStream* st) {
   st->print_cr("%sShared Dictionary", prefix);
   SharedDictionaryPrinter p(st);
   st->print_cr("%sShared Builtin Dictionary", prefix);
-  builtin_dictionary->iterate(&p);
+  _builtin_dictionary.iterate(&p);
   st->print_cr("%sShared Unregistered Dictionary", prefix);
-  unregistered_dictionary->iterate(&p);
-  if (!lambda_dictionary->empty()) {
+  _unregistered_dictionary.iterate(&p);
+  if (!_lambda_proxy_class_dictionary.empty()) {
     st->print_cr("%sShared Lambda Dictionary", prefix);
     SharedLambdaDictionaryPrinter ldp(st, p.index());
-    lambda_dictionary->iterate(&ldp);
+    _lambda_proxy_class_dictionary.iterate(&ldp);
   }
+}
+
+void SystemDictionaryShared::ArchiveInfo::print_table_statistics(const char* prefix,
+                                                                 outputStream* st) {
+  st->print_cr("%sArchve Statistics", prefix);
+  _builtin_dictionary.print_table_statistics(st, "Builtin Shared Dictionary");
+  _unregistered_dictionary.print_table_statistics(st, "Unregistered Shared Dictionary");
+  _lambda_proxy_class_dictionary.print_table_statistics(st, "Lambda Shared Dictionary");
 }
 
 void SystemDictionaryShared::print_shared_archive(outputStream* st, bool is_static) {
   if (UseSharedSpaces) {
     if (is_static) {
-      print_on("", &_builtin_dictionary, &_unregistered_dictionary, &_lambda_proxy_class_dictionary, st);
+      _static_archive.print_on("", st);
     } else {
       if (DynamicArchive::is_mapped()) {
-        print_on("", &_dynamic_builtin_dictionary, &_dynamic_unregistered_dictionary,
-               &_dynamic_lambda_proxy_class_dictionary, st);
+        _dynamic_archive.print_on("Dynamic ", st);
       }
     }
   }
 }
 
 void SystemDictionaryShared::print_on(outputStream* st) {
-  if (UseSharedSpaces) {
-    print_on("", &_builtin_dictionary, &_unregistered_dictionary, &_lambda_proxy_class_dictionary, st);
-    if (DynamicArchive::is_mapped()) {
-      print_on("", &_dynamic_builtin_dictionary, &_dynamic_unregistered_dictionary,
-               &_dynamic_lambda_proxy_class_dictionary, st);
-    }
-  }
+  print_shared_archive(st, true);
+  print_shared_archive(st, false);
 }
 
 void SystemDictionaryShared::print_table_statistics(outputStream* st) {
   if (UseSharedSpaces) {
-    _builtin_dictionary.print_table_statistics(st, "Builtin Shared Dictionary");
-    _unregistered_dictionary.print_table_statistics(st, "Unregistered Shared Dictionary");
-    _lambda_proxy_class_dictionary.print_table_statistics(st, "Lambda Shared Dictionary");
+    _static_archive.print_table_statistics("Static ", st);
     if (DynamicArchive::is_mapped()) {
-      _dynamic_builtin_dictionary.print_table_statistics(st, "Dynamic Builtin Shared Dictionary");
-      _dynamic_unregistered_dictionary.print_table_statistics(st, "Unregistered Shared Dictionary");
-      _dynamic_lambda_proxy_class_dictionary.print_table_statistics(st, "Dynamic Lambda Shared Dictionary");
+      _dynamic_archive.print_table_statistics("Dynamic ", st);
     }
   }
 }
@@ -1680,9 +1660,10 @@ void SystemDictionaryShared::update_archived_mirror_native_pointers() {
   if (MetaspaceShared::relocation_delta() == 0) {
     return;
   }
-  update_archived_mirror_native_pointers_for(&_builtin_dictionary);
-  update_archived_mirror_native_pointers_for(&_unregistered_dictionary);
-  update_archived_mirror_native_pointers_for(&_lambda_proxy_class_dictionary);
+  // mirrors are not archived for the classes in the dynamic archive
+  update_archived_mirror_native_pointers_for(&_static_archive._builtin_dictionary);
+  update_archived_mirror_native_pointers_for(&_static_archive._unregistered_dictionary);
+  update_archived_mirror_native_pointers_for(&_static_archive._lambda_proxy_class_dictionary);
 
   for (int t = T_BOOLEAN; t <= T_LONG; t++) {
     Klass* k = Universe::typeArrayKlassObj((BasicType)t);

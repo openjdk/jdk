@@ -35,6 +35,7 @@
 #include "memory/universe.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/os.hpp" // malloc
 #include "utilities/events.hpp"
 
 JVMCIRuntime* JVMCI::_compiler_runtimes = nullptr;
@@ -91,7 +92,7 @@ void* JVMCI::get_shared_library(char*& path, bool load) {
       fatal("Unable to load JVMCI shared library from %s: %s", path, ebuf);
     }
     _shared_library_handle = handle;
-    _shared_library_path = strdup(path);
+    _shared_library_path = os::strdup(path);
 
     JVMCI_event_1("loaded JVMCI shared library from %s", path);
   }
