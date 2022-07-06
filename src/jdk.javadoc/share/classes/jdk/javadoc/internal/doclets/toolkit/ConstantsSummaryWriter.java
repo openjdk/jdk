@@ -55,13 +55,10 @@ public interface ConstantsSummaryWriter {
     /**
      * Adds the given package name link to the constant content list.
      *
-     * @param pkg                    the {@link PackageElement} to index.
-     * @param writtenPackageHeaders  the set of package headers that have already
-     *                               been indexed, we want to index utmost once.
-     * @param content                the content to which the link will be added
+     * @param abbrevPackageName the abbreviated package name
+     * @param content       the content to which the link will be added
      */
-    void addLinkToPackageContent(PackageElement pkg, Set<PackageElement> writtenPackageHeaders,
-                                 Content content);
+    void addLinkToPackageContent(String abbrevPackageName, Content content);
 
     /**
      * Add the content list to the documentation.
@@ -78,17 +75,12 @@ public interface ConstantsSummaryWriter {
     Content getConstantSummaries();
 
     /**
-     * Adds the given package name.
+     * Adds a header for the given abbreviated package name.
      *
-     * @param pkg  the parsed package name.  We only Write the
-     *                          first 2 directory levels of the package
-     *                          name. For example, java.lang.ref would be
-     *                          indexed as java.lang.*.
+     * @param abbrevPackageName  the abbreviated package name
      * @param toContent the summaries documentation
-     * @param first true if the first package is listed
-     *                    be written
      */
-    void addPackageName(PackageElement pkg, Content toContent, boolean first);
+    void addPackageGroup(String abbrevPackageName, Content toContent);
 
     /**
      * Get the class summary header for the constants summary.
