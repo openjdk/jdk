@@ -35,7 +35,7 @@ void CodeBuffer::shared_stub_to_runtime_for(address dest, int caller_offset) {
   _finalize_stubs = true;
 }
 
-template <typename MacroAssembler, int relocate_format = 0>
+template <typename MacroAssembler>
 bool emit_shared_stubs_to_runtime_call(CodeBuffer* cb, CodeBuffer::SharedStubToRuntimeCallRequests* requests) {
   if (requests == NULL) {
     return true;

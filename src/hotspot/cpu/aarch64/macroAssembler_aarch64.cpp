@@ -648,7 +648,7 @@ address MacroAssembler::trampoline_call1(Address entry, CodeBuffer* cbuf, bool c
     }
 #endif
     if (!in_scratch_emit_size) {
-      if (true && CodeBuffer::supports_shared_stubs() && entry.rspec().type() == relocInfo::runtime_call_type) {
+      if (CodeBuffer::supports_shared_stubs() && entry.rspec().type() == relocInfo::runtime_call_type) {
         code()->shared_stub_to_runtime_for(entry.target(), offset());
       } else {
         address stub = emit_trampoline_stub(offset(), entry.target());
