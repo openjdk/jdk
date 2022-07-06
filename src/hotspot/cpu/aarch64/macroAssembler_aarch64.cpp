@@ -131,9 +131,9 @@ int MacroAssembler::pd_patch_instruction_size(address insn_addr, address target)
       int shift = Instruction_aarch64::extract(insn, 31, 31);
       if (shift) {
         instructions = 2;
-        uint64_t dest = (uint64_t)target;
-        uint64_t pc_page = (uint64_t)insn_addr >> 12;
-        uint64_t adr_page = (uint64_t)target >> 12;
+        uintptr_t dest = (uintptr_t)target;
+        uintptr_t pc_page = (uintptr_t)insn_addr >> 12;
+        uintptr_t adr_page = (uintptr_t)target >> 12;
         uint32_t offset_lo = dest & 0xfff;
         offset = adr_page - pc_page;
 
@@ -176,7 +176,7 @@ int MacroAssembler::pd_patch_instruction_size(address insn_addr, address target)
                    Instruction_aarch64::extract(insn, 4, 0) ==
                    Instruction_aarch64::extract(insn2, 4, 0), "must be");
             // movk #imm16<<32
-            Instruction_aarch64::patch(insn_addr + 4, 20, 5, (uint64_t)target >> 32);
+            Instruction_aarch64::patch(insn_addr + 4, 20, 5, (uintptr_t)target >> 32);
             uintptr_t dest = ((uintptr_t)target & 0xffffffffULL) | ((uintptr_t)insn_addr & 0xffff00000000ULL);
             uintptr_t pc_page = (uintptr_t)insn_addr >> 12;
             uintptr_t adr_page = (uintptr_t)dest >> 12;
@@ -3537,7 +3537,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
     mvnw(crc, crc);
 
     adrp(table0, ExternalAddress(StubRoutines::crc_table_addr()), offset);
-    if (offset) add(table0, table0, offset);
+    add(table0, table0, offset);
     add(table1, table0, 1*256*sizeof(juint));
     add(table2, table0, 2*256*sizeof(juint));
     add(table3, table0, 3*256*sizeof(juint));
