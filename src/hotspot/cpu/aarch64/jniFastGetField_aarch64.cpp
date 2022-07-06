@@ -119,9 +119,9 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   Label slow;
 
   uint64_t offset;
+  Address safepoint_counter_addr(rcounter_addr, offset);
   __ adrp(rcounter_addr,
           SafepointSynchronize::safepoint_counter_addr(), offset);
-  Address safepoint_counter_addr(rcounter_addr, offset);
   __ ldrw(rcounter, safepoint_counter_addr);
   __ tbnz(rcounter, 0, slow);
 

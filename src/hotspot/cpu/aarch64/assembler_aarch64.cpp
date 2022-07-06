@@ -155,10 +155,6 @@ void Address::lea(MacroAssembler *as, Register r) const {
   }
 }
 
-void Assembler::adrp(Register reg1, const Address &dest, uint64_t &byte_offset) {
-  ShouldNotReachHere();
-}
-
 #undef __
 
 #define starti Instruction_aarch64 current_insn(this);
