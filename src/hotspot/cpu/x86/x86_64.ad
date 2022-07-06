@@ -2168,12 +2168,18 @@ encode %{
                                                   : static_call_Relocation::spec(method_index);
       emit_d32_reloc(cbuf, (int) ($meth$$method - ((intptr_t) cbuf.insts_end()) - 4),
                      rspec, RELOC_DISP32);
-      // Emit stubs for static call.
       address mark = cbuf.insts_mark();
-      address stub = CompiledStaticCall::emit_to_interp_stub(cbuf, mark);
-      if (stub == NULL) {
-        ciEnv::current()->record_failure("CodeCache is full");
-        return;
+      if (CodeBuffer::supports_shared_stubs() && _method->can_be_statically_bound()) {
+        // Calls of the same statically bound method can share
+        // a stub to the interpreter.
+        cbuf.shared_stub_to_interp_for(_method, cbuf.insts()->mark_off());
+      } else {
+        // Emit stubs for static call.
+        address stub = CompiledStaticCall::emit_to_interp_stub(cbuf, mark);
+        if (stub == NULL) {
+          ciEnv::current()->record_failure("CodeCache is full");
+          return;
+        }
       }
     }
     _masm.clear_inst_mark();

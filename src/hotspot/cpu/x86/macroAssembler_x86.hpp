@@ -866,6 +866,8 @@ public:
   // Emit the CompiledIC call idiom
   void ic_call(address entry, jint method_index = 0);
 
+  void emit_static_call_stub();
+
   // Jumps
 
   // NOTE: these jumps transfer to the effective address of dst NOT

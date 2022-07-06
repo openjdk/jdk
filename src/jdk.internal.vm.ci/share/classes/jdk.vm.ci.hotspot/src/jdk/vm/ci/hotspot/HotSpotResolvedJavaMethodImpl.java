@@ -166,7 +166,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
         }
         if (obj instanceof HotSpotResolvedJavaMethodImpl) {
             HotSpotResolvedJavaMethodImpl that = (HotSpotResolvedJavaMethodImpl) obj;
-            return getMethodPointer() == getMethodPointer();
+            return that.getMethodPointer() == getMethodPointer();
         }
         return false;
     }
