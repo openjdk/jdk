@@ -1027,6 +1027,7 @@ static char* mmap_create_shared(size_t size) {
   assert(((size > 0) && (size % os::vm_page_size() == 0)),
          "unexpected PerfMemory region size");
 
+  log_info(perf, memops)("Trying to open %s/%s", dirname, short_filename);
   fd = create_sharedmem_resources(dirname, short_filename, size);
 
   FREE_C_HEAP_ARRAY(char, user_name);
@@ -1060,7 +1061,7 @@ static char* mmap_create_shared(size_t size) {
   // it does not go through os api, the operation has to record from here
   MemTracker::record_virtual_memory_reserve_and_commit((address)mapAddress, size, CURRENT_PC, mtInternal);
 
-  log_info(perf, memops)("Successfully opened %s/%s", dirname, short_filename);
+  log_info(perf, memops)("Successfully opened");
 
   return mapAddress;
 }
