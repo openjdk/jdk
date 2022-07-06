@@ -27,6 +27,7 @@ import javax.swing.filechooser.FileSystemView;
 import java.awt.Image;
 import java.awt.image.MultiResolutionImage;
 import java.io.File;
+import java.io.IOException;
 
 /*
  * @test
@@ -47,17 +48,26 @@ public class WindowsDefaultIconSizeTest {
         String dir = System.getProperty("test.src", ".");
         String filename = "test.not";
 
-        FileSystemView fsv = FileSystemView.getFileSystemView();
-        Icon icon = fsv.getSystemIcon(new File(dir + sep + filename));
-        if (icon instanceof ImageIcon) {
-            Image image = ((ImageIcon)icon).getImage();
-            if (image instanceof MultiResolutionImage) {
-                Image variant = ((MultiResolutionImage)image).getResolutionVariant(16, 16);
-                if (variant.getWidth(null) != 16) {
-                    throw new RuntimeException("Default file icon has size of " +
-                            variant.getWidth(null) + " instead of 16");
+        File testFile = new File(dir + sep + filename);
+        try {
+            if (!testFile.exists()) {
+                testFile.createNewFile();
+                testFile.deleteOnExit();
+            }
+            FileSystemView fsv = FileSystemView.getFileSystemView();
+            Icon icon = fsv.getSystemIcon(new File(dir + sep + filename));
+            if (icon instanceof ImageIcon) {
+                Image image = ((ImageIcon) icon).getImage();
+                if (image instanceof MultiResolutionImage) {
+                    Image variant = ((MultiResolutionImage) image).getResolutionVariant(16, 16);
+                    if (variant.getWidth(null) != 16) {
+                        throw new RuntimeException("Default file icon has size of " +
+                                variant.getWidth(null) + " instead of 16");
+                    }
                 }
             }
+        } catch (IOException ioe) {
+            throw new RuntimeException("Unexpected error while creating the test file: " + ioe.getLocalizedMessage());
         }
     }
 }
