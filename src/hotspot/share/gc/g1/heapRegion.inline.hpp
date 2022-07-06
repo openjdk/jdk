@@ -86,7 +86,7 @@ inline HeapWord* HeapRegion::forward_to_block_containing_addr(HeapWord* q, HeapW
     // step forward until we find the correct block. With the BOT
     // being precise, we should never have to step through more than
     // a single card.
-    _bot_part.assert_same_bot_entry(n, addr);
+    assert(!G1BlockOffsetTablePart::is_crossing_card_boundary(n, (HeapWord*)addr), "must be");
     q = n;
     assert(cast_to_oop(q)->klass_or_null() != nullptr,
         "start of block must be an initialized object");
@@ -97,7 +97,7 @@ inline HeapWord* HeapRegion::forward_to_block_containing_addr(HeapWord* q, HeapW
   return q;
 }
 
-inline HeapWord* HeapRegion::block_start(const void* addr) {
+inline HeapWord* HeapRegion::block_start(const void* addr) const {
   HeapWord* q = _bot_part.block_start_reaching_into_card(addr);
   // The returned address is the block that reaches into the card of addr. Walk
   // the heap to get to the block reaching into addr.

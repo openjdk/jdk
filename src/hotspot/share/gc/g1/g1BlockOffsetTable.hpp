@@ -129,6 +129,10 @@ private:
     return align_up(addr, BOTConstants::card_size());
   }
 
+  void update_for_block(HeapWord* blk_start, size_t size) {
+    update_for_block(blk_start, blk_start + size);
+  }
+public:
   static bool is_crossing_card_boundary(HeapWord* const obj_start,
                                         HeapWord* const obj_end) {
     HeapWord* cur_card_boundary = align_up_by_card_size(obj_start);
@@ -136,17 +140,10 @@ private:
     return obj_end > cur_card_boundary;
   }
 
-  void update_for_block(HeapWord* blk_start, size_t size) {
-    update_for_block(blk_start, blk_start + size);
-  }
-public:
-
   //  The elements of the array are initialized to zero.
   G1BlockOffsetTablePart(G1BlockOffsetTable* array, HeapRegion* hr);
 
   void verify() const;
-
-  void assert_same_bot_entry(const void* n, const void* addr) const NOT_DEBUG_RETURN;
 
   // Returns the address of the start of the block reaching into the card containing
   // "addr".

@@ -152,7 +152,7 @@ private:
 
 public:
   // Returns the address of the block reaching into or starting at addr.
-  HeapWord* block_start(const void* addr);
+  HeapWord* block_start(const void* addr) const;
 
   void object_iterate(ObjectClosure* blk);
 

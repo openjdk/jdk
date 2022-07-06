@@ -32,14 +32,6 @@
 #include "runtime/atomic.hpp"
 #include "oops/oop.inline.hpp"
 
-#ifdef ASSERT
-inline void G1BlockOffsetTablePart::assert_same_bot_entry(const void* n, const void* addr) const {
-  assert(_bot->index_for(n) == _bot->index_for(addr),
-         "BOT not precise. Index for n: " SIZE_FORMAT " must be equal to the index for addr: " SIZE_FORMAT,
-         _bot->index_for(n), _bot->index_for(addr));
-}
-#endif
-
 inline HeapWord* G1BlockOffsetTablePart::block_start_reaching_into_card(const void* addr) const {
   assert(addr >= _hr->bottom() && addr < _hr->top(), "invalid address");
 
