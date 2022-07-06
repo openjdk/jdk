@@ -171,6 +171,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
     private String refreshActionLabelText;
     private String newFolderActionLabelText;
 
+    private String byteString;
     private String kiloByteString;
     private String megaByteString;
     private String gigaByteString;
@@ -528,6 +529,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
         viewTypeActionNames[VIEWTYPE_DETAILS] =
                         UIManager.getString("FileChooser.detailsViewActionLabelText", l);
 
+        byteString      = UIManager.getString("FileChooser.fileSizeBytes", l);
         kiloByteString = UIManager.getString("FileChooser.fileSizeKiloBytes", l);
         megaByteString = UIManager.getString("FileChooser.fileSizeMegaBytes", l);
         gigaByteString = UIManager.getString("FileChooser.fileSizeGigaBytes", l);
@@ -1195,7 +1197,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
                     len /= 1024L;
                     text = MessageFormat.format(kiloByteString, len + 1);
                 } else if (len < 1024L) {
-                    text = (len == 0L) ? 0 + " bytes" : len + " bytes";
+                    text = MessageFormat.format(byteString, len);
                 } else {
                     len /= 1024L;
                     if (len < 1024L) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,42 +43,36 @@ import javax.swing.JFileChooser;
 public class ZeroFileSizeCheck {
 
     private static JFrame frame;
-    private static final String text =
-            "Click the \"Details\" button in right-top corner.\n\nScroll Down if required. \n\nIf the size of TEST-EMPTY-FILE shows Zero bytes in \nDetails view," +
+    private static final String INSTRUCTIONS =
+            "Click on the \"Details\" button in right-top corner.\n\nScroll Down if required. \n\nIf the size of TEST-EMPTY-FILE shows Zero bytes in \nDetails view," +
                     " press PASS.\n\n";
 
-    public static void createAndShowGUI() throws InterruptedException,
-            InvocationTargetException {
-        SwingUtilities.invokeAndWait(() -> {
-            frame = new JFrame("JFileChooser");
-            JFileChooser fc = new JFileChooser();
-            try {
-                Path currentDir = Paths.get(System.getProperty("java.io.tmpdir"));
-                // create empty file
-                Path emptyFile = currentDir.resolve("TEST-EMPTY-FILE.txt");
-                if (!Files.exists(emptyFile)) {
-                    Files.createFile(emptyFile);
-                }
-                fc.setCurrentDirectory(currentDir.toFile());
-            }catch (IOException ex) {
-                throw new RuntimeException(ex);
+    public static void test() {
+        JFileChooser fc = new JFileChooser();
+        try {
+            Path currentDir = Paths.get(System.getProperty("test.src"));
+            // create empty file
+            Path emptyFile = currentDir.resolve("TEST-EMPTY-FILE.txt");
+            if (!Files.exists(emptyFile)) {
+                Files.createFile(emptyFile);
             }
-            frame.getContentPane().add(fc);
-            frame.setSize(400, 400);
-            frame.setLocationRelativeTo(null);
-            frame.setVisible(true);
-
-            PassFailJFrame.addTestFrame(frame);
-            PassFailJFrame.positionTestFrame(frame,
-                    PassFailJFrame.Position.HORIZONTAL);
-        });
+            fc.setCurrentDirectory(currentDir.toFile());
+        }catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+        fc.showOpenDialog(null);
     }
 
-    public static void main(String[] args) throws InterruptedException,
-            InvocationTargetException {
-        PassFailJFrame passFailJFrame = new PassFailJFrame("JFileChooser " +
-                "Test Instructions", text, 5, 19, 35);
-        createAndShowGUI();
+    public static void main(String args[]) throws Exception {
+        PassFailJFrame passFailJFrame = new PassFailJFrame("JFileChooser Test Instructions" ,
+                INSTRUCTIONS, 5, 19, 35);
+        SwingUtilities.invokeAndWait(() -> {
+            frame = new JFrame();
+            PassFailJFrame.addTestWindow(frame);
+            PassFailJFrame.positionTestWindow(frame, PassFailJFrame.Position.HORIZONTAL);
+            test();
+        });
+
         passFailJFrame.awaitAndCheck();
     }
 }
