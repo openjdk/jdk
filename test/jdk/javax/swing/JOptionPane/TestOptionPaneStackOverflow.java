@@ -35,7 +35,6 @@ import javax.swing.SwingUtilities;
 
 public class TestOptionPaneStackOverflow
 {
-    static JDialog dialog;
     static JFrame frame;
 
     public static void main(String[] argv) throws Exception
@@ -46,7 +45,7 @@ public class TestOptionPaneStackOverflow
             SwingUtilities.invokeAndWait(() -> {
                 frame = new JFrame();
                 JOptionPane optionPane = new JOptionPane();
-                dialog = optionPane.createDialog(frame, null);
+                optionPane.createDialog(frame, null);
                 optionPane.setMessage(message);
             });
         } finally {
@@ -55,6 +54,6 @@ public class TestOptionPaneStackOverflow
                     frame.dispose();
                 }
             });
-        }	    
+        }
     }
-} 
+}
