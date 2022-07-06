@@ -1129,6 +1129,61 @@ void C2_MacroAssembler::sve_vmask_lasttrue(Register dst, BasicType bt, PRegister
   subw(dst, rscratch1, dst);
 }
 
+// Extend integer vector src to dst with the same lane count
+// but larger element size, e.g. 4B -> 4I
+void C2_MacroAssembler::neon_vector_extend(FloatRegister dst, BasicType dst_bt, unsigned dst_vlen_in_bytes,
+                                           FloatRegister src, BasicType src_bt) {
+  if (src_bt == T_BYTE) {
+    if (dst_bt == T_SHORT) {
+      // 4B/8B to 4S/8S
+      assert(dst_vlen_in_bytes == 8 || dst_vlen_in_bytes == 16, "unsupported");
+      sxtl(dst, T8H, src, T8B);
+    } else {
+      // 4B to 4I
+      assert(dst_vlen_in_bytes == 16 && dst_bt == T_INT, "unsupported");
+      sxtl(dst, T8H, src, T8B);
+      sxtl(dst, T4S, dst, T4H);
+    }
+  } else if (src_bt == T_SHORT) {
+    // 4S to 4I
+    assert(dst_vlen_in_bytes == 16 && dst_bt == T_INT, "unsupported");
+    sxtl(dst, T4S, src, T4H);
+  } else if (src_bt == T_INT) {
+    // 2I to 2L
+    assert(dst_vlen_in_bytes == 16 && dst_bt == T_LONG, "unsupported");
+    sxtl(dst, T2D, src, T2S);
+  } else {
+    ShouldNotReachHere();
+  }
+}
+
+// Narrow integer vector src down to dst with the same lane count
+// but smaller element size, e.g. 4I -> 4B
+void C2_MacroAssembler::neon_vector_narrow(FloatRegister dst, BasicType dst_bt,
+                                           FloatRegister src, BasicType src_bt, unsigned src_vlen_in_bytes) {
+  if (src_bt == T_SHORT) {
+    // 4S/8S to 4B/8B
+    assert(src_vlen_in_bytes == 8 || src_vlen_in_bytes == 16, "unsupported");
+    assert(dst_bt == T_BYTE, "unsupported");
+    xtn(dst, T8B, src, T8H);
+  } else if (src_bt == T_INT) {
+    // 4I to 4B/4S
+    assert(src_vlen_in_bytes == 16, "unsupported");
+    assert(dst_bt == T_BYTE || dst_bt == T_SHORT, "unsupported");
+    xtn(dst, T4H, src, T4S);
+    if (dst_bt == T_BYTE) {
+      xtn(dst, T8B, dst, T8H);
+    }
+  } else if (src_bt == T_LONG) {
+    // 2L to 2I
+    assert(src_vlen_in_bytes == 16, "unsupported");
+    assert(dst_bt == T_INT, "unsupported");
+    xtn(dst, T2S, src, T2D);
+  } else {
+    ShouldNotReachHere();
+  }
+}
+
 void C2_MacroAssembler::sve_vector_extend(FloatRegister dst, SIMD_RegVariant dst_size,
                                           FloatRegister src, SIMD_RegVariant src_size) {
   assert(dst_size > src_size && dst_size <= D && src_size <= S, "invalid element size");
