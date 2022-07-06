@@ -1759,10 +1759,6 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
       }
       break;
     case Op_LoadVectorMasked:
-      if (!VM_Version::supports_avx512bw() && (is_subword_type(bt) || UseAVX < 1)) {
-        return false;
-      }
-      break;
     case Op_StoreVectorMasked:
       if (!VM_Version::supports_avx512bw() && (is_subword_type(bt) || UseAVX < 1)) {
         return false;

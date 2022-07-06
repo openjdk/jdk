@@ -3531,7 +3531,6 @@ public abstract class DoubleVector extends AbstractVector<Double> {
 
     // End of low-level memory operations.
 
-    @ForceInline
     private static
     void checkMaskFromIndexSize(int offset,
                                 DoubleSpecies vsp,
@@ -3542,7 +3541,6 @@ public abstract class DoubleVector extends AbstractVector<Double> {
             .checkIndexByLane(offset, limit, vsp.iota(), scale);
     }
 
-    @ForceInline
     private static
     void checkMaskFromIndexSize(long offset,
                                 DoubleSpecies vsp,

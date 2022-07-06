@@ -1,26 +1,25 @@
-//
-// Copyright (c) 2022, Arm Limited. All rights reserved.
-// DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-//
-// This code is free software; you can redistribute it and/or modify it
-// under the terms of the GNU General Public License version 2 only, as
-// published by the Free Software Foundation.
-//
-// This code is distributed in the hope that it will be useful, but WITHOUT
-// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-// version 2 for more details (a copy is included in the LICENSE file that
-// accompanied this code).
-//
-// You should have received a copy of the GNU General Public License version
-// 2 along with this work; if not, write to the Free Software Foundation,
-// Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-//
-// Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
-// or visit www.oracle.com if you need additional information or have any
-// questions.
-//
-//
+/*
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
 package org.openjdk.bench.jdk.incubator.vector;
 
 import java.util.concurrent.TimeUnit;
@@ -33,11 +32,11 @@ import org.openjdk.jmh.annotations.*;
 @Warmup(iterations = 3, time = 1)
 @Measurement(iterations = 5, time = 1)
 @Fork(value = 1, jvmArgsPrepend = {"--add-modules=jdk.incubator.vector"})
-public class LoadMaskedIOOBEBenchmark {
-    @Param({"1026"})
+public class StoreMaskedIOOBEBenchmark {
+    @Param({"1024"})
     private int inSize;
 
-    @Param({"1152"})
+    @Param({"1022"})
     private int outSize;
 
     private byte[] byteIn;
@@ -52,8 +51,6 @@ public class LoadMaskedIOOBEBenchmark {
     private float[] floatOut;
     private double[] doubleIn;
     private double[] doubleOut;
-
-    private boolean[] m;
 
     private static final VectorSpecies<Byte> bspecies = VectorSpecies.ofLargestShape(byte.class);
     private static final VectorSpecies<Short> sspecies = VectorSpecies.ofLargestShape(short.class);
@@ -85,57 +82,53 @@ public class LoadMaskedIOOBEBenchmark {
             floatIn[i] = (float) i;
             doubleIn[i] = (double) i;
         }
-        m = new boolean[outSize];
-        for (int i = 0; i < inSize; i++) {
-            m[i] = i % 2 == 0;
-        }
     }
 
     @Benchmark
-    public void byteLoadArrayMaskIOOBE() {
+    public void byteStoreArrayMaskIOOBE() {
+        VectorMask<Byte> mask = VectorMask.fromLong(bspecies, (1 << (bspecies.length() - 2)) - 1);
         for (int i = 0; i < inSize; i += bspecies.length()) {
-            VectorMask<Byte> mask = VectorMask.fromArray(bspecies, m, i);
-            ByteVector.fromArray(bspecies, byteIn, i, mask).intoArray(byteOut, i);
+            ByteVector.fromArray(bspecies, byteIn, i, mask).intoArray(byteOut, i, mask);
         }
     }
 
     @Benchmark
-    public void shortLoadArrayMaskIOOBE() {
+    public void shortStoreArrayMaskIOOBE() {
+        VectorMask<Short> mask = VectorMask.fromLong(sspecies, (1 << (sspecies.length() - 2)) - 1);
         for (int i = 0; i < inSize; i += sspecies.length()) {
-            VectorMask<Short> mask = VectorMask.fromArray(sspecies, m, i);
-            ShortVector.fromArray(sspecies, shortIn, i, mask).intoArray(shortOut, i);
+            ShortVector.fromArray(sspecies, shortIn, i).intoArray(shortOut, i, mask);
         }
     }
 
     @Benchmark
-    public void intLoadArrayMaskIOOBE() {
+    public void intStoreArrayMaskIOOBE() {
+        VectorMask<Integer> mask = VectorMask.fromLong(ispecies, (1 << (ispecies.length() - 2)) - 1);
         for (int i = 0; i < inSize; i += ispecies.length()) {
-            VectorMask<Integer> mask = VectorMask.fromArray(ispecies, m, i);
-            IntVector.fromArray(ispecies, intIn, i, mask).intoArray(intOut, i);
+            IntVector.fromArray(ispecies, intIn, i).intoArray(intOut, i, mask);
         }
     }
 
     @Benchmark
-    public void longLoadArrayMaskIOOBE() {
+    public void longStoreArrayMaskIOOBE() {
+        VectorMask<Long> mask = VectorMask.fromLong(lspecies, (1 << (lspecies.length() - 2)) -1);
         for (int i = 0; i < inSize; i += lspecies.length()) {
-            VectorMask<Long> mask = VectorMask.fromArray(lspecies, m, i);
-            LongVector.fromArray(lspecies, longIn, i, mask).intoArray(longOut, i);
+            LongVector.fromArray(lspecies, longIn, i).intoArray(longOut, i, mask);
         }
     }
 
     @Benchmark
-    public void floatLoadArrayMaskIOOBE() {
+    public void floatStoreArrayMaskIOOBE() {
+        VectorMask<Float> mask = VectorMask.fromLong(fspecies, (1 << (fspecies.length() - 2)) - 1);
         for (int i = 0; i < inSize; i += fspecies.length()) {
-            VectorMask<Float> mask = VectorMask.fromArray(fspecies, m, i);
-            FloatVector.fromArray(fspecies, floatIn, i, mask).intoArray(floatOut, i);
+            FloatVector.fromArray(fspecies, floatIn, i).intoArray(floatOut, i, mask);
         }
     }
 
     @Benchmark
-    public void doubleLoadArrayMaskIOOBE() {
+    public void doubleStoreArrayMaskIOOBE() {
+        VectorMask<Double> mask = VectorMask.fromLong(dspecies, (1 << (dspecies.length() - 2)) - 1);
         for (int i = 0; i < inSize; i += dspecies.length()) {
-            VectorMask<Double> mask = VectorMask.fromArray(dspecies, m, i);
-            DoubleVector.fromArray(dspecies, doubleIn, i, mask).intoArray(doubleOut, i);
+            DoubleVector.fromArray(dspecies, doubleIn, i).intoArray(doubleOut, i, mask);
         }
     }
 }

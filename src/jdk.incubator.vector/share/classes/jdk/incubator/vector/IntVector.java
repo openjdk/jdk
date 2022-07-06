@@ -3638,7 +3638,6 @@ public abstract class IntVector extends AbstractVector<Integer> {
 
     // End of low-level memory operations.
 
-    @ForceInline
     private static
     void checkMaskFromIndexSize(int offset,
                                 IntSpecies vsp,
@@ -3649,7 +3648,6 @@ public abstract class IntVector extends AbstractVector<Integer> {
             .checkIndexByLane(offset, limit, vsp.iota(), scale);
     }
 
-    @ForceInline
     private static
     void checkMaskFromIndexSize(long offset,
                                 IntSpecies vsp,
