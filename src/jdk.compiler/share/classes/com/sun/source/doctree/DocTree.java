@@ -222,7 +222,7 @@ public interface DocTree {
          * Used for instances of {@link SpecTree}
          * representing an {@code @spec} tag.
          *
-         * @since 19
+         * @since 20
          */
         SPEC("spec"),
 

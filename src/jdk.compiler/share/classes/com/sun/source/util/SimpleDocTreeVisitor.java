@@ -473,7 +473,7 @@ public class SimpleDocTreeVisitor<R,P> implements DocTreeVisitor<R, P> {
      *
      * @return  the result of {@code defaultAction}
      *
-     * @since 19
+     * @since 20
      */
     @Override
     public R visitSpec(SpecTree node, P p) {
