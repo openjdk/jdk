@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,20 +89,6 @@ public class I18NArgTest extends TestHelper {
                 "-Dtest.classes=" + TEST_CLASSES_DIR.getAbsolutePath(),
                 "-cp", TEST_CLASSES_DIR.getAbsolutePath(),
                 "I18NArgTest", unicodeStr, hexValue);
-        System.out.println(tr.testOutput);
-        if (!tr.isOK()) {
-            System.err.println(tr);
-            throw new RuntimeException("test fails");
-        }
-
-        // Test via JDK_JAVA_OPTIONS
-        Map<String, String> env = new HashMap<>();
-        String cmd = "-Dtest.src=" + TEST_SOURCES_DIR.getAbsolutePath() +
-                " -Dtest.classes=" + TEST_CLASSES_DIR.getAbsolutePath() +
-                " -cp " + TEST_CLASSES_DIR.getAbsolutePath() +
-                " I18NArgTest " + unicodeStr + " " + hexValue;
-        env.put("JDK_JAVA_OPTIONS", cmd);
-        tr = doExec(env, javaCmd);
         System.out.println(tr.testOutput);
         if (!tr.isOK()) {
             System.err.println(tr);
