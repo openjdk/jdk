@@ -145,13 +145,13 @@ int MacroAssembler::pd_patch_instruction_size(address insn_addr, address target)
         //   3 - adrp    Rx, target_page (page aligned reloc, offset == 0)
         //       movk    Rx, #imm16<<32
         //
-        unsigned insn2 = ((unsigned*)branch)[1];
+        uint32_t insn2 = ((uint32_t*)insn_addr)[1];
         if (Instruction_aarch64::extract(insn2, 29, 24) == 0b111001 &&
             Instruction_aarch64::extract(insn, 4, 0) ==
             Instruction_aarch64::extract(insn2, 9, 5)) {
           // Load/store register (unsigned immediate)
-          unsigned size = Instruction_aarch64::extract(insn2, 31, 30);
-          Instruction_aarch64::patch(branch + sizeof (unsigned),
+          uint32_t size = Instruction_aarch64::extract(insn2, 31, 30);
+          Instruction_aarch64::patch(insn_addr + sizeof (uint32_t),
                                      21, 10, offset_lo >> size);
           guarantee(((dest >> size) << size) == dest, "misaligned target");
           instructions = 2;
@@ -159,7 +159,7 @@ int MacroAssembler::pd_patch_instruction_size(address insn_addr, address target)
                    Instruction_aarch64::extract(insn, 4, 0) ==
                    Instruction_aarch64::extract(insn2, 4, 0)) {
           // add (immediate)
-          Instruction_aarch64::patch(branch + sizeof (unsigned),
+          Instruction_aarch64::patch(insn_addr + sizeof (uint32_t),
                                      21, 10, offset_lo);
           instructions = 2;
         } else if (Instruction_aarch64::extract(insn2, 31, 21) == 0b11110010110 &&
@@ -177,8 +177,8 @@ int MacroAssembler::pd_patch_instruction_size(address insn_addr, address target)
       // Naked adrp: danger!
       int offset_lo = offset & 3;
       offset >>= 2;
-      Instruction_aarch64::spatch(branch, 23, 5, offset);
-      Instruction_aarch64::patch(branch, 30, 29, offset_lo);
+      Instruction_aarch64::spatch(insn_addr, 23, 5, offset);
+      Instruction_aarch64::patch(insn_addr, 30, 29, offset_lo);
       break;
     }
     case 0b001001:
