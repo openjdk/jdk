@@ -328,7 +328,7 @@ address MacroAssembler::target_addr_for_insn(address insn_addr, uint32_t insn) {
             target_page = (target_page & 0xffffffff) |
               ((uint64_t)Instruction_aarch64::extract(insn2, 20, 5) << 32);
           }
-          // Naked adrp
+          // Naked adrp, maybe.
           return (address)target_page;
         }
       } else {
