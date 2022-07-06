@@ -446,8 +446,8 @@ class JavaThread: public Thread {
   int64_t _held_monitor_count;  // used by continuations for fast lock detection
   int64_t _jni_monitor_count;
 #else
-  int64_t _held_monitor_count;  // used by continuations for fast lock detection
-  int64_t _jni_monitor_count;
+  int32_t _held_monitor_count;  // used by continuations for fast lock detection
+  int32_t _jni_monitor_count;
 #endif
 
 private:
@@ -602,13 +602,8 @@ private:
   void inc_held_monitor_count(int i = 1, bool jni = false);
   void dec_held_monitor_count(int i = 1, bool jni = false);
 
-#ifdef _LP64
-  int64_t held_monitor_count() { return _held_monitor_count; }
-  int64_t jni_monitor_count()  { return _jni_monitor_count;  }
-#else
-  int64_t held_monitor_count() { return _held_monitor_count; }
-  int64_t jni_monitor_count()  { return _jni_monitor_count;  }
-#endif
+  int64_t held_monitor_count() { return (int64_t)_held_monitor_count; }
+  int64_t jni_monitor_count()  { return (int64_t)_jni_monitor_count;  }
   void clear_jni_monitor_count() { _jni_monitor_count = 0;   }
 
   inline bool is_vthread_mounted() const;

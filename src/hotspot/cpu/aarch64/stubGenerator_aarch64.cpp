@@ -8096,7 +8096,7 @@ void fill_continuation_entry(MacroAssembler* masm) {
   __ str(rscratch1, Address(sp, ContinuationEntry::parent_held_monitor_count_offset()));
 
   __ str(zr, Address(rthread, JavaThread::cont_fastpath_offset()));
-  __ strw(zr, Address(rthread, JavaThread::held_monitor_count_offset()));
+  __ str(zr, Address(rthread, JavaThread::held_monitor_count_offset()));
 }
 
 // on entry, sp points to the ContinuationEntry
