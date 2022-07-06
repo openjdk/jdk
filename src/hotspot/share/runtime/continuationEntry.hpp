@@ -65,7 +65,11 @@ private:
   int _flags;
   int _argsize;
   intptr_t* _parent_cont_fastpath;
+#ifdef _LP64
   int64_t   _parent_held_monitor_count;
+#else
+  int32_t   _parent_held_monitor_count;
+#endif
   uint _pin_count;
 
 public:
@@ -84,7 +88,7 @@ public:
   static size_t size() { return align_up((int)sizeof(ContinuationEntry), 2*wordSize); }
 
   ContinuationEntry* parent() const { return _parent; }
-  int parent_held_monitor_count() const { return _parent_held_monitor_count; }
+  int64_t parent_held_monitor_count() const { return (int64_t)_parent_held_monitor_count; }
 
   static address entry_pc() { return _return_pc; }
   intptr_t* entry_sp() const { return (intptr_t*)this; }
