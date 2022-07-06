@@ -229,8 +229,8 @@ module java.base {
         jdk.management.agent,
         jdk.internal.jvmstat;
     exports jdk.internal.platform to
-        jdk.management,
         java.management,
+        jdk.management,
         jdk.jfr;
     exports jdk.internal.ref to
         java.desktop,
