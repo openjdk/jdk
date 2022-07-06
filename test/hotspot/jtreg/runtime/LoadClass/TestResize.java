@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,14 +113,14 @@ public class TestResize {
   }
 
   public static void main(String[] args) throws Exception {
-    // -XX:+PrintSystemDictionaryAtExit will print the details of system dictionary,
+    // -XX:+PrintClassLoaderDataGraphAtExit will print the summary of the dictionaries,
     // that will allow us to calculate the table's load factor.
     // -Xlog:safepoint+cleanup will print out cleanup details at safepoint
     // that will allow us to detect if the system dictionary resized.
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+PrintSystemDictionaryAtExit",
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+PrintClassLoaderDataGraphAtExit",
                                                               "-Xlog:safepoint+cleanup",
                                                               "TriggerResize",
-                                                              "50000");
+                                                              "30000");
     analyzeOutputOn(pb);
   }
 }
