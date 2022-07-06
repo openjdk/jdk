@@ -812,7 +812,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
     b(done);
 
     bind(count);
-    incrementw(Address(rthread, JavaThread::held_monitor_count_offset()));
+    increment(Address(rthread, JavaThread::held_monitor_count_offset()));
 
     bind(done);
   }
@@ -871,7 +871,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
     b(done);
 
     bind(count);
-    decrementw(Address(rthread, JavaThread::held_monitor_count_offset()));
+    decrement(Address(rthread, JavaThread::held_monitor_count_offset()));
 
     bind(done);
     restore_bcp();

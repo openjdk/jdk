@@ -1610,7 +1610,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       __ b(slow_path_lock);
     }
     __ bind(count);
-    __ incrementw(Address(rthread, JavaThread::held_monitor_count_offset()));
+    __ increment(Address(rthread, JavaThread::held_monitor_count_offset()));
 
     // Slow path will re-enter here
     __ bind(lock_done);
@@ -1718,7 +1718,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       // Simple recursive lock?
       __ ldr(rscratch1, Address(sp, lock_slot_offset * VMRegImpl::stack_slot_size));
       __ cbnz(rscratch1, not_recursive);
-      __ decrementw(Address(rthread, JavaThread::held_monitor_count_offset()));
+      __ decrement(Address(rthread, JavaThread::held_monitor_count_offset()));
       __ b(done);
     }
 
@@ -1739,7 +1739,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       Label count;
       __ cmpxchg_obj_header(r0, old_hdr, obj_reg, rscratch1, count, &slow_path_unlock);
       __ bind(count);
-      __ decrementw(Address(rthread, JavaThread::held_monitor_count_offset()));
+      __ decrement(Address(rthread, JavaThread::held_monitor_count_offset()));
     } else {
       __ b(slow_path_unlock);
     }

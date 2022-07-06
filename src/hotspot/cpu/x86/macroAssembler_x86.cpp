@@ -2909,14 +2909,10 @@ void MacroAssembler::inc_held_monitor_count() {
   Register thread = rax;
   push(thread);
   get_thread(thread);
-#else
-  Register thread = r15_thread;
-#endif
-
   incrementl(Address(thread, JavaThread::held_monitor_count_offset()));
-
-#ifndef _LP64
   pop(thread);
+#else // LP64
+  incrementq(Address(r15_thread, JavaThread::held_monitor_count_offset()));
 #endif
 }
 
@@ -2925,14 +2921,10 @@ void MacroAssembler::dec_held_monitor_count() {
   Register thread = rax;
   push(thread);
   get_thread(thread);
-#else
-  Register thread = r15_thread;
-#endif
-
   decrementl(Address(thread, JavaThread::held_monitor_count_offset()));
-
-#ifndef _LP64
   pop(thread);
+#else // LP64
+  decrementq(Address(r15_thread, JavaThread::held_monitor_count_offset()));
 #endif
 }
 

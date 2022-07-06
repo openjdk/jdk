@@ -590,9 +590,13 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
 
   bind(COUNT);
   // Count monitors in fast path
-  Register thread = NOT_LP64(tmpReg) LP64_ONLY(r15_thread);
-  NOT_LP64(get_thread(thread);)
-  incrementl(Address(thread, JavaThread::held_monitor_count_offset()));
+#ifndef _LP64
+  get_thread(tmpReg);
+  incrementl(Address(tmpReg, JavaThread::held_monitor_count_offset()));
+#else // _LP64
+  incrementq(Address(r15_thread, JavaThread::held_monitor_count_offset()));
+#endif
+
   xorl(tmpReg, tmpReg); // Set ZF == 1
 
   bind(NO_COUNT);
@@ -820,9 +824,13 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
 
   bind(COUNT);
   // Count monitors in fast path
-  Register thread = NOT_LP64(tmpReg) LP64_ONLY(r15_thread);
-  NOT_LP64(get_thread(thread);)
-  decrementl(Address(thread, JavaThread::held_monitor_count_offset()));
+#ifndef _LP64
+  get_thread(tmpReg);
+  decrementl(Address(tmpReg, JavaThread::held_monitor_count_offset()));
+#else // _LP64
+  decrementq(Address(r15_thread, JavaThread::held_monitor_count_offset()));
+#endif
+
   xorl(tmpReg, tmpReg); // Set ZF == 1
 
   bind(NO_COUNT);

@@ -851,8 +851,8 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
   // JNI monitorexit, held count should be equal jni count.
   // Consider scan all object monitor for this owner if JNI count > 0 (at least on detach).
   assert(this->held_monitor_count() == this->jni_monitor_count(),
-         "held monitor count should be equal to jni: " UINT32_FORMAT " != " INT32_FORMAT,
-         this->held_monitor_count(), this->jni_monitor_count());
+         "held monitor count should be equal to jni: " INT64_FORMAT " != " INT64_FORMAT,
+         (int64_t)this->held_monitor_count(), (int64_t)this->jni_monitor_count());
   if (CheckJNICalls && this->jni_monitor_count() > 0) {
     // We would like a fatal here, but due to we never checked this before there
     // is a lot of tests which breaks, even with an error log.
@@ -1826,24 +1826,24 @@ void JavaThread::trace_stack() {
 
 #endif // PRODUCT
 
-void JavaThread::inc_held_monitor_count(int32_t i, bool jni) {
+void JavaThread::inc_held_monitor_count(int i, bool jni) {
 #ifdef SUPPORT_MONITOR_COUNT
-  assert(_held_monitor_count >= 0, "Must always be greater than 0: " INT32_FORMAT, _held_monitor_count);
+  assert(_held_monitor_count >= 0, "Must always be greater than 0: " INT64_FORMAT, (int64_t)_held_monitor_count);
   _held_monitor_count += i;
   if (jni) {
-    assert(_jni_monitor_count >= 0, "Must always be greater than 0: " INT32_FORMAT, _jni_monitor_count);
+    assert(_jni_monitor_count >= 0, "Must always be greater than 0: " INT64_FORMAT, (int64_t)_jni_monitor_count);
     _jni_monitor_count += i;
   }
 #endif
 }
 
-void JavaThread::dec_held_monitor_count(int32_t i, bool jni) {
+void JavaThread::dec_held_monitor_count(int i, bool jni) {
 #ifdef SUPPORT_MONITOR_COUNT
   _held_monitor_count -= i;
-  assert(_held_monitor_count >= 0, "Must always be greater than 0: " INT32_FORMAT, _held_monitor_count);
+  assert(_held_monitor_count >= 0, "Must always be greater than 0: " INT64_FORMAT, (int64_t)_held_monitor_count);
   if (jni) {
     _jni_monitor_count -= i;
-    assert(_jni_monitor_count >= 0, "Must always be greater than 0: " INT32_FORMAT, _jni_monitor_count);
+    assert(_jni_monitor_count >= 0, "Must always be greater than 0: " INT64_FORMAT, (int64_t)_jni_monitor_count);
   }
 #endif
 }

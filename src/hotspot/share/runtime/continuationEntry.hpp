@@ -65,7 +65,7 @@ private:
   int _flags;
   int _argsize;
   intptr_t* _parent_cont_fastpath;
-  int _parent_held_monitor_count;
+  int64_t   _parent_held_monitor_count;
   uint _pin_count;
 
 public:

@@ -442,8 +442,14 @@ class JavaThread: public Thread {
                             // continuation that we know about
   int _cont_fastpath_thread_state; // whether global thread state allows continuation fastpath (JVMTI)
   // It's signed for error detection.
-  int32_t _held_monitor_count;  // used by continuations for fast lock detection
-  int32_t _jni_monitor_count;
+#ifdef _LP64
+  int64_t _held_monitor_count;  // used by continuations for fast lock detection
+  int64_t _jni_monitor_count;
+#else
+  int64_t _held_monitor_count;  // used by continuations for fast lock detection
+  int64_t _jni_monitor_count;
+#endif
+
 private:
 
   friend class VMThread;
@@ -593,10 +599,16 @@ private:
   bool cont_fastpath() const                   { return _cont_fastpath == NULL && _cont_fastpath_thread_state != 0; }
   bool cont_fastpath_thread_state() const      { return _cont_fastpath_thread_state != 0; }
 
-  void inc_held_monitor_count(int32_t i = 1, bool jni = false);
-  void dec_held_monitor_count(int32_t i = 1, bool jni = false);
-  int32_t held_monitor_count() { return _held_monitor_count; }
-  int32_t jni_monitor_count()  { return _jni_monitor_count;  }
+  void inc_held_monitor_count(int i = 1, bool jni = false);
+  void dec_held_monitor_count(int i = 1, bool jni = false);
+
+#ifdef _LP64
+  int64_t held_monitor_count() { return _held_monitor_count; }
+  int64_t jni_monitor_count()  { return _jni_monitor_count;  }
+#else
+  int64_t held_monitor_count() { return _held_monitor_count; }
+  int64_t jni_monitor_count()  { return _jni_monitor_count;  }
+#endif
   void clear_jni_monitor_count() { _jni_monitor_count = 0;   }
 
   inline bool is_vthread_mounted() const;

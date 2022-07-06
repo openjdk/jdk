@@ -4035,7 +4035,7 @@ encode %{
     // flag == NE indicates failure
     __ br(Assembler::NE, no_count);
 
-    __ incrementw(Address(rthread, JavaThread::held_monitor_count_offset()));
+    __ increment(Address(rthread, JavaThread::held_monitor_count_offset()));
 
     __ bind(no_count);
   %}
@@ -4109,7 +4109,7 @@ encode %{
     // flag == NE indicates failure
     __ br(Assembler::NE, no_count);
 
-    __ decrementw(Address(rthread, JavaThread::held_monitor_count_offset()));
+    __ decrement(Address(rthread, JavaThread::held_monitor_count_offset()));
 
     __ bind(no_count);
   %}
