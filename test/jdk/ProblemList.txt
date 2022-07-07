@@ -759,6 +759,7 @@ jdk/jfr/startupargs/TestStartDuration.java                      8214685 windows-
 jdk/jfr/jvm/TestWaste.java                                      8282427 generic-all
 jdk/jfr/api/consumer/recordingstream/TestOnEvent.java           8255404 linux-x64
 jdk/jfr/event/runtime/TestActiveSettingEvent.java               8287832 generic-all
+jdk/jfr/api/consumer/TestRecordingFileWrite.java                8287699 linux-x64,macosx-x64
 
 ############################################################################
 
