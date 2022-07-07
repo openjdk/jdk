@@ -356,13 +356,13 @@ class CryptoPermission extends java.security.Permission {
     }
 
     /**
-     * Returns a string describing this {@code CryptoPermission}.
+     * Returns a string describing this {@code CryptoPermission} object.
      * The convention is to specify the class name, the algorithm name,
      * the maximum allowable key size, and the name of the exemption mechanism,
      * in the following
      * format: '("ClassName" "algorithm" "keysize" "exemption_mechanism")'.
      *
-     * @return information about this {@code CryptoPermission}.
+     * @return information about this {@code CryptoPermission} object.
      */
     public String toString() {
         StringBuilder buf = new StringBuilder(100);
@@ -448,8 +448,8 @@ class CryptoPermission extends java.security.Permission {
 }
 
 /**
- * A {@code CryptoPermissionCollection} stores a set of
- * {@code CryptoPermission} permissions.
+ * A {@code CryptoPermissionCollection} object stores a set of
+ * {@code CryptoPermission} objects.
  *
  * @see java.security.Permission
  * @see java.security.Permissions
@@ -474,7 +474,7 @@ final class CryptoPermissionCollection extends PermissionCollection
     }
 
     /**
-     * Adds a permission to the {@code CryptoPermissionCollection}.
+     * Adds a permission to the {@code CryptoPermissionCollection} object.
      *
      * @param permission the {@code Permission} object to add.
      *
@@ -499,7 +499,7 @@ final class CryptoPermissionCollection extends PermissionCollection
      *
      * @param permission the {@code Permission} object to compare
      *
-     * @return {@code true} if the given permission  is implied by this
+     * @return {@code true} if the given permission is implied by this
      * {@code CryptoPermissionCollection}, {@code false} if not.
      */
     public boolean implies(Permission permission) {

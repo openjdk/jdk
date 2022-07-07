@@ -103,7 +103,7 @@ public class CipherOutputStream extends FilterOutputStream {
     /**
      *
      * Constructs a {@code CipherOutputStream} from an
-     * {@code OutputStream} and a {@code Cipher}.
+     * {@code OutputStream} and a {@code Cipher} object.
      * <br>Note: if the specified output stream or cipher is
      * {@code null}, {@code a NullPointerException} may be thrown later when
      * they are used.
@@ -203,7 +203,7 @@ public class CipherOutputStream extends FilterOutputStream {
      *
      * <p>Any bytes buffered by the encapsulated {@code Cipher} object
      * and waiting to be processed by it will not be written out. For example,
-     * if the encapsulated {@code Cipher} is a block cipher, and the
+     * if the encapsulated {@code Cipher} object is a block cipher, and the
      * total number of bytes written using one of the {@code write}
      * methods is less than the cipher's block size, no bytes will be written
      * out.

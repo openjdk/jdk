@@ -141,8 +141,8 @@ import sun.security.util.KnownOIDs;
  * information on the ChaCha20 and ChaCha20-Poly1305 algorithms.
  * <p>
  * Every implementation of the Java platform is required to support
- * the following standard {@code Cipher} objecttransformations with the keysizes
- * in parentheses:
+ * the following standard {@code Cipher} object transformations with
+ * the keysizes in parentheses:
  * <ul>
  * <li>{@code AES/CBC/NoPadding} (128)</li>
  * <li>{@code AES/CBC/PKCS5Padding} (128)</li>
@@ -1066,10 +1066,11 @@ public class Cipher {
     }
 
     /**
-     * Returns the exemption mechanism object used with this {@code Cipher}.
+     * Returns the exemption mechanism object used with this {@code Cipher}
+     * object.
      *
-     * @return the exemption mechanism object used with this {@code Cipher}, or
-     * {@code null} if this {@code Cipher} object does not use any
+     * @return the exemption mechanism object used with this {@code Cipher}
+     * object, or {@code null} if this {@code Cipher} object does not use any
      * exemption mechanism.
      */
     public final ExemptionMechanism getExemptionMechanism() {
@@ -1221,7 +1222,7 @@ public class Cipher {
      * <p>Note that when a {@code Cipher} object is initialized, it loses all
      * previously-acquired state. In other words, initializing a {@code Cipher}
      * object is equivalent to creating a new instance of that {@code Cipher}
-     * and initializing it.
+     * object and initializing it.
      *
      * @param opmode the operation mode of this {@code Cipher} object
      * (this is one of the following:
@@ -1798,7 +1799,7 @@ public class Cipher {
      * Ensures that {@code Cipher} object is in a valid state for update() and
      * doFinal() calls - should be initialized and in ENCRYPT_MODE or
      * DECRYPT_MODE.
-     * @throws IllegalStateException if this {@code Cipher} objectis not in
+     * @throws IllegalStateException if this {@code Cipher} object is not in
      * valid state
      */
     private void checkCipherState() {
@@ -2704,7 +2705,7 @@ public class Cipher {
      * <p>
      * Calls to this method provide AAD to the {@code Cipher} object
      * when operating in modes such as AEAD (GCM/CCM).  If this
-     * {@code Cipher} is operating in either GCM or CCM mode, all AAD
+     * {@code Cipher} object is operating in either GCM or CCM mode, all AAD
      * must be supplied before beginning operations on the ciphertext
      * (via the {@code update} and {@code doFinal} methods).
      *
@@ -2782,8 +2783,8 @@ public class Cipher {
      * Data (AAD).
      * <p>
      * Calls to this method provide AAD to the {@code Cipher} object
-     *  when operating in modes such as AEAD (GCM/CCM).  If this
-     * {@code Cipher} is operating in either GCM or CCM mode, all AAD
+     * when operating in modes such as AEAD (GCM/CCM).  If this
+     * {@code Cipher} object is operating in either GCM or CCM mode, all AAD
      * must be supplied before beginning operations on the ciphertext
      * (via the {@code update} and {@code doFinal} methods).
      * <p>

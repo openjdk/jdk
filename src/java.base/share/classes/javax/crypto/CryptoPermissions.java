@@ -44,7 +44,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * This class contains {@code CryptoPermission} objects, organized into
- * PermissionCollections according to algorithm names.
+ * {@code PermissionCollection} objects according to algorithm names.
  *
  * <p>When the {@code add} method is called to add a
  * {@code CryptoPermission}, the {@code CryptoPermission} is stored in the
@@ -91,7 +91,7 @@ implements Serializable {
 
     /**
      * Populates the crypto policy from the specified
-     * InputStream into this {@code CryptoPermissions} object.
+     * {@code InputStream} into this {@code CryptoPermissions} object.
      *
      * @param in the InputStream to load from.
      *
@@ -132,7 +132,7 @@ implements Serializable {
      * @exception SecurityException if this {@code CryptoPermissions}
      * object is marked as readonly.
      *
-     * @see isReadOnly
+     * @see PermissionCollection#isReadOnly
      */
     @Override
     public void add(Permission permission) {
@@ -161,8 +161,8 @@ implements Serializable {
      *
      * @param permission the {@code Permission} object to check.
      *
-     * @return true if "permission" is implied by the permissions
-     * in the {@code PermissionCollection} it belongs to, false if not.
+     * @return {@code true} if {@code permission} is implied by the permissions
+     * in the {@code PermissionCollection} it belongs to, {@code false} if not.
      *
      */
     @Override
@@ -184,9 +184,8 @@ implements Serializable {
 
     /**
      * Returns an enumeration of all the {@code Permission} objects
-     * in all the PermissionCollections in this
-     * {@code CryptoPermissions} object.
-     * @return an enumeration of all the {@code Permissions}.
+     * in this {@code CryptoPermissions} object.
+     * @return an enumeration of all the {@code Permission} objects.
      */
     @Override
     public Enumeration<Permission> elements() {

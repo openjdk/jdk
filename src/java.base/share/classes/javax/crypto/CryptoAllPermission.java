@@ -104,7 +104,7 @@ final class CryptoAllPermission extends CryptoPermission {
 
 /**
  * A {@code CryptoAllPermissionCollection} stores a collection
- * of {@code CryptoAllPermission} permissions.
+ * of {@code CryptoAllPermission} objects.
  *
  * @see java.security.Permission
  * @see java.security.Permissions
@@ -155,7 +155,7 @@ final class CryptoAllPermissionCollection extends PermissionCollection
      * @param permission the {@code Permission} object to compare
      *
      * @return {@code true} if the given permission is implied by this
-     * CryptoAllPermissionCollection.
+     * {@code CryptoAllPermissionCollection} object.
      */
     public boolean implies(Permission permission) {
         if (!(permission instanceof CryptoPermission)) {

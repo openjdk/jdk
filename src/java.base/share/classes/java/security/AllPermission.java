@@ -180,7 +180,7 @@ final class AllPermissionCollection
      * @param permission the {@code Permission} object to add.
      *
      * @throws    IllegalArgumentException   if the permission is not an
-     *                                       {@crypto AllPermission}
+     *                                       {@code AllPermission}
      *
      * @throws    SecurityException   if this {@code AllPermissionCollection}
      *                                object has been marked readonly
