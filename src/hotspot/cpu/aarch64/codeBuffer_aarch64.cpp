@@ -26,21 +26,20 @@
 #include "asm/codeBuffer.inline.hpp"
 #include "asm/macroAssembler.hpp"
 
-void CodeBuffer::shared_stub_to_runtime_for(address dest, int caller_offset) {
-  if (_shared_stub_to_runtime_call_requests == nullptr) {
-    _shared_stub_to_runtime_call_requests = new SharedStubToRuntimeCallRequests();
+void CodeBuffer::share_trampoline_for(address dest, int caller_offset) {
+  if (_shared_trampoline_requests == nullptr) {
+    _shared_trampoline_requests = new SharedTrampolineRequests();
   }
-  SharedStubToRuntimeCallRequest request(dest, caller_offset);
-  _shared_stub_to_runtime_call_requests->push(request);
+  SharedTrampolineRequest request(dest, caller_offset);
+  _shared_trampoline_requests->push(request);
   _finalize_stubs = true;
 }
 
-template <typename MacroAssembler>
-bool emit_shared_stubs_to_runtime_call(CodeBuffer* cb, CodeBuffer::SharedStubToRuntimeCallRequests* requests) {
+static bool emit_shared_stubs_to_runtime_call(CodeBuffer* cb, CodeBuffer::SharedTrampolineRequests* requests) {
   if (requests == NULL) {
     return true;
   }
-  auto by_dest = [](CodeBuffer::SharedStubToRuntimeCallRequest* r1, CodeBuffer::SharedStubToRuntimeCallRequest* r2) {
+  auto by_dest = [](CodeBuffer::SharedTrampolineRequest* r1, CodeBuffer::SharedTrampolineRequest* r2) {
     if (r1->dest() < r2->dest()) {
       return -1;
     } else if (r1->dest() == r2->dest()) {
@@ -76,5 +75,5 @@ bool emit_shared_stubs_to_runtime_call(CodeBuffer* cb, CodeBuffer::SharedStubToR
 
 bool CodeBuffer::pd_finalize_stubs() {
   return emit_shared_stubs_to_interp<MacroAssembler>(this, _shared_stub_to_interp_requests)
-      && emit_shared_stubs_to_runtime_call<MacroAssembler>(this, _shared_stub_to_runtime_call_requests);
+      && emit_shared_stubs_to_runtime_call(this, _shared_trampoline_requests);
 }

@@ -27,13 +27,13 @@
 #define CPU_AARCH64_CODEBUFFER_AARCH64_HPP
 
 public:
-  class SharedStubToRuntimeCallRequest {
+  class SharedTrampolineRequest {
    private:
     address _dest;
     int _caller_offset;
 
    public:
-    SharedStubToRuntimeCallRequest(address dest = nullptr, int caller_offset = -1):
+    SharedTrampolineRequest(address dest = nullptr, int caller_offset = -1):
         _dest(dest),
         _caller_offset(caller_offset) {}
 
@@ -49,6 +49,6 @@ public:
   void flush_bundle(bool start_new_bundle) {}
   static constexpr bool supports_shared_stubs() { return true; }
 
-  void shared_stub_to_runtime_for(address dest, int caller_offset);
+  void share_trampoline_for(address dest, int caller_offset);
 
 #endif // CPU_AARCH64_CODEBUFFER_AARCH64_HPP
