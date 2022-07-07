@@ -31,6 +31,7 @@
  * @key intermittent
  * @summary Basic tests for Process and Environment Variable code
  * @modules java.base/java.lang:open
+ * @requires !vm.musl
  * @library /test/lib
  * @run main/othervm/native/timeout=300 -Djava.security.manager=allow Basic
  * @run main/othervm/native/timeout=300 -Djava.security.manager=allow -Djdk.lang.Process.launchMechanism=fork Basic
@@ -40,7 +41,7 @@
 /*
  * @test
  * @modules java.base/java.lang:open
- * @requires (os.family == "linux")
+ * @requires (os.family == "linux" & !vm.musl)
  * @library /test/lib
  * @run main/othervm/timeout=300 -Djava.security.manager=allow -Djdk.lang.Process.launchMechanism=posix_spawn Basic
  */
