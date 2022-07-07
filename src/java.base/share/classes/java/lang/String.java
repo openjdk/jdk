@@ -484,7 +484,7 @@ public final class String
      */
     public String(byte[] bytes, int offset, int length, String charsetName)
             throws UnsupportedEncodingException {
-        this(bytes, offset, length, lookupCharset(charsetName));
+        this(bytes, offset, length, lookupCharset(charsetName), checkBoundsOffCount(offset, length, bytes.length));
     }
 
     /**
@@ -517,10 +517,12 @@ public final class String
      *
      * @since  1.6
      */
-    @SuppressWarnings("removal")
     public String(byte[] bytes, int offset, int length, Charset charset) {
-        Objects.requireNonNull(charset);
-        checkBoundsOffCount(offset, length, bytes.length);
+        this(bytes, offset, length, Objects.requireNonNull(charset), checkBoundsOffCount(offset, length, bytes.length));
+    }
+
+    @SuppressWarnings("removal")
+    String(byte[] bytes, int offset, int length, Charset charset, int unused) {
         if (length == 0) {
             this.value = "".value;
             this.coder = "".coder;
@@ -1370,7 +1372,7 @@ public final class String
      */
     public String(byte[] bytes, String charsetName)
             throws UnsupportedEncodingException {
-        this(bytes, 0, bytes.length, charsetName);
+        this(bytes, 0, bytes.length, lookupCharset(charsetName), -1);
     }
 
     /**
@@ -1394,7 +1396,7 @@ public final class String
      * @since  1.6
      */
     public String(byte[] bytes, Charset charset) {
-        this(bytes, 0, bytes.length, charset);
+        this(bytes, 0, bytes.length, Objects.requireNonNull(charset), -1);
     }
 
     /**
@@ -1424,7 +1426,7 @@ public final class String
      * @since  1.1
      */
     public String(byte[] bytes, int offset, int length) {
-        this(bytes, offset, length, Charset.defaultCharset());
+        this(bytes, offset, length, Charset.defaultCharset(), checkBoundsOffCount(offset, length, bytes.length));
     }
 
     /**
@@ -1444,7 +1446,7 @@ public final class String
      * @since  1.1
      */
     public String(byte[] bytes) {
-        this(bytes, 0, bytes.length);
+        this(bytes, 0, bytes.length, Charset.defaultCharset(), -1);
     }
 
     /**
@@ -4586,8 +4588,8 @@ public final class String
      *          If {@code offset} is negative, {@code count} is negative,
      *          or {@code offset} is greater than {@code length - count}
      */
-    static void checkBoundsOffCount(int offset, int count, int length) {
-        Preconditions.checkFromIndexSize(offset, count, length, Preconditions.SIOOBE_FORMATTER);
+    static int checkBoundsOffCount(int offset, int count, int length) {
+        return Preconditions.checkFromIndexSize(offset, count, length, Preconditions.SIOOBE_FORMATTER);
     }
 
     /*
