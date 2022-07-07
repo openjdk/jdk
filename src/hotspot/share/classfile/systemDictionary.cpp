@@ -45,6 +45,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "classfile/invokeMethodTable.hpp"
 #include "code/codeCache.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "interpreter/bootstrapInfo.hpp"
@@ -87,8 +88,12 @@
 #include "jfr/jfr.hpp"
 #endif
 
+ResourceHashtable<InvokeMethodKey, InvokeMethodValue, 107, ResourceObj::C_HEAP, mtClass, 
+                  InvokeMethodKey::compute_hash, InvokeMethodKey::key_comparison> _invoke_method_table;
+ResolutionErrorTable*  SystemDictionary::_resolution_errors   = NULL;
 SymbolPropertyTable*   SystemDictionary::_invoke_method_table = NULL;
 ProtectionDomainCacheTable*   SystemDictionary::_pd_cache_table = NULL;
+
 
 OopHandle   SystemDictionary::_java_system_loader;
 OopHandle   SystemDictionary::_java_platform_loader;
@@ -1848,7 +1853,7 @@ void SystemDictionary::add_resolution_error(const constantPoolHandle& pool, int 
                                             Symbol* cause, Symbol* cause_msg) {
   {
     MutexLocker ml(Thread::current(), SystemDictionary_lock);
-    ResolutionErrorEntry* entry = ResolutionErrorTable::find_entry(pool, which);
+    ResolutionErrorEntry* entry = ResolutionErrorTable::(pool, which);
     if (entry == NULL) {
       ResolutionErrorTable::add_entry(pool, which, error, message, cause, cause_msg);
     }
@@ -1999,6 +2004,7 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
 
   unsigned int hash  = invoke_method_table()->compute_hash(signature, iid_as_int);
   int          index = invoke_method_table()->hash_to_index(hash);
+  InvokeMethodKey x(null, null)
   SymbolPropertyEntry* spe = invoke_method_table()->find_entry(index, hash, signature, iid_as_int);
   methodHandle m;
   if (spe == NULL || spe->method() == NULL) {
@@ -2020,6 +2026,11 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
     {
       MutexLocker ml(THREAD, SystemDictionary_lock);
       spe = invoke_method_table()->find_entry(index, hash, signature, iid_as_int);
+      bool useNewCode = false;
+      if(useNewCode){
+        ResourceMark rm;
+        tty->print_cr("finding symbol %s %d", signature->as_C_string(), iid_as_int);
+      }
       if (spe == NULL)
         spe = invoke_method_table()->add_entry(index, hash, signature, iid_as_int);
       if (spe->method() == NULL)
