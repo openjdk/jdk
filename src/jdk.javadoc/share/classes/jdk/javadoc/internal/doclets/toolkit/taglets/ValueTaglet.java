@@ -120,7 +120,7 @@ public class ValueTaglet extends BaseTaglet {
             }
             return writer.valueTagOutput(field,
                 text,
-                field != holder);
+                !field.equals(holder));
         } else {
             //Referenced field is not a constant.
             messages.warning(holder,
