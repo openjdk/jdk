@@ -718,7 +718,9 @@ static bool is_locked_by_another_process(const char* dirname, const char* filena
   fd = ::open(filename, O_RDONLY);
   if (fd >= 0) {
     is_locked = (flock(fd, LOCK_EX|LOCK_NB) != 0);
-    // is_locked == true: This file is locked by a compatible JVM process that's still alive.
+    // The locking protocol works only with JVMs that have the JDK-8286030 fix.
+    // If you are sharing the /tmp difrectory among different containers, do not
+    // use older JVMs that don't have this fix.
     if (!is_locked) {
       ::close(fd);
     }
@@ -773,17 +775,23 @@ static void cleanup_sharedmem_resources(const char* dirname) {
       continue;
     }
 
-    // FIXME -- update comments below
-
-    // we now have a file name that converts to a valid integer
-    // that could represent a process id . if this process id
-    // matches the current process id or the process is not running,
-    // then remove the stale file resources.
+    // We now have a file name that converts to a valid integer
+    // that could represent a process id.
     //
-    // process liveness is detected by sending signal number 0 to
-    // the process id (see kill(2)). if kill determines that the
+    // On Linux, we first try to flock() on the file to check
+    // for JVM processes in other containers that share the same
+    // /tmp directory as the current process. See comments in
+    // create_sharedmem_resources() and is_locked_by_another_process().
+    // If it's already locked by another process, then obviously it's
+    // not stale
+    //
+    // Otherwise, if this process id matches the current process id or
+    // the process is not running, we treat it as a stale file and remove it.
+    //
+    // Process liveness is detected by sending signal number 0 to
+    // the process id (see kill(2)). If kill determines that the
     // process does not exist, then the file resources are removed.
-    // if kill determines that that we don't have permission to
+    // If kill determines that that we don't have permission to
     // signal the process, then the file resources are assumed to
     // be stale and are removed because the resources for such a
     // process should be in a different user specific directory.
@@ -797,8 +805,8 @@ static void cleanup_sharedmem_resources(const char* dirname) {
       }
     }
     if (fd >= 0) {
-      // LINUX: hold the lock to prevent other JVMs from using this file while we are in the middle
-      // of deleting it.
+      // LINUX: hold the lock to prevent other JVMs from using this file while we
+      // are in the middle of deleting it.
       ::close(fd);
     }
     errno = 0;
@@ -898,6 +906,15 @@ static int create_sharedmem_resources(const char* dirname, const char* filename,
   }
 
 #if defined(LINUX)
+  // On Linux, different containerized processes that share the same /tmp
+  // directory (e.g., with "docker --volume ...") may have the same pid and
+  // try to use the same file. To avoid conflicts among such
+  // processes, we allow only one of them (the winner of the flock() call)
+  // to write to the file. All the other processes will give up and will
+  // have perfdata disabled.
+  //
+  // Note that the flock will be automatically given up when the winner
+  // process exits.
   int n = flock(fd, LOCK_EX|LOCK_NB);
   if (n != 0) {
     log_warning(perf, memops)("Cannot use file %s/%s because it is locked by another process", dirname, filename);

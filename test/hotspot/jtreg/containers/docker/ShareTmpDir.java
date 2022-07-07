@@ -123,7 +123,7 @@ public class ShareTmpDir {
             // have pid==1.
             // One of the two contains must fail to create the hsperf file.
             String s = "Cannot use file " + file1 + " because it is locked by another process";
-            Asserts.assertTrue(out1.getStdout().contains(s) || 
+            Asserts.assertTrue(out1.getStdout().contains(s) ||
                                out2.getStdout().contains(s));
         } else {
             throw new SkippedException("Java in the two containers don't have the same pid: " + file1 + " vs " + file2);
