@@ -113,7 +113,7 @@ public class isexceeded001 {
                 continue;
             }
 
-            // If used value is less than threshold, then isUsageThresholdExceeded()
+            // If peak used value is less than threshold, then isUsageThresholdExceeded()
             // is expected to return false.
             if (peakUsed < threshold && isExceeded) {
                 // used is commonly less than threshold, but isExceeded should not be true:
@@ -127,7 +127,7 @@ public class isexceeded001 {
                     log.complain("isUsageThresholdExceeded() now says false.");
                 }
             } else
-            // If used value is greater or equal than threshold, then
+            // If peak used value is greater or equal than threshold, then
             // isUsageThresholdExceeded() is expected to return true.
             if (peakUsed >= threshold && !isExceeded) {
                 isExceeded = monitor.isUsageThresholdExceeded(pool);
