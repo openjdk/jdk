@@ -79,19 +79,6 @@ G1BlockOffsetTablePart::G1BlockOffsetTablePart(G1BlockOffsetTable* array, HeapRe
 {
 }
 
-void G1BlockOffsetTablePart::update() {
-  HeapWord* next_addr = _hr->bottom();
-  HeapWord* const limit = _hr->top();
-
-  HeapWord* prev_addr;
-  while (next_addr < limit) {
-    prev_addr = next_addr;
-    next_addr  = prev_addr + block_size(prev_addr);
-    update_for_block(prev_addr, next_addr);
-  }
-  assert(next_addr == limit, "Should stop the scan at the limit.");
-}
-
 // Write the backskip value for each region.
 //
 //    offset
