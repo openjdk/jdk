@@ -108,13 +108,12 @@ public:
 
 class G1BlockOffsetTablePart {
   friend class G1BlockOffsetTable;
-  friend class HeapRegion;
   friend class VMStructs;
 private:
   // This is the global BlockOffsetTable.
   G1BlockOffsetTable* _bot;
 
-  // The region that owns this subregion.
+  // The region that owns this part of the BOT.
   HeapRegion* _hr;
 
   // Sets the entries corresponding to the cards starting at "start" and ending
@@ -122,7 +121,6 @@ private:
   void set_remainder_to_point_to_start_incl(size_t start, size_t end);
 
   inline size_t block_size(const HeapWord* p) const;
-  inline size_t block_size(const HeapWord* p, HeapWord* pb) const;
 
   // Returns the address of a block whose start is at most "addr".
   inline HeapWord* block_at_or_preceding(const void* addr) const;
@@ -130,7 +128,6 @@ private:
   // Return the address of the beginning of the block that contains "addr".
   // "q" is a block boundary that is <= "addr"; "n" is the address of the
   // next block (or the end of the space.)
-  // "pb" is the current value of the region's parsable_bottom.
   inline HeapWord* forward_to_block_containing_addr(HeapWord* q, HeapWord* n,
                                                     const void* addr,
                                                     HeapWord* pb) const;
@@ -138,13 +135,16 @@ private:
   // Update BOT entries corresponding to the mem range [blk_start, blk_end).
   void update_for_block_work(HeapWord* blk_start, HeapWord* blk_end);
 
-  void check_all_cards(size_t left_card, size_t right_card) const;
+  void check_all_cards(size_t left_card, size_t right_card) const NOT_DEBUG_RETURN;
 
-public:
   static HeapWord* align_up_by_card_size(HeapWord* const addr) {
     return align_up(addr, BOTConstants::card_size());
   }
 
+  void update_for_block(HeapWord* blk_start, size_t size) {
+    update_for_block(blk_start, blk_start + size);
+  }
+public:
   static bool is_crossing_card_boundary(HeapWord* const obj_start,
                                         HeapWord* const obj_end) {
     HeapWord* cur_card_boundary = align_up_by_card_size(obj_start);
@@ -157,22 +157,14 @@ public:
 
   void verify() const;
 
-  // Returns the address of the start of the block containing "addr", or
-  // else "null" if it is covered by no block.  (May have side effects,
-  // namely updating of shared array entries that "point" too far
-  // backwards.  This can occur, for example, when lab allocation is used
-  // in a space covered by the table.)
-  // "pb" is the current value of the region's parsable_bottom.
-  inline HeapWord* block_start(const void* addr, HeapWord* pb);
+  // Returns the address of the start of the block reaching into the card containing
+  // "addr".
+  inline HeapWord* block_start_reaching_into_card(const void* addr) const;
 
   void update_for_block(HeapWord* blk_start, HeapWord* blk_end) {
     if (is_crossing_card_boundary(blk_start, blk_end)) {
       update_for_block_work(blk_start, blk_end);
     }
-  }
-
-  void update_for_block(HeapWord* blk_start, size_t size) {
-    update_for_block(blk_start, blk_start + size);
   }
 
   void set_for_starts_humongous(HeapWord* obj_top, size_t fill_size);

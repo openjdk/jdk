@@ -2346,7 +2346,7 @@ HeapWord* G1CollectedHeap::block_start(const void* addr) const {
   if (addr >= hr->top()) {
     return nullptr;
   }
-  return hr->block_start(addr, hr->parsable_bottom_acquire());
+  return hr->block_start(addr);
 }
 
 bool G1CollectedHeap::block_is_obj(const HeapWord* addr) const {
