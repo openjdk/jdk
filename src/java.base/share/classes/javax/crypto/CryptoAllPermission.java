@@ -95,7 +95,7 @@ final class CryptoAllPermission extends CryptoPermission {
      * {@code CryptoAllPermission} objects.
      *
      * @return a new {@code PermissionCollection} object suitable for
-     * storing {@code CryptoAllPermissions} objects.
+     * storing {@code CryptoAllPermission} objects.
      */
     public PermissionCollection newPermissionCollection() {
         return new CryptoAllPermissionCollection();

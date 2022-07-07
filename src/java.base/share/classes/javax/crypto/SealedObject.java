@@ -40,8 +40,8 @@ import java.util.Arrays;
  * This class enables a programmer to create an object and protect its
  * confidentiality with a cryptographic algorithm.
  *
- * <p> Given any Serializable object, one can create a {@code SealedObject}
- * that encapsulates the original object, in serialized
+ * <p> Given any {@code Serializable} object, one can create a
+ * {@code SealedObject} that encapsulates the original object, in serialized
  * format (i.e., a "deep copy"), and seals (encrypts) its serialized contents,
  * using a cryptographic algorithm such as AES, to protect its
  * confidentiality.  The encrypted content can later be decrypted (with
@@ -122,14 +122,14 @@ public class SealedObject implements Serializable {
      * The cryptographic parameters used by the sealing {@code Cipher} object,
      * encoded in the default format.
      * <p>
-     * That is, {@code cipher.getParameters().getEncoded()}.
+     * That is, {@code Cipher.getParameters().getEncoded()}.
      *
      * @serial
      */
     protected byte[] encodedParams = null;
 
     /**
-     * Constructs a {@code SealedObject} from any Serializable object.
+     * Constructs a {@code SealedObject} from any {@code Serializable} object.
      *
      * <p>The given object is serialized, and its serialized contents are
      * encrypted using the given {@code Cipher} object, which must be fully
@@ -192,7 +192,7 @@ public class SealedObject implements Serializable {
 
     /**
      * Constructs a {@code SealedObject} object from the passed-in
-     * SealedObject.
+     * {@code SealedObject}.
      *
      * @param so a {@code SealedObject} object
      * @exception NullPointerException if the given sealed object
@@ -224,7 +224,7 @@ public class SealedObject implements Serializable {
      * <p>This method creates a cipher for the algorithm that had been used in
      * the sealing operation.
      * If the default provider package provides an implementation of that
-     * algorithm, an instance of {@code Cipher} object containing that
+     * algorithm, a {@code Cipher} object containing that
      * implementation is used.
      * If the algorithm is not available in the default package, other
      * packages are searched.
