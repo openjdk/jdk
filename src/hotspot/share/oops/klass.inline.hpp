@@ -45,7 +45,7 @@ inline bool Klass::is_non_strong_hidden() const {
 // Klass is considered alive. This is safe to call before the CLD is marked as
 // unloading, and hence during concurrent class unloading.
 // This returns false if the Klass is unloaded, or about to be unloaded because the holder of
-// the CLD is strongly reachable.
+// the CLD is no longer strongly reachable.
 // The return value of this function may change from true to false after a safepoint. So the caller
 // of this function must ensure that a safepoint doesn't happen while interpreting the return value.
 inline bool Klass::is_loader_alive() const {
