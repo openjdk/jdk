@@ -44,7 +44,7 @@ Classfile Processing API benchmarks are a part of JDK Microbenchmark Suite:
 
 Benchmarks can be selectively executed as:
 
-    make test TEST=micro:org.openjdk.bench.jdk.bytecode.+
+    make test TEST=micro:org.openjdk.bench.jdk.classfile.+
 
 See [JEP 230: Microbenchmark Suite](https://bugs.openjdk.java.net/browse/JDK-8050952) for more information about JDK benchmarks.
 
