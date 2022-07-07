@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -182,7 +182,7 @@ int JfrThreadGroupsHelper::populate_thread_group_hierarchy(const JavaThread* jt,
 }
 
 static traceid next_id() {
-  static traceid _current_threadgroup_id = 0;
+  static traceid _current_threadgroup_id = 1; // 1 is reserved for thread group "VirtualThreads"
   return ++_current_threadgroup_id;
 }
 
@@ -284,6 +284,7 @@ void JfrThreadGroup::set_instance(JfrThreadGroup* new_instance) {
 }
 
 traceid JfrThreadGroup::thread_group_id(const JavaThread* jt, Thread* current) {
+  HandleMark hm(current);
   JfrThreadGroupsHelper helper(jt, current);
   return helper.is_valid() ? thread_group_id_internal(helper) : 0;
 }
@@ -353,7 +354,14 @@ int JfrThreadGroup::add_entry(JfrThreadGroupEntry* tge) {
 void JfrThreadGroup::write_thread_group_entries(JfrCheckpointWriter& writer) const {
   assert(_list != NULL && !_list->is_empty(), "should not need be here!");
   const int number_of_tg_entries = _list->length();
-  writer.write_count(number_of_tg_entries);
+  writer.write_count(number_of_tg_entries + 1); // + VirtualThread group
+  writer.write_key(1);      // 1 is reserved for VirtualThread group
+  writer.write<traceid>(0); // parent
+  const oop vgroup = java_lang_Thread_Constants::get_VTHREAD_GROUP();
+  assert(vgroup != (oop)NULL, "invariant");
+  const char* const vgroup_name = java_lang_ThreadGroup::name(vgroup);
+  assert(vgroup_name != NULL, "invariant");
+  writer.write(vgroup_name);
   for (int index = 0; index < number_of_tg_entries; ++index) {
     const JfrThreadGroupEntry* const curtge = _list->at(index);
     writer.write_key(curtge->thread_group_id());
@@ -365,6 +373,7 @@ void JfrThreadGroup::write_thread_group_entries(JfrCheckpointWriter& writer) con
 void JfrThreadGroup::write_selective_thread_group(JfrCheckpointWriter* writer, traceid thread_group_id) const {
   assert(writer != NULL, "invariant");
   assert(_list != NULL && !_list->is_empty(), "should not need be here!");
+  assert(thread_group_id != 1, "should not need be here!");
   const int number_of_tg_entries = _list->length();
 
   // save context

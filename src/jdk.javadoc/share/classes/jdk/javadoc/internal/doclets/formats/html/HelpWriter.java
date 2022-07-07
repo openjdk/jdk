@@ -46,18 +46,13 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 /**
  * Generate the Help File for the generated API documentation. The help file
  * contents are helpful for browsing the generated documentation.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class HelpWriter extends HtmlDocletWriter {
 
     private final String[][] SEARCH_EXAMPLES = {
-            {"j.l.obj", "\"java.lang.Object\""},
-            {"InpStr", "\"java.io.InputStream\""},
-            {"HM.cK", "\"java.util.HashMap.containsKey(Object)\""}
+            {"\"j.l.obj\"", "\"java.lang.Object\""},
+            {"\"InpStr\"", "\"java.io.InputStream\""},
+            {"\"math exact long\"", "\"java.lang.Math.absExact(long)\""}
     };
 
     Content overviewLink;
@@ -189,7 +184,7 @@ public class HelpWriter extends HtmlDocletWriter {
 
         // Search
         if (options.createIndex()) {
-            section = newHelpSection(getContent("doclet.help.search.head"), subTOC, HtmlIds.HELP_SEARCH);
+            section = newHelpSection(getContent("doclet.help.search.head"), PageMode.SEARCH, subTOC);
             var searchIntro = HtmlTree.P(getContent("doclet.help.search.intro"));
             var searchExamples = HtmlTree.UL(HtmlStyle.helpSectionList);
             for (String[] example : SEARCH_EXAMPLES) {

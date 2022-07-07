@@ -48,11 +48,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
  * can not be used effectively to change formatting.  The concrete
  * class subclass of this class can be subclassed to change formatting.
  *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
- *
  * @see AbstractMemberWriter
  * @see ClassWriterImpl
  */

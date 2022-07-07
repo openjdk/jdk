@@ -47,11 +47,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
  * Generate serialized form for serializable fields.
  * Documentation denoted by the tags <code>serial</code> and
  * <code>serialField</code> is processed.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class HtmlSerialFieldWriter extends FieldWriterImpl
         implements SerializedFormWriter.SerialFieldWriter {

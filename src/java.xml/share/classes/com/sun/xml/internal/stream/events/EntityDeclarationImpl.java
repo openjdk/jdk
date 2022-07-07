@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package com.sun.xml.internal.stream.events;
 import javax.xml.stream.events.EntityDeclaration;
 import javax.xml.stream.events.XMLEvent;
 import com.sun.org.apache.xerces.internal.xni.XMLResourceIdentifier;
+import jdk.xml.internal.JdkXmlUtils;
 
 /**
  *
@@ -129,18 +130,12 @@ public class EntityDeclarationImpl extends DummyEvent implements EntityDeclarati
             //escape quotes, lt and amps
             writer.write(" \"");
             charEncode(writer, fReplacementText);
+            writer.write("\"");
         } else {
             //external entity
-            String pubId = getPublicId();
-            if (pubId != null) {
-                writer.write(" PUBLIC \"");
-                writer.write(pubId);
-            } else {
-                writer.write(" SYSTEM \"");
-                writer.write(getSystemId());
-            }
+            writer.write(JdkXmlUtils.getDTDExternalDecl(getPublicId(), getSystemId()));
         }
-        writer.write("\"");
+
         if (fNotationName != null) {
             writer.write(" NDATA ");
             writer.write(fNotationName);

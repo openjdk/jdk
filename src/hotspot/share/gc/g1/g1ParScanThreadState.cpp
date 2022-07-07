@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/g1/g1Trace.hpp"
 #include "gc/g1/g1YoungGCEvacFailureInjector.inline.hpp"
+#include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/partialArrayTaskStepper.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
@@ -263,7 +264,7 @@ void G1ParScanThreadState::start_partial_objarray(G1HeapRegionAttr dest_attr,
                                    _partial_objarray_chunk_size);
 
   // Push any needed partial scan tasks.  Pushed before processing the
-  // intitial chunk to allow other workers to steal while we're processing.
+  // initial chunk to allow other workers to steal while we're processing.
   for (uint i = 0; i < step._ncreate; ++i) {
     push_on_queue(ScannerTask(PartialArrayScanTask(from_obj)));
   }
@@ -526,6 +527,8 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
       return obj;
     }
 
+    ContinuationGCSupport::transform_stack_chunk(obj);
+
     // Check for deduplicating young Strings.
     if (G1StringDedup::is_candidate_from_evacuation(klass,
                                                     region_attr,
@@ -630,6 +633,9 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m, siz
     }
 
     _preserved_marks->push_if_necessary(old, m);
+
+    ContinuationGCSupport::transform_stack_chunk(old);
+
     _evacuation_failed_info.register_copy_failure(word_sz);
 
     // For iterating objects that failed evacuation currently we can reuse the

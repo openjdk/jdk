@@ -54,7 +54,7 @@ class Dict { // Dictionary structure
  public:
   friend class DictI;            // Friendly iterator function
 
-  // cmp is a key comparision routine.  hash is a routine to hash a key.
+  // cmp is a key comparison routine.  hash is a routine to hash a key.
   Dict( CmpKey cmp, Hash hash );
   Dict( CmpKey cmp, Hash hash, AdlArena *arena );
   void init();

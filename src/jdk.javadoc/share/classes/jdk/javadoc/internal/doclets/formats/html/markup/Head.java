@@ -43,11 +43,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
  * An HTML {@code <head>} element.
  *
  * Many methods return the current object, to facilitate fluent builder-style usage.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class Head extends Content {
     private final Runtime.Version docletVersion;

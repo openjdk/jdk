@@ -49,6 +49,7 @@ public final class EventFileStream extends AbstractEventStream {
     public EventFileStream(@SuppressWarnings("removal") AccessControlContext acc, Path file) throws IOException {
         super(acc, null, Collections.emptyList());
         this.input = new RecordingInput(file.toFile(), FileAccess.UNPRIVILEGED);
+        this.input.setStreamed();
     }
 
     @Override

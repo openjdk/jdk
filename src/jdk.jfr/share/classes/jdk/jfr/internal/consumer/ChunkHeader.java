@@ -113,7 +113,7 @@ public final class ChunkHeader {
         byte fs;
         input.positionPhysical(absoluteChunkStart + FILE_STATE_POSITION);
         while ((fs = input.readPhysicalByte()) == UPDATING_CHUNK_HEADER) {
-            Utils.takeNap(1);
+            input.pollWait();
             input.positionPhysical(absoluteChunkStart + FILE_STATE_POSITION);
         }
         return fs;
@@ -180,7 +180,7 @@ public final class ChunkHeader {
                     finished = true;
                     return;
                 }
-                Utils.takeNap(1);
+                input.pollWait();
             }
         } finally {
             input.position(pos);

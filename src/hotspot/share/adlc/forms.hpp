@@ -95,7 +95,7 @@ private:
   bool operator ==(const FormDict &d) const; // Compare dictionaries for equal
 
 public:
-  // cmp is a key comparision routine.  hash is a routine to hash a key.
+  // cmp is a key comparison routine.  hash is a routine to hash a key.
   // FormDict( CmpKey cmp, Hash hash );
   FormDict( CmpKey cmp, Hash hash, AdlArena *arena );
   FormDict( const FormDict & fd );    // Deep-copy guts
@@ -572,7 +572,7 @@ private:
   bool operator ==(const ExprDict &d) const; // Compare dictionaries for equal
 
 public:
-  // cmp is a key comparision routine.  hash is a routine to hash a key.
+  // cmp is a key comparison routine.  hash is a routine to hash a key.
   ExprDict( CmpKey cmp, Hash hash, AdlArena *arena );
   ~ExprDict();
 

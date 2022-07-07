@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,7 +205,7 @@ private:
   uint              _monoff;    // Offset to monitors in input edge mapping
   uint              _scloff;    // Offset to fields of scalar objs in input edge mapping
   uint              _endoff;    // Offset to end of input edge mapping
-  uint              _sp;        // Jave Expression Stack Pointer for this state
+  uint              _sp;        // Java Expression Stack Pointer for this state
   int               _bci;       // Byte Code Index of this JVM point
   ReexecuteState    _reexecute; // Whether this bytecode need to be re-executed
   ciMethod*         _method;    // Method Pointer
@@ -512,7 +512,6 @@ class SafePointScalarObjectNode: public TypeNode {
                      // states of the scalarized object fields are collected.
                      // It is relative to the last (youngest) jvms->_scloff.
   uint _n_fields;    // Number of non-static fields of the scalarized object.
-  bool _is_auto_box; // True if the scalarized object is an auto box.
   DEBUG_ONLY(Node* _alloc;)
 
   virtual uint hash() const ; // { return NO_HASH; }
@@ -525,7 +524,7 @@ public:
 #ifdef ASSERT
                             Node* alloc,
 #endif
-                            uint first_index, uint n_fields, bool is_auto_box = false);
+                            uint first_index, uint n_fields);
   virtual int Opcode() const;
   virtual uint           ideal_reg() const;
   virtual const RegMask &in_RegMask(uint) const;
@@ -538,7 +537,6 @@ public:
   }
   uint n_fields()    const { return _n_fields; }
 
-  bool is_auto_box() const { return _is_auto_box; }
 #ifdef ASSERT
   Node* alloc() const { return _alloc; }
 #endif

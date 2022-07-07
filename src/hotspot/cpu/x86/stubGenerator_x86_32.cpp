@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3320,7 +3320,7 @@ class StubGenerator: public StubCodeGenerator {
    *   rsp(8)   - byte* buf
    *   rsp(12)  - int length
    *
-   * Ouput:
+   * Output:
    *       rax   - int crc result
    */
   address generate_updateBytesCRC32() {
@@ -3376,7 +3376,7 @@ class StubGenerator: public StubCodeGenerator {
   *   rsp(16)  - table_start - optional (present only when doing a library_calll,
   *              not used by x86 algorithm)
   *
-  * Ouput:
+  * Output:
   *       rax  - int crc result
   */
   address generate_updateBytesCRC32C(bool is_pclmulqdq_supported) {
@@ -3652,40 +3652,6 @@ class StubGenerator: public StubCodeGenerator {
    return start;
 
  }
-
-  // Safefetch stubs.
-  void generate_safefetch(const char* name, int size, address* entry,
-                          address* fault_pc, address* continuation_pc) {
-    // safefetch signatures:
-    //   int      SafeFetch32(int*      adr, int      errValue);
-    //   intptr_t SafeFetchN (intptr_t* adr, intptr_t errValue);
-
-    StubCodeMark mark(this, "StubRoutines", name);
-
-    // Entry point, pc or function descriptor.
-    *entry = __ pc();
-
-    __ movl(rax, Address(rsp, 0x8));
-    __ movl(rcx, Address(rsp, 0x4));
-    // Load *adr into eax, may fault.
-    *fault_pc = __ pc();
-    switch (size) {
-      case 4:
-        // int32_t
-        __ movl(rax, Address(rcx, 0));
-        break;
-      case 8:
-        // int64_t
-        Unimplemented();
-        break;
-      default:
-        ShouldNotReachHere();
-    }
-
-    // Return errValue or *adr.
-    *continuation_pc = __ pc();
-    __ ret(0);
-  }
 
   address generate_method_entry_barrier() {
     __ align(CodeEntryAlignment);
@@ -3985,14 +3951,6 @@ class StubGenerator: public StubCodeGenerator {
         StubRoutines::_dtan = generate_libmTan();
       }
     }
-
-    // Safefetch stubs.
-    generate_safefetch("SafeFetch32", sizeof(int), &StubRoutines::_safefetch32_entry,
-                                                   &StubRoutines::_safefetch32_fault_pc,
-                                                   &StubRoutines::_safefetch32_continuation_pc);
-    StubRoutines::_safefetchN_entry           = StubRoutines::_safefetch32_entry;
-    StubRoutines::_safefetchN_fault_pc        = StubRoutines::_safefetch32_fault_pc;
-    StubRoutines::_safefetchN_continuation_pc = StubRoutines::_safefetch32_continuation_pc;
   }
 
   void generate_all() {
@@ -4095,10 +4053,10 @@ class StubGenerator: public StubCodeGenerator {
   }
 }; // end class declaration
 
-#define UCM_TABLE_MAX_ENTRIES 8
-void StubGenerator_generate(CodeBuffer* code, bool all) {
+#define UCM_TABLE_MAX_ENTRIES 16
+void StubGenerator_generate(CodeBuffer* code, int phase) {
   if (UnsafeCopyMemory::_table == NULL) {
     UnsafeCopyMemory::create_table(UCM_TABLE_MAX_ENTRIES);
   }
-  StubGenerator g(code, all);
+  StubGenerator g(code, phase);
 }

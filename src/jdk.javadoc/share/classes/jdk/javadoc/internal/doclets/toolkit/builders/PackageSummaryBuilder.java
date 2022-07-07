@@ -35,11 +35,6 @@ import jdk.javadoc.internal.doclets.toolkit.PackageSummaryWriter;
 
 /**
  * Builds the summary for a given package.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class PackageSummaryBuilder extends AbstractBuilder {
 

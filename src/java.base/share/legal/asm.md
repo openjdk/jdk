@@ -1,4 +1,4 @@
-## ASM Bytecode Manipulation Framework v9.2
+## ASM Bytecode Manipulation Framework v9.3
 
 ### ASM License
 <pre>

@@ -2438,7 +2438,7 @@ public abstract class ResourceBundle {
      * import static java.util.ResourceBundle.Control.*;
      * ...
      * ResourceBundle bundle =
-     *   ResourceBundle.getBundle("MyResources", new Locale("fr", "CH"),
+     *   ResourceBundle.getBundle("MyResources", Locale.forLanguageTag("fr-CH"),
      *                            ResourceBundle.Control.getControl(FORMAT_PROPERTIES));
      * </pre>
      *
@@ -2969,7 +2969,7 @@ public abstract class ResourceBundle {
                     if (language.equals("zh")) {
                         if (region.isEmpty()) {
                             // Supply region(country) for users who still package Chinese
-                            // bundles using old convension.
+                            // bundles using old convention.
                             switch (script) {
                                 case "Hans" -> region = "CN";
                                 case "Hant" -> region = "TW";

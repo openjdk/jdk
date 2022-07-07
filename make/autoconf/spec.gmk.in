@@ -38,7 +38,7 @@ CONFIGURE_START_DIR:=@CONFIGURE_START_DIR@
 # A self-referential reference to this file.
 SPEC:=@SPEC@
 
-# Path to autoconf if overriden by the user, to be used by "make reconfigure"
+# Path to autoconf if overridden by the user, to be used by "make reconfigure"
 AUTOCONF := @AUTOCONF@
 
 # SPACE and COMMA are defined in MakeBase.gmk, but they are also used in
@@ -148,7 +148,7 @@ ifneq ($(findstring windows.wsl, @OPENJDK_BUILD_OS_ENV@), )
   # Tell WSL to convert PATH between linux and windows
   export WSLENV := PATH/l
 else ifeq (@OPENJDK_BUILD_OS_ENV@, windows.msys2)
-  # Prohibit msys2 from attemping any path wrangling
+  # Prohibit msys2 from attempting any path wrangling
   export MSYS2_ARG_CONV_EXCL := "*"
 endif
 
@@ -623,7 +623,7 @@ SET_SHARED_LIBRARY_NAME=@SET_SHARED_LIBRARY_NAME@
 
 SHARED_LIBRARY_FLAGS=@SHARED_LIBRARY_FLAGS@
 
-# Set origin using the linker, ie use the relative path to the dependent library to find the dependees.
+# Set origin using the linker, ie use the relative path to the dependent library to find the dependencies.
 # (Note absence of := assignment, because we do not want to evaluate the macro body here)
 SET_SHARED_LIBRARY_ORIGIN=@SET_SHARED_LIBRARY_ORIGIN@
 SET_EXECUTABLE_ORIGIN=@SET_EXECUTABLE_ORIGIN@

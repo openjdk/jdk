@@ -60,11 +60,6 @@ import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.
  * There are two anonymous subtype variants of this builder, created
  * in the {@link #getInstance} methods. One is for general types;
  * the other is for annotation types.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
 

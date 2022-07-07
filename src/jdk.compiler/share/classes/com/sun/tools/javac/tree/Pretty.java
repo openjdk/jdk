@@ -170,14 +170,6 @@ public class Pretty extends JCTree.Visitor {
      * Traversal methods
      *************************************************************************/
 
-    /** Exception to propagate IOException through visitXYZ methods */
-    private static class UncheckedIOException extends Error {
-        static final long serialVersionUID = -4032692679158424751L;
-        UncheckedIOException(IOException e) {
-            super(e.getMessage(), e);
-        }
-    }
-
     /** Visitor argument: the current precedence level.
      */
     int prec;
@@ -194,7 +186,7 @@ public class Pretty extends JCTree.Visitor {
                 tree.accept(this);
             }
         } catch (UncheckedIOException ex) {
-            throw new IOException(ex.getMessage(), ex);
+            throw ex.getCause();
         } finally {
             this.prec = prevPrec;
         }

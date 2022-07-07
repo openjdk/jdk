@@ -95,8 +95,24 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
   # info flags for toolchains unless we know they work.
   # See JDK-8207057.
   ASFLAGS_DEBUG_SYMBOLS=""
+
+  # Debug prefix mapping if supported by compiler
+  DEBUG_PREFIX_CFLAGS=
+
   # Debug symbols
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
+    if test "x$ALLOW_ABSOLUTE_PATHS_IN_OUTPUT" = "xfalse"; then
+      # Check if compiler supports -fdebug-prefix-map. If so, use that to make
+      # the debug symbol paths resolve to paths relative to the workspace root.
+      workspace_root_trailing_slash="${WORKSPACE_ROOT%/}/"
+      DEBUG_PREFIX_CFLAGS="-fdebug-prefix-map=${workspace_root_trailing_slash}="
+      FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${DEBUG_PREFIX_CFLAGS}],
+        IF_FALSE: [
+            DEBUG_PREFIX_CFLAGS=
+        ]
+      )
+    fi
+
     CFLAGS_DEBUG_SYMBOLS="-g"
     ASFLAGS_DEBUG_SYMBOLS="-g"
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
@@ -106,6 +122,11 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
     CFLAGS_DEBUG_SYMBOLS="-g1"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     CFLAGS_DEBUG_SYMBOLS="-Z7"
+  fi
+
+  if test "x$DEBUG_PREFIX_CFLAGS" != x; then
+    CFLAGS_DEBUG_SYMBOLS="$CFLAGS_DEBUG_SYMBOLS $DEBUG_PREFIX_CFLAGS"
+    ASFLAGS_DEBUG_SYMBOLS="$ASFLAGS_DEBUG_SYMBOLS $DEBUG_PREFIX_CFLAGS"
   fi
 
   AC_SUBST(CFLAGS_DEBUG_SYMBOLS)
@@ -200,7 +221,7 @@ AC_DEFUN([FLAGS_SETUP_QUALITY_CHECKS],
       ;;
     slowdebug )
       # FIXME: By adding this to C(XX)FLAGS_DEBUG_OPTIONS/JVM_CFLAGS_SYMBOLS it
-      # get's added conditionally on whether we produce debug symbols or not.
+      # gets added conditionally on whether we produce debug symbols or not.
       # This is most likely not really correct.
 
       # Add runtime stack smashing and undefined behavior checks.
@@ -646,7 +667,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
     $1_DEFINES_CPU_JVM="${$1_DEFINES_CPU_JVM} -D_LP64=1"
   fi
 
-  # toolchain dependend, per-cpu
+  # toolchain dependent, per-cpu
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     if test "x$FLAGS_CPU" = xaarch64; then
       $1_DEFINES_CPU_JDK="${$1_DEFINES_CPU_JDK} -D_ARM64_ -Darm64"

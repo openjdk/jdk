@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,13 +55,13 @@ public class Bug4177489Test extends RBTestFmwk {
             errln("ResourceBundle didn't handle resource class name with '_' in it.");
         }
 
-        Locale loc = new Locale("jf", "");
+        Locale loc = Locale.of("jf");
         ResourceBundle rb2 = ResourceBundle.getBundle( "Bug4177489_Resource", loc );
         if (!loc.equals(rb2.getLocale())) {
             errln("ResourceBundle didn't return proper locale name:"+rb2.getLocale());
         }
 
-        loc = new Locale("jf", "JF");
+        loc = Locale.of("jf", "JF");
         ResourceBundle rb3 = ResourceBundle.getBundle("Bug4177489_Resource", loc);
         if (!loc.equals(rb3.getLocale())) {
             errln("ResourceBundle didn't return proper locale name for property bundle:"+rb3.getLocale());

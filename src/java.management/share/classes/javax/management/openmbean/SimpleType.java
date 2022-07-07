@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,9 @@ import javax.management.ObjectName;
  * are also set to <i>className</i>.
  * In other words, its methods <code>getClassName</code>, <code>getTypeName</code> and <code>getDescription</code>
  * all return the same string value <i>className</i>.
+ *
+ * @param <T> the Java type that values described by this SimpleType must
+ * have.
  *
  * @since 1.5
  */

@@ -29,6 +29,7 @@
 #include "gc/parallel/psOldGen.hpp"
 #include "gc/parallel/psPromotionManager.inline.hpp"
 #include "gc/parallel/psScavenge.inline.hpp"
+#include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
@@ -335,6 +336,8 @@ oop PSPromotionManager::oop_promotion_failed(oop obj, markWord obj_mark) {
     assert(obj == obj->forwardee(), "Sanity");
 
     _promotion_failed_info.register_copy_failure(obj->size());
+
+    ContinuationGCSupport::transform_stack_chunk(obj);
 
     push_contents(obj);
 

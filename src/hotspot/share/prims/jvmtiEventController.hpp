@@ -44,13 +44,17 @@ class JvmtiEnvBase;
 
 // Extension events start JVMTI_MIN_EVENT_TYPE_VAL-1 and work towards 0.
 typedef enum {
+  EXT_EVENT_VIRTUAL_THREAD_UNMOUNT = JVMTI_MIN_EVENT_TYPE_VAL-3,
+  EXT_EVENT_VIRTUAL_THREAD_MOUNT = JVMTI_MIN_EVENT_TYPE_VAL-2,
   EXT_EVENT_CLASS_UNLOAD = JVMTI_MIN_EVENT_TYPE_VAL-1,
-  EXT_MIN_EVENT_TYPE_VAL = EXT_EVENT_CLASS_UNLOAD,
+  EXT_MIN_EVENT_TYPE_VAL = EXT_EVENT_VIRTUAL_THREAD_UNMOUNT,
   EXT_MAX_EVENT_TYPE_VAL = EXT_EVENT_CLASS_UNLOAD
 } jvmtiExtEvent;
 
 typedef struct {
   jvmtiExtensionEvent ClassUnload;
+  jvmtiExtensionEvent VirtualThreadMount;
+  jvmtiExtensionEvent VirtualThreadUnmount;
 } jvmtiExtEventCallbacks;
 
 
@@ -209,7 +213,7 @@ public:
   // Use (thread == NULL) to enable/disable an event globally.
   // Use (thread != NULL) to enable/disable an event for a particular thread.
   // thread is ignored for events that can only be specified globally
-  static void set_user_enabled(JvmtiEnvBase *env, JavaThread *thread,
+  static void set_user_enabled(JvmtiEnvBase *env, JavaThread *thread, oop thread_oop,
                                jvmtiEvent event_type, bool enabled);
 
   // Setting callbacks changes computed enablement and must be done
@@ -224,6 +228,7 @@ public:
                                            jint extension_event_index,
                                            jvmtiExtensionEvent callback);
 
+  static void enter_interp_only_mode();
   static void set_frame_pop(JvmtiEnvThreadState *env_thread, JvmtiFramePop fpop);
   static void clear_frame_pop(JvmtiEnvThreadState *env_thread, JvmtiFramePop fpop);
 

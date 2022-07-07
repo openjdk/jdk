@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ public:
 
   // Oop fields (and metadata) iterators
   //
-  // The InstanceClassLoaderKlass iterators also visit the CLD pointer (or mirror of hidden klasses.)
+  // The InstanceClassLoaderKlass iterators also visit the CLD pointer
 
   // Forward iteration
   // Iterate over the oop fields and metadata.

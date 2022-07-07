@@ -135,6 +135,9 @@ import java.io.IOException;
  * @since 1.6
  */
 public interface Filer {
+    // Maintenance note: if the ability to create module-info files
+    // through the Filer is added, add link to this method from
+    // ModuleElement interface-level discussion.
     /**
      * Creates a new source file and returns an object to allow
      * writing to it. A source file for a class, interface, or a
@@ -217,6 +220,9 @@ public interface Filer {
     JavaFileObject createSourceFile(CharSequence name,
                                     Element... originatingElements) throws IOException;
 
+    // Maintenance note: if the ability to create module-info files
+    // through the Filer is added, add link to this method from
+    // ModuleElement interface-level discussion.
     /**
      * Creates a new class file, and returns an object to allow
      * writing to it. A class file for a class, interface, or a package can

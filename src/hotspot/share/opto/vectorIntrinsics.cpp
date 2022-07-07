@@ -816,7 +816,7 @@ bool LibraryCallKit::inline_vector_frombits_coerced() {
   const TypeInt*     vlen         = gvn().type(argument(2))->isa_int();
   const TypeLong*    bits_type    = gvn().type(argument(3))->isa_long();
   // Mode argument determines the mode of operation it can take following values:-
-  // MODE_BROADCAST for vector Vector.boradcast and VectorMask.maskAll operations.
+  // MODE_BROADCAST for vector Vector.broadcast and VectorMask.maskAll operations.
   // MODE_BITS_COERCED_LONG_TO_MASK for VectorMask.fromLong operation.
   const TypeInt*     mode         = gvn().type(argument(5))->isa_int();
 

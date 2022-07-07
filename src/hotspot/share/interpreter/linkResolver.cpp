@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@
 #include "oops/cpCache.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/klass.inline.hpp"
-#include "oops/method.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
@@ -56,6 +56,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/reflection.hpp"
 #include "runtime/safepointVerifiers.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/vmThread.hpp"
@@ -592,6 +593,16 @@ void LinkResolver::check_method_accessability(Klass* ref_klass,
   }
 }
 
+void LinkResolver::resolve_continuation_enter(CallInfo& callinfo, TRAPS) {
+  Klass* resolved_klass = vmClasses::Continuation_klass();
+  Symbol* method_name = vmSymbols::enter_name();
+  Symbol* method_signature = vmSymbols::continuationEnter_signature();
+  Klass*  current_klass = resolved_klass;
+  LinkInfo link_info(resolved_klass, method_name, method_signature, current_klass);
+  Method* resolved_method = resolve_method(link_info, Bytecodes::_invokestatic, CHECK);
+  callinfo.set_static(resolved_klass, methodHandle(THREAD, resolved_method), CHECK);
+}
+
 Method* LinkResolver::resolve_method_statically(Bytecodes::Code code,
                                                 const constantPoolHandle& pool, int index, TRAPS) {
   // This method is used only
@@ -813,7 +824,7 @@ static void trace_method_resolution(const char* prefix,
 #endif // PRODUCT
 }
 
-// Do linktime resolution of a method in the interface within the context of the specied bytecode.
+// Do linktime resolution of a method in the interface within the context of the specified bytecode.
 Method* LinkResolver::resolve_interface_method(const LinkInfo& link_info, Bytecodes::Code code, TRAPS) {
 
   Klass* resolved_klass = link_info.resolved_klass();
@@ -1069,6 +1080,14 @@ void LinkResolver::resolve_static_call(CallInfo& result,
                       link_info.check_access() ? LinkInfo::AccessCheck::required : LinkInfo::AccessCheck::skip,
                       link_info.check_loader_constraints() ? LinkInfo::LoaderConstraintCheck::required : LinkInfo::LoaderConstraintCheck::skip);
     resolved_method = linktime_resolve_static_method(new_info, CHECK);
+  }
+
+  if (resolved_method->is_continuation_enter_intrinsic()) {
+    if (!resolved_method->has_compiled_code()) {
+      methodHandle mh(THREAD, resolved_method);
+      // Generate a compiled form of the enterSpecial intrinsic.
+      AdapterHandlerLibrary::create_native_wrapper(mh);
+    }
   }
 
   // setup result

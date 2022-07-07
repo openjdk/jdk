@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ public class SystemDictionary {
   private static AddressField stringKlassField;
   private static AddressField systemKlassField;
   private static AddressField threadKlassField;
-  private static AddressField threadGroupKlassField;
+  private static AddressField threadFieldHolderKlassField;
   private static AddressField methodHandleKlassField;
 
   static {
@@ -60,7 +60,7 @@ public class SystemDictionary {
     stringKlassField = type.getAddressField(VM_CLASS_AT("String_klass"));
     systemKlassField = type.getAddressField(VM_CLASS_AT("System_klass"));
     threadKlassField = type.getAddressField(VM_CLASS_AT("Thread_klass"));
-    threadGroupKlassField = type.getAddressField(VM_CLASS_AT("ThreadGroup_klass"));
+    threadFieldHolderKlassField = type.getAddressField(VM_CLASS_AT("Thread_FieldHolder_klass"));
     methodHandleKlassField = type.getAddressField(VM_CLASS_AT("MethodHandle_klass"));
   }
 
@@ -86,8 +86,8 @@ public class SystemDictionary {
     return (InstanceKlass)Metadata.instantiateWrapperFor(threadKlassField.getValue());
   }
 
-  public static InstanceKlass getThreadGroupKlass() {
-    return (InstanceKlass)Metadata.instantiateWrapperFor(threadGroupKlassField.getValue());
+  public static InstanceKlass getThreadFieldHolderKlass() {
+    return (InstanceKlass)Metadata.instantiateWrapperFor(threadFieldHolderKlassField.getValue());
   }
 
   public static InstanceKlass getObjectKlass() {

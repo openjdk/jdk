@@ -78,7 +78,7 @@ else ifeq ($(call isTargetOs, macosx), true)
       }'
 
 # NOTE: The script is from the old build. It is broken and finds no symbols.
-# The script below might be what was intended, but it failes to link with tons
+# The script below might be what was intended, but it fails to link with tons
 # of 'cannot export hidden symbol vtable for X'.
 #  '{ if ($$1 ~ /^__ZTV/ || $$1 ~ /^_gHotSpotVM/) print substr($$1, 2) }'
 else ifeq ($(call isTargetOs, aix), true)

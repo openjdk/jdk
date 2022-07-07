@@ -92,7 +92,7 @@
 //
 // Total Store Order (TSO) machines can be seen as machines issuing a
 // release store for each store and a load acquire for each load. Therefore
-// there is an inherent resemblence between TSO and acquire/release
+// there is an inherent resemblance between TSO and acquire/release
 // semantics. TSO can be seen as an abstract machine where loads are
 // executed immediately when encountered (hence loadload reordering not
 // happening) but enqueues stores in a FIFO queue
