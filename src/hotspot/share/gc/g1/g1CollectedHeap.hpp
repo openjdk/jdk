@@ -229,34 +229,12 @@ private:
   // Helper for monitoring and management support.
   G1MonitoringSupport* _monitoring_support;
 
-  // Records whether the region at the given index is (still) a
-  // candidate for eager reclaim.  Only valid for humongous start
-  // regions; other regions have unspecified values.  Humongous start
-  // regions are initialized at start of collection pause, with
-  // candidates removed from the set as they are found reachable from
-  // roots or the young generation.
-  class HumongousReclaimCandidates : public G1BiasedMappedArray<bool> {
-  protected:
-    bool default_value() const override { return false; }
-  public:
-    void clear() { G1BiasedMappedArray<bool>::clear(); }
-    void set_candidate(uint region, bool value) {
-      set_by_index(region, value);
-    }
-    bool is_candidate(uint region) {
-      return get_by_index(region);
-    }
-  };
-
-  HumongousReclaimCandidates _humongous_reclaim_candidates;
   uint _num_humongous_objects; // Current amount of (all) humongous objects found in the heap.
   uint _num_humongous_reclaim_candidates; // Number of humongous object eager reclaim candidates.
 public:
   uint num_humongous_objects() const { return _num_humongous_objects; }
   uint num_humongous_reclaim_candidates() const { return _num_humongous_reclaim_candidates; }
   bool has_humongous_reclaim_candidates() const { return _num_humongous_reclaim_candidates > 0; }
-
-  bool should_do_eager_reclaim() const;
 
   void set_humongous_stats(uint num_humongous_total, uint num_humongous_candidates);
 
@@ -509,7 +487,7 @@ private:
                                       bool* succeeded);
   // Internal helpers used during full GC to split it up to
   // increase readability.
-  void abort_concurrent_cycle();
+  bool abort_concurrent_cycle();
   void verify_before_full_collection(bool explicit_gc);
   void prepare_heap_for_full_collection();
   void prepare_heap_for_mutators();
@@ -590,9 +568,6 @@ public:
   // Does the given region fulfill remembered set based eager reclaim candidate requirements?
   bool is_potential_eager_reclaim_candidate(HeapRegion* r) const;
 
-  // Modify the reclaim candidate set and test for presence.
-  // These are only valid for starts_humongous regions.
-  inline void set_humongous_reclaim_candidate(uint region, bool value);
   inline bool is_humongous_reclaim_candidate(uint region);
 
   // Remove from the reclaim candidate set.  Also remove from the
@@ -624,7 +599,7 @@ public:
   // for all regions.
   void verify_region_attr_remset_is_tracked() PRODUCT_RETURN;
 
-  void clear_prev_bitmap_for_region(HeapRegion* hr);
+  void clear_bitmap_for_region(HeapRegion* hr);
 
   bool is_user_requested_concurrent_full_gc(GCCause::Cause cause);
 
@@ -1235,7 +1210,7 @@ public:
   bool check_young_list_empty();
 #endif
 
-  bool is_marked_next(oop obj) const;
+  bool is_marked(oop obj) const;
 
   // Determine if an object is dead, given the object and also
   // the region to which the object belongs.
@@ -1244,9 +1219,7 @@ public:
   // Determine if an object is dead, given only the object itself.
   // This will find the region to which the object belongs and
   // then call the region version of the same function.
-
-  // Added if it is NULL it isn't dead.
-
+  // If obj is NULL it is not dead.
   inline bool is_obj_dead(const oop obj) const;
 
   inline bool is_obj_dead_full(const oop obj, const HeapRegion* hr) const;

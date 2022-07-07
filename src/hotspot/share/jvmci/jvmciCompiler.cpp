@@ -33,8 +33,6 @@
 #include "runtime/handles.inline.hpp"
 
 JVMCICompiler* JVMCICompiler::_instance = NULL;
-elapsedTimer JVMCICompiler::_codeInstallTimer;
-elapsedTimer JVMCICompiler::_hostedCodeInstallTimer;
 
 JVMCICompiler::JVMCICompiler() : AbstractCompiler(compiler_jvmci) {
   _bootstrapping = false;
@@ -183,19 +181,26 @@ void JVMCICompiler::on_empty_queue(CompileQueue* queue, CompilerThread* thread) 
   }
 }
 
-// Print CompileBroker compilation timers
+// Print compilation timers
 void JVMCICompiler::print_timers() {
-  double code_install_time = _codeInstallTimer.seconds();
   tty->print_cr("    JVMCI CompileBroker Time:");
   tty->print_cr("       Compile:        %7.3f s", stats()->total_time());
-  tty->print_cr("       Install Code:   %7.3f s", code_install_time);
+  _jit_code_installs.print_on(tty, "       Install Code:   ");
+  tty->cr();
+  tty->print_cr("    JVMCI Hosted Time:");
+  _hosted_code_installs.print_on(tty, "       Install Code:   ");
 }
 
-// Print non-CompileBroker compilation timers
-void JVMCICompiler::print_hosted_timers() {
-  double code_install_time = _hostedCodeInstallTimer.seconds();
-  tty->print_cr("    JVMCI Hosted Time:");
-  tty->print_cr("       Install Code:   %7.3f s", code_install_time);
+void JVMCICompiler::CodeInstallStats::print_on(outputStream* st, const char* prefix) const {
+  double time = _timer.seconds();
+  st->print_cr("%s%7.3f s (installs: %d, CodeBlob total size: %d, CodeBlob code size: %d)",
+      prefix, time, _count, _codeBlobs_size, _codeBlobs_code_size);
+}
+
+void JVMCICompiler::CodeInstallStats::on_install(CodeBlob* cb) {
+  Atomic::inc(&_count);
+  Atomic::add(&_codeBlobs_size, cb->size());
+  Atomic::add(&_codeBlobs_code_size, cb->code_size());
 }
 
 void JVMCICompiler::inc_methods_compiled() {

@@ -67,8 +67,8 @@ public class HtmlScriptTagParserTest {
             frame.pack();
             frame.setLocationRelativeTo(null);
 
-            PassFailJFrame.addTestFrame(frame);
-            PassFailJFrame.positionTestFrame(frame,
+            PassFailJFrame.addTestWindow(frame);
+            PassFailJFrame.positionTestWindow(frame,
                     PassFailJFrame.Position.HORIZONTAL);
         });
     }

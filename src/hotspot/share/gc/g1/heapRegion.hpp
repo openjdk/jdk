@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,7 @@ public:
     assert(is_in(pre_dummy_top) && pre_dummy_top <= top(), "pre-condition");
     _pre_dummy_top = pre_dummy_top;
   }
-  HeapWord* pre_dummy_top() { return (_pre_dummy_top == NULL) ? top() : _pre_dummy_top; }
+  HeapWord* pre_dummy_top() const { return (_pre_dummy_top == NULL) ? top() : _pre_dummy_top; }
   void reset_pre_dummy_top() { _pre_dummy_top = NULL; }
 
   // Returns true iff the given the heap  region contains the
@@ -144,14 +144,30 @@ private:
   // This version synchronizes with other calls to par_allocate_impl().
   inline HeapWord* par_allocate_impl(size_t min_word_size, size_t desired_word_size, size_t* actual_word_size);
 
+  // Return the address of the beginning of the block that contains "addr".
+  // "q" is a block boundary that is <= "addr"; "n" is the address of the
+  // next block (or the end of the HeapRegion.)
+  inline HeapWord* forward_to_block_containing_addr(HeapWord* q, HeapWord* n,
+                                                    const void* addr,
+                                                    HeapWord* pb) const;
+
+  static bool obj_is_filler(oop obj);
+
 public:
-  HeapWord* block_start(const void* p);
+  // Returns the address of the block reaching into or starting at addr.
+  HeapWord* block_start(const void* addr) const;
+  HeapWord* block_start(const void* addr, HeapWord* const pb) const;
 
   void object_iterate(ObjectClosure* blk);
 
   // At the given address create an object with the given size. If the region
   // is old the BOT will be updated if the object spans a threshold.
   void fill_with_dummy_object(HeapWord* address, size_t word_size, bool zap = true);
+
+  // Create objects in the given range. The BOT will be updated if needed and
+  // the created objects will have their header marked to show that they are
+  // dead.
+  void fill_range_with_dead_objects(HeapWord* start, HeapWord* end);
 
   // All allocations are done without updating the BOT. The BOT
   // needs to be kept in sync for old generation regions and
@@ -172,26 +188,27 @@ public:
   // Update skip-compacting heap region to be consistent after Full GC.
   void reset_skip_compacting_after_full_gc();
 
-  // All allocated blocks are occupied by objects in a HeapRegion
-  bool block_is_obj(const HeapWord* p) const;
+  // All allocated blocks are occupied by objects in a HeapRegion.
+  bool block_is_obj(const HeapWord* p, HeapWord* pb) const;
 
-  // Returns whether the given object is dead based on TAMS and bitmap.
-  // An object is dead iff a) it was not allocated since the last mark (>TAMS), b) it
-  // is not marked (bitmap).
-  bool is_obj_dead(const oop obj, const G1CMBitMap* const prev_bitmap) const;
+  // Returns whether the given object is dead based on the given parsable_bottom (pb).
+  // For an object to be considered dead it must be below pb and scrubbed.
+  bool is_obj_dead(oop obj, HeapWord* pb) const;
 
-  // Returns the object size for all valid block starts
-  // and the amount of unallocated words if called on top()
+  // Returns the object size for all valid block starts. If parsable_bottom (pb)
+  // is given, calculates the block size based on that parsable_bottom, not the
+  // current value of this HeapRegion.
   size_t block_size(const HeapWord* p) const;
+  size_t block_size(const HeapWord* p, HeapWord* pb) const;
 
   // Scans through the region using the bitmap to determine what
   // objects to call size_t ApplyToMarkedClosure::apply(oop) for.
   template<typename ApplyToMarkedClosure>
   inline void apply_to_marked_objects(G1CMBitMap* bitmap, ApplyToMarkedClosure* closure);
 
-  void update_bot() {
-    _bot_part.update();
-  }
+  // Update the BOT for the entire region - assumes that all objects are parsable
+  // and contiguous for this region.
+  void update_bot();
 
 private:
   // The remembered set for this region.
@@ -222,21 +239,27 @@ private:
   // word until the top and/or end of the region, and is the part
   // of the region for which no marking was done, i.e. objects may
   // have been allocated in this part since the last mark phase.
-  // "prev" is the top at the start of the last completed marking.
-  // "next" is the top at the start of the in-progress marking (if any.)
-  HeapWord* _prev_top_at_mark_start;
-  HeapWord* _next_top_at_mark_start;
+  HeapWord* volatile _top_at_mark_start;
 
+  // The area above this limit is fully parsable. This limit
+  // is equal to bottom except from Remark and until the region has been
+  // scrubbed concurrently. The scrubbing ensures that all dead objects (with
+  // possibly unloaded classes) have beenreplaced with filler objects that
+  // are parsable. Below this limit the marking bitmap must be used to
+  // determine size and liveness.
+  HeapWord* volatile _parsable_bottom;
+
+  // Amount of dead data in the region.
+  size_t _garbage_bytes;
   // We use concurrent marking to determine the amount of live data
   // in each heap region.
-  size_t _prev_marked_bytes;    // Bytes known to be live via last completed marking.
-  size_t _next_marked_bytes;    // Bytes known to be live via in-progress marking.
+  size_t _marked_bytes;    // Bytes known to be live via last completed marking.
 
   void init_top_at_mark_start() {
-    assert(_prev_marked_bytes == 0 &&
-           _next_marked_bytes == 0,
-           "Must be called after zero_marked_bytes.");
-    _prev_top_at_mark_start = _next_top_at_mark_start = bottom();
+    set_top_at_mark_start(bottom());
+    _parsable_bottom = bottom();
+    _garbage_bytes = 0;
+    _marked_bytes = 0;
   }
 
   // Data for young region survivor prediction.
@@ -253,12 +276,11 @@ private:
 
   void report_region_type_change(G1HeapRegionTraceType::Type to);
 
-  // Returns whether the given object address refers to a dead object, and either the
-  // size of the object (if live) or the size of the block (if dead) in size.
-  // May
-  // - only called with obj < top()
-  // - not called on humongous objects or archive regions
-  inline bool is_obj_dead_with_size(const oop obj, const G1CMBitMap* const prev_bitmap, size_t* size) const;
+  template <class Closure, bool in_gc_pause>
+  inline HeapWord* oops_on_memregion_iterate(MemRegion mr, Closure* cl);
+
+  template <class Closure>
+  inline HeapWord* oops_on_memregion_iterate_in_unparsable(MemRegion mr, HeapWord* pb, Closure* cl);
 
   // Iterate over the references covered by the given MemRegion in a humongous
   // object and apply the given closure to them.
@@ -267,14 +289,15 @@ private:
   // Returns the address after the last actually scanned or NULL if the area could
   // not be scanned (That should only happen when invoked concurrently with the
   // mutator).
-  template <class Closure, bool is_gc_active>
+  template <class Closure, bool in_gc_pause>
   inline HeapWord* do_oops_on_memregion_in_humongous(MemRegion mr,
-                                                     Closure* cl,
-                                                     G1CollectedHeap* g1h);
+                                                     Closure* cl);
 
-  // Returns the block size of the given (dead, potentially having its class unloaded) object
-  // starting at p extending to at most the prev TAMS using the given mark bitmap.
-  inline size_t block_size_using_bitmap(const HeapWord* p, const G1CMBitMap* const prev_bitmap) const;
+  inline bool is_marked_in_bitmap(oop obj) const;
+
+  inline HeapWord* next_live_in_unparsable(G1CMBitMap* bitmap, const HeapWord* p, HeapWord* limit) const;
+  inline HeapWord* next_live_in_unparsable(const HeapWord* p, HeapWord* limit) const;
+
 public:
   HeapRegion(uint hrm_index,
              G1BlockOffsetTable* bot,
@@ -322,25 +345,14 @@ public:
   static void setup_heap_region_size(size_t max_heap_size);
 
   // The number of bytes marked live in the region in the last marking phase.
-  size_t marked_bytes()    { return _prev_marked_bytes; }
-  size_t live_bytes() {
-    return (top() - prev_top_at_mark_start()) * HeapWordSize + marked_bytes();
-  }
-
-  // The number of bytes counted in the next marking.
-  size_t next_marked_bytes() { return _next_marked_bytes; }
-  // The number of bytes live wrt the next marking.
-  size_t next_live_bytes() {
-    return
-      (top() - next_top_at_mark_start()) * HeapWordSize + next_marked_bytes();
+  size_t marked_bytes() const { return _marked_bytes; }
+  // An upper bound on the number of live bytes in the region.
+  size_t live_bytes() const {
+    return used() - garbage_bytes();
   }
 
   // A lower bound on the amount of garbage bytes in the region.
-  size_t garbage_bytes() {
-    size_t used_at_mark_start_bytes =
-      (prev_top_at_mark_start() - bottom()) * HeapWordSize;
-    return used_at_mark_start_bytes - marked_bytes();
-  }
+  size_t garbage_bytes() const { return _garbage_bytes; }
 
   // Return the amount of bytes we'll reclaim if we collect this
   // region. This includes not only the known garbage bytes in the
@@ -352,19 +364,15 @@ public:
     return capacity() - known_live_bytes;
   }
 
-  // An upper bound on the number of live bytes in the region.
-  size_t max_live_bytes() { return used() - garbage_bytes(); }
-
-  void add_to_marked_bytes(size_t incr_bytes) {
-    _next_marked_bytes = _next_marked_bytes + incr_bytes;
-  }
-
-  void zero_marked_bytes()      {
-    _prev_marked_bytes = _next_marked_bytes = 0;
-  }
   // Get the start of the unmarked area in this region.
-  HeapWord* prev_top_at_mark_start() const { return _prev_top_at_mark_start; }
-  HeapWord* next_top_at_mark_start() const { return _next_top_at_mark_start; }
+  HeapWord* top_at_mark_start() const;
+  void set_top_at_mark_start(HeapWord* value);
+
+  // Retrieve parsable bottom; since it may be modified concurrently, outside a
+  // safepoint the _acquire method must be used.
+  HeapWord* parsable_bottom() const;
+  HeapWord* parsable_bottom_acquire() const;
+  void reset_parsable_bottom();
 
   // Note the start or end of marking. This tells the heap region
   // that the collector is about to start or has finished (concurrently)
@@ -374,10 +382,27 @@ public:
   // all fields related to the next marking info.
   inline void note_start_of_marking();
 
-  // Notify the region that concurrent marking has finished. Copy the
-  // (now finalized) next marking info fields into the prev marking
-  // info fields.
-  inline void note_end_of_marking();
+  // Notify the region that concurrent marking has finished. Passes the number of
+  // bytes between bottom and TAMS.
+  inline void note_end_of_marking(size_t marked_bytes);
+
+  // Notify the region that scrubbing has completed.
+  inline void note_end_of_scrubbing();
+
+  // Notify the region that the (corresponding) bitmap has been cleared.
+  inline void note_end_of_clearing();
+
+  // During the concurrent scrubbing phase, can there be any areas with unloaded
+  // classes or dead objects in this region?
+  // This set only includes old and open archive regions - humongous regions only
+  // contain a single object which is either dead or live, contents of closed archive
+  // regions never die (so is always contiguous), and young regions are never even
+  // considered during concurrent scrub.
+  bool needs_scrubbing() const { return is_old() || is_open_archive(); }
+  // Same question as above, during full gc. Full gc needs to scrub any region that
+  // might be skipped for compaction. This includes young generation regions as the
+  // region relabeling to old happens later than scrubbing.
+  bool needs_scrubbing_during_full_gc() const { return is_young() || needs_scrubbing(); }
 
   const char* get_type_str() const { return _type.get_str(); }
   const char* get_short_type_str() const { return _type.get_short_str(); }
@@ -535,14 +560,12 @@ public:
 
   void record_surv_words_in_group(size_t words_survived);
 
-  // Determine if an object has been allocated since the last
-  // mark performed by the collector. This returns true iff the object
-  // is within the unmarked area of the region.
-  bool obj_allocated_since_prev_marking(oop obj) const {
-    return cast_from_oop<HeapWord*>(obj) >= prev_top_at_mark_start();
-  }
-  bool obj_allocated_since_next_marking(oop obj) const {
-    return cast_from_oop<HeapWord*>(obj) >= next_top_at_mark_start();
+  // Determine if an object is in the parsable or the to-be-scrubbed area.
+  inline static bool obj_in_parsable_area(const HeapWord* addr, HeapWord* pb);
+  inline static bool obj_in_unparsable_area(oop obj, HeapWord* pb);
+
+  bool obj_allocated_since_marking_start(oop obj) const {
+    return cast_from_oop<HeapWord*>(obj) >= top_at_mark_start();
   }
 
   // Update the region state after a failed evacuation.
@@ -556,7 +579,7 @@ public:
   // Returns the next unscanned address if the designated objects were successfully
   // processed, NULL if an unparseable part of the heap was encountered (That should
   // only happen when invoked concurrently with the mutator).
-  template <bool is_gc_active, class Closure>
+  template <bool in_gc_pause, class Closure>
   inline HeapWord* oops_on_memregion_seq_iterate_careful(MemRegion mr, Closure* cl);
 
   // Routines for managing a list of code roots (attached to the

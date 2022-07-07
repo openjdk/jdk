@@ -435,7 +435,7 @@ static void gen_c2i_adapter(MacroAssembler *masm,
 
   int extraspace = total_args_passed * Interpreter::stackElementSize;
 
-  __ mov(r13, sp);
+  __ mov(r19_sender_sp, sp);
 
   // stack is aligned, keep it that way
   extraspace = align_up(extraspace, 2*wordSize);
@@ -552,12 +552,10 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
                                     const BasicType *sig_bt,
                                     const VMRegPair *regs) {
 
-  // Note: r13 contains the senderSP on entry. We must preserve it since
-  // we may do a i2c -> c2i transition if we lose a race where compiled
-  // code goes non-entrant while we get args ready.
-
-  // In addition we use r13 to locate all the interpreter args because
-  // we must align the stack to 16 bytes.
+  // Note: r19_sender_sp contains the senderSP on entry. We must
+  // preserve it since we may do a i2c -> c2i transition if we lose a
+  // race where compiled code goes non-entrant while we get args
+  // ready.
 
   // Adapters are frameless.
 
@@ -1015,22 +1013,65 @@ static void gen_continuation_enter(MacroAssembler* masm,
                                  int& exception_offset,
                                  OopMapSet*oop_maps,
                                  int& frame_complete,
-                                 int& stack_slots) {
+                                 int& stack_slots,
+                                 int& interpreted_entry_offset,
+                                 int& compiled_entry_offset) {
   //verify_oop_args(masm, method, sig_bt, regs);
-  Address resolve(SharedRuntime::get_resolve_static_call_stub(),
-                  relocInfo::static_call_type);
+  Address resolve(SharedRuntime::get_resolve_static_call_stub(), relocInfo::static_call_type);
 
-  stack_slots = 2; // will be overwritten
   address start = __ pc();
 
   Label call_thaw, exit;
 
+  // i2i entry used at interp_only_mode only
+  interpreted_entry_offset = __ pc() - start;
+  {
+
+#ifdef ASSERT
+    Label is_interp_only;
+    __ ldrw(rscratch1, Address(rthread, JavaThread::interp_only_mode_offset()));
+    __ cbnzw(rscratch1, is_interp_only);
+    __ stop("enterSpecial interpreter entry called when not in interp_only_mode");
+    __ bind(is_interp_only);
+#endif
+
+    // Read interpreter arguments into registers (this is an ad-hoc i2c adapter)
+    __ ldr(c_rarg1, Address(esp, Interpreter::stackElementSize*2));
+    __ ldr(c_rarg2, Address(esp, Interpreter::stackElementSize*1));
+    __ ldr(c_rarg3, Address(esp, Interpreter::stackElementSize*0));
+    __ push_cont_fastpath(rthread);
+
+    __ enter();
+    stack_slots = 2; // will be adjusted in setup
+    OopMap* map = continuation_enter_setup(masm, stack_slots);
+    // The frame is complete here, but we only record it for the compiled entry, so the frame would appear unsafe,
+    // but that's okay because at the very worst we'll miss an async sample, but we're in interp_only_mode anyway.
+
+    fill_continuation_entry(masm);
+
+    __ cmp(c_rarg2, (u1)0);
+    __ br(Assembler::NE, call_thaw);
+
+    address mark = __ pc();
+    __ trampoline_call1(resolve, NULL, false);
+
+    oop_maps->add_gc_map(__ pc() - start, map);
+    __ post_call_nop();
+
+    __ b(exit);
+
+    CodeBuffer* cbuf = masm->code_section()->outer();
+    CompiledStaticCall::emit_to_interp_stub(*cbuf, mark);
+  }
+
+  // compiled entry
+  __ align(CodeEntryAlignment);
+  compiled_entry_offset = __ pc() - start;
+
   __ enter();
-
+  stack_slots = 2; // will be adjusted in setup
   OopMap* map = continuation_enter_setup(masm, stack_slots);
-
-  // Frame is now completed as far as size and linkage.
-  frame_complete =__ pc() - start;
+  frame_complete = __ pc() - start;
 
   fill_continuation_entry(masm);
 
@@ -1038,7 +1079,6 @@ static void gen_continuation_enter(MacroAssembler* masm,
   __ br(Assembler::NE, call_thaw);
 
   address mark = __ pc();
-
   __ trampoline_call1(resolve, NULL, false);
 
   oop_maps->add_gc_map(__ pc() - start, map);
@@ -1081,7 +1121,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
   }
 
   CodeBuffer* cbuf = masm->code_section()->outer();
-  address stub = CompiledStaticCall::emit_to_interp_stub(*cbuf, mark);
+  CompiledStaticCall::emit_to_interp_stub(*cbuf, mark);
 }
 
 static void gen_special_dispatch(MacroAssembler* masm,
@@ -1171,11 +1211,12 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   if (method->is_continuation_enter_intrinsic()) {
     vmIntrinsics::ID iid = method->intrinsic_id();
     intptr_t start = (intptr_t)__ pc();
-    int vep_offset = ((intptr_t)__ pc()) - start;
+    int vep_offset = 0;
     int exception_offset = 0;
     int frame_complete = 0;
     int stack_slots = 0;
     OopMapSet* oop_maps =  new OopMapSet();
+    int interpreted_entry_offset = -1;
     gen_continuation_enter(masm,
                          method,
                          in_sig_bt,
@@ -1183,7 +1224,9 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                          exception_offset,
                          oop_maps,
                          frame_complete,
-                         stack_slots);
+                         stack_slots,
+                         interpreted_entry_offset,
+                         vep_offset);
     __ flush();
     nmethod* nm = nmethod::new_native_nmethod(method,
                                               compile_id,
@@ -1195,7 +1238,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                                               in_ByteSize(-1),
                                               oop_maps,
                                               exception_offset);
-    ContinuationEntry::set_enter_code(nm);
+    ContinuationEntry::set_enter_code(nm, interpreted_entry_offset);
     return nm;
   }
 
