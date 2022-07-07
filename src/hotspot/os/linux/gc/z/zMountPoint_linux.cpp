@@ -58,16 +58,16 @@ char* ZMountPoint::get_mountpoint(const char* line, const char* filesystem) cons
   // Parse line and return a newly allocated string containing the mount point if
   // the line contains a matching filesystem and the mount point is accessible by
   // the current user.
+  // sscanf, using %m, will return malloced memory. Need raw ::free, not os::free.
   if (sscanf(line, "%*u %*u %*u:%*u %*s %ms %*[^-]- %ms", &line_mountpoint, &line_filesystem) != 2 ||
       strcmp(line_filesystem, filesystem) != 0 ||
       access(line_mountpoint, R_OK|W_OK|X_OK) != 0) {
     // Not a matching or accessible filesystem
-    // sscanf, using %m, will return malloced memory. Need raw ::free, not os::free.
     ALLOW_C_FUNCTION(::free, ::free(line_mountpoint);)
     line_mountpoint = NULL;
   }
 
-  ALLOW_C_FUNCTION(::free, ::free(line_filesystem);) // *not* os::free
+  ALLOW_C_FUNCTION(::free, ::free(line_filesystem);)
 
   return line_mountpoint;
 }
