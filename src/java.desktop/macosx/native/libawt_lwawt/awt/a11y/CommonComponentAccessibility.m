@@ -805,7 +805,7 @@ static jobject sAccessibilityClass = NULL;
     (*env)->DeleteLocalRef(env, axComponent);
     point.y += size.height;
 
-    point.y = [[[[self view] window] screen] frame].size.height - point.y;
+    point.y = [[[NSScreen screens] objectAtIndex:0] frame].size.height - point.y;
 
     return NSMakeRect(point.x, point.y, size.width, size.height);
 }
@@ -1005,7 +1005,7 @@ static jobject sAccessibilityClass = NULL;
     point.y += size.height;
 
     // Now make it into Cocoa screen coords.
-    point.y = [[[[self view] window] screen] frame].size.height - point.y;
+    point.y = [[[NSScreen screens] objectAtIndex:0] frame].size.height - point.y;
 
     return point;
 }
@@ -1114,7 +1114,7 @@ static jobject sAccessibilityClass = NULL;
                                  "(Ljava/awt/Container;FF)Ljavax/accessibility/Accessible;", nil);
 
     // Make it into java screen coords
-    point.y = [[[[self view] window] screen] frame].size.height - point.y;
+    point.y = [[[NSScreen screens] objectAtIndex:0] frame].size.height - point.y;
 
     jobject jparent = fComponent;
 
