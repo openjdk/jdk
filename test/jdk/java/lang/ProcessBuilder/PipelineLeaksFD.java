@@ -1,0 +1,140 @@
+/*
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+import java.io.File;
+import java.io.FileDescriptor;
+import java.io.FileInputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.FilterInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.Reader;
+import java.io.UncheckedIOException;
+import java.io.Writer;
+import java.lang.reflect.Field;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.testng.Assert;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+
+/*
+ * @test
+ * @bug 8289643
+ * @requires (os.family == "linux" & !vm.musl)
+ * @summary file descriptor leak with ProcessBuilder.startPipeline
+ * @run testng PipelineLeaksFD
+ */
+
+@Test
+public class PipelineLeaksFD {
+
+    @DataProvider
+    public Object[][] builders() {
+        return new Object[][]{
+                {new ProcessBuilder("cat")},
+                {new ProcessBuilder("cat"),
+                        new ProcessBuilder("cat")},
+                {new ProcessBuilder("cat"),
+                        new ProcessBuilder("cat"),
+                        new ProcessBuilder("cat"),
+                        new ProcessBuilder("cat"),
+                        new ProcessBuilder("cat")},
+        };
+    }
+
+    @Test(dataProvider = "builders")
+    void checkForLeaks(ProcessBuilder[] builders) throws IOException {
+
+        Set<PipeRecord> pipesBefore = myPipes();
+        System.out.println(pipesBefore);
+
+        List<ProcessBuilder> processBuilders = Arrays.asList(builders);
+        List<Process> processes = ProcessBuilder.startPipeline(processBuilders);
+
+        OutputStream out = processes.get(0).getOutputStream();
+        out.write('a');
+        out.close();
+
+        Process last = processes.get(processes.size() - 1);
+        try (InputStream inputStream = last.getInputStream()) {
+            byte[] bytes = inputStream.readAllBytes();
+            Assert.assertEquals(bytes.length, 1, "Bytes read");
+        }
+
+        processes.forEach(p -> waitForQuiet(p));
+
+        Set<PipeRecord> pipesAfter = myPipes();
+        if (!pipesBefore.equals(pipesAfter)) {
+            System.out.println("pipesBefore: " + pipesBefore);
+            System.out.println("pipesAfter: " + pipesAfter);
+            Assert.fail("More or fewer pipes");
+        }
+    }
+
+    static void waitForQuiet(Process p) {
+        try {
+            int st = p.waitFor();
+            if (st != 0) {
+                System.out.println("non-zero exit status: " + p);
+            }
+        } catch (InterruptedException ie) {
+        }
+    }
+
+    static Set<PipeRecord> myPipes() {
+        Map<Path, Path> pipes = new HashMap<>();
+        Path path = Path.of("/proc/" + ProcessHandle.current().pid() + "/fd");
+        try {
+            Stream<Path> s = Files.walk(path);
+            return s.filter(Files::isSymbolicLink)
+                    .map(p -> {
+                        try {
+                            return new PipeRecord(p, Files.readSymbolicLink(p));
+                        } catch (IOException ioe) {
+                        }
+                        return new PipeRecord(p, null);
+                    })
+                    .filter(p1 -> p1.link().toString().startsWith("pipe:"))
+                    .collect(Collectors.toSet());
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+        return null;
+    }
+
+    record PipeRecord(Path fd, Path link) {};
+}

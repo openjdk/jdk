@@ -1296,6 +1296,10 @@ public final class ProcessBuilder
                     redirects[1] = new RedirectPipeImpl();  // placeholder for new output
                 }
                 processes.add(builder.start(redirects));
+                if (prevOutput instanceof RedirectPipeImpl redir) {
+                    // Wrap the fd so it can be closed
+                    new Process.PipeInputStream(redir.getFd()).close();
+                }
                 prevOutput = redirects[1];
             }
         } catch (Exception ex) {
