@@ -294,8 +294,7 @@ bool Continuation::unpin(JavaThread* current) {
 
 frame Continuation::continuation_bottom_sender(JavaThread* thread, const frame& callee, intptr_t* sender_sp) {
   assert (thread != nullptr, "");
-  ContinuationEntry* ce = get_continuation_entry_for_sp(thread,
-        callee.is_interpreted_frame() ? callee.interpreter_frame_last_sp() : callee.unextended_sp());
+  ContinuationEntry* ce = get_continuation_entry_for_sp(thread, callee.unextended_sp());
   assert(ce != nullptr, "callee.unextended_sp(): " INTPTR_FORMAT, p2i(callee.unextended_sp()));
 
   log_develop_debug(continuations)("continuation_bottom_sender: [" JLONG_FORMAT "] [%d] callee: " INTPTR_FORMAT
