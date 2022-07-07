@@ -1310,6 +1310,7 @@ public class Sorting {
     private enum TypeConverter {
 
         INT {
+            @Override
             void convert(int[] src, Object dst, boolean fix) {
                 if (fix) {
                     src[0] = Integer.MIN_VALUE;
@@ -1318,6 +1319,7 @@ public class Sorting {
         },
 
         LONG {
+            @Override
             void convert(int[] src, Object dst, boolean fix) {
                 long[] b = (long[]) dst;
 
@@ -1331,6 +1333,7 @@ public class Sorting {
         },
 
         BYTE {
+            @Override
             void convert(int[] src, Object dst, boolean fix) {
                 byte[] b = (byte[]) dst;
 
@@ -1344,6 +1347,7 @@ public class Sorting {
         },
 
         CHAR {
+            @Override
             void convert(int[] src, Object dst, boolean fix) {
                 char[] b = (char[]) dst;
 
@@ -1357,6 +1361,7 @@ public class Sorting {
         },
 
         SHORT {
+            @Override
             void convert(int[] src, Object dst, boolean fix) {
                 short[] b = (short[]) dst;
 
@@ -1370,6 +1375,7 @@ public class Sorting {
         },
 
         FLOAT {
+            @Override
             void convert(int[] src, Object dst, boolean fix) {
                 float[] b = (float[]) dst;
 
@@ -1383,6 +1389,7 @@ public class Sorting {
         },
 
         DOUBLE {
+            @Override
             void convert(int[] src, Object dst, boolean fix) {
                 double[] b = (double[]) dst;
 
@@ -1401,6 +1408,7 @@ public class Sorting {
     private enum SortedBuilder {
 
         STEPS {
+            @Override
             void build(int[] a, int m) {
                 for (int i = 0; i < m; ++i) {
                     a[i] = 0;
@@ -1418,6 +1426,7 @@ public class Sorting {
     private enum UnsortedBuilder {
 
         RANDOM {
+            @Override
             void build(int[] a, int m, Random random) {
                 for (int i = 0; i < a.length; ++i) {
                     a[i] = random.nextInt();
@@ -1426,6 +1435,7 @@ public class Sorting {
         },
 
         PERMUTATION {
+            @Override
             void build(int[] a, int m, Random random) {
                 int mask = ~(0x000000FF << (random.nextInt(4) * 2));
 
@@ -1440,6 +1450,7 @@ public class Sorting {
         },
 
         UNIFORM {
+            @Override
             void build(int[] a, int m, Random random) {
                 int mask = (m << 15) - 1;
 
@@ -1450,6 +1461,7 @@ public class Sorting {
         },
 
         REPEATED {
+            @Override
             void build(int[] a, int m, Random random) {
                 for (int i = 0; i < a.length; ++i) {
                     a[i] = i % m;
@@ -1458,6 +1470,7 @@ public class Sorting {
         },
 
         DUPLICATED {
+            @Override
             void build(int[] a, int m, Random random) {
                 for (int i = 0; i < a.length; ++i) {
                     a[i] = random.nextInt(m);
@@ -1466,6 +1479,7 @@ public class Sorting {
         },
 
         SAWTOOTH {
+            @Override
             void build(int[] a, int m, Random random) {
                 int incCount = 1;
                 int decCount = a.length;
@@ -1493,6 +1507,7 @@ public class Sorting {
         },
 
         SHUFFLE {
+            @Override
             void build(int[] a, int m, Random random) {
                 for (int i = 0, j = 0, k = 1; i < a.length; ++i) {
                     a[i] = random.nextInt(m) > 0 ? (j += 2) : (k += 2);
@@ -1506,6 +1521,7 @@ public class Sorting {
     private enum StructuredBuilder {
 
         ASCENDING {
+            @Override
             void build(int[] a, int m) {
                 for (int i = 0; i < a.length; ++i) {
                     a[i] = m + i;
@@ -1514,6 +1530,7 @@ public class Sorting {
         },
 
         DESCENDING {
+            @Override
             void build(int[] a, int m) {
                 for (int i = 0; i < a.length; ++i) {
                     a[i] = a.length - m - i;
@@ -1522,12 +1539,14 @@ public class Sorting {
         },
 
         EQUAL {
+            @Override
             void build(int[] a, int m) {
                 Arrays.fill(a, m);
             }
         },
 
         MASKED {
+            @Override
             void build(int[] a, int m) {
                 int mask = (m << 15) - 1;
 
@@ -1538,6 +1557,7 @@ public class Sorting {
         },
 
         ORGAN_PIPES {
+            @Override
             void build(int[] a, int m) {
                 int middle = a.length / (m + 1);
 
@@ -1552,6 +1572,7 @@ public class Sorting {
         },
 
         STAGGER {
+            @Override
             void build(int[] a, int m) {
                 for (int i = 0; i < a.length; ++i) {
                     a[i] = (i * m + i) % a.length;
@@ -1560,6 +1581,7 @@ public class Sorting {
         },
 
         PLATEAU {
+            @Override
             void build(int[] a, int m) {
                 for (int i = 0; i < a.length; ++i) {
                     a[i] = Math.min(i, m);
@@ -1568,6 +1590,7 @@ public class Sorting {
         },
 
         LATCH {
+            @Override
             void build(int[] a, int m) {
                 int max = a.length / m;
                 max = Math.max(max, 2);
@@ -1579,6 +1602,7 @@ public class Sorting {
         },
 
         POINT {
+            @Override
             void build(int[] a, int m) {
                 Arrays.fill(a, 0);
                 a[a.length / 2] = m;
@@ -1586,6 +1610,7 @@ public class Sorting {
         },
 
         LINE {
+            @Override
             void build(int[] a, int m) {
                 for (int i = 0; i < a.length; ++i) {
                     a[i] = i;
@@ -1595,6 +1620,7 @@ public class Sorting {
         },
 
         PEARL {
+            @Override
             void build(int[] a, int m) {
                 for (int i = 0; i < a.length; ++i) {
                     a[i] = i;
@@ -1604,6 +1630,7 @@ public class Sorting {
         },
 
         RING {
+            @Override
             void build(int[] a, int m) {
                 int k1 = a.length / 3;
                 int k2 = a.length / 3 * 2;
@@ -1637,6 +1664,7 @@ public class Sorting {
     private enum NegativeZeroBuilder {
 
         FLOAT {
+            @Override
             void build(Object o, Random random) {
                 float[] a = (float[]) o;
 
@@ -1647,6 +1675,7 @@ public class Sorting {
         },
 
         DOUBLE {
+            @Override
             void build(Object o, Random random) {
                 double[] a = (double[]) o;
 
@@ -1662,6 +1691,7 @@ public class Sorting {
     private enum FloatingPointBuilder {
 
         FLOAT {
+            @Override
             void build(Object o, int a, int g, int z, int n, int p, Random random) {
                 float negativeValue = -random.nextFloat();
                 float positiveValue =  random.nextFloat();
@@ -1697,6 +1727,7 @@ public class Sorting {
         },
 
         DOUBLE {
+            @Override
             void build(Object o, int a, int g, int z, int n, int p, Random random) {
                 double negativeValue = -random.nextFloat();
                 double positiveValue =  random.nextFloat();

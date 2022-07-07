@@ -103,7 +103,7 @@ final class DualPivotQuicksort {
     /**
      * Min array size to perform sorting in parallel.
      */
-    private static final int MIN_PARALLEL_SORT_SIZE = 640;
+    private static final int MIN_PARALLEL_SORT_SIZE = 1024;
 
     /**
      * Max recursive depth before switching to heap sort.
