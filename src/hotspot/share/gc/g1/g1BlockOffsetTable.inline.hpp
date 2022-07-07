@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,11 +32,11 @@
 #include "runtime/atomic.hpp"
 #include "oops/oop.inline.hpp"
 
-inline HeapWord* G1BlockOffsetTablePart::block_start(const void* addr) {
+inline HeapWord* G1BlockOffsetTablePart::block_start(const void* addr, HeapWord* const pb) {
   assert(addr >= _hr->bottom() && addr < _hr->top(), "invalid address");
   HeapWord* q = block_at_or_preceding(addr);
-  HeapWord* n = q + block_size(q);
-  return forward_to_block_containing_addr(q, n, addr);
+  HeapWord* n = q + block_size(q, pb);
+  return forward_to_block_containing_addr(q, n, addr, pb);
 }
 
 u_char G1BlockOffsetTable::offset_array(size_t index) const {
@@ -99,6 +99,10 @@ inline size_t G1BlockOffsetTablePart::block_size(const HeapWord* p) const {
   return _hr->block_size(p);
 }
 
+inline size_t G1BlockOffsetTablePart::block_size(const HeapWord* p, HeapWord* const pb) const {
+  return _hr->block_size(p, pb);
+}
+
 inline HeapWord* G1BlockOffsetTablePart::block_at_or_preceding(const void* addr) const {
 #ifdef ASSERT
   if (!_hr->is_continues_humongous()) {
@@ -126,7 +130,8 @@ inline HeapWord* G1BlockOffsetTablePart::block_at_or_preceding(const void* addr)
 }
 
 inline HeapWord* G1BlockOffsetTablePart::forward_to_block_containing_addr(HeapWord* q, HeapWord* n,
-                                                                          const void* addr) const {
+                                                                          const void* addr,
+                                                                          HeapWord* const pb) const {
   while (n <= addr) {
     // When addr is not covered by the block starting at q we need to
     // step forward until we find the correct block. With the BOT
@@ -138,7 +143,7 @@ inline HeapWord* G1BlockOffsetTablePart::forward_to_block_containing_addr(HeapWo
     q = n;
     assert(cast_to_oop(q)->klass_or_null() != nullptr,
         "start of block must be an initialized object");
-    n += block_size(q);
+    n += block_size(q, pb);
   }
   assert(q <= addr, "wrong order for q and addr");
   assert(addr < n, "wrong order for addr and n");

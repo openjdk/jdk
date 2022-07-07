@@ -500,29 +500,29 @@ final class CompilerToVM {
      * @throws JVMCIError if there is something wrong with the compiled code or the associated
      *             metadata.
      */
-     int installCode(HotSpotCompiledCode compiledCode, InstalledCode code, long failedSpeculationsAddress, byte[] speculations) {
-         int codeInstallFlags = getInstallCodeFlags();
-         boolean withComments = (codeInstallFlags & 0x0001) != 0;
-         boolean withMethods = (codeInstallFlags & 0x0002) != 0;
-         boolean withTypeInfo;
-         if ((codeInstallFlags & 0x0004) != 0 && HotSpotJVMCIRuntime.Option.CodeSerializationTypeInfo.isDefault) {
-             withTypeInfo = true;
-         } else {
-             withTypeInfo = HotSpotJVMCIRuntime.Option.CodeSerializationTypeInfo.getBoolean();
-         }
-         try (HotSpotCompiledCodeStream stream = new HotSpotCompiledCodeStream(compiledCode, withTypeInfo, withComments, withMethods)) {
-             return installCode0(stream.headChunk, stream.timeNS, withTypeInfo, compiledCode, stream.objectPool, code, failedSpeculationsAddress, speculations);
-         }
+    int installCode(HotSpotCompiledCode compiledCode, InstalledCode code, long failedSpeculationsAddress, byte[] speculations) {
+        int codeInstallFlags = getInstallCodeFlags();
+        boolean withComments = (codeInstallFlags & 0x0001) != 0;
+        boolean withMethods = (codeInstallFlags & 0x0002) != 0;
+        boolean withTypeInfo;
+        if ((codeInstallFlags & 0x0004) != 0 && HotSpotJVMCIRuntime.Option.CodeSerializationTypeInfo.isDefault) {
+            withTypeInfo = true;
+        } else {
+            withTypeInfo = HotSpotJVMCIRuntime.Option.CodeSerializationTypeInfo.getBoolean();
+        }
+        try (HotSpotCompiledCodeStream stream = new HotSpotCompiledCodeStream(compiledCode, withTypeInfo, withComments, withMethods)) {
+            return installCode0(stream.headChunk, stream.timeNS, withTypeInfo, compiledCode, stream.objectPool, code, failedSpeculationsAddress, speculations);
+        }
      }
 
-     native int installCode0(long compiledCodeBuffer,
-                     long serializationNS,
-                     boolean withTypeInfo,
-                     HotSpotCompiledCode compiledCode,
-                     Object[] objectPool,
-                     InstalledCode code,
-                     long failedSpeculationsAddress,
-                     byte[] speculations);
+    native int installCode0(long compiledCodeBuffer,
+                    long serializationNS,
+                    boolean withTypeInfo,
+                    HotSpotCompiledCode compiledCode,
+                    Object[] objectPool,
+                    InstalledCode code,
+                    long failedSpeculationsAddress,
+                    byte[] speculations);
 
     /**
      * Gets flags specifying optional parts of code info. Only if a flag is set, will the

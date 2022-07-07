@@ -2479,6 +2479,7 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
         return false;
       }
       break;
+    case Op_VectorMaskGen:
     case Op_LoadVectorGather:
     case Op_StoreVectorScatter:
     case Op_CompressV:
@@ -2500,6 +2501,11 @@ const bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, Bas
   }
   return match_rule_supported(opcode) &&
          masked_op_sve_supported(opcode, vlen, bt);
+}
+
+const bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
+  // Only SVE has partial vector operations
+  return (UseSVE > 0) && partial_op_sve_needed(node, vt);
 }
 
 const RegMask* Matcher::predicate_reg_mask(void) {
@@ -3835,11 +3841,17 @@ encode %{
         ciEnv::current()->record_failure("CodeCache is full");
         return;
       }
-      // Emit stub for static call
-      address stub = CompiledStaticCall::emit_to_interp_stub(cbuf);
-      if (stub == NULL) {
-        ciEnv::current()->record_failure("CodeCache is full");
-        return;
+      if (CodeBuffer::supports_shared_stubs() && _method->can_be_statically_bound()) {
+        // Calls of the same statically bound method can share
+        // a stub to the interpreter.
+        cbuf.shared_stub_to_interp_for(_method, cbuf.insts()->mark_off());
+      } else {
+        // Emit stub for static call
+        address stub = CompiledStaticCall::emit_to_interp_stub(cbuf);
+        if (stub == NULL) {
+          ciEnv::current()->record_failure("CodeCache is full");
+          return;
+        }
       }
     }
 
