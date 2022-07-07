@@ -310,7 +310,7 @@ MTLVertexCache_AddGlyphQuad(MTLContext *mtlc,
 {
     J2dTraceLn(J2D_TRACE_INFO, "MTLVertexCache_AddGlyphQuad");
 
-    // MTLVC_ADD_TRIANGLES adds VERTS_FOR_A_QUAD vertexes into Cache, so need to check space for MTL_TRIS_IN_VERTEX elements
+    // MTLVC_ADD_TRIANGLES adds VERTS_FOR_A_QUAD vertexes into Cache, so need to check space for VERTS_FOR_A_QUAD elements
     if ((vertexCacheIndex + VERTS_FOR_A_QUAD) >= MTLVC_MAX_INDEX)
     {
         J2dTraceLn2(J2D_TRACE_INFO, "maskCacheIndex = %d, vertexCacheIndex = %d", maskCacheIndex, vertexCacheIndex);
