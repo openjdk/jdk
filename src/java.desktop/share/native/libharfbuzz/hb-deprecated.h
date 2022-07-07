@@ -107,9 +107,6 @@ hb_font_funcs_set_glyph_func (hb_font_funcs_t *ffuncs,
                               hb_font_get_glyph_func_t func,
                               void *user_data, hb_destroy_func_t destroy);
 
-HB_EXTERN HB_DEPRECATED void
-hb_set_invert (hb_set_t *set);
-
 /**
  * hb_unicode_eastasian_width_func_t:
  * @ufuncs: A Unicode-functions structure
@@ -199,7 +196,7 @@ typedef unsigned int                    (*hb_unicode_decompose_compatibility_fun
  *
  * Sets the implementation function for #hb_unicode_decompose_compatibility_func_t.
  *
- *
+ * 
  *
  * Since: 0.9.2
  * Deprecated: 2.0.0

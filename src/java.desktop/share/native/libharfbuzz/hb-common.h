@@ -90,7 +90,7 @@ HB_BEGIN_DECLS
 
 /**
  * hb_bool_t:
- *
+ * 
  * Data type for booleans.
  *
  **/
@@ -98,7 +98,7 @@ typedef int hb_bool_t;
 
 /**
  * hb_codepoint_t:
- *
+ * 
  * Data type for holding Unicode codepoints. Also
  * used to hold glyph IDs.
  *
@@ -106,7 +106,7 @@ typedef int hb_bool_t;
 typedef uint32_t hb_codepoint_t;
 /**
  * hb_position_t:
- *
+ * 
  * Data type for holding a single coordinate value.
  * Contour points and other multi-dimensional data are
  * stored as tuples of #hb_position_t's.
@@ -115,7 +115,7 @@ typedef uint32_t hb_codepoint_t;
 typedef int32_t hb_position_t;
 /**
  * hb_mask_t:
- *
+ * 
  * Data type for bitmasks.
  *
  **/
@@ -129,6 +129,16 @@ typedef union _hb_var_int_t {
   uint8_t u8[4];
   int8_t i8[4];
 } hb_var_int_t;
+
+typedef union _hb_var_num_t {
+  float f;
+  uint32_t u32;
+  int32_t i32;
+  uint16_t u16[2];
+  int16_t i16[2];
+  uint8_t u8[4];
+  int8_t i8[4];
+} hb_var_num_t;
 
 
 /* hb_tag_t */
@@ -210,9 +220,9 @@ hb_tag_to_string (hb_tag_t tag, char *buf);
  * @HB_DIRECTION_BTT: Text is set vertically from bottom to top.
  *
  * The direction of a text segment or buffer.
- *
+ * 
  * A segment can also be tested for horizontal or vertical
- * orientation (irrespective of specific direction) with
+ * orientation (irrespective of specific direction) with 
  * HB_DIRECTION_IS_HORIZONTAL() or HB_DIRECTION_IS_VERTICAL().
  *
  */
@@ -476,6 +486,12 @@ hb_language_get_default (void);
  * @HB_SCRIPT_DIVES_AKURU: `Diak`, Since: 2.6.7
  * @HB_SCRIPT_KHITAN_SMALL_SCRIPT: `Kits`, Since: 2.6.7
  * @HB_SCRIPT_YEZIDI: `Yezi`, Since: 2.6.7
+ * @HB_SCRIPT_CYPRO_MINOAN: `Cpmn`, Since: 3.0.0
+ * @HB_SCRIPT_OLD_UYGHUR: `Ougr`, Since: 3.0.0
+ * @HB_SCRIPT_TANGSA: `Tnsa`, Since: 3.0.0
+ * @HB_SCRIPT_TOTO: `Toto`, Since: 3.0.0
+ * @HB_SCRIPT_VITHKUQI: `Vith`, Since: 3.0.0
+ * @HB_SCRIPT_MATH: `Zmth`, Since: 3.4.0
  * @HB_SCRIPT_INVALID: No script set
  *
  * Data type for scripts. Each #hb_script_t's value is an #hb_tag_t corresponding
@@ -683,6 +699,20 @@ typedef enum
   HB_SCRIPT_KHITAN_SMALL_SCRIPT         = HB_TAG ('K','i','t','s'), /*13.0*/
   HB_SCRIPT_YEZIDI                      = HB_TAG ('Y','e','z','i'), /*13.0*/
 
+  /*
+   * Since 3.0.0
+   */
+  HB_SCRIPT_CYPRO_MINOAN                = HB_TAG ('C','p','m','n'), /*14.0*/
+  HB_SCRIPT_OLD_UYGHUR                  = HB_TAG ('O','u','g','r'), /*14.0*/
+  HB_SCRIPT_TANGSA                      = HB_TAG ('T','n','s','a'), /*14.0*/
+  HB_SCRIPT_TOTO                        = HB_TAG ('T','o','t','o'), /*14.0*/
+  HB_SCRIPT_VITHKUQI                    = HB_TAG ('V','i','t','h'), /*14.0*/
+
+  /*
+   * Since 3.4.0
+   */
+  HB_SCRIPT_MATH                        = HB_TAG ('Z','m','t','h'),
+
   /* No script set. */
   HB_SCRIPT_INVALID                     = HB_TAG_NONE,
 
@@ -801,7 +831,7 @@ hb_feature_to_string (hb_feature_t *feature,
  * Data type for holding variation data. Registered OpenType
  * variation-axis tags are listed in
  * [OpenType Axis Tag Registry](https://docs.microsoft.com/en-us/typography/opentype/spec/dvaraxisreg).
- *
+ * 
  * Since: 1.4.2
  */
 typedef struct hb_variation_t {
