@@ -196,5 +196,11 @@ public final class BufferedMethodBuilder
             elements.forEach(mb);
             mb.writeTo(buf);
         }
+
+        @Override
+        public String toString() {
+            return String.format("MethodModel[methodName=%s, methodType=%s, flags=%d]",
+                    name.stringValue(), desc.stringValue(), flags.flagsMask());
+        }
     }
 }

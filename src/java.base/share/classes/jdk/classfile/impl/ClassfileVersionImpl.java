@@ -53,4 +53,9 @@ public final class ClassfileVersionImpl
     public void writeTo(DirectClassBuilder builder) {
         builder.setVersion(majorVersion, minorVersion);
     }
+
+    @Override
+    public String toString() {
+        return String.format("ClassfileVersion[majorVersion=%d, minorVersion=%d]", majorVersion, minorVersion);
+    }
 }

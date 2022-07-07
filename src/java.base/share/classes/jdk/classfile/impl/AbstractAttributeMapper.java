@@ -102,4 +102,10 @@ public abstract class AbstractAttributeMapper<T extends Attribute<T>>
     public int validSince() {
         return majorVersion;
     }
+
+    @Override
+    public String toString() {
+        return String.format("AttributeMapper[name=%s, allowMultiple=%b, validSince=%d, whereApplicable=%s]",
+                name, allowMultiple, majorVersion, whereApplicable);
+    }
 }

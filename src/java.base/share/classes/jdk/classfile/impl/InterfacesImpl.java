@@ -25,6 +25,7 @@
 package jdk.classfile.impl;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import jdk.classfile.constantpool.ClassEntry;
 import jdk.classfile.Interfaces;
@@ -49,5 +50,12 @@ public final class InterfacesImpl
     @Override
     public void writeTo(DirectClassBuilder builder) {
         builder.setInterfaces(interfaces);
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Interfaces[interfaces=%s]", interfaces.stream()
+                .map(iface -> iface.name().stringValue())
+                .collect(Collectors.joining(", ")));
     }
 }

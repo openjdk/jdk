@@ -76,5 +76,10 @@ public final class LineNumberImpl
     public void writeTo(DirectCodeBuilder writer) {
         writer.setLineNumber(line);
     }
+
+    @Override
+    public String toString() {
+        return String.format("LineNumber[line=%d]", line);
+    }
 }
 

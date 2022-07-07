@@ -116,5 +116,10 @@ public final class BufferedFieldBuilder
             elements.forEach(fb);
             fb.writeTo(buf);
         }
+
+        @Override
+        public String toString() {
+            return String.format("FieldModel[fieldName=%s, fieldType=%s, flags=%d]", name.stringValue(), desc.stringValue(), flags.flagsMask());
+        }
     }
 }

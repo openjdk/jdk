@@ -94,4 +94,10 @@ public final class BoundCharacterRange
     public int sizeInBytes() {
         return 0;
     }
+
+    @Override
+    public String toString() {
+        return String.format("CharacterRange[startScope=%s, endScope=%s, characterRangeStart=%s, characterRangeEnd=%s, flags=%d]",
+                startScope(), endScope(), characterRangeStart(), characterRangeEnd(), flags());
+    }
 }

@@ -51,4 +51,9 @@ public final class SuperclassImpl
     public void writeTo(DirectClassBuilder builder) {
         builder.setSuperclass(superclassEntry);
     }
+
+    @Override
+    public String toString() {
+        return String.format("Superclass[superclassEntry=%s]", superclassEntry.name().stringValue());
+    }
 }

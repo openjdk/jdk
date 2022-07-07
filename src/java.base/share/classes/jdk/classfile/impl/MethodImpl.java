@@ -145,4 +145,10 @@ public final class MethodImpl
             });
         }
     }
+
+    @Override
+    public String toString() {
+        return String.format("MethodModel[methodName=%s, methodType=%s, flags=%d]",
+                methodName().stringValue(), methodType().stringValue(), flags().flagsMask());
+    }
 }

@@ -139,6 +139,11 @@ public final class BufferedCodeBuilder
         return this;
     }
 
+    @Override
+    public String toString() {
+        return String.format("CodeModel[id=%d]", System.identityHashCode(this));
+    }
+
     public BufferedCodeBuilder run(Consumer<? super CodeBuilder> handler) {
         handler.accept(this);
         return this;
@@ -208,6 +213,11 @@ public final class BufferedCodeBuilder
 
         public void writeTo(BufWriter buf) {
             DirectCodeBuilder.build(methodInfo, cb -> elements.forEach(cb), constantPool, null).writeTo(buf);
+        }
+
+        @Override
+        public String toString() {
+            return String.format("CodeModel[id=%s]", Integer.toHexString(System.identityHashCode(this)));
         }
     }
 }

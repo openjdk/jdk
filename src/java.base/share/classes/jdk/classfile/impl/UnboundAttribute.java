@@ -140,6 +140,10 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         builder.writeAttribute(this);
     }
 
+    @Override
+    public String toString() {
+        return String.format("Attribute[name=%s]", mapper.name());
+    }
     public static final class UnboundConstantValueAttribute
             extends UnboundAttribute<ConstantValueAttribute>
             implements ConstantValueAttribute {

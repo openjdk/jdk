@@ -214,6 +214,11 @@ public final class ClassImpl
                && verifyModuleAttributes();
     }
 
+    @Override
+    public String toString() {
+        return String.format("ClassModel[thisClass=%s, flags=%d]", thisClass().name().stringValue(), flags().flagsMask());
+    }
+
     private boolean verifyModuleAttributes() {
         if (findAttribute(Attributes.MODULE).isEmpty())
             return false;

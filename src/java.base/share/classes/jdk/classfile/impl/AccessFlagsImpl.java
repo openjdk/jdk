@@ -84,4 +84,9 @@ public final class AccessFlagsImpl extends AbstractElement
     public boolean has(AccessFlag flag) {
         return Util.has(location, flagsMask, flag);
     }
+
+    @Override
+    public String toString() {
+        return String.format("AccessFlags[flags=%d]", flagsMask);
+    }
 }

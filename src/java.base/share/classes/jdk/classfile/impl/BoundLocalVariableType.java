@@ -55,4 +55,9 @@ public final class BoundLocalVariableType
     public void writeTo(DirectCodeBuilder writer) {
         writer.addLocalVariableType(this);
     }
+
+    @Override
+    public String toString() {
+        return String.format("LocalVariableType[name=%s, slot=%d, signature=%s]", name().stringValue(), slot(), signature().stringValue());
+    }
 }

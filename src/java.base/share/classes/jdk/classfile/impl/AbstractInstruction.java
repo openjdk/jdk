@@ -1392,6 +1392,11 @@ public abstract sealed class AbstractInstruction
         public void writeTo(DirectCodeBuilder writer) {
             writer.addHandler(this);
         }
+
+        @Override
+        public String toString() {
+            return String.format("ExceptionCatch[catchType=%s]", catchTypeEntry == null ? "<any>" : catchTypeEntry.name().stringValue());
+        }
     }
 
     public static final class UnboundCharacterRange

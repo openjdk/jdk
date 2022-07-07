@@ -499,4 +499,9 @@ public final class CodeImpl
             }
         };
     }
+
+    @Override
+    public String toString() {
+        return String.format("CodeModel[id=%d]", System.identityHashCode(this));
+    }
 }

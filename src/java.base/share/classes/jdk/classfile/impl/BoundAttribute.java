@@ -111,6 +111,11 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
         return classReader;
     }
 
+    @Override
+    public String toString() {
+        return String.format("Attribute[name=%s]", mapper.name());
+    }
+
     <E> List<E> readEntryList(int p) {
         // @@@ Could use JavaUtilCollectionAccess.listFromTrustedArrayNullsAllowed to avoid copy
         int cnt = classReader.readU2(p);

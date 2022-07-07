@@ -691,6 +691,11 @@ public final class DirectCodeBuilder
         localVariableTypes.add(element);
     }
 
+    @Override
+    public String toString() {
+        return String.format("CodeBuilder[id=%d]", System.identityHashCode(this));
+    }
+
     //ToDo: consolidate and open all exceptions
     private static final class LabelOverflowException extends IllegalStateException {
 

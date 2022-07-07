@@ -125,4 +125,10 @@ public final class FieldImpl
                 consumer.accept(e);
         }
     }
+
+    @Override
+    public String toString() {
+        return String.format("FieldModel[fieldName=%s, fieldType=%s, flags=%d]",
+                fieldName().stringValue(), fieldType().stringValue(), flags().flagsMask());
+    }
 }
