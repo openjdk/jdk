@@ -31,6 +31,7 @@
 #include "logging/log.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/globals_extension.hpp"
 
 size_t PLAB::min_size() {
   // Make sure that we return something that is larger than AlignmentReserve
@@ -39,6 +40,17 @@ size_t PLAB::min_size() {
 
 size_t PLAB::max_size() {
   return ThreadLocalAllocBuffer::max_size();
+}
+
+void PLAB::startup_initialization() {
+  if (!FLAG_IS_DEFAULT(MinTLABSize)) {
+    if (FLAG_IS_DEFAULT(YoungPLABSize)) {
+      FLAG_SET_ERGO(YoungPLABSize, MAX2(ThreadLocalAllocBuffer::min_size(), YoungPLABSize));
+    }
+    if (FLAG_IS_DEFAULT(OldPLABSize)) {
+      FLAG_SET_ERGO(OldPLABSize, MAX2(ThreadLocalAllocBuffer::min_size(), OldPLABSize));
+    }
+  }
 }
 
 PLAB::PLAB(size_t desired_plab_sz_) :

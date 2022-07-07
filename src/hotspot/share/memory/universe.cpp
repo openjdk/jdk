@@ -840,6 +840,8 @@ jint Universe::initialize_heap() {
 
 void Universe::initialize_tlab() {
   ThreadLocalAllocBuffer::set_max_size(Universe::heap()->max_tlab_size());
+  PLAB::startup_initialization();
+
   if (UseTLAB) {
     ThreadLocalAllocBuffer::startup_initialization();
   }

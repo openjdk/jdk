@@ -69,6 +69,8 @@ protected:
   void undo_last_allocation(HeapWord* obj, size_t word_sz);
 
 public:
+  static void startup_initialization();
+
   // Initializes the buffer to be empty, but with the given "word_sz".
   // Must get initialized with "set_buf" for an allocation to succeed.
   PLAB(size_t word_sz);
