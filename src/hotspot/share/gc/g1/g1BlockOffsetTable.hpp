@@ -129,6 +129,9 @@ private:
     return align_up(addr, BOTConstants::card_size());
   }
 
+  void update_for_block(HeapWord* blk_start, size_t size) {
+    update_for_block(blk_start, blk_start + size);
+  }
 public:
   static bool is_crossing_card_boundary(HeapWord* const obj_start,
                                         HeapWord* const obj_end) {
@@ -142,8 +145,6 @@ public:
 
   void verify() const;
 
-  void assert_same_bot_entry(const void* n, const void* addr) const NOT_DEBUG_RETURN;
-
   // Returns the address of the start of the block reaching into the card containing
   // "addr".
   inline HeapWord* block_start_reaching_into_card(const void* addr) const;
@@ -152,10 +153,6 @@ public:
     if (is_crossing_card_boundary(blk_start, blk_end)) {
       update_for_block_work(blk_start, blk_end);
     }
-  }
-
-  void update_for_block(HeapWord* blk_start, size_t size) {
-    update_for_block(blk_start, blk_start + size);
   }
 
   void set_for_starts_humongous(HeapWord* obj_top, size_t fill_size);
