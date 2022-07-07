@@ -46,7 +46,7 @@ public class LocalStaticDeclarations2 extends CompilationTestCase {
                     class Inner {
                         Inner() { enum E { A } }
                     }
-                }        
+                }
                 """);
         assertOK(
                 """
@@ -58,7 +58,7 @@ public class LocalStaticDeclarations2 extends CompilationTestCase {
                             }
                         }
                     }
-                }        
+                }
                 """);
         assertOK(
                 """
@@ -70,7 +70,7 @@ public class LocalStaticDeclarations2 extends CompilationTestCase {
                             }
                         }
                     }
-                }        
+                }
                 """);
     }
 }
