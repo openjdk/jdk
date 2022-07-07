@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ ExceptionsEventLog* Events::_exceptions = NULL;
 StringEventLog* Events::_redefinitions = NULL;
 UnloadingEventLog* Events::_class_unloading = NULL;
 StringEventLog* Events::_deopt_messages = NULL;
+StringEventLog* Events::_dll_messages = NULL;
 
 EventLog::EventLog() {
   // This normally done during bootstrap when we're only single
@@ -97,6 +98,7 @@ void Events::init() {
     _redefinitions = new StringEventLog("Classes redefined", "redef");
     _class_unloading = new UnloadingEventLog("Classes unloaded", "unload");
     _deopt_messages = new StringEventLog("Deoptimization events", "deopt");
+    _dll_messages = new StringEventLog("Dll operation events", "dll");
   }
 }
 

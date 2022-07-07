@@ -1050,7 +1050,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 
   void * result= ::dlopen(filename, RTLD_LAZY);
   if (result != NULL) {
-    Events::log(NULL, "Loaded shared library %s", filename);
+    Events::log_dll_message(NULL, "Loaded shared library %s", filename);
     // Successful loading
     log_info(os)("shared library load of %s was successful", filename);
     return result;
@@ -1065,7 +1065,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     ::strncpy(ebuf, error_report, ebuflen-1);
     ebuf[ebuflen-1]='\0';
   }
-  Events::log(NULL, "Loading shared library %s failed, %s", filename, error_report);
+  Events::log_dll_message(NULL, "Loading shared library %s failed, %s", filename, error_report);
   log_info(os)("shared library load of %s failed, %s", filename, error_report);
 
   return NULL;
@@ -1079,7 +1079,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   log_info(os)("attempting shared library load of %s", filename);
   void * result= ::dlopen(filename, RTLD_LAZY);
   if (result != NULL) {
-    Events::log(NULL, "Loaded shared library %s", filename);
+    Events::log_dll_message(NULL, "Loaded shared library %s", filename);
     // Successful loading
     log_info(os)("shared library load of %s was successful", filename);
     return result;
@@ -1096,7 +1096,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     ::strncpy(ebuf, error_report, ebuflen-1);
     ebuf[ebuflen-1]='\0';
   }
-  Events::log(NULL, "Loading shared library %s failed, %s", filename, error_report);
+  Events::log_dll_message(NULL, "Loading shared library %s failed, %s", filename, error_report);
   log_info(os)("shared library load of %s failed, %s", filename, error_report);
 
   int diag_msg_max_length=ebuflen-strlen(ebuf);

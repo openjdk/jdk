@@ -1526,7 +1526,7 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
 
   void * result = LoadLibrary(name);
   if (result != NULL) {
-    Events::log(NULL, "Loaded shared library %s", name);
+    Events::log_dll_message(NULL, "Loaded shared library %s", name);
     // Recalculate pdb search path if a DLL was loaded successfully.
     SymbolEngine::recalc_search_path();
     log_info(os)("shared library load of %s was successful", name);
@@ -1537,7 +1537,7 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   // It may or may not be overwritten below (in the for loop and just above)
   lasterror(ebuf, (size_t) ebuflen);
   ebuf[ebuflen - 1] = '\0';
-  Events::log(NULL, "Loading shared library %s failed, error code %lu", name, errcode);
+  Events::log_dll_message(NULL, "Loading shared library %s failed, error code %lu", name, errcode);
   log_info(os)("shared library load of %s failed, error code %lu", name, errcode);
 
   if (errcode == ERROR_MOD_NOT_FOUND) {
