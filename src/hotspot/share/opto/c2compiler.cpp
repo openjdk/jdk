@@ -66,7 +66,7 @@ bool C2Compiler::init_c2_runtime() {
 
   for (OptoReg::Name i=OptoReg::Name(0); i<OptoReg::Name(REG_COUNT); i = OptoReg::add(i,1)) {
     VMReg r = OptoReg::as_VMReg(i);
-    if (r != nullptr && r->is_valid()) {
+    if (r->is_valid()) {
       OptoReg::vm2opto[r->value()] = i;
     }
   }
