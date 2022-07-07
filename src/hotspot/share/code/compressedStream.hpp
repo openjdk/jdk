@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,11 +43,11 @@ class CompressedStream : public ResourceObj {
     _position = position;
   }
 
-  u_char* buffer() const               { return _buffer; }
+  u_char* buffer() const { return _buffer; }
 
   // Positioning
-  int position() const                 { return _position; }
-  void set_position(int position)      { _position = position; }
+  virtual int position()                  { return _position; }
+  virtual void set_position(int position) { _position = position; }
 };
 
 
@@ -59,8 +59,8 @@ class CompressedReadStream : public CompressedStream {
   CompressedReadStream(u_char* buffer, int position = 0)
   : CompressedStream(buffer, position) {}
 
-  jboolean read_bool()                 { return (jboolean) read();      }
-  jbyte    read_byte()                 { return (jbyte   ) read();      }
+  virtual jboolean read_bool()         { return (jboolean) read();      }
+  virtual jbyte    read_byte()         { return (jbyte   ) read();      }
   jchar    read_char()                 { return (jchar   ) read_int();  }
   jshort   read_short()                { return (jshort  ) read_signed_int(); }
   jint     read_signed_int();
@@ -68,12 +68,12 @@ class CompressedReadStream : public CompressedStream {
   jdouble  read_double();              // jdouble_cast(2*reverse_bits(read_int))
   jlong    read_long();                // jlong_from(2*read_signed_int())
 
-  jint     read_int() {
+  virtual jint     read_int() {
     return UNSIGNED5::read_uint(_buffer, _position, 0);
   }
 };
 
-
+// Pack200 compression algorithm
 class CompressedWriteStream : public CompressedStream {
  private:
   bool full() {
@@ -82,22 +82,21 @@ class CompressedWriteStream : public CompressedStream {
   void store(u_char b) {
     _buffer[_position++] = b;
   }
-  void write(u_char b) {
-    if (full()) grow();
-    store(b);
-  }
   void grow();
 
  protected:
   int _size;
+
+  void write(u_char b) {
+    if (full()) grow();
+    store(b);
+  }
 
  public:
   CompressedWriteStream(int initial_size);
   CompressedWriteStream(u_char* buffer, int initial_size, int position = 0)
   : CompressedStream(buffer, position) { _size = initial_size; }
 
-  void write_bool(jboolean value)      { write(value);      }
-  void write_byte(jbyte value)         { write(value);      }
   void write_char(jchar value)         { write_int(value); }
   void write_short(jshort value)       { write_signed_int(value);  }
   void write_signed_int(jint value)    { write_int(UNSIGNED5::encode_sign(value)); }
@@ -105,10 +104,54 @@ class CompressedWriteStream : public CompressedStream {
   void write_double(jdouble value);    // write_int(reverse_bits(<low,high>))
   void write_long(jlong value);        // write_signed_int(<low,high>)
 
-  void write_int(juint value) {
+  virtual void write_bool(jboolean value) { write(value); }
+  virtual void write_byte(jbyte value)    { write(value); }
+  virtual void write_int(juint value) {
     UNSIGNED5::write_uint_grow(value, _buffer, _position, _size,
                                [&](int){ grow(); });
   }
+};
+
+// Modified compression algorithm for a data set in which a significant part of the data is null
+class CompressedSparseDataReadStream : public CompressedReadStream {
+public:
+  CompressedSparseDataReadStream(u_char* buffer, int position = 0)
+  : CompressedReadStream(buffer, position) {}
+
+  jboolean read_bool() override { return read_int(); }
+  jbyte    read_byte() override { return read_int(); }
+  jint     read_int()  override;
+
+  void set_position(int pos) override {
+    byte_pos_ = 0;
+    _position = pos;
+  }
+private:
+  size_t byte_pos_ {0};
+
+  bool read_zero();
+  uint8_t read_byte_impl();
+};
+
+class CompressedSparseDataWriteStream : public CompressedWriteStream {
+public:
+  CompressedSparseDataWriteStream(int initial_size) : CompressedWriteStream(initial_size) {}
+
+  void write_bool(jboolean value) override { write_int(value ? 1 : 0); }
+  void write_byte(jbyte value)    override { write_int(value); }
+  void write_int(juint value) override;
+
+  int position() override;
+  void set_position(int pos) override {
+    position();
+    _position = pos;
+  }
+private:
+  u_char curr_byte_ {0};
+  size_t byte_pos_ {0};
+
+  void write_zero();  // The zero word is encoded with a single zero bit
+  void write_byte_impl(uint8_t b);
 };
 
 #endif // SHARE_CODE_COMPRESSEDSTREAM_HPP

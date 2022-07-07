@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,4 +111,73 @@ void CompressedWriteStream::write_double(jdouble value) {
 void CompressedWriteStream::write_long(jlong value) {
   write_signed_int(low(value));
   write_signed_int(high(value));
+}
+
+
+bool CompressedSparseDataReadStream::read_zero() {
+  if (_buffer[_position] & (1 << (7 - byte_pos_))) {
+    return 0; // not a zero data
+  }
+  if (++byte_pos_ == 8) {
+    _position++;
+    byte_pos_ = 0;
+  }
+  return 1;
+}
+
+uint8_t CompressedSparseDataReadStream::read_byte_impl() {
+  return (_buffer[_position++] << byte_pos_) | (_buffer[_position] >> (8 - byte_pos_));
+}
+
+jint CompressedSparseDataReadStream::read_int() {
+  if (read_zero()) {
+    return 0;
+  }
+  uint32_t result = 0;
+  while (true) {
+    uint8_t b = read_byte_impl();
+    result = (result << 6) | (b & 0x3f);
+    if ((b & 0xC0) == 0x80) {
+      return (jint)result;
+    }
+  }
+}
+
+int CompressedSparseDataWriteStream::position() {
+  if (byte_pos_ == 0) {
+    return _position;
+  }
+  // flush current data and start a new byte
+  write(curr_byte_ << (8 - byte_pos_));
+  curr_byte_ = 0;
+  byte_pos_ = 0;
+  return _position;
+}
+
+void CompressedSparseDataWriteStream::write_zero() {
+  curr_byte_ <<= 1; // zero bit represents a zero word
+  if (++byte_pos_ == 8) {
+    write(curr_byte_);
+    curr_byte_ = 0;
+    byte_pos_ = 0;
+  }
+}
+
+void CompressedSparseDataWriteStream::write_byte_impl(uint8_t b) {
+  write((curr_byte_ << (8 - byte_pos_)) | (b >> byte_pos_));
+  curr_byte_ = (0xff >> (8 - byte_pos_)) & b;
+}
+
+void CompressedSparseDataWriteStream::write_int(juint val) {
+  if (val == 0) {
+    write_zero();
+    return;
+  }
+  for (int i = 5; i > 0; i--) {
+    uint32_t v = (val >> (6 * i));
+    if (v != 0) {
+      write_byte_impl(0xC0 | (v & 0x3f));
+    }
+  }
+  write_byte_impl(0x80 | (val & 0x3f));
 }

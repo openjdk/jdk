@@ -374,7 +374,7 @@ class OopMapStream : public StackObj {
   void next()                           { find_next(); }
   OopMapValue current()                 { return _omv; }
 #ifdef ASSERT
-  int stream_position() const           { return _stream.position(); }
+  int stream_position()                 { return _stream.position(); }
 #endif
 };
 

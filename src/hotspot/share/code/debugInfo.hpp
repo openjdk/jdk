@@ -295,14 +295,14 @@ class MonitorValue: public ResourceObj {
 // DebugInfoReadStream specializes CompressedReadStream for reading
 // debugging information. Used by ScopeDesc.
 
-class DebugInfoReadStream : public CompressedReadStream {
+class DebugInfoReadStream : public CompressedSparseDataReadStream {
  private:
   const CompiledMethod* _code;
   const CompiledMethod* code() const { return _code; }
   GrowableArray<ScopeValue*>* _obj_pool;
  public:
   DebugInfoReadStream(const CompiledMethod* code, int offset, GrowableArray<ScopeValue*>* obj_pool = NULL) :
-    CompressedReadStream(code->scopes_data_begin(), offset) {
+    CompressedSparseDataReadStream(code->scopes_data_begin(), offset) {
     _code = code;
     _obj_pool = obj_pool;
 
@@ -321,10 +321,10 @@ class DebugInfoReadStream : public CompressedReadStream {
   int read_bci() { return read_int() + InvocationEntryBci; }
 };
 
-// DebugInfoWriteStream specializes CompressedWriteStream for
+// DebugInfoWriteStream specializes CompressedSparseDataWriteStream for
 // writing debugging information. Used by ScopeDescRecorder.
 
-class DebugInfoWriteStream : public CompressedWriteStream {
+class DebugInfoWriteStream : public CompressedSparseDataWriteStream {
  private:
   DebugInformationRecorder* _recorder;
   DebugInformationRecorder* recorder() const { return _recorder; }
