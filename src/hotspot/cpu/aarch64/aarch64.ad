@@ -2479,6 +2479,7 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
         return false;
       }
       break;
+    case Op_VectorMaskGen:
     case Op_LoadVectorGather:
     case Op_StoreVectorScatter:
     case Op_CompressV:
@@ -2500,6 +2501,11 @@ const bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, Bas
   }
   return match_rule_supported(opcode) &&
          masked_op_sve_supported(opcode, vlen, bt);
+}
+
+const bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
+  // Only SVE has partial vector operations
+  return (UseSVE > 0) && partial_op_sve_needed(node, vt);
 }
 
 const RegMask* Matcher::predicate_reg_mask(void) {

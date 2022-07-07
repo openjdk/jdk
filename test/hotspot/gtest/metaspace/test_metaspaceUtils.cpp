@@ -89,8 +89,8 @@ TEST_VM(MetaspaceUtils, non_compressed_class_pointers) {
 }
 
 static void check_metaspace_stats_are_consistent(const MetaspaceStats& stats) {
-  EXPECT_LT(stats.committed(), stats.reserved());
-  EXPECT_LT(stats.used(), stats.committed());
+  EXPECT_LE(stats.committed(), stats.reserved());
+  EXPECT_LE(stats.used(), stats.committed());
 }
 
 static void check_metaspace_stats_are_not_null(const MetaspaceStats& stats) {

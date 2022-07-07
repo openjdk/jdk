@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,6 +119,18 @@ private:
   // Sets the entries corresponding to the cards starting at "start" and ending
   // at "end" to point back to the card before "start"; [start, end]
   void set_remainder_to_point_to_start_incl(size_t start, size_t end);
+
+  inline size_t block_size(const HeapWord* p) const;
+
+  // Returns the address of a block whose start is at most "addr".
+  inline HeapWord* block_at_or_preceding(const void* addr) const;
+
+  // Return the address of the beginning of the block that contains "addr".
+  // "q" is a block boundary that is <= "addr"; "n" is the address of the
+  // next block (or the end of the space.)
+  inline HeapWord* forward_to_block_containing_addr(HeapWord* q, HeapWord* n,
+                                                    const void* addr,
+                                                    HeapWord* pb) const;
 
   // Update BOT entries corresponding to the mem range [blk_start, blk_end).
   void update_for_block_work(HeapWord* blk_start, HeapWord* blk_end);
