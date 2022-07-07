@@ -439,7 +439,7 @@ void ConnectionGraph::reduce_allocation_merges() {
   _igvn->set_delay_transform(prev_delay_transform);
 }
 
-Node* ConnectionGraph::come_from_allocate(const Node* n) const {
+bool ConnectionGraph::come_from_allocate(const Node* n) const {
   while (true) {
     switch (n->Opcode()) {
       case Op_CastPP:
@@ -455,6 +455,8 @@ Node* ConnectionGraph::come_from_allocate(const Node* n) const {
         n = n->in(0);
         break;
       case Op_Parm:
+      case Op_GetAndSetN:
+      case Op_GetAndSetP:
       case Op_LoadP:
       case Op_LoadN:
       case Op_LoadNKlass:
@@ -463,19 +465,19 @@ Node* ConnectionGraph::come_from_allocate(const Node* n) const {
       case Op_CreateEx:
       case Op_AllocateArray:
       case Op_Phi:
-        return NULL;
+        return false;
       case Op_Allocate:
-        return n->in(AllocateNode::KlassNode);
+        return true;
       default:
         if (n->is_Call()) {
-          return NULL;
+          return false;
         }
         assert(false, "Should not reach here. Unmatched %d %s", n->_idx, n->Name());
     }
   }
 
   // should never reach here
-  return NULL;
+  return false;
 }
 
 bool ConnectionGraph::is_read_only(Node* merge_phi_region, Node* base) const {
@@ -523,7 +525,7 @@ bool ConnectionGraph::can_reduce_this_phi(const Node* phi) const {
 
   const Type* phi_t  = _igvn->type(phi);
 
-  if (phi_t == NULL || phi_t->make_oopptr() == NULL || !phi_t->make_oopptr()->klass_is_exact()) {
+  if (phi_t == NULL || phi_t->make_oopptr() == NULL) {
     return false;
   }
 
@@ -532,36 +534,31 @@ bool ConnectionGraph::can_reduce_this_phi(const Node* phi) const {
   //    of the same Klass and that they can be scalar replaced. Also
   //    checks that there is no write to any of the inputs after the
   //    merge occurs.
-  //
-  // TODO:
-  //    - Do not require all inputs to be allocate.
-  Node* prev_klass = NULL;
+  bool has_any_allocate = false;
   for (uint in_idx=1; in_idx<phi->req(); in_idx++) {
     Node* input = phi->in(in_idx);
 
-    // Check if input is NoEscape
     PointsToNode* input_ptn = ptnode_adr(input->_idx);
-    if (input_ptn == NULL || input_ptn->escape_state() != PointsToNode::EscapeState::NoEscape) {
-      return false;
+    if (input_ptn == NULL) {
+      continue;
     }
 
-    Node* klass = come_from_allocate(input);
+    // Check if input comes from Allocate and does not escape
+    has_any_allocate |= (input_ptn->escape_state() == PointsToNode::EscapeState::NoEscape && come_from_allocate(input));
 
-    if (klass == NULL) {
-      NOT_PRODUCT(if (Verbose) tty->print_cr("Will NOT try to reduce Phi %d. The %dth input does not come from an Allocate.", phi->_idx, in_idx);)
-      return false;
-    }
-    else if (!is_read_only(phi->in(0), input)) {
+    // Check if there is no write to the input after it is merged.
+    // If there is a write to any input after the merge we need to bail out.
+    if (!is_read_only(phi->in(0), input)) {
       NOT_PRODUCT(if (Verbose) tty->print_cr("Will NOT try to reduce Phi %d. The %dth input has a store after the merge.", phi->_idx, in_idx);)
       return false;
     }
-    else {
-      if (prev_klass != NULL && prev_klass != klass) {
-        NOT_PRODUCT(if (Verbose) tty->print_cr("Will NOT try to reduce Phi %d. The input Allocate klass nodes don't match.", phi->_idx);)
-        return false;
-      }
-      prev_klass = klass;
-    }
+  }
+
+  // If there was no input that can be removed then there is
+  // no profit doing the reduction of inputs.
+  if (!has_any_allocate) {
+    NOT_PRODUCT(if (Verbose) tty->print_cr("Will NOT try to reduce Phi %d. There is not any NoEscape Allocate as input.", phi->_idx);)
+    return false;
   }
 
   // Validate outputs:
@@ -626,7 +623,7 @@ bool ConnectionGraph::can_reduce_this_phi(const Node* phi) const {
     }
   }
 
-  NOT_PRODUCT(if (Verbose) tty->print_cr("Will try to reduce Phi %d.", phi->_idx);)
+  NOT_PRODUCT(if (Verbose) tty->print_cr("Will reduce Phi %d.", phi->_idx);)
   return true;
 }
 
@@ -647,6 +644,10 @@ bool ConnectionGraph::reduce_this_phi(PhiNode* n) {
 
   _igvn->_worklist.push(ram);
 
+//  if (n->_idx == 257 && ram->_idx == 1239) {
+//    _compile->root()->dump(-100);
+//  }
+//
   return true;
 }
 

@@ -1034,12 +1034,6 @@ private:
 
   uint _num_orig_inputs;            // Number of inputs to the original Phi
 
-  Node_Array* _in_copy;             // I need a *copy* of the original Phi input node addresses
-                                    // because these input nodes are going to go away as we scalar
-                                    // replace the allocations and remove the nodes. However,
-                                    // the order of the inputs in the original Phi is important
-                                    // to several operations of RAM.
-
   bool _needs_all_fields;           // This is set to true when there was a Safepoint or uncommon_trap
                                     // using the original Phi. In that situation we need information of
                                     // all fields reaching the Safepoint/trap so that we can construct
@@ -1067,6 +1061,7 @@ public:
 
   bool register_value_for_field(jlong field, Node* base, Node* value) ;
 
+  Node* make_load(Node* ctrl, Node* base, Node* mem, jlong offset, PhaseIterGVN* igvn);
   Node* value_phi_for_field(jlong field, PhaseIterGVN* igvn) ;
 
   static ReducedAllocationMergeNode* make(Compile* C, PhaseIterGVN* igvn, PhiNode* phi) ;

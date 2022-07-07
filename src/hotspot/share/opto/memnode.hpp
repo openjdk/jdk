@@ -230,7 +230,7 @@ public:
                     const TypePtr* at, const Type* rt, BasicType bt,
                     MemOrd mo, ControlDependency control_dependency = DependsOnlyOnTest,
                     bool require_atomic_access = false, bool unaligned = false, bool mismatched = false, bool unsafe = false,
-                    uint8_t barrier_data = 0);
+                    uint8_t barrier_data = 0, bool decode_narrow = true);
 
   virtual uint hash()   const;  // Check the type
 

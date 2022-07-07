@@ -1221,12 +1221,12 @@ bool PhaseMacroExpand::eliminate_reduced_allocation_merge(ReducedAllocationMerge
       assert(offset != -1, "Didn't find constant offset for AddP.");
 
       Node* value_phi = ram->value_phi_for_field(offset, &_igvn);
-      
+
       if (value_phi == NULL) {
         assert(false, "At RAM node %d can't find value for a field.", ram->_idx);
         return false;
       }
-      
+
       _igvn._worklist.push(value_phi);
 
       for (DUIterator_Fast jmax, j = addp->fast_outs(jmax); j < jmax; j++) {
@@ -1291,7 +1291,6 @@ bool PhaseMacroExpand::eliminate_reduced_allocation_merge(ReducedAllocationMerge
           }
           if (UseCompressedOops) {
             field_type = field_type->make_narrowoop();
-            basic_elem_type = T_NARROWOOP;
           }
         } else {
           field_type = Type::get_const_basic_type(basic_elem_type);
@@ -1307,14 +1306,9 @@ bool PhaseMacroExpand::eliminate_reduced_allocation_merge(ReducedAllocationMerge
         _igvn._worklist.push(field_val);
 
         if (UseCompressedOops && field_type->isa_narrowoop()) {
-          // Enable "DecodeN(EncodeP(Allocate)) --> Allocate" transformation
-          // to be able scalar replace the allocation.
-          if (field_val->is_EncodeP()) {
-            field_val = field_val->in(1);
-          } else {
-            field_val = transform_later(new DecodeNNode(field_val, field_val->get_ptr_type()));
-          }
+          field_val = transform_later(new DecodeNNode(field_val, field_val->get_ptr_type()));
         }
+
         sfpt->add_req(field_val);
       }
 
@@ -1346,14 +1340,14 @@ bool PhaseMacroExpand::eliminate_reduced_allocation_merge(ReducedAllocationMerge
 
         _igvn._worklist.push(value_phi);
 
-        for (DUIterator_Fast jmax, j = addp->fast_outs(jmax); j < jmax; j++) {
-          Node* addp_use = addp->fast_out(j);
+        for (DUIterator_Fast kmax, k = addp->fast_outs(kmax); k < kmax; k++) {
+          Node* addp_use = addp->fast_out(k);
 
           if (addp_use->is_Load()) {
             Node* load = addp_use; // just for readability
 
-            for (DUIterator_Last kmin, k = load->last_outs(kmin); k >= kmin; --k) {
-              Node* load_use = load->last_out(k);
+            for (DUIterator_Last lmin, l = load->last_outs(lmin); l >= lmin; --l) {
+              Node* load_use = load->last_out(l);
 
               _igvn.hash_delete(load_use);
               load_use->replace_edge(load, value_phi, &_igvn);

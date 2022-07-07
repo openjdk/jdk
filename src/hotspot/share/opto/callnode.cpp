@@ -1629,14 +1629,12 @@ ReducedAllocationMergeNode::ReducedAllocationMergeNode(Compile* C, PhaseIterGVN*
 
   _num_orig_inputs        = phi->req();
   _needs_all_fields       = false;
-  _in_copy                = new Node_Array(Thread::current()->resource_area(), phi->req());
   _memories_indexes_start = -1;
   _fields_and_values      = new (C->comp_arena()) Dict(cmpkey, hashkey);
-  _klass                  = ram_t->make_oopptr()->exact_klass();
+  _klass                  = ram_t->make_oopptr()->is_instptr()->instance_klass();
 
   for (uint i=0; i<phi->req(); i++) {
     init_req(i, phi->in(i));
-    _in_copy->map(i, this->_in[i]);
   }
 
   // Try to find a memory Phi coming from same region
@@ -1732,7 +1730,7 @@ Node* ReducedAllocationMergeNode::memory_for(jlong field, Node* base) const {
   assert(_memories_indexes_start != -1, "Didn't find memory edges yet?");
 
   for (uint i=1; i<_num_orig_inputs; i++) {
-    if (base == _in_copy->at(i)) {
+    if (base == in(i)) {
       return in(_memories_indexes_start + i - 1);
     }
   }
@@ -1751,10 +1749,10 @@ bool ReducedAllocationMergeNode::register_value_for_field(jlong field, Node* bas
   Node_Array* values = (Node_Array*) ((*_fields_and_values)[(void*)field]);
 
   if (_num_orig_inputs == 3) {
-    if (base == _in_copy->at(1)) {
+    if (base == in(1)) {
       values->map(1, value);
     }
-    else if (base == _in_copy->at(2)) {
+    else if (base == in(2)) {
       values->map(2, value);
     }
     else {
@@ -1764,7 +1762,7 @@ bool ReducedAllocationMergeNode::register_value_for_field(jlong field, Node* bas
   else {
     uint i = 1;
     for (; i<_num_orig_inputs; i++) {
-      if (base == _in_copy->at(i)) {
+      if (base == in(i)) {
         values->map(i, value);
         break;
       }
@@ -1779,6 +1777,39 @@ bool ReducedAllocationMergeNode::register_value_for_field(jlong field, Node* bas
   return true;
 }
 
+Node* ReducedAllocationMergeNode::make_load(Node* ctrl, Node* base, Node* mem, jlong offset, PhaseIterGVN* igvn) {
+  Node* off                  = igvn->transform((Node*)ConLNode::make(offset));
+  Node* addp                 = igvn->transform(new AddPNode(base, base, off));
+
+  const TypePtr* adr_type     = addp->bottom_type()->is_ptr();
+  const TypeInstPtr* res_type = igvn->type(base)->is_instptr();
+  ciInstanceKlass* iklass     = res_type->instance_klass();
+  ciField* field              = iklass->get_field_by_offset(offset, /*is_static=*/false);
+  ciType* elem_type           = field->type();
+  BasicType basic_elem_type   = field->layout_type();
+  const Type* field_type      = NULL;
+
+  if (is_reference_type(basic_elem_type)) {
+    if (!elem_type->is_loaded()) {
+      field_type = TypeInstPtr::BOTTOM;
+    }
+    else {
+      field_type = TypeOopPtr::make_from_klass(elem_type->as_klass());
+    }
+    if (UseCompressedOops) {
+      field_type = field_type->make_narrowoop();
+      basic_elem_type = T_OBJECT;
+    }
+  }
+  else {
+    field_type = Type::get_const_basic_type(basic_elem_type);
+  }
+
+  Node* load = LoadNode::make(*igvn, ctrl, mem, addp, adr_type, field_type, basic_elem_type, MemNode::unordered,
+                                LoadNode::DependsOnlyOnTest, false, false, false, false, (uint8_t)0U, false);
+  return igvn->register_new_node_with_optimizer(load);
+}
+
 Node* ReducedAllocationMergeNode::value_phi_for_field(jlong field, PhaseIterGVN* igvn) {
   PhiNode* phi       = new PhiNode(this->in(0), Type::BOTTOM);
   Node_Array* values = (Node_Array*) ((*_fields_and_values)[(void*)field]);
@@ -1786,8 +1817,8 @@ Node* ReducedAllocationMergeNode::value_phi_for_field(jlong field, PhaseIterGVN*
 
   for (uint i=1; i<_num_orig_inputs; i++) {
     if (values->at(i) == NULL) {
-      assert(values->at(i) != NULL, "shouldn't be null at this point");
-      return NULL;
+      Node* load = make_load(this->in(0)->in(i), in(i), in(_memories_indexes_start + i - 1), field, igvn);
+      values->map(i, load);
     }
     phi->set_req(i, values->at(i));
     const Type* input_type = igvn->type(values->at(i));

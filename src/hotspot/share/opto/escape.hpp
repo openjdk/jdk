@@ -591,7 +591,7 @@ private:
 
   // Returns non-null if the node producing the initial value
   // for 'n' is an AllocateNode.
-  Node* come_from_allocate(const Node* n) const;
+  bool come_from_allocate(const Node* n) const;
 
   // Performs several checks to see if the Phi pointed by 'n'
   // can be reduced into a ReducedAllocationMergeNode. The
