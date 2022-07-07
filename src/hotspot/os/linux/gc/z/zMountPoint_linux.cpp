@@ -28,6 +28,7 @@
 #include "gc/z/zMountPoint_linux.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 #include <stdio.h>
 #include <unistd.h>
@@ -61,7 +62,8 @@ char* ZMountPoint::get_mountpoint(const char* line, const char* filesystem) cons
       strcmp(line_filesystem, filesystem) != 0 ||
       access(line_mountpoint, R_OK|W_OK|X_OK) != 0) {
     // Not a matching or accessible filesystem
-    ALLOW_C_FUNCTION(::free, ::free(line_mountpoint);) // *not* os::free
+    // sscanf, using %m, will return malloced memory. Need raw ::free, not os::free.
+    ALLOW_C_FUNCTION(::free, ::free(line_mountpoint);)
     line_mountpoint = NULL;
   }
 
@@ -88,7 +90,8 @@ void ZMountPoint::get_mountpoints(const char* filesystem, ZArray<char*>* mountpo
     }
   }
 
-  ALLOW_C_FUNCTION(::free, ::free(line);) // *not* os::free
+  // readline will return malloced memory. Need raw ::free, not os::free.
+  ALLOW_C_FUNCTION(::free, ::free(line);)
   fclose(fd);
 }
 
