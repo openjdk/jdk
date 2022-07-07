@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,7 +123,7 @@ private:
   // Update BOT entries corresponding to the mem range [blk_start, blk_end).
   void update_for_block_work(HeapWord* blk_start, HeapWord* blk_end);
 
-  void check_all_cards(size_t left_card, size_t right_card) const;
+  void check_all_cards(size_t left_card, size_t right_card) const NOT_DEBUG_RETURN;
 
   static HeapWord* align_up_by_card_size(HeapWord* const addr) {
     return align_up(addr, BOTConstants::card_size());

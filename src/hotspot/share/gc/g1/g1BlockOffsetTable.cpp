@@ -134,9 +134,10 @@ void G1BlockOffsetTablePart::set_remainder_to_point_to_start_incl(size_t start_c
     start_card_for_region = reach + 1;
   }
   assert(start_card_for_region > end_card, "Sanity check");
-  DEBUG_ONLY(check_all_cards(start_card, end_card);)
+  check_all_cards(start_card, end_card);
 }
 
+#ifdef ASSERT
 // The card-interval [start_card, end_card] is a closed interval; this
 // is an expensive check -- use with care and only under protection of
 // suitable flag.
@@ -174,6 +175,7 @@ void G1BlockOffsetTablePart::check_all_cards(size_t start_card, size_t end_card)
     }
   }
 }
+#endif
 
 //
 //              cur_card_boundary
