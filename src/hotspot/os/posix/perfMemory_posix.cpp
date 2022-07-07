@@ -699,26 +699,6 @@ static void remove_file(const char* path) {
   }
 }
 
-static bool is_locked_by_another_process(const char* dirname, const char* filename, int& fd) {
-  bool is_locked = false;
-
-#if defined(LINUX)
-  fd = ::open(filename, O_RDONLY);
-  if (fd >= 0) {
-    is_locked = (flock(fd, LOCK_EX|LOCK_NB) != 0);
-    // The locking protocol works only with JVMs that have the JDK-8286030 fix.
-    // If you are sharing the /tmp difrectory among different containers, do not
-    // use older JVMs that don't have this fix.
-    if (!is_locked) {
-      ::close(fd);
-    }
-  }
-  log_info(perf, memops)("is_locked %s/%s (fd = %d) = %s", dirname, filename, fd, is_locked ? "true" : "false");
-#endif
-
-  return is_locked;
-}
-
 // cleanup stale shared memory files
 //
 // This method attempts to remove all stale shared memory files in
@@ -745,14 +725,14 @@ static void cleanup_sharedmem_files(const char* dirname) {
   struct dirent* entry;
   errno = 0;
   while ((entry = os::readdir(dirp)) != NULL) {
-
-    pid_t pid = filename_to_pid(entry->d_name);
+    const char* filename = entry->d_name;
+    pid_t pid = filename_to_pid(filename);
 
     if (pid == 0) {
 
-      if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
+      if (strcmp(filename, ".") != 0 && strcmp(filename, "..") != 0) {
         // attempt to remove all unexpected files, except "." and ".."
-        unlink(entry->d_name);
+        unlink(filename);
       }
 
       errno = 0;
@@ -764,10 +744,8 @@ static void cleanup_sharedmem_files(const char* dirname) {
     //
     // On Linux, we first try to flock() on the file to check
     // for JVM processes in other containers that share the same
-    // /tmp directory as the current process. See comments in
-    // create_sharedmem_file() and is_locked_by_another_process().
-    // If it's already locked by another process, then obviously it's
-    // not stale
+    // /tmp directory as the current process. If it's already
+    // locked by another process, then obviously it's not stale.
     //
     // Otherwise, if this process id matches the current process id or
     // the process is not running, we treat it as a stale file and remove it.
@@ -780,19 +758,54 @@ static void cleanup_sharedmem_files(const char* dirname) {
     // be stale and is removed because the files for such a
     // process should be in a different user specific directory.
     //
-    int fd = -1;
-    if (!is_locked_by_another_process(dirname, entry->d_name, fd)) {
+
+    bool is_locked_by_another_process = false;
+ #if defined(LINUX)
+    // The locking protocol works only with JVMs that have the JDK-8286030 fix.
+    // If you are sharing the /tmp difrectory among different containers, do not
+    // use older JVMs that don't have this fix.
+    int fd;
+    RESTARTABLE(os::open(filename, O_RDONLY, 0), fd);
+    if (fd == OS_ERR) {
+      // Something wrong happened. Ignore the error and don't try to remove the
+      // file.
+      continue;
+    }
+    int n;
+    RESTARTABLE(::flock(fd, LOCK_EX|LOCK_NB), n);
+    if (n != 0) {
+      if (errno == EWOULDBLOCK) {
+        // Another process holds the exclusive lock on this file.
+        is_locked_by_another_process = true;
+      } else {
+        // Something wrong happened. Ignore the error and don't try to remove the
+        // file.
+        ::close(fd);
+        continue;
+      }
+    } else {
+      // I have successfully locked the file. No other process will try to write to
+      // it, so I can safely remove it below.
+    }
+    log_info(perf, memops)("is_locked_by_another_process %s/%s = %s", dirname, filename,
+                            is_locked_by_another_process ? "true" : "false");
+#endif
+
+    if (!is_locked_by_another_process) {
       if ((pid == os::current_process_id()) ||
           (kill(pid, 0) == OS_ERR && (errno == ESRCH || errno == EPERM))) {
         // kill() is needed to be compatible with older JVMs that don't do flock ...
-        unlink(entry->d_name);
+        log_info(perf, memops)("Remove stale file %s/%s", dirname, filename);
+        unlink(filename);
       }
     }
-    if (fd >= 0) {
-      // LINUX: hold the lock to prevent other JVMs from using this file while we
-      // are in the middle of deleting it.
-      ::close(fd);
-    }
+
+ #if defined(LINUX)
+    // LINUX: hold the lock to prevent other JVMs from using this file while we
+    // are in the middle of deleting it.
+    ::close(fd);
+#endif
+
     errno = 0;
   }
 
@@ -899,9 +912,13 @@ static int create_sharedmem_file(const char* dirname, const char* filename, size
   //
   // Note that the flock will be automatically given up when the winner
   // process exits.
-  int n = flock(fd, LOCK_EX|LOCK_NB);
+  int n;
+  RESTARTABLE(::flock(fd, LOCK_EX|LOCK_NB), n);
   if (n != 0) {
-    log_warning(perf, memops)("Cannot use file %s/%s because it is locked by another process", dirname, filename);
+    log_warning(perf, memops)("Cannot use file %s/%s because %s", dirname, filename,
+                              (errno == EWOULDBLOCK) ?
+                              "it is locked by another process" :
+                              "flock() failed");
     ::close(fd);
     return -1;
   }
