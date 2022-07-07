@@ -415,9 +415,6 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
 
   verify_young_cset_indices();
 
-  // Clear the fields that point to the survivor list - they are all young now.
-  survivors->convert_to_eden();
-
   _bytes_used_before = _inc_bytes_used_before;
 
   // The number of recorded young regions is the incremental
@@ -432,6 +429,9 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
                             "predicted eden time: %1.2fms, predicted base time: %1.2fms, target pause time: %1.2fms, remaining time: %1.2fms",
                             eden_region_length, survivor_region_length,
                             predicted_eden_time, predicted_base_time_ms, target_pause_time_ms, remaining_time_ms);
+
+  // Clear the fields that point to the survivor list - they are all young now.
+  survivors->convert_to_eden();
 
   phase_times()->record_young_cset_choice_time_ms((Ticks::now() - start_time).seconds() * 1000.0);
 
