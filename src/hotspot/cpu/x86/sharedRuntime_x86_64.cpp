@@ -1374,8 +1374,6 @@ static void gen_continuation_enter(MacroAssembler* masm,
 
   fill_continuation_entry(masm, reg_cont_obj, reg_is_virtual);
 
-  Label L_thaw, L_exit;
-
   // If isContinue, call to thaw. Otherwise, call Continuation.enter(Continuation c, boolean isContinue)
   __ testptr(reg_is_cont, reg_is_cont);
   __ jccb(Assembler::notZero, L_thaw);
@@ -1396,8 +1394,6 @@ static void gen_continuation_enter(MacroAssembler* masm,
   // SharedRuntime::find_callee_info_helper() which calls
   // LinkResolver::resolve_continuation_enter() which resolves the call to
   // Continuation.enter(Continuation c, boolean isContinue).
-  AddressLiteral resolve(SharedRuntime::get_resolve_static_call_stub(),
-                         relocInfo::static_call_type);
   __ call(resolve);
 
   oop_maps->add_gc_map(__ pc() - start, map);
