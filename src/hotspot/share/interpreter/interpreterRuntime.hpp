@@ -29,8 +29,8 @@
 #include "interpreter/linkResolver.hpp"
 #include "oops/method.hpp"
 #include "runtime/frame.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/signature.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/macros.hpp"
 
 class BufferBlob;

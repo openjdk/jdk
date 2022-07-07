@@ -30,6 +30,7 @@
 #include "classfile/altHashing.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/javaClassesImpl.hpp"
 #include "classfile/javaThreadStatus.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/stringTable.hpp"
@@ -64,6 +65,7 @@
 #include "prims/methodHandles.hpp"
 #include "prims/resolvedMethodTable.hpp"
 #include "runtime/continuationEntry.inline.hpp"
+#include "runtime/continuationJavaClasses.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -72,11 +74,11 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/reflectionUtils.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/safepointVerifiers.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vm_version.hpp"
@@ -86,14 +88,6 @@
 #include "utilities/utf8.hpp"
 #if INCLUDE_JVMCI
 #include "jvmci/jvmciJavaClasses.hpp"
-#endif
-
-#define INJECTED_FIELD_COMPUTE_OFFSET(klass, name, signature, may_be_java)    \
-  klass::_##name##_offset = JavaClasses::compute_injected_offset(JavaClasses::klass##_##name##_enum);
-
-#if INCLUDE_CDS
-#define INJECTED_FIELD_SERIALIZE_OFFSET(klass, name, signature, may_be_java) \
-  f->do_u4((u4*)&_##name##_offset);
 #endif
 
 #define DECLARE_INJECTED_FIELD(klass, name, signature, may_be_java)           \
@@ -119,7 +113,7 @@ void java_lang_Object::register_natives(TRAPS) {
 }
 
 int JavaClasses::compute_injected_offset(InjectedFieldID id) {
-  return _injected_fields[id].compute_offset();
+  return _injected_fields[(int)id].compute_offset();
 }
 
 InjectedField* JavaClasses::get_injected(Symbol* class_name, int* field_count) {
@@ -137,7 +131,9 @@ InjectedField* JavaClasses::get_injected(Symbol* class_name, int* field_count) {
 #define LOOKUP_INJECTED_FIELD(klass, name, signature, may_be_java) \
   if (sid == VM_SYMBOL_ENUM_NAME(klass)) {                         \
     count++;                                                       \
-    if (start == -1) start = klass##_##name##_enum;                \
+    if (start == -1) {                                             \
+      start = (int)InjectedFieldID::klass##_##name##_enum;         \
+    }                                                              \
   }
   ALL_INJECTED_FIELDS(LOOKUP_INJECTED_FIELD);
 #undef LOOKUP_INJECTED_FIELD
@@ -153,9 +149,9 @@ InjectedField* JavaClasses::get_injected(Symbol* class_name, int* field_count) {
 // Helpful routine for computing field offsets at run time rather than hardcoding them
 // Finds local fields only, including static fields.  Static field offsets are from the
 // beginning of the mirror.
-static void compute_offset(int &dest_offset,
-                           InstanceKlass* ik, Symbol* name_symbol, Symbol* signature_symbol,
-                           bool is_static = false) {
+void JavaClasses::compute_offset(int &dest_offset,
+                                 InstanceKlass* ik, Symbol* name_symbol, Symbol* signature_symbol,
+                                 bool is_static) {
   fieldDescriptor fd;
   if (ik == NULL) {
     ResourceMark rm;
@@ -179,9 +175,9 @@ static void compute_offset(int &dest_offset,
 }
 
 // Overloading to pass name as a string.
-static void compute_offset(int& dest_offset, InstanceKlass* ik,
-                           const char* name_string, Symbol* signature_symbol,
-                           bool is_static = false) {
+void JavaClasses::compute_offset(int& dest_offset, InstanceKlass* ik,
+                                 const char* name_string, Symbol* signature_symbol,
+                                 bool is_static) {
   TempNewSymbol name = SymbolTable::probe(name_string, (int)strlen(name_string));
   if (name == NULL) {
     ResourceMark rm;
@@ -190,16 +186,6 @@ static void compute_offset(int& dest_offset, InstanceKlass* ik,
   }
   compute_offset(dest_offset, ik, name, signature_symbol, is_static);
 }
-
-
-#if INCLUDE_CDS
-#define FIELD_SERIALIZE_OFFSET(offset, klass, name, signature, is_static) \
-  f->do_u4((u4*)&offset)
-#endif
-
-#define FIELD_COMPUTE_OFFSET(offset, klass, name, signature, is_static) \
-  compute_offset(offset, klass, name, vmSymbols::signature(), is_static)
-
 
 // java_lang_String
 
@@ -792,7 +778,6 @@ int java_lang_Class::_class_loader_offset;
 int java_lang_Class::_module_offset;
 int java_lang_Class::_protection_domain_offset;
 int java_lang_Class::_component_mirror_offset;
-int java_lang_Class::_init_lock_offset;
 int java_lang_Class::_signers_offset;
 int java_lang_Class::_name_offset;
 int java_lang_Class::_source_file_offset;
@@ -926,12 +911,6 @@ void java_lang_Class::initialize_mirror_fields(Klass* k,
                                                Handle protection_domain,
                                                Handle classData,
                                                TRAPS) {
-  // Allocate a simple java object for a lock.
-  // This needs to be a java object because during class initialization
-  // it can be held across a java call.
-  typeArrayOop r = oopFactory::new_typeArray(T_INT, 0, CHECK);
-  set_init_lock(mirror(), r);
-
   // Set protection domain also
   set_protection_domain(mirror(), protection_domain());
 
@@ -1270,8 +1249,6 @@ oop java_lang_Class::process_archived_mirror(Klass* k, oop mirror,
     // Reset local static fields in the mirror
     InstanceKlass::cast(k)->do_local_static_fields(&reset);
 
-    set_init_lock(archived_mirror, NULL);
-
     set_protection_domain(archived_mirror, NULL);
     set_signers(archived_mirror, NULL);
     set_source_file(archived_mirror, NULL);
@@ -1353,10 +1330,6 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
   if (!k->is_array_klass()) {
     // - local static final fields with initial values were initialized at dump time
 
-    // create the init_lock
-    typeArrayOop r = oopFactory::new_typeArray(T_INT, 0, CHECK_(false));
-    set_init_lock(mirror(), r);
-
     if (protection_domain.not_null()) {
       set_protection_domain(mirror(), protection_domain());
     }
@@ -1419,15 +1392,6 @@ void java_lang_Class::set_component_mirror(oop java_class, oop comp_mirror) {
 oop java_lang_Class::component_mirror(oop java_class) {
   assert(_component_mirror_offset != 0, "must be set");
   return java_class->obj_field(_component_mirror_offset);
-}
-
-oop java_lang_Class::init_lock(oop java_class) {
-  assert(_init_lock_offset != 0, "must be set");
-  return java_class->obj_field(_init_lock_offset);
-}
-void java_lang_Class::set_init_lock(oop java_class, oop init_lock) {
-  assert(_init_lock_offset != 0, "must be set");
-  java_class->obj_field_put(_init_lock_offset, init_lock);
 }
 
 objArrayOop java_lang_Class::signers(oop java_class) {
@@ -1641,18 +1605,12 @@ void java_lang_Class::compute_offsets() {
   InstanceKlass* k = vmClasses::Class_klass();
   CLASS_FIELDS_DO(FIELD_COMPUTE_OFFSET);
 
-  // Init lock is a C union with component_mirror.  Only instanceKlass mirrors have
-  // init_lock and only ArrayKlass mirrors have component_mirror.  Since both are oops
-  // GC treats them the same.
-  _init_lock_offset = _component_mirror_offset;
-
   CLASS_INJECTED_FIELDS(INJECTED_FIELD_COMPUTE_OFFSET);
 }
 
 #if INCLUDE_CDS
 void java_lang_Class::serialize_offsets(SerializeClosure* f) {
   f->do_bool(&_offsets_computed);
-  f->do_u4((u4*)&_init_lock_offset);
 
   CLASS_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
 
@@ -2233,8 +2191,8 @@ oop java_lang_VirtualThread::continuation(oop vthread) {
   return cont;
 }
 
-u2 java_lang_VirtualThread::state(oop vthread) {
-  return vthread->short_field_acquire(_state_offset);
+int java_lang_VirtualThread::state(oop vthread) {
+  return vthread->int_field_acquire(_state_offset);
 }
 
 JavaThreadStatus java_lang_VirtualThread::map_state_to_thread_status(int state) {
@@ -5106,86 +5064,6 @@ void java_lang_AssertionStatusDirectives::set_deflt(oop o, bool val) {
   o->bool_field_put(_deflt_offset, val);
 }
 
-// Support for jdk.internal.vm.Continuation
-
-int jdk_internal_vm_ContinuationScope::_name_offset;
-int jdk_internal_vm_Continuation::_scope_offset;
-int jdk_internal_vm_Continuation::_target_offset;
-int jdk_internal_vm_Continuation::_tail_offset;
-int jdk_internal_vm_Continuation::_parent_offset;
-int jdk_internal_vm_Continuation::_yieldInfo_offset;
-int jdk_internal_vm_Continuation::_mounted_offset;
-int jdk_internal_vm_Continuation::_done_offset;
-int jdk_internal_vm_Continuation::_preempted_offset;
-
-#define CONTINUATIONSCOPE_FIELDS_DO(macro) \
-  macro(_name_offset, k, vmSymbols::name_name(), string_signature, false);
-
-void jdk_internal_vm_ContinuationScope::compute_offsets() {
-  InstanceKlass* k = vmClasses::ContinuationScope_klass();
-  CONTINUATIONSCOPE_FIELDS_DO(FIELD_COMPUTE_OFFSET);
-}
-
-#if INCLUDE_CDS
-void jdk_internal_vm_ContinuationScope::serialize_offsets(SerializeClosure* f) {
-  CONTINUATIONSCOPE_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
-}
-#endif
-
-// Support for jdk.internal.vm.Continuation
-
-#define CONTINUATION_FIELDS_DO(macro) \
-  macro(_scope_offset,     k, vmSymbols::scope_name(),     continuationscope_signature, false); \
-  macro(_target_offset,    k, vmSymbols::target_name(),    runnable_signature,          false); \
-  macro(_parent_offset,    k, vmSymbols::parent_name(),    continuation_signature,      false); \
-  macro(_yieldInfo_offset, k, vmSymbols::yieldInfo_name(), object_signature,            false); \
-  macro(_tail_offset,      k, vmSymbols::tail_name(),      stackchunk_signature,        false); \
-  macro(_mounted_offset,   k, vmSymbols::mounted_name(),   bool_signature,              false); \
-  macro(_done_offset,      k, vmSymbols::done_name(),      bool_signature,              false); \
-  macro(_preempted_offset, k, "preempted",                 bool_signature,              false);
-
-void jdk_internal_vm_Continuation::compute_offsets() {
-  InstanceKlass* k = vmClasses::Continuation_klass();
-  CONTINUATION_FIELDS_DO(FIELD_COMPUTE_OFFSET);
-}
-
-#if INCLUDE_CDS
-void jdk_internal_vm_Continuation::serialize_offsets(SerializeClosure* f) {
-  CONTINUATION_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
-}
-#endif
-
-// Support for jdk.internal.vm.StackChunk
-
-int jdk_internal_vm_StackChunk::_parent_offset;
-int jdk_internal_vm_StackChunk::_size_offset;
-int jdk_internal_vm_StackChunk::_sp_offset;
-int jdk_internal_vm_StackChunk::_pc_offset;
-int jdk_internal_vm_StackChunk::_argsize_offset;
-int jdk_internal_vm_StackChunk::_flags_offset;
-int jdk_internal_vm_StackChunk::_maxThawingSize_offset;
-int jdk_internal_vm_StackChunk::_cont_offset;
-
-#define STACKCHUNK_FIELDS_DO(macro) \
-  macro(_parent_offset,  k, vmSymbols::parent_name(),  stackchunk_signature, false); \
-  macro(_size_offset,    k, vmSymbols::size_name(),    int_signature,        false); \
-  macro(_sp_offset,      k, vmSymbols::sp_name(),      int_signature,        false); \
-  macro(_argsize_offset, k, vmSymbols::argsize_name(), int_signature,        false);
-
-void jdk_internal_vm_StackChunk::compute_offsets() {
-  InstanceKlass* k = vmClasses::StackChunk_klass();
-  STACKCHUNK_FIELDS_DO(FIELD_COMPUTE_OFFSET);
-  STACKCHUNK_INJECTED_FIELDS(INJECTED_FIELD_COMPUTE_OFFSET);
-}
-
-#if INCLUDE_CDS
-void jdk_internal_vm_StackChunk::serialize_offsets(SerializeClosure* f) {
-  STACKCHUNK_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
-  STACKCHUNK_INJECTED_FIELDS(INJECTED_FIELD_SERIALIZE_OFFSET);
-}
-#endif
-
-
 int java_util_concurrent_locks_AbstractOwnableSynchronizer::_owner_offset;
 
 #define AOS_FIELDS_DO(macro) \
@@ -5506,6 +5384,63 @@ void java_lang_InternalError::serialize_offsets(SerializeClosure* f) {
   INTERNALERROR_INJECTED_FIELDS(INJECTED_FIELD_SERIALIZE_OFFSET);
 }
 #endif
+
+#define BASIC_JAVA_CLASSES_DO_PART1(f) \
+  f(java_lang_Class) \
+  f(java_lang_String) \
+  f(java_lang_ref_Reference) \
+  //end
+
+#define BASIC_JAVA_CLASSES_DO_PART2(f) \
+  f(java_lang_System) \
+  f(java_lang_ClassLoader) \
+  f(java_lang_Throwable) \
+  f(java_lang_Thread) \
+  f(java_lang_Thread_FieldHolder) \
+  f(java_lang_Thread_Constants) \
+  f(java_lang_ThreadGroup) \
+  f(java_lang_VirtualThread) \
+  f(java_lang_InternalError) \
+  f(java_lang_AssertionStatusDirectives) \
+  f(java_lang_ref_SoftReference) \
+  f(java_lang_invoke_MethodHandle) \
+  f(java_lang_invoke_DirectMethodHandle) \
+  f(java_lang_invoke_MemberName) \
+  f(java_lang_invoke_ResolvedMethodName) \
+  f(java_lang_invoke_LambdaForm) \
+  f(java_lang_invoke_MethodType) \
+  f(java_lang_invoke_CallSite) \
+  f(java_lang_invoke_ConstantCallSite) \
+  f(java_lang_invoke_MethodHandleNatives_CallSiteContext) \
+  f(java_security_AccessControlContext) \
+  f(java_lang_reflect_AccessibleObject) \
+  f(java_lang_reflect_Method) \
+  f(java_lang_reflect_Constructor) \
+  f(java_lang_reflect_Field) \
+  f(java_lang_reflect_RecordComponent) \
+  f(reflect_ConstantPool) \
+  f(reflect_UnsafeStaticFieldAccessorImpl) \
+  f(java_lang_reflect_Parameter) \
+  f(java_lang_Module) \
+  f(java_lang_StackTraceElement) \
+  f(java_lang_StackFrameInfo) \
+  f(java_lang_LiveStackFrameInfo) \
+  f(jdk_internal_vm_ContinuationScope) \
+  f(jdk_internal_vm_Continuation) \
+  f(jdk_internal_vm_StackChunk) \
+  f(java_util_concurrent_locks_AbstractOwnableSynchronizer) \
+  f(jdk_internal_foreign_abi_NativeEntryPoint) \
+  f(jdk_internal_foreign_abi_ABIDescriptor) \
+  f(jdk_internal_foreign_abi_VMStorage) \
+  f(jdk_internal_foreign_abi_CallConv) \
+  f(jdk_internal_misc_UnsafeConstants) \
+  f(java_lang_boxing_object) \
+  f(vector_VectorPayload) \
+  //end
+
+#define BASIC_JAVA_CLASSES_DO(f) \
+        BASIC_JAVA_CLASSES_DO_PART1(f) \
+        BASIC_JAVA_CLASSES_DO_PART2(f)
 
 #define DO_COMPUTE_OFFSETS(k) k::compute_offsets();
 

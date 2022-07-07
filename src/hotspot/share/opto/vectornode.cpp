@@ -248,14 +248,6 @@ int VectorNode::opcode(int sopc, BasicType bt) {
     return Op_StoreVector;
   case Op_MulAddS2I:
     return Op_MulAddVS2VI;
-  case Op_ConvI2F:
-    return Op_VectorCastI2X;
-  case Op_ConvL2D:
-    return Op_VectorCastL2X;
-  case Op_ConvF2I:
-    return Op_VectorCastF2X;
-  case Op_ConvD2L:
-    return Op_VectorCastD2X;
   case Op_CountLeadingZerosI:
   case Op_CountLeadingZerosL:
     return Op_CountLeadingZerosV;
@@ -268,6 +260,9 @@ int VectorNode::opcode(int sopc, BasicType bt) {
     return Op_SignumVD;
 
   default:
+    assert(!VectorNode::is_convert_opcode(sopc),
+           "Convert node %s should be processed by VectorCastNode::opcode()",
+           NodeClassNames[sopc]);
     return 0; // Unimplemented
   }
 }
@@ -294,12 +289,17 @@ int VectorNode::replicate_opcode(BasicType bt) {
   }
 }
 
+bool VectorNode::vector_size_supported(BasicType bt, uint vlen) {
+  return (Matcher::vector_size_supported(bt, vlen) &&
+          (vlen * type2aelembytes(bt) <= (uint)SuperWordMaxVectorSize));
+}
+
 // Also used to check if the code generator
 // supports the vector operation.
 bool VectorNode::implemented(int opc, uint vlen, BasicType bt) {
   if (is_java_primitive(bt) &&
       (vlen > 1) && is_power_of_2(vlen) &&
-      Matcher::vector_size_supported(bt, vlen)) {
+      vector_size_supported(bt, vlen)) {
     int vopc = VectorNode::opcode(opc, bt);
     // For rotate operation we will do a lazy de-generation into
     // OrV/LShiftV/URShiftV pattern if the target does not support
@@ -310,7 +310,7 @@ bool VectorNode::implemented(int opc, uint vlen, BasicType bt) {
     if (VectorNode::is_vector_integral_negate(vopc)) {
       return is_vector_integral_negate_supported(vopc, vlen, bt, false);
     }
-    return vopc > 0 && Matcher::match_rule_supported_vector(vopc, vlen, bt);
+    return vopc > 0 && Matcher::match_rule_supported_superword(vopc, vlen, bt);
   }
   return false;
 }
@@ -380,7 +380,6 @@ bool VectorNode::is_vector_rotate_supported(int vopc, uint vlen, BasicType bt) {
              Matcher::match_rule_supported_vector(Op_LShiftVL,  vlen, bt) &&
              Matcher::match_rule_supported_vector(Op_URShiftVL, vlen, bt);
     default:
-      assert(false, "not supported: %s", type2name(bt));
       return false;
   }
 }
@@ -435,6 +434,44 @@ bool VectorNode::is_shift_opcode(int opc) {
     return true;
   default:
     return false;
+  }
+}
+
+bool VectorNode::can_transform_shift_op(Node* n, BasicType bt) {
+  if (n->Opcode() != Op_URShiftI) {
+    return false;
+  }
+  Node* in2 = n->in(2);
+  if (!in2->is_Con()) {
+    return false;
+  }
+  jint cnt = in2->get_int();
+  // Only when shift amount is not greater than number of sign extended
+  // bits (16 for short and 24 for byte), unsigned shift right on signed
+  // subword types can be vectorized as vector signed shift.
+  if ((bt == T_BYTE && cnt <= 24) || (bt == T_SHORT && cnt <= 16)) {
+    return true;
+  }
+  return false;
+}
+
+bool VectorNode::is_convert_opcode(int opc) {
+  switch (opc) {
+    case Op_ConvI2F:
+    case Op_ConvL2D:
+    case Op_ConvF2I:
+    case Op_ConvD2L:
+    case Op_ConvI2D:
+    case Op_ConvL2F:
+    case Op_ConvL2I:
+    case Op_ConvI2L:
+    case Op_ConvF2L:
+    case Op_ConvD2F:
+    case Op_ConvF2D:
+    case Op_ConvD2I:
+      return true;
+    default:
+      return false;
   }
 }
 
@@ -791,26 +828,42 @@ bool VectorNode::is_vector_shift_count(int opc) {
   }
 }
 
-static bool is_con_M1(Node* n) {
+static bool is_con(Node* n, long con) {
   if (n->is_Con()) {
     const Type* t = n->bottom_type();
-    if (t->isa_int() && t->is_int()->get_con() == -1) {
+    if (t->isa_int() && t->is_int()->get_con() == (int)con) {
       return true;
     }
-    if (t->isa_long() && t->is_long()->get_con() == -1) {
+    if (t->isa_long() && t->is_long()->get_con() == con) {
       return true;
     }
   }
   return false;
 }
 
+// Return true if every bit in this vector is 1.
 bool VectorNode::is_all_ones_vector(Node* n) {
   switch (n->Opcode()) {
   case Op_ReplicateB:
   case Op_ReplicateS:
   case Op_ReplicateI:
   case Op_ReplicateL:
-    return is_con_M1(n->in(1));
+  case Op_MaskAll:
+    return is_con(n->in(1), -1);
+  default:
+    return false;
+  }
+}
+
+// Return true if every bit in this vector is 0.
+bool VectorNode::is_all_zeros_vector(Node* n) {
+  switch (n->Opcode()) {
+  case Op_ReplicateB:
+  case Op_ReplicateS:
+  case Op_ReplicateI:
+  case Op_ReplicateL:
+  case Op_MaskAll:
+    return is_con(n->in(1), 0);
   default:
     return false;
   }
@@ -1210,9 +1263,19 @@ int VectorCastNode::opcode(BasicType bt, bool is_signed) {
     case T_FLOAT:  return Op_VectorCastF2X;
     case T_DOUBLE: return Op_VectorCastD2X;
     default:
-      assert(false, "unknown type: %s", type2name(bt));
+      assert(bt == T_CHAR || bt == T_BOOLEAN, "unknown type: %s", type2name(bt));
       return 0;
   }
+}
+
+bool VectorCastNode::implemented(int opc, uint vlen, BasicType src_type, BasicType dst_type) {
+  if (is_java_primitive(dst_type) &&
+      (vlen > 1) && is_power_of_2(vlen) &&
+      VectorNode::vector_size_supported(dst_type, vlen)) {
+    int vopc = VectorCastNode::opcode(src_type);
+    return vopc > 0 && Matcher::match_rule_supported_superword(vopc, vlen, dst_type);
+  }
+  return false;
 }
 
 Node* VectorCastNode::Identity(PhaseGVN* phase) {
@@ -1302,9 +1365,9 @@ Node* ReductionNode::make_reduction_input(PhaseGVN& gvn, int opc, BasicType bt) 
 bool ReductionNode::implemented(int opc, uint vlen, BasicType bt) {
   if (is_java_primitive(bt) &&
       (vlen > 1) && is_power_of_2(vlen) &&
-      Matcher::vector_size_supported(bt, vlen)) {
+      VectorNode::vector_size_supported(bt, vlen)) {
     int vopc = ReductionNode::opcode(opc, bt);
-    return vopc != opc && Matcher::match_rule_supported_vector(vopc, vlen, bt);
+    return vopc != opc && Matcher::match_rule_supported_superword(vopc, vlen, bt);
   }
   return false;
 }
@@ -1726,6 +1789,95 @@ Node* ReverseVNode::Identity(PhaseGVN* phase) {
     }
   }
   return this;
+}
+
+Node* AndVNode::Identity(PhaseGVN* phase) {
+  // (AndV src (Replicate m1))   => src
+  // (AndVMask src (MaskAll m1)) => src
+  if (VectorNode::is_all_ones_vector(in(2))) {
+    return in(1);
+  }
+  // (AndV (Replicate zero) src)   => (Replicate zero)
+  // (AndVMask (MaskAll zero) src) => (MaskAll zero)
+  if (VectorNode::is_all_zeros_vector(in(1))) {
+    return in(1);
+  }
+  // The following transformations are only applied to
+  // the un-predicated operation, since the VectorAPI
+  // masked operation requires the unmasked lanes to
+  // save the same values in the first operand.
+  if (!is_predicated_vector()) {
+    // (AndV (Replicate m1) src)   => src
+    // (AndVMask (MaskAll m1) src) => src
+    if (VectorNode::is_all_ones_vector(in(1))) {
+      return in(2);
+    }
+    // (AndV src (Replicate zero))   => (Replicate zero)
+    // (AndVMask src (MaskAll zero)) => (MaskAll zero)
+    if (VectorNode::is_all_zeros_vector(in(2))) {
+      return in(2);
+    }
+  }
+
+  // (AndV src src)     => src
+  // (AndVMask src src) => src
+  if (in(1) == in(2)) {
+    return in(1);
+  }
+  return this;
+}
+
+Node* OrVNode::Identity(PhaseGVN* phase) {
+  // (OrV (Replicate m1) src)   => (Replicate m1)
+  // (OrVMask (MaskAll m1) src) => (MaskAll m1)
+  if (VectorNode::is_all_ones_vector(in(1))) {
+    return in(1);
+  }
+  // (OrV src (Replicate zero))   => src
+  // (OrVMask src (MaskAll zero)) => src
+  if (VectorNode::is_all_zeros_vector(in(2))) {
+    return in(1);
+  }
+  // The following transformations are only applied to
+  // the un-predicated operation, since the VectorAPI
+  // masked operation requires the unmasked lanes to
+  // save the same values in the first operand.
+  if (!is_predicated_vector()) {
+    // (OrV src (Replicate m1))   => (Replicate m1)
+    // (OrVMask src (MaskAll m1)) => (MaskAll m1)
+    if (VectorNode::is_all_ones_vector(in(2))) {
+      return in(2);
+    }
+    // (OrV (Replicate zero) src)   => src
+    // (OrVMask (MaskAll zero) src) => src
+    if (VectorNode::is_all_zeros_vector(in(1))) {
+      return in(2);
+    }
+  }
+
+  // (OrV src src)     => src
+  // (OrVMask src src) => src
+  if (in(1) == in(2)) {
+    return in(1);
+  }
+  return this;
+}
+
+Node* XorVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  // (XorV src src)      => (Replicate zero)
+  // (XorVMask src src)  => (MaskAll zero)
+  //
+  // The transformation is only applied to the un-predicated
+  // operation, since the VectorAPI masked operation requires
+  // the unmasked lanes to save the same values in the first
+  // operand.
+  if (!is_predicated_vector() && (in(1) == in(2))) {
+    BasicType bt = vect_type()->element_basic_type();
+    Node* zero = phase->transform(phase->zerocon(bt));
+    return VectorNode::scalar2vector(zero, length(), Type::get_const_basic_type(bt),
+                                     bottom_type()->isa_vectmask() != NULL);
+  }
+  return NULL;
 }
 
 #ifndef PRODUCT

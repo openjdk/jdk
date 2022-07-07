@@ -46,10 +46,10 @@
 #include "runtime/continuationEntry.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -298,9 +298,9 @@ class StubGenerator: public StubCodeGenerator {
 
     // call Java entry -- passing methdoOop, and current sp
     //      rmethod: Method*
-    //      r13: sender sp
+    //      r19_sender_sp: sender sp
     BLOCK_COMMENT("call Java function");
-    __ mov(r13, sp);
+    __ mov(r19_sender_sp, sp);
     __ blr(c_rarg4);
 
     // we do this here because the notify will already have been done
@@ -6760,11 +6760,11 @@ class StubGenerator: public StubCodeGenerator {
       __ leave();
       __ mov(r3, lr);
       __ br(r1); // the exception handler
+    } else {
+      // We're "returning" into the topmost thawed frame; see Thaw::push_return_frame
+      __ leave();
+      __ ret(lr);
     }
-
-    // We're "returning" into the topmost thawed frame; see Thaw::push_return_frame
-    __ leave();
-    __ ret(lr);
 
     return start;
   }

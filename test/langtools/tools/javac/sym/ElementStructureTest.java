@@ -128,16 +128,16 @@ public class ElementStructureTest {
         (byte) 0xB7, (byte) 0x52, (byte) 0x0F, (byte) 0x68
     };
     static final byte[] hash7 = new byte[] {
-        (byte) 0x45, (byte) 0xCA, (byte) 0x83, (byte) 0xCD,
-        (byte) 0x1A, (byte) 0x68, (byte) 0x57, (byte) 0x9C,
-        (byte) 0x6F, (byte) 0x2D, (byte) 0xEB, (byte) 0x28,
-        (byte) 0xAB, (byte) 0x05, (byte) 0x53, (byte) 0x6E
+        (byte) 0x2C, (byte) 0x01, (byte) 0xC0, (byte) 0xFB,
+        (byte) 0xD5, (byte) 0x66, (byte) 0x0D, (byte) 0x9C,
+        (byte) 0x09, (byte) 0x17, (byte) 0x2F, (byte) 0x5A,
+        (byte) 0x3D, (byte) 0xC1, (byte) 0xFE, (byte) 0xCB
     };
     static final byte[] hash8 = new byte[] {
-        (byte) 0x26, (byte) 0x8C, (byte) 0xFD, (byte) 0x61,
-        (byte) 0x53, (byte) 0x00, (byte) 0x57, (byte) 0x10,
-        (byte) 0x36, (byte) 0x2B, (byte) 0x92, (byte) 0x0B,
-        (byte) 0xE1, (byte) 0x6A, (byte) 0xB5, (byte) 0xFD
+        (byte) 0x10, (byte) 0xE6, (byte) 0xE8, (byte) 0x11,
+        (byte) 0xC8, (byte) 0x02, (byte) 0x63, (byte) 0x9B,
+        (byte) 0xAB, (byte) 0x11, (byte) 0x9E, (byte) 0x4F,
+        (byte) 0xFA, (byte) 0x00, (byte) 0x6D, (byte) 0x81
     };
 
     final static Map<String, byte[]> version2Hash = new HashMap<>();
@@ -484,7 +484,7 @@ public class ElementStructureTest {
                 return null;
             try {
                 analyzeElement(e);
-                out.write(String.valueOf(e.getConstantValue()));
+                writeConstant(e.getConstantValue());
                 out.write("\n");
             } catch (IOException ex) {
                 ex.printStackTrace();
@@ -512,6 +512,16 @@ public class ElementStructureTest {
         @Override
         public Void visitUnknown(Element e, Void p) {
             throw new IllegalStateException("Should not get here.");
+        }
+
+        private void writeConstant(Object value) throws IOException {
+            if (value instanceof Double) {
+                out.write(Double.toHexString((Double) value));
+            } else if (value instanceof Float) {
+                out.write(Float.toHexString((Float) value));
+            } else {
+                out.write(String.valueOf(value));
+            }
         }
 
     }

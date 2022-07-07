@@ -80,6 +80,8 @@ class VectorNode : public TypeNode {
   static VectorNode* make_mask_node(int vopc, Node* n1, Node* n2, uint vlen, BasicType bt);
 
   static bool is_shift_opcode(int opc);
+  static bool can_transform_shift_op(Node* n, BasicType bt);
+  static bool is_convert_opcode(int opc);
 
   static bool is_vshift_cnt_opcode(int opc);
 
@@ -87,6 +89,7 @@ class VectorNode : public TypeNode {
 
   static int  opcode(int opc, BasicType bt);
   static int replicate_opcode(BasicType bt);
+  static bool vector_size_supported(BasicType bt, uint vlen);
   static bool implemented(int opc, uint vlen, BasicType bt);
   static bool is_shift(Node* n);
   static bool is_vshift_cnt(Node* n);
@@ -100,7 +103,10 @@ class VectorNode : public TypeNode {
   static bool is_vector_integral_negate_supported(int opc, uint vlen, BasicType bt, bool use_predicate);
   static bool is_populate_index_supported(BasicType bt);
   static bool is_invariant_vector(Node* n);
+  // Return true if every bit in this vector is 1.
   static bool is_all_ones_vector(Node* n);
+  // Return true if every bit in this vector is 0.
+  static bool is_all_zeros_vector(Node* n);
   static bool is_vector_bitwise_not_pattern(Node* n);
   static Node* degenerate_vector_rotate(Node* n1, Node* n2, bool is_rotate_left, int vlen,
                                         BasicType bt, PhaseGVN* phase);
@@ -711,6 +717,7 @@ class AndVNode : public VectorNode {
  public:
   AndVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
   virtual int Opcode() const;
+  virtual Node* Identity(PhaseGVN* phase);
 };
 
 //------------------------------AndReductionVNode--------------------------------------
@@ -727,6 +734,7 @@ class OrVNode : public VectorNode {
  public:
   OrVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
   virtual int Opcode() const;
+  virtual Node* Identity(PhaseGVN* phase);
 };
 
 //------------------------------OrReductionVNode--------------------------------------
@@ -751,6 +759,7 @@ class XorVNode : public VectorNode {
  public:
   XorVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
   virtual int Opcode() const;
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
 //------------------------------MinReductionVNode--------------------------------------
@@ -1066,23 +1075,23 @@ class MaskAllNode : public VectorNode {
 };
 
 //--------------------------- Vector mask logical and --------------------------------
-class AndVMaskNode : public VectorNode {
+class AndVMaskNode : public AndVNode {
  public:
-  AndVMaskNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  AndVMaskNode(Node* in1, Node* in2, const TypeVect* vt) : AndVNode(in1, in2, vt) {}
   virtual int Opcode() const;
 };
 
 //--------------------------- Vector mask logical or ---------------------------------
-class OrVMaskNode : public VectorNode {
+class OrVMaskNode : public OrVNode {
  public:
-  OrVMaskNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  OrVMaskNode(Node* in1, Node* in2, const TypeVect* vt) : OrVNode(in1, in2, vt) {}
   virtual int Opcode() const;
 };
 
 //--------------------------- Vector mask logical xor --------------------------------
-class XorVMaskNode : public VectorNode {
+class XorVMaskNode : public XorVNode {
  public:
-  XorVMaskNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  XorVMaskNode(Node* in1, Node* in2, const TypeVect* vt) : XorVNode(in1, in2, vt) {}
   virtual int Opcode() const;
 };
 
@@ -1518,7 +1527,7 @@ class VectorCastNode : public VectorNode {
 
   static VectorCastNode* make(int vopc, Node* n1, BasicType bt, uint vlen);
   static int  opcode(BasicType bt, bool is_signed = true);
-  static bool implemented(BasicType bt, uint vlen);
+  static bool implemented(int opc, uint vlen, BasicType src_type, BasicType dst_type);
 
   virtual Node* Identity(PhaseGVN* phase);
 };

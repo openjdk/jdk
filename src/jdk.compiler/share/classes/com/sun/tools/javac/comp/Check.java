@@ -2960,6 +2960,9 @@ public class Check {
     /** Check an annotation of a symbol.
      */
     private void validateAnnotation(JCAnnotation a, JCTree declarationTree, Symbol s) {
+        /** NOTE: if annotation processors are present, annotation processing rounds can happen after this method,
+         *  this can impact in particular records for which annotations are forcibly propagated.
+         */
         validateAnnotationTree(a);
         boolean isRecordMember = ((s.flags_field & RECORD) != 0 || s.enclClass() != null && s.enclClass().isRecord());
 
@@ -3600,7 +3603,7 @@ public class Check {
     }
 
     void checkPreview(DiagnosticPosition pos, Symbol other, Symbol s) {
-        if ((s.flags() & PREVIEW_API) != 0 && !preview.participatesInPreview(other, s)) {
+        if ((s.flags() & PREVIEW_API) != 0 && !preview.participatesInPreview(syms, other, s)) {
             if ((s.flags() & PREVIEW_REFLECTIVE) == 0) {
                 if (!preview.isEnabled()) {
                     log.error(pos, Errors.IsPreview(s));
@@ -4327,30 +4330,31 @@ public class Check {
         boolean wasNonEmptyFallThrough = false;
         for (List<JCCase> l = cases; l.nonEmpty(); l = l.tail) {
             JCCase c = l.head;
-            for (JCCaseLabel pat : c.labels) {
-                if (pat.isExpression()) {
-                    JCExpression expr = (JCExpression) pat;
+            for (JCCaseLabel label : c.labels) {
+                if (label.hasTag(CONSTANTCASELABEL)) {
+                    JCExpression expr = ((JCConstantCaseLabel) label).expr;
                     if (TreeInfo.isNull(expr)) {
                         if (wasPattern && !wasTypePattern && !wasNonEmptyFallThrough) {
-                            log.error(pat.pos(), Errors.FlowsThroughFromPattern);
+                            log.error(label.pos(), Errors.FlowsThroughFromPattern);
                         }
                         wasNullPattern = true;
                     } else {
                         if (wasPattern && !wasNonEmptyFallThrough) {
-                            log.error(pat.pos(), Errors.FlowsThroughFromPattern);
+                            log.error(label.pos(), Errors.FlowsThroughFromPattern);
                         }
                         wasConstant = true;
                     }
-                } else if (pat.hasTag(DEFAULTCASELABEL)) {
+                } else if (label.hasTag(DEFAULTCASELABEL)) {
                     if (wasPattern && !wasNonEmptyFallThrough) {
-                        log.error(pat.pos(), Errors.FlowsThroughFromPattern);
+                        log.error(label.pos(), Errors.FlowsThroughFromPattern);
                     }
                     wasDefault = true;
                 } else {
+                    JCPattern pat = ((JCPatternCaseLabel) label).pat;
                     boolean isTypePattern = pat.hasTag(BINDINGPATTERN);
                     if (wasPattern || wasConstant || wasDefault ||
                         (wasNullPattern && (!isTypePattern || wasNonEmptyFallThrough))) {
-                        log.error(pat.pos(), Errors.FlowsThroughToPattern);
+                        log.error(label.pos(), Errors.FlowsThroughToPattern);
                     }
                     wasPattern = true;
                     wasTypePattern = isTypePattern;
@@ -4606,7 +4610,7 @@ public class Check {
                         return ; // Don't try to recover
                     }
                 }
-                // Non-Serializable super class
+                // Non-Serializable superclass
                 try {
                     ClassSymbol supertype = ((ClassSymbol)(((DeclaredType)superClass).asElement()));
                     for(var sym : supertype.getEnclosedElements()) {

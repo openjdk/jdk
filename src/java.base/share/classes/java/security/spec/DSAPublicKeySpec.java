@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,10 +44,10 @@ import java.math.BigInteger;
 
 public class DSAPublicKeySpec implements KeySpec {
 
-    private BigInteger y;
-    private BigInteger p;
-    private BigInteger q;
-    private BigInteger g;
+    private final BigInteger y;
+    private final BigInteger p;
+    private final BigInteger q;
+    private final BigInteger g;
 
     /**
      * Creates a new DSAPublicKeySpec with the specified parameter values.

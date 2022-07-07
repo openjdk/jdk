@@ -36,8 +36,8 @@ import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind;
 
 /**
  * The superclass for all member builders.  Member builders are only executed
- * within Class Builders.  They essentially build sub-components.  For example,
- * method documentation is a sub-component of class documentation.
+ * within Class Builders.  They essentially build subcomponents.  For example,
+ * method documentation is a subcomponent of class documentation.
  */
 public abstract class AbstractMemberBuilder extends AbstractBuilder {
 
@@ -57,7 +57,7 @@ public abstract class AbstractMemberBuilder extends AbstractBuilder {
     }
 
     /**
-     * This method is not supported by sub-builders.
+     * This method is not supported by subbuilders.
      *
      * @throws AssertionError always
      */

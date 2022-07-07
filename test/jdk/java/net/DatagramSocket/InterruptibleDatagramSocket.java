@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.DatagramChannel;
+import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 
 import static java.lang.Thread.sleep;
@@ -60,6 +61,8 @@ public class InterruptibleDatagramSocket {
         latch.countDown();
         try {
             s.receive(p);
+            System.out.println("Received data " + Arrays.toString(p.getData())
+                    + " from " + p.getSocketAddress());
         } finally {
             try {
                 coordinator.join();
@@ -95,12 +98,18 @@ public class InterruptibleDatagramSocket {
 
     public static void main(String[] args) throws Exception {
         try (DatagramSocket s = new DatagramSocket()) {
+            System.out.println("Testing interrupt of DatagramSocket receive " +
+                    "on endpoint " + s.getLocalSocketAddress());
             test(s, false);
         }
         try (DatagramSocket s = new MulticastSocket()) {
+            System.out.println("Testing interrupt of MulticastSocket receive" +
+                    " on endpoint " + s.getLocalSocketAddress());
             test(s, false);
         }
-        try (DatagramSocket s = DatagramChannel.open().socket()) {
+        try (DatagramSocket s = DatagramChannel.open().bind(null).socket()) {
+            System.out.println("Testing interrupt of DatagramChannel socket " +
+                    "receive on endpoint " + s.getLocalSocketAddress());
             test(s, true);
         }
     }

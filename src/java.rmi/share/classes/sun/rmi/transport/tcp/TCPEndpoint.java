@@ -384,7 +384,7 @@ public class TCPEndpoint implements Endpoint {
         Set<TCPTransport> s;
         synchronized (localEndpoints) {
             // presize s to number of localEndpoints
-            s = new HashSet<TCPTransport>(localEndpoints.size());
+            s = HashSet.newHashSet(localEndpoints.size());
             for (LinkedList<TCPEndpoint> epList : localEndpoints.values()) {
                 /*
                  * Each local endpoint has its transport added to s.
@@ -489,8 +489,7 @@ public class TCPEndpoint implements Endpoint {
     }
 
     public boolean equals(Object obj) {
-        if ((obj != null) && (obj instanceof TCPEndpoint)) {
-            TCPEndpoint ep = (TCPEndpoint) obj;
+        if (obj instanceof TCPEndpoint ep) {
             if (port != ep.port || !host.equals(ep.host))
                 return false;
             if (((csf == null) ^ (ep.csf == null)) ||
