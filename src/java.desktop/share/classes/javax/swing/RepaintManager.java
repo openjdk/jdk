@@ -1085,7 +1085,7 @@ public class RepaintManager
 
         // If the window is non-opaque, it's double-buffered at peer's level
         Window w = (c instanceof Window) ? (Window)c : SwingUtilities.getWindowAncestor(c);
-        if (!w.isOpaque()) {
+        if (w != null && !w.isOpaque()) {
             Toolkit tk = Toolkit.getDefaultToolkit();
             if ((tk instanceof SunToolkit) && (((SunToolkit)tk).needUpdateWindow())) {
                 return null;
