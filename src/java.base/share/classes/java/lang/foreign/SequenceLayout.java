@@ -124,7 +124,6 @@ public final class SequenceLayout extends AbstractLayout implements MemoryLayout
      * @param elementCounts an array of element counts, of which at most one can be {@code -1}.
      * @return a sequence layout where element layouts in the flattened projection of this
      * sequence layout (see {@link #flatten()}) are re-arranged into one or more nested sequence layouts.
-     * @throws UnsupportedOperationException if this sequence layout does not have an element count.
      * @throws IllegalArgumentException if two or more element counts are set to {@code -1}, or if one
      * or more element count is {@code <= 0} (but other than {@code -1}) or, if, after any required inference,
      * multiplying the element counts does not yield the same element count as the flattened projection of this
@@ -187,8 +186,6 @@ public final class SequenceLayout extends AbstractLayout implements MemoryLayout
      * }
      * @return a sequence layout with the same size as this layout (but, possibly, with different
      * element count), whose element layout is not a sequence layout.
-     * @throws UnsupportedOperationException if this sequence layout, or one of the nested sequence layouts being
-     * flattened, does not have an element count.
      */
     public SequenceLayout flatten() {
         long count = elementCount();
@@ -214,10 +211,9 @@ public final class SequenceLayout extends AbstractLayout implements MemoryLayout
         if (!super.equals(other)) {
             return false;
         }
-        if (!(other instanceof SequenceLayout s)) {
-            return false;
-        }
-        return elemCount == s.elemCount && elementLayout.equals(s.elementLayout);
+        return other instanceof SequenceLayout otherSeq &&
+                elemCount == otherSeq.elemCount &&
+                elementLayout.equals(otherSeq.elementLayout);
     }
 
     @Override
