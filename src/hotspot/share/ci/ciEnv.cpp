@@ -1117,6 +1117,10 @@ void ciEnv::register_method(ciMethod* target,
     }
 #endif
 
+    if (!failing()) {
+      code_buffer->finalize_stubs();
+    }
+
     if (failing()) {
       // While not a true deoptimization, it is a preemptive decompile.
       MethodData* mdo = method()->method_data();
