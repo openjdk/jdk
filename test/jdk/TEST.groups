@@ -584,7 +584,7 @@ jdk_core_manual_no_input = \
     javax/net/ssl/compatibility/BasicConnectTest.java \
     javax/net/ssl/compatibility/HrrTest.java \
     javax/net/ssl/compatibility/SniTest.java \
-    jdk/nio/zipfs/TestLocOffsetFromZip64EF.java
+    jdk/nio/zipfs/TestLocOffsetFromZip64EF.java \
     java/util/ArrayList/Bug8146568.java \
     java/util/Vector/Bug8148174.java
 
