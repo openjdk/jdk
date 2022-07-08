@@ -139,7 +139,10 @@ public class Runtime {
      * them run concurrently.  When all the hooks have finished it will then
      * halt. Note that daemon threads will continue to run during the shutdown
      * sequence, as will non-daemon threads if shutdown was initiated by
-     * invoking the {@link #exit exit} method.
+     * invoking the {@link #exit exit} method. Also note that running threads
+     * can create and start new threads during the shutdown sequence; the new
+     * threads execute concurrently with their creators and may create and
+     * start further threads.
      *
      * <p> Once the shutdown sequence has begun it can be stopped only by
      * invoking the {@link #halt halt} method, which forcibly
@@ -166,7 +169,10 @@ public class Runtime {
      * underlying operating system may only allow a fixed amount of time in
      * which to shut down and exit.  It is therefore inadvisable to attempt any
      * user interaction or to perform a long-running computation in a shutdown
-     * hook.
+     * hook. A shutdown hook that never finishes (because it blocks indefinitely
+     * or loops infinitely) will prevent the shutdown sequence from completing.
+     * In this case, the virtual machine can still be halted if a daemon or
+     * non-daemon thread which is still running calls {@link #halt halt}.
      *
      * <p> Uncaught exceptions are handled in shutdown hooks just as in any
      * other thread, by invoking the
