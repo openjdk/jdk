@@ -71,7 +71,7 @@ public class SafeLogout {
             if (login) {
                 lc.login();
             }
-        } catch (Exception e) {
+        } catch (LoginException e) {
             // Don't care
         } finally {
             try {
@@ -80,13 +80,17 @@ public class SafeLogout {
                 if (!le.getMessage().contains("all modules ignored")) {
                     throw le;
                 }
-            } catch (Exception e) {
-                throw e;
             }
         }
     }
 
-    static AppConfigurationEntry.LoginModuleControlFlag[] allControls = { REQUIRED, REQUISITE, SUFFICIENT, OPTIONAL };
+    static AppConfigurationEntry.LoginModuleControlFlag[] allControls = {
+            REQUIRED,
+            REQUISITE,
+            SUFFICIENT,
+            OPTIONAL
+    };
+
     static AppConfigurationEntry.LoginModuleControlFlag randomControl() {
         return allControls[r.nextInt(allControls.length)];
     }
@@ -100,6 +104,7 @@ public class SafeLogout {
             "com.sun.security.auth.module.LdapLoginModule",
             "com.sun.jmx.remote.security.FileLoginModule"
     };
+
     static String randomModule() {
         return allModules[r.nextInt(allModules.length)];
     }
