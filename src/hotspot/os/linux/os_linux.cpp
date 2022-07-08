@@ -36,6 +36,7 @@
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "os_linux.impl.hpp"
 #include "os_linux.inline.hpp"
 #include "os_posix.inline.hpp"
 #include "os_share_linux.hpp"

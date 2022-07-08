@@ -24,9 +24,7 @@
 
 
 #include "jvm.h"
-#ifdef LINUX
 #include "classfile/classLoader.hpp"
-#endif
 #include "jvmtifiles/jvmti.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
@@ -50,6 +48,10 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
+
+#ifdef LINUX
+#include "os_linux.impl.hpp"
+#endif
 
 #include <dirent.h>
 #include <dlfcn.h>
@@ -1119,8 +1121,8 @@ bool os::Posix::handle_stack_overflow(JavaThread* thread, address addr, address 
                       "enabled executable stack (see man page execstack(8))");
 
   } else {
-#if !defined(AIX) && !defined(__APPLE__)
-    // bsd and aix don't have this
+#ifdef LINUX
+    // This only works with os::Linux::manually_expand_stack()
 
     // Accessing stack address below sp may cause SEGV if current
     // thread has MAP_GROWSDOWN stack. This should only happen when
@@ -1138,7 +1140,7 @@ bool os::Posix::handle_stack_overflow(JavaThread* thread, address addr, address 
     }
 #else
     tty->print_raw_cr("SIGSEGV happened inside stack but outside yellow and red zone.");
-#endif // AIX or BSD
+#endif // LINUX
   }
   return false;
 }
