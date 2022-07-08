@@ -1114,7 +1114,13 @@ public class XPathParser extends lr_parser {
         try {
             _expression = expression;
             _lineNumber = lineNumber;
-            Symbol s = super.parse();
+
+            Symbol s = null;
+            try {
+                super.parse();
+            }catch(XPathOverLimitException ex){
+                //only catch this exception;ignore all of other exceptions
+            }
             /*
              * While the Java CUP parser is used for parsing symbols, the error
              * report mechanism has so far been kept within the Xalan implementation.

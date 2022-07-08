@@ -404,9 +404,18 @@ public abstract class lr_parser {
               || opLimit > 0 && opCount > opLimit
               || totalOpLimit > 0 && totalOpCount > totalOpLimit) {
           overLimit = true;
+          //throw exception to break scanning procss in the middle when limit is over
+          throw new XPathOverLimitException();
       }
 
     return s;
+  }
+
+  protected class XPathOverLimitException extends Exception{
+    private static final long serialVersionUID = 8620931730244388104L;
+
+    public XPathOverLimitException() {
+    }
   }
 
   private boolean contains(final int[] arr, final int key) {
