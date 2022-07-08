@@ -36,6 +36,7 @@ public class SixteenBitFormats {
     public static void main(String... argv) {
         int errors = 0;
         errors += binary16RoundTrip();
+        errors += binary16CardinalValues();
         if (errors > 0)
             throw new RuntimeException(errors + " errors");
     }
@@ -60,6 +61,58 @@ public class SixteenBitFormats {
         return errors;
     }
 
+    private static int binary16CardinalValues() {
+        int errors = 0;
+        // Encode short value for different binary16 cardinal values as an
+        // integer-valued float.
+        float[][] testCases = {
+            {Binary16.POSITIVE_INFINITY, Float.POSITIVE_INFINITY},
+            {Binary16.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY},
+            {Binary16.POSITIVE_ZERO,     +0.0f},
+            {Binary16.NEGATIVE_ZERO,     -0.0f},
+            {Binary16.MIN_VALUE,         0x1.0p-24f},
+            {Binary16.MIN_NORMAL,        0x1.0p-14f},
+            {Binary16.MAX_VALUE,         65504.0f},
+            {Binary16.ONE,               1.0f},
+            {Binary16.ONE,               1.0f},
+            {Binary16.MAX_SUBNORMAL,     0x1.ff8p-15f},
+        };
+
+        // Check conversions in both directions
+
+        // short -> float
+        for (var testCase : testCases) {
+            short input    = (short)testCase[0];
+            float expected = testCase[1];
+            float actual   = Float.binary16AsShortBitsToFloat(input);
+
+            if (Float.compare(actual, expected) != 0) {
+                errors++;
+                System.out.println("Unexpected result of converting 0x" +
+                                   Integer.toHexString(0xFFFF & input) +
+                                   " to float. Expected " + expected +
+                                   " got " + actual);
+            }
+        }
+
+        // float -> short
+        for (var testCase : testCases) {
+            float input    = testCase[1];
+            short expected = (short)testCase[0];
+            short actual   = Float.floatToBinary16AsShortBits(input);
+
+            if (Binary16.compare(actual, expected) != 0) {
+                errors++;
+                System.out.println("Unexpected result of converting " +
+                                   Float.toHexString(input) +
+                                   " to short. Expected " + expected +
+                                   " got " + actual);
+            }
+        }
+
+        return errors;
+    };
+
     public static class Binary16 {
         public static final short POSITIVE_INFINITY = (short)0x7c00;
         public static final short NEGATIVE_INFINITY = (short)0xfc00;
@@ -69,6 +122,7 @@ public class SixteenBitFormats {
         public static final short MIN_VALUE = 0x0001;
         public static final short NEGATIVE_ZERO = (short)0x8000;
         public static final short POSITIVE_ZERO = 0x0000;
+        public static final short MAX_SUBNORMAL = (short)0x03ff;
 
         public static boolean isNaN(short binary16) {
             return ((binary16 & 0x7c00) == 0x7c00) // Max exponent and... 
