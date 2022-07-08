@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 6866804 7006126 8028270 8065109
+ * @bug 6866804 7006126 8028270 8065109 8289984
  * @summary Unit test for java.nio.file.Files
  * @library ..
  * @build CheckPermissions
