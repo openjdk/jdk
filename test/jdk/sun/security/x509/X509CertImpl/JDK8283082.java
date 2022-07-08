@@ -25,8 +25,8 @@
  * @test
  * @bug 8283082
  * @modules java.base/sun.security.x509
- * @summary This test is to confirm that 
- * sun.security.x509.X509CertImpl.delete("x509.info.validity") doesn't 
+ * @summary This test is to confirm that
+ * sun.security.x509.X509CertImpl.delete("x509.info.validity") doesn't
  * null out info field as reported by bug 8283082
  */
 
