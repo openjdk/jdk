@@ -112,7 +112,7 @@ typedef enum { /*< flags >*/
  * @min_value: The minimum value on the variation axis that the font covers
  * @default_value: The position on the variation axis corresponding to the font's defaults
  * @max_value: The maximum value on the variation axis that the font covers
- * 
+ *
  * Data type for holding variation-axis values.
  *
  * The minimum, default, and maximum values are in un-normalized, user scales.

@@ -161,7 +161,7 @@ hb_ot_math_is_glyph_extended_shape (hb_face_t *face,
  * @correction_height: the correction height to use to determine the kerning.
  *
  * Fetches the math kerning (cut-ins) value for the specified font, glyph index, and
- * @kern. 
+ * @kern.
  *
  * If the MathKern table is found, the function examines it to find a height
  * value that is greater or equal to @correction_height. If such a height
@@ -246,7 +246,7 @@ hb_ot_math_get_glyph_kernings (hb_font_t *font,
  * <note>The @direction parameter is only used to select between horizontal
  * or vertical directions for the construction. Even though all #hb_direction_t
  * values are accepted, only the result of #HB_DIRECTION_IS_HORIZONTAL is
- * considered.</note> 
+ * considered.</note>
  *
  * Return value: the total number of size variants available or zero
  *
@@ -278,7 +278,7 @@ hb_ot_math_get_glyph_variants (hb_font_t *font,
  * <note>The @direction parameter is only used to select between horizontal
  * or vertical directions for the construction. Even though all #hb_direction_t
  * values are accepted, only the result of #HB_DIRECTION_IS_HORIZONTAL is
- * considered.</note> 
+ * considered.</note>
  *
  * Return value: requested minimum connector overlap or zero
  *
@@ -310,7 +310,7 @@ hb_ot_math_get_min_connector_overlap (hb_font_t *font,
  * <note>The @direction parameter is only used to select between horizontal
  * or vertical directions for the construction. Even though all #hb_direction_t
  * values are accepted, only the result of #HB_DIRECTION_IS_HORIZONTAL is
- * considered.</note> 
+ * considered.</note>
  *
  * Return value: the total number of parts in the glyph assembly
  *

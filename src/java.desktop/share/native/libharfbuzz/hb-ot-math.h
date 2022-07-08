@@ -256,7 +256,7 @@ typedef enum { /*< flags >*/
  * @end_connector_length: The length of the connector on the ending side of the variant part
  * @full_advance: The total advance of the part
  * @flags: #hb_ot_math_glyph_part_flags_t flags for the part
- * 
+ *
  * Data type to hold information for a "part" component of a math-variant glyph.
  * Large variants for stretchable math glyphs (such as parentheses) can be constructed
  * on the fly from parts.

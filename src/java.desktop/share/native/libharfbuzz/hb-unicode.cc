@@ -279,7 +279,7 @@ hb_unicode_funcs_destroy (hb_unicode_funcs_t *ufuncs)
  * @destroy: (nullable): A callback to call when @data is not needed anymore
  * @replace: Whether to replace an existing data with the same key
  *
- * Attaches a user-data key/data pair to the specified Unicode-functions structure. 
+ * Attaches a user-data key/data pair to the specified Unicode-functions structure.
  *
  * Return value: %true if success, %false otherwise
  *
@@ -441,7 +441,7 @@ hb_unicode_compose (hb_unicode_funcs_t *ufuncs,
  * @a: (out): The first code point of the decomposition of @ab
  * @b: (out): The second code point of the decomposition of @ab
  *
- * Fetches the decomposition of a Unicode code point. 
+ * Fetches the decomposition of a Unicode code point.
  *
  * Calls the decomposition function of the specified
  * Unicode-functions structure @ufuncs.

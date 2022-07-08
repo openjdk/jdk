@@ -79,7 +79,7 @@ struct shared_ptr
   void set_user_data (hb_user_data_key_t *key,
                       void *value,
                       hb_destroy_func_t destroy,
-                      hb_bool_t replace) { v::set_user_data (p, key, value, destroy, replace); } 
+                      hb_bool_t replace) { v::set_user_data (p, key, value, destroy, replace); }
   void * get_user_data (hb_user_data_key_t *key) { return v::get_user_data (p, key); }
 
   private:

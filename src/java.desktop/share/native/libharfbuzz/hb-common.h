@@ -90,7 +90,7 @@ HB_BEGIN_DECLS
 
 /**
  * hb_bool_t:
- * 
+ *
  * Data type for booleans.
  *
  **/
@@ -98,7 +98,7 @@ typedef int hb_bool_t;
 
 /**
  * hb_codepoint_t:
- * 
+ *
  * Data type for holding Unicode codepoints. Also
  * used to hold glyph IDs.
  *
@@ -106,7 +106,7 @@ typedef int hb_bool_t;
 typedef uint32_t hb_codepoint_t;
 /**
  * hb_position_t:
- * 
+ *
  * Data type for holding a single coordinate value.
  * Contour points and other multi-dimensional data are
  * stored as tuples of #hb_position_t's.
@@ -115,7 +115,7 @@ typedef uint32_t hb_codepoint_t;
 typedef int32_t hb_position_t;
 /**
  * hb_mask_t:
- * 
+ *
  * Data type for bitmasks.
  *
  **/
@@ -220,9 +220,9 @@ hb_tag_to_string (hb_tag_t tag, char *buf);
  * @HB_DIRECTION_BTT: Text is set vertically from bottom to top.
  *
  * The direction of a text segment or buffer.
- * 
+ *
  * A segment can also be tested for horizontal or vertical
- * orientation (irrespective of specific direction) with 
+ * orientation (irrespective of specific direction) with
  * HB_DIRECTION_IS_HORIZONTAL() or HB_DIRECTION_IS_VERTICAL().
  *
  */
@@ -831,7 +831,7 @@ hb_feature_to_string (hb_feature_t *feature,
  * Data type for holding variation data. Registered OpenType
  * variation-axis tags are listed in
  * [OpenType Axis Tag Registry](https://docs.microsoft.com/en-us/typography/opentype/spec/dvaraxisreg).
- * 
+ *
  * Since: 1.4.2
  */
 typedef struct hb_variation_t {

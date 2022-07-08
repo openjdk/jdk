@@ -39,7 +39,7 @@ HB_BEGIN_DECLS
 /**
  * hb_shape_plan_t:
  *
- * Data type for holding a shaping plan. 
+ * Data type for holding a shaping plan.
  *
  * Shape plans contain information about how HarfBuzz will shape a
  * particular text segment, based on the segment's properties and the

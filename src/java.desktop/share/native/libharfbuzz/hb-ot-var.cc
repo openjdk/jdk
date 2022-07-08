@@ -70,7 +70,7 @@ hb_ot_var_has_data (hb_face_t *face)
  * hb_ot_var_get_axis_count:
  * @face: The #hb_face_t to work on
  *
- * Fetches the number of OpenType variation axes included in the face. 
+ * Fetches the number of OpenType variation axes included in the face.
  *
  * Return value: the number of variation axes defined
  *
@@ -183,7 +183,7 @@ hb_ot_var_find_axis_info (hb_face_t             *face,
  * hb_ot_var_get_named_instance_count:
  * @face: The #hb_face_t to work on
  *
- * Fetches the number of named instances included in the face. 
+ * Fetches the number of named instances included in the face.
  *
  * Return value: the number of named instances defined
  *
@@ -263,7 +263,7 @@ hb_ot_var_named_instance_get_design_coords (hb_face_t    *face,
  * @face: The #hb_face_t to work on
  * @variations: The array of variations to normalize
  * @variations_length: The number of variations to normalize
- * @coords: (out) (array length=coords_length): The array of normalized coordinates 
+ * @coords: (out) (array length=coords_length): The array of normalized coordinates
  * @coords_length: The length of the coordinate array
  *
  * Normalizes all of the coordinates in the given list of variation axes.
