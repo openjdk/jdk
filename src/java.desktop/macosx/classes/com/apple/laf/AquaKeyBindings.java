@@ -90,8 +90,6 @@ public class AquaKeyBindings {
         "alt KP_LEFT", DefaultEditorKit.previousWordAction,
         "alt RIGHT", DefaultEditorKit.nextWordAction,
         "alt KP_RIGHT", DefaultEditorKit.nextWordAction,
-        "alt altgraph LEFT", DefaultEditorKit.previousWordAction,
-        "alt altgraph RIGHT", DefaultEditorKit.nextWordAction,
         "alt UP", DefaultEditorKit.beginLineUpAction,
         "alt DOWN", DefaultEditorKit.endLineDownAction,
         "alt altGraph UP", DefaultEditorKit.beginLineUpAction,
