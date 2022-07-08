@@ -36,15 +36,21 @@ package gc.epsilon;
  * @run main/othervm -Xmx64m -XX:-UseTLAB
  *                   -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
  *                   gc.epsilon.TestAlignment
- *
+ */
+/**
+ * @test TestMaxTLAB
+ * @requires vm.gc.Epsilon
+ * @requires vm.bits == "64"
+ * @summary Check EpsilonMaxTLAB options
+ * @bug 8212177
  * @run main/othervm -Xmx64m -XX:+UseTLAB
  *                   -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
- *                   -XX:+IgnoreUnrecognizedVMOptions -XX:ObjectAlignmentInBytes=16
+ *                   -XX:ObjectAlignmentInBytes=16
  *                   gc.epsilon.TestAlignment
  *
  * @run main/othervm -Xmx64m -XX:-UseTLAB
  *                   -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
- *                   -XX:+IgnoreUnrecognizedVMOptions -XX:ObjectAlignmentInBytes=16
+ *                   -XX:ObjectAlignmentInBytes=16
  *                   gc.epsilon.TestAlignment
  */
 
