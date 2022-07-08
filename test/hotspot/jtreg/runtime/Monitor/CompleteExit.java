@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2009, 2021, Red Hat, Inc.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,25 +22,26 @@
  *
  */
 
-#ifndef CPU_ZERO_GLOBALDEFINITIONS_ZERO_HPP
-#define CPU_ZERO_GLOBALDEFINITIONS_ZERO_HPP
+/*
+ * @test CompleteExit
+ * @summary This does a sanity test of the poll in the native wrapper.
+ * @requires os.family == "linux"
+ * @library /testlibrary /test/lib
+ * @build CompleteExit
+ * @run main/native CompleteExit
+ */
 
-#ifdef _LP64
-#define SUPPORTS_NATIVE_CX8
-#endif
+public class CompleteExit {
+    public static native void testIt(Object o1, Object o2);
 
-#define SUPPORT_MONITOR_COUNT
+    static volatile Object o1 = new Object();
+    static volatile Object o2 = new Object();
 
-#ifndef FFI_GO_CLOSURES
-#define FFI_GO_CLOSURES 0
-#endif
+    static {
+        System.loadLibrary("CompleteExit");
+    }
 
-#include <ffi.h>
-
-// Indicates whether the C calling conventions require that
-// 32-bit integer argument values are extended to 64 bits.
-const bool CCallingConventionRequiresIntsAsLongs = false;
-
-#define COMPRESSED_CLASS_POINTERS_DEPENDS_ON_COMPRESSED_OOPS false
-
-#endif // CPU_ZERO_GLOBALDEFINITIONS_ZERO_HPP
+    public static void main(String[] args) throws Exception {
+        testIt(o1, o2);
+    }
+}
