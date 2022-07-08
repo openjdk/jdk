@@ -35,10 +35,11 @@ unsigned int compute_hash(Symbol* sym, intptr_t symbol_mode) {
     return hash ^ symbol_mode;
 }
 
+//key for the _invoke_method_table, which contains the symbol and its intrisic id
 class InvokeMethodKey : public StackObj {
   private:
     Symbol* _symbol;
-    intptr_t _symbol_mode;
+    intptr_t _iid;
 
   public:
     InvokeMethodKey(Symbol* symbol, intptr_t symbol_mode) :

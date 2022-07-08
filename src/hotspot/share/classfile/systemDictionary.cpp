@@ -88,8 +88,9 @@
 #include "jfr/jfr.hpp"
 #endif
 
-ResourceHashtable<InvokeMethodKey, InvokeMethodValue, 107, ResourceObj::C_HEAP, mtClass, 
-                  InvokeMethodKey::compute_hash, InvokeMethodKey::key_comparison> _invoke_method_table;
+ResourceHashtable<InvokeMethodKey, Method*, 139, ResourceObj::C_HEAP, mtClass, 
+                  InvokeMethodKey::compute_hash, InvokeMethodKey::key_comparison> _invoke_method_intrisic_table;
+ResourceHashtable<Symbol*, Oophandle, 139, ResourceObj::C_HEAP, mtClass> _invoke_method_type_table;
 ResolutionErrorTable*  SystemDictionary::_resolution_errors   = NULL;
 SymbolPropertyTable*   SystemDictionary::_invoke_method_table = NULL;
 ProtectionDomainCacheTable*   SystemDictionary::_pd_cache_table = NULL;
@@ -2012,7 +2013,7 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
     // Must create lots of stuff here, but outside of the SystemDictionary lock.
     m = Method::make_method_handle_intrinsic(iid, signature, CHECK_NULL);
     if (!Arguments::is_interpreter_only() || iid == vmIntrinsics::_linkToNative) {
-      // Generate a compiled form of the MH intrinsic.
+      // Generate a compiled form of the MH intrinsic
       // linkToNative doesn't have interpreter-specific implementation, so always has to go through compiled version.
       AdapterHandlerLibrary::create_native_wrapper(m);
       // Check if have the compiled code.
