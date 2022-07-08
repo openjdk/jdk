@@ -21,69 +21,55 @@
  * questions.
  */
 
-import java.io.File;
-import java.io.FileDescriptor;
-import java.io.FileInputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.FilterInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.Reader;
-import java.io.UncheckedIOException;
-import java.io.Writer;
-import java.lang.reflect.Field;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /*
  * @test
  * @bug 8289643
  * @requires (os.family == "linux" & !vm.musl)
  * @summary file descriptor leak with ProcessBuilder.startPipeline
- * @run testng PipelineLeaksFD
+ * @run testng/othervm PipelineLeaksFD
  */
 
 @Test
 public class PipelineLeaksFD {
-
     @DataProvider
     public Object[][] builders() {
         return new Object[][]{
-                {new ProcessBuilder("cat")},
-                {new ProcessBuilder("cat"),
-                        new ProcessBuilder("cat")},
-                {new ProcessBuilder("cat"),
+                {List.of(new ProcessBuilder("cat"))},
+                {List.of(new ProcessBuilder("cat"),
+                        new ProcessBuilder("cat"))},
+                {List.of(new ProcessBuilder("cat"),
                         new ProcessBuilder("cat"),
                         new ProcessBuilder("cat"),
                         new ProcessBuilder("cat"),
-                        new ProcessBuilder("cat")},
+                        new ProcessBuilder("cat"))},
         };
     }
 
     @Test(dataProvider = "builders")
-    void checkForLeaks(ProcessBuilder[] builders) throws IOException {
+    void checkForLeaks(List<ProcessBuilder> builders) throws IOException {
 
         Set<PipeRecord> pipesBefore = myPipes();
-        System.out.println(pipesBefore);
+        if (pipesBefore.size() < 3) {
+            System.out.println(pipesBefore);
+            Assert.fail("There should be at least 3 pipes before, (0, 1, 2)");
+        }
 
-        List<ProcessBuilder> processBuilders = Arrays.asList(builders);
-        List<Process> processes = ProcessBuilder.startPipeline(processBuilders);
+        List<Process> processes = ProcessBuilder.startPipeline(builders);
 
         OutputStream out = processes.get(0).getOutputStream();
         out.write('a');
@@ -99,10 +85,19 @@ public class PipelineLeaksFD {
 
         Set<PipeRecord> pipesAfter = myPipes();
         if (!pipesBefore.equals(pipesAfter)) {
-            System.out.println("pipesBefore: " + pipesBefore);
-            System.out.println("pipesAfter: " + pipesAfter);
-            Assert.fail("More or fewer pipes");
+            Set<PipeRecord> missing = new HashSet<>(pipesBefore);
+            missing.removeAll(pipesAfter);
+            printPipes(missing, "Missing from pipesAfter");
+            Set<PipeRecord> extra = new HashSet<>(pipesAfter);
+            extra.removeAll(pipesBefore);
+            printPipes(extra, "Extra pipes in pipesAfter");
+            Assert.fail("More or fewer pipes than expected");
         }
+    }
+
+    static void printPipes(Set<PipeRecord> pipes, String label) {
+        System.out.printf("%s: [%d]%n", label, pipes.size());
+        pipes.forEach(r -> System.out.printf("%20s: %20s%n", r.fd(), r.link()));
     }
 
     static void waitForQuiet(Process p) {
@@ -115,26 +110,26 @@ public class PipelineLeaksFD {
         }
     }
 
-    static Set<PipeRecord> myPipes() {
-        Map<Path, Path> pipes = new HashMap<>();
+    /**
+     * Collect a Set of pairs of /proc fd paths and the symbol links that are pipes.
+     * @return A set of PipeRecords, possibly empty
+     * @throws IOException if reading the directory entries of "/proc/<pid>/fd/*" fails
+     */
+    static Set<PipeRecord> myPipes() throws IOException {
         Path path = Path.of("/proc/" + ProcessHandle.current().pid() + "/fd");
-        try {
-            Stream<Path> s = Files.walk(path);
-            return s.filter(Files::isSymbolicLink)
-                    .map(p -> {
-                        try {
-                            return new PipeRecord(p, Files.readSymbolicLink(p));
-                        } catch (IOException ioe) {
-                        }
-                        return new PipeRecord(p, null);
-                    })
-                    .filter(p1 -> p1.link().toString().startsWith("pipe:"))
-                    .collect(Collectors.toSet());
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
-        return null;
+        Stream<Path> s = Files.walk(path);
+        return s.filter(Files::isSymbolicLink)
+                .map(p -> {
+                    try {
+                        return new PipeRecord(p, Files.readSymbolicLink(p));
+                    } catch (IOException ioe) {
+                    }
+                    return new PipeRecord(p, null);
+                })
+                .filter(p1 -> p1.link().toString().startsWith("pipe:"))
+                .collect(Collectors.toSet());
+
     }
 
-    record PipeRecord(Path fd, Path link) {};
+    record PipeRecord(Path fd, Path link) { };
 }
