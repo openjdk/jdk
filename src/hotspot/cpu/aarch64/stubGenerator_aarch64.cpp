@@ -6414,7 +6414,7 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-#ifdef LINUX
+#if defined (LINUX) && !defined (__ARM_FEATURE_ATOMICS)
 
   // ARMv8.1 LSE versions of the atomic stubs used by Atomic::PlatformXX.
   //
@@ -7989,7 +7989,7 @@ class StubGenerator: public StubCodeGenerator {
 
     StubRoutines::aarch64::_spin_wait = generate_spin_wait();
 
-#ifdef LINUX
+#if defined (LINUX) && !defined (__ARM_FEATURE_ATOMICS)
 
     generate_atomic_entry_points();
 
@@ -8019,7 +8019,7 @@ void StubGenerator_generate(CodeBuffer* code, int phase) {
 }
 
 
-#ifdef LINUX
+#if defined (LINUX)
 
 // Define pointers to atomic stubs and initialize them to point to the
 // code in atomic_aarch64.S.
