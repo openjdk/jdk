@@ -430,11 +430,20 @@ public abstract class AbstractQueuedSynchronizer
      * Most of the above is performed by primary internal method
      * acquire, that is invoked in some way by all exported acquire
      * methods.  (It is usually easy for compilers to optimize
-     * call-site specializations when heavily used.)  This method may
-     * be called by components that cannot be allowed to fail to
-     * acquire locks when encountering OutOfMemoryErrors, so it
-     * resorts to spin-waits with backoff if nodes cannot be
-     * allocated. Similarly for Condition waits.
+     * call-site specializations when heavily used.)
+     *
+     * Most AQS methods may be called by JDK components that cannot be
+     * allowed to fail when encountering OutOfMemoryErrors. The main
+     * acquire method resorts to spin-waits with backoff if nodes
+     * cannot be allocated. Static IllegalMonitorStateException and
+     * InterruptedException objects (without useful stack traces)
+     * defined in class LockSupport are thrown when applicable on
+     * OOM. Condition waits release and reacquire locks upon OOME at a
+     * slow fixed rate (OOME_COND_WAIT_DELAY) designed with the hope
+     * that eventually enough memory will be recovered; if not
+     * performance can be very slow. Effectiveness is also limited by
+     * the possibility of class loading triggered by first-time
+     * usages, that may encounter unrecoverable OOMEs.
      *
      * There are several arbitrary decisions about when and how to
      * check interrupts in both acquire and await before and/or after
@@ -566,12 +575,27 @@ public abstract class AbstractQueuedSynchronizer
         return U.compareAndSetReference(this, TAIL, c, v);
     }
 
-    /** tries once to CAS a new dummy node for head */
-    private void tryInitializeHead() {
-        if (tail == null) {
-            Node h = new ExclusiveNode();
-            if (U.compareAndSetReference(this, HEAD, null, h))
-                tail = h;
+    /**
+     * Tries to CAS a new dummy node for head.
+     * Returns new tail, or null if OutOfMemory
+     */
+    private Node tryInitializeHead() {
+        for (Node h = null, t;;) {
+            if ((t = tail) != null)
+                return t;
+            else if (head != null)
+                Thread.onSpinWait();
+            else {
+                if (h == null) {
+                    try {
+                        h = new ExclusiveNode();
+                    } catch (OutOfMemoryError oome) {
+                        return null;
+                    }
+                }
+                if (U.compareAndSetReference(this, HEAD, null, h))
+                    return tail = h;
+            }
         }
     }
 
@@ -579,20 +603,24 @@ public abstract class AbstractQueuedSynchronizer
      * Enqueues the node unless null. (Currently used only for
      * ConditionNodes; other cases are interleaved with acquires.)
      */
-    final void enqueue(Node node) {
+    final void enqueue(ConditionNode node) {
         if (node != null) {
-            for (;;) {
-                Node t = tail;
+            boolean unpark = false;
+            for (Node t;;) {
+                if ((t = tail) == null && (t = tryInitializeHead()) == null) {
+                    unpark = true;             // wake up to spin on OOME
+                    break;
+                }
                 node.setPrevRelaxed(t);        // avoid unnecessary fence
-                if (t == null)                 // initialize
-                    tryInitializeHead();
-                else if (casTail(t, node)) {
+                if (casTail(t, node)) {
                     t.next = node;
                     if (t.status < 0)          // wake up to clean link
-                        LockSupport.unpark(node.waiter);
+                        unpark = true;
                     break;
                 }
             }
+            if (unpark)
+                LockSupport.unpark(node.waiter);
         }
     }
 
@@ -644,7 +672,7 @@ public abstract class AbstractQueuedSynchronizer
         Thread current = Thread.currentThread();
         byte spins = 0, postSpins = 0;   // retries upon unpark of first thread
         boolean interrupted = false, first = false;
-        Node t, pred = null;             // predecessor of node when enqueued
+        Node pred = null, t;             // predecessor of node when enqueued
 
         /*
          * Repeatedly:
@@ -698,14 +726,8 @@ public abstract class AbstractQueuedSynchronizer
                 }
             }
             if ((t = tail) == null) {           // initialize queue
-                Node h = null;
-                try {
-                    h = new ExclusiveNode();
-                } catch (OutOfMemoryError oome) {
+                if (tryInitializeHead() == null)
                     return acquireOnOOME(shared, arg);
-                }
-                if (U.compareAndSetReference(this, HEAD, null, h))
-                    tail = h;
             } else if (node == null) {          // allocate; retry before enqueue
                 try {
                     node = (shared) ? new SharedNode() : new ExclusiveNode();
@@ -985,7 +1007,7 @@ public abstract class AbstractQueuedSynchronizer
         throws InterruptedException {
         if (Thread.interrupted() ||
             (!tryAcquire(arg) && acquire(null, arg, false, true, false, 0L) < 0))
-            throw new InterruptedException();
+            throw LockSupport.interruptedException();
     }
 
     /**
@@ -1019,7 +1041,7 @@ public abstract class AbstractQueuedSynchronizer
             if (stat == 0)
                 return false;
         }
-        throw new InterruptedException();
+        throw LockSupport.interruptedException();
     }
 
     /**
@@ -1074,7 +1096,7 @@ public abstract class AbstractQueuedSynchronizer
         if (Thread.interrupted() ||
             (tryAcquireShared(arg) < 0 &&
              acquire(null, arg, true, true, false, 0L) < 0))
-            throw new InterruptedException();
+            throw LockSupport.interruptedException();
     }
 
     /**
@@ -1107,7 +1129,7 @@ public abstract class AbstractQueuedSynchronizer
             if (stat == 0)
                 return false;
         }
-        throw new InterruptedException();
+        throw LockSupport.interruptedException();
     }
 
     /**
@@ -1465,6 +1487,12 @@ public abstract class AbstractQueuedSynchronizer
         private transient ConditionNode lastWaiter;
 
         /**
+         * Fixed delay in nanoseconds between releasing and reacquiring
+         * lock during Condition waits that encounter OutOfMemoryErrors
+         */
+        static final long OOME_COND_WAIT_DELAY = 10L * 1000L * 1000L; // 10 ms
+
+        /**
          * Creates a new {@code ConditionObject} instance.
          */
         public ConditionObject() { }
@@ -1499,8 +1527,8 @@ public abstract class AbstractQueuedSynchronizer
         public final void signal() {
             ConditionNode first = firstWaiter;
             if (!isHeldExclusively())
-                throw new IllegalMonitorStateException();
-            if (first != null)
+                throw LockSupport.illegalMonitorStateException();
+            else if (first != null)
                 doSignal(first, false);
         }
 
@@ -1514,8 +1542,8 @@ public abstract class AbstractQueuedSynchronizer
         public final void signalAll() {
             ConditionNode first = firstWaiter;
             if (!isHeldExclusively())
-                throw new IllegalMonitorStateException();
-            if (first != null)
+                throw LockSupport.illegalMonitorStateException();
+            else if (first != null)
                 doSignal(first, true);
         }
 
@@ -1542,7 +1570,7 @@ public abstract class AbstractQueuedSynchronizer
                     return savedState;
             }
             node.status = CANCELLED; // lock not held or inconsistent
-            throw new IllegalMonitorStateException();
+            throw LockSupport.illegalMonitorStateException();
         }
 
         /**
@@ -1584,25 +1612,21 @@ public abstract class AbstractQueuedSynchronizer
 
         /**
          * Constructs objects needed for condition wait. On OOME,
-         * releases lock, sleeps, reacquires, and retries. This uses
-         * longer sleeps than the similar method acquireOnOOME because
-         * each attempt can throw.
+         * releases lock, sleeps, reacquires, and returns null.
          */
         private ConditionNode newConditionNode() {
-            for (long nanos = 1L << 20;;) {     // initially about 1ms
+            int savedState;
+            if (tryInitializeHead() != null) {
                 try {
-                    tryInitializeHead();        // ensure queue exists
                     return new ConditionNode();
                 } catch (OutOfMemoryError oome) {
-                    int savedState = getState();
-                    boolean released = release(savedState);
-                    U.park(false, nanos);
-                    if (nanos < 1L << 30)       // max about 1 second
-                        nanos <<= 1;
-                    if (released)
-                        acquireOnOOME(false, savedState);
                 }
             }
+            if (!isHeldExclusively() || !release(savedState = getState()))
+                throw LockSupport.staticIllegalMonitorStateException; // OOM
+            U.park(false, OOME_COND_WAIT_DELAY);
+            acquireOnOOME(false, savedState);
+            return null;
         }
 
         /**
@@ -1618,6 +1642,8 @@ public abstract class AbstractQueuedSynchronizer
          */
         public final void awaitUninterruptibly() {
             ConditionNode node = newConditionNode();
+            if (node == null)
+                return;
             int savedState = enableWait(node);
             LockSupport.setCurrentBlocker(this); // for back-compatibility
             boolean interrupted = false, rejected = false;
@@ -1659,9 +1685,11 @@ public abstract class AbstractQueuedSynchronizer
          * </ol>
          */
         public final void await() throws InterruptedException {
-            ConditionNode node = newConditionNode();
             if (Thread.interrupted())
-                throw new InterruptedException();
+                throw LockSupport.interruptedException();
+            ConditionNode node = newConditionNode();
+            if (node == null)
+                return;
             int savedState = enableWait(node);
             LockSupport.setCurrentBlocker(this); // for back-compatibility
             boolean interrupted = false, cancelled = false, rejected = false;
@@ -1689,7 +1717,7 @@ public abstract class AbstractQueuedSynchronizer
             if (interrupted) {
                 if (cancelled) {
                     unlinkCancelledWaiters(node);
-                    throw new InterruptedException();
+                    throw LockSupport.interruptedException();
                 }
                 Thread.currentThread().interrupt();
             }
@@ -1710,9 +1738,11 @@ public abstract class AbstractQueuedSynchronizer
          */
         public final long awaitNanos(long nanosTimeout)
                 throws InterruptedException {
-            ConditionNode node = newConditionNode();
             if (Thread.interrupted())
-                throw new InterruptedException();
+                throw LockSupport.interruptedException();
+            ConditionNode node = newConditionNode();
+            if (node == null)
+                return nanosTimeout - OOME_COND_WAIT_DELAY;
             int savedState = enableWait(node);
             long nanos = (nanosTimeout < 0L) ? 0L : nanosTimeout;
             long deadline = System.nanoTime() + nanos;
@@ -1730,7 +1760,7 @@ public abstract class AbstractQueuedSynchronizer
             if (cancelled) {
                 unlinkCancelledWaiters(node);
                 if (interrupted)
-                    throw new InterruptedException();
+                    throw LockSupport.interruptedException();
             } else if (interrupted)
                 Thread.currentThread().interrupt();
             long remaining = deadline - System.nanoTime(); // avoid overflow
@@ -1754,9 +1784,11 @@ public abstract class AbstractQueuedSynchronizer
         public final boolean awaitUntil(Date deadline)
                 throws InterruptedException {
             long abstime = deadline.getTime();
-            ConditionNode node = newConditionNode();
             if (Thread.interrupted())
-                throw new InterruptedException();
+                throw LockSupport.interruptedException();
+            ConditionNode node = newConditionNode();
+            if (node == null)
+                return false;
             int savedState = enableWait(node);
             boolean cancelled = false, interrupted = false;
             while (!canReacquire(node)) {
@@ -1772,7 +1804,7 @@ public abstract class AbstractQueuedSynchronizer
             if (cancelled) {
                 unlinkCancelledWaiters(node);
                 if (interrupted)
-                    throw new InterruptedException();
+                    throw LockSupport.interruptedException();
             } else if (interrupted)
                 Thread.currentThread().interrupt();
             return !cancelled;
@@ -1795,9 +1827,11 @@ public abstract class AbstractQueuedSynchronizer
         public final boolean await(long time, TimeUnit unit)
                 throws InterruptedException {
             long nanosTimeout = unit.toNanos(time);
-            ConditionNode node = newConditionNode();
             if (Thread.interrupted())
-                throw new InterruptedException();
+                throw LockSupport.interruptedException();
+            ConditionNode node = newConditionNode();
+            if (node == null)
+                return false;
             int savedState = enableWait(node);
             long nanos = (nanosTimeout < 0L) ? 0L : nanosTimeout;
             long deadline = System.nanoTime() + nanos;
@@ -1815,7 +1849,7 @@ public abstract class AbstractQueuedSynchronizer
             if (cancelled) {
                 unlinkCancelledWaiters(node);
                 if (interrupted)
-                    throw new InterruptedException();
+                    throw LockSupport.interruptedException();
             } else if (interrupted)
                 Thread.currentThread().interrupt();
             return !cancelled;
@@ -1843,7 +1877,7 @@ public abstract class AbstractQueuedSynchronizer
          */
         protected final boolean hasWaiters() {
             if (!isHeldExclusively())
-                throw new IllegalMonitorStateException();
+                throw LockSupport.illegalMonitorStateException();
             for (ConditionNode w = firstWaiter; w != null; w = w.nextWaiter) {
                 if ((w.status & COND) != 0)
                     return true;
@@ -1862,7 +1896,7 @@ public abstract class AbstractQueuedSynchronizer
          */
         protected final int getWaitQueueLength() {
             if (!isHeldExclusively())
-                throw new IllegalMonitorStateException();
+                throw LockSupport.illegalMonitorStateException();
             int n = 0;
             for (ConditionNode w = firstWaiter; w != null; w = w.nextWaiter) {
                 if ((w.status & COND) != 0)
@@ -1882,7 +1916,7 @@ public abstract class AbstractQueuedSynchronizer
          */
         protected final Collection<Thread> getWaitingThreads() {
             if (!isHeldExclusively())
-                throw new IllegalMonitorStateException();
+                throw LockSupport.illegalMonitorStateException();
             ArrayList<Thread> list = new ArrayList<>();
             for (ConditionNode w = firstWaiter; w != null; w = w.nextWaiter) {
                 if ((w.status & COND) != 0) {
@@ -1903,7 +1937,6 @@ public abstract class AbstractQueuedSynchronizer
         = U.objectFieldOffset(AbstractQueuedSynchronizer.class, "head");
     private static final long TAIL
         = U.objectFieldOffset(AbstractQueuedSynchronizer.class, "tail");
-
     static {
         Class<?> ensureLoaded = LockSupport.class;
     }

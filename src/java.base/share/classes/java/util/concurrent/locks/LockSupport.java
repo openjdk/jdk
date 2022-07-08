@@ -457,6 +457,39 @@ public class LockSupport {
         return thread.threadId();
     }
 
+    /**
+     *  Preallocated exceptions thrown if acquiring or releasing locks
+     *  when OutOfMemory.
+     */
+    static final IllegalMonitorStateException staticIllegalMonitorStateException
+        = new IllegalMonitorStateException();
+    static final InterruptedException staticInterruptedException
+        = new InterruptedException();
+
+    /**
+     * Returns an IllegalMonitorStateException, using preallocated
+     * exception on OutOfMemoryError
+     */
+    static final IllegalMonitorStateException illegalMonitorStateException() {
+        try {
+            return new IllegalMonitorStateException();
+        } catch (OutOfMemoryError oome) {
+            return staticIllegalMonitorStateException;
+        }
+    }
+
+    /**
+     * Returns an InterruptedException, using preallocated
+     * exception on OutOfMemoryError
+     */
+    static final InterruptedException interruptedException() {
+        try {
+            return new InterruptedException();
+        } catch (OutOfMemoryError oome) {
+            return staticInterruptedException;
+        }
+    }
+
     // Hotspot implementation via intrinsics API
     private static final Unsafe U = Unsafe.getUnsafe();
     private static final long PARKBLOCKER
