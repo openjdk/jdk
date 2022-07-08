@@ -460,15 +460,15 @@
 
  private:
 
-  inline void find_codeblob_and_set_pc_and_deopt_state(address pc);
+  // Initialize frame members (_pc and _sp must be given)
+  inline void setup();
   const ImmutableOopMap* get_oop_map() const;
 
  // Constructors
 
  public:
   // To be used, if sp was not extended to match callee's calling convention.
-  inline frame(intptr_t* sp, address pc);
-  inline frame(intptr_t* sp, address pc, intptr_t* unextended_sp);
+  inline frame(intptr_t* sp, address pc, intptr_t* unextended_sp = nullptr, intptr_t* fp = nullptr, CodeBlob* cb = nullptr);
 
   // Access frame via stack pointer.
   inline intptr_t* sp_addr_at(int index) const  { return &sp()[index]; }
@@ -479,10 +479,6 @@
   inline z_abi_160* callers_abi() const { return (z_abi_160*) fp(); }
 
  private:
-
-  intptr_t* compiled_sender_sp(CodeBlob* cb) const;
-  address*  compiled_sender_pc_addr(CodeBlob* cb) const;
-
   address* sender_pc_addr(void) const;
 
  public:

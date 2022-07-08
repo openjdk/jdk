@@ -39,6 +39,7 @@
 #include "oops/method.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
+#include "runtime/continuationEntry.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/safepoint.hpp"
@@ -650,6 +651,13 @@ void CompiledStaticCall::compute_entry(const methodHandle& m, bool caller_is_nme
     assert(!m->is_method_handle_intrinsic(), "Compiled code should never call interpreter MH intrinsics");
     info._to_interpreter = true;
     info._entry      = m()->get_c2i_entry();
+  }
+}
+
+void CompiledStaticCall::compute_entry_for_continuation_entry(const methodHandle& m, StaticCallInfo& info) {
+  if (ContinuationEntry::is_interpreted_call(instruction_address())) {
+    info._to_interpreter = true;
+    info._entry = m()->get_c2i_entry();
   }
 }
 

@@ -26,8 +26,8 @@
 package java.security;
 
 /**
- * The Key interface is the top-level interface for all keys. It
- * defines the functionality shared by all key objects. All keys
+ * The {@code Key} interface is the top-level interface for all keys. It
+ * defines the functionality shared by all {@code Key} objects. All keys
  * have three characteristics:
  *
  * <UL>
@@ -130,7 +130,7 @@ public interface Key extends java.io.Serializable {
 
     /**
      * Returns the name of the primary encoding format of this key,
-     * or null if this key does not support encoding.
+     * or {@code null} if this key does not support encoding.
      * The primary encoding format is
      * named in terms of the appropriate ASN.1 data format, if an
      * ASN.1 specification for this key exists.
@@ -148,10 +148,10 @@ public interface Key extends java.io.Serializable {
     String getFormat();
 
     /**
-     * Returns the key in its primary encoding format, or null
+     * Returns the key in its primary encoding format, or {@code null}
      * if this key does not support encoding.
      *
-     * @return the encoded key, or null if the key does not support
+     * @return the encoded key, or {@code null} if the key does not support
      * encoding.
      */
     byte[] getEncoded();

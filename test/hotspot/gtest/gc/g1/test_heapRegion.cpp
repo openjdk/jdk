@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,12 +75,12 @@ void VM_HeapRegionApplyToMarkedObjectsTest::doit() {
   HeapRegion* region = heap->heap_region_containing(heap->bottom_addr_for_region(0));
 
   // Mark some "oops" in the bitmap.
-  G1CMBitMap* bitmap = heap->concurrent_mark()->next_mark_bitmap();
-  bitmap->mark(region->bottom());
-  bitmap->mark(region->bottom() + MARK_OFFSET_1);
-  bitmap->mark(region->bottom() + MARK_OFFSET_2);
-  bitmap->mark(region->bottom() + MARK_OFFSET_3);
-  bitmap->mark(region->end());
+  G1CMBitMap* bitmap = heap->concurrent_mark()->mark_bitmap();
+  bitmap->par_mark(region->bottom());
+  bitmap->par_mark(region->bottom() + MARK_OFFSET_1);
+  bitmap->par_mark(region->bottom() + MARK_OFFSET_2);
+  bitmap->par_mark(region->bottom() + MARK_OFFSET_3);
+  bitmap->par_mark(region->end());
 
   VerifyAndCountMarkClosure cl(bitmap);
 

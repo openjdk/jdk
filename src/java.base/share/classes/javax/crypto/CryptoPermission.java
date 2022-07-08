@@ -35,9 +35,9 @@ import java.util.Vector;
 import javax.crypto.spec.*;
 
 /**
- * The CryptoPermission class extends the
- * java.security.Permission class. A
- * CryptoPermission object is used to represent
+ * The {@code CryptoPermission} class extends the
+ * {@code java.security.Permission} class. A
+ * {@code CryptoPermission} object is used to represent
  * the ability of an application/applet to use certain
  * algorithms with certain key sizes and other
  * restrictions in certain environments.
@@ -80,7 +80,7 @@ class CryptoPermission extends java.security.Permission {
      * key size.
      *
      * This constructor implies that the given algorithm can be
-     * used with a key size up to <code>maxKeySize</code>.
+     * used with a key size up to {@code maxKeySize}.
      *
      * @param alg the algorithm name.
      *
@@ -95,12 +95,12 @@ class CryptoPermission extends java.security.Permission {
 
     /**
      * Constructor that takes an algorithm name, a maximum
-     * key size, and an AlgorithmParameterSpec object.
+     * key size, and an {@code AlgorithmParameterSpec} object.
      *
      * This constructor implies that the given algorithm can be
-     * used with a key size up to <code>maxKeySize</code>, and
+     * used with a key size up to {@code maxKeySize}, and
      * algorithm
-     * parameters up to the limits set in <code>algParamSpec</code>.
+     * parameters up to the limits set in {@code algParamSpec}.
      *
      * @param alg the algorithm name.
      *
@@ -144,7 +144,7 @@ class CryptoPermission extends java.security.Permission {
      * size, and the name of an exemption mechanism.
      *
      * This constructor implies that the given algorithm can be
-     * used with a key size up to <code>maxKeySize</code>
+     * used with a key size up to {@code maxKeySize}
      * provided that the
      * specified exemption mechanism is enforced.
      *
@@ -166,12 +166,12 @@ class CryptoPermission extends java.security.Permission {
     /**
      * Constructor that takes an algorithm name, a maximum key
      * size, the name of an exemption mechanism, and an
-     * AlgorithmParameterSpec object.
+     * {@code AlgorithmParameterSpec} object.
      *
      * This constructor implies that the given algorithm can be
-     * used with a key size up to <code>maxKeySize</code>
+     * used with a key size up to {@code maxKeySize}
      * and algorithm
-     * parameters up to the limits set in <code>algParamSpec</code>
+     * parameters up to the limits set in {@code algParamSpec}
      * provided that
      * the specified exemption mechanism is enforced.
      *
@@ -199,9 +199,9 @@ class CryptoPermission extends java.security.Permission {
      * Checks if the specified permission is "implied" by
      * this object.
      * <p>
-     * More specifically, this method returns true if:
+     * More specifically, this method returns {@code true} if:
      * <ul>
-     * <li> <i>p</i> is an instance of CryptoPermission, and</li>
+     * <li> <i>p</i> is an instance of {@code CryptoPermission}, and</li>
      * <li> <i>p</i>'s algorithm name equals or (in the case of wildcards)
      *       is implied by this permission's algorithm name, and</li>
      * <li> <i>p</i>'s maximum allowable key size is less or
@@ -210,14 +210,14 @@ class CryptoPermission extends java.security.Permission {
      *        implied by this permission's algorithm parameter spec, and</li>
      * <li> <i>p</i>'s exemptionMechanism equals or
      *        is implied by this permission's
-     *        exemptionMechanism (a <code>null</code> exemption mechanism
+     *        exemptionMechanism (a {@code null} exemption mechanism
      *        implies any other exemption mechanism).</li>
      * </ul>
      *
      * @param p the permission to check against.
      *
-     * @return true if the specified permission is equal to or
-     * implied by this permission, false otherwise.
+     * @return {@code true} if the specified permission is equal to or
+     * implied by this permission, {@code false} otherwise.
      */
     public boolean implies(Permission p) {
         if (!(p instanceof CryptoPermission cp))
@@ -244,15 +244,13 @@ class CryptoPermission extends java.security.Permission {
     }
 
     /**
-     * Checks two CryptoPermission objects for equality. Checks that
-     * <code>obj</code> is a CryptoPermission, and has the same
-     * algorithm name,
+     * Checks two {@code CryptoPermission} objects for equality.
+     * Checks that {@code obj} is a {@code CryptoPermission}
+     * object, and has the same algorithm name,
      * exemption mechanism name, maximum allowable key size and
-     * algorithm parameter spec
-     * as this object.
-     * <P>
+     * algorithm parameter spec as this object.
      * @param obj the object to test for equality with this object.
-     * @return true if <code>obj</code> is equal to this object.
+     * @return {@code true} if {@code obj} is equal to this object.
      */
     public boolean equals(Object obj) {
         if (obj == this)
@@ -294,7 +292,7 @@ class CryptoPermission extends java.security.Permission {
     }
 
     /**
-     * There is no action defined for a CryptoPermission
+     * There is no action defined for a {@code CryptoPermission}
      * object.
      */
     public String getActions()
@@ -303,10 +301,10 @@ class CryptoPermission extends java.security.Permission {
     }
 
     /**
-     * Returns a new PermissionCollection object for storing
-     * CryptoPermission objects.
+     * Returns a new {@code PermissionCollection} object for storing
+     * {@code CryptoPermission} objects.
      *
-     * @return a new PermissionCollection object suitable for storing
+     * @return a new {@code PermissionCollection} object suitable for storing
      * CryptoPermissions.
      */
 
@@ -316,7 +314,7 @@ class CryptoPermission extends java.security.Permission {
 
     /**
      * Returns the algorithm name associated with
-     * this CryptoPermission object.
+     * this {@code CryptoPermission} object.
      */
     final String getAlgorithm() {
         return alg;
@@ -324,7 +322,7 @@ class CryptoPermission extends java.security.Permission {
 
     /**
      * Returns the exemption mechanism name
-     * associated with this CryptoPermission
+     * associated with this {@code CryptoPermission}
      * object.
      */
     final String getExemptionMechanism() {
@@ -333,16 +331,16 @@ class CryptoPermission extends java.security.Permission {
 
     /**
      * Returns the maximum allowable key size associated
-     * with this CryptoPermission object.
+     * with this {@code CryptoPermission} object.
      */
     final int getMaxKeySize() {
         return maxKeySize;
     }
 
     /**
-     * Returns true if there is a limitation on the
-     * AlgorithmParameterSpec associated with this
-     * CryptoPermission object and false if otherwise.
+     * Returns {@code true} if there is a limitation on the
+     * {@code AlgorithmParameterSpec} associated with this
+     * {@code CryptoPermission} object and {@code false} if otherwise.
      */
     final boolean getCheckParam() {
         return checkParam;
@@ -358,12 +356,13 @@ class CryptoPermission extends java.security.Permission {
     }
 
     /**
-     * Returns a string describing this CryptoPermission.  The convention is to
-     * specify the class name, the algorithm name, the maximum allowable
-     * key size, and the name of the exemption mechanism, in the following
+     * Returns a string describing this {@code CryptoPermission} object.
+     * The convention is to specify the class name, the algorithm name,
+     * the maximum allowable key size, and the name of the exemption mechanism,
+     * in the following
      * format: '("ClassName" "algorithm" "keysize" "exemption_mechanism")'.
      *
-     * @return information about this CryptoPermission.
+     * @return information about this {@code CryptoPermission} object.
      */
     public String toString() {
         StringBuilder buf = new StringBuilder(100);
@@ -449,8 +448,8 @@ class CryptoPermission extends java.security.Permission {
 }
 
 /**
- * A CryptoPermissionCollection stores a set of CryptoPermission
- * permissions.
+ * A {@code CryptoPermissionCollection} object stores a set of
+ * {@code CryptoPermission} objects.
  *
  * @see java.security.Permission
  * @see java.security.Permissions
@@ -475,12 +474,13 @@ final class CryptoPermissionCollection extends PermissionCollection
     }
 
     /**
-     * Adds a permission to the CryptoPermissionCollection.
+     * Adds a permission to the {@code CryptoPermissionCollection} object.
      *
-     * @param permission the Permission object to add.
+     * @param permission the {@code Permission} object to add.
      *
-     * @exception SecurityException - if this CryptoPermissionCollection
-     * object has been marked <i>readOnly</i>.
+     * @exception SecurityException if this
+     * {@code CryptoPermissionCollection} object has been marked
+     * <i>readOnly</i>.
      */
     public void add(Permission permission) {
         if (isReadOnly())
@@ -494,13 +494,13 @@ final class CryptoPermissionCollection extends PermissionCollection
     }
 
     /**
-     * Check and see if this CryptoPermission object implies
-     * the given Permission object.
+     * Check and see if this {@code CryptoPermission} object implies
+     * the given {@code Permission} object.
      *
-     * @param permission the Permission object to compare
+     * @param permission the {@code Permission} object to compare
      *
-     * @return true if the given permission  is implied by this
-     * CryptoPermissionCollection, false if not.
+     * @return {@code true} if the given permission is implied by this
+     * {@code CryptoPermissionCollection}, {@code false} if not.
      */
     public boolean implies(Permission permission) {
         if (!(permission instanceof CryptoPermission cp))
@@ -518,10 +518,10 @@ final class CryptoPermissionCollection extends PermissionCollection
     }
 
     /**
-     * Returns an enumeration of all the CryptoPermission objects
+     * Returns an enumeration of all the {@code CryptoPermission} objects
      * in the container.
      *
-     * @return an enumeration of all the CryptoPermission objects.
+     * @return an enumeration of all the {@code CryptoPermission} objects.
      */
 
     public Enumeration<Permission> elements() {

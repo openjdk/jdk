@@ -120,12 +120,15 @@ abstract non-sealed class AbstractLayout implements MemoryLayout {
         return this instanceof PaddingLayout;
     }
 
+    // the following methods have to copy the same Javadoc as in MemoryLayout, or subclasses will just show
+    // the Object methods javadoc
+
     /**
      * {@return the hash code value for this layout}
      */
     @Override
     public int hashCode() {
-        return name.hashCode() << Long.hashCode(alignment);
+        return Objects.hash(name, size, alignment);
     }
 
     /**
@@ -134,28 +137,27 @@ abstract non-sealed class AbstractLayout implements MemoryLayout {
      * the same kind, have the same size, name and alignment constraints. Furthermore, depending on the layout kind, additional
      * conditions must be satisfied:
      * <ul>
-     *     <li>two value layouts are considered equal if they have the same byte order (see {@link ValueLayout#order()})</li>
+     *     <li>two value layouts are considered equal if they have the same {@linkplain ValueLayout#order() order},
+     *     and {@linkplain ValueLayout#carrier() carrier}</li>
      *     <li>two sequence layouts are considered equal if they have the same element count (see {@link SequenceLayout#elementCount()}), and
      *     if their element layouts (see {@link SequenceLayout#elementLayout()}) are also equal</li>
      *     <li>two group layouts are considered equal if they are of the same kind (see {@link GroupLayout#isStruct()},
      *     {@link GroupLayout#isUnion()}) and if their member layouts (see {@link GroupLayout#memberLayouts()}) are also equal</li>
      * </ul>
      *
-     * @param that the object to be compared for equality with this layout.
+     * @param other the object to be compared for equality with this layout.
      * @return {@code true} if the specified object is equal to this layout.
      */
     @Override
-    public boolean equals(Object that) {
-        if (this == that) {
+    public boolean equals(Object other) {
+        if (this == other) {
             return true;
         }
 
-        if (!(that instanceof AbstractLayout)) {
-            return false;
-        }
-
-        return Objects.equals(name, ((AbstractLayout) that).name) &&
-                Objects.equals(alignment, ((AbstractLayout) that).alignment);
+        return other instanceof AbstractLayout otherLayout &&
+                name.equals(otherLayout.name) &&
+                size == otherLayout.size &&
+                alignment == otherLayout.alignment;
     }
 
     /**
