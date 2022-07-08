@@ -128,7 +128,7 @@ public class MultiresolutionIconTest extends JFrame {
 
     private boolean checkPressedColor(int x, int y, Color ok) {
 
-        r.mouseMove(x, y);
+        r.mouseMove(x+5, y+5);
         r.waitForIdle();
         r.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         r.waitForIdle(100);
@@ -136,10 +136,14 @@ public class MultiresolutionIconTest extends JFrame {
         r.waitForIdle(100);
         r.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         r.waitForIdle(100);
-        if (!c.equals(ok)) { return false; }
+        System.out.println("checkPressedColor color: " + c + " expected: " + ok);
+        if (!c.equals(ok)) {
+            return false;
+        }
         // check the icon's color hasn't changed
         // after the mouse was released
         c = r.getPixelColor(x, y);
+        System.out.println("checkPressedColor2 color: " + c + " expected: " + ok);
         return c.equals(ok);
     }
 
@@ -186,9 +190,13 @@ public class MultiresolutionIconTest extends JFrame {
             // check icon color
             c = r.getPixelColor(t, y);
             System.out.print(components[i] + " icon: ");
+            System.out.println("getPixelColor color: " + c + " expected: " + expected);
             if (!c.equals(expected)) {
+//                c.equals(expected);
+                System.out.println("c.equals(expected) color: " + c + " expected: " + expected);
                 curr = false;
             } else {
+                System.out.println("else color: " + c + " expected: " + expected);
                 // check icon color when mouse button pressed - see JDK-8151303
                 curr = checkPressedColor(t, y, expected);
             }
