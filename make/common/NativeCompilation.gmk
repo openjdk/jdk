@@ -406,9 +406,7 @@ define SetupCompileNativeFileBody
     # For reproducible builds with gcc and clang ensure random symbol generation is
     # seeded deterministically
     ifneq ($(findstring $(TOOLCHAIN_TYPE), gcc clang), )
-       ifeq ($$(ENABLE_REPRODUCIBLE_BUILD), true)
-         $1_COMPILE_OPTIONS += -frandom-seed="$$($1_FILENAME)"
-       endif
+      $1_COMPILE_OPTIONS += -frandom-seed="$$($1_FILENAME)"
     endif
 
     $$($1_OBJ_JSON): $$($1_OBJ_DEPS)

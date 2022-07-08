@@ -161,13 +161,6 @@ void G1BarrierSetC1::post_barrier(LIRAccess& access, LIR_Opr addr, LIR_Opr new_v
                             LIR_Opr::illegalOpr());
   }
 
-  if (!new_val->is_register()) {
-    LIR_Opr new_val_reg = gen->new_register(T_OBJECT);
-    __ leal(new_val, new_val_reg);
-    new_val = new_val_reg;
-  }
-  assert(new_val->is_register(), "must be a register at this point");
-
   __ cmp(lir_cond_notEqual, xor_shift_res, LIR_OprFact::intptrConst(NULL_WORD));
 
   CodeStub* slow = new G1PostBarrierStub(addr, new_val);

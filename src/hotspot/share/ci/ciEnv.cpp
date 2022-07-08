@@ -69,11 +69,11 @@
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
-#include "runtime/reflection.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/reflection.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/thread.inline.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/macros.hpp"
 #ifdef COMPILER1
@@ -1116,6 +1116,10 @@ void ciEnv::register_method(ciMethod* target,
       record_failure("RTM state change invalidated rtm code");
     }
 #endif
+
+    if (!failing()) {
+      code_buffer->finalize_stubs();
+    }
 
     if (failing()) {
       // While not a true deoptimization, it is a preemptive decompile.

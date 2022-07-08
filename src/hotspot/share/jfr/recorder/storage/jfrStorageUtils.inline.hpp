@@ -28,7 +28,7 @@
 #include "jfr/recorder/storage/jfrStorageUtils.hpp"
 
 #include "runtime/atomic.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
 
 template <typename T>
 inline bool UnBufferedWriteToChunk<T>::write(T* t, const u1* data, size_t size) {

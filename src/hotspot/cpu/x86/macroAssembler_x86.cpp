@@ -43,6 +43,7 @@
 #include "runtime/continuation.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/os.hpp"
@@ -50,7 +51,6 @@
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/macros.hpp"
 #include "crc32c.h"
 
@@ -1326,6 +1326,13 @@ void MacroAssembler::ic_call(address entry, jint method_index) {
   RelocationHolder rh = virtual_call_Relocation::spec(pc(), method_index);
   movptr(rax, (intptr_t)Universe::non_oop_word());
   call(AddressLiteral(entry, rh));
+}
+
+void MacroAssembler::emit_static_call_stub() {
+  // Static stub relocation also tags the Method* in the code-stream.
+  mov_metadata(rbx, (Metadata*) NULL);  // Method is zapped till fixup time.
+  // This is recognized as unresolved by relocs/nativeinst/ic code.
+  jump(RuntimeAddress(pc()));
 }
 
 // Implementation of call_VM versions
@@ -2898,56 +2905,26 @@ void MacroAssembler::pop_cont_fastpath() {
 }
 
 void MacroAssembler::inc_held_monitor_count() {
-  if (!Continuations::enabled()) return;
-
 #ifndef _LP64
   Register thread = rax;
   push(thread);
   get_thread(thread);
-#else
-  Register thread = r15_thread;
-#endif
-
   incrementl(Address(thread, JavaThread::held_monitor_count_offset()));
-
-#ifndef _LP64
   pop(thread);
+#else // LP64
+  incrementq(Address(r15_thread, JavaThread::held_monitor_count_offset()));
 #endif
 }
 
 void MacroAssembler::dec_held_monitor_count() {
-  if (!Continuations::enabled()) return;
-
 #ifndef _LP64
   Register thread = rax;
   push(thread);
   get_thread(thread);
-#else
-  Register thread = r15_thread;
-#endif
-
   decrementl(Address(thread, JavaThread::held_monitor_count_offset()));
-
-#ifndef _LP64
   pop(thread);
-#endif
-}
-
-void MacroAssembler::reset_held_monitor_count() {
-  if (!Continuations::enabled()) return;
-
-#ifndef _LP64
-  Register thread = rax;
-  push(thread);
-  get_thread(thread);
-#else
-  Register thread = r15_thread;
-#endif
-
-  movl(Address(thread, JavaThread::held_monitor_count_offset()), (int32_t)0);
-
-#ifndef _LP64
-  pop(thread);
+#else // LP64
+  decrementq(Address(r15_thread, JavaThread::held_monitor_count_offset()));
 #endif
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,11 +55,11 @@ class LinuxThread implements ThreadProxy {
     }
 
     public boolean equals(Object obj) {
-        if ((obj == null) || !(obj instanceof LinuxThread)) {
+        if (!(obj instanceof LinuxThread other)) {
             return false;
         }
 
-        return (((LinuxThread) obj).lwp_id == lwp_id);
+        return (other.lwp_id == lwp_id);
     }
 
     public int hashCode() {

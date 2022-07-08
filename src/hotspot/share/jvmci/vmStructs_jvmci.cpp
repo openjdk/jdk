@@ -191,7 +191,7 @@
   nonstatic_field(JavaThread,                  _jni_environment,                              JNIEnv)                                \
   nonstatic_field(JavaThread,                  _poll_data,                                    SafepointMechanism::ThreadData)        \
   nonstatic_field(JavaThread,                  _stack_overflow_state._reserved_stack_activation, address)                            \
-  nonstatic_field(JavaThread,                  _held_monitor_count,                           int)                                   \
+  nonstatic_field(JavaThread,                  _held_monitor_count,                           int64_t)                               \
                                                                                                                                      \
   static_field(java_lang_Class,                _klass_offset,                                 int)                                   \
   static_field(java_lang_Class,                _array_klass_offset,                           int)                                   \
@@ -492,6 +492,70 @@
   declare_constant(CodeInstaller::VERIFY_OOP_BITS)                        \
   declare_constant(CodeInstaller::VERIFY_OOP_MASK)                        \
   declare_constant(CodeInstaller::INVOKE_INVALID)                         \
+                                                                          \
+  declare_constant(CodeInstaller::ILLEGAL)                                \
+  declare_constant(CodeInstaller::REGISTER_PRIMITIVE)                     \
+  declare_constant(CodeInstaller::REGISTER_OOP)                           \
+  declare_constant(CodeInstaller::REGISTER_NARROW_OOP)                    \
+  declare_constant(CodeInstaller::STACK_SLOT_PRIMITIVE)                   \
+  declare_constant(CodeInstaller::STACK_SLOT_OOP)                         \
+  declare_constant(CodeInstaller::STACK_SLOT_NARROW_OOP)                  \
+  declare_constant(CodeInstaller::VIRTUAL_OBJECT_ID)                      \
+  declare_constant(CodeInstaller::VIRTUAL_OBJECT_ID2)                     \
+  declare_constant(CodeInstaller::NULL_CONSTANT)                          \
+  declare_constant(CodeInstaller::RAW_CONSTANT)                           \
+  declare_constant(CodeInstaller::PRIMITIVE_0)                            \
+  declare_constant(CodeInstaller::PRIMITIVE4)                             \
+  declare_constant(CodeInstaller::PRIMITIVE8)                             \
+  declare_constant(CodeInstaller::JOBJECT)                                \
+  declare_constant(CodeInstaller::OBJECT_ID)                              \
+  declare_constant(CodeInstaller::OBJECT_ID2)                             \
+                                                                          \
+  declare_constant(CodeInstaller::NO_FINALIZABLE_SUBCLASS)                \
+  declare_constant(CodeInstaller::CONCRETE_SUBTYPE)                       \
+  declare_constant(CodeInstaller::LEAF_TYPE)                              \
+  declare_constant(CodeInstaller::CONCRETE_METHOD)                        \
+  declare_constant(CodeInstaller::CALLSITE_TARGET_VALUE)                  \
+                                                                          \
+  declare_constant(CodeInstaller::PATCH_OBJECT_ID)                        \
+  declare_constant(CodeInstaller::PATCH_OBJECT_ID2)                       \
+  declare_constant(CodeInstaller::PATCH_NARROW_OBJECT_ID)                 \
+  declare_constant(CodeInstaller::PATCH_NARROW_OBJECT_ID2)                \
+  declare_constant(CodeInstaller::PATCH_JOBJECT)                          \
+  declare_constant(CodeInstaller::PATCH_NARROW_JOBJECT)                   \
+  declare_constant(CodeInstaller::PATCH_KLASS)                            \
+  declare_constant(CodeInstaller::PATCH_NARROW_KLASS)                     \
+  declare_constant(CodeInstaller::PATCH_METHOD)                           \
+  declare_constant(CodeInstaller::PATCH_DATA_SECTION_REFERENCE)           \
+                                                                          \
+  declare_constant(CodeInstaller::SITE_CALL)                              \
+  declare_constant(CodeInstaller::SITE_FOREIGN_CALL)                      \
+  declare_constant(CodeInstaller::SITE_FOREIGN_CALL_NO_DEBUG_INFO)        \
+  declare_constant(CodeInstaller::SITE_SAFEPOINT)                         \
+  declare_constant(CodeInstaller::SITE_INFOPOINT)                         \
+  declare_constant(CodeInstaller::SITE_IMPLICIT_EXCEPTION)                \
+  declare_constant(CodeInstaller::SITE_IMPLICIT_EXCEPTION_DISPATCH)       \
+  declare_constant(CodeInstaller::SITE_MARK)                              \
+  declare_constant(CodeInstaller::SITE_DATA_PATCH)                        \
+  declare_constant(CodeInstaller::SITE_EXCEPTION_HANDLER)                 \
+                                                                          \
+  declare_constant(CodeInstaller::DI_HAS_REFERENCE_MAP)                   \
+  declare_constant(CodeInstaller::DI_HAS_CALLEE_SAVE_INFO)                \
+  declare_constant(CodeInstaller::DI_HAS_FRAMES)                          \
+                                                                          \
+  declare_constant(CodeInstaller::DIF_HAS_LOCALS)                         \
+  declare_constant(CodeInstaller::DIF_HAS_STACK)                          \
+  declare_constant(CodeInstaller::DIF_HAS_LOCKS)                          \
+  declare_constant(CodeInstaller::DIF_DURING_CALL)                        \
+  declare_constant(CodeInstaller::DIF_RETHROW_EXCEPTION)                  \
+                                                                          \
+  declare_constant(CodeInstaller::HCC_IS_NMETHOD)                         \
+  declare_constant(CodeInstaller::HCC_HAS_ASSUMPTIONS)                    \
+  declare_constant(CodeInstaller::HCC_HAS_METHODS)                        \
+  declare_constant(CodeInstaller::HCC_HAS_DEOPT_RESCUE_SLOT)              \
+  declare_constant(CodeInstaller::HCC_HAS_COMMENTS)                       \
+                                                                          \
+  declare_constant(CodeInstaller::NO_REGISTER)                            \
                                                                           \
   declare_constant(CollectedHeap::None)                                   \
   declare_constant(CollectedHeap::Serial)                                 \

@@ -69,6 +69,7 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/keepStackGCProcessed.hpp"
 #include "runtime/objectMonitor.inline.hpp"
@@ -80,7 +81,6 @@
 #include "runtime/stackValue.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/threadWXSetters.inline.hpp"
 #include "runtime/vframe.hpp"
@@ -1522,7 +1522,6 @@ bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInf
         BasicLock* lock = mon_info->lock();
         ObjectSynchronizer::enter(obj, lock, deoptee_thread);
         assert(mon_info->owner()->is_locked(), "object must be locked now");
-        deoptee_thread->inc_held_monitor_count();
       }
     }
   }
@@ -1597,7 +1596,6 @@ void Deoptimization::pop_frames_failed_reallocs(JavaThread* thread, vframeArray*
         BasicObjectLock* src = monitors->at(j);
         if (src->obj() != NULL) {
           ObjectSynchronizer::exit(src->obj(), src->lock(), thread);
-          thread->dec_held_monitor_count();
         }
       }
       array->element(i)->free_monitors(thread);
