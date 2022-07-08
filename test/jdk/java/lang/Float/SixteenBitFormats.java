@@ -125,7 +125,7 @@ public class SixteenBitFormats {
         public static final short MAX_SUBNORMAL = (short)0x03ff;
 
         public static boolean isNaN(short binary16) {
-            return ((binary16 & 0x7c00) == 0x7c00) // Max exponent and... 
+            return ((binary16 & 0x7c00) == 0x7c00) // Max exponent and...
                 && ((binary16 & 0x03ff) != 0 );    // significand nonzero.
         }
 

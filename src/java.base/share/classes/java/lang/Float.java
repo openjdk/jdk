@@ -984,7 +984,7 @@ public final class Float extends Number
      * correspond to narrowing primitive conversion
      * todo: round to nearest-even specified
      * Special value handling
-     * 
+     *
      * @param f the float value to convert
      * @since 20
      */
@@ -993,7 +993,7 @@ public final class Float extends Number
         if (Float.isNaN(f)) {
             // Arbitrary binary16 NaN value; could try to preserve the
             // sign and some bits of the NaN significand.
-            return (short)0x7fff; 
+            return (short)0x7fff;
         }
 
         // TODO: use round-to-zero for initial implementation to allow
@@ -1025,7 +1025,7 @@ public final class Float extends Number
             assert -24 <= exp && exp <= 15;
             short sign_bit = (f_sign == 0) ? (short)0 : (short)0x8000;
             short signif_bits;
-            
+
             // scale down to float subnormal range to do rounding? -- use scaleBy
             if (exp <= -15) {
                 exp = -15; // Subnormal encoding using -E_max.
@@ -1065,7 +1065,7 @@ public final class Float extends Number
      * todo: round to nearest-even
      * specified Special value handling
      * correspond to widening primitive conversion
-     * 
+     *
      * @param binary16asShort the binary16 value to convert
      * @since 20
      */
