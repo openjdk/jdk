@@ -462,9 +462,16 @@ public class LockSupport {
      *  when OutOfMemory.
      */
     static final IllegalMonitorStateException staticIllegalMonitorStateException
-        = new IllegalMonitorStateException();
+        = new IllegalMonitorStateException() {
+                @Override public Throwable fillInStackTrace() { return this; }
+                @Override public void setStackTrace(java.lang.StackTraceElement[] new_stackTrace) {}
+            };
+
     static final InterruptedException staticInterruptedException
-        = new InterruptedException();
+        = new InterruptedException() {
+                @Override public Throwable fillInStackTrace() { return this; }
+                @Override public void setStackTrace(java.lang.StackTraceElement[] new_stackTrace) {}
+            };
 
     /**
      * Returns an IllegalMonitorStateException, using preallocated
