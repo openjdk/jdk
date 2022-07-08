@@ -33,7 +33,6 @@
 #include "os_posix.inline.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/osThread.hpp"
-#include "utilities/globalDefinitions.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -48,6 +47,7 @@
 #include "utilities/align.hpp"
 #include "utilities/events.hpp"
 #include "utilities/formatBuffer.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
 
@@ -905,7 +905,7 @@ char* os::Posix::realpath(const char* filename, char* outbuf, size_t outbuflen) 
   // This assumes platform realpath() is implemented according to POSIX.1-2008.
   // POSIX.1-2008 allows to specify NULL for the output buffer, in which case
   // output buffer is dynamically allocated and must be ::free()'d by the caller.
-  char* p = ::realpath(filename, NULL);
+  ALLOW_C_FUNCTION(::realpath, char* p = ::realpath(filename, NULL);)
   if (p != NULL) {
     if (strlen(p) < outbuflen) {
       strcpy(outbuf, p);
@@ -913,7 +913,7 @@ char* os::Posix::realpath(const char* filename, char* outbuf, size_t outbuflen) 
     } else {
       errno = ENAMETOOLONG;
     }
-    ::free(p); // *not* os::free
+    ALLOW_C_FUNCTION(::free, ::free(p);) // *not* os::free
   } else {
     // Fallback for platforms struggling with modern Posix standards (AIX 5.3, 6.1). If realpath
     // returns EINVAL, this may indicate that realpath is not POSIX.1-2008 compatible and
@@ -922,7 +922,7 @@ char* os::Posix::realpath(const char* filename, char* outbuf, size_t outbuflen) 
     // a memory overwrite.
     if (errno == EINVAL) {
       outbuf[outbuflen - 1] = '\0';
-      p = ::realpath(filename, outbuf);
+      ALLOW_C_FUNCTION(::realpath, p = ::realpath(filename, outbuf);)
       if (p != NULL) {
         guarantee(outbuf[outbuflen - 1] == '\0', "realpath buffer overwrite detected.");
         result = p;

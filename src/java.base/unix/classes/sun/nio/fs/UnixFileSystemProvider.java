@@ -126,7 +126,7 @@ public abstract class UnixFileSystemProvider
             return (V) UnixFileAttributeViews.createOwnerView(file, followLinks);
         if (type == null)
             throw new NullPointerException();
-        return (V) null;
+        return null;
     }
 
     @Override
@@ -146,6 +146,25 @@ public abstract class UnixFileSystemProvider
         else
             throw new UnsupportedOperationException();
         return (A) getFileAttributeView(file, view, options).readAttributes();
+    }
+
+    @Override
+    public <A extends BasicFileAttributes> A readAttributesIfExists(Path path,
+                                                                    Class<A> type,
+                                                                    LinkOption... options)
+        throws IOException
+    {
+        if (type == BasicFileAttributes.class && Util.followLinks(options)) {
+            UnixPath file = UnixPath.toUnixPath(path);
+            try {
+                @SuppressWarnings("unchecked")
+                A attrs = (A) UnixFileAttributes.getIfExists(file);
+                return attrs;
+            } catch (UnixException e) {
+                e.rethrowAsIOException(file);
+            }
+        }
+        return super.readAttributesIfExists(path, type, options);
     }
 
     @Override
@@ -281,10 +300,9 @@ public abstract class UnixFileSystemProvider
         } else {
             for (AccessMode mode: modes) {
                 switch (mode) {
-                    case READ : r = true; break;
-                    case WRITE : w = true; break;
-                    case EXECUTE : x = true; break;
-                    default: throw new AssertionError("Should not get here");
+                    case READ -> r = true;
+                    case WRITE -> w = true;
+                    case EXECUTE -> x = true;
                 }
             }
         }
@@ -321,9 +339,8 @@ public abstract class UnixFileSystemProvider
             return true;
         if (obj2 == null)
             throw new NullPointerException();
-        if (!(obj2 instanceof UnixPath))
+        if (!(obj2 instanceof UnixPath file2))
             return false;
-        UnixPath file2 = (UnixPath)obj2;
 
         // check security manager access to both files
         file1.checkRead();
@@ -516,28 +533,16 @@ public abstract class UnixFileSystemProvider
     }
 
     @Override
-    public final boolean isDirectory(Path obj) {
-        UnixPath file = UnixPath.toUnixPath(obj);
-        file.checkRead();
-        int mode = UnixNativeDispatcher.stat(file);
-        return ((mode & UnixConstants.S_IFMT) == UnixConstants.S_IFDIR);
-    }
+    public boolean exists(Path path, LinkOption... options) {
+        if (Util.followLinks(options)) {
+            UnixPath file = UnixPath.toUnixPath(path);
+            file.checkRead();
+            return UnixNativeDispatcher.exists(file);
+        } else {
+            return super.exists(path, options);
+        }
 
-    @Override
-    public final boolean isRegularFile(Path obj) {
-        UnixPath file = UnixPath.toUnixPath(obj);
-        file.checkRead();
-        int mode = UnixNativeDispatcher.stat(file);
-        return ((mode & UnixConstants.S_IFMT) == UnixConstants.S_IFREG);
     }
-
-    @Override
-    public final boolean exists(Path obj) {
-        UnixPath file = UnixPath.toUnixPath(obj);
-        file.checkRead();
-        return UnixNativeDispatcher.exists(file);
-    }
-
     /**
      * Returns a {@code FileTypeDetector} for this platform.
      */

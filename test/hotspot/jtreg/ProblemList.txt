@@ -135,12 +135,6 @@ serviceability/sa/TestJmapCoreMetaspace.java 8269982,8267433 macosx-aarch64,maco
 
 #############################################################################
 
-vmTestbase/nsk/monitoring/MemoryPoolMBean/isUsageThresholdExceeded/isexceeded001/TestDescription.java 8198668 generic-all
-vmTestbase/nsk/monitoring/MemoryPoolMBean/isUsageThresholdExceeded/isexceeded002/TestDescription.java 8153598 generic-all
-vmTestbase/nsk/monitoring/MemoryPoolMBean/isUsageThresholdExceeded/isexceeded003/TestDescription.java 8198668 generic-all
-vmTestbase/nsk/monitoring/MemoryPoolMBean/isUsageThresholdExceeded/isexceeded004/TestDescription.java 8153598 generic-all
-vmTestbase/nsk/monitoring/MemoryPoolMBean/isUsageThresholdExceeded/isexceeded005/TestDescription.java 8153598 generic-all
-
 vmTestbase/nsk/jdi/HiddenClass/events/events001.java                 8257705 generic-all
 vmTestbase/nsk/jdi/ThreadReference/stop/stop001/TestDescription.java 7034630 generic-all
 
