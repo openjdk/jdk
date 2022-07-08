@@ -271,7 +271,7 @@ jobs:
     with:
       platform: macos-x64
       bootjdk-platform: macos-x64
-      runs-on: macos-10.15
+      runs-on: macos-12
 
   test-windows-x64:
     name: windows-x64
