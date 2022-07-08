@@ -287,8 +287,10 @@ public class UnixLoginModule implements LoginModule {
             subject.getPrincipals().remove(GIDPrincipal);
         }
         if (supplementaryGroups != null) {
-            for (int i = 0; i < supplementaryGroups.size(); i++) {
-                subject.getPrincipals().remove(supplementaryGroups.get(i));
+            for (UnixNumericGroupPrincipal gp : supplementaryGroups) {
+                if (gp != null) {
+                    subject.getPrincipals().remove(gp);
+                }
             }
         }
 

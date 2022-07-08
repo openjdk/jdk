@@ -365,9 +365,9 @@ public class NTLoginModule implements LoginModule {
             principals.remove(primaryGroup);
         }
         if (groups != null) {
-            for (int i = 0; groups != null && i < groups.length; i++) {
-                if (principals.contains(groups[i])) {
-                    principals.remove(groups[i]);
+            for (NTSidGroupPrincipal gp : groups) {
+                if (gp != null) {
+                    principals.remove(gp);
                 }
             }
         }
