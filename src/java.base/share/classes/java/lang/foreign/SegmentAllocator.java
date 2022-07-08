@@ -71,6 +71,11 @@ public interface SegmentAllocator {
      * sequences with this charset's default replacement byte array.  The
      * {@link java.nio.charset.CharsetEncoder} class should be used when more
      * control over the encoding process is required.
+     * <p>
+     * If the given string contains any {@code '\0'} characters, they will be
+     * copied as well. This means that, depending on the method used to read
+     * the string, such as {@link MemorySegment#getUtf8String(long)}, the string
+     * will appear truncated when read again.
      *
      * @implSpec the default implementation for this method copies the contents of the provided Java string
      * into a new memory segment obtained by calling {@code this.allocate(str.length() + 1)}.

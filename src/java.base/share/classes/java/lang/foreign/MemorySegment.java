@@ -737,6 +737,12 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
      * sequences with this charset's default replacement string.  The {@link
      * java.nio.charset.CharsetDecoder} class should be used when more control
      * over the decoding process is required.
+     * <p>
+     * If the given string contains any {@code '\0'} characters, they will be
+     * copied as well. This means that, depending on the method used to read
+     * the string, such as {@link MemorySegment#getUtf8String(long)}, the string
+     * will appear truncated when read again.
+     *
      * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
      *               the final address of this write operation can be expressed as {@code address().toRowLongValue() + offset}.
      * @param str the Java string to be written into this segment.
