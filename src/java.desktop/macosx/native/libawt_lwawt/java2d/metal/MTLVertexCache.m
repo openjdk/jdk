@@ -226,7 +226,8 @@ MTLVertexCache_AddMaskQuad(MTLContext *mtlc,
     // MTLVC_ADD_TRIANGLES at the end of this function
     // will place VERTS_FOR_A_QUAD vertexes to the vertex cache
     // check free space and flush if needed.
-    if ((maskCacheIndex >= MTLVC_MASK_CACHE_MAX_INDEX) || ((vertexCacheIndex + VERTS_FOR_A_QUAD) >= MTLVC_MAX_INDEX))
+    if ((maskCacheIndex >= MTLVC_MASK_CACHE_MAX_INDEX) ||
+         ((vertexCacheIndex + VERTS_FOR_A_QUAD) >= MTLVC_MAX_INDEX))
     {
         J2dTraceLn2(J2D_TRACE_INFO, "maskCacheIndex = %d, vertexCacheIndex = %d", maskCacheIndex, vertexCacheIndex);
         MTLVertexCache_FlushVertexCache(mtlc);
