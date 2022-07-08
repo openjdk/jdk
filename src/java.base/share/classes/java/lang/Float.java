@@ -30,6 +30,7 @@ import java.lang.constant.Constable;
 import java.lang.constant.ConstantDesc;
 import java.util.Optional;
 
+import jdk.internal.math.FloatConsts;
 import jdk.internal.math.FloatingDecimal;
 import jdk.internal.math.FloatToDecimal;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
@@ -974,6 +975,143 @@ public final class Float extends Number
      */
     @IntrinsicCandidate
     public static native float intBitsToFloat(int bits);
+
+
+    /**
+     * {@return the binary16 value, encoded as a {@code short},
+     * closest in value to the argument}
+     *
+     * correspond to narrowing primitive conversion
+     * todo: round to nearest-even specified
+     * Special value handling
+     * 
+     * @param f the float value to convert
+     * @since 20
+     */
+    // @IntrinsicCandidate
+    public static short floatToBinary16AsShortBits(float f) {
+        if (Float.isNaN(f)) {
+            // Arbitrary binary16 NaN value; could try to preserve the
+            // sign and some bits of the NaN significand.
+            return (short)0x7fff; 
+        }
+
+        // TODO: use round-to-zero for initial implementation to allow
+        // round-trip testing
+        float abs_f = Math.abs(f);
+        int doppel = Float.floatToRawIntBits(f);
+        int f_sign = 0x8000_0000 & doppel;
+
+        // TODO: Overflow threshold should be adjusted based on ulp of
+        // the binary16 MAX_VALUE ( 0x1.ffcp15) + 0.5 ulp max_value
+        if (abs_f > 65504.0f ) {
+            return (f_sign == 0) ?
+                (short)0x7c00: // Positive infinity
+                (short)0xfc00; // Negative infinity
+        } else {
+            // Smallest magnitude nonzero representable binary16 value
+            // is equal to 0x1.0p-24.
+            // TODO: adjust threshold for round to nearest; <= 1/2 min subnormal
+            // => 0x1.0p-25f
+            if (abs_f < 0x1.0p-24f) { // Covers float zeros and subnormals.
+                return (f_sign == 0) ?
+                    (short)0x0000 : // Positive zero
+                    (short)0x8000 ; // Negative zero;
+            }
+
+            // Dealing with finite values in exponent range of
+            // binary16 (when rounding is done, could still round up)
+            int exp = Math.getExponent(f);
+            assert -24 <= exp && exp <= 15;
+            short sign_bit = (f_sign == 0) ? (short)0 : (short)0x8000;
+            short signif_bits;
+            
+            // scale down to float subnormal range to do rounding? -- use scaleBy
+            if (exp <= -15) {
+                exp = -15; // Subnormal encoding using -E_max.
+                // Use a float multiply to compute the correct
+                // trailing significand bits for a binary16 subnormal.
+                //
+                // The exponent range of normalized binary16 subnormal
+                // values is [-15, -24]. The exponent range of float
+                // subnormals is [-140, -149]. Multiply abs_f down by
+                // 2^(-125) -- since (-125 = -149 - (-24)) -- so that
+                // the trailing bits of a subnormal float represent
+                // the correct trailing bits of a binary16 subnormal.
+                float f_adjust = abs_f * 0x1.0p-125f;
+                signif_bits = (short)(Float.floatToRawIntBits(f_adjust) & 0x03ff);
+            } else {
+                // All remaining values of f are in the normalized
+                // range of binary16 (which is also in the normalized
+                // range of float).
+
+                // TODO: look at discarded significand bits and adjust
+                // when needed, computing guard, round, and sticky, etc.
+                signif_bits = (short)((doppel & 0x0007f_e000) >>
+                                      (FloatConsts.SIGNIFICAND_WIDTH - 11));
+            }
+
+            short result = 0;
+            result = (short)(((exp + 15) << 10) | signif_bits);
+            return (short)(sign_bit | (0x7fff & result));
+        }
+    }
+
+    /**
+     * {@return the {@code float} representation of the numerical
+     * value of the argument, a binary16 value encoded as a {@code
+     * short} }
+     *
+     * todo: round to nearest-even
+     * specified Special value handling
+     * correspond to widening primitive conversion
+     * 
+     * @param binary16asShort the binary16 value to convert
+     * @since 20
+     */
+    // @IntrinsicCandidate
+    public static float binary16AsShortBitsToFloat(short binary16asShort) {
+        /*
+         * The binary16 format has 1 sign bit, 5 exponent bits, and 10
+         * significand bits. The exponent bias is 15.
+         */
+        int bin16arg = (int)binary16asShort;
+        int bin16SignBit     = 0x8000 & bin16arg;
+        int bin16ExpBits     = 0x7c00 & bin16arg;
+        int bin16SignifBits  = 0x03FF & bin16arg;
+
+        float sign = (bin16SignBit != 0) ? -1.0f : 1.0f;
+
+        // Extract binary16 exponent, remove its bias, add in the bias
+        // of a float exponent and shift to correct bit location
+        // (significand width includes the implicit bit so shift one
+        // less).
+        int bin16Exp = (((bin16ExpBits >> 10) - 15));
+        if (bin16Exp == -15) {
+            // For subnormal binary16 values and 0, the numerical
+            // value is 2^24 * the significand as an integer (no
+            // implicit bit).
+            return sign * (0x1p-24f * bin16SignifBits);
+        } else if (bin16Exp == 16) {
+            return (bin16SignifBits == 0) ?
+                sign * Float.POSITIVE_INFINITY :
+                Float.NaN; // Could try to preserve NaN significand bits
+        }
+
+        assert -14 <= bin16Exp  && bin16Exp <= 15;
+
+        int floatExpBits = (bin16Exp + FloatConsts.EXP_BIAS)
+            << (FloatConsts.SIGNIFICAND_WIDTH - 1);
+
+        int result = 0;
+        // Compute result sign, exponent, and significand bits.
+        result |= (floatExpBits |
+                   // Shift left difference in the number of
+                   // significand bits in the float and binary16
+                   // formats
+                   (bin16SignifBits << (FloatConsts.SIGNIFICAND_WIDTH - 11)));
+        return sign * Float.intBitsToFloat(result);
+    }
 
     /**
      * Compares two {@code Float} objects numerically.
