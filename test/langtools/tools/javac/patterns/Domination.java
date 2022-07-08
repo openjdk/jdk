@@ -136,4 +136,79 @@ public class Domination {
         }
     }
 
+    int testRecordPatternsDominated1() {
+        record R(int a) {}
+        Object o = null;
+        switch (o) {
+            case R r: return 1;
+            case R(int a): return -1;
+        }
+    }
+
+    int testRecordPatternsDominated2() {
+        record R(int a) {}
+        Object o = null;
+        switch (o) {
+            case R(int a): return 1;
+            case R(int a): return -1;
+        }
+    }
+
+    int testRecordPatternsDominated3() {
+        record R(int a) {}
+        Object o = null;
+        switch (o) {
+            case R r when guard(): return 1;
+            case R(int a): return -1;
+        }
+    }
+
+    int testRecordPatternsDominated4() {
+        record R(int a) {}
+        Object o = null;
+        switch (o) {
+            case R(int a) when guard(): return 1;
+            case R(int a): return -1;
+        }
+    }
+
+    boolean guard() {
+        return false;
+    }
+
+    int testRecordPatternsDominated5() {
+        record R(int a) {}
+        Object o = null;
+        switch (o) {
+            case ((R r)): return 1;
+            case ((R(int a))): return -1;
+        }
+    }
+
+    int testRecordPatternsDominated6() {
+        record R(int a) {}
+        Object o = null;
+        switch (o) {
+            case ((R(int a))): return 1;
+            case ((R(int a))): return -1;
+        }
+    }
+
+    int testRecordPatternsDominated7() {
+        record R(int a) {}
+        Object o = null;
+        switch (o) {
+            case R r when true: return 1;
+            case R(int a): return -1;
+        }
+    }
+
+    int testRecordPatternsDominated8() {
+        record R(int a) {}
+        Object o = null;
+        switch (o) {
+            case R(int a) when true: return 1;
+            case R(int a): return -1;
+        }
+    }
 }
