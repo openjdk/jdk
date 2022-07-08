@@ -44,7 +44,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Platform;
 
 import jtreg.SkippedException;
-import sun.hotspot.code.Compiler;
+import jdk.test.whitebox.code.Compiler;
 
 public class MainModuleOnly {
 
