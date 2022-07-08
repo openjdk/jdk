@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,14 +136,10 @@ public class MultiresolutionIconTest extends JFrame {
         r.waitForIdle(100);
         r.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         r.waitForIdle(100);
-        System.out.println("checkPressedColor color: " + c + " expected: " + ok);
-        if (!c.equals(ok)) {
-            return false;
-        }
+        if (!c.equals(ok)) { return false; }
         // check the icon's color hasn't changed
         // after the mouse was released
         c = r.getPixelColor(x, y);
-        System.out.println("checkPressedColor2 color: " + c + " expected: " + ok);
         return c.equals(ok);
     }
 
@@ -190,13 +186,9 @@ public class MultiresolutionIconTest extends JFrame {
             // check icon color
             c = r.getPixelColor(t, y);
             System.out.print(components[i] + " icon: ");
-            System.out.println("getPixelColor color: " + c + " expected: " + expected);
             if (!c.equals(expected)) {
-//                c.equals(expected);
-                System.out.println("c.equals(expected) color: " + c + " expected: " + expected);
                 curr = false;
             } else {
-                System.out.println("else color: " + c + " expected: " + expected);
                 // check icon color when mouse button pressed - see JDK-8151303
                 curr = checkPressedColor(t, y, expected);
             }
