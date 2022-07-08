@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,7 +108,7 @@ inline void G1RootRegionScanClosure::do_oop_work(T* p) {
     return;
   }
   oop obj = CompressedOops::decode_not_null(heap_oop);
-  _cm->mark_in_next_bitmap(_worker_id, obj);
+  _cm->mark_in_bitmap(_worker_id, obj);
 }
 
 template <class T>
@@ -210,7 +210,7 @@ void G1ParCopyHelper::mark_object(oop obj) {
   assert(!_g1h->heap_region_containing(obj)->in_collection_set(), "should not mark objects in the CSet");
 
   // We know that the object is not moving so it's safe to read its size.
-  _cm->mark_in_next_bitmap(_worker_id, obj);
+  _cm->mark_in_bitmap(_worker_id, obj);
 }
 
 void G1ParCopyHelper::trim_queue_partially() {

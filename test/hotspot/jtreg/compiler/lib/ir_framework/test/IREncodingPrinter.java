@@ -25,7 +25,7 @@ package compiler.lib.ir_framework.test;
 
 import compiler.lib.ir_framework.*;
 import compiler.lib.ir_framework.shared.*;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;

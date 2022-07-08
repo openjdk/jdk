@@ -61,6 +61,7 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/continuationEntry.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
@@ -1328,7 +1329,7 @@ void Method::set_code(const methodHandle& mh, CompiledMethod *code) {
     assert(mh->_from_interpreted_entry == NULL, "initialized incorrectly"); // see link_method
 
     // This is the entry used when we're in interpreter-only mode; see InterpreterMacroAssembler::jump_from_interpreted
-    mh->_i2i_entry = mh->get_i2c_entry();
+    mh->_i2i_entry = ContinuationEntry::interpreted_entry();
     // This must come last, as it is what's tested in LinkResolver::resolve_static_call
     Atomic::release_store(&mh->_from_interpreted_entry , mh->get_i2c_entry());
   } else if (!mh->is_method_handle_intrinsic()) {

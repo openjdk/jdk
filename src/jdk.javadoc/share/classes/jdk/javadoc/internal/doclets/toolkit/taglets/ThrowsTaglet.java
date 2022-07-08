@@ -25,6 +25,7 @@
 
 package jdk.javadoc.internal.doclets.toolkit.taglets;
 
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -32,7 +33,6 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 
 import javax.lang.model.element.Element;
@@ -160,22 +160,21 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
         var utils = writer.configuration().utils;
         Content result = writer.getOutputInstance();
         var documentedInThisCall = new HashSet<String>();
-        for (Entry<ThrowsTree, ExecutableElement> entry : throwsTags.entrySet()) {
-            Element e = entry.getValue();
+        Map<ThrowsTree, ExecutableElement> flattenedExceptions = flatten(throwsTags, writer);
+        flattenedExceptions.forEach((ThrowsTree t, ExecutableElement e) -> {
             var ch = utils.getCommentHelper(e);
-            ThrowsTree tag = entry.getKey();
-            Element te = ch.getException(tag);
-            String excName = tag.getExceptionName().toString();
+            Element te = ch.getException(t);
+            String excName = t.getExceptionName().toString();
             TypeMirror substituteType = typeSubstitutions.get(excName);
             if (alreadyDocumented.contains(excName)
                     || (te != null && alreadyDocumented.contains(utils.getFullyQualifiedName(te, false)))
                     || (substituteType != null && alreadyDocumented.contains(substituteType.toString()))) {
-                continue;
+                return;
             }
             if (alreadyDocumented.isEmpty() && documentedInThisCall.isEmpty()) {
                 result.add(writer.getThrowsHeader());
             }
-            result.add(writer.throwsTagOutput(e, tag, substituteType));
+            result.add(writer.throwsTagOutput(e, t, substituteType));
             if (substituteType != null) {
                 documentedInThisCall.add(substituteType.toString());
             } else {
@@ -183,9 +182,55 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
                         ? utils.getFullyQualifiedName(te, false)
                         : excName);
             }
-        }
+        });
         alreadyDocumented.addAll(documentedInThisCall);
         return result;
+    }
+
+    /*
+     * A single @throws tag from an overriding method can correspond to multiple
+     * @throws tags from an overridden method.
+     */
+    private Map<ThrowsTree, ExecutableElement> flatten(Map<ThrowsTree, ExecutableElement> throwsTags,
+                                                       TagletWriter writer) {
+        Map<ThrowsTree, ExecutableElement> result = new LinkedHashMap<>();
+        throwsTags.forEach((tag, taggedElement) -> {
+            var expandedTags = expand(tag, taggedElement, writer);
+            assert Collections.disjoint(result.entrySet(), expandedTags.entrySet());
+            result.putAll(expandedTags);
+        });
+        return result;
+    }
+
+    private Map<ThrowsTree, ExecutableElement> expand(ThrowsTree tag,
+                                                      ExecutableElement e,
+                                                      TagletWriter writer) {
+
+        // This method uses Map.of() to create maps of size zero and one.
+        // While such maps are effectively ordered, the syntax is more
+        // compact than that of LinkedHashMap.
+
+        // peek into @throws description
+        if (tag.getDescription().stream().noneMatch(d -> d.getKind() == DocTree.Kind.INHERIT_DOC)) {
+            // nothing to inherit
+            return Map.of(tag, e);
+        }
+        var input = new DocFinder.Input(writer.configuration().utils, e, this, new DocFinder.DocTreeInfo(tag, e), false, true);
+        var output = DocFinder.search(writer.configuration(), input);
+        if (output.tagList.size() <= 1) {
+            // outer code will handle this trivial case of inheritance
+            return Map.of(tag, e);
+        }
+        if (tag.getDescription().size() > 1) {
+            // there's more to description than just {@inheritDoc}
+            // it's likely a documentation error
+            var ch = writer.configuration().utils.getCommentHelper(e);
+            writer.configuration().getMessages().error(ch.getDocTreePath(tag), "doclet.inheritDocWithinInappropriateTag");
+            return Map.of();
+        }
+        Map<ThrowsTree, ExecutableElement> tags = new LinkedHashMap<>();
+        output.tagList.forEach(t -> tags.put((ThrowsTree) t, (ExecutableElement) output.holder));
+        return tags;
     }
 
     /**
