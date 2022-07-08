@@ -1673,11 +1673,6 @@ void os::initialize_initial_active_processor_count() {
   log_debug(os)("Initial active processor count set to %d" , _initial_active_processor_count);
 }
 
-void os::SuspendedThreadTask::run() {
-  internal_do_task();
-  _done = true;
-}
-
 bool os::create_stack_guard_pages(char* addr, size_t bytes) {
   return os::pd_create_stack_guard_pages(addr, bytes);
 }
@@ -1892,22 +1887,6 @@ bool os::release_memory_special(char* addr, size_t bytes) {
   }
   return res;
 }
-
-#ifndef _WINDOWS
-/* try to switch state from state "from" to state "to"
- * returns the state set after the method is complete
- */
-os::SuspendResume::State os::SuspendResume::switch_state(os::SuspendResume::State from,
-                                                         os::SuspendResume::State to)
-{
-  os::SuspendResume::State result = Atomic::cmpxchg(&_state, from, to);
-  if (result == from) {
-    // success
-    return to;
-  }
-  return result;
-}
-#endif
 
 // Convenience wrapper around naked_short_sleep to allow for longer sleep
 // times. Only for use by non-JavaThreads.
