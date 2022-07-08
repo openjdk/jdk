@@ -547,10 +547,6 @@ public class CommentHelper {
         return dtree.getKind() == SEE ? ((SeeTree)dtree).getReference() : null;
     }
 
-    public ReferenceTree getExceptionName(ThrowsTree tt) {
-        return tt.getExceptionName();
-    }
-
     public IdentifierTree getName(DocTree dtree) {
         switch (dtree.getKind()) {
             case PARAM:

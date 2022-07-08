@@ -505,7 +505,7 @@ public class TagletWriterImpl extends TagletWriter {
            excName = htmlWriter.getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.MEMBER,
                    substituteType));
         } else if (exception == null) {
-            excName = Text.of(ch.getExceptionName(throwsTag).toString());
+            excName = RawHtml.of(throwsTag.getExceptionName().toString());
         } else if (exception.asType() == null) {
             excName = Text.of(utils.getFullyQualifiedName(exception));
         } else {

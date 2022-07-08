@@ -1557,19 +1557,17 @@ public class HtmlDocletWriter {
                                     content.add(options.docrootParent());
                                     content.add(textCleanup(text.substring(3), isLastNode));
                                     pendingDocRoot = null;
-                                    first = false;
                                     continue;
                                 }
                             }
                             pendingDocRoot.accept(this, content);
                             pendingDocRoot = null;
-                            first = false;
                         }
 
-                        if (dt instanceof TextTree tt){
+                        if (dt instanceof TextTree tt) {
                             String text = tt.getBody();
                             if (first && isHRef) {
-                                text = redirectRelativeLinks(element, (TextTree) dt);
+                                text = redirectRelativeLinks(element, tt);
                             }
                             content.add(textCleanup(text, isLastNode));
                         } else if (dt instanceof DocRootTree drt) {

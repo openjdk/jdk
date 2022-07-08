@@ -69,7 +69,7 @@ public class TestThrowsTagInheritance extends JavadocTester {
         checkExit(Exit.OK);
 
         // The method should not inherit the IOOBE throws tag from the abstract class,
-        // for now keep keep this bug compatible, should fix this correctly in
+        // for now keep this bug compatible, should fix this correctly in
         // the future.
         checkOutput("pkg/Extender.html", false, "java.lang.IndexOutOfBoundsException");
     }
