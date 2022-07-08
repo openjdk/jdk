@@ -305,7 +305,6 @@ static struct symtab* build_symtab_internal(int fd, const char *filename, bool t
   int cnt = 0;
   ELF_SHDR* shbuf = NULL;
   ELF_SHDR* cursct = NULL;
-  ELF_PHDR* phbuf = NULL;
   int sym_section = SHT_DYNSYM;
 
   uintptr_t baseaddr = (uintptr_t)-1;
@@ -500,7 +499,6 @@ bad:
 
 quit:
   if (shbuf) free(shbuf);
-  if (phbuf) free(phbuf);
   if (scn_cache) {
     for (cnt = 0; cnt < ehdr.e_shnum; cnt++) {
       if (scn_cache[cnt].c_data != NULL) {
