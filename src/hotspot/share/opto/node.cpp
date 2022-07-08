@@ -1644,7 +1644,7 @@ int node_idx_cmp(const Node** n1, const Node** n2) {
   return (*n1)->_idx - (*n2)->_idx;
 }
 
-void find_node_by_name(Node* start, const char* name) {
+void find_nodes_by_name(Node* start, const char* name) {
   ResourceMark rm;
   GrowableArray<const Node*> ns;
   auto callback = [&] (const Node* n) {
@@ -1659,7 +1659,7 @@ void find_node_by_name(Node* start, const char* name) {
   }
 }
 
-void find_node_by_dump(Node* start, const char* pattern) {
+void find_nodes_by_dump(Node* start, const char* pattern) {
   ResourceMark rm;
   GrowableArray<const Node*> ns;
   auto callback = [&] (const Node* n) {
@@ -1679,33 +1679,33 @@ void find_node_by_dump(Node* start, const char* pattern) {
 // call from debugger: find node with name pattern in new/current graph
 // name can contain "*" in match pattern to match any characters
 // the matching is case insensitive
-void find_node_by_name(const char* name) {
+void find_nodes_by_name(const char* name) {
   Node* root = Compile::current()->root();
-  find_node_by_name(root, name);
+  find_nodes_by_name(root, name);
 }
 
 // call from debugger: find node with name pattern in old graph
 // name can contain "*" in match pattern to match any characters
 // the matching is case insensitive
-void find_old_node_by_name(const char* name) {
+void find_old_nodes_by_name(const char* name) {
   Node* root = old_root();
-  find_node_by_name(root, name);
+  find_nodes_by_name(root, name);
 }
 
 // call from debugger: find node with dump pattern in new/current graph
 // can contain "*" in match pattern to match any characters
 // the matching is case insensitive
-void find_node_by_dump(const char* pattern) {
+void find_nodes_by_dump(const char* pattern) {
   Node* root = Compile::current()->root();
-  find_node_by_dump(root, pattern);
+  find_nodes_by_dump(root, pattern);
 }
 
 // call from debugger: find node with name pattern in old graph
 // can contain "*" in match pattern to match any characters
 // the matching is case insensitive
-void find_old_node_by_dump(const char* pattern) {
+void find_old_nodes_by_dump(const char* pattern) {
   Node* root = old_root();
-  find_node_by_dump(root, pattern);
+  find_nodes_by_dump(root, pattern);
 }
 
 // Call this from debugger, search in same graph as n:
@@ -1799,6 +1799,16 @@ private:
       _mixed = true;
       _other = true;
     }
+    // Check if the filter accepts the node. Go by the type categories, but also all CFG nodes
+    // are considered to have control.
+    bool accepts(const Node* n) {
+      const Type* t = n->bottom_type();
+      return ( _data    &&  t->has_category(Type::Category::Data)                    ) ||
+             ( _memory  &&  t->has_category(Type::Category::Memory)                  ) ||
+             ( _mixed   &&  t->has_category(Type::Category::Mixed)                   ) ||
+             ( _control && (t->has_category(Type::Category::Control) || n->is_CFG()) ) ||
+             ( _other   &&  t->has_category(Type::Category::Other)                   );
+    }
   };
   Filter _filter_visit;
   Filter _filter_boundary;
@@ -1811,8 +1821,6 @@ private:
   static void print_options_help(bool print_examples);
   bool parse_options();
 
-  // node category (filter / color)
-  static bool filter_category(const Node* n, Filter& filter); // filter node category against options
 public:
   class DumpConfigColored : public Node::DumpConfig {
   public:
@@ -1907,7 +1915,7 @@ void PrintBFS::collect() {
   while (pos < _worklist.length()) {
     const Node* n = _worklist.at(pos++); // next node to traverse
     Info* info = find_info(n);
-    if (!filter_category(n, _filter_visit) && n != _start) {
+    if (!_filter_visit.accepts(n) && n != _start) {
       continue; // we hit boundary, do not traverse further
     }
     if (n != _start && n->is_Root()) {
@@ -2206,26 +2214,6 @@ bool PrintBFS::parse_options() {
   return true;
 }
 
-bool PrintBFS::filter_category(const Node* n, Filter& filter) {
-  const Type* t = n->bottom_type();
-  if (filter._data && t->has_category(Type::Category::Data)) {
-    return true;
-  }
-  if (filter._memory && t->has_category(Type::Category::Memory)) {
-    return true;
-  }
-  if (filter._mixed && t->has_category(Type::Category::Mixed)) {
-    return true;
-  }
-  if (filter._control && (t->has_category(Type::Category::Control) || n->is_CFG())) {
-    return true;
-  }
-  if (filter._other && t->has_category(Type::Category::Other)) {
-    return true;
-  }
-  return false;
-}
-
 void PrintBFS::DumpConfigColored::pre_dump(outputStream* st, const Node* n) {
   if (!_bfs->_use_color) {
     return;
@@ -2324,8 +2312,8 @@ void PrintBFS::print_node_block(const Node* n) {
 // filter, and add to worklist, add info, note traversal edges
 void PrintBFS::maybe_traverse(const Node* src, const Node* dst) {
   if (dst != nullptr &&
-     (filter_category(dst, _filter_visit) ||
-      filter_category(dst, _filter_boundary) ||
+     (_filter_visit.accepts(dst) ||
+      _filter_boundary.accepts(dst) ||
       dst == _start)) { // correct category or start?
     if (find_info(dst) == nullptr) {
       // never visited - set up info
