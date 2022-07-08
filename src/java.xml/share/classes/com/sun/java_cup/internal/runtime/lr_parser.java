@@ -404,6 +404,7 @@ public abstract class lr_parser {
               || opLimit > 0 && opCount > opLimit
               || totalOpLimit > 0 && totalOpCount > totalOpLimit) {
           overLimit = true;
+
           //throw exception to break scanning procss in the middle when limit is over
           throw new XPathOverLimitException();
       }
