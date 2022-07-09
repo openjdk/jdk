@@ -158,7 +158,7 @@ public class TestSeeTag extends JavadocTester {
                 /** Comment. */
                 public class C {
                     private C() { }
-                    
+
                     /**
                      * Comment.
                      * @see #noArgs() no args
@@ -166,7 +166,7 @@ public class TestSeeTag extends JavadocTester {
                      * @see #twoArgs(int, int) two args
                      */
                     public void noComma() { }
-                    
+
                     /**
                      * Comment.
                      * @see #noArgs() no args
@@ -174,7 +174,7 @@ public class TestSeeTag extends JavadocTester {
                      * @see #twoArgs(int, int) two args with a comma , in the description
                      */
                     public void commaInDescription() { }
-                    
+
                     /**
                      * Comment.
                      * @see #noArgs()
@@ -182,18 +182,18 @@ public class TestSeeTag extends JavadocTester {
                      * @see #twoArgs(int, int)
                      */
                     public void commaInDefaultDescription() { }
-                    
+
                     /**
                      * No arg method.
                      */
                     public void noArgs() { }
-                    
+
                     /**
                      * One arg method.
                      * @param a1 an arg
                      */
                     public void oneArg(int a1) { }
-                    
+
                     /**
                      * Two arg method.
                      * @param a1 an arg
