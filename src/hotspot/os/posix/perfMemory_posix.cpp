@@ -39,7 +39,7 @@
 #include "utilities/exceptions.hpp"
 
 #if defined(LINUX)
-#include "os_linux.impl.hpp"
+#include "os_linux_impl.hpp"
 #endif
 
 // put OS-includes here

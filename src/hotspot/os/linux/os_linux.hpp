@@ -29,7 +29,7 @@
 static bool zero_page_read_protected() { return true; }
 
 // If you want to use any member of the os::Linux class, you need to
-// explicitly include os_linux.impl.hpp.
+// explicitly include os_linux_impl.hpp.
 class Linux;
 
 #endif // OS_LINUX_OS_LINUX_HPP

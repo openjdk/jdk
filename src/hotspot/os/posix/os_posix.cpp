@@ -50,7 +50,7 @@
 #include "utilities/vmError.hpp"
 
 #ifdef LINUX
-#include "os_linux.impl.hpp"
+#include "os_linux_impl.hpp"
 #endif
 
 #include <dirent.h>
