@@ -612,6 +612,7 @@ void PhaseIdealLoop::add_empty_predicate(Deoptimization::DeoptReason reason, Nod
     Node* halt = new HaltNode(ctrl, frame, "uncommon trap returned which should never happen" PRODUCT_ONLY(COMMA /*reachable*/false));
     register_control(halt, _ltree_root, ctrl);
     C->root()->add_req(halt);
+    _igvn._worklist.push(C->root());
 
     _igvn.replace_input_of(inner_head, LoopNode::EntryControl, iftrue);
     set_idom(inner_head, iftrue, dom_depth(inner_head));
@@ -621,7 +622,7 @@ void PhaseIdealLoop::add_empty_predicate(Deoptimization::DeoptReason reason, Nod
 // Find a safepoint node that dominates the back edge. We need a
 // SafePointNode so we can use its jvm state to create empty
 // predicates.
-static bool no_side_effect_since_safepoint(Compile* C, Node* x, Node* mem, MergeMemNode* mm) {
+static bool no_side_effect_since_safepoint(Compile* C, Node* x, Node* mem, MergeMemNode* mm, PhaseIdealLoop* phase) {
   SafePointNode* safepoint = NULL;
   for (DUIterator_Fast imax, i = x->fast_outs(imax); i < imax; i++) {
     Node* u = x->fast_out(i);
@@ -633,6 +634,9 @@ static bool no_side_effect_since_safepoint(Compile* C, Node* x, Node* mem, Merge
             for (MergeMemStream mms(m->as_MergeMem(), mem->as_MergeMem()); mms.next_non_empty2(); ) {
               if (!mms.is_empty()) {
                 if (mms.memory() != mms.memory2()) {
+                  // we may have made m longer. that was unnecessary. but I guess we still need to register it for igvn
+                  // TODO: discuss if what to do about this. does MergeMemStream really need to modify m???
+                  phase->igvn()._worklist.push(m);
                   return false;
                 }
 #ifdef ASSERT
@@ -705,7 +709,7 @@ SafePointNode* PhaseIdealLoop::find_safepoint(Node* back_control, Node* x, Ideal
       }
     }
 #endif
-    if (!no_side_effect_since_safepoint(C, x, mem, mm)) {
+    if (!no_side_effect_since_safepoint(C, x, mem, mm, this)) {
       safepoint = NULL;
     } else {
       assert(mm == NULL|| _igvn.transform(mm) == mem->as_MergeMem()->base_memory(), "all memory state should have been processed");
@@ -5126,6 +5130,7 @@ int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
           _igvn.register_new_node_with_optimizer(halt);
           set_loop(halt, l);
           C->root()->add_req(halt);
+          _igvn._worklist.push(C->root());
         }
         set_loop(C->root(), _ltree_root);
       }

@@ -1475,6 +1475,7 @@ void SafePointNode::disconnect_from_root(PhaseIterGVN *igvn) {
   int nb = igvn->C->root()->find_prec_edge(this);
   if (nb != -1) {
     igvn->C->root()->rm_prec(nb);
+    igvn->_worklist.push(igvn->C->root());
   }
 }
 
