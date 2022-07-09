@@ -356,7 +356,10 @@ public class TagletWriterImpl extends TagletWriter {
     }
 
     private boolean isLongOrHasComma(Content c) {
-        String s = c.toString().replaceAll("<.*?>", "").replaceAll("\\&[a-z0-9]+;?", " ");
+        String s = c.toString()
+                .replaceAll("<.*?>", "")            // ignore HTML
+                .replaceAll("\\&[a-z0-9]+;?", " ")  // entities count as a single character
+                .replaceAll("\\R", "\n");           // normalize newlines
         return s.length() > SEE_TAG_MAX_INLINE_LENGTH || s.contains(",");
     }
 
