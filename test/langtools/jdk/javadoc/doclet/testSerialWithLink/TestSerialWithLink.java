@@ -71,7 +71,7 @@ public class TestSerialWithLink extends JavadocTester {
                              * An item that is described in serialPersistentFields.
                              */
                             private Item item;
-                            
+
                             /** A dummy item, not described in serialPersistentFields. */
                             private int dummy;
                         }
