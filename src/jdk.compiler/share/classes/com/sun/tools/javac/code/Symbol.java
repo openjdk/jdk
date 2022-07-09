@@ -491,7 +491,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         return kind == TYP && type.getEnclosingType().hasTag(CLASS);
     }
 
-    /** An inner class has an outer instance if it is not an interface
+    /** An inner class has an outer instance if it is not an interface, enum or record,
      *  it has an enclosing instance class which might be referenced from the class.
      *  Nested classes can see instance members of their enclosing class.
      *  Their constructors carry an additional this$n parameter, inserted
@@ -501,7 +501,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
      */
     public boolean hasOuterInstance() {
         return
-            type.getEnclosingType().hasTag(CLASS) && (flags() & (INTERFACE | NOOUTERTHIS)) == 0;
+            type.getEnclosingType().hasTag(CLASS) && (flags() & (INTERFACE | ENUM | RECORD | NOOUTERTHIS)) == 0;
     }
 
     /** The closest enclosing class of this symbol's declaration.

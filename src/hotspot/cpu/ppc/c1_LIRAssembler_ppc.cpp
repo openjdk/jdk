@@ -2697,6 +2697,10 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
       //       simpler and requires less duplicated code - additionally, the
       //       slow locking code is the same in either case which simplifies
       //       debugging.
+      if (op->info() != NULL) {
+        add_debug_info_for_null_check_here(op->info());
+        __ null_check(obj);
+      }
       __ b(*op->stub()->entry());
     }
   } else {

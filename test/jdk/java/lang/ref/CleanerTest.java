@@ -37,7 +37,7 @@ import java.util.function.Supplier;
 import jdk.internal.ref.PhantomCleanable;
 import jdk.internal.ref.CleanerFactory;
 
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 import jdk.test.lib.Utils;
 
@@ -49,7 +49,7 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @library /lib/testlibrary /test/lib
- * @build sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
  *        jdk.test.lib.Utils
  *        jdk.test.lib.Asserts
  *        jdk.test.lib.JDKToolFinder
@@ -60,7 +60,7 @@ import org.testng.annotations.Test;
  *          java.base/jdk.internal.ref
  *          java.management
  * @compile --enable-preview -source ${jdk.version} CleanerTest.java
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run testng/othervm --enable-preview
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *      -verbose:gc CleanerTest
