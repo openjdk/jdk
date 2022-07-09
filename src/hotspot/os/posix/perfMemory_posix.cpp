@@ -729,7 +729,6 @@ static void cleanup_sharedmem_files(const char* dirname) {
     pid_t pid = filename_to_pid(filename);
 
     if (pid == 0) {
-
       if (strcmp(filename, ".") != 0 && strcmp(filename, "..") != 0) {
         // attempt to remove all unexpected files, except "." and ".."
         unlink(filename);
@@ -739,70 +738,68 @@ static void cleanup_sharedmem_files(const char* dirname) {
       continue;
     }
 
-    // We now have a file name that converts to a valid integer
-    // that could represent a process id.
+#if defined(LINUX)
+    // Special case on Linux, if multiple containers share the
+    // same /tmp directory:
     //
-    // On Linux, we first try to flock() on the file to check
-    // for JVM processes in other containers that share the same
-    // /tmp directory as the current process. If it's already
-    // locked by another process, then obviously it's not stale.
-    //
-    // Otherwise, if this process id matches the current process id or
-    // the process is not running, we treat it as a stale file and remove it.
-    //
-    // Process liveness is detected by sending signal number 0 to
-    // the process id (see kill(2)). If kill determines that the
-    // process does not exist, then the file is removed.
-    // If kill determines that that we don't have permission to
-    // signal the process, then the file is assumed to
-    // be stale and is removed because the files for such a
-    // process should be in a different user specific directory.
-    //
-
-    bool is_locked_by_another_process = false;
- #if defined(LINUX)
-    // The locking protocol works only with JVMs that have the JDK-8286030 fix.
-    // If you are sharing the /tmp difrectory among different containers, do not
-    // use older JVMs that don't have this fix.
+    // - All the JVMs must have the JDK-8286030 fix, or the behavior
+    //   is undefined.
+    // - We cannot rely on the values of the pid, because it could
+    //   be a process in a different namespace. We must use the flock
+    //   protocol to determine if a live process is using this file.
+    //   See create_sharedmem_file().
     int fd;
     RESTARTABLE(os::open(filename, O_RDONLY, 0), fd);
     if (fd == OS_ERR) {
       // Something wrong happened. Ignore the error and don't try to remove the
       // file.
+      errno = 0;
       continue;
     }
+
     int n;
     RESTARTABLE(::flock(fd, LOCK_EX|LOCK_NB), n);
     if (n != 0) {
-      if (errno == EWOULDBLOCK) {
-        // Another process holds the exclusive lock on this file.
-        is_locked_by_another_process = true;
-      } else {
-        // Something wrong happened. Ignore the error and don't try to remove the
-        // file.
-        ::close(fd);
-        continue;
-      }
-    } else {
-      // I have successfully locked the file. No other process will try to write to
-      // it, so I can safely remove it below.
+      // Either another process holds the exclusive lock on this file, or
+      // something wrong happened. Ignore the error and don't try to remove the
+      // file.
+      log_debug(perf, memops)("flock for stale file check failed for %s/%s", dirname, filename);
+      ::close(fd);
+      errno = 0;
+      continue;
     }
-    log_info(perf, memops)("is_locked_by_another_process %s/%s = %s", dirname, filename,
-                            is_locked_by_another_process ? "true" : "false");
+    // We are able to lock the file, but this file might have been created
+    // by an older JVM that doesn't use the flock prototol, so we must do
+    // the folowing checks (which are also done by older JVMs).
 #endif
 
-    if (!is_locked_by_another_process) {
-      if ((pid == os::current_process_id()) ||
-          (kill(pid, 0) == OS_ERR && (errno == ESRCH || errno == EPERM))) {
-        // kill() is needed to be compatible with older JVMs that don't do flock ...
-        log_info(perf, memops)("Remove stale file %s/%s", dirname, filename);
-        unlink(filename);
+    // The following code assumes that pid must be in the same
+    // namespace as the current process.
+    bool stale = false;
+
+    if (pid == os::current_process_id()) {
+      // The file was created by a terminated process that happened
+      // to have the same pid as the current process.
+      stale = true;
+    } else if (kill(pid, 0) == OS_ERR) {
+      if (errno == ESRCH) {
+        // The target process does not exist.
+        stale = true;
+      } else if (errno == EPERM) {
+        // The file was created by a terminated process that happened
+        // to have the same pid as a process not owned by the current user.
+        stale = true;
       }
+    }
+
+    if (stale) {
+      log_info(perf, memops)("Remove stale file %s/%s", dirname, filename);
+      unlink(filename);
     }
 
  #if defined(LINUX)
-    // LINUX: hold the lock to prevent other JVMs from using this file while we
-    // are in the middle of deleting it.
+    // Hold the lock until here to prevent other JVMs from using this file
+    // while we are in the middle of deleting it.
     ::close(fd);
 #endif
 
@@ -912,6 +909,10 @@ static int create_sharedmem_file(const char* dirname, const char* filename, size
   //
   // Note that the flock will be automatically given up when the winner
   // process exits.
+  //
+  // The locking protocol works only with other JVMs that have the JDK-8286030
+  // fix. If you are sharing the /tmp difrectory among different containers,
+  // do not use older JVMs that don't have this fix, or the behavior is undefined.
   int n;
   RESTARTABLE(::flock(fd, LOCK_EX|LOCK_NB), n);
   if (n != 0) {
