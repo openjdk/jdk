@@ -705,6 +705,10 @@ static void remove_file(const char* path) {
 // the named user temporary directory. It scans the named directory
 // for files matching the pattern ^$[0-9]*$.
 //
+// This directory should be used only by JVM processes own by the
+// current user to store PerfMemory files. Any other files found
+// in this directory may be removed.
+//
 static void cleanup_sharedmem_files(const char* dirname) {
 
   int saved_cwd_fd;
