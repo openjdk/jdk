@@ -25,6 +25,9 @@
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /*
  * @test HandshakeTransitionTest
@@ -39,17 +42,17 @@ public class HandshakeTransitionTest {
     public static native void someTime(int ms);
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb =
-            ProcessTools.createTestJvm(
-                    "-Djava.library.path=" + Utils.TEST_NATIVE_PATH,
-                    "-XX:+SafepointALot",
-                    "-XX:+HandshakeALot",
-                    "-XX:GuaranteedSafepointInterval=20",
-                    "-Xlog:ergo*",
-                    "-XX:ParallelGCThreads=1",
-                    "-XX:ConcGCThreads=1",
-                    "-XX:CICompilerCount=2",
-                    "HandshakeTransitionTest$Test");
+        List<String> commands = new ArrayList<>();
+        commands.add("-Djava.library.path=" + Utils.TEST_NATIVE_PATH);
+        commands.add("-XX:+SafepointALot");
+        commands.add("-XX:+HandshakeALot");
+        commands.add("-XX:GuaranteedSafepointInterval=20");
+        commands.add("-XX:ParallelGCThreads=1");
+        commands.add("-XX:ConcGCThreads=1");
+        commands.add("-XX:CICompilerCount=2");
+        commands.addAll(Arrays.asList(args));
+        commands.add("HandshakeTransitionTest$Test");
+        ProcessBuilder pb = ProcessTools.createTestJvm(commands);
 
         OutputAnalyzer output = ProcessTools.executeProcess(pb);
         output.reportDiagnosticSummary();

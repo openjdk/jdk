@@ -45,6 +45,7 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -1711,7 +1712,9 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ strw(rscratch1, Address(rthread, JavaThread::thread_state_offset()));
 
   // Force this write out before the read below
-  __ dmb(Assembler::ISH);
+  if (!UseSystemMemoryBarrier) {
+    __ dmb(Assembler::ISH);
+  }
 
   __ verify_sve_vector_length();
 
