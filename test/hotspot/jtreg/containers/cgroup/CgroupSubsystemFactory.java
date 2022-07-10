@@ -27,8 +27,8 @@
  * @key cgroups
  * @requires os.family == "linux"
  * @library /testlibrary /test/lib
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI CgroupSubsystemFactory
  */
 
@@ -41,7 +41,7 @@ import java.nio.file.Paths;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
 import jdk.test.lib.util.FileUtils;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 /*
  * Verify hotspot's detection heuristics of CgroupSubsystemFactory::create()

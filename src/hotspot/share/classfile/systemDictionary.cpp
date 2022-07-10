@@ -87,7 +87,6 @@
 #include "jfr/jfr.hpp"
 #endif
 
-ResolutionErrorTable*  SystemDictionary::_resolution_errors   = NULL;
 SymbolPropertyTable*   SystemDictionary::_invoke_method_table = NULL;
 ProtectionDomainCacheTable*   SystemDictionary::_pd_cache_table = NULL;
 
@@ -1605,7 +1604,7 @@ bool SystemDictionary::do_unloading(GCTimer* gc_timer) {
       MutexLocker ml1(is_concurrent ? SystemDictionary_lock : NULL);
       ClassLoaderDataGraph::clean_module_and_package_info();
       constraints()->purge_loader_constraints();
-      resolution_errors()->purge_resolution_errors();
+      ResolutionErrorTable::purge_resolution_errors();
     }
   }
 
@@ -1647,7 +1646,6 @@ void SystemDictionary::initialize(TRAPS) {
   // Allocate arrays
   _placeholders        = new PlaceholderTable(_placeholder_table_size);
   _loader_constraints  = new LoaderConstraintTable(_loader_constraint_size);
-  _resolution_errors   = new ResolutionErrorTable(_resolution_error_size);
   _invoke_method_table = new SymbolPropertyTable(_invoke_method_size);
   _pd_cache_table = new ProtectionDomainCacheTable(defaultProtectionDomainCacheSize);
 
@@ -1848,30 +1846,27 @@ bool SystemDictionary::add_loader_constraint(Symbol* class_name,
 void SystemDictionary::add_resolution_error(const constantPoolHandle& pool, int which,
                                             Symbol* error, Symbol* message,
                                             Symbol* cause, Symbol* cause_msg) {
-  unsigned int hash = resolution_errors()->compute_hash(pool, which);
-  int index = resolution_errors()->hash_to_index(hash);
   {
     MutexLocker ml(Thread::current(), SystemDictionary_lock);
-    ResolutionErrorEntry* entry = resolution_errors()->find_entry(index, hash, pool, which);
+    ResolutionErrorEntry* entry = ResolutionErrorTable::find_entry(pool, which);
     if (entry == NULL) {
-      resolution_errors()->add_entry(index, hash, pool, which, error, message, cause, cause_msg);
+      ResolutionErrorTable::add_entry(pool, which, error, message, cause, cause_msg);
     }
   }
 }
 
 // Delete a resolution error for RedefineClasses for a constant pool is going away
 void SystemDictionary::delete_resolution_error(ConstantPool* pool) {
-  resolution_errors()->delete_entry(pool);
+  ResolutionErrorTable::delete_entry(pool);
 }
 
 // Lookup resolution error table. Returns error if found, otherwise NULL.
 Symbol* SystemDictionary::find_resolution_error(const constantPoolHandle& pool, int which,
                                                 Symbol** message, Symbol** cause, Symbol** cause_msg) {
-  unsigned int hash = resolution_errors()->compute_hash(pool, which);
-  int index = resolution_errors()->hash_to_index(hash);
+
   {
     MutexLocker ml(Thread::current(), SystemDictionary_lock);
-    ResolutionErrorEntry* entry = resolution_errors()->find_entry(index, hash, pool, which);
+    ResolutionErrorEntry* entry = ResolutionErrorTable::find_entry(pool, which);
     if (entry != NULL) {
       *message = entry->message();
       *cause = entry->cause();
@@ -1887,14 +1882,13 @@ Symbol* SystemDictionary::find_resolution_error(const constantPoolHandle& pool, 
 // validating a nest host. This is used to construct informative error
 // messages when IllegalAccessError's occur. If an entry already exists it will
 // be updated with the nest host error message.
+
 void SystemDictionary::add_nest_host_error(const constantPoolHandle& pool,
                                            int which,
                                            const char* message) {
-  unsigned int hash = resolution_errors()->compute_hash(pool, which);
-  int index = resolution_errors()->hash_to_index(hash);
   {
     MutexLocker ml(Thread::current(), SystemDictionary_lock);
-    ResolutionErrorEntry* entry = resolution_errors()->find_entry(index, hash, pool, which);
+    ResolutionErrorEntry* entry = ResolutionErrorTable::find_entry(pool, which);
     if (entry != NULL && entry->nest_host_error() == NULL) {
       // An existing entry means we had a true resolution failure (LinkageError) with our nest host, but we
       // still want to add the error message for the higher-level access checks to report. We should
@@ -1902,18 +1896,16 @@ void SystemDictionary::add_nest_host_error(const constantPoolHandle& pool,
       // the message. If we see it is already set then we can ignore it.
       entry->set_nest_host_error(message);
     } else {
-      resolution_errors()->add_entry(index, hash, pool, which, message);
+      ResolutionErrorTable::add_entry(pool, which, message);
     }
   }
 }
 
 // Lookup any nest host error
 const char* SystemDictionary::find_nest_host_error(const constantPoolHandle& pool, int which) {
-  unsigned int hash = resolution_errors()->compute_hash(pool, which);
-  int index = resolution_errors()->hash_to_index(hash);
   {
     MutexLocker ml(Thread::current(), SystemDictionary_lock);
-    ResolutionErrorEntry* entry = resolution_errors()->find_entry(index, hash, pool, which);
+    ResolutionErrorEntry* entry = ResolutionErrorTable::find_entry(pool, which);
     if (entry != NULL) {
       return entry->nest_host_error();
     } else {
@@ -1921,7 +1913,6 @@ const char* SystemDictionary::find_nest_host_error(const constantPoolHandle& poo
     }
   }
 }
-
 
 // Signature constraints ensure that callers and callees agree about
 // the meaning of type names in their signatures.  This routine is the
