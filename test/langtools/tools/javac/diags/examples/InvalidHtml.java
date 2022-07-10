@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,20 +19,14 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_PRIMS_FORTE_HPP
-#define SHARE_PRIMS_FORTE_HPP
+// key: compiler.err.dc.invalid.html
+// key: compiler.note.note
+// key: compiler.note.proc.messager
+// run: backdoor
+// options: -processor DocCommentProcessor -proc:only
 
-// Interface to Forte support.
+/** <![CDATA[ */
+class InvalidHtml { }
 
-class Forte : AllStatic {
- public:
-   static bool is_enabled() NOT_JVMTI_RETURN_(false);
-   static void register_stub(const char* name, address start, address end)
-                                                 NOT_JVMTI_RETURN;
-                                                 // register internal VM stub
-};
-
-#endif // SHARE_PRIMS_FORTE_HPP
