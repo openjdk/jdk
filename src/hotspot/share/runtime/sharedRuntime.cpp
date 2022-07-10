@@ -1293,6 +1293,8 @@ bool SharedRuntime::resolve_sub_helper_internal(methodHandle callee_method, cons
   address dest_entry_point = callee == NULL ? 0 : (callee->is_compiled() ? callee->as_compiled_method()->entry_point() : callee->code_begin()); // used below
 #endif
 
+  bool is_nmethod = caller_nm->is_nmethod();
+
   if (is_virtual) {
     assert(receiver.not_null() || invoke_code == Bytecodes::_invokehandle, "sanity check");
     bool static_bound = call_info.resolved_method()->can_be_statically_bound();
