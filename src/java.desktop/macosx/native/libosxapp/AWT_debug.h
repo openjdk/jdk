@@ -41,7 +41,7 @@ JNIEXPORT bool ShouldPrintVerboseDebugging();
     if (ShouldPrintVerboseDebugging()) AWT_DEBUG_LOG((str))
 
 #define AWT_DEBUG_BUG_REPORT_MESSAGE \
-    NSLog(@"\tPlease file a bug report at http://bugreport.java.com/bugreport \
+    NSLog(@"\tPlease file a bug report at https://bugreport.java.com/bugreport \
 with this message and a reproducible test case.")
 
 #endif
