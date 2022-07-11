@@ -25,8 +25,8 @@
 // key: compiler.misc.where.description.typevar.1
 // key: compiler.misc.type.var
 // key: compiler.err.cant.apply.symbol
-// key: compiler.misc.inconvertible.types
 // key: compiler.misc.no.conforming.assignment.exists
+// key: compiler.misc.inconvertible.types
 // options: --diags=formatterOptions=where,disambiguateTvars
 // run: simple
 
