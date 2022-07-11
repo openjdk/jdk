@@ -71,8 +71,8 @@ import jdk.test.lib.Asserts;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 
-import sun.hotspot.code.Compiler;
-import sun.hotspot.gc.GC;
+import jdk.test.whitebox.code.Compiler;
+import jdk.test.whitebox.gc.GC;
 
 public class IncompatibleOptions {
     static final String COOPS_DUMP_WARNING =

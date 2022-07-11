@@ -38,7 +38,7 @@
 import org.testng.annotations.Test;
 import java.io.File;
 import jtreg.SkippedException;
-import sun.hotspot.gc.GC;
+import jdk.test.whitebox.gc.GC;
 
 @Test
 public class CDSStreamTestDriver extends DynamicArchiveTestBase {

@@ -47,7 +47,7 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 
 import compiler.whitebox.CompilerWhiteBoxTest;
-import sun.hotspot.code.Compiler;
+import jdk.test.whitebox.code.Compiler;
 import jdk.test.lib.Utils;
 import jtreg.SkippedException;
 

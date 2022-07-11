@@ -39,7 +39,7 @@ import java.util.ArrayList;
 import jdk.test.lib.process.OutputAnalyzer;
 
 import jtreg.SkippedException;
-import sun.hotspot.gc.GC;
+import jdk.test.whitebox.gc.GC;
 
 public class TestParallelRefProc {
 
