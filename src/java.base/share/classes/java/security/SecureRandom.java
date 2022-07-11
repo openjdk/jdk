@@ -202,9 +202,9 @@ public class SecureRandom extends java.util.Random {
      * <p> This constructor traverses the list of registered security Providers,
      * starting with the most preferred Provider.
      * A new {@code SecureRandom} object encapsulating the
-     * {@code SecureRandomSpi} implementation from the first
-     * Provider that supports a {@code SecureRandom} (RNG) algorithm is returned.
-     * If none of the Providers support an RNG algorithm,
+     * {@code SecureRandomSpi} implementation from the first provider
+     * that supports a {@code SecureRandom} (RNG) algorithm is returned.
+     * If none of the providers support an RNG algorithm,
      * then an implementation-specific default is returned.
      *
      * <p> Note that the list of registered providers may be retrieved via
@@ -243,9 +243,9 @@ public class SecureRandom extends java.util.Random {
      * <p> This constructor traverses the list of registered security Providers,
      * starting with the most preferred Provider.
      * A new {@code SecureRandom} object encapsulating the
-     * {@code SecureRandomSpi} implementation from the first
-     * Provider that supports a {@code SecureRandom} (RNG) algorithm is returned.
-     * If none of the Providers support an RNG algorithm,
+     * {@code SecureRandomSpi} implementation from the first provider
+     * that supports a {@code SecureRandom} (RNG) algorithm is returned.
+     * If none of the providers support an RNG algorithm,
      * then an implementation-specific default is returned.
      *
      * <p> Note that the list of registered providers may be retrieved via
@@ -350,7 +350,7 @@ public class SecureRandom extends java.util.Random {
      * starting with the most preferred Provider.
      * A new {@code SecureRandom} object encapsulating the
      * {@code SecureRandomSpi} implementation from the first
-     * Provider that supports the specified algorithm is returned.
+     * provider that supports the specified algorithm is returned.
      *
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
@@ -442,9 +442,9 @@ public class SecureRandom extends java.util.Random {
      * Random Number Generator (RNG) algorithm.
      *
      * <p> A new {@code SecureRandom} object encapsulating the
-     * {@code SecureRandomSpi} implementation from the specified {@code Provider}
-     * object is returned.  Note that the specified {@code Provider} object
-     * does not have to be registered in the provider list.
+     * {@code SecureRandomSpi} implementation from the specified provider
+     * is returned.  Note that the specified provider does not
+     * have to be registered in the provider list.
      *
      * @param algorithm the name of the RNG algorithm.
      * See the {@code SecureRandom} section in the <a href=
@@ -483,11 +483,11 @@ public class SecureRandom extends java.util.Random {
      * Random Number Generator (RNG) algorithm and supports the specified
      * {@code SecureRandomParameters} request.
      *
-     * <p> This method traverses the list of registered security Providers,
-     * starting with the most preferred Provider.
+     * <p> This method traverses the list of registered security providers,
+     * starting with the most preferred provider.
      * A new {@code SecureRandom} object encapsulating the
      * {@code SecureRandomSpi} implementation from the first
-     * Provider that supports the specified algorithm and the specified
+     * provider that supports the specified algorithm and the specified
      * {@code SecureRandomParameters} is returned.
      *
      * <p> Note that the list of registered providers may be retrieved via
@@ -599,9 +599,8 @@ public class SecureRandom extends java.util.Random {
      *
      * <p> A new {@code SecureRandom} object encapsulating the
      * {@code SecureRandomSpi} implementation from the specified
-     * {@code Provider} object is returned.  Note that the specified
-     * {@code Provider} object does not have to be registered in the
-     * provider list.
+     * provider is returned.  Note that the specified provider
+     * does not have to be registered in the provider list.
      *
      * @param algorithm the name of the RNG algorithm.
      * See the {@code SecureRandom} section in the <a href=

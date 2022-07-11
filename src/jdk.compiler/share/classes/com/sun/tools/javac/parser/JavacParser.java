@@ -3107,13 +3107,9 @@ public class JavacParser implements Parser {
             nextToken();
             label = toP(F.at(patternPos).DefaultCaseLabel());
         } else {
-            int lookahead = 0;
-            while (S.token(lookahead).kind == LPAREN) {
-                lookahead++;
-            }
             JCModifiers mods = optFinal(0);
             boolean pattern = mods.flags != 0 || mods.annotations.nonEmpty() ||
-                              analyzePattern(lookahead) == PatternResult.PATTERN;
+                              analyzePattern(0) == PatternResult.PATTERN;
             if (pattern) {
                 checkSourceLevel(token.pos, Feature.PATTERN_SWITCH);
                 JCPattern p = parsePattern(patternPos, mods, null, false, true);

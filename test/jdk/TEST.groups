@@ -494,6 +494,7 @@ jdk_jdi_sanity = \
     com/sun/jdi/ResumeOneThreadTest.java \
     com/sun/jdi/RunToExit.java \
     com/sun/jdi/SourceNameFilterTest.java \
+    com/sun/jdi/SuspendAfterDeath.java \
     com/sun/jdi/VarargsTest.java \
     com/sun/jdi/Vars.java \
     com/sun/jdi/redefineMethod/RedefineTest.java \

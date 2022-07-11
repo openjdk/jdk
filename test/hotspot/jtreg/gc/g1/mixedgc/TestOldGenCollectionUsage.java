@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 package gc.g1.mixedgc;
 
-import static sun.hotspot.WhiteBox.getWhiteBox;
+import static jdk.test.whitebox.WhiteBox.getWhiteBox;
 
 import java.lang.management.*;
 import java.util.ArrayList;
@@ -39,8 +39,8 @@ import gc.testlibrary.g1.MixedGCProvoker;
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  * @modules java.management
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UseG1GC -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -verbose:gc -XX:NewSize=2m -XX:MaxNewSize=2m -Xmx14m -Xms14m -XX:+AlwaysTenure -XX:InitiatingHeapOccupancyPercent=100 -XX:-G1UseAdaptiveIHOP -XX:G1MixedGCCountTarget=4 -XX:MaxGCPauseMillis=30000 -XX:G1HeapRegionSize=1m -XX:G1HeapWastePercent=0 -XX:G1MixedGCLiveThresholdPercent=100 gc.g1.mixedgc.TestOldGenCollectionUsage
  */
 

@@ -36,14 +36,91 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
  */
 public class RawHtml extends Content {
 
-    private final String rawHtmlContent;
+    protected final String rawHtmlContent;
+
+    /**
+     * Creates HTML for an arbitrary string of HTML.
+     * The string is accepted as-is and is not validated in any way.
+     * It should be syntactically well-formed and contain matching {@code <} and {@code >},
+     * and matching quotes for attributes.
+     *
+     * @param rawHtml the string
+     * @return the HTML
+     */
+    public static RawHtml of(CharSequence rawHtml) {
+        return new RawHtml(rawHtml) {
+            @Override
+            public int charCount() {
+                return charCount(rawHtmlContent);
+            }
+        };
+    }
+
+    /**
+     * Creates HTML for the start of an element.
+     *
+     * @param name the name of the element
+     * @param attrs content containing any attributes
+     * @param selfClosing whether this is a self-closing element.
+     * @return the HTML
+     */
+    public static RawHtml startElement(CharSequence name, Content attrs, boolean selfClosing) {
+        StringBuilder sb = new StringBuilder("<" + name);
+        if (!attrs.isEmpty()) {
+            sb.append(" ");
+            sb.append(attrs);
+        }
+        sb.append(selfClosing ? "/>" : ">");
+        return new RawHtml(sb);
+    }
+
+    /**
+     * Creates HTML for the end of an element.
+     *
+     * @param name the name of the element
+     * @return the HTML
+     */
+    public static RawHtml endElement(CharSequence name) {
+        return new RawHtml("</" + name + ">");
+    }
+
+    /**
+     * Creates HTML for an HTML comment.
+     *
+     * The body will be enclosed in {@code <!--} and {@code -->} if it does not
+     * already begin and end with those sequences.
+     *
+     * @param body the body of the comment
+     *
+     * @return the HTML
+     */
+    public static RawHtml comment(String body) {
+        return section("<!--", body, "-->");
+    }
+    /**
+     * Creates HTML for an HTML CDATA section.
+     *
+     * The body will be enclosed in {@code <![CDATA]} and {@code ]]>} if it does not
+     * already begin and end with those sequences.
+     *
+     * @param body the body of the CDATA section
+     *
+     * @return the HTML
+     */
+    public static RawHtml cdata(String body) {
+        return section("<![CDATA[", body, "]]>");
+    }
+
+    private static RawHtml section(String prefix, String body, String suffix) {
+        return new RawHtml(body.startsWith(prefix) && body.endsWith(suffix) ? body : prefix + body + suffix);
+    }
 
     /**
      * Constructor to construct a RawHtml object.
      *
      * @param rawHtml raw HTML text to be added
      */
-    public RawHtml(CharSequence rawHtml) {
+    private RawHtml(CharSequence rawHtml) {
         rawHtmlContent = rawHtml.toString();
     }
 
@@ -59,12 +136,7 @@ public class RawHtml extends Content {
 
     private enum State { TEXT, ENTITY, TAG, STRING }
 
-    @Override
-    public int charCount() {
-        return charCount(rawHtmlContent);
-    }
-
-    static int charCount(CharSequence htmlText) {
+    protected static int charCount(CharSequence htmlText) {
         State state = State.TEXT;
         int count = 0;
         for (int i = 0; i < htmlText.length(); i++) {
@@ -80,9 +152,12 @@ public class RawHtml extends Content {
                             count++;
                             break;
                         case '\r':
-                        case '\n':
                             // Windows uses "\r\n" as line separator while UNIX uses "\n".
-                            // Ignore line separators to get consistent results across platforms.
+                            // Skip the "\r" to get consistent results across platforms.
+                            if (i + 1 < htmlText.length() && htmlText.charAt(i + 1) == '\n') {
+                                i++;
+                            }
+                            count++;
                             break;
                         default:
                             count++;

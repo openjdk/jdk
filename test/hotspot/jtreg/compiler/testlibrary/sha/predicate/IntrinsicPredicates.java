@@ -27,7 +27,7 @@ import jdk.test.lib.Platform;
 import jdk.test.lib.cli.predicate.AndPredicate;
 import jdk.test.lib.cli.predicate.CPUSpecificPredicate;
 import jdk.test.lib.cli.predicate.OrPredicate;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 import java.lang.reflect.Method;
 import java.util.function.BooleanSupplier;

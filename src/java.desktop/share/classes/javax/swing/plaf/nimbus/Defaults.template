@@ -680,7 +680,7 @@ ${UI_DEFAULT_INIT}
      * Get a derived color, derived colors are shared instances and will be
      * updated when its parent UIDefault color changes.
      *
-     * @param uiDefaultParentName The parent UIDefault key
+     * @param parentUin The parent UIDefault key
      * @param hOffset The hue offset
      * @param sOffset The saturation offset
      * @param bOffset The brightness offset
@@ -710,10 +710,10 @@ ${UI_DEFAULT_INIT}
                 bOffset, aOffset);
         }
 
-        if (derivedColors.containsKey(color)) {
-            return derivedColors.get(color);
+        DerivedColor prev = derivedColors.putIfAbsent(color, color);
+        if (prev != null) {
+            return prev;
         } else {
-            derivedColors.put(color, color);
             color.rederiveColor(); /// move to ARP.decodeColor() ?
             colorTree.addColor(uin, color);
             return color;

@@ -78,7 +78,7 @@ abstract class HotSpotMethodDataAccessor {
     final int getSize(HotSpotMethodData data, int position) {
         int size = staticSize + getDynamicSize(data, position);
         // Sanity check against VM
-        int vmSize = HotSpotJVMCIRuntime.runtime().compilerToVm.methodDataProfileDataSize(data.metaspaceMethodData, position);
+        int vmSize = HotSpotJVMCIRuntime.runtime().compilerToVm.methodDataProfileDataSize(data.methodDataPointer, position);
         assert size == vmSize : size + " != " + vmSize;
         return size;
     }

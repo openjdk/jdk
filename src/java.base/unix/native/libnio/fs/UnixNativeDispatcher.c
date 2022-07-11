@@ -521,7 +521,7 @@ static void prepAttributes(JNIEnv* env, struct stat64* buf, jobject attrs) {
 #endif
 }
 
-JNIEXPORT void JNICALL
+JNIEXPORT jint JNICALL
 Java_sun_nio_fs_UnixNativeDispatcher_stat0(JNIEnv* env, jclass this,
     jlong pathAddress, jobject attrs)
 {
@@ -530,24 +530,11 @@ Java_sun_nio_fs_UnixNativeDispatcher_stat0(JNIEnv* env, jclass this,
     const char* path = (const char*)jlong_to_ptr(pathAddress);
 
     RESTARTABLE(stat64(path, &buf), err);
-    if (err == -1) {
-        throwUnixException(env, errno);
-    } else {
+    if (err == 0) {
         prepAttributes(env, &buf, attrs);
-    }
-}
-
-JNIEXPORT jint JNICALL
-Java_sun_nio_fs_UnixNativeDispatcher_stat1(JNIEnv* env, jclass this, jlong pathAddress) {
-    int err;
-    struct stat64 buf;
-    const char* path = (const char*)jlong_to_ptr(pathAddress);
-
-    RESTARTABLE(stat64(path, &buf), err);
-    if (err == -1) {
         return 0;
     } else {
-        return (jint)buf.st_mode;
+        return errno;
     }
 }
 
