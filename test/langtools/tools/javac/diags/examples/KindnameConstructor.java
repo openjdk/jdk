@@ -27,6 +27,8 @@
 // key: compiler.misc.count.error.plural
 // key: compiler.misc.inconvertible.types
 // key: compiler.err.error
+// key: compiler.note.compressed.diags
+// key: compiler.note.note
 // options: -Xdiags:verbose
 // run: backdoor
 

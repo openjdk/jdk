@@ -4,4 +4,5 @@ ErroneousArg.java:31:11: compiler.err.cant.apply.symbols: kindname.method, g, in
 ErroneousArg.java:32:11: compiler.err.ref.ambiguous: g, kindname.method, g(java.lang.String), ErroneousArg, kindname.method, g(java.lang.Double), ErroneousArg
 ErroneousArg.java:33:11: compiler.err.non-static.cant.be.ref: kindname.method, h()
 ErroneousArg.java:34:14: compiler.err.not.def.access.class.intf.cant.access: j(), ErroneousArg.Foo
+- compiler.note.compressed.diags
 6 errors

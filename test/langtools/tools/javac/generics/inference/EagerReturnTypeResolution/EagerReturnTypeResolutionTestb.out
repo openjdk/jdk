@@ -42,4 +42,5 @@ EagerReturnTypeResolutionTestb.java:179:23: compiler.err.prob.found.req: (compil
 EagerReturnTypeResolutionTestb.java:180:26: compiler.err.prob.found.req: (compiler.misc.inferred.do.not.conform.to.upper.bounds: java.lang.Double, java.lang.Long,java.lang.Double,java.lang.Object)
 - compiler.note.unchecked.filename: EagerReturnTypeResolutionTestb.java
 - compiler.note.unchecked.recompile
+- compiler.note.compressed.diags
 42 errors

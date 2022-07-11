@@ -3,4 +3,5 @@ LambdaExpr19.java:25:55: compiler.err.prob.found.req: (compiler.misc.incompatibl
 LambdaExpr19.java:33:37: compiler.err.prob.found.req: (compiler.misc.incompatible.ret.type.in.lambda: (compiler.misc.inconvertible.types: int, java.lang.String))
 LambdaExpr19.java:41:28: compiler.err.prob.found.req: (compiler.misc.incompatible.ret.type.in.lambda: (compiler.misc.inconvertible.types: int, java.lang.String))
 LambdaExpr19.java:49:28: compiler.err.prob.found.req: (compiler.misc.incompatible.ret.type.in.lambda: (compiler.misc.inconvertible.types: int, java.lang.String))
+- compiler.note.compressed.diags
 5 errors

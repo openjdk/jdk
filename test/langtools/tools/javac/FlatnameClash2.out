@@ -1,3 +1,4 @@
 FlatnameClash2.java:32:22: compiler.err.cant.resolve.location: kindname.class, T1$Inner1, , , (compiler.misc.location: kindname.package, tests, null)
 FlatnameClash2.java:28:21: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: tests.T2.Inner2, tests.T1.Inner1)
+- compiler.note.compressed.diags
 2 errors

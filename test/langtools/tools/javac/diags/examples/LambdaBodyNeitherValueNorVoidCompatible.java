@@ -25,6 +25,7 @@
 // key: compiler.err.prob.found.req
 // key: compiler.misc.incompatible.ret.type.in.lambda
 // key: compiler.misc.missing.ret.val
+// key: compiler.note.compressed.diags
 
 class LambdaBodyNeitherValueNorVoidCompatible {
     interface I {

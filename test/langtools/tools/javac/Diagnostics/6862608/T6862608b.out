@@ -1,3 +1,4 @@
 T6862608b.java:11:12: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: compiler.misc.type.var: T, 1, compiler.misc.type.var: T, 2)
 - compiler.misc.where.description.typevar.1: compiler.misc.type.var: T, 1,S,compiler.misc.type.var: T, 2,{(compiler.misc.where.typevar: compiler.misc.type.var: T, 1, S, kindname.method, <S,compiler.misc.type.var: T, 1>foo(compiler.misc.type.var: T, 1)),(compiler.misc.where.typevar: S, java.lang.Object, kindname.method, <S,compiler.misc.type.var: T, 1>foo(compiler.misc.type.var: T, 1)),(compiler.misc.where.typevar: compiler.misc.type.var: T, 2, java.lang.String, kindname.class, T66862608b)}
+- compiler.note.compressed.diags
 1 error

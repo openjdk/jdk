@@ -26,6 +26,7 @@
 // key: compiler.err.prob.found.req
 // key: compiler.misc.no.conforming.assignment.exists
 // key: compiler.misc.inconvertible.types
+// key: compiler.note.compressed.diags
 // options: --debug=verboseResolution=inapplicable,failure
 
 class NotApplicableMethodFound {

@@ -1,3 +1,4 @@
 T8016177g.java:34:20: compiler.err.prob.found.req: (compiler.misc.incompatible.bounds: R, (compiler.misc.upper.bounds: java.lang.String,java.lang.Object), (compiler.misc.lower.bounds: Test.Person))
 T8016177g.java:35:26: compiler.err.prob.found.req: (compiler.misc.inferred.do.not.conform.to.upper.bounds: java.lang.Double, java.lang.Integer,java.lang.Object)
+- compiler.note.compressed.diags
 2 errors

@@ -1,2 +1,3 @@
 MethodRefStuck.java:15:18: compiler.err.prob.found.req: (compiler.misc.infer.no.conforming.instance.exists: U, java.util.Optional<U>, boolean)
+- compiler.note.compressed.diags
 1 error

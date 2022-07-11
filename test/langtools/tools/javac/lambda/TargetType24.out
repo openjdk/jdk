@@ -8,4 +8,5 @@ TargetType24.java:37:58: compiler.err.prob.found.req: (compiler.misc.incompatibl
 TargetType24.java:38:59: compiler.err.prob.found.req: (compiler.misc.incompatible.ret.type.in.lambda: (compiler.misc.inconvertible.types: boolean, java.lang.String))
 TargetType24.java:39:101: compiler.err.prob.found.req: (compiler.misc.incompatible.ret.type.in.lambda: (compiler.misc.inconvertible.types: java.lang.String, java.lang.Boolean))
 TargetType24.java:40:104: compiler.err.prob.found.req: (compiler.misc.incompatible.ret.type.in.lambda: (compiler.misc.inconvertible.types: boolean, java.lang.String))
+- compiler.note.compressed.diags
 10 errors

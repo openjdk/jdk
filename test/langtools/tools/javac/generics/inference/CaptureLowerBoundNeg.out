@@ -1,2 +1,3 @@
 CaptureLowerBoundNeg.java:17:35: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: java.lang.Object, compiler.misc.type.captureof: 1, ? extends java.lang.Object)
+- compiler.note.compressed.diags
 1 error

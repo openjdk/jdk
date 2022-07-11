@@ -5,4 +5,5 @@ T8202372.java:36:25: compiler.err.prob.found.req: (compiler.misc.incompatible.re
 T8202372.java:40:23: compiler.err.prob.found.req: (compiler.misc.incompatible.arg.types.in.lambda)
 T8202372.java:42:23: compiler.err.prob.found.req: (compiler.misc.incompatible.arg.types.in.lambda)
 T8202372.java:43:23: compiler.err.prob.found.req: (compiler.misc.incompatible.arg.types.in.lambda)
+- compiler.note.compressed.diags
 7 errors

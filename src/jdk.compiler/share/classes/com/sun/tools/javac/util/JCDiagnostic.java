@@ -449,6 +449,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         SYNTAX,
         RECOVERABLE,
         NON_DEFERRABLE,
+        COMPRESSED,
         /** Flag for diagnostics that were reported through API methods.
          */
         API,

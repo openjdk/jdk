@@ -26,6 +26,7 @@
 // key: compiler.misc.type.var
 // key: compiler.err.prob.found.req
 // key: compiler.misc.inconvertible.types
+// key: compiler.note.compressed.diags
 // options: --diags=formatterOptions=where,disambiguateTvars
 // run: simple
 

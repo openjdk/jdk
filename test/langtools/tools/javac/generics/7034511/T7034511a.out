@@ -1,2 +1,3 @@
 T7034511a.java:18:19: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: java.lang.String[], compiler.misc.type.captureof: 1, ?[])
+- compiler.note.compressed.diags
 1 error

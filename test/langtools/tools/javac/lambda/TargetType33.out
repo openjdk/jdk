@@ -2,4 +2,5 @@ TargetType33.java:21:31: compiler.err.prob.found.req: (compiler.misc.incompatibl
 TargetType33.java:21:46: compiler.err.prob.found.req: (compiler.misc.incompatible.type.in.conditional: (compiler.misc.invalid.mref: kindname.method, (compiler.misc.cant.apply.symbol: kindname.method, intRes, java.lang.Object, compiler.misc.no.args, kindname.class, TargetType33, (compiler.misc.arg.length.mismatch))))
 TargetType33.java:22:18: compiler.err.prob.found.req: (compiler.misc.incompatible.type.in.conditional: (compiler.misc.invalid.mref: kindname.method, (compiler.misc.cant.apply.symbol: kindname.method, intRes, java.lang.Object, compiler.misc.no.args, kindname.class, TargetType33, (compiler.misc.arg.length.mismatch))))
 TargetType33.java:23:19: compiler.err.prob.found.req: (compiler.misc.incompatible.type.in.conditional: (compiler.misc.invalid.mref: kindname.method, (compiler.misc.cant.apply.symbol: kindname.method, intRes, java.lang.Object, compiler.misc.no.args, kindname.class, TargetType33, (compiler.misc.arg.length.mismatch))))
+- compiler.note.compressed.diags
 4 errors

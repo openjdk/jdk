@@ -1,4 +1,5 @@
 BadSwitchExpressionLambda.java:19:26: compiler.err.prob.found.req: (compiler.misc.incompatible.ret.type.in.lambda: (compiler.misc.switch.expression.target.cant.be.void))
 BadSwitchExpressionLambda.java:21:17: compiler.err.prob.found.req: (compiler.misc.incompatible.ret.type.in.lambda: (compiler.misc.switch.expression.target.cant.be.void))
 BadSwitchExpressionLambda.java:22:16: compiler.err.prob.found.req: (compiler.misc.unexpected.ret.val)
+- compiler.note.compressed.diags
 3 errors

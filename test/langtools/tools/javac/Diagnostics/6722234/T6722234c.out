@@ -1,2 +1,3 @@
 T6722234c.java:14:11: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: java.lang.String, T6722234c.String)
+- compiler.note.compressed.diags
 1 error

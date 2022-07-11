@@ -4234,10 +4234,13 @@ public class Resolve {
             if (filteredCandidates.isEmpty()) {
                 filteredCandidates = candidatesMap;
             }
+            boolean truncatedDiag = candidatesMap.size() != filteredCandidates.size();
             if (filteredCandidates.size() > 1) {
                 JCDiagnostic err = diags.create(dkind,
                         null,
-                        EnumSet.noneOf(DiagnosticFlag.class),
+                        truncatedDiag ?
+                                EnumSet.of(DiagnosticFlag.COMPRESSED) :
+                                EnumSet.noneOf(DiagnosticFlag.class),
                         log.currentSource(),
                         pos,
                         "cant.apply.symbols",
@@ -4256,6 +4259,9 @@ public class Resolve {
                     }
                 }.getDiagnostic(dkind, pos,
                     location, site, name, argtypes, typeargtypes);
+                if (truncatedDiag) {
+                    d.setFlag(DiagnosticFlag.COMPRESSED);
+                }
                 return d;
             } else {
                 return new SymbolNotFoundError(ABSENT_MTH).getDiagnostic(dkind, pos,
@@ -4883,6 +4889,7 @@ public class Resolve {
                 if (_entry.getKey().matches(d)) {
                     JCDiagnostic simpleDiag =
                             _entry.getValue().rewriteDiagnostic(diags, pos, source, dkind, d);
+                    simpleDiag.setFlag(DiagnosticFlag.COMPRESSED);
                     return simpleDiag;
                 }
             }

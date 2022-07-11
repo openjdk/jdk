@@ -1,3 +1,4 @@
 T8010387.java:12:11: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: compiler.misc.anonymous.class: T8010387.F<P>, T8010387.F<? extends X>)
 - compiler.misc.where.description.typevar.1: P,X,{(compiler.misc.where.typevar: P, java.lang.Object, kindname.method, <P>test()),(compiler.misc.where.typevar: X, java.lang.Object, kindname.class, T8010387)}
+- compiler.note.compressed.diags
 1 error

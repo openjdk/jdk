@@ -23,6 +23,7 @@
 
 // key: compiler.err.prob.found.req
 // key: compiler.misc.incompatible.arg.types.in.mref
+// key: compiler.note.compressed.diags
 
 class IncompatibleArgTypesInMethodRef {
     interface SAM<X> {

@@ -1,3 +1,4 @@
 MethodReference20.java:21:26: compiler.err.prob.found.req: (compiler.misc.invalid.mref: kindname.constructor, (compiler.misc.cant.apply.symbol: kindname.constructor, MethodReference20, java.lang.String, java.lang.Integer, kindname.class, MethodReference20<X>, (compiler.misc.no.conforming.assignment.exists: (compiler.misc.inconvertible.types: java.lang.Integer, java.lang.String))))
 MethodReference20.java:22:14: compiler.err.prob.found.req: (compiler.misc.invalid.mref: kindname.constructor, (compiler.misc.cant.apply.symbol: kindname.constructor, MethodReference20, java.lang.String, java.lang.Integer, kindname.class, MethodReference20<X>, (compiler.misc.no.conforming.assignment.exists: (compiler.misc.inconvertible.types: java.lang.Integer, java.lang.String))))
+- compiler.note.compressed.diags
 2 errors

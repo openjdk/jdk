@@ -23,6 +23,7 @@
 
 // key: compiler.err.prob.found.req
 // key: compiler.misc.inconvertible.types
+// key: compiler.note.compressed.diags
 
 import java.util.*;
 

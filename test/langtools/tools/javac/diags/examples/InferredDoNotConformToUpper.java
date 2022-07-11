@@ -23,6 +23,7 @@
 
 // key: compiler.err.prob.found.req
 // key: compiler.misc.inconvertible.types
+// key: compiler.note.compressed.diags
 // options: -source 7 -Xlint:-options
 
 import java.util.*;

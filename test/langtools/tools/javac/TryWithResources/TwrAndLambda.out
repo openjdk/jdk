@@ -4,4 +4,5 @@ TwrAndLambda.java:35:14: compiler.err.prob.found.req: (compiler.misc.try.not.app
 TwrAndLambda.java:43:13: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: java.lang.Runnable, java.lang.AutoCloseable)
 TwrAndLambda.java:44:13: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: java.lang.Runnable, java.lang.AutoCloseable)
 TwrAndLambda.java:45:13: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: java.lang.Runnable, java.lang.AutoCloseable)
+- compiler.note.compressed.diags
 6 errors

@@ -2,4 +2,5 @@ BadTargetType.java:16:24: compiler.err.prob.found.req: (compiler.misc.not.a.func
 BadTargetType.java:17:17: compiler.err.prob.found.req: (compiler.misc.not.a.functional.intf: java.lang.Object)
 BadTargetType.java:20:9: compiler.err.prob.found.req: (compiler.misc.not.a.functional.intf: java.lang.Object)
 BadTargetType.java:21:9: compiler.err.prob.found.req: (compiler.misc.not.a.functional.intf: java.lang.Object)
+- compiler.note.compressed.diags
 4 errors

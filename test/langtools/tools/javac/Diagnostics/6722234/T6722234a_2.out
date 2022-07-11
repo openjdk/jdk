@@ -1,3 +1,4 @@
 T6722234a.java:12:11: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: compiler.misc.type.var: T, 1, compiler.misc.type.var: T, 2)
 - compiler.misc.where.description.typevar.1: compiler.misc.type.var: T, 1,compiler.misc.type.var: T, 2,{(compiler.misc.where.typevar: compiler.misc.type.var: T, 1, java.lang.Integer, kindname.method, <compiler.misc.type.var: T, 1>test(compiler.misc.type.var: T, 1)),(compiler.misc.where.typevar: compiler.misc.type.var: T, 2, java.lang.String, kindname.class, T6722234a)}
+- compiler.note.compressed.diags
 1 error
