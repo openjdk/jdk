@@ -484,7 +484,7 @@ public final class String
      */
     public String(byte[] bytes, int offset, int length, String charsetName)
             throws UnsupportedEncodingException {
-        this(bytes, checkBoundsOffCount(offset, length, bytes.length), length, lookupCharset(charsetName), null);
+        this(bytes, offset, length, lookupCharset(charsetName), checkBoundsOffCount(offset, length, bytes.length));
     }
 
     /**
@@ -518,7 +518,7 @@ public final class String
      * @since  1.6
      */
     public String(byte[] bytes, int offset, int length, Charset charset) {
-        this(bytes, checkBoundsOffCount(offset, length, bytes.length), length, Objects.requireNonNull(charset), null);
+        this(bytes, offset, length, Objects.requireNonNull(charset), checkBoundsOffCount(offset, length, bytes.length));
     }
 
     @SuppressWarnings("removal")
@@ -1426,7 +1426,7 @@ public final class String
      * @since  1.1
      */
     public String(byte[] bytes, int offset, int length) {
-        this(bytes, checkBoundsOffCount(offset, length, bytes.length), length, Charset.defaultCharset(), null);
+        this(bytes, offset, length, Charset.defaultCharset(), checkBoundsOffCount(offset, length, bytes.length));
     }
 
     /**
@@ -4588,8 +4588,9 @@ public final class String
      *          If {@code offset} is negative, {@code count} is negative,
      *          or {@code offset} is greater than {@code length - count}
      */
-    static int checkBoundsOffCount(int offset, int count, int length) {
-        return Preconditions.checkFromIndexSize(offset, count, length, Preconditions.SIOOBE_FORMATTER);
+    static Void checkBoundsOffCount(int offset, int count, int length) {
+        Preconditions.checkFromIndexSize(offset, count, length, Preconditions.SIOOBE_FORMATTER);
+        return null;
     }
 
     /*
