@@ -89,6 +89,7 @@ public class BasicOptionPaneUI extends OptionPaneUI {
     public static final int MinimumHeight = 90;
 
     private static String newline;
+    private static int recursionCount;
 
     /**
      * {@code JOptionPane} that the receiver is providing the
@@ -455,32 +456,35 @@ public class BasicOptionPaneUI extends OptionPaneUI {
                 nll = 1;
             }
             if (nl >= 0) {
-                try {
-                    // break up newlines
-                    if (nl == 0) {
-                        @SuppressWarnings("serial") // anonymous class
-                                JPanel breakPanel = new JPanel() {
-                            public Dimension getPreferredSize() {
-                                Font f = getFont();
+                // break up newlines
+                if (nl == 0) {
+                    @SuppressWarnings("serial") // anonymous class
+                            JPanel breakPanel = new JPanel() {
+                        public Dimension getPreferredSize() {
+                            Font f = getFont();
 
-                                if (f != null) {
-                                    return new Dimension(1, f.getSize() + 2);
-                                }
-                                return new Dimension(0, 0);
+                            if (f != null) {
+                                return new Dimension(1, f.getSize() + 2);
                             }
-                        };
-                        breakPanel.setName("OptionPane.break");
-                        addMessageComponents(container, cons, breakPanel, maxll,
-                                true);
-                    } else {
-                        addMessageComponents(container, cons, s.substring(0, nl),
-                                maxll, false);
-                    }
-                    addMessageComponents(container, cons, s.substring(nl + nll), maxll,
-                            false);
-                } catch (StackOverflowError e) {
+                            return new Dimension(0, 0);
+                        }
+                    };
+                    breakPanel.setName("OptionPane.break");
+                    addMessageComponents(container, cons, breakPanel, maxll,
+                            true);
+                } else {
+                    addMessageComponents(container, cons, s.substring(0, nl),
+                            maxll, false);
+                }
+                // Prevent recursion of more than
+                // 200 successive newlines in a message
+                if (recursionCount++ > 200) {
+                    recursionCount = 0;
                     return;
                 }
+                addMessageComponents(container, cons, s.substring(nl + nll), maxll,
+                        false);
+
             } else if (len > maxll) {
                 Container c = Box.createVerticalBox();
                 c.setName("OptionPane.verticalBox");
