@@ -21,7 +21,7 @@
  * questions.
  */
 
-package gc.g1;
+package gc;
 
 /*
  * @test TestPLABAdaptToMinTLABSize
@@ -30,7 +30,7 @@ package gc.g1;
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run driver gc.g1.TestPLABAdaptToMinTLABSize
+ * @run driver gc.TestPLABAdaptToMinTLABSize
  */
 
 import java.util.ArrayList;
