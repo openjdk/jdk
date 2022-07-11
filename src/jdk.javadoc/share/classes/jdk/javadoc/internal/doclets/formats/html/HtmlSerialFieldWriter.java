@@ -135,8 +135,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
         if (!description.isEmpty()) {
             Content serialFieldContent = writer.commentTagsToContent(field,
                     description,
-                    new TagletWriterImpl.Context(false, false),
-                    false);
+                    new TagletWriterImpl.Context(false, false));
             var div = HtmlTree.DIV(HtmlStyle.block, serialFieldContent);
             content.add(div);
         }

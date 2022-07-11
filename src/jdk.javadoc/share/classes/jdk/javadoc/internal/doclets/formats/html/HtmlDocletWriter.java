@@ -1474,26 +1474,6 @@ public class HtmlDocletWriter {
                                         List<? extends DocTree> trees,
                                         TagletWriterImpl.Context context)
     {
-        return commentTagsToContent(element, trees, context, true);
-    }
-
-    /**
-     * Converts inline tags and text to content, expanding the
-     * inline tags along the way.  Called wherever text can contain
-     * an inline tag, such as in comments or in free-form text arguments
-     * to block tags.
-     *
-     * @param element   specific element where comment resides
-     * @param trees     list of text trees and inline tag trees (often alternating)
-     * @param context   the enclosing context for the trees
-     *
-     * @return a Content object
-     */
-    public Content commentTagsToContent(Element element,
-                                        List<? extends DocTree> trees,
-                                        TagletWriterImpl.Context context,
-                                        boolean redirectRelativeLinks)
-    {
         final Content result = new ContentBuilder() {
             @Override
             public ContentBuilder add(CharSequence text) {
@@ -1583,7 +1563,7 @@ public class HtmlDocletWriter {
 
                         if (dt instanceof TextTree tt) {
                             String text = tt.getBody();
-                            if (first && isHRef && redirectRelativeLinks) {
+                            if (first && isHRef) {
                                 text = redirectRelativeLinks(element, tt);
                             }
                             content.add(textCleanup(text, isLastNode));
