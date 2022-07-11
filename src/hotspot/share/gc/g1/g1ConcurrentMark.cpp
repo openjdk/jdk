@@ -693,7 +693,7 @@ void G1ConcurrentMark::clear_bitmap(WorkerThreads* workers, bool may_yield) {
 
   log_debug(gc, ergo)("Running %s with %u workers for " SIZE_FORMAT " work units.", cl.name(), num_workers, num_chunks);
   workers->run_task(&cl, num_workers);
-  guarantee(!may_yield || cl.is_complete(), "Must have completed iteration when not yielding.");
+  guarantee(may_yield || cl.is_complete(), "Must have completed iteration when not yielding.");
 }
 
 void G1ConcurrentMark::cleanup_for_next_mark() {
