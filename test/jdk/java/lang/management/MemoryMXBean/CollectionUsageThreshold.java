@@ -48,7 +48,7 @@ import java.lang.management.*;
 import static java.lang.management.MemoryNotificationInfo.*;;
 import static java.lang.management.ManagementFactory.*;
 
-import sun.hotspot.code.Compiler;
+import jdk.test.whitebox.code.Compiler;
 
 public class CollectionUsageThreshold {
     private static final MemoryMXBean mm = getMemoryMXBean();
