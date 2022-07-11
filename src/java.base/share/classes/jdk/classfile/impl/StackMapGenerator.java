@@ -829,27 +829,14 @@ public final class StackMapGenerator {
         var cpe = cp.entryByIndex(index);
         var nameAndType = opcode == Classfile.INVOKEDYNAMIC ? ((DynamicConstantPoolEntry)cpe).nameAndType() : ((MemberRefEntry)cpe).nameAndType();
         String invokeMethodName = nameAndType.name().stringValue();
-        var methodDesc = MethodTypeDesc.ofDescriptor(nameAndType.type().stringValue());
+        var mDesc = MethodTypeDesc.ofDescriptor(nameAndType.type().stringValue());
         Type[] sig_type = new Type[2];
         int nargs = 0;
-        ArrayList<Type> sigVerifTypes = new ArrayList<>();
-        for (int i = 0; i < methodDesc.parameterCount(); i++) {
-            int n = classDescToType(methodDesc.parameterType(i), sig_type, 0);
-            for (int x = 0; x < n; x++) {
-                sigVerifTypes.add(sig_type[x]);
-            }
-            nargs += n;
-        }
-        if (!methodDesc.returnType().equals(CD_void)) {
-            int n = classDescToType(methodDesc.returnType(), sig_type, 0);
-            for (int y = 0; y < n; y++) {
-                sigVerifTypes.add(sig_type[y]);
-            }
+        for (int i = 0; i < mDesc.parameterCount(); i++) {
+            nargs += classDescToType(mDesc.parameterType(i), sig_type, 0);
         }
         int bci = bcs.bci;
-        for (int i = nargs - 1; i >= 0; i--) {
-            currentFrame.popStack();
-        }
+        currentFrame.decStack(nargs);
         if (opcode != Classfile.INVOKESTATIC && opcode != Classfile.INVOKEDYNAMIC) {
             if (OBJECT_INITIALIZER_NAME.equals(invokeMethodName)) {
                 Type type = currentFrame.popStack();
@@ -874,13 +861,13 @@ public final class StackMapGenerator {
                 currentFrame.popStack();
             }
         }
-        int sig_verif_types_len = sigVerifTypes.size();
-        if (sig_verif_types_len > nargs) {
+        if (!mDesc.returnType().equals(CD_void)) {
             if (OBJECT_INITIALIZER_NAME.equals(invokeMethodName)) {
                 generatorError("Return type must be void in <init> method");
             }
-            for (int i = nargs; i < sig_verif_types_len; i++) {
-                currentFrame.pushStack(sigVerifTypes.get(i));
+            int n = classDescToType(mDesc.returnType(), sig_type, 0);
+            for (int y = 0; y < n; y++) {
+                currentFrame.pushStack(sig_type[y]);
             }
         }
         return thisUninit;
