@@ -1117,7 +1117,7 @@ public class XPathParser extends lr_parser {
 
             Symbol s = null;
             try {
-                super.parse();
+               s = super.parse();
             }catch(XPathOverLimitException ex){
                 //only catch this exception;ignore all of other exceptions
             }
