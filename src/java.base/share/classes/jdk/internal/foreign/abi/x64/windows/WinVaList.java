@@ -133,7 +133,7 @@ public non-sealed class WinVaList implements VaList, Scoped {
     @Override
     public void skip(MemoryLayout... layouts) {
         Objects.requireNonNull(layouts);
-        MemorySessionImpl.toSessionImpl(session()).checkValidStateSlow();
+        sessionImpl().checkValidState();
         Stream.of(layouts).forEach(Objects::requireNonNull);
         segment = segment.asSlice(layouts.length * VA_SLOT_SIZE_BYTES);
     }
@@ -153,13 +153,8 @@ public non-sealed class WinVaList implements VaList, Scoped {
     }
 
     @Override
-    public MemorySessionImpl sessionImpl() {
-        return MemorySessionImpl.toSessionImpl(session());
-    }
-
-    @Override
     public VaList copy() {
-        MemorySessionImpl.toSessionImpl(session).checkValidStateSlow();
+        sessionImpl().checkValidState();
         return new WinVaList(segment, session);
     }
 
@@ -174,7 +169,7 @@ public non-sealed class WinVaList implements VaList, Scoped {
         private final List<SimpleVaArg> args = new ArrayList<>();
 
         public Builder(MemorySession session) {
-            MemorySessionImpl.toSessionImpl(session).checkValidStateSlow();
+            MemorySessionImpl.toSessionImpl(session).checkValidState();
             this.session = session;
         }
 

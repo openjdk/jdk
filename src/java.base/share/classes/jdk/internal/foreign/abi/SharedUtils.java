@@ -446,11 +446,6 @@ public class SharedUtils {
         }
 
         @Override
-        public MemorySessionImpl sessionImpl() {
-            return MemorySessionImpl.GLOBAL;
-        }
-
-        @Override
         public VaList copy() {
             return this;
         }
