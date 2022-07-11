@@ -36,16 +36,16 @@ import jtreg.SkippedException;
  *          /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  *          /test/hotspot/jtreg/runtime/cds/appcds/jcmd
  * @build JCmdTestLingeredApp Hello jdk.test.lib.apps.LingeredApp
- * @build sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar loadclass.jar JCmdTestLingeredApp
  *             jdk.test.lib.apps.LingeredApp jdk.test.lib.apps.LingeredApp$1
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=500 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:./WhiteBox.jar DynamicSharedSymbols
  */
 
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.helpers.ClassFileInstaller;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 public class DynamicSharedSymbols extends DynamicArchiveTestBase {
 

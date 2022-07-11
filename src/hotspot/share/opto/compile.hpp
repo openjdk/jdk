@@ -51,6 +51,7 @@ class AddPNode;
 class Block;
 class Bundle;
 class CallGenerator;
+class CallStaticJavaNode;
 class CloneMap;
 class ConnectionGraph;
 class IdealGraphPrinter;
@@ -90,6 +91,7 @@ class TypeOopPtr;
 class TypeFunc;
 class TypeVect;
 class Unique_Node_List;
+class UnstableIfTrap;
 class nmethod;
 class Node_Stack;
 struct Final_Reshape_Counts;
@@ -357,6 +359,7 @@ class Compile : public Phase {
   GrowableArray<Node*>  _skeleton_predicate_opaqs; // List of Opaque4 nodes for the loop skeleton predicates.
   GrowableArray<Node*>  _expensive_nodes;       // List of nodes that are expensive to compute and that we'd better not let the GVN freely common
   GrowableArray<Node*>  _for_post_loop_igvn;    // List of nodes for IGVN after loop opts are over
+  GrowableArray<UnstableIfTrap*> _unstable_if_traps;        // List of ifnodes after IGVN
   GrowableArray<Node_List*> _coarsened_locks;   // List of coarsened Lock and Unlock nodes
   ConnectionGraph*      _congraph;
 #ifndef PRODUCT
@@ -731,6 +734,11 @@ class Compile : public Phase {
   void record_for_post_loop_opts_igvn(Node* n);
   void remove_from_post_loop_opts_igvn(Node* n);
   void process_for_post_loop_opts_igvn(PhaseIterGVN& igvn);
+
+  void record_unstable_if_trap(UnstableIfTrap* trap);
+  bool remove_unstable_if_trap(CallStaticJavaNode* unc, bool yield);
+  void remove_useless_unstable_if_traps(Unique_Node_List &useful);
+  void process_for_unstable_if_traps(PhaseIterGVN& igvn);
 
   void sort_macro_nodes();
 
@@ -1211,7 +1219,7 @@ class Compile : public Phase {
 #endif
 
   static bool push_thru_add(PhaseGVN* phase, Node* z, const TypeInteger* tz, const TypeInteger*& rx, const TypeInteger*& ry,
-                            BasicType bt);
+                            BasicType out_bt, BasicType in_bt);
 
   static Node* narrow_value(BasicType bt, Node* value, const Type* type, PhaseGVN* phase, bool transform_res);
 };

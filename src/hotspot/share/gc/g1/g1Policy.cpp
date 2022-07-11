@@ -448,7 +448,7 @@ void G1Policy::record_full_collection_end() {
   collector_state()->set_initiate_conc_mark_if_possible(need_to_start_conc_mark("end of Full GC"));
   collector_state()->set_in_concurrent_start_gc(false);
   collector_state()->set_mark_or_rebuild_in_progress(false);
-  collector_state()->set_clearing_next_bitmap(false);
+  collector_state()->set_clearing_bitmap(false);
 
   _eden_surv_rate_group->start_adding_regions();
   // also call this on any additional surv rate groups
@@ -915,7 +915,7 @@ double G1Policy::predict_base_elapsed_time_ms(size_t pending_cards) const {
 size_t G1Policy::predict_bytes_to_copy(HeapRegion* hr) const {
   size_t bytes_to_copy;
   if (!hr->is_young()) {
-    bytes_to_copy = hr->max_live_bytes();
+    bytes_to_copy = hr->live_bytes();
   } else {
     bytes_to_copy = (size_t) (hr->used() * hr->surv_rate_prediction(_predictor));
   }
@@ -1138,6 +1138,7 @@ void G1Policy::record_concurrent_mark_cleanup_end(bool has_rebuilt_remembered_se
   }
   collector_state()->set_in_young_gc_before_mixed(mixed_gc_pending);
   collector_state()->set_mark_or_rebuild_in_progress(false);
+  collector_state()->set_clearing_bitmap(true);
 
   double end_sec = os::elapsedTime();
   double elapsed_time_ms = (end_sec - _mark_cleanup_start_sec) * 1000.0;

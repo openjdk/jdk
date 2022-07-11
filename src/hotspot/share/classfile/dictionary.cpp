@@ -586,13 +586,17 @@ void DictionaryEntry::print_count(outputStream *st) {
 
 // ----------------------------------------------------------------------------
 
+void Dictionary::print_size(outputStream* st) const {
+  st->print_cr("Java dictionary (table_size=%d, classes=%d, resizable=%s)",
+               table_size(), number_of_entries(), BOOL_TO_STR(_resizable));
+}
+
 void Dictionary::print_on(outputStream* st) const {
   ResourceMark rm;
 
   assert(loader_data() != NULL, "loader data should not be null");
   assert(!loader_data()->has_class_mirror_holder(), "cld should have a ClassLoader holder not a Class holder");
-  st->print_cr("Java dictionary (table_size=%d, classes=%d, resizable=%s)",
-               table_size(), number_of_entries(), BOOL_TO_STR(_resizable));
+  print_size(st);
   st->print_cr("^ indicates that initiating loader is different from defining loader");
 
   for (int index = 0; index < table_size(); index++) {

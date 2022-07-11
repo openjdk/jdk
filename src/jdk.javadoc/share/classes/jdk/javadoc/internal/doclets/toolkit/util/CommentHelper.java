@@ -314,7 +314,7 @@ public class CommentHelper {
             public String visitSee(SeeTree node, Void p) {
                 Utils utils = configuration.utils;
                 return node.getReference().stream()
-                        .filter(utils::isText)
+                        .filter(dt -> dt.getKind() == DocTree.Kind.TEXT)
                         .map(dt -> ((TextTree) dt).getBody())
                         .collect(Collectors.joining());
             }
@@ -545,10 +545,6 @@ public class CommentHelper {
 
     public List<? extends DocTree> getReference(DocTree dtree) {
         return dtree.getKind() == SEE ? ((SeeTree)dtree).getReference() : null;
-    }
-
-    public ReferenceTree getExceptionName(ThrowsTree tt) {
-        return tt.getExceptionName();
     }
 
     public IdentifierTree getName(DocTree dtree) {
