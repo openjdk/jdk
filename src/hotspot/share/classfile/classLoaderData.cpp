@@ -992,14 +992,23 @@ void ClassLoaderData::print_on(outputStream* out) const {
   }
   out->print_cr(" - handles             %d", _handles.count());
   out->print_cr(" - dependency count    %d", _dependency_count);
-  out->print   (" - klasses             {");
-  PrintKlassClosure closure(out);
-  ((ClassLoaderData*)this)->classes_do(&closure);
+  out->print   (" - klasses             { ");
+  if (Verbose) {
+    PrintKlassClosure closure(out);
+    ((ClassLoaderData*)this)->classes_do(&closure);
+  } else {
+     out->print("...");
+  }
   out->print_cr(" }");
   out->print_cr(" - packages            " INTPTR_FORMAT, p2i(_packages));
   out->print_cr(" - module              " INTPTR_FORMAT, p2i(_modules));
   out->print_cr(" - unnamed module      " INTPTR_FORMAT, p2i(_unnamed_module));
-  out->print_cr(" - dictionary          " INTPTR_FORMAT, p2i(_dictionary));
+  if (_dictionary != nullptr) {
+    out->print   (" - dictionary          " INTPTR_FORMAT " ", p2i(_dictionary));
+    _dictionary->print_size(out);
+  } else {
+    out->print_cr(" - dictionary          " INTPTR_FORMAT, p2i(_dictionary));
+  }
   if (_jmethod_ids != NULL) {
     out->print   (" - jmethod count       ");
     Method::print_jmethod_ids_count(this, out);

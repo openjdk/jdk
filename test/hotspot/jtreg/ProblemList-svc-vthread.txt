@@ -68,6 +68,8 @@ vmTestbase/nsk/jvmti/GetObjectMonitorUsage/objmonusage006/TestDescription.java
 ####
 ## NSK JDWP Tests failing with wrapper
 
+vmTestbase/nsk/jdwp/ThreadReference/ForceEarlyReturn/forceEarlyReturn002/forceEarlyReturn002.java 8286789 generic-all
+
 
 ##########
 ## NSK JDB Tests failing with wrapper

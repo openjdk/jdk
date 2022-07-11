@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,8 @@ package gc.g1;
  * @library /test/lib
  * @requires vm.gc.G1
  * @requires vm.opt.LargePageSizeInBytes == null
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+IgnoreUnrecognizedVMOptions -XX:+UseLargePages gc.g1.TestLargePageUseForAuxMemory
  */
 
@@ -42,7 +42,7 @@ import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Platform;
 import jtreg.SkippedException;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 public class TestLargePageUseForAuxMemory {
     static final long HEAP_REGION_SIZE = 1 * 1024 * 1024;
@@ -61,7 +61,7 @@ public class TestLargePageUseForAuxMemory {
         // being checked. In case of a large page allocation failure the output will
         // include logs like this for the affected data structure:
         // [0.048s][debug][gc,heap,coops] Reserve regular memory without large pages
-        // [0.048s][info ][pagesize     ] Next Bitmap: ... page_size=4K ...
+        // [0.048s][info ][pagesize     ] Mark Bitmap: ... page_size=4K ...
         //
         // The pattern passed in should match the second line.
         String failureMatch = output.firstMatch("Reserve regular memory without large pages\\n.*" + pattern, 1);
@@ -101,9 +101,8 @@ public class TestLargePageUseForAuxMemory {
         checkSize(output, expectedPageSize, "Card Counts Table: .*page_size=([^ ]+)");
     }
 
-    static void checkBitmaps(OutputAnalyzer output, long expectedPageSize) throws Exception {
-        checkSize(output, expectedPageSize, "Prev Bitmap: .*page_size=([^ ]+)");
-        checkSize(output, expectedPageSize, "Next Bitmap: .*page_size=([^ ]+)");
+    static void checkBitmap(OutputAnalyzer output, long expectedPageSize) throws Exception {
+        checkSize(output, expectedPageSize, "Mark Bitmap: .*page_size=([^ ]+)");
     }
 
     static void testVM(String what, long heapsize, boolean cardsShouldUseLargePages, boolean bitmapShouldUseLargePages) throws Exception {
@@ -124,10 +123,10 @@ public class TestLargePageUseForAuxMemory {
         // Only expect large page size if large pages are enabled.
         if (largePagesEnabled(output)) {
             checkSmallTables(output, (cardsShouldUseLargePages ? largePageSize : smallPageSize));
-            checkBitmaps(output, (bitmapShouldUseLargePages ? largePageSize : smallPageSize));
+            checkBitmap(output, (bitmapShouldUseLargePages ? largePageSize : smallPageSize));
         } else {
             checkSmallTables(output, smallPageSize);
-            checkBitmaps(output, smallPageSize);
+            checkBitmap(output, smallPageSize);
         }
         output.shouldHaveExitValue(0);
 
@@ -143,7 +142,7 @@ public class TestLargePageUseForAuxMemory {
 
         output = new OutputAnalyzer(pb.start());
         checkSmallTables(output, smallPageSize);
-        checkBitmaps(output, smallPageSize);
+        checkBitmap(output, smallPageSize);
         output.shouldHaveExitValue(0);
     }
 

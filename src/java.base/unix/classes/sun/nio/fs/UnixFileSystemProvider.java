@@ -156,6 +156,7 @@ public abstract class UnixFileSystemProvider
     {
         if (type == BasicFileAttributes.class && Util.followLinks(options)) {
             UnixPath file = UnixPath.toUnixPath(path);
+            file.checkRead();
             try {
                 @SuppressWarnings("unchecked")
                 A attrs = (A) UnixFileAttributes.getIfExists(file);
