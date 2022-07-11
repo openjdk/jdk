@@ -27,8 +27,6 @@ import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import static java.lang.constant.ConstantDescs.*;
 import java.lang.constant.MethodTypeDesc;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import jdk.classfile.Classfile;
 import jdk.classfile.constantpool.ClassEntry;
 import jdk.classfile.constantpool.ConstantDynamicEntry;
@@ -40,11 +38,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashMap;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.BiConsumer;
 import jdk.classfile.Attribute;
 
 import static jdk.classfile.Classfile.*;
@@ -176,7 +172,6 @@ public final class StackMapGenerator {
     private static final String OBJECT_INITIALIZER_NAME = "<init>";
     private static final int FLAG_THIS_UNINIT = 0x01;
     private static final int FRAME_DEFAULT_CAPACITY = 10;
-    private static final int BITS_PER_BYTE = 8;
     private static final int T_BOOLEAN = 4, T_LONG = 11;
 
     private static final int ITEM_TOP = 0,
@@ -398,7 +393,6 @@ public final class StackMapGenerator {
         return frames.isEmpty() ? null : new UnboundAttribute.AdHocAttribute<>(Attributes.STACK_MAP_TABLE) {
             @Override
             public void writeBody(BufWriter b) {
-                int start = b.size();
                 b.writeU2(frames.size());
                 Frame prevFrame =  new Frame(classHierarchy);
                 prevFrame.setLocalsFromArg(methodName, methodDesc, isStatic, thisType);
@@ -416,41 +410,8 @@ public final class StackMapGenerator {
         return Type.referenceType(((ClassEntry)cp.entryByIndex(index)).asSymbol());
     }
 
-    private static int classDescToType(ClassDesc desc, Type inference_types[], int inference_type_index) {
-        return classDescToType(desc, new BiConsumer<>() {
-            @Override
-            public void accept(Integer i, Type vt) {
-                inference_types[i] = vt;
-            }
-        }, inference_type_index);
-    }
-
-    private static int classDescToType(ClassDesc desc, BiConsumer<Integer, Type> inference_types_consumer, int inference_type_index) {
-        if (desc.isClassOrInterface() || desc.isArray()) {
-            inference_types_consumer.accept(inference_type_index, Type.referenceType(desc));
-            return 1;
-        }
-        switch (desc.descriptorString()) {
-            case "J" -> {
-                inference_types_consumer.accept(inference_type_index, Type.LONG_TYPE);
-                inference_types_consumer.accept(++inference_type_index, Type.LONG2_TYPE);
-                return 2;
-            }
-            case "D" -> {
-                inference_types_consumer.accept(inference_type_index, Type.DOUBLE_TYPE);
-                inference_types_consumer.accept(++inference_type_index, Type.DOUBLE2_TYPE);
-                return 2;
-            }
-            case "I", "Z", "B", "C", "S" -> {
-                inference_types_consumer.accept(inference_type_index, Type.INTEGER_TYPE);
-                return 1;
-            }
-            case "F" -> {
-                inference_types_consumer.accept(inference_type_index, Type.FLOAT_TYPE);
-                return 1;
-            }
-            default -> throw new AssertionError("Should not reach here");
-        }
+    private static boolean isDoubleSlot(ClassDesc desc) {
+        return CD_double.equals(desc) || CD_long.equals(desc);
     }
 
     private void processMethod() {
@@ -513,11 +474,11 @@ public final class StackMapGenerator {
             case Classfile.ICONST_M1, Classfile.ICONST_0, Classfile.ICONST_1, Classfile.ICONST_2, Classfile.ICONST_3, Classfile.ICONST_4, Classfile.ICONST_5, Classfile.SIPUSH, Classfile.BIPUSH ->
                 currentFrame.pushStack(Type.INTEGER_TYPE);
             case Classfile.LCONST_0, Classfile.LCONST_1 ->
-                currentFrame.pushStack2(Type.LONG_TYPE, Type.LONG2_TYPE);
+                currentFrame.pushStack(Type.LONG_TYPE, Type.LONG2_TYPE);
             case Classfile.FCONST_0, Classfile.FCONST_1, Classfile.FCONST_2 ->
                 currentFrame.pushStack(Type.FLOAT_TYPE);
             case Classfile.DCONST_0, Classfile.DCONST_1 ->
-                currentFrame.pushStack2(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
+                currentFrame.pushStack(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
             case Classfile.LDC ->
                 processLdc(bcs.getIndexU1());
             case Classfile.LDC_W, Classfile.LDC2_W ->
@@ -527,17 +488,17 @@ public final class StackMapGenerator {
             case Classfile.ILOAD_0, Classfile.ILOAD_1, Classfile.ILOAD_2, Classfile.ILOAD_3 ->
                 currentFrame.checkLocal(opcode - Classfile.ILOAD_0).pushStack(Type.INTEGER_TYPE);
             case Classfile.LLOAD ->
-                currentFrame.checkLocal(bcs.getIndex() + 1).pushStack2(Type.LONG_TYPE, Type.LONG2_TYPE);
+                currentFrame.checkLocal(bcs.getIndex() + 1).pushStack(Type.LONG_TYPE, Type.LONG2_TYPE);
             case Classfile.LLOAD_0, Classfile.LLOAD_1, Classfile.LLOAD_2, Classfile.LLOAD_3 ->
-                currentFrame.checkLocal(opcode - Classfile.LLOAD_0 + 1).pushStack2(Type.LONG_TYPE, Type.LONG2_TYPE);
+                currentFrame.checkLocal(opcode - Classfile.LLOAD_0 + 1).pushStack(Type.LONG_TYPE, Type.LONG2_TYPE);
             case Classfile.FLOAD ->
                 currentFrame.checkLocal(bcs.getIndex()).pushStack(Type.FLOAT_TYPE);
             case Classfile.FLOAD_0, Classfile.FLOAD_1, Classfile.FLOAD_2, Classfile.FLOAD_3 ->
                 currentFrame.checkLocal(opcode - Classfile.FLOAD_0).pushStack(Type.FLOAT_TYPE);
             case Classfile.DLOAD ->
-                currentFrame.checkLocal(bcs.getIndex() + 1).pushStack2(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
+                currentFrame.checkLocal(bcs.getIndex() + 1).pushStack(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
             case Classfile.DLOAD_0, Classfile.DLOAD_1, Classfile.DLOAD_2, Classfile.DLOAD_3 ->
-                currentFrame.checkLocal(opcode - Classfile.DLOAD_0 + 1).pushStack2(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
+                currentFrame.checkLocal(opcode - Classfile.DLOAD_0 + 1).pushStack(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
             case Classfile.ALOAD ->
                 currentFrame.pushStack(currentFrame.getLocal(bcs.getIndex()));
             case Classfile.ALOAD_0, Classfile.ALOAD_1, Classfile.ALOAD_2, Classfile.ALOAD_3 ->
@@ -545,13 +506,13 @@ public final class StackMapGenerator {
             case Classfile.IALOAD, Classfile.BALOAD, Classfile.CALOAD, Classfile.SALOAD ->
                 currentFrame.decStack(2).pushStack(Type.INTEGER_TYPE);
             case Classfile.LALOAD ->
-                currentFrame.decStack(2).pushStack2(Type.LONG_TYPE, Type.LONG2_TYPE);
+                currentFrame.decStack(2).pushStack(Type.LONG_TYPE, Type.LONG2_TYPE);
             case Classfile.FALOAD ->
                 currentFrame.decStack(2).pushStack(Type.FLOAT_TYPE);
             case Classfile.DALOAD ->
-                currentFrame.decStack(2).pushStack2(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
+                currentFrame.decStack(2).pushStack(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
             case Classfile.AALOAD ->
-                currentFrame.pushStack((type1 = currentFrame.decStack(1).popStack()).isNull() ? Type.NULL_TYPE : type1.getComponent());
+                currentFrame.pushStack((type1 = currentFrame.decStack(1).popStack()) == Type.NULL_TYPE ? Type.NULL_TYPE : type1.getComponent());
             case Classfile.ISTORE ->
                 currentFrame.decStack(1).setLocal(bcs.getIndex(), Type.INTEGER_TYPE);
             case Classfile.ISTORE_0, Classfile.ISTORE_1, Classfile.ISTORE_2, Classfile.ISTORE_3 ->
@@ -622,41 +583,41 @@ public final class StackMapGenerator {
             case Classfile.INEG, Classfile.ARRAYLENGTH, Classfile.INSTANCEOF ->
                 currentFrame.decStack(1).pushStack(Type.INTEGER_TYPE);
             case Classfile.LADD, Classfile.LSUB, Classfile.LMUL, Classfile.LDIV, Classfile.LREM, Classfile.LAND, Classfile.LOR, Classfile.LXOR ->
-                currentFrame.decStack(4).pushStack2(Type.LONG_TYPE, Type.LONG2_TYPE);
+                currentFrame.decStack(4).pushStack(Type.LONG_TYPE, Type.LONG2_TYPE);
             case Classfile.LNEG ->
-                currentFrame.decStack(2).pushStack2(Type.LONG_TYPE, Type.LONG2_TYPE);
+                currentFrame.decStack(2).pushStack(Type.LONG_TYPE, Type.LONG2_TYPE);
             case Classfile.LSHL, Classfile.LSHR, Classfile.LUSHR ->
-                currentFrame.decStack(3).pushStack2(Type.LONG_TYPE, Type.LONG2_TYPE);
+                currentFrame.decStack(3).pushStack(Type.LONG_TYPE, Type.LONG2_TYPE);
             case Classfile.FADD, Classfile.FSUB, Classfile.FMUL, Classfile.FDIV, Classfile.FREM ->
                 currentFrame.decStack(2).pushStack(Type.FLOAT_TYPE);
             case Classfile.FNEG ->
                 currentFrame.decStack(1).pushStack(Type.FLOAT_TYPE);
             case Classfile.DADD, Classfile.DSUB, Classfile.DMUL, Classfile.DDIV, Classfile.DREM ->
-                currentFrame.decStack(4).pushStack2(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
+                currentFrame.decStack(4).pushStack(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
             case Classfile.DNEG ->
-                currentFrame.decStack(2).pushStack2(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
+                currentFrame.decStack(2).pushStack(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
             case Classfile.IINC ->
                 currentFrame.checkLocal(bcs.getIndex());
             case Classfile.I2L ->
-                currentFrame.decStack(1).pushStack2(Type.LONG_TYPE, Type.LONG2_TYPE);
+                currentFrame.decStack(1).pushStack(Type.LONG_TYPE, Type.LONG2_TYPE);
             case Classfile.L2I ->
                 currentFrame.decStack(2).pushStack(Type.INTEGER_TYPE);
             case Classfile.I2F ->
                 currentFrame.decStack(1).pushStack(Type.FLOAT_TYPE);
             case Classfile.I2D ->
-                currentFrame.decStack(1).pushStack2(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
+                currentFrame.decStack(1).pushStack(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
             case Classfile.L2F ->
                 currentFrame.decStack(2).pushStack(Type.FLOAT_TYPE);
             case Classfile.L2D ->
-                currentFrame.decStack(2).pushStack2(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
+                currentFrame.decStack(2).pushStack(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
             case Classfile.F2I ->
                 currentFrame.decStack(1).pushStack(Type.INTEGER_TYPE);
             case Classfile.F2L ->
-                currentFrame.decStack(1).pushStack2(Type.LONG_TYPE, Type.LONG2_TYPE);
+                currentFrame.decStack(1).pushStack(Type.LONG_TYPE, Type.LONG2_TYPE);
             case Classfile.F2D ->
-                currentFrame.decStack(1).pushStack2(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
+                currentFrame.decStack(1).pushStack(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
             case Classfile.D2L ->
-                currentFrame.decStack(2).pushStack2(Type.LONG_TYPE, Type.LONG2_TYPE);
+                currentFrame.decStack(2).pushStack(Type.LONG_TYPE, Type.LONG2_TYPE);
             case Classfile.D2F ->
                 currentFrame.decStack(2).pushStack(Type.FLOAT_TYPE);
             case Classfile.I2B, Classfile.I2C, Classfile.I2S ->
@@ -733,20 +694,15 @@ public final class StackMapGenerator {
             case TAG_FLOAT ->
                 currentFrame.pushStack(Type.FLOAT_TYPE);
             case TAG_DOUBLE ->
-                currentFrame.pushStack2(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
+                currentFrame.pushStack(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
             case TAG_LONG ->
-                currentFrame.pushStack2(Type.LONG_TYPE, Type.LONG2_TYPE);
+                currentFrame.pushStack(Type.LONG_TYPE, Type.LONG2_TYPE);
             case TAG_METHODHANDLE ->
                 currentFrame.pushStack(Type.referenceType(CD_MethodHandle));
             case TAG_METHODTYPE ->
                 currentFrame.pushStack(Type.referenceType(CD_MethodType));
-            case TAG_CONSTANTDYNAMIC -> {
-                Type[] vConstantType = new Type[2];
-                int n = classDescToType(((ConstantDynamicEntry)cp.entryByIndex(index)).asSymbol().constantType(), vConstantType, 0);
-                for (int i = 0; i < n; i++) {
-                    currentFrame.pushStack(vConstantType[i]);
-                }
-            }
+            case TAG_CONSTANTDYNAMIC ->
+                currentFrame.pushStack(((ConstantDynamicEntry)cp.entryByIndex(index)).asSymbol().constantType());
             default ->
                 generatorError("Invalid index in ldc");
         }
@@ -793,31 +749,22 @@ public final class StackMapGenerator {
     }
 
     private void processFieldInstructions(RawBytecodeHelper bcs) {
-        int index = bcs.getIndexU2();
-        Type[] fieldType = new Type[2];
-        int n = classDescToType(ClassDesc.ofDescriptor(((MemberRefEntry)cp.entryByIndex(index)).nameAndType().type().stringValue()), fieldType, 0);
+        var desc = ClassDesc.ofDescriptor(((MemberRefEntry)cp.entryByIndex(bcs.getIndexU2())).nameAndType().type().stringValue());
         switch (bcs.rawCode) {
-            case Classfile.GETSTATIC -> {
-                for (int i = 0; i < n; i++) {
-                    currentFrame.pushStack(fieldType[i]);
-                }
-            }
+            case Classfile.GETSTATIC ->
+                currentFrame.pushStack(desc);
             case Classfile.PUTSTATIC -> {
-                for (int i = n - 1; i >= 0; i--) {
-                    currentFrame.popStack();
-                }
+                currentFrame.popStack();
+                if (isDoubleSlot(desc)) currentFrame.popStack();
             }
             case Classfile.GETFIELD -> {
                 currentFrame.popStack();
-                for (int i = 0; i < n; i++) {
-                    currentFrame.pushStack(fieldType[i]);
-                }
+                currentFrame.pushStack(desc);
             }
             case Classfile.PUTFIELD -> {
-                for (int i = n - 1; i >= 0; i--) {
-                    currentFrame.popStack();
-                }
                 currentFrame.popStack();
+                currentFrame.popStack();
+                if (isDoubleSlot(desc)) currentFrame.popStack();
             }
             default -> throw new AssertionError("Should not reach here");
         }
@@ -830,23 +777,21 @@ public final class StackMapGenerator {
         var nameAndType = opcode == Classfile.INVOKEDYNAMIC ? ((DynamicConstantPoolEntry)cpe).nameAndType() : ((MemberRefEntry)cpe).nameAndType();
         String invokeMethodName = nameAndType.name().stringValue();
         var mDesc = MethodTypeDesc.ofDescriptor(nameAndType.type().stringValue());
-        Type[] sig_type = new Type[2];
         int nargs = 0;
-        for (int i = 0; i < mDesc.parameterCount(); i++) {
-            nargs += classDescToType(mDesc.parameterType(i), sig_type, 0);
-        }
+        for (int i = 0; i < mDesc.parameterCount(); i++)
+            nargs += isDoubleSlot(mDesc.parameterType(i)) ? 2 : 1;
         int bci = bcs.bci;
         currentFrame.decStack(nargs);
         if (opcode != Classfile.INVOKESTATIC && opcode != Classfile.INVOKEDYNAMIC) {
             if (OBJECT_INITIALIZER_NAME.equals(invokeMethodName)) {
                 Type type = currentFrame.popStack();
-                if (type.isUninitializedThis()) {
+                if (type == Type.UNITIALIZED_THIS_TYPE) {
                     if (inTryBlock) {
                         processExceptionHandlerTargets(bci, true);
                     }
                     currentFrame.initializeObject(type, thisType);
                     thisUninit = true;
-                } else if (type.isUninitialized()) {
+                } else if (type.tag == ITEM_UNINITIALIZED) {
                     int new_offset = type.bci();
                     int new_class_index = bcs.getIndexU2Raw(new_offset + 1);
                     Type new_class_type = cpIndexToType(new_class_index, cp);
@@ -861,15 +806,7 @@ public final class StackMapGenerator {
                 currentFrame.popStack();
             }
         }
-        if (!mDesc.returnType().equals(CD_void)) {
-            if (OBJECT_INITIALIZER_NAME.equals(invokeMethodName)) {
-                generatorError("Return type must be void in <init> method");
-            }
-            int n = classDescToType(mDesc.returnType(), sig_type, 0);
-            for (int y = 0; y < n; y++) {
-                currentFrame.pushStack(sig_type[y]);
-            }
-        }
+        currentFrame.pushStack(mDesc.returnType());
         return thisUninit;
     }
 
@@ -975,32 +912,43 @@ public final class StackMapGenerator {
         private Type[] locals, stack;
 
         Frame(ClassHierarchyImpl classHierarchy) {
-            this.offset = -1;
-            this.localsSize = 0;
-            this.stackSize = 0;
-            this.flags = 0;
-            this.classHierarchy = classHierarchy;
-            this.locals = null;
-            this.stack = null;
+            this(-1, 0, 0, 0, null, null, classHierarchy);
         }
 
-        Frame(int offset, int flags, int locals_size, int stack_size, Type[] locals, Type[] stack, ClassHierarchyImpl context) {
+        Frame(int offset, ClassHierarchyImpl classHierarchy) {
+            this(offset, -1, 0, 0, null, null, classHierarchy);
+        }
+
+        Frame(int offset, int flags, int locals_size, int stack_size, Type[] locals, Type[] stack, ClassHierarchyImpl classHierarchy) {
             this.offset = offset;
             this.localsSize = locals_size;
             this.stackSize = stack_size;
             this.flags = flags;
             this.locals = locals;
             this.stack = stack;
-            this.classHierarchy = context;
-        }
-
-        public Frame(int offset, ClassHierarchyImpl context) {
-            this(offset, -1, 0, 0, null, null, context);
+            this.classHierarchy = classHierarchy;
         }
 
         @Override
         public String toString() {
             return (dirty ? "frame* @" : "frame @") + offset + " with locals " + (locals == null ? "[]" : Arrays.asList(locals).subList(0, localsSize)) + " and stack " + (stack == null ? "[]" : Arrays.asList(stack).subList(0, stackSize));
+        }
+
+        Frame pushStack(ClassDesc desc) {
+            return switch (desc.descriptorString()) {
+                case "J" ->
+                    pushStack(Type.LONG_TYPE, Type.LONG2_TYPE);
+                case "D" ->
+                    pushStack(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
+                case "I", "Z", "B", "C", "S" ->
+                    pushStack(Type.INTEGER_TYPE);
+                case "F" ->
+                    pushStack(Type.FLOAT_TYPE);
+                case "V" ->
+                    this;
+                default ->
+                    pushStack(Type.referenceType(desc));
+            };
         }
 
         Frame pushStack(Type type) {
@@ -1009,10 +957,11 @@ public final class StackMapGenerator {
             return this;
         }
 
-        void pushStack2(Type type1, Type type2) {
+        Frame pushStack(Type type1, Type type2) {
             checkStack(stackSize + 1);
             stack[stackSize++] = type1;
             stack[stackSize++] = type2;
+            return this;
         }
 
         Type popStack() {
@@ -1042,7 +991,7 @@ public final class StackMapGenerator {
                     stack[i] = new_object;
                 }
             }
-            if (old_object.isUninitializedThis()) {
+            if (old_object == Type.UNITIALIZED_THIS_TYPE) {
                 flags = 0;
             }
         }
@@ -1077,56 +1026,48 @@ public final class StackMapGenerator {
             locals[index] = type;
         }
 
-        Type setLocalsFromArg(String name, MethodTypeDesc methodDesc, boolean isStatic, Type thisKlass) {
+        void setLocalsFromArg(String name, MethodTypeDesc methodDesc, boolean isStatic, Type thisKlass) {
             localsSize = 0;
             if (!isStatic) {
                 localsSize++;
                 if (OBJECT_INITIALIZER_NAME.equals(name) && !ConstantDescs.CD_Object.equals(thisKlass.sym)) {
-                    setLocal(0, Type.uninitialized_this_type);
+                    setLocal(0, Type.UNITIALIZED_THIS_TYPE);
                     flags |= FLAG_THIS_UNINIT;
                 } else {
                     setLocalRawInternal(0, thisKlass);
                 }
             }
             for (int i = 0; i < methodDesc.parameterCount(); i++) {
-                localsSize += StackMapGenerator.classDescToType(methodDesc.parameterType(i), new BiConsumer<>() {
-                    @Override
-                    public void accept(Integer i, Type vt) {
-                        setLocalRawInternal(i, vt);
+                var desc = methodDesc.parameterType(i);
+                if (desc.isClassOrInterface() || desc.isArray()) {
+                    setLocalRawInternal(localsSize++, Type.referenceType(desc));
+                } else switch (desc.descriptorString()) {
+                    case "J" -> {
+                        setLocalRawInternal(localsSize++, Type.LONG_TYPE);
+                        setLocalRawInternal(localsSize++, Type.LONG2_TYPE);
                     }
-                }, localsSize);
+                    case "D" -> {
+                        setLocalRawInternal(localsSize++, Type.DOUBLE_TYPE);
+                        setLocalRawInternal(localsSize++, Type.DOUBLE2_TYPE);
+                    }
+                    case "I", "Z", "B", "C", "S" ->
+                        setLocalRawInternal(localsSize++, Type.INTEGER_TYPE);
+                    case "F" ->
+                        setLocalRawInternal(localsSize++, Type.FLOAT_TYPE);
+                    default -> throw new AssertionError("Should not reach here");
+                }
             }
-            var ret = methodDesc.returnType();
-            if (ret.isClassOrInterface() || ret.isArray()) {
-                return Type.referenceType(ret);
-            }
-            return switch (ret.descriptorString()) {
-                case "I" -> Type.INTEGER_TYPE;
-                case "B" -> Type.BYTE_TYPE;
-                case "C" -> Type.CHAR_TYPE;
-                case "S" -> Type.SHORT_TYPE;
-                case "Z" -> Type.BOOLEAN_TYPE;
-                case "F"-> Type.FLOAT_TYPE;
-                case "D" -> Type.DOUBLE_TYPE;
-                case "J" -> Type.LONG_TYPE;
-                case "V" -> Type.TOP_TYPE;
-                default -> throw new AssertionError("Should not reach here");
-            };
         }
 
         void copyFrom(Frame src) {
             if (locals != null && src.localsSize < locals.length) Arrays.fill(locals, src.localsSize, locals.length, Type.TOP_TYPE);
             localsSize = src.localsSize;
             checkLocal(src.localsSize - 1);
-            for (int i = 0; i < src.localsSize; i++) {
-                locals[i] = src.locals[i];
-            }
+            if (src.localsSize > 0) System.arraycopy(src.locals, 0, locals, 0, src.localsSize);
             if (stack != null) Arrays.fill(stack, src.stackSize, stack.length, Type.TOP_TYPE);
             stackSize = src.stackSize;
             checkStack(src.stackSize - 1);
-            for (int i = 0; i < src.stackSize; i++) {
-                stack[i] = src.stack[i];
-            }
+            if (src.stackSize > 0) System.arraycopy(src.stack, 0, stack, 0, src.stackSize);
             flags = src.flags;
         }
 
@@ -1165,17 +1106,12 @@ public final class StackMapGenerator {
             return ret;
         }
 
-        void getLocal2(int index) {
-            getLocalRawInternal(index);
-            getLocalRawInternal(index + 1);
-        }
-
         void setLocal(int index, Type type) {
             Type old = getLocalRawInternal(index);
-            if (old.isDouble() || old.isLong()) {
+            if (old == Type.DOUBLE_TYPE || old == Type.LONG_TYPE) {
                 setLocalRawInternal(index + 1, Type.TOP_TYPE);
             }
-            if (old.isDouble2() || old.isLong2()) {
+            if (old == Type.DOUBLE2_TYPE || old == Type.LONG2_TYPE) {
                 setLocalRawInternal(index - 1, Type.TOP_TYPE);
             }
             setLocalRawInternal(index, type);
@@ -1186,11 +1122,11 @@ public final class StackMapGenerator {
 
         void setLocal2(int index, Type type1, Type type2) {
             Type old = getLocalRawInternal(index + 1);
-            if (old.isDouble() || old.isLong()) {
+            if (old == Type.DOUBLE_TYPE || old == Type.LONG_TYPE) {
                 setLocalRawInternal(index + 2, Type.TOP_TYPE);
             }
             old = getLocalRawInternal(index);
-            if (old.isDouble2() || old.isLong2()) {
+            if (old == Type.DOUBLE2_TYPE || old == Type.LONG2_TYPE) {
                 setLocalRawInternal(index - 1, Type.TOP_TYPE);
             }
             setLocalRawInternal(index, type1);
@@ -1210,7 +1146,7 @@ public final class StackMapGenerator {
         }
 
         private static int trimAndCompress(Type[] types, int count) {
-            while (count > 0 && types[count - 1].isTop()) count--;
+            while (count > 0 && types[count - 1] == Type.TOP_TYPE) count--;
             int compressed = 0;
             for (int i = 0; i < count; i++) {
                 if (!types[i].isCategory2_2nd()) {
@@ -1265,94 +1201,37 @@ public final class StackMapGenerator {
         }
     }
 
-    private static final class Type {
+    private static record Type(int tag, ClassDesc sym, int bci) {
+
+        @Override //mandatory overrride to avoid use of method reference during JDK bootstrap
+        public boolean equals(Object o) {
+            return (o instanceof Type t) && t.tag == tag && t.bci == bci && Objects.equals(t.sym, sym);
+        }
+
+        private Type(int tag) {
+            this(tag, null, 0);
+        }
 
         private Type(ClassDesc sym) {
-            this(0x100, sym);
-        }
-        private final int data;
-        final ClassDesc sym;
-
-        @Override
-        public int hashCode() {
-            return sym == null ? data : sym.hashCode();
+            this(ITEM_OBJECT, sym, 0);
         }
 
-        @Override
-        public boolean equals(Object obj) {
-            return obj instanceof Type ? (data == ((Type) obj).data) && Objects.equals(sym, ((Type) obj).sym) : false;
-        }
+        //singleton types
+        static final Type TOP_TYPE = new Type(ITEM_TOP),
+                NULL_TYPE = new Type(ITEM_NULL),
+                INTEGER_TYPE = new Type(ITEM_INTEGER),
+                FLOAT_TYPE = new Type(ITEM_FLOAT),
+                LONG_TYPE = new Type(ITEM_LONG),
+                LONG2_TYPE = new Type(ITEM_LONG_2ND),
+                DOUBLE_TYPE = new Type(ITEM_DOUBLE),
+                BOOLEAN_TYPE = new Type(ITEM_BOOLEAN),
+                BYTE_TYPE = new Type(ITEM_BYTE),
+                CHAR_TYPE = new Type(ITEM_CHAR),
+                SHORT_TYPE = new Type(ITEM_SHORT),
+                DOUBLE2_TYPE = new Type(ITEM_DOUBLE_2ND),
+                UNITIALIZED_THIS_TYPE = new Type(ITEM_UNINITIALIZED_THIS);
 
-        private static final Map<Type, String> CONSTANTS_MAP = new IdentityHashMap<>(18);
-
-        @Override
-        public String toString() {
-            if (CONSTANTS_MAP.isEmpty()) {
-                for (Field f : Type.class.getDeclaredFields()) {
-                    var name = f.getName();
-                    if (Modifier.isStatic(f.getModifiers()) && f.getType() == Type.class && name.endsWith("_TYPE")) try {
-                        CONSTANTS_MAP.put((Type) f.get(null), name.substring(0, name.length() - 5));
-                    } catch (IllegalAccessException ignore) {
-                    }
-                }
-            }
-            if (sym != null) {
-                return sym.displayName();
-            }
-            if ((data & 0xff) == UNINITIALIZED) {
-                return "uninit@" + (data >> 8);
-            }
-            return CONSTANTS_MAP.getOrDefault(this, Integer.toHexString(data));
-        }
-
-        private static final int TYPE_MASK = 0x00000003,
-                REFERENCE = 0x0,
-                PRIMITIVE = 0x1,
-                UNINITIALIZED = 0x2,
-                TYPE_QUERY = 0x3,
-                CATEGORY1_FLAG = 0x01,
-                CATEGORY2_FLAG = 0x02,
-                CATEGORY2_2ND_FLAG = 0x04,
-                NULL = 0x00000000,
-                CATEGORY1 = (CATEGORY1_FLAG << 1 * BITS_PER_BYTE) | PRIMITIVE,
-                CATEGORY2 = (CATEGORY2_FLAG << 1 * BITS_PER_BYTE) | PRIMITIVE,
-                CATEGORY2_2ND = (CATEGORY2_2ND_FLAG << 1 * BITS_PER_BYTE) | PRIMITIVE,
-                TOP = PRIMITIVE,
-                BOOLEAN = (ITEM_BOOLEAN << 2 * BITS_PER_BYTE) | CATEGORY1,
-                BYTE = (ITEM_BYTE << 2 * BITS_PER_BYTE) | CATEGORY1,
-                SHORT = (ITEM_SHORT << 2 * BITS_PER_BYTE) | CATEGORY1,
-                CHAR = (ITEM_CHAR << 2 * BITS_PER_BYTE) | CATEGORY1,
-                INTEGER = (ITEM_INTEGER << 2 * BITS_PER_BYTE) | CATEGORY1,
-                FLOAT = (ITEM_FLOAT << 2 * BITS_PER_BYTE) | CATEGORY1,
-                LONG = (ITEM_LONG << 2 * BITS_PER_BYTE) | CATEGORY2,
-                DOUBLE = (ITEM_DOUBLE << 2 * BITS_PER_BYTE) | CATEGORY2,
-                LONG_2ND = (ITEM_LONG_2ND << 2 * BITS_PER_BYTE) | CATEGORY2_2ND,
-                DOUBLE_2ND = (ITEM_DOUBLE_2ND << 2 * BITS_PER_BYTE) | CATEGORY2_2ND,
-                BCI_MASK = 0xffff << 1 * BITS_PER_BYTE,
-                BCI_FOR_THIS = 0xffff;
-
-        private Type(int raw_data) {
-            this(raw_data, null);
-        }
-
-        private Type(int raw_data, ClassDesc sym) {
-            this.data = raw_data;
-            this.sym = sym;
-        }
-
-        static final Type TOP_TYPE = new Type(TOP),
-                NULL_TYPE = new Type(NULL),
-                INTEGER_TYPE = new Type(INTEGER),
-                FLOAT_TYPE = new Type(FLOAT),
-                LONG_TYPE = new Type(LONG),
-                LONG2_TYPE = new Type(LONG_2ND),
-                DOUBLE_TYPE = new Type(DOUBLE),
-                BOOLEAN_TYPE = new Type(BOOLEAN),
-                BYTE_TYPE = new Type(BYTE),
-                CHAR_TYPE = new Type(CHAR),
-                SHORT_TYPE = new Type(SHORT),
-                DOUBLE2_TYPE = new Type(DOUBLE_2ND);
-
+        //frequently used types to reduce footprint
         static final Type OBJECT_TYPE = new Type(CD_Object),
             THROWABLE_TYPE = new Type(CD_Throwable),
             INT_ARRAY_TYPE = new Type(CD_int.arrayType()),
@@ -1369,158 +1248,58 @@ public final class StackMapGenerator {
         }
 
         static Type uninitializedType(int bci) {
-            return new Type(bci << 1 * BITS_PER_BYTE | UNINITIALIZED);
-        }
-        static final Type uninitialized_this_type = uninitializedType(BCI_FOR_THIS);
-
-        boolean isTop() {
-            return (data == TOP);
-        }
-
-        boolean isNull() {
-            return (data == NULL);
-        }
-
-        boolean isNullOrArray() {
-            return isNull() || isArray();// || (sub1 != null && sub1.isNullOrArray() && sub2.isNullOrArray());
-        }
-
-        boolean isBoolean() {
-            return (data == BOOLEAN);
-        }
-
-        boolean isByte() {
-            return (data == BYTE);
-        }
-
-        boolean isChar() {
-            return (data == CHAR);
-        }
-
-        boolean isShort() {
-            return (data == SHORT);
-        }
-
-        boolean isInteger() {
-            return (data == INTEGER);
-        }
-
-        boolean isLong() {
-            return (data == LONG);
-        }
-
-        boolean isFloat() {
-            return (data == FLOAT);
-        }
-
-        boolean isDouble() {
-            return (data == DOUBLE);
-        }
-
-        boolean isLong2() {
-            return (data == LONG_2ND);
-        }
-
-        boolean isDouble2() {
-            return (data == DOUBLE_2ND);
-        }
-
-        boolean isReference() {
-            return ((data & TYPE_MASK) == REFERENCE);
-        }
-
-        boolean isCategory1() {
-            return ((data & CATEGORY1) != PRIMITIVE);
-        }
-
-        boolean isCategory2() {
-            return ((data & CATEGORY2) == CATEGORY2);
+            return new Type(ITEM_UNINITIALIZED, null, bci);
         }
 
         boolean isCategory2_2nd() {
-            return ((data & CATEGORY2_2ND) == CATEGORY2_2ND);
+            return this == DOUBLE2_TYPE || this == LONG2_TYPE;
         }
 
-        boolean isCheck() {
-            return (data & TYPE_QUERY) == TYPE_QUERY;
+        boolean isReference() {
+            return tag == ITEM_OBJECT || this == NULL_TYPE;
         }
 
         boolean isObject() {
-            return (isReference() && !isNull() && sym.isClassOrInterface());
+            return tag == ITEM_OBJECT && sym.isClassOrInterface();
         }
 
         boolean isArray() {
-            return (isReference() && !isNull() && sym.isArray());
-        }
-
-        boolean isUninitialized() {
-            return ((data & UNINITIALIZED) == UNINITIALIZED);
-        }
-
-        boolean isUninitializedThis() {
-            return isUninitialized() && bci() == BCI_FOR_THIS;
-        }
-
-        int bci() {
-            return ((data & BCI_MASK) >> 1 * BITS_PER_BYTE);
+            return tag == ITEM_OBJECT && sym.isArray();
         }
 
         Type mergeFrom(Type from, ClassHierarchyImpl context) {
-            if (isTop() || this == from || equals(from)) {
+            if (this == TOP_TYPE || this == from || equals(from)) {
                 return this;
             } else {
-                switch (data) {
-                    case BOOLEAN:
-                    case BYTE:
-                    case CHAR:
-                    case SHORT:
-                        return from.isInteger() ? this : Type.TOP_TYPE;
-                    default:
-                        if (isReference() && from.isReference()) {
-                            return mergeReferenceFrom(from, context);
-                        } else {
-                            return Type.TOP_TYPE;
-                        }
-                }
+                return switch (tag) {
+                    case ITEM_BOOLEAN, ITEM_BYTE, ITEM_CHAR, ITEM_SHORT ->
+                        from == INTEGER_TYPE ? this : TOP_TYPE;
+                    default ->
+                        isReference() && from.isReference() ? mergeReferenceFrom(from, context) : TOP_TYPE;
+                };
             }
         }
 
         Type mergeComponentFrom(Type from, ClassHierarchyImpl context) {
-            if (isTop() || this == from || equals(from)) {
+            if (this == TOP_TYPE || this == from || equals(from)) {
                 return this;
             } else {
-                switch (data) {
-                    case BOOLEAN:
-                    case BYTE:
-                    case CHAR:
-                    case SHORT:
-                        return Type.TOP_TYPE;
-                    default:
-                        if (isReference() && from.isReference()) {
-                            return mergeReferenceFrom(from, context);
-                        } else {
-                            return Type.TOP_TYPE;
-                        }
-                }
+                return switch (tag) {
+                    case ITEM_BOOLEAN, ITEM_BYTE, ITEM_CHAR, ITEM_SHORT ->
+                        TOP_TYPE;
+                    default ->
+                        isReference() && from.isReference() ? mergeReferenceFrom(from, context) : TOP_TYPE;
+                };
             }
-        }
-
-        int dimensions() {
-            int index = 0;
-            String desc = sym.descriptorString();
-            while (desc.charAt(index) == '[') {
-                index++;
-            }
-            return index;
         }
 
         private static final ClassDesc CD_Cloneable = ClassDesc.of("java.lang.Cloneable");
         private static final ClassDesc CD_Serializable = ClassDesc.of("java.io.Serializable");
 
         private Type mergeReferenceFrom(Type from, ClassHierarchyImpl context) {
-            if (from.isNull()) {
+            if (from == NULL_TYPE) {
                 return this;
-            } else if (isNull()) {
+            } else if (this == NULL_TYPE) {
                 return from;
             } else if (sym.equals(from.sym)) {
                 return this;
@@ -1536,11 +1315,10 @@ public final class StackMapGenerator {
                     var anc = context.commonAncestor(sym, from.sym);
                     return anc == null ? this : Type.referenceType(anc);
                 }
-                return Type.OBJECT_TYPE;
             } else if (isArray() && from.isArray()) {
                 Type compThis = getComponent();
                 Type compFrom = from.getComponent();
-                if (!compThis.isTop() && !compFrom.isTop()) {
+                if (compThis != TOP_TYPE && compFrom != TOP_TYPE) {
                     return  compThis.mergeComponentFrom(compFrom, context).toArray();
                 }
             }
@@ -1548,27 +1326,18 @@ public final class StackMapGenerator {
         }
 
         Type toArray() {
-            if (isBoolean()) {
-                return BOOLEAN_ARRAY_TYPE;
-            } else if (isByte()) {
-                return BYTE_ARRAY_TYPE;
-            } else if (isChar()) {
-                return CHAR_ARRAY_TYPE;
-            } else if (isShort()) {
-                return SHORT_ARRAY_TYPE;
-            } else if (isInteger()) {
-                return INT_ARRAY_TYPE;
-            } else if (isLong()) {
-                return LONG_ARRAY_TYPE;
-            } else if (isFloat()) {
-                return FLOAT_ARRAY_TYPE;
-            } else if (isDouble()) {
-                return DOUBLE_ARRAY_TYPE;
-            } else if (isArray() || isObject()) {
-                return Type.referenceType(sym.arrayType());
-            } else {
-                return OBJECT_TYPE;
-            }
+            return switch (tag) {
+                case ITEM_BOOLEAN -> BOOLEAN_ARRAY_TYPE;
+                case ITEM_BYTE -> BYTE_ARRAY_TYPE;
+                case ITEM_CHAR -> CHAR_ARRAY_TYPE;
+                case ITEM_SHORT -> SHORT_ARRAY_TYPE;
+                case ITEM_INTEGER -> INT_ARRAY_TYPE;
+                case ITEM_LONG -> LONG_ARRAY_TYPE;
+                case ITEM_FLOAT -> FLOAT_ARRAY_TYPE;
+                case ITEM_DOUBLE -> DOUBLE_ARRAY_TYPE;
+                case ITEM_OBJECT -> Type.referenceType(sym.arrayType());
+                default -> OBJECT_TYPE;
+            };
         }
 
         Type getComponent() {
@@ -1593,26 +1362,12 @@ public final class StackMapGenerator {
         }
 
         void writeTo(BufWriter bw, ConstantPoolBuilder cp) {
-            if (isTop()) {
-                bw.writeU1(ITEM_TOP);
-            } else if (isInteger()) {
-                bw.writeU1(ITEM_INTEGER);
-            } else if (isFloat()) {
-                bw.writeU1(ITEM_FLOAT);
-            } else if (isLong()) {
-                bw.writeU1(ITEM_LONG);
-            } else if (isDouble()) {
-                bw.writeU1(ITEM_DOUBLE);
-            } else if (isNull()) {
-                bw.writeU1(ITEM_NULL);
-            } else if (isUninitializedThis()) {
-                bw.writeU1(ITEM_UNINITIALIZED_THIS);
-            } else if (isReference()) {
-                bw.writeU1(ITEM_OBJECT);
-                bw.writeU2(cp.classEntry(cp.utf8Entry(Util.toInternalName(sym))).index());
-            } else if (isUninitialized()) {
-                bw.writeU1(ITEM_UNINITIALIZED);
-                bw.writeU2(bci());
+            bw.writeU1(tag);
+            switch (tag) {
+                case ITEM_OBJECT ->
+                    bw.writeU2(cp.classEntry(cp.utf8Entry(Util.toInternalName(sym))).index());
+                case ITEM_UNINITIALIZED ->
+                    bw.writeU2(bci());
             }
         }
     }
