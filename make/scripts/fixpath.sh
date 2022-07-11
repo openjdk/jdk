@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,14 @@
 # available, or extract values automatically from the environment if missing.
 # This is robust, but slower.
 function setup() {
+
+  # Make regexp tests case insensitive
+  shopt -s nocasematch
+  # Prohibit msys2 from meddling with paths
+  export MSYS2_ARG_CONV_EXCL="*"
+  #  Make sure WSL gets a copy of the path
+  export WSLENV=PATH/l
+
   while getopts "e:p:r:t:c:qmi" opt; do
     case "$opt" in
     e) PATHTOOL="$OPTARG" ;;
@@ -87,13 +95,6 @@ function setup() {
     wintemp_win="$($CMD /q /c echo %TEMP% 2>/dev/null | tr -d \\n\\r)"
     WINTEMP="$($PATHTOOL -u "$wintemp_win")"
   fi
-
-  # Make regexp tests case insensitive
-  shopt -s nocasematch
-  # Prohibit msys2 from meddling with paths
-  export MSYS2_ARG_CONV_EXCL="*"
-  #  Make sure WSL gets a copy of the path
-  export WSLENV=PATH/l
 }
 
 # Cleanup handling
@@ -299,6 +300,19 @@ function convert_path() {
   if [[ $arg =~ ^([^/]*|-[^:=]*[:=]|.*file://|/[a-zA-Z:]{1,3}:?)($DRIVEPREFIX/)([a-z])(/[^/]+.*$) ]] ; then
     prefix="${BASH_REMATCH[1]}"
     winpath="${BASH_REMATCH[3]}:${BASH_REMATCH[4]}"
+
+    # If the thing in its entirety points to an existing path, use that instead of thinking
+    # we have a prefix. This can only happen if the top-level directory has a single-letter name.
+    if [[ ${#prefix} -eq 2 && "${prefix:0:1}" == "/" ]]; then
+      possiblepath="${BASH_REMATCH[1]}/${BASH_REMATCH[3]}${BASH_REMATCH[4]}"
+      if [[ -e "$possiblepath" || -e "$(dirname $possiblepath)" || -e "$(echo $possiblepath | cut -d / -f 1-5)" ]] ; then
+        prefix=
+        drivepart="${possiblepath:1:1}"
+        pathpart="${possiblepath:2}"
+        winpath="$drivepart:$pathpart"
+      fi
+    fi
+
     # Change slash to backslash (or vice versa if mixed mode)
     if [[ $MIXEDMODE != true ]]; then
       winpath="${winpath//'/'/'\'}"
