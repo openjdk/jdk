@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,13 +32,13 @@
  * @modules java.base/jdk.internal.misc
  * @compile test-classes/LambdaProxyCallerIsHiddenApp.java
  *          ../../../../../../lib/jdk/test/lib/compiler/InMemoryJavaCompiler.java
- * @build sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar callerishidden.jar LambdaProxyCallerIsHiddenApp
  *                 jdk/test/lib/compiler/InMemoryJavaCompiler
  *                 jdk/test/lib/compiler/InMemoryJavaCompiler$FileManagerWrapper$1
  *                 jdk/test/lib/compiler/InMemoryJavaCompiler$FileManagerWrapper
  *                 jdk/test/lib/compiler/InMemoryJavaCompiler$MemoryJavaFileObject
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. LambdaProxyCallerIsHidden
  */
 

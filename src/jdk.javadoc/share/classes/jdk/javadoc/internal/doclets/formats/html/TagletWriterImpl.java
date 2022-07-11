@@ -52,6 +52,7 @@ import com.sun.source.doctree.ReturnTree;
 import com.sun.source.doctree.SeeTree;
 import com.sun.source.doctree.SnippetTree;
 import com.sun.source.doctree.SystemPropertyTree;
+import com.sun.source.doctree.TextTree;
 import com.sun.source.doctree.ThrowsTree;
 import com.sun.source.util.DocTreePath;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
@@ -307,7 +308,7 @@ public class TagletWriterImpl extends TagletWriter {
     public Content returnTagOutput(Element element, ReturnTree returnTag, boolean inline) {
         CommentHelper ch = utils.getCommentHelper(element);
         List<? extends DocTree> desc = ch.getDescription(returnTag);
-        Content content = htmlWriter.commentTagsToContent(element, desc , context.within(returnTag));
+        Content content = htmlWriter.commentTagsToContent(element, desc, context.within(returnTag));
         return inline
                 ? new ContentBuilder(contents.getContent("doclet.Returns_0", content))
                 : new ContentBuilder(HtmlTree.DT(contents.returns), HtmlTree.DD(content));
@@ -371,7 +372,7 @@ public class TagletWriterImpl extends TagletWriter {
             many = true;
         }
         return new ContentBuilder(
-                HtmlTree.DT(new RawHtml(header)),
+                HtmlTree.DT(RawHtml.of(header)),
                 HtmlTree.DD(body));
     }
 
@@ -504,9 +505,9 @@ public class TagletWriterImpl extends TagletWriter {
            excName = htmlWriter.getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.MEMBER,
                    substituteType));
         } else if (exception == null) {
-            excName = new RawHtml(ch.getExceptionName(throwsTag).toString());
+            excName = RawHtml.of(throwsTag.getExceptionName().toString());
         } else if (exception.asType() == null) {
-            excName = new RawHtml(utils.getFullyQualifiedName(exception));
+            excName = Text.of(utils.getFullyQualifiedName(exception));
         } else {
             HtmlLinkInfo link = new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.MEMBER,
                                                  exception.asType());

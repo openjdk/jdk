@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,12 @@ package gc.g1;
  * @summary Test to make sure that humongous object remset states are in sync
  * @requires vm.gc.G1 & os.maxMemory >= 2G
  * @library /test/lib
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -Xmx512M -Xms512M -Xmn10M -XX:ParallelGCThreads=2 -XX:-UseDynamicNumberOfGCThreads -XX:+UseG1GC -XX:+WhiteBoxAPI -XX:G1HeapRegionSize=1M -XX:+VerifyAfterGC -Xlog:gc,gc+remset+tracking=trace gc.g1.TestHumongousRemsetsMatch
  */
 
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 public class TestHumongousRemsetsMatch {
 

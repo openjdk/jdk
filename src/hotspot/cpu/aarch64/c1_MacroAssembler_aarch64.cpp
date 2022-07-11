@@ -116,6 +116,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
   cbnz(hdr, slow_case);
   // done
   bind(done);
+  increment(Address(rthread, JavaThread::held_monitor_count_offset()));
   return null_check_offset;
 }
 
@@ -147,6 +148,7 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
   }
   // done
   bind(done);
+  decrement(Address(rthread, JavaThread::held_monitor_count_offset()));
 }
 
 

@@ -581,8 +581,8 @@ public class CommandProcessor {
                     // dump replay data
 
                     CodeBlob cb = VM.getVM().getCodeCache().findBlob(a);
-                    if (cb != null && (cb instanceof NMethod)) {
-                        ((NMethod)cb).dumpReplayData(out);
+                    if (cb instanceof NMethod nMethod) {
+                        nMethod.dumpReplayData(out);
                         return;
                     }
                     // assume it is Metadata

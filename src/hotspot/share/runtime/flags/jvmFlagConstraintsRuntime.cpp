@@ -32,10 +32,10 @@
 #include "runtime/task.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-JVMFlag::Error ObjectAlignmentInBytesConstraintFunc(intx value, bool verbose) {
+JVMFlag::Error ObjectAlignmentInBytesConstraintFunc(int value, bool verbose) {
   if (!is_power_of_2(value)) {
     JVMFlag::printError(verbose,
-                        "ObjectAlignmentInBytes (" INTX_FORMAT ") must be "
+                        "ObjectAlignmentInBytes (%d) must be "
                         "power of 2\n",
                         value);
     return JVMFlag::VIOLATES_CONSTRAINT;
@@ -43,7 +43,7 @@ JVMFlag::Error ObjectAlignmentInBytesConstraintFunc(intx value, bool verbose) {
   // In case page size is very small.
   if (value >= (intx)os::vm_page_size()) {
     JVMFlag::printError(verbose,
-                        "ObjectAlignmentInBytes (" INTX_FORMAT ") must be "
+                        "ObjectAlignmentInBytes (%d) must be "
                         "less than page size (%d)\n",
                         value, os::vm_page_size());
     return JVMFlag::VIOLATES_CONSTRAINT;

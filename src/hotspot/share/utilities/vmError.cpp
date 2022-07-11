@@ -553,14 +553,14 @@ void VMError::report(outputStream* st, bool _verbose) {
   // error handler after a secondary crash works.
   STEP("test secondary crash 1")
     if (_verbose && TestCrashInErrorHandler == TEST_SECONDARY_CRASH) {
-      st->print_cr("Will crash now (TestCrashInErrorHandler=" UINTX_FORMAT ")...",
+      st->print_cr("Will crash now (TestCrashInErrorHandler=%u)...",
         TestCrashInErrorHandler);
       controlled_crash(TestCrashInErrorHandler);
     }
 
   STEP("test secondary crash 2")
     if (_verbose && TestCrashInErrorHandler == TEST_SECONDARY_CRASH) {
-      st->print_cr("Will crash now (TestCrashInErrorHandler=" UINTX_FORMAT ")...",
+      st->print_cr("Will crash now (TestCrashInErrorHandler=%u)...",
         TestCrashInErrorHandler);
       controlled_crash(TestCrashInErrorHandler);
     }
