@@ -845,7 +845,7 @@ JvmtiEnvBase::count_locked_objects(JavaThread *java_thread, Handle hobj) {
   Thread* current_thread = Thread::current();
   ResourceMark rm(current_thread);
   HandleMark   hm(current_thread);
-  RegisterMap  reg_map(java_thread, /* update_map */ true, /* process_frames */ true);
+  RegisterMap  reg_map(java_thread, true /* update_map */, true /* process_frames */, false /* walk_cont */);
 
   for (javaVFrame *jvf = java_thread->last_java_vframe(&reg_map); jvf != NULL;
        jvf = jvf->java_sender()) {
@@ -928,7 +928,7 @@ JvmtiEnvBase::get_owned_monitors(JavaThread *calling_thread, JavaThread* java_th
   if (java_thread->has_last_Java_frame()) {
     ResourceMark rm(current_thread);
     HandleMark   hm(current_thread);
-    RegisterMap  reg_map(java_thread);
+    RegisterMap  reg_map(java_thread, true /* update_map */, true /* process_frames */, false /* walk_cont */);
 
     int depth = 0;
     for (javaVFrame *jvf = get_cthread_last_java_vframe(java_thread, &reg_map);
@@ -1144,7 +1144,7 @@ JvmtiEnvBase::get_stack_trace(JavaThread *java_thread,
   jvmtiError err = JVMTI_ERROR_NONE;
 
   if (java_thread->has_last_Java_frame()) {
-    RegisterMap reg_map(java_thread, /* update_map */ true, /* process_frames */ false);
+    RegisterMap reg_map(java_thread, true /* update_map */, false /* process_frames */, false /* walk_cont */);
     ResourceMark rm(current_thread);
     javaVFrame *jvf = get_cthread_last_java_vframe(java_thread, &reg_map);
 
@@ -1182,7 +1182,7 @@ JvmtiEnvBase::get_frame_count(JavaThread* jt, jint *count_ptr) {
     *count_ptr = 0;
   } else {
     ResourceMark rm(current_thread);
-    RegisterMap reg_map(jt, true, true);
+    RegisterMap reg_map(jt, true /* update_map */, true /* process_frames */, false /* walk_cont */);
     javaVFrame *jvf = get_cthread_last_java_vframe(jt, &reg_map);
 
     *count_ptr = get_frame_count(jvf);
@@ -2254,7 +2254,7 @@ PrintStackTraceClosure::do_thread_impl(Thread *target) {
                    java_thread->is_VTMS_transition_disabler(), java_thread->is_in_VTMS_transition());
 
   if (java_thread->has_last_Java_frame()) {
-    RegisterMap reg_map(java_thread, /* update_map */ true, /* process_frames */ true);
+    RegisterMap reg_map(java_thread, true /* update_map */, true /* process_frames */, false /* walk_cont */);
     ResourceMark rm(current_thread);
     HandleMark hm(current_thread);
     javaVFrame *jvf = java_thread->last_java_vframe(&reg_map);

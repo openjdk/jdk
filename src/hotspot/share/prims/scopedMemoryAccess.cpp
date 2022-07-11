@@ -88,7 +88,7 @@ public:
     }
 
     frame last_frame = jt->last_frame();
-    RegisterMap register_map(jt, true);
+    RegisterMap register_map(jt, true /* update_map */, true /* process_frames */, false /* walk_cont */);
 
     if (last_frame.is_safepoint_blob_frame()) {
       last_frame = last_frame.sender(&register_map);

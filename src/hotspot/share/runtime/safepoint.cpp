@@ -915,7 +915,7 @@ void ThreadSafepointState::handle_polling_page_exception() {
   frame stub_fr = self->last_frame();
   CodeBlob* stub_cb = stub_fr.cb();
   assert(stub_cb->is_safepoint_stub(), "must be a safepoint stub");
-  RegisterMap map(self, true, false);
+  RegisterMap map(self, true /* update_map */, false /* process_frames */, false /* walk_cont */);
   frame caller_fr = stub_fr.sender(&map);
 
   // Should only be poll_return or poll
@@ -980,7 +980,7 @@ void ThreadSafepointState::handle_polling_page_exception() {
 
     // If an exception has been installed we must verify that the top frame wasn't deoptimized.
     if (self->has_pending_exception() ) {
-      RegisterMap map(self, true, false);
+      RegisterMap map(self, true /* update_map */, false /* process_frames */, false /* walk_cont */);
       frame caller_fr = stub_fr.sender(&map);
       if (caller_fr.is_deoptimized_frame()) {
         // The exception path will destroy registers that are still

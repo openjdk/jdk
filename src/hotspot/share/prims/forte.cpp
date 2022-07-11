@@ -91,7 +91,7 @@ static bool is_decipherable_interpreted_frame(JavaThread* thread,
 vframeStreamForte::vframeStreamForte(JavaThread *jt,
                                      frame fr,
                                      bool stop_at_java_call_stub)
-    : vframeStreamCommon(RegisterMap(jt, false, false, false)) {
+    : vframeStreamCommon(RegisterMap(jt, false /* update_map */, false /* process_frames */, false /* walk_cont */)) {
   _reg_map.set_async(true);
   _stop_at_java_call_stub = stop_at_java_call_stub;
   _frame = fr;
@@ -362,7 +362,7 @@ static bool find_initial_Java_frame(JavaThread* thread,
     // See if we can find a useful frame
     int loop_count;
     int loop_max = MaxJavaStackTraceDepth * 2;
-    RegisterMap map(thread, false, false);
+    RegisterMap map(thread, false /* update_map */, false /* process_frames */, false /* walk_cont */);
 
     for (loop_count = 0; loop_max == 0 || loop_count < loop_max; loop_count++) {
       if (!candidate.safe_for_sender(thread)) return false;
@@ -376,7 +376,7 @@ static bool find_initial_Java_frame(JavaThread* thread,
   // We will hopefully be able to figure out something to do with it.
   int loop_count;
   int loop_max = MaxJavaStackTraceDepth * 2;
-  RegisterMap map(thread, false, false);
+  RegisterMap map(thread, false /* update_map */, false /* process_frames */, false /* walk_cont */);
 
   for (loop_count = 0; loop_max == 0 || loop_count < loop_max; loop_count++) {
 

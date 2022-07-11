@@ -575,7 +575,7 @@ int JvmtiThreadState::count_frames() {
            "call by myself / at safepoint / at handshake");
     if (!thread->has_last_Java_frame()) return 0;  // No Java frames.
     // TBD: This might need to be corrected for detached carrier threads.
-    RegisterMap reg_map(thread, /* update_map */ false, /* process_frames */ false, /* walk_cont */ true);
+    RegisterMap reg_map(thread, false /* update_map */, false /* process_frames */, true /* walk_cont */);
     jvf = thread->last_java_vframe(&reg_map);
     jvf = JvmtiEnvBase::check_and_skip_hidden_frames(thread, jvf);
   }

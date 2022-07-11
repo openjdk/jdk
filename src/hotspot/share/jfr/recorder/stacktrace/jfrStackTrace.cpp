@@ -149,7 +149,8 @@ class JfrVframeStream : public vframeStreamCommon {
 };
 
 JfrVframeStream::JfrVframeStream(JavaThread* jt, const frame& fr, bool stop_at_java_call_stub, bool async_mode) :
-  vframeStreamCommon(RegisterMap(jt, false, false, true)), _cont_entry(JfrThreadLocal::is_vthread(jt) ? jt->last_continuation() : nullptr),
+  vframeStreamCommon(RegisterMap(jt, false /* update_map */, false /* process_frames */, true /* walk_cont */)),
+    _cont_entry(JfrThreadLocal::is_vthread(jt) ? jt->last_continuation() : nullptr),
     _async_mode(async_mode), _vthread(JfrThreadLocal::is_vthread(jt)) {
   assert(!_vthread || _cont_entry != nullptr, "invariant");
   _reg_map.set_async(async_mode);

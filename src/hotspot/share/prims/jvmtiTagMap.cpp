@@ -2649,7 +2649,7 @@ inline bool VM_HeapWalkOperation::collect_stack_roots(JavaThread* java_thread,
     ResourceMark rm(current_thread);
     HandleMark hm(current_thread);
 
-    RegisterMap reg_map(java_thread);
+    RegisterMap reg_map(java_thread, true /* update_map */, true /* process_frames */, false /* walk_cont */);
     frame f = java_thread->last_frame();
     vframe* vf = vframe::new_vframe(&f, &reg_map, java_thread);
 

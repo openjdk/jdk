@@ -318,7 +318,7 @@ class GetCurrentLocationClosure : public HandshakeClosure {
   void do_thread(Thread *target) {
     JavaThread *jt = JavaThread::cast(target);
     ResourceMark rmark; // jt != Thread::current()
-    RegisterMap rm(jt, false);
+    RegisterMap rm(jt, false /* update_map */, true /* process_frames */, false /* walk_cont */);
     // There can be a race condition between a handshake
     // and the target thread exiting from Java execution.
     // We must recheck that the last Java frame still exists.

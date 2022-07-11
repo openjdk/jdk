@@ -739,9 +739,9 @@ extern "C" void pf(uintptr_t sp, uintptr_t fp, uintptr_t pc,
                    uintptr_t bcx, uintptr_t thread) {
   if (!reg_map) {
     reg_map = NEW_C_HEAP_OBJ(RegisterMap, mtInternal);
-    ::new (reg_map) RegisterMap((JavaThread*)thread, false);
+    ::new (reg_map) RegisterMap((JavaThread*)thread, false /* update_map */, true /* process_frames */, false /* walk_cont */);
   } else {
-    *reg_map = RegisterMap((JavaThread*)thread, false);
+    *reg_map = RegisterMap((JavaThread*)thread, false /* update_map */, true /* process_frames */, false /* walk_cont */);
   }
 
   {

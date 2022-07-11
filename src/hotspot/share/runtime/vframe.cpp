@@ -62,7 +62,7 @@ vframe::vframe(const frame* fr, const RegisterMap* reg_map, JavaThread* thread)
 }
 
 vframe::vframe(const frame* fr, JavaThread* thread)
-: _reg_map(thread), _thread(thread), _chunk() {
+: _reg_map(thread, true /* update_map */, true /* process_frames */, false /* walk_cont */), _thread(thread), _chunk() {
   assert(fr != NULL, "must have frame");
   _fr = *fr;
   assert(!_reg_map.in_cont(), "");
@@ -529,7 +529,7 @@ void vframeStreamCommon::found_bad_method_frame() const {
 // top-frame will be skipped
 vframeStream::vframeStream(JavaThread* thread, frame top_frame,
                           bool stop_at_java_call_stub) :
-    vframeStreamCommon(RegisterMap(thread, true, true, true)) {
+    vframeStreamCommon(RegisterMap(thread, true /* update_map */, true /* process_frames */, true /* walk_cont */)) {
   _stop_at_java_call_stub = stop_at_java_call_stub;
 
   // skip top frame, as it may not be at safepoint
@@ -540,7 +540,7 @@ vframeStream::vframeStream(JavaThread* thread, frame top_frame,
 }
 
 vframeStream::vframeStream(JavaThread* thread, Handle continuation_scope, bool stop_at_java_call_stub)
- : vframeStreamCommon(RegisterMap(thread, true, true, true)) {
+ : vframeStreamCommon(RegisterMap(thread, true /* update_map */, true /* process_frames */, true /* walk_cont */)) {
 
   _stop_at_java_call_stub = stop_at_java_call_stub;
   _continuation_scope = continuation_scope;
@@ -558,7 +558,7 @@ vframeStream::vframeStream(JavaThread* thread, Handle continuation_scope, bool s
 }
 
 vframeStream::vframeStream(oop continuation, Handle continuation_scope)
- : vframeStreamCommon(RegisterMap(continuation, true)) {
+ : vframeStreamCommon(RegisterMap(continuation, true /* update_map */)) {
 
   _stop_at_java_call_stub = false;
   _continuation_scope = continuation_scope;

@@ -80,7 +80,7 @@ bool EscapeBarrier::deoptimize_objects(int d1, int d2) {
     KeepStackGCProcessedMark ksgcpm(deoptee_thread());
     ResourceMark rm(calling_thread());
     HandleMark   hm(calling_thread());
-    RegisterMap  reg_map(deoptee_thread(), false /* update_map */, false /* process_frames */);
+    RegisterMap  reg_map(deoptee_thread(), false /* update_map */, false /* process_frames */, false /* walk_cont */);
     vframe* vf = deoptee_thread()->last_java_vframe(&reg_map);
     int cur_depth = 0;
 
@@ -132,7 +132,7 @@ bool EscapeBarrier::deoptimize_objects_all_threads() {
     }
     if (jt->has_last_Java_frame()) {
       KeepStackGCProcessedMark ksgcpm(jt);
-      RegisterMap reg_map(jt, false /* update_map */, false /* process_frames */);
+      RegisterMap reg_map(jt, false /* update_map */, false /* process_frames */, false /* walk_cont */);
       vframe* vf = jt->last_java_vframe(&reg_map);
       assert(jt->frame_anchor()->walkable(),
              "The stack of JavaThread " PTR_FORMAT " is not walkable. Thread state is %d",

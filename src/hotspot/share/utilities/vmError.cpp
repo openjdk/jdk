@@ -332,7 +332,7 @@ static frame next_frame(frame fr, Thread* t) {
       return invalid;
     }
     if (fr.is_java_frame() || fr.is_native_frame() || fr.is_runtime_frame()) {
-      RegisterMap map(JavaThread::cast(t), false); // No update
+      RegisterMap map(JavaThread::cast(t), false /* update_map */, true /* process_frames */, false /* walk_cont */); // No update
       return fr.sender(&map);
     } else {
       // is_first_C_frame() does only simple checks for frame pointer,

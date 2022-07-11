@@ -274,7 +274,7 @@ bool frame::is_safepoint_blob_frame() const {
 // testers
 
 bool frame::is_first_java_frame() const {
-  RegisterMap map(JavaThread::current(), false); // No update
+  RegisterMap map(JavaThread::current(), false /* update_map */, true /* process_frames */, false /* walk_cont */); // No update
   frame s;
   for (s = sender(&map); !(s.is_java_frame() || s.is_first_frame()); s = s.sender(&map));
   return s.is_first_frame();
@@ -366,7 +366,7 @@ void frame::deoptimize(JavaThread* thread) {
   if (thread != NULL) {
     frame check = thread->last_frame();
     if (is_older(check.id())) {
-      RegisterMap map(thread, false);
+      RegisterMap map(thread, false /* update_map */, true /* process_frames */, false /* walk_cont */);
       while (id() != check.id()) {
         check = check.sender(&map);
       }
@@ -377,7 +377,7 @@ void frame::deoptimize(JavaThread* thread) {
 }
 
 frame frame::java_sender() const {
-  RegisterMap map(JavaThread::current(), false);
+  RegisterMap map(JavaThread::current(), false /* update_map */, true /* process_frames */, false /* walk_cont */);
   frame s;
   for (s = sender(&map); !(s.is_java_frame() || s.is_first_frame()); s = s.sender(&map)) ;
   guarantee(s.is_java_frame(), "tried to get caller of first java frame");
