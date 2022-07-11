@@ -480,12 +480,9 @@ public class JndiLoginModule implements LoginModule {
         if (GIDPrincipal != null) {
             subject.getPrincipals().remove(GIDPrincipal);
         }
-        if (supplementaryGroups != null) {
-            for (UnixNumericGroupPrincipal gp : supplementaryGroups) {
-                if (gp != null) {
-                    subject.getPrincipals().remove(gp);
-                }
-            }
+        for (UnixNumericGroupPrincipal gp : supplementaryGroups) {
+            // gp is never null
+            subject.getPrincipals().remove(gp);
         }
 
 

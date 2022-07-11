@@ -34,8 +34,10 @@ import static javax.security.auth.login.AppConfigurationEntry.LoginModuleControl
  * @test
  * @bug 8282730
  * @key randomness
- * @summary LdapLoginModule throw NPE from logout method after login failure
+ * @summary Check that all LoginModule implementations don't throw NPE
+ *          from logout method after login failure
  * @modules jdk.security.auth
+ *          java.management
  */
 public class SafeLogout {
 
@@ -48,7 +50,10 @@ public class SafeLogout {
     }
 
     static void test(int pos) throws Exception {
-        // Create random JAAS login config.
+        // Since there is an infinite number of LoginModule configurations,
+        // we use a random number to choose login module names, flag for each,
+        // and whether to perform a login. The config is printed out so any
+        // failure can be reproduced.
         boolean login = r.nextBoolean();
         Map<String, ?> empty = Collections.emptyMap();
         AppConfigurationEntry[] result = new AppConfigurationEntry[r.nextInt(4) + 1];

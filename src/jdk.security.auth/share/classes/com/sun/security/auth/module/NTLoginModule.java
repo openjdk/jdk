@@ -366,9 +366,8 @@ public class NTLoginModule implements LoginModule {
         }
         if (groups != null) {
             for (NTSidGroupPrincipal gp : groups) {
-                if (gp != null) {
-                    principals.remove(gp);
-                }
+                // gp is never null
+                principals.remove(gp);
             }
         }
 

@@ -227,9 +227,10 @@ public interface LoginModule {
      *
      * @implSpec Implementations should check if a variable is {@code null}
      *      before removing it from the Principals or Credentials set
-     *      of a {@code Subject}, otherwise a {@code NullPointerException} will
-     *      be thrown. This is especially important when this method is called
-     *      after a login failure.
+     *      of a {@code Subject}, otherwise a {@code NullPointerException}
+     *      will be thrown as these sets {@linkplain Subject#Subject()
+     *      prohibit null elements}. This is especially important if
+     *      this method is called after a login failure.
      */
     boolean logout() throws LoginException;
 }
