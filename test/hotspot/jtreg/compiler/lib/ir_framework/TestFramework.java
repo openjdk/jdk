@@ -134,6 +134,8 @@ public class TestFramework {
                     "Xmixed",
                     "server",
                     "Xlog",
+                    "UseAVX",
+                    "UseKNLSetting",
                     "LogCompilation"
             )
     );
