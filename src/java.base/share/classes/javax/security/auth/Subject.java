@@ -145,7 +145,7 @@ public final class Subject implements java.io.Serializable {
      * The newly created Sets also prevent illegal modifications
      * by ensuring that callers have sufficient permissions.  These Sets
      * also prohibit null elements, and attempts to add, query, or remove
-     * a {@code null} element will result in a {@code NullPointerException}.
+     * a null element will result in a {@code NullPointerException}.
      *
      * <p> To modify the Principals Set, the caller must have
      * {@code AuthPermission("modifyPrincipals")}.
@@ -175,7 +175,7 @@ public final class Subject implements java.io.Serializable {
      * The newly created Sets also prevent illegal modifications
      * by ensuring that callers have sufficient permissions.  These Sets
      * also prohibit null elements, and attempts to add, query, or remove
-     * a {@code null} element will result in a {@code NullPointerException}.
+     * a null element will result in a {@code NullPointerException}.
      *
      * <p> To modify the Principals Set, the caller must have
      * {@code AuthPermission("modifyPrincipals")}.
