@@ -672,7 +672,7 @@ public abstract class AbstractQueuedSynchronizer
         Thread current = Thread.currentThread();
         byte spins = 0, postSpins = 0;   // retries upon unpark of first thread
         boolean interrupted = false, first = false;
-        Node pred = null, t;             // predecessor of node when enqueued
+        Node pred = null;               // predecessor of node when enqueued
 
         /*
          * Repeatedly:
@@ -725,6 +725,7 @@ public abstract class AbstractQueuedSynchronizer
                     return 1;
                 }
             }
+            Node t;
             if ((t = tail) == null) {           // initialize queue
                 if (tryInitializeHead() == null)
                     return acquireOnOOME(shared, arg);
@@ -1622,8 +1623,9 @@ public abstract class AbstractQueuedSynchronizer
                 } catch (OutOfMemoryError oome) {
                 }
             }
+            // fall through if encountered OutOfMemoryError
             if (!isHeldExclusively() || !release(savedState = getState()))
-                throw LockSupport.staticIllegalMonitorStateException; // OOM
+                throw LockSupport.staticIllegalMonitorStateException;
             U.park(false, OOME_COND_WAIT_DELAY);
             acquireOnOOME(false, savedState);
             return null;
