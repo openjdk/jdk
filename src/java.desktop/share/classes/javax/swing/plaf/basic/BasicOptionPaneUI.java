@@ -459,7 +459,7 @@ public class BasicOptionPaneUI extends OptionPaneUI {
                 // break up newlines
                 if (nl == 0) {
                     @SuppressWarnings("serial") // anonymous class
-                            JPanel breakPanel = new JPanel() {
+                    JPanel breakPanel = new JPanel() {
                         public Dimension getPreferredSize() {
                             Font f = getFont();
 
@@ -471,10 +471,10 @@ public class BasicOptionPaneUI extends OptionPaneUI {
                     };
                     breakPanel.setName("OptionPane.break");
                     addMessageComponents(container, cons, breakPanel, maxll,
-                            true);
+                                         true);
                 } else {
                     addMessageComponents(container, cons, s.substring(0, nl),
-                            maxll, false);
+                                      maxll, false);
                 }
                 // Prevent recursion of more than
                 // 200 successive newlines in a message
@@ -483,7 +483,7 @@ public class BasicOptionPaneUI extends OptionPaneUI {
                     return;
                 }
                 addMessageComponents(container, cons, s.substring(nl + nll), maxll,
-                        false);
+                                     false);
 
             } else if (len > maxll) {
                 Container c = Box.createVerticalBox();
