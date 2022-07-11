@@ -478,7 +478,8 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
             if (editor != null) {
                 final Rectangle editorRect = rectangleForCurrentValue();
                 editorRect.width += 4;
-                editorRect.height += 1;
+                editorRect.height += 2;
+                editorRect.y -= 2;
                 editor.setBounds(editorRect);
             }
         }
