@@ -909,7 +909,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, Runtime1::StubID stub_
 #endif
 
   ResourceMark rm(current);
-  RegisterMap reg_map(current, false);
+  RegisterMap reg_map(current, false /* update_map */, true /* process_frames */, false /* walk_cont */);
   frame runtime_frame = current->last_frame();
   frame caller_frame = runtime_frame.sender(&reg_map);
 

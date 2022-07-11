@@ -318,7 +318,7 @@ static bool find_initial_Java_frame(JavaThread* thread,
   // Instead, try to do Zero-specific search for Java frame.
 
   {
-    RegisterMap map(thread, false, false);
+    RegisterMap map(thread, false /* update_map */, false /* process_frames */, false /* walk_cont */);
 
     while (true) {
       // Cannot walk this frame? Cannot do anything anymore.

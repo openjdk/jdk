@@ -2126,7 +2126,7 @@ void ThawBase::recurse_thaw_stub_frame(const frame& hf, frame& caller, int num_f
   DEBUG_ONLY(_frames++;)
 
   {
-    RegisterMap map(nullptr, true, false, false);
+    RegisterMap map(nullptr, true /* update_map */, false /* process_frames */, false /* walk_cont */);
     map.set_include_argument_oops(false);
     _stream.next(&map);
     assert(!_stream.is_done(), "");
