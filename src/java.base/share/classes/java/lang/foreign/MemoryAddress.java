@@ -44,7 +44,7 @@ import java.lang.invoke.MethodHandle;
  * </ul>
  * A memory address is backed by a raw machine pointer, expressed as a {@linkplain #toRawLongValue() long value}.
  *
- * <h2>Dereferencing memory addresses</h2>
+ * <h2 id="dereferencing">Dereferencing memory addresses</h2>
  *
  * A memory address can be read or written using various methods provided in this class (e.g. {@link #get(ValueLayout.OfInt, long)}).
  * Each dereference method takes a {@linkplain ValueLayout value layout}, which specifies the size,
