@@ -84,6 +84,7 @@ public class PipelineLeaksFD {
         processes.forEach(p -> waitForQuiet(p));
 
         Set<PipeRecord> pipesAfter = myPipes();
+        printPipes(pipesAfter, "After");
         if (!pipesBefore.equals(pipesAfter)) {
             Set<PipeRecord> missing = new HashSet<>(pipesBefore);
             missing.removeAll(pipesAfter);
@@ -117,18 +118,18 @@ public class PipelineLeaksFD {
      */
     static Set<PipeRecord> myPipes() throws IOException {
         Path path = Path.of("/proc/" + ProcessHandle.current().pid() + "/fd");
-        Stream<Path> s = Files.walk(path);
-        return s.filter(Files::isSymbolicLink)
-                .map(p -> {
-                    try {
-                        return new PipeRecord(p, Files.readSymbolicLink(p));
-                    } catch (IOException ioe) {
-                    }
-                    return new PipeRecord(p, null);
-                })
-                .filter(p1 -> p1.link().toString().startsWith("pipe:"))
-                .collect(Collectors.toSet());
-
+        try (Stream<Path> s = Files.walk(path)) {
+            return s.filter(Files::isSymbolicLink)
+                    .map(p -> {
+                        try {
+                            return new PipeRecord(p, Files.readSymbolicLink(p));
+                        } catch (IOException ioe) {
+                        }
+                        return new PipeRecord(p, null);
+                    })
+                    .filter(p1 -> p1.link().toString().startsWith("pipe:"))
+                    .collect(Collectors.toSet());
+        }
     }
 
     record PipeRecord(Path fd, Path link) { };
