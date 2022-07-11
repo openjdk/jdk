@@ -27,6 +27,8 @@
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.misc
  * @library /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/native TestClassUnloadEvents run
  */
 
@@ -34,6 +36,7 @@ import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.Label;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
+import jdk.test.lib.classloader.ClassUnloadCommon;
 
 import com.sun.jdi.*;
 import com.sun.jdi.connect.*;
@@ -48,20 +51,13 @@ public class TestClassUnloadEvents {
     static final String CLASS_NAME_ALT_PREFIX = CLASS_NAME_PREFIX + "Alt__";
     static final int NUM_CLASSES = 10;
     static final int NUM_ALT_CLASSES = NUM_CLASSES / 2;
-    static final int MAX_RETRY = 5;
 
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
             runDebuggee();
         } else {
-            for (int index = 0; index < MAX_RETRY; index ++) {
-                if(runDebugger()) {
-                    return;
-                }
-            }
+            runDebugger();
         }
-
-        System.out.println("No class unloading detected after " + MAX_RETRY + " tries, result is inconclusive");
     }
 
     private static class TestClassLoader extends ClassLoader implements Opcodes {
@@ -104,24 +100,11 @@ public class TestClassUnloadEvents {
             }
         }
         loader = null;
-        System.gc();
+        // Trigger class unloading
+        ClassUnloadCommon.triggerUnloading();
     }
 
-    // Check debuggee's output, see if class unloading actually
-    // happened
-    private static boolean classUnloadingOccurred(Process p) throws IOException {
-        final String infoClassUnloaded = "unloading class " + CLASS_NAME_PREFIX;
-        InputStreamReader reader = new InputStreamReader(p.getInputStream());
-        StringBuffer sb = new StringBuffer();
-        char[] buf = new char[1024];
-        int n;
-        while ((n = reader.read(buf)) > 0) {
-            sb.append(buf, 0, n);
-        }
-        return sb.toString().indexOf(infoClassUnloaded) != -1;
-    }
-
-    private static boolean runDebugger() {
+    private static void runDebugger() {
         System.out.println("Running debugger");
         HashSet<String> unloadedSampleClasses = new HashSet<>();
         HashSet<String> unloadedSampleClasses_alt = new HashSet<>();
@@ -180,17 +163,7 @@ public class TestClassUnloadEvents {
                 eventSet.resume();
             }
         } catch (InterruptedException | VMCannotBeModifiedException | IOException | IllegalConnectorArgumentsException | VMStartException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                Process p = vm.process();
-                // If debuggee did not unload the classes, we can not expect ClassUnloadEvent
-                if (!classUnloadingOccurred(p)) {
-                    return false;
-                }
-            } catch (Exception e) {
-                throw new RuntimeException("Test failed: " + e.getMessage());
-            }
+            throw new RuntimeException("Test failed due to " + e.getMessage());
         }
         if (unloadedSampleClasses.size() != NUM_CLASSES) {
             throw new RuntimeException("Wrong number of class unload events: expected " + NUM_CLASSES + " got " + unloadedSampleClasses.size());
@@ -198,7 +171,6 @@ public class TestClassUnloadEvents {
         if (unloadedSampleClasses_alt.size() != NUM_ALT_CLASSES) {
             throw new RuntimeException("Wrong number of alt class unload events: expected " + NUM_ALT_CLASSES + " got " + unloadedSampleClasses_alt.size());
         }
-        return true;
     }
 
     private static VirtualMachine connectAndLaunchVM() throws IOException,
@@ -207,7 +179,7 @@ public class TestClassUnloadEvents {
         LaunchingConnector launchingConnector = Bootstrap.virtualMachineManager().defaultConnector();
         Map<String, Connector.Argument> arguments = launchingConnector.defaultArguments();
         arguments.get("main").setValue(TestClassUnloadEvents.class.getName());
-        arguments.get("options").setValue("--add-exports java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED -Xlog:class+unload");
+        arguments.get("options").setValue("--add-exports java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI");
         return launchingConnector.launch(arguments);
     }
 }
