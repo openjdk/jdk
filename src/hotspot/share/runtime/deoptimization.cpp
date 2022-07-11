@@ -1870,7 +1870,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
   // JVMCI might need to get an exception from the stack, which in turn requires the register map to be valid
   RegisterMap reg_map(current, true /* update_map */, true /* process_frames */, false /* walk_cont */);
 #else
-  RegisterMap reg_map(current, false);
+  RegisterMap reg_map(current, false /* update_map */, true /* process_frames */, false /* walk_cont */);
 #endif
   frame stub_frame = current->last_frame();
   frame fr = stub_frame.sender(&reg_map);

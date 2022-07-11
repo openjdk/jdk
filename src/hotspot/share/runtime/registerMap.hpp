@@ -60,7 +60,8 @@ class JavaThread;
 //      values of the callee-saved registers does not matter, e.g., if you
 //      only need the static properties such as frame type, pc, and such.
 //      Updating of the RegisterMap can be turned off by instantiating the
-//      register map as: RegisterMap map(thread, false);
+//      register map as: RegisterMap map(thread, false /* update_map */,
+//      true /* process_frames */, false /* walk_cont */);
 
 class RegisterMap : public StackObj {
  public:
