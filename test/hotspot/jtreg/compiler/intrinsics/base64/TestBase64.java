@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
  * @author Eric Wang <yiming.wang@oracle.com>
  * @summary tests java.util.Base64
  * @library /test/lib /
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
  * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true
  *       -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
@@ -51,7 +51,7 @@ import java.util.Random;
 import java.util.Arrays;
 
 import compiler.whitebox.CompilerWhiteBoxTest;
-import sun.hotspot.code.Compiler;
+import jdk.test.whitebox.code.Compiler;
 import jtreg.SkippedException;
 import jdk.test.lib.Utils;
 

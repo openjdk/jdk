@@ -28,8 +28,8 @@ package gc.g1;
  * @requires vm.gc.G1
  * @summary Basic testing of various GC pause verification during the G1 concurrent cycle.
  * @library /test/lib
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm
  *   -Xbootclasspath/a:.
  *   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
@@ -40,8 +40,8 @@ package gc.g1;
  *   gc.g1.TestVerificationInConcurrentCycle
  */
 
-import sun.hotspot.WhiteBox;
-import sun.hotspot.gc.GC;
+import jdk.test.whitebox.WhiteBox;
+import jdk.test.whitebox.gc.GC;
 
 public class TestVerificationInConcurrentCycle {
 
