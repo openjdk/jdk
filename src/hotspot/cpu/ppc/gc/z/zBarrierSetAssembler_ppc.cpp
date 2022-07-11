@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2021, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -476,10 +476,22 @@ class ZSaveLiveRegisters {
         }
       } else if (vm_reg->is_ConditionRegister()) {
         // NOP. Conditions registers are covered by save_LR_CR
+      } else if (vm_reg->is_VectorSRegister()) {
+        assert(SuperwordUseVSX, "or should not reach here");
+        VectorSRegister vs_reg = vm_reg->as_VectorSRegister();
+        if (vs_reg->encoding() >= VSR32->encoding() && vs_reg->encoding() <= VSR51->encoding()) {
+          reg_save_index += 2;
+
+          Register spill_addr = R0;
+          _masm->addi(spill_addr, R1_SP, -reg_save_index * BytesPerWord);
+          if (action == ACTION_SAVE) {
+            _masm->stxvd2x(vs_reg, spill_addr);
+          } else if (action == ACTION_RESTORE) {
+            _masm->lxvd2x(vs_reg, spill_addr);
+          }
+        }
       } else {
-        if (vm_reg->is_VectorRegister()) {
-          fatal("Vector registers are unsupported. Found register %s", vm_reg->name());
-        } else if (vm_reg->is_SpecialRegister()) {
+        if (vm_reg->is_SpecialRegister()) {
           fatal("Special registers are unsupported. Found register %s", vm_reg->name());
         } else {
           fatal("Register type is not known");
