@@ -1,4 +1,3 @@
-T8016177g.java:34:20: compiler.err.prob.found.req: (compiler.misc.incompatible.bounds: R, (compiler.misc.upper.bounds: java.lang.String,java.lang.Object), (compiler.misc.lower.bounds: Test.Person))
-T8016177g.java:35:26: compiler.err.prob.found.req: (compiler.misc.inferred.do.not.conform.to.upper.bounds: java.lang.Double, java.lang.Integer,java.lang.Object)
-- compiler.note.compressed.diags
+T8016177g.java:34:14: compiler.err.cant.apply.symbol: kindname.method, print, java.lang.String, Test.Person, kindname.class, Test, (compiler.misc.no.conforming.assignment.exists: (compiler.misc.incompatible.bounds: R, (compiler.misc.upper.bounds: java.lang.String,java.lang.Object), (compiler.misc.lower.bounds: Test.Person)))
+T8016177g.java:35:20: compiler.err.cant.apply.symbol: kindname.method, abs, int, java.lang.Double, kindname.class, Test, (compiler.misc.no.conforming.assignment.exists: (compiler.misc.inferred.do.not.conform.to.upper.bounds: java.lang.Double, java.lang.Integer,java.lang.Object))
 2 errors

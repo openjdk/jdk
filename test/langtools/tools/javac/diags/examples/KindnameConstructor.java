@@ -22,13 +22,12 @@
  */
 
 // key: compiler.misc.kindname.constructor
-// key: compiler.err.cant.resolve.args
-// key: compiler.err.prob.found.req
-// key: compiler.misc.count.error.plural
+// key: compiler.err.cant.apply.symbol
+// key: compiler.misc.count.error
+// key: compiler.misc.kindname.class
 // key: compiler.misc.inconvertible.types
 // key: compiler.err.error
-// key: compiler.note.compressed.diags
-// key: compiler.note.note
+// key: compiler.misc.no.conforming.assignment.exists
 // options: -Xdiags:verbose
 // run: backdoor
 

@@ -21,9 +21,9 @@
  * questions.
  */
 
-// key: compiler.err.prob.found.req
+// key: compiler.err.cant.apply.symbol
 // key: compiler.misc.incompatible.arg.types.in.mref
-// key: compiler.note.compressed.diags
+// key: compiler.misc.infer.no.conforming.assignment.exists
 
 class IncompatibleArgTypesInMethodRef {
     interface SAM<X> {

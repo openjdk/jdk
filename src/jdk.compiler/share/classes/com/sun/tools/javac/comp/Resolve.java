@@ -4178,7 +4178,8 @@ public class Resolve {
             Symbol ws = c.fst.asMemberOf(site, types);
             return diags.create(dkind, log.currentSource(), pos,
                       "cant.apply.symbol",
-                      d -> MethodResolutionDiagHelper.rewrite(diags, pos, log.currentSource(), dkind, c.snd),
+                      compactMethodDiags ?
+                              d -> MethodResolutionDiagHelper.rewrite(diags, pos, log.currentSource(), dkind, c.snd) : null,
                       kindName(ws),
                       ws.name == names.init ? ws.owner.name : ws.name,
                       methodArguments(ws.type.getParameterTypes()),

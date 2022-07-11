@@ -1,3 +1,2 @@
-Metharg1.java:33:25: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: java.lang.String, java.lang.Integer)
-- compiler.note.compressed.diags
+Metharg1.java:33:13: compiler.err.cant.apply.symbol: kindname.method, f, K, java.lang.String, kindname.class, T<X>, (compiler.misc.no.conforming.assignment.exists: (compiler.misc.inconvertible.types: java.lang.String, java.lang.Integer))
 1 error

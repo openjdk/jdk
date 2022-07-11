@@ -206,4 +206,4 @@ compiler.warn.target.default.source.conflict
 compiler.err.preview.not.latest
 compiler.err.preview.without.source.or.release
 compiler.misc.illegal.signature                               # the compiler can now detect more non-denotable types before class writing
-compiler.misc.infer.no.conforming.assignment.exists
+compiler.note.compressed.diags

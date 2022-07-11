@@ -22,10 +22,10 @@
  */
 
 // key: compiler.err.lambda.body.neither.value.nor.void.compatible
-// key: compiler.err.prob.found.req
+// key: compiler.err.cant.apply.symbol
 // key: compiler.misc.incompatible.ret.type.in.lambda
 // key: compiler.misc.missing.ret.val
-// key: compiler.note.compressed.diags
+// key: compiler.misc.no.conforming.assignment.exists
 
 class LambdaBodyNeitherValueNorVoidCompatible {
     interface I {
