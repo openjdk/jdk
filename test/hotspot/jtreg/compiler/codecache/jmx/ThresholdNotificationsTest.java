@@ -44,7 +44,7 @@ package compiler.codecache.jmx;
 
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
-import sun.hotspot.code.BlobType;
+import jdk.test.whitebox.code.BlobType;
 
 import javax.management.ListenerNotFoundException;
 import javax.management.Notification;

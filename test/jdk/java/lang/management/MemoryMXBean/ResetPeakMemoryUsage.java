@@ -47,7 +47,7 @@ import java.lang.management.*;
 import java.lang.ref.WeakReference;
 import java.util.*;
 
-import sun.hotspot.code.Compiler;
+import jdk.test.whitebox.code.Compiler;
 
 public class ResetPeakMemoryUsage {
     private static MemoryMXBean mbean = ManagementFactory.getMemoryMXBean();

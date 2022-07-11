@@ -69,7 +69,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * {@link ByteBuffer#allocateDirect(int)} method will be backed by off-heap memory.</li>
  * </ul>
  *
- * <h2>Lifecycle and confinement</h2>
+ * <h2 id="lifecyle-confinement">Lifecycle and confinement</h2>
  *
  * Memory segments are associated with a {@linkplain MemorySegment#session() memory session}. As for all resources associated
  * with a memory session, a segment cannot be accessed after its underlying session has been closed. For instance,
@@ -91,7 +91,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * from byte buffer instances obtained calling the {@link #asByteBuffer()} method on a memory segment {@code S}
  * are associated with the same memory session as {@code S}.
  *
- * <h2><a id = "segment-deref">Dereferencing memory segments</a></h2>
+ * <h2 id="segment-deref">Dereferencing memory segments</h2>
  *
  * A memory segment can be read or written using various methods provided in this class (e.g. {@link #get(ValueLayout.OfInt, long)}).
  * Each dereference method takes a {@linkplain ValueLayout value layout}, which specifies the size,
@@ -136,7 +136,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * intHandle.get(segment, 3L); // get int element at offset 3 * 4 = 12
  * }
  *
- * <h2>Slicing memory segments</h2>
+ * <h2 id="slicing">Slicing memory segments</h2>
  *
  * Memory segments support <em>slicing</em>. A memory segment can be used to {@linkplain MemorySegment#asSlice(long, long) obtain}
  * other segments backed by the same underlying memory region, but with <em>stricter</em> spatial bounds than the ones
@@ -220,7 +220,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * constructed from a {@code byte[]} might have a subset of addresses {@code S} which happen to be 8-byte aligned. But determining
  * which segment addresses belong to {@code S} requires reasoning about details which are ultimately implementation-dependent.
  *
- * <h2>Restricted memory segments</h2>
+ * <h2 id="restricted-segments">Restricted memory segments</h2>
  * Sometimes it is necessary to turn a memory address obtained from native code into a memory segment with
  * full spatial, temporal and confinement bounds. To do this, clients can {@linkplain #ofAddress(MemoryAddress, long, MemorySession) obtain}
  * a native segment <em>unsafely</em> from a give memory address, by providing the segment size, as well as the segment {@linkplain MemorySession session}.
@@ -737,6 +737,12 @@ public sealed interface MemorySegment extends Addressable permits AbstractMemory
      * sequences with this charset's default replacement string.  The {@link
      * java.nio.charset.CharsetDecoder} class should be used when more control
      * over the decoding process is required.
+     * <p>
+     * If the given string contains any {@code '\0'} characters, they will be
+     * copied as well. This means that, depending on the method used to read
+     * the string, such as {@link MemorySegment#getUtf8String(long)}, the string
+     * will appear truncated when read again.
+     *
      * @param offset offset in bytes (relative to this segment). For instance, if this segment is a {@linkplain #isNative() native} segment,
      *               the final address of this write operation can be expressed as {@code address().toRowLongValue() + offset}.
      * @param str the Java string to be written into this segment.

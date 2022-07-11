@@ -43,7 +43,7 @@ package gc.TestJNIWeak;
  *    gc.TestJNIWeak.TestJNIWeak
  */
 
-import sun.hotspot.gc.GC;
+import jdk.test.whitebox.gc.GC;
 import jdk.test.whitebox.WhiteBox;
 import jtreg.SkippedException;
 import java.lang.ref.Reference;
