@@ -104,67 +104,64 @@ public class TestClassUnloadEvents {
         ClassUnloadCommon.triggerUnloading();
     }
 
-    private static void runDebugger() {
+    private static void runDebugger() throws Exception {
         System.out.println("Running debugger");
         HashSet<String> unloadedSampleClasses = new HashSet<>();
         HashSet<String> unloadedSampleClasses_alt = new HashSet<>();
         VirtualMachine vm = null;
-        try {
-            vm = connectAndLaunchVM();
-            ClassUnloadRequest classUnloadRequest = vm.eventRequestManager().createClassUnloadRequest();
-            classUnloadRequest.addClassFilter(CLASS_NAME_PREFIX + "*");
-            classUnloadRequest.enable();
+        vm = connectAndLaunchVM();
+        ClassUnloadRequest classUnloadRequest = vm.eventRequestManager().createClassUnloadRequest();
+        classUnloadRequest.addClassFilter(CLASS_NAME_PREFIX + "*");
+        classUnloadRequest.enable();
 
-            ClassUnloadRequest classUnloadRequest_alt = vm.eventRequestManager().createClassUnloadRequest();
-            classUnloadRequest_alt.addClassFilter(CLASS_NAME_ALT_PREFIX + "*");
-            classUnloadRequest_alt.enable();
+        ClassUnloadRequest classUnloadRequest_alt = vm.eventRequestManager().createClassUnloadRequest();
+        classUnloadRequest_alt.addClassFilter(CLASS_NAME_ALT_PREFIX + "*");
+        classUnloadRequest_alt.enable();
 
-            EventSet eventSet = null;
-            boolean exited = false;
-            while (!exited && (eventSet = vm.eventQueue().remove()) != null) {
-                System.out.println("EventSet: " + eventSet);
-                for (Event event : eventSet) {
-                    if (event instanceof ClassUnloadEvent) {
-                        String className = ((ClassUnloadEvent)event).className();
+        EventSet eventSet = null;
+        boolean exited = false;
+        while (!exited && (eventSet = vm.eventQueue().remove()) != null) {
+            System.out.println("EventSet: " + eventSet);
+            for (Event event : eventSet) {
+                if (event instanceof ClassUnloadEvent) {
+                    String className = ((ClassUnloadEvent)event).className();
 
-                        // The unloaded class should always match CLASS_NAME_PREFIX.
-                        if (className.indexOf(CLASS_NAME_PREFIX) == -1) {
-                            throw new RuntimeException("FAILED: Unexpected unloaded class: " + className);
-                        }
-
-                        // Unloaded classes with ALT names should only occur on the classUnloadRequest_alt.
-                        if (event.request() == classUnloadRequest_alt) {
-                            unloadedSampleClasses_alt.add(className);
-                            if (className.indexOf(CLASS_NAME_ALT_PREFIX) == -1) {
-                                throw new RuntimeException("FAILED: non-alt class unload event for classUnloadRequest_alt.");
-                            }
-                        } else {
-                            unloadedSampleClasses.add(className);
-                        }
-
-                        // If the unloaded class matches the ALT prefix, then we should have
-                        // unload events in this EventSet for each of the two ClassUnloadRequesta.
-                        int expectedEventSetSize;
-                        if (className.indexOf(CLASS_NAME_ALT_PREFIX) != -1) {
-                            expectedEventSetSize = 2;
-                        } else {
-                            expectedEventSetSize = 1;
-                        }
-                        if (eventSet.size() != expectedEventSetSize) {
-                            throw new RuntimeException("FAILED: Unexpected eventSet size: " + eventSet.size());
-                        }
+                    // The unloaded class should always match CLASS_NAME_PREFIX.
+                    if (className.indexOf(CLASS_NAME_PREFIX) == -1) {
+                        throw new RuntimeException("FAILED: Unexpected unloaded class: " + className);
                     }
 
-                    if (event instanceof VMDeathEvent) {
-                        exited = true;
-                        break;
+                    // Unloaded classes with ALT names should only occur on the classUnloadRequest_alt.
+                    if (event.request() == classUnloadRequest_alt) {
+                        unloadedSampleClasses_alt.add(className);
+                        if (className.indexOf(CLASS_NAME_ALT_PREFIX) == -1) {
+                            throw new RuntimeException("FAILED: non-alt class unload event for classUnloadRequest_alt.");
+                        }
+                    } else {
+                        unloadedSampleClasses.add(className);
+                    }
+
+                    // If the unloaded class matches the ALT prefix, then we should have
+                    // unload events in this EventSet for each of the two ClassUnloadRequesta.
+                    int expectedEventSetSize;
+                    if (className.indexOf(CLASS_NAME_ALT_PREFIX) != -1) {
+                        expectedEventSetSize = 2;
+                    } else {
+                        expectedEventSetSize = 1;
+                    }
+                    if (eventSet.size() != expectedEventSetSize) {
+                        throw new RuntimeException("FAILED: Unexpected eventSet size: " + eventSet.size());
                     }
                 }
-                eventSet.resume();
+
+                if (event instanceof VMDeathEvent) {
+                    exited = true;
+                    break;
+                }
             }
-        } catch (InterruptedException | VMCannotBeModifiedException | IOException | IllegalConnectorArgumentsException | VMStartException e) {
-            throw new RuntimeException("Test failed due to " + e.getMessage());
+            eventSet.resume();
         }
+
         if (unloadedSampleClasses.size() != NUM_CLASSES) {
             throw new RuntimeException("Wrong number of class unload events: expected " + NUM_CLASSES + " got " + unloadedSampleClasses.size());
         }
