@@ -484,7 +484,7 @@ public final class String
      */
     public String(byte[] bytes, int offset, int length, String charsetName)
             throws UnsupportedEncodingException {
-        this(bytes, offset, length, lookupCharset(charsetName), checkBoundsOffCount(offset, length, bytes.length));
+        this(bytes, checkBoundsOffCount(offset, length, bytes.length), length, lookupCharset(charsetName), null);
     }
 
     /**
@@ -518,11 +518,11 @@ public final class String
      * @since  1.6
      */
     public String(byte[] bytes, int offset, int length, Charset charset) {
-        this(bytes, offset, length, Objects.requireNonNull(charset), checkBoundsOffCount(offset, length, bytes.length));
+        this(bytes, checkBoundsOffCount(offset, length, bytes.length), length, Objects.requireNonNull(charset), null);
     }
 
     @SuppressWarnings("removal")
-    String(byte[] bytes, int offset, int length, Charset charset, int unused) {
+    private String(byte[] bytes, int offset, int length, Charset charset, Void sig) {
         if (length == 0) {
             this.value = "".value;
             this.coder = "".coder;
@@ -1372,7 +1372,7 @@ public final class String
      */
     public String(byte[] bytes, String charsetName)
             throws UnsupportedEncodingException {
-        this(bytes, 0, bytes.length, lookupCharset(charsetName), -1);
+        this(bytes, 0, bytes.length, lookupCharset(charsetName), null);
     }
 
     /**
@@ -1396,7 +1396,7 @@ public final class String
      * @since  1.6
      */
     public String(byte[] bytes, Charset charset) {
-        this(bytes, 0, bytes.length, Objects.requireNonNull(charset), -1);
+        this(bytes, 0, bytes.length, Objects.requireNonNull(charset), null);
     }
 
     /**
@@ -1426,7 +1426,7 @@ public final class String
      * @since  1.1
      */
     public String(byte[] bytes, int offset, int length) {
-        this(bytes, offset, length, Charset.defaultCharset(), checkBoundsOffCount(offset, length, bytes.length));
+        this(bytes, checkBoundsOffCount(offset, length, bytes.length), length, Charset.defaultCharset(), null);
     }
 
     /**
@@ -1446,7 +1446,7 @@ public final class String
      * @since  1.1
      */
     public String(byte[] bytes) {
-        this(bytes, 0, bytes.length, Charset.defaultCharset(), -1);
+        this(bytes, 0, bytes.length, Charset.defaultCharset(), null);
     }
 
     /**
