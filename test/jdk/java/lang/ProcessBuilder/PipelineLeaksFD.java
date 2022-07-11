@@ -84,7 +84,6 @@ public class PipelineLeaksFD {
         processes.forEach(p -> waitForQuiet(p));
 
         Set<PipeRecord> pipesAfter = myPipes();
-        printPipes(pipesAfter, "After");
         if (!pipesBefore.equals(pipesAfter)) {
             Set<PipeRecord> missing = new HashSet<>(pipesBefore);
             missing.removeAll(pipesAfter);
