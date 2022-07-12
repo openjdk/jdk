@@ -101,15 +101,11 @@ public class TestDumpOnCrash {
     }
 
     private static void test(Class<?> crasher, String signal, boolean disk, String dumppath, boolean expectDump) throws Exception {
-        test(crasher, signal, disk, dumppath, dumppath, expectDump);
-    }
-
-    private static void test(Class<?> crasher, String signal, boolean disk, String dumppath, String expectedPath, boolean expectDump) throws Exception {
         // The JVM may be in a state it can't recover from, so try three times
         // before concluding functionality is not working.
         for (int attempt = 0; attempt < ATTEMPTS; attempt++) {
             try {
-                verify(runProcess(crasher, signal, disk, dumppath), expectedPath, expectDump);
+                verify(runProcess(crasher, signal, disk, dumppath), dumppath, expectDump);
                 return;
             } catch (Exception e) {
                 System.out.println("Attempt " + attempt + ". Verification failed:");
