@@ -82,7 +82,7 @@ RegisterMap::RegisterMap(JavaThread *thread, UpdateMap update_map, ProcessFrames
 
 RegisterMap::RegisterMap(oop continuation, UpdateMap update_map) {
   _thread         = NULL;
-  _update_map     = update_map == UpdateMap::yes;;
+  _update_map     = update_map == UpdateMap::yes;
   _process_frames = false;
   _walk_cont      = true;
   clear();
