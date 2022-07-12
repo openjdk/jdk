@@ -40,7 +40,7 @@ import java.util.Set;
  * @bug 8289643
  * @requires (os.family == "linux" & !vm.musl)
  * @summary file descriptor leak with ProcessBuilder.startPipeline
- * @run testng/othervm PipelineLeaksFD
+ * @run testng/othervm -DDEBUG PipelineLeaksFD
  */
 
 @Test
@@ -83,6 +83,7 @@ public class PipelineLeaksFD {
         processes.forEach(p -> waitForQuiet(p));
 
         Set<PipeRecord> pipesAfter = myPipes();
+        printPipes(pipesAfter, "DEBUG: All Pipes After");
         if (!pipesBefore.equals(pipesAfter)) {
             Set<PipeRecord> missing = new HashSet<>(pipesBefore);
             missing.removeAll(pipesAfter);
