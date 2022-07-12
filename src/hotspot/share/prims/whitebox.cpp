@@ -767,7 +767,10 @@ WB_END
 WB_ENTRY(jboolean, WB_IsFrameDeoptimized(JNIEnv* env, jobject o, jint depth))
   bool result = false;
   if (thread->has_last_Java_frame()) {
-    RegisterMap reg_map(thread, true /* update_map */, true /* process_frames */, false /* walk_cont */);
+    RegisterMap reg_map(thread,
+                        RegisterMap::UpdateMap::yes,
+                        RegisterMap::ProcessFrames::yes,
+                        RegisterMap::WalkContinuation::skip);
     javaVFrame *jvf = thread->last_java_vframe(&reg_map);
     for (jint d = 0; d < depth && jvf != NULL; d++) {
       jvf = jvf->java_sender();
@@ -2103,7 +2106,10 @@ WB_ENTRY(jboolean, WB_HandshakeReadMonitors(JNIEnv* env, jobject wb, jobject thr
       if (!jt->has_last_Java_frame()) {
         return;
       }
-      RegisterMap rmap(jt, true /* update_map */, true /* process_frames */, false /* walk_cont */);
+      RegisterMap rmap(jt,
+                       RegisterMap::UpdateMap::yes,
+                       RegisterMap::ProcessFrames::yes,
+                       RegisterMap::WalkContinuation::skip);
       for (javaVFrame* vf = jt->last_java_vframe(&rmap); vf != NULL; vf = vf->java_sender()) {
         GrowableArray<MonitorInfo*> *monitors = vf->monitors();
         if (monitors != NULL) {

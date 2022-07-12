@@ -162,7 +162,10 @@ void InterfaceSupport::walk_stack() {
   walk_stack_counter++;
   if (!thread->has_last_Java_frame()) return;
   ResourceMark rm(thread);
-  RegisterMap reg_map(thread, true /* update_map */, true /* process_frames */, false /* walk_cont */);
+  RegisterMap reg_map(thread,
+                      RegisterMap::UpdateMap::yes,
+                      RegisterMap::ProcessFrames::yes,
+                      RegisterMap::WalkContinuation::skip);
   walk_stack_from(thread->last_java_vframe(&reg_map));
 }
 
@@ -229,7 +232,10 @@ void InterfaceSupport::verify_stack() {
 void InterfaceSupport::verify_last_frame() {
   JavaThread* thread = JavaThread::current();
   ResourceMark rm(thread);
-  RegisterMap reg_map(thread, true /* update_map */, true /* process_frames */, false /* walk_cont */);
+  RegisterMap reg_map(thread,
+                      RegisterMap::UpdateMap::yes,
+                      RegisterMap::ProcessFrames::yes,
+                      RegisterMap::WalkContinuation::skip);
   frame fr = thread->last_frame();
   fr.verify(&reg_map);
 }

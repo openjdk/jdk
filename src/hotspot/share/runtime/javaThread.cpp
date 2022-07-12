@@ -1054,7 +1054,10 @@ void JavaThread::handle_async_exception(oop java_throwable) {
       // OptoRuntime from compiled code. Some runtime stubs (new, monitor_exit..)
       // must deoptimize the caller before continuing, as the compiled exception
       // handler table may not be valid.
-      RegisterMap reg_map(this, false /* update_map */, true /* process_frames */, false /* walk_cont */);
+      RegisterMap reg_map(this,
+                          RegisterMap::UpdateMap::skip,
+                          RegisterMap::ProcessFrames::yes,
+                          RegisterMap::WalkContinuation::skip);
       frame compiled_frame = f.sender(&reg_map);
       if (!StressCompiledExceptionHandlers && compiled_frame.can_be_deoptimized()) {
         Deoptimization::deoptimize(this, compiled_frame);
@@ -1704,7 +1707,10 @@ void JavaThread::print_stack_on(outputStream* st) {
   ResourceMark rm(current_thread);
   HandleMark hm(current_thread);
 
-  RegisterMap reg_map(this, true /* update_map */, true /* process_frames */, false /* walk_cont */);
+  RegisterMap reg_map(this,
+                      RegisterMap::UpdateMap::yes,
+                      RegisterMap::ProcessFrames::yes,
+                      RegisterMap::WalkContinuation::skip);
   vframe* start_vf = platform_thread_last_java_vframe(&reg_map);
   int count = 0;
   for (vframe* f = start_vf; f != NULL; f = f->sender()) {
@@ -1849,7 +1855,10 @@ void JavaThread::trace_stack() {
   Thread* current_thread = Thread::current();
   ResourceMark rm(current_thread);
   HandleMark hm(current_thread);
-  RegisterMap reg_map(this, true /* update_map */, true /* process_frames */, false /* walk_cont */);
+  RegisterMap reg_map(this,
+                      RegisterMap::UpdateMap::yes,
+                      RegisterMap::ProcessFrames::yes,
+                      RegisterMap::WalkContinuation::skip);
   trace_stack_from(last_java_vframe(&reg_map));
 }
 

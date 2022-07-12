@@ -452,7 +452,10 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
     ttyLocker ttyl;
     tty->print_cr("[%d. Interpreted Frame]", ++unpack_counter);
     iframe()->print_on(tty);
-    RegisterMap map(thread, true /* update_map */, true /* process_frames */, false /* walk_cont */);
+    RegisterMap map(thread,
+                    RegisterMap::UpdateMap::yes,
+                    RegisterMap::ProcessFrames::yes,
+                    RegisterMap::WalkContinuation::skip);
     vframe* f = vframe::new_vframe(iframe(), &map, thread);
     f->print();
     if (WizardMode && Verbose) method()->print_codes();
@@ -567,7 +570,10 @@ void vframeArray::unpack_to_stack(frame &unpack_frame, int exec_mode, int caller
   // Find the skeletal interpreter frames to unpack into
   JavaThread* current = JavaThread::current();
 
-  RegisterMap map(current, false /* update_map */, true /* process_frames */, false /* walk_cont */);
+  RegisterMap map(current,
+                  RegisterMap::UpdateMap::skip,
+                  RegisterMap::ProcessFrames::yes,
+                  RegisterMap::WalkContinuation::skip);
   // Get the youngest frame we will unpack (last to be unpacked)
   frame me = unpack_frame.sender(&map);
   int index;
