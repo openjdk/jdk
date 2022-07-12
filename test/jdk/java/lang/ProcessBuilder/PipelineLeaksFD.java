@@ -28,13 +28,12 @@ import org.testng.annotations.Test;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /*
  * @test
@@ -117,18 +116,21 @@ public class PipelineLeaksFD {
      */
     static Set<PipeRecord> myPipes() throws IOException {
         Path path = Path.of("/proc/" + ProcessHandle.current().pid() + "/fd");
-        try (Stream<Path> s = Files.walk(path)) {
-            return s.filter(Files::isSymbolicLink)
-                    .map(p -> {
-                        try {
-                            return new PipeRecord(p, Files.readSymbolicLink(p));
-                        } catch (IOException ioe) {
-                        }
-                        return new PipeRecord(p, null);
-                    })
-                    .filter(p1 -> p1.link().toString().startsWith("pipe:"))
-                    .collect(Collectors.toSet());
+        Set<PipeRecord> pipes = new HashSet<>();
+        try (DirectoryStream<Path> s = Files.newDirectoryStream(path)) {
+            s.forEach(p -> {
+                try {
+                     if (Files.isSymbolicLink(p)) {
+                         Path link = Files.readSymbolicLink(p);
+                         if (link.toString().startsWith("pipe:")) {
+                             pipes.add(new PipeRecord(p, link));
+                         }
+                     }
+                 } catch (IOException ioe) {
+                 }
+            });
         }
+        return pipes;
     }
 
     record PipeRecord(Path fd, Path link) { };
