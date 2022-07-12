@@ -92,9 +92,6 @@ public class TestDumpOnCrash {
             dumppath.toFile().delete();
         }
 
-        test(CrasherHalt.class, "", true, dumppath.toString(), false);
-        test(CrasherHalt.class, "", false, dumppath.toString(), false);
-
         // Test is excluded until 8219680 is fixed
         // @ignore 8219680
         // test(CrasherSig.class, "FPE", true, true);
