@@ -346,7 +346,8 @@ public class ResponseBodyBeforeError {
 
         @Override
         public void run() {
-            int maxUnexpected = 2;
+            int maxUnexpected = 10; // if we get there too often we may
+                                    // want to reassess the diagnosis
             while (!closed) {
                 boolean accepted = false;
                 try (Socket s = ss.accept()) {
