@@ -38,10 +38,11 @@ class JvmtiTagMap :  public CHeapObj<mtInternal> {
  private:
 
   JvmtiEnv*             _env;                       // the jvmti environment
-  Mutex                 _lock;                      // lock for this tag map
+  Monitor               _lock;                      // lock for this tag map
   JvmtiTagMapTable*     _hashmap;                   // the hashmap for tags
   bool                  _needs_rehashing;
   bool                  _needs_cleaning;
+  bool                  _posting_events;
 
   static bool           _has_object_free_events;
 
@@ -58,7 +59,7 @@ class JvmtiTagMap :  public CHeapObj<mtInternal> {
  public:
   // indicates if this tag map is locked
   bool is_locked()                          { return lock()->is_locked(); }
-  inline Mutex* lock()                      { return &_lock; }
+  inline Monitor* lock()                    { return &_lock; }
 
   JvmtiTagMapTable* hashmap() { return _hashmap; }
 

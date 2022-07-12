@@ -77,7 +77,8 @@ JvmtiTagMap::JvmtiTagMap(JvmtiEnv* env) :
   _env(env),
   _lock(Mutex::nosafepoint, "JvmtiTagMap_lock"),
   _needs_rehashing(false),
-  _needs_cleaning(false) {
+  _needs_cleaning(false),
+  _posting_events(false) {
 
   assert(JvmtiThreadState_lock->is_locked(), "sanity check");
   assert(((JvmtiEnvBase *)env)->tag_map() == NULL, "tag map already exists for environment");
@@ -1214,15 +1215,27 @@ void JvmtiTagMap::flush_object_free_events() {
   assert_not_at_safepoint();
   if (env()->is_enabled(JVMTI_EVENT_OBJECT_FREE)) {
     {
-      MutexLocker ml(lock(), Mutex::_no_safepoint_check_flag);
+      MonitorLocker ml(lock(), Mutex::_no_safepoint_check_flag);
+      // If another thread is posting events, let it finish
+      bool posting = _posting_events;
+      while (_posting_events) {
+        ml.wait();
+      }
+
       if (!_needs_cleaning || is_empty()) {
         _needs_cleaning = false;
         return;
       }
+      _posting_events = true;
     } // Drop the lock so we can do the cleaning on the VM thread.
     // Needs both cleaning and event posting (up to some other thread
     // getting there first after we dropped the lock).
     remove_and_post_dead_objects();
+    {
+      MonitorLocker ml(lock(), Mutex::_no_safepoint_check_flag);
+      _posting_events = false;
+      ml.notify_all();
+    }
   } else {
     remove_dead_entries(NULL);
   }
