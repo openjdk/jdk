@@ -1484,7 +1484,7 @@ public class HtmlDocletWriter {
             }
         };
         CommentHelper ch = utils.getCommentHelper(element);
-        configuration.tagletManager.checkTags(element, trees, true);
+        configuration.tagletManager.checkTags(element, trees);
         commentRemoved = false;
 
         for (ListIterator<? extends DocTree> iterator = trees.listIterator(); iterator.hasNext();) {
