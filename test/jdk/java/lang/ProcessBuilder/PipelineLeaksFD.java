@@ -25,10 +25,10 @@ import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
@@ -40,7 +40,7 @@ import java.util.Set;
  * @bug 8289643
  * @requires (os.family == "linux" & !vm.musl)
  * @summary file descriptor leak with ProcessBuilder.startPipeline
- * @run testng/othervm PipelineLeaksFD
+ * @run testng/othervm -DDEBUG PipelineLeaksFD
  */
 
 @Test
@@ -75,14 +75,18 @@ public class PipelineLeaksFD {
         out.close();
 
         Process last = processes.get(processes.size() - 1);
-        try (InputStream inputStream = last.getInputStream()) {
+        try (InputStream inputStream = last.getInputStream();
+             InputStream errorStream = last.getErrorStream()) {
             byte[] bytes = inputStream.readAllBytes();
-            Assert.assertEquals(bytes.length, 1, "Bytes read");
+            Assert.assertEquals(bytes.length, 1, "stdout bytes read");
+            byte[] errBytes = errorStream.readAllBytes();
+            Assert.assertEquals(errBytes.length, 0, "stderr bytes read");
         }
 
         processes.forEach(p -> waitForQuiet(p));
 
         Set<PipeRecord> pipesAfter = myPipes();
+        printPipes(pipesAfter, "DEBUG: All Pipes After");
         if (!pipesBefore.equals(pipesAfter)) {
             Set<PipeRecord> missing = new HashSet<>(pipesBefore);
             missing.removeAll(pipesAfter);
@@ -96,7 +100,7 @@ public class PipelineLeaksFD {
 
     static void printPipes(Set<PipeRecord> pipes, String label) {
         System.out.printf("%s: [%d]%n", label, pipes.size());
-        pipes.forEach(r -> System.out.printf("%20s: %20s%n", r.fd(), r.link()));
+        pipes.forEach(r -> System.out.printf("%-20s: %s%n", r.fd(), r.link()));
     }
 
     static void waitForQuiet(Process p) {
@@ -114,21 +118,20 @@ public class PipelineLeaksFD {
      * @return A set of PipeRecords, possibly empty
      * @throws IOException if reading the directory entries of "/proc/<pid>/fd/*" fails
      */
-    static Set<PipeRecord> myPipes() throws IOException {
+    static Set<PipeRecord> myPipes() {
         Path path = Path.of("/proc/" + ProcessHandle.current().pid() + "/fd");
         Set<PipeRecord> pipes = new HashSet<>();
-        try (DirectoryStream<Path> s = Files.newDirectoryStream(path)) {
-            s.forEach(p -> {
+        File[] files = path.toFile().listFiles(f -> Files.isSymbolicLink(f.toPath()));
+        if (files != null) {
+            for (File file : files) {
                 try {
-                     if (Files.isSymbolicLink(p)) {
-                         Path link = Files.readSymbolicLink(p);
-                         if (link.toString().startsWith("pipe:")) {
-                             pipes.add(new PipeRecord(p, link));
-                         }
-                     }
-                 } catch (IOException ioe) {
-                 }
-            });
+                    Path link = Files.readSymbolicLink(file.toPath());
+                    if (link.toString().startsWith("pipe:")) {
+                        pipes.add(new PipeRecord(file.toPath(), link));
+                    }
+                } catch (IOException ioe) {
+                }
+            }
         }
         return pipes;
     }
