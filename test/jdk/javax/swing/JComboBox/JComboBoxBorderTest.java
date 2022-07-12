@@ -51,18 +51,13 @@ public class JComboBoxBorderTest {
             InvocationTargetException {
         SwingUtilities.invokeAndWait(() -> {
 
-//            try {
-//                UIManager.setLookAndFeel("com.apple.laf.AquaLookAndFeel");
-//            } catch (Exception e) {
-//
-//            }
-
-
             JLabel label = new JLabel("Editable combo box:");
             JLabel label2 = new JLabel("Non-editable combo box:");
 
-            JComboBox<String> comboBox = new JComboBox<>(new String[] { "Item 1", "Item 2", "Item 3" });
-            JComboBox<String> comboBox2 = new JComboBox<>(new String[] { "Item 1", "Item 2", "Item 3" });
+            JComboBox<String> comboBox = new JComboBox<>(new String[]
+                    { "Item 1", "Item 2", "Item 3" });
+            JComboBox<String> comboBox2 = new JComboBox<>(new String[]
+                    { "Item 1", "Item 2", "Item 3" });
             comboBox.setEditable(true);
 
             FlowLayout layout = new FlowLayout(FlowLayout.LEADING);
