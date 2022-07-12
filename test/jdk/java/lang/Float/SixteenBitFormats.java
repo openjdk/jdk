@@ -32,11 +32,14 @@
 
 import static java.lang.Float.*;
 
+// TODO: add sign-symmetric testing from positive test cases
+
 public class SixteenBitFormats {
     public static void main(String... argv) {
         int errors = 0;
         errors += binary16RoundTrip();
         errors += binary16CardinalValues();
+        errors += roundFloatToBinary16();
         if (errors > 0)
             throw new RuntimeException(errors + " errors");
     }
@@ -51,6 +54,7 @@ public class SixteenBitFormats {
             short s = (short)i;
             float f = Float.binary16AsShortBitsToFloat(s);
             short s2 = Float.floatToBinary16AsShortBits(f);
+
             if (Binary16.compare(s, s2) != 0) {
                 errors++;
                 System.out.println("Roundtrip failure on " +
@@ -86,6 +90,7 @@ public class SixteenBitFormats {
             float expected = testCase[1];
             float actual   = Float.binary16AsShortBitsToFloat(input);
 
+            // TODO: extract into separate method
             if (Float.compare(actual, expected) != 0) {
                 errors++;
                 System.out.println("Unexpected result of converting 0x" +
@@ -101,6 +106,7 @@ public class SixteenBitFormats {
             short expected = (short)testCase[0];
             short actual   = Float.floatToBinary16AsShortBits(input);
 
+            // TODO: extract into separate method
             if (Binary16.compare(actual, expected) != 0) {
                 errors++;
                 System.out.println("Unexpected result of converting " +
@@ -112,6 +118,58 @@ public class SixteenBitFormats {
 
         return errors;
     };
+
+    private static int roundFloatToBinary16() {
+        int errors = 0;
+
+        float[][] testCases = {
+            // Test all combinations of LSB, round, and sticky bit
+
+           // LSB = 0, test combination of round and sticky
+            {0x1.ff8p-1f,                (short)0x3bfe}, // guard = 0, sticky = 0
+            {0x1.ff801p-1f,              (short)0x3bfe}, // guard = 0, sticky = 1
+            {0x1.ffap-1f,                (short)0x3bfe}, // guard = 1, sticky = 0
+            {0x1.ffa01p-1f,              (short)0x3bff}, // guard = 1, sticky = 1 => ++
+
+            // LSB = 1, test combination of round and sticky
+            // (short)0x3bff is the largest binary16 less than one
+            {0x1.ffcp-1f,                (short)0x3bff}, // guard = 0, sticky = 0
+            {0x1.ffc01p-1f,              (short)0x3bff}, // guard = 0, sticky = 1
+            {0x1.ffep-1f,                (short)0x3c00}, // guard = 1, sticky = 0 => ++
+            {0x1.ffe01p-1f,              (short)0x3c00}, // guard = 1, sticky = 1 => ++
+
+            // Test subnormal rounding
+            // Largest subnormal binary16 0x03ff => 0x1.ff8p-15f
+            // LSB = 1
+            {0x1.ff8p-15f,               (short)0x03ff}, // guard = 0, sticky = 0
+            {0x1.ff801p-15f,             (short)0x03ff}, // guard = 0, sticky = 1
+            {0x1.ffcp-15f,               (short)0x0400}, // guard = 1, sticky = 1 => ++
+            {0x1.ffc01p-15f,             (short)0x0400}, // guard = 1, sticky = 1 => ++
+        };
+
+
+        for (var testCase : testCases) {
+            float input    = testCase[0];
+            short expected = (short)testCase[1];
+            short actual   = Float.floatToBinary16AsShortBits(input);
+
+            System.out.println(input + "\t" +
+                               Integer.toHexString(expected) + "\t" +
+                               Integer.toHexString(actual));
+
+            if (Binary16.compare(actual, expected) != 0) {
+                errors++;
+                System.out.println("Unexpected result of converting " +
+                                   Float.toHexString(input) +
+                                   " to short. Expected " + expected +
+                                   " got " + actual);
+            }
+
+
+        }
+
+        return errors;
+    }
 
     public static class Binary16 {
         public static final short POSITIVE_INFINITY = (short)0x7c00;

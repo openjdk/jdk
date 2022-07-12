@@ -1021,9 +1021,7 @@ public final class Float extends Number
             assert -24 <= exp && exp <= 15;
             short signif_bits;
 
-            // scale down to float subnormal range to do rounding? -- use scaleBy
-            if (exp <= -15) {
-                exp = -15; // Subnormal encoding using -E_max.
+            if (exp <= -15) { // scale down to float subnormal range to do rounding
                 // Use a float multiply to compute the correct
                 // trailing significand bits for a binary16 subnormal.
                 //
@@ -1033,17 +1031,51 @@ public final class Float extends Number
                 // 2^(-125) -- since (-125 = -149 - (-24)) -- so that
                 // the trailing bits of a subnormal float represent
                 // the correct trailing bits of a binary16 subnormal.
+                exp = -15; // Subnormal encoding using -E_max.
                 float f_adjust = abs_f * 0x1.0p-125f;
                 signif_bits = (short)(Float.floatToRawIntBits(f_adjust) & 0x03ff);
+                if (signif_bits == 0) {
+                    // Since zero cases have already been handled, if
+                    // the significand is all zeros, there was a
+                    // round-up to normal range so the exponent needs
+                    // to be adjusted accordingly.
+                    exp++;
+                }
             } else {
                 // All remaining values of f are in the normalized
                 // range of binary16 (which is also in the normalized
                 // range of float).
 
-                // TODO: look at discarded significand bits and adjust
-                // when needed, computing guard, round, and sticky, etc.
+                // Significand bits as if using rounding to zero (truncation).
                 signif_bits = (short)((doppel & 0x0007f_e000) >>
                                       (FloatConsts.SIGNIFICAND_WIDTH - 11));
+
+                // For round to nearest even, determining whether or
+                // not to round up (in magnitude) is a function of the
+                // least significant bit (LSB), the next bit position
+                // (the round position), and the sticky bit (whether
+                // there are any nonzero bits in the exact result to
+                // the right of the round digit). An increment occurs
+                // in three cases:
+                //
+                // LSB  Round Sticky
+                // 0    1     1
+                // 1    1     0
+                // 1    1     1
+
+                // Bits of binary16 significand in a float: 0x0007f_e000;
+                // therefore, the other quantities of interest are:
+                int lsb   =  doppel & 0x00000_2000;
+                int round =  doppel & 0x00000_1000;
+                int sticky = doppel & 0x00000_0fff;
+
+                if (((lsb == 0) && (round != 0) && (sticky != 0)) ||
+                    ( lsb != 0  &&  round != 0 ) ) { // sticky not needed
+                    // Due to the representational properties, an
+                    // increment will also handle a ripple carry that
+                    // updates the exponent too.
+                    signif_bits++;
+                }
             }
 
             short result = 0;
