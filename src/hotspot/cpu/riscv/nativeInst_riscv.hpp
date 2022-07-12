@@ -65,6 +65,7 @@ class NativeInstruction {
   bool is_movptr()                          const { return is_movptr_at(addr_at(0));      }
   bool is_call()                            const { return is_call_at(addr_at(0));        }
   bool is_jump()                            const { return is_jump_at(addr_at(0));        }
+  bool is_lui()                             const { return is_lui_at(addr_at(0));         }
 
   static bool is_jal_at(address instr)        { assert_cond(instr != NULL); return extract_opcode(instr) == 0b1101111; }
   static bool is_jalr_at(address instr)       { assert_cond(instr != NULL); return extract_opcode(instr) == 0b1100111 && extract_funct3(instr) == 0b000; }
