@@ -100,14 +100,6 @@ public class TestDumpOnCrash {
         // test(CrasherSig.class, "FPE", true, true);
     }
 
-    private static void test(Class<?> crasher, String signal, boolean disk) throws Exception {
-        test(crasher, signal, disk, null);
-    }
-
-    private static void test(Class<?> crasher, String signal, boolean disk, String dumppath) throws Exception {
-        test(crasher, signal, disk, dumppath, dumppath);
-    }
-
     private static void test(Class<?> crasher, String signal, boolean disk, String dumppath, boolean expectDump) throws Exception {
         test(crasher, signal, disk, dumppath, dumppath, expectDump);
     }
