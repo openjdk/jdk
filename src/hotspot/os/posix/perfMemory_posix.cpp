@@ -921,10 +921,10 @@ static int create_sharedmem_file(const char* dirname, const char* filename, size
   int n;
   RESTARTABLE(::flock(fd, LOCK_EX|LOCK_NB), n);
   if (n != 0) {
-    log_warning(perf, memops)("Cannot use file %s/%s because %s", dirname, filename,
+    log_warning(perf, memops)("Cannot use file %s/%s because %s (errno = %d)", dirname, filename,
                               (errno == EWOULDBLOCK) ?
                               "it is locked by another process" :
-                              "flock() failed");
+                              "flock() failed", errno);
     ::close(fd);
     return -1;
   }
