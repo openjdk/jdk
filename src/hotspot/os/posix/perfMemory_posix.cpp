@@ -757,6 +757,7 @@ static void cleanup_sharedmem_files(const char* dirname) {
     if (fd == OS_ERR) {
       // Something wrong happened. Ignore the error and don't try to remove the
       // file.
+      log_debug(perf, memops)("os::open() for stale file check failed for %s/%s", dirname, filename);
       errno = 0;
       continue;
     }
@@ -801,9 +802,9 @@ static void cleanup_sharedmem_files(const char* dirname) {
       unlink(filename);
     }
 
- #if defined(LINUX)
+#if defined(LINUX)
     // Hold the lock until here to prevent other JVMs from using this file
-    // while we are in the middle of deleting it.
+    // while we were in the middle of deleting it.
     ::close(fd);
 #endif
 
