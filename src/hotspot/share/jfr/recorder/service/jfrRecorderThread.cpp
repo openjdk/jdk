@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,22 +23,17 @@
  */
 
 #include "precompiled.hpp"
-#include "jni.h"
-#include "classfile/javaClasses.hpp"
-#include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
-#include "jfr/jfr.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
-#include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointManager.hpp"
+#include "jfr/recorder/service/jfrPostBox.hpp"
 #include "jfr/recorder/service/jfrRecorderThread.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/mutexLocker.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "utilities/preserveException.hpp"
 #include "utilities/macros.hpp"
 
@@ -91,7 +86,6 @@ bool JfrRecorderThread::start(JfrCheckpointManager* cp_manager, JfrPostBox* post
   // attempt thread start
   Thread* const t = start_thread(h_thread_oop, recorderthread_entry,THREAD);
   if (!HAS_PENDING_EXCEPTION) {
-    Jfr::exclude_thread(t);
     return true;
   }
   assert(HAS_PENDING_EXCEPTION, "invariant");

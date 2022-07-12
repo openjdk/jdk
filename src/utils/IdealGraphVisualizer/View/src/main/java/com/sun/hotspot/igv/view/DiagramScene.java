@@ -37,11 +37,13 @@ import com.sun.hotspot.igv.hierarchicallayout.LinearLayoutManager;
 import com.sun.hotspot.igv.hierarchicallayout.HierarchicalLayoutManager;
 import com.sun.hotspot.igv.layout.LayoutGraph;
 import com.sun.hotspot.igv.layout.Link;
-import com.sun.hotspot.igv.selectioncoordinator.SelectionCoordinator;
+import com.sun.hotspot.igv.selectioncoordinator.*;
 import com.sun.hotspot.igv.util.ColorIcon;
+import com.sun.hotspot.igv.util.CustomSelectAction;
 import com.sun.hotspot.igv.util.DoubleClickAction;
 import com.sun.hotspot.igv.util.PropertiesSheet;
 import com.sun.hotspot.igv.view.actions.CustomizablePanAction;
+import com.sun.hotspot.igv.view.EditorTopComponent;
 import com.sun.hotspot.igv.view.widgets.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -65,6 +67,7 @@ import org.openide.nodes.Sheet;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.AbstractLookup;
 import org.openide.util.lookup.InstanceContent;
+import org.openide.util.Utilities;
 
 /**
  *
@@ -406,7 +409,33 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         panAction = new CustomizablePanAction(~0, MouseEvent.BUTTON1_DOWN_MASK);
         this.getActions().addAction(panAction);
 
-        selectAction = createSelectAction();
+        selectAction = new CustomSelectAction(new SelectProvider() {
+            public boolean isAimingAllowed(Widget widget, Point localLocation, boolean invertSelection) {
+                return false;
+            }
+
+            public boolean isSelectionAllowed(Widget widget, Point localLocation, boolean invertSelection) {
+                return findObject(widget) != null;
+            }
+
+            public void select(Widget widget, Point localLocation, boolean invertSelection) {
+                EditorTopComponent editor = EditorTopComponent.getActive();
+                if (editor != null) {
+                    editor.requestActive();
+                }
+                Object object = findObject(widget);
+                setFocusedObject(object);
+                if (object != null) {
+                    if (!invertSelection && getSelectedObjects().contains(object)) {
+                        return;
+                    }
+                    userSelectionSuggested(Collections.singleton(object), invertSelection);
+                } else {
+                    userSelectionSuggested(Collections.emptySet(), invertSelection);
+                }
+            }
+        });
+
         this.getActions().addAction(selectAction);
 
         blockLayer = new LayerWidget(this);
@@ -431,7 +460,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
 
         this.setLayout(LayoutFactory.createAbsoluteLayout());
 
-        this.getInputBindings().setZoomActionModifiers(KeyEvent.CTRL_MASK);
+        this.getInputBindings().setZoomActionModifiers(Utilities.isMac() ? KeyEvent.META_MASK : KeyEvent.CTRL_MASK);
         zoomAction = ActionFactory.createMouseCenteredZoomAction(1.2);
         this.getActions().addAction(zoomAction);
         this.getView().addMouseWheelListener(mouseWheelListener);

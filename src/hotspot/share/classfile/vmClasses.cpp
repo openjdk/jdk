@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,12 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/universe.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceRefKlass.hpp"
+#include "oops/instanceStackChunkKlass.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/globals.hpp"
 
@@ -122,10 +124,10 @@ void vmClasses::resolve_all(TRAPS) {
   // Preload commonly used klasses
   vmClassID scan = vmClassID::FIRST;
   // first do Object, then String, Class
+  resolve_through(VM_CLASS_ID(Object_klass), scan, CHECK);
+  CollectedHeap::set_filler_object_klass(vmClasses::Object_klass());
 #if INCLUDE_CDS
   if (UseSharedSpaces) {
-    resolve_through(VM_CLASS_ID(Object_klass), scan, CHECK);
-
     // It's unsafe to access the archived heap regions before they
     // are fixed up, so we must do the fixup as early as possible
     // before the archived java objects are accessed by functions
@@ -156,7 +158,7 @@ void vmClasses::resolve_all(TRAPS) {
   java_lang_Object::register_natives(CHECK);
 
   // Calculate offsets for String and Class classes since they are loaded and
-  // can be used after this point.
+  // can be used after this point. These are no-op when CDS is enabled.
   java_lang_String::compute_offsets();
   java_lang_Class::compute_offsets();
 
@@ -164,32 +166,34 @@ void vmClasses::resolve_all(TRAPS) {
   Universe::initialize_basic_type_mirrors(CHECK);
   Universe::fixup_mirrors(CHECK);
 
-  // do a bunch more:
-  resolve_through(VM_CLASS_ID(Reference_klass), scan, CHECK);
+  if (UseSharedSpaces) {
+    // These should already have been initialized during CDS dump.
+    assert(vmClasses::Reference_klass()->reference_type() == REF_NONE, "sanity");
+    assert(vmClasses::SoftReference_klass()->reference_type() == REF_SOFT, "sanity");
+    assert(vmClasses::WeakReference_klass()->reference_type() == REF_WEAK, "sanity");
+    assert(vmClasses::FinalReference_klass()->reference_type() == REF_FINAL, "sanity");
+    assert(vmClasses::PhantomReference_klass()->reference_type() == REF_PHANTOM, "sanity");
+  } else {
+    // If CDS is not enabled, the references classes must be initialized in
+    // this order before the rest of the vmClasses can be resolved.
+    resolve_through(VM_CLASS_ID(Reference_klass), scan, CHECK);
 
-  // The offsets for jlr.Reference must be computed before
-  // InstanceRefKlass::update_nonstatic_oop_maps is called. That function uses
-  // the offsets to remove the referent and discovered fields from the oop maps,
-  // as they are treated in a special way by the GC. Removing these oops from the
-  // oop maps must be done before the usual subclasses of jlr.Reference are loaded.
-  java_lang_ref_Reference::compute_offsets();
+    // The offsets for jlr.Reference must be computed before
+    // InstanceRefKlass::update_nonstatic_oop_maps is called. That function uses
+    // the offsets to remove the referent and discovered fields from the oop maps,
+    // as they are treated in a special way by the GC. Removing these oops from the
+    // oop maps must be done before the usual subclasses of jlr.Reference are loaded.
+    java_lang_ref_Reference::compute_offsets();
 
-  // Preload ref klasses and set reference types
-  vmClasses::Reference_klass()->set_reference_type(REF_OTHER);
-  InstanceRefKlass::update_nonstatic_oop_maps(vmClasses::Reference_klass());
+    // Preload ref klasses and set reference types
+    InstanceRefKlass::update_nonstatic_oop_maps(vmClasses::Reference_klass());
 
-  resolve_through(VM_CLASS_ID(PhantomReference_klass), scan, CHECK);
-  vmClasses::SoftReference_klass()->set_reference_type(REF_SOFT);
-  vmClasses::WeakReference_klass()->set_reference_type(REF_WEAK);
-  vmClasses::FinalReference_klass()->set_reference_type(REF_FINAL);
-  vmClasses::PhantomReference_klass()->set_reference_type(REF_PHANTOM);
+    resolve_through(VM_CLASS_ID(PhantomReference_klass), scan, CHECK);
+  }
 
-  // JSR 292 classes
-  vmClassID jsr292_group_start = VM_CLASS_ID(MethodHandle_klass);
-  vmClassID jsr292_group_end   = VM_CLASS_ID(VolatileCallSite_klass);
-  resolve_until(jsr292_group_start, scan, CHECK);
-  resolve_through(jsr292_group_end, scan, CHECK);
   resolve_until(vmClassID::LIMIT, scan, CHECK);
+
+  CollectedHeap::set_filler_object_klass(vmClasses::FillerObject_klass());
 
   _box_klasses[T_BOOLEAN] = vmClasses::Boolean_klass();
   _box_klasses[T_CHAR]    = vmClasses::Character_klass();
@@ -212,6 +216,8 @@ void vmClasses::resolve_all(TRAPS) {
     }
   }
 #endif
+
+  InstanceStackChunkKlass::init_offset_of_stack();
 }
 
 #if INCLUDE_CDS

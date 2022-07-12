@@ -34,7 +34,7 @@
 #include "code/exceptionHandlerTable.hpp"
 #include "compiler/compilerThread.hpp"
 #include "oops/methodData.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 
 class CompileTask;
 class OopMapSet;
@@ -392,8 +392,9 @@ public:
                        AbstractCompiler*         compiler,
                        bool                      has_unsafe_access,
                        bool                      has_wide_vectors,
-                       RTMState                  rtm_state = NoRTM,
-                       const GrowableArrayView<RuntimeStub*>& native_invokers = GrowableArrayView<RuntimeStub*>::EMPTY);
+                       bool                      has_monitors,
+                       int                       immediate_oops_patched,
+                       RTMState                  rtm_state = NoRTM);
 
 
   // Access to certain well known ciObjects.
@@ -433,6 +434,8 @@ public:
   ciInstance* unloaded_ciinstance();
 
   ciInstanceKlass* get_box_klass_for_primitive_type(BasicType type);
+
+  ciKlass*  find_system_klass(ciSymbol* klass_name);
 
   // Note:  To find a class from its name string, use ciSymbol::make,
   // but consider adding to vmSymbols.hpp instead.

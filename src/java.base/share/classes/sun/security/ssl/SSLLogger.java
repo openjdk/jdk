@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,6 +207,15 @@ public final class SSLLogger {
         }
     }
 
+    // Logs a warning message and always returns false. This method
+    // can be used as an OR Predicate to add a log in a stream filter.
+    public static boolean logWarning(String option, String s) {
+        if (SSLLogger.isOn && SSLLogger.isOn(option)) {
+            SSLLogger.warning(s);
+        }
+        return false;
+    }
+
     private static class SSLConsoleLogger implements Logger {
         private final String loggerName;
         private final boolean useCompactFormat;
@@ -354,7 +363,7 @@ public final class SSLLogger {
                 Object[] messageFields = {
                     logger.loggerName,
                     level.getName(),
-                    Utilities.toHexString(Thread.currentThread().getId()),
+                    Utilities.toHexString(Thread.currentThread().threadId()),
                     Thread.currentThread().getName(),
                     dateTimeFormat.format(Instant.now()),
                     formatCaller(),
@@ -371,7 +380,7 @@ public final class SSLLogger {
             Object[] messageFields = {
                     logger.loggerName,
                     level.getName(),
-                    Utilities.toHexString(Thread.currentThread().getId()),
+                    Utilities.toHexString(Thread.currentThread().threadId()),
                     Thread.currentThread().getName(),
                     dateTimeFormat.format(Instant.now()),
                     formatCaller(),

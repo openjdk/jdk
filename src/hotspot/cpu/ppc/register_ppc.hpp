@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,11 @@ typedef VMRegImpl* VMReg;
 //  v14-v19   Volatile scratch registers
 //  v20-v31   Non-volatile registers
 //  vrsave    Non-volatile 32-bit register
-
+//
+//  ----------------------------------------------
+//  On processors with VSX feature:
+//  vs0-31    Alias for f0-f31 (64 bit, see above)
+//  vs32-63   Alias for v0-31 (128 bit, see above)
 
 // Use Register as shortcut
 class RegisterImpl;

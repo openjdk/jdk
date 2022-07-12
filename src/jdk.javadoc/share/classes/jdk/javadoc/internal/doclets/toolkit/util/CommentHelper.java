@@ -125,19 +125,8 @@ public class CommentHelper {
         }
     }
 
-    public boolean isTypeParameter(DocTree dtree) {
-        if (dtree.getKind() == PARAM) {
-            return ((ParamTree)dtree).isTypeParameter();
-        }
-        return false;
-    }
-
-    public String getParameterName(DocTree dtree) {
-        if (dtree.getKind() == PARAM) {
-            return ((ParamTree) dtree).getName().getName().toString();
-        } else {
-            return null;
-        }
+    public String getParameterName(ParamTree p) {
+        return p.getName().getName().toString();
     }
 
     Element getElement(ReferenceTree rtree) {
@@ -325,7 +314,7 @@ public class CommentHelper {
             public String visitSee(SeeTree node, Void p) {
                 Utils utils = configuration.utils;
                 return node.getReference().stream()
-                        .filter(utils::isText)
+                        .filter(dt -> dt.getKind() == DocTree.Kind.TEXT)
                         .map(dt -> ((TextTree) dt).getBody())
                         .collect(Collectors.joining());
             }
@@ -558,12 +547,6 @@ public class CommentHelper {
         return dtree.getKind() == SEE ? ((SeeTree)dtree).getReference() : null;
     }
 
-    public ReferenceTree getExceptionName(DocTree dtree) {
-        return (dtree.getKind() == THROWS || dtree.getKind() == EXCEPTION)
-                ? ((ThrowsTree)dtree).getExceptionName()
-                : null;
-    }
-
     public IdentifierTree getName(DocTree dtree) {
         switch (dtree.getKind()) {
             case PARAM:
@@ -711,7 +694,7 @@ public class CommentHelper {
         DocFinder.Output inheritedDoc =
                 DocFinder.search(configuration,
                         new DocFinder.Input(utils, ee));
-        return inheritedDoc == null || inheritedDoc.holder == ee
+        return inheritedDoc.holder == ee
                 ? null
                 : utils.getCommentHelper(inheritedDoc.holder).getDocTreePath(dtree);
     }

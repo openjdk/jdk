@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,14 @@ import com.sun.hotspot.igv.coordinator.actions.*;
 import com.sun.hotspot.igv.data.GraphDocument;
 import com.sun.hotspot.igv.data.Group;
 import com.sun.hotspot.igv.data.services.GroupCallback;
+import com.sun.hotspot.igv.data.services.InputGraphProvider;
+import com.sun.hotspot.igv.util.LookupHistory;
 import java.awt.BorderLayout;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.io.Serializable;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.border.Border;
 import org.openide.ErrorManager;
@@ -42,9 +45,12 @@ import org.openide.awt.ToolbarPool;
 import org.openide.explorer.ExplorerManager;
 import org.openide.explorer.ExplorerUtils;
 import org.openide.explorer.view.BeanTreeView;
+import org.openide.util.Exceptions;
+import org.openide.util.Lookup;
 import org.openide.util.LookupEvent;
 import org.openide.util.LookupListener;
 import org.openide.util.NbBundle;
+import org.openide.util.Utilities;
 import org.openide.util.actions.NodeAction;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
@@ -57,6 +63,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
 
     public static OutlineTopComponent instance;
     public static final String PREFERRED_ID = "OutlineTopComponent";
+    private Lookup.Result result = null;
     private ExplorerManager manager;
     private GraphDocument document;
     private FolderNode root;
@@ -123,8 +130,22 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         binaryServer = new Server(getDocument(), callback, true);
     }
 
+    // Fetch and select the latest active graph.
+    private void updateGraphSelection() {
+        final InputGraphProvider p = LookupHistory.getLast(InputGraphProvider.class);
+        if (p == null) {
+            return;
+        }
+        try {
+            manager.setSelectedNodes(new GraphNode[]{FolderNode.getGraphNode(p.getGraph())});
+        } catch (Exception e) {
+            Exceptions.printStackTrace(e);
+        }
+    }
+
     public void clear() {
         document.clear();
+        FolderNode.clearGraphNodeMap();
         root = new FolderNode(document);
         manager.setRootContext(root);
     }
@@ -173,11 +194,16 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
 
     @Override
     public void componentOpened() {
+        Lookup.Template<InputGraphProvider> tpl = new Lookup.Template<InputGraphProvider>(InputGraphProvider.class);
+        result = Utilities.actionsGlobalContext().lookup(tpl);
+        result.addLookupListener(this);
+        updateGraphSelection();
         this.requestActive();
     }
 
     @Override
     public void componentClosed() {
+        result.removeLookupListener(this);
     }
 
     @Override
@@ -205,6 +231,13 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
 
     @Override
     public void resultChanged(LookupEvent lookupEvent) {
+        // Highlight the focused graph, if available, in the outline.
+        if (result.allItems().isEmpty()) {
+            return;
+        }
+        // Wait for LookupHistory to be updated with the last active graph
+        // before selecting it.
+        SwingUtilities.invokeLater(() -> updateGraphSelection());
     }
 
     @Override

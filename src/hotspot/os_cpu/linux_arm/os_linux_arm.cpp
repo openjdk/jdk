@@ -44,6 +44,7 @@
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
 #include "signals_posix.hpp"
 #include "utilities/debug.hpp"
@@ -418,9 +419,9 @@ void os::setup_fpu() {
 
 // Minimum usable stack sizes required to get to user code. Space for
 // HotSpot guard pages is added later.
-size_t os::Posix::_compiler_thread_min_stack_allowed = (32 DEBUG_ONLY(+ 4)) * K;
-size_t os::Posix::_java_thread_min_stack_allowed = (32 DEBUG_ONLY(+ 4)) * K;
-size_t os::Posix::_vm_internal_thread_min_stack_allowed = (48 DEBUG_ONLY(+ 4)) * K;
+size_t os::_compiler_thread_min_stack_allowed = (32 DEBUG_ONLY(+ 4)) * K;
+size_t os::_java_thread_min_stack_allowed = (32 DEBUG_ONLY(+ 4)) * K;
+size_t os::_vm_internal_thread_min_stack_allowed = (48 DEBUG_ONLY(+ 4)) * K;
 
 // return default stack size for thr_type
 size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
@@ -434,6 +435,7 @@ size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
 
 void os::print_context(outputStream *st, const void *context) {
   if (context == NULL) return;
+
   const ucontext_t *uc = (const ucontext_t*)context;
 
   st->print_cr("Registers:");
@@ -443,8 +445,27 @@ void os::print_context(outputStream *st, const void *context) {
   }
 #define U64_FORMAT "0x%016llx"
   // now print flag register
-  st->print_cr("  %-4s = 0x%08lx", "cpsr",uc->uc_mcontext.arm_cpsr);
+  uint32_t cpsr = uc->uc_mcontext.arm_cpsr;
+  st->print_cr("  %-4s = 0x%08x", "cpsr", cpsr);
+  // print out instruction set state
+  st->print("isetstate: ");
+  const int isetstate =
+      ((cpsr & (1 << 5))  ? 1 : 0) | // T
+      ((cpsr & (1 << 24)) ? 2 : 0); // J
+  switch (isetstate) {
+  case 0: st->print_cr("ARM"); break;
+  case 1: st->print_cr("Thumb"); break;
+  case 2: st->print_cr("Jazelle"); break;
+  case 3: st->print_cr("ThumbEE"); break;
+  default: ShouldNotReachHere();
+  };
   st->cr();
+}
+
+void os::print_tos_pc(outputStream *st, const void *context) {
+  if (context == NULL) return;
+
+  const ucontext_t* uc = (const ucontext_t*)context;
 
   intptr_t *sp = (intptr_t *)os::Linux::ucontext_get_sp(uc);
   st->print_cr("Top of Stack: (sp=" INTPTR_FORMAT ")", p2i(sp));
@@ -463,8 +484,8 @@ void os::print_register_info(outputStream *st, const void *context) {
   if (context == NULL) return;
 
   const ucontext_t *uc = (const ucontext_t*)context;
-  intx* reg_area = (intx*)&uc->uc_mcontext.arm_r0;
 
+  intx* reg_area = (intx*)&uc->uc_mcontext.arm_r0;
   st->print_cr("Register to memory mapping:");
   st->cr();
   for (int r = 0; r < ARM_REGS_IN_CONTEXT; r++) {
@@ -473,8 +494,6 @@ void os::print_register_info(outputStream *st, const void *context) {
   }
   st->cr();
 }
-
-
 
 typedef int64_t cmpxchg_long_func_t(int64_t, int64_t, volatile int64_t*);
 

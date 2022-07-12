@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,6 +65,12 @@ import com.sun.source.doctree.*;
  * method is such that the result of the visitXYZ method will be the result of
  * the last child scanned.
  * </ul>
+ *
+ * @param <R> the return type of this visitor's methods.  Use {@link
+ *            Void} for visitors that do not need to return results.
+ * @param <P> the type of the additional parameter to this visitor's
+ *            methods.  Use {@code Void} for visitors that do not need an
+ *            additional parameter.
  *
  * @since 1.8
  */
@@ -638,7 +644,9 @@ public class DocTreeScanner<R,P> implements DocTreeVisitor<R,P> {
      */
     @Override
     public R visitValue(ValueTree node, P p) {
-        return scan(node.getReference(), p);
+        R r = scan(node.getFormat(), p);
+        r = scanAndReduce(node.getReference(), p, r);
+        return r;
     }
 
     /**

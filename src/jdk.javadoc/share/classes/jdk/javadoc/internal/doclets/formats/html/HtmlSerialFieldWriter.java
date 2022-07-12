@@ -72,7 +72,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
     @Override
     public Content getSerializableFields(String heading, Content source) {
         var section = HtmlTree.SECTION(HtmlStyle.detail);
-        if (source.isValid()) {
+        if (!source.isEmpty()) {
             Content headingContent = Text.of(heading);
             var serialHeading = HtmlTree.HEADING(Headings.SerializedForm.CLASS_SUBHEADING, headingContent);
             section.add(serialHeading);
@@ -134,7 +134,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
         CommentHelper ch = utils.getCommentHelper(field);
         List<? extends DocTree> description = ch.getDescription(serialFieldTag);
         if (!description.isEmpty()) {
-            Content serialFieldContent = new RawHtml(ch.getText(description));
+            Content serialFieldContent = RawHtml.of(ch.getText(description)); // should interpret tags
             var div = HtmlTree.DIV(HtmlStyle.block, serialFieldContent);
             content.add(div);
         }

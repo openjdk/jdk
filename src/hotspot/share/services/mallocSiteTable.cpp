@@ -178,28 +178,6 @@ MallocSiteHashtableEntry* MallocSiteTable::new_entry(const NativeCallStack& key,
   return ::new (p) MallocSiteHashtableEntry(key, flags);
 }
 
-void MallocSiteTable::reset() {
-  for (int index = 0; index < table_size; index ++) {
-    MallocSiteHashtableEntry* head = _table[index];
-    _table[index] = NULL;
-    delete_linked_list(head);
-  }
-
-  _hash_entry_allocation_stack = NULL;
-  _hash_entry_allocation_site = NULL;
-}
-
-void MallocSiteTable::delete_linked_list(MallocSiteHashtableEntry* head) {
-  MallocSiteHashtableEntry* p;
-  while (head != NULL) {
-    p = head;
-    head = (MallocSiteHashtableEntry*)head->next();
-    if (p != hash_entry_allocation_site()) {
-      delete p;
-    }
-  }
-}
-
 bool MallocSiteTable::walk_malloc_site(MallocSiteWalker* walker) {
   assert(walker != NULL, "NuLL walker");
   return walk(walker);

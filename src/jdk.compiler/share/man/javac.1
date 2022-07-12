@@ -691,7 +691,7 @@ Enables or disables specific groups of checks in documentation comments.
 .PP
 \f[I]group\f[R] can have one of the following values:
 \f[CB]accessibility\f[R], \f[CB]html\f[R], \f[CB]missing\f[R],
-\f[CB]reference\f[R], \f[CB]syntax\f[R]
+\f[CB]reference\f[R], \f[CB]syntax\f[R].
 .PP
 The variable \f[I]access\f[R] specifies the minimum visibility level of
 classes and members that the \f[CB]\-Xdoclint\f[R] option checks.
@@ -700,6 +700,11 @@ visible): \f[CB]public\f[R], \f[CB]protected\f[R], \f[CB]package\f[R],
 \f[CB]private\f[R].
 .PP
 The default \f[I]access\f[R] level is \f[CB]private\f[R].
+.PP
+When prefixed by \f[CB]doclint:\f[R], the \f[I]group\f[R] names and
+\f[CB]all\f[R] can be used with \f[CB]\@SuppressWarnings\f[R] to suppress
+warnings about documentation comments in parts of the code being
+compiled.
 .PP
 For more information about these groups of checks, see the
 \f[B]DocLint\f[R] section of the \f[CB]javadoc\f[R] command documentation.
@@ -753,8 +758,8 @@ Supported values for \f[I]key\f[R] are:
 .IP \[bu] 2
 \f[CB]all\f[R]: Enables all warnings.
 .IP \[bu] 2
-\f[CB]auxiliaryclass\f[R]: Warns about an auxiliary class that\[aq]s
-hidden in a source file, and is used from other files.
+\f[CB]auxiliaryclass\f[R]: Warns about an auxiliary class that is hidden
+in a source file, and is used from other files.
 .IP \[bu] 2
 \f[CB]cast\f[R]: Warns about the use of unnecessary casts.
 .IP \[bu] 2
@@ -778,6 +783,9 @@ switch statement to the next.
 \f[CB]finally\f[R]: Warns about \f[CB]finally\f[R] clauses that do not
 terminate normally.
 .IP \[bu] 2
+\f[CB]missing\-explicit\-ctor\f[R]: Warns about missing explicit
+constructors in public and protected classes in exported packages.
+.IP \[bu] 2
 \f[CB]module\f[R]: Warns about the module system\-related issues.
 .IP \[bu] 2
 \f[CB]opens\f[R]: Warns about the issues related to module opens.
@@ -789,8 +797,10 @@ options.
 .IP \[bu] 2
 \f[CB]overrides\f[R]: Warns about the issues related to method overrides.
 .IP \[bu] 2
-\f[CB]path\f[R]: Warns about the invalid path elements on the command l
-ine.
+\f[CB]path\f[R]: Warns about the invalid path elements on the command
+line.
+.IP \[bu] 2
+\f[CB]preview\f[R]: Warns about the use of preview language features.
 .IP \[bu] 2
 \f[CB]processing\f[R]: Warns about the issues related to annotation
 processing.
@@ -814,8 +824,17 @@ element.
 \f[CB]static\f[R]: Warns about the accessing a static member using an
 instance.
 .IP \[bu] 2
-\f[CB]try\f[R]: Warns about the issues relating to the use of try blocks (
-that is, try\-with\-resources).
+\f[CB]strictfp\f[R]: Warns about unnecessary use of the \f[CB]strictfp\f[R]
+modifier.
+.IP \[bu] 2
+\f[CB]synchronization\f[R]: Warns about synchronization attempts on
+instances of value\-based classes.
+.IP \[bu] 2
+\f[CB]text\-blocks\f[R]: Warns about inconsistent white space characters
+in text block indentation.
+.IP \[bu] 2
+\f[CB]try\f[R]: Warns about the issues relating to the use of try blocks
+(that is, try\-with\-resources).
 .IP \[bu] 2
 \f[CB]unchecked\f[R]: Warns about the unchecked operations.
 .IP \[bu] 2
@@ -823,6 +842,10 @@ that is, try\-with\-resources).
 methods.
 .IP \[bu] 2
 \f[CB]none\f[R]: Disables all warnings.
+.PP
+With the exception of \f[CB]all\f[R] and \f[CB]none\f[R], the keys can be
+used with the \f[CB]\@SuppressWarnings\f[R] annotation to suppress
+warnings in a part of the source code being compiled.
 .PP
 See \f[B]Examples of Using \-Xlint keys\f[R].
 .RE

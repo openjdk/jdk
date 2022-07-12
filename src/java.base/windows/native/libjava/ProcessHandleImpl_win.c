@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -417,7 +417,6 @@ Java_java_lang_ProcessHandleImpl_00024Info_info0(JNIEnv *env,
                                                  jobject jinfo,
                                                  jlong jpid) {
     DWORD pid = (DWORD)jpid;
-    int ret = 0;
     HANDLE handle =
         OpenProcess(THREAD_QUERY_INFORMATION | PROCESS_QUERY_LIMITED_INFORMATION,
                     FALSE, pid);

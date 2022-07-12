@@ -1,0 +1,46 @@
+
+com/sun/jdi/EATests.java#id0                                    8264699 generic-all
+
+##########
+## Tests failing when main() is executed in additional vthread or in vthread instead of thread
+#
+
+com/sun/jdi/DeferredStepTest.java 8285422 generic-all
+com/sun/jdi/EarlyReturnTest.java 8285422 generic-all
+com/sun/jdi/ExceptionEvents.java 8285422 generic-all
+com/sun/jdi/FetchLocals.java 8285422 generic-all
+com/sun/jdi/Frames2Test.java 8285422 generic-all
+com/sun/jdi/GetSetLocalTest.java 8285422 generic-all
+com/sun/jdi/JdbMethodExitTest.java 8285422 generic-all
+com/sun/jdi/JdbStepTest.java 8285422 generic-all
+com/sun/jdi/JdbStopThreadTest.java 8285422 generic-all
+com/sun/jdi/JdbStopThreadidTest.java 8285422 generic-all
+com/sun/jdi/LaunchCommandLine.java 8285422 generic-all
+com/sun/jdi/MethodEntryExitEvents.java 8285422 generic-all
+com/sun/jdi/MultiBreakpointsTest.java 8285422 generic-all
+com/sun/jdi/NativeInstanceFilter.java 8285422 generic-all
+com/sun/jdi/PopAndStepTest.java 8285422 generic-all
+com/sun/jdi/PopAsynchronousTest.java 8285422 generic-all
+com/sun/jdi/PopSynchronousTest.java 8285422 generic-all
+com/sun/jdi/RedefineCrossStart.java 8285422 generic-all
+com/sun/jdi/RedefineG.java 8285422 generic-all
+com/sun/jdi/RedefineNestmateAttr/TestNestmateAttr.java 8285422 generic-all
+com/sun/jdi/RedefineTTYLineNumber.java 8285422 generic-all
+com/sun/jdi/ReferrersTest.java 8285422 generic-all
+com/sun/jdi/ResumeAfterThreadResumeCallTest.java 8285422 generic-all
+com/sun/jdi/SetLocalWhileThreadInNative.java 8285422 generic-all
+com/sun/jdi/StepTest.java 8285422 generic-all
+com/sun/jdi/redefine/RedefineTest.java 8285422 generic-all
+com/sun/jdi/redefineMethod/RedefineTest.java 8285422 generic-all
+
+####
+# JDI SDE Tests
+# Use custom classpath
+
+com/sun/jdi/sde/FilterMangleTest.java 8285423 generic-all
+com/sun/jdi/sde/MangleTest.java 8285423 generic-all
+com/sun/jdi/sde/MangleStepTest.java 8285423 generic-all
+com/sun/jdi/sde/TemperatureTableTest.java 8285423 generic-all
+com/sun/jdi/sde/SourceDebugExtensionTest.java 8285423 generic-all
+
+com/sun/jdi/EATests.java#id0 8264699 generic-all

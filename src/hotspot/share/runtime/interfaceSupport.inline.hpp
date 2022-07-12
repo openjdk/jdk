@@ -30,12 +30,12 @@
 
 #include "gc/shared/gc_globals.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
-#include "runtime/thread.hpp"
 #include "runtime/threadWXSetters.inline.hpp"
 #include "runtime/vmOperations.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -113,7 +113,7 @@ class ThreadStateTransition : public StackObj {
       thread->check_possible_safepoint();
 
       // Once we are in native/blocked vm expects stack to be walkable
-      thread->frame_anchor()->make_walkable(thread);
+      thread->frame_anchor()->make_walkable();
       OrderAccess::storestore(); // Keep thread_state change and make_walkable() separate.
       thread->set_thread_state(to);
     }

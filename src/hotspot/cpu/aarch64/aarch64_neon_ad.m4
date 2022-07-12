@@ -349,6 +349,25 @@ VECTOR_CAST_F2F(F, D, X, D, fcvtl, 2S, 2D)
 VECTOR_CAST_F2F(D, F, D, X, fcvtn, 2D, 2S)
 dnl
 
+define(`VECTOR_JAVA_FROUND', `
+instruct vround$7$2to$5$3($7 dst, $7 src, $7 tmp1, $7 tmp2, $7 tmp3)
+%{
+  predicate(UseSVE == 0 &&
+            n->as_Vector()->length() == $5 && n->bottom_type()->is_vect()->element_basic_type() == T_$6);
+  match(Set dst (RoundV$1 src));
+  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, TEMP tmp3);
+  format %{ "vround  $dst, $4, $src\t# round $7 $2 to $5$3 vector" %}
+  ins_encode %{
+    __ vector_round_neon(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg),
+                         as_FloatRegister($tmp1$$reg), as_FloatRegister($tmp2$$reg),
+                         as_FloatRegister($tmp3$$reg), __ $4);
+  %}
+  ins_pipe(pipe_class_default);
+%}')dnl           $1  $2  $3   $4 $5    $6    $7
+VECTOR_JAVA_FROUND(F, 2F,  I, T2S, 2,  INT, vecD)
+VECTOR_JAVA_FROUND(F, 4F,  I, T4S, 4,  INT, vecX)
+VECTOR_JAVA_FROUND(D, 2D,  L, T2D, 2, LONG, vecX)
+
 // ------------------------------ Reduction -------------------------------
 dnl
 define(`REDUCE_ADD_BORS', `
@@ -868,53 +887,55 @@ REDUCE_LOGIC_OP_2L(eor, Xor, eor )
 dnl
 
 // ------------------------------ Vector insert ---------------------------------
+dnl VECTOR_INSERT_I($1,        $2,                     $3,          $4,   $5)
+dnl VECTOR_INSERT_I(rule_name, vector_length_in_bytes, reg_variant, vreg, ireg)
 define(`VECTOR_INSERT_I', `
-instruct insert$1$2`'(vec$3 dst, vec$3 src, iReg$4`'ORL2I($4) val, immI idx)
+instruct $1($4 dst, $4 src, $5 val, immI idx)
 %{
-  predicate(n->bottom_type()->is_vect()->element_basic_type() == T_`'TYPE2DATATYPE($2));
+  predicate(ifelse($3, D, n->bottom_type()->is_vect()->element_basic_type() == T_LONG,
+            (n->bottom_type()->is_vect()->element_basic_type() == T_BYTE ||
+             n->bottom_type()->is_vect()->element_basic_type() == T_SHORT ||
+             n->bottom_type()->is_vect()->element_basic_type() == T_INT)));
   match(Set dst (VectorInsert (Binary src val) idx));
-  ins_cost(INSN_COST);
-  format %{ "orr    $dst, T$5, $src, $src\n\t"
-            "mov    $dst, iTYPE2SIMD($2), $idx, $val\t# insert into vector($1$2)" %}
+  ins_cost(2 * INSN_COST);
+  format %{ "orr    $dst, T$2B, $src, $src\n\t"
+            "mov    $dst, $3, $idx, $val\t`#' insert into vector ($3)" %}
   ins_encode %{
     if (as_FloatRegister($dst$$reg) != as_FloatRegister($src$$reg)) {
-      __ orr(as_FloatRegister($dst$$reg), __ T$5,
+      __ orr(as_FloatRegister($dst$$reg), __ T$2B,
              as_FloatRegister($src$$reg), as_FloatRegister($src$$reg));
     }
-    __ mov(as_FloatRegister($dst$$reg), __ iTYPE2SIMD($2), $idx$$constant, $val$$Register);
+    __ mov(as_FloatRegister($dst$$reg), __ ifelse($3, D, D, elemType_to_regVariant(Matcher::vector_element_basic_type(this))),
+           $idx$$constant, $val$$Register);
   %}
   ins_pipe(pipe_slow);
 %}')dnl
-dnl             $1  $2 $3 $4 $5
-VECTOR_INSERT_I(8,  B, D, I, 8B)
-VECTOR_INSERT_I(16, B, X, I, 16B)
-VECTOR_INSERT_I(4,  S, D, I, 8B)
-VECTOR_INSERT_I(8,  S, X, I, 16B)
-VECTOR_INSERT_I(2,  I, D, I, 8B)
-VECTOR_INSERT_I(4,  I, X, I, 16B)
-VECTOR_INSERT_I(2,  L, X, L, 16B)
+dnl             $1        $2  $3     $4    $5
+VECTOR_INSERT_I(insertID, 8,  B/H/S, vecD, iRegIorL2I)
+VECTOR_INSERT_I(insertIX, 16, B/H/S, vecX, iRegIorL2I)
+VECTOR_INSERT_I(insert2L, 16, D,     vecX, iRegL)
 dnl
 define(`VECTOR_INSERT_F', `
-instruct insert$1`'(vec$2 dst, vec$2 src, vReg$3 val, immI idx)
+instruct insert$3`'(vec$2 dst, vec$2 src, vReg$1 val, immI idx)
 %{
-  predicate(n->bottom_type()->is_vect()->element_basic_type() == T_`'TYPE2DATATYPE($3));
+  predicate(n->bottom_type()->is_vect()->element_basic_type() == T_`'TYPE2DATATYPE($1));
   match(Set dst (VectorInsert (Binary src val) idx));
-  ins_cost(INSN_COST);
+  ins_cost(2 * INSN_COST);
   effect(TEMP_DEF dst);
-  format %{ "orr    $dst, T$4, $src, $src\n\t"
-            "ins    $dst, $5, $val, $idx, 0\t# insert into vector($1)" %}
+  format %{ "orr    $dst, ifelse($2, D, T8B, T16B), $src, $src\n\t"
+            "ins    $dst, ifelse($1, F, S, D), $val, $idx, 0\t# insert into vector($3)" %}
   ins_encode %{
-    __ orr(as_FloatRegister($dst$$reg), __ T$4,
+    __ orr(as_FloatRegister($dst$$reg), __ ifelse($2, D, T8B, T16B),
            as_FloatRegister($src$$reg), as_FloatRegister($src$$reg));
-    __ ins(as_FloatRegister($dst$$reg), __ $5,
+    __ ins(as_FloatRegister($dst$$reg), __ ifelse($1, F, S, D),
            as_FloatRegister($val$$reg), $idx$$constant, 0);
   %}
   ins_pipe(pipe_slow);
 %}')dnl
-dnl             $1  $2 $3 $4   $5
-VECTOR_INSERT_F(2F, D, F, 8B,  S)
-VECTOR_INSERT_F(4F, X, F, 16B, S)
-VECTOR_INSERT_F(2D, X, D, 16B, D)
+dnl             $1 $2 $3
+VECTOR_INSERT_F(F, D, 2F)
+VECTOR_INSERT_F(F, X, 4F)
+VECTOR_INSERT_F(D, X, 2D)
 dnl
 
 // ------------------------------ Vector extract ---------------------------------
@@ -947,8 +968,15 @@ instruct extract$1$2`'(vReg$2 dst, vec$3 src, immI idx)
   ins_cost(INSN_COST);
   format %{ "ins   $dst, $4, $src, 0, $idx\t# extract from vector($1$2)" %}
   ins_encode %{
-    __ ins(as_FloatRegister($dst$$reg), __ $4,
-           as_FloatRegister($src$$reg), 0, $idx$$constant);
+    if ((0 == $idx$$constant) &&
+        (as_FloatRegister($dst$$reg) == as_FloatRegister($src$$reg))) {
+      /* empty */
+    } else if ($idx$$constant == 0) {
+      __ ifelse($2, F, fmovs, fmovd)(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg));
+    } else {
+      __ ins(as_FloatRegister($dst$$reg), __ $4,
+             as_FloatRegister($src$$reg), 0, $idx$$constant);
+    }
   %}
   ins_pipe(pipe_class_default);
 %}')dnl
@@ -2171,7 +2199,7 @@ instruct vsll$1$2_imm`'(vec$4 dst, vec$4 src, immI shift) %{
 %}')dnl
 dnl
 define(`VSRA_IMM', `
-instruct vsra$1$2_imm`'(vec$4 dst, vec$4 src, immI shift) %{
+instruct vsra$1$2_imm`'(vec$4 dst, vec$4 src, immI_positive shift) %{
   PREDICATE(`$1$2', $1, assert_not_var_shift(n))
   match(Set dst (RShiftV$2 src (RShiftCntV shift)));
   ins_cost(INSN_COST);
@@ -2193,7 +2221,7 @@ instruct vsra$1$2_imm`'(vec$4 dst, vec$4 src, immI shift) %{
 %}')dnl
 dnl
 define(`VSRL_IMM', `
-instruct vsrl$1$2_imm`'(vec$4 dst, vec$4 src, immI shift) %{
+instruct vsrl$1$2_imm`'(vec$4 dst, vec$4 src, immI_positive shift) %{
   PREDICATE(`$1$2', $1, assert_not_var_shift(n))
   match(Set dst (URShiftV$2 src (RShiftCntV shift)));
   ins_cost(INSN_COST);
@@ -2225,7 +2253,7 @@ instruct vsrl$1$2_imm`'(vec$4 dst, vec$4 src, immI shift) %{
 %}')dnl
 dnl
 define(`VSRLA_IMM', `
-instruct vsrla$1$2_imm`'(vec$4 dst, vec$4 src, immI shift) %{
+instruct vsrla$1$2_imm`'(vec$4 dst, vec$4 src, immI_positive shift) %{
   predicate(n->as_Vector()->length() == $1);
   match(Set dst (AddV$2 dst (URShiftV$2 src (RShiftCntV shift))));
   ins_cost(INSN_COST);
@@ -2249,7 +2277,7 @@ instruct vsrla$1$2_imm`'(vec$4 dst, vec$4 src, immI shift) %{
 %}')dnl
 dnl
 define(`VSRAA_IMM', `
-instruct vsraa$1$2_imm`'(vec$4 dst, vec$4 src, immI shift) %{
+instruct vsraa$1$2_imm`'(vec$4 dst, vec$4 src, immI_positive shift) %{
   predicate(n->as_Vector()->length() == $1);
   match(Set dst (AddV$2 dst (RShiftV$2 src (RShiftCntV shift))));
   ins_cost(INSN_COST);
@@ -2417,28 +2445,50 @@ instruct vround2D_reg(vecX dst, vecX src, immI rmode) %{
   ins_pipe(vdop_fp128);
 %}
 dnl
-define(`VPOPCOUNT', `
-instruct vpopcount$1$2`'(vec$5 dst, vec$5 src) %{
-  predicate(UsePopCountInstruction && n->as_Vector()->length() == $1);
-  match(Set dst (PopCountVI src));
-  format %{
-    "cnt     $dst, $src\t# vector ($3B)\n\t"
-    "uaddlp  $dst, $dst\t# vector ($3B)\n\t"
-    "uaddlp  $dst, $dst\t# vector ($4H)"
-  %}
-  ins_encode %{
-    __ cnt(as_FloatRegister($dst$$reg), __ T$3B,
-           as_FloatRegister($src$$reg));
-    __ uaddlp(as_FloatRegister($dst$$reg), __ T$3B,
+define(`VPOPCOUNT', `dnl
+ifelse($1$2, `LD', `
+// If the PopCountVL is generated by auto-vectorization, the dst basic
+// type is T_INT. And once we have unified the type definition for
+// Vector API and auto-vectorization, this rule can be merged with
+// "vpopcountLX" rule.', `')
+instruct vpopcount$1$2`'(vec$2 dst, vec$3 src) %{
+  predicate(n->as_Vector()->length_in_bytes() $4 16`'ifelse($1$2, `LD', ` &&
+            n->bottom_type()->is_vect()->element_basic_type() == T_INT', $1$2, `LX', ` &&
+            n->bottom_type()->is_vect()->element_basic_type() == T_LONG', `'));
+  match(Set dst (PopCountV$1 src));
+  ins_cost($5 * INSN_COST);
+  format %{ "vpopcount$1  $dst, $src\t# vector ($6)" %}
+  ins_encode %{dnl
+ifelse($1, `I', `
+    BasicType bt = Matcher::vector_element_basic_type(this);', `')
+    __ cnt(as_FloatRegister($dst$$reg), __ T`'ifelse($3, D, 8, 16)B,
+           as_FloatRegister($src$$reg));dnl
+ifelse($1, `L', `
+    __ uaddlp(as_FloatRegister($dst$$reg), __ T16B,
               as_FloatRegister($dst$$reg));
-    __ uaddlp(as_FloatRegister($dst$$reg), __ T$4H,
+    __ uaddlp(as_FloatRegister($dst$$reg), __ T8H,
               as_FloatRegister($dst$$reg));
+    __ uaddlp(as_FloatRegister($dst$$reg), __ T4S,
+              as_FloatRegister($dst$$reg));', `
+    if (bt == T_SHORT || bt == T_INT) {
+      __ uaddlp(as_FloatRegister($dst$$reg), __ T`'ifelse($2, D, 8, 16)B,
+                as_FloatRegister($dst$$reg));
+      if (bt == T_INT) {
+        __ uaddlp(as_FloatRegister($dst$$reg), __ T`'ifelse($2, D, 4, 8)H,
+                  as_FloatRegister($dst$$reg));
+      }
+    }')dnl
+ifelse($1$2, `LD', `
+    __ xtn(as_FloatRegister($dst$$reg), __ T2S,
+           as_FloatRegister($dst$$reg), __ T2D);', `')
   %}
   ins_pipe(pipe_class_default);
 %}')dnl
-dnl       $1 $2 $3  $4 $5
-VPOPCOUNT(4, I, 16, 8, X)
-VPOPCOUNT(2, I, 8,  4, D)
+dnl       $1 $2 $3 $4  $5 $6
+VPOPCOUNT(I, D, D, <,  3, 8B/4H/2S)
+VPOPCOUNT(I, X, X, ==, 3, 16B/8H/4S)
+VPOPCOUNT(L, D, X, <,  5, 2S)
+VPOPCOUNT(L, X, X, ==, 4, 2D)
 dnl
 dnl VMASK_TRUECOUNT($1,     $2 )
 dnl VMASK_TRUECOUNT(suffix, reg)
@@ -2619,3 +2669,81 @@ instruct vmask_tolong16B(iRegLNoSp dst, vecX src) %{
   %}
   ins_pipe(pipe_slow);
 %}
+
+dnl
+dnl CLTZ_D($1     )
+dnl CLTZ_D(op_name)
+define(`CLTZ_D', `
+instruct count$1D(vecD dst, vecD src) %{
+  predicate(n->as_Vector()->length_in_bytes() == 8);
+  match(Set dst (Count$1 src));
+  ins_cost(ifelse($1, `TrailingZerosV', `3 * ', `')INSN_COST);
+  format %{ "count$1 $dst, $src\t# vector (8B/4H/2S)" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    Assembler::SIMD_Arrangement size = __ esize2arrangement((unsigned)type2aelembytes(bt), false);dnl
+ifelse($1, `TrailingZerosV', `
+    __ neon_reverse_bits(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg), bt, false);', `')
+    __ clz(as_FloatRegister($dst$$reg), size, as_FloatRegister($ifelse($1, `TrailingZerosV', dst, src)$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+dnl
+dnl CLTZ_X($1     )
+dnl CLTZ_X(op_name)
+define(`CLTZ_X', `
+instruct count$1X(vecX dst, vecX src) %{
+  predicate(n->as_Vector()->length_in_bytes() == 16);
+  match(Set dst (Count$1 src));
+  ins_cost(ifelse($1, `TrailingZerosV', `3 * ', `')INSN_COST);
+  format %{ "count$1 $dst, $src\t# vector (16B/8H/4S/2D)" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    Assembler::SIMD_Arrangement size = __ esize2arrangement((unsigned)type2aelembytes(bt), true);dnl
+ifelse($1, `TrailingZerosV', `
+    __ neon_reverse_bits(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg), bt, true);', `')
+    if (bt != T_LONG) {
+      __ clz(as_FloatRegister($dst$$reg), size, as_FloatRegister($ifelse($1, `TrailingZerosV', dst, src)$$reg));
+    } else {
+      __ umov(rscratch1, as_FloatRegister($ifelse($1, `TrailingZerosV', dst, src)$$reg), __ D, 0);
+      __ clz(rscratch1, rscratch1);
+      __ mov(as_FloatRegister($dst$$reg), __ D, 0, rscratch1);
+      __ umov(rscratch1, as_FloatRegister($ifelse($1, `TrailingZerosV', dst, src)$$reg), __ D, 1);
+      __ clz(rscratch1, rscratch1);
+      __ mov(as_FloatRegister($dst$$reg), __ D, 1, rscratch1);
+    }
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+dnl
+//------------------------- CountLeadingZerosV -----------------------------
+CLTZ_D(LeadingZerosV)
+CLTZ_X(LeadingZerosV)
+
+//------------------------- CountTrailingZerosV ----------------------------
+CLTZ_D(TrailingZerosV)
+CLTZ_X(TrailingZerosV)
+
+dnl
+dnl REVERSE($1,        $2,      $3,   $4  )
+dnl REVERSE(insn_name, op_name, type, insn)
+define(`REVERSE', `
+instruct $1(vec$3 dst, vec$3 src) %{
+  predicate(n->as_Vector()->length_in_bytes() == ifelse($3, D, 8, 16));
+  match(Set dst ($2 src));
+  ins_cost(ifelse($2, `ReverseV', `2 * ', `')INSN_COST);
+  format %{ "$2 $dst, $src\t# vector ($3)" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ $4(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg), bt, ifelse($3, D, false, true));
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+dnl
+//------------------------------ ReverseV -----------------------------------
+REVERSE(vreverseD, ReverseV, D, neon_reverse_bits)
+REVERSE(vreverseX, ReverseV, X, neon_reverse_bits)
+
+//---------------------------- ReverseBytesV --------------------------------
+REVERSE(vreverseBytesD, ReverseBytesV, D, neon_reverse_bytes)
+REVERSE(vreverseBytesX, ReverseBytesV, X, neon_reverse_bytes)

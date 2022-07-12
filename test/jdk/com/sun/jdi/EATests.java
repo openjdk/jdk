@@ -31,8 +31,8 @@
  * @requires ((vm.compMode == "Xmixed") & vm.compiler2.enabled)
  * @library /test/lib /test/hotspot/jtreg
  *
- * @run build TestScaffold VMConnection TargetListener TargetAdapter sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run compile -g EATests.java
  * @run driver EATests
  *                 -XX:+UnlockDiagnosticVMOptions
@@ -94,8 +94,8 @@
  *
  * @library /test/lib /test/hotspot/jtreg
  *
- * @run build TestScaffold VMConnection TargetListener TargetAdapter sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run compile -g EATests.java
  *
  * @comment Test with Graal. Some testcases are expected to fail because Graal does not provide all information about non-escaping
@@ -122,8 +122,8 @@ import java.util.Map;
 import java.util.function.Function;
 
 import jdk.test.lib.Asserts;
-import sun.hotspot.WhiteBox;
-import sun.hotspot.gc.GC;
+import jdk.test.whitebox.WhiteBox;
+import jdk.test.whitebox.gc.GC;
 
 
 //
@@ -1901,13 +1901,13 @@ class EARelockingObjectCurrentlyWaitingOn extends EATestCaseBaseDebugger {
             Thread.sleep(100);
             env.targetMainThread.suspend();
             printStack(env.targetMainThread);
-            inWait = env.targetMainThread.frame(0).location().method().name().equals("wait");
+            inWait = env.targetMainThread.frame(0).location().method().name().equals("wait0");
             if (!inWait) {
                 msg("Target not yet in java.lang.Object.wait(long).");
                 env.targetMainThread.resume();
             }
         } while(!inWait);
-        StackFrame testMethodFrame = env.targetMainThread.frame(4);
+        StackFrame testMethodFrame = env.targetMainThread.frame(5);
         // Access triggers relocking of all eliminated locks, including nested locks of l1 which references
         // the object on which the target main thread is currently waiting.
         ObjectReference l0 = getLocalRef(testMethodFrame, EARelockingObjectCurrentlyWaitingOnTarget.ForLocking.class.getName(), "l0");

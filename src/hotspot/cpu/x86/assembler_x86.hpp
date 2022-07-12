@@ -49,7 +49,9 @@ class Argument {
     n_int_register_parameters_j   = 6, // j_rarg0, j_rarg1, ...
     n_float_register_parameters_j = 8  // j_farg0, j_farg1, ...
 #else
-    n_register_parameters = 0   // 0 registers used to pass arguments
+    n_register_parameters = 0,   // 0 registers used to pass arguments
+    n_int_register_parameters_j   = 0,
+    n_float_register_parameters_j = 0
 #endif // _LP64
   };
 };
@@ -1167,9 +1169,10 @@ private:
   void vcvtps2pd(XMMRegister dst, XMMRegister src, int vector_len);
   void vcvtpd2ps(XMMRegister dst, XMMRegister src, int vector_len);
 
-  // Convert vector float and int
+  // Convert vector float to int/long
   void vcvtps2dq(XMMRegister dst, XMMRegister src, int vector_len);
   void vcvttps2dq(XMMRegister dst, XMMRegister src, int vector_len);
+  void evcvttps2qq(XMMRegister dst, XMMRegister src, int vector_len);
 
   // Convert vector long to vector FP
   void evcvtqq2ps(XMMRegister dst, XMMRegister src, int vector_len);
@@ -1187,6 +1190,9 @@ private:
   void evpmovqb(XMMRegister dst, XMMRegister src, int vector_len);
   void evpmovqw(XMMRegister dst, XMMRegister src, int vector_len);
 
+  // Evex casts with signed saturation
+  void evpmovsqd(XMMRegister dst, XMMRegister src, int vector_len);
+
   //Abs of packed Integer values
   void pabsb(XMMRegister dst, XMMRegister src);
   void pabsw(XMMRegister dst, XMMRegister src);
@@ -1195,9 +1201,6 @@ private:
   void vpabsw(XMMRegister dst, XMMRegister src, int vector_len);
   void vpabsd(XMMRegister dst, XMMRegister src, int vector_len);
   void evpabsq(XMMRegister dst, XMMRegister src, int vector_len);
-
-  void divl(Register src);
-  void divq(Register src);
 
   // Divide Scalar Double-Precision Floating-Point Values
   void divsd(XMMRegister dst, Address src);
@@ -1367,9 +1370,12 @@ private:
   void hlt();
 
   void idivl(Register src);
-  void idivl(Address src);
+  void divl(Register src); // Unsigned division
+
+#ifdef _LP64
   void idivq(Register src);
-  void idivq(Address src);
+  void divq(Register src); // Unsigned division
+#endif
 
   void imull(Register src);
   void imull(Register dst, Register src);
@@ -1441,9 +1447,11 @@ private:
   void size_prefix();
 
   void lzcntl(Register dst, Register src);
+  void lzcntl(Register dst, Address src);
 
 #ifdef _LP64
   void lzcntq(Register dst, Register src);
+  void lzcntq(Register dst, Address src);
 #endif
 
   enum Membar_mask_bits {
@@ -1552,27 +1560,33 @@ private:
   void vmovdqu(XMMRegister dst, XMMRegister src);
 
    // Move Unaligned 512bit Vector
-  void evmovdqub(Address dst, XMMRegister src, bool merge, int vector_len);
-  void evmovdqub(XMMRegister dst, Address src, bool merge, int vector_len);
-  void evmovdqub(XMMRegister dst, XMMRegister src, bool merge, int vector_len);
+  void evmovdqub(XMMRegister dst, XMMRegister src, int vector_len);
+  void evmovdqub(XMMRegister dst, Address src, int vector_len);
+  void evmovdqub(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
   void evmovdqub(XMMRegister dst, KRegister mask, Address src, bool merge, int vector_len);
   void evmovdqub(Address dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
-  void evmovdquw(Address dst, XMMRegister src, bool merge, int vector_len);
-  void evmovdquw(Address dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
-  void evmovdquw(XMMRegister dst, Address src, bool merge, int vector_len);
+
+  void evmovdquw(XMMRegister dst, Address src, int vector_len);
+  void evmovdquw(Address dst, XMMRegister src, int vector_len);
+  void evmovdquw(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
   void evmovdquw(XMMRegister dst, KRegister mask, Address src, bool merge, int vector_len);
-  void evmovdqul(Address dst, XMMRegister src, int vector_len);
-  void evmovdqul(XMMRegister dst, Address src, int vector_len);
+  void evmovdquw(Address dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
+
   void evmovdqul(XMMRegister dst, XMMRegister src, int vector_len);
-  void evmovdqul(Address dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
-  void evmovdqul(XMMRegister dst, KRegister mask, Address src, bool merge, int vector_len);
+  void evmovdqul(XMMRegister dst, Address src, int vector_len);
+  void evmovdqul(Address dst, XMMRegister src, int vector_len);
+
   void evmovdqul(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
+  void evmovdqul(XMMRegister dst, KRegister mask, Address src, bool merge, int vector_len);
+  void evmovdqul(Address dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
+
   void evmovdquq(Address dst, XMMRegister src, int vector_len);
   void evmovdquq(XMMRegister dst, Address src, int vector_len);
   void evmovdquq(XMMRegister dst, XMMRegister src, int vector_len);
-  void evmovdquq(Address dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
-  void evmovdquq(XMMRegister dst, KRegister mask, Address src, bool merge, int vector_len);
+
   void evmovdquq(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
+  void evmovdquq(XMMRegister dst, KRegister mask, Address src, bool merge, int vector_len);
+  void evmovdquq(Address dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
 
   // Move lower 64bit to high 64bit in 128bit register
   void movlhps(XMMRegister dst, XMMRegister src);
@@ -1776,6 +1790,7 @@ private:
   void evpcmpeqd(KRegister kdst, KRegister mask, XMMRegister nds, Address src, int vector_len);
 
   void pcmpeqq(XMMRegister dst, XMMRegister src);
+  void evpcmpeqq(KRegister kdst, KRegister mask, XMMRegister nds, XMMRegister src, int vector_len);
   void vpcmpCCq(XMMRegister dst, XMMRegister nds, XMMRegister src, int cond_encoding, int vector_len);
   void vpcmpeqq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void evpcmpeqq(KRegister kdst, XMMRegister nds, XMMRegister src, int vector_len);
@@ -1789,6 +1804,13 @@ private:
   void vmovmskps(Register dst, XMMRegister src, int vec_enc);
   void vmovmskpd(Register dst, XMMRegister src, int vec_enc);
   void vpmaskmovd(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+  void vpmaskmovq(XMMRegister dst, XMMRegister mask, Address src, int vector_len);
+
+
+  void vmaskmovps(XMMRegister dst, Address src, XMMRegister mask, int vector_len);
+  void vmaskmovpd(XMMRegister dst, Address src, XMMRegister mask, int vector_len);
+  void vmaskmovps(Address dst, XMMRegister src, XMMRegister mask, int vector_len);
+  void vmaskmovpd(Address dst, XMMRegister src, XMMRegister mask, int vector_len);
 
   // SSE 4.1 extract
   void pextrd(Register dst, XMMRegister src, int imm8);
@@ -1870,8 +1892,10 @@ private:
   void popcntl(Register dst, Address src);
   void popcntl(Register dst, Register src);
 
-  void vpopcntd(XMMRegister dst, XMMRegister src, int vector_len);
-  void vpopcntq(XMMRegister dst, XMMRegister src, int vector_len);
+  void evpopcntb(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
+  void evpopcntw(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
+  void evpopcntd(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
+  void evpopcntq(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
 
 #ifdef _LP64
   void popcntq(Register dst, Address src);
@@ -1937,6 +1961,12 @@ private:
   void punpckldq(XMMRegister dst, Address src);
   void vpunpckldq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
 
+  // Interleave High Word
+  void vpunpckhwd(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+
+  // Interleave Low Word
+  void vpunpcklwd(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+
   // Interleave High Doublewords
   void vpunpckhdq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
 
@@ -1979,8 +2009,10 @@ private:
   void rolq(Register dst, int imm8);
   void rorq(Register dst);
   void rorq(Register dst, int imm8);
+  void rorxl(Register dst, Register src, int imm8);
+  void rorxl(Register dst, Address src, int imm8);
   void rorxq(Register dst, Register src, int imm8);
-  void rorxd(Register dst, Register src, int imm8);
+  void rorxq(Register dst, Address src, int imm8);
 #endif
 
   void sahf();
@@ -2116,7 +2148,9 @@ private:
 
   // BMI - count trailing zeros
   void tzcntl(Register dst, Register src);
+  void tzcntl(Register dst, Address src);
   void tzcntq(Register dst, Register src);
+  void tzcntq(Register dst, Address src);
 
   // Unordered Compare Scalar Double-Precision Floating-Point Values and set EFLAGS
   void ucomisd(XMMRegister dst, Address src);
@@ -2192,14 +2226,29 @@ private:
   void vminss(XMMRegister dst, XMMRegister nds, XMMRegister src);
   void vminsd(XMMRegister dst, XMMRegister nds, XMMRegister src);
 
+  void sarxl(Register dst, Register src1, Register src2);
+  void sarxl(Register dst, Address src1, Register src2);
+  void sarxq(Register dst, Register src1, Register src2);
+  void sarxq(Register dst, Address src1, Register src2);
   void shlxl(Register dst, Register src1, Register src2);
+  void shlxl(Register dst, Address src1, Register src2);
   void shlxq(Register dst, Register src1, Register src2);
+  void shlxq(Register dst, Address src1, Register src2);
   void shrxl(Register dst, Register src1, Register src2);
+  void shrxl(Register dst, Address src1, Register src2);
   void shrxq(Register dst, Register src1, Register src2);
+  void shrxq(Register dst, Address src1, Register src2);
 
   void bzhiq(Register dst, Register src1, Register src2);
-  void pdep(Register dst, Register src1, Register src2);
-  void pext(Register dst, Register src1, Register src2);
+
+  void pextl(Register dst, Register src1, Register src2);
+  void pdepl(Register dst, Register src1, Register src2);
+  void pextq(Register dst, Register src1, Register src2);
+  void pdepq(Register dst, Register src1, Register src2);
+  void pextl(Register dst, Register src1, Address src2);
+  void pdepl(Register dst, Register src1, Address src2);
+  void pextq(Register dst, Register src1, Address src2);
+  void pdepq(Register dst, Register src1, Address src2);
 
 
   //====================VECTOR ARITHMETIC=====================================
@@ -2429,6 +2478,8 @@ private:
   void evpternlogq(XMMRegister dst, int imm8, KRegister mask, XMMRegister src2, XMMRegister src3, bool merge, int vector_len);
   void evpternlogq(XMMRegister dst, int imm8, KRegister mask, XMMRegister src2, Address src3, bool merge, int vector_len);
 
+  void evplzcntd(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
+  void evplzcntq(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
 
   // Sub packed integers
   void psubb(XMMRegister dst, XMMRegister src);
@@ -2573,6 +2624,21 @@ private:
   void vpternlogd(XMMRegister dst, int imm8, XMMRegister src2, Address     src3, int vector_len);
   void vpternlogq(XMMRegister dst, int imm8, XMMRegister src2, XMMRegister src3, int vector_len);
 
+  // Vector compress/expand instructions.
+  void evpcompressb(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
+  void evpcompressw(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
+  void evpcompressd(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
+  void evpcompressq(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
+  void evcompressps(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
+  void evcompresspd(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
+
+  void evpexpandb(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
+  void evpexpandw(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
+  void evpexpandd(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
+  void evpexpandq(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
+  void evexpandps(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
+  void evexpandpd(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
+
   // Vector Rotate Left/Right instruction.
   void evprolvd(XMMRegister dst, XMMRegister src, XMMRegister shift, int vector_len);
   void evprolvq(XMMRegister dst, XMMRegister src, XMMRegister shift, int vector_len);
@@ -2714,6 +2780,10 @@ private:
   void evpmovm2d(XMMRegister dst, KRegister src, int vector_len);
   void evpmovm2q(XMMRegister dst, KRegister src, int vector_len);
 
+  // floating point class tests
+  void vfpclassss(KRegister kdst, XMMRegister src, uint8_t imm8);
+  void vfpclasssd(KRegister kdst, XMMRegister src, uint8_t imm8);
+
   // Vector blends
   void blendvps(XMMRegister dst, XMMRegister src);
   void blendvpd(XMMRegister dst, XMMRegister src);
@@ -2729,6 +2799,10 @@ private:
   void evpblendmw(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len);
   void evpblendmd(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len);
   void evpblendmq(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len);
+
+  // Galois field affine transformation instructions.
+  void vgf2p8affineqb(XMMRegister dst, XMMRegister src2, XMMRegister src3, int imm8, int vector_len);
+
  protected:
   // Next instructions require address alignment 16 bytes SSE mode.
   // They should be called only from corresponding MacroAssembler instructions.

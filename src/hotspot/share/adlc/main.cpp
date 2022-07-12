@@ -226,7 +226,6 @@ int main(int argc, char *argv[])
   AD.addInclude(AD._CPP_file, "opto/intrinsicnode.hpp");
   AD.addInclude(AD._CPP_file, "opto/locknode.hpp");
   AD.addInclude(AD._CPP_file, "opto/opcodes.hpp");
-  AD.addInclude(AD._CPP_file, "opto/parse.hpp");
   AD.addInclude(AD._CPP_file, "opto/regalloc.hpp");
   AD.addInclude(AD._CPP_file, "opto/regmask.hpp");
   AD.addInclude(AD._CPP_file, "opto/runtime.hpp");
@@ -489,8 +488,7 @@ int get_legal_text(FileBuff &fbuf, char **legal_text)
   return (int) (legal_end - legal_start);
 }
 
-// VS2005 has its own definition, identical to this one.
-#if !defined(_WIN32) || defined(_WIN64) || _MSC_VER < 1400
+#if !defined(_WIN32) || defined(_WIN64)
 void *operator new( size_t size, int, const char *, int ) throw() {
   return ::operator new( size );
 }
