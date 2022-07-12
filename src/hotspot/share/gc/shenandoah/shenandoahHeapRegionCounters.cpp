@@ -53,6 +53,9 @@ ShenandoahHeapRegionCounters::ShenandoahHeapRegionCounters() :
     cname = PerfDataManager::counter_name(_name_space, "max_regions");
     PerfDataManager::create_constant(SUN_GC, cname, PerfData::U_None, num_regions, CHECK);
 
+    cname = PerfDataManager::counter_name(_name_space, "protocol_version"); //creating new protocol_version
+    PerfDataManager::create_constant(SUN_GC, cname, PerfData::U_None, VERSION_NUMBER, CHECK);
+
     cname = PerfDataManager::counter_name(_name_space, "region_size");
     PerfDataManager::create_constant(SUN_GC, cname, PerfData::U_None, ShenandoahHeapRegion::region_size_bytes() >> 10, CHECK);
 
@@ -116,7 +119,7 @@ void ShenandoahHeapRegionCounters::update() {
 
         // If logging enabled, dump current region snapshot to log file
         if (ShenandoahLogRegionSampling && _log_file != NULL) {
-          _log_file->write_snapshot(_regions_data, _timestamp, _status, num_regions, rs >> 10);
+          _log_file->write_snapshot(_regions_data, _timestamp, _status, num_regions, rs >> 10, VERSION_NUMBER);
         }
       }
     }

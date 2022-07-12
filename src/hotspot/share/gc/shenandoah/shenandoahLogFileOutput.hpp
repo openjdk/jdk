@@ -65,7 +65,7 @@ public:
                        PerfLongVariable* ts,
                        PerfLongVariable* status,
                        size_t num_regions,
-                       size_t rs);
+                       size_t region_size, size_t protocolVersion);
 
     const char* name() const {
       return _name;

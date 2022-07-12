@@ -103,14 +103,15 @@ int ShenandoahLogFileOutput::write_snapshot(PerfLongVariable** regions,
                                             PerfLongVariable* ts,
                                             PerfLongVariable* status,
                                             size_t num_regions,
-                                            size_t rs) {
+                                            size_t region_size, size_t protocol_version) {
   int written = 0;
+
   FileLocker flocker(_stream);
-  WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%lli %lli %u %u\n",
+  WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%lli %lli %u %u %u\n",
                                           ts->get_value(),
                                           status->get_value(),
                                           num_regions,
-                                          rs),written);
+                                          region_size, protocol_version), written);
   if (num_regions > 0) {
     WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%lli", regions[0]->get_value()), written);
   }

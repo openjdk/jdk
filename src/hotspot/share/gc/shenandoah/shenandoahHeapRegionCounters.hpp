@@ -82,6 +82,8 @@ private:
   static const jlong AFFILIATION_SHIFT = 56;
   static const jlong STATUS_SHIFT      = 58;
 
+  static const jlong VERSION_NUMBER    = 2;
+
   char* _name_space;
   PerfLongVariable** _regions_data;
   PerfLongVariable* _timestamp;
