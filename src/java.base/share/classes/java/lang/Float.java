@@ -996,29 +996,24 @@ public final class Float extends Number
             return (short)0x7fff;
         }
 
-        // TODO: use round-to-zero for initial implementation to allow
-        // round-trip testing
         float abs_f = Math.abs(f);
         int doppel = Float.floatToRawIntBits(f);
         short sign_bit = (short)((doppel >> 16) & 0x8000);
 
-        // TODO: Overflow threshold should be adjusted based on ulp of
-        // the binary16 MAX_VALUE ( 0x1.ffcp15) + 0.5 ulp max_value
-        if (abs_f > 65504.0f ) {
+        // The overflow threshold is binary16 MAX_VALUE + 1/2 ulp
+        if (abs_f > (65504.0f + 16.0f) ) {
             return (short)(sign_bit | 0x7c00); // Positive or negative infinity
         } else {
             // Smallest magnitude nonzero representable binary16 value
-            // is equal to 0x1.0p-24.
-            // TODO: adjust threshold for round to nearest; <= 1/2 min subnormal
-            // => 0x1.0p-25f
-            if (abs_f < 0x1.0p-24f) { // Covers float zeros and subnormals.
+            // is equal to 0x1.0p-24; half-way and smaller rounds to zero.
+            if (abs_f <= 0x1.0p-25f) { // Covers float zeros and subnormals.
                 return sign_bit; // Positive or negative zero
             }
 
             // Dealing with finite values in exponent range of
             // binary16 (when rounding is done, could still round up)
             int exp = Math.getExponent(f);
-            assert -24 <= exp && exp <= 15;
+            assert -25 <= exp && exp <= 15;
             short signif_bits;
 
             if (exp <= -15) { // scale down to float subnormal range to do rounding
