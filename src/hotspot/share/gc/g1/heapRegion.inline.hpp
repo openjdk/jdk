@@ -480,7 +480,7 @@ inline HeapWord* HeapRegion::oops_on_memregion_iterate(MemRegion mr, Closure* cl
   //   safepoints.
   //
   HeapWord* cur = in_gc_pause ? block_start(start, pb) : block_start_aligned(start);
-  if (!obj_in_parsable_area(cur, pb)) {
+  if (!obj_in_parsable_area(start, pb)) {
     // Limit the MemRegion to the part of the area to scan to the unparsable one as using the bitmap
     // is slower than blindly iterating the objects.
     MemRegion mr_in_unparsable(mr.start(), MIN2(mr.end(), pb));
