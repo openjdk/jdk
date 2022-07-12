@@ -79,7 +79,7 @@ public class TestDumpOnCrash {
         test(CrasherIllegalAccess.class, "", true, null, true);
         test(CrasherIllegalAccess.class, "", false, null, true);
 
-	// JDK-8290020 disables dumps when calling halt, so expect no dump. 
+        // JDK-8290020 disables dumps when calling halt, so expect no dump. 
         test(CrasherHalt.class, "", true, null, false);
         test(CrasherHalt.class, "", false, null, false);
 
@@ -148,18 +148,18 @@ public class TestDumpOnCrash {
         Path file = (dumppath == null) ? Paths.get(fileName) : Paths.get(dumppath, fileName);
         file = file.toAbsolutePath().normalize();
 
-	if (expectDump) {
-		Asserts.assertTrue(Files.exists(file), "No emergency jfr recording file " + file + " exists");
-		Asserts.assertNotEquals(Files.size(file), 0L, "File length 0. Should at least be some bytes");
-		System.out.printf("File size=%d%n", Files.size(file));
+        if (expectDump) {
+            Asserts.assertTrue(Files.exists(file), "No emergency jfr recording file " + file + " exists");
+            Asserts.assertNotEquals(Files.size(file), 0L, "File length 0. Should at least be some bytes");
+            System.out.printf("File size=%d%n", Files.size(file));
 
-		List<RecordedEvent> events = RecordingFile.readAllEvents(file);
-		Asserts.assertFalse(events.isEmpty(), "No event found");
-		System.out.printf("Found event %s%n", events.get(0).getEventType().getName());
+            List<RecordedEvent> events = RecordingFile.readAllEvents(file);
+            Asserts.assertFalse(events.isEmpty(), "No event found");
+            System.out.printf("Found event %s%n", events.get(0).getEventType().getName());
 
-		Files.delete(file);
-	} else {
-		Asserts.assertFalse(Files.exists(file), "Emergency jfr recording file " + file + " exists but wasn't expected");
-	}
+            Files.delete(file);
+        } else {
+            Asserts.assertFalse(Files.exists(file), "Emergency jfr recording file " + file + " exists but wasn't expected");
+        }
     }
 }
