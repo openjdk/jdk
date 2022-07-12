@@ -47,9 +47,11 @@ import com.sun.hotspot.igv.view.EditorTopComponent;
 import java.awt.Container;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.Cursor;
 import javax.swing.JComponent;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
+import javax.swing.JScrollBar;
 import org.netbeans.api.visual.action.WidgetAction;
 import org.netbeans.api.visual.action.WidgetAction.State;
 import org.netbeans.api.visual.action.WidgetAction.WidgetMouseEvent;
@@ -62,16 +64,15 @@ import org.netbeans.api.visual.widget.Widget;
  */
 public class CustomizablePanAction extends WidgetAction.LockedAdapter {
     private boolean enabled = true;
+    private boolean active = true;
 
     private Scene scene;
     private JScrollPane scrollPane;
     private Point lastLocation;
-
-    private final int modifiersExMask;
+    private Rectangle rectangle;
     private final int modifiersEx;
 
-    public CustomizablePanAction(int modifiersExMask, int modifiersEx) {
-        this.modifiersExMask = modifiersExMask;
+    public CustomizablePanAction(int modifiersEx) {
         this.modifiersEx = modifiersEx;
     }
 
@@ -89,62 +90,82 @@ public class CustomizablePanAction extends WidgetAction.LockedAdapter {
         }
     }
 
+    public State mouseEntered(Widget widget, WidgetAction.WidgetMouseEvent event) {
+        active = true;
+        return State.REJECTED;
+    }
+
+    public State mouseExited(Widget widget, WidgetAction.WidgetMouseEvent event) {
+        active = false;
+        return State.REJECTED;
+    }
+
     @Override
-    public State mousePressed (Widget widget, WidgetMouseEvent event) {
+    public State mousePressed(Widget widget, WidgetMouseEvent event) {
         EditorTopComponent editor = EditorTopComponent.getActive();
         if (editor != null) {
             editor.requestActive();
         }
-        if (isLocked ())
-            return State.createLocked (widget, this);
-        if (enabled && (event.getModifiersEx() & modifiersExMask) == modifiersEx) {
-            scene = widget.getScene ();
-            scrollPane = findScrollPane (scene.getView ());
+        if (isLocked()) {
+            return State.createLocked(widget, this);
+        }
+        if (enabled && (event.getModifiersEx() == modifiersEx)) {
+            scene = widget.getScene();
+            scrollPane = findScrollPane(scene.getView());
             if (scrollPane != null) {
-                lastLocation = scene.convertSceneToView (widget.convertLocalToScene (event.getPoint ()));
-                SwingUtilities.convertPointToScreen (lastLocation, scene.getView ());
-                return State.createLocked (widget, this);
+                rectangle = scene.getView().getVisibleRect();
+                lastLocation = scene.convertSceneToView(event.getPoint());
+                SwingUtilities.convertPointToScreen(lastLocation, scene.getView());
+                scene.getView().setCursor(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR));
+                return State.createLocked(widget, this);
             }
         }
         return State.REJECTED;
     }
 
-    private JScrollPane findScrollPane (JComponent component) {
+    private JScrollPane findScrollPane(JComponent component) {
         for (;;) {
-            if (component == null)
+            if (component == null) {
                 return null;
-            if (component instanceof JScrollPane)
+            }
+            if (component instanceof JScrollPane) {
                 return ((JScrollPane) component);
-            Container parent = component.getParent ();
-            if (! (parent instanceof JComponent))
+            }
+            Container parent = component.getParent();
+            if (!(parent instanceof JComponent)) {
                 return null;
+            }
             component = (JComponent) parent;
         }
     }
 
     @Override
-    public State mouseReleased (Widget widget, WidgetMouseEvent event) {
-        boolean state = pan (widget, event.getPoint ());
-        if (state)
+    public State mouseReleased(Widget widget, WidgetMouseEvent event) {
+        scene.getView().setCursor(Cursor.getDefaultCursor());
+        boolean state = pan(widget, event.getPoint());
+        if (state) {
             scrollPane = null;
-        return state ? State.createLocked (widget, this) : State.REJECTED;
+        }
+        return state ? State.REJECTED : State.REJECTED;
     }
 
     @Override
-    public State mouseDragged (Widget widget, WidgetMouseEvent event) {
-        return pan (widget, event.getPoint ()) ? State.createLocked (widget, this) : State.REJECTED;
+    public State mouseDragged(Widget widget, WidgetMouseEvent event) {
+        return pan(widget, event.getPoint()) ? State.createLocked(widget, this) : State.REJECTED;
     }
 
-    private boolean pan (Widget widget, Point newLocation) {
-        if (scrollPane == null  ||  scene != widget.getScene ())
+    private boolean pan(Widget widget, Point newLocation) {
+        if (!active || scrollPane == null || scene != widget.getScene()) {
             return false;
-        newLocation = scene.convertSceneToView (widget.convertLocalToScene (newLocation));
-        SwingUtilities.convertPointToScreen (newLocation, scene.getView ());
-        JComponent view = scene.getView ();
-        Rectangle rectangle = view.getVisibleRect ();
-        rectangle.x += lastLocation.x - newLocation.x;
-        rectangle.y += lastLocation.y - newLocation.y;
-        view.scrollRectToVisible (rectangle);
+        }
+        newLocation = scene.convertSceneToView(newLocation);
+        SwingUtilities.convertPointToScreen(newLocation, scene.getView());
+        JComponent view = scene.getView();
+        int dx = lastLocation.x - newLocation.x;
+        int dy = lastLocation.y - newLocation.y;
+        rectangle.x += dx;
+        rectangle.y += dy;
+        view.scrollRectToVisible(rectangle);
         lastLocation = newLocation;
         return true;
     }
