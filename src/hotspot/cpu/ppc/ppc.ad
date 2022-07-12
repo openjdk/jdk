@@ -257,7 +257,7 @@ register %{
 // ----------------------------
 // Vector-Scalar Registers
 // ----------------------------
-  // 1st 32 VSRs are aliases for the FPRs wich are already defined above.
+  // 1st 32 VSRs are aliases for the FPRs which are already defined above.
   reg_def VSR0 ( SOC, SOC, Op_VecX, 0, VMRegImpl::Bad());
   reg_def VSR1 ( SOC, SOC, Op_VecX, 1, VMRegImpl::Bad());
   reg_def VSR2 ( SOC, SOC, Op_VecX, 2, VMRegImpl::Bad());
