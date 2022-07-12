@@ -1136,16 +1136,19 @@ void JvmtiTagMap::iterate_over_heap(jvmtiHeapObjectFilter object_filter,
                    object_filter == JVMTI_HEAP_OBJECT_EITHER,
                    JavaThread::current());
   eb.deoptimize_objects_all_threads();
-  MutexLocker ml(Heap_lock);
-  IterateOverHeapObjectClosure blk(this,
-                                   klass,
-                                   object_filter,
-                                   heap_object_callback,
-                                   user_data);
   Arena dead_object_arena(mtInternal);
-  GrowableArray<jlong> dead_objects(&dead_object_arena, 10, 0, 0);
-  VM_HeapIterateOperation op(&blk, &dead_objects);
-  VMThread::execute(&op);
+  GrowableArray <jlong> dead_objects(&dead_object_arena, 10, 0, 0);
+  {
+    MutexLocker ml(Heap_lock);
+    IterateOverHeapObjectClosure blk(this,
+                                     klass,
+                                     object_filter,
+                                     heap_object_callback,
+                                     user_data);
+    VM_HeapIterateOperation op(&blk, &dead_objects);
+    VMThread::execute(&op);
+  }
+  // Post events outside of Heap_lock
   post_dead_objects(&dead_objects);
 }
 
