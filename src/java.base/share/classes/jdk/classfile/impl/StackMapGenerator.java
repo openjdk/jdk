@@ -190,9 +190,9 @@ public final class StackMapGenerator {
             ITEM_LONG_2ND = 13,
             ITEM_DOUBLE_2ND = 14;
 
-    private static final ClassDesc[] ARRAY_FROM_BASIC_TYPE = new ClassDesc[]{null, null, null, null,
-        CD_boolean.arrayType(), CD_char.arrayType(), CD_float.arrayType(), CD_double.arrayType(),
-        CD_byte.arrayType(), CD_short.arrayType(), CD_int.arrayType(), CD_long.arrayType()};
+    private static final Type[] ARRAY_FROM_BASIC_TYPE = {null, null, null, null,
+        Type.BOOLEAN_ARRAY_TYPE, Type.CHAR_ARRAY_TYPE, Type.FLOAT_ARRAY_TYPE, Type.DOUBLE_ARRAY_TYPE,
+        Type.BYTE_ARRAY_TYPE, Type.SHORT_ARRAY_TYPE, Type.INT_ARRAY_TYPE, Type.LONG_ARRAY_TYPE};
 
     private final Type thisType;
     private final String methodName;
@@ -776,10 +776,34 @@ public final class StackMapGenerator {
         var cpe = cp.entryByIndex(index);
         var nameAndType = opcode == Classfile.INVOKEDYNAMIC ? ((DynamicConstantPoolEntry)cpe).nameAndType() : ((MemberRefEntry)cpe).nameAndType();
         String invokeMethodName = nameAndType.name().stringValue();
-        var mDesc = MethodTypeDesc.ofDescriptor(nameAndType.type().stringValue());
-        int nargs = 0;
-        for (int i = 0; i < mDesc.parameterCount(); i++)
-            nargs += isDoubleSlot(mDesc.parameterType(i)) ? 2 : 1;
+
+        var mDesc = nameAndType.type().stringValue();
+        //faster counting of method descriptor argument slots instead of full parsing
+        int nargs = 0, pos = 0, descLen = mDesc.length();
+        if (descLen < 3 || mDesc.charAt(0) != '(')
+            throw new IllegalArgumentException("Bad method descriptor: " + mDesc);
+        char ch;
+        while (++pos < descLen && (ch = mDesc.charAt(pos)) != ')') {
+            switch (ch) {
+                case '[' -> {
+                    nargs++;
+                    while (++pos < descLen && mDesc.charAt(pos) == '[');
+                    if (mDesc.charAt(pos) == 'L')
+                        while (++pos < descLen && mDesc.charAt(pos) != ';');
+                }
+                case 'D', 'J' -> nargs += 2;
+                case 'B', 'C', 'F', 'I', 'S', 'Z' -> nargs++;
+                case 'L' -> {
+                    nargs++;
+                    while (++pos < descLen && mDesc.charAt(pos) != ';');
+                }
+                default ->
+                    throw new IllegalArgumentException("Bad method descriptor: " + mDesc);
+            }
+        }
+        if (++pos >= descLen)
+            throw new IllegalArgumentException("Bad method descriptor: " + mDesc);
+
         int bci = bcs.bci;
         currentFrame.decStack(nargs);
         if (opcode != Classfile.INVOKESTATIC && opcode != Classfile.INVOKEDYNAMIC) {
@@ -806,13 +830,13 @@ public final class StackMapGenerator {
                 currentFrame.popStack();
             }
         }
-        currentFrame.pushStack(mDesc.returnType());
+        currentFrame.pushStack(ClassDesc.ofDescriptor(mDesc.substring(pos)));
         return thisUninit;
     }
 
     private Type getNewarrayType(int index) {
         if (index < T_BOOLEAN || index > T_LONG) generatorError("Illegal newarray instruction");
-        return Type.referenceType(ARRAY_FROM_BASIC_TYPE[index]);
+        return ARRAY_FROM_BASIC_TYPE[index];
     }
 
     private void processAnewarray(int index) {
