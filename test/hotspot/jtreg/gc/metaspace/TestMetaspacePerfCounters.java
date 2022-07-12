@@ -97,6 +97,21 @@ import gc.testlibrary.PerfCounters;
  * @run main/othervm -XX:+UseCompressedOops -XX:+UseCompressedClassPointers -XX:+UsePerfData -XX:+UseShenandoahGC gc.metaspace.TestMetaspacePerfCounters
  */
 
+/* @test id=Epsilon-64
+ * @bug 8014659
+ * @requires vm.gc.Epsilon
+ * @requires vm.bits == "64"
+ * @library /test/lib /
+ * @summary Tests that performance counters for metaspace and compressed class
+ *          space exists and works.
+ * @modules java.base/jdk.internal.misc
+ *          java.compiler
+ *          java.management/sun.management
+ *          jdk.internal.jvmstat/sun.jvmstat.monitor
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseCompressedOops -XX:-UseCompressedClassPointers -XX:+UsePerfData -XX:+UseEpsilonGC gc.metaspace.TestMetaspacePerfCounters
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseCompressedOops -XX:+UseCompressedClassPointers -XX:+UsePerfData -XX:+UseEpsilonGC gc.metaspace.TestMetaspacePerfCounters
+ */
+
 /* @test id=Serial-32
  * @bug 8014659
  * @requires vm.gc.Serial
@@ -151,6 +166,22 @@ import gc.testlibrary.PerfCounters;
  *          java.management/sun.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @run main/othervm -XX:+UsePerfData -XX:+UseShenandoahGC gc.metaspace.TestMetaspacePerfCounters
+ */
+
+
+/* @test id=Epsilon-32
+ * @bug 8014659
+ * @requires vm.gc.Epsilon
+ * @requires vm.bits == "32"
+ * @library /test/lib /
+ * @summary Tests that performance counters for metaspace and compressed class
+ *          space exists and works.
+ * @modules java.base/jdk.internal.misc
+ *          java.compiler
+ *          java.management/sun.management
+ *          jdk.internal.jvmstat/sun.jvmstat.monitor
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseCompressedOops -XX:-UseCompressedClassPointers -XX:+UsePerfData -XX:+UseEpsilonGC gc.metaspace.TestMetaspacePerfCounters
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseCompressedOops -XX:+UseCompressedClassPointers -XX:+UsePerfData -XX:+UseEpsilonGC
  */
 
 public class TestMetaspacePerfCounters {
