@@ -29,7 +29,7 @@
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm/native TestClassUnloadEvents run
+ * @run main/othervm/native ClassUnloadEventTest run
  */
 
 import jdk.internal.org.objectweb.asm.ClassWriter;
@@ -46,7 +46,7 @@ import com.sun.jdi.request.*;
 import java.util.*;
 import java.io.*;
 
-public class TestClassUnloadEvents {
+public class ClassUnloadEventTest {
     static final String CLASS_NAME_PREFIX = "SampleClass__";
     static final String CLASS_NAME_ALT_PREFIX = CLASS_NAME_PREFIX + "Alt__";
     static final int NUM_CLASSES = 10;
@@ -175,7 +175,7 @@ public class TestClassUnloadEvents {
                                                               VMStartException {
         LaunchingConnector launchingConnector = Bootstrap.virtualMachineManager().defaultConnector();
         Map<String, Connector.Argument> arguments = launchingConnector.defaultArguments();
-        arguments.get("main").setValue(TestClassUnloadEvents.class.getName());
+        arguments.get("main").setValue(ClassUnloadEventTest.class.getName());
         arguments.get("options").setValue("--add-exports java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI");
         return launchingConnector.launch(arguments);
     }
