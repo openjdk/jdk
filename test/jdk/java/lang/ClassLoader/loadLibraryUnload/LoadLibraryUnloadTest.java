@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, BELLSOFT. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -102,5 +102,8 @@ public class LoadLibraryUnloadTest {
         Asserts.assertTrue(
                 countLines(outputAnalyzer, "Native library unloaded.") == refCount,
                 "Failed to unload native library");
+
+        Asserts.assertEquals(0, outputAnalyzer.getExitValue(),
+                "LoadLibraryUnload exit value not zero");
     }
 }
