@@ -78,6 +78,69 @@
 extern "C" void disnm(intptr_t p);
 #endif
 
+// Instruction sequences whose target may need to be retrieved or
+// patched can be distinguished by their leading instruction,
+// sorting them into three main instruction groups and
+// related subgroups.
+//
+// 1) Branch, Exception and System (insn count = 1)
+//    1a) Unconditional branch (immediate):
+//      b/bl imm19
+//    1b) Compare & branch (immediate):
+//      cbz/cbnz Rt imm19
+//    1c) Test & branch (immediate):
+//      tbz/tbnz Rt imm14
+//    1d) Conditional branch (immediate):
+//      b.cond imm19
+//
+// 2) Loads and Stores (insn count = 1)
+//    2a) Load register literal:
+//      ldr Rt imm19
+//
+// 3) Data Processing Immediate (insn count = 2 or 3)
+//    3a) PC-rel. addressing
+//      adr/adrp Rx imm21; ldr/str Ry Rx  #imm12
+//      adr/adrp Rx imm21; add Ry Rx  #imm12
+//      adr/adrp Rx imm21; movk Rx #imm16<<32; ldr/str Ry, [Rx, #offset_in_page]
+//      adr/adrp Rx imm21; movk Rx #imm16<<32; add Ry, Rx, #offset_in_page
+//      adr/adrp Rx imm21; movk Rx #imm16<<32
+//      adr/adrp Rx imm21
+//    3b) Move wide (immediate)
+//      movz Rx #imm16; movk Rx #imm16 << 16; movk Rx #imm16 << 32;
+//
+// A switch on a subset of the instruction's bits provides an efficient
+// dispatch to these subcases.
+//
+// insn[28:26] -> main group ('x' == don't care)
+//   00x -> UNALLOCATED
+//   100 -> Data Processing Immediate
+//   101 -> Branch, Exception and System
+//   x1x -> Loads and Stores
+//
+// insn[30:25] -> subgroup ('_' == group, 'x' == don't care).
+// n.b. in some cases extra bits need to be checked to verify the
+// instruction is as expected
+//
+// 1) ... xx101x Branch, Exception and System
+//   1a)  00___x Unconditional branch (immediate)
+//   1b)  01___0 Compare & branch (immediate)
+//   1c)  01___1 Test & branch (immediate)
+//   1d)  10___0 Conditional branch (immediate)
+//        other  Should not happen
+//
+// 2) ... xxx1x0 Loads and Stores
+//   2a)  xx1__00 Load/Store register (insn[28] == 1 && insn[24] == 0)
+//   2aa) x01__00 Load register literal (i.e. requires insn[29] == 0)
+//                strictly should be 64 bit non-FP/SIMD i.e.
+//       0101_000 (i.e. requires insn[31:24] == 01011000)
+//
+// 3) ... xx100x Data Processing Immediate
+//   3a)  xx___00 PC-rel. addressing (n.b. requires insn[24] == 0)
+//   3b)  xx___101 Move wide (immediate) (n.b. requires insn[24:23] == 01)
+//                 strictly should be 64 bit movz #imm16<<0
+//       110___10100 (i.e. requires insn[31:21] == 11010010100)
+//
+
 // Patch any kind of instruction; there may be several instructions.
 // Return the total length (in bytes) of the instructions.
 int MacroAssembler::pd_patch_instruction_size(address insn_addr, address target) {
@@ -95,8 +158,8 @@ int MacroAssembler::pd_patch_instruction_size(address insn_addr, address target)
       Instruction_aarch64::spatch(insn_addr, 25, 0, offset);
       break;
     }
-    case 0b101010: // Compare & branch (immediate)
-    case 0b011010: // Conditional branch (immediate)
+    case 0b101010: // Conditional branch (immediate)
+    case 0b011010: // Compare & branch (immediate)
     {
       Instruction_aarch64::spatch(insn_addr, 23, 5, offset);
       break;
@@ -307,8 +370,8 @@ address MacroAssembler::target_addr_for_insn(address insn_addr, uint32_t insn) {
       offset = Instruction_aarch64::sextract(insn, 25, 0);
       break;
     }
-    case 0b101010: // Compare & branch (immediate)
-    case 0b011010: // Conditional branch (immediate)
+    case 0b101010: // Conditional branch (immediate)
+    case 0b011010: // Compare & branch (immediate)
     {
       offset = Instruction_aarch64::sextract(insn, 23, 5);
       break;
