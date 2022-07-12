@@ -39,7 +39,6 @@ import jdk.classfile.ClassBuilder;
 import jdk.classfile.ClassModel;
 import jdk.classfile.ClassReader;
 import jdk.classfile.Classfile;
-import jdk.classfile.impl.ClassImpl;
 import jdk.classfile.impl.ClassReaderImpl;
 import jdk.classfile.impl.Options;
 import jdk.classfile.jdktypes.ModuleDesc;

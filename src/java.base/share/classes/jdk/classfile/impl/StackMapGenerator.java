@@ -24,7 +24,6 @@
 package jdk.classfile.impl;
 
 import java.lang.constant.ClassDesc;
-import java.lang.constant.ConstantDescs;
 import static java.lang.constant.ConstantDescs.*;
 import java.lang.constant.MethodTypeDesc;
 import jdk.classfile.Classfile;
@@ -450,14 +449,14 @@ public final class StackMapGenerator {
             } else if (ncf) {
                 generatorError("Expecting a stack map frame");
             }
-            processBlock(bcs);
-            ncf = noControlFlow(bcs.rawCode);
+            ncf = processBlock(bcs);
         }
         if (trace) System.out.println("    " + currentFrame);
     }
 
-    private void processBlock(RawBytecodeHelper bcs) {
+    private boolean processBlock(RawBytecodeHelper bcs) {
         int opcode = bcs.rawCode;
+        boolean ncf = false;
         boolean this_uninit = false;
         boolean verified_exc_handlers = false;
         int bci = bcs.bci;
@@ -468,7 +467,10 @@ public final class StackMapGenerator {
             verified_exc_handlers = true;
         }
         switch (opcode) {
-            case Classfile.NOP, Classfile.RETURN -> {}
+            case Classfile.NOP -> {}
+            case Classfile.RETURN -> {
+                ncf = true;
+            }
             case Classfile.ACONST_NULL ->
                 currentFrame.pushStack(Type.NULL_TYPE);
             case Classfile.ICONST_M1, Classfile.ICONST_0, Classfile.ICONST_1, Classfile.ICONST_2, Classfile.ICONST_3, Classfile.ICONST_4, Classfile.ICONST_5, Classfile.SIPUSH, Classfile.BIPUSH ->
@@ -630,16 +632,26 @@ public final class StackMapGenerator {
                 checkJumpTarget(currentFrame.decStack(2), bcs.dest());
             case Classfile.IFEQ, Classfile.IFNE, Classfile.IFLT, Classfile.IFGE, Classfile.IFGT, Classfile.IFLE, Classfile.IFNULL, Classfile.IFNONNULL ->
                 checkJumpTarget(currentFrame.decStack(1), bcs.dest());
-            case Classfile.GOTO ->
+            case Classfile.GOTO -> {
                 checkJumpTarget(currentFrame, bcs.dest());
-            case Classfile.GOTO_W ->
+                ncf = true;
+            }
+            case Classfile.GOTO_W -> {
                 checkJumpTarget(currentFrame, bcs.destW());
-            case Classfile.TABLESWITCH, Classfile.LOOKUPSWITCH ->
+                ncf = true;
+            }
+            case Classfile.TABLESWITCH, Classfile.LOOKUPSWITCH -> {
                 processSwitch(bcs);
-            case Classfile.LRETURN, Classfile.DRETURN ->
+                ncf = true;
+            }
+            case Classfile.LRETURN, Classfile.DRETURN -> {
                 currentFrame.decStack(2);
-            case Classfile.IRETURN, Classfile.FRETURN, Classfile.ARETURN, Classfile.ATHROW ->
+                ncf = true;
+            }
+            case Classfile.IRETURN, Classfile.FRETURN, Classfile.ARETURN, Classfile.ATHROW -> {
                 currentFrame.decStack(1);
+                ncf = true;
+            }
             case Classfile.GETSTATIC, Classfile.PUTSTATIC, Classfile.GETFIELD, Classfile.PUTFIELD ->
                 processFieldInstructions(bcs);
             case Classfile.INVOKEVIRTUAL, Classfile.INVOKESPECIAL, Classfile.INVOKESTATIC, Classfile.INVOKEINTERFACE, Classfile.INVOKEDYNAMIC ->
@@ -666,6 +678,7 @@ public final class StackMapGenerator {
         if (!verified_exc_handlers && bci >= exMin && bci < exMax) {
             processExceptionHandlerTargets(bci, this_uninit);
         }
+        return ncf;
     }
 
     private void processExceptionHandlerTargets(int bci, boolean this_uninit) {
@@ -686,9 +699,9 @@ public final class StackMapGenerator {
             case TAG_UTF8 ->
                 currentFrame.pushStack(Type.OBJECT_TYPE);
             case TAG_STRING ->
-                currentFrame.pushStack(Type.referenceType(CD_String));
+                currentFrame.pushStack(Type.STRING_TYPE);
             case TAG_CLASS ->
-                currentFrame.pushStack(Type.referenceType(CD_Class));
+                currentFrame.pushStack(Type.CLASS_TYPE);
             case TAG_INTEGER ->
                 currentFrame.pushStack(Type.INTEGER_TYPE);
             case TAG_FLOAT ->
@@ -698,9 +711,9 @@ public final class StackMapGenerator {
             case TAG_LONG ->
                 currentFrame.pushStack(Type.LONG_TYPE, Type.LONG2_TYPE);
             case TAG_METHODHANDLE ->
-                currentFrame.pushStack(Type.referenceType(CD_MethodHandle));
+                currentFrame.pushStack(Type.METHOD_HANDLE_TYPE);
             case TAG_METHODTYPE ->
-                currentFrame.pushStack(Type.referenceType(CD_MethodType));
+                currentFrame.pushStack(Type.METHOD_TYPE);
             case TAG_CONSTANTDYNAMIC ->
                 currentFrame.pushStack(((ConstantDynamicEntry)cp.entryByIndex(index)).asSymbol().constantType());
             default ->
@@ -816,7 +829,7 @@ public final class StackMapGenerator {
                     currentFrame.initializeObject(type, thisType);
                     thisUninit = true;
                 } else if (type.tag == ITEM_UNINITIALIZED) {
-                    int new_offset = type.bci();
+                    int new_offset = type.bci;
                     int new_class_index = bcs.getIndexU2Raw(new_offset + 1);
                     Type new_class_type = cpIndexToType(new_class_index, cp);
                     if (inTryBlock) {
@@ -841,7 +854,7 @@ public final class StackMapGenerator {
 
     private void processAnewarray(int index) {
         currentFrame.popStack();
-        currentFrame.pushStack(Type.referenceType(cpIndexToType(index, cp).sym.arrayType()));
+        currentFrame.pushStack(cpIndexToType(index, cp).toArray());
     }
 
     /**
@@ -850,22 +863,6 @@ public final class StackMapGenerator {
      */
     private void generatorError(String msg) {
         throw new VerifyError(String.format("%s at %s", msg, methodName));
-    }
-
-    /**
-     * Simple check if the given opcode falls into "no control flow" instructions group
-     * (<code>GOTO</code>, <code>GOTO_W</code>, <code>TABLESWITCH</code>,
-     * <code>LOOKUPSWITCH</code>, <code>ATHROW</code>, all <code>xRETURN</code> instructions),
-     * for which current stack map frame is not propagated to the next instruction
-     * and a new frame must be provided for the following instruction (if any)
-     * @param opcode bytecode instruction opcode
-     * @return boolean true if the opcode is in the "no control flow" group
-     */
-    private static boolean noControlFlow(int opcode) {
-        return switch(opcode) {
-            case Classfile.GOTO, Classfile.GOTO_W, Classfile.TABLESWITCH, Classfile.LOOKUPSWITCH, Classfile.IRETURN, Classfile.LRETURN, Classfile.FRETURN, Classfile.DRETURN, Classfile.ARETURN, Classfile.RETURN, Classfile.ATHROW -> true;
-            default -> false;
-        };
     }
 
     /**
@@ -891,30 +888,44 @@ public final class StackMapGenerator {
             if (no_control_flow) {
                 offsets.set(bci);
             }
-            no_control_flow = noControlFlow(opcode);
-            switch (opcode) {
-                case Classfile.IF_ICMPEQ, Classfile.IF_ICMPNE, Classfile.IF_ICMPLT, Classfile.IF_ICMPGE, Classfile.IF_ICMPGT, Classfile.IF_ICMPLE, Classfile.IFEQ, Classfile.IFNE, Classfile.IFLT, Classfile.IFGE, Classfile.IFGT, Classfile.IFLE, Classfile.IF_ACMPEQ , Classfile.IF_ACMPNE , Classfile.IFNULL , Classfile.IFNONNULL, Classfile.GOTO ->
-                    offsets.set(bcs.dest());
-                case Classfile.GOTO_W ->
-                    offsets.set(bcs.destW());
+            no_control_flow = switch (opcode) {
+                case Classfile.GOTO -> {
+                            offsets.set(bcs.dest());
+                            yield true;
+                        }
+                case Classfile.GOTO_W -> {
+                            offsets.set(bcs.destW());
+                            yield true;
+                        }
+                case Classfile.IF_ICMPEQ, Classfile.IF_ICMPNE, Classfile.IF_ICMPLT, Classfile.IF_ICMPGE,
+                     Classfile.IF_ICMPGT, Classfile.IF_ICMPLE, Classfile.IFEQ, Classfile.IFNE,
+                     Classfile.IFLT, Classfile.IFGE, Classfile.IFGT, Classfile.IFLE, Classfile.IF_ACMPEQ,
+                     Classfile.IF_ACMPNE , Classfile.IFNULL , Classfile.IFNONNULL -> {
+                            offsets.set(bcs.dest());
+                            yield false;
+                        }
                 case Classfile.TABLESWITCH, Classfile.LOOKUPSWITCH -> {
-                    int aligned_bci = RawBytecodeHelper.align(bci + 1);
-                    int default_ofset = bcs.getInt(aligned_bci);
-                    int keys, delta;
-                    if (bcs.rawCode == Classfile.TABLESWITCH) {
-                        int low = bcs.getInt(aligned_bci + 4);
-                        int high = bcs.getInt(aligned_bci + 2 * 4);
-                        keys = high - low + 1;
-                        delta = 1;
-                    } else {
-                        keys = bcs.getInt(aligned_bci + 4);
-                        delta = 2;
-                    }
-                    offsets.set(bci + default_ofset);
-                    for (int i = 0; i < keys; i++) {
-                        offsets.set(bci + bcs.getInt(aligned_bci + (3 + i * delta) * 4));
-                    }
-                }
+                            int aligned_bci = RawBytecodeHelper.align(bci + 1);
+                            int default_ofset = bcs.getInt(aligned_bci);
+                            int keys, delta;
+                            if (bcs.rawCode == Classfile.TABLESWITCH) {
+                                int low = bcs.getInt(aligned_bci + 4);
+                                int high = bcs.getInt(aligned_bci + 2 * 4);
+                                keys = high - low + 1;
+                                delta = 1;
+                            } else {
+                                keys = bcs.getInt(aligned_bci + 4);
+                                delta = 2;
+                            }
+                            offsets.set(bci + default_ofset);
+                            for (int i = 0; i < keys; i++) {
+                                offsets.set(bci + bcs.getInt(aligned_bci + (3 + i * delta) * 4));
+                            }
+                            yield true;
+                        }
+                case Classfile.IRETURN, Classfile.LRETURN, Classfile.FRETURN, Classfile.DRETURN,
+                     Classfile.ARETURN, Classfile.RETURN, Classfile.ATHROW -> true;
+                default -> false;
             };
         }
         for (var exhandler : exceptionTable) {
@@ -1000,7 +1011,7 @@ public final class StackMapGenerator {
         }
 
         Frame frameInExceptionHandler(int flags) {
-            return  new Frame(offset, flags, localsSize, 0, locals, new Type[] {Type.TOP_TYPE}, classHierarchy);
+            return new Frame(offset, flags, localsSize, 0, locals, new Type[] {Type.TOP_TYPE}, classHierarchy);
         }
 
         void initializeObject(Type old_object, Type new_object) {
@@ -1054,7 +1065,7 @@ public final class StackMapGenerator {
             localsSize = 0;
             if (!isStatic) {
                 localsSize++;
-                if (OBJECT_INITIALIZER_NAME.equals(name) && !ConstantDescs.CD_Object.equals(thisKlass.sym)) {
+                if (OBJECT_INITIALIZER_NAME.equals(name) && !CD_Object.equals(thisKlass.sym)) {
                     setLocal(0, Type.UNITIALIZED_THIS_TYPE);
                     flags |= FLAG_THIS_UNINIT;
                 } else {
@@ -1088,7 +1099,7 @@ public final class StackMapGenerator {
             localsSize = src.localsSize;
             checkLocal(src.localsSize - 1);
             if (src.localsSize > 0) System.arraycopy(src.locals, 0, locals, 0, src.localsSize);
-            if (stack != null) Arrays.fill(stack, src.stackSize, stack.length, Type.TOP_TYPE);
+            if (stack != null && src.stackSize < stack.length) Arrays.fill(stack, src.stackSize, stack.length, Type.TOP_TYPE);
             stackSize = src.stackSize;
             checkStack(src.stackSize - 1);
             if (src.stackSize > 0) System.arraycopy(src.stack, 0, stack, 0, src.stackSize);
@@ -1227,52 +1238,52 @@ public final class StackMapGenerator {
 
     private static record Type(int tag, ClassDesc sym, int bci) {
 
-        @Override //mandatory overrride to avoid use of method reference during JDK bootstrap
-        public boolean equals(Object o) {
-            return (o instanceof Type t) && t.tag == tag && t.bci == bci && Objects.equals(t.sym, sym);
-        }
-
-        private Type(int tag) {
-            this(tag, null, 0);
-        }
-
-        private Type(ClassDesc sym) {
-            this(ITEM_OBJECT, sym, 0);
-        }
-
         //singleton types
-        static final Type TOP_TYPE = new Type(ITEM_TOP),
-                NULL_TYPE = new Type(ITEM_NULL),
-                INTEGER_TYPE = new Type(ITEM_INTEGER),
-                FLOAT_TYPE = new Type(ITEM_FLOAT),
-                LONG_TYPE = new Type(ITEM_LONG),
-                LONG2_TYPE = new Type(ITEM_LONG_2ND),
-                DOUBLE_TYPE = new Type(ITEM_DOUBLE),
-                BOOLEAN_TYPE = new Type(ITEM_BOOLEAN),
-                BYTE_TYPE = new Type(ITEM_BYTE),
-                CHAR_TYPE = new Type(ITEM_CHAR),
-                SHORT_TYPE = new Type(ITEM_SHORT),
-                DOUBLE2_TYPE = new Type(ITEM_DOUBLE_2ND),
-                UNITIALIZED_THIS_TYPE = new Type(ITEM_UNINITIALIZED_THIS);
+        static final Type TOP_TYPE = simpleType(ITEM_TOP),
+                NULL_TYPE = simpleType(ITEM_NULL),
+                INTEGER_TYPE = simpleType(ITEM_INTEGER),
+                FLOAT_TYPE = simpleType(ITEM_FLOAT),
+                LONG_TYPE = simpleType(ITEM_LONG),
+                LONG2_TYPE = simpleType(ITEM_LONG_2ND),
+                DOUBLE_TYPE = simpleType(ITEM_DOUBLE),
+                BOOLEAN_TYPE = simpleType(ITEM_BOOLEAN),
+                BYTE_TYPE = simpleType(ITEM_BYTE),
+                CHAR_TYPE = simpleType(ITEM_CHAR),
+                SHORT_TYPE = simpleType(ITEM_SHORT),
+                DOUBLE2_TYPE = simpleType(ITEM_DOUBLE_2ND),
+                UNITIALIZED_THIS_TYPE = simpleType(ITEM_UNINITIALIZED_THIS);
 
         //frequently used types to reduce footprint
-        static final Type OBJECT_TYPE = new Type(CD_Object),
-            THROWABLE_TYPE = new Type(CD_Throwable),
-            INT_ARRAY_TYPE = new Type(CD_int.arrayType()),
-            BOOLEAN_ARRAY_TYPE = new Type(CD_boolean.arrayType()),
-            BYTE_ARRAY_TYPE = new Type(CD_byte.arrayType()),
-            CHAR_ARRAY_TYPE = new Type(CD_char.arrayType()),
-            SHORT_ARRAY_TYPE = new Type(CD_short.arrayType()),
-            LONG_ARRAY_TYPE = new Type(CD_long.arrayType()),
-            DOUBLE_ARRAY_TYPE = new Type(CD_double.arrayType()),
-            FLOAT_ARRAY_TYPE = new Type(CD_float.arrayType());
+        static final Type OBJECT_TYPE = referenceType(CD_Object),
+            THROWABLE_TYPE = referenceType(CD_Throwable),
+            INT_ARRAY_TYPE = referenceType(CD_int.arrayType()),
+            BOOLEAN_ARRAY_TYPE = referenceType(CD_boolean.arrayType()),
+            BYTE_ARRAY_TYPE = referenceType(CD_byte.arrayType()),
+            CHAR_ARRAY_TYPE = referenceType(CD_char.arrayType()),
+            SHORT_ARRAY_TYPE = referenceType(CD_short.arrayType()),
+            LONG_ARRAY_TYPE = referenceType(CD_long.arrayType()),
+            DOUBLE_ARRAY_TYPE = referenceType(CD_double.arrayType()),
+            FLOAT_ARRAY_TYPE = referenceType(CD_float.arrayType()),
+            STRING_TYPE = referenceType(CD_String),
+            CLASS_TYPE = referenceType(CD_Class),
+            METHOD_HANDLE_TYPE = referenceType(CD_MethodHandle),
+            METHOD_TYPE = referenceType(CD_MethodType);
 
-        static Type referenceType(ClassDesc sh) {
-            return new Type(sh);
+        private static Type simpleType(int tag) {
+            return new Type(tag, null, 0);
+        }
+
+        static Type referenceType(ClassDesc desc) {
+            return new Type(ITEM_OBJECT, desc, 0);
         }
 
         static Type uninitializedType(int bci) {
             return new Type(ITEM_UNINITIALIZED, null, bci);
+        }
+
+        @Override //mandatory overrride to avoid use of method reference during JDK bootstrap
+        public boolean equals(Object o) {
+            return (o instanceof Type t) && t.tag == tag && t.bci == bci && Objects.equals(sym, t.sym);
         }
 
         boolean isCategory2_2nd() {
@@ -1328,7 +1339,7 @@ public final class StackMapGenerator {
             } else if (sym.equals(from.sym)) {
                 return this;
             } else if (isObject()) {
-                if (ConstantDescs.CD_Object.equals(sym)) {
+                if (CD_Object.equals(sym)) {
                     return this;
                 }
                 if (context.isInterface(sym)) {
@@ -1389,9 +1400,9 @@ public final class StackMapGenerator {
             bw.writeU1(tag);
             switch (tag) {
                 case ITEM_OBJECT ->
-                    bw.writeU2(cp.classEntry(cp.utf8Entry(Util.toInternalName(sym))).index());
+                    bw.writeU2(cp.classEntry(sym).index());
                 case ITEM_UNINITIALIZED ->
-                    bw.writeU2(bci());
+                    bw.writeU2(bci);
             }
         }
     }
