@@ -214,7 +214,7 @@ public abstract class JavadocTester {
         NONE(null) { @Override void check(Path dir) { } };
 
         /** The filter used to detect that files should <i>not</i> be present. */
-        DirectoryStream.Filter<Path> filter;
+        private final DirectoryStream.Filter<Path> filter;
 
         DirectoryCheck(DirectoryStream.Filter<Path> f) {
             filter = f;
@@ -246,6 +246,7 @@ public abstract class JavadocTester {
     private boolean automaticCheckAccessibility = true;
     private boolean automaticCheckLinks = true;
     private boolean automaticCheckUniqueOUT = true;
+    private boolean automaticCheckNoStacktrace = true;
     private boolean useStandardStreams = false;
     private StandardJavaFileManager fileManager = null;
 
@@ -488,15 +489,21 @@ public abstract class JavadocTester {
             }
         });
 
-        if (exitCode == Exit.OK.code && Files.exists(outputDir)) {
-            if (automaticCheckLinks) {
-                checkLinks();
+        if (Files.exists(outputDir)) {
+            if (automaticCheckNoStacktrace) {
+                checkOutput(Output.STDERR, false, " at com.sun.");
             }
-            if (automaticCheckAccessibility) {
-                checkAccessibility();
-            }
-            if (automaticCheckUniqueOUT) {
-                checkUnique(Output.OUT, "^[A-Z][a-z]+ing ", true);
+
+            if (exitCode == Exit.OK.code) {
+                if (automaticCheckLinks) {
+                    checkLinks();
+                }
+                if (automaticCheckAccessibility) {
+                    checkAccessibility();
+                }
+                if (automaticCheckUniqueOUT) {
+                    checkUnique(Output.OUT, "^[A-Z][a-z]+ing ", true);
+                }
             }
         }
     }
@@ -531,6 +538,13 @@ public abstract class JavadocTester {
      */
     public void setAutomaticCheckUniqueOUT(boolean b) {
         automaticCheckUniqueOUT = b;
+    }
+
+    /**
+     * Sets whether or not to check for stacktraces.
+     */
+    public void setAutomaticCheckNoStacktrace(boolean b) {
+        automaticCheckNoStacktrace = b;
     }
 
     /**
@@ -1147,7 +1161,7 @@ public abstract class JavadocTester {
         public OutputChecker check(String... strings) {
             if (name == null) {
                 out.println("Skipping checks for:" + NL
-                        + List.of(strings).stream()
+                        + Stream.of(strings)
                         .map(s -> "    " + toShortString(s))
                         .collect(Collectors.joining(NL)));
                 return this;
@@ -1169,7 +1183,7 @@ public abstract class JavadocTester {
         public OutputChecker check(Pattern... patterns) {
             if (name == null) {
                 out.println("Skipping checks for:" + NL
-                        + List.of(patterns).stream()
+                        + Stream.of(patterns)
                         .map(p -> "    " + toShortString(p.pattern()))
                         .collect(Collectors.joining(NL)));
                 return this;
