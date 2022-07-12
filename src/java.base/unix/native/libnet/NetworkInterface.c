@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -704,7 +704,6 @@ static jobject createNetworkInterface(JNIEnv *env, netif *ifs) {
     jobjectArray addrArr;
     jobjectArray bindArr;
     jobjectArray childArr;
-    netaddr *addrs;
     jint addr_index, addr_count, bind_index;
     jint child_count, child_index;
     netaddr *addrP;
@@ -902,7 +901,6 @@ static netif *enumInterfaces(JNIEnv *env) {
  */
 static void freeif(netif *ifs) {
     netif *currif = ifs;
-    netif *child = NULL;
 
     while (currif != NULL) {
         netaddr *addrP = currif->addr;

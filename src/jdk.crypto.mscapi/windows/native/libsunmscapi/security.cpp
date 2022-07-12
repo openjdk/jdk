@@ -2562,7 +2562,6 @@ JNIEXPORT jobject JNICALL Java_sun_security_mscapi_CKeyStore_storePrivateKey
 JNIEXPORT jobject JNICALL Java_sun_security_mscapi_CSignature_importECPublicKey
     (JNIEnv *env, jclass clazz, jstring alg, jbyteArray keyBlob, jint keySize)
 {
-    BCRYPT_ALG_HANDLE hSignAlg = NULL;
     NCRYPT_KEY_HANDLE       hTmpKey         = NULL;
     DWORD dwBlobLen;
     BYTE * pbKeyBlob = NULL;
