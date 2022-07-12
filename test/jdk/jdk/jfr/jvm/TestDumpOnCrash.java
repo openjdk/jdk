@@ -79,7 +79,7 @@ public class TestDumpOnCrash {
         test(CrasherIllegalAccess.class, "", true, null, true);
         test(CrasherIllegalAccess.class, "", false, null, true);
 
-        // JDK-8290020 disables dumps when calling halt, so expect no dump. 
+        // JDK-8290020 disables dumps when calling halt, so expect no dump.
         test(CrasherHalt.class, "", true, null, false);
         test(CrasherHalt.class, "", false, null, false);
 
