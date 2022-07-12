@@ -138,17 +138,17 @@ public final class MD4 extends DigestBase {
 
     private static int FF(int a, int b, int c, int d, int x, int s) {
         a += ((b & c) | ((~b) & d)) + x;
-        return Integer.rotateRight(a, (32 - s));
+        return Integer.rotateLeft(a, s);
     }
 
     private static int GG(int a, int b, int c, int d, int x, int s) {
         a += ((b & c) | (b & d) | (c & d)) + x + 0x5a827999;
-        return Integer.rotateRight(a, (32 - s));
+        return Integer.rotateLeft(a, s);
     }
 
     private static int HH(int a, int b, int c, int d, int x, int s) {
         a += ((b ^ c) ^ d) + x + 0x6ed9eba1;
-        return Integer.rotateRight(a, (32 - s));
+        return Integer.rotateLeft(a, s);
     }
 
     /**

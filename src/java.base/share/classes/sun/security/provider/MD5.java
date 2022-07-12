@@ -120,22 +120,22 @@ public final class MD5 extends DigestBase {
 
     private static int FF(int a, int b, int c, int d, int x, int s, int ac) {
         a += ((b & c) | ((~b) & d)) + x + ac;
-        return (Integer.rotateRight(a, (32 - s)) + b);
+        return Integer.rotateLeft(a, s) + b;
     }
 
     private static int GG(int a, int b, int c, int d, int x, int s, int ac) {
         a += ((b & d) | (c & (~d))) + x + ac;
-        return (Integer.rotateRight(a, (32 - s)) + b);
+        return Integer.rotateLeft(a, s) + b;
     }
 
     private static int HH(int a, int b, int c, int d, int x, int s, int ac) {
         a += ((b ^ c) ^ d) + x + ac;
-        return (Integer.rotateRight(a, (32 - s)) + b);
+        return Integer.rotateLeft(a, s) + b;
     }
 
     private static int II(int a, int b, int c, int d, int x, int s, int ac) {
         a += (c ^ (b | (~d))) + x + ac;
-        return (Integer.rotateRight(a, (32 - s)) + b);
+        return Integer.rotateLeft(a, s) + b;
     }
 
     /**
