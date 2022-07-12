@@ -55,7 +55,6 @@ import gc.testlibrary.PerfCounters;
  *          java.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @run main/othervm -Xlog:class+load,class+unload=trace -XX:+UseSerialGC -XX:+UsePerfData -Xint gc.metaspace.TestPerfCountersAndMemoryPools
- * @run main/othervm -Xlog:class+load,class+unload=trace -XX:+UseSerialGC -XX:+UsePerfData -Xint gc.metaspace.TestPerfCountersAndMemoryPools
  */
 public class TestPerfCountersAndMemoryPools {
     public static void main(String[] args) throws Exception {

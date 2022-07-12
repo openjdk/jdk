@@ -26,21 +26,18 @@
  * @summary Test selective barrier enabling works, by aggressively compiling HelloWorld with combinations
  *          of barrier flags
  * @requires vm.gc.Shenandoah
- * @requires vm.debug
  * @library /test/lib
  * @run driver TestSelectiveBarrierFlags -Xint
  * @run driver TestSelectiveBarrierFlags -Xbatch -XX:CompileThreshold=100 -XX:TieredStopAtLevel=1
- * @run driver TestSelectiveBarrierFlags -Xbatch -XX:CompileThreshold=100 -XX:-TieredCompilation -XX:+ShenandoahVerifyOptoBarriers
  */
 
 /* @test
  * @summary Test selective barrier enabling works, by aggressively compiling HelloWorld with combinations
  *          of barrier flags
  * @requires vm.gc.Shenandoah
- * @requires !vm.debug
+ * @requires vm.debug
  * @library /test/lib
- * @run driver TestSelectiveBarrierFlags -Xint
- * @run driver TestSelectiveBarrierFlags -Xbatch -XX:CompileThreshold=100 -XX:TieredStopAtLevel=1
+ * @run driver TestSelectiveBarrierFlags -Xbatch -XX:CompileThreshold=100 -XX:-TieredCompilation -XX:+ShenandoahVerifyOptoBarriers
  */
 
 import java.util.*;

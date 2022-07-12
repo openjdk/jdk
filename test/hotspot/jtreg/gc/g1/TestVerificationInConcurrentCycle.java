@@ -45,7 +45,8 @@ package gc.g1;
  * @test TestVerificationInConcurrentCycle
  * @requires vm.gc.G1
  * @requires !vm.debug
- * @summary Basic testing of various GC pause verification during the G1 concurrent cycle.
+ * @summary Basic testing of various GC pause verification during the G1 concurrent cycle. It leaves
+ *          out G1VerifyBitmaps as this is a debug-only option.
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox

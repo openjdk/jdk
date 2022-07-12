@@ -110,19 +110,12 @@ public class TestLargePageUseForAuxMemory {
     }
 
     static List<String> getOpts(long heapsize, boolean largePageEnabled) {
-        ArrayList<String> vmOpts = new ArrayList<>();
-
-        Collections.addAll(vmOpts, new String[] {"-XX:+UseG1GC",
-                                                 "-XX:G1HeapRegionSize=" + HEAP_REGION_SIZE,
-                                                 "-Xmx" + heapsize,
-                                                 "-Xlog:pagesize,gc+init,gc+heap+coops=debug",
-                                                 "-XX:" + (largePageEnabled ? "+" : "-") + "UseLargePages" });
-        if (Platform.is64bit()) {
-            vmOpts.add("-XX:ObjectAlignmentInBytes=8");
-        }
-        vmOpts.add("-version");
-
-        return vmOpts;
+        return List.of("-XX:+UseG1GC",
+                       "-XX:G1HeapRegionSize=" + HEAP_REGION_SIZE,
+                       "-Xmx" + heapsize,
+                       "-Xlog:pagesize,gc+init,gc+heap+coops=debug",
+                       "-XX:" + (largePageEnabled ? "+" : "-") + "UseLargePages",
+                       "-version");
     }
 
     static void testVM(String what, long heapsize, boolean cardsShouldUseLargePages, boolean bitmapShouldUseLargePages) throws Exception {

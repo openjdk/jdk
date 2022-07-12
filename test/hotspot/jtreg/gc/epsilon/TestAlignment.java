@@ -37,11 +37,12 @@ package gc.epsilon;
  *                   -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
  *                   gc.epsilon.TestAlignment
  */
+
 /**
- * @test TestMaxTLAB
+ * @test TestAlignment
  * @requires vm.gc.Epsilon
  * @requires vm.bits == "64"
- * @summary Check EpsilonMaxTLAB options
+ * @summary Check Epsilon TLAB options with unusual object alignment
  * @bug 8212177
  * @run main/othervm -Xmx64m -XX:+UseTLAB
  *                   -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
