@@ -101,6 +101,15 @@
           "be taken for collection.")                                       \
           range(0,100)                                                      \
                                                                             \
+  product(uintx, ShenandoahIgnoreGarbageThreshold, 5, EXPERIMENTAL,         \
+          "When less than this amount of garbage (as a percentage of "      \
+          "region size) exists within a region, the region will not be "    \
+          "added to the collection set, even when the heuristic has "       \
+          "chosen to aggressively add regions with less than "              \
+          "ShenandoahGarbageThreshold amount of garbage into the "          \
+          "collection set.")                                                \
+          range(0,100)                                                      \
+                                                                            \
   product(uintx, ShenandoahInitFreeThreshold, 70, EXPERIMENTAL,             \
           "When less than this amount of memory is free within the"         \
           "heap or generation, trigger a learning cycle if we are "         \
@@ -498,22 +507,6 @@
   product(bool, ShenandoahSelfFixing, true, DIAGNOSTIC,                     \
           "Fix references with load reference barrier. Disabling this "     \
           "might degrade performance.")                                     \
-                                                                            \
-  product(uintx, ShenandoahTenuredRegionUsageBias, 16, EXPERIMENTAL,        \
-          "The collection set is comprised of heap regions that contain "   \
-          "the greatest amount of garbage.  "                               \
-          "For purposes of selecting regions to be included in the "        \
-          "collection set, regions that have reached the tenure age will "  \
-          "be treated as if their contained garbage is the contained "      \
-          "garbage multiplied by ShenandoahTenuredRegionUsageBias as "      \
-          "many times as the age of the region meets or exceeds "           \
-          "tenure age.  For example, if tenure age is 7, "                  \
-          "the region age is 9, ShenandoahTenuredRegionUsageBias is "       \
-          "16, and the region is 12.5% garbage, this region "               \
-          "will by treated as if its garbage content is "                   \
-          "12.5% * 16 * 16 * 16 = 51,200% when comparing this region "      \
-          " to untenured regions.")                                         \
-          range(1,128)                                                      \
                                                                             \
   product(uintx, ShenandoahBorrowPercent, 30, EXPERIMENTAL,                 \
           "During evacuation and reference updating in generational "       \

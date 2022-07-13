@@ -468,7 +468,6 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
     adjust_bounds();
   }
   assert_bounds();
-
   req.set_actual_size(words_size);
   return _heap->get_region(beg)->bottom();
 }
@@ -578,7 +577,12 @@ void ShenandoahFreeSet::rebuild() {
     reserve_regions(to_reserve);
   } else {
     size_t young_reserve = (_heap->young_generation()->max_capacity() / 100) * ShenandoahEvacReserve;
-    size_t old_reserve = (_heap->old_generation()->max_capacity() / 100) * ShenandoahOldEvacReserve;
+    // Note that all allocations performed from old-gen are performed by GC, generally using PLABs for both
+    // promotions and evacuations.  The partition between which old memory is reserved for evacuation and
+    // which is reserved for promotion is enforced using thread-local variables that prescribe intentons within
+    // each PLAB.  We do not reserve any of old-gen memory in order to facilitate the loaning of old-gen memory
+    // to young-gen purposes.
+    size_t old_reserve = 0;
     size_t to_reserve = young_reserve + old_reserve;
     reserve_regions(to_reserve);
   }

@@ -686,6 +686,7 @@ size_t ShenandoahHeap::capture_old_usage(size_t old_usage) {
 }
 
 void ShenandoahHeap::set_previous_promotion(size_t promoted_bytes) {
+  shenandoah_assert_heaplocked();
   _previous_promotion = promoted_bytes;
 }
 

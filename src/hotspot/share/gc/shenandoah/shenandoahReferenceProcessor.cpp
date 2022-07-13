@@ -537,7 +537,6 @@ void ShenandoahReferenceProcessor::enqueue_references(bool concurrent) {
     // Nothing to enqueue
     return;
   }
-
   if (!concurrent) {
     // When called from mark-compact or degen-GC, the locking is done by the VMOperation,
     enqueue_references_locked();
