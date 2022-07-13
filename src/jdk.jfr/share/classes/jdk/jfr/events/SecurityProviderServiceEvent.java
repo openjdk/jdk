@@ -37,21 +37,15 @@ import jdk.jfr.internal.MirrorEvent;
 @Description("Details of Provider.getInstance(String type, String algorithm) calls")
 @MirrorEvent(className = "jdk.internal.event.SecurityProviderServiceEvent")
 public final class SecurityProviderServiceEvent extends AbstractJDKEvent {
-
-        public String type;
-        public String algorithm;
-        public String provider;
-        public boolean exists;
-
     @Label("Type Of Service")
     public String type;
 
     @Label("Algorithm Name")
-    public int algorithm;
+    public String algorithm;
 
     @Label("Security Provider")
     public String provider;
 
     @Label("Success")
-    public boolean;
+    public boolean success;
 }

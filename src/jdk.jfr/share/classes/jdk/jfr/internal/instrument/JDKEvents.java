@@ -27,36 +27,9 @@ package jdk.jfr.internal.instrument;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import jdk.jfr.Event;
-import jdk.jfr.events.ActiveRecordingEvent;
-import jdk.jfr.events.ActiveSettingEvent;
-import jdk.jfr.events.ContainerIOUsageEvent;
-import jdk.jfr.events.ContainerConfigurationEvent;
-import jdk.jfr.events.ContainerCPUUsageEvent;
-import jdk.jfr.events.ContainerCPUThrottlingEvent;
-import jdk.jfr.events.ContainerMemoryUsageEvent;
-import jdk.jfr.events.DirectBufferStatisticsEvent;
-import jdk.jfr.events.ErrorThrownEvent;
-import jdk.jfr.events.ExceptionStatisticsEvent;
-import jdk.jfr.events.ExceptionThrownEvent;
-import jdk.jfr.events.FileForceEvent;
-import jdk.jfr.events.FileReadEvent;
-import jdk.jfr.events.FileWriteEvent;
-import jdk.jfr.events.DeserializationEvent;
-import jdk.jfr.events.ProcessStartEvent;
-import jdk.jfr.events.SecurityPropertyModificationEvent;
-import jdk.jfr.events.SocketReadEvent;
-import jdk.jfr.events.SocketWriteEvent;
-import jdk.jfr.events.TLSHandshakeEvent;
-import jdk.jfr.events.ThreadSleepEvent;
-import jdk.jfr.events.VirtualThreadStartEvent;
-import jdk.jfr.events.VirtualThreadEndEvent;
-import jdk.jfr.events.VirtualThreadPinnedEvent;
-import jdk.jfr.events.VirtualThreadSubmitFailedEvent;
-import jdk.jfr.events.X509CertificateEvent;
-import jdk.jfr.events.X509ValidationEvent;
+import jdk.jfr.events.*;
 import jdk.jfr.internal.JVM;
 import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
@@ -72,6 +45,7 @@ public final class JDKEvents {
         DeserializationEvent.class,
         ProcessStartEvent.class,
         SecurityPropertyModificationEvent.class,
+        SecurityProviderServiceEvent.class,
         ThreadSleepEvent.class,
         TLSHandshakeEvent.class,
         VirtualThreadStartEvent.class,
@@ -96,6 +70,7 @@ public final class JDKEvents {
         jdk.internal.event.DeserializationEvent.class,
         jdk.internal.event.ProcessStartEvent.class,
         jdk.internal.event.SecurityPropertyModificationEvent.class,
+        jdk.internal.event.SecurityProviderServiceEvent.class,
         jdk.internal.event.ThreadSleepEvent.class,
         jdk.internal.event.TLSHandshakeEvent.class,
         jdk.internal.event.VirtualThreadStartEvent.class,
