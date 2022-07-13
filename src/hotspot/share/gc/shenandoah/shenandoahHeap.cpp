@@ -2308,17 +2308,16 @@ void ShenandoahHeap::flush_liveness_cache(uint worker_id) {
 }
 
 bool ShenandoahHeap::requires_barriers(stackChunkOop obj) const {
-  if (is_idle()) return false;
-
-  // Objects allocated after marking start are implicitly alive, don't need any barriers during
-  // marking phase.
-  if (is_concurrent_mark_in_progress() &&
-     !marking_context()->allocated_after_mark_start(obj)) {
-    return true;
-  }
+  return !is_idle();
 
   // Can not guarantee obj is deeply good.
   if (has_forwarded_objects()) {
+    return true;
+  }
+
+  // Objects allocated after marking start are implicitly alive, don't need any barriers during
+  // marking phase.
+  if (is_concurrent_mark_in_progress() && !marking_context()->allocated_after_mark_start(obj)) {
     return true;
   }
 

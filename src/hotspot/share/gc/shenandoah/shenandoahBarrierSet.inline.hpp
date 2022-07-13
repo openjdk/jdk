@@ -80,9 +80,6 @@ inline oop ShenandoahBarrierSet::load_reference_barrier(oop obj) {
   if (!ShenandoahLoadRefBarrier) {
     return obj;
   }
-
-  iu_barrier(obj);
-
   if (_heap->has_forwarded_objects() &&
       _heap->in_collection_set(obj)) { // Subsumes NULL-check
     assert(obj != NULL, "cset check must have subsumed NULL-check");
