@@ -652,7 +652,7 @@ static char* get_user_name_slow(int vmid, int nspid, TRAPS) {
 // return the name of the user that owns the JVM indicated by the given vmid.
 //
 static char* get_user_name(int vmid, int *nspid, TRAPS) {
-  char *result = get_user_name_slow(vmid, *nspid, THREAD);
+  char *result = get_user_name_slow(vmid, *nspid, CHECK_NULL);
 
 #if defined(LINUX)
   // If we are examining a container process without PID namespaces enabled
