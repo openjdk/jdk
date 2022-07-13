@@ -176,7 +176,27 @@ Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,
 
 #if defined(__linux__)
     off64_t offset = (off64_t)position;
-    jlong n = sendfile64(dstFD, srcFD, &offset, (size_t)count);
+
+    jlong n;
+    if (my_copy_file_range_func != NULL) {
+        n = my_copy_file_range_func(srcFD, &offset, dstFD, NULL, count, 0);
+        if (n < 0) {
+            switch (errno) {
+                case EINTR:
+                case EINVAL:
+                case EXDEV:
+                    // ignore and try sendfile()
+                    break;
+                default:
+                    JNU_ThrowIOExceptionWithLastError(env, "Copy failed");
+                    return IOS_THROWN;
+            }
+        }
+        if (n >= 0)
+            return n;
+    }
+
+    n = sendfile64(dstFD, srcFD, &offset, (size_t)count);
     if (n < 0) {
         if (errno == EAGAIN)
             return IOS_UNAVAILABLE;

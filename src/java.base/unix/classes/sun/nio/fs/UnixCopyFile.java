@@ -262,6 +262,9 @@ class UnixCopyFile {
         return bufferSize;
     }
 
+    // whether file cloning is supported on this platform
+    private static volatile boolean cloneFileNotSupported;
+
     // whether direct copying is supported on this platform
     private static volatile boolean directCopyNotSupported;
 
@@ -273,6 +276,32 @@ class UnixCopyFile {
                                  long addressToPollForCancel)
         throws IOException
     {
+        boolean copied = false;
+        if (addressToPollForCancel == 0 &&
+            source.getFileSystem() == target.getFileSystem() &&
+            !cloneFileNotSupported) {
+            try (NativeBuffer sourceBuffer = copyToNativeBuffer(source);
+                NativeBuffer targetBuffer = copyToNativeBuffer(target)) {
+                long comp = Blocker.begin();
+                try {
+                    int res = cloneFile0(sourceBuffer.address(),
+                                         targetBuffer.address(),
+                                         flags.followLinks);
+                    if (res == 0) {
+                        copied = true;
+                    }
+                    if (res == IOStatus.UNSUPPORTED) {
+                        cloneFileNotSupported = true;
+                    }
+                    // other IOStatus values: fall through
+                } catch (UnixException x) {
+                    x.rethrowAsIOException(source, target);
+                } finally {
+                    Blocker.end(comp);
+                }
+            }
+        }
+
         int fi = -1;
         try {
             fi = open(source, O_RDONLY, 0);
@@ -285,6 +314,8 @@ class UnixCopyFile {
             int fo = -1;
             try {
                 fo = open(target,
+                           copied ? // copied == true => target already exists
+                           O_WRONLY :
                            (O_WRONLY |
                             O_CREAT |
                             O_EXCL),
@@ -296,8 +327,7 @@ class UnixCopyFile {
             // set to true when file and attributes copied
             boolean complete = false;
             try {
-                boolean copied = false;
-                if (!directCopyNotSupported) {
+                if (!copied && !directCopyNotSupported) {
                     // copy bytes to target using platform function
                     long comp = Blocker.begin();
                     try {
@@ -703,6 +733,22 @@ class UnixCopyFile {
     // -- native methods --
 
     /**
+     * Clones the file whose path name address is {@code src} to that whose
+     * path name address is {@code dst} using a platform-specific system call.
+     *
+     * @param sourceAddress the path address of the source file
+     * @param targetAddres the path address of the target file (clone)
+     * @param followLinks whether to follow links
+     *
+     * @return 0 on success, UNSUPPORTED_CASE if the call does not work with
+     *         the given parameters, or UNSUPPORTED if cloning is not supported
+     *         on this platform
+     */
+    private static native int cloneFile0(long sourceAddress, long targetAddres,
+                                         boolean followLinks)
+        throws UnixException;
+
+    /**
      * Copies data between file descriptors {@code src} and {@code dst} using
      * a platform-specific function or system call possibly having kernel
      * support.
@@ -736,8 +782,11 @@ class UnixCopyFile {
                                              int size, long addressToPollForCancel)
         throws UnixException;
 
+    private static native void init();
+
     static {
         jdk.internal.loader.BootLoader.loadLibrary("nio");
+        init();
     }
 
 }

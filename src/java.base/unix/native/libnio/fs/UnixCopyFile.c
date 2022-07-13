@@ -36,10 +36,25 @@
 #if defined(__linux__)
 #include <sys/sendfile.h>
 #include <fcntl.h>
+#include <dlfcn.h>
+#include <linux/fs.h>
+#include <sys/ioctl.h>
 #elif defined(_ALLBSD_SOURCE)
 #include <copyfile.h>
+#include <sys/attr.h>
+#include <sys/clonefile.h>
 #endif
 #include "sun_nio_fs_UnixCopyFile.h"
+
+#ifndef FICLONE
+#define FICLONE      1074041865
+#endif
+
+#if defined(__linux__)
+typedef ssize_t copy_file_range_func(int, loff_t*, int, loff_t*, size_t,
+                                     unsigned int);
+static copy_file_range_func* my_copy_file_range_func = NULL;
+#endif
 
 #define RESTARTABLE(_cmd, _result) do { \
   do { \
@@ -53,6 +68,16 @@ static void throwUnixException(JNIEnv* env, int errnum) {
     if (x != NULL) {
         (*env)->Throw(env, x);
     }
+}
+
+JNIEXPORT void JNICALL
+Java_sun_nio_fs_UnixCopyFile_init
+    (JNIEnv* env, jclass this)
+{
+#if defined(__linux__)
+    my_copy_file_range_func =
+        (copy_file_range_func*) dlsym(RTLD_DEFAULT, "copy_file_range");
+#endif
 }
 
 #if defined(_ALLBSD_SOURCE)
@@ -71,6 +96,93 @@ int fcopyfile_callback(int what, int stage, copyfile_state_t state,
     return COPYFILE_CONTINUE;
 }
 #endif
+
+// Copy via file cloning
+JNIEXPORT jint JNICALL
+Java_sun_nio_fs_UnixCopyFile_cloneFile0
+    (JNIEnv* env, jclass this, jlong sourceAddress, jlong targetAddress,
+     jboolean followLinks)
+{
+    const char* src = (const char*)jlong_to_ptr(sourceAddress);
+    const char* dst = (const char*)jlong_to_ptr(targetAddress);
+
+#if defined(_ALLBSD_SOURCE)
+    int flags = followLinks == JNI_FALSE ? CLONE_NOFOLLOW : 0;
+    int res = clonefile(src, dst, flags);
+    if (res < 0) {
+        if (errno == ENOTSUP) { // cloning not supported by filesystem
+            // disable further attempts to clone in this instance
+            return IOS_UNSUPPORTED;
+        } else if (errno == EXDEV   || // src and dst on different filesystems
+                   errno == ENOTDIR) { // problematic path parameter(s)
+            // cannot clone: fall back to direct or buffered copy
+            return IOS_UNSUPPORTED_CASE;
+        } else {
+            // unrecoverable errors
+            throwUnixException(env, errno);
+            return IOS_THROWN;
+        }
+    }
+    return 0;
+#elif defined(__linux__)
+    // disable ioctl_ficlone if copy_file_range() is available
+    if (my_copy_file_range_func != NULL) {
+        return IOS_UNSUPPORTED;
+    }
+
+    int srcFD = open(src, O_RDONLY);
+    if (srcFD < 0) {
+        JNU_ThrowIOExceptionWithLastError(env, "Open src failed");
+        return IOS_THROWN;
+    }
+    int dstFD = open(dst, O_CREAT | O_WRONLY, 0666);
+    if (dstFD < 0) {
+        JNU_ThrowIOExceptionWithLastError(env, "Open dst failed");
+        close(srcFD);
+        return IOS_THROWN;
+    }
+
+    int res = ioctl(dstFD, FICLONE, srcFD);
+    const int errno_ioctl = errno;
+
+    // ignore close errors
+    close(srcFD);
+    close(dstFD);
+
+    if (res != -1) {
+        return 0;
+    }
+
+    if (errno_ioctl == EPERM) {
+        // dst is immutable
+        throwUnixException(env, errno_ioctl);
+        return IOS_THROWN;
+    }
+
+    // delete dst to avoid later exception when re-creating in Java layer
+    if (access(dst, F_OK) == 0) {
+        if (unlink(dst) != 0) {
+            const int errno_unlink = errno;
+            if (access(dst, F_OK) == 0) {
+                throwUnixException(env, errno_unlink);
+                return IOS_THROWN;
+            }
+        }
+    }
+
+    if (errno_ioctl == EINVAL) {
+        // interpret EINVAL as indicating that FICLONE is an invalid
+        // ioctl request code hence unsupported on this platform;
+        // disable ioctl_ficlone
+        return IOS_UNSUPPORTED;
+    }
+
+    // cannot clone: fall back to direct or buffered copy
+    return IOS_UNSUPPORTED_CASE;
+#else
+    return IOS_UNSUPPORTED;
+#endif
+}
 
 // Copy via an intermediate temporary direct buffer
 JNIEXPORT void JNICALL
@@ -141,6 +253,32 @@ Java_sun_nio_fs_UnixCopyFile_directCopy0
         1048576 :   // 1 MB to give cancellation a chance
         0x7ffff000; // maximum number of bytes that sendfile() can transfer
     ssize_t bytes_sent;
+
+    if (my_copy_file_range_func != NULL) {
+        do {
+            RESTARTABLE(my_copy_file_range_func(src, NULL, dst, NULL, count, 0),
+                                                bytes_sent);
+            if (bytes_sent < 0) {
+                switch (errno) {
+                    case EINVAL:
+                    case EXDEV:
+                        // ignore and try sendfile()
+                        break;
+                    default:
+                        JNU_ThrowIOExceptionWithLastError(env, "Copy failed");
+                        return IOS_THROWN;
+                }
+            }
+            if (cancel != NULL && *cancel != 0) {
+                throwUnixException(env, ECANCELED);
+                return IOS_THROWN;
+            }
+        } while (bytes_sent > 0);
+
+        if (bytes_sent == 0)
+            return 0;
+    }
+
     do {
         RESTARTABLE(sendfile64(dst, src, NULL, count), bytes_sent);
         if (bytes_sent < 0) {
