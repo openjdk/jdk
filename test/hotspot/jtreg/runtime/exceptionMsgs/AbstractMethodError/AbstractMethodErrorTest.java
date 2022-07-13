@@ -28,8 +28,8 @@
  * @requires !(os.arch=="arm") & vm.flavor == "server" & !vm.emulatedClient & vm.compMode=="Xmixed" & !vm.graal.enabled & vm.opt.UseJVMCICompiler != true & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel==4)
  * @requires vm.opt.DeoptimizeALot != true
  * @library /test/lib /
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @compile AbstractMethodErrorTest.java
  * @compile AME1_E.jasm AME2_C.jasm AME3_C.jasm AME4_E.jasm AME5_B.jasm AME6_B.jasm
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
@@ -38,7 +38,7 @@
  *                   AbstractMethodErrorTest
  */
 
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 import compiler.whitebox.CompilerWhiteBoxTest;
 import java.lang.reflect.Method;
 

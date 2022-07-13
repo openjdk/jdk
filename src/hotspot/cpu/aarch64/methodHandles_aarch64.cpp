@@ -185,7 +185,7 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
     return NULL;
   }
 
-  // r13: sender SP (must preserve; see prepare_to_jump_from_interpreted)
+  // r19_sender_sp: sender SP (must preserve; see prepare_to_jump_from_interpreted)
   // rmethod: Method*
   // r3: argument locator (parameter slot count, added to rsp)
   // r1: used as temp to hold mh or receiver
@@ -283,7 +283,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
   // temps used in this code are not used in *either* compiled or interpreted calling sequences
   Register temp1 = r10;
   Register temp2 = r11;
-  Register temp3 = r14;  // r13 is live by this point: it contains the sender SP
+  Register temp3 = r14;
   if (for_compiler_entry) {
     assert(receiver_reg == (iid == vmIntrinsics::_linkToStatic || iid == vmIntrinsics::_linkToNative ? noreg : j_rarg0), "only valid assignment");
     assert_different_registers(temp1,        j_rarg0, j_rarg1, j_rarg2, j_rarg3, j_rarg4, j_rarg5, j_rarg6, j_rarg7);
@@ -356,7 +356,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
     // Live registers at this point:
     //  member_reg - MemberName that was the trailing argument
     //  temp1_recv_klass - klass of stacked receiver, if needed
-    //  r13 - interpreter linkage (if interpreted)  ??? FIXME
+    //  r19 - interpreter linkage (if interpreted)
     //  r1 ... r0 - compiler arguments (if compiled)
 
     Label L_incompatible_class_change_error;
@@ -443,7 +443,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       break;
     }
 
-    // live at this point:  rmethod, r13 (if interpreted)
+    // live at this point:  rmethod, r19_sender_sp (if interpreted)
 
     // After figuring out which concrete method to call, jump into it.
     // Note that this works in the interpreter with no data motion.

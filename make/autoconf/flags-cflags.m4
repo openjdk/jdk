@@ -786,10 +786,8 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
     $1_TOOLCHAIN_CFLAGS="${NO_DELETE_NULL_POINTER_CHECKS_CFLAG}"
   fi
 
-  if test "x$TOOLCHAIN_TYPE" = xmicrosoft && test "x$ENABLE_REPRODUCIBLE_BUILD" = xtrue; then
-    # Enabling deterministic creates warnings if __DATE__ or __TIME__ are
-    # used, and since we are, silence that warning.
-    REPRODUCIBLE_CFLAGS="-experimental:deterministic -wd5048"
+  if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+    REPRODUCIBLE_CFLAGS="-experimental:deterministic"
     FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${REPRODUCIBLE_CFLAGS}],
         PREFIX: $3,
         IF_FALSE: [
@@ -816,8 +814,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
               FILE_MACRO_CFLAGS=
           ]
       )
-    elif test "x$TOOLCHAIN_TYPE" = xmicrosoft &&
-        test "x$ENABLE_REPRODUCIBLE_BUILD" = xtrue; then
+    elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
       # There is a known issue with the pathmap if the mapping is made to the
       # empty string. Add a minimal string "s" as prefix to work around this.
       # PATHMAP_FLAGS is also added to LDFLAGS in flags-ldflags.m4.

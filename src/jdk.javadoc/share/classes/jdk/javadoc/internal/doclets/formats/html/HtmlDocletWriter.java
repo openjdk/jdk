@@ -500,7 +500,7 @@ public class HtmlDocletWriter {
      */
     protected HtmlTree getHeader(Navigation.PageMode pageMode, Element element) {
         return HtmlTree.HEADER()
-                .add(new RawHtml(replaceDocRootDir(options.top())))
+                .add(RawHtml.of(replaceDocRootDir(options.top())))
                 .add(getNavBar(pageMode, element).getContent());
     }
 
@@ -515,7 +515,7 @@ public class HtmlDocletWriter {
      */
     protected Navigation getNavBar(Navigation.PageMode pageMode, Element element) {
         return new Navigation(element, configuration, pageMode, path)
-                .setUserHeader(new RawHtml(replaceDocRootDir(options.header())));
+                .setUserHeader(RawHtml.of(replaceDocRootDir(options.header())));
     }
 
     /**
@@ -532,7 +532,7 @@ public class HtmlDocletWriter {
                     .add(new HtmlTree(TagName.HR))
                     .add(HtmlTree.P(HtmlStyle.legalCopy,
                             HtmlTree.SMALL(
-                                    new RawHtml(replaceDocRootDir(bottom)))));
+                                    RawHtml.of(replaceDocRootDir(bottom)))));
     }
 
     /**
@@ -1004,7 +1004,7 @@ public class HtmlDocletWriter {
                     }
                     case START_ELEMENT -> {
                         // @see <a href="...">...</a>
-                        return new RawHtml(replaceDocRootDir(removeTrailingSlash(seeText)));
+                        return RawHtml.of(replaceDocRootDir(removeTrailingSlash(seeText)));
                     }
                     case REFERENCE -> {
                         // @see reference label...
@@ -1484,8 +1484,7 @@ public class HtmlDocletWriter {
             }
         };
         CommentHelper ch = utils.getCommentHelper(element);
-        // Array of all possible inline tags for this javadoc run
-        configuration.tagletManager.checkTags(element, trees, true);
+        configuration.tagletManager.checkTags(element, trees);
         commentRemoved = false;
 
         for (ListIterator<? extends DocTree> iterator = trees.listIterator(); iterator.hasNext();) {
@@ -1511,103 +1510,108 @@ public class HtmlDocletWriter {
                 }
             }
 
-            boolean allDone = new SimpleDocTreeVisitor<Boolean, Content>() {
+            var docTreeVisitor = new SimpleDocTreeVisitor<Boolean, Content>() {
 
                 private boolean inAnAtag() {
-                    if (utils.isStartElement(tag)) {
-                        StartElementTree st = (StartElementTree)tag;
-                        Name name = st.getName();
-                        if (name != null) {
-                            HtmlTag htag = HtmlTag.get(name);
-                            return htag != null && htag.equals(HtmlTag.A);
-                        }
-                    }
-                    return false;
+                    return (tag instanceof StartElementTree st) && equalsIgnoreCase(st.getName(), "a");
+                }
+
+                private boolean equalsIgnoreCase(Name name, String s) {
+                    return name != null && name.toString().equalsIgnoreCase(s);
                 }
 
                 @Override
-                public Boolean visitAttribute(AttributeTree node, Content c) {
-                    StringBuilder sb = new StringBuilder(SPACER).append(node.getName().toString());
+                public Boolean visitAttribute(AttributeTree node, Content content) {
+                    if (!content.isEmpty()) {
+                        content.add(" ");
+                    }
+                    content.add(node.getName());
                     if (node.getValueKind() == ValueKind.EMPTY) {
-                        result.add(sb);
                         return false;
                     }
-                    sb.append("=");
+                    content.add("=");
                     String quote = switch (node.getValueKind()) {
                         case DOUBLE -> "\"";
                         case SINGLE -> "'";
                         default -> "";
                     };
-                    sb.append(quote);
-                    result.add(sb);
-                    Content docRootContent = new ContentBuilder();
+                    content.add(quote);
 
-                    boolean isHRef = inAnAtag() && node.getName().toString().equalsIgnoreCase("href");
+                    /* In the following code for an attribute value:
+                     * 1. {@docRoot} followed by text beginning "/.." is replaced by the value
+                     *    of the docrootParent option, followed by the remainder of the text
+                     * 2. in the value of an "href" attribute in a <a> tag, an initial text
+                     *    value will have a relative link redirected.
+                     * Note that, realistically, it only makes sense to ever use {@docRoot}
+                     * at the beginning of a URL in an attribute value, but this is not
+                     * required or enforced.
+                     */
+                    boolean isHRef = inAnAtag() && equalsIgnoreCase(node.getName(), "href");
+                    boolean first = true;
+                    DocRootTree pendingDocRoot = null;
                     for (DocTree dt : node.getValue()) {
-                        if (utils.isText(dt) && isHRef) {
-                            String text = ((TextTree) dt).getBody();
-                            if (text.startsWith("/..") && !options.docrootParent().isEmpty()) {
-                                result.add(options.docrootParent());
-                                docRootContent = new ContentBuilder();
-                                result.add(textCleanup(text.substring(3), isLastNode));
-                            } else {
-                                if (!docRootContent.isEmpty()) {
-                                    docRootContent = copyDocRootContent(docRootContent);
-                                } else {
-                                    text = redirectRelativeLinks(element, (TextTree) dt);
+                        if (pendingDocRoot != null) {
+                            if (dt instanceof TextTree tt) {
+                                String text = tt.getBody();
+                                if (text.startsWith("/..") && !options.docrootParent().isEmpty()) {
+                                    content.add(options.docrootParent());
+                                    content.add(textCleanup(text.substring(3), isLastNode));
+                                    pendingDocRoot = null;
+                                    continue;
                                 }
-                                result.add(textCleanup(text, isLastNode));
                             }
-                        } else {
-                            docRootContent = copyDocRootContent(docRootContent);
-                            dt.accept(this, docRootContent);
+                            pendingDocRoot.accept(this, content);
+                            pendingDocRoot = null;
                         }
+
+                        if (dt instanceof TextTree tt) {
+                            String text = tt.getBody();
+                            if (first && isHRef) {
+                                text = redirectRelativeLinks(element, tt);
+                            }
+                            content.add(textCleanup(text, isLastNode));
+                        } else if (dt instanceof DocRootTree drt) {
+                            // defer until we see what, if anything, follows this node
+                            pendingDocRoot = drt;
+                        } else {
+                            dt.accept(this, content);
+                        }
+                        first = false;
                     }
-                    copyDocRootContent(docRootContent);
-                    result.add(quote);
-                    return false;
-                }
-
-                @Override
-                public Boolean visitComment(CommentTree node, Content c) {
-                    result.add(new RawHtml(node.getBody()));
-                    return false;
-                }
-
-                private Content copyDocRootContent(Content content) {
-                    if (!content.isEmpty()) {
-                        result.add(content);
-                        return new ContentBuilder();
+                    if (pendingDocRoot != null) {
+                        pendingDocRoot.accept(this, content);
                     }
-                    return content;
-                }
 
-                @Override
-                public Boolean visitDocRoot(DocRootTree node, Content c) {
-                    Content docRootContent = getInlineTagOutput(element, node, context);
-                    if (c != null) {
-                        c.add(docRootContent);
-                    } else {
-                        result.add(docRootContent);
-                    }
+                    content.add(quote);
                     return false;
                 }
 
                 @Override
-                public Boolean visitEndElement(EndElementTree node, Content c) {
-                    RawHtml rawHtml = new RawHtml("</" + node.getName() + ">");
-                    result.add(rawHtml);
+                public Boolean visitComment(CommentTree node, Content content) {
+                    content.add(RawHtml.comment(node.getBody()));
                     return false;
                 }
 
                 @Override
-                public Boolean visitEntity(EntityTree node, Content c) {
-                    result.add(new RawHtml(node.toString()));
+                public Boolean visitDocRoot(DocRootTree node, Content content) {
+                    content.add(getInlineTagOutput(element, node, context));
                     return false;
                 }
 
                 @Override
-                public Boolean visitErroneous(ErroneousTree node, Content c) {
+                public Boolean visitEndElement(EndElementTree node, Content content) {
+                    content.add(RawHtml.endElement(node.getName()));
+                    return false;
+                }
+
+                @Override
+                public Boolean visitEntity(EntityTree node, Content content) {
+                    content.add(Entity.of(node.getName()));
+                    return false;
+                }
+
+                @Override
+                public Boolean visitErroneous(ErroneousTree node, Content content) {
                     DocTreePath dtp = ch.getDocTreePath(node);
                     if (dtp != null) {
                         String body = node.getBody();
@@ -1617,11 +1621,11 @@ public class HtmlDocletWriter {
                             if (!configuration.isDocLintSyntaxGroupEnabled()) {
                                 messages.warning(dtp, "doclet.tag.invalid_input", body);
                             }
-                            result.add(invalidTagOutput(resources.getText("doclet.tag.invalid_input", body),
+                            content.add(invalidTagOutput(resources.getText("doclet.tag.invalid_input", body),
                                     Optional.empty()));
                         } else {
                             messages.warning(dtp, "doclet.tag.invalid_usage", body);
-                            result.add(invalidTagOutput(resources.getText("doclet.tag.invalid", tagName),
+                            content.add(invalidTagOutput(resources.getText("doclet.tag.invalid", tagName),
                                     Optional.of(Text.of(body))));
                         }
                     }
@@ -1629,24 +1633,24 @@ public class HtmlDocletWriter {
                 }
 
                 @Override
-                public Boolean visitInheritDoc(InheritDocTree node, Content c) {
+                public Boolean visitInheritDoc(InheritDocTree node, Content content) {
                     Content output = getInlineTagOutput(element, node, context);
-                    result.add(output);
+                    content.add(output);
                     // if we obtained the first sentence successfully, nothing more to do
                     return (context.isFirstSentence && !output.isEmpty());
                 }
 
                 @Override
-                public Boolean visitIndex(IndexTree node, Content p) {
+                public Boolean visitIndex(IndexTree node, Content content) {
                     Content output = getInlineTagOutput(element, node, context);
                     if (output != null) {
-                        result.add(output);
+                        content.add(output);
                     }
                     return false;
                 }
 
                 @Override
-                public Boolean visitLink(LinkTree node, Content c) {
+                public Boolean visitLink(LinkTree node, Content content) {
                     var inTags = context.inTags;
                     if (inTags.contains(LINK) || inTags.contains(LINK_PLAIN) || inTags.contains(SEE)) {
                         DocTreePath dtp = ch.getDocTreePath(node);
@@ -1657,55 +1661,50 @@ public class HtmlDocletWriter {
                         if (label.isEmpty()) {
                             label = Text.of(node.getReference().getSignature());
                         }
-                        result.add(label);
+                        content.add(label);
                     } else {
-                        Content content = seeTagToContent(element, node, context.within(node));
-                        result.add(content);
+                        Content c = seeTagToContent(element, node, context.within(node));
+                        content.add(c);
                     }
                     return false;
                 }
 
                 @Override
-                public Boolean visitLiteral(LiteralTree node, Content c) {
+                public Boolean visitLiteral(LiteralTree node, Content content) {
                     String s = node.getBody().getBody();
-                    Content content = Text.of(utils.normalizeNewlines(s));
-                    if (node.getKind() == CODE)
-                        content = HtmlTree.CODE(content);
-                    result.add(content);
+                    Content t = Text.of(utils.normalizeNewlines(s));
+                    content.add(node.getKind() == CODE ? HtmlTree.CODE(t) : t);
                     return false;
                 }
 
                 @Override
-                public Boolean visitSee(SeeTree node, Content c) {
-                    result.add(seeTagToContent(element, node, context));
+                public Boolean visitSee(SeeTree node, Content content) {
+                    content.add(seeTagToContent(element, node, context));
                     return false;
                 }
 
                 @Override
-                public Boolean visitStartElement(StartElementTree node, Content c) {
-                    String text = "<" + node.getName();
-                    RawHtml rawHtml = new RawHtml(utils.normalizeNewlines(text));
-                    result.add(rawHtml);
-
+                public Boolean visitStartElement(StartElementTree node, Content content) {
+                    Content attrs = new ContentBuilder();
                     for (DocTree dt : node.getAttributes()) {
-                        dt.accept(this, null);
+                        dt.accept(this, attrs);
                     }
-                    result.add(new RawHtml(node.isSelfClosing() ? "/>" : ">"));
+                    content.add(RawHtml.startElement(node.getName(), attrs, node.isSelfClosing()));
                     return false;
                 }
 
                 @Override
-                public Boolean visitSummary(SummaryTree node, Content c) {
+                public Boolean visitSummary(SummaryTree node, Content content) {
                     Content output = getInlineTagOutput(element, node, context);
-                    result.add(output);
+                    content.add(output);
                     return false;
                 }
 
                 @Override
-                public Boolean visitSystemProperty(SystemPropertyTree node, Content p) {
+                public Boolean visitSystemProperty(SystemPropertyTree node, Content content) {
                     Content output = getInlineTagOutput(element, node, context);
                     if (output != null) {
-                        result.add(output);
+                        content.add(output);
                     }
                     return false;
                 }
@@ -1728,23 +1727,28 @@ public class HtmlDocletWriter {
                 }
 
                 @Override
-                public Boolean visitText(TextTree node, Content c) {
+                public Boolean visitText(TextTree node, Content content) {
                     String text = node.getBody();
-                    result.add(new RawHtml(textCleanup(text, isLastNode, commentRemoved)));
+                    result.add(text.startsWith("<![CDATA[")
+                            ? RawHtml.cdata(text)
+                            : Text.of(textCleanup(text, isLastNode, commentRemoved)));
                     return false;
                 }
 
                 @Override
-                protected Boolean defaultAction(DocTree node, Content c) {
+                protected Boolean defaultAction(DocTree node, Content content) {
                     Content output = getInlineTagOutput(element, node, context);
                     if (output != null) {
-                        result.add(output);
+                        content.add(output);
                     }
                     return false;
                 }
 
-            }.visit(tag, null);
+            };
+
+            boolean allDone = docTreeVisitor.visit(tag, result);
             commentRemoved = false;
+
             if (allDone)
                 break;
         }
@@ -1895,15 +1899,6 @@ public class HtmlDocletWriter {
             }
         }
         return text;
-    }
-
-    /**
-     * According to
-     * <cite>The Java Language Specification</cite>,
-     * all the outer classes and static nested classes are core classes.
-     */
-    public boolean isCoreClass(TypeElement typeElement) {
-        return utils.getEnclosingTypeElement(typeElement) == null || utils.isStatic(typeElement);
     }
 
     /**
@@ -2166,6 +2161,7 @@ public class HtmlDocletWriter {
                     }
                 }.visit(t);
             }
+
             @Override
             public Content visitAnnotation(AnnotationMirror a, Void p) {
                 List<Content> list = getAnnotations(List.of(a), false);
@@ -2175,10 +2171,12 @@ public class HtmlDocletWriter {
                 }
                 return buf;
             }
+
             @Override
             public Content visitEnumConstant(VariableElement c, Void p) {
                 return getDocLink(HtmlLinkInfo.Kind.ANNOTATION, c, c.getSimpleName());
             }
+
             @Override
             public Content visitArray(List<? extends AnnotationValue> vals, Void p) {
                 ContentBuilder buf = new ContentBuilder();
@@ -2190,6 +2188,7 @@ public class HtmlDocletWriter {
                 }
                 return buf;
             }
+
             @Override
             protected Content defaultAction(Object o, Void p) {
                 return Text.of(annotationValue.toString());
@@ -2272,10 +2271,6 @@ public class HtmlDocletWriter {
                 .replace("API", "Api");
         String page = kind.substring(0, 1).toLowerCase(Locale.US) + kind.substring(1) + "Page";
         return HtmlStyle.valueOf(page);
-    }
-
-    Script getMainBodyScript() {
-        return mainBodyScript;
     }
 
     /**
