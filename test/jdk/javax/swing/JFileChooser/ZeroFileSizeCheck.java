@@ -50,14 +50,14 @@ public class ZeroFileSizeCheck {
     public static void test() {
         JFileChooser fc = new JFileChooser();
         try {
-            Path currentDir = Paths.get(System.getProperty("test.src"));
+            Path dir = Paths.get(System.getProperty("test.src"));
             // create empty file
-            Path emptyFile = currentDir.resolve("TEST-EMPTY-FILE.txt");
+            Path emptyFile = dir.resolve("TEST-EMPTY-FILE.txt");
             if (!Files.exists(emptyFile)) {
                 Files.createFile(emptyFile);
             }
-            fc.setCurrentDirectory(currentDir.toFile());
-        }catch (IOException ex) {
+            fc.setCurrentDirectory(dir.toFile());
+        } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
         fc.showOpenDialog(null);
@@ -76,3 +76,4 @@ public class ZeroFileSizeCheck {
         passFailJFrame.awaitAndCheck();
     }
 }
+

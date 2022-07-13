@@ -529,7 +529,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
         viewTypeActionNames[VIEWTYPE_DETAILS] =
                         UIManager.getString("FileChooser.detailsViewActionLabelText", l);
 
-        byteString      = UIManager.getString("FileChooser.fileSizeBytes", l);
+        byteString = UIManager.getString("FileChooser.fileSizeBytes", l);
         kiloByteString = UIManager.getString("FileChooser.fileSizeKiloBytes", l);
         megaByteString = UIManager.getString("FileChooser.fileSizeMegaBytes", l);
         gigaByteString = UIManager.getString("FileChooser.fileSizeGigaBytes", l);
@@ -1191,11 +1191,14 @@ public class FilePane extends JPanel implements PropertyChangeListener {
                 Icon icon = chooser.getIcon(file);
                 setIcon(icon);
 
-            } else if (value instanceof Long) {
-                long len = ((Long) value);
+            } else if (value instanceof Long len) {
                 if (listViewWindowsStyle) {
-                    len /= 1024L;
-                    text = MessageFormat.format(kiloByteString, len + 1);
+                    if(len == 0) {
+                        text = MessageFormat.format(byteString, len);
+                    } else {
+                        len /= 1024L;
+                        text = MessageFormat.format(kiloByteString, len + 1);
+                    }
                 } else if (len < 1024L) {
                     text = MessageFormat.format(byteString, len);
                 } else {
