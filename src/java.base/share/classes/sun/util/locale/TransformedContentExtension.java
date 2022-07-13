@@ -25,6 +25,7 @@
 package sun.util.locale;
 
 import java.util.IllformedLocaleException;
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -38,8 +39,8 @@ import java.util.stream.Collectors;
 public class TransformedContentExtension extends Extension {
 
     private static final Pattern FIELD = Pattern.compile("[-_]?(?<fsep>[a-zA-Z]\\d)[-_](?<fval>([-_]?\\w{3,8})+)");
-    private final String sourceLang;
-    private final SortedSet<Field> fields;
+    private final Optional<String> sourceLang;
+    private final Optional<SortedSet<Field>> fields;
     private final String canonical;
 
     TransformedContentExtension(char key, String value) {
@@ -47,44 +48,45 @@ public class TransformedContentExtension extends Extension {
         Matcher m = FIELD.matcher(value);
         if (m.find()) {
             var firstFieldIndex = m.start();
-            sourceLang = (firstFieldIndex != 0) ? value.substring(0, firstFieldIndex) : null;
-            fields = new TreeSet<>();
+            var sourceLangVal = (firstFieldIndex != 0) ? value.substring(0, firstFieldIndex) : null;
+            var fieldsVal = new TreeSet<Field>();
             do {
                 var f = new Field(m.group("fsep"), m.group("fval"));
-                if (fields.contains(f)) {
+                if (fieldsVal.contains(f)) {
                     throw new IllformedLocaleException("Field duplicates for the separator '" +
                             f.fsep() + "' within the Transformed Content extension",
                             m.start() + 3); // +3 for "t-" and the leading '-' of the duplicated field
                 } else {
-                    fields.add(f);
+                    fieldsVal.add(f);
                 }
             } while (m.find());
+            sourceLang = Optional.ofNullable(sourceLangVal);
+            fields = Optional.of(fieldsVal);
         } else {
-            sourceLang = value;
-            fields = null;
+            sourceLang = Optional.of(value);
+            fields = Optional.empty();
         }
 
         // Verify sourceLang
-        if (sourceLang != null) {
+        sourceLang.ifPresent(sl -> {
             var pp = new ParseStatus();
-            LanguageTag.parse(sourceLang, pp);
+            LanguageTag.parse(sl, pp);
             if (pp.isError()) {
-                throw new IllformedLocaleException("Source language tag is invalid within the t extension: " + sourceLang);
+                throw new IllformedLocaleException("Source language tag is invalid within the t extension: " + sl);
             }
-        }
+        });
 
         canonical = LanguageTag.TRANSFORMED_CONTENT + "-" +
-                (sourceLang == null ? "" : sourceLang + "-") +
-                (fields == null ? "" : fields.stream()
-                        .map(f -> f.fsep() + "-" + f.fval())
-                        .collect(Collectors.joining("-")));
+                sourceLang.map(sl -> sl + "-").orElse("") +
+                fields.map(ss -> ss.stream().map(f -> f.fsep() + "-" + f.fval()).collect(Collectors.joining("-")))
+                    .orElse("");
     }
 
-    public String getSourceLang() {
+    public Optional<String> getSourceLang() {
         return sourceLang;
     }
 
-    public Set<Field> getFields() {
+    public Optional<SortedSet<Field>> getFields() {
         return fields;
     }
 

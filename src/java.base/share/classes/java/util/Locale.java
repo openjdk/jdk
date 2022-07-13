@@ -1516,17 +1516,12 @@ public final class Locale implements Cloneable, Serializable {
      * @since 20
      */
     public Locale getTransformedContentSource() {
-        Locale ret = null;
-        if (hasExtensions()) {
-            if (localeExtensions.getExtension(Locale.TRANSFORMED_CONTENT_EXTENSION)
+        if (hasExtensions() &&
+            localeExtensions.getExtension(Locale.TRANSFORMED_CONTENT_EXTENSION)
                     instanceof TransformedContentExtension t_ext) {
-                var source = t_ext.getSourceLang();
-                if (source != null) {
-                    ret = Locale.forLanguageTag(source);
-                }
-            }
+                return t_ext.getSourceLang().map(sl -> Locale.forLanguageTag(sl)).orElse(null);
         }
-        return ret;
+        return null;
     }
 
     /**
@@ -1544,13 +1539,11 @@ public final class Locale implements Cloneable, Serializable {
         if (hasExtensions() &&
                 localeExtensions.getExtension(Locale.TRANSFORMED_CONTENT_EXTENSION)
                     instanceof TransformedContentExtension t_ext) {
-            var fields = t_ext.getFields();
-            if (fields != null) {
-                return fields.stream()
+            return t_ext.getFields().map(ss -> ss.stream()
                         .collect(Collectors.toUnmodifiableMap(
                                 TransformedContentExtension.Field::fsep,
-                                TransformedContentExtension.Field::fval));
-            }
+                                TransformedContentExtension.Field::fval)))
+                .orElse(Collections.emptyMap());
         }
         return Collections.emptyMap();
     }
@@ -2264,22 +2257,20 @@ public final class Locale implements Cloneable, Serializable {
                                 .forEach(names::add);
                     }
                     case TRANSFORMED_CONTENT_EXTENSION -> {
-                        var ext = localeExtensions.getExtension(TRANSFORMED_CONTENT_EXTENSION);
-                        if (ext instanceof TransformedContentExtension tce) {
-                            var sourceLang = tce.getSourceLang();
-                            var fields = tce.getFields();
-                            if (sourceLang != null) {
+                        if (localeExtensions.getExtension(TRANSFORMED_CONTENT_EXTENSION)
+                                instanceof TransformedContentExtension tce) {
+                            tce.getSourceLang().ifPresent(sourceLang ->
                                 names.add(getDisplayString(String.valueOf(TRANSFORMED_CONTENT_EXTENSION), null, inLocale, DISPLAY_UEXT_KEY) + ": " +
-                                        forLanguageTag(sourceLang).getDisplayName(inLocale));
-                            }
-                            if (fields != null) {
+                                        forLanguageTag(sourceLang).getDisplayName(inLocale))
+                            );
+                            tce.getFields().ifPresent(fields ->
                                 fields.stream()
                                         .map(f -> getDisplayString(f.fsep(), null, inLocale, DISPLAY_UEXT_KEY) + ": " +
                                                 Arrays.stream(f.fval().split("-"))
                                                         .map(v -> getDisplayString(v, f.fsep(), inLocale, DISPLAY_UEXT_TYPE))
                                                         .collect(Collectors.joining(" ")))
-                                        .forEach(names::add);
-                            }
+                                        .forEach(names::add)
+                            );
                         }
                     }
                     default -> {
