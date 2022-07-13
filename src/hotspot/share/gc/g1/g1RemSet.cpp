@@ -768,6 +768,8 @@ class G1ScanHRForRegionClosure : public HeapRegionClosure {
 
   G1RemSetScanState* _scan_state;
 
+  G1ScanCardClosure _scan_closure;
+
   G1GCPhaseTimes::GCParPhases _phase;
 
   uint   _worker_id;
@@ -787,9 +789,8 @@ class G1ScanHRForRegionClosure : public HeapRegionClosure {
 
   HeapWord* scan_memregion(uint region_idx_for_card, MemRegion mr) {
     HeapRegion* const card_region = _g1h->region_at(region_idx_for_card);
-    G1ScanCardClosure card_cl(_g1h, _pss, _heap_roots_found);
 
-    HeapWord* const scanned_to = card_region->oops_on_memregion_seq_iterate_careful<true>(mr, &card_cl);
+    HeapWord* const scanned_to = card_region->oops_on_memregion_seq_iterate_careful<true>(mr, &_scan_closure);
     assert(scanned_to != NULL, "Should be able to scan range");
     assert(scanned_to >= mr.end(), "Scanned to " PTR_FORMAT " less than range " PTR_FORMAT, p2i(scanned_to), p2i(mr.end()));
 
@@ -877,6 +878,7 @@ public:
     _bot(_g1h->bot()),
     _pss(pss),
     _scan_state(scan_state),
+    _scan_closure(_g1h, _pss, _heap_roots_found),
     _phase(phase),
     _worker_id(worker_id),
     _cards_scanned(0),
