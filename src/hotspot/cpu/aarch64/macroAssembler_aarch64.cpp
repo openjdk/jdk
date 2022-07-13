@@ -177,7 +177,7 @@ public:
       case 0b011010: { // Compare & branch (immediate)
           conditionalBranch(insn_addr, target);
           break;
-        }
+      }
       case 0b011011: {
         testAndBranch(insn_addr, target);
         break;
@@ -277,7 +277,7 @@ public:
     Instruction_aarch64::spatch(insn_addr, 23, 5, offset);
     return 1;
   }
-  virtual int adrp(address insn_addr, address &target, reloc_insn inner) {
+  virtual int adr(address insn_addr, address &target, reloc_insn inner) {
     int instructions = 1;
 #ifdef ASSERT
     uint32_t insn = *(uint32_t*)insn_addr;
