@@ -180,7 +180,7 @@ import gc.testlibrary.PerfCounters;
  *          java.compiler
  *          java.management/sun.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run main/othervm -XX:+UsePerfData -XX:+UseEpsilonGC gc.metaspace.TestMetaspacePerfCounters
+ * @run main/othervm -XX:+UsePerfData -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC gc.metaspace.TestMetaspacePerfCounters
  */
 
 public class TestMetaspacePerfCounters {
