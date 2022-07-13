@@ -48,8 +48,8 @@ package gc.g1;
  * @summary Basic testing of various GC pause verification during the G1 concurrent cycle. It leaves
  *          out G1VerifyBitmaps as this is a debug-only option.
  * @library /test/lib
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm
  *   -Xbootclasspath/a:.
  *   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
