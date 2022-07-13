@@ -629,7 +629,7 @@ public abstract class AbstractQueuedLongSynchronizer
         throws InterruptedException {
         if (Thread.interrupted() ||
             (!tryAcquire(arg) && acquire(null, arg, false, true, false, 0L) < 0))
-            throw LockSupport.interruptedException();
+            throw new InterruptedException();
     }
 
     /**
@@ -718,7 +718,7 @@ public abstract class AbstractQueuedLongSynchronizer
         if (Thread.interrupted() ||
             (tryAcquireShared(arg) < 0 &&
              acquire(null, arg, true, true, false, 0L) < 0))
-            throw LockSupport.interruptedException();
+            throw new InterruptedException();
     }
 
     /**
@@ -751,7 +751,7 @@ public abstract class AbstractQueuedLongSynchronizer
             if (stat == 0)
                 return false;
         }
-        throw LockSupport.interruptedException();
+        throw new InterruptedException();
     }
 
     /**
@@ -1149,7 +1149,7 @@ public abstract class AbstractQueuedLongSynchronizer
         public final void signal() {
             ConditionNode first = firstWaiter;
             if (!isHeldExclusively())
-                throw LockSupport.illegalMonitorStateException();
+                throw new IllegalMonitorStateException();
             else if (first != null)
                 doSignal(first, false);
         }
@@ -1164,7 +1164,7 @@ public abstract class AbstractQueuedLongSynchronizer
         public final void signalAll() {
             ConditionNode first = firstWaiter;
             if (!isHeldExclusively())
-                throw LockSupport.illegalMonitorStateException();
+                throw new IllegalMonitorStateException();
             else if (first != null)
                 doSignal(first, true);
         }
@@ -1192,7 +1192,7 @@ public abstract class AbstractQueuedLongSynchronizer
                     return savedState;
             }
             node.status = CANCELLED; // lock not held or inconsistent
-            throw LockSupport.illegalMonitorStateException();
+            throw new IllegalMonitorStateException();
         }
 
         /**
@@ -1246,7 +1246,7 @@ public abstract class AbstractQueuedLongSynchronizer
             }
             // fall through if encountered OutOfMemoryError
             if (!isHeldExclusively() || !release(savedState = getState()))
-                throw LockSupport.staticIllegalMonitorStateException;
+                throw new IllegalMonitorStateException();
             U.park(false, OOME_COND_WAIT_DELAY);
             acquireOnOOME(false, savedState);
             return null;
@@ -1309,7 +1309,7 @@ public abstract class AbstractQueuedLongSynchronizer
          */
         public final void await() throws InterruptedException {
             if (Thread.interrupted())
-                throw LockSupport.interruptedException();
+                throw new InterruptedException();
             ConditionNode node = newConditionNode();
             if (node == null)
                 return;
@@ -1340,7 +1340,7 @@ public abstract class AbstractQueuedLongSynchronizer
             if (interrupted) {
                 if (cancelled) {
                     unlinkCancelledWaiters(node);
-                    throw LockSupport.interruptedException();
+                    throw new InterruptedException();
                 }
                 Thread.currentThread().interrupt();
             }
@@ -1362,7 +1362,7 @@ public abstract class AbstractQueuedLongSynchronizer
         public final long awaitNanos(long nanosTimeout)
                 throws InterruptedException {
             if (Thread.interrupted())
-                throw LockSupport.interruptedException();
+                throw new InterruptedException();
             ConditionNode node = newConditionNode();
             if (node == null)
                 return nanosTimeout - OOME_COND_WAIT_DELAY;
@@ -1383,7 +1383,7 @@ public abstract class AbstractQueuedLongSynchronizer
             if (cancelled) {
                 unlinkCancelledWaiters(node);
                 if (interrupted)
-                    throw LockSupport.interruptedException();
+                    throw new InterruptedException();
             } else if (interrupted)
                 Thread.currentThread().interrupt();
             long remaining = deadline - System.nanoTime(); // avoid overflow
@@ -1408,7 +1408,7 @@ public abstract class AbstractQueuedLongSynchronizer
                 throws InterruptedException {
             long abstime = deadline.getTime();
             if (Thread.interrupted())
-                throw LockSupport.interruptedException();
+                throw new InterruptedException();
             ConditionNode node = newConditionNode();
             if (node == null)
                 return false;
@@ -1427,7 +1427,7 @@ public abstract class AbstractQueuedLongSynchronizer
             if (cancelled) {
                 unlinkCancelledWaiters(node);
                 if (interrupted)
-                    throw LockSupport.interruptedException();
+                    throw new InterruptedException();
             } else if (interrupted)
                 Thread.currentThread().interrupt();
             return !cancelled;
@@ -1451,7 +1451,7 @@ public abstract class AbstractQueuedLongSynchronizer
                 throws InterruptedException {
             long nanosTimeout = unit.toNanos(time);
             if (Thread.interrupted())
-                throw LockSupport.interruptedException();
+                throw new InterruptedException();
             ConditionNode node = newConditionNode();
             if (node == null)
                 return false;
@@ -1472,7 +1472,7 @@ public abstract class AbstractQueuedLongSynchronizer
             if (cancelled) {
                 unlinkCancelledWaiters(node);
                 if (interrupted)
-                    throw LockSupport.interruptedException();
+                    throw new InterruptedException();
             } else if (interrupted)
                 Thread.currentThread().interrupt();
             return !cancelled;
@@ -1500,7 +1500,7 @@ public abstract class AbstractQueuedLongSynchronizer
          */
         protected final boolean hasWaiters() {
             if (!isHeldExclusively())
-                throw LockSupport.illegalMonitorStateException();
+                throw new IllegalMonitorStateException();
             for (ConditionNode w = firstWaiter; w != null; w = w.nextWaiter) {
                 if ((w.status & COND) != 0)
                     return true;
@@ -1519,7 +1519,7 @@ public abstract class AbstractQueuedLongSynchronizer
          */
         protected final int getWaitQueueLength() {
             if (!isHeldExclusively())
-                throw LockSupport.illegalMonitorStateException();
+                throw new IllegalMonitorStateException();
             int n = 0;
             for (ConditionNode w = firstWaiter; w != null; w = w.nextWaiter) {
                 if ((w.status & COND) != 0)
@@ -1539,7 +1539,7 @@ public abstract class AbstractQueuedLongSynchronizer
          */
         protected final Collection<Thread> getWaitingThreads() {
             if (!isHeldExclusively())
-                throw LockSupport.illegalMonitorStateException();
+                throw new IllegalMonitorStateException();
             ArrayList<Thread> list = new ArrayList<>();
             for (ConditionNode w = firstWaiter; w != null; w = w.nextWaiter) {
                 if ((w.status & COND) != 0) {
