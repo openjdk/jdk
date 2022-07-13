@@ -441,7 +441,7 @@ JVM_END
 
 
 JVM_ENTRY_NO_ENV(void, JVM_Halt(jint code))
-  before_exit(thread);
+  before_exit(thread, true);
   vm_exit(code);
 JVM_END
 

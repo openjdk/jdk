@@ -27,7 +27,7 @@
 /**
  * <p>Provides low-level access to memory and functions outside the Java runtime.
  *
- * <h2>Foreign memory access</h2>
+ * <h2 id="fma">Foreign memory access</h2>
  *
  * <p>
  * The main abstraction introduced to support foreign memory access is {@link java.lang.foreign.MemorySegment}, which
@@ -58,7 +58,7 @@
  * where the size of each slot is exactly 4 bytes, the initialization logic above will set each slot
  * so that {@code s[i] = i}, again where {@code 0 <= i < 10}.
  *
- * <h3><a id="deallocation"></a>Deterministic deallocation</h3>
+ * <h3 id="deallocation">Deterministic deallocation</h3>
  *
  * When writing code that manipulates memory segments, especially if backed by memory which resides outside the Java heap, it is
  * often crucial that the resources associated with a memory segment are released when the segment is no longer in use,
@@ -81,7 +81,7 @@
  * <em>try-with-resources</em> construct: this idiom ensures that all the memory resources associated with the segment will be released
  * at the end of the block, according to the semantics described in Section {@jls 14.20.3} of <cite>The Java Language Specification</cite>.
  *
- * <h3><a id="safety"></a>Safety</h3>
+ * <h3 id="safety">Safety</h3>
  *
  * This API provides strong safety guarantees when it comes to memory access. First, when dereferencing a memory segment,
  * the access coordinates are validated (upon access), to make sure that access does not occur at any address which resides
@@ -94,7 +94,7 @@
  * We call this guarantee <em>temporal safety</em>. Together, spatial and temporal safety ensure that each memory access
  * operation either succeeds - and accesses a valid memory location - or fails.
  *
- * <h2>Foreign function access</h2>
+ * <h2 id="ffa">Foreign function access</h2>
  * The key abstractions introduced to support foreign function access are {@link java.lang.foreign.SymbolLookup},
  * {@link java.lang.foreign.FunctionDescriptor} and {@link java.lang.foreign.Linker}. The first is used to look up symbols
  * inside libraries; the second is used to model the signature of foreign functions, while the third provides
@@ -134,7 +134,7 @@
  * {@linkplain java.lang.foreign.MemorySegment#setUtf8String(long, java.lang.String) into} zero-terminated, UTF-8 strings and
  * {@linkplain java.lang.foreign.MemorySegment#getUtf8String(long) back}, as demonstrated in the above example.
  *
- * <h3>Foreign addresses</h3>
+ * <h3 id="addresses">Foreign addresses</h3>
  *
  * When a memory segment is created from Java code, the segment properties (spatial bounds, temporal bounds and confinement)
  * are fully known at segment creation. But when interacting with foreign functions, clients will often receive <em>raw</em> pointers.
@@ -165,7 +165,7 @@
  * int x = segment.get(ValueLayout.JAVA_INT, 0);
  * }
  *
- * <h3>Upcalls</h3>
+ * <h3 id="upcalls">Upcalls</h3>
  * The {@link java.lang.foreign.Linker} interface also allows clients to turn an existing method handle (which might point
  * to a Java method) into a memory address, so that Java code can effectively be passed to other foreign functions.
  * For instance, we can write a method that compares two integer values, as follows:
@@ -213,8 +213,7 @@
  * provided when the upcall stub is created. This same session is made available by the {@link java.lang.foreign.MemorySegment}
  * instance returned by that method.
  *
- * <a id="restricted"></a>
- * <h2>Restricted methods</h2>
+ * <h2 id="restricted">Restricted methods</h2>
  * Some methods in this package are considered <em>restricted</em>. Restricted methods are typically used to bind native
  * foreign data and/or functions to first-class Java API elements which can then be used directly by clients. For instance
  * the restricted method {@link java.lang.foreign.MemorySegment#ofAddress(MemoryAddress, long, MemorySession)}
