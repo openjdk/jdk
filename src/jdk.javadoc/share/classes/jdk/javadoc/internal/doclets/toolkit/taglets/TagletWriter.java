@@ -79,7 +79,7 @@ public abstract class TagletWriter {
      *
      * @return the output
      */
-    protected abstract Content codeTagOutput(Element element, DocTree tag);
+    protected abstract Content codeTagOutput(Element element, LiteralTree tag);
 
     /**
      * Returns the output for a {@code {@index...}} tag.
