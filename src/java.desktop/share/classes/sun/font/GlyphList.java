@@ -25,16 +25,11 @@
 
 package sun.font;
 
-import java.awt.*;
 import java.awt.font.GlyphVector;
-import java.awt.geom.AffineTransform;
-import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import sun.java2d.SurfaceData;
 import sun.java2d.loops.FontInfo;
-
-import static sun.font.CharToGlyphMapper.INVISIBLE_GLYPH_ID;
 
 /*
  * This class represents a list of actual renderable glyphs.
@@ -280,49 +275,6 @@ public final class GlyphList {
                                           usePositions ? positions : null,
                                           info.devTx);
         glyphindex = -1;
-    }
-
-    public Shape extractOutlineAndSetAsFallback(FontInfo info, GlyphVector gv,
-                                                float x, float y) {
-        this.x = x;
-        this.y = y;
-        this.lcdRGBOrder = info.lcdRGBOrder;
-        this.lcdSubPixPos = info.lcdSubPixPos;
-        StandardGlyphVector sgv = StandardGlyphVector.getStandardGV(gv, info);
-        usePositions = true;
-        len = 0;
-        strikelist = null;
-        glyphindex = -1;
-        Shape shape = sgv.getGlyphsOutline(0, sgv.getNumGlyphs(), x, y, this);
-        if (len > 0) {
-            AffineTransform dtx = new AffineTransform(info.devTx);
-            dtx.transform(positions, 0, positions, 0, len);
-        }
-        info.fontStrike.getGlyphImagePtrs(glyphData, images, len);
-        return shape;
-    }
-
-    public void setPosition(float x, float y) {
-        this.x = x;
-        this.y = y;
-    }
-
-    @SuppressWarnings("unchecked")
-    void addFallbackGlyph(StandardGlyphVector.GlyphStrike strike, int glyph, float x, float y) {
-        if (glyph == INVISIBLE_GLYPH_ID) return;
-
-        if (strikelist == null) strikelist = new ArrayList<StandardGlyphVector.GlyphStrike>();
-        ((ArrayList<StandardGlyphVector.GlyphStrike>) strikelist).add(strike);
-
-        int[] gd = glyphData;
-        float[] pos = positions;
-        ensureCapacity(len + 1);
-        if (gd != glyphData && gd != null) System.arraycopy(gd, 0, glyphData, 0, len);
-        if (pos != positions && pos != null) System.arraycopy(pos, 0, positions, 0, len * 2);
-        glyphData[len] = glyph;
-        positions[len*2] = x;
-        positions[len*2+1] = y;
-        len++;
     }
 
     public void startGlyphIteration() {

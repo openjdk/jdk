@@ -364,7 +364,7 @@ public abstract class SurfaceData
 
     protected static final LoopPipe colorPrimitives;
 
-    public static final OutlineTextRenderer outlineTextRenderer;
+    public static final TextPipe outlineTextRenderer;
     public static final TextPipe solidTextRenderer;
     public static final TextPipe aaTextRenderer;
     public static final TextPipe lcdTextRenderer;

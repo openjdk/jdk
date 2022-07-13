@@ -169,7 +169,11 @@ public final class CompositeStrike extends FontStrike {
 
         PhysicalStrike strike = getStrikeForGlyph(glyphCode);
         GeneralPath path = strike.getGlyphOutline(glyphCode & SLOTMASK, x, y);
-        return path;
+        if (path == null) {
+            return new GeneralPath();
+        } else {
+            return path;
+        }
     }
 
     /* The physical font slot for each glyph is encoded in the glyph ID

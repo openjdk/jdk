@@ -420,21 +420,21 @@ public class StandardGlyphVector extends GlyphVector {
     }
 
     public Shape getOutline() {
-        return getGlyphsOutline(0, glyphs.length, 0, 0, null);
+        return getGlyphsOutline(0, glyphs.length, 0, 0);
     }
 
     public Shape getOutline(float x, float y) {
-        return getGlyphsOutline(0, glyphs.length, x, y, null);
+        return getGlyphsOutline(0, glyphs.length, x, y);
     }
 
     // relative to gv origin
     public Shape getGlyphOutline(int ix) {
-        return getGlyphsOutline(ix, 1, 0, 0, null);
+        return getGlyphsOutline(ix, 1, 0, 0);
     }
 
     // relative to gv origin offset by x, y
     public Shape getGlyphOutline(int ix, float x, float y) {
-        return getGlyphsOutline(ix, 1, x, y, null);
+        return getGlyphsOutline(ix, 1, x, y);
     }
 
     public Point2D getGlyphPosition(int ix) {
@@ -1161,9 +1161,9 @@ public class StandardGlyphVector extends GlyphVector {
     }
 
     /**
-     * Used by getOutline, getGlyphsOutline and GlyphList#extractOutlineAndSetAsFallback
+     * Used by getOutline, getGlyphsOutline
      */
-    Shape getGlyphsOutline(int start, int count, float x, float y, GlyphList fallbackList) {
+    private Shape getGlyphsOutline(int start, int count, float x, float y) {
         setFRCTX();
         initPositions();
 
@@ -1172,11 +1172,7 @@ public class StandardGlyphVector extends GlyphVector {
             float px = x + positions[n];
             float py = y + positions[n+1];
 
-            GlyphStrike strike = getGlyphStrike(i);
-            boolean hasOutline = strike.appendGlyphOutline(glyphs[i], result, px, py);
-            if (!hasOutline && fallbackList != null) {
-                fallbackList.addFallbackGlyph(strike, glyphs[i], positions[n], positions[n+1]);
-            }
+            getGlyphStrike(i).appendGlyphOutline(glyphs[i], result, px, py);
         }
 
         return result;
@@ -1787,7 +1783,6 @@ public class StandardGlyphVector extends GlyphVector {
                 result.setRect(strike.getGlyphOutlineBounds(glyphID)); // don't mutate cached rect
             } else {
                 GeneralPath gp = strike.getGlyphOutline(glyphID, 0, 0);
-                if (gp == null) gp = new GeneralPath();
                 gp.transform(sgv.invdtx);
                 result = gp.getBounds2D();
             }
@@ -1807,21 +1802,18 @@ public class StandardGlyphVector extends GlyphVector {
             return result;
         }
 
-        boolean appendGlyphOutline(int glyphID, GeneralPath result, float x, float y) {
+        void appendGlyphOutline(int glyphID, GeneralPath result, float x, float y) {
             // !!! fontStrike needs a method for this.  For that matter, GeneralPath does.
             GeneralPath gp = null;
             if (sgv.invdtx == null) {
                 gp = strike.getGlyphOutline(glyphID, x + dx, y + dy);
-                if (gp == null) return false;
             } else {
                 gp = strike.getGlyphOutline(glyphID, 0, 0);
-                if (gp == null) return false;
                 gp.transform(sgv.invdtx);
                 gp.transform(AffineTransform.getTranslateInstance(x + dx, y + dy));
             }
             PathIterator iterator = gp.getPathIterator(null);
             result.append(iterator, false);
-            return true;
         }
     }
 

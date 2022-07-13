@@ -904,7 +904,6 @@ public class FileFontStrike extends PhysicalStrike {
 
     private
         WeakReference<ConcurrentHashMap<Integer,GeneralPath>> outlineMapRef;
-    private static final GeneralPath NULL_OUTLINE = new GeneralPath();
 
     GeneralPath getGlyphOutline(int glyphCode, float x, float y) {
 
@@ -920,7 +919,6 @@ public class FileFontStrike extends PhysicalStrike {
 
         if (gp == null) {
             gp = fileFont.getGlyphOutline(pScalerContext, glyphCode, 0, 0);
-            if (gp == null) gp = NULL_OUTLINE;
             if (outlineMap == null) {
                 outlineMap = new ConcurrentHashMap<Integer, GeneralPath>();
                 outlineMapRef =
@@ -929,12 +927,9 @@ public class FileFontStrike extends PhysicalStrike {
             }
             outlineMap.put(glyphCode, gp);
         }
-        if (gp == NULL_OUTLINE) gp = null;
-        else {
-            gp = (GeneralPath)gp.clone(); // mutable!
-            if (x != 0f || y != 0f) {
-                gp.transform(AffineTransform.getTranslateInstance(x, y));
-            }
+        gp = (GeneralPath)gp.clone(); // mutable!
+        if (x != 0f || y != 0f) {
+            gp.transform(AffineTransform.getTranslateInstance(x, y));
         }
         return gp;
     }

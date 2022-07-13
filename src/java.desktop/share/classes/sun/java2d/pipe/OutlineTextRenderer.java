@@ -25,14 +25,15 @@
 
 package sun.java2d.pipe;
 
-import sun.awt.SunHints;
-import sun.font.GlyphList;
-import sun.font.StandardGlyphVector;
-import sun.java2d.SunGraphics2D;
-
-import java.awt.*;
 import java.awt.font.FontRenderContext;
 import java.awt.font.GlyphVector;
+import java.awt.font.TextLayout;
+import sun.java2d.SunGraphics2D;
+import sun.awt.SunHints;
+
+import java.awt.Shape;
+import java.awt.geom.AffineTransform;
+import java.awt.font.TextLayout;
 
 /**
  * A delegate pipe of SG2D for drawing "large" text with
@@ -66,26 +67,47 @@ public class OutlineTextRenderer implements TextPipe {
                           char[] data, int offset, int length,
                           int x, int y) {
 
-        StandardGlyphVector sgv = new StandardGlyphVector(g2d.getFont(), data, offset, length, g2d.getFontRenderContext());
-        drawGlyphVector(g2d, sgv, (float) x, (float) y);
+        String s = new String(data, offset, length);
+        drawString(g2d, s, x, y);
     }
 
     public void drawString(SunGraphics2D g2d, String str, double x, double y) {
 
-        StandardGlyphVector sgv = new StandardGlyphVector(g2d.getFont(), str, g2d.getFontRenderContext());
-        drawGlyphVector(g2d, sgv, (float) x, (float) y);
+        if ("".equals(str)) {
+            return; // TextLayout constructor throws IAE on "".
+        }
+        TextLayout tl = new TextLayout(str, g2d.getFont(),
+                                       g2d.getFontRenderContext());
+        Shape s = tl.getOutline(AffineTransform.getTranslateInstance(x, y));
+
+        int textAAHint = g2d.getFontInfo().aaHint;
+
+        int prevaaHint = - 1;
+        if (textAAHint != SunHints.INTVAL_TEXT_ANTIALIAS_OFF &&
+            g2d.antialiasHint != SunHints.INTVAL_ANTIALIAS_ON) {
+            prevaaHint = g2d.antialiasHint;
+            g2d.antialiasHint =  SunHints.INTVAL_ANTIALIAS_ON;
+            g2d.validatePipe();
+        } else if (textAAHint == SunHints.INTVAL_TEXT_ANTIALIAS_OFF
+            && g2d.antialiasHint != SunHints.INTVAL_ANTIALIAS_OFF) {
+            prevaaHint = g2d.antialiasHint;
+            g2d.antialiasHint =  SunHints.INTVAL_ANTIALIAS_OFF;
+            g2d.validatePipe();
+        }
+
+        g2d.fill(s);
+
+        if (prevaaHint != -1) {
+             g2d.antialiasHint = prevaaHint;
+             g2d.validatePipe();
+        }
     }
 
     public void drawGlyphVector(SunGraphics2D g2d, GlyphVector gv,
                                 float x, float y) {
-        drawGlyphVector(g2d, gv, x, y, null);
-    }
 
-    void drawGlyphVector(SunGraphics2D g2d, GlyphVector gv,
-                                float x, float y, GlyphList fallbackList) {
 
-        Shape s = fallbackList == null ? gv.getOutline(x, y) :
-                fallbackList.extractOutlineAndSetAsFallback(g2d.getFontInfo(), gv, x, y);
+        Shape s = gv.getOutline(x, y);
         int prevaaHint = - 1;
         FontRenderContext frc = gv.getFontRenderContext();
         boolean aa = frc.isAntiAliased();
