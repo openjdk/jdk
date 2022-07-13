@@ -977,6 +977,86 @@ public final class Float extends Number
     public static native float intBitsToFloat(int bits);
 
     /**
+     * {@return the {@code float} value closest to the numerical value
+     * of the argument, a binary16 value encoded in a {@code short}}
+     * The conversion is exact; all binary16 values can be exactly
+     * represented in {@code float}.
+     *
+     * Special cases:
+     * <ul>
+     * <li> If the argument is zero, the result is a zero with the
+     * same sign as the argument.
+     * <li> If the argument is infinite, the result is an infinity
+     * with the same sign as the argument.
+     * <li> If the argument is a NaN, the result is a NaN.
+     * </ul>
+     *
+     * <h4><a id=binary16Format>IEEE 754 binary16 format</a></h4>
+     * IEEE 754 standard defines binary16 as a 16-bit format, along
+     * with the 32-bit binary32 format (corresponding to the {@code
+     * float} type) and the 64-bit binary64 format (corresponding to
+     * the {@code double} type). The binary16 format is similar to the
+     * other IEEE 754 formats, except smaller, having all the usual
+     * IEEE 754 values such as NaN, signed infinities, signed zeros,
+     * and subnormals. The parameters (JLS {@jls 4.2.3}) for the
+     * binary16 format are N = 11 precision bits, K = 5 exponent bits,
+     * <i>E</i><sub><i>max</i></sub> = 15, and
+     * <i>E</i><sub><i>min</i></sub> = -14.
+     *
+     * @apiNote
+     * This method corresponds to the convertFormat operation defined
+     * in IEEE 754 from the binary16 format to the binary32 format.
+     * The operation of this method is analogous to a primitive
+     * widening conversion (JLS {@jls 5.1.2}).
+     *
+     * @param binary16asShort the binary16 value to convert to {@code float}
+     * @since 20
+     */
+    // @IntrinsicCandidate
+    public static float binary16AsShortBitsToFloat(short binary16asShort) {
+        /*
+         * The binary16 format has 1 sign bit, 5 exponent bits, and 10
+         * significand bits. The exponent bias is 15.
+         */
+        int bin16arg = (int)binary16asShort;
+        int bin16SignBit     = 0x8000 & bin16arg;
+        int bin16ExpBits     = 0x7c00 & bin16arg;
+        int bin16SignifBits  = 0x03FF & bin16arg;
+
+        float sign = (bin16SignBit != 0) ? -1.0f : 1.0f;
+
+        // Extract binary16 exponent, remove its bias, add in the bias
+        // of a float exponent and shift to correct bit location
+        // (significand width includes the implicit bit so shift one
+        // less).
+        int bin16Exp = (((bin16ExpBits >> 10) - 15));
+        if (bin16Exp == -15) {
+            // For subnormal binary16 values and 0, the numerical
+            // value is 2^24 * the significand as an integer (no
+            // implicit bit).
+            return sign * (0x1p-24f * bin16SignifBits);
+        } else if (bin16Exp == 16) {
+            return (bin16SignifBits == 0) ?
+                sign * Float.POSITIVE_INFINITY :
+                Float.NaN; // Could try to preserve NaN significand bits
+        }
+
+        assert -14 <= bin16Exp  && bin16Exp <= 15;
+
+        int floatExpBits = (bin16Exp + FloatConsts.EXP_BIAS)
+            << (FloatConsts.SIGNIFICAND_WIDTH - 1);
+
+        int result = 0;
+        // Compute result sign, exponent, and significand bits.
+        result |= (floatExpBits |
+                   // Shift left difference in the number of
+                   // significand bits in the float and binary16
+                   // formats
+                   (bin16SignifBits << (FloatConsts.SIGNIFICAND_WIDTH - 11)));
+        return sign * Float.intBitsToFloat(result);
+    }
+
+    /**
      * {@return the binary16 value, encoded in a {@code short},
      * closest in value to the argument}
      * The conversion is computed under the {@linkplain
@@ -991,6 +1071,9 @@ public final class Float extends Number
      * with the same sign as the argument.
      * <li> If the argument is a NaN, the result is a NaN.
      * </ul>
+     *
+     * The <a href="#binary16Format">binary16 format</a> is discussed in
+     * more detail in the {@link #binary16AsShortBitsToFloat} method.
      *
      * @apiNote
      * This method corresponds to the convertFormat operation defined
@@ -1070,6 +1153,7 @@ public final class Float extends Number
                 // 0    1     1
                 // 1    1     0
                 // 1    1     1
+                // See "Computer Arithmetic Algorithms," Koren, Table 4.9
 
                 // Bits of binary16 significand in a float: 0x0007f_e000;
                 // therefore, the other quantities of interest are:
@@ -1090,74 +1174,6 @@ public final class Float extends Number
             result = (short)(((exp + 15) << 10) | signif_bits);
             return (short)(sign_bit | (0x7fff & result));
         }
-    }
-
-    /**
-     * {@return the {@code float} value closest to the numerical value
-     * of the argument, a binary16 value encoded in a {@code short}}
-     * The conversion is exact; all binary16 values can be exactly
-     * represented in {@code float}.
-     *
-     * Special cases:
-     * <ul>
-     * <li> If the argument is zero, the result is a zero with the
-     * same sign as the argument.
-     * <li> If the argument is infinite, the result is an infinity
-     * with the same sign as the argument.
-     * <li> If the argument is a NaN, the result is a NaN.
-     * </ul>
-     *
-     * @apiNote
-     * This method corresponds to the convertFormat operation defined
-     * in IEEE 754 from the binary16 format to the binary32 format.
-     * The operation of this method is analogous to a primitive
-     * widening conversion (JLS {@jls 5.1.2}).
-     *
-     * @param binary16asShort the binary16 value to convert to {@code float}
-     * @since 20
-     */
-    // @IntrinsicCandidate
-    public static float binary16AsShortBitsToFloat(short binary16asShort) {
-        /*
-         * The binary16 format has 1 sign bit, 5 exponent bits, and 10
-         * significand bits. The exponent bias is 15.
-         */
-        int bin16arg = (int)binary16asShort;
-        int bin16SignBit     = 0x8000 & bin16arg;
-        int bin16ExpBits     = 0x7c00 & bin16arg;
-        int bin16SignifBits  = 0x03FF & bin16arg;
-
-        float sign = (bin16SignBit != 0) ? -1.0f : 1.0f;
-
-        // Extract binary16 exponent, remove its bias, add in the bias
-        // of a float exponent and shift to correct bit location
-        // (significand width includes the implicit bit so shift one
-        // less).
-        int bin16Exp = (((bin16ExpBits >> 10) - 15));
-        if (bin16Exp == -15) {
-            // For subnormal binary16 values and 0, the numerical
-            // value is 2^24 * the significand as an integer (no
-            // implicit bit).
-            return sign * (0x1p-24f * bin16SignifBits);
-        } else if (bin16Exp == 16) {
-            return (bin16SignifBits == 0) ?
-                sign * Float.POSITIVE_INFINITY :
-                Float.NaN; // Could try to preserve NaN significand bits
-        }
-
-        assert -14 <= bin16Exp  && bin16Exp <= 15;
-
-        int floatExpBits = (bin16Exp + FloatConsts.EXP_BIAS)
-            << (FloatConsts.SIGNIFICAND_WIDTH - 1);
-
-        int result = 0;
-        // Compute result sign, exponent, and significand bits.
-        result |= (floatExpBits |
-                   // Shift left difference in the number of
-                   // significand bits in the float and binary16
-                   // formats
-                   (bin16SignifBits << (FloatConsts.SIGNIFICAND_WIDTH - 11)));
-        return sign * Float.intBitsToFloat(result);
     }
 
     /**
