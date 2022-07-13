@@ -96,18 +96,7 @@ public class TExtensionTests {
     }
 
     @DataProvider
-    Object[][] data_FieldSeparators() {
-        return new Object[][]{
-                {L1, Set.of("m0")},
-                {L2, Set.of("t0")},
-                {L3, Set.of("h0")},
-                {L4, Set.of("s0", "d0")},
-                {L5, Set.of("s0", "d0")},
-        };
-    }
-
-    @DataProvider
-    Object[][] data_FieldSubtag() {
+    Object[][] data_Fields() {
         return new Object[][]{
                 {L1, Map.of("m0", "ungegn-2007")},
                 {L2, Map.of("t0", "und")},
@@ -186,15 +175,8 @@ public class TExtensionTests {
         assertEquals(locale.getTransformedContentSource(), expected.isEmpty() ? null : Locale.forLanguageTag(expected));
     }
 
-    @Test(dataProvider="data_FieldSeparators")
-    public void test_getTransformedContentFieldSeparators(Locale locale, Set<String> seps) {
-        assertEquals(locale.getTransformedContentFieldSeparators(), seps);
-    }
-
-    @Test(dataProvider="data_FieldSubtag")
-    public void test_getTransformedContentFieldSubtag(Locale locale, Map<String, String> values) {
-        values.keySet().stream().forEach(fsep -> {
-            assertEquals(locale.getTransformedContentFieldSubtag(fsep), values.get(fsep));
-        });
+    @Test(dataProvider="data_Fields")
+    public void test_getTransformedContentFields(Locale locale, Map<String, String> fields) {
+        assertEquals(locale.getTransformedContentFields(), fields);
     }
 }

@@ -264,9 +264,8 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * accompanying a locale object, either via {@link #getExtension(char)} with
  * {@link #TRANSFORMED_CONTENT_EXTENSION} which produces the string
  * representation of the transformed content, or via the specialized
- * methods; {@link #getTransformedContentSource()},
- * {@link #getTransformedContentFieldSeparators()}, and
- * {@link #getTransformedContentFieldSubtag(String)}.
+ * methods; {@link #getTransformedContentSource()} and
+ * {@link #getTransformedContentFields()}.
  * <p>To create a locale object that contains the transformed content, either use
  * the factory method {@link #forLanguageTag(String)} or use
  * {@link Locale.Builder#setExtension(char, String)} with
@@ -1531,51 +1530,29 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     /**
-     * Returns the set of field separators in the T extension of this
-     * locale, or the empty set if it has no T extension fields. The
-     * returned set is unmodifiable.
+     * Returns the map of fields in the T extension of this
+     * locale, or the empty map if it has no T extension fields.
+     * The returned map contains entries of a separator and its
+     * corresponding subtags pair. If there are multiple subtags
+     * in the map value, subtags are delimited by a hyphen. The
+     * returned map is unmodifiable.
      *
-     * @return The set of field separators in the T extension
+     * @return The map of fields in the T extension
      * @since 20
      */
-    public Set<String> getTransformedContentFieldSeparators() {
+    public Map<String, String> getTransformedContentFields() {
         if (hasExtensions() &&
                 localeExtensions.getExtension(Locale.TRANSFORMED_CONTENT_EXTENSION)
                     instanceof TransformedContentExtension t_ext) {
             var fields = t_ext.getFields();
             if (fields != null) {
                 return fields.stream()
-                        .map(TransformedContentExtension.Field::fsep)
-                        .collect(Collectors.toUnmodifiableSet());
+                        .collect(Collectors.toUnmodifiableMap(
+                                TransformedContentExtension.Field::fsep,
+                                TransformedContentExtension.Field::fval));
             }
         }
-        return Collections.emptySet();
-    }
-
-    /**
-     * Returns the subtag for the specified field separator in the T extension
-     * of this locale, or {@code null} if the separator does not exist. If there
-     * are multiple subtags for the separator, the returned string consists of
-     * the subtags, delimited by a hyphen.
-     *
-     * @param separator The separator for which the value is retrieved
-     * @return The subtag for the specified field separator
-     * @since 20
-     */
-    public String getTransformedContentFieldSubtag(String separator) {
-        if (hasExtensions() &&
-                localeExtensions.getExtension(Locale.TRANSFORMED_CONTENT_EXTENSION)
-                        instanceof TransformedContentExtension t_ext) {
-            var fields = t_ext.getFields();
-            if (fields != null) {
-                return fields.stream()
-                        .filter(f -> f.fsep().equals(separator))
-                        .map(TransformedContentExtension.Field::fval)
-                        .findAny()
-                        .orElse(null);
-            }
-        }
-        return null;
+        return Collections.emptyMap();
     }
 
     /**
