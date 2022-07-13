@@ -53,7 +53,7 @@ public class SixteenBitFormats {
         int errors = 0;
         for (int i = Short.MIN_VALUE; i < Short.MAX_VALUE; i++) {
             short s = (short)i;
-            float f = Float.binary16AsShortBitsToFloat(s);
+            float f =  Float.binary16AsShortBitsToFloat(s);
             short s2 = Float.floatToBinary16AsShortBits(f);
 
             if (Binary16.compare(s, s2) != 0) {
@@ -72,14 +72,12 @@ public class SixteenBitFormats {
         // integer-valued float.
         float[][] testCases = {
             {Binary16.POSITIVE_INFINITY,      Float.POSITIVE_INFINITY},
-            {Binary16.NEGATIVE_INFINITY,      Float.NEGATIVE_INFINITY},
             {Binary16.POSITIVE_ZERO,         +0.0f},
-            {Binary16.NEGATIVE_ZERO,         -0.0f},
             {Binary16.MIN_VALUE,              0x1.0p-24f},
-            {Binary16.MIN_NORMAL,             0x1.0p-14f},
-            {Binary16.MAX_VALUE,              65504.0f},
-            {Binary16.ONE,                    1.0f},
             {Binary16.MAX_SUBNORMAL,          0x1.ff8p-15f},
+            {Binary16.MIN_NORMAL,             0x1.0p-14f},
+            {Binary16.ONE,                    1.0f},
+            {Binary16.MAX_VALUE,              65504.0f},
         };
 
         // Check conversions in both directions
@@ -125,7 +123,6 @@ public class SixteenBitFormats {
             {0x1.ff801p-15f,             (short)0x03ff}, // round = 0, sticky = 1
             {0x1.ffcp-15f,               (short)0x0400}, // round = 1, sticky = 0 => ++
             {0x1.ffc01p-15f,             (short)0x0400}, // round = 1, sticky = 1 => ++
-
 
             // Test rounding near binary16 MIN_VALUE
             // Smallest in magnitude subnormal binary16 value 0x0001 => 0x1.0p-24f
@@ -175,7 +172,7 @@ public class SixteenBitFormats {
             errors += compareAndReportError(Math.nextUp(lowerFloat),   lower);
             errors += compareAndReportError(Math.nextDown(midway),     lower);
 
-            // Under round to nearest zero, the midway point will
+            // Under round to nearest even, the midway point will
             // round *down* to the (even) lower endpoint.
             errors += compareAndReportError(midway, lower);
 
@@ -201,6 +198,7 @@ public class SixteenBitFormats {
 
     private static int compareAndReportError(float input,
                                              short expected) {
+        // Round to nearest even is sign symmetric
         return compareAndReportError0( input, expected) +
                compareAndReportError0(-input, Binary16.negate(expected));
     }
@@ -220,6 +218,7 @@ public class SixteenBitFormats {
 
     private static int compareAndReportError(short input,
                                              float expected) {
+        // Round to nearest even is sign symmetric
         return compareAndReportError0(                input,   expected) +
                compareAndReportError0(Binary16.negate(input), -expected);
     }
@@ -241,7 +240,7 @@ public class SixteenBitFormats {
         }
 
         public static short negate(short binary16) {
-            return (short)(((binary16 & 0x8000) ^ 0x8000) |
+            return (short)(((binary16 & 0x8000) ^ 0x8000) | // Isolate and flip sign bit
                            (binary16 & 0x7fff));
         }
 

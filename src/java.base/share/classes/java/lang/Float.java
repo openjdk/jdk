@@ -976,16 +976,29 @@ public final class Float extends Number
     @IntrinsicCandidate
     public static native float intBitsToFloat(int bits);
 
-
     /**
-     * {@return the binary16 value, encoded as a {@code short},
+     * {@return the binary16 value, encoded in a {@code short},
      * closest in value to the argument}
+     * The conversion is computed under the {@linkplain
+     * java.math.RoundingMode#HALF_EVEN round to nearest even rounding
+     * mode}.
      *
-     * correspond to narrowing primitive conversion
-     * todo: round to nearest-even specified
-     * Special value handling
+     * Special cases:
+     * <ul>
+     * <li> If the argument is zero, the result is a zero with the
+     * same sign as the argument.
+     * <li> If the argument is infinite, the result is an infinity
+     * with the same sign as the argument.
+     * <li> If the argument is a NaN, the result is a NaN.
+     * </ul>
      *
-     * @param f the float value to convert
+     * @apiNote
+     * This method corresponds to the convertFormat operation defined
+     * in IEEE 754 from the binary32 format to the binary16 format.
+     * The operation of this method is analogous to a primitive
+     * narrowing conversion (JLS {@jls 5.1.3}).
+     *
+     * @param f the {@code float} value to convert to binary16
      * @since 20
      */
     // @IntrinsicCandidate
@@ -1080,15 +1093,27 @@ public final class Float extends Number
     }
 
     /**
-     * {@return the {@code float} representation of the numerical
-     * value of the argument, a binary16 value encoded as a {@code
-     * short} }
+     * {@return the {@code float} value closest to the numerical value
+     * of the argument, a binary16 value encoded in a {@code short}}
+     * The conversion is exact; all binary16 values can be exactly
+     * represented in {@code float}.
      *
-     * todo: round to nearest-even
-     * specified Special value handling
-     * correspond to widening primitive conversion
+     * Special cases:
+     * <ul>
+     * <li> If the argument is zero, the result is a zero with the
+     * same sign as the argument.
+     * <li> If the argument is infinite, the result is an infinity
+     * with the same sign as the argument.
+     * <li> If the argument is a NaN, the result is a NaN.
+     * </ul>
      *
-     * @param binary16asShort the binary16 value to convert
+     * @apiNote
+     * This method corresponds to the convertFormat operation defined
+     * in IEEE 754 from the binary16 format to the binary32 format.
+     * The operation of this method is analogous to a primitive
+     * widening conversion (JLS {@jls 5.1.2}).
+     *
+     * @param binary16asShort the binary16 value to convert to {@code float}
      * @since 20
      */
     // @IntrinsicCandidate
