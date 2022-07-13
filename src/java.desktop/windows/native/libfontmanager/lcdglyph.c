@@ -435,6 +435,9 @@ Java_sun_font_FileFontStrike__1getGlyphImageFromWindows
         glyphInfo->width -= 1; // must subtract 1
     }
     glyphInfo->height = height;
+    glyphInfo->subpixelResolutionX = 1;
+    glyphInfo->subpixelResolutionY = 1;
+    glyphInfo->format = sun_font_StrikeCache_PIXEL_FORMAT_LCD;
     glyphInfo->advanceX = advanceX;
     glyphInfo->advanceY = advanceY;
     glyphInfo->topLeftX = (float)(topLeftX-1);

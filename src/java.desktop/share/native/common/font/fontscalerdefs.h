@@ -27,6 +27,7 @@
 #define FontScalerDefsIncludesDefined
 
 #include "AccelGlyphCache.h"
+#include "sun_font_StrikeCache.h"
 
 #ifdef  __cplusplus
 extern "C" {
@@ -74,7 +75,8 @@ typedef struct GlyphInfo {
     UInt16       width;
     UInt16       height;
     UInt16       rowBytes;
-    UInt8         managed;
+    UInt8        managed;
+    UInt8        format; // sun_font_StrikeCache_PIXEL_FORMAT_*
     float        topLeftX;
     float        topLeftY;
     void         *cellInfo;

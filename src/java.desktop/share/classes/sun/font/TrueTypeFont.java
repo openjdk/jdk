@@ -98,6 +98,7 @@ public class TrueTypeFont extends FileFont {
     public static final int v1ttTag = 0x00010000; // 'v1tt' - Version 1 TT font
     public static final int trueTag = 0x74727565; // 'true' - Version 2 TT font
     public static final int ottoTag = 0x4f54544f; // 'otto' - OpenType font
+    public static final int COLRTag = 0x434f4c52; // 'COLR'
 
     /* -- ID's used in the 'name' table */
     public static final int MAC_PLATFORM_ID = 1;
@@ -871,6 +872,10 @@ public class TrueTypeFont extends FileFont {
             }
         }
         return null;
+    }
+
+    boolean hasCOLRTable() {
+        return getDirectoryEntry(COLRTag) != null;
     }
 
     /* Used to determine if this size has embedded bitmaps, which

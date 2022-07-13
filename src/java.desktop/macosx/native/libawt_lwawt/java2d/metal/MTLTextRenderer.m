@@ -713,7 +713,7 @@ MTLTR_DrawGlyphList(JNIEnv *env, MTLContext *mtlc, BMTLSDOps *dstOps,
 
         J2dTraceLn2(J2D_TRACE_INFO, "Glyph width = %d height = %d", ginfo->width, ginfo->height);
         J2dTraceLn1(J2D_TRACE_INFO, "rowBytes = %d", ginfo->rowBytes);
-        if (ginfo->rowBytes == ginfo->width) {
+        if (ginfo->format == sun_font_StrikeCache_PIXEL_FORMAT_GREYSCALE) {
             // grayscale or monochrome glyph data
             if (ginfo->width <= MTLTR_CACHE_CELL_WIDTH &&
                 ginfo->height <= MTLTR_CACHE_CELL_HEIGHT)
@@ -724,7 +724,7 @@ MTLTR_DrawGlyphList(JNIEnv *env, MTLContext *mtlc, BMTLSDOps *dstOps,
                 J2dTraceLn(J2D_TRACE_INFO, "MTLTR_DrawGlyphList Grayscale no cache");
                 ok = MTLTR_DrawGrayscaleGlyphNoCache(mtlc, ginfo, x, y, dstOps);
             }
-        } else if (ginfo->rowBytes == ginfo->width * 4) {
+        } else if (ginfo->format == sun_font_StrikeCache_PIXEL_FORMAT_BGRA) {
             J2dTraceLn(J2D_TRACE_INFO, "MTLTR_DrawGlyphList color glyph no cache");
             ok = MTLTR_DrawColorGlyphNoCache(mtlc, ginfo, x, y, dstOps);
             flushBeforeLCD = JNI_FALSE;

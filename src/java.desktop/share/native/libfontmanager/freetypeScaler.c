@@ -96,6 +96,7 @@ typedef struct FTScalerContext {
     int        ptsz;          /* size in points */
     int        fixedSizeIndex;/* -1 for scalable fonts and index inside
                                * scalerInfo->face->available_sizes otherwise */
+    jboolean colorFont;
 } FTScalerContext;
 
 /* SampledBGRABitmap contains (possibly) downscaled image data
@@ -594,9 +595,11 @@ static int setupFTContext(JNIEnv *env,
 
         int charSize;
         if (FT_IS_SCALABLE(scalerInfo->face)) { // Standard scalable face
+            context->colorFont = FT_HAS_COLOR(scalerInfo->face) ? TRUE : FALSE;
             context->fixedSizeIndex = -1;
             charSize = context->ptsz;
         } else { // Non-scalable face (that should only be bitmap faces)
+            context->colorFont = TRUE;
             const int ptsz = context->ptsz;
             // Best size is smallest, but not smaller than requested
             int bestSizeIndex = 0;
@@ -1165,13 +1168,17 @@ static jlong
      * as being compatible with what happened in earlier JDK versions
      * which did not use freetype.
      */
-    if (context->aaType == TEXT_AA_ON && context->fmType == TEXT_FM_ON) {
+    if ((context->aaType == TEXT_AA_ON && context->fmType == TEXT_FM_ON) ||
+        context->colorFont) {
          renderFlags |= FT_LOAD_NO_HINTING;
      }
 
-    /* Don't disable bitmaps when working with fixed-size glyph,
-     * this is most probably a BGRA glyph */
-    if (!context->useSbits && context->fixedSizeIndex == -1) {
+    if (context->colorFont) {
+        context->loadFlags |= FT_LOAD_COLOR;
+    }
+
+    /* Don't disable bitmaps for color glyphs */
+    if (!context->useSbits && !context->colorFont) {
         renderFlags |= FT_LOAD_NO_BITMAP;
     }
 
@@ -1181,13 +1188,12 @@ static jlong
      Or we can disable hinting. */
 
     /* select appropriate hinting mode */
-    if (context->aaType == TEXT_AA_OFF) {
+    if (context->aaType == TEXT_AA_ON || context->colorFont) {
+        target = FT_LOAD_TARGET_NORMAL;
+    } else if (context->aaType == TEXT_AA_OFF) {
         /* We disable MONO for non-scalable fonts, because that
          * is most probably a colored bitmap glyph */
-        target = context->fixedSizeIndex == -1 ?
-                 FT_LOAD_TARGET_MONO : FT_LOAD_TARGET_NORMAL;
-    } else if (context->aaType == TEXT_AA_ON) {
-        target = FT_LOAD_TARGET_NORMAL;
+        target = FT_LOAD_TARGET_MONO
     } else if (context->aaType == TEXT_AA_LCD_HRGB ||
                context->aaType == TEXT_AA_LCD_HBGR) {
         target = FT_LOAD_TARGET_LCD;
@@ -1195,10 +1201,6 @@ static jlong
         target = FT_LOAD_TARGET_LCD_V;
     }
     renderFlags |= target;
-    if (context->fixedSizeIndex != -1) {
-        // This is most probably a colored bitmap glyph, so enable COLOR
-        renderFlags |= FT_LOAD_COLOR;
-    }
 
     error = FT_Load_Glyph(scalerInfo->face, glyphCode, renderFlags);
     if (error) {
@@ -1214,7 +1216,7 @@ static jlong
     int outlineGlyph = ftglyph->format == FT_GLYPH_FORMAT_OUTLINE;
 
     /* apply styles */
-    if (context->doBold && outlineGlyph) { /* if bold style */
+    if (context->doBold && outlineGlyph && !context->colorFont) { /* if bold style */
         GlyphSlot_Embolden(ftglyph, context->transform);
     }
 
@@ -1286,6 +1288,11 @@ static jlong
     glyphInfo->rowBytes  = rowBytes;
     glyphInfo->width     = width;
     glyphInfo->height    = height;
+
+    if (ftglyph->bitmap.pixel_mode == FT_PIXEL_MODE_BGRA) glyphInfo->format = sun_font_StrikeCache_PIXEL_FORMAT_BGRA;
+    else if (ftglyph->bitmap.pixel_mode == FT_PIXEL_MODE_LCD ||
+             ftglyph->bitmap.pixel_mode == FT_PIXEL_MODE_LCD_V) glyphInfo->format = sun_font_StrikeCache_PIXEL_FORMAT_LCD;
+    else glyphInfo->format = sun_font_StrikeCache_PIXEL_FORMAT_GREYSCALE;
 
     if (renderImage) {
         if (context->fixedSizeIndex == -1) {

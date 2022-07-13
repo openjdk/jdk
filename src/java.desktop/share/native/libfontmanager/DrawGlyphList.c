@@ -545,8 +545,7 @@ GlyphBlitVector* setupLCDBlitVector(JNIEnv *env, jobject glyphlist,
             free(gbv);
             return (GlyphBlitVector*)NULL;
         }
-        /* rowBytes==width tests if its a B&W or LCD glyph */
-        if (ginfo->width == ginfo->rowBytes) {
+        if (ginfo->format != sun_font_StrikeCache_PIXEL_FORMAT_LCD) {
             subPixPos = JNI_FALSE;
         }
     }

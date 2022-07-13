@@ -26,6 +26,7 @@
 package sun.java2d.pipe;
 
 import sun.awt.SunHints;
+import sun.font.StrikeCache;
 import sun.java2d.SunGraphics2D;
 import sun.font.GlyphList;
 
@@ -41,50 +42,49 @@ public abstract class GlyphListLoopPipe extends GlyphListPipe
     protected void drawGlyphList(SunGraphics2D sg2d, GlyphList gl,
                                  int aaHint) {
         int prevLimit = 0;
-        boolean isColor = false;
+        byte pixelFormat = StrikeCache.PIXEL_FORMAT_UNKNOWN;
         int len = gl.getNumGlyphs();
         gl.startGlyphIteration();
         if (GlyphList.canContainColorGlyphs()) {
             for (int i = 0; i < len; i++) {
-                boolean newIsColor = gl.isColorGlyph(i);
-                if (newIsColor != isColor) {
-                    drawGlyphListSegment(sg2d, gl, prevLimit, i, aaHint,
-                            isColor);
+                byte newFormat = gl.getPixelFormat(i);
+                if (newFormat != pixelFormat) {
+                    drawGlyphListSegment(sg2d, gl,
+                            prevLimit, i, aaHint, pixelFormat);
                     prevLimit = i;
-                    isColor = newIsColor;
+                    pixelFormat = newFormat;
                 }
             }
         }
-        drawGlyphListSegment(sg2d, gl, prevLimit, len, aaHint, isColor);
+        drawGlyphListSegment(sg2d, gl, prevLimit, len, aaHint, pixelFormat);
     }
 
     private void drawGlyphListSegment(SunGraphics2D sg2d, GlyphList gl,
                                       int fromglyph, int toGlyph,
-                                      int aaHint, boolean isColor) {
+                                      int aaHint, byte pixelFormat) {
         if (fromglyph >= toGlyph) return;
-        if (isColor) {
-            sg2d.loops.drawGlyphListColorLoop.
-                    DrawGlyphListColor(sg2d, sg2d.surfaceData,
-                            gl, fromglyph, toGlyph);
-        } else {
-            switch (aaHint) {
-                case SunHints.INTVAL_TEXT_ANTIALIAS_OFF:
+        switch (pixelFormat) {
+            case StrikeCache.PIXEL_FORMAT_GREYSCALE:
+                if (aaHint == SunHints.INTVAL_TEXT_ANTIALIAS_OFF) {
                     sg2d.loops.drawGlyphListLoop.
                             DrawGlyphList(sg2d, sg2d.surfaceData,
                                     gl, fromglyph, toGlyph);
-                    return;
-                case SunHints.INTVAL_TEXT_ANTIALIAS_ON:
+                } else {
                     sg2d.loops.drawGlyphListAALoop.
                             DrawGlyphListAA(sg2d, sg2d.surfaceData,
                                     gl, fromglyph, toGlyph);
-                    return;
-                case SunHints.INTVAL_TEXT_ANTIALIAS_LCD_HRGB:
-                case SunHints.INTVAL_TEXT_ANTIALIAS_LCD_VRGB:
-                    sg2d.loops.drawGlyphListLCDLoop.
-                            DrawGlyphListLCD(sg2d, sg2d.surfaceData,
-                                    gl, fromglyph, toGlyph);
-                    return;
-            }
+                }
+                return;
+            case StrikeCache.PIXEL_FORMAT_LCD:
+                sg2d.loops.drawGlyphListLCDLoop.
+                        DrawGlyphListLCD(sg2d, sg2d.surfaceData,
+                                gl, fromglyph, toGlyph);
+                return;
+            case StrikeCache.PIXEL_FORMAT_BGRA:
+                sg2d.loops.drawGlyphListColorLoop.
+                        DrawGlyphListColor(sg2d, sg2d.surfaceData,
+                                gl, fromglyph, toGlyph);
+                return;
         }
     }
 }
