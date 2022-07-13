@@ -32,6 +32,7 @@ import org.w3c.dom.NodeList;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -79,6 +80,7 @@ public class XPathChildTest {
     @DataProvider(name = "parameters")
     public Object[][] getXPathExpression() {
         return new Object[][]{
+                // abbreviated text
                 {"/store/book/author", AUTHOR_1},
                 {"/child::store/child::book/child::author", AUTHOR_1},
                 {"/store/child::book/author", AUTHOR_1},
@@ -109,10 +111,12 @@ public class XPathChildTest {
                 // dot reference
                 {"//child::book/./child::author", AUTHOR_1},
                 {"//child::node()/./child::author", AUTHOR_1},
+                {"//././/./child::author", AUTHOR_1},
 
                 // attributes
                 {"/store/child::book[@id=1]/author", AUTHOR_1},
                 {"/store/child::book[attribute::id=1]/author", AUTHOR_1},
+                {"/store/child::book[@id]/author", AUTHOR_1},
                 {"/store/child::book[@id=1][@lang='en']/author", AUTHOR_1},
                 {"/store/child::book[@lang='en'][1]/author", AUTHOR_1},
                 {"/store/child::book[child::isbn='1234']/author", AUTHOR_1},
@@ -121,11 +125,56 @@ public class XPathChildTest {
                 {"/store/child::*[@lang='en'][2]/author", AUTHOR_2},
                 {"/store/child::node()[@id='1']/author", AUTHOR_1},
                 {"/store/child::node()[@lang='en'][2]/author", AUTHOR_2},
+                {"/store/child::*[child::author][child::title][@id='2']/author",
+                        AUTHOR_2},
+                {"/store/child::*[child::author or child::ssn][@id='2']/author",
+                        AUTHOR_2},
+                {"/store/child::*[child::*]/author", AUTHOR_1},
+                {"/store/child::*[attribute::*]/author", AUTHOR_1},
+                {"/store/*[*][*][*][*][*][*][*][*]/author", AUTHOR_1},
+                {"/store/*[@*][@*][@*][@*][@*][@*][@*][@*]/author", AUTHOR_1},
+                {"//author[@*]", AUTHOR_1},
 
                 // text node
                 {"/store/book[1]/isbn/child::text()/../../author", AUTHOR_1},
                 {"/store/book/isbn[child::text()='5678']/../author", AUTHOR_2},
                 {"/store/book/isbn[.='5678']/../author", AUTHOR_2},
+
+                // count child nodes
+                {"/store/book[count(./child::author)]/author", AUTHOR_1},
+                {"/store/book[count(child::author)]/author", AUTHOR_1},
+                {"/store/book[count(../child::book)]/author", AUTHOR_2},
+        };
+    }
+
+    /*
+     * DataProvider: provides invalid XPath expression and expected exception
+     */
+    @DataProvider(name = "invalidExp")
+    public Object[][] getInvalidExp() {
+        return new Object[][]{
+                // NullPointerException
+                {"/store/book[3]/author", NullPointerException.class},
+                {"/store/book/author/ssn", NullPointerException.class},
+                {"/store/child[book]/author", NullPointerException.class},
+                {"/store/child[@id='1']/book/author",
+                        NullPointerException.class},
+                {"/store/child::*[@category]/author",
+                        NullPointerException.class},
+                {"//author[*]/../author", NullPointerException.class},
+                {"//title[@*]/../author", NullPointerException.class},
+                {"/store/book[-1]/author", NullPointerException.class},
+                {"/store/child:book/author", NullPointerException.class},
+                {"//book[.='1']/author", NullPointerException.class},
+
+                // XPathExpressionException
+                {"/store/*[child::author] and [child::title]/author",
+                        XPathExpressionException.class},
+                {"//book[@id='en'] and book[@lang='en']/author",
+                        XPathExpressionException.class},
+                {"/store/book[child::count()]/author",
+                        XPathExpressionException.class},
+                {"//book[child::position()=1]", XPathExpressionException.class},
         };
     }
 
@@ -149,5 +198,20 @@ public class XPathChildTest {
         Assert.assertEquals(node.getNodeName() + "_" +
                         node.getAttributes().item(0).getNodeValue(),
                 expected);
+    }
+
+    /**
+     * Verifies exception thrown for invalid expression.
+     *
+     * @param exp            XPath expression
+     * @param throwableClass expected exception
+     * @throws Exception
+     */
+    @Test(dataProvider = "invalidExp")
+    void testInvalidExp(String exp, Class throwableClass) throws Exception {
+        XPath xPath = XPathFactory.newInstance().newXPath();
+        Assert.assertThrows(throwableClass,
+                () -> ((NodeList) xPath.evaluate(exp, doc,
+                XPathConstants.NODESET)).item(0).getNodeName());
     }
 }
