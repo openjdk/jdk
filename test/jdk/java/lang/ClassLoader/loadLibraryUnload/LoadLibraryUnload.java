@@ -42,6 +42,7 @@
 import jdk.test.lib.Asserts;
 import jdk.test.lib.util.ForceGC;
 import java.lang.*;
+import java.lang.ref.ReferenceQueue;
 import java.lang.reflect.*;
 import java.lang.ref.WeakReference;
 import java.net.URL;
@@ -107,18 +108,18 @@ public class LoadLibraryUnload {
     public static void main(String[] args) throws Exception {
 
         int LOADER_COUNT = 5;
-        Class<?> clazz = null;
         List<Thread> threads = new ArrayList<>();
         Object[] canary = new Object[LOADER_COUNT];
         WeakReference<Object> wCanary[] = new WeakReference[LOADER_COUNT];
+        ReferenceQueue<Object> refQueue = new ReferenceQueue<>();
 
         for (int i = 0 ; i < LOADER_COUNT ; i++) {
             // LOADER_COUNT loaders and 2X threads in total.
             // winner loads the library in 2 threads
             canary[i] = new Object();
-            wCanary[i] = new WeakReference<>(canary[i]);
+            wCanary[i] = new WeakReference<>(canary[i], refQueue);
 
-            clazz = new TestLoader().loadClass("p.Class1");
+            Class<?> clazz = new TestLoader().loadClass("p.Class1");
             threads.add(new Thread(new LoadLibraryFromClass(clazz, canary[i])));
             threads.add(new Thread(new LoadLibraryFromClass(clazz, canary[i])));
         }
@@ -155,20 +156,19 @@ public class LoadLibraryUnload {
         Asserts.assertTrue(allAreUnsatisfiedLinkError,
                 "All errors have to be UnsatisfiedLinkError");
 
-        WeakReference<Class<?>> wClass = new WeakReference<>(clazz);
-
         // release strong refs
-        clazz = null;
         threads = null;
         canary = null;
         exceptions.clear();
-        if (!ForceGC.wait(() -> wClass.refersTo(null))) {
-            throw new RuntimeException("Class1 hasn't been GC'ed");
-        }
+
+        // Wait for the canary for each of the libraries to be GC'd
+        // before exiting the test.
         for (int i = 0; i < LOADER_COUNT; i++) {
-            var wCan = wCanary[i];
-            if (!ForceGC.wait(() -> wCan.refersTo(null))) {
-                System.out.println("canary[" + i + "] hasn't been GC'ed");
+            System.gc();
+            var res = refQueue.remove();
+            System.out.println(i + " dequeued: " + res);
+            if (res == null) {
+                Asserts.fail("Too few cleared Weak references");
             }
         }
     }
