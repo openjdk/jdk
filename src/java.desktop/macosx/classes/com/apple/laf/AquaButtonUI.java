@@ -400,10 +400,23 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
 
         if (icon == null) return;
 
+        Icon selectedIcon = null;
+
+        // the fallback icon should be based on the selected state
+        if (model.isSelected()) {
+            selectedIcon = b.getSelectedIcon();
+            if (selectedIcon != null) {
+                icon = selectedIcon;
+            }
+        }
         if (!model.isEnabled()) {
             if (model.isSelected()) {
                 tmpIcon = b.getDisabledSelectedIcon();
-            } else {
+               if (tmpIcon == null) {
+                   tmpIcon = selectedIcon;
+               }
+            }
+            if (tmpIcon == null) {
                 tmpIcon = b.getDisabledIcon();
             }
         } else if (model.isPressed() && model.isArmed()) {
@@ -416,7 +429,11 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
         } else if (b.isRolloverEnabled() && model.isRollover()) {
             if (model.isSelected()) {
                 tmpIcon = b.getRolloverSelectedIcon();
-            } else {
+                if (tmpIcon == null) {
+                    tmpIcon = selectedIcon;
+                }
+            }
+            if (tmpIcon == null) {
                 tmpIcon = b.getRolloverIcon();
             }
         } else if (model.isSelected()) {
