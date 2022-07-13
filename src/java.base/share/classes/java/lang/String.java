@@ -525,7 +525,7 @@ public final class String
      * This method does not do any precondition checks on its argument.
      * <p>
      * Important: parameter order of this method is deliberately changed in order to
-     * disambiguate it against other similar methods ot this class.
+     * disambiguate it against other similar methods of this class.
      */
     @SuppressWarnings("removal")
     private String(Charset charset, byte[] bytes, int offset, int length) {
