@@ -140,145 +140,364 @@ extern "C" void disnm(intptr_t p);
 //                 strictly should be 64 bit movz #imm16<<0
 //       110___10100 (i.e. requires insn[31:21] == 11010010100)
 //
+class RelocActions {
+protected:
+  typedef int (RelocActions::* reloc_insn)(address insn_addr, address &target);
+
+  virtual reloc_insn adrpMem() = 0;
+  virtual reloc_insn adrpAdd() = 0;
+  virtual reloc_insn adrpMovk() = 0;
+
+public:
+  virtual int unconditionalBranch(address insn_addr, address &target) = 0;
+  virtual int conditionalBranch(address insn_addr, address &target) = 0;
+  virtual int testAndBranch(address insn_addr, address &target) = 0;
+  virtual int loadStore(address insn_addr, address &target) = 0;
+  virtual int adr(address insn_addr, address &target, reloc_insn inner) = 0;
+  virtual int adrpMem_impl(address insn_addr, address &target) = 0;
+  virtual int adrpAdd_impl(address insn_addr, address &target) = 0;
+  virtual int adrpMovk_impl(address insn_addr, address &target) = 0;
+  virtual int immediate(address insn_addr, address &target) = 0;
+  virtual void verify(address insn_addr, address &target) = 0;
+
+  int act(address insn_addr, address &target) {
+    int instructions = 1;
+    // assert((uint64_t)target < (1ull << 48), "48-bit overflow in address constant");
+    // intptr_t offset = (target - insn_addr) >> 2;
+    uint32_t insn = *(uint32_t*)insn_addr;
+
+    uint32_t dispatch = Instruction_aarch64::extract(insn, 30, 25);
+    switch(dispatch) {
+      case 0b001010:
+      case 0b001011: {
+        unconditionalBranch(insn_addr, target);
+        break;
+      }
+      case 0b101010:   // Conditional branch (immediate)
+      case 0b011010: { // Compare & branch (immediate)
+          conditionalBranch(insn_addr, target);
+          break;
+        }
+      case 0b011011: {
+        testAndBranch(insn_addr, target);
+        break;
+      }
+      case 0b001100:
+      case 0b001110:
+      case 0b011100:
+      case 0b011110:
+      case 0b101100:
+      case 0b101110:
+      case 0b111100:
+      case 0b111110: {
+        // load/store
+        if ((Instruction_aarch64::extract(insn, 29, 24) & 0b111011) == 0b011000) {
+          // Load register (literal)
+          loadStore(insn_addr, target);
+          break;
+        } else {
+          // nothing to do
+          assert(target == 0, "did not expect to relocate target for polling page load");
+        }
+        break;
+      }
+      case 0b001000:
+      case 0b011000:
+      case 0b101000:
+      case 0b111000: {
+        // adr/adrp
+        assert(Instruction_aarch64::extract(insn, 28, 24) == 0b10000, "must be");
+        int shift = Instruction_aarch64::extract(insn, 31, 31);
+        if (shift) {
+          uint32_t insn2 = ((uint32_t*)insn_addr)[1];
+          if (Instruction_aarch64::extract(insn2, 29, 24) == 0b111001 &&
+              Instruction_aarch64::extract(insn, 4, 0) ==
+              Instruction_aarch64::extract(insn2, 9, 5)) {
+            adr(insn_addr, target, adrpMem());
+            instructions = 2;
+          } else if (Instruction_aarch64::extract(insn2, 31, 22) == 0b1001000100 &&
+                     Instruction_aarch64::extract(insn, 4, 0) ==
+                     Instruction_aarch64::extract(insn2, 4, 0)) {
+            adr(insn_addr, target, adrpAdd());
+            instructions = 2;
+          } else if (Instruction_aarch64::extract(insn2, 31, 21) == 0b11110010110 &&
+                     Instruction_aarch64::extract(insn, 4, 0) ==
+                     Instruction_aarch64::extract(insn2, 4, 0)) {
+            adr(insn_addr, target, adrpMovk());
+            instructions = 2;
+          } else {
+            ShouldNotReachHere();
+          }
+        } else {
+          adr(insn_addr, target, NULL);
+        }
+        break;
+      }
+      case 0b001001:
+      case 0b011001:
+      case 0b101001:
+      case 0b111001: {
+        immediate(insn_addr, target);
+        instructions = 3;
+        break;
+      }
+      default: {
+        ShouldNotReachHere();
+      }
+    }
+
+    verify(insn_addr, target);
+    return instructions * NativeInstruction::instruction_size;
+  }
+};
+
+class Patcher : public RelocActions {
+  virtual reloc_insn adrpMem() { return &RelocActions::adrpMem_impl; }
+  virtual reloc_insn adrpAdd() { return &RelocActions::adrpAdd_impl; }
+  virtual reloc_insn adrpMovk() { return &RelocActions::adrpMovk_impl; }
+
+public:
+  virtual int unconditionalBranch(address insn_addr, address &target) {
+    intptr_t offset = (target - insn_addr) >> 2;
+    Instruction_aarch64::spatch(insn_addr, 25, 0, offset);
+    return 1;
+  }
+  virtual int conditionalBranch(address insn_addr, address &target) {
+    intptr_t offset = (target - insn_addr) >> 2;
+    Instruction_aarch64::spatch(insn_addr, 23, 5, offset);
+    return 1;
+  }
+  virtual int testAndBranch(address insn_addr, address &target) {
+    intptr_t offset = (target - insn_addr) >> 2;
+    Instruction_aarch64::spatch(insn_addr, 18, 5, offset);
+    return 1;
+  }
+  virtual int loadStore(address insn_addr, address &target) {
+    intptr_t offset = (target - insn_addr) >> 2;
+    Instruction_aarch64::spatch(insn_addr, 23, 5, offset);
+    return 1;
+  }
+  virtual int adrp(address insn_addr, address &target, reloc_insn inner) {
+    int instructions = 1;
+#ifdef ASSERT
+    uint32_t insn = *(uint32_t*)insn_addr;
+    assert(Instruction_aarch64::extract(insn, 28, 24) == 0b10000, "must be");
+#endif
+    // PC-rel. addressing
+    int offset = target - insn_addr;
+    if (inner) {
+      instructions = 2;
+      uintptr_t dest = (uintptr_t)target;
+      uintptr_t pc_page = (uintptr_t)insn_addr >> 12;
+      uintptr_t adr_page = (uintptr_t)target >> 12;
+      uint32_t offset_lo = dest & 0xfff;
+      offset = adr_page - pc_page;
+
+      // We handle 3 types of PC-relative addressing
+      //   1 - adrp    Rx, target_page
+      //       ldr/str Ry, [Rx, #offset_in_page]
+      //   2 - adrp    Rx, target_page
+      //       add     Ry, Rx, #offset_in_page
+      //   3 - adrp    Rx, target_page (page aligned reloc, offset == 0)
+      //       movk    Rx, #imm16<<32
+      //
+      uint32_t insn2 = ((uint32_t*)insn_addr)[1];
+      instructions = ((*this).*inner)(insn_addr, target);
+    }
+
+    int offset_lo = offset & 3;
+    offset >>= 2;
+    Instruction_aarch64::spatch(insn_addr, 23, 5, offset);
+    Instruction_aarch64::patch(insn_addr, 30, 29, offset_lo);
+    return instructions;
+  }
+  virtual int adrpMem_impl(address insn_addr, address &target) {
+    uintptr_t dest = (uintptr_t)target;
+    uint32_t offset_lo = dest & 0xfff;
+    uint32_t insn2 = ((uint32_t*)insn_addr)[1];
+    uint32_t size = Instruction_aarch64::extract(insn2, 31, 30);
+    Instruction_aarch64::patch(insn_addr + sizeof (uint32_t), 21, 10, offset_lo >> size);
+    guarantee(((dest >> size) << size) == dest, "misaligned target");
+    return 2;
+  }
+  virtual int adrpAdd_impl(address insn_addr, address &target) {
+    uintptr_t dest = (uintptr_t)target;
+    uint32_t offset_lo = dest & 0xfff;
+    Instruction_aarch64::patch(insn_addr + sizeof (uint32_t), 21, 10, offset_lo);
+    return 2;
+  }
+  virtual int adrpMovk_impl(address insn_addr, address &target) {
+    uintptr_t dest = (uintptr_t)target;
+    uint32_t offset_lo = dest & 0xfff;
+    Instruction_aarch64::patch(insn_addr + sizeof (uint32_t), 20, 5, (uintptr_t)target >> 32);
+    return 2;
+  }
+  virtual int immediate(address insn_addr, address &target) {
+    uint32_t insn = *(uint32_t*)insn_addr;
+    assert(Instruction_aarch64::extract(insn, 31, 21) == 0b11010010100, "must be");
+    uint64_t dest = (uint64_t)target;
+    // Move wide constant
+    assert(nativeInstruction_at(insn_addr+4)->is_movk(), "wrong insns in patch");
+    assert(nativeInstruction_at(insn_addr+8)->is_movk(), "wrong insns in patch");
+    Instruction_aarch64::patch(insn_addr, 20, 5, dest & 0xffff);
+    Instruction_aarch64::patch(insn_addr+4, 20, 5, (dest >>= 16) & 0xffff);
+    Instruction_aarch64::patch(insn_addr+8, 20, 5, (dest >>= 16) & 0xffff);
+    return 3;
+  }
+  virtual void verify(address insn_addr, address &target) {
+#ifdef ASSERT
+    address address_is = MacroAssembler::target_addr_for_insn(insn_addr);
+    if (!(address_is == target)) {
+      tty->print_cr("%p at %p should be %p", address_is, insn_addr, target);
+      disnm((intptr_t)insn_addr);
+      assert(address_is == target, "should be");
+    }
+#endif
+  }
+};
+
+static Patcher patcher;
 
 // Patch any kind of instruction; there may be several instructions.
 // Return the total length (in bytes) of the instructions.
 int MacroAssembler::pd_patch_instruction_size(address insn_addr, address target) {
-  int instructions = 1;
-  assert((uint64_t)target < (1ull << 48), "48-bit overflow in address constant");
-  intptr_t offset = (target - insn_addr) >> 2;
-  uint32_t insn = *(uint32_t*)insn_addr;
 
-  // branches, all kinds
-  uint32_t dispatch = Instruction_aarch64::extract(insn, 30, 25);
-  switch(dispatch) {
-    case 0b001010:
-    case 0b001011: {
-      // Unconditional branch (immediate)
-      Instruction_aarch64::spatch(insn_addr, 25, 0, offset);
-      break;
-    }
-    case 0b101010: // Conditional branch (immediate)
-    case 0b011010: // Compare & branch (immediate)
-    {
-      Instruction_aarch64::spatch(insn_addr, 23, 5, offset);
-      break;
-    }
-    case 0b011011: {
-      // Test & branch (immediate)
-      Instruction_aarch64::spatch(insn_addr, 18, 5, offset);
-      break;
-    }
-    case 0b001100:
-    case 0b001110:
-    case 0b011100:
-    case 0b011110:
-    case 0b101100:
-    case 0b101110:
-    case 0b111100:
-    case 0b111110: {
-      // load/store
-      if ((Instruction_aarch64::extract(insn, 29, 24) & 0b111011) == 0b011000) {
-        // Load register (literal)
-        Instruction_aarch64::spatch(insn_addr, 23, 5, offset);
-        break;
-      } else {
-        // nothing to do
-        assert(target == 0, "did not expect to relocate target for polling page load");
-      }
-      break;
-    }
-    case 0b001000:
-    case 0b011000:
-    case 0b101000:
-    case 0b111000: {
-      // adr/adrp
-      assert(Instruction_aarch64::extract(insn, 28, 24) == 0b10000, "must be");
-      // PC-rel. addressing
-      offset = target-insn_addr;
-      int shift = Instruction_aarch64::extract(insn, 31, 31);
-      if (shift) {
-        instructions = 2;
-        uintptr_t dest = (uintptr_t)target;
-        uintptr_t pc_page = (uintptr_t)insn_addr >> 12;
-        uintptr_t adr_page = (uintptr_t)target >> 12;
-        uint32_t offset_lo = dest & 0xfff;
-        offset = adr_page - pc_page;
+  return patcher.act(insn_addr, target);
 
-        // We handle 3 types of PC-relative addressing
-        //   1 - adrp    Rx, target_page
-        //       ldr/str Ry, [Rx, #offset_in_page]
-        //   2 - adrp    Rx, target_page
-        //       add     Ry, Rx, #offset_in_page
-        //   3 - adrp    Rx, target_page (page aligned reloc, offset == 0)
-        //       movk    Rx, #imm16<<32
-        //
-        uint32_t insn2 = ((uint32_t*)insn_addr)[1];
-        if (Instruction_aarch64::extract(insn2, 29, 24) == 0b111001 &&
-            Instruction_aarch64::extract(insn, 4, 0) ==
-            Instruction_aarch64::extract(insn2, 9, 5)) {
-          // Load/store register (unsigned immediate)
-          uint32_t size = Instruction_aarch64::extract(insn2, 31, 30);
-          Instruction_aarch64::patch(insn_addr + sizeof (uint32_t),
-                                     21, 10, offset_lo >> size);
-          guarantee(((dest >> size) << size) == dest, "misaligned target");
-          instructions = 2;
-        } else if (Instruction_aarch64::extract(insn2, 31, 22) == 0b1001000100 &&
-                   Instruction_aarch64::extract(insn, 4, 0) ==
-                   Instruction_aarch64::extract(insn2, 4, 0)) {
-          // add (immediate)
-          Instruction_aarch64::patch(insn_addr + sizeof (uint32_t),
-                                     21, 10, offset_lo);
-          instructions = 2;
-        } else if (Instruction_aarch64::extract(insn2, 31, 21) == 0b11110010110 &&
-                   Instruction_aarch64::extract(insn, 4, 0) ==
-                   Instruction_aarch64::extract(insn2, 4, 0)) {
-          // movk #imm16<<32
-          Instruction_aarch64::patch(insn_addr + 4, 20, 5, (uintptr_t)target >> 32);
-          uintptr_t dest = ((uintptr_t)target & 0xffffffffULL) | ((uintptr_t)insn_addr & 0xffff00000000ULL);
-          uintptr_t pc_page = (uintptr_t)insn_addr >> 12;
-          uintptr_t adr_page = (uintptr_t)dest >> 12;
-          offset = adr_page - pc_page;
-          instructions = 2;
-        }
-      }
-      // Naked adrp: danger!
-      int offset_lo = offset & 3;
-      offset >>= 2;
-      Instruction_aarch64::spatch(insn_addr, 23, 5, offset);
-      Instruction_aarch64::patch(insn_addr, 30, 29, offset_lo);
-      break;
-    }
-    case 0b001001:
-    case 0b011001:
-    case 0b101001:
-    case 0b111001: {
-      // immediate constant
-      assert(Instruction_aarch64::extract(insn, 31, 21) == 0b11010010100, "must be");
-      uint64_t dest = (uint64_t)target;
-      // Move wide constant
-      assert(nativeInstruction_at(insn_addr+4)->is_movk(), "wrong insns in patch");
-      assert(nativeInstruction_at(insn_addr+8)->is_movk(), "wrong insns in patch");
-      Instruction_aarch64::patch(insn_addr, 20, 5, dest & 0xffff);
-      Instruction_aarch64::patch(insn_addr+4, 20, 5, (dest >>= 16) & 0xffff);
-      Instruction_aarch64::patch(insn_addr+8, 20, 5, (dest >>= 16) & 0xffff);
-      instructions = 3;
-      break;
-    }
-    default: {
-      ShouldNotReachHere();
-    }
-  }
-  // assert(target_addr_for_insn(insn_addr) == target, "should be");
-#ifdef ASSERT
-  address address_is = target_addr_for_insn(insn_addr);
-  if (!(address_is == target)) {
-    tty->print_cr("%p at %p should be %p", address_is, insn_addr, target);
-    disnm((intptr_t)insn_addr);
-    assert(target_addr_for_insn(insn_addr) == target, "should be");
-  }
-#endif
-  return instructions * NativeInstruction::instruction_size;
+//   int instructions = 1;
+//   assert((uint64_t)target < (1ull << 48), "48-bit overflow in address constant");
+//   intptr_t offset = (target - insn_addr) >> 2;
+//   uint32_t insn = *(uint32_t*)insn_addr;
+
+//   uint32_t dispatch = Instruction_aarch64::extract(insn, 30, 25);
+//   switch(dispatch) {
+//     case 0b001010:
+//     case 0b001011: {
+//       // Unconditional branch (immediate)
+//       Instruction_aarch64::spatch(insn_addr, 25, 0, offset);
+//       break;
+//     }
+//     case 0b101010: // Conditional branch (immediate)
+//     case 0b011010: // Compare & branch (immediate)
+//     {
+//       Instruction_aarch64::spatch(insn_addr, 23, 5, offset);
+//       break;
+//     }
+//     case 0b011011: {
+//       // Test & branch (immediate)
+//       Instruction_aarch64::spatch(insn_addr, 18, 5, offset);
+//       break;
+//     }
+//     case 0b001100:
+//     case 0b001110:
+//     case 0b011100:
+//     case 0b011110:
+//     case 0b101100:
+//     case 0b101110:
+//     case 0b111100:
+//     case 0b111110: {
+//       // load/store
+//       if ((Instruction_aarch64::extract(insn, 29, 24) & 0b111011) == 0b011000) {
+//         // Load register (literal)
+//         Instruction_aarch64::spatch(insn_addr, 23, 5, offset);
+//         break;
+//       } else {
+//         // nothing to do
+//         assert(target == 0, "did not expect to relocate target for polling page load");
+//       }
+//       break;
+//     }
+//     case 0b001000:
+//     case 0b011000:
+//     case 0b101000:
+//     case 0b111000: {
+//       // adr/adrp
+//       assert(Instruction_aarch64::extract(insn, 28, 24) == 0b10000, "must be");
+//       // PC-rel. addressing
+//       offset = target-insn_addr;
+//       int shift = Instruction_aarch64::extract(insn, 31, 31);
+//       if (shift) {
+//         instructions = 2;
+//         uintptr_t dest = (uintptr_t)target;
+//         uintptr_t pc_page = (uintptr_t)insn_addr >> 12;
+//         uintptr_t adr_page = (uintptr_t)target >> 12;
+//         uint32_t offset_lo = dest & 0xfff;
+//         offset = adr_page - pc_page;
+
+//         // We handle 3 types of PC-relative addressing
+//         //   1 - adrp    Rx, target_page
+//         //       ldr/str Ry, [Rx, #offset_in_page]
+//         //   2 - adrp    Rx, target_page
+//         //       add     Ry, Rx, #offset_in_page
+//         //   3 - adrp    Rx, target_page (page aligned reloc, offset == 0)
+//         //       movk    Rx, #imm16<<32
+//         //
+//         uint32_t insn2 = ((uint32_t*)insn_addr)[1];
+//         if (Instruction_aarch64::extract(insn2, 29, 24) == 0b111001 &&
+//             Instruction_aarch64::extract(insn, 4, 0) ==
+//             Instruction_aarch64::extract(insn2, 9, 5)) {
+//           // Load/store register (unsigned immediate)
+//           uint32_t size = Instruction_aarch64::extract(insn2, 31, 30);
+//           Instruction_aarch64::patch(insn_addr + sizeof (uint32_t),
+//                                      21, 10, offset_lo >> size);
+//           guarantee(((dest >> size) << size) == dest, "misaligned target");
+//           instructions = 2;
+//         } else if (Instruction_aarch64::extract(insn2, 31, 22) == 0b1001000100 &&
+//                    Instruction_aarch64::extract(insn, 4, 0) ==
+//                    Instruction_aarch64::extract(insn2, 4, 0)) {
+//           // add (immediate)
+//           Instruction_aarch64::patch(insn_addr + sizeof (uint32_t),
+//                                      21, 10, offset_lo);
+//           instructions = 2;
+//         } else if (Instruction_aarch64::extract(insn2, 31, 21) == 0b11110010110 &&
+//                    Instruction_aarch64::extract(insn, 4, 0) ==
+//                    Instruction_aarch64::extract(insn2, 4, 0)) {
+//           // movk #imm16<<32
+//           Instruction_aarch64::patch(insn_addr + 4, 20, 5, (uintptr_t)target >> 32);
+//           uintptr_t dest = ((uintptr_t)target & 0xffffffffULL) | ((uintptr_t)insn_addr & 0xffff00000000ULL);
+//           uintptr_t pc_page = (uintptr_t)insn_addr >> 12;
+//           uintptr_t adr_page = (uintptr_t)dest >> 12;
+//           offset = adr_page - pc_page;
+//           instructions = 2;
+//         }
+//       }
+//       // Naked adrp: danger!
+//       int offset_lo = offset & 3;
+//       offset >>= 2;
+//       Instruction_aarch64::spatch(insn_addr, 23, 5, offset);
+//       Instruction_aarch64::patch(insn_addr, 30, 29, offset_lo);
+//       break;
+//     }
+//     case 0b001001:
+//     case 0b011001:
+//     case 0b101001:
+//     case 0b111001: {
+//       // immediate constant
+//       assert(Instruction_aarch64::extract(insn, 31, 21) == 0b11010010100, "must be");
+//       uint64_t dest = (uint64_t)target;
+//       // Move wide constant
+//       assert(nativeInstruction_at(insn_addr+4)->is_movk(), "wrong insns in patch");
+//       assert(nativeInstruction_at(insn_addr+8)->is_movk(), "wrong insns in patch");
+//       Instruction_aarch64::patch(insn_addr, 20, 5, dest & 0xffff);
+//       Instruction_aarch64::patch(insn_addr+4, 20, 5, (dest >>= 16) & 0xffff);
+//       Instruction_aarch64::patch(insn_addr+8, 20, 5, (dest >>= 16) & 0xffff);
+//       instructions = 3;
+//       break;
+//     }
+//     default: {
+//       ShouldNotReachHere();
+//     }
+//   }
+//   // assert(target_addr_for_insn(insn_addr) == target, "should be");
+// #ifdef ASSERT
+//   address address_is = target_addr_for_insn(insn_addr);
+//   if (!(address_is == target)) {
+//     tty->print_cr("%p at %p should be %p", address_is, insn_addr, target);
+//     disnm((intptr_t)insn_addr);
+//     assert(target_addr_for_insn(insn_addr) == target, "should be");
+//   }
+// #endif
+//   return instructions * NativeInstruction::instruction_size;
 }
 
 int MacroAssembler::patch_oop(address insn_addr, address o) {
@@ -346,6 +565,7 @@ address MacroAssembler::target_addr_for_insn(address insn_addr, uint32_t insn) {
   // branches, all kinds
   uint32_t dispatch = Instruction_aarch64::extract(insn, 30, 25);
   intptr_t offset = 0;
+
   switch(dispatch) {
     case 0b001100:
     case 0b001110:
