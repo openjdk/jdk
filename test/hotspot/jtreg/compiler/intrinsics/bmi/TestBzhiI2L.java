@@ -38,7 +38,7 @@
 package compiler.intrinsics.bmi;
 
 import jdk.test.lib.Platform;
-import sun.hotspot.cpuinfo.CPUInfo;
+import jdk.test.whitebox.cpuinfo.CPUInfo;
 
 public class TestBzhiI2L {
 

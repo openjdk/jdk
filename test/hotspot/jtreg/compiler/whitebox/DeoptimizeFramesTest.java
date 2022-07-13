@@ -49,7 +49,7 @@
 package compiler.whitebox;
 
 import jdk.test.lib.Asserts;
-import sun.hotspot.code.NMethod;
+import jdk.test.whitebox.code.NMethod;
 
 import java.lang.reflect.Executable;
 import java.util.concurrent.Callable;
