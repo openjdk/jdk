@@ -22,19 +22,6 @@
  *
  */
 
-bool key_comparison(InvokeMethodKey k1, InvokeMethodKey k2){
-    if (k1._symbol == k2._symbol && k1._symbol_mode == k2._symbol_mode) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
-unsigned int compute_hash(Symbol* sym, intptr_t symbol_mode) {
-    unsigned int hash = (unsigned int) name->identity_hash();
-    return hash ^ symbol_mode;
-}
-
 //key for the _invoke_method_table, which contains the symbol and its intrisic id
 class InvokeMethodKey : public StackObj {
   private:
@@ -42,22 +29,32 @@ class InvokeMethodKey : public StackObj {
     intptr_t _iid;
 
   public:
-    InvokeMethodKey(Symbol* symbol, intptr_t symbol_mode) :
+    InvokeMethodKey(Symbol* symbol, intptr_t iid) :
         _symbol(symbol),
-        _symbol_mode(symbol_mode) {}
+        _iid(iid) {}
 
     static bool key_comparison(InvokeMethodKey const &k1, InvokeMethodKey const &k2){
-        return k1._symbol == k2._symbol && k1._symbol_mode == k2._symbol_mode;
+        return k1._symbol == k2._symbol && k1._iid == k2._iid;
     }  
 
-    static unsigned int compute_hash(Symbol* sym, intptr_t symbol_mode) {
-        unsigned int hash = (unsigned int) name->identity_hash();
-        return hash ^ symbol_mode;
+    static unsigned int compute_hash(const InvokeMethodKey &k) {
+        Symbol* sym = k._symbol;
+        intptr_t iid = k._iid;
+        unsigned int hash = (unsigned int) sym -> identity_hash();
+        return (unsigned int) (hash ^ iid);
     }
 
-}
+    Symbol* get_symbol(){
+        return _symbol;
+    }
 
-class InvokeMethodValue : public StackObj {
+    intptr_t get_iid(){
+        return _iid;
+    }
+
+};
+
+/*class InvokeMethodValue : public StackObj {
  private:
   Method*   _method;
   OopHandle _method_type;
@@ -67,4 +64,4 @@ class InvokeMethodValue : public StackObj {
         _method(methods),
         _method_type(OopHandle(Universe::vm_global(), p)) {}
 
-}
+}*/

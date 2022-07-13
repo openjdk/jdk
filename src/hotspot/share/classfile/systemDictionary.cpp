@@ -63,6 +63,8 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oop.hpp"
+#include "oops/oopHandle.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "oops/symbol.hpp"
 #include "oops/typeArrayKlass.hpp"
@@ -90,11 +92,8 @@
 
 ResourceHashtable<InvokeMethodKey, Method*, 139, ResourceObj::C_HEAP, mtClass, 
                   InvokeMethodKey::compute_hash, InvokeMethodKey::key_comparison> _invoke_method_intrisic_table;
-ResourceHashtable<Symbol*, Oophandle, 139, ResourceObj::C_HEAP, mtClass> _invoke_method_type_table;
-ResolutionErrorTable*  SystemDictionary::_resolution_errors   = NULL;
-SymbolPropertyTable*   SystemDictionary::_invoke_method_table = NULL;
+ResourceHashtable<Symbol*, OopHandle, 139, ResourceObj::C_HEAP, mtClass> _invoke_method_type_table;
 ProtectionDomainCacheTable*   SystemDictionary::_pd_cache_table = NULL;
-
 
 OopHandle   SystemDictionary::_java_system_loader;
 OopHandle   SystemDictionary::_java_platform_loader;
@@ -1641,8 +1640,6 @@ void SystemDictionary::methods_do(void f(Method*)) {
   // Walk methods in loaded classes
   MutexLocker ml(ClassLoaderDataGraph_lock);
   ClassLoaderDataGraph::methods_do(f);
-  // Walk method handle intrinsics
-  invoke_method_table()->methods_do(f);
 }
 
 // ----------------------------------------------------------------------------
@@ -1652,7 +1649,6 @@ void SystemDictionary::initialize(TRAPS) {
   // Allocate arrays
   _placeholders        = new PlaceholderTable(_placeholder_table_size);
   _loader_constraints  = new LoaderConstraintTable(_loader_constraint_size);
-  _invoke_method_table = new SymbolPropertyTable(_invoke_method_size);
   _pd_cache_table = new ProtectionDomainCacheTable(defaultProtectionDomainCacheSize);
 
   // Resolve basic classes
@@ -1854,7 +1850,7 @@ void SystemDictionary::add_resolution_error(const constantPoolHandle& pool, int 
                                             Symbol* cause, Symbol* cause_msg) {
   {
     MutexLocker ml(Thread::current(), SystemDictionary_lock);
-    ResolutionErrorEntry* entry = ResolutionErrorTable::(pool, which);
+    ResolutionErrorEntry* entry = ResolutionErrorTable::find_entry(pool, which);
     if (entry == NULL) {
       ResolutionErrorTable::add_entry(pool, which, error, message, cause, cause_msg);
     }
@@ -2003,13 +1999,15 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
          iid != vmIntrinsics::_invokeGeneric,
          "must be a known MH intrinsic iid=%d: %s", iid_as_int, vmIntrinsics::name_at(iid));
 
-  unsigned int hash  = invoke_method_table()->compute_hash(signature, iid_as_int);
-  int          index = invoke_method_table()->hash_to_index(hash);
-  InvokeMethodKey x(null, null)
-  SymbolPropertyEntry* spe = invoke_method_table()->find_entry(index, hash, signature, iid_as_int);
+  Method** met;
+  InvokeMethodKey key(signature, iid_as_int);
+  {
+    MutexLocker ml(THREAD, SystemDictionary_lock);
+    met = _invoke_method_intrisic_table.get(key);
+  }
+  
   methodHandle m;
-  if (spe == NULL || spe->method() == NULL) {
-    spe = NULL;
+  if (met == nullptr) {
     // Must create lots of stuff here, but outside of the SystemDictionary lock.
     m = Method::make_method_handle_intrinsic(iid, signature, CHECK_NULL);
     if (!Arguments::is_interpreter_only() || iid == vmIntrinsics::_linkToNative) {
@@ -2025,25 +2023,24 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
     // Now grab the lock.  We might have to throw away the new method,
     // if a racing thread has managed to install one at the same time.
     {
-      MutexLocker ml(THREAD, SystemDictionary_lock);
-      spe = invoke_method_table()->find_entry(index, hash, signature, iid_as_int);
-      bool useNewCode = false;
-      if(useNewCode){
+      MutexLocker ml(THREAD, InvokeMethod_lock);
+      if(UseNewCode){
         ResourceMark rm;
         tty->print_cr("finding symbol %s %d", signature->as_C_string(), iid_as_int);
       }
-      if (spe == NULL)
-        spe = invoke_method_table()->add_entry(index, hash, signature, iid_as_int);
-      if (spe->method() == NULL)
-        spe->set_method(m());
+      bool created = false;
+      _invoke_method_intrisic_table.put_if_absent(key, m(), &created);
     }
+
+  } else { 
+    m = methodHandle(THREAD, *met);
   }
 
-  assert(spe != NULL && spe->method() != NULL, "");
-  assert(Arguments::is_interpreter_only() || (spe->method()->has_compiled_code() &&
-         spe->method()->code()->entry_point() == spe->method()->from_compiled_entry()),
+  assert(m() != NULL, "");
+  assert(Arguments::is_interpreter_only() || (m->has_compiled_code() &&
+         m->code()->entry_point() == m->from_compiled_entry()),
          "MH intrinsic invariant");
-  return spe->method();
+  return m();
 }
 
 // Helper for unpacking the return value from linkMethod and linkCallSite.
@@ -2184,13 +2181,17 @@ Handle SystemDictionary::find_method_handle_type(Symbol* signature,
                                                  Klass* accessing_klass,
                                                  TRAPS) {
   Handle empty;
-  int null_iid = vmIntrinsics::as_int(vmIntrinsics::_none);  // distinct from all method handle invoker intrinsics
-  unsigned int hash  = invoke_method_table()->compute_hash(signature, null_iid);
-  int          index = invoke_method_table()->hash_to_index(hash);
-  SymbolPropertyEntry* spe = invoke_method_table()->find_entry(index, hash, signature, null_iid);
-  if (spe != NULL && spe->method_type() != NULL) {
-    assert(java_lang_invoke_MethodType::is_instance(spe->method_type()), "");
-    return Handle(THREAD, spe->method_type());
+  OopHandle* o;
+  {
+    MutexLocker ml(THREAD, InvokeMethod_lock);
+    o = _invoke_method_type_table.get(signature);
+  }
+  
+  //if (spe != NULL && spe->method_type() != NULL) {
+  if (o != nullptr) {
+    oop mt = o->resolve();
+    assert(java_lang_invoke_MethodType::is_instance(mt), "");
+    return Handle(THREAD, mt);
   } else if (!THREAD->can_call_java()) {
     warning("SystemDictionary::find_method_handle_type called from compiler thread");  // FIXME
     return Handle();  // do not attempt from within compiler, unless it was cached
@@ -2252,15 +2253,11 @@ Handle SystemDictionary::find_method_handle_type(Symbol* signature,
 
   if (can_be_cached) {
     // We can cache this MethodType inside the JVM.
-    MutexLocker ml(THREAD, SystemDictionary_lock);
-    spe = invoke_method_table()->find_entry(index, hash, signature, null_iid);
-    if (spe == NULL)
-      spe = invoke_method_table()->add_entry(index, hash, signature, null_iid);
-    if (spe->method_type() == NULL) {
-      spe->set_method_type(method_type());
-    }
+    MutexLocker ml(THREAD, InvokeMethod_lock);
+    bool created = false;
+    assert(method_type != NULL, "THIS IS THE ERROR");
+    _invoke_method_type_table.put_if_absent(signature, OopHandle(Universe::vm_global(), method_type()), &created);
   }
-
   // report back to the caller with the MethodType
   return method_type;
 }

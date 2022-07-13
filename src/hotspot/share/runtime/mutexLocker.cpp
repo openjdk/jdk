@@ -42,6 +42,7 @@
 Mutex*   Patching_lock                = NULL;
 Mutex*   CompiledMethod_lock          = NULL;
 Monitor* SystemDictionary_lock        = NULL;
+Mutex*   InvokeMethod_lock            = NULL;
 Mutex*   SharedDictionary_lock        = NULL;
 Monitor* ClassInitError_lock          = NULL;
 Mutex*   Module_lock                  = NULL;
@@ -261,7 +262,7 @@ void mutex_init() {
   }
 
   def(JmethodIdCreation_lock       , PaddedMutex  , nosafepoint-2); // used for creating jmethodIDs.
-
+  def(InvokeMethod_lock            , PaddedMutex  , safepoint);
   def(SharedDictionary_lock        , PaddedMutex  , safepoint);
   def(VMStatistic_lock             , PaddedMutex  , safepoint);
   def(SignatureHandlerLibrary_lock , PaddedMutex  , safepoint);
@@ -320,6 +321,7 @@ void mutex_init() {
 #endif
 
   def(ContinuationRelativize_lock  , PaddedMonitor, nosafepoint-3);
+
 
   def(CodeHeapStateAnalytics_lock  , PaddedMutex  , safepoint);
   def(NMethodSweeperStats_lock     , PaddedMutex  , nosafepoint);
