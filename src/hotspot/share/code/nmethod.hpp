@@ -322,7 +322,7 @@ class nmethod : public CompiledMethod {
           );
 
   // helper methods
-  void* operator new(size_t size, int nmethod_size, CompLevel comp_level) throw();
+  void* operator new(size_t size, int nmethod_size, int comp_level) throw();
 
   const char* reloc_string_for(u_char* begin, u_char* end);
 
@@ -500,7 +500,7 @@ class nmethod : public CompiledMethod {
     _has_flushed_dependencies = 1;
   }
 
-  CompLevel comp_level() const                    { return _comp_level; }
+  int   comp_level() const                        { return _comp_level; }
 
   void unlink_from_method();
 

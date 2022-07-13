@@ -3265,7 +3265,7 @@ void InstanceKlass::add_osr_nmethod(nmethod* n) {
   n->set_osr_link(osr_nmethods_head());
   set_osr_nmethods_head(n);
   // Raise the highest osr level if necessary
-  n->method()->set_highest_osr_comp_level(MAX2(n->method()->highest_osr_comp_level(), int(n->comp_level())));
+  n->method()->set_highest_osr_comp_level(MAX2(n->method()->highest_osr_comp_level(), n->comp_level()));
 
   // Get rid of the osr methods for the same bci that have lower levels.
   for (int l = CompLevel_limited_profile; l < n->comp_level(); l++) {
@@ -3284,7 +3284,7 @@ bool InstanceKlass::remove_osr_nmethod(nmethod* n) {
   assert(n->is_osr_method(), "wrong kind of nmethod");
   nmethod* last = NULL;
   nmethod* cur  = osr_nmethods_head();
-  CompLevel max_level = CompLevel_none;  // Find the max comp level excluding n
+  int max_level = CompLevel_none;  // Find the max comp level excluding n
   Method* m = n->method();
   // Search for match
   bool found = false;
