@@ -80,7 +80,7 @@ public class OOMEInAQS extends Thread {
                 if (i == 2) // Subsequent AQS methods encounter OOME
                     filled.await();
             }
-        } catch (InterruptedException ie) {
+        } catch (Throwable ex) { // Could be InterruptedExeption or OOME
             data = null;
             System.exit(0); // avoid getting stuck trying to recover
         }
