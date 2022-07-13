@@ -144,6 +144,10 @@ private:
   // This version synchronizes with other calls to par_allocate_impl().
   inline HeapWord* par_allocate_impl(size_t min_word_size, size_t desired_word_size, size_t* actual_word_size);
 
+  inline HeapWord* advance_to_block_containing_addr(const void* addr,
+                                                    HeapWord* const pb,
+                                                    HeapWord* first_block) const;
+
   static bool obj_is_filler(oop obj);
 
 public:

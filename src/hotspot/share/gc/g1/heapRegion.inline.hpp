@@ -86,10 +86,9 @@ inline HeapWord* HeapRegion::block_start(const void* addr) const {
   return block_start(addr, parsable_bottom_acquire());
 }
 
-inline HeapWord* HeapRegion::block_start(const void* addr, HeapWord* const pb) const {
-  HeapWord* first_block = _bot_part.block_start_reaching_into_card(addr);
-  // The returned address is the first block that reaches into the card of
-  // addr. Walk the heap to get to the block including addr.
+inline HeapWord* HeapRegion::advance_to_block_containing_addr(const void* addr,
+                                                              HeapWord* const pb,
+                                                              HeapWord* first_block) const {
   HeapWord* cur_block = first_block;
   while (true) {
     HeapWord* next_block = cur_block + block_size(cur_block, pb);
@@ -102,6 +101,11 @@ inline HeapWord* HeapRegion::block_start(const void* addr, HeapWord* const pb) c
     // (i.e. crossing the card boundary).
     assert(!G1BlockOffsetTablePart::is_crossing_card_boundary(cur_block, (HeapWord*)addr), "must be");
   }
+}
+
+inline HeapWord* HeapRegion::block_start(const void* addr, HeapWord* const pb) const {
+  HeapWord* first_block = _bot_part.block_start_reaching_into_card(addr);
+  return advance_to_block_containing_addr(addr, pb, first_block);
 }
 
 inline bool HeapRegion::obj_in_unparsable_area(oop obj, HeapWord* const pb) {
