@@ -2146,9 +2146,10 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
 
 
     /**
-     * Returns <code>true</code> if the button icon for present button state
-     * is an instance of ImageIcon and the image it contains is same as the
-     * passed in <code>Image</code>, <code>false</code> otherwise.
+     * If the button icon for present button state is either <code>null</code>
+     * or not an <code>ImageIcon</code> with an <code>Image</code> equal to the
+     * passed in <code>Image</code>, return <code>false</code>; Otherwise it
+     * will delegate to the super-class.
      *
      * @param img  the <code>Image</code> to be compared
      * @param infoflags flags used to repaint the button when the image
