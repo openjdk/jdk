@@ -522,7 +522,7 @@ public final class String
     }
 
     /**
-     * This method does not do any precondition checks on its argument.
+     * This method does not do any precondition checks on its arguments.
      * <p>
      * Important: parameter order of this method is deliberately changed in order to
      * disambiguate it against other similar methods of this class.
