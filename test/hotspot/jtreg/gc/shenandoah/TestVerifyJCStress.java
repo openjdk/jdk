@@ -96,7 +96,7 @@
  * @test id=iu
  * @summary Tests that we pass at least one jcstress-like test with all verification turned on
  * @requires vm.gc.Shenandoah
- * @required !vm.debug
+ * @requires !vm.debug
  * @modules java.base/jdk.internal.misc
  *          java.management
  *
