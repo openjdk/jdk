@@ -90,7 +90,7 @@ public class TracePinnedThreads {
     private static String run(Runnable task) throws Exception {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         PrintStream original = System.out;
-        System.setOut(new PrintStream(baos));
+        System.setOut(new PrintStream(baos, true));
         try {
             VThreadRunner.run(task::run);
         } finally {
