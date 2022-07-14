@@ -398,32 +398,29 @@ HeapWord* HeapRegion::do_oops_on_memregion_in_humongous(MemRegion mr,
 template <class Closure>
 inline HeapWord* HeapRegion::oops_on_memregion_iterate_in_unparsable(MemRegion mr, HeapWord* block_start, Closure* cl) {
   HeapWord* const start = mr.start();
-  // Only scan until parsable_bottom.
   HeapWord* const end = mr.end();
 
   G1CMBitMap* bitmap = G1CollectedHeap::heap()->concurrent_mark()->mark_bitmap();
 
   HeapWord* cur = block_start;
-  // The passed block_start may point at a dead block - during the concurrent phase the scrubbing
-  // may have written a (partial) filler object header exactly crossing that perceived object
-  // start; during GC pause this might just be a dead object that we should not read from.
-  // So we have to advance to the next live object (using the bitmap) to be able to start
-  // the following iteration over the objects.
-  if (!bitmap->is_marked(cur)) {
-    cur = bitmap->get_next_marked_addr(cur, end);
-  }
 
-  while (cur != end) {
-    assert(bitmap->is_marked(cur), "must be");
+  while (true) {
+    // Using bitmap to locate marked objs in the unparsable area
+    cur = bitmap->get_next_marked_addr(cur, end);
+    if (cur == end) {
+      return end;
+    }
+    assert(bitmap->is_marked(cur), "inv");
 
     oop obj = cast_to_oop(cur);
     assert(oopDesc::is_oop(obj, true), "Not an oop at " PTR_FORMAT, p2i(cur));
 
     cur += obj->size();
-    bool is_precise = false;
+    bool is_precise;
 
     if (!obj->is_objArray() || (cast_from_oop<HeapWord*>(obj) >= start && cur <= end)) {
       obj->oop_iterate(cl);
+      is_precise = false;
     } else {
       obj->oop_iterate(cl, mr);
       is_precise = true;
@@ -432,10 +429,7 @@ inline HeapWord* HeapRegion::oops_on_memregion_iterate_in_unparsable(MemRegion m
     if (cur >= end) {
       return is_precise ? end : cur;
     }
-
-    cur = bitmap->get_next_marked_addr(cur, end);
   }
-  return end;
 }
 
 // Applies cl to all reference fields of live objects in mr in non-humongous regions.
