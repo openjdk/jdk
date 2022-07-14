@@ -1351,7 +1351,7 @@ public class HtmlDocletWriter {
                         content.add(label);
                     } else {
                         TagletWriterImpl t = getTagletWriterInstance(context.within(node));
-                        content.add(t.seeTagToContent(element, node));
+                        content.add(t.linkTagOutput(element, node));
                     }
                     return false;
                 }
@@ -1361,13 +1361,6 @@ public class HtmlDocletWriter {
                     String s = node.getBody().getBody();
                     Content t = Text.of(utils.normalizeNewlines(s));
                     content.add(node.getKind() == CODE ? HtmlTree.CODE(t) : t);
-                    return false;
-                }
-
-                @Override
-                public Boolean visitSee(SeeTree node, Content content) {
-                    TagletWriterImpl t = getTagletWriterInstance(context);
-                    content.add(t.seeTagToContent(element, node));
                     return false;
                 }
 

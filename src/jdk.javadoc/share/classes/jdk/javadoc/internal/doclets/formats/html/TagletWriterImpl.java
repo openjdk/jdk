@@ -282,6 +282,32 @@ public class TagletWriterImpl extends TagletWriter {
     }
 
     @Override
+    public Content linkTagOutput(Element element, LinkTree tag) {
+        CommentHelper ch = utils.getCommentHelper(element);
+
+        var linkRef = tag.getReference();
+        if (linkRef == null) {
+            messages.warning(ch.getDocTreePath(tag), "doclet.link.no_reference");
+            return invalidTagOutput(resources.getText("doclet.tag.invalid_input", tag.toString()),
+                    Optional.empty());
+        }
+
+        DocTree.Kind kind = tag.getKind();
+        String tagName = ch.getTagName(tag);
+        String refSignature = ch.getReferencedSignature(linkRef);
+        List<? extends DocTree> label = tag.getLabel();
+
+        return linkSeeReferenceToContent(element,
+                tag,
+                refSignature,
+                ch.getReferencedElement(tag),
+                ch, tagName,kind == LINK_PLAIN,
+                label,
+                (key, args) -> messages.warning(ch.getDocTreePath(tag), key, args)
+        );
+    }
+
+    @Override
     protected Content literalTagOutput(Element element, LiteralTree tag) {
         return Text.of(utils.normalizeNewlines(tag.getBody().getBody()));
     }
@@ -326,9 +352,9 @@ public class TagletWriterImpl extends TagletWriter {
     @Override
     public Content seeTagOutput(Element holder, List<? extends SeeTree> seeTags) {
         List<Content> links = new ArrayList<>();
-        for (DocTree dt : seeTags) {
+        for (SeeTree dt : seeTags) {
             TagletWriterImpl t = new TagletWriterImpl(htmlWriter, context.within(dt));
-            links.add(t.seeTagToContent(holder, dt));
+            links.add(t.seeTagOutput(holder, dt));
         }
         if (utils.isVariableElement(holder) && ((VariableElement)holder).getConstantValue() != null &&
                 htmlWriter instanceof ClassWriterImpl writer) {
@@ -375,62 +401,43 @@ public class TagletWriterImpl extends TagletWriter {
         return s.length() > SEE_TAG_MAX_INLINE_LENGTH || s.contains(",");
     }
 
-    public Content seeTagToContent(Element element, DocTree see) {
-        DocTree.Kind kind = see.getKind();
-        CommentHelper ch = utils.getCommentHelper(element);
-        String tagName = ch.getTagName(see);
-
-        String refSignature;
-        List<? extends DocTree> label;
-        switch (kind) {
-            case LINK, LINK_PLAIN -> {
-                // {@link[plain] reference label...}
-                LinkTree lt = (LinkTree) see;
-                var linkRef = lt.getReference();
-                if (linkRef == null) {
-                    messages.warning(ch.getDocTreePath(see), "doclet.link.no_reference");
-                    return invalidTagOutput(resources.getText("doclet.tag.invalid_input", lt.toString()),
-                            Optional.empty());
-                }
-                refSignature = ch.getReferencedSignature(linkRef);
-                label = lt.getLabel();
+    private Content seeTagOutput(Element element, SeeTree see) {
+        List<? extends DocTree> ref = see.getReference();
+        assert !ref.isEmpty();
+        DocTree ref0 = ref.get(0);
+        switch (ref0.getKind()) {
+            case TEXT, START_ELEMENT -> {
+                // @see "Reference"
+                // @see <a href="...">...</a>
+                return htmlWriter.commentTagsToContent(element, ref, false, false);
             }
 
-            case SEE -> {
-                List<? extends DocTree> ref = ((SeeTree) see).getReference();
-                assert !ref.isEmpty();
-                DocTree ref0 = ref.get(0);
-                switch (ref0.getKind()) {
-                    case TEXT, START_ELEMENT -> {
-                        // @see "Reference"
-                        // @see <a href="...">...</a>
-                        return htmlWriter.commentTagsToContent(element, ref, false, false);
-                    }
-                    case REFERENCE -> {
-                        // @see reference label...
-                        refSignature = ch.getReferencedSignature(ref0);
-                        label = ref.subList(1, ref.size());
-                    }
-                    case ERRONEOUS -> {
-                        return invalidTagOutput(resources.getText("doclet.tag.invalid_input",
-                                        ref0.toString()),
-                                Optional.empty());
-                    }
-                    default -> throw new IllegalStateException(ref0.getKind().toString());
-                }
+            case REFERENCE -> {
+                // @see reference label...
+                CommentHelper ch = utils.getCommentHelper(element);
+                String tagName = ch.getTagName(see);
+                String refSignature = ch.getReferencedSignature(ref0);
+                List<? extends DocTree> label = ref.subList(1, ref.size());
+
+                return linkSeeReferenceToContent(element,
+                        see,
+                        refSignature,
+                        ch.getReferencedElement(see),
+                        ch, tagName,false,
+                        label,
+                        (key, args) -> messages.warning(ch.getDocTreePath(see), key, args)
+                );
             }
 
-            default -> throw new IllegalStateException(kind.toString());
+            case ERRONEOUS -> {
+                return invalidTagOutput(resources.getText("doclet.tag.invalid_input",
+                                ref0.toString()),
+                        Optional.empty());
+            }
+
+            default -> throw new IllegalStateException(ref0.getKind().toString());
         }
 
-        return linkSeeReferenceToContent(element,
-                see,
-                refSignature,
-                ch.getReferencedElement(see),
-                ch, tagName,kind == LINK_PLAIN,
-                label,
-                (key, args) -> messages.warning(ch.getDocTreePath(see), key, args)
-        );
     }
 
     Content linkSeeReferenceToContent(Element holder, DocTree refTree, String refSignature, Element ref,
