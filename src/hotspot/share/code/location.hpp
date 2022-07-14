@@ -28,6 +28,9 @@
 #include "asm/assembler.hpp"
 #include "code/vmreg.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+
 class DebugInfoReadStream;
 class DebugInfoWriteStream;
 
@@ -123,5 +126,7 @@ class Location {
   // check
   static bool legal_offset_in_bytes(int offset_in_bytes);
 };
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_CODE_LOCATION_HPP

@@ -36,6 +36,9 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/hashtable.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+
 //** Dependencies represent assertions (approximate invariants) within
 // the runtime system, e.g. class hierarchy changes.  An example is an
 // assertion that a given method is not overridden; another example is
@@ -830,5 +833,7 @@ class CallSiteDepChange : public DepChange {
   oop call_site()     const { return _call_site();     }
   oop method_handle() const { return _method_handle(); }
 };
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_CODE_DEPENDENCIES_HPP

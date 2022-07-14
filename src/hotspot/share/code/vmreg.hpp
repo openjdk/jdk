@@ -35,6 +35,9 @@
 #include "opto/adlcVMDeps.hpp"
 #endif
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+
 //------------------------------VMReg------------------------------------------
 // The VM uses 'unwarped' stack slots; the compiler uses 'warped' stack slots.
 // Register numbers below VMRegImpl::stack0 are the same for both.  Register
@@ -210,5 +213,7 @@ public:
   VMRegPair(VMReg f) { _second = VMRegImpl::Bad(); _first = f; }
   VMRegPair() { _second = VMRegImpl::Bad(); _first = VMRegImpl::Bad(); }
 };
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_CODE_VMREG_HPP

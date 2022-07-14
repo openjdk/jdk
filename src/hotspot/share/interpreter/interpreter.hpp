@@ -32,6 +32,9 @@
 #include "memory/resourceArea.hpp"
 #include "utilities/align.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+
 // This file contains the platform-independent parts
 // of the interpreter and the interpreter generator.
 
@@ -126,5 +129,7 @@ class CodeletMark: ResourceMark {
 // the Zero interpreter or the template interpreter.
 
 typedef ZERO_ONLY(ZeroInterpreter) NOT_ZERO(TemplateInterpreter) Interpreter;
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_INTERPRETER_INTERPRETER_HPP

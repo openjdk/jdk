@@ -31,6 +31,9 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+
 class JavaThread;
 
 //
@@ -177,5 +180,7 @@ class RegisterMap : public StackObj {
 #include CPU_HEADER(registerMap)
 
 };
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_RUNTIME_REGISTERMAP_HPP

@@ -29,6 +29,9 @@
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+
 class Bytes: AllStatic {
  private:
 #ifndef AMD64
@@ -123,5 +126,7 @@ class Bytes: AllStatic {
 
 // The following header contains the implementations of swap_u2, swap_u4, and swap_u8[_base]
 #include OS_CPU_HEADER(bytes)
+
+PRAGMA_DIAG_POP
 
 #endif // CPU_X86_BYTES_X86_HPP

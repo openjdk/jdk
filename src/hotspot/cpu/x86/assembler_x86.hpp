@@ -28,6 +28,9 @@
 #include "asm/register.hpp"
 #include "utilities/powerOfTwo.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+
 // Contains all the definitions needed for x86 assembly code generation.
 
 // Calling convention
@@ -2914,5 +2917,7 @@ public:
   }
 
 };
+
+PRAGMA_DIAG_POP
 
 #endif // CPU_X86_ASSEMBLER_X86_HPP

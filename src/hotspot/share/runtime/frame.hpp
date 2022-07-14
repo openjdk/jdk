@@ -36,6 +36,9 @@
 # include "stack_zero.hpp"
 #endif
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+
 typedef class BytecodeInterpreter* interpreterState;
 
 class CodeBlob;
@@ -556,5 +559,6 @@ class FrameValues {
 
 #endif
 
+PRAGMA_DIAG_POP
 
 #endif // SHARE_RUNTIME_FRAME_HPP

@@ -28,6 +28,9 @@
 #include "runtime/handles.hpp"
 #include "utilities/exceptions.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+
 // InvocationCounters are used to trigger actions when a limit (threshold) is reached.
 //
 // The counter is incremented before a method is activated and an
@@ -85,5 +88,7 @@ public:
   // Miscellaneous
   static ByteSize counter_offset()               { return byte_offset_of(InvocationCounter, _counter); }
 };
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_INTERPRETER_INVOCATIONCOUNTER_HPP

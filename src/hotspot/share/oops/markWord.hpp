@@ -30,6 +30,9 @@
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/globals.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+
 // The markWord describes the header of an object.
 //
 // Bit-format of an object header (most significant first, big endian layout below):
@@ -255,5 +258,7 @@ struct PrimitiveConversions::Translate<markWord> : public TrueType {
   static Decayed decay(const Value& x) { return x.value(); }
   static Value recover(Decayed x) { return Value(x); }
 };
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_OOPS_MARKWORD_HPP

@@ -27,6 +27,9 @@
 
 #include "runtime/javaThread.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+
 class BufferBlob;
 class AbstractCompiler;
 class ciEnv;
@@ -140,5 +143,6 @@ class CodeCacheSweeperThread : public JavaThread {
   void nmethods_do(CodeBlobClosure* cf);
 };
 
+PRAGMA_DIAG_POP
 
 #endif  // SHARE_COMPILER_COMPILERTHREAD_HPP

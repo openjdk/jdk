@@ -28,6 +28,9 @@
 #include "asm/codeBuffer.hpp"
 #include "memory/allocation.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+
 // The classes in this file provide a simple framework for the
 // management of little pieces of machine code - or stubs -
 // created on the fly and frequently discarded. In this frame-
@@ -211,5 +214,7 @@ class StubQueue: public CHeapObj<mtCode> {
   void  print();                                 // prints information about the stub queue
 
 };
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_CODE_STUBS_HPP

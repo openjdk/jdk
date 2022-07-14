@@ -28,6 +28,9 @@
 #include "interpreter/abstractInterpreter.hpp"
 #include "interpreter/templateTable.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+
 // This file contains the platform-independent parts
 // of the template interpreter and the template interpreter generator.
 
@@ -197,5 +200,7 @@ class TemplateInterpreter: public AbstractInterpreter {
 };
 
 #endif // !ZERO
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_INTERPRETER_TEMPLATEINTERPRETER_HPP

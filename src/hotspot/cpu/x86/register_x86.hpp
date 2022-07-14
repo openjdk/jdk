@@ -30,6 +30,9 @@
 #include "utilities/count_leading_zeros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+
 class VMRegImpl;
 typedef VMRegImpl* VMReg;
 
@@ -315,5 +318,7 @@ inline XMMRegister AbstractRegSet<XMMRegister>::last() {
 
 typedef AbstractRegSet<Register> RegSet;
 typedef AbstractRegSet<XMMRegister> XMMRegSet;
+
+PRAGMA_DIAG_POP
 
 #endif // CPU_X86_REGISTER_X86_HPP

@@ -29,6 +29,9 @@
 #include "runtime/handles.hpp"
 #include "utilities/growableArray.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+
 // A klassVtable abstracts the variable-length vtable that is embedded in InstanceKlass
 // and ArrayKlass.  klassVtable objects are used just as convenient transient accessors to the vtable,
 // not to actually hold the vtable data.
@@ -326,5 +329,7 @@ class klassItable {
   static int  calc_itable_size(int num_interfaces, int num_methods) { return (num_interfaces * itableOffsetEntry::size()) + (num_methods * itableMethodEntry::size()); }
 
 };
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_OOPS_KLASSVTABLE_HPP

@@ -31,9 +31,14 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+
 inline const ImmutableOopMap* CodeBlob::oop_map_for_slot(int slot, address return_address) const {
   assert(_oop_maps != NULL, "nope");
   return _oop_maps->find_map_at_slot(slot, (intptr_t) return_address - (intptr_t) code_begin());
 }
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_CODE_CODEBLOB_INLINE_HPP

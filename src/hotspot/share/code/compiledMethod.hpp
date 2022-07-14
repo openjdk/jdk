@@ -30,6 +30,9 @@
 #include "oops/metadata.hpp"
 #include "oops/method.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+
 class Dependencies;
 class ExceptionHandlerTable;
 class ImplicitExceptionTable;
@@ -423,5 +426,7 @@ private:
     return _pc_desc_container.find_pc_desc(pc, approximate, PcDescSearch(code_begin(), scopes_pcs_begin(), scopes_pcs_end()));
   }
 };
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_CODE_COMPILEDMETHOD_HPP

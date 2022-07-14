@@ -31,6 +31,9 @@
 #include "interpreter/invocationCounter.hpp"
 #include "utilities/align.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+
 class MethodCounters : public Metadata {
  friend class VMStructs;
  friend class JVMCIVMStructs;
@@ -160,4 +163,7 @@ class MethodCounters : public Metadata {
   virtual void print_value_on(outputStream* st) const;
 
 };
+
+PRAGMA_DIAG_POP
+
 #endif // SHARE_OOPS_METHODCOUNTERS_HPP

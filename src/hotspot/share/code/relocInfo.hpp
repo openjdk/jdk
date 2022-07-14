@@ -28,6 +28,9 @@
 #include "runtime/os.hpp"
 #include "utilities/macros.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+
 class nmethod;
 class CodeBlob;
 class CompiledMethod;
@@ -1372,5 +1375,7 @@ APPLY_TO_RELOCATIONS(EACH_CASE);
 inline RelocIterator::RelocIterator(CompiledMethod* nm, address begin, address limit) {
   initialize(nm, begin, limit);
 }
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_CODE_RELOCINFO_HPP

@@ -34,6 +34,9 @@
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+
 class ImmutableOopMap;
 class ImmutableOopMapSet;
 class JNIHandleBlock;
@@ -808,5 +811,7 @@ class UpcallStub: public RuntimeBlob {
   virtual void print_on(outputStream* st) const override;
   virtual void print_value_on(outputStream* st) const override;
 };
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_CODE_CODEBLOB_HPP

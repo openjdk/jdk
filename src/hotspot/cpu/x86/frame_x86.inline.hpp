@@ -34,6 +34,9 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/registerMap.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+
 // Inline functions for Intel frames:
 
 // Constructors:
@@ -468,4 +471,7 @@ void frame::update_map_with_saved_link(RegisterMapT* map, intptr_t** link_addr) 
   }
 #endif // AMD64
 }
+
+PRAGMA_DIAG_POP
+
 #endif // CPU_X86_FRAME_X86_INLINE_HPP

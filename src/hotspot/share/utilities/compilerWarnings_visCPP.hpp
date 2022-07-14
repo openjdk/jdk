@@ -30,6 +30,9 @@
 
 #define PRAGMA_DISABLE_MSVC_WARNING(num) __pragma(warning(disable : num))
 
+#define PRAGMA_ALLOW_UNSAFE_CONERVERIONS \
+  PRAGMA_DISABLE_MSVC_WARNING(4244)
+
 // The Visual Studio implementation of FORBID_C_FUNCTION explicitly does
 // nothing, because there doesn't seem to be a way to implement it for Visual
 // Studio.  What seems the most likely approach is to use deprecation warnings,

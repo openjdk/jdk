@@ -27,6 +27,9 @@
 
 #include "register_x86.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+
 inline bool is_Register() {
   return (unsigned int) value() < (unsigned int) ConcreteRegisterImpl::max_gpr;
 }
@@ -92,5 +95,7 @@ inline   bool is_concrete() {
     return is_even(value());   // General, float, and K registers are all two slots wide
   }
 }
+
+PRAGMA_DIAG_POP
 
 #endif // CPU_X86_VMREG_X86_HPP

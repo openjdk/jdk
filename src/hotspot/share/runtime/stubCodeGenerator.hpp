@@ -28,6 +28,9 @@
 #include "asm/assembler.hpp"
 #include "memory/allocation.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+
 // All the basic framework for stub code generation/debugging/printing.
 
 
@@ -132,5 +135,7 @@ class StubCodeMark: public StackObj {
   ~StubCodeMark();
 
 };
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_RUNTIME_STUBCODEGENERATOR_HPP

@@ -32,6 +32,9 @@
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/growableArray.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+
 // Interface for generating the frame map for compiled code.  A frame map
 // describes for a specific pc whether each register and frame stack slot is:
 //   Oop         - A GC root for current frame
@@ -514,5 +517,7 @@ class DerivedPointerTableDeactivate: public StackObj {
   }
 };
 #endif // COMPILER2_OR_JVMCI
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_COMPILER_OOPMAP_HPP

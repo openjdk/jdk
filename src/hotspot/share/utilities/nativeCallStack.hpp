@@ -29,6 +29,9 @@
 #include "services/nmtCommon.hpp"
 #include "utilities/ostream.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+
 /*
  * This class represents a native call path (does not include Java frame)
  *
@@ -102,5 +105,7 @@ public:
   void print_on(outputStream* out) const;
   void print_on(outputStream* out, int indent) const;
 };
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_UTILITIES_NATIVECALLSTACK_HPP

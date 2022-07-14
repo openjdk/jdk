@@ -39,6 +39,9 @@
 #include "utilities/macros.hpp"
 #include CPU_HEADER_INLINE(stackChunkOop)
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+
 DEF_HANDLE_CONSTR(stackChunk, is_stackChunk_noinline)
 
 inline stackChunkOop stackChunkOopDesc::cast(oop obj) {
@@ -379,5 +382,7 @@ inline void stackChunkOopDesc::derelativize_frame(frame& fr) const {
   derelativize_frame_pd(fr);
   fr.set_frame_index(-1); // for the sake of assertions in frame
 }
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_OOPS_STACKCHUNKOOP_INLINE_HPP

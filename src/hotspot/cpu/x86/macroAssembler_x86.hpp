@@ -33,6 +33,9 @@
 #include "runtime/rtmLocking.hpp"
 #include "runtime/vm_version.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+
 // MacroAssembler extends Assembler by frequently used macros.
 //
 // Instructions for which a 'better' code sequence exists depending
@@ -2098,5 +2101,7 @@ class SkipIfEqual {
    SkipIfEqual(MacroAssembler*, const bool* flag_addr, bool value);
    ~SkipIfEqual();
 };
+
+PRAGMA_DIAG_POP
 
 #endif // CPU_X86_MACROASSEMBLER_X86_HPP

@@ -32,6 +32,9 @@
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+
 // Functions for encoding and decoding compressed oops.
 // If the oops are compressed, the type passed to these overloaded functions
 // is narrowOop.  All functions are overloaded so they can be called by
@@ -158,5 +161,7 @@ inline narrowKlass CompressedKlassPointers::encode_not_null(Klass* v, address na
 inline narrowKlass CompressedKlassPointers::encode(Klass* v) {
   return is_null(v) ? (narrowKlass)0 : encode_not_null(v);
 }
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_OOPS_COMPRESSEDOOPS_INLINE_HPP

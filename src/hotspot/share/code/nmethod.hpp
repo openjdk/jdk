@@ -27,6 +27,9 @@
 
 #include "code/compiledMethod.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+
 class DepChange;
 class DirectiveSet;
 class DebugInformationRecorder;
@@ -803,5 +806,7 @@ class nmethodLocker : public StackObj {
     lock(_nm, zombie_ok);
   }
 };
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_CODE_NMETHOD_HPP

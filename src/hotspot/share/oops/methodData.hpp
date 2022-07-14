@@ -35,6 +35,9 @@
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+
 class BytecodeStream;
 
 // The MethodData object collects counts and other profile information
@@ -2477,5 +2480,7 @@ public:
   void clean_weak_method_links();
   Mutex* extra_data_lock() { return &_extra_data_lock; }
 };
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_OOPS_METHODDATA_HPP

@@ -32,6 +32,9 @@
 #include "runtime/signature.hpp"
 #include "utilities/bitMap.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+
 // Forward definition
 class GenerateOopMap;
 class BasicBlock;
@@ -564,5 +567,7 @@ class GeneratePairingInfo: public GenerateOopMap {
 
   // Call compute_map() to generate info.
 };
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_OOPS_GENERATEOOPMAP_HPP

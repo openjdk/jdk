@@ -34,6 +34,9 @@
 #include "utilities/constantTag.hpp"
 #include "utilities/growableArray.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+
 // The ConstantPoolCache is not a cache! It is the resolution table that the
 // interpreter uses to avoid going into the runtime and a way to access resolved
 // values.
@@ -521,5 +524,7 @@ class ConstantPoolCache: public MetaspaceObj {
   // Verify
   void verify_on(outputStream* st);
 };
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_OOPS_CPCACHE_HPP

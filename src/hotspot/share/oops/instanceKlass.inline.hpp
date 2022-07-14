@@ -38,6 +38,9 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+
 inline intptr_t* InstanceKlass::start_of_itable()   const { return (intptr_t*)start_of_vtable() + vtable_length(); }
 inline intptr_t* InstanceKlass::end_of_itable()     const { return start_of_itable() + itable_length(); }
 
@@ -196,5 +199,7 @@ inline instanceOop InstanceKlass::allocate_instance(oop java_class, TRAPS) {
   ik->initialize(CHECK_NULL);
   return ik->allocate_instance(THREAD);
 }
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_OOPS_INSTANCEKLASS_INLINE_HPP

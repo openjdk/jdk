@@ -33,6 +33,9 @@
 #include "oops/oop.hpp"
 #include "runtime/deoptimization.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+
 class ciBitData;
 class ciCounterData;
 class ciJumpData;
@@ -580,5 +583,7 @@ public:
 #endif
   void dump_replay_data(outputStream* out);
 };
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_CI_CIMETHODDATA_HPP

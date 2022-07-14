@@ -29,6 +29,9 @@
 #include "runtime/icache.hpp"
 #include "runtime/safepointMechanism.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+
 // We have interfaces for the following instructions:
 // - NativeInstruction
 // - - NativeCall
@@ -776,5 +779,7 @@ class NativeDeoptInstruction: public NativeInstruction {
   // MT-safe patching
   static void insert(address code_pos, bool invalidate = true);
 };
+
+PRAGMA_DIAG_POP
 
 #endif // CPU_X86_NATIVEINST_X86_HPP
