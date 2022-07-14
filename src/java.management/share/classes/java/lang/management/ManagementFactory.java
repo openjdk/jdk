@@ -1019,7 +1019,7 @@ public class ManagementFactory {
         }
     }
 
-    private static class ReadOnlyExtensionMBeanInit {
+    private static class ReadOnlyExtensionMBeanInitializer {
        public static void init() {
             Metrics containerMetrics = SystemMetrics.instance();
             if (containerMetrics != null) {
@@ -1037,7 +1037,7 @@ public class ManagementFactory {
 
     static {
         loadNativeLib();
-        ReadOnlyExtensionMBeanInit.init();
+        ReadOnlyExtensionMBeanInitializer.init();
     }
 
     @SuppressWarnings("removal")
