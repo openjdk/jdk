@@ -374,12 +374,6 @@ HeapWord* HeapRegion::do_oops_on_memregion_in_humongous(MemRegion mr,
   // Only filler objects follow a humongous object in the containing
   // regions, and we can ignore those.  So only process the one
   // humongous object.
-  HeapWord* const pb = in_gc_pause ? sr->parsable_bottom() : sr->parsable_bottom_acquire();
-  if (sr->is_obj_dead(obj, pb)) {
-    // The object is dead. There can be no other object in this region, so return
-    // the end of that region.
-    return end();
-  }
   if (obj->is_objArray() || (sr->bottom() < mr.start())) {
     // objArrays are always marked precisely, so limit processing
     // with mr.  Non-objArrays might be precisely marked, and since
