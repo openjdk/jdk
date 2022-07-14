@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package sun.nio.fs;
+
+import jdk.internal.misc.Blocker;
 
 /**
  * Bsd specific system calls.
@@ -61,6 +63,33 @@ class BsdNativeDispatcher extends UnixNativeDispatcher {
         }
     }
     static native byte[] getmntonname0(long pathAddress) throws UnixException;
+
+    /**
+     * int clonefile(const char * src, const char * dst, int flags);
+     *
+     * int flags = noFollowLinks ? CLONE_NOFOLLOW : 0;
+     */
+    static int clonefile(UnixPath src, UnixPath dst, boolean noFollowLinks)
+        throws UnixException {
+        if (src.getFileSystem() == dst.getFileSystem()) {
+            try (NativeBuffer srcBuffer = copyToNativeBuffer(src);
+                NativeBuffer dstBuffer = copyToNativeBuffer(dst)) {
+                long comp = Blocker.begin();
+                try {
+                    return clonefile0(srcBuffer.address(),
+                                      dstBuffer.address(),
+                                      noFollowLinks);
+                } finally {
+                    Blocker.end(comp);
+                }
+            }
+        }
+
+        return -1;
+    }
+    private static native int clonefile0(long srcAddress, long dstAddres,
+                                         boolean noFollowLinks)
+        throws UnixException;
 
     // initialize field IDs
     private static native void initIDs();

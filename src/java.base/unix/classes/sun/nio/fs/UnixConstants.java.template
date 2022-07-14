@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,6 +129,14 @@ class UnixConstants {
 
     static final int PREFIX_ERANGE = ERANGE;
     static final int PREFIX_EMFILE = EMFILE;
+
+#ifdef _ALLBSD_SOURCE
+    static final int PREFIX_ENOTSUP = ENOTSUP;
+#endif
+
+#ifdef __linux__
+    static final int PREFIX_EPERM = EPERM;
+#endif
 
     // flags used with openat/unlinkat/etc.
 #if defined(AT_SYMLINK_NOFOLLOW) && defined(AT_REMOVEDIR)

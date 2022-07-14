@@ -277,28 +277,15 @@ class UnixCopyFile {
         throws IOException
     {
         boolean copied = false;
-        if (addressToPollForCancel == 0 &&
-            source.getFileSystem() == target.getFileSystem() &&
-            !cloneFileNotSupported) {
-            try (NativeBuffer sourceBuffer = copyToNativeBuffer(source);
-                NativeBuffer targetBuffer = copyToNativeBuffer(target)) {
-                long comp = Blocker.begin();
-                try {
-                    int res = cloneFile0(sourceBuffer.address(),
-                                         targetBuffer.address(),
-                                         flags.followLinks);
-                    if (res == 0) {
-                        copied = true;
-                    }
-                    if (res == IOStatus.UNSUPPORTED) {
-                        cloneFileNotSupported = true;
-                    }
-                    // other IOStatus values: fall through
-                } catch (UnixException x) {
-                    x.rethrowAsIOException(source, target);
-                } finally {
-                    Blocker.end(comp);
-                }
+        if (addressToPollForCancel == 0 && !cloneFileNotSupported) {
+            UnixFileSystemProvider provider =
+               (UnixFileSystemProvider)source.getFileSystem().provider();
+            int res = provider.clone(source, target, !flags.followLinks);
+            if (res == 0) {
+                copied = true;
+            }
+            if (res == IOStatus.UNSUPPORTED) {
+                cloneFileNotSupported = true;
             }
         }
 
@@ -731,22 +718,6 @@ class UnixCopyFile {
     }
 
     // -- native methods --
-
-    /**
-     * Clones the file whose path name address is {@code src} to that whose
-     * path name address is {@code dst} using a platform-specific system call.
-     *
-     * @param sourceAddress the path address of the source file
-     * @param targetAddres the path address of the target file (clone)
-     * @param followLinks whether to follow links
-     *
-     * @return 0 on success, UNSUPPORTED_CASE if the call does not work with
-     *         the given parameters, or UNSUPPORTED if cloning is not supported
-     *         on this platform
-     */
-    private static native int cloneFile0(long sourceAddress, long targetAddres,
-                                         boolean followLinks)
-        throws UnixException;
 
     /**
      * Copies data between file descriptors {@code src} and {@code dst} using

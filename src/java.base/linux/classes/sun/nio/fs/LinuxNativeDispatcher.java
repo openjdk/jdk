@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package sun.nio.fs;
+
+import jdk.internal.misc.Blocker;
 
 /**
  * Linux specific system calls.
@@ -68,6 +70,20 @@ class LinuxNativeDispatcher extends UnixNativeDispatcher {
      * int endmntent(FILE* filep);
      */
     static native void endmntent(long stream) throws UnixException;
+
+    /**
+     * int ioctl(int dest_fd, FICLONE, int src_fd);
+     */
+    static int ioctl_ficlone(int dst, int src) throws UnixException {
+        long comp = Blocker.begin();
+        try {
+            return ioctl_ficlone0(dst, src);
+        } finally {
+            Blocker.end(comp);
+        }
+    }
+    private static native int ioctl_ficlone0(int dst, int src)
+        throws UnixException;
 
     // initialize
     private static native void init();

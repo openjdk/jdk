@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,16 @@
 
 package sun.nio.fs;
 
+import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.*;
 import java.nio.file.spi.FileTypeDetector;
-import java.io.IOException;
-
+import jdk.internal.misc.Blocker;
 import jdk.internal.util.StaticProperty;
+import sun.nio.ch.IOStatus;
+
+import static sun.nio.fs.LinuxNativeDispatcher.*;
+import static sun.nio.fs.UnixConstants.*;
 
 /**
  * Linux implementation of FileSystemProvider
@@ -108,5 +112,64 @@ class LinuxFileSystemProvider extends UnixFileSystemProvider {
 
         return chain(new MimeTypesFileTypeDetector(userMimeTypes),
                      new MimeTypesFileTypeDetector(etcMimeTypes));
+    }
+
+    @Override
+    public int clone(Path source, Path target, boolean noFollowLinks)
+        throws IOException {
+        UnixPath src = UnixPath.toUnixPath(source);
+        UnixPath dst = UnixPath.toUnixPath(target);
+        int srcFD = 0;
+        int dstFD = 0;
+        try {
+            srcFD = open(src, O_RDONLY, 0);
+            dstFD = open(dst, O_CREAT | O_WRONLY, 0666);
+        } catch (UnixException x) {
+            x.rethrowAsIOException(src, dst);
+            return IOStatus.THROWN;
+        }
+
+        try {
+            return ioctl_ficlone(dstFD, srcFD);
+        } catch (UnixException x) {
+            // delete dst to avoid later exception in Java layer
+            if (exists(dst)) {
+                try {
+                    close(dstFD);
+                    dstFD = 0;
+                } catch (UnixException ignore) {
+                }
+                try {
+                    unlink(dst);
+                } catch (UnixException y) {
+                    y.rethrowAsIOException(dst);
+                    return IOStatus.THROWN;
+                }
+            }
+            switch (x.errno()) {
+                case EINVAL:
+                    return IOStatus.UNSUPPORTED;
+                case EPERM:
+                    x.rethrowAsIOException(src, dst);
+                    return IOStatus.THROWN;
+                default:
+                    return IOStatus.UNSUPPORTED_CASE;
+            }
+        } finally {
+            if (dstFD != 0) {
+                try {
+                    close(dstFD);
+                } catch (UnixException x) {
+                    x.rethrowAsIOException(dst);
+                    return IOStatus.THROWN;
+                }
+            }
+            try {
+                close(srcFD);
+            } catch (UnixException x) {
+                x.rethrowAsIOException(src);
+                return IOStatus.THROWN;
+            }
+        }
     }
 }

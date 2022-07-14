@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@
 #include "jni_util.h"
 #include "jvm.h"
 #include "jlong.h"
+#include <linux/fs.h>
+#include <sys/ioctl.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -35,6 +37,10 @@
 #include <mntent.h>
 
 #include "sun_nio_fs_LinuxNativeDispatcher.h"
+
+#ifndef FICLONE
+#define FICLONE      1074041865
+#endif
 
 static jfieldID entry_name;
 static jfieldID entry_dir;
@@ -142,3 +148,17 @@ Java_sun_nio_fs_LinuxNativeDispatcher_endmntent(JNIEnv* env, jclass this, jlong 
     /* FIXME - man page doesn't explain how errors are returned */
     endmntent(fp);
 }
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_fs_LinuxNativeDispatcher_ioctl_1ficlone0(JNIEnv* env, jclass this,
+    jint dst, jint src)
+{
+    int ret = ioctl(dst, FICLONE, src);
+    if (ret != 0) {
+        throwUnixException(env, errno);
+        return ret;
+    }
+
+    return 0;
+}
+

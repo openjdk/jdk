@@ -288,6 +288,21 @@ public abstract class UnixFileSystemProvider
                           options);
     }
 
+    /**
+     * Clones the file whose path name is {@code src} to that whose path
+     * name is {@code dst} using a platform-specific system call.
+     *
+     * @param src the path of the source file
+     * @param dst the path of the desintation file (clone)
+     * @param noFollowLinks whether to follow links
+     *
+     * @return 0 on success, UNSUPPORTED_CASE if the call does not work with
+     *         the given parameters, or UNSUPPORTED if cloning is not supported
+     *         on this platform
+     */
+    public abstract int clone(Path source, Path target, boolean noFollowLinks)
+        throws IOException;
+
     @Override
     public void checkAccess(Path obj, AccessMode... modes) throws IOException {
         UnixPath file = UnixPath.toUnixPath(obj);
