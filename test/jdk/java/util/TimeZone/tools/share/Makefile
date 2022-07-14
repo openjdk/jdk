@@ -30,7 +30,7 @@
 #     make install
 #
 
-TZDATA = ../../../../../../../../open/src/java.base/share/data/tzdata
+TZDATA = ../../../../../../../src/java.base/share/data/tzdata
 TZDATA_VER = `grep '^tzdata' $(TZDATA)/VERSION`
 TZNAME = africa antarctica asia australasia europe northamerica \
 	solar87 solar88 solar89 southamerica \
