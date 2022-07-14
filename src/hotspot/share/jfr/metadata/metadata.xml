@@ -558,6 +558,11 @@
     <Field type="ulong" contentType="bytes" name="used" label="Used" />
   </Event>
 
+  <Event name="JitRestart" category="Java Virtual Machine, Compiler" label="JIT restart" stackTrace="false" startTime="false" thread="true">
+    <Field type="int" name="freedMemory" label="Freed Memory" />
+    <Field type="ulong" name="codeCacheMaxCapacity" label="CodeCache maximum capacity" />
+  </Event>
+
   <Event name="Compilation" category="Java Virtual Machine, Compiler" label="Compilation" thread="true">
     <Field type="uint" name="compileId" label="Compilation Identifier" relation="CompileId" />
     <Field type="CompilerType" name="compiler" label="Compiler" />
@@ -600,8 +605,6 @@
     <Field type="uint" name="sweptCount" label="Methods Swept" />
     <Field type="uint" name="flushedCount" label="Methods Flushed" />
     <Field type="uint" name="zombifiedCount" label="Methods Zombified" />
-    <Field type="boolean" name="jitRestarted" label="JIT restarted" />
-    <Field type="uint" contentType="bytes" name="freedMemory" label="Freed Memory" />
   </Event>
 
   <Event name="CodeCacheFull" category="Java Virtual Machine, Code Cache" label="Code Cache Full" thread="true" startTime="false">
@@ -614,6 +617,7 @@
     <Field type="int" name="adaptorCount" label="Adaptors" />
     <Field type="ulong" contentType="bytes" name="unallocatedCapacity" label="Unallocated" />
     <Field type="int" name="fullCount" label="Full Count" />
+    <Field type="ulong" name="codeCacheMaxCapacity" label="CodeCache maximum capacity" />
   </Event>
 
   <Event name="Deoptimization" category="Java Virtual Machine, Compiler" label="Deoptimization" thread="true" stackTrace="true" startTime="false">

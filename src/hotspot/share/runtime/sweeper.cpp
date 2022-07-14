@@ -310,9 +310,7 @@ static void post_sweep_event(EventSweepCodeCache* event,
                              s4 traversals,
                              int swept,
                              int flushed,
-                             int zombified,
-                             bool jit_restarted,
-                             int freed_memory) {
+                             int zombified) {
   assert(event != NULL, "invariant");
   assert(event->should_commit(), "invariant");
   event->set_starttime(start);
@@ -321,8 +319,6 @@ static void post_sweep_event(EventSweepCodeCache* event,
   event->set_sweptCount(swept);
   event->set_flushedCount(flushed);
   event->set_zombifiedCount(zombified);
-  event->set_jitRestarted(jit_restarted);
-  event->set_freedMemory(freed_memory);
   event->commit();
 }
 
@@ -437,17 +433,19 @@ void NMethodSweeper::sweep_code_cache() {
   // it only makes sense to re-enable compilation if we have actually freed memory.
   // Note that typically several kB are released for sweeping 16MB of the code
   // cache. As a result, 'freed_memory' > 0 to restart the compiler.
-  bool jit_restarted = false;
   if (!CompileBroker::should_compile_new_jobs() && (freed_memory > 0)) {
     CompileBroker::set_should_compile_new_jobs(CompileBroker::run_compilation);
     log.debug("restart compiler");
     log_sweep("restart_compiler");
-    jit_restarted = true;
+    EventJitRestart event;
+    event.set_freedMemory(freed_memory);
+    event.set_codeCacheMaxCapacity(CodeCache::max_capacity());
+    event.commit();
   }
 
   EventSweepCodeCache event(UNTIMED);
   if (event.should_commit()) {
-    post_sweep_event(&event, sweep_start_counter, sweep_end_counter, (s4)_traversals, swept_count, flushed_count, zombified_count, jit_restarted, freed_memory);
+    post_sweep_event(&event, sweep_start_counter, sweep_end_counter, (s4)_traversals, swept_count, flushed_count, zombified_count);
   }
 }
 
