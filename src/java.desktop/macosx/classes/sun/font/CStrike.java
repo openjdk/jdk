@@ -62,6 +62,12 @@ public final class CStrike extends PhysicalStrike {
                                                             double x,
                                                             double y);
 
+    private static native void getNativeGlyphRenderData(long nativeStrikePtr,
+                                                        int glyphCode,
+                                                        double x,
+                                                        double y,
+                                                        GlyphRenderData result);
+
     // returns the bounding rect for a glyph
     private static native void getNativeGlyphImageBounds(long nativeStrikePtr,
                                                          int glyphCode,
@@ -219,6 +225,12 @@ public final class CStrike extends PhysicalStrike {
     // should implement, however not called though any path that is publicly exposed
     GeneralPath getGlyphVectorOutline(int[] glyphs, float x, float y) {
         throw new Error("not implemented yet");
+    }
+
+    GlyphRenderData getGlyphRenderData(int glyphCode, float x, float y) {
+        GlyphRenderData result = new GlyphRenderData();
+        getNativeGlyphRenderData(getNativeStrikePtr(), glyphCode, x, y, result);
+        return result;
     }
 
     // called from the Sun2D renderer

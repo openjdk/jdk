@@ -1065,7 +1065,7 @@ abstract class CMap {
 
     public static final NullCMapClass theNullCmap = new NullCMapClass();
 
-    final int getControlCodeGlyph(int charCode, boolean noSurrogates) {
+    static int getControlCodeGlyph(int charCode, boolean noSurrogates) {
         if (charCode < 0x0010) {
             switch (charCode) {
             case 0x0009:
@@ -1078,7 +1078,7 @@ abstract class CMap {
         return -1;
     }
 
-    final char getFormatCharGlyph(int charCode) {
+    static char getFormatCharGlyph(int charCode) {
         if (charCode >= 0x200c) {
             if ((charCode <= 0x200f) ||
                 (charCode >= 0x2028 && charCode <= 0x202e) ||
@@ -1145,15 +1145,17 @@ abstract class CMap {
             }
         }
 
-        static final int VS_NOGLYPH = 0;
-        private int getGlyph(int charCode, int variationSelector) {
-            int targetSelector = -1;
+        private int findVariationSelectorIndex(int variationSelector) {
             for (int i = 0; i < numSelectors; i++) {
                 if (selector[i] == variationSelector) {
-                    targetSelector = i;
-                    break;
+                    return i;
                 }
             }
+            return -1;
+        }
+
+        static final int VS_NOGLYPH = 0;
+        private int getGlyph(int charCode, int targetSelector) {
             if (targetSelector == -1) {
                 return VS_NOGLYPH;
             }
@@ -1169,15 +1171,17 @@ abstract class CMap {
     }
 
     char getVariationGlyph(int charCode, int variationSelector) {
+        if (variationSelector == 0) return getGlyph(charCode);
         char glyph = 0;
-        if (uvs == null) {
-            glyph = getGlyph(charCode);
-        } else {
-            int result = uvs.getGlyph(charCode, variationSelector);
-            if (result > 0) {
-                glyph = (char)(result & 0xFFFF);
-            } else {
-                glyph = getGlyph(charCode);
+        if (uvs != null) {
+            int targetSelector = uvs.findVariationSelectorIndex(variationSelector);
+            if (targetSelector != -1) {
+                int result = uvs.getGlyph(charCode, targetSelector);
+                if (result > 0) {
+                    glyph = (char)(result & 0xFFFF);
+                } else {
+                    glyph = getGlyph(charCode);
+                }
             }
         }
         return glyph;

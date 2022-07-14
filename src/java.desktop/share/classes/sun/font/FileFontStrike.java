@@ -933,6 +933,37 @@ public class FileFontStrike extends PhysicalStrike {
         return gp;
     }
 
+    private
+        WeakReference<ConcurrentHashMap<Integer, GlyphRenderData>> glyphRenderDataMapRef;
+
+    GlyphRenderData getGlyphRenderData(int glyphCode, float x, float y) {
+
+        GlyphRenderData grd = null;
+        ConcurrentHashMap<Integer, GlyphRenderData> glyphRenderDataMap = null;
+
+        if (glyphRenderDataMapRef != null) {
+            glyphRenderDataMap = glyphRenderDataMapRef.get();
+            if (glyphRenderDataMap != null) {
+                grd = glyphRenderDataMap.get(glyphCode);
+            }
+        }
+
+        if (grd == null) {
+            grd = fileFont.getGlyphRenderData(pScalerContext, glyphCode, 0, 0);
+            if (glyphRenderDataMap == null) {
+                glyphRenderDataMap = new ConcurrentHashMap<>();
+                glyphRenderDataMapRef = new WeakReference<>(glyphRenderDataMap);
+            }
+            glyphRenderDataMap.put(glyphCode, grd);
+        }
+        grd = new GlyphRenderData(grd); // mutable!
+        if (x != 0f || y != 0f) {
+            grd.transform(AffineTransform.getTranslateInstance(x, y));
+        }
+        return grd;
+    }
+
+
     GeneralPath getGlyphVectorOutline(int[] glyphs, float x, float y) {
         return fileFont.getGlyphVectorOutline(pScalerContext,
                                               glyphs, glyphs.length, x, y);

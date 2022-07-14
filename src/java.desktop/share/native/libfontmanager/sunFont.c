@@ -189,6 +189,20 @@ static void initFontIDs(JNIEnv *env) {
      CHECK_NULL(sunFontIDs.lcdSubPixPos =
          (*env)->GetFieldID(env, tmpClass, "lcdSubPixPos", "Z"));
 
+    CHECK_NULL(tmpClass = (*env)->FindClass(env, "sun/font/GlyphRenderData"));
+    CHECK_NULL(sunFontIDs.glyphRenderDataOutline =
+         (*env)->GetFieldID(env, tmpClass, "outline", "Ljava/awt/geom/GeneralPath;"));
+    CHECK_NULL(sunFontIDs.glyphRenderDataColorLayers =
+         (*env)->GetFieldID(env, tmpClass, "colorLayers", "Ljava/util/List;"));
+    CHECK_NULL(sunFontIDs.glyphRenderDataSetColorLayersListMID =
+          (*env)->GetMethodID(env, tmpClass, "setColorLayersList", "(I)V"));
+    CHECK_NULL(sunFontIDs.glyphRenderDataAddColorLayerMID =
+          (*env)->GetMethodID(env, tmpClass, "addColorLayers", "(IIIILjava/awt/geom/GeneralPath;)V"));
+    CHECK_NULL(sunFontIDs.glyphRenderDataAddColorLayerFGMID =
+          (*env)->GetMethodID(env, tmpClass, "addColorLayers", "(Ljava/awt/geom/GeneralPath;)V"));
+    CHECK_NULL(sunFontIDs.glyphRenderDataAddBitmapMID =
+          (*env)->GetMethodID(env, tmpClass, "addBitmap", "(DDDDDDIIII[I)V"));
+
      initLCDGammaTables();
 
      initialisedFontIDs = 1;

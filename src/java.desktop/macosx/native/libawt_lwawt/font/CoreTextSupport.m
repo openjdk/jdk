@@ -88,6 +88,17 @@ ReleaseCTStateDictionary(CFDictionaryRef ctStateDict)
     CFRelease(ctStateDict); // GC
 }
 
+int NextUnicode(const UniChar unicodes[], UnicodeScalarValue *codePoint, const size_t index, const size_t limit) {
+    if (index >= limit) return 0;
+    UniChar unicode = unicodes[index];
+    UniChar nextUnicode = (index+1) < limit ? unicodes[index+1] : 0;
+    bool surrogatePair = unicode >= HI_SURROGATE_START && unicode <= HI_SURROGATE_END
+                         && nextUnicode >= LO_SURROGATE_START && nextUnicode <= LO_SURROGATE_END;
+    *codePoint = surrogatePair ? (((int)(unicode - HI_SURROGATE_START)) << 10)
+                                + nextUnicode - LO_SURROGATE_START + 0x10000 : unicode;
+    return surrogatePair ? 2 : 1;
+}
+
 /*
  *    Transform Unicode characters into glyphs.
  *
@@ -101,36 +112,37 @@ void CTS_GetGlyphsAsIntsForCharacters
 {
     CTFontGetGlyphsForCharacters((CTFontRef)font->fFont, unicodes, glyphs, count);
 
-    size_t i;
-    for (i = 0; i < count; i++) {
-        UniChar unicode = unicodes[i];
-        UniChar nextUnicode = (i+1) < count ? unicodes[i+1] : 0;
-        bool surrogatePair = unicode >= HI_SURROGATE_START && unicode <= HI_SURROGATE_END
-                             && nextUnicode >= LO_SURROGATE_START && nextUnicode <= LO_SURROGATE_END;
+    size_t i, size;
+    for (i = 0; i < count; i += size) {
+        UnicodeScalarValue codePoint, variationCodePoint;
+        int codePointSize = size = NextUnicode(unicodes, &codePoint, i, count);
+        if (size == 0) break;
+
+        int variationSize = NextUnicode(unicodes, &variationCodePoint, i + size , count);
+        bool hasVariationSelector = variationSize > 0 &&
+                ((variationCodePoint >= VSS_START && variationCodePoint <= VSS_END) ||
+                 (variationCodePoint >= VS_START && variationCodePoint <= VS_END));
+        if (hasVariationSelector) size += variationSize;
 
         CGGlyph glyph = glyphs[i];
-        if (glyph > 0) {
+        if (glyph > 0 && (!hasVariationSelector || glyphs[i + codePointSize] > 0)) {
             glyphsAsInts[i] = glyph;
-            if (surrogatePair) i++;
             continue;
         }
 
         const CTFontRef fallback = JRSFontCreateFallbackFontForCharacters((CTFontRef)font->fFont, &unicodes[i],
-                                                                          surrogatePair ? 2 : 1);
+                                                                          size);
         if (fallback) {
-            CTFontGetGlyphsForCharacters(fallback, &unicodes[i], &glyphs[i], surrogatePair ? 2 : 1);
+            CTFontGetGlyphsForCharacters(fallback, &unicodes[i], &glyphs[i], size);
             glyph = glyphs[i];
             CFRelease(fallback);
         }
 
         if (glyph > 0) {
-            int codePoint = surrogatePair ? (((int)(unicode - HI_SURROGATE_START)) << 10)
-                                            + nextUnicode - LO_SURROGATE_START + 0x10000 : unicode;
             glyphsAsInts[i] = -codePoint; // set the glyph code to the negative unicode value
         } else {
             glyphsAsInts[i] = 0; // CoreText couldn't find a glyph for this character either
         }
-        if (surrogatePair) i++;
     }
 }
 

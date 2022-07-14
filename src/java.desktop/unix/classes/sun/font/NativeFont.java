@@ -304,6 +304,11 @@ public class NativeFont extends PhysicalFont {
         return null;
     }
 
+    public GlyphRenderData getGlyphRenderData(long pScalerContext, int glyphCode,
+                                              float x, float y) {
+        return null;
+    }
+
     private native int countGlyphs(byte[] platformNameBytes, int ptSize);
 
     public int getNumGlyphs() {

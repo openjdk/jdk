@@ -64,6 +64,11 @@ class NullFontScaler extends FontScaler {
         return new GeneralPath();
     }
 
+    GlyphRenderData getGlyphRenderData(long pScalerContext, int glyphCode,
+                                       float x, float y) {
+        return new GlyphRenderData();
+    }
+
     long createScalerContext(double[] matrix, int aa,
         int fm, float boldness, float italic) {
         return getNullScalerContext();

@@ -77,6 +77,11 @@ public final class CFont extends PhysicalFont implements FontSubstitution {
        throw new InternalError("Not implemented");
     }
 
+    GlyphRenderData getGlyphRenderData(long pScalerContext, int glyphCode,
+                                       float x, float y) {
+        throw new InternalError("Not implemented");
+    }
+
     @Override
     protected byte[] getTableBytes(int tag) {
         return getTableBytesNative(getNativeFontPtr(), tag);

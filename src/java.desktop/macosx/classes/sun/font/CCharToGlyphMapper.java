@@ -88,6 +88,31 @@ public class CCharToGlyphMapper extends CharToGlyphMapper {
         return false;
     }
 
+    private static int unicodeToUnits(int unicode, int dstOffset, char[] dst) {
+        if (unicode >= 0x10000) {
+            int base = unicode - 0x10000;
+            dst[dstOffset] = (char)((base >>> 10) + HI_SURROGATE_START);
+            dst[dstOffset+1] = (char)((base % 0x400) + LO_SURROGATE_START);
+            return 2;
+        } else {
+            dst[dstOffset] = (char) unicode;
+            return 1;
+        }
+    }
+
+    public int charToVariationGlyph(int unicode, int variationSelector) {
+        if (variationSelector == 0) return charToGlyph(unicode);
+        final char[] unicodeArray = new char[4];
+        final int[] glyphArray = new int[4];
+
+        int size = unicodeToUnits(unicode, 0, unicodeArray);
+        size += unicodeToUnits(variationSelector, size, unicodeArray);
+
+        nativeCharsToGlyphs(fFont.getNativeFontPtr(), size, unicodeArray, glyphArray);
+
+        return glyphArray[0];
+    }
+
     public synchronized int charToGlyph(char unicode) {
         final int glyph = cache.get(unicode);
         if (glyph != 0) return glyph;
@@ -105,9 +130,7 @@ public class CCharToGlyphMapper extends CharToGlyphMapper {
         if (unicode >= 0x10000) {
             int[] glyphs = new int[2];
             char[] surrogates = new char[2];
-            int base = unicode - 0x10000;
-            surrogates[0] = (char)((base >>> 10) + HI_SURROGATE_START);
-            surrogates[1] = (char)((base % 0x400) + LO_SURROGATE_START);
+            unicodeToUnits(unicode, 0, surrogates);
             charsToGlyphs(2, surrogates, glyphs);
             return glyphs[0];
          } else {

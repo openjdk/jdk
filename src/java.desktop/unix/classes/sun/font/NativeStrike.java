@@ -292,4 +292,8 @@ class NativeStrike extends PhysicalStrike {
          return new GeneralPath();
      }
 
+     GlyphRenderData getGlyphRenderData(int glyphCode, float x, float y) {
+         return new GlyphRenderData();
+     }
+
 }

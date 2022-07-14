@@ -35,6 +35,10 @@
 #define HI_SURROGATE_END   0xDBFF
 #define LO_SURROGATE_START 0xDC00
 #define LO_SURROGATE_END   0xDFFF
+#define VS_START  0xFE00
+#define VS_END    0xFE0F
+#define VSS_START 0xE0100
+#define VSS_END   0xE01FF
 
 /*
  *    Transform Unicode characters into glyphs.

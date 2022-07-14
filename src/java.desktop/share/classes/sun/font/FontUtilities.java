@@ -135,7 +135,7 @@ public final class FontUtilities {
      * where the caller interprets 'layout' to mean any case where
      * one 'char' (ie the java type char) does not map to one glyph
      */
-    public static final int MAX_LAYOUT_CHARCODE = 0x206F;
+    public static final int MAX_LAYOUT_CHARCODE = CharToGlyphMapper.VSS_END;
 
     /**
      * Calls the private getFont2D() method in java.awt.Font objects.
@@ -300,6 +300,21 @@ public final class FontUtilities {
             return true;
         }
         else if (code >= 0x206a && code <= 0x206f) { // directional control
+            return true;
+        }
+        else if (code >= 0x20d0 && code <= 0x20f0) { // U+20D0 - U+20F0 combining diacritical marks for symbols
+            return true;
+        }
+        else if (code >= 0x1f1e6 && code <= 0x1f1ff) { // U+1F1E6 - U+1F1FF flag letters https://emojipedia.org/emoji-flag-sequence/
+            return true;
+        }
+        else if (code == 0x1f3f4) { // black flag https://emojipedia.org/emoji-tag-sequence/
+            return true;
+        }
+        else if (code >= 0x1f3fb && code <= 0x1f3ff) { // U+1F3FB - U+1F3FF emoji modifiers
+            return true;
+        }
+        else if (CharToGlyphMapper.isVariationSelector(code)) {
             return true;
         }
         return false;

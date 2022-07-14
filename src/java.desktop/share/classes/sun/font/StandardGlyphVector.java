@@ -876,6 +876,25 @@ public class StandardGlyphVector extends GlyphVector {
         return result;
     }
 
+    public GlyphRenderData getGlyphRenderData(float x, float y) {
+        return getGlyphRenderData(0, glyphs.length, x, y);
+    }
+
+    public GlyphRenderData getGlyphRenderData(int start, int count, float x, float y) {
+        setFRCTX();
+        initPositions();
+
+        GlyphRenderData result = new GlyphRenderData();
+        for (int i = start, e = start + count, n = start * 2; i < e; ++i, n += 2) {
+            float px = x + positions[n];
+            float py = y + positions[n+1];
+
+            getGlyphStrike(i).appendGlyphRenderData(glyphs[i], result, px, py);
+        }
+
+        return result;
+    }
+
     //////////////////////
     // StandardGlyphVector package private methods
     /////////////////////
@@ -1814,6 +1833,19 @@ public class StandardGlyphVector extends GlyphVector {
             }
             PathIterator iterator = gp.getPathIterator(null);
             result.append(iterator, false);
+        }
+
+        void appendGlyphRenderData(int glyphID, GlyphRenderData result, float x, float y) {
+            // !!! fontStrike needs a method for this.  For that matter, GeneralPath does.
+            GlyphRenderData grd;
+            if (sgv.invdtx == null) {
+                grd = strike.getGlyphRenderData(glyphID, x + dx, y + dy);
+            } else {
+                grd = strike.getGlyphRenderData(glyphID, 0, 0);
+                grd.transform(sgv.invdtx);
+                grd.transform(AffineTransform.getTranslateInstance(x + dx, y + dy));
+            }
+            result.merge(grd);
         }
     }
 

@@ -230,6 +230,16 @@ public abstract class FileFont extends PhysicalFont {
         }
     }
 
+    public GlyphRenderData getGlyphRenderData(long pScalerContext, int glyphCode,
+                                              float x, float y) {
+        try {
+            return getScaler().getGlyphRenderData(pScalerContext, glyphCode, x, y);
+        } catch (FontScalerException fe) {
+            scaler = FontScaler.getNullScaler();
+            return getGlyphRenderData(pScalerContext, glyphCode, x, y);
+        }
+    }
+
     /* T1 & TT implementation differ so this method is abstract.
        NB: null should not be returned here! */
     protected abstract FontScaler getScaler();

@@ -205,20 +205,11 @@ JNI_COCOA_ENTER(env);
 JNI_COCOA_EXIT(env);
 }
 
-/*
- * Class:     sun_font_CStrike
- * Method:    getNativeGlyphOutline
- * Signature: (JJIDD)Ljava/awt/geom/GeneralPath;
- */
-JNIEXPORT jobject JNICALL
-Java_sun_font_CStrike_getNativeGlyphOutline
-    (JNIEnv *env, jclass clazz,
-     jlong awtStrikePtr, jint glyphCode, jdouble xPos, jdouble yPos)
+jobject getGlyphOutline(JNIEnv *env, AWTStrike *awtStrike,
+                        CTFontRef font, CGGlyph glyph,
+                        jdouble xPos, jdouble yPos)
 {
     jobject generalPath = NULL;
-
-JNI_COCOA_ENTER(env);
-
     AWTPathRef path = NULL;
     jfloatArray pointCoords = NULL;
     jbyteArray pointTypes = NULL;
@@ -228,20 +219,10 @@ JNI_COCOA_ENTER(env);
 
 AWT_FONT_CLEANUP_SETUP;
 
-    AWTStrike *awtStrike = (AWTStrike *)jlong_to_ptr(awtStrikePtr);
-    AWTFont *awtfont = awtStrike->fAWTFont;
-
-AWT_FONT_CLEANUP_CHECK(awtfont);
-
     // inverting the shear order and sign to compensate for the flipped coordinate system
     CGAffineTransform tx = awtStrike->fTx;
     tx.tx += xPos;
     tx.ty += yPos;
-
-    // get the right font and glyph for this "Java GlyphCode"
-
-    CGGlyph glyph;
-    const CTFontRef font = CTS_CopyCTFallbackFontAndGlyphForJavaGlyphCode(awtfont, glyphCode, &glyph);
 
     // get the advance of this glyph
     CGSize advance;
@@ -255,7 +236,6 @@ AWT_FONT_CLEANUP_CHECK(path);
     tx = awtStrike->fTx;
     tx = CGAffineTransformConcat(tx, sInverseTX);
     AWTGetGlyphOutline(&glyph, (NSFont *)font, &advance, &tx, 0, 1, &path);
-    CFRelease(font);
 
     pointCoords = (*env)->NewFloatArray(env, path->fNumberOfDataElements);
 AWT_FONT_CLEANUP_CHECK(pointCoords);
@@ -289,8 +269,181 @@ cleanup:
     }
 
     AWT_FONT_CLEANUP_FINISH;
-JNI_COCOA_EXIT(env);
     return generalPath;
+}
+
+/*
+ * Class:     sun_font_CStrike
+ * Method:    getNativeGlyphOutline
+ * Signature: (JJIDD)Ljava/awt/geom/GeneralPath;
+ */
+JNIEXPORT jobject JNICALL
+Java_sun_font_CStrike_getNativeGlyphOutline
+        (JNIEnv *env, jclass clazz,
+         jlong awtStrikePtr, jint glyphCode, jdouble xPos, jdouble yPos) {
+    jobject generalPath = NULL;
+
+    JNI_COCOA_ENTER(env);
+    AWT_FONT_CLEANUP_SETUP;
+
+    AWTStrike *awtStrike = (AWTStrike *)jlong_to_ptr(awtStrikePtr);
+    AWTFont *awtfont = awtStrike->fAWTFont;
+    AWT_FONT_CLEANUP_CHECK(awtfont);
+
+    // get the right font and glyph for this "Java GlyphCode"
+    CGGlyph glyph;
+    const CTFontRef font = CTS_CopyCTFallbackFontAndGlyphForJavaGlyphCode(awtfont, glyphCode, &glyph);
+
+    generalPath = getGlyphOutline(env, awtStrike, font, glyph, xPos, yPos);
+
+    cleanup:
+    CFRelease(font);
+
+    AWT_FONT_CLEANUP_FINISH;
+    JNI_COCOA_EXIT(env);
+
+    return generalPath;
+}
+
+// OpenType data is Big-Endian
+#define GET_BE_INT32(data, i) CFSwapInt32BigToHost(*(const UInt32*) ((const UInt8*) (data) + (i)))
+#define GET_BE_INT16(data, i) CFSwapInt16BigToHost(*(const UInt16*) ((const UInt8*) (data) + (i)))
+
+static bool addBitmapRenderData(JNIEnv *env, AWTStrike *awtStrike,
+                                CTFontRef font, CGGlyph glyph,
+                                jdouble xPos, jdouble yPos, jobject result) {
+    bool success = false;
+
+    DECLARE_CLASS_RETURN(jc_GlyphRenderData, "sun/font/GlyphRenderData", false);
+    DECLARE_METHOD_RETURN(GlyphRenderDataAddBitmap, jc_GlyphRenderData, "addBitmap", "(DDDDDDIIII[I)V", false);
+
+    AWT_FONT_CLEANUP_SETUP;
+
+    CTFontDescriptorRef descriptor = NULL;
+    CGFontRef cgFont = CTFontCopyGraphicsFont(font, &descriptor);
+
+    CFDataRef sbixTable = CGFontCopyTableForTag(cgFont, kCTFontTableSbix);
+    if (sbixTable == NULL) goto cleanup;
+
+    // Parse sbix table
+    const UInt8* sbix = CFDataGetBytePtr(sbixTable);
+    UInt32 numStrikes = GET_BE_INT32(sbix, 4);
+    // Find last strike which has data for our glyph
+    // Last is usually the biggest
+    const UInt8* glyphData = NULL;
+    UInt32 size;
+    UInt16 ppem, ppi;
+    for (int i = numStrikes - 1; i >= 0; i--) {
+        const UInt8* strike = sbix + GET_BE_INT32(sbix, 8 + 4 * i);
+        UInt32 offset = GET_BE_INT32(strike, 4 + 4 * glyph);
+        size = GET_BE_INT32(strike, 8 + 4 * glyph) - offset;
+        if (size > 0) {
+            ppem = GET_BE_INT16(strike, 0);
+            ppi = GET_BE_INT16(strike, 2);
+            glyphData = strike + offset;
+            break;
+        }
+    }
+    if (glyphData == NULL) goto cleanup;
+
+    // Read glyph data
+    FourCharCode graphicType = GET_BE_INT32(glyphData, 4);
+    glyphData += 8;
+    size -= 8;
+
+    // Decode glyph image
+    CGDataProviderRef dataProvider = CGDataProviderCreateWithData(NULL, glyphData, size, NULL);
+    CGImageRef image = NULL;
+    if (graphicType == 'jpg ') {
+        image = CGImageCreateWithJPEGDataProvider(dataProvider, NULL, false, kCGRenderingIntentDefault);
+    } else if (graphicType == 'png ') {
+        image = CGImageCreateWithPNGDataProvider(dataProvider, NULL, false, kCGRenderingIntentDefault);
+    }
+    CGDataProviderRelease(dataProvider);
+
+    if (image != NULL) {
+        CGBitmapInfo info = CGImageGetBitmapInfo(image);
+        size_t bits = CGImageGetBitsPerPixel(image);
+        jint colorModel = -1;
+        if (info & (kCGImageAlphaPremultipliedLast | kCGImageAlphaLast)) colorModel = 0; // RGBA
+        else if (info & (kCGImageAlphaPremultipliedFirst | kCGImageAlphaFirst)) colorModel = 1; // ARGB
+        if (colorModel != -1 && (info & kCGBitmapFloatComponents) == 0 && bits == 32) {
+            size_t width = CGImageGetWidth(image);
+            size_t height = CGImageGetHeight(image);
+            size_t pitch = CGImageGetBytesPerRow(image) / 4;
+            dataProvider = CGImageGetDataProvider(image);
+            CFDataRef data = CGDataProviderCopyData(dataProvider);
+
+            jbyteArray array = (*env)->NewIntArray(env, pitch * height);
+            (*env)->SetIntArrayRegion(env, array, 0, pitch * height, (const jint*) CFDataGetBytePtr(data));
+            CFRelease(data);
+
+            double pointSize = 72.0 * ppem / ppi;
+            double scale = 1.0 / pointSize;
+            font = CTFontCreateWithGraphicsFont(cgFont, pointSize, NULL, descriptor);
+            CGRect bbox = CTFontGetBoundingRectsForGlyphs(font, kCTFontOrientationDefault, &glyph, NULL, 1);
+            CFRelease(font);
+            double tx = bbox.origin.x + xPos * pointSize / awtStrike->fSize;
+            double ty = -bbox.origin.y - (double) height + yPos * pointSize / awtStrike->fSize;
+
+            jdouble m00 = awtStrike->fTx.a * scale, m10 = awtStrike->fTx.b * scale;
+            jdouble m01 = -awtStrike->fTx.c * scale, m11 = -awtStrike->fTx.d * scale;
+            jdouble m02 = m00 * tx + m01 * ty, m12 = m10 * tx + m11 * ty;
+
+            (*env)->CallVoidMethod(env, result, GlyphRenderDataAddBitmap,
+                                   m00, m10, m01, m11, m02, m12,
+                                   width, height, pitch, 0, array);
+            success = true;
+        }
+        CGImageRelease(image);
+    }
+
+    // Cleanup
+    cleanup:
+    if (cgFont) CFRelease(cgFont);
+    if (descriptor) CFRelease(descriptor);
+
+    AWT_FONT_CLEANUP_FINISH;
+    return success;
+}
+
+/*
+ * Class:     sun_font_CStrike
+ * Method:    getNativeGlyphRenderData
+ * Signature: (JIDDLsun/font/GlyphRenderData;)V
+ */
+JNIEXPORT void JNICALL
+Java_sun_font_CStrike_getNativeGlyphRenderData
+        (JNIEnv *env, jclass clazz,
+         jlong awtStrikePtr, jint glyphCode, jdouble xPos, jdouble yPos, jobject result)
+{
+    JNI_COCOA_ENTER(env);
+
+    DECLARE_CLASS(jc_GlyphRenderData, "sun/font/GlyphRenderData");
+    DECLARE_FIELD(GlyphRenderDataOutline, jc_GlyphRenderData, "outline", "Ljava/awt/geom/GeneralPath;")
+
+    AWT_FONT_CLEANUP_SETUP;
+
+    AWTStrike *awtStrike = (AWTStrike *)jlong_to_ptr(awtStrikePtr);
+    AWTFont *awtfont = awtStrike->fAWTFont;
+    AWT_FONT_CLEANUP_CHECK(awtfont);
+
+    // get the right font and glyph for this "Java GlyphCode"
+    CGGlyph glyph;
+    const CTFontRef font = CTS_CopyCTFallbackFontAndGlyphForJavaGlyphCode(awtfont, glyphCode, &glyph);
+
+    if (!addBitmapRenderData(env, awtStrike, font, glyph, xPos, yPos, result)) {
+        jobject gp = getGlyphOutline(env, awtStrike, font, glyph, xPos, yPos);
+        if (gp != NULL) {
+            (*env)->SetObjectField(env, result, GlyphRenderDataOutline, gp);
+        }
+    }
+
+    cleanup:
+    CFRelease(font);
+
+    AWT_FONT_CLEANUP_FINISH;
+    JNI_COCOA_EXIT(env);
 }
 
 /*

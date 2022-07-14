@@ -51,10 +51,28 @@ public final class CCompositeGlyphMapper extends CompositeGlyphMapper {
         return glyph != missingGlyph;
     }
 
-    private int convertToGlyph(int unicode) {
+    @Override
+    public int charToVariationGlyph(int unicode, int variationSelector) {
+        if (variationSelector == 0) return charToGlyph(unicode);
+        else {
+            int glyph = convertToGlyph(unicode, variationSelector);
+            if (glyph == missingGlyph) glyph = charToGlyph(unicode);
+            return glyph;
+        }
+    }
+
+    @Override
+    protected int convertToGlyph(int unicode) {
+        int glyph = convertToGlyph(unicode, 0);
+//        setCachedGlyphCode(unicode, glyph);
+        return glyph;
+    }
+
+    @Override
+    protected int convertToGlyph(int unicode, int variationSelector) {
         for (int slot = 0; slot < font.numSlots; slot++) {
             CharToGlyphMapper mapper = getSlotMapper(slot);
-            int glyphCode = mapper.charToGlyph(unicode);
+            int glyphCode = mapper.charToVariationGlyph(unicode, variationSelector);
             // The CFont Mappers will return a negative code
             // for fonts that will fill the glyph from fallbacks
             // - cascading font in OSX-speak. But we need to be

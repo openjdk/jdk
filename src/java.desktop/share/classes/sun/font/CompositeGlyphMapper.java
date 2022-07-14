@@ -117,20 +117,46 @@ public class CompositeGlyphMapper extends CharToGlyphMapper {
         return mapper;
     }
 
-    private int convertToGlyph(int unicode) {
+    protected int convertToGlyph(int unicode) {
+        return convertToGlyph(unicode, 0);
+    }
+
+    protected int convertToGlyph(int unicode, int variationSelector) {
 
         for (int slot = 0; slot < font.numSlots; slot++) {
             if (!hasExcludes || !font.isExcludedChar(slot, unicode)) {
                 CharToGlyphMapper mapper = getSlotMapper(slot);
-                int glyphCode = mapper.charToGlyph(unicode);
+                int glyphCode = mapper.charToVariationGlyph(unicode, variationSelector);
                 if (glyphCode != mapper.getMissingGlyphCode()) {
                     glyphCode = compositeGlyphCode(slot, glyphCode);
-                    setCachedGlyphCode(unicode, glyphCode);
+                    if (variationSelector == 0) setCachedGlyphCode(unicode, glyphCode);
                     return glyphCode;
                 }
             }
         }
         return missingGlyph;
+    }
+
+    @Override
+    public int charToVariationGlyph(int unicode, int variationSelector) {
+        if (variationSelector == 0) return charToGlyph(unicode);
+        else {
+            int glyph = convertToGlyph(unicode, variationSelector);
+            // Glyph variation not found, fallback to base glyph.
+            // In fallback from variation glyph we ignore excluded chars,
+            // this is needed for proper display of monochrome emoji (\ufe0e)
+            if (glyph == missingGlyph) {
+                for (int slot = 0; slot < font.numSlots; slot++) {
+                    CharToGlyphMapper mapper = getSlotMapper(slot);
+                    glyph = mapper.charToGlyph(unicode);
+                    if (glyph != mapper.getMissingGlyphCode()) {
+                        glyph = compositeGlyphCode(slot, glyph);
+                        break;
+                    }
+                }
+            }
+            return glyph;
+        }
     }
 
     public int getNumGlyphs() {
