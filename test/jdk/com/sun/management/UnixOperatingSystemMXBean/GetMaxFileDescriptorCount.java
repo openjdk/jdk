@@ -26,9 +26,9 @@
  * @bug     4858522
  * @summary Basic unit test of UnixOperatingSystemMXBean.getMaxFileDescriptorCount()
  * @author  Steve Bohne
- * @requires (os.family=="linux")
+ * @requires os.family == "linux"
  *
- * @run main/othervm GetMaxFileDescriptorCount
+ * @run main GetMaxFileDescriptorCount
  */
 
 /*
