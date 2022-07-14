@@ -104,6 +104,7 @@ private:
   // given timestamp.
   double calculate_gc_time(double current_timestamp);
 
+  double old_when_sec(double current_timestamp, double pause_time);
 public:
   G1MMUTracker(double time_slice, double max_gc_time);
 
@@ -112,6 +113,8 @@ public:
   // Minimum delay required from current_timestamp until a GC pause of duration
   // pause_time may be scheduled without violating the MMU constraint.
   double when_sec(double current_timestamp, double pause_time);
+
+  double time_till_next_gc_sec(double current_timestamp, double pause_time);
 
   double max_gc_time() const {
     return _max_gc_time;
