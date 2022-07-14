@@ -58,7 +58,7 @@ void G1MMUTracker::remove_expired_entries(double current_time) {
 
 double G1MMUTracker::calculate_gc_time(double current_timestamp) {
   double gc_time = 0.0;
-  double limit = timestamp - _time_slice;
+  double limit = current_timestamp - _time_slice;
   for (int i = 0; i < _no_entries; ++i) {
     int index = trim_index(_tail_index + i);
     G1MMUTrackerElem *elem = &_array[index];
