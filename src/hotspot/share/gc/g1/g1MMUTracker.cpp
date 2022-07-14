@@ -56,7 +56,7 @@ void G1MMUTracker::remove_expired_entries(double current_time) {
   guarantee(_no_entries == 0, "should have no entries in the array");
 }
 
-double G1MMUTracker::calculate_gc_time(double timestamp) {
+double G1MMUTracker::calculate_gc_time(double current_timestamp) {
   double gc_time = 0.0;
   double limit = timestamp - _time_slice;
   for (int i = 0; i < _no_entries; ++i) {
