@@ -328,7 +328,6 @@ public class ManagementFactory {
     public static final String MEMORY_POOL_MXBEAN_DOMAIN_TYPE=
         "java.lang:type=MemoryPool";
 
-
     /**
      * Returns the managed bean for the class loading system of
      * the Java virtual machine.
