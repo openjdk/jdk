@@ -25,6 +25,7 @@
  * @test
  * @summary Test compress expand methods
  * @key randomness
+ * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_expand_i,_expand_l,_compress_i,_compress_l CompressExpandTest
  * @run testng CompressExpandTest
  */
 

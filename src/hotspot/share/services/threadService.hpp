@@ -30,10 +30,10 @@
 #include "classfile/javaThreadStatus.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/init.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/thread.hpp"
 #include "runtime/threadSMR.hpp"
 #include "services/management.hpp"
 
@@ -77,6 +77,9 @@ private:
   static ThreadDumpResult* _threaddump_list;
 
   static void decrement_thread_counts(JavaThread* jt, bool daemon);
+
+  // test if the JavaThread is a virtual thread or has a mounted virtual thread
+  static bool is_virtual_or_carrier_thread(JavaThread* jt);
 
 public:
   static void init();

@@ -74,6 +74,10 @@ VirtualizationType Abstract_VM_Version::_detected_virtualization = NoDetectedVir
   #error DEBUG_LEVEL must be defined
 #endif
 
+#ifndef HOTSPOT_BUILD_TIME
+  #error HOTSPOT_BUILD_TIME must be defined
+#endif
+
 #define VM_RELEASE HOTSPOT_VERSION_STRING
 
 // HOTSPOT_VERSION_STRING equals the JDK VERSION_STRING (unless overridden
@@ -265,10 +269,6 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
     #define LIBC_STR "-" XSTR(LIBC)
   #else
     #define LIBC_STR ""
-  #endif
-
-  #ifndef HOTSPOT_BUILD_TIME
-    #define HOTSPOT_BUILD_TIME __DATE__ " " __TIME__
   #endif
 
   #define INTERNAL_VERSION_SUFFIX VM_RELEASE ")" \

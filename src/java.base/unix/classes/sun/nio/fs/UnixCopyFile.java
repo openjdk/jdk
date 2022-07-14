@@ -26,6 +26,7 @@
 package sun.nio.fs;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.CopyOption;
 import java.nio.file.DirectoryNotEmptyException;
@@ -36,6 +37,9 @@ import java.nio.file.StandardCopyOption;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import jdk.internal.misc.Blocker;
+import sun.nio.ch.DirectBuffer;
+import sun.nio.ch.IOStatus;
+import sun.nio.ch.Util;
 import static sun.nio.fs.UnixNativeDispatcher.*;
 import static sun.nio.fs.UnixConstants.*;
 
@@ -44,6 +48,9 @@ import static sun.nio.fs.UnixConstants.*;
  */
 
 class UnixCopyFile {
+    // minimum size of a temporary direct buffer
+    private static final int MIN_BUFFER_SIZE = 16384;
+
     private UnixCopyFile() {  }
 
     // The flags that control how a file is copied or moved
@@ -217,6 +224,47 @@ class UnixCopyFile {
         }
     }
 
+    // calculate the least common multiple of two values;
+    // the parameters in general will be powers of two likely in the
+    // range [4096, 65536] so this algorithm is expected to converge
+    // when it is rarely called
+    private static long lcm(long x, long y) {
+        assert x > 0 && y > 0 : "Non-positive parameter";
+
+        long u = x;
+        long v = y;
+
+        while (u != v) {
+            if (u < v)
+                u += x;
+            else // u > v
+                v += y;
+        }
+
+        return u;
+    }
+
+    // calculate temporary direct buffer size
+    private static int temporaryBufferSize(UnixPath source, UnixPath target) {
+        int bufferSize = MIN_BUFFER_SIZE;
+        try {
+            long bss = UnixFileStoreAttributes.get(source).blockSize();
+            long bst = UnixFileStoreAttributes.get(target).blockSize();
+            if (bss > 0 && bst > 0) {
+                bufferSize = (int)(bss == bst ? bss : lcm(bss, bst));
+            }
+            if (bufferSize < MIN_BUFFER_SIZE) {
+                int factor = (MIN_BUFFER_SIZE + bufferSize - 1)/bufferSize;
+                bufferSize *= factor;
+            }
+        } catch (UnixException ignored) {
+        }
+        return bufferSize;
+    }
+
+    // whether direct copying is supported on this platform
+    private static volatile boolean directCopyNotSupported;
+
     // copy regular file from source to target
     private static void copyFile(UnixPath source,
                                  UnixFileAttributes attrs,
@@ -248,17 +296,43 @@ class UnixCopyFile {
             // set to true when file and attributes copied
             boolean complete = false;
             try {
-                // transfer bytes to target file
-                try {
+                boolean copied = false;
+                if (!directCopyNotSupported) {
+                    // copy bytes to target using platform function
                     long comp = Blocker.begin();
                     try {
-                        transfer(fo, fi, addressToPollForCancel);
+                        int res = directCopy0(fo, fi, addressToPollForCancel);
+                        if (res == 0) {
+                            copied = true;
+                        } else if (res == IOStatus.UNSUPPORTED) {
+                            directCopyNotSupported = true;
+                        }
+                    } catch (UnixException x) {
+                        x.rethrowAsIOException(source, target);
                     } finally {
                         Blocker.end(comp);
                     }
-                } catch (UnixException x) {
-                    x.rethrowAsIOException(source, target);
                 }
+
+                if (!copied) {
+                    // copy bytes to target via a temporary direct buffer
+                    int bufferSize = temporaryBufferSize(source, target);
+                    ByteBuffer buf = Util.getTemporaryDirectBuffer(bufferSize);
+                    try {
+                        long comp = Blocker.begin();
+                        try {
+                            bufferedCopy0(fo, fi, ((DirectBuffer)buf).address(),
+                                          bufferSize, addressToPollForCancel);
+                        } catch (UnixException x) {
+                            x.rethrowAsIOException(source, target);
+                        } finally {
+                            Blocker.end(comp);
+                        }
+                    } finally {
+                        Util.releaseTemporaryDirectBuffer(buf);
+                    }
+                }
+
                 // copy owner/permissions
                 if (flags.copyPosixAttributes) {
                     try {
@@ -628,7 +702,38 @@ class UnixCopyFile {
 
     // -- native methods --
 
-    static native void transfer(int dst, int src, long addressToPollForCancel)
+    /**
+     * Copies data between file descriptors {@code src} and {@code dst} using
+     * a platform-specific function or system call possibly having kernel
+     * support.
+     *
+     * @param dst destination file descriptor
+     * @param src source file descriptor
+     * @param addressToPollForCancel address to check for cancellation
+     *        (a non-zero value written to this address indicates cancel)
+     *
+     * @return 0 on success, UNAVAILABLE if the platform function would block,
+     *         UNSUPPORTED_CASE if the call does not work with the given
+     *         parameters, or UNSUPPORTED if direct copying is not supported
+     *         on this platform
+     */
+    private static native int directCopy0(int dst, int src,
+                                          long addressToPollForCancel)
+        throws UnixException;
+
+    /**
+     * Copies data between file descriptors {@code src} and {@code dst} using
+     * an intermediate temporary direct buffer.
+     *
+     * @param dst destination file descriptor
+     * @param src source file descriptor
+     * @param address the address of the temporary direct buffer's array
+     * @param size the size of the temporary direct buffer's array
+     * @param addressToPollForCancel address to check for cancellation
+     *        (a non-zero value written to this address indicates cancel)
+     */
+    private static native void bufferedCopy0(int dst, int src, long address,
+                                             int size, long addressToPollForCancel)
         throws UnixException;
 
     static {

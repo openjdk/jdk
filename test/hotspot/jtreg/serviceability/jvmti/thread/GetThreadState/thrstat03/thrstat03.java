@@ -37,12 +37,11 @@
  *     Converted the test to use GetThreadState instead of GetThreadStatus.
  *     Ported from JVMDI.
  *
+ * @requires vm.continuations
  * @library /test/lib
  * @compile --enable-preview -source ${jdk.version} thrstat03.java
  * @run main/othervm/native --enable-preview  -agentlib:thrstat03 thrstat03 5
  */
-
-import java.io.PrintStream;
 
 public class thrstat03 {
 
@@ -86,7 +85,7 @@ public class thrstat03 {
             throw new Error("Unexpected: " + e);
         }
 
-        if (!check(t, t.isVirtual() ? NOT_STARTED : ZOMBIE)) {
+        if (!check(t, ZOMBIE)) {
             throw new RuntimeException();
         }
     }

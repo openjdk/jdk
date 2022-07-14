@@ -42,14 +42,7 @@
 public class GetAllThreadsNullTest {
 
     static {
-        try {
-            System.loadLibrary("GetAllThreadsNullTest");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load GetAllThreadsNullTest library");
-            System.err.println("java.library.path:"
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
+        System.loadLibrary("GetAllThreadsNullTest");
     }
 
     native static boolean check();

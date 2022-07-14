@@ -95,7 +95,7 @@ public class CaseStructureTest extends ComboInstance<CaseStructureTest> {
         task.generate(result -> {
             boolean shouldPass = true;
             long patternCases = Arrays.stream(caseLabels).filter(l -> l == CaseLabel.TYPE_PATTERN || l == CaseLabel.PARENTHESIZED_PATTERN).count();
-            long typePatternCases = Arrays.stream(caseLabels).filter(l -> l == CaseLabel.TYPE_PATTERN).count();
+            long typePatternCases = Arrays.stream(caseLabels).filter(l -> l == CaseLabel.TYPE_PATTERN || l == CaseLabel.PARENTHESIZED_PATTERN).count();
             long constantCases = Arrays.stream(caseLabels).filter(l -> l == CaseLabel.CONSTANT).count();
             long nullCases = Arrays.stream(caseLabels).filter(l -> l == CaseLabel.NULL).count();
             long defaultCases = Arrays.stream(caseLabels).filter(l -> l == CaseLabel.DEFAULT).count();

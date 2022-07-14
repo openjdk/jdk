@@ -31,7 +31,8 @@ exclusiveAccess.dirs=java/math/BigInteger/largeMemory \
 java/rmi/Naming java/util/prefs sun/management/jmxremote \
 sun/tools/jstatd sun/security/mscapi java/util/Arrays/largeMemory \
 java/util/BitSet/stream javax/rmi java/net/httpclient/websocket \
-com/sun/net/httpserver/simpleserver
+com/sun/net/httpserver/simpleserver \
+java/nio/channels/FileChannel/largeMemory
 
 # Group definitions
 groups=TEST.groups
@@ -60,6 +61,7 @@ requires.properties= \
     vm.compiler1.enabled \
     vm.compiler2.enabled \
     vm.cds \
+    vm.continuations \
     vm.musl \
     vm.debug \
     vm.hasSA \

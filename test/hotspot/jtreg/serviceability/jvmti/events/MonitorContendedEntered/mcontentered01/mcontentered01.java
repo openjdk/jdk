@@ -23,8 +23,6 @@
 
 import jdk.test.lib.jvmti.DebugeeClass;
 
-import java.io.PrintStream;
-
 /*
  * @test
  *
@@ -42,6 +40,7 @@ import java.io.PrintStream;
  *     - change signature of agentProc function
  *       and save JNIEnv pointer now passed as argument.
  *
+ * @requires vm.continuations
  * @library /test/lib
  * @compile --enable-preview -source ${jdk.version} mcontentered01.java
  * @run main/othervm/native --enable-preview -agentlib:mcontentered01 mcontentered01 platform

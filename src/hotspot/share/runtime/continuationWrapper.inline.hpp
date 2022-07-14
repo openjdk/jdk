@@ -33,7 +33,8 @@
 #include "oops/oopsHierarchy.hpp"
 #include "oops/stackChunkOop.hpp"
 #include "runtime/continuationEntry.inline.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/continuationJavaClasses.inline.hpp"
+#include "runtime/javaThread.hpp"
 
 /////////////////////////////////////////////////////////////////////
 

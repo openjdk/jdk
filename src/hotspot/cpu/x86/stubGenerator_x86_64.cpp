@@ -45,10 +45,10 @@
 #include "runtime/continuationEntry.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
 #ifdef COMPILER2
 #include "opto/runtime.hpp"
 #endif
@@ -393,7 +393,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 #endif
 
-    __ pop_cont_fastpath(r15_thread);
+    __ pop_cont_fastpath();
 
     // restore regs belonging to calling function
 #ifdef _WIN64
@@ -807,6 +807,21 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  address generate_count_leading_zeros_lut(const char *stub_name) {
+    __ align64();
+    StubCodeMark mark(this, "StubRoutines", stub_name);
+    address start = __ pc();
+    __ emit_data64(0x0101010102020304, relocInfo::none);
+    __ emit_data64(0x0000000000000000, relocInfo::none);
+    __ emit_data64(0x0101010102020304, relocInfo::none);
+    __ emit_data64(0x0000000000000000, relocInfo::none);
+    __ emit_data64(0x0101010102020304, relocInfo::none);
+    __ emit_data64(0x0000000000000000, relocInfo::none);
+    __ emit_data64(0x0101010102020304, relocInfo::none);
+    __ emit_data64(0x0000000000000000, relocInfo::none);
+    return start;
+  }
+
   address generate_popcount_avx_lut(const char *stub_name) {
     __ align64();
     StubCodeMark mark(this, "StubRoutines", stub_name);
@@ -834,6 +849,66 @@ class StubGenerator: public StubCodeGenerator {
     __ emit_data64(0x2F2E2D2C2B2A2928, relocInfo::none);
     __ emit_data64(0x3736353433323130, relocInfo::none);
     __ emit_data64(0x3F3E3D3C3B3A3938, relocInfo::none);
+    return start;
+  }
+
+  address generate_vector_reverse_bit_lut(const char *stub_name) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", stub_name);
+    address start = __ pc();
+    __ emit_data64(0x0E060A020C040800, relocInfo::none);
+    __ emit_data64(0x0F070B030D050901, relocInfo::none);
+    __ emit_data64(0x0E060A020C040800, relocInfo::none);
+    __ emit_data64(0x0F070B030D050901, relocInfo::none);
+    __ emit_data64(0x0E060A020C040800, relocInfo::none);
+    __ emit_data64(0x0F070B030D050901, relocInfo::none);
+    __ emit_data64(0x0E060A020C040800, relocInfo::none);
+    __ emit_data64(0x0F070B030D050901, relocInfo::none);
+    return start;
+  }
+
+  address generate_vector_reverse_byte_perm_mask_long(const char *stub_name) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", stub_name);
+    address start = __ pc();
+    __ emit_data64(0x0001020304050607, relocInfo::none);
+    __ emit_data64(0x08090A0B0C0D0E0F, relocInfo::none);
+    __ emit_data64(0x0001020304050607, relocInfo::none);
+    __ emit_data64(0x08090A0B0C0D0E0F, relocInfo::none);
+    __ emit_data64(0x0001020304050607, relocInfo::none);
+    __ emit_data64(0x08090A0B0C0D0E0F, relocInfo::none);
+    __ emit_data64(0x0001020304050607, relocInfo::none);
+    __ emit_data64(0x08090A0B0C0D0E0F, relocInfo::none);
+    return start;
+  }
+
+  address generate_vector_reverse_byte_perm_mask_int(const char *stub_name) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", stub_name);
+    address start = __ pc();
+    __ emit_data64(0x0405060700010203, relocInfo::none);
+    __ emit_data64(0x0C0D0E0F08090A0B, relocInfo::none);
+    __ emit_data64(0x0405060700010203, relocInfo::none);
+    __ emit_data64(0x0C0D0E0F08090A0B, relocInfo::none);
+    __ emit_data64(0x0405060700010203, relocInfo::none);
+    __ emit_data64(0x0C0D0E0F08090A0B, relocInfo::none);
+    __ emit_data64(0x0405060700010203, relocInfo::none);
+    __ emit_data64(0x0C0D0E0F08090A0B, relocInfo::none);
+    return start;
+  }
+
+  address generate_vector_reverse_byte_perm_mask_short(const char *stub_name) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", stub_name);
+    address start = __ pc();
+    __ emit_data64(0x0607040502030001, relocInfo::none);
+    __ emit_data64(0x0E0F0C0D0A0B0809, relocInfo::none);
+    __ emit_data64(0x0607040502030001, relocInfo::none);
+    __ emit_data64(0x0E0F0C0D0A0B0809, relocInfo::none);
+    __ emit_data64(0x0607040502030001, relocInfo::none);
+    __ emit_data64(0x0E0F0C0D0A0B0809, relocInfo::none);
+    __ emit_data64(0x0607040502030001, relocInfo::none);
+    __ emit_data64(0x0E0F0C0D0A0B0809, relocInfo::none);
     return start;
   }
 
@@ -7591,17 +7666,20 @@ address generate_avx_ghash_processBlocks() {
       __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), 2);
       __ movptr(rbx, rax);
 
-      // rbx now holds the exception handler.
-      // Prepare for its invocation; see OptoRuntime::generate_exception_blob.
-      __ pop(rax); // exception oop
-      __ pop(rbp);
-      __ pop(rdx); // exception pc
+      // Continue at exception handler:
+      //   rax: exception oop
+      //   rbx: exception handler
+      //   rdx: exception pc
+      __ pop(rax);
+      __ verify_oop(rax);
+      __ pop(rbp); // pop out RBP here too
+      __ pop(rdx);
       __ jmp(rbx);
+    } else {
+      // We are "returning" into the topmost thawed frame; see Thaw::push_return_frame
+      __ pop(rbp);
+      __ ret(0);
     }
-
-    // We are "returning" into the topmost thawed frame; see Thaw::push_return_frame
-    __ pop(rbp);
-    __ ret(0);
 
     return start;
   }
@@ -7955,8 +8033,13 @@ address generate_avx_ghash_processBlocks() {
     StubRoutines::x86::_vector_long_shuffle_mask = generate_vector_mask("vector_long_shuffle_mask", 0x0000000100000000);
     StubRoutines::x86::_vector_long_sign_mask = generate_vector_mask("vector_long_sign_mask", 0x8000000000000000);
     StubRoutines::x86::_vector_iota_indices = generate_iota_indices("iota_indices");
+    StubRoutines::x86::_vector_count_leading_zeros_lut = generate_count_leading_zeros_lut("count_leading_zeros_lut");
+    StubRoutines::x86::_vector_reverse_bit_lut = generate_vector_reverse_bit_lut("reverse_bit_lut");
+    StubRoutines::x86::_vector_reverse_byte_perm_mask_long = generate_vector_reverse_byte_perm_mask_long("perm_mask_long");
+    StubRoutines::x86::_vector_reverse_byte_perm_mask_int = generate_vector_reverse_byte_perm_mask_int("perm_mask_int");
+    StubRoutines::x86::_vector_reverse_byte_perm_mask_short = generate_vector_reverse_byte_perm_mask_short("perm_mask_short");
 
-    if (UsePopCountInstruction && VM_Version::supports_avx2() && !VM_Version::supports_avx512_vpopcntdq()) {
+    if (VM_Version::supports_avx2() && !VM_Version::supports_avx512_vpopcntdq()) {
       // lut implementation influenced by counting 1s algorithm from section 5-1 of Hackers' Delight.
       StubRoutines::x86::_vector_popcount_lut = generate_popcount_avx_lut("popcount_lut");
     }
@@ -8229,8 +8312,8 @@ OopMap* continuation_enter_setup(MacroAssembler* masm, int& stack_slots) {
 //
 // Arguments:
 //   rsp: pointer to blank Continuation entry
-//   c_rarg1: pointer to the continuation
-//   c_rarg3: flags
+//   reg_cont_obj: pointer to the continuation
+//   reg_flags: flags
 //
 // Results:
 //   rsp: pointer to filled out ContinuationEntry
@@ -8238,22 +8321,24 @@ OopMap* continuation_enter_setup(MacroAssembler* masm, int& stack_slots) {
 // Kills:
 //   rax
 //
-void fill_continuation_entry(MacroAssembler* masm) {
+void fill_continuation_entry(MacroAssembler* masm, Register reg_cont_obj, Register reg_flags) {
+  assert_different_registers(rax, reg_cont_obj, reg_flags);
+
   DEBUG_ONLY(__ movl(Address(rsp, ContinuationEntry::cookie_offset()), ContinuationEntry::cookie_value());)
 
-  __ movptr(Address(rsp, ContinuationEntry::cont_offset()), c_rarg1);
-  __ movl  (Address(rsp, ContinuationEntry::flags_offset()), c_rarg3);
+  __ movptr(Address(rsp, ContinuationEntry::cont_offset()), reg_cont_obj);
+  __ movl  (Address(rsp, ContinuationEntry::flags_offset()), reg_flags);
   __ movptr(Address(rsp, ContinuationEntry::chunk_offset()), 0);
   __ movl(Address(rsp, ContinuationEntry::argsize_offset()), 0);
   __ movl(Address(rsp, ContinuationEntry::pin_count_offset()), 0);
 
   __ movptr(rax, Address(r15_thread, JavaThread::cont_fastpath_offset()));
   __ movptr(Address(rsp, ContinuationEntry::parent_cont_fastpath_offset()), rax);
-  __ movl(rax, Address(r15_thread, JavaThread::held_monitor_count_offset()));
-  __ movl(Address(rsp, ContinuationEntry::parent_held_monitor_count_offset()), rax);
+  __ movq(rax, Address(r15_thread, JavaThread::held_monitor_count_offset()));
+  __ movq(Address(rsp, ContinuationEntry::parent_held_monitor_count_offset()), rax);
 
   __ movptr(Address(r15_thread, JavaThread::cont_fastpath_offset()), 0);
-  __ reset_held_monitor_count(r15_thread);
+  __ movq(Address(r15_thread, JavaThread::held_monitor_count_offset()), 0);
 }
 
 //---------------------------- continuation_enter_cleanup ---------------------------
@@ -8278,8 +8363,8 @@ void continuation_enter_cleanup(MacroAssembler* masm) {
 
   __ movptr(rbx, Address(rsp, ContinuationEntry::parent_cont_fastpath_offset()));
   __ movptr(Address(r15_thread, JavaThread::cont_fastpath_offset()), rbx);
-  __ movl(rbx, Address(rsp, ContinuationEntry::parent_held_monitor_count_offset()));
-  __ movl(Address(r15_thread, JavaThread::held_monitor_count_offset()), rbx);
+  __ movq(rbx, Address(rsp, ContinuationEntry::parent_held_monitor_count_offset()));
+  __ movq(Address(r15_thread, JavaThread::held_monitor_count_offset()), rbx);
 
   __ movptr(rbx, Address(rsp, ContinuationEntry::parent_offset()));
   __ movptr(Address(r15_thread, JavaThread::cont_entry_offset()), rbx);

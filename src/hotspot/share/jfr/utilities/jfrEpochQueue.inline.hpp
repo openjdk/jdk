@@ -28,7 +28,7 @@
 #include "jfr/utilities/jfrEpochQueue.hpp"
 #include "jfr/recorder/storage/jfrEpochStorage.inline.hpp"
 #include "jfr/recorder/storage/jfrStorageUtils.inline.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
 
 template <template <typename> class ElementPolicy>
 JfrEpochQueue<ElementPolicy>::JfrEpochQueue() : _storage(NULL) {}

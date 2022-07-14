@@ -77,7 +77,7 @@ import jdk.internal.javac.PreviewFeature;
  * ).withName("TaggedValues");
  * }
  *
- * <h2><a id = "layout-align">Size, alignment and byte order</a></h2>
+ * <h2 id="layout-align">Size, alignment and byte order</h2>
  *
  * All layouts have a size; layout size for value and padding layouts is always explicitly denoted; this means that a layout description
  * always has the same size in bits, regardless of the platform in which it is used. For derived layouts, the size is computed
@@ -105,7 +105,7 @@ import jdk.internal.javac.PreviewFeature;
  * <p>
  * All value layouts have an <em>explicit</em> byte order (see {@link java.nio.ByteOrder}) which is set when the layout is created.
  *
- * <h2><a id = "layout-paths">Layout paths</a></h2>
+ * <h2 id="layout-paths">Layout paths</h2>
  *
  * A <em>layout path</em> originates from a <em>root</em> layout (typically a group or a sequence layout) and terminates
  * at a layout nested within the root layout - this is the layout <em>selected</em> by the layout path.
@@ -369,6 +369,9 @@ public sealed interface MemoryLayout permits AbstractLayout, SequenceLayout, Gro
      * arguments, whereas {@code c_1}, {@code c_2}, ... {@code c_m} are <em>static</em> offset constants
      * and {@code s_1}, {@code s_2}, ... {@code s_n} are <em>static</em> stride constants which are derived from
      * the layout path.
+     * <p>
+     * Additionally, the provided dynamic values must conform to some bound which is derived from the layout path, that is,
+     * {@code 0 <= x_i < b_i}, where {@code 1 <= i <= n}, or {@link IndexOutOfBoundsException} is thrown.
      *
      * @apiNote the resulting var handle will feature an additional {@code long} access coordinate for every
      * unspecified sequence access component contained in this layout path. Moreover, the resulting var handle
@@ -515,6 +518,7 @@ public sealed interface MemoryLayout permits AbstractLayout, SequenceLayout, Gro
          * Returns a path element which selects the element layout in a <em>range</em> of positions in a sequence layout.
          * The range is expressed as a pair of starting index (inclusive) {@code S} and step factor (which can also be negative)
          * {@code F}.
+         * <p>
          * If a path with free dimensions {@code n} is combined with the path element returned by this method,
          * the number of free dimensions of the resulting path will be {@code 1 + n}. If the free dimension associated
          * with this path is bound by an index {@code I}, the resulting accessed offset can be obtained with the following
@@ -525,6 +529,14 @@ public sealed interface MemoryLayout permits AbstractLayout, SequenceLayout, Gro
          * }</pre></blockquote>
          *
          * where {@code E} is the size (in bytes) of the sequence element layout.
+         * <p>
+         * Additionally, if {@code C} is the sequence element count, it follows that {@code 0 <= I < B},
+         * where {@code B} is computed as follows:
+         *
+         * <ul>
+         *    <li>if {@code F > 0}, then {@code B = ceilDiv(C - S, F)}</li>
+         *    <li>if {@code F < 0}, then {@code B = ceilDiv(-(S + 1), -F)}</li>
+         * </ul>
          *
          * @param start the index of the first sequence element to be selected.
          * @param step the step factor at which subsequence sequence elements are to be selected.
@@ -544,8 +556,19 @@ public sealed interface MemoryLayout permits AbstractLayout, SequenceLayout, Gro
 
         /**
          * Returns a path element which selects an unspecified element layout in a sequence layout.
+         * <p>
          * If a path with free dimensions {@code n} is combined with the path element returned by this method,
-         * the number of free dimensions of the resulting path will be {@code 1 + n}.
+         * the number of free dimensions of the resulting path will be {@code 1 + n}. If the free dimension associated
+         * with this path is bound by an index {@code I}, the resulting accessed offset can be obtained with the following
+         * formula:
+         *
+         * <blockquote><pre>{@code
+         * E * I
+         * }</pre></blockquote>
+         *
+         * where {@code E} is the size (in bytes) of the sequence element layout.
+         * <p>
+         * Additionally, if {@code C} is the sequence element count, it follows that {@code 0 <= I < C}.
          *
          * @return a path element which selects an unspecified sequence element layout.
          */
@@ -561,17 +584,18 @@ public sealed interface MemoryLayout permits AbstractLayout, SequenceLayout, Gro
      * the same kind, have the same size, name and alignment constraints. Furthermore, depending on the layout kind, additional
      * conditions must be satisfied:
      * <ul>
-     *     <li>two value layouts are considered equal if they have the same byte order (see {@link ValueLayout#order()})</li>
+     *     <li>two value layouts are considered equal if they have the same {@linkplain ValueLayout#order() order},
+     *     and {@linkplain ValueLayout#carrier() carrier}</li>
      *     <li>two sequence layouts are considered equal if they have the same element count (see {@link SequenceLayout#elementCount()}), and
      *     if their element layouts (see {@link SequenceLayout#elementLayout()}) are also equal</li>
      *     <li>two group layouts are considered equal if they are of the same kind (see {@link GroupLayout#isStruct()},
      *     {@link GroupLayout#isUnion()}) and if their member layouts (see {@link GroupLayout#memberLayouts()}) are also equal</li>
      * </ul>
      *
-     * @param that the object to be compared for equality with this layout.
+     * @param other the object to be compared for equality with this layout.
      * @return {@code true} if the specified object is equal to this layout.
      */
-    boolean equals(Object that);
+    boolean equals(Object other);
 
     /**
      * {@return the hash code value for this layout}

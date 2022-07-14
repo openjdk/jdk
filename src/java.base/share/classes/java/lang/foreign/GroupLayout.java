@@ -143,10 +143,9 @@ public final class GroupLayout extends AbstractLayout implements MemoryLayout {
         if (!super.equals(other)) {
             return false;
         }
-        if (!(other instanceof GroupLayout g)) {
-            return false;
-        }
-        return kind.equals(g.kind) && elements.equals(g.elements);
+        return other instanceof GroupLayout otherGroup &&
+                kind == otherGroup.kind &&
+                elements.equals(otherGroup.elements);
     }
 
     /**
