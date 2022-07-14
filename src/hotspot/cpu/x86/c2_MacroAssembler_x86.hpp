@@ -442,4 +442,9 @@ public:
 
   void vector_signum_evex(int opcode, XMMRegister dst, XMMRegister src, XMMRegister zero, XMMRegister one,
                           KRegister ktmp1, int vec_enc);
+
+  void vmovmask(BasicType elem_bt, XMMRegister dst, Address src, XMMRegister mask, int vec_enc);
+
+  void vmovmask(BasicType elem_bt, Address dst, XMMRegister src, XMMRegister mask, int vec_enc);
+
 #endif // CPU_X86_C2_MACROASSEMBLER_X86_HPP

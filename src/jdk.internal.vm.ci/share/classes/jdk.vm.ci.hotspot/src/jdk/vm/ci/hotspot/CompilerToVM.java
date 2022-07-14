@@ -500,29 +500,29 @@ final class CompilerToVM {
      * @throws JVMCIError if there is something wrong with the compiled code or the associated
      *             metadata.
      */
-     int installCode(HotSpotCompiledCode compiledCode, InstalledCode code, long failedSpeculationsAddress, byte[] speculations) {
-         int codeInstallFlags = getInstallCodeFlags();
-         boolean withComments = (codeInstallFlags & 0x0001) != 0;
-         boolean withMethods = (codeInstallFlags & 0x0002) != 0;
-         boolean withTypeInfo;
-         if ((codeInstallFlags & 0x0004) != 0 && HotSpotJVMCIRuntime.Option.CodeSerializationTypeInfo.isDefault) {
-             withTypeInfo = true;
-         } else {
-             withTypeInfo = HotSpotJVMCIRuntime.Option.CodeSerializationTypeInfo.getBoolean();
-         }
-         try (HotSpotCompiledCodeStream stream = new HotSpotCompiledCodeStream(compiledCode, withTypeInfo, withComments, withMethods)) {
-             return installCode0(stream.headChunk, stream.timeNS, withTypeInfo, compiledCode, stream.objectPool, code, failedSpeculationsAddress, speculations);
-         }
+    int installCode(HotSpotCompiledCode compiledCode, InstalledCode code, long failedSpeculationsAddress, byte[] speculations) {
+        int codeInstallFlags = getInstallCodeFlags();
+        boolean withComments = (codeInstallFlags & 0x0001) != 0;
+        boolean withMethods = (codeInstallFlags & 0x0002) != 0;
+        boolean withTypeInfo;
+        if ((codeInstallFlags & 0x0004) != 0 && HotSpotJVMCIRuntime.Option.CodeSerializationTypeInfo.isDefault) {
+            withTypeInfo = true;
+        } else {
+            withTypeInfo = HotSpotJVMCIRuntime.Option.CodeSerializationTypeInfo.getBoolean();
+        }
+        try (HotSpotCompiledCodeStream stream = new HotSpotCompiledCodeStream(compiledCode, withTypeInfo, withComments, withMethods)) {
+            return installCode0(stream.headChunk, stream.timeNS, withTypeInfo, compiledCode, stream.objectPool, code, failedSpeculationsAddress, speculations);
+        }
      }
 
-     native int installCode0(long compiledCodeBuffer,
-                     long serializationNS,
-                     boolean withTypeInfo,
-                     HotSpotCompiledCode compiledCode,
-                     Object[] objectPool,
-                     InstalledCode code,
-                     long failedSpeculationsAddress,
-                     byte[] speculations);
+    native int installCode0(long compiledCodeBuffer,
+                    long serializationNS,
+                    boolean withTypeInfo,
+                    HotSpotCompiledCode compiledCode,
+                    Object[] objectPool,
+                    InstalledCode code,
+                    long failedSpeculationsAddress,
+                    byte[] speculations);
 
     /**
      * Gets flags specifying optional parts of code info. Only if a flag is set, will the
@@ -880,8 +880,15 @@ final class CompilerToVM {
         return getResolvedJavaType0(base, displacement, compressed);
     }
 
-    HotSpotResolvedObjectTypeImpl getResolvedJavaType(long displacement, boolean compressed) {
-        return getResolvedJavaType0(null, displacement, compressed);
+    /**
+     * Reads a {@code Klass*} from {@code address} (i.e., {@code address} is a {@code Klass**}
+     * value) and wraps it in a {@link HotSpotResolvedObjectTypeImpl}. This VM call must be used for
+     * any {@code Klass*} value not known to be already wrapped in a
+     * {@link HotSpotResolvedObjectTypeImpl}. The VM call is necessary so that the {@code Klass*} is
+     * wrapped in a {@code JVMCIKlassHandle} to protect it from the concurrent scanning done by G1.
+     */
+    HotSpotResolvedObjectTypeImpl getResolvedJavaType(long address) {
+        return getResolvedJavaType0(null, address, false);
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 // os_posix.hpp included by os.hpp
 
+#include "runtime/mutex.hpp"
 #include "runtime/os.hpp"
 
 #include <unistd.h>
@@ -51,28 +52,28 @@ inline bool os::numa_has_group_homing()     { AIX_ONLY(ShouldNotReachHere();) re
 
 // Platform Mutex/Monitor implementation
 
-inline void os::PlatformMutex::lock() {
+inline void PlatformMutex::lock() {
   int status = pthread_mutex_lock(mutex());
   assert_status(status == 0, status, "mutex_lock");
 }
 
-inline void os::PlatformMutex::unlock() {
+inline void PlatformMutex::unlock() {
   int status = pthread_mutex_unlock(mutex());
   assert_status(status == 0, status, "mutex_unlock");
 }
 
-inline bool os::PlatformMutex::try_lock() {
+inline bool PlatformMutex::try_lock() {
   int status = pthread_mutex_trylock(mutex());
   assert_status(status == 0 || status == EBUSY, status, "mutex_trylock");
   return status == 0;
 }
 
-inline void os::PlatformMonitor::notify() {
+inline void PlatformMonitor::notify() {
   int status = pthread_cond_signal(cond());
   assert_status(status == 0, status, "cond_signal");
 }
 
-inline void os::PlatformMonitor::notify_all() {
+inline void PlatformMonitor::notify_all() {
   int status = pthread_cond_broadcast(cond());
   assert_status(status == 0, status, "cond_broadcast");
 }

@@ -1328,6 +1328,13 @@ void MacroAssembler::ic_call(address entry, jint method_index) {
   call(AddressLiteral(entry, rh));
 }
 
+void MacroAssembler::emit_static_call_stub() {
+  // Static stub relocation also tags the Method* in the code-stream.
+  mov_metadata(rbx, (Metadata*) NULL);  // Method is zapped till fixup time.
+  // This is recognized as unresolved by relocs/nativeinst/ic code.
+  jump(RuntimeAddress(pc()));
+}
+
 // Implementation of call_VM versions
 
 void MacroAssembler::call_VM(Register oop_result,
@@ -2898,56 +2905,26 @@ void MacroAssembler::pop_cont_fastpath() {
 }
 
 void MacroAssembler::inc_held_monitor_count() {
-  if (!Continuations::enabled()) return;
-
 #ifndef _LP64
   Register thread = rax;
   push(thread);
   get_thread(thread);
-#else
-  Register thread = r15_thread;
-#endif
-
   incrementl(Address(thread, JavaThread::held_monitor_count_offset()));
-
-#ifndef _LP64
   pop(thread);
+#else // LP64
+  incrementq(Address(r15_thread, JavaThread::held_monitor_count_offset()));
 #endif
 }
 
 void MacroAssembler::dec_held_monitor_count() {
-  if (!Continuations::enabled()) return;
-
 #ifndef _LP64
   Register thread = rax;
   push(thread);
   get_thread(thread);
-#else
-  Register thread = r15_thread;
-#endif
-
   decrementl(Address(thread, JavaThread::held_monitor_count_offset()));
-
-#ifndef _LP64
   pop(thread);
-#endif
-}
-
-void MacroAssembler::reset_held_monitor_count() {
-  if (!Continuations::enabled()) return;
-
-#ifndef _LP64
-  Register thread = rax;
-  push(thread);
-  get_thread(thread);
-#else
-  Register thread = r15_thread;
-#endif
-
-  movl(Address(thread, JavaThread::held_monitor_count_offset()), (int32_t)0);
-
-#ifndef _LP64
-  pop(thread);
+#else // LP64
+  decrementq(Address(r15_thread, JavaThread::held_monitor_count_offset()));
 #endif
 }
 

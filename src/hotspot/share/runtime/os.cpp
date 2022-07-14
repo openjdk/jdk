@@ -57,6 +57,7 @@
 #include "runtime/osThread.hpp"
 #include "runtime/safefetch.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/threadCrashProtection.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vm_version.hpp"
@@ -618,7 +619,7 @@ static bool has_reached_max_malloc_test_peak(size_t alloc_size) {
 
 #ifdef ASSERT
 static void check_crash_protection() {
-  assert(!os::ThreadCrashProtection::is_crash_protected(Thread::current_or_null()),
+  assert(!ThreadCrashProtection::is_crash_protected(Thread::current_or_null()),
          "not allowed when crash protection is set");
 }
 static void break_if_ptr_caught(void* ptr) {
@@ -657,7 +658,7 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
 
   const size_t outer_size = size + MemTracker::overhead_per_malloc();
 
-  void* const outer_ptr = ::malloc(outer_size);
+  ALLOW_C_FUNCTION(::malloc, void* const outer_ptr = ::malloc(outer_size);)
   if (outer_ptr == NULL) {
     return NULL;
   }
@@ -707,7 +708,7 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
   // If NMT is enabled, this checks for heap overwrites, then de-accounts the old block.
   void* const old_outer_ptr = MemTracker::record_free(memblock);
 
-  void* const new_outer_ptr = ::realloc(old_outer_ptr, new_outer_size);
+  ALLOW_C_FUNCTION(::realloc, void* const new_outer_ptr = ::realloc(old_outer_ptr, new_outer_size);)
   if (new_outer_ptr == NULL) {
     return NULL;
   }
@@ -735,7 +736,7 @@ void  os::free(void *memblock) {
   // If NMT is enabled, this checks for heap overwrites, then de-accounts the old block.
   void* const old_outer_ptr = MemTracker::record_free(memblock);
 
-  ::free(old_outer_ptr);
+  ALLOW_C_FUNCTION(::free, ::free(old_outer_ptr);)
 }
 
 void os::init_random(unsigned int initval) {
@@ -1296,7 +1297,7 @@ bool os::set_boot_path(char fileSep, char pathSep) {
   if (jimage == NULL) return false;
   bool has_jimage = (os::stat(jimage, &st) == 0);
   if (has_jimage) {
-    Arguments::set_sysclasspath(jimage, true);
+    Arguments::set_boot_class_path(jimage, true);
     FREE_C_HEAP_ARRAY(char, jimage);
     return true;
   }
@@ -1306,7 +1307,7 @@ bool os::set_boot_path(char fileSep, char pathSep) {
   char* base_classes = format_boot_path("%/modules/" JAVA_BASE_NAME, home, home_len, fileSep, pathSep);
   if (base_classes == NULL) return false;
   if (os::stat(base_classes, &st) == 0) {
-    Arguments::set_sysclasspath(base_classes, false);
+    Arguments::set_boot_class_path(base_classes, false);
     FREE_C_HEAP_ARRAY(char, base_classes);
     return true;
   }
@@ -1672,11 +1673,6 @@ void os::initialize_initial_active_processor_count() {
   log_debug(os)("Initial active processor count set to %d" , _initial_active_processor_count);
 }
 
-void os::SuspendedThreadTask::run() {
-  internal_do_task();
-  _done = true;
-}
-
 bool os::create_stack_guard_pages(char* addr, size_t bytes) {
   return os::pd_create_stack_guard_pages(addr, bytes);
 }
@@ -1891,22 +1887,6 @@ bool os::release_memory_special(char* addr, size_t bytes) {
   }
   return res;
 }
-
-#ifndef _WINDOWS
-/* try to switch state from state "from" to state "to"
- * returns the state set after the method is complete
- */
-os::SuspendResume::State os::SuspendResume::switch_state(os::SuspendResume::State from,
-                                                         os::SuspendResume::State to)
-{
-  os::SuspendResume::State result = Atomic::cmpxchg(&_state, from, to);
-  if (result == from) {
-    // success
-    return to;
-  }
-  return result;
-}
-#endif
 
 // Convenience wrapper around naked_short_sleep to allow for longer sleep
 // times. Only for use by non-JavaThreads.

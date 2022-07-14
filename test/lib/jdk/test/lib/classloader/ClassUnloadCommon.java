@@ -23,12 +23,13 @@
 
 
 /*
- * To use ClassUnloadCommon from a sub-process, see hotspot/test/runtime/logging/ClassLoadUnloadTest.java
+ * To use ClassUnloadCommon from a sub-process, see test/hotspot/jtreg/runtime/logging/ClassLoadUnloadTest.java
  * for an example.
  */
 
 
 package jdk.test.lib.classloader;
+import jdk.test.whitebox.WhiteBox;
 
 import java.io.File;
 import java.net.MalformedURLException;
@@ -62,8 +63,8 @@ public class ClassUnloadCommon {
     }
 
     public static void triggerUnloading() {
-        allocateMemory(16 * 1024); // force young collection
-        System.gc();
+        WhiteBox wb = WhiteBox.getWhiteBox();
+        wb.fullGC();  // will do class unloading
     }
 
     /**

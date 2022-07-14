@@ -185,6 +185,25 @@ public class TestSegmentAllocators {
         assertEquals(calls.get(), 7);
     }
 
+    @Test
+    public void testStringAllocateDelegation() {
+        AtomicInteger calls = new AtomicInteger();
+        SegmentAllocator allocator = new SegmentAllocator() {
+            @Override
+            public MemorySegment allocate(long bytesSize, long bytesAlignment) {
+                return MemorySegment.allocateNative(bytesSize, bytesAlignment, MemorySession.openImplicit());
+            }
+
+            @Override
+            public MemorySegment allocate(long size) {
+                calls.incrementAndGet();
+                return allocate(size, 1);
+            };
+        };
+        allocator.allocateUtf8String("Hello");
+        assertEquals(calls.get(), 1);
+    }
+
 
     @Test(dataProvider = "arrayAllocations")
     public <Z> void testArray(AllocationFactory allocationFactory, ValueLayout layout, AllocationFunction<Object, ValueLayout> allocationFunction, ToArrayHelper<Z> arrayHelper) {
