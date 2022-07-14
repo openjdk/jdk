@@ -2055,25 +2055,25 @@ void PrintBFS::print_options_help(bool print_examples) {
   tty->print("    if nullptr: simple BFS\n");
   tty->print("    else: shortest path or all paths between this/start and target\n");
   tty->print("  options:\n");
-  tty->print("    if nullptr: same as \"cdmxo@B\"\n");
+  tty->print("    if nullptr: same as \"cdmox@B\"\n");
   tty->print("    else: use combination of following characters\n");
   tty->print("      h: display this help info\n");
   tty->print("      H: display this help info, with examples\n");
   tty->print("      +: traverse in-edges (on if neither + nor -)\n");
   tty->print("      -: traverse out-edges\n");
   tty->print("      c: visit control nodes\n");
-  tty->print("      m: visit memory nodes\n");
   tty->print("      d: visit data nodes\n");
-  tty->print("      x: visit mixed nodes\n");
+  tty->print("      m: visit memory nodes\n");
   tty->print("      o: visit other nodes\n");
+  tty->print("      x: visit mixed nodes\n");
   tty->print("      C: boundary control nodes\n");
-  tty->print("      M: boundary memory nodes\n");
   tty->print("      D: boundary data nodes\n");
-  tty->print("      X: boundary mixed nodes\n");
+  tty->print("      M: boundary memory nodes\n");
   tty->print("      O: boundary other nodes\n");
+  tty->print("      X: boundary mixed nodes\n");
+  tty->print("      #: display node category in color (not supported in all terminals)\n");
   tty->print("      S: sort displayed nodes by node idx\n");
   tty->print("      A: all paths (not just shortest path to target)\n");
-  tty->print("      #: display node category in color (not supported in all terminals)\n");
   tty->print("      @: print old nodes - before matching (if available)\n");
   tty->print("      B: print scheduling blocks (if available)\n");
   tty->print("      $: dump only, no header, no other columns\n");
@@ -2122,7 +2122,7 @@ void PrintBFS::print_options_help(bool print_examples) {
     tty->print("    useful to find how x and y are related\n");
     tty->print("  find_node(741)->dump_bfs(20, find_node(746), \"c+\")\n");
     tty->print("    find shortest control path between two nodes\n");
-    tty->print("  find_node(741)->dump_bfs(8, find_node(746), \"cdmxo+A\")\n");
+    tty->print("  find_node(741)->dump_bfs(8, find_node(746), \"cdmox+A\")\n");
     tty->print("    find all paths (A) between two nodes of length at most 8\n");
     tty->print("  find_node(741)->dump_bfs(7, find_node(741), \"c+A\")\n");
     tty->print("    find all control loops for this node\n");
@@ -2131,7 +2131,7 @@ void PrintBFS::print_options_help(bool print_examples) {
 
 bool PrintBFS::parse_options() {
   if (_options == nullptr) {
-    _options = "cmdxo@B"; // default options
+    _options = "cdmox@B"; // default options
   }
   size_t len = strlen(_options);
   for (size_t i = 0; i < len; i++) {
