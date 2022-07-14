@@ -98,8 +98,8 @@ public class OOMEInAQS extends Thread {
         try {
             started.await();
             for (int i = 0; i < NREPS; i++) {
+                lock.lock();
                 try {
-                    lock.lock();
                     while (turn != id)
                         cond.await();
                     turn = nextId;
