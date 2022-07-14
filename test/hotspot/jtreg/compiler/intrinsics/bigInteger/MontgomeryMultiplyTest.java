@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,8 +31,8 @@
  * @modules java.base/java.math:open
  * @library /test/lib /
  *
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      compiler.intrinsics.bigInteger.MontgomeryMultiplyTest
  */
@@ -40,7 +40,7 @@
 package compiler.intrinsics.bigInteger;
 
 import jdk.test.lib.Platform;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 import compiler.whitebox.CompilerWhiteBoxTest;
 
 import java.lang.invoke.MethodHandle;

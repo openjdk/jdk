@@ -29,8 +29,12 @@
 #include "runtime/handles.hpp"
 #include "runtime/javaFrameAnchor.hpp"
 #include "runtime/objectMonitor.hpp"
-#include "runtime/os.hpp"
+#include "runtime/suspendedThreadTask.hpp"
 #include "utilities/macros.hpp"
+
+#if defined(LINUX) || defined(AIX) || defined(BSD)
+#include "suspendResume_posix.hpp"
+#endif
 
 class Monitor;
 

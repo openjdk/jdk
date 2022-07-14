@@ -26,10 +26,10 @@
  * @summary Vectorization test on basic short operations
  * @library /test/lib /
  *
- * @build sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
  *        compiler.vectorization.runner.VectorizationTestRunner
  *
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI

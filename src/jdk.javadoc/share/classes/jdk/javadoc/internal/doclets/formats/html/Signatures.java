@@ -530,7 +530,7 @@ public class Signatures {
          */
         private int appendTypeParameters(Content target, int lastLineSeparator) {
             // Apply different wrapping strategies for type parameters
-            // depending of combined length of type parameters and return type.
+            // depending on the combined length of type parameters and return type.
             int typeParamLength = typeParameters.charCount();
 
             if (typeParamLength >= TYPE_PARAMS_MAX_INLINE_LENGTH) {
