@@ -165,10 +165,10 @@ public class LoadLibraryUnload {
         // before exiting the test.
         for (int i = 0; i < LOADER_COUNT; i++) {
             System.gc();
-            var res = refQueue.remove();
+            var res = refQueue.remove(5 * 1000L);
             System.out.println(i + " dequeued: " + res);
             if (res == null) {
-                Asserts.fail("Too few cleared Weak references");
+                Asserts.fail("Too few cleared WeakReferences");
             }
         }
     }

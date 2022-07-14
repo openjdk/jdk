@@ -36,7 +36,9 @@ public class Class1 {
     public void loadLibrary(Object obj) throws Exception {
         System.loadLibrary("loadLibraryUnload");
         System.out.println("Native library loaded from Class1.");
-        setRef(obj);
+        synchronized (Class1.class) {
+            setRef(obj);
+        }
     }
 
     /**
