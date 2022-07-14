@@ -374,6 +374,7 @@ public class BasicOptionPaneUI extends OptionPaneUI {
                       "OptionPane.messageAnchor", GridBagConstraints.CENTER);
         cons.insets = new Insets(0,0,3,0);
 
+        recursionCount = 0;
         addMessageComponents(body, cons, getMessage(),
                           getMaxCharactersPerLineCount(), false);
         top.add(realBody, BorderLayout.CENTER);
@@ -478,8 +479,11 @@ public class BasicOptionPaneUI extends OptionPaneUI {
                 }
                 // Prevent recursion of more than
                 // 200 successive newlines in a message
+                // and indicate message is truncated via ellipsis
                 if (recursionCount++ > 200) {
                     recursionCount = 0;
+                    addMessageComponents(container, cons, new String("..."),
+                                         maxll,false);
                     return;
                 }
                 addMessageComponents(container, cons, s.substring(nl + nll), maxll,
