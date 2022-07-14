@@ -39,6 +39,9 @@
 #include "utilities/vmError.hpp"
 #include "utilities/xmlstream.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // Declarations of jvm methods
 extern "C" void jio_print(const char* s, size_t len);
 extern "C" int jio_printf(const char *fmt, ...);
@@ -1138,3 +1141,5 @@ bool networkStream::connect(const char *ip, short port) {
 }
 
 #endif
+
+PRAGMA_DIAG_POP
