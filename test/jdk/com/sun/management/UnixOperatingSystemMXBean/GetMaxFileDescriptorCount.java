@@ -22,10 +22,13 @@
  */
 
 /*
- *
+ * @test
  * @bug     4858522
  * @summary Basic unit test of UnixOperatingSystemMXBean.getMaxFileDescriptorCount()
  * @author  Steve Bohne
+ * @requires (os.family=="linux")
+ *
+ * @run main/othervm GetMaxFileDescriptorCount
  */
 
 /*
@@ -42,7 +45,7 @@ import java.lang.management.*;
 public class GetMaxFileDescriptorCount {
 
     private static UnixOperatingSystemMXBean mbean =
-        (UnixOperatingSystemMXBean)ManagementFactory.getOperatingSystemMXBean();
+        (UnixOperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
 
     // Careful with these values.
     // Min count for pass dynamically determined below.
