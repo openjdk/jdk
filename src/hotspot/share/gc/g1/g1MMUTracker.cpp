@@ -56,9 +56,9 @@ void G1MMUTracker::remove_expired_entries(double current_time) {
   guarantee(_no_entries == 0, "should have no entries in the array");
 }
 
-double G1MMUTracker::calculate_gc_time(double time_stamp) {
+double G1MMUTracker::calculate_gc_time(double timestamp) {
   double gc_time = 0.0;
-  double limit = time_stamp - _time_slice;
+  double limit = timestamp - _time_slice;
   for (int i = 0; i < _no_entries; ++i) {
     int index = trim_index(_tail_index + i);
     G1MMUTrackerElem *elem = &_array[index];
@@ -111,13 +111,13 @@ void G1MMUTracker::add_pause(double start, double end) {
   }
 }
 
-double G1MMUTracker::when_sec(double current_time, double pause_time) {
+double G1MMUTracker::when_sec(double current_timestamp, double pause_time) {
   // If the pause is over the maximum, just assume that it's the maximum.
   double adjusted_pause_time =
     (pause_time > max_gc_time()) ? max_gc_time() : pause_time;
 
   // Earliest end time of a hypothetical pause starting now, taking pause_time.
-  double earliest_end_time = current_time + adjusted_pause_time;
+  double earliest_end_time = current_timestamp + adjusted_pause_time;
   double gc_time_in_recent_time_slice = calculate_gc_time(earliest_end_time) + adjusted_pause_time;
 
   // How much gc time is needed to pass within the MMU window to fit the given pause into the MMU.
@@ -132,7 +132,7 @@ double G1MMUTracker::when_sec(double current_time, double pause_time) {
   // the time slice and maximum gc pause, counted from the end of the last pause.
   if (adjusted_pause_time == max_gc_time()) {
     G1MMUTrackerElem *elem = &_array[_head_index];
-    return (elem->end_time() + (_time_slice - max_gc_time())) - current_time;
+    return (elem->end_time() + (_time_slice - max_gc_time())) - current_timestamp;
   }
 
   // Now go through the recent pause time events,
