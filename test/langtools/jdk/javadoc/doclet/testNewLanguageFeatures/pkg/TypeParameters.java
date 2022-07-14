@@ -66,7 +66,7 @@ public class TypeParameters<E> implements SubInterface<E> {
      *
      * @param <A> This is the first type parameter.
      */
-    public <A> void methodThatHasTypeParmaters(A... a) {}
+    public <A> void methodThatHasTypeParameters(A... a) {}
 
     /**
      * This method returns a TypeParameter array and takes in a TypeParameter array
