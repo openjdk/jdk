@@ -431,18 +431,23 @@ extern "C" {
       }
     }
   }
+
+  // Atomically copy 64 bits of data
+  inline void atomic_copy64(const volatile void *src, volatile void *dst) {
+    *(jlong *) dst = *(const jlong *) src;
+  }
   void _Copy_conjoint_jlongs_atomic(const jlong* from, jlong* to, size_t count) {
     if (from > to) {
       const jlong *end = from + count;
       while (from < end) {
-        os::atomic_copy64(from++, to++);
+        atomic_copy64(from++, to++);
       }
     } else if (from < to) {
       const jlong *end = from;
       from += count - 1;
       to   += count - 1;
       while (from >= end) {
-        os::atomic_copy64(from--, to--);
+        atomic_copy64(from--, to--);
       }
     }
   }

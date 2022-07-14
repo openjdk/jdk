@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2011, 2015, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -285,12 +285,31 @@ inline T Atomic::PlatformCmpxchg<8>::operator()(T volatile* dest,
   return value;
 }
 
+// Atomically copy 64 bits of data
+static void atomic_copy64(const volatile void *src, volatile void *dst) {
+#if defined(PPC32)
+  double tmp;
+  asm volatile ("lfd  %0, 0(%1)\n"
+                "stfd %0, 0(%2)\n"
+                : "=f"(tmp)
+                : "b"(src), "b"(dst));
+#elif defined(S390) && !defined(_LP64)
+  double tmp;
+  asm volatile ("ld  %0, 0(%1)\n"
+                "std %0, 0(%2)\n"
+                : "=r"(tmp)
+                : "a"(src), "a"(dst));
+#else
+  *(jlong *) dst = *(const jlong *) src;
+#endif
+}
+
 template<>
 template<typename T>
 inline T Atomic::PlatformLoad<8>::operator()(T const volatile* src) const {
   STATIC_ASSERT(8 == sizeof(T));
   volatile int64_t dest;
-  os::atomic_copy64(reinterpret_cast<const volatile int64_t*>(src), reinterpret_cast<volatile int64_t*>(&dest));
+  atomic_copy64(reinterpret_cast<const volatile int64_t*>(src), reinterpret_cast<volatile int64_t*>(&dest));
   return PrimitiveConversions::cast<T>(dest);
 }
 
@@ -299,7 +318,7 @@ template<typename T>
 inline void Atomic::PlatformStore<8>::operator()(T volatile* dest,
                                                  T store_value) const {
   STATIC_ASSERT(8 == sizeof(T));
-  os::atomic_copy64(reinterpret_cast<const volatile int64_t*>(&store_value), reinterpret_cast<volatile int64_t*>(dest));
+  atomic_copy64(reinterpret_cast<const volatile int64_t*>(&store_value), reinterpret_cast<volatile int64_t*>(dest));
 }
 
 #endif // OS_CPU_BSD_ZERO_ATOMIC_BSD_ZERO_HPP
