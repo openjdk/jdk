@@ -39,10 +39,11 @@ import java.io.InputStream;
 
 /*
  * @test
- * @run testng/othervm xpath.XPathChildTest
+ * @bug 8289511
+ * @run testng/othervm xpath.XPathExpChildTest
  * @summary Tests for XPath child axis specifier.
  */
-public class XPathChildTest {
+public class XPathExpChildTest {
 
     private static final String XML = """
             <store>
@@ -148,25 +149,31 @@ public class XPathChildTest {
     }
 
     /*
+     * DataProvider: provides XPath expressions that return zero children
+     */
+    @DataProvider(name = "zeroChildrenExp")
+    public Object[][] getZeroChildrenExp() {
+        return new Object[][]{
+                {"/store/book[3]/author"},
+                {"/store/book/author/ssn"},
+                {"/store/child[book]/author"},
+                {"/store/child[@id='1']/book/author"},
+                {"/store/child::*[@category]/author"},
+                {"//author[*]/../author"},
+                {"//title[@*]/../author"},
+                {"/store/book[-1]/author"},
+                {"/store/child:book/author"},
+                {"//book[.='1']/author"},
+        };
+    }
+
+    /*
      * DataProvider: provides invalid XPath expression and expected exception
+     *  to be thrown
      */
     @DataProvider(name = "invalidExp")
     public Object[][] getInvalidExp() {
         return new Object[][]{
-                // NullPointerException
-                {"/store/book[3]/author", NullPointerException.class},
-                {"/store/book/author/ssn", NullPointerException.class},
-                {"/store/child[book]/author", NullPointerException.class},
-                {"/store/child[@id='1']/book/author",
-                        NullPointerException.class},
-                {"/store/child::*[@category]/author",
-                        NullPointerException.class},
-                {"//author[*]/../author", NullPointerException.class},
-                {"//title[@*]/../author", NullPointerException.class},
-                {"/store/book[-1]/author", NullPointerException.class},
-                {"/store/child:book/author", NullPointerException.class},
-                {"//book[.='1']/author", NullPointerException.class},
-
                 // XPathExpressionException
                 {"/store/*[child::author] and [child::title]/author",
                         XPathExpressionException.class},
@@ -201,6 +208,19 @@ public class XPathChildTest {
     }
 
     /**
+     * Verifies no child nodes returned from the XPath expression.
+     *
+     * @param exp XPath expression
+     * @throws Exception
+     */
+    @Test(dataProvider = "zeroChildrenExp")
+    void testZeroChildrenExp(String exp) throws Exception {
+        XPath xPath = XPathFactory.newInstance().newXPath();
+        Node node = xPath.evaluateExpression(exp, doc, Node.class);
+        Assert.assertNull(node);
+    }
+
+    /**
      * Verifies exception thrown for invalid expression.
      *
      * @param exp            XPath expression
@@ -212,6 +232,6 @@ public class XPathChildTest {
         XPath xPath = XPathFactory.newInstance().newXPath();
         Assert.assertThrows(throwableClass,
                 () -> ((NodeList) xPath.evaluate(exp, doc,
-                XPathConstants.NODESET)).item(0).getNodeName());
+                        XPathConstants.NODESET)).item(0).getNodeName());
     }
 }
