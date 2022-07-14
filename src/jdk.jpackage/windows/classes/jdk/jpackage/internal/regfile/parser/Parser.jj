@@ -1,0 +1,139 @@
+/*
+ * JavaCC grammar for .reg files parser.
+ * To re-generate the parser, run:
+ * java -cp path/to/javacc.jar javacc Parser.jj
+ */
+options {
+  STATIC = false;
+}
+
+
+PARSER_BEGIN(Parser)
+/*
+ * Copyright (c) 2022, Red Hat Inc. and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+package jdk.jpackage.internal.regfile.parser;
+
+import java.util.ArrayList;
+
+import jdk.jpackage.internal.regfile.RegFileKey;
+import jdk.jpackage.internal.regfile.RegFileParseException;
+import jdk.jpackage.internal.regfile.RegFileTokenException;
+import jdk.jpackage.internal.regfile.RegFileValue;
+
+public class Parser {
+
+public ArrayList<RegFileKey> parse() throws RegFileParseException {
+    try {
+        return registryKeyList();
+    } catch (TokenMgrError e) {
+        throw RegFileParseException.fromTokenMgrError(e);
+    } catch (ParseException e) {
+        throw RegFileParseException.fromParseException(e);
+    } catch (RegFileTokenException e) {
+        throw RegFileParseException.fromTokenException(e);
+    }
+}
+
+}
+
+PARSER_END(Parser)
+
+
+TOKEN : { < EOL : "\n" | "\r\n" > }
+TOKEN : { < #NUMBER : ["0" - "9"] > }
+TOKEN : { < HEADER : "Windows Registry Editor Version " (<NUMBER>)+ ( "." | <NUMBER> )* > }
+TOKEN : { < #PRINTABLE : ( ["\u0020" - "\u007e"] | ["\u00a0" - "\ufffd"] ) > }
+TOKEN : { < #PRINTABLE_NO_BACKSLASH : ( ["\u0020" - "\u005b"] | ["\u005d" - "\u007e"] | ["\u00a0" - "\ufffd"] ) > }
+TOKEN : { < #HEX : ( ["0" - "9"] | ["a" - "f"] ) > }
+TOKEN : { < #HEX_PAIR : ( (<HEX>){2} "," ) > }
+TOKEN : { < #HEX_MULTILINE : (<HEX_PAIR>)* | ( (<HEX_PAIR>)+ "\\" <EOL> (" "){2} )* (<HEX_PAIR>)+ > }
+TOKEN : { < #END_QUOTED : ( "\\" <PRINTABLE> | ~["\"", "\\", "\r", "\n"] )* "\"" > }
+TOKEN : { < #QUOTED : "\"" <END_QUOTED> > }
+TOKEN : { < #KEY_PART : ( <PRINTABLE_NO_BACKSLASH> )+ > }
+TOKEN : { < KEY : "[" ( <KEY_PART> "\\" )* <KEY_PART> "]" > }
+TOKEN : { < NAME : ( <QUOTED> | "@" ) "=" > }
+TOKEN : { < TYPE : ( "\"" | "hex:" | "dword:" | "hex(b):" | "hex(7):" | "hex(2):" ) > }
+TOKEN : { < VALUE_REG_SZ : <END_QUOTED> <EOL> > }
+TOKEN : { < VALUE_REG_BINARY : <HEX_MULTILINE> (<HEX>){2} <EOL> > }
+TOKEN : { < VALUE_REG_DWORD : (<HEX>){8} <EOL> > }
+TOKEN : { < VALUE_REG_QWORD : (<HEX_PAIR>){7} <HEX> <EOL> > }
+TOKEN : { < VALUE_REG_MULTI_SZ: <HEX_MULTILINE> "00" <EOL> > }
+TOKEN : { < VALUE_REG_EXPAND_SZ : <HEX_MULTILINE> "00" <EOL> > }
+
+
+ArrayList<RegFileKey> registryKeyList() :
+{
+    RegFileKey key;
+    RegFileValue value;
+}
+{
+    <HEADER><EOL>
+    <EOL>
+    { ArrayList<RegFileKey> keyList = new ArrayList<>(); }
+    (
+        key = registryKey()
+        <EOL>
+        (
+            value = registryValue()
+            { key.addValue(value); }
+        )*
+        <EOL>
+        { keyList.add(key); }
+    )*
+    (<EOL>)*
+    <EOF>
+    { return keyList; }
+}
+
+RegFileKey registryKey():
+{
+    Token keyToken;
+}
+{
+    keyToken = <KEY>
+    { return RegFileKey.fromToken(keyToken); }
+}
+
+RegFileValue registryValue():
+{
+    Token nameToken;
+    Token typeToken;
+    Token valueToken;
+}
+{
+    nameToken = <NAME>
+    typeToken = <TYPE>
+    (
+        valueToken = <VALUE_REG_SZ>       |
+        valueToken = <VALUE_REG_BINARY>   |
+        valueToken = <EOL>                |
+        valueToken = <VALUE_REG_DWORD>    |
+        valueToken = <VALUE_REG_QWORD>    |
+        valueToken = <VALUE_REG_MULTI_SZ> |
+        valueToken = <VALUE_REG_EXPAND_SZ>
+    )
+    { return RegFileValue.fromTokens(nameToken, typeToken, valueToken); }
+}

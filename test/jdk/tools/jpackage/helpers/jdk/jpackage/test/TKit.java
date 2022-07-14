@@ -771,6 +771,29 @@ final public class TKit {
         }
     }
 
+    public static <T extends Throwable> void assertThrows(Class<T> excClass, ThrowingRunnable supplier, String msg) {
+        try {
+            supplier.run();
+            error(concatMessages("Failed", msg));
+        } catch (Throwable t) {
+            if (excClass.isInstance(t)) {
+                traceAssert(String.format("assertThrows(): %s", msg));
+                return;
+            }
+            error(concatMessages(String.format("Unexpected throwable [%s]", t), msg));
+        }
+    }
+
+    public static void assertDoesNotThrow(ThrowingRunnable supplier, String msg) {
+        try {
+            supplier.run();
+        } catch (Throwable t) {
+            error(concatMessages(String.format("Unexpected throwable [%s]", t), msg));
+        }
+
+        traceAssert(String.format("assertDoesNotThrow(): %s", msg));
+    }
+
     /**
      * Creates a directory by creating all nonexistent parent directories first
      * just like java.nio.file.Files#createDirectories() and returns

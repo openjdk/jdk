@@ -61,9 +61,11 @@ import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.INSTALL_DIR;
 import static jdk.jpackage.internal.StandardBundlerParam.VENDOR;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
-import static jdk.jpackage.internal.WinMsiBundler.MSI_SYSTEM_WIDE;
-import static jdk.jpackage.internal.WinMsiBundler.SERVICE_INSTALLER;
-import static jdk.jpackage.internal.WinMsiBundler.WIN_APP_IMAGE;
+import static jdk.jpackage.internal.WinMsiBundler.*;
+
+import jdk.jpackage.internal.regfile.RegFileKey;
+import jdk.jpackage.internal.regfile.RegFileValue;
+import jdk.jpackage.internal.regfile.RegFileValueType;
 import org.w3c.dom.NodeList;
 
 /**
@@ -143,6 +145,8 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         programMenuFolderName = MENU_GROUP.fetchFrom(params);
 
         initFileAssociations(params);
+
+        initRegFileKeys(params);
     }
 
     @Override
@@ -159,6 +163,8 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
                     addFaComponentGroup(xml);
 
                     addShortcutComponentGroup(xml);
+
+                    addRegistryComponentGroup(xml);
 
                     addFilesComponentGroup(xml);
 
@@ -214,6 +220,15 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         });
     }
 
+    private void initRegFileKeys(Map<String, ? super Object> params) {
+        try {
+            regFileKeys = RegistryFile.fetchFrom(WinMsiBundler.REGISTRY_FILE.fetchFrom(params));
+        } catch (ConfigException e) {
+            // todo: fixme
+            throw new RuntimeException(e);
+        }
+    }
+
     private static UUID createNameUUID(String str) {
         return UUID.nameUUIDFromBytes(str.getBytes(StandardCharsets.UTF_8));
     }
@@ -238,6 +253,7 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         Folder("dir"),
         Shortcut,
         ProgId,
+        RegistryKey,
         Icon,
         CreateFolder("mkdir"),
         RemoveFolder("rm");
@@ -285,6 +301,7 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         File(cfg().file()),
         Shortcut(cfg().file().withRegistryKeyPath()),
         ProgId(cfg().file().withRegistryKeyPath()),
+        RegistryKey(cfg()),
         CreateFolder(cfg().withRegistryKeyPath()),
         RemoveFolder(cfg().withRegistryKeyPath());
 
@@ -364,7 +381,7 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
             IOException {
 
         final Path directoryRefPath;
-        if (role.isFile()) {
+        if (role.isFile() || Component.RegistryKey == role) {
             directoryRefPath = path.getParent();
         } else {
             directoryRefPath = path;
@@ -409,7 +426,7 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
             xml.writeAttribute("Id", role.idOf(path));
         }
 
-        if (!isRegistryKeyPath) {
+        if (!isRegistryKeyPath && role != Component.RegistryKey) {
             xml.writeAttribute("KeyPath", "yes");
         }
 
@@ -470,6 +487,40 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         }
 
         addComponentGroup(xml, "Shortcuts", componentIds);
+    }
+
+    private void addRegistryComponentGroup(XMLStreamWriter xml) throws IOException, XMLStreamException {
+        List<String> componentIds = new ArrayList<>();
+        for (var k : regFileKeys) {
+            componentIds.add(addRegistryKeyComponent(xml, k));
+        }
+        addComponentGroup(xml, "RegistryKeys", componentIds);
+    }
+
+    private String addRegistryKeyComponent(XMLStreamWriter xml, RegFileKey key) throws IOException, XMLStreamException {
+        String path = key.getPathParts().stream().collect(Collectors.joining("\\"));
+        Path fakeDir = INSTALLDIR.resolve(UUID.randomUUID().toString());
+        return addComponent(xml, fakeDir, Component.RegistryKey, unused -> {
+            xml.writeAttribute("ForceCreateOnInstall", "yes");
+            xml.writeAttribute("Key", path);
+            xml.writeAttribute("Root", key.getRoot().name());
+
+            for (RegFileValue val : key.getValues()) {
+                xml.writeStartElement("RegistryValue");
+                xml.writeAttribute("Name", val.getName());
+                xml.writeAttribute("Type", val.getWixType());
+                if (RegFileValueType.REG_MULTI_SZ == val.getType()) {
+                    for (String line : val.getWixValue()) {
+                        xml.writeStartElement("MultiStringValue");
+                        xml.writeCharacters(line);
+                        xml.writeEndElement();
+                    }
+                } else {
+                    xml.writeAttribute("Value", val.getWixValue().get(0));
+                }
+                xml.writeEndElement();
+            }
+        });
     }
 
     private String addShortcutComponent(XMLStreamWriter xml, Path launcherPath,
@@ -908,6 +959,8 @@ class WixAppImageFragmentBuilder extends WixFragmentBuilder {
     private String programMenuFolderName;
 
     private List<FileAssociation> associations;
+
+    private List<RegFileKey> regFileKeys;
 
     private Set<ShortcutsFolder> shortcutFolders;
 

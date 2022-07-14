@@ -67,6 +67,7 @@ import static jdk.jpackage.internal.StandardBundlerParam.RESOURCE_DIR;
 import static jdk.jpackage.internal.StandardBundlerParam.TEMP_ROOT;
 import static jdk.jpackage.internal.StandardBundlerParam.VENDOR;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
@@ -223,6 +224,13 @@ public class WinMsiBundler  extends AbstractBundler {
             },
             (s, p) -> s);
 
+    static final BundlerParamInfo<Path> REGISTRY_FILE =
+            new StandardBundlerParam<>(
+            Arguments.CLIOptions.WIN_REGISTRY_FILE.getId(),
+            Path.class,
+            null,
+            (s, p) -> Path.of(s));
+
     public WinMsiBundler() {
         appImageBundler = new WinAppBundler().setDependentTask(true);
         wixFragments = Stream.of(
@@ -331,6 +339,8 @@ public class WinMsiBundler  extends AbstractBundler {
             }
 
             FileAssociation.verify(FileAssociation.fetchFrom(params));
+
+            RegistryFile.verify(REGISTRY_FILE.fetchFrom(params));
 
             var serviceInstallerResource = initServiceInstallerResource(params);
             if (serviceInstallerResource != null) {

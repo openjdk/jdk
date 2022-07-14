@@ -381,6 +381,8 @@ public class Arguments {
             setOptionValue("win-console", true);
         }),
 
+        WIN_REGISTRY_FILE ("win-registry-file", OptionCategories.PLATFORM_WIN),
+
         LINUX_BUNDLE_NAME ("linux-package-name",
                 OptionCategories.PLATFORM_LINUX),
 

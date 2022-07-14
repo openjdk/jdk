@@ -118,6 +118,7 @@ class ValidOptions {
             put(CLIOptions.WIN_UPGRADE_UUID.getId(), USE.INSTALL);
             put(CLIOptions.WIN_PER_USER_INSTALLATION.getId(),
                     USE.INSTALL);
+            put(CLIOptions.WIN_REGISTRY_FILE.getId(), USE.INSTALL);
         }
 
         if (Platform.getPlatform() == Platform.MAC) {
