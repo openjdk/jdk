@@ -99,7 +99,7 @@ extern "C" {
  * functions in a Win32 Cryptoki .dll, in might be defined by:
  *
  * #define CK_DECLARE_FUNCTION_POINTER(returnType, name) \
- *   returnType (* name)
+ *   returnType __declspec(dllimport) (* name)
  *
  * In a UNIX environment, it might be defined by:
  *
