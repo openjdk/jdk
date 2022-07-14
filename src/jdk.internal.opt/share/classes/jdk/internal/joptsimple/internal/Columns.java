@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,7 +126,7 @@ class Columns {
         String word = source.substring( start, end );
         if ( augmented.length() + word.length() > width ) {
             pieces.add( augmented.toString().replaceAll( "\\s+$", "" ) );
-            augmented = new StringBuilder( repeat( ' ', INDENT_WIDTH ) ).append( word );
+            augmented = new StringBuilder( " ".repeat(INDENT_WIDTH) ).append( word );
         }
         else
             augmented.append( word );

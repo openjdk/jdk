@@ -1536,11 +1536,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                         }
                         List<String> l = entry.getValue();
                         if (l != null && !l.isEmpty()) {
-                            StringJoiner cookieValue = new StringJoiner("; ");
-                            for (String value : l) {
-                                cookieValue.add(value);
-                            }
-                            requests.add(key, cookieValue.toString());
+                            requests.add(key, String.join("; ", l));
                         }
                     }
                 }

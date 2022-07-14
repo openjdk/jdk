@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1114,12 +1114,8 @@ public final class ProcessBuilder
                                      redirectErrorStream);
             ProcessStartEvent event = new ProcessStartEvent();
             if (event.isEnabled()) {
-                StringJoiner command = new StringJoiner(" ");
-                for (String s: cmdarray) {
-                    command.add(s);
-                }
                 event.directory = dir;
-                event.command = command.toString();
+                event.command = String.join(" ", cmdarray);
                 event.pid = process.pid();
                 event.commit();
             }

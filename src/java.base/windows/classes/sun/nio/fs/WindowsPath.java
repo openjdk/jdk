@@ -704,11 +704,9 @@ class WindowsPath implements Path {
         if (beginIndex >= endIndex)
             throw new IllegalArgumentException();
 
-        StringBuilder sb = new StringBuilder();
+        StringJoiner sb = new StringJoiner("\\");
         for (int i = beginIndex; i < endIndex; i++) {
-            sb.append(elementAsString(i));
-            if (i != (endIndex-1))
-                sb.append("\\");
+            sb.add(elementAsString(i));
         }
         return new WindowsPath(getFileSystem(), WindowsPathType.RELATIVE, "", sb.toString());
     }
