@@ -57,6 +57,9 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.text.DateFormat;
 import java.text.MessageFormat;
+import java.text.ChoiceFormat;
+import java.text.Format;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -171,7 +174,12 @@ public class FilePane extends JPanel implements PropertyChangeListener {
     private String refreshActionLabelText;
     private String newFolderActionLabelText;
 
-    private String byteString;
+    private MessageFormat messageForm = new MessageFormat("");
+    private double[] fileSizeLimits = {0,1,2};
+    private ChoiceFormat choiceForm;
+    private String fileSizePattern;
+    private Long[] messageArguments = {null};
+
     private String kiloByteString;
     private String megaByteString;
     private String gigaByteString;
@@ -529,12 +537,29 @@ public class FilePane extends JPanel implements PropertyChangeListener {
         viewTypeActionNames[VIEWTYPE_DETAILS] =
                         UIManager.getString("FileChooser.detailsViewActionLabelText", l);
 
-        byteString = UIManager.getString("FileChooser.fileSizeBytes", l);
+        String [] fileSizeStrings = {
+            UIManager.getString("FileChooser.fileSizeZeroByte", l),
+            UIManager.getString("FileChooser.fileSizeOneByte", l),
+            UIManager.getString("FileChooser.fileSizeMultipleByte", l)
+        };
+
+        choiceForm = new ChoiceFormat(fileSizeLimits, fileSizeStrings);
+
+        Format[] formats = {
+                choiceForm,
+                null,
+                NumberFormat.getInstance()
+        };
+
+        fileSizePattern  = UIManager.getString("FileChooser.fileSizePattern",l);
+        messageForm.setLocale(l);
+        messageForm.applyPattern(fileSizePattern);
+        messageForm.setFormats(formats);
+
         kiloByteString = UIManager.getString("FileChooser.fileSizeKiloBytes", l);
         megaByteString = UIManager.getString("FileChooser.fileSizeMegaBytes", l);
         gigaByteString = UIManager.getString("FileChooser.fileSizeGigaBytes", l);
         fullRowSelection = UIManager.getBoolean("FileView.fullRowSelection");
-
         filesListAccessibleName = UIManager.getString("FileChooser.filesListAccessibleName", l);
         filesDetailsAccessibleName = UIManager.getString("FileChooser.filesDetailsAccessibleName", l);
 
@@ -1194,13 +1219,16 @@ public class FilePane extends JPanel implements PropertyChangeListener {
             } else if (value instanceof Long len) {
                 if (listViewWindowsStyle) {
                     if(len == 0) {
-                        text = MessageFormat.format(byteString, len);
+                        messageArguments[0] = len;
+                        text = messageForm.format(messageArguments);
                     } else {
                         len /= 1024L;
                         text = MessageFormat.format(kiloByteString, len + 1);
                     }
                 } else if (len < 1024L) {
-                    text = MessageFormat.format(byteString, len);
+                    messageArguments[0] = len;
+                    text = messageForm.format(messageArguments);
+
                 } else {
                     len /= 1024L;
                     if (len < 1024L) {
