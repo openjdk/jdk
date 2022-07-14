@@ -2308,11 +2308,10 @@ void ShenandoahHeap::flush_liveness_cache(uint worker_id) {
 }
 
 bool ShenandoahHeap::requires_barriers(stackChunkOop obj) const {
-  if (is_idle()) return false;
-
   // Need barrier for IU mode
   if (ShenandoahIUBarrier) return true;
 
+  if (is_idle()) return false;
   // Objects allocated after marking start are implicitly alive, don't need any barriers during
   // marking phase.
   if (is_concurrent_mark_in_progress() &&
