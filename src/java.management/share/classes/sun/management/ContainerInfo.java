@@ -23,15 +23,17 @@
 
 package sun.management;
 
-import jdk.internal.platform.Container;
 import jdk.internal.platform.Metrics;
 
-import javax.management.ObjectName;
-import java.lang.management.ContainerMXBean;
-import java.lang.management.ManagementFactory;
+import java.lang.management.ContainerInfoMXBean;
 
-public class ContainerImpl implements ContainerMXBean {
-    final Metrics containerMetrics = Container.metrics();
+public class ContainerInfo implements ContainerInfoMXBean {
+    final Metrics containerMetrics ;
+
+    public ContainerInfo(Metrics containerMetrics) {
+        this.containerMetrics = containerMetrics;
+    }
+
 
     @Override
     public String getProvider() {
@@ -73,8 +75,4 @@ public class ContainerImpl implements ContainerMXBean {
         return containerMetrics.getMemoryAndSwapLimit();
     }
 
-    @Override
-    public ObjectName getObjectName() {
-        return Util.newObjectName(ManagementFactory.CONTAINER_MXBEAN_NAME);
-    }
 }

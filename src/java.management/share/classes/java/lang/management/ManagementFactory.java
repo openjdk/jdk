@@ -55,6 +55,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.management.JMX;
+
+import jdk.internal.platform.Metrics;
+import jdk.internal.platform.SystemMetrics;
+import sun.management.ContainerInfo;
 import sun.management.Util;
 import sun.management.spi.PlatformMBeanProvider;
 import sun.management.spi.PlatformMBeanProvider.PlatformComponent;
@@ -324,12 +328,6 @@ public class ManagementFactory {
     public static final String MEMORY_POOL_MXBEAN_DOMAIN_TYPE=
         "java.lang:type=MemoryPool";
 
-    /**
-     * String representation of the
-     * {@code ObjectName} for the {@link ContainerMXBean}.
-     */
-    public static final String CONTAINER_MXBEAN_NAME =
-            "java.lang:type=Container";
 
     /**
      * Returns the managed bean for the class loading system of
@@ -1022,8 +1020,25 @@ public class ManagementFactory {
         }
     }
 
+    private static class ReadOnlyExtensionMBeanInit {
+       public static void init() {
+            Metrics containerMetrics = SystemMetrics.instance();
+            if (containerMetrics != null) {
+                MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+                ContainerInfoMXBean mbean = new ContainerInfo(containerMetrics);
+                try {
+                    ObjectName name = new ObjectName("java.lang:type=Container");
+                    mbs.registerMBean(mbean, name);
+                } catch (Exception e) {
+                }
+            }
+
+        }
+    }
+
     static {
         loadNativeLib();
+        ReadOnlyExtensionMBeanInit.init();
     }
 
     @SuppressWarnings("removal")
