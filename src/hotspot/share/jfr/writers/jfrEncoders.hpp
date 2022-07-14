@@ -30,6 +30,9 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 //
 // The Encoding policy prescribes a template
 // method taking a first parameter of type T.
@@ -294,5 +297,7 @@ inline size_t Varint128EncoderImpl::encode_padded(const T* src, size_t len, u1* 
   }
   return size;
 }
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_JFR_WRITERS_JFRENCODERS_HPP

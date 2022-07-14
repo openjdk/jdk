@@ -52,6 +52,9 @@
 #include "utilities/quickSort.hpp"
 #include "utilities/ticks.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 G1DirtyCardQueue::G1DirtyCardQueue(G1DirtyCardQueueSet* qset) :
   PtrQueue(qset),
   _refinement_stats(new G1ConcurrentRefineStats())
@@ -640,3 +643,5 @@ void G1DirtyCardQueueSet::discard_max_cards_padding() {
     Atomic::store(&_padded_max_cards, _max_cards);
   }
 }
+
+PRAGMA_DIAG_POP

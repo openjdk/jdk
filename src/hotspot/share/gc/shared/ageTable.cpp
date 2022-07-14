@@ -34,6 +34,9 @@
 #include "oops/oop.inline.hpp"
 #include "utilities/copy.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 /* Copyright (c) 1992, 2021, Oracle and/or its affiliates, and Stanford University.
    See the LICENSE file for license information. */
 
@@ -127,3 +130,4 @@ void AgeTable::print_age_table(uint tenuring_threshold) {
   }
 }
 
+PRAGMA_DIAG_POP

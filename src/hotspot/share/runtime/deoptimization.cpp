@@ -97,6 +97,9 @@
 #include "jfr/metadata/jfrSerializer.hpp"
 #endif
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 bool DeoptimizationMarker::_is_active = false;
 
 Deoptimization::UnrollBlock::UnrollBlock(int  size_of_deoptimized_frame,
@@ -2774,3 +2777,5 @@ const char* Deoptimization::format_trap_state(char* buf, size_t buflen,
 }
 
 #endif // COMPILER2_OR_JVMCI
+
+PRAGMA_DIAG_POP

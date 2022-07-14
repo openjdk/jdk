@@ -33,6 +33,9 @@
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // Default values for what is being printed as line prefix when disassembling a single instruction.
 // Can be overridden by command line parameter PrintAssemblyOptions.
 bool AbstractDisassembler::_show_data_hex      = true;
@@ -361,3 +364,5 @@ void AbstractDisassembler::decode_abstract(address start, address end, outputStr
   st->bol();
   st->print_cr("[/MachCode]");
 }
+
+PRAGMA_DIAG_POP

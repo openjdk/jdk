@@ -34,6 +34,9 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 class CodeEmitInfo;
 class LIR_Assembler;
 class LIR_OpVisitState;
@@ -553,5 +556,7 @@ class ArrayCopyStub: public CodeStub {
   virtual void print_name(outputStream* out) const { out->print("ArrayCopyStub"); }
 #endif // PRODUCT
 };
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_C1_C1_CODESTUBS_HPP

@@ -35,6 +35,9 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 class AbstractCompiler;
 class Arena;
 class Bundle;
@@ -263,5 +266,7 @@ public:
   static void print_statistics();
 #endif
 };
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_OPTO_OUTPUT_HPP

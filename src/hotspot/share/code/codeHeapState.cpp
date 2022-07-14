@@ -31,6 +31,9 @@
 #include "runtime/sweeper.hpp"
 #include "utilities/powerOfTwo.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // -------------------------
 // |  General Description  |
 // -------------------------
@@ -2565,3 +2568,5 @@ bool CodeHeapState::holding_required_locks() {
   return SafepointSynchronize::is_at_safepoint() ||
         (CodeCache_lock->owned_by_self() && Compile_lock->owned_by_self());
 }
+
+PRAGMA_DIAG_POP

@@ -30,6 +30,9 @@
 #include "oops/oopHandle.inline.hpp"
 #include "runtime/atomic.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 inline int ConstantPoolCacheEntry::indices_ord() const { return Atomic::load_acquire(&_indices); }
 
 inline Bytecodes::Code ConstantPoolCacheEntry::bytecode_1() const {
@@ -100,5 +103,7 @@ inline ConstantPoolCache::ConstantPoolCache(int length,
 }
 
 inline oop ConstantPoolCache::resolved_references() { return _resolved_references.resolve(); }
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_OOPS_CPCACHE_INLINE_HPP

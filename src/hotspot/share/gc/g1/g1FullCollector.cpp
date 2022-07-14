@@ -48,6 +48,9 @@
 #include "runtime/handles.inline.hpp"
 #include "utilities/debug.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 static void clear_and_activate_derived_pointers() {
 #if COMPILER2_OR_JVMCI
   DerivedPointerTable::clear();
@@ -426,3 +429,5 @@ void G1FullCollector::verify_after_marking() {
   GCTraceTime(Info, gc, verify) tm("Verifying During GC (full)");
   _heap->verify(VerifyOption::G1UseFullMarking);
 }
+
+PRAGMA_DIAG_POP

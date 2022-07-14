@@ -27,6 +27,9 @@
 
 #include "runtime/flags/jvmFlag.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 class outputStream;
 template <typename T> class JVMTypedFlagLimit;
 
@@ -182,5 +185,7 @@ const JVMTypedFlagLimit<T>* JVMFlagLimit::cast() const {
   DEBUG_ONLY(JVMFlag::assert_compatible_type<T>(_type_enum));
   return static_cast<const JVMTypedFlagLimit<T>*>(this);
 }
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_RUNTIME_FLAGS_JVMFLAGLIMIT_HPP

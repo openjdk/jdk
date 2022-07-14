@@ -30,7 +30,7 @@
 
 #define PRAGMA_DISABLE_MSVC_WARNING(num) __pragma(warning(disable : num))
 
-#define PRAGMA_ALLOW_UNSAFE_CONERVERIONS \
+#define PRAGMA_ALLOW_LOSSY_CONVERSIONS \
   PRAGMA_DISABLE_MSVC_WARNING(4244)
 
 // The Visual Studio implementation of FORBID_C_FUNCTION explicitly does

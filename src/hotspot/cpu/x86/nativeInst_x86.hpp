@@ -30,7 +30,7 @@
 #include "runtime/safepointMechanism.hpp"
 
 PRAGMA_DIAG_PUSH
-PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 // We have interfaces for the following instructions:
 // - NativeInstruction

@@ -35,7 +35,7 @@
 #include "utilities/growableArray.hpp"
 
 PRAGMA_DIAG_PUSH
-PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 // The ConstantPoolCache is not a cache! It is the resolution table that the
 // interpreter uses to avoid going into the runtime and a way to access resolved

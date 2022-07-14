@@ -91,6 +91,9 @@
 #include "jfr/support/jfrTraceIdExtension.hpp"
 #endif
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // We generally try to create the oops directly when parsing, rather than
 // allocating temporary data structures and copying the bytes twice. A
 // temporary area is only needed when parsing utf8 entries in the constant
@@ -6132,3 +6135,5 @@ bool ClassFileParser::is_internal_format(Symbol* class_name) {
 }
 
 #endif
+
+PRAGMA_DIAG_POP

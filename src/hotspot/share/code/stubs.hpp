@@ -29,7 +29,7 @@
 #include "memory/allocation.hpp"
 
 PRAGMA_DIAG_PUSH
-PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 // The classes in this file provide a simple framework for the
 // management of little pieces of machine code - or stubs -

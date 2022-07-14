@@ -31,6 +31,9 @@
 #include "runtime/handles.hpp"
 #include "runtime/signature.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 enum {
   // As specified in the JVM spec
   ITEM_Top = 0,
@@ -339,5 +342,7 @@ class VerificationType {
                                               bool from_is_array, bool from_is_object,
                                               TRAPS);
 };
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_CLASSFILE_VERIFICATIONTYPE_HPP

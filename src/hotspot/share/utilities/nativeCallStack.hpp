@@ -30,7 +30,7 @@
 #include "utilities/ostream.hpp"
 
 PRAGMA_DIAG_PUSH
-PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 /*
  * This class represents a native call path (does not include Java frame)

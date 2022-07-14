@@ -29,6 +29,9 @@
 #include "utilities/align.hpp"
 #include "utilities/bytes.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 bool            Bytecodes::_is_initialized = false;
 const char*     Bytecodes::_name          [Bytecodes::number_of_codes];
 BasicType       Bytecodes::_result_type   [Bytecodes::number_of_codes];
@@ -555,3 +558,5 @@ void bytecodes_init() {
 #ifdef _M_AMD64
 #pragma optimize ("", on)
 #endif
+
+PRAGMA_DIAG_POP

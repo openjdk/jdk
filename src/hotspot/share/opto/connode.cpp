@@ -34,6 +34,9 @@
 #include "opto/subnode.hpp"
 #include "runtime/sharedRuntime.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // Optimization - Graph Style
 
 //=============================================================================
@@ -65,3 +68,5 @@ ConNode *ConNode::make(const Type *t) {
     return NULL;
   }
 }
+
+PRAGMA_DIAG_POP

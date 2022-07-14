@@ -31,6 +31,9 @@
 #include "utilities/powerOfTwo.hpp"
 #include <type_traits>
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // Compute mask to use for aligning to or testing alignment.
 // The alignment must be a power of 2. Returns alignment - 1, which is
 // a mask with all bits set below alignment's single bit.
@@ -142,5 +145,7 @@ inline T* clamp_address_in_page(T* addr, T* page_address, size_t page_size) {
     return align_down(page_address, page_size);
   }
 }
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_UTILITIES_ALIGN_HPP

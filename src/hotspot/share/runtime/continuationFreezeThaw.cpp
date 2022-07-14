@@ -66,6 +66,9 @@
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 /*
  * This file contains the implementation of continuation freezing (yield) and thawing (run).
  *
@@ -2486,3 +2489,5 @@ private:
 void Continuation::init() {
   ConfigResolve::resolve();
 }
+
+PRAGMA_DIAG_POP

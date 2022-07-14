@@ -44,6 +44,9 @@
 
 #include CPU_HEADER_INLINE(frame)
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 inline bool frame::is_entry_frame() const {
   return StubRoutines::returns_to_call_stub(pc());
 }
@@ -110,5 +113,6 @@ inline int frame::num_oops() const {
   return oop_map()->num_oops() ;
 }
 
+PRAGMA_DIAG_POP
 
 #endif // SHARE_RUNTIME_FRAME_INLINE_HPP

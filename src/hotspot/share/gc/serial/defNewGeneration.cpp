@@ -63,6 +63,9 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/stack.inline.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 //
 // DefNewGeneration functions.
 
@@ -964,3 +967,5 @@ size_t DefNewGeneration::tlab_used() const {
 size_t DefNewGeneration::unsafe_max_tlab_alloc() const {
   return unsafe_max_alloc_nogc();
 }
+
+PRAGMA_DIAG_POP

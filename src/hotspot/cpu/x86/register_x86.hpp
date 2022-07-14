@@ -31,7 +31,7 @@
 #include "utilities/powerOfTwo.hpp"
 
 PRAGMA_DIAG_PUSH
-PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 class VMRegImpl;
 typedef VMRegImpl* VMReg;

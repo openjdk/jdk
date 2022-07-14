@@ -30,6 +30,9 @@
 #include "runtime/frame.hpp"
 #include "runtime/frame.inline.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 inline void patch_callee_link(const frame& f, intptr_t* fp) {
   *ContinuationHelper::Frame::callee_link_address(f) = fp;
 }
@@ -286,4 +289,7 @@ inline void ThawBase::derelativize_interpreted_frame_metadata(const frame& hf, c
 inline void ThawBase::set_interpreter_frame_bottom(const frame& f, intptr_t* bottom) {
   *(intptr_t**)f.addr_at(frame::interpreter_frame_locals_offset) = bottom - 1;
 }
+
+PRAGMA_DIAG_POP
+
 #endif // CPU_X86_CONTINUATIONFREEZE_THAW_X86_INLINE_HPP

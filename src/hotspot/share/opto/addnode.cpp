@@ -34,6 +34,9 @@
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // Portions of code courtesy of Clifford Click
 
 // Classic Add functionality.  This covers all the usual 'add' behaviors for
@@ -1262,3 +1265,5 @@ const Type *MaxDNode::add_ring( const Type *t0, const Type *t1 ) const {
   // handle max of 0.0, -0.0 case.
   return (jlong_cast(d0) > jlong_cast(d1)) ? r0 : r1;
 }
+
+PRAGMA_DIAG_POP

@@ -29,6 +29,9 @@
 #include "code/vmreg.hpp"
 #include "memory/allStatic.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // A VtableStub holds an individual code stub for a pair (vtable index, #args) for either itables or vtables
 // There's a one-to-one relationship between a VtableStub and such a pair.
 
@@ -180,5 +183,7 @@ class VtableStub {
   void print() const;
 
 };
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_CODE_VTABLESTUBS_HPP

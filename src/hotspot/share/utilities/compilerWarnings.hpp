@@ -74,8 +74,8 @@
 #define PRAGMA_NONNULL_IGNORED
 #endif
 
-#ifndef PRAGMA_ALLOW_UNSAFE_CONERVERIONS
-#define PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+#ifndef PRAGMA_ALLOW_LOSSY_CONVERSIONS
+#define PRAGMA_ALLOW_LOSSY_CONVERSIONS
 #endif
 
 // Support warnings for use of certain C functions, except where explicitly

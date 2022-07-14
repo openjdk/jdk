@@ -30,7 +30,7 @@
 #include "utilities/macros.hpp"
 
 PRAGMA_DIAG_PUSH
-PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 class Bytes: AllStatic {
  private:

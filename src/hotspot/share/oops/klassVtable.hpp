@@ -30,7 +30,7 @@
 #include "utilities/growableArray.hpp"
 
 PRAGMA_DIAG_PUSH
-PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 // A klassVtable abstracts the variable-length vtable that is embedded in InstanceKlass
 // and ArrayKlass.  klassVtable objects are used just as convenient transient accessors to the vtable,

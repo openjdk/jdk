@@ -26,6 +26,9 @@
 
 #include "utilities/hashtable.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 class nmethod;
 
 class G1CodeRootSetTable : public Hashtable<nmethod*, mtGC> {
@@ -72,5 +75,7 @@ class G1CodeRootSetTable : public Hashtable<nmethod*, mtGC> {
 
   size_t mem_size();
 };
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_GC_G1_G1CODEROOTSETTABLE_HPP

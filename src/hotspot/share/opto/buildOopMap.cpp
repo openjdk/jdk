@@ -37,6 +37,9 @@
 #include "opto/rootnode.hpp"
 #include "utilities/align.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // The functions in this file builds OopMaps after all scheduling is done.
 //
 // OopMaps contain a list of all registers and stack-slots containing oops (so
@@ -688,3 +691,5 @@ void PhaseOutput::BuildOopMaps() {
 
   }
 }
+
+PRAGMA_DIAG_POP

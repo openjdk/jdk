@@ -29,7 +29,7 @@
 #include "memory/allocation.hpp"
 
 PRAGMA_DIAG_PUSH
-PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 // All the basic framework for stub code generation/debugging/printing.
 

@@ -34,7 +34,7 @@
 #include "runtime/vm_version.hpp"
 
 PRAGMA_DIAG_PUSH
-PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 // MacroAssembler extends Assembler by frequently used macros.
 //

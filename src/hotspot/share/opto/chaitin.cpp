@@ -43,6 +43,9 @@
 #include "opto/rootnode.hpp"
 #include "utilities/align.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 #ifndef PRODUCT
 void LRG::dump() const {
   ttyLocker ttyl;
@@ -2555,3 +2558,5 @@ void PhaseChaitin::print_chaitin_statistics() {
   tty->print_cr("High Pressure Blocks = %d, Low Pressure Blocks = %d", _high_pressure, _low_pressure);
 }
 #endif // not PRODUCT
+
+PRAGMA_DIAG_POP

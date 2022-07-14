@@ -31,6 +31,9 @@
 #include "opto/regmask.hpp"
 #include "utilities/count_trailing_zeros.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // This file defines the IndexSet class, a set of sparse integer indices.
 // This data structure is used by the compiler in its liveness analysis and
 // during register allocation.
@@ -471,5 +474,7 @@ class IndexSetIterator {
   }
 
 };
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_OPTO_INDEXSET_HPP

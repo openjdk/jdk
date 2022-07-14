@@ -34,6 +34,9 @@
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 class CompiledIC;
 class CompiledICHolder;
 
@@ -182,5 +185,7 @@ class InlineCacheBuffer: public AllStatic {
   static address ic_destination_for(CompiledIC *ic);
   static void*   cached_value_for(CompiledIC *ic);
 };
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_CODE_ICBUFFER_HPP

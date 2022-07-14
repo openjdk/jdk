@@ -29,6 +29,9 @@
 #include "utilities/bytes.hpp"
 #include "utilities/exceptions.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // Input stream for reading .class file
 //
 // The entire input stream is present in a buffer allocated by the caller.
@@ -158,5 +161,7 @@ class ClassFileStream: public ResourceObj {
 
   uint64_t compute_fingerprint() const;
 };
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_CLASSFILE_CLASSFILESTREAM_HPP

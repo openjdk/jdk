@@ -78,6 +78,9 @@
 #include "utilities/macros.hpp"
 #include "utilities/utf8.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // Entry point in java.dll for path canonicalization
 
 typedef int (*canonicalize_fn_t)(const char *orig, char *out, int len);
@@ -1641,3 +1644,5 @@ PerfClassTraceTime::~PerfClassTraceTime() {
   // reset the timer
   _timers[_event_type].reset();
 }
+
+PRAGMA_DIAG_POP

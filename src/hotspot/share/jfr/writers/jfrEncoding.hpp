@@ -29,6 +29,9 @@
 #include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 enum JfrStringEncoding {
   NULL_STRING = 0,
   EMPTY_STRING,
@@ -113,5 +116,7 @@ class EncoderHost : public AllStatic {
 
 typedef EncoderHost<BigEndianEncoderImpl, BigEndianEncoderImpl> BigEndianEncoder;
 typedef EncoderHost<Varint128EncoderImpl, BigEndianEncoderImpl> CompressedIntegerEncoder;
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_JFR_WRITERS_JFRENCODING_HPP

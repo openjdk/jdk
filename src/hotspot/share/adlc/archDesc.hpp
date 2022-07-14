@@ -289,6 +289,11 @@ public:
   // output the #include line for this file.
   void addInclude(ADLFILE &adlfile, const char* fileName);
   void addInclude(ADLFILE &adlfile, const char* includeDir, const char* fileName);
+
+  // pragma
+  void pragmaAllowUnsafeConversions(ADLFILE& adlfile);
+  void pragmaDiagPop(ADLFILE& adlfile);
+
   // Output C preprocessor code to verify the backend compilation environment.
   void addPreprocessorChecks(FILE *fp);
   // Output C source and header (source_hpp) blocks.

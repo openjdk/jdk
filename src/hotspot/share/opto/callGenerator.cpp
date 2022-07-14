@@ -42,6 +42,9 @@
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/debug.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // Utility function.
 const TypeFunc* CallGenerator::tf() const {
   return TypeFunc::make(method());
@@ -1406,3 +1409,5 @@ JVMState* UncommonTrapCallGenerator::generate(JVMState* jvms) {
 // (Note:  Moved hook_up_call to GraphKit::set_edges_for_java_call.)
 
 // (Node:  Merged hook_up_exits into ParseGenerator::generate.)
+
+PRAGMA_DIAG_POP

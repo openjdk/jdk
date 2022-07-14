@@ -29,6 +29,9 @@
 #include "c1/c1_ValueSet.hpp"
 #include "c1/c1_ValueStack.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 #ifndef PRODUCT
 
   int ValueMap::_number_of_finds = 0;
@@ -595,3 +598,5 @@ void GlobalValueNumbering::substitute(Instruction* instr) {
   }
   set_processed(instr);
 }
+
+PRAGMA_DIAG_POP

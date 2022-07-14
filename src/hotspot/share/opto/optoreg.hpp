@@ -31,6 +31,9 @@
 // in the .ad files.
 #include CPU_HEADER(adfiles/adGlobals)
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 //------------------------------OptoReg----------------------------------------
 // We eventually need Registers for the Real World.  Registers are essentially
 // non-SSA names.  A Register is represented as a number.  Non-regular values
@@ -206,5 +209,7 @@ public:
   OptoRegPair(OptoReg::Name f) { _second = OptoReg::Bad; _first = f; }
   OptoRegPair() { _second = OptoReg::Bad; _first = OptoReg::Bad; }
 };
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_OPTO_OPTOREG_HPP

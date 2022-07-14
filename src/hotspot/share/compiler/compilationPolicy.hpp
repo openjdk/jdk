@@ -30,6 +30,9 @@
 #include "oops/methodData.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 class CompileTask;
 class CompileQueue;
 /*
@@ -271,5 +274,7 @@ public:
   // Return highest level possible
   static CompLevel highest_compile_level();
 };
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_COMPILER_COMPILATIONPOLICY_HPP

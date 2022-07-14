@@ -29,6 +29,9 @@
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/align.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 //-----------------------------------------------------
 
 // Convert method signature into an array of BasicTypes for the arguments
@@ -324,7 +327,4 @@ VMReg FrameMap::regname(LIR_Opr opr) const {
   return VMRegImpl::Bad();
 }
 
-
-
-
-// ------------ extra spill slots ---------------
+PRAGMA_DIAG_POP

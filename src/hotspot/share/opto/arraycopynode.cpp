@@ -33,6 +33,9 @@
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 ArrayCopyNode::ArrayCopyNode(Compile* C, bool alloc_tightly_coupled, bool has_negative_length_guard)
   : CallNode(arraycopy_type(), NULL, TypePtr::BOTTOM),
     _kind(None),
@@ -769,3 +772,5 @@ int ArrayCopyNode::get_partial_inline_vector_lane_count(BasicType type, int cons
   }
   return lane_count;
 }
+
+PRAGMA_DIAG_POP

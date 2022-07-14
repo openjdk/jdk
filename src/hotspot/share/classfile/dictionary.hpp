@@ -31,6 +31,9 @@
 #include "utilities/hashtable.hpp"
 #include "utilities/ostream.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 class DictionaryEntry;
 class ProtectionDomainEntry;
 template <typename T> class GrowableArray;
@@ -247,4 +250,7 @@ public:
     return (SymbolPropertyEntry*) Hashtable<Symbol*, mtSymbol>::bucket(i);
   }
 };
+
+PRAGMA_DIAG_POP
+
 #endif // SHARE_CLASSFILE_DICTIONARY_HPP

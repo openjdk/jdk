@@ -31,6 +31,9 @@
 #include "ci/ciMethod.hpp"
 #include "interpreter/bytecode.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // ciBytecodeStream
 //
 // The class is used to iterate over the bytecodes of a method.
@@ -459,5 +462,7 @@ public:
 Bytecode::Bytecode(const ciBytecodeStream* stream, address bcp): _bcp(bcp != NULL ? bcp : stream->cur_bcp()), _code(Bytecodes::code_at(NULL, addr_at(0))) {}
 Bytecode_lookupswitch::Bytecode_lookupswitch(const ciBytecodeStream* stream): Bytecode(stream) { verify(); }
 Bytecode_tableswitch::Bytecode_tableswitch(const ciBytecodeStream* stream): Bytecode(stream) { verify(); }
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_CI_CISTREAMS_HPP

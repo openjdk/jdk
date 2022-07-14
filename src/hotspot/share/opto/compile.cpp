@@ -80,6 +80,8 @@
 #include "utilities/macros.hpp"
 #include "utilities/resourceHash.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 // -------------------- Compile::mach_constant_base_node -----------------------
 // Constant table base node singleton.
@@ -5166,3 +5168,4 @@ Node* Compile::narrow_value(BasicType bt, Node* value, const Type* type, PhaseGV
   return result;
 }
 
+PRAGMA_DIAG_POP

@@ -29,7 +29,7 @@
 #include "utilities/exceptions.hpp"
 
 PRAGMA_DIAG_PUSH
-PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 // InvocationCounters are used to trigger actions when a limit (threshold) is reached.
 //

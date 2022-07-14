@@ -37,6 +37,9 @@
 #include "oops/typeArrayOop.inline.hpp"
 #include "runtime/jniHandles.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 inline bool compressed_integers() {
   static const bool comp_integers = JfrOptionSet::compressed_integers();
   return comp_integers;
@@ -362,5 +365,7 @@ inline void WriterHost<BE, IE, WriterPolicyImpl>::write_be_at_offset(T value, in
     this->seek(current); // restore
   }
 }
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_JFR_WRITERS_JFRWRITERHOST_INLINE_HPP

@@ -33,6 +33,9 @@
 #include "runtime/objectMonitor.hpp"
 #include "runtime/stubRoutines.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 inline Assembler::AvxVectorLen C2_MacroAssembler::vector_length_encoding(int vlen_in_bytes) {
   switch (vlen_in_bytes) {
     case  4: // fall-through
@@ -5437,3 +5440,4 @@ void C2_MacroAssembler::udivmodL(Register rax, Register divisor, Register rdx, R
 }
 #endif
 
+PRAGMA_DIAG_POP

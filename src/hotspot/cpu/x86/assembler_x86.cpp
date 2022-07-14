@@ -37,6 +37,9 @@
 #include "runtime/vm_version.hpp"
 #include "utilities/macros.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */
 #define STOP(error) stop(error)
@@ -13647,3 +13650,5 @@ void InstructionAttr::set_address_attributes(int tuple_type, int input_size_in_b
     _input_size_in_bits = input_size_in_bits;
   }
 }
+
+PRAGMA_DIAG_POP

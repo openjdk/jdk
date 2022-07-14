@@ -48,6 +48,9 @@
 #include "runtime/os.hpp"
 #include "utilities/stringUtils.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 jshort ClassLoaderExt::_app_class_paths_start_index = ClassLoaderExt::max_classpath_index;
 jshort ClassLoaderExt::_app_module_paths_start_index = ClassLoaderExt::max_classpath_index;
 jshort ClassLoaderExt::_max_used_path_index = 0;
@@ -264,3 +267,5 @@ void ClassLoaderExt::record_result(const s2 classpath_index, InstanceKlass* resu
   }
 #endif // INCLUDE_CDS_JAVA_HEAP
 }
+
+PRAGMA_DIAG_POP

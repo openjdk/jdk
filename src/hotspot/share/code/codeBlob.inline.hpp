@@ -32,7 +32,7 @@
 #include "utilities/globalDefinitions.hpp"
 
 PRAGMA_DIAG_PUSH
-PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 inline const ImmutableOopMap* CodeBlob::oop_map_for_slot(int slot, address return_address) const {
   assert(_oop_maps != NULL, "nope");

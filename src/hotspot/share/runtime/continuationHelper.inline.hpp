@@ -37,6 +37,9 @@
 
 #include CPU_HEADER_INLINE(continuationHelper)
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 inline bool ContinuationHelper::NonInterpretedUnknownFrame::is_instance(const frame& f) {
   return !f.is_interpreted_frame();
 }
@@ -212,5 +215,7 @@ bool ContinuationHelper::CompiledFrame::is_owning_locks(JavaThread* thread, Regi
 inline bool ContinuationHelper::StubFrame::is_instance(const frame& f) {
   return !f.is_interpreted_frame() && is_stub(f.cb());
 }
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_VM_RUNTIME_CONTINUATIONHELPER_INLINE_HPP

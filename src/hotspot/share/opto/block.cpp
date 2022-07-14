@@ -38,6 +38,9 @@
 #include "utilities/copy.hpp"
 #include "utilities/powerOfTwo.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 void Block_Array::grow( uint i ) {
   assert(i >= Max(), "must be an overflow");
   debug_only(_limit = i+1);
@@ -1781,3 +1784,5 @@ bool Trace::backedge(CFGEdge *e) {
 
   return loop_rotated;
 }
+
+PRAGMA_DIAG_POP

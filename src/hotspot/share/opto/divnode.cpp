@@ -42,6 +42,9 @@
 
 #include <math.h>
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 //----------------------magic_int_divide_constants-----------------------------
 // Compute magic multiplier and shift constant for converting a 32 bit divide
 // by constant into a multiply/shift/add series. Return false if calculations
@@ -1466,3 +1469,5 @@ Node* UDivModLNode::match( const ProjNode *proj, const Matcher *match ) {
   }
   return new MachProjNode(this, proj->_con, rm, ideal_reg);
 }
+
+PRAGMA_DIAG_POP

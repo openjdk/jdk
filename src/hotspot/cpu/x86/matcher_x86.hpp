@@ -25,6 +25,9 @@
 #ifndef CPU_X86_MATCHER_X86_HPP
 #define CPU_X86_MATCHER_X86_HPP
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
   // Defined within class Matcher
 
   // The ecx parameter to rep stosq for the ClearArray node is in words.
@@ -219,5 +222,7 @@
       }
     }
   }
+
+PRAGMA_DIAG_POP
 
 #endif // CPU_X86_MATCHER_X86_HPP

@@ -31,7 +31,7 @@
 #include "runtime/globals.hpp"
 
 PRAGMA_DIAG_PUSH
-PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 // The markWord describes the header of an object.
 //

@@ -273,6 +273,10 @@ int main(int argc, char *argv[])
   AD.addInclude(AD._DFA_file, "opto/convertnode.hpp");
   AD.addInclude(AD._DFA_file, "utilities/powerOfTwo.hpp");
 
+  // add pragma after includes
+  AD.pragmaAllowUnsafeConversions(AD._CPP_file);
+  AD.pragmaAllowUnsafeConversions(AD._HPP_file);
+
   // Make sure each .cpp file starts with include lines:
   // files declaring and defining generators for Mach* Objects (hpp,cpp)
   // Generate the result files:
@@ -318,6 +322,11 @@ int main(int argc, char *argv[])
 
   // define the finite automata that selects lowest cost production
   AD.buildDFA(AD._DFA_file._fp);
+
+  // pragma pop
+  AD.pragmaDiagPop(AD._CPP_file);
+  AD.pragmaDiagPop(AD._HPP_file);
+
   // Add include guards for all .hpp files
   AD.addIncludeGuardEnd(AD._HPP_file, "GENERATED_ADFILES_AD_HPP");        // .hpp
   AD.addIncludeGuardEnd(AD._VM_file, "GENERATED_ADFILES_ADGLOBALS_HPP");  // .hpp

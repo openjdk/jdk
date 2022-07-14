@@ -38,6 +38,9 @@
 #include "utilities/bitMap.hpp"
 #endif
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 #ifdef ASSERT
 class JfrEventVerifier {
   template <typename>
@@ -274,5 +277,7 @@ class JfrEvent {
   }
 #endif // ASSERT
 };
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_JFR_RECORDER_SERVICE_JFREVENT_HPP

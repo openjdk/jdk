@@ -64,6 +64,9 @@
 #include "trimCHeapDCmd.hpp"
 #endif
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 static void loadAgentModule(TRAPS) {
   ResourceMark rm(THREAD);
   HandleMark hm(THREAD);
@@ -1161,3 +1164,5 @@ void ThreadDumpToFileDCmd::dumpToFile(Symbol* name, Symbol* signature, const cha
   jbyte* addr = typeArrayOop(res)->byte_at_addr(0);
   output()->print_raw((const char*)addr, ba->length());
 }
+
+PRAGMA_DIAG_POP

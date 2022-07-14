@@ -31,6 +31,9 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/spinYield.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 inline G1CardSetInlinePtr::ContainerPtr G1CardSetInlinePtr::merge(ContainerPtr orig_value, uint card_in_region, uint idx, uint bits_per_card) {
   assert((idx & (SizeFieldMask >> SizeFieldPos)) == idx, "Index %u too large to fit into size field", idx);
   assert(card_in_region < ((uint)1 << bits_per_card), "Card %u too large to fit into card value field", card_in_region);
@@ -363,5 +366,7 @@ inline G1CardSetHowl::EntryCountType G1CardSetHowl::num_buckets(size_t size_in_b
 inline size_t G1CardSetHowl::header_size_in_bytes() {
   return offset_of(G1CardSetHowl, _buckets);
 }
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_GC_G1_G1CARDSETCONTAINERS_INLINE_HPP

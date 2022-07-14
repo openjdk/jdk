@@ -30,6 +30,9 @@
 #include "gc/shared/gcUtil.hpp"
 #include "memory/allocation.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // This class keeps statistical information and computes the
 // size of the heap.
 
@@ -450,5 +453,7 @@ class AdaptiveSizePolicy : public CHeapObj<mtGC> {
   virtual bool print() const;
   void print_tenuring_threshold(uint new_tenuring_threshold) const;
 };
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_GC_SHARED_ADAPTIVESIZEPOLICY_HPP

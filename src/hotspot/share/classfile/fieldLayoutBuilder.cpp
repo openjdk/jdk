@@ -34,6 +34,8 @@
 #include "oops/klass.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 LayoutRawBlock::LayoutRawBlock(Kind kind, int size) :
   _next_block(NULL),
@@ -704,3 +706,5 @@ void FieldLayoutBuilder::epilogue() {
 void FieldLayoutBuilder::build_layout() {
   compute_regular_layout();
 }
+
+PRAGMA_DIAG_POP

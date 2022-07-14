@@ -62,6 +62,9 @@
 #include "runtime/vframe.inline.hpp"
 #include "utilities/copy.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 ConstantPool* ConstantPool::allocate(ClassLoaderData* loader_data, int length, TRAPS) {
   Array<u1>* tags = MetadataFactory::new_array<u1>(loader_data, length, 0, CHECK_NULL);
   int size = ConstantPool::size(length);
@@ -2483,3 +2486,5 @@ void SymbolHashMap::initialize_table(int table_size) {
     _buckets[index].clear();
   }
 }
+
+PRAGMA_DIAG_POP

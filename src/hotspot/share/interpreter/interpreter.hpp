@@ -33,7 +33,7 @@
 #include "utilities/align.hpp"
 
 PRAGMA_DIAG_PUSH
-PRAGMA_ALLOW_UNSAFE_CONERVERIONS
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 // This file contains the platform-independent parts
 // of the interpreter and the interpreter generator.

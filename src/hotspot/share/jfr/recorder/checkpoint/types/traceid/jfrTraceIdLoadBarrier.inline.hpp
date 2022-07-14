@@ -38,6 +38,9 @@
 #include "runtime/javaThread.hpp"
 #include "utilities/debug.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 inline bool is_not_tagged(traceid value) {
   const traceid this_epoch_bit = JfrTraceIdEpoch::this_epoch_bit();
   return ((value & ((this_epoch_bit << META_SHIFT) | this_epoch_bit)) != this_epoch_bit);
@@ -135,5 +138,7 @@ inline traceid JfrTraceIdLoadBarrier::load_leakp(const Klass* klass, const Metho
   SET_METHOD_LEAKP(method);
   return (METHOD_ID(klass, method));
 }
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEIDBARRIER_INLINE_HPP

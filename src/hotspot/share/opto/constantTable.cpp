@@ -30,6 +30,9 @@
 #include "opto/machnode.hpp"
 #include "opto/output.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 //=============================================================================
 // Two Constant's are equal when the type and the value are equal.
 bool ConstantTable::Constant::operator==(const Constant& other) {
@@ -284,3 +287,5 @@ void ConstantTable::fill_jump_table(CodeBuffer& cb, MachConstantNode* n, Growabl
     cb.consts()->relocate((address) constant_addr, relocInfo::internal_word_type);
   }
 }
+
+PRAGMA_DIAG_POP

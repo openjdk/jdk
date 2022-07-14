@@ -31,6 +31,9 @@
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 G1FreeIdSet::G1FreeIdSet(uint start, uint size) :
   _sem(size),          // counting semaphore for available ids
   _next(NULL),         // array of "next" indices
@@ -103,3 +106,5 @@ void G1FreeIdSet::release_par_id(uint id) {
   // Now that id has been released, permit another thread through the gate.
   _sem.signal();
 }
+
+PRAGMA_DIAG_POP

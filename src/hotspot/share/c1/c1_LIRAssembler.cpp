@@ -35,6 +35,9 @@
 #include "runtime/os.hpp"
 #include "runtime/vm_version.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 void LIR_Assembler::patching_epilog(PatchingStub* patch, LIR_PatchCode patch_code, Register obj, CodeEmitInfo* info) {
   // We must have enough patching space so that call can be inserted.
   // We cannot use fat nops here, since the concurrent code rewrite may transiently
@@ -853,3 +856,5 @@ void LIR_Assembler::verify_oop_map(CodeEmitInfo* info) {
   }
 #endif
 }
+
+PRAGMA_DIAG_POP

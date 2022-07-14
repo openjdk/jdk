@@ -60,6 +60,9 @@
 #include "utilities/decoder.hpp"
 #include "utilities/formatBuffer.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 RegisterMap::RegisterMap(JavaThread *thread, bool update_map, bool process_frames, bool walk_cont) {
   _thread         = thread;
   _update_map     = update_map;
@@ -1647,3 +1650,5 @@ void FrameValues::print_on(outputStream* st, int min_index, int max_index, intpt
 }
 
 #endif // ndef PRODUCT
+
+PRAGMA_DIAG_POP

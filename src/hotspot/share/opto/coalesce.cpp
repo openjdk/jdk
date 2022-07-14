@@ -35,6 +35,9 @@
 #include "opto/matcher.hpp"
 #include "opto/regmask.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 #ifndef PRODUCT
 void PhaseCoalesce::dump(Node *n) const {
   // Being a const function means I cannot use 'Find'
@@ -828,3 +831,5 @@ void PhaseConservativeCoalesce::coalesce( Block *b ) {
     }
   }
 }
+
+PRAGMA_DIAG_POP

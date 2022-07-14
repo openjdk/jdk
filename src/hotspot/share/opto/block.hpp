@@ -30,6 +30,9 @@
 #include "opto/phase.hpp"
 #include "utilities/powerOfTwo.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // Optimization - Graph Style
 
 class Block;
@@ -902,5 +905,7 @@ class PhaseBlockLayout : public Phase {
   void reorder_traces(int count);
   void union_traces(Trace* from, Trace* to);
 };
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_OPTO_BLOCK_HPP

@@ -1119,6 +1119,15 @@ void ArchDesc::addInclude(ADLFILE &adlfile, const char* includeDir, const char* 
 
 }
 
+void ArchDesc::pragmaAllowUnsafeConversions(ADLFILE &adlfile) {
+  fprintf(adlfile._fp, "PRAGMA_DIAG_PUSH\n");
+  fprintf(adlfile._fp, "PRAGMA_ALLOW_LOSSY_CONVERSIONS\n");
+}
+
+void ArchDesc::pragmaDiagPop(ADLFILE &adlfile) {
+  fprintf(adlfile._fp, "PRAGMA_DIAG_POP\n");
+}
+
 //---------------------------addPreprocessorChecks-----------------------------
 // Output C preprocessor code to verify the backend compilation environment.
 // The idea is to force code produced by "adlc -DHS64" to be compiled by a

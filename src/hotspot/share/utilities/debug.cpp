@@ -66,6 +66,9 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // Support for showing register content on asserts/guarantees.
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT
 static char g_dummy;
@@ -801,3 +804,5 @@ bool handle_assert_poison_fault(const void* ucVoid, const void* faulting_address
   return false;
 }
 #endif // CAN_SHOW_REGISTERS_ON_ASSERT
+
+PRAGMA_DIAG_POP

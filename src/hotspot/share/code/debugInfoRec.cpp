@@ -29,6 +29,9 @@
 #include "prims/jvmtiExport.hpp"
 #include "runtime/globals_extension.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // Private definition.
 // There is one DIR_Chunk for each scope and values array.
 // A chunk can potentially be used more than once.
@@ -445,3 +448,5 @@ void DebugInformationRecorder::print_statistics() {
   dir_stats.print();
 }
 #endif //PRODUCT
+
+PRAGMA_DIAG_POP
