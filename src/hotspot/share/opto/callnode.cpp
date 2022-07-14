@@ -1622,11 +1622,15 @@ Node *AllocateArrayNode::make_ideal_length(const TypeOopPtr* oop_type, PhaseTran
              "narrow type must be narrower than length type");
 
       // Return NULL if new nodes are not allowed
-      if (!allow_new_nodes) return NULL;
+      if (!allow_new_nodes) {
+        return NULL;
+      }
       // Create a cast which is control dependent on the initialization to
       // propagate the fact that the array length must be positive.
       InitializeNode* init = initialization();
-      assert(init != NULL, "initialization not found");
+      if (init == NULL) {
+        return NULL; // Return NULL if dead path
+      }
       length = new CastIINode(length, narrow_length_type);
       length->set_req(TypeFunc::Control, init->proj_out_or_null(TypeFunc::Control));
     }
