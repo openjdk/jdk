@@ -105,39 +105,38 @@ public class SixteenBitFormats {
             // Test all combinations of LSB, round, and sticky bit
 
             // LSB = 0, test combination of round and sticky
-            {0x1.ff8p-1f,                (short)0x3bfe}, // round = 0, sticky = 0
-            {0x1.ff801p-1f,              (short)0x3bfe}, // round = 0, sticky = 1
-            {0x1.ffap-1f,                (short)0x3bfe}, // round = 1, sticky = 0
-            {0x1.ffa01p-1f,              (short)0x3bff}, // round = 1, sticky = 1 => ++
+            {0x1.ff8000p-1f,       (short)0x3bfe},              // round = 0, sticky = 0
+            {0x1.ff8010p-1f,       (short)0x3bfe},              // round = 0, sticky = 1
+            {0x1.ffa000p-1f,       (short)0x3bfe},              // round = 1, sticky = 0
+            {0x1.ffa010p-1f,       (short)0x3bff},              // round = 1, sticky = 1 => ++
 
             // LSB = 1, test combination of round and sticky
-            // (short)0x3bff is the largest binary16 less than one
-            {0x1.ffcp-1f,                (short)0x3bff}, // round = 0, sticky = 0
-            {0x1.ffc01p-1f,              (short)0x3bff}, // round = 0, sticky = 1
-            {0x1.ffep-1f,                (short)0x3c00}, // round = 1, sticky = 0 => ++
-            {0x1.ffe01p-1f,              (short)0x3c00}, // round = 1, sticky = 1 => ++
+            {0x1.ffc000p-1f,       Binary16.ONE-1},             // round = 0, sticky = 0
+            {0x1.ffc010p-1f,       Binary16.ONE-1},             // round = 0, sticky = 1
+            {0x1.ffe000p-1f,       Binary16.ONE},               // round = 1, sticky = 0 => ++
+            {0x1.ffe010p-1f,       Binary16.ONE},               // round = 1, sticky = 1 => ++
 
             // Test subnormal rounding
             // Largest subnormal binary16 0x03ff => 0x1.ff8p-15f; LSB = 1
-            {0x1.ff8p-15f,               (short)0x03ff}, // round = 0, sticky = 0
-            {0x1.ff801p-15f,             (short)0x03ff}, // round = 0, sticky = 1
-            {0x1.ffcp-15f,               (short)0x0400}, // round = 1, sticky = 0 => ++
-            {0x1.ffc01p-15f,             (short)0x0400}, // round = 1, sticky = 1 => ++
+            {0x1.ff8000p-15f,      Binary16.MAX_SUBNORMAL},     // round = 0, sticky = 0
+            {0x1.ff8010p-15f,      Binary16.MAX_SUBNORMAL},     // round = 0, sticky = 1
+            {0x1.ffc000p-15f,      Binary16.MIN_NORMAL},        // round = 1, sticky = 0 => ++
+            {0x1.ffc010p-15f,      Binary16.MIN_NORMAL},        // round = 1, sticky = 1 => ++
 
             // Test rounding near binary16 MIN_VALUE
             // Smallest in magnitude subnormal binary16 value 0x0001 => 0x1.0p-24f
             // Half-way case and small should round down to zero
-            {0x1.fffffep-26f,             (short)0x0000}, // nextDown in float
-            {0x1.0p-25f,                  (short)0x0000},
-            {0x1.000002p-25f,             (short)0x0001}, // nextUp in float
-            {0x1.1p-25f,                  (short)0x0001},
+            {0x1.fffffep-26f,      Binary16.POSITIVE_ZERO},     // nextDown in float
+            {0x1.000000p-25f,      Binary16.POSITIVE_ZERO},
+            {0x1.000002p-25f,      Binary16.MIN_VALUE},         // nextUp in float
+            {0x1.100000p-25f,      Binary16.MIN_VALUE},
 
             // Test rounding near overflow threshold
             // Largest normal binary16 number 0x7bff => 0x1.ffcp15f; LSB = 1
-            {0x1.ffcp15f,                (short)0x7bff}, // round = 0, sticky = 0
-            {0x1.ffc01p15f,              (short)0x7bff}, // round = 0, sticky = 1
-            {0x1.ffep15f,                (short)0x7c00}, // round = 1, sticky = 0 => ++
-            {0x1.ffe01p15f,              (short)0x7c00}, // round = 1, sticky = 1 => ++
+            {0x1.ffc000p15f,       Binary16.MAX_VALUE},         // round = 0, sticky = 0
+            {0x1.ffc010p15f,       Binary16.MAX_VALUE},         // round = 0, sticky = 1
+            {0x1.ffe000p15f,       Binary16.POSITIVE_INFINITY}, // round = 1, sticky = 0 => ++
+            {0x1.ffe010p15f,       Binary16.POSITIVE_INFINITY}, // round = 1, sticky = 1 => ++
         };
 
         for (var testCase : testCases) {
@@ -157,9 +156,9 @@ public class SixteenBitFormats {
         // tests in this file make sure all short values round-trip so
         // that doesn't need to be tested here.)
 
-        for (int i = 0;   // binary16 0.0
-             i < 0x7bff ; // Largest normal binary16 value
-             i += 2) {    // Check every even/odd pair once
+        for (int i = Binary16.POSITIVE_ZERO;    // binary16 0.0
+             i <= Binary16.MAX_VALUE; // Largest normal binary16 value
+             i += 2) {     // Check every even/odd pair once
             short lower = (short)i;
             short upper = (short)(i+1);
 
@@ -229,10 +228,10 @@ public class SixteenBitFormats {
         public static final short MAX_VALUE = 0x7bff;
         public static final short ONE = 0x3c00;
         public static final short MIN_NORMAL = 0x0400;
+        public static final short MAX_SUBNORMAL = 0x03ff;
         public static final short MIN_VALUE = 0x0001;
         public static final short NEGATIVE_ZERO = (short)0x8000;
         public static final short POSITIVE_ZERO = 0x0000;
-        public static final short MAX_SUBNORMAL = (short)0x03ff;
 
         public static boolean isNaN(short binary16) {
             return ((binary16 & 0x7c00) == 0x7c00) // Max exponent and...

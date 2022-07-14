@@ -1046,13 +1046,12 @@ public final class Float extends Number
         int floatExpBits = (bin16Exp + FloatConsts.EXP_BIAS)
             << (FloatConsts.SIGNIFICAND_WIDTH - 1);
 
-        int result = 0;
-        // Compute result sign, exponent, and significand bits.
-        result |= (floatExpBits |
-                   // Shift left difference in the number of
-                   // significand bits in the float and binary16
-                   // formats
-                   (bin16SignifBits << (FloatConsts.SIGNIFICAND_WIDTH - 11)));
+        // Compute and combine result sign, exponent, and significand bits.
+        int result = (floatExpBits |
+                      // Shift left difference in the number of
+                      // significand bits in the float and binary16
+                      // formats
+                      (bin16SignifBits << (FloatConsts.SIGNIFICAND_WIDTH - 11)));
         return sign * Float.intBitsToFloat(result);
     }
 
@@ -1138,7 +1137,7 @@ public final class Float extends Number
                 // range of float).
 
                 // Significand bits as if using rounding to zero (truncation).
-                signif_bits = (short)((doppel & 0x0007f_e000) >>
+                signif_bits = (short)((doppel & 0x007f_e000) >>
                                       (FloatConsts.SIGNIFICAND_WIDTH - 11));
 
                 // For round to nearest even, determining whether or
@@ -1157,9 +1156,9 @@ public final class Float extends Number
 
                 // Bits of binary16 significand in a float: 0x0007f_e000;
                 // therefore, the other quantities of interest are:
-                int lsb   =  doppel & 0x00000_2000;
-                int round =  doppel & 0x00000_1000;
-                int sticky = doppel & 0x00000_0fff;
+                int lsb   =  doppel & 0x0000_2000;
+                int round =  doppel & 0x0000_1000;
+                int sticky = doppel & 0x0000_0fff;
 
                 if (((lsb == 0) && (round != 0) && (sticky != 0)) ||
                     ( lsb != 0  &&  round != 0 ) ) { // sticky not needed
