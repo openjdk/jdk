@@ -156,8 +156,8 @@ public class CommentHelper {
     public TypeMirror getType(ReferenceTree rtree) {
         DocTreePath docTreePath = getDocTreePath(rtree);
         if (docTreePath != null) {
-            DocTrees doctrees = configuration.docEnv.getDocTrees();
-            return doctrees.getType(docTreePath);
+            DocTrees docTrees = configuration.docEnv.getDocTrees();
+            return docTrees.getType(docTreePath);
         }
         return null;
     }
@@ -213,11 +213,6 @@ public class CommentHelper {
         return (utils.isExecutableElement(e) || utils.isVariableElement(e)) ? e : null;
     }
 
-    public String getReferencedMemberName(DocTree dtree) {
-        String s = getReferencedSignature(dtree);
-        return getReferencedMemberName(s);
-    }
-
     public String getReferencedMemberName(String signature) {
         if (signature == null) {
             return null;
@@ -259,7 +254,7 @@ public class CommentHelper {
         return getFirstSentenceTrees(getBody(dtree));
     }
 
-    private Element getReferencedElement(DocTree dtree) {
+    public Element getReferencedElement(DocTree dtree) {
         return new ReferenceDocTreeVisitor<Element>() {
             @Override
             public Element visitReference(ReferenceTree node, Void p) {
@@ -286,7 +281,10 @@ public class CommentHelper {
         return null;
     }
 
-    public  String getReferencedSignature(DocTree dtree) {
+    /**
+     * {@return the normalized signature from a {@code ReferenceTree}}
+     */
+    public String getReferencedSignature(DocTree dtree) {
         return new ReferenceDocTreeVisitor<String>() {
             @Override
             public String visitReference(ReferenceTree node, Void p) {
