@@ -49,6 +49,7 @@ public class Longs {
     @Param("500")
     private int size;
 
+    private long[] res;
     private String[] strings;
     private long[] longArraySmall;
     private long[] longArrayBig;
@@ -57,6 +58,7 @@ public class Longs {
     public void setup() {
         var random = ThreadLocalRandom.current();
         strings = new String[size];
+        res = new long[size];
         longArraySmall = new long[size];
         longArrayBig = new long[size];
         for (int i = 0; i < size; i++) {
@@ -139,6 +141,13 @@ public class Longs {
     public void shiftLeft(Blackhole bh) {
         for (int i = 0; i < size; i++) {
             bh.consume(longArrayBig[i] << longArraySmall[i]);
+        }
+    }
+
+    @Benchmark
+    public void reverseBytes() {
+        for (int i = 0; i < size; i++) {
+            res[i] = Long.reverseBytes(longArraySmall[i]);
         }
     }
 }
