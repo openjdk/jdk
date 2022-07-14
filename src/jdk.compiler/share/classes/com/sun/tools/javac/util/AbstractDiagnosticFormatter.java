@@ -186,7 +186,7 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
                 if (diagnostic.hasRewriter()) {
                     rewrittenDiagnostic = diagnostic.rewrite();
                 }
-                s = formatMessage(rewrittenDiagnostic != null? rewrittenDiagnostic : diagnostic, l);
+                s = formatMessage(rewrittenDiagnostic != null ? rewrittenDiagnostic : diagnostic, l);
             }
             finally {
                 depth--;
