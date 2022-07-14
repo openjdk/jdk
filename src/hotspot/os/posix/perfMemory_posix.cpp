@@ -658,7 +658,7 @@ static char* get_user_name(int vmid, int *nspid, TRAPS) {
   // If we are examining a container process without PID namespaces enabled
   // we need to use /proc/{pid}/root/tmp to find hsperfdata files.
   if (result == NULL) {
-    result = get_user_name_slow(vmid, vmid, THREAD);
+    result = get_user_name_slow(vmid, vmid, CHECK_NULL);
     // Enable nspid logic going forward
     if (result != NULL) *nspid = vmid;
   }
