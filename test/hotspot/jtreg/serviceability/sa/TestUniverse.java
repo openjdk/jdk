@@ -21,7 +21,7 @@
  * questions.
  */
 
-import sun.hotspot.code.Compiler;
+import jdk.test.whitebox.code.Compiler;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,7 +29,7 @@ import java.util.Map;
 import java.util.HashMap;
 import jdk.test.lib.apps.LingeredApp;
 import jtreg.SkippedException;
-import sun.hotspot.gc.GC;
+import jdk.test.whitebox.gc.GC;
 
 /**
  * @test

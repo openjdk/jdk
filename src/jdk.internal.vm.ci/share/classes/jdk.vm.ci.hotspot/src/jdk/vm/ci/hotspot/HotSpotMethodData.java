@@ -308,11 +308,7 @@ final class HotSpotMethodData {
 
     private HotSpotResolvedObjectTypeImpl readKlass(int position, int offsetInBytes) {
         long fullOffsetInBytes = state.computeFullOffset(position, offsetInBytes);
-        long klassPointer = UNSAFE.getAddress(methodDataPointer + fullOffsetInBytes);
-        if (klassPointer == 0) {
-            return null;
-        }
-        return runtime().fromMetaspace(klassPointer);
+        return compilerToVM().getResolvedJavaType(methodDataPointer + fullOffsetInBytes);
     }
 
     /**

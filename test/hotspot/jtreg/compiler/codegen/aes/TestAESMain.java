@@ -148,7 +148,7 @@
 package compiler.codegen.aes;
 
 import compiler.whitebox.CompilerWhiteBoxTest;
-import sun.hotspot.code.Compiler;
+import jdk.test.whitebox.code.Compiler;
 import jtreg.SkippedException;
 
 public class TestAESMain {

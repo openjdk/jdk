@@ -35,8 +35,8 @@ import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 import jdk.test.whitebox.WhiteBox;
-import sun.hotspot.code.BlobType;
-import sun.hotspot.code.CodeBlob;
+import jdk.test.whitebox.code.BlobType;
+import jdk.test.whitebox.code.CodeBlob;
 
 /**
  * Test for events: vm/code_sweeper/sweep vm/code_cache/full vm/compiler/failure

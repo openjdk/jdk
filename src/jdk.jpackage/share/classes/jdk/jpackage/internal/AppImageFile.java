@@ -146,7 +146,7 @@ public final class AppImageFile {
         return mainClass;
     }
 
-    boolean isSigned() {
+    public boolean isSigned() {
         return signed;
     }
 
@@ -218,7 +218,7 @@ public final class AppImageFile {
      * @return valid info about application image or null
      * @throws IOException
      */
-    static AppImageFile load(Path appImageDir) {
+    public static AppImageFile load(Path appImageDir) {
         try {
             Document doc = readXml(appImageDir);
 
