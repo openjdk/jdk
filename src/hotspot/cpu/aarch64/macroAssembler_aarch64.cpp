@@ -142,7 +142,7 @@ extern "C" void disnm(intptr_t p);
 //
 class RelocActions {
 protected:
-  typedef int (RelocActions::* reloc_insn)(address insn_addr, address &target, ptrdiff_t *offset);
+  typedef int (RelocActions::* reloc_insn)(address insn_addr, address &target);
 
   virtual reloc_insn adrpMem() = 0;
   virtual reloc_insn adrpAdd() = 0;
@@ -155,9 +155,9 @@ public:
   virtual int loadStore(address insn_addr, address &target) = 0;
   virtual int adr(address insn_addr, address &target) = 0;
   virtual int adrp(address insn_addr, address &target, reloc_insn inner) = 0;
-  virtual int adrpMem_impl(address insn_addr, address &target, ptrdiff_t *offset) = 0;
-  virtual int adrpAdd_impl(address insn_addr, address &target, ptrdiff_t *offset) = 0;
-  virtual int adrpMovk_impl(address insn_addr, address &target, ptrdiff_t *offset) = 0;
+  virtual int adrpMem_impl(address insn_addr, address &target) = 0;
+  virtual int adrpAdd_impl(address insn_addr, address &target) = 0;
+  virtual int adrpMovk_impl(address insn_addr, address &target) = 0;
   virtual int immediate(address insn_addr, address &target) = 0;
   virtual void verify(address insn_addr, address &target) = 0;
 
@@ -302,7 +302,7 @@ public:
       //   3 - adrp    Rx, target_page (page aligned reloc, offset == 0)
       //       movk    Rx, #imm16<<32
       //
-      instructions = ((*this).*inner)(insn_addr, target, NULL);
+      instructions = ((*this).*inner)(insn_addr, target);
     }
 
     int offset_lo = offset & 3;
@@ -324,7 +324,7 @@ public:
     Instruction_aarch64::patch(insn_addr, 30, 29, offset_lo);
     return 1;
   }
-  virtual int adrpMem_impl(address insn_addr, address &target, ptrdiff_t *) {
+  virtual int adrpMem_impl(address insn_addr, address &target) {
     uintptr_t dest = (uintptr_t)target;
     int offset_lo = dest & 0xfff;
     uint32_t insn2 = ((uint32_t*)insn_addr)[1];
@@ -333,13 +333,13 @@ public:
     guarantee(((dest >> size) << size) == dest, "misaligned target");
     return 2;
   }
-  virtual int adrpAdd_impl(address insn_addr, address &target, ptrdiff_t *) {
+  virtual int adrpAdd_impl(address insn_addr, address &target) {
     uintptr_t dest = (uintptr_t)target;
     int offset_lo = dest & 0xfff;
     Instruction_aarch64::patch(insn_addr + sizeof (uint32_t), 21, 10, offset_lo);
     return 2;
   }
-  virtual int adrpMovk_impl(address insn_addr, address &target, ptrdiff_t *) {
+  virtual int adrpMovk_impl(address insn_addr, address &target) {
     uintptr_t dest = (uintptr_t)target;
     Instruction_aarch64::patch(insn_addr + sizeof (uint32_t), 20, 5, (uintptr_t)target >> 32);
     return 2;
@@ -438,8 +438,7 @@ public:
       target_page &= ((uint64_t)-1) << shift;
       uint32_t insn2 = ((uint32_t*)insn_addr)[1];
       target = address(target_page);
-      ptrdiff_t byte_offset;
-      ((*this).*inner)(insn_addr, target, &byte_offset);
+      ((*this).*inner)(insn_addr, target);
       instructions = 2;
     // } else {
     //   target = address((uint64_t)insn_addr + offset);
@@ -454,7 +453,7 @@ public:
     target = address((uint64_t)insn_addr + offset);
     return 1;
   }
-  virtual int adrpMem_impl(address insn_addr, address &target, ptrdiff_t *offset) {
+  virtual int adrpMem_impl(address insn_addr, address &target) {
     uint32_t insn2 = ((uint32_t*)insn_addr)[1];
     // Load/store register (unsigned immediate)
     ptrdiff_t byte_offset = Instruction_aarch64::extract(insn2, 21, 10);
@@ -463,14 +462,14 @@ public:
     target += byte_offset;
     return 2;
   }
-  virtual int adrpAdd_impl(address insn_addr, address &target, ptrdiff_t *offset) {
+  virtual int adrpAdd_impl(address insn_addr, address &target) {
     uint32_t insn2 = ((uint32_t*)insn_addr)[1];
     // add (immediate)
     ptrdiff_t byte_offset = Instruction_aarch64::extract(insn2, 21, 10);
     target += byte_offset;
     return 2;
   }
-  virtual int adrpMovk_impl(address insn_addr, address &target, ptrdiff_t *offset) {
+  virtual int adrpMovk_impl(address insn_addr, address &target) {
     uint32_t insn2 = ((uint32_t*)insn_addr)[1];
     uint64_t dest = uint64_t(target);
     dest = (dest & 0xffffffff) |
