@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Google, Inc.  All Rights Reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,23 +21,11 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8148174
- * @summary repro for: NegativeArraySizeException in Vector.grow(int)
- * @run main/manual/othervm -Xmx17g Bug8148174
- * @requires os.maxMemory>17G
- */
+#include "jni.h"
 
-public class Bug8148174 {
-    public static void main(String[] args) {
-        int size = Integer.MAX_VALUE - 2;
-        java.util.Vector<Object> huge = new java.util.Vector<>(size);
-        for (int i = 0; i < size; i++)
-            huge.add(null);
-        try {
-            huge.addAll(huge);
-            throw new Error("expected OutOfMemoryError not thrown");
-        } catch (OutOfMemoryError success) {}
+JNIEXPORT void JNICALL Java_TracePinnedThreads_invokePark(JNIEnv *env, jclass clazz) {
+    jmethodID mid = (*env)->GetStaticMethodID(env, clazz, "park", "()V");
+    if (mid != NULL) {
+        (*env)->CallStaticVoidMethod(env, clazz, mid);
     }
 }
