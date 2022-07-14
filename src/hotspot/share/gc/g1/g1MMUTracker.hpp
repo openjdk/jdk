@@ -109,8 +109,8 @@ public:
 
   void add_pause(double start, double end);
 
-  // Distance to the earliest possible GC pause of length pause_time from
-  // current_timestamp without violating the MMU constraint.
+  // Minimum delay required from current_timestamp until a GC pause of duration
+  // pause_time may be scheduled without violating the MMU constraint.
   double when_sec(double current_timestamp, double pause_time);
 
   double max_gc_time() const {
