@@ -163,12 +163,10 @@ public class ManagementFactoryHelper {
         }
     }
 
-
     public static boolean isPlatformLoggingMXBeanAvailable() {
         return LoggingMXBeanAccess.isAvailable();
     }
-
-
+    
     /**
      * Returns an array of the name of all memory pools.  The order of the memory pools is
      * significant and maintained in the VM.
