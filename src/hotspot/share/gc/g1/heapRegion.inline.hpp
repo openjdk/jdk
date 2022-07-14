@@ -374,12 +374,6 @@ HeapWord* HeapRegion::do_oops_on_memregion_in_humongous(MemRegion mr,
   // Only filler objects follow a humongous object in the containing
   // regions, and we can ignore those.  So only process the one
   // humongous object.
-  HeapWord* const pb = in_gc_pause ? sr->parsable_bottom() : sr->parsable_bottom_acquire();
-  if (sr->is_obj_dead(obj, pb)) {
-    // The object is dead. There can be no other object in this region, so return
-    // the end of that region.
-    return end();
-  }
   if (obj->is_objArray() || (sr->bottom() < mr.start())) {
     // objArrays are always marked precisely, so limit processing
     // with mr.  Non-objArrays might be precisely marked, and since
@@ -402,46 +396,31 @@ HeapWord* HeapRegion::do_oops_on_memregion_in_humongous(MemRegion mr,
 }
 
 template <class Closure>
-inline HeapWord* HeapRegion::oops_on_memregion_iterate_in_unparsable(MemRegion mr, HeapWord* const pb, Closure* cl) {
-  // Cache the boundaries of the area to scan in some locals.
+inline HeapWord* HeapRegion::oops_on_memregion_iterate_in_unparsable(MemRegion mr, HeapWord* block_start, Closure* cl) {
   HeapWord* const start = mr.start();
-  // Only scan until parsable_bottom.
-  HeapWord* const end = MIN2(mr.end(), pb);
+  HeapWord* const end = mr.end();
 
   G1CMBitMap* bitmap = G1CollectedHeap::heap()->concurrent_mark()->mark_bitmap();
-  // Find the obj that extends onto mr.start().
-  //
-  // The BOT itself is stable enough to be read at any time as
-  //
-  // * during refinement the individual elements of the BOT are read and written
-  //   atomically and any visible mix of new and old BOT entries will eventually lead
-  //   to some (possibly outdated) object start.
-  //   The result of block_start() during concurrent refinement may be outdated - the
-  //   scrubbing may have written a (partial) filler object header exactly crossing
-  //   that perceived object start. So we have to advance to the next live object
-  //   (using the bitmap) to be able to start the following iteration.
-  //
-  // * during GC the BOT does not change while reading, and the objects corresponding
-  //   to these block starts are valid as "holes" are filled atomically wrt to
-  //   safepoints.
-  //
-  HeapWord* cur = block_start(start, pb);
 
-  if (!bitmap->is_marked(cur)) {
+  HeapWord* cur = block_start;
+
+  while (true) {
+    // Using bitmap to locate marked objs in the unparsable area
     cur = bitmap->get_next_marked_addr(cur, end);
-  }
-
-  while (cur != end) {
-    assert(bitmap->is_marked(cur), "must be");
+    if (cur == end) {
+      return end;
+    }
+    assert(bitmap->is_marked(cur), "inv");
 
     oop obj = cast_to_oop(cur);
     assert(oopDesc::is_oop(obj, true), "Not an oop at " PTR_FORMAT, p2i(cur));
 
     cur += obj->size();
-    bool is_precise = false;
+    bool is_precise;
 
     if (!obj->is_objArray() || (cast_from_oop<HeapWord*>(obj) >= start && cur <= end)) {
       obj->oop_iterate(cl);
+      is_precise = false;
     } else {
       obj->oop_iterate(cl, mr);
       is_precise = true;
@@ -450,10 +429,7 @@ inline HeapWord* HeapRegion::oops_on_memregion_iterate_in_unparsable(MemRegion m
     if (cur >= end) {
       return is_precise ? end : cur;
     }
-
-    cur = bitmap->get_next_marked_addr(cur, end);
   }
-  return end;
 }
 
 // Applies cl to all reference fields of live objects in mr in non-humongous regions.
@@ -473,12 +449,24 @@ inline HeapWord* HeapRegion::oops_on_memregion_iterate(MemRegion mr, Closure* cl
   // Snapshot the region's parsable_bottom.
   HeapWord* const pb = in_gc_pause ? parsable_bottom() : parsable_bottom_acquire();
 
-  // Find the obj that extends onto mr.start()
-  HeapWord* cur;
-  if (obj_in_parsable_area(start, pb)) {
-    cur = block_start(start, pb);
-  } else {
-    cur = oops_on_memregion_iterate_in_unparsable<Closure>(mr, pb, cl);
+  // Find the obj that extends onto mr.start().
+  //
+  // The BOT itself is stable enough to be read at any time as
+  //
+  // * during refinement the individual elements of the BOT are read and written
+  //   atomically and any visible mix of new and old BOT entries will eventually lead
+  //   to some (possibly outdated) object start.
+  //
+  // * during GC the BOT does not change while reading, and the objects corresponding
+  //   to these block starts are valid as "holes" are filled atomically wrt to
+  //   safepoints.
+  //
+  HeapWord* cur = block_start(start, pb);
+  if (!obj_in_parsable_area(start, pb)) {
+    // Limit the MemRegion to the part of the area to scan to the unparsable one as using the bitmap
+    // is slower than blindly iterating the objects.
+    MemRegion mr_in_unparsable(mr.start(), MIN2(mr.end(), pb));
+    cur = oops_on_memregion_iterate_in_unparsable<Closure>(mr_in_unparsable, cur, cl);
     // We might have scanned beyond end at this point because of imprecise iteration.
     if (cur >= end) {
       return cur;

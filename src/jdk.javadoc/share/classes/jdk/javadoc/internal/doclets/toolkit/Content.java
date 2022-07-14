@@ -133,9 +133,7 @@ public abstract class Content {
     }
 
     /**
-     * Return the number of characters of plain text content in this object
-     * (optional operation.)
-     * @return the number of characters of plain text content in this
+     * {@return the number of characters of plain text content in this object}
      */
     public int charCount() {
         return 0;
