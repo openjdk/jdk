@@ -6959,6 +6959,12 @@ class StubGenerator: public StubCodeGenerator {
 #endif // ASSERT
     __ far_jump(RuntimeAddress(StubRoutines::forward_exception_entry()));
 
+    {
+      ExternalAddress longWayAway(__ pc() - (1ll << 34));
+      uint64_t offset;
+      __ adrp(rscratch1, longWayAway, offset);
+      __ add(rscratch1, rscratch1, offset);
+    }
 
     // codeBlob framesize is in words (not VMRegImpl::slot_size)
     RuntimeStub* stub =
