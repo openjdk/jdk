@@ -35,7 +35,7 @@ class InvokeMethodKey : public StackObj {
 
     static bool key_comparison(InvokeMethodKey const &k1, InvokeMethodKey const &k2){
         return k1._symbol == k2._symbol && k1._iid == k2._iid;
-    }  
+    }
 
     static unsigned int compute_hash(const InvokeMethodKey &k) {
         Symbol* sym = k._symbol;

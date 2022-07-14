@@ -90,7 +90,7 @@
 #include "jfr/jfr.hpp"
 #endif
 
-ResourceHashtable<InvokeMethodKey, Method*, 139, ResourceObj::C_HEAP, mtClass, 
+ResourceHashtable<InvokeMethodKey, Method*, 139, ResourceObj::C_HEAP, mtClass,
                   InvokeMethodKey::compute_hash, InvokeMethodKey::key_comparison> _invoke_method_intrisic_table;
 ResourceHashtable<Symbol*, OopHandle, 139, ResourceObj::C_HEAP, mtClass> _invoke_method_type_table;
 ProtectionDomainCacheTable*   SystemDictionary::_pd_cache_table = NULL;
@@ -2005,7 +2005,7 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
     MutexLocker ml(THREAD, SystemDictionary_lock);
     met = _invoke_method_intrisic_table.get(key);
   }
-  
+
   methodHandle m;
   if (met == nullptr) {
     // Must create lots of stuff here, but outside of the SystemDictionary lock.
@@ -2032,7 +2032,7 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
       _invoke_method_intrisic_table.put_if_absent(key, m(), &created);
     }
 
-  } else { 
+  } else {
     m = methodHandle(THREAD, *met);
   }
 
@@ -2186,7 +2186,7 @@ Handle SystemDictionary::find_method_handle_type(Symbol* signature,
     MutexLocker ml(THREAD, InvokeMethod_lock);
     o = _invoke_method_type_table.get(signature);
   }
-  
+
   //if (spe != NULL && spe->method_type() != NULL) {
   if (o != nullptr) {
     oop mt = o->resolve();
