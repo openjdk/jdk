@@ -1083,7 +1083,7 @@ private int jjMoveNfa_0(int startState, int curPos)
 
 /** Token literal values. */
 public static final String[] jjstrLiteralImages = {
-"", null, null, null, null, null, null, null, null, null, null, null, null, 
+"", null, null, null, null, null, null, null, null, null, null, null, null,
 null, null, null, null, null, null, null, null, };
 protected Token jjFillToken()
 {
@@ -1109,10 +1109,10 @@ protected Token jjFillToken()
    return t;
 }
 static final int[] jjnextStates = {
-   51, 53, 54, 77, 79, 80, 55, 57, 82, 89, 97, 85, 102, 112, 136, 144, 
-   152, 157, 165, 173, 39, 40, 41, 42, 77, 79, 80, 86, 88, 91, 92, 109, 
-   111, 133, 135, 140, 142, 146, 147, 161, 163, 167, 168, 60, 65, 70, 75, 93, 
-   101, 148, 156, 169, 177, 
+   51, 53, 54, 77, 79, 80, 55, 57, 82, 89, 97, 85, 102, 112, 136, 144,
+   152, 157, 165, 173, 39, 40, 41, 42, 77, 79, 80, 86, 88, 91, 92, 109,
+   111, 133, 135, 140, 142, 146, 147, 161, 163, 167, 168, 60, 65, 70, 75, 93,
+   101, 148, 156, 169, 177,
 };
 private static final boolean jjCanMove_0(int hiByte, int i1, int i2, long l1, long l2)
 {
@@ -1149,7 +1149,7 @@ int jjmatchedPos;
 int jjmatchedKind;
 
 /** Get the next Token. */
-public Token getNextToken() 
+public Token getNextToken()
 {
   Token matchedToken;
   int curPos = 0;
@@ -1270,7 +1270,7 @@ private void jjCheckNAddStates(int start, int end)
   }
 
   /** Reinitialise parser. */
-  
+
   public void ReInit(SimpleCharStream stream)
   {
 
@@ -1293,7 +1293,7 @@ private void jjCheckNAddStates(int start, int end)
 
   /** Reinitialise parser. */
   public void ReInit(SimpleCharStream stream, int lexState)
-  
+
   {
     ReInit(stream);
     SwitchTo(lexState);
@@ -1316,19 +1316,19 @@ public static final String[] lexStateNames = {
 
 /** Lex State array. */
 public static final int[] jjnewLexState = {
-   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
+   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 };
 static final long[] jjtoToken = {
-   0x1ff00bL, 
+   0x1ff00bL,
 };
 static final long[] jjtoSkip = {
-   0x0L, 
+   0x0L,
 };
 static final long[] jjtoSpecial = {
-   0x0L, 
+   0x0L,
 };
 static final long[] jjtoMore = {
-   0x0L, 
+   0x0L,
 };
     protected SimpleCharStream  input_stream;
 

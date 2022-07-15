@@ -151,8 +151,8 @@ public class ParseException extends Exception {
       retval += "\" at line " + currentToken.next.beginLine + ", column " + currentToken.next.beginColumn;
     }
     retval += "." + EOL;
-    
-    
+
+
     if (expectedTokenSequences.length == 0) {
         // Nothing to add here
     } else {
@@ -163,7 +163,7 @@ public class ParseException extends Exception {
         }
         retval += expected.toString();
     }
-    
+
     return retval;
   }
 
