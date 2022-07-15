@@ -28,7 +28,7 @@
  * @summary Stress delivery of asynchronous exceptions.
  * @library /test/lib /test/hotspot/jtreg
  * @build AsyncExceptionTest
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -Xcomp
+ * @run main/othervm/native -agentlib:AsyncException -Xcomp
                      -XX:CompileCommand=dontinline,AsyncExceptionTest::internalRun2
                      -XX:CompileCommand=compileonly,AsyncExceptionTest::internalRun1
                      -XX:CompileCommand=compileonly,AsyncExceptionTest::internalRun2
@@ -48,6 +48,8 @@ public class AsyncExceptionTest extends Thread {
     private boolean receivedThreadDeathinInternal1 = false;
     private boolean receivedThreadDeathinInternal2 = false;
 
+    public static native int stopThread(Thread thread);
+
     @Override
     public void run() {
         try {
@@ -55,7 +57,7 @@ public class AsyncExceptionTest extends Thread {
         } catch (ThreadDeath td) {
             throw new RuntimeException("Catched ThreadDeath in run() instead of internalRun2() or internalRun1(). receivedThreadDeathinInternal1=" + receivedThreadDeathinInternal1 + "; receivedThreadDeathinInternal2=" + receivedThreadDeathinInternal2);
         } catch (NoClassDefFoundError ncdfe) {
-            // ignore because we're testing Thread.stop() which can cause it
+            // ignore because we're testing StopThread() which can cause it
         }
 
         if (receivedThreadDeathinInternal2 == false && receivedThreadDeathinInternal1 == false) {
@@ -120,7 +122,7 @@ public class AsyncExceptionTest extends Thread {
                 thread.startSyncObj.await();
                 while (true) {
                     // Send async exception and wait until it is thrown
-                    thread.stop();
+                    stopThread(thread);
                     thread.exitSyncObj.await();
                     Thread.sleep(100);
 
@@ -133,7 +135,7 @@ public class AsyncExceptionTest extends Thread {
             } catch (InterruptedException e) {
                 throw new Error("Unexpected: " + e);
             } catch (NoClassDefFoundError ncdfe) {
-                // Ignore because we're testing Thread.stop() which can
+                // Ignore because we're testing StopThread which can
                 // cause it. Yes, a NoClassDefFoundError that happens
                 // in a worker thread can subsequently be seen in the
                 // main thread.
@@ -165,4 +167,3 @@ public class AsyncExceptionTest extends Thread {
         System.exit(1);
     }
 }
-

@@ -28,61 +28,14 @@
 extern "C" {
 
 static jvmtiEnv* jvmti = NULL;
-static jrawMonitorID monitor;
 
 JNIEXPORT void JNICALL
-Java_AsyncExceptionOnMonitorEnter_stopThread(JNIEnv *jni, jclass cls, jthread thread) {
+Java_AsyncExceptionTest_stopThread(JNIEnv *jni, jclass cls, jthread thread) {
   stop_thread(jvmti, jni, thread);
-}
-
-
-JNIEXPORT jint JNICALL
-Java_AsyncExceptionOnMonitorEnter_createRawMonitor(JNIEnv *jni, jclass cls) {
-  jvmtiError err;
-  char name[32];
-
-  sprintf(name, "MyRawMonitor");
-  err = jvmti->CreateRawMonitor(name, &monitor);
-  if (err != JVMTI_ERROR_NONE) {
-    printf("CreateRawMonitor unexpected error: (%d)\n", err);
-  }
-  return err;
-}
-
-JNIEXPORT jint JNICALL
-Java_AsyncExceptionOnMonitorEnter_enterRawMonitor(JNIEnv *jni, jclass cls) {
-  jvmtiError err;
-  err = jvmti->RawMonitorEnter(monitor);
-  if (err != JVMTI_ERROR_NONE) {
-      printf("RawMonitorEnter unexpected error: (%d)\n", err);
-  }
-  return err;
-}
-
-JNIEXPORT jint JNICALL
-Java_AsyncExceptionOnMonitorEnter_exitRawMonitor(JNIEnv *jni, jclass cls) {
-  jvmtiError err;
-  err = jvmti->RawMonitorExit(monitor);
-  if (err != JVMTI_ERROR_NONE) {
-      printf("RawMonitorExit unexpected error: (%d)\n", err);
-  }
-  return err;
-}
-
-JNIEXPORT void JNICALL
-Java_AsyncExceptionOnMonitorEnter_destroyRawMonitor(JNIEnv *jni, jclass cls) {
-  jvmtiError err;
-  err = jvmti->DestroyRawMonitor(monitor);
-  // Almost always worker2 will be stopped before being able to release the
-  // JVMTI monitor so just ignore those errors.
-  if (err != JVMTI_ERROR_NONE && err != JVMTI_ERROR_NOT_MONITOR_OWNER) {
-    printf("DestroyRawMonitor unexpected error: (%d)\n", err);
-  }
 }
 
 JNIEXPORT jint JNICALL
 Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
-  // create JVMTI environment
   if (jvm->GetEnv((void **) (&jvmti), JVMTI_VERSION) != JNI_OK) {
     return JNI_ERR;
   }

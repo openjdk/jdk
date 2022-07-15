@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,10 +90,12 @@ public class stack002 {
     private static class Tester extends Thread {
         int maxdepth;
         PrintStream out;
+        public volatile boolean stop;
 
         public Tester(PrintStream out) {
             this.out = out;
             maxdepth = 0;
+            stop = false;
         }
 
         public void run() {
@@ -103,6 +105,9 @@ public class stack002 {
         void recurse(int depth) {
             maxdepth = depth;
             try {
+                if (stop) {
+                    return;
+                }
                 recurse(depth + 1);
 //          } catch (StackOverflowError e) {
 //
@@ -147,7 +152,7 @@ public class stack002 {
              return;
              };
              ***/
-            tester.stop();
+            tester.stop = true;
         }
     }
 }

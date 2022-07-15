@@ -26,7 +26,7 @@
  * @bug 8283044
  * @summary Stress delivery of asynchronous exceptions while target is at monitorenter
  * @build AsyncExceptionOnMonitorEnter
- * @run main/othervm AsyncExceptionOnMonitorEnter 0
+ * @run main/othervm/native -agentlib:AsyncExceptionOnMonitorEnter AsyncExceptionOnMonitorEnter 0
  * @run main/othervm/native -agentlib:AsyncExceptionOnMonitorEnter AsyncExceptionOnMonitorEnter 1
  */
 
@@ -37,6 +37,7 @@ public class AsyncExceptionOnMonitorEnter extends Thread {
     private final static String PROG_NAME = "AsyncExceptionOnMonitorEnter";
     private static int TEST_MODE = 0;
 
+    public static native int stopThread(Thread thread);
     public static native int createRawMonitor();
     public static native int enterRawMonitor();
     public static native int exitRawMonitor();
@@ -142,11 +143,11 @@ public class AsyncExceptionOnMonitorEnter extends Thread {
                 Thread.sleep(300);
 
                 while (true) {
-                    worker2.stop();
+                    stopThread(worker2);
                     if (TEST_MODE != 1) {
                         // Don't stop() worker1 with JVMTI raw monitors since if the monitor is
                         // not released worker2 will deadlock on enter
-                        worker1.stop();
+                        stopThread(worker1);
                     }
 
                     if (!worker1.isAlive() && !worker2.isAlive()) {
@@ -197,4 +198,3 @@ public class AsyncExceptionOnMonitorEnter extends Thread {
         System.exit(1);
     }
 }
-
