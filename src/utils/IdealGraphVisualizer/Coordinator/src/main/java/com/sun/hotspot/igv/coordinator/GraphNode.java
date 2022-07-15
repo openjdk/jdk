@@ -92,7 +92,7 @@ public class GraphNode extends AbstractNode {
         this.setShortDescription(PropertiesConverter.convertToHTML(createProperties()));
     }
 
-    private Properties createProperties() {
+    protected Properties createProperties() {
         Properties p = new Properties();
         p.add(graph.getProperties());
         p.setProperty("nodeCount", Integer.toString(graph.getNodes().size()));
