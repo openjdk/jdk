@@ -280,7 +280,7 @@ class UnixCopyFile {
         if (addressToPollForCancel == 0 && !cloneFileNotSupported) {
             UnixFileSystemProvider provider =
                (UnixFileSystemProvider)source.getFileSystem().provider();
-            int res = provider.clone(source, target, !flags.followLinks);
+            int res = provider.clone(source, target, flags.followLinks);
             if (res == 0) {
                 copied = true;
             }

@@ -76,12 +76,13 @@ class BsdFileSystemProvider extends UnixFileSystemProvider {
     }
 
     @Override
-    public int clone(Path source, Path target, boolean noFollowLinks)
+    public int clone(Path source, Path target, boolean followLinks)
         throws IOException {
         UnixPath src = UnixPath.toUnixPath(source);
         UnixPath dst = UnixPath.toUnixPath(target);
+        int flags = followLinks ? 0 : CLONE_NOFOLLOW;
         try {
-            return BsdNativeDispatcher.clonefile(src, dst, noFollowLinks);
+            return BsdNativeDispatcher.clonefile(src, dst, flags);
         } catch (UnixException x) {
             switch (x.errno()) {
                 case ENOTSUP: // cloning not supported by filesystem

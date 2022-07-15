@@ -66,19 +66,16 @@ class BsdNativeDispatcher extends UnixNativeDispatcher {
 
     /**
      * int clonefile(const char * src, const char * dst, int flags);
-     *
-     * int flags = noFollowLinks ? CLONE_NOFOLLOW : 0;
      */
-    static int clonefile(UnixPath src, UnixPath dst, boolean noFollowLinks)
+    static int clonefile(UnixPath src, UnixPath dst, int flags)
         throws UnixException {
         if (src.getFileSystem() == dst.getFileSystem()) {
             try (NativeBuffer srcBuffer = copyToNativeBuffer(src);
                 NativeBuffer dstBuffer = copyToNativeBuffer(dst)) {
                 long comp = Blocker.begin();
                 try {
-                    return clonefile0(srcBuffer.address(),
-                                      dstBuffer.address(),
-                                      noFollowLinks);
+                    return clonefile0(srcBuffer.address(), dstBuffer.address(),
+                                      flags);
                 } finally {
                     Blocker.end(comp);
                 }
@@ -87,8 +84,8 @@ class BsdNativeDispatcher extends UnixNativeDispatcher {
 
         return -1;
     }
-    private static native int clonefile0(long srcAddress, long dstAddres,
-                                         boolean noFollowLinks)
+    private static native int clonefile0(long srcAddress, long dstAddress,
+                                         int flags)
         throws UnixException;
 
     // initialize field IDs

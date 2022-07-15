@@ -36,6 +36,7 @@ import java.io.FilePermission;
 import java.util.*;
 
 import jdk.internal.util.StaticProperty;
+import sun.nio.ch.IOStatus;
 import sun.nio.ch.ThreadPool;
 import sun.security.util.SecurityConstants;
 import static sun.nio.fs.UnixNativeDispatcher.*;
@@ -290,18 +291,21 @@ public abstract class UnixFileSystemProvider
 
     /**
      * Clones the file whose path name is {@code src} to that whose path
-     * name is {@code dst} using a platform-specific system call.
+     * name is {@code dst} using a platform-specific system call. The
+     * implementation in this class always returns IOStatus.UNSUPPORTED.
      *
      * @param src the path of the source file
      * @param dst the path of the desintation file (clone)
-     * @param noFollowLinks whether to follow links
+     * @param followLinks whether to follow links
      *
-     * @return 0 on success, UNSUPPORTED_CASE if the call does not work with
-     *         the given parameters, or UNSUPPORTED if cloning is not supported
-     *         on this platform
+     * @return 0 on success, IOStatus.UNSUPPORTED if the call does not work with
+     *         the given parameters, or IOStatus.UNSUPPORTED if cloning is not
+     *         supported on this platform
      */
-    public abstract int clone(Path source, Path target, boolean noFollowLinks)
-        throws IOException;
+    public int clone(Path source, Path target, boolean followLinks)
+        throws IOException {
+        return IOStatus.UNSUPPORTED;
+    }
 
     @Override
     public void checkAccess(Path obj, AccessMode... modes) throws IOException {

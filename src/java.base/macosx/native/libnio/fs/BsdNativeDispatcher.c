@@ -228,12 +228,10 @@ Java_sun_nio_fs_BsdNativeDispatcher_getmntonname0(JNIEnv *env, jclass this,
 
 JNIEXPORT jint JNICALL
 Java_sun_nio_fs_BsdNativeDispatcher_clonefile0(JNIEnv* env, jclass this,
-    jlong srcAddress, jlong dstAddress, jboolean noFollowLinks)
+    jlong srcAddress, jlong dstAddress, int flags)
 {
     const char* src = (const char*)jlong_to_ptr(srcAddress);
     const char* dst = (const char*)jlong_to_ptr(dstAddress);
-
-    int flags = noFollowLinks == JNI_TRUE ? CLONE_NOFOLLOW : 0;
 
     int ret = clonefile(src, dst, flags);
     if (ret != 0) {
