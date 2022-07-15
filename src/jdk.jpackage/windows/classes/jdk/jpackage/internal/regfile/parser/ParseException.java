@@ -156,12 +156,12 @@ public class ParseException extends Exception {
     if (expectedTokenSequences.length == 0) {
         // Nothing to add here
     } else {
-	    if (expectedTokenSequences.length == 1) {
-	      retval += "Was expecting:" + EOL + "    ";
-	    } else {
-	      retval += "Was expecting one of:" + EOL + "    ";
-	    }
-	    retval += expected.toString();
+        if (expectedTokenSequences.length == 1) {
+          retval += "Was expecting:" + EOL + "    ";
+        } else {
+          retval += "Was expecting one of:" + EOL + "    ";
+        }
+        retval += expected.toString();
     }
     
     return retval;
