@@ -65,7 +65,7 @@ import static java.util.Arrays.*;
  */
 public final class Strings {
     public static final String EMPTY = "";
-    public static final String LINE_SEPARATOR = System.lineSeparator();
+    public static final String LINE_SEPARATOR = getProperty( "line.separator" );
 
     private Strings() {
         throw new UnsupportedOperationException();
