@@ -48,6 +48,30 @@ import jdk.internal.reflect.Reflection;
  * <p>
  * An application cannot create its own instance of this class.
  *
+ * <h2><a id="shutdown">Shutdown</a></h2>
+ * <p>
+ * The Java Virtual Machine initiates the <i>shutdown sequence</i> in response
+ * to one of several events:
+ * <ol>
+ * <li>when the number of non-daemon threads drops to zero for the first time;</li>
+ * <li>when the {@link #exit exit} or {@link System#exit System.exit} method is called; or<li>
+ * <li>when some external event, such as an interrupt or a signal is received from
+ * the operating system.</li>
+ * </ol>
+ *
+ * <p>At the beginning of the shutdown sequence, all registered
+ * {@linkplain #addShutdownHook shutdown hooks}
+ * are started in some unspecified order, and they are allowed to run concurrently
+ * until they finish. Any already-existing threads and any newly started threads also
+ * continue to run concurrently during the shutdown sequence.
+ * During the shutdown sequence, registering or deregistering shutdown hooks with
+ * {@link #addShutdownHook addShutdownHook}
+ * or
+ * {@link #removeShutdownHook removeShutdownHook}
+ * is prohibited.
+ * When all shutdown hooks have completed, the program exits and the Java Virtual Machine
+ * {@linkplain #halt halts}.
+ *
  * @see     java.lang.Runtime#getRuntime()
  * @since   1.0
  */
