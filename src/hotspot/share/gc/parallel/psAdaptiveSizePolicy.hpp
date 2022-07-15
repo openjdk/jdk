@@ -31,6 +31,9 @@
 #include "gc/shared/gcUtil.hpp"
 #include "utilities/align.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // This class keeps statistical information and computes the
 // optimal free space for both the young and old generation
 // based on current application characteristics (based on gc cost
@@ -370,5 +373,7 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
   // Decay the supplemental growth additive.
   void decay_supplemental_growth(bool is_full_gc);
 };
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_GC_PARALLEL_PSADAPTIVESIZEPOLICY_HPP

@@ -31,6 +31,9 @@
 #include "oops/klass.hpp"
 #include "oops/method.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 template <typename T>
 class GrowableArray;
 
@@ -275,5 +278,7 @@ class KlassArtifactRegistrator {
     return true;
   }
 };
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_JFR_RECORDER_CHECKPOINT_TYPES_JFRTYPESETUTILS_HPP

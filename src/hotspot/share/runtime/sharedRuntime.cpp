@@ -79,6 +79,9 @@
 #include "c1/c1_Runtime1.hpp"
 #endif
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // Shared stub locations
 RuntimeStub*        SharedRuntime::_wrong_method_blob;
 RuntimeStub*        SharedRuntime::_wrong_method_abstract_blob;
@@ -128,9 +131,6 @@ void SharedRuntime::generate_stubs() {
 }
 
 #include <math.h>
-
-PRAGMA_DIAG_PUSH
-PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 // Implementation of SharedRuntime
 

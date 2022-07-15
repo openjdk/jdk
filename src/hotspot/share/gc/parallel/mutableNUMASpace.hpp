@@ -31,6 +31,9 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 /*
  *    The NUMA-aware allocator (MutableNUMASpace) is basically a modification
  * of MutableSpace which preserves interfaces but implements different
@@ -236,5 +239,7 @@ class MutableNUMASpace : public MutableSpace {
 
   virtual void set_top(HeapWord* value);
 };
+
+PRAGMA_DIAG_POP
 
 #endif // SHARE_GC_PARALLEL_MUTABLENUMASPACE_HPP
