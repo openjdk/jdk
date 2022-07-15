@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle America, Inc.
+ * Copyright (c) 2020, 2022, Oracle America, Inc.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,6 @@ public class Base64VarLenDecode {
             ran = new Random(10101); // fixed seed for repeatability
             encoder = Base64.getEncoder();
             decoder = Base64.getDecoder();
-            System.out.println("Do Trial Setup");
         }
 
         @Setup(Level.Invocation)
@@ -85,6 +84,9 @@ public class Base64VarLenDecode {
     }
 
     @Benchmark
+    @Warmup(iterations = 4, time = 2)
+    @Measurement(iterations = 4, time = 2)
+    @Fork(value = 3)
     public void decodeMethod(MyState state) {
        state.decoder.decode(state.encoded, state.decoded);
     }
