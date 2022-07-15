@@ -686,7 +686,7 @@ public final class ClassPrinterImpl implements ClassPrinter {
                             case StoreInstruction lv ->
                                 out.accept(format.localVariableInstruction.formatted(bci, ins.opcode().name(), lv.slot(), findLocal(locals, lv.slot(), bci)));
                             case FieldInstruction fa ->
-                                out.accept(format.memberInstruction.formatted(bci, ins.opcode().name(), fa.owner(), fa.name().stringValue(), fa.type()));
+                                out.accept(format.memberInstruction.formatted(bci, ins.opcode().name(), fa.owner().asInternalName(), escape(fa.name().stringValue()), fa.type().stringValue()));
                             case InvokeInstruction inv ->
                                 out.accept(format.memberInstruction.formatted(bci, ins.opcode().name(), inv.owner().asInternalName(), escape(inv.name().stringValue()), inv.type().stringValue()));
                             case InvokeDynamicInstruction invd -> {

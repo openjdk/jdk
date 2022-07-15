@@ -906,7 +906,7 @@ public sealed interface CodeBuilder
     }
 
     default CodeBuilder if_icmpne(Label target) {
-        return branchInstruction(Opcode.IF_ACMPNE, target);
+        return branchInstruction(Opcode.IF_ICMPNE, target);
     }
 
     default CodeBuilder if_nonnull(Label target) {
