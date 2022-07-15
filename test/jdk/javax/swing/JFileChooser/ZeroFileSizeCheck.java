@@ -44,7 +44,7 @@ public class ZeroFileSizeCheck {
 
     private static JFrame frame;
     private static final String INSTRUCTIONS =
-            "Click on the \"Details\" button in right-top corner.\n\nScroll Down if required. \n\nIf the size of TEST-EMPTY-FILE shows Zero bytes in \nDetails view," +
+            "Click on the \"Details\" button in right-top corner.\n\nScroll Down if required. \n\nIf the size of TEST-EMPTY-FILE shows 0 KB in \nDetails view," +
                     " press PASS.\n\n";
 
     public static void test() {
