@@ -40,6 +40,7 @@ public class SixteenBitFormats {
         errors += binary16CardinalValues();
         errors += roundFloatToBinary16();
         errors += roundFloatToBinary16HalfWayCases();
+        errors += roundFloatToBinary16FullBinade();
 
         if (errors > 0)
             throw new RuntimeException(errors + " errors");
@@ -236,6 +237,71 @@ public class SixteenBitFormats {
         // Round to nearest even is sign symmetric
         return compareAndReportError0(                input,   expected) +
                compareAndReportError0(Binary16.negate(input), -expected);
+    }
+
+    private static int roundFloatToBinary16FullBinade() {
+        int errors = 0;
+
+        // For each float value between 1.0 and less than two
+        // (i.e. set of float values with an exponent of 0), convert
+        // each value to binary16 and then convert that binary16 value
+        // back to float.
+        //
+        // Any exponent could be used; the maximum exponent for normal
+        // values would not exercise the full set of code path since
+        // there is an up-front check on values that would overflow,
+        // which correspond to a ripple-carry of the significand that
+        // bumps the exponent.
+        short previous = (short)0;
+        for (int i = Float.floatToIntBits(1.0f);
+             i <= Float.floatToIntBits(Math.nextDown(2.0f));
+             i++) {
+            // (Could also express the loop control directly in terms
+            // of floating-point operations, incrementing by ulp(1.0),
+            // etc.)
+
+            float f = Float.intBitsToFloat(i);
+            short f_as_bin16 = Float.floatToBinary16AsShortBits(f);
+            short f_as_bin16_down = (short)(f_as_bin16 - 1);
+            short f_as_bin16_up   = (short)(f_as_bin16 + 1);
+
+            // Across successive float values to convert to binary16,
+            // the binary16 results should be semi-monotonic,
+            // non-decreasing in this case.
+
+            // Only positive binary16 values so can compare using integer operations
+            if (f_as_bin16 < previous) {
+                errors++;
+                System.out.println("Semi-monotonicity violation observed on " +
+                                   Integer.toHexString(0xfff & f_as_bin16));
+            }
+            previous = f_as_bin16;
+
+            // If round-to-nearest was correctly done, when exactly
+            // mapped back to float, f_as_bin16 should be at least as
+            // close as either of its neighbors to the original value
+            // of f.
+
+            float f_prime_down = Float.binary16AsShortBitsToFloat(f_as_bin16_down);
+            float f_prime      = Float.binary16AsShortBitsToFloat(f_as_bin16);
+            float f_prime_up   = Float.binary16AsShortBitsToFloat(f_as_bin16_up);
+
+            float f_prime_diff = Math.abs(f - f_prime);
+            if (f_prime_diff == 0.0) {
+                continue;
+            }
+            float f_prime_down_diff = Math.abs(f - f_prime_down);
+            float f_prime_up_diff   = Math.abs(f - f_prime_up);
+
+            if (f_prime_diff > f_prime_down_diff ||
+                f_prime_diff > f_prime_up_diff) {
+                errors++;
+                System.out.println("Round-to-nearest violation on converting " +
+                                   Float.toHexString(f) + " to binary16 and back.");
+            }
+        }
+
+        return errors;
     }
 
     public static class Binary16 {

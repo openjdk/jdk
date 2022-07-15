@@ -1171,15 +1171,16 @@ public final class Float extends Number
 
                 if (((lsb == 0) && (round != 0) && (sticky != 0)) ||
                     ( lsb != 0  &&  round != 0 ) ) { // sticky not needed
-                    // Due to the representational properties, an
-                    // increment will also handle a ripple carry that
-                    // updates the exponent too.
                     signif_bits++;
+                    // Check for carry-out after increment
+                    if (signif_bits == 0x0400) {
+                        exp++;
+                    }
                 }
             }
 
             short result = 0;
-            result = (short)(((exp + 15) << 10) | signif_bits);
+            result = (short)(((exp + 15) << 10) | (0x3ff & signif_bits));
             return (short)(sign_bit | (0x7fff & result));
         }
     }
