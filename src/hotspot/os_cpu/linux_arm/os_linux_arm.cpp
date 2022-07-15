@@ -445,7 +445,20 @@ void os::print_context(outputStream *st, const void *context) {
   }
 #define U64_FORMAT "0x%016llx"
   // now print flag register
-  st->print_cr("  %-4s = 0x%08lx", "cpsr",uc->uc_mcontext.arm_cpsr);
+  uint32_t cpsr = uc->uc_mcontext.arm_cpsr;
+  st->print_cr("  %-4s = 0x%08x", "cpsr", cpsr);
+  // print out instruction set state
+  st->print("isetstate: ");
+  const int isetstate =
+      ((cpsr & (1 << 5))  ? 1 : 0) | // T
+      ((cpsr & (1 << 24)) ? 2 : 0); // J
+  switch (isetstate) {
+  case 0: st->print_cr("ARM"); break;
+  case 1: st->print_cr("Thumb"); break;
+  case 2: st->print_cr("Jazelle"); break;
+  case 3: st->print_cr("ThumbEE"); break;
+  default: ShouldNotReachHere();
+  };
   st->cr();
 }
 

@@ -43,6 +43,7 @@ import java.nio.LongBuffer;
 import java.nio.ShortBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.IntStream;
@@ -158,6 +159,62 @@ public class TestSegmentAllocators {
     public void testBadAllocationAlignNotPowerTwo(SegmentAllocator allocator) {
         allocator.allocate(1, 3);
     }
+
+    @Test(dataProvider = "allocators", expectedExceptions = IllegalArgumentException.class)
+    public void testBadAllocationArrayNegSize(SegmentAllocator allocator) {
+        allocator.allocateArray(ValueLayout.JAVA_BYTE, -1);
+    }
+
+    @Test(expectedExceptions = OutOfMemoryError.class)
+    public void testBadArenaNullReturn() {
+        SegmentAllocator segmentAllocator = SegmentAllocator.newNativeArena(MemorySession.openImplicit());
+        segmentAllocator.allocate(Long.MAX_VALUE, 2);
+    }
+
+    @Test
+    public void testArrayAllocateDelegation() {
+        AtomicInteger calls = new AtomicInteger();
+        SegmentAllocator allocator = new SegmentAllocator() {
+            @Override
+            public MemorySegment allocate(long bytesSize, long bytesAlignment) {
+                return null;
+            }
+
+            @Override
+            public MemorySegment allocateArray(MemoryLayout elementLayout, long count) {
+                calls.incrementAndGet();
+                return null;
+            };
+        };
+        allocator.allocateArray(ValueLayout.JAVA_BYTE);
+        allocator.allocateArray(ValueLayout.JAVA_SHORT);
+        allocator.allocateArray(ValueLayout.JAVA_CHAR);
+        allocator.allocateArray(ValueLayout.JAVA_INT);
+        allocator.allocateArray(ValueLayout.JAVA_FLOAT);
+        allocator.allocateArray(ValueLayout.JAVA_LONG);
+        allocator.allocateArray(ValueLayout.JAVA_DOUBLE);
+        assertEquals(calls.get(), 7);
+    }
+
+    @Test
+    public void testStringAllocateDelegation() {
+        AtomicInteger calls = new AtomicInteger();
+        SegmentAllocator allocator = new SegmentAllocator() {
+            @Override
+            public MemorySegment allocate(long bytesSize, long bytesAlignment) {
+                return MemorySegment.allocateNative(bytesSize, bytesAlignment, MemorySession.openImplicit());
+            }
+
+            @Override
+            public MemorySegment allocate(long size) {
+                calls.incrementAndGet();
+                return allocate(size, 1);
+            };
+        };
+        allocator.allocateUtf8String("Hello");
+        assertEquals(calls.get(), 1);
+    }
+
 
     @Test(dataProvider = "arrayAllocations")
     public <Z> void testArray(AllocationFactory allocationFactory, ValueLayout layout, AllocationFunction<Object, ValueLayout> allocationFunction, ToArrayHelper<Z> arrayHelper) {

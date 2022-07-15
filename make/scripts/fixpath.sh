@@ -148,14 +148,13 @@ function import_path() {
   if [[ "$path" != "" ]]; then
     # Store current unix path
     unixpath="$path"
-    # Now turn it into a windows path
-    winpath="$($PATHTOOL -w "$path" 2>/dev/null)"
-    # If it fails, try again with an added .exe (needed on WSL)
-    if [[ $? -ne 0 ]]; then
+    # If $unixpath does not exist, add .exe (needed on WSL)
+    if [[ ! -e "$unixpath" ]]; then
       unixpath="$unixpath.exe"
-      winpath="$($PATHTOOL -w "$unixpath" 2>/dev/null)"
     fi
-    if [[ $? -eq 0 ]]; then
+    # Now turn it into a windows path
+    winpath="$($PATHTOOL -w "$unixpath" 2>/dev/null)"
+    if [[ $? -eq 0 && -e "$unixpath" ]]; then
       if [[ ! "$winpath" =~ ^"$ENVROOT"\\.*$ ]] ; then
         # If it is not in envroot, it's a generic windows path
         if [[ ! $winpath =~ ^[-_.:\\a-zA-Z0-9]*$ ]] ; then

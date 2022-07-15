@@ -1350,7 +1350,7 @@ public class WeakHashMap<K,V>
      * without resizing the map.
      *
      * @param numMappings the expected number of mappings
-     * @param <K>         the type of keys maintained by this map
+     * @param <K>         the type of keys maintained by the new map
      * @param <V>         the type of mapped values
      * @return the newly created map
      * @throws IllegalArgumentException if numMappings is negative

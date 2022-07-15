@@ -71,6 +71,11 @@ public interface SegmentAllocator {
      * sequences with this charset's default replacement byte array.  The
      * {@link java.nio.charset.CharsetEncoder} class should be used when more
      * control over the encoding process is required.
+     * <p>
+     * If the given string contains any {@code '\0'} characters, they will be
+     * copied as well. This means that, depending on the method used to read
+     * the string, such as {@link MemorySegment#getUtf8String(long)}, the string
+     * will appear truncated when read again.
      *
      * @implSpec the default implementation for this method copies the contents of the provided Java string
      * into a new memory segment obtained by calling {@code this.allocate(str.length() + 1)}.
@@ -285,9 +290,11 @@ public interface SegmentAllocator {
         Objects.requireNonNull(array);
         Objects.requireNonNull(elementLayout);
         int size = Array.getLength(array);
-        MemorySegment addr = allocate(MemoryLayout.sequenceLayout(size, elementLayout));
-        MemorySegment.copy(heapSegmentFactory.apply(array), elementLayout, 0,
-                addr, elementLayout.withOrder(ByteOrder.nativeOrder()), 0, size);
+        MemorySegment addr = allocateArray(elementLayout, size);
+        if (size > 0) {
+            MemorySegment.copy(heapSegmentFactory.apply(array), elementLayout, 0,
+                    addr, elementLayout.withOrder(ByteOrder.nativeOrder()), 0, size);
+        }
         return addr;
     }
 
@@ -312,6 +319,9 @@ public interface SegmentAllocator {
      */
     default MemorySegment allocateArray(MemoryLayout elementLayout, long count) {
         Objects.requireNonNull(elementLayout);
+        if (count < 0) {
+            throw new IllegalArgumentException("Negative array size");
+        }
         return allocate(MemoryLayout.sequenceLayout(count, elementLayout));
     }
 

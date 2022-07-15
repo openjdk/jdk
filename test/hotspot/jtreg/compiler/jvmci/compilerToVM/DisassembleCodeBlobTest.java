@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,9 +36,9 @@
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *
  * @build jdk.internal.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
- * @build sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
  *        compiler.jvmci.compilerToVM.DisassembleCodeBlobTest
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
@@ -52,7 +52,7 @@ import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
-import sun.hotspot.code.NMethod;
+import jdk.test.whitebox.code.NMethod;
 
 import java.util.List;
 

@@ -29,16 +29,10 @@ include LibCommon.gmk
 
 ifeq ($(call isTargetOs, windows), true)
 
-  CFLAGS_LIBDT_SHMEM := $(CFLAGS_JDKLIB)
-
-  ifneq ($(HOTSPOT_BUILD_TIME), )
-    CFLAGS_LIBDT_SHMEM += -DSHMEM_BUILD_TIME='"$(HOTSPOT_BUILD_TIME)"'
-  endif
-
   $(eval $(call SetupJdkLibrary, BUILD_LIBDT_SHMEM, \
       NAME := dt_shmem, \
       OPTIMIZATION := LOW, \
-      CFLAGS := $(CFLAGS_LIBDT_SHMEM), \
+      CFLAGS := $(CFLAGS_JDKLIB), \
       EXTRA_HEADER_DIRS := \
           jdk.jdwp.agent:include \
           jdk.jdwp.agent:libjdwp/export, \
