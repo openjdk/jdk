@@ -40,6 +40,9 @@
 #include "opto/runtime.hpp"
 #endif
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 UnsafeCopyMemory* UnsafeCopyMemory::_table                      = NULL;
 int UnsafeCopyMemory::_table_length                             = 0;
 int UnsafeCopyMemory::_table_max_length                         = 0;
@@ -616,3 +619,5 @@ UnsafeCopyMemoryMark::~UnsafeCopyMemoryMark() {
     }
   }
 }
+
+PRAGMA_DIAG_POP

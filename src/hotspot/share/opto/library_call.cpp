@@ -57,6 +57,9 @@
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 //---------------------------make_vm_intrinsic----------------------------
 CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
   vmIntrinsicID id = m->intrinsic_id();
@@ -7938,3 +7941,5 @@ bool LibraryCallKit::inline_blackhole() {
 
   return true;
 }
+
+PRAGMA_DIAG_POP

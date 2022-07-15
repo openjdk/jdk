@@ -43,6 +43,9 @@
 #include "runtime/vmThread.hpp"
 #include "utilities/preserveException.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // Implementation of InterfaceSupport
 
 #ifdef ASSERT
@@ -245,3 +248,5 @@ void InterfaceSupport_init() {
   }
 #endif
 }
+
+PRAGMA_DIAG_POP

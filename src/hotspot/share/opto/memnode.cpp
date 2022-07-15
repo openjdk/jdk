@@ -54,6 +54,9 @@
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/vmError.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // Portions of code courtesy of Clifford Click
 
 // Optimization - Graph Style
@@ -4992,3 +4995,5 @@ bool MergeMemStream::match_memory(Node* mem, const MergeMemNode* mm, int idx) {
   return false;
 }
 #endif // !PRODUCT
+
+PRAGMA_DIAG_POP

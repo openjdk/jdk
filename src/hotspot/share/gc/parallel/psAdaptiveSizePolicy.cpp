@@ -36,6 +36,9 @@
 
 #include <math.h>
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 PSAdaptiveSizePolicy::PSAdaptiveSizePolicy(size_t init_eden_size,
                                            size_t init_promo_size,
                                            size_t init_survivor_size,
@@ -1097,3 +1100,5 @@ bool PSAdaptiveSizePolicy::print() const {
 
   return false;
 }
+
+PRAGMA_DIAG_POP

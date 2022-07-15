@@ -83,6 +83,9 @@
 #include "utilities/preserveException.hpp"
 #include "utilities/utf8.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 
 #define FIXLATER 0 // REMOVE this when completed.
 
@@ -4044,3 +4047,5 @@ JvmtiEnv::SetSystemProperty(const char* property, const char* value_ptr) {
   // We cannot find a property of the given name
   return JVMTI_ERROR_NOT_AVAILABLE;
 } /* end SetSystemProperty */
+
+PRAGMA_DIAG_POP

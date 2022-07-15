@@ -60,6 +60,9 @@
 #include "runtime/vmOperations.hpp"
 #include "services/threadService.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 
 ///////////////////////////////////////////////////////////////
 //
@@ -2400,3 +2403,5 @@ VirtualThreadSetFramePopClosure::doit(Thread *target, bool self) {
   javaVFrame *jvf = JvmtiEnvBase::get_vthread_jvf(_vthread_h());
   _result = ((JvmtiEnvBase*)_env)->set_frame_pop(_state, jvf, _depth);
 }
+
+PRAGMA_DIAG_POP

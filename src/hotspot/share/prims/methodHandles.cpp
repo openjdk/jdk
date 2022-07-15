@@ -61,6 +61,9 @@
 #include "runtime/stubRoutines.hpp"
 #include "utilities/exceptions.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 
 /*
  * JSR 292 reference implementation: method handles
@@ -1597,3 +1600,5 @@ JVM_ENTRY(void, JVM_RegisterMethodHandleMethods(JNIEnv *env, jclass MHN_class)) 
   MethodHandles::set_enabled(true);
 }
 JVM_END
+
+PRAGMA_DIAG_POP

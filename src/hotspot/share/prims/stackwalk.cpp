@@ -45,6 +45,9 @@
 #include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // setup and cleanup actions
 BaseFrameStream::BaseFrameStream(JavaThread* thread, Handle continuation)
   : _thread(thread), _continuation(continuation), _anchor(0L) {
@@ -595,3 +598,5 @@ void StackWalk::setContinuation(Handle stackStream, jlong magic, objArrayHandle 
 
   existing_stream->set_continuation(cont);
 }
+
+PRAGMA_DIAG_POP

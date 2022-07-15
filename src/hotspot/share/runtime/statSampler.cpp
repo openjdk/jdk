@@ -37,6 +37,9 @@
 #include "runtime/statSampler.hpp"
 #include "runtime/vm_version.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // --------------------------------------------------------
 // StatSamplerTask
 
@@ -330,3 +333,5 @@ void StatSampler::create_sampled_perfdata() {
   PerfDataManager::create_counter(SUN_OS, "hrt.ticks",
                                   PerfData::U_Ticks, psh, CHECK);
 }
+
+PRAGMA_DIAG_POP

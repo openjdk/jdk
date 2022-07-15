@@ -29,6 +29,9 @@
 #include "logging/log.hpp"
 #include "runtime/globals_extension.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 G1YoungGenSizer::G1YoungGenSizer() : _sizer_kind(SizerDefaults),
   _use_adaptive_sizing(true), _min_desired_young_length(0), _max_desired_young_length(0) {
 
@@ -129,3 +132,5 @@ void G1YoungGenSizer::heap_size_changed(uint new_number_of_heap_regions) {
   recalculate_min_max_young_length(new_number_of_heap_regions, &_min_desired_young_length,
           &_max_desired_young_length);
 }
+
+PRAGMA_DIAG_POP

@@ -30,6 +30,9 @@
 #include "services/virtualMemoryTracker.hpp"
 #include "services/threadStackTracker.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 volatile size_t ThreadStackTracker::_thread_count = 0;
 SortedLinkedList<SimpleThreadStackSite, ThreadStackTracker::compare_thread_stack_base>* ThreadStackTracker::_simple_thread_stacks = NULL;
 
@@ -118,3 +121,5 @@ bool ThreadStackTracker::walk_simple_thread_stack_site(MallocSiteWalker* walker)
   }
   return true;
 }
+
+PRAGMA_DIAG_POP

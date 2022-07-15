@@ -41,6 +41,9 @@
 #include "opto/movenode.hpp"
 #include "utilities/powerOfTwo.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 //
 //                  S U P E R W O R D   T R A N S F O R M
 //=============================================================================
@@ -5186,3 +5189,5 @@ bool SuperWord::hoist_loads_in_graph() {
 
   return true;
 }
+
+PRAGMA_DIAG_POP

@@ -41,6 +41,9 @@
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/align.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // frequently used constants
 // Allocate them with new so they are never destroyed (otherwise, a
 // forced exit could destroy these objects while they are still in
@@ -1284,3 +1287,5 @@ void CodeInstaller::site_Mark(CodeBuffer& buffer, jint pc_offset, HotSpotCompile
       break;
   }
 }
+
+PRAGMA_DIAG_POP

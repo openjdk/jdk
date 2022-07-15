@@ -42,6 +42,9 @@
 #include "utilities/formatBuffer.hpp"
 #include "utilities/preserveException.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 #define __ Disassembler::hook<MacroAssembler>(__FILE__, __LINE__, _masm)->
 
 #ifdef PRODUCT
@@ -694,3 +697,5 @@ void MethodHandles::trace_method_handle(MacroAssembler* _masm, const char* adapt
   BLOCK_COMMENT("} trace_method_handle");
 }
 #endif //PRODUCT
+
+PRAGMA_DIAG_POP

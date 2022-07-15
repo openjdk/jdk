@@ -27,6 +27,9 @@
 #include "oops/methodCounters.hpp"
 #include "runtime/handles.inline.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 MethodCounters::MethodCounters(const methodHandle& mh) :
   _prev_time(0),
   _rate(0),
@@ -80,3 +83,5 @@ void MethodCounters::print_value_on(outputStream* st) const {
 }
 
 
+
+PRAGMA_DIAG_POP

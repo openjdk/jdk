@@ -34,6 +34,9 @@
 #include "opto/loopnode.hpp"
 #include "opto/machnode.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 //------------------------------Split--------------------------------------
 // Walk the graph in RPO and for each lrg which spills, propagate reaching
 // definitions.  During propagation, split the live range around regions of
@@ -1455,3 +1458,5 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
   // Return updated count of live ranges
   return maxlrg;
 }
+
+PRAGMA_DIAG_POP

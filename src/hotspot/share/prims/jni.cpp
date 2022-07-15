@@ -100,6 +100,9 @@
 #include "jvmci/jvmciCompiler.hpp"
 #endif
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 static jint CurrentVersion = JNI_VERSION_19;
 
 #if defined(_WIN32) && !defined(USE_VECTORED_EXCEPTION_HANDLING)
@@ -4060,3 +4063,5 @@ const struct JNIInvokeInterface_ jni_InvokeInterface = {
     jni_GetEnv,
     jni_AttachCurrentThreadAsDaemon
 };
+
+PRAGMA_DIAG_POP

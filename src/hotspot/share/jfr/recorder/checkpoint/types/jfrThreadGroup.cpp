@@ -32,6 +32,9 @@
 #include "runtime/semaphore.hpp"
 #include "utilities/growableArray.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 static const int initial_array_size = 30;
 
 class ThreadGroupExclusiveAccess : public StackObj {
@@ -416,3 +419,5 @@ void JfrThreadGroup::serialize(JfrCheckpointWriter* writer, traceid thread_group
   assert(tg_instance != NULL, "invariant");
   tg_instance->write_selective_thread_group(writer, thread_group_id);
 }
+
+PRAGMA_DIAG_POP

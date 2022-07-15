@@ -32,6 +32,9 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 LogOutput::~LogOutput() {
   os::free(_config_string);
 }
@@ -382,3 +385,5 @@ bool LogOutput::parse_options(const char* options, outputStream* errstream) {
   os::free(opts);
   return success;
 }
+
+PRAGMA_DIAG_POP

@@ -52,6 +52,9 @@
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 #define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->
 
 // Size of interpreter code.  Increase if too small.  Interpreter will
@@ -1869,3 +1872,5 @@ void TemplateInterpreterGenerator::stop_interpreter_at() {
   __ bind(L);
 }
 #endif // !PRODUCT
+
+PRAGMA_DIAG_POP

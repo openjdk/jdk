@@ -26,6 +26,9 @@
 #include "asm/assembler.hpp"
 #include "code/vmreg.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // First VMReg value that could refer to a stack slot.  This is only
 // used by SA and jvmti, but it's a leaky abstraction: SA and jvmti
 // "know" that stack0 is an integer masquerading as a pointer. For the
@@ -55,3 +58,5 @@ void VMRegImpl::print_on(outputStream* st) const {
 VMRegImpl all_VMRegs[ConcreteRegisterImpl::number_of_registers + 1];
 
 void VMRegImpl::print() const { print_on(tty); }
+
+PRAGMA_DIAG_POP

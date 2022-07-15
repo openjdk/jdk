@@ -60,6 +60,9 @@
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 /*
  * HPROF binary format - description copied from:
  *   src/share/demo/jvmti/hprof/hprof_io.c
@@ -2558,3 +2561,5 @@ void HeapDumper::dump_heap(bool oome) {
   dumper.dump(my_path, tty, HeapDumpGzipLevel);
   os::free(my_path);
 }
+
+PRAGMA_DIAG_POP

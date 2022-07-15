@@ -45,6 +45,9 @@
 #include "utilities/debug.hpp"
 #include "utilities/powerOfTwo.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 ZNMethodTableEntry* ZNMethodTable::_table = NULL;
 size_t ZNMethodTable::_size = 0;
 size_t ZNMethodTable::_nregistered = 0;
@@ -233,3 +236,5 @@ void ZNMethodTable::nmethods_do_end() {
 void ZNMethodTable::nmethods_do(NMethodClosure* cl) {
   _iteration.nmethods_do(cl);
 }
+
+PRAGMA_DIAG_POP

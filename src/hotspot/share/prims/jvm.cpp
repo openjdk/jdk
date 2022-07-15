@@ -112,6 +112,9 @@
 
 #include <errno.h>
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 /*
   NOTE about use of any ctor or function call that can trigger a safepoint/GC:
   such ctors and calls MUST NOT come between an oop declaration/init and its
@@ -4044,3 +4047,5 @@ JVM_ENTRY(void, JVM_VirtualThreadUnmountEnd(JNIEnv* env, jobject vthread, jboole
   fatal("Should only be called with JVMTI enabled");
 #endif
 JVM_END
+
+PRAGMA_DIAG_POP

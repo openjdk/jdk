@@ -52,6 +52,9 @@
 #include "runtime/vmOperations.hpp"
 #include "services/threadService.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // TODO: we need to define a naming convention for perf counters
 // to distinguish counters for:
 //   - standard JSR174 use
@@ -1122,3 +1125,5 @@ ThreadsListEnumerator::ThreadsListEnumerator(Thread* cur_thread,
     _threads_array->append(h);
   }
 }
+
+PRAGMA_DIAG_POP

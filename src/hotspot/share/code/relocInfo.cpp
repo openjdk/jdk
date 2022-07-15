@@ -36,6 +36,9 @@
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 const RelocationHolder RelocationHolder::none; // its type is relocInfo::none
 
 
@@ -953,3 +956,5 @@ void print_buf_locs(CodeBuffer* cb) {
   cb->print();
 }
 #endif // !PRODUCT
+
+PRAGMA_DIAG_POP

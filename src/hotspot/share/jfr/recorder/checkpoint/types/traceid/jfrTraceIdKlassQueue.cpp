@@ -34,6 +34,9 @@
 #include "oops/compressedOops.hpp"
 #include "utilities/macros.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 #ifdef VM_LITTLE_ENDIAN
 static const u1      UNLOADED_BIT = 1;
 static const u1      UNCOMPRESSED_BIT = 1 << 1;
@@ -260,3 +263,5 @@ void JfrTraceIdKlassQueue::iterate(klass_callback callback, bool previous_epoch)
   KlassFunctor functor(callback);
   _queue->iterate(functor, previous_epoch);
 }
+
+PRAGMA_DIAG_POP

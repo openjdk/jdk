@@ -60,6 +60,9 @@
 #include "gc/g1/g1CollectedHeap.hpp"
 #endif
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // We prefer short chains of avg 2
 const double PREF_AVG_LIST_LEN = 2.0;
 // 2^24 is max size
@@ -881,3 +884,5 @@ void StringTable::transfer_shared_strings_to_local_table() {
 }
 
 #endif //INCLUDE_CDS_JAVA_HEAP
+
+PRAGMA_DIAG_POP

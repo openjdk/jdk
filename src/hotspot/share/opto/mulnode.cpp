@@ -33,6 +33,9 @@
 #include "opto/subnode.hpp"
 #include "utilities/powerOfTwo.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // Portions of code courtesy of Clifford Click
 
 
@@ -1860,3 +1863,5 @@ Node* MulNode::AndIL_add_shift_and_mask(PhaseGVN* phase, BasicType bt) {
   }
   return NULL;
 }
+
+PRAGMA_DIAG_POP

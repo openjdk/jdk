@@ -52,6 +52,9 @@
 #include "utilities/vmError.hpp"
 #include "windbghelp.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 
 #undef REG_SP
 #undef REG_FP
@@ -559,3 +562,5 @@ int os::extra_bang_size_in_bytes() {
   // JDK-8050147 requires the full cache line bang for x86.
   return VM_Version::L1_line_size();
 }
+
+PRAGMA_DIAG_POP

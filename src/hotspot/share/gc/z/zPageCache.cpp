@@ -33,6 +33,9 @@
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 static const ZStatCounter ZCounterPageCacheHitL1("Memory", "Page Cache Hit L1", ZStatUnitOpsPerSecond);
 static const ZStatCounter ZCounterPageCacheHitL2("Memory", "Page Cache Hit L2", ZStatUnitOpsPerSecond);
 static const ZStatCounter ZCounterPageCacheHitL3("Memory", "Page Cache Hit L3", ZStatUnitOpsPerSecond);
@@ -354,3 +357,5 @@ void ZPageCache::pages_do(ZPageClosure* cl) const {
     cl->do_page(page);
   }
 }
+
+PRAGMA_DIAG_POP

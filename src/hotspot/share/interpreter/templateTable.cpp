@@ -27,6 +27,9 @@
 #include "interpreter/interp_masm.hpp"
 #include "interpreter/templateTable.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 #ifdef ZERO
 
 void templateTable_init() {
@@ -504,3 +507,5 @@ void TemplateTable::unimplemented_bc() {
   _masm->unimplemented( Bytecodes::name(_desc->bytecode()));
 }
 #endif /* !ZERO */
+
+PRAGMA_DIAG_POP

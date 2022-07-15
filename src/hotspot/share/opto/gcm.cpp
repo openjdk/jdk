@@ -38,6 +38,9 @@
 #include "opto/chaitin.hpp"
 #include "runtime/deoptimization.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // Portions of code courtesy of Clifford Click
 
 // Optimization - Graph Style
@@ -2289,3 +2292,5 @@ void CFGLoop::dump() const {
   tty->print("\n");
 }
 #endif
+
+PRAGMA_DIAG_POP

@@ -52,6 +52,9 @@
 
 #include "gc/shared/gcTraceTime.inline.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 G1Policy::G1Policy(STWGCTimer* gc_timer) :
   _predictor(G1ConfidencePercent / 100.0),
   _analytics(new G1Analytics(&_predictor)),
@@ -1521,3 +1524,5 @@ void G1Policy::transfer_survivors_to_cset(const G1SurvivorRegions* survivors) {
   // the survivor regions from this evacuation pause as 'young'
   // at the start of the next.
 }
+
+PRAGMA_DIAG_POP

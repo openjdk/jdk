@@ -82,6 +82,9 @@
 #include "utilities/ostream.hpp"
 #include "utilities/preserveException.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // Known objects
 Klass* Universe::_typeArrayKlassObjs[T_LONG+1]        = { NULL /*, NULL...*/ };
 Klass* Universe::_objectArrayKlassObj                 = NULL;
@@ -1285,3 +1288,5 @@ bool Universe::is_in_heap(const void* p) {
 }
 
 #endif // ASSERT
+
+PRAGMA_DIAG_POP

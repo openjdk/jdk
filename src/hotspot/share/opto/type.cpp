@@ -42,6 +42,9 @@
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/stringUtils.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // Portions of code courtesy of Clifford Click
 
 // Optimization - Graph Style
@@ -6285,3 +6288,5 @@ BasicType TypeFunc::return_type() const{
   }
   return range()->field_at(TypeFunc::Parms)->basic_type();
 }
+
+PRAGMA_DIAG_POP

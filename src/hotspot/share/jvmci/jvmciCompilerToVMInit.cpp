@@ -41,6 +41,9 @@
 #include "runtime/stubRoutines.hpp"
 #include "utilities/resourceHash.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 
 int CompilerToVM::Data::Klass_vtable_start_offset;
 int CompilerToVM::Data::Klass_vtable_length_offset;
@@ -414,3 +417,5 @@ jobjectArray readConfiguration0(JNIEnv *env, JVMCI_TRAPS) {
 
   return JVMCIENV->get_jobjectArray(data);
 }
+
+PRAGMA_DIAG_POP

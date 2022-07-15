@@ -48,6 +48,9 @@
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/powerOfTwo.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 //=============================================================================
 //--------------------------is_cloop_ind_var-----------------------------------
 // Determine if a node is a counted loop induction variable.
@@ -6207,3 +6210,5 @@ void LoopTreeIterator::next() {
     }
   }
 }
+
+PRAGMA_DIAG_POP

@@ -32,6 +32,9 @@
 #include "runtime/threadSMR.hpp"
 #include "utilities/stringUtils.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 #ifndef PRODUCT
 
 // Constants
@@ -890,3 +893,5 @@ void IdealGraphPrinter::update_compiled_method(ciMethod* current_method) {
 extern const char *NodeClassNames[];
 
 #endif
+
+PRAGMA_DIAG_POP

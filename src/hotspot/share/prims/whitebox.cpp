@@ -118,6 +118,9 @@
 #include "cgroupSubsystem_linux.hpp"
 #endif
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 #define SIZE_T_MAX_VALUE ((size_t) -1)
 
 #define CHECK_JNI_EXCEPTION_(env, value)                               \
@@ -2791,3 +2794,5 @@ JVM_ENTRY(void, JVM_RegisterWhiteBoxMethods(JNIEnv* env, jclass wbclass))
     }
   }
 JVM_END
+
+PRAGMA_DIAG_POP

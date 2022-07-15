@@ -45,6 +45,9 @@
 #include "runtime/deoptimization.hpp"
 #include "runtime/sharedRuntime.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 #ifndef PRODUCT
 extern int explicit_null_checks_inserted,
            explicit_null_checks_elided;
@@ -2768,3 +2771,5 @@ void Parse::do_one_bytecode() {
   }
 #endif
 }
+
+PRAGMA_DIAG_POP

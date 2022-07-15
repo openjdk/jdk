@@ -33,6 +33,9 @@
 #include "utilities/debug.hpp"
 #include "utilities/powerOfTwo.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 ZRelocationSetSelectorGroupStats::ZRelocationSetSelectorGroupStats() :
     _npages(0),
     _total(0),
@@ -207,3 +210,5 @@ ZRelocationSetSelectorStats ZRelocationSetSelector::stats() const {
   stats._large = _large.stats();
   return stats;
 }
+
+PRAGMA_DIAG_POP

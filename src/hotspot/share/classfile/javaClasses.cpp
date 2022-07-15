@@ -90,6 +90,9 @@
 #include "jvmci/jvmciJavaClasses.hpp"
 #endif
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 #define DECLARE_INJECTED_FIELD(klass, name, signature, may_be_java)           \
   { VM_CLASS_ID(klass), VM_SYMBOL_ENUM_NAME(name##_name), VM_SYMBOL_ENUM_NAME(signature), may_be_java },
 
@@ -5581,3 +5584,5 @@ void javaClasses_init() {
   java_lang_VirtualThread::init_static_notify_jvmti_events();
   FilteredFieldsMap::initialize();  // must be done after computing offsets.
 }
+
+PRAGMA_DIAG_POP

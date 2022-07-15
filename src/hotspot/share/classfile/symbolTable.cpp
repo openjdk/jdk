@@ -42,6 +42,9 @@
 #include "utilities/concurrentHashTableTasks.inline.hpp"
 #include "utilities/utf8.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // We used to not resize at all, so let's be conservative
 // and not set it too short before we decide to resize,
 // to match previous startup behavior
@@ -922,3 +925,5 @@ void SymboltableDCmd::execute(DCmdSource source, TRAPS) {
                          _verbose.value());
   VMThread::execute(&dumper);
 }
+
+PRAGMA_DIAG_POP

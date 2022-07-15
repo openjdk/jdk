@@ -33,6 +33,9 @@
 #include "jfr/metadata/jfrSerializer.hpp"
 #endif
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 #if INCLUDE_JFR
 class G1HeapRegionTypeConstant : public JfrSerializer {
 public:
@@ -272,3 +275,5 @@ void G1MMUTracer::send_g1_mmu_event(double time_slice_ms, double gc_time_ms, dou
     e.commit();
   }
 }
+
+PRAGMA_DIAG_POP

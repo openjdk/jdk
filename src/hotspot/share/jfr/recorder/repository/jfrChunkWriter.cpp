@@ -30,6 +30,9 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 static const int64_t MAGIC_OFFSET = 0;
 static const int64_t MAGIC_LEN = 4;
 static const int64_t VERSION_OFFSET = MAGIC_LEN;
@@ -291,3 +294,5 @@ int64_t JfrChunkWriter::close() {
   assert(!this->is_valid(), "invariant");
   return size_written;
 }
+
+PRAGMA_DIAG_POP

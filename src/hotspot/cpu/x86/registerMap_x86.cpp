@@ -26,6 +26,9 @@
 #include "runtime/registerMap.hpp"
 #include "vmreg_x86.inline.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 address RegisterMap::pd_location(VMReg reg) const {
   if (reg->is_XMMRegister()) {
     int reg_base = reg->value() - ConcreteRegisterImpl::max_fpr;
@@ -65,3 +68,5 @@ address RegisterMap::pd_location(VMReg reg) const {
 address RegisterMap::pd_location(VMReg base_reg, int slot_idx) const {
   return location(base_reg->next(slot_idx), nullptr);
 }
+
+PRAGMA_DIAG_POP

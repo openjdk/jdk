@@ -1081,6 +1081,9 @@ bufferedStream::~bufferedStream() {
 #include <winsock2.h>
 #endif
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // Network access
 networkStream::networkStream() : bufferedStream(1024*10, 1024*10) {
 
@@ -1141,5 +1144,7 @@ bool networkStream::connect(const char *ip, short port) {
 }
 
 #endif
+
+PRAGMA_DIAG_POP
 
 PRAGMA_DIAG_POP

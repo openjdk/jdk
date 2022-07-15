@@ -40,6 +40,9 @@
 #include "runtime/java.hpp"
 #include "utilities/macros.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 bool TenuredGeneration::grow_by(size_t bytes) {
   assert_correct_size_change_locking();
   bool result = _virtual_space.expand_by(bytes);
@@ -530,3 +533,5 @@ void TenuredGeneration::print_on(outputStream* st)  const {
   st->print("   the");
   _the_space->print_on(st);
 }
+
+PRAGMA_DIAG_POP

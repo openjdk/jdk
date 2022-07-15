@@ -72,6 +72,9 @@
 #include "runtime/vm_version.hpp"
 #include "utilities/macros.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 #ifdef JVMTI_TRACE
 #define EVT_TRACE(evt,out) if ((JvmtiTrace::event_trace_flags(evt) & JvmtiTrace::SHOW_EVENT_SENT) != 0) { SafeResourceMark rm; log_trace(jvmti) out; }
 #define EVT_TRIG_TRACE(evt,out) if ((JvmtiTrace::event_trace_flags(evt) & JvmtiTrace::SHOW_EVENT_TRIGGER) != 0) { SafeResourceMark rm; log_trace(jvmti) out; }
@@ -3252,3 +3255,5 @@ JvmtiGCMarker::~JvmtiGCMarker() {
     JvmtiExport::post_garbage_collection_finish();
   }
 }
+
+PRAGMA_DIAG_POP

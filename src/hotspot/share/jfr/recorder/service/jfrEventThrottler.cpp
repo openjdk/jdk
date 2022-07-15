@@ -28,6 +28,9 @@
 #include "jfr/utilities/jfrSpinlockHelper.hpp"
 #include "logging/log.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 constexpr static const JfrSamplerParams _disabled_params = {
                                                              0, // sample points per window
                                                              0, // window duration ms
@@ -274,3 +277,5 @@ const JfrSamplerParams& JfrEventThrottler::next_window_params(const JfrSamplerWi
   }
   return _disabled ? _disabled_params : _last_params;
 }
+
+PRAGMA_DIAG_POP

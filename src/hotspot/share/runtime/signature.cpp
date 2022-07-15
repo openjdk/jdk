@@ -42,6 +42,9 @@
 #include "runtime/signature.hpp"
 #include "runtime/sharedRuntime.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // Implementation of SignatureIterator
 
 // Signature syntax:
@@ -678,3 +681,5 @@ ssize_t SignatureVerifier::is_valid_type(const char* type, ssize_t limit) {
 }
 
 #endif // ASSERT
+
+PRAGMA_DIAG_POP

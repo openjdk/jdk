@@ -53,6 +53,9 @@
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/stack.inline.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 void Klass::set_java_mirror(Handle m) {
   assert(!m.is_null(), "New mirror should never be null.");
   assert(_java_mirror.is_empty(), "should only be used to initialize mirror");
@@ -955,3 +958,5 @@ const char* Klass::class_in_module_of_loader(bool use_are, bool include_parent_l
 
   return class_description;
 }
+
+PRAGMA_DIAG_POP

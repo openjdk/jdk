@@ -39,6 +39,9 @@
 #include "runtime/orderAccess.hpp"
 #include "utilities/bitMap.inline.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 class MasterFreeRegionListChecker : public HeapRegionSetChecker {
 public:
   void check_mt_safety() {
@@ -825,3 +828,5 @@ void HeapRegionManager::rebuild_free_list(WorkerThreads* workers) {
   }
   G1CollectedHeap::heap()->phase_times()->record_serial_rebuild_freelist_time_ms((Ticks::now() - serial_time).seconds() * 1000.0);
 }
+
+PRAGMA_DIAG_POP

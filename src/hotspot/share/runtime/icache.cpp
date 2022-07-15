@@ -28,6 +28,9 @@
 #include "runtime/icache.hpp"
 #include "utilities/align.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // The flush stub function address
 AbstractICache::flush_icache_stub_t AbstractICache::_flush_icache_stub = NULL;
 
@@ -109,3 +112,5 @@ void AbstractICache::invalidate_range(address start, int nbytes) {
 void icache_init() {
   ICache::initialize();
 }
+
+PRAGMA_DIAG_POP

@@ -41,6 +41,9 @@
 #include "jfr/support/jfrKlassExtension.hpp"
 #endif
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 
 // called during initial loading of a shared class
 InstanceKlass* KlassFactory::check_shared_class_file_load_hook(
@@ -217,3 +220,5 @@ InstanceKlass* KlassFactory::create_from_stream(ClassFileStream* stream,
 
   return result;
 }
+
+PRAGMA_DIAG_POP

@@ -32,6 +32,9 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 TaskTerminator::DelayContext::DelayContext() {
   _yield_count = 0;
   reset_hard_spin_information();
@@ -203,3 +206,5 @@ bool TaskTerminator::offer_termination(TerminatorTerminator* terminator) {
     }
   }
 }
+
+PRAGMA_DIAG_POP

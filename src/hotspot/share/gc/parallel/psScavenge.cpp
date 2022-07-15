@@ -71,6 +71,9 @@
 #include "services/memoryService.hpp"
 #include "utilities/stack.inline.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 SpanSubjectToDiscoveryClosure PSScavenge::_span_based_discoverer;
 ReferenceProcessor*           PSScavenge::_ref_processor = NULL;
 PSCardTable*                  PSScavenge::_card_table = NULL;
@@ -768,3 +771,5 @@ void PSScavenge::initialize() {
 
   _counters = new CollectorCounters("Parallel young collection pauses", 0);
 }
+
+PRAGMA_DIAG_POP

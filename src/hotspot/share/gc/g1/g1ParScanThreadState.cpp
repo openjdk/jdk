@@ -46,6 +46,9 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // In fastdebug builds the code size can get out of hand, potentially
 // tripping over compiler limits (which may be bugs, but nevertheless
 // need to be taken into consideration).  A side benefit of limiting
@@ -715,3 +718,5 @@ G1ParScanThreadStateSet::~G1ParScanThreadStateSet() {
   FREE_C_HEAP_ARRAY(G1ParScanThreadState*, _states);
   FREE_C_HEAP_ARRAY(size_t, _surviving_young_words_total);
 }
+
+PRAGMA_DIAG_POP

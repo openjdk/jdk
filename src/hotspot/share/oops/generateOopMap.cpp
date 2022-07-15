@@ -41,6 +41,9 @@
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/ostream.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 //
 //
 // Compute stack layouts for each instruction in method.
@@ -2563,3 +2566,5 @@ methodHandle ResolveOopMapConflicts::do_potential_rewrite(TRAPS) {
 #endif
   return methodHandle(THREAD, method());
 }
+
+PRAGMA_DIAG_POP

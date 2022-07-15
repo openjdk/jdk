@@ -31,6 +31,9 @@
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 //------------------------------VectorNode--------------------------------------
 
 // Return the vector operator for the specified scalar operation
@@ -1977,3 +1980,5 @@ void VectorBoxAllocateNode::dump_spec(outputStream *st) const {
 }
 
 #endif // !PRODUCT
+
+PRAGMA_DIAG_POP

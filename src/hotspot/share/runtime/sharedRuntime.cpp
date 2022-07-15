@@ -129,6 +129,9 @@ void SharedRuntime::generate_stubs() {
 
 #include <math.h>
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // Implementation of SharedRuntime
 
 #ifndef PRODUCT
@@ -3430,3 +3433,5 @@ void SharedRuntime::on_slowpath_allocation_exit(JavaThread* current) {
   BarrierSet *bs = BarrierSet::barrier_set();
   bs->on_slowpath_allocation_exit(current, new_obj);
 }
+
+PRAGMA_DIAG_POP

@@ -77,6 +77,9 @@
 #include "utilities/vmError.hpp"
 #include "utilities/xmlstream.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // Implementation of Method
 
 Method* Method::allocate(ClassLoaderData* loader_data,
@@ -430,7 +433,7 @@ void Method::set_itable_index(int index) {
     // itable index should be the same as the runtime index.
     assert(_vtable_index == itable_index_max - index,
            "archived itable index is different from runtime index");
-    return; // don’t write into the shared class
+    return; // don???t write into the shared class
   } else {
     _vtable_index = itable_index_max - index;
   }
@@ -2536,3 +2539,5 @@ void Method::verify_on(outputStream* st) {
   guarantee(md == NULL ||
       md->is_methodData(), "should be method data");
 }
+
+PRAGMA_DIAG_POP

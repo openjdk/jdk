@@ -34,6 +34,9 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/stringUtils.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 static bool is_product_build() {
 #ifdef PRODUCT
   return true;
@@ -758,3 +761,5 @@ void JVMFlag::printError(bool verbose, const char* msg, ...) {
     va_end(listPointer);
   }
 }
+
+PRAGMA_DIAG_POP

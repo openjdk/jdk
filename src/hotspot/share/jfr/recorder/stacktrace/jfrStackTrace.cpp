@@ -37,6 +37,9 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/vframe.inline.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 static void copy_frames(JfrStackFrame** lhs_frames, u4 length, const JfrStackFrame* rhs_frames) {
   assert(lhs_frames != NULL, "invariant");
   assert(rhs_frames != NULL, "invariant");
@@ -338,3 +341,5 @@ void JfrStackTrace::resolve_linenos() const {
   }
   _lineno = true;
 }
+
+PRAGMA_DIAG_POP

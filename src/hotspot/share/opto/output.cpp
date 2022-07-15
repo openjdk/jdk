@@ -56,6 +56,9 @@
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/xmlstream.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 #ifndef PRODUCT
 #define DEBUG_ARG(x) , x
 #else
@@ -3563,3 +3566,5 @@ void PhaseOutput::print_statistics() {
   Scheduling::print_statistics();
 }
 #endif
+
+PRAGMA_DIAG_POP

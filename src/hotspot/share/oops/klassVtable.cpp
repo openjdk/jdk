@@ -46,6 +46,9 @@
 #include "runtime/safepointVerifiers.hpp"
 #include "utilities/copy.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 inline InstanceKlass* klassVtable::ik() const {
   return InstanceKlass::cast(_klass);
 }
@@ -1626,3 +1629,5 @@ void vtableEntry::print() {
   }
 }
 #endif // PRODUCT
+
+PRAGMA_DIAG_POP

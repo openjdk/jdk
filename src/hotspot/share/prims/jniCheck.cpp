@@ -46,6 +46,9 @@
 #include "utilities/formatBuffer.hpp"
 #include "utilities/utf8.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // Complain every extra number of unplanned local refs
 #define CHECK_JNI_LOCAL_REF_CAP_WARN_THRESHOLD 32
 
@@ -2339,3 +2342,5 @@ struct JNINativeInterface_* jni_functions_check() {
 
   return &checked_jni_NativeInterface;
 }
+
+PRAGMA_DIAG_POP

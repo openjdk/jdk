@@ -59,6 +59,9 @@
 #include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 using metaspace::ChunkManager;
 using metaspace::CommitLimiter;
 using metaspace::MetaspaceContext;
@@ -1028,3 +1031,5 @@ bool Metaspace::contains_non_shared(const void* ptr) {
 
   return VirtualSpaceList::vslist_nonclass()->contains((MetaWord*)ptr);
 }
+
+PRAGMA_DIAG_POP

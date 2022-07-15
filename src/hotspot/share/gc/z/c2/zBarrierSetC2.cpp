@@ -44,6 +44,9 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 class ZBarrierSetC2State : public ResourceObj {
 private:
   GrowableArray<ZLoadBarrierStubC2*>* _stubs;
@@ -564,3 +567,5 @@ void ZBarrierSetC2::compute_liveness_at_stubs() const {
     }
   }
 }
+
+PRAGMA_DIAG_POP

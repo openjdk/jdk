@@ -41,6 +41,9 @@
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/powerOfTwo.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // Implementation of InterpreterMacroAssembler
 
 void InterpreterMacroAssembler::jump_to_entry(address entry) {
@@ -2066,3 +2069,5 @@ void InterpreterMacroAssembler::notify_method_exit(
     pop(state);
   }
 }
+
+PRAGMA_DIAG_POP

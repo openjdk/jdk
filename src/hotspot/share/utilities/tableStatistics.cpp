@@ -32,6 +32,9 @@
 #include "jfr/jfr.hpp"
 #endif
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 TableRateStatistics::TableRateStatistics() :
   _added_items(0), _removed_items(0),
   _time_stamp(0), _seconds_stamp(0),
@@ -147,3 +150,5 @@ void TableStatistics::print(outputStream* st, const char *table_name) {
   st->print_cr("Maximum bucket size     : %9" PRIuPTR, _maximum_bucket_size);
 }
 
+
+PRAGMA_DIAG_POP

@@ -46,6 +46,9 @@
 #include "opto/runtime.hpp"
 #endif
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 int vframeArrayElement:: bci(void) const { return (_bci == SynchronizationEntryBCI ? 0 : _bci); }
 
 void vframeArrayElement::free_monitors(JavaThread* jt) {
@@ -703,3 +706,5 @@ void vframeArray::print_value_on(outputStream* st) const {
 
 
 #endif // !PRODUCT
+
+PRAGMA_DIAG_POP

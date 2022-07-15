@@ -49,6 +49,9 @@
 #include "utilities/events.hpp"
 #include "utilities/xmlstream.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 #ifdef ASSERT
 
 #define SWEEP(nm) record_sweep(nm, __LINE__)
@@ -674,3 +677,5 @@ void NMethodSweeper::print(outputStream* out) {
                                                     _total_nof_c2_methods_reclaimed);
   out->print_cr("  Total size of flushed methods:   " SIZE_FORMAT " kB", _total_flushed_size/K);
 }
+
+PRAGMA_DIAG_POP

@@ -32,6 +32,9 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 jlong JfrThreadCPULoadEvent::get_wallclock_time() {
   return os::javaTimeNanos();
 }
@@ -142,3 +145,5 @@ void JfrThreadCPULoadEvent::send_event_for_thread(JavaThread* jt) {
     }
   }
 }
+
+PRAGMA_DIAG_POP

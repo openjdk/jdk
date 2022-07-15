@@ -33,6 +33,9 @@
 #include "logging/logTag.hpp"
 #include "utilities/quickSort.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // These constants are used to adjust the margin of error for the moving
 // average of the allocation rate and cycle time. The units are standard
 // deviations.
@@ -365,3 +368,5 @@ double ShenandoahAllocationRate::instantaneous_rate(double time, size_t allocate
   double time_delta_sec = time - last_time;
   return (time_delta_sec > 0)  ? (allocation_delta / time_delta_sec) : 0;
 }
+
+PRAGMA_DIAG_POP

@@ -61,6 +61,9 @@
 #include "utilities/dtrace.hpp"
 #include "utilities/macros.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 /**
  * Implementation of the jdk.internal.misc.Unsafe class
  */
@@ -932,3 +935,5 @@ JVM_ENTRY(void, JVM_RegisterJDKInternalMiscUnsafeMethods(JNIEnv *env, jclass uns
   int ok = env->RegisterNatives(unsafeclass, jdk_internal_misc_Unsafe_methods, sizeof(jdk_internal_misc_Unsafe_methods)/sizeof(JNINativeMethod));
   guarantee(ok == 0, "register jdk.internal.misc.Unsafe natives");
 } JVM_END
+
+PRAGMA_DIAG_POP

@@ -58,6 +58,9 @@
 #include "gc/g1/g1BarrierSetRuntime.hpp"
 #endif // INCLUDE_G1GC
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // Simple helper to see if the caller of a runtime stub which
 // entered the VM has been deoptimized
 
@@ -2230,3 +2233,5 @@ void JVMCIRuntime::post_compile(JavaThread* thread) {
     }
   }
 }
+
+PRAGMA_DIAG_POP

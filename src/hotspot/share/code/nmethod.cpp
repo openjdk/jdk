@@ -84,6 +84,9 @@
 #include "jvmci/jvmciRuntime.hpp"
 #endif
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 #ifdef DTRACE_ENABLED
 
 // Only bother with this argument setup if dtrace is available
@@ -3673,3 +3676,5 @@ const char* nmethod::jvmci_name() {
   return NULL;
 }
 #endif
+
+PRAGMA_DIAG_POP

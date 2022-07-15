@@ -46,6 +46,9 @@
 #include "memory/universe.hpp"
 #include "runtime/atomic.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 ShenandoahControlThread::ShenandoahControlThread() :
   ConcurrentGCThread(),
   _alloc_failure_waiters_lock(Mutex::safepoint-1, "ShenandoahAllocFailureGC_lock", true),
@@ -646,3 +649,5 @@ void ShenandoahControlThread::prepare_for_graceful_shutdown() {
 bool ShenandoahControlThread::in_graceful_shutdown() {
   return _graceful_shutdown.is_set();
 }
+
+PRAGMA_DIAG_POP

@@ -55,6 +55,9 @@
 #include "runtime/mutex.hpp"
 #include "runtime/safepoint.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 typedef JfrCheckpointManager::BufferPtr BufferPtr;
 
 static JfrSignal _new_checkpoint;
@@ -604,3 +607,5 @@ void JfrCheckpointManager::notify_threads() {
     tc.do_thread(iter.next());
   }
 }
+
+PRAGMA_DIAG_POP

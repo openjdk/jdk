@@ -32,6 +32,9 @@
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 size_t PLAB::min_size() {
   // Make sure that we return something that is larger than AlignmentReserve
   return align_object_size(MAX2(MinTLABSize / HeapWordSize, (size_t)oopDesc::header_size())) + CollectedHeap::lab_alignment_reserve();
@@ -180,3 +183,5 @@ size_t PLABStats::compute_desired_plab_sz() {
   size_t recent_plab_sz = used / target_refills;
   return recent_plab_sz;
 }
+
+PRAGMA_DIAG_POP

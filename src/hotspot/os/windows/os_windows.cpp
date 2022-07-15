@@ -105,6 +105,9 @@
 #include <winsock2.h>
 #include <versionhelpers.h>
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // for timer info max values which include all bits
 #define ALL_64_BITS CONST64(-1)
 
@@ -5940,3 +5943,5 @@ void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {
     }
   }
 }
+
+PRAGMA_DIAG_POP

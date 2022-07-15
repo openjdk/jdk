@@ -41,6 +41,9 @@
 
 #include OS_HEADER_INLINE(os)
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 int VM_Version::_cpu;
 int VM_Version::_model;
 int VM_Version::_stepping;
@@ -3161,3 +3164,5 @@ intx VM_Version::allocate_prefetch_distance(bool use_watermark_prefetch) {
     }
   }
 }
+
+PRAGMA_DIAG_POP

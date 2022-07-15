@@ -36,6 +36,9 @@
 #include "opto/runtime.hpp"
 #endif
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // machine-dependent part of VtableStubs: create VtableStub of correct size and
 // initialize its code
 
@@ -267,3 +270,5 @@ int VtableStub::pd_code_alignment() {
   const unsigned int icache_line_size = wordSize;
   return icache_line_size;
 }
+
+PRAGMA_DIAG_POP

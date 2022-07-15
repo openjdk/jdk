@@ -43,6 +43,9 @@
 #include "utilities/debug.hpp"
 #include "utilities/ticks.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 #define ZSIZE_FMT                       SIZE_FORMAT "M(%.0f%%)"
 #define ZSIZE_ARGS_WITH_MAX(size, max)  ((size) / M), (percent_of(size, max))
 #define ZSIZE_ARGS(size)                ZSIZE_ARGS_WITH_MAX(size, ZStatHeap::max_capacity())
@@ -1513,3 +1516,5 @@ void ZStatHeap::print() {
                      .left(ZTABLE_ARGS_NA)
                      .end());
 }
+
+PRAGMA_DIAG_POP

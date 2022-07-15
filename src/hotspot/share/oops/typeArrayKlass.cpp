@@ -42,6 +42,9 @@
 #include "runtime/handles.inline.hpp"
 #include "utilities/macros.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 TypeArrayKlass* TypeArrayKlass::create_klass(BasicType type,
                                       const char* name_str, TRAPS) {
   Symbol* sym = NULL;
@@ -374,3 +377,5 @@ ModuleEntry* TypeArrayKlass::module() const {
 PackageEntry* TypeArrayKlass::package() const {
   return NULL;
 }
+
+PRAGMA_DIAG_POP

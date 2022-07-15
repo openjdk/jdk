@@ -51,6 +51,9 @@
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 
 //------------------------------------------------------------------------------------------------------------------
 // Timeout machinery
@@ -554,3 +557,5 @@ void VMThread::execute(VM_Operation* op) {
 void VMThread::verify() {
   oops_do(&VerifyOopClosure::verify_oop, NULL);
 }
+
+PRAGMA_DIAG_POP

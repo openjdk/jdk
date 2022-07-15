@@ -62,6 +62,9 @@
 #include "gc/shenandoah/c2/shenandoahBarrierSetC2.hpp"
 #endif
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 
 //
 // Replace any references to "oldref" in inputs to "use" with "newref".
@@ -2630,3 +2633,5 @@ int PhaseMacroExpand::count_MemBar(Compile *C) {
   return total;
 }
 #endif
+
+PRAGMA_DIAG_POP

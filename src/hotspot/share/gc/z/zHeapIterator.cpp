@@ -37,6 +37,9 @@
 #include "memory/iterator.inline.hpp"
 #include "utilities/bitMap.inline.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 class ZHeapIteratorBitMap : public CHeapObj<mtGC> {
 private:
   CHeapBitMap _bitmap;
@@ -434,3 +437,5 @@ void ZHeapIterator::object_iterate(ObjectClosure* cl, uint worker_id) {
     object_iterate_inner<false /* VisitWeaks */>(context, cl);
   }
 }
+
+PRAGMA_DIAG_POP

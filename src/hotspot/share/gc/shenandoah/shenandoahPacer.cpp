@@ -32,6 +32,9 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/threadSMR.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 /*
  * In normal concurrent cycle, we have to pace the application to let GC finish.
  *
@@ -331,3 +334,5 @@ void ShenandoahPacer::print_cycle_on(outputStream* out) {
   }
   out->cr();
 }
+
+PRAGMA_DIAG_POP

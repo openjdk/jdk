@@ -41,6 +41,9 @@
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 //=============================================================================
 #define NODE_HASH_MINIMUM_SIZE    255
 //------------------------------NodeHash---------------------------------------
@@ -2210,3 +2213,5 @@ void Type_Array::dump() const {
   }
 }
 #endif
+
+PRAGMA_DIAG_POP

@@ -49,6 +49,9 @@
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/stack.inline.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 typedef const Klass* KlassPtr;
 typedef const PackageEntry* PkgPtr;
 typedef const ModuleEntry* ModPtr;
@@ -1102,3 +1105,5 @@ size_t JfrTypeSet::on_unloading_classes(JfrCheckpointWriter* writer) {
   }
   return register_unloading_klasses();
 }
+
+PRAGMA_DIAG_POP
