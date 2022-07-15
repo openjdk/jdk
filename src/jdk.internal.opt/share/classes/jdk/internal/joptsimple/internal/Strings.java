@@ -55,12 +55,14 @@
 
 package jdk.internal.joptsimple.internal;
 
+import static java.lang.System.*;
+
 /**
  * @author <a href="mailto:pholser@alumni.rice.edu">Paul Holser</a>
  */
 public final class Strings {
     public static final String EMPTY = "";
-    public static final String LINE_SEPARATOR = System.lineSeparator();
+    public static final String LINE_SEPARATOR = getProperty( "line.separator" );
 
     private Strings() {
         throw new UnsupportedOperationException();
