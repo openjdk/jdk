@@ -342,7 +342,7 @@ address TemplateInterpreterGenerator::generate_StackOverflowError_handler() {
     __ mv(t1, sp);
     // maximal sp for current fp (stack grows negative)
     // check if frame is complete
-    __ bge(t0, t1, L);
+    __ bge(t0, sp, L);
     __ stop ("interpreter frame not set up");
     __ bind(L);
   }
