@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,6 +79,7 @@ public class TestCodeCacheFull {
         Events.assertField(event, "startAddress").notEqual(0L);
         Events.assertField(event, "commitedTopAddress").notEqual(0L);
         Events.assertField(event, "reservedTopAddress").notEqual(0L);
+        Events.assertField(event, "codeCacheMaxCapacity").notEqual(0L);
     }
 
     private static BlobType blobTypeFromName(String codeBlobTypeName) throws Exception {
