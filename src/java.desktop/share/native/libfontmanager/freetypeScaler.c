@@ -1775,10 +1775,10 @@ static jboolean addColorLayersRenderData(JNIEnv* env, FTScalerContext *context,
 static void addBitmapRenderData(JNIEnv *env, jobject scaler, jobject font2D,
                                 FTScalerContext *context, FTScalerInfo* scalerInfo,
                                 jint glyphCode, jfloat xpos, jfloat ypos, jobject result) {
-    GlyphInfo* glyphInfo = (GlyphInfo*) getGlyphImageNativeInternal(
+    GlyphInfo* glyphInfo = (GlyphInfo*) jlong_to_ptr(getGlyphImageNativeInternal(
             env, scaler, font2D,
-            (jlong) context, (jlong) scalerInfo,
-            glyphCode, JNI_FALSE, JNI_FALSE);
+            ptr_to_jlong(context), ptr_to_jlong(scalerInfo),
+            glyphCode, JNI_FALSE, JNI_FALSE));
 
     FT_GlyphSlot ftglyph = scalerInfo->face->glyph;
 
