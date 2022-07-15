@@ -200,8 +200,7 @@ public class AdvancedTransformationsTest {
             target.forEachElement(cle -> {
                 CodeModel instrumentorCodeModel;
                 if (cle instanceof MethodModel mm && ((instrumentorCodeModel = instrumentorCodeMap.get(mm.methodName().stringValue() + mm.methodType().stringValue())) != null)) {
-                    clb.withMethod(mm.methodName().stringValue(), mm.methodTypeSymbol(), mm.flags().flagsMask(),
-                                   mb -> mm.forEachElement(me -> {
+                    clb.withMethod(mm.methodName().stringValue(), mm.methodTypeSymbol(), mm.flags().flagsMask(), mb -> mm.forEachElement(me -> {
                         if (me instanceof CodeModel targetCodeModel) {
                             //instrumented methods are merged
                             var instrumentorLocalsShifter = new CodeLocalsShifter(mm.flags(), mm.methodTypeSymbol());
@@ -221,9 +220,9 @@ public class AdvancedTransformationsTest {
                                     if (!mm.flags().has(AccessFlag.STATIC)) {
                                         storeStack.add(new Arg(TypeKind.ReferenceType, slot++));
                                     }
-                                    var it = Util.parameterTypes(mm.methodType().stringValue());
-                                    while (it.hasNext()) {
-                                        var tk = TypeKind.fromDescriptor(it.next());
+                                    var mType = mm.methodTypeSymbol();
+                                    for (int i = 0; i < mType.parameterCount(); i++) {
+                                        var tk = TypeKind.fromDescriptor(mType.parameterType(i).descriptorString());
                                         storeStack.add(new Arg(tk, slot));
                                         slot += tk.slotSize();
                                     }
@@ -250,7 +249,7 @@ public class AdvancedTransformationsTest {
                                     codeBuilder.with(instrumentorCodeElement);
                             };
                             mb.transformCode(instrumentorCodeModel,
-                                             invokeInterceptor.andThen(instrumentorCodeRemapperAndShifter));
+                                         invokeInterceptor.andThen(instrumentorCodeRemapperAndShifter));
                         }
                         else {
                             mb.with(me);
@@ -265,10 +264,10 @@ public class AdvancedTransformationsTest {
             instrumentor.forEachElement(cle -> {
                 //remaining instrumentor fields and methods are remapped and moved
                 if (cle instanceof FieldModel fm && !targetFieldNames.contains(fm.fieldName().stringValue())) {
-                   remapperConsumer.accept(cle);
+                    remapperConsumer.accept(cle);
                 }
                 else if (cle instanceof MethodModel mm && !"<init>".equals(mm.methodName().stringValue()) && !targetMethods.contains(mm.methodName().stringValue() + mm.methodType().stringValue())) {
-                   remapperConsumer.accept(cle);
+                    remapperConsumer.accept(cle);
                 }
             });
         });
