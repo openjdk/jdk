@@ -102,14 +102,13 @@ extern "C" void disnm(intptr_t p);
 //      adr/adrp Rx imm21; ldr/str Ry Rx  #imm12
 //      adr/adrp Rx imm21; add Ry Rx  #imm12
 //      adr/adrp Rx imm21; movk Rx #imm16<<32; ldr/str Ry, [Rx, #offset_in_page]
-//      adr/adrp Rx imm21; movk Rx #imm16<<32; add Ry, Rx, #offset_in_page
-//      adr/adrp Rx imm21; movk Rx #imm16<<32
 //      adr/adrp Rx imm21
-//      The adr/adrp Rx imm21; movk Rx #imm16<<32; add Rx, Rx, #offset_in_page
-//      form can only happen when the target is an ExternalAddress,
-//      and (by definition) ExternalAddresses don't move. Because of
-//      that property, there is never any need to patch the last of
-//      the three instructions. However,
+//      adr/adrp Rx imm21; movk Rx #imm16<<32
+//      adr/adrp Rx imm21; movk Rx #imm16<<32; add Ry, Rx, #offset_in_page
+//      The latter form can only happen when the target is an
+//      ExternalAddress, and (by definition) ExternalAddresses don't
+//      move. Because of that property, there is never any need to
+//      patch the last of the three instructions. However,
 //      MacroAssembler::target_addr_for_insn takes all three
 //      instructions into account and returns the correct address.
 //    3b) Move wide (immediate)
