@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,7 +111,7 @@ public class Rows {
         StringBuilder buffer = new StringBuilder();
 
         for ( Row each : rows ) {
-            pad( buffer, each.option, optionWidth() ).append(" ".repeat(columnSeparatorWidth) );
+            pad( buffer, each.option, optionWidth() ).append( repeat( ' ', columnSeparatorWidth ) );
             pad( buffer, each.description, descriptionWidth() ).append( LINE_SEPARATOR );
         }
 
@@ -127,7 +127,7 @@ public class Rows {
     }
 
     private StringBuilder pad( StringBuilder buffer, String s, int length ) {
-        buffer.append( s ).append(" ".repeat(length - s.length()) );
+        buffer.append( s ).append( repeat( ' ', length - s.length() ) );
         return buffer;
     }
 }

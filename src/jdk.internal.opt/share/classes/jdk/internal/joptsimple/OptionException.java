@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,14 +57,16 @@ package jdk.internal.joptsimple;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import java.util.StringJoiner;
 
-import static java.util.Collections.unmodifiableList;
-import static jdk.internal.joptsimple.internal.Messages.message;
+import jdk.internal.joptsimple.internal.Strings;
+
+import static java.util.Collections.*;
+import static jdk.internal.joptsimple.internal.Messages.*;
 
 /**
  * Thrown when a problem occurs during option parsing.
@@ -98,7 +100,7 @@ public abstract class OptionException extends RuntimeException {
     }
 
     private String specToString( OptionSpec<?> option ) {
-        return String.join("/", option.options());
+        return Strings.join( new ArrayList<>( option.options() ), "/" );
     }
 
     /**
@@ -119,12 +121,16 @@ public abstract class OptionException extends RuntimeException {
     }
 
     protected final String multipleOptionString() {
-        StringJoiner buffer = new StringJoiner(", ", "[", "]");
+        StringBuilder buffer = new StringBuilder( "[" );
 
-        Set<String> asSet = new LinkedHashSet<>(options);
-        for (String option : asSet) {
-            buffer.add(singleOptionString(option));
+        Set<String> asSet = new LinkedHashSet<String>( options );
+        for ( Iterator<String> iter = asSet.iterator(); iter.hasNext(); ) {
+            buffer.append( singleOptionString(iter.next()) );
+            if ( iter.hasNext() )
+                buffer.append( ", " );
         }
+
+        buffer.append( ']' );
 
         return buffer.toString();
     }
