@@ -1423,7 +1423,7 @@ final class Win32ShellFolder2 extends ShellFolder {
         public Image getResolutionVariant(double width, double height) {
             int dist = 0;
             Image retVal = null;
-            // We only care about width since we don't support non-rectangular icons
+            // We only care about width since we don't support non-square icons
             int w = (int) width;
             int retindex = 0;
             for (Integer i : resolutionVariants.keySet()) {
