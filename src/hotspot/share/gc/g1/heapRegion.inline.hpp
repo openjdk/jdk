@@ -213,7 +213,6 @@ inline void HeapRegion::reset_skip_compacting_after_full_gc() {
          "region %u compaction_top " PTR_FORMAT " must not be different from bottom " PTR_FORMAT,
          hrm_index(), p2i(compaction_top()), p2i(bottom()));
 
-  _marked_bytes = used();
   _garbage_bytes = 0;
 
   set_top_at_mark_start(bottom());
@@ -326,8 +325,7 @@ inline void HeapRegion::note_start_of_marking() {
 inline void HeapRegion::note_end_of_marking(size_t marked_bytes) {
   assert_at_safepoint();
 
-  _marked_bytes = marked_bytes;
-  _garbage_bytes = byte_size(bottom(), top_at_mark_start()) - _marked_bytes;
+  _garbage_bytes = byte_size(bottom(), top_at_mark_start()) - marked_bytes;
 
   if (needs_scrubbing()) {
     _parsable_bottom = top_at_mark_start();
