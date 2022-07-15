@@ -59,8 +59,8 @@ public class SixteenBitFormats {
             if (Binary16.compare(s, s2) != 0) {
                 errors++;
                 System.out.println("Roundtrip failure on " +
-                                   Integer.toHexString((int)s) +
-                                   "\t got back " + Integer.toHexString((int)s2));
+                                   Integer.toHexString(0xFFFF & (int)s) +
+                                   "\t got back " + Integer.toHexString(0xFFFF & (int)s2));
             }
         }
         return errors;
@@ -125,7 +125,7 @@ public class SixteenBitFormats {
 
             // Test rounding near binary16 MIN_VALUE
             // Smallest in magnitude subnormal binary16 value 0x0001 => 0x1.0p-24f
-            // Half-way case and small should round down to zero
+            // Half-way case,0x1.0p-25f, and smaller should round down to zero
             {0x1.fffffep-26f,      Binary16.POSITIVE_ZERO},     // nextDown in float
             {0x1.000000p-25f,      Binary16.POSITIVE_ZERO},
             {0x1.000002p-25f,      Binary16.MIN_VALUE},         // nextUp in float
@@ -156,8 +156,8 @@ public class SixteenBitFormats {
         // tests in this file make sure all short values round-trip so
         // that doesn't need to be tested here.)
 
-        for (int i = Binary16.POSITIVE_ZERO;    // binary16 0.0
-             i <= Binary16.MAX_VALUE; // Largest normal binary16 value
+        for (int i = Binary16.POSITIVE_ZERO; // 0x0000
+             i <= Binary16.MAX_VALUE;        // 0x7bff
              i += 2) {     // Check every even/odd pair once
             short lower = (short)i;
             short upper = (short)(i+1);
@@ -173,11 +173,27 @@ public class SixteenBitFormats {
 
             // Under round to nearest even, the midway point will
             // round *down* to the (even) lower endpoint.
-            errors += compareAndReportError(midway, lower);
+            errors += compareAndReportError(              midway,      lower);
 
-            errors += compareAndReportError(Math.nextUp(midway),       upper);
+            errors += compareAndReportError(Math.nextUp(  midway),     upper);
             errors += compareAndReportError(Math.nextDown(upperFloat), upper);
         }
+
+        // More testing around the overflow threshold
+        // Binary16.ulp(Binary16.MAX_VALUE) == 32.0f; test around Binary16.MAX_VALUE + 1/2 ulp
+        float binary16_MAX_VALUE = Float.binary16AsShortBitsToFloat(Binary16.MAX_VALUE);
+        float binary16_MAX_VALUE_halfUlp = binary16_MAX_VALUE + 16.0f;
+
+        errors += compareAndReportError(Math.nextDown(binary16_MAX_VALUE), Binary16.MAX_VALUE);
+        errors += compareAndReportError(              binary16_MAX_VALUE,  Binary16.MAX_VALUE);
+        errors += compareAndReportError(Math.nextUp(  binary16_MAX_VALUE), Binary16.MAX_VALUE);
+
+        // Binary16.MAX_VALUE is an "odd" value since its LSB = 1 so
+        // the half-way value greater than Binary16.MAX_VALUE should
+        // round up to the next even value, in this case Binary16.POSITIVE_INFINITY.
+        errors += compareAndReportError(Math.nextDown(binary16_MAX_VALUE_halfUlp), Binary16.MAX_VALUE);
+        errors += compareAndReportError(              binary16_MAX_VALUE_halfUlp,  Binary16.POSITIVE_INFINITY);
+        errors += compareAndReportError(Math.nextUp(  binary16_MAX_VALUE_halfUlp), Binary16.POSITIVE_INFINITY);
 
         return errors;
     }
@@ -239,8 +255,7 @@ public class SixteenBitFormats {
         }
 
         public static short negate(short binary16) {
-            return (short)(((binary16 & 0x8000) ^ 0x8000) | // Isolate and flip sign bit
-                           (binary16 & 0x7fff));
+            return (short)(binary16 ^ 0x8000 ); // Flip only sign bit.
         }
 
         public static int compare(short bin16_1, short bin16_2) {

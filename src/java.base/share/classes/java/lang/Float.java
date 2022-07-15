@@ -992,7 +992,7 @@ public final class Float extends Number
      * </ul>
      *
      * <h4><a id=binary16Format>IEEE 754 binary16 format</a></h4>
-     * IEEE 754 standard defines binary16 as a 16-bit format, along
+     * The IEEE 754 standard defines binary16 as a 16-bit format, along
      * with the 32-bit binary32 format (corresponding to the {@code
      * float} type) and the 64-bit binary64 format (corresponding to
      * the {@code double} type). The binary16 format is similar to the
@@ -1023,6 +1023,10 @@ public final class Float extends Number
         int bin16ExpBits     = 0x7c00 & bin16arg;
         int bin16SignifBits  = 0x03FF & bin16arg;
 
+        // Shift left difference in the number of significand bits in
+        // the float and binary16 formats
+        final int SIGNIF_SHIFT = (FloatConsts.SIGNIFICAND_WIDTH - 11);
+
         float sign = (bin16SignBit != 0) ? -1.0f : 1.0f;
 
         // Extract binary16 exponent, remove its bias, add in the bias
@@ -1038,7 +1042,8 @@ public final class Float extends Number
         } else if (bin16Exp == 16) {
             return (bin16SignifBits == 0) ?
                 sign * Float.POSITIVE_INFINITY :
-                Float.NaN; // Could try to preserve NaN significand bits
+                Float.intBitsToFloat(0x7f80_0000 | // Preserve NaN signif bits
+                                     ( bin16SignifBits << SIGNIF_SHIFT ));
         }
 
         assert -14 <= bin16Exp  && bin16Exp <= 15;
@@ -1048,10 +1053,7 @@ public final class Float extends Number
 
         // Compute and combine result sign, exponent, and significand bits.
         int result = (floatExpBits |
-                      // Shift left difference in the number of
-                      // significand bits in the float and binary16
-                      // formats
-                      (bin16SignifBits << (FloatConsts.SIGNIFICAND_WIDTH - 11)));
+                      (bin16SignifBits << SIGNIF_SHIFT));
         return sign * Float.intBitsToFloat(result);
     }
 
@@ -1085,18 +1087,25 @@ public final class Float extends Number
      */
     // @IntrinsicCandidate
     public static short floatToBinary16AsShortBits(float f) {
-        if (Float.isNaN(f)) {
-            // Arbitrary binary16 NaN value; could try to preserve the
-            // sign and some bits of the NaN significand.
-            return (short)0x7fff;
-        }
-
-        float abs_f = Math.abs(f);
         int doppel = Float.floatToRawIntBits(f);
         short sign_bit = (short)((doppel >> 16) & 0x8000);
 
+        if (Float.isNaN(f)) {
+            // Preserve sign and attempt to preserve significand bits
+            return (short)(sign_bit
+                    | 0x7c00 // max exponent + 1
+                    // Preserve high order bit of float NaN in the
+                    // binary16 result NaN (tenth bit); OR in remaining
+                    // bits into lower 9 bits of binary 16 significand.
+                    | (doppel & 0x007f_e000) >> 13 // 10 bits
+                    | (doppel & 0x0000_1ff0) >> 4  //  9 bits
+                    | (doppel & 0x0000_000f));     //  4 bits
+        }
+
+        float abs_f = Math.abs(f);
+
         // The overflow threshold is binary16 MAX_VALUE + 1/2 ulp
-        if (abs_f > (65504.0f + 16.0f) ) {
+        if (abs_f >= (65504.0f + 16.0f) ) {
             return (short)(sign_bit | 0x7c00); // Positive or negative infinity
         } else {
             // Smallest magnitude nonzero representable binary16 value
@@ -1116,8 +1125,8 @@ public final class Float extends Number
                 // trailing significand bits for a binary16 subnormal.
                 //
                 // The exponent range of normalized binary16 subnormal
-                // values is [-15, -24]. The exponent range of float
-                // subnormals is [-140, -149]. Multiply abs_f down by
+                // values is [-24, -15]. The exponent range of float
+                // subnormals is [-149, -140]. Multiply abs_f down by
                 // 2^(-125) -- since (-125 = -149 - (-24)) -- so that
                 // the trailing bits of a subnormal float represent
                 // the correct trailing bits of a binary16 subnormal.
