@@ -269,6 +269,7 @@ class relocInfo {
     runtime_call_w_cp_type  = 14, // Runtime call which may load its target from the constant pool
     data_prefix_tag         = 15, // tag for a prefix (carries data arguments)
     post_call_nop_type      = 16, // A tag for post call nop relocations
+    entry_guard_type        = 17, // A tag for an nmethod entry barrier guard value
     type_mask               = 31  // A mask which selects only the above values
   };
 
@@ -309,6 +310,7 @@ class relocInfo {
     visitor(section_word) \
     visitor(trampoline_stub) \
     visitor(post_call_nop) \
+    visitor(entry_guard) \
 
 
  public:
@@ -879,6 +881,19 @@ public:
   static RelocationHolder spec() {
     RelocationHolder rh = newHolder();
     new(rh) post_call_nop_Relocation();
+    return rh;
+  }
+};
+
+class entry_guard_Relocation : public Relocation {
+  friend class RelocIterator;
+
+public:
+  entry_guard_Relocation() : Relocation(relocInfo::entry_guard_type) { }
+
+  static RelocationHolder spec() {
+    RelocationHolder rh = newHolder();
+    new(rh) entry_guard_Relocation();
     return rh;
   }
 };
