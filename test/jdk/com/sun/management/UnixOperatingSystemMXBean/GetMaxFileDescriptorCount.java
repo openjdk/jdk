@@ -32,7 +32,6 @@
  */
 
 import com.sun.management.UnixOperatingSystemMXBean;
-
 import java.lang.management.*;
 
 public class GetMaxFileDescriptorCount {
@@ -42,7 +41,7 @@ public class GetMaxFileDescriptorCount {
 
     private static long       minCountForPass = 1;
     private static final long MAX_COUNT_FOR_PASS = Long.MAX_VALUE;
-    
+
     public static void main(String args[]) throws Exception {
 
         long minCount = mbean.getOpenFileDescriptorCount();
