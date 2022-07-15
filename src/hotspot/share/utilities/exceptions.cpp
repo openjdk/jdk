@@ -357,9 +357,8 @@ Handle Exceptions::new_exception(JavaThread* thread, Symbol* name,
     if (thread->has_pending_exception()) {
       incoming_exception = Handle(thread, thread->pending_exception());
       thread->clear_pending_exception();
-      incoming_exception->print();
-      ResourceMark rm;
-      assert(false, "Pending exception while throwing %s %s", name->as_C_string(), message);
+      ResourceMark rm(thread);
+      assert(incoming_exception.is_null(), "Pending exception while throwing %s %s", name->as_C_string(), message);
     }
     Handle msg;
     if (to_utf8_safe == safe_to_utf8) {
