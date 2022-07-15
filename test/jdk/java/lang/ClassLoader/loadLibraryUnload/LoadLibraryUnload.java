@@ -40,7 +40,8 @@
  * @run main/othervm/native -Xcheck:jni LoadLibraryUnload
  */
 import jdk.test.lib.Asserts;
-import jdk.test.lib.util.ForceGC;
+import jdk.test.lib.Utils;
+
 import java.lang.*;
 import java.lang.ref.ReferenceQueue;
 import java.lang.reflect.*;
@@ -165,7 +166,7 @@ public class LoadLibraryUnload {
         // before exiting the test.
         for (int i = 0; i < LOADER_COUNT; i++) {
             System.gc();
-            var res = refQueue.remove(5 * 1000L);
+            var res = refQueue.remove(Utils.adjustTimeout(5 * 1000L));
             System.out.println(i + " dequeued: " + res);
             if (res == null) {
                 Asserts.fail("Too few cleared WeakReferences");
