@@ -705,8 +705,7 @@ void TemplateInterpreterGenerator::lock_method() {
   __ check_extended_sp();
   __ add(sp, sp, - entry_size); // add space for a monitor entry
   __ add(esp, esp, - entry_size);
-  __ mv(t0, sp);
-  __ sd(t0, Address(fp, frame::interpreter_frame_extended_sp_offset * wordSize));
+  __ sd(sp, Address(fp, frame::interpreter_frame_extended_sp_offset * wordSize));
   __ sd(esp, monitor_block_top);  // set new monitor block top
   // store object
   __ sd(x10, Address(esp, BasicObjectLock::obj_offset_in_bytes()));
@@ -776,14 +775,13 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
     __ slli(t0, t0, 3);
     __ sub(t0, sp, t0);
     __ andi(t0, t0, -16);
-    // Store extender SP and mirror
+    // Store extended SP and mirror
     __ sd(t0, Address(sp, 5 * wordSize));
     __ sd(t2, Address(sp, 4 * wordSize));
     // Move SP out of the way
     __ mv(sp, t0);
   } else {
-    __ mv(t0, sp);
-    __ sd(t0, Address(sp, 5 * wordSize));
+    __ sd(sp, Address(sp, 5 * wordSize));
     __ sd(zr, Address(sp, 4 * wordSize));
   }
 }

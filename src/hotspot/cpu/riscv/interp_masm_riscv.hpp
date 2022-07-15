@@ -93,7 +93,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
     mv(sp, t0);
   }
 
-  void check_extended_sp(const char* msg =  "check extended SP") {
+  void check_extended_sp(const char* msg = "check extended SP") {
 #ifdef ASSERT
     Label L;
     ld(t0, Address(fp, frame::interpreter_frame_extended_sp_offset * wordSize));
