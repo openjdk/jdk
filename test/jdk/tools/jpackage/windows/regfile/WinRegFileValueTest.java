@@ -84,6 +84,13 @@ public class WinRegFileValueTest {
                 new Token(0, "bar\"\r\n")
         ).getName(), "name contents");
 
+        // name quotes
+        assertEquals("f\"oo", RegFileValue.fromTokens(
+                new Token(0, "\"f\\\"oo\"="),
+                new Token(0, "\""),
+                new Token(0, "bar\"\r\n")
+        ).getName(), "name quotes");
+
         // type invalid
         assertThrows(RegFileTokenException.class, () -> RegFileValue.fromTokens(
                 new Token(0, "\"foo\"="),
@@ -120,6 +127,16 @@ public class WinRegFileValueTest {
                     new Token(0, "bar\"\r\n"));
             assertEquals(RegFileValueType.REG_SZ.name(), val.getType().name(), "value sz type");
             assertEquals("bar", val.getValue(), "value sz");
+        }
+
+        // value REG_SZ quotes
+        {
+            RegFileValue val = RegFileValue.fromTokens(
+                    new Token(0, "\"foo\"="),
+                    new Token(0, "\""),
+                    new Token(0, "b\\\"ar\"\r\n"));
+            assertEquals(RegFileValueType.REG_SZ.name(), val.getType().name(), "value sz quotes type");
+            assertEquals("b\"ar", val.getValue(), "value sz quotes");
         }
 
         // value REG_BINARY empty

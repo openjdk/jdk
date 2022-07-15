@@ -184,7 +184,7 @@ public class WinRegFileParserTest {
         List<RegFileKey> keys = parseResource("test_success_value_name_quotes.reg");
         assertEquals(1, keys.size(), "value quotes keys size");
         assertEquals(1, keys.get(0).getValues().size(), "value quotes value size");
-        assertEquals("test\\\"\\\"_name\\\"", keys.get(0).getValues().get(0).getName(), "value quotes");
+        assertEquals("test\"\"_name\"", keys.get(0).getValues().get(0).getName(), "value quotes");
     }
 
     @Test
@@ -200,7 +200,7 @@ public class WinRegFileParserTest {
         assertEquals("value_string_with_case", values.get(1).getName(), "value sz case name");
         assertEquals("withCase", values.get(1).getValue(), "value sz case");
         assertEquals("value_string_with_quotes", values.get(2).getName(), "value sz quotes name");
-        assertEquals("with_\\\"quotes\\\"\\\"", values.get(2).getValue(), "value sz quotes");
+        assertEquals("with_\"quotes\"\"", values.get(2).getValue(), "value sz quotes");
         assertEquals("value_string_with_spaces", values.get(3).getName(), "value sz spaes name");
         assertEquals("with spaces", values.get(3).getValue(), "value sz spaces");
         assertEquals("value_string_nonascii", values.get(4).getName(), "value sz nonascii name");

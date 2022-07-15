@@ -129,7 +129,7 @@ public class RegFileValue {
                     "Registry value name length: %d exceeds max allowed length: %d",
                     name.length(), MAX_NAME_LENGTH));
         }
-        return name;
+        return unescapeQuotes(name);
     }
 
     @SuppressWarnings("fallthrough")
@@ -148,7 +148,8 @@ public class RegFileValue {
                 .substring(0, token.image.length() - eolLength);
         switch (type) {
             case REG_SZ: // example: 'my string value"'
-                return valueImage.substring(0, valueImage.length() - DOUBLE_QUOTE.length());
+                return unescapeQuotes(
+                        valueImage.substring(0, valueImage.length() - DOUBLE_QUOTE.length()));
             case REG_BINARY:
             case REG_MULTI_SZ:
             case REG_EXPAND_SZ: // example: de,ad,be,...,ef,\<EOL>  de,ad
@@ -175,6 +176,10 @@ public class RegFileValue {
         return bytes;
     }
 
+    private static String unescapeQuotes(String str) {
+        return ESCAPED_QUOTE_REGEX.matcher(str).replaceAll("\"");
+    }
+
     private final String name;
     private final RegFileValueType type;
     private final String value;
@@ -188,5 +193,6 @@ public class RegFileValue {
     private static final String DOUBLE_SPACE = "  ";
     private static final Pattern BACKSLASH_EOL_CR_LF_REGEX = Pattern.compile("\\\\" + EOL_CR_LF + DOUBLE_SPACE);
     private static final Pattern BACKSLASH_EOL_LF_REGEX = Pattern.compile("\\\\" + EOL_LF + DOUBLE_SPACE);
+    private static final Pattern ESCAPED_QUOTE_REGEX = Pattern.compile("\\\\\"");
 
 }
