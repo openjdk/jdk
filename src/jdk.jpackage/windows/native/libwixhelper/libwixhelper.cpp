@@ -76,20 +76,24 @@ void findInstalledPackages(const Guid& upgradeCode,
     for (DWORD productCodeIdx = 0; true; ++productCodeIdx) {
         TCHAR productCode[39 /* http://msdn.microsoft.com/en-us/library/aa370101(v=vs.85).aspx */];
         const UINT status = MsiEnumRelatedProducts(upgradeCodeStr, 0,
-                                              productCodeIdx++, productCode);
+                                              productCodeIdx, productCode);
         if (ERROR_NO_MORE_ITEMS == status) {
             break;
         }
 
-        if (ERROR_SUCCESS != status) {
+        if (ERROR_SUCCESS == status) {
+            LOG_TRACE(tstrings::any() << "Found " << productCode << " product");
+            JP_NO_THROW(products.push_back(ProductInfo(Guid(productCode))));
+        } else {
             LOG_WARNING(tstrings::any()
                         << "MsiEnumRelatedProducts("
                         << upgradeCodeStr << ", "
                         << productCodeIdx
                         << ") failed with error=[" << status << "]");
+            if (ERROR_INVALID_PARAMETER == status) {
+                break;
+            }
         }
-
-        JP_NO_THROW(products.push_back(ProductInfo(Guid(productCode))));
     }
 }
 
@@ -104,6 +108,13 @@ DottedVersion getDottedVersion(const msi::DatabaseRecord& record, UINT idx) {
 } // namespace
 
 JP_CA(FindRelatedProductsEx) {
+    if (ca.isInMode(MSIRUNMODE_MAINTENANCE)) {
+        // MSI skips tha standard FindRelatedProducts action is in maintenance mode,
+        // so should we do for custom FindRelatedProducts action
+        LOG_TRACE("Not run in maintenance mode");
+        return;
+    }
+
     const Guid upgradeCode = Guid(ca.getProperty(_T("UpgradeCode")));
 
     std::vector<ProductInfo> installedProducts;
@@ -111,11 +122,23 @@ JP_CA(FindRelatedProductsEx) {
 
     const msi::Database db(ca);
 
+    bool migratePropRemoved = false;
+
+    // https://docs.microsoft.com/en-us/windows/win32/adsi/sql-dialect
     msi::DatabaseView view(db, (tstrings::any()
-            << _T("SELECT `VersionMin`,`VersionMax`,`Language`,`Attributes`,`Remove`,`ActionProperty` FROM Upgrade WHERE `ActionProperty` NOT NULL And `UpgradeCode` = '")
+            << _T("SELECT `VersionMin`,`VersionMax`,`Language`,`Attributes`,`Remove`,`ActionProperty` FROM Upgrade WHERE `ActionProperty` <> NULL And `UpgradeCode` = '")
             << upgradeCode.toMsiString() << _T("'")).tstr());
     msi::DatabaseRecord record;
     while (!record.tryFetch(view).empty()) {
+        const tstring actionProperty = record.getString(6);
+
+        // Clean up properties set by the standard FindRelatedProducts action
+        ca.removeProperty(actionProperty);
+        if (!migratePropRemoved) {
+            ca.removeProperty(_T("MIGRATE"));
+            migratePropRemoved = true;
+        }
+
         const DottedVersion versionMin = getDottedVersion(record, 1);
         const DottedVersion versionMax = getDottedVersion(record, 2);
 
@@ -144,12 +167,10 @@ JP_CA(FindRelatedProductsEx) {
                 }
             }
 
-            const tstring actionProperty = record.getString(6);
             if (match) {
-                ca.setProperty(actionProperty,
-                                productIt->getProductCode().toMsiString());
-            } else {
-                ca.removeProperty(actionProperty);
+                tstring value = productIt->getProductCode().toMsiString();
+                ca.setProperty(actionProperty, value);
+                ca.setProperty(_T("MIGRATE"), value);
             }
         }
     }
