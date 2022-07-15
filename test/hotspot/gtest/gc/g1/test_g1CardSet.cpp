@@ -34,6 +34,9 @@
 #include "unittest.hpp"
 #include "utilities/powerOfTwo.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 class G1CardSetTest : public ::testing::Test {
 
   class G1CountCardsClosure : public G1CardSet::CardClosure {
@@ -486,3 +489,5 @@ TEST_VM(G1CardSetTest, basic_cardset_test) {
 TEST_VM(G1CardSetTest, mt_cardset_test) {
   G1CardSetTest::cardset_mt_test();
 }
+
+PRAGMA_DIAG_POP

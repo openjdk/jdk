@@ -29,6 +29,9 @@
 #include "runtime/thread.inline.hpp"
 #include "threadHelper.inline.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // This file contains helper classes to run unit tests concurrently in multiple threads.
 
 // Base class for test runnable. Override runUnitTest() to specify what to run.
@@ -94,5 +97,7 @@ private:
   const int nrOfThreads;
   const long testDurationMillis;
 };
+
+PRAGMA_DIAG_POP
 
 #endif // GTEST_CONCURRENT_TEST_RUNNER_INLINE_HPP
