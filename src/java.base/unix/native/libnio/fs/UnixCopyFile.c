@@ -80,7 +80,7 @@ Java_sun_nio_fs_UnixCopyFile_bufferedCopy0
 {
     volatile jint* cancel = (jint*)jlong_to_ptr(cancelAddress);
 
-    char* buf = (char*)address;
+    char* buf = (char*)jlong_to_ptr(address);
 
 #if defined(__linux__)
     int advice = POSIX_FADV_SEQUENTIAL | // sequential data access

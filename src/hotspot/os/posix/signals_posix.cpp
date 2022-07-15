@@ -38,7 +38,10 @@
 #include "runtime/osThread.hpp"
 #include "runtime/safefetch.hpp"
 #include "runtime/semaphore.inline.hpp"
+#include "runtime/suspendedThreadTask.hpp"
+#include "runtime/threadCrashProtection.hpp"
 #include "signals_posix.hpp"
+#include "suspendResume_posix.hpp"
 #include "utilities/events.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/vmError.hpp"
@@ -584,7 +587,7 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
   // Handle JFR thread crash protection.
   //  Note: this may cause us to longjmp away. Do not use any code before this
   //  point which really needs any form of epilogue code running, eg RAII objects.
-  os::ThreadCrashProtection::check_crash_protection(sig, t);
+  ThreadCrashProtection::check_crash_protection(sig, t);
 
   bool signal_was_handled = false;
 
@@ -1628,14 +1631,14 @@ static void SR_handler(int sig, siginfo_t* siginfo, ucontext_t* context) {
 
   OSThread* osthread = thread->osthread();
 
-  os::SuspendResume::State current = osthread->sr.state();
+  SuspendResume::State current = osthread->sr.state();
 
-  if (current == os::SuspendResume::SR_SUSPEND_REQUEST) {
+  if (current == SuspendResume::SR_SUSPEND_REQUEST) {
     suspend_save_context(osthread, siginfo, context);
 
     // attempt to switch the state, we assume we had a SUSPEND_REQUEST
-    os::SuspendResume::State state = osthread->sr.suspended();
-    if (state == os::SuspendResume::SR_SUSPENDED) {
+    SuspendResume::State state = osthread->sr.suspended();
+    if (state == SuspendResume::SR_SUSPENDED) {
       sigset_t suspend_set;  // signals for sigsuspend()
       sigemptyset(&suspend_set);
 
@@ -1649,26 +1652,26 @@ static void SR_handler(int sig, siginfo_t* siginfo, ucontext_t* context) {
       while (1) {
         sigsuspend(&suspend_set);
 
-        os::SuspendResume::State result = osthread->sr.running();
-        if (result == os::SuspendResume::SR_RUNNING) {
+        SuspendResume::State result = osthread->sr.running();
+        if (result == SuspendResume::SR_RUNNING) {
           // double check AIX doesn't need this!
           sr_semaphore.signal();
           break;
-        } else if (result != os::SuspendResume::SR_SUSPENDED) {
+        } else if (result != SuspendResume::SR_SUSPENDED) {
           ShouldNotReachHere();
         }
       }
 
-    } else if (state == os::SuspendResume::SR_RUNNING) {
+    } else if (state == SuspendResume::SR_RUNNING) {
       // request was cancelled, continue
     } else {
       ShouldNotReachHere();
     }
 
     resume_clear_context(osthread);
-  } else if (current == os::SuspendResume::SR_RUNNING) {
+  } else if (current == SuspendResume::SR_RUNNING) {
     // request was cancelled, continue
-  } else if (current == os::SuspendResume::SR_WAKEUP_REQUEST) {
+  } else if (current == SuspendResume::SR_WAKEUP_REQUEST) {
     // ignore
   } else {
     // ignore
@@ -1727,7 +1730,7 @@ bool PosixSignals::do_suspend(OSThread* osthread) {
   assert(!sr_semaphore.trywait(), "semaphore has invalid state");
 
   // mark as suspended and send signal
-  if (osthread->sr.request_suspend() != os::SuspendResume::SR_SUSPEND_REQUEST) {
+  if (osthread->sr.request_suspend() != SuspendResume::SR_SUSPEND_REQUEST) {
     // failed to switch, state wasn't running?
     ShouldNotReachHere();
     return false;
@@ -1743,10 +1746,10 @@ bool PosixSignals::do_suspend(OSThread* osthread) {
       break;
     } else {
       // timeout
-      os::SuspendResume::State cancelled = osthread->sr.cancel_suspend();
-      if (cancelled == os::SuspendResume::SR_RUNNING) {
+      SuspendResume::State cancelled = osthread->sr.cancel_suspend();
+      if (cancelled == SuspendResume::SR_RUNNING) {
         return false;
-      } else if (cancelled == os::SuspendResume::SR_SUSPENDED) {
+      } else if (cancelled == SuspendResume::SR_SUSPENDED) {
         // make sure that we consume the signal on the semaphore as well
         sr_semaphore.wait();
         break;
@@ -1765,7 +1768,7 @@ void PosixSignals::do_resume(OSThread* osthread) {
   assert(osthread->sr.is_suspended(), "thread should be suspended");
   assert(!sr_semaphore.trywait(), "invalid semaphore state");
 
-  if (osthread->sr.request_wakeup() != os::SuspendResume::SR_WAKEUP_REQUEST) {
+  if (osthread->sr.request_wakeup() != SuspendResume::SR_WAKEUP_REQUEST) {
     // failed to switch to WAKEUP_REQUEST
     ShouldNotReachHere();
     return;
@@ -1786,9 +1789,9 @@ void PosixSignals::do_resume(OSThread* osthread) {
   guarantee(osthread->sr.is_running(), "Must be running!");
 }
 
-void os::SuspendedThreadTask::internal_do_task() {
+void SuspendedThreadTask::internal_do_task() {
   if (PosixSignals::do_suspend(_thread->osthread())) {
-    os::SuspendedThreadTaskContext context(_thread, _thread->osthread()->ucontext());
+    SuspendedThreadTaskContext context(_thread, _thread->osthread()->ucontext());
     do_task(context);
     PosixSignals::do_resume(_thread->osthread());
   }

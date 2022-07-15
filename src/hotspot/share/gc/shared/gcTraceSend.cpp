@@ -157,9 +157,9 @@ void OldGCTracer::send_old_gc_event() const {
 static JfrStructCopyFailed to_struct(const CopyFailedInfo& cf_info) {
   JfrStructCopyFailed failed_info;
   failed_info.set_objectCount(cf_info.failed_count());
-  failed_info.set_firstSize(cf_info.first_size());
-  failed_info.set_smallestSize(cf_info.smallest_size());
-  failed_info.set_totalSize(cf_info.total_size());
+  failed_info.set_firstSize(cf_info.first_size() * HeapWordSize);
+  failed_info.set_smallestSize(cf_info.smallest_size() * HeapWordSize);
+  failed_info.set_totalSize(cf_info.total_size() * HeapWordSize);
   return failed_info;
 }
 

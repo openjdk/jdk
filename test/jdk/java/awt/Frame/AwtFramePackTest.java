@@ -39,10 +39,9 @@ import javax.imageio.ImageIO;
  * @test
  * @bug 8265586
  * @key headful
- * @requires (os.family == "windows")
  * @summary Tests whether insets are calculated correctly on Windows
  * for AWT Frame by checking the actual and expected/preferred frame sizes.
- * @run main/othervm -Dsun.java2d.uiScale=1 AwtFramePackTest
+ * @run main AwtFramePackTest
  */
 
 public class AwtFramePackTest {

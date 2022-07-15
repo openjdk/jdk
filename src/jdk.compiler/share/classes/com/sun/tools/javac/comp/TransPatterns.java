@@ -97,6 +97,7 @@ import com.sun.tools.javac.tree.JCTree.JCSwitchExpression;
 import com.sun.tools.javac.tree.JCTree.LetExpr;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.util.Assert;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
 
 /**
@@ -284,7 +285,7 @@ public class TransPatterns extends TreeTranslator {
                 names.fromString(target.syntheticNameChar() + "c" + target.syntheticNameChar() + component.name),
                                  component.erasure(types),
                                  currentMethodSym);
-            Symbol accessor = getAccessor(component);
+            Symbol accessor = getAccessor(tree.pos(), component);
             JCVariableDecl nestedTempVar =
                     make.VarDef(nestedTemp,
                                 make.App(make.QualIdent(accessor),
@@ -344,12 +345,8 @@ public class TransPatterns extends TreeTranslator {
         result = test != null ? test : makeLit(syms.booleanType, 1);
     }
 
-    private MethodSymbol getAccessor(RecordComponent component) {
+    private MethodSymbol getAccessor(DiagnosticPosition pos, RecordComponent component) {
         return component2Proxy.computeIfAbsent(component, c -> {
-            MethodSymbol realAccessor = (MethodSymbol) component.owner
-                                                 .members()
-                                                 .findFirst(component.name, s -> s.kind == Kind.MTH &&
-                                                                                 ((MethodSymbol) s).params.isEmpty());
             MethodType type = new MethodType(List.of(component.owner.erasure(types)),
                                              types.erasure(component.type),
                                              List.nil(),
@@ -359,7 +356,7 @@ public class TransPatterns extends TreeTranslator {
                                                   type,
                                                   currentClass);
             JCStatement accessorStatement =
-                    make.Return(make.App(make.Select(make.Ident(proxy.params().head), realAccessor)));
+                    make.Return(make.App(make.Select(make.Ident(proxy.params().head), c.accessor)));
             VarSymbol ctch = new VarSymbol(Flags.SYNTHETIC,
                     names.fromString("catch" + currentClassTree.pos + target.syntheticNameChar()),
                     syms.throwableType,
@@ -534,7 +531,21 @@ public class TransPatterns extends TreeTranslator {
                         currentValue = temp;
                         JCExpression test = (JCExpression) this.<JCTree>translate(label.pat);
                         if (label.guard != null) {
-                            test = makeBinary(Tag.AND, test, translate(label.guard));
+                            JCExpression guard = translate(label.guard);
+                            if (hasJoinedNull) {
+                                JCPattern pattern = label.pat;
+                                while (pattern instanceof JCParenthesizedPattern parenthesized) {
+                                    pattern = parenthesized.pattern;
+                                }
+                                Assert.check(pattern.hasTag(Tag.BINDINGPATTERN));
+                                VarSymbol binding = ((JCBindingPattern) pattern).var.sym;
+                                guard = makeBinary(Tag.OR,
+                                                   makeBinary(Tag.EQ,
+                                                              make.Ident(binding),
+                                                              makeNull()),
+                                                   guard);
+                            }
+                            test = makeBinary(Tag.AND, test, guard);
                         }
                         c.stats = translate(c.stats);
                         JCContinue continueSwitch = make.at(clearedPatterns.head.pos()).Continue(null);

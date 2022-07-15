@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "compiler/compiler_globals.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 
 class PhaseCFG;
@@ -37,6 +38,8 @@ class Compile;
 class BufferBlob;
 class CodeBuffer;
 class Label;
+class ciMethod;
+class SharedStubToInterpRequest;
 
 class CodeOffsets: public StackObj {
 public:
@@ -346,6 +349,8 @@ class Scrubber {
 };
 #endif // ASSERT
 
+typedef GrowableArray<SharedStubToInterpRequest> SharedStubToInterpRequests;
+
 // A CodeBuffer describes a memory space into which assembly
 // code is generated.  This memory space usually occupies the
 // interior of a single BufferBlob, but in some cases it may be
@@ -418,6 +423,9 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
 
   address      _last_insn;      // used to merge consecutive memory barriers, loads or stores.
 
+  SharedStubToInterpRequests* _shared_stub_to_interp_requests; // used to collect requests for shared iterpreter stubs
+  bool         _finalize_stubs; // Indicate if we need to finalize stubs to make CodeBuffer final.
+
 #ifndef PRODUCT
   AsmRemarks   _asm_remarks;
   DbgStrings   _dbg_strings;
@@ -435,6 +443,8 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
     _oop_recorder    = NULL;
     _overflow_arena  = NULL;
     _last_insn       = NULL;
+    _finalize_stubs  = false;
+    _shared_stub_to_interp_requests = NULL;
 
 #ifndef PRODUCT
     _decode_begin    = NULL;
@@ -686,6 +696,12 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   // Log a little info about section usage in the CodeBuffer
   void log_section_sizes(const char* name);
 
+  // Make a set of stubs final. It can create/optimize stubs.
+  void finalize_stubs();
+
+  // Request for a shared stub to the interpreter
+  void shared_stub_to_interp_for(ciMethod* callee, csize_t call_offset);
+
 #ifndef PRODUCT
  public:
   // Printing / Decoding
@@ -699,6 +715,23 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   // The following header contains architecture-specific implementations
 #include CPU_HEADER(codeBuffer)
 
+};
+
+// A Java method can have calls of Java methods which can be statically bound.
+// Calls of Java methods need stubs to the interpreter. Calls sharing the same Java method
+// can share a stub to the interpreter.
+// A SharedStubToInterpRequest is a request for a shared stub to the interpreter.
+class SharedStubToInterpRequest : public ResourceObj {
+ private:
+  ciMethod* _shared_method;
+  CodeBuffer::csize_t _call_offset; // The offset of the call in CodeBuffer
+
+ public:
+  SharedStubToInterpRequest(ciMethod* method = NULL, CodeBuffer::csize_t call_offset = -1) : _shared_method(method),
+      _call_offset(call_offset) {}
+
+  ciMethod* shared_method() const { return _shared_method; }
+  CodeBuffer::csize_t call_offset() const { return _call_offset; }
 };
 
 inline bool CodeSection::maybe_expand_to_ensure_remaining(csize_t amount) {
