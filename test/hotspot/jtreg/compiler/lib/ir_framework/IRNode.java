@@ -209,7 +209,6 @@ public class IRNode {
     public static final String VECTOR_UCAST_I2X = START + "VectorUCastI2X" + MID + END;
     public static final String VECTOR_REINTERPRET = START + "VectorReinterpret" + MID + END;
 
-    public static final String Max_I = START + "MaxI" + MID + END;
     public static final String Min_V = START + "MinV" + MID + END;
     public static final String Max_V = START + "MaxV" + MID + END;
 
