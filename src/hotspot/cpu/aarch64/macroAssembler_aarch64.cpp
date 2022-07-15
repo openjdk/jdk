@@ -142,7 +142,7 @@ extern "C" void disnm(intptr_t p);
 //
 class RelocActions {
 protected:
-  typedef int (RelocActions::* reloc_insn)(address insn_addr, address &target);
+  typedef int (*reloc_insn)(address insn_addr, address &target);
 
   virtual reloc_insn adrpMem() = 0;
   virtual reloc_insn adrpAdd() = 0;
@@ -161,9 +161,6 @@ public:
   virtual int loadStore(address insn_addr, address &target) = 0;
   virtual int adr(address insn_addr, address &target) = 0;
   virtual int adrp(address insn_addr, address &target, reloc_insn inner) = 0;
-  virtual int adrpMem_impl(address insn_addr, address &target) = 0;
-  virtual int adrpAdd_impl(address insn_addr, address &target) = 0;
-  virtual int adrpMovk_impl(address insn_addr, address &target) = 0;
   virtual int immediate(address insn_addr, address &target) = 0;
   virtual void verify(address insn_addr, address &target) = 0;
 
@@ -252,9 +249,9 @@ public:
 };
 
 class Patcher : public RelocActions {
-  virtual reloc_insn adrpMem() { return &RelocActions::adrpMem_impl; }
-  virtual reloc_insn adrpAdd() { return &RelocActions::adrpAdd_impl; }
-  virtual reloc_insn adrpMovk() { return &RelocActions::adrpMovk_impl; }
+  virtual reloc_insn adrpMem() { return &Patcher::adrpMem_impl; }
+  virtual reloc_insn adrpAdd() { return &Patcher::adrpAdd_impl; }
+  virtual reloc_insn adrpMovk() { return &Patcher::adrpMovk_impl; }
 
 public:
   Patcher(address insn_addr) : RelocActions(insn_addr) {}
@@ -304,7 +301,7 @@ public:
       uintptr_t adr_page = (uintptr_t)target >> 12;
       uint32_t offset_lo = dest & 0xfff;
       offset = adr_page - pc_page;
-      instructions = (this->*inner)(insn_addr, target);
+      instructions = (*inner)(insn_addr, target);
     }
     // movk has handled the upper bits. Now we extract the lower 19
     // bits of the signed offset field for the ADRP.
@@ -315,7 +312,7 @@ public:
     Instruction_aarch64::patch(insn_addr, 30, 29, offset_lo);
     return instructions;
   }
-  virtual int adrpMem_impl(address insn_addr, address &target) {
+  static int adrpMem_impl(address insn_addr, address &target) {
     uintptr_t dest = (uintptr_t)target;
     int offset_lo = dest & 0xfff;
     uint32_t insn2 = ((uint32_t*)insn_addr)[1];
@@ -324,13 +321,13 @@ public:
     guarantee(((dest >> size) << size) == dest, "misaligned target");
     return 2;
   }
-  virtual int adrpAdd_impl(address insn_addr, address &target) {
+  static int adrpAdd_impl(address insn_addr, address &target) {
     uintptr_t dest = (uintptr_t)target;
     int offset_lo = dest & 0xfff;
     Instruction_aarch64::patch(insn_addr + sizeof (uint32_t), 21, 10, offset_lo);
     return 2;
   }
-  virtual int adrpMovk_impl(address insn_addr, address &target) {
+  static int adrpMovk_impl(address insn_addr, address &target) {
     uintptr_t dest = (uintptr_t)target;
     Instruction_aarch64::patch(insn_addr + sizeof (uint32_t), 20, 5, (uintptr_t)target >> 32);
     return 2;
@@ -381,9 +378,9 @@ static bool offset_for(uint32_t insn1, uint32_t insn2, ptrdiff_t &byte_offset) {
 }
 
 class Decoder : public RelocActions {
-  virtual reloc_insn adrpMem() { return &RelocActions::adrpMem_impl; }
-  virtual reloc_insn adrpAdd() { return &RelocActions::adrpAdd_impl; }
-  virtual reloc_insn adrpMovk() { return &RelocActions::adrpMovk_impl; }
+  virtual reloc_insn adrpMem() { return &Decoder::adrpMem_impl; }
+  virtual reloc_insn adrpAdd() { return &Decoder::adrpAdd_impl; }
+  virtual reloc_insn adrpMovk() { return &Decoder::adrpMovk_impl; }
 
 public:
   Decoder(address insn_addr, uint32_t insn) : RelocActions(insn_addr, insn) {}
@@ -425,10 +422,10 @@ public:
     target_page &= ((uint64_t)-1) << shift;
     uint32_t insn2 = ((uint32_t*)insn_addr)[1];
     target = address(target_page);
-    (this->*inner)(insn_addr, target);
+    (*inner)(insn_addr, target);
     return 2;
   }
-  virtual int adrpMem_impl(address insn_addr, address &target) {
+  static int adrpMem_impl(address insn_addr, address &target) {
     uint32_t insn2 = ((uint32_t*)insn_addr)[1];
     // Load/store register (unsigned immediate)
     ptrdiff_t byte_offset = Instruction_aarch64::extract(insn2, 21, 10);
@@ -437,14 +434,14 @@ public:
     target += byte_offset;
     return 2;
   }
-  virtual int adrpAdd_impl(address insn_addr, address &target) {
+  static int adrpAdd_impl(address insn_addr, address &target) {
     uint32_t insn2 = ((uint32_t*)insn_addr)[1];
     // add (immediate)
     ptrdiff_t byte_offset = Instruction_aarch64::extract(insn2, 21, 10);
     target += byte_offset;
     return 2;
   }
-  virtual int adrpMovk_impl(address insn_addr, address &target) {
+  static int adrpMovk_impl(address insn_addr, address &target) {
     uint32_t insn2 = ((uint32_t*)insn_addr)[1];
     uint64_t dest = uint64_t(target);
     dest = (dest & 0xffffffff) |
@@ -453,10 +450,11 @@ public:
 
     // We know the destination 4k page. Maybe we have a third
     // instruction.
+    uint32_t insn = ((uint32_t*)insn_addr)[0];
     int *insn3_addr = &((int*)insn_addr)[2];
-    uint32_t insn3 = SafeFetch32(insn3_addr, -1);
+    uint32_t insn3 = (uint32_t)SafeFetch32(insn3_addr, -1);
     ptrdiff_t byte_offset;
-    if (offset_for(_insn, insn3, byte_offset)) {
+    if (offset_for(insn, insn3, byte_offset)) {
       target += byte_offset;
       return 3;
     } else {
