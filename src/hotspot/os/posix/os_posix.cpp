@@ -1110,7 +1110,7 @@ bool os::Posix::handle_stack_overflow(JavaThread* thread, address addr, address 
     }
   } else if (overflow_state->in_stack_red_zone(addr)) {
     // Fatal red zone violation.  Disable the guard pages and fall through
-    // to handle_unexpected_exception way down below.
+    // to the exception handling code below.
     overflow_state->disable_stack_red_zone();
     tty->print_raw_cr("An irrecoverable stack overflow has occurred.");
 
