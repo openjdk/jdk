@@ -47,6 +47,9 @@
 
 #include "unittest.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // #undef SHARE_JFR_SUPPORT_JFRADAPTIVESAMPLER_HPP
 
 namespace {
@@ -279,3 +282,5 @@ TEST_VM_F(JfrGTestAdaptiveSampling, DISABLED_bursty_rate_10_percent) {
 TEST_VM_F(JfrGTestAdaptiveSampling, DISABLED_bursty_rate_90_percent) {
   test(&JfrGTestAdaptiveSampling::incoming_bursty_10_percent, expected_sample_points_per_window, 0.96, "bursty 90%");
 }
+
+PRAGMA_DIAG_POP
