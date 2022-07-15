@@ -176,9 +176,7 @@ void BarrierSetAssembler::eden_allocate(MacroAssembler* masm, Register obj,
     __ bind(retry);
     {
       uint64_t offset;
-      ExternalAddress adr((address) Universe::heap()->end_addr());
-      __ adrp(rscratch1, adr, offset);
-      __ movk(rscratch1, ((uint64_t)adr.target() >> 32), 32);
+      __ adrp(rscratch1, ExternalAddress((address) Universe::heap()->end_addr()), offset);
       __ ldr(heap_end, Address(rscratch1, offset));
     }
 
