@@ -138,11 +138,11 @@ void debugBreak(const SourceCodePos& location, const tstring& envVarName,
     }
 
     tstring msg = tstrings::fromUtf8(makeMessage(
-            std::runtime_error((tstrings::any() 
-                    << "debug break. Reason: environment variable " 
-                    << envVarName << " is set.").str()), 
+            std::runtime_error((tstrings::any()
+                    << "debug break. Reason: environment variable "
+                    << envVarName << " is set.").str()),
             location));
     tstring caption = FileUtils::basename(SysInfo::getCurrentModulePath());
-            
+
     MessageBoxW(NULL, msg.c_str(), caption.c_str(), MB_OK | MB_TASKMODAL);
 }

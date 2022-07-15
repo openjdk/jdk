@@ -155,7 +155,7 @@ public:
         impl.setProperty(name, v);
         return *this;
     }
-    
+
     CA& removeProperty(const tstring& name) {
         impl.removeProperty(name);
         return *this;
