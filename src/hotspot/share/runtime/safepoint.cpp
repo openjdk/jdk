@@ -516,16 +516,7 @@ bool SafepointSynchronize::is_cleanup_needed() {
   return false;
 }
 
-class ParallelSPCleanupThreadClosure : public ThreadClosure {
-public:
-  void do_thread(Thread* thread) {
-    if (thread->is_Java_thread()) {
-      StackWatermarkSet::start_processing(JavaThread::cast(thread), StackWatermarkKind::gc);
-    }
-  }
-};
-
-class ParallelSPCleanupTask : public WorkerTask {
+class ParallelCleanupTask : public WorkerTask {
 private:
   SubTasksDone _subtasks;
   uint _num_workers;
@@ -547,8 +538,15 @@ private:
     }
   };
 
+  class SafepointCleanupThreadClosure : public ThreadClosure {
+  public:
+    void do_thread(Thread* thread) {
+      StackWatermarkSet::start_processing(JavaThread::cast(thread), StackWatermarkKind::gc);
+    }
+  };
+
 public:
-  ParallelSPCleanupTask(uint num_workers) :
+  ParallelCleanupTask(uint num_workers) :
     WorkerTask("Parallel Safepoint Cleanup"),
     _subtasks(SafepointSynchronize::SAFEPOINT_CLEANUP_NUM_TASKS),
     _num_workers(num_workers),
@@ -556,6 +554,7 @@ public:
                    Universe::heap()->uses_stack_watermark_barrier()) {}
 
   void work(uint worker_id) {
+    // These tasks are ordered by relative length of time to execute so that potentially longer tasks start first.
     if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_SYMBOL_TABLE_REHASH)) {
       if (SymbolTable::needs_rehashing()) {
         Tracer t("rehashing symbol table");
@@ -580,8 +579,8 @@ public:
     if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_LAZY_ROOT_PROCESSING)) {
       if (_do_lazy_roots) {
         Tracer t("lazy partial thread root processing");
-        ParallelSPCleanupThreadClosure cl;
-        Threads::threads_do(&cl);
+        SafepointCleanupThreadClosure cl;
+        Threads::java_threads_do(&cl);
       }
     }
 
@@ -611,11 +610,11 @@ void SafepointSynchronize::do_cleanup_tasks() {
   if (cleanup_workers != NULL) {
     // Parallel cleanup using GC provided thread pool.
     uint num_cleanup_workers = cleanup_workers->active_workers();
-    ParallelSPCleanupTask cleanup(num_cleanup_workers);
+    ParallelCleanupTask cleanup(num_cleanup_workers);
     cleanup_workers->run_task(&cleanup);
   } else {
     // Serial cleanup using VMThread.
-    ParallelSPCleanupTask cleanup(1);
+    ParallelCleanupTask cleanup(1);
     cleanup.work(0);
   }
 
