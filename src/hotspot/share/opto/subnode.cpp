@@ -1621,10 +1621,10 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Change x u< 1 or x u<= 0 to x == 0
   if (cop == Op_CmpU &&
       cmp1_op != Op_LoadRange &&
-      ((_test._test == BoolTest::lt || _test._test == BoolTest::ge) &&
+      (((_test._test == BoolTest::lt || _test._test == BoolTest::ge) &&
         cmp2->find_int_con(-1) == 1) ||
        ((_test._test == BoolTest::le || _test._test == BoolTest::gt) &&
-        cmp2->find_int_con(-1) == 0)) {
+        cmp2->find_int_con(-1) == 0))) {
     Node* ncmp = phase->transform(new CmpINode(cmp1, phase->intcon(0)));
     return new BoolNode(ncmp, _test.is_less() ? BoolTest::eq : BoolTest::ne);
   }
