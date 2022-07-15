@@ -664,8 +664,8 @@ public class ModulePath implements ModuleFinder {
 
     private Set<String> explodedPackages(Path dir) {
         String separator = dir.getFileSystem().getSeparator();
-        try (Stream<Path> stream =
-                Files.find(dir, Integer.MAX_VALUE, (path, attrs) -> attrs.isRegularFile() && !isHidden(path))) {
+        try (Stream<Path> stream = Files.find(dir, Integer.MAX_VALUE,
+                (path, attrs) -> attrs.isRegularFile() && !isHidden(path))) {
             return stream.map(dir::relativize)
                 .map(path -> toPackageName(path, separator))
                 .flatMap(Optional::stream)

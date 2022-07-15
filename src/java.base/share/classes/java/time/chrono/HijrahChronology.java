@@ -1037,7 +1037,7 @@ public final class HijrahChronology extends AbstractChronology implements Serial
             (PrivilegedAction<Void>)() -> {
                 if (Files.isDirectory(CONF_PATH)) {
                     try (Stream<Path> stream = Files.list(CONF_PATH)) {
-                            stream.map(p -> p.getFileName().toString())
+                        stream.map(p -> p.getFileName().toString())
                             .filter(fn -> fn.matches("hijrah-config-[^\\.]+\\.properties"))
                             .map(fn -> fn.replaceAll("(hijrah-config-|\\.properties)", ""))
                             .forEach(idtype -> {

@@ -115,20 +115,19 @@ public final class ModuleHashes {
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalArgumentException(e);
         }
-        try {
-            byte[] buf = new byte[32*1024];
-            try (Stream<String> stream = reader.list()) {
-                stream.sorted().forEach(rn -> {
-                    md.update(rn.getBytes(StandardCharsets.UTF_8));
-                    try (InputStream in = reader.open(rn).orElseThrow()) {
-                        int n;
-                        while ((n = in.read(buf)) > 0) {
-                            md.update(buf, 0, n);
-                        }
-                    } catch (IOException ioe) {
-                        throw new UncheckedIOException(ioe);
+        byte[] buf = new byte[32*1024];
+        try (Stream<String> stream = reader.list()) {
+            stream.sorted().forEach(rn -> {
+                md.update(rn.getBytes(StandardCharsets.UTF_8));
+                try (InputStream in = reader.open(rn).orElseThrow()) {
+                    int n;
+                    while ((n = in.read(buf)) > 0) {
+                        md.update(buf, 0, n);
                     }
-                });
+                } catch (IOException ioe) {
+                    throw new UncheckedIOException(ioe);
+                }
+            });
         } catch (IOException ioe) {
             throw new UncheckedIOException(ioe);
         }
