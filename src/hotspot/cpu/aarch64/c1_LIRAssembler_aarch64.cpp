@@ -45,6 +45,9 @@
 #include "utilities/powerOfTwo.hpp"
 #include "vmreg_aarch64.inline.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 
 #ifndef PRODUCT
 #define COMMENT(x)   do { __ block_comment(x); } while (0)
@@ -3200,3 +3203,5 @@ void LIR_Assembler::atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr 
 }
 
 #undef __
+
+PRAGMA_DIAG_POP

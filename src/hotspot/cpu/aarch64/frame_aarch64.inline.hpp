@@ -34,6 +34,9 @@
 #include "runtime/sharedRuntime.hpp"
 #include "pauth_aarch64.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // Inline functions for AArch64 frames:
 
 // Constructors:
@@ -478,4 +481,6 @@ void frame::update_map_with_saved_link(RegisterMapT* map, intptr_t** link_addr) 
     map->set_location(rfp->as_VMReg()->next(), (address) link_addr);
   }
 }
+PRAGMA_DIAG_POP
+
 #endif // CPU_AARCH64_FRAME_AARCH64_INLINE_HPP

@@ -29,6 +29,9 @@
 #include "asm/register.hpp"
 #include "utilities/powerOfTwo.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 class VMRegImpl;
 typedef VMRegImpl* VMReg;
 
@@ -336,5 +339,7 @@ inline FloatRegister AbstractRegSet<FloatRegister>::first() {
 inline Register as_Register(FloatRegister reg) {
   return as_Register(reg->encoding());
 }
+
+PRAGMA_DIAG_POP
 
 #endif // CPU_AARCH64_REGISTER_AARCH64_HPP

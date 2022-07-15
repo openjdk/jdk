@@ -36,6 +36,9 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/stubRoutines.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 #define __ _masm->
 
 #ifdef PRODUCT
@@ -476,3 +479,5 @@ void trace_method_handle_stub_wrapper(MethodHandleStubArguments* args) {  }
 
 void MethodHandles::trace_method_handle(MacroAssembler* _masm, const char* adaptername) {  }
 #endif //PRODUCT
+
+PRAGMA_DIAG_POP

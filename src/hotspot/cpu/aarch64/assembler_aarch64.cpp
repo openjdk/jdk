@@ -30,6 +30,9 @@
 #include "immediate_aarch64.hpp"
 #include "memory/resourceArea.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 #ifndef PRODUCT
 const uintptr_t Assembler::asm_bp = 0x0000ffffac221240;
 #endif
@@ -507,3 +510,5 @@ static float unpack(unsigned value) {
 address Assembler::locate_next_instruction(address inst) {
   return inst + Assembler::instruction_size;
 }
+
+PRAGMA_DIAG_POP

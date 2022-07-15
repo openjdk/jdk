@@ -29,6 +29,9 @@
 #include "asm/register.hpp"
 #include "metaprogramming/enableIf.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 #ifdef __GNUC__
 
 // __nop needs volatile so that compiler doesn't optimize it away
@@ -3908,5 +3911,7 @@ inline const Assembler::Condition operator~(const Assembler::Condition cond) {
 }
 
 extern "C" void das(uint64_t start, int len);
+
+PRAGMA_DIAG_POP
 
 #endif // CPU_AARCH64_ASSEMBLER_AARCH64_HPP

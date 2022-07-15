@@ -30,6 +30,9 @@
 #include "runtime/icache.hpp"
 #include "runtime/os.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // We have interfaces for the following instructions:
 // - NativeInstruction
 // - - NativeCall
@@ -732,5 +735,7 @@ class NativeDeoptInstruction: public NativeInstruction {
   // MT-safe patching
   static void insert(address code_pos);
 };
+
+PRAGMA_DIAG_POP
 
 #endif // CPU_AARCH64_NATIVEINST_AARCH64_HPP

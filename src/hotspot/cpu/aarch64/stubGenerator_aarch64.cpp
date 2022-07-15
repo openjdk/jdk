@@ -60,6 +60,9 @@
 #include "gc/z/zThreadLocalData.hpp"
 #endif
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 // Declaration and definition of StubGenerator (no .hpp file).
 // For a more detailed description of the stub routine structure
 // see the comment in stubRoutines.hpp
@@ -8122,3 +8125,5 @@ void continuation_enter_cleanup(MacroAssembler* masm) {
 }
 
 #undef __
+
+PRAGMA_DIAG_POP

@@ -33,6 +33,9 @@
 #include "prims/downcallLinker.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 #define __ _masm->
 
 class DowncallStubGenerator : public StubCodeGenerator {
@@ -325,3 +328,5 @@ void DowncallStubGenerator::generate() {
 
   __ flush();
 }
+
+PRAGMA_DIAG_POP

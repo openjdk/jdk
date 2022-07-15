@@ -26,6 +26,9 @@
 #include "runtime/registerMap.hpp"
 #include "vmreg_aarch64.inline.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 address RegisterMap::pd_location(VMReg base_reg, int slot_idx) const {
   if (base_reg->is_FloatRegister()) {
     // Not all physical slots of an SVE register have corresponding
@@ -46,3 +49,5 @@ address RegisterMap::pd_location(VMReg base_reg, int slot_idx) const {
     return location(base_reg->next(slot_idx), nullptr);
   }
 }
+
+PRAGMA_DIAG_POP

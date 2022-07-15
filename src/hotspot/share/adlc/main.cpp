@@ -276,6 +276,7 @@ int main(int argc, char *argv[])
   // add pragma after includes
   AD.pragmaAllowUnsafeConversions(AD._CPP_file);
   AD.pragmaAllowUnsafeConversions(AD._HPP_file);
+  AD.pragmaAllowUnsafeConversions(AD._DFA_file);
 
   // Make sure each .cpp file starts with include lines:
   // files declaring and defining generators for Mach* Objects (hpp,cpp)
@@ -326,6 +327,7 @@ int main(int argc, char *argv[])
   // pragma pop
   AD.pragmaDiagPop(AD._CPP_file);
   AD.pragmaDiagPop(AD._HPP_file);
+  AD.pragmaDiagPop(AD._DFA_file);
 
   // Add include guards for all .hpp files
   AD.addIncludeGuardEnd(AD._HPP_file, "GENERATED_ADFILES_AD_HPP");        // .hpp

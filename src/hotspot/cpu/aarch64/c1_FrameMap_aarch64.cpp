@@ -29,6 +29,9 @@
 #include "runtime/sharedRuntime.hpp"
 #include "vmreg_aarch64.inline.hpp"
 
+PRAGMA_DIAG_PUSH
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 LIR_Opr FrameMap::map_to_opr(BasicType type, VMRegPair* reg, bool) {
   LIR_Opr opr = LIR_OprFact::illegalOpr;
   VMReg r_1 = reg->first();
@@ -364,3 +367,5 @@ LIR_Opr FrameMap::method_handle_invoke_SP_save_opr() {
 bool FrameMap::validate_frame() {
   return true;
 }
+
+PRAGMA_DIAG_POP
