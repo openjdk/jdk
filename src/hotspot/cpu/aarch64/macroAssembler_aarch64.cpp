@@ -309,9 +309,9 @@ public:
       offset = adr_page - pc_page;
       instructions = (*inner)(insn_addr, target);
     }
-    // movk has handled the upper bits. Now we extract the lower 19
-    // bits of the signed offset field for the ADRP.
-    offset = offset << (64-19) >> (64-19);
+    // Now we extract the lower 21 bits of the signed offset field for
+    // the ADR or ADRP.
+    offset = offset << (64-21) >> (64-21);
     int offset_lo = offset & 3;
     offset >>= 2;
     Instruction_aarch64::spatch(insn_addr, 23, 5, offset);
