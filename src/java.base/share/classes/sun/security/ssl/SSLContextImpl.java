@@ -33,6 +33,7 @@ import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.net.ssl.*;
 import sun.security.action.GetPropertyAction;
+import sun.security.action.OpenFileInputStreamAction;
 import sun.security.provider.certpath.AlgorithmChecker;
 import sun.security.validator.Validator;
 
@@ -1010,13 +1011,8 @@ public abstract class SSLContextImpl extends SSLContextSpi {
             try {
                 if (!defaultKeyStore.isEmpty() &&
                         !NONE.equals(defaultKeyStore)) {
-                    fs = AccessController.doPrivileged(
-                            new PrivilegedExceptionAction<FileInputStream>() {
-                        @Override
-                        public FileInputStream run() throws Exception {
-                            return new FileInputStream(defaultKeyStore);
-                        }
-                    });
+                    fs = OpenFileInputStreamAction.privilegedGetFileInputStream(
+                        defaultKeyStore);
                 }
 
                 String defaultKeyStorePassword = props.get("keyStorePasswd");

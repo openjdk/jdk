@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.security.*;
 import java.security.cert.*;
 import java.util.*;
 import javax.net.ssl.*;
+import sun.security.action.OpenFileInputStreamAction;
 import sun.security.validator.TrustStoreUtil;
 import sun.security.validator.Validator;
 
@@ -111,22 +112,7 @@ abstract class TrustManagerFactoryImpl extends TrustManagerFactorySpi {
     @SuppressWarnings("removal")
     private static FileInputStream getFileInputStream(final File file)
             throws Exception {
-        return AccessController.doPrivileged(
-                new PrivilegedExceptionAction<FileInputStream>() {
-                    @Override
-                    public FileInputStream run() throws Exception {
-                        try {
-                            if (file.exists()) {
-                                return new FileInputStream(file);
-                            } else {
-                                return null;
-                            }
-                        } catch (FileNotFoundException e) {
-                            // couldn't find it, oh well.
-                            return null;
-                        }
-                    }
-                });
+          return OpenFileInputStreamAction.privilegedGetFileInputStream(file);
     }
 
     public static final class SimpleFactory extends TrustManagerFactoryImpl {

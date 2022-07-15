@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package sun.security.action;
 
 import java.io.*;
 
+import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
 
 /**
@@ -49,5 +50,67 @@ public class OpenFileInputStreamAction
 
     public FileInputStream run() throws Exception {
         return new FileInputStream(file);
+    }
+
+    /**
+     * Convenience method to get a property without going through doPrivileged
+     * if no security manager is present. This is unsafe for inclusion in a
+     * public API but allowable here since this class is now encapsulated.
+     *
+     * Note that this method performs a privileged action using caller-provided
+     * inputs. The caller of this method should take care to ensure that the
+     * inputs are not tainted and the returned property is not made accessible
+     * to untrusted code if it contains sensitive information.
+     *
+     * @param file the File object
+     */
+    @SuppressWarnings("removal")
+    public static FileInputStream privilegedGetFileInputStream(File file)
+            throws Exception {
+        return AccessController.doPrivileged(
+            new PrivilegedExceptionAction<FileInputStream>() {
+                @Override
+                public FileInputStream run() throws Exception {
+                    try {
+                        if (file.exists()) {
+                            return new FileInputStream(file);
+                        } else {
+                            return null;
+                        }
+                    } catch (FileNotFoundException e) {
+                        return null;
+                    }
+                }
+            }
+        );
+    }
+
+    /**
+     * Convenience method to get a property without going through doPrivileged
+     * if no security manager is present. This is unsafe for inclusion in a
+     * public API but allowable here since this class is now encapsulated.
+     *
+     * Note that this method performs a privileged action using caller-provided
+     * inputs. The caller of this method should take care to ensure that the
+     * inputs are not tainted and the returned property is not made accessible
+     * to untrusted code if it contains sensitive information.
+     *
+     * @param file the File object
+     */
+    @SuppressWarnings("removal")
+    public static FileInputStream privilegedGetFileInputStream(String filename)
+            throws Exception {
+        return AccessController.doPrivileged(
+            new PrivilegedExceptionAction<FileInputStream>() {
+                @Override
+                public FileInputStream run() throws Exception {
+                    try {
+                        return new FileInputStream(filename);
+                    } catch (FileNotFoundException e) {
+                        return null;
+                    }
+                }
+            }
+        );
     }
 }
