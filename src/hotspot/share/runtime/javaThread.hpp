@@ -568,7 +568,7 @@ private:
   // thread's GC barrier is NOT detached and thread is NOT terminated
   bool is_oop_safe() const;
   // thread is terminated (no longer on the threads list); the thread must
-  // protected by a ThreadsListHandle to avoid potential crashes.
+  // be protected by a ThreadsListHandle to avoid potential crashes.
   bool check_is_terminated(TerminatedTypes l_terminated) const {
     return l_terminated == _thread_terminated || l_terminated == _vm_exited;
   }
