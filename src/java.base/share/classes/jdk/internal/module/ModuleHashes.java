@@ -41,6 +41,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 /**
  * The result of hashing the contents of a number of module artifacts.
@@ -116,17 +117,18 @@ public final class ModuleHashes {
         }
         try {
             byte[] buf = new byte[32*1024];
-            reader.list().sorted().forEach(rn -> {
-                md.update(rn.getBytes(StandardCharsets.UTF_8));
-                try (InputStream in = reader.open(rn).orElseThrow()) {
-                    int n;
-                    while ((n = in.read(buf)) > 0) {
-                        md.update(buf, 0, n);
+            try (Stream<String> stream = reader.list()) {
+                stream.sorted().forEach(rn -> {
+                    md.update(rn.getBytes(StandardCharsets.UTF_8));
+                    try (InputStream in = reader.open(rn).orElseThrow()) {
+                        int n;
+                        while ((n = in.read(buf)) > 0) {
+                            md.update(buf, 0, n);
+                        }
+                    } catch (IOException ioe) {
+                        throw new UncheckedIOException(ioe);
                     }
-                } catch (IOException ioe) {
-                    throw new UncheckedIOException(ioe);
-                }
-            });
+                });
         } catch (IOException ioe) {
             throw new UncheckedIOException(ioe);
         }
