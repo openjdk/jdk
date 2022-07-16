@@ -1042,7 +1042,9 @@ public final class Float extends Number
         } else if (bin16Exp == 16) {
             return (bin16SignifBits == 0) ?
                 sign * Float.POSITIVE_INFINITY :
-                Float.intBitsToFloat(0x7f80_0000 | // Preserve NaN signif bits
+                Float.intBitsToFloat((bin16SignBit << 16) |
+                                     0x7f80_0000 |
+                                     // Preserve NaN signif bits
                                      ( bin16SignifBits << SIGNIF_SHIFT ));
         }
 
@@ -1088,7 +1090,7 @@ public final class Float extends Number
     // @IntrinsicCandidate
     public static short floatToBinary16AsShortBits(float f) {
         int doppel = Float.floatToRawIntBits(f);
-        short sign_bit = (short)((doppel >> 16) & 0x8000);
+        short sign_bit = (short)((doppel & 0x8000_0000) >> 16);
 
         if (Float.isNaN(f)) {
             // Preserve sign and attempt to preserve significand bits
