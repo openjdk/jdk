@@ -50,10 +50,12 @@ public class SafeLogout {
     }
 
     static void test(int pos) throws Exception {
-        // Since there is an infinite number of LoginModule configurations,
-        // we use a random number to choose login module names, flag for each,
-        // and whether to perform a login. The config is printed out so any
-        // failure can be reproduced.
+        // The content of the principals and credentials sets depends on
+        // combinations of (possibly multiple) login modules configurations,
+        // and it is difficult to find only a "typical" subset to test on,
+        // Therefore we use a random number to choose login module names,
+        // flag for each, and whether to perform a login at the beginning.
+        // Each config is printed out so that any failure can be reproduced.
         boolean login = r.nextBoolean();
         Map<String, ?> empty = Collections.emptyMap();
         AppConfigurationEntry[] result = new AppConfigurationEntry[r.nextInt(4) + 1];
