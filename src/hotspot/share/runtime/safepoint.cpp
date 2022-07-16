@@ -519,7 +519,6 @@ bool SafepointSynchronize::is_cleanup_needed() {
 class ParallelCleanupTask : public WorkerTask {
 private:
   SubTasksDone _subtasks;
-  uint _num_workers;
   bool _do_lazy_roots;
 
   class Tracer {
@@ -538,18 +537,10 @@ private:
     }
   };
 
-  class SafepointCleanupThreadClosure : public ThreadClosure {
-  public:
-    void do_thread(Thread* thread) {
-      StackWatermarkSet::start_processing(JavaThread::cast(thread), StackWatermarkKind::gc);
-    }
-  };
-
 public:
-  ParallelCleanupTask(uint num_workers) :
+  ParallelCleanupTask() :
     WorkerTask("Parallel Safepoint Cleanup"),
     _subtasks(SafepointSynchronize::SAFEPOINT_CLEANUP_NUM_TASKS),
-    _num_workers(num_workers),
     _do_lazy_roots(!VMThread::vm_operation()->skip_thread_oop_barriers() &&
                    Universe::heap()->uses_stack_watermark_barrier()) {}
 
@@ -579,7 +570,13 @@ public:
     if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_LAZY_ROOT_PROCESSING)) {
       if (_do_lazy_roots) {
         Tracer t("lazy partial thread root processing");
-        SafepointCleanupThreadClosure cl;
+        class LazyRootClosure : public ThreadClosure {
+        public:
+          void do_thread(Thread* thread) {
+            StackWatermarkSet::start_processing(JavaThread::cast(thread), StackWatermarkKind::gc);
+          }
+        };
+        LazyRootClosure cl;
         Threads::java_threads_do(&cl);
       }
     }
@@ -606,15 +603,13 @@ void SafepointSynchronize::do_cleanup_tasks() {
 
   CollectedHeap* heap = Universe::heap();
   assert(heap != NULL, "heap not initialized yet?");
+  ParallelCleanupTask cleanup;
   WorkerThreads* cleanup_workers = heap->safepoint_workers();
   if (cleanup_workers != NULL) {
     // Parallel cleanup using GC provided thread pool.
-    uint num_cleanup_workers = cleanup_workers->active_workers();
-    ParallelCleanupTask cleanup(num_cleanup_workers);
     cleanup_workers->run_task(&cleanup);
   } else {
     // Serial cleanup using VMThread.
-    ParallelCleanupTask cleanup(1);
     cleanup.work(0);
   }
 
