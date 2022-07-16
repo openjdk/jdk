@@ -132,7 +132,9 @@ public class WindowsHelper {
         BiConsumer<JPackageCommand, Boolean> installExe = (cmd, install) -> {
             cmd.verifyIsOfType(PackageType.WIN_EXE);
             Executor exec = new Executor().setExecutable(cmd.outputBundle());
-            if (!install) {
+            if (install) {
+                exec.addArgument("/qn").addArgument("/norestart");
+            } else {
                 exec.addArgument("uninstall");
             }
             runMsiexecWithRetries(exec);
