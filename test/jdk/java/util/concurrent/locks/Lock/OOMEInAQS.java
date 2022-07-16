@@ -49,18 +49,24 @@ public class OOMEInAQS extends Thread {
     static final Condition condition = mainLock.newCondition();
     static final CountDownLatch started = new CountDownLatch(1);
     static final CountDownLatch filled = new CountDownLatch(1);
+    static final CountDownLatch canFill = new CountDownLatch(NTHREADS);
     static volatile Object data;
+    static volatile Throwable exception;
     static int turn;
 
     /**
      * For each of NTHREADS threads, REPS times: Take turns
-     * executing. Introduce OOM using fillHeap during runs.
+     * executing. Introduce OOM using fillHeap during runs. In
+     * addition to testing AQS, the CountDownLatches ensure that
+     * methods execute at least once before OutOfMemory occurs, to
+     * avoid uncontrollable impact of OOME during class-loading.
      */
     public static void main(String[] args) throws Throwable {
         OOMEInAQS[] threads = new OOMEInAQS[NTHREADS];
         for (int i = 0; i < NTHREADS; ++i)
             (threads[i] = new OOMEInAQS(i)).start();
         started.countDown();
+        canFill.await();
         long t0 = System.nanoTime();
         data = fillHeap();
         filled.countDown();
@@ -69,6 +75,9 @@ public class OOMEInAQS extends Thread {
             threads[i].join();
         data = null;  // free heap before reporting and terminating
         System.gc();
+        Throwable ex = exception;
+        if (ex != null)
+            throw ex;
         System.out.println(
             "fillHeap time: " + (t1 - t0) / 1000_000 +
             " millis, whole test time: " + (System.nanoTime() - t0) / 1000_000 +
@@ -89,8 +98,8 @@ public class OOMEInAQS extends Thread {
         try {
             started.await();
             for (int i = 0; i < NREPS; i++) {
+                lock.lock();
                 try {
-                    lock.lock();
                     while (turn != id)
                         cond.await();
                     turn = nextId;
@@ -98,12 +107,17 @@ public class OOMEInAQS extends Thread {
                 } finally {
                     lock.unlock();
                 }
-                if (i == 2) // Subsequent AQS methods encounter OOME
+                if (i == 2) {  // Subsequent AQS methods encounter OOME
+                    canFill.countDown();
                     filled.await();
+                }
             }
-        } catch (Throwable ex) { // Could be InterruptedExeption or OOME
             data = null;
-            System.exit(0); // avoid getting stuck trying to recover
+            System.gc(); // avoid getting stuck while exiting
+        } catch (Throwable ex) {
+            data = null;
+            System.gc(); // avoid nested OOME
+            exception = ex;
         }
     }
 

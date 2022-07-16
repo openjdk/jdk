@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,12 +19,28 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef OS_WINDOWS_OS_SHARE_WINDOWS_HPP
-#define OS_WINDOWS_OS_SHARE_WINDOWS_HPP
+/*
+ * @test
+ * @bug 8268312
+ * @summary Compilation error with nested generic functional interface
+ * @compile DiagnosticRewriterTest3.java
+ */
 
-// Defines the interfaces to Windows operating system that vary across platforms
+import java.util.Optional;
 
-#endif // OS_WINDOWS_OS_SHARE_WINDOWS_HPP
+class DiagnosticRewriterTest3 {
+    void m() {
+        Optional.of("").map(outer -> {
+            Optional.of("")
+                    .map(inner -> returnGeneric(outer))
+                    .ifPresent(String::toString);
+            return "";
+        });
+    }
+
+    <T> T returnGeneric(T generic) {
+        return generic;
+    }
+}
