@@ -105,6 +105,16 @@ DottedVersion getDottedVersion(const msi::DatabaseRecord& record, UINT idx) {
     return DottedVersion();
 }
 
+bool dbContainsUpgradeTable(const msi::Database &db) {
+    msi::DatabaseView view(db,
+                    _T("SELECT Name FROM _Tables WHERE Name = 'Upgrade'"));
+    msi::DatabaseRecord record;
+    while (!record.tryFetch(view).empty()) {
+        return true;
+    }
+    return false;
+}
+
 } // namespace
 
 JP_CA(FindRelatedProductsEx) {
@@ -115,22 +125,26 @@ JP_CA(FindRelatedProductsEx) {
         return;
     }
 
+    const msi::Database db(ca);
+    if (!dbContainsUpgradeTable(db)) {
+        LOG_TRACE("The package doesn't contain Upgrade table");
+        return;
+    }
+
     const Guid upgradeCode = Guid(ca.getProperty(_T("UpgradeCode")));
 
     std::vector<ProductInfo> installedProducts;
     findInstalledPackages(upgradeCode, installedProducts);
 
-    const msi::Database db(ca);
-
     bool migratePropRemoved = false;
 
     // https://docs.microsoft.com/en-us/windows/win32/adsi/sql-dialect
     msi::DatabaseView view(db, (tstrings::any()
-            << _T("SELECT `VersionMin`,`VersionMax`,`Language`,`Attributes`,`Remove`,`ActionProperty` FROM Upgrade WHERE `ActionProperty` <> NULL And `UpgradeCode` = '")
+            << _T("SELECT `VersionMin`,`VersionMax`,`Attributes`,`ActionProperty` FROM Upgrade WHERE `ActionProperty` <> NULL And `UpgradeCode` = '")
             << upgradeCode.toMsiString() << _T("'")).tstr());
     msi::DatabaseRecord record;
     while (!record.tryFetch(view).empty()) {
-        const tstring actionProperty = record.getString(6);
+        const tstring actionProperty = record.getString(4);
 
         // Clean up properties set by the standard FindRelatedProducts action
         ca.removeProperty(actionProperty);
@@ -143,34 +157,40 @@ JP_CA(FindRelatedProductsEx) {
         const DottedVersion versionMax = getDottedVersion(record, 2);
 
         const int attrs = MsiRecordIsNull(
-                          record.getHandle(), 4) ? 0 : record.getInteger(4);
+                          record.getHandle(), 3) ? 0 : record.getInteger(3);
 
         std::vector<ProductInfo>::const_iterator productIt =
                                                 installedProducts.begin();
         std::vector<ProductInfo>::const_iterator productEnd =
                                                 installedProducts.end();
         for (; productIt != productEnd; ++productIt) {
-            bool match = false;
-            if (!versionMin.source().empty()) {
-                if (attrs & msidbUpgradeAttributesVersionMinInclusive) {
-                    match = (versionMin <= productIt->getVersion());
-                } else {
-                    match = (versionMin < productIt->getVersion());
-                }
+            bool minMatch;
+            if (versionMin.source().empty()) {
+                minMatch = true;
+            } else if (attrs & msidbUpgradeAttributesVersionMinInclusive) {
+                minMatch = (versionMin <= productIt->getVersion());
+            } else {
+                minMatch = (versionMin < productIt->getVersion());
             }
 
-            if (!versionMax.source().empty()) {
-                if (attrs & msidbUpgradeAttributesVersionMaxInclusive) {
-                    match = (productIt->getVersion() <= versionMax);
-                } else {
-                    match = (productIt->getVersion() < versionMax);
-                }
+            bool maxMatch;
+            if (versionMax.source().empty()) {
+                maxMatch = true;
+            } else if (attrs & msidbUpgradeAttributesVersionMaxInclusive) {
+                maxMatch = (productIt->getVersion() <= versionMax);
+            } else {
+                maxMatch = (productIt->getVersion() < versionMax);
             }
 
-            if (match) {
+            if (minMatch && maxMatch) {
                 tstring value = productIt->getProductCode().toMsiString();
                 ca.setProperty(actionProperty, value);
                 ca.setProperty(_T("MIGRATE"), value);
+                // Bail out after the first match as action
+                // property has been set already.
+                // There is no way to communicate multiple product codes
+                // through a single property.
+                break;
             }
         }
     }

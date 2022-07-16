@@ -331,7 +331,7 @@ public final class PackageTest extends RunnablePackageTest {
         return this;
     }
 
-    public final static class Group extends RunnablePackageTest {
+    public static class Group extends RunnablePackageTest {
         public Group(PackageTest... tests) {
             handlers = Stream.of(tests)
                     .map(PackageTest::createPackageTypeHandlers)
