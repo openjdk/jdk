@@ -23,6 +23,7 @@
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.event.WindowAdapter;
@@ -60,7 +61,7 @@ public class PassFailJFrame {
     private static volatile String testFailedReason;
     private static JFrame frame;
 
-    public enum Position {HORIZONTAL, VERTICAL}
+    public enum Position {HORIZONTAL, VERTICAL, LEFT_HALF}
 
     public PassFailJFrame(String instructions) throws InterruptedException,
             InvocationTargetException {
@@ -266,15 +267,20 @@ public class PassFailJFrame {
      * @param position  position can be either HORIZONTAL (both test
      *                  instruction frame and test window as arranged
      *                  side by side) or VERTICAL (both test instruction
-     *                  frame and test window as arranged up and down)
+     *                  frame and test window as arranged up and down) or
+     *                  LEFT_HALF (both test instruction frame and test
+     *                  window as arranged up and down, to the left half
+     *                  of the screen)
      */
     public static void positionTestWindow(Window testWindow, Position position) {
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+
         if (position.equals(Position.HORIZONTAL)) {
             int newX = ((screenSize.width / 2) - frame.getWidth());
             frame.setLocation(newX, frame.getY());
 
-            testWindow.setLocation((frame.getLocation().x + frame.getWidth() + 5), frame.getY());
+            testWindow.setLocation((frame.getLocation().x + frame.getWidth() + 5),
+                    frame.getY());
         } else if (position.equals(Position.VERTICAL)) {
             int newY = ((screenSize.height / 2) - frame.getHeight());
             frame.setLocation(frame.getX(), newY);
@@ -282,6 +288,29 @@ public class PassFailJFrame {
             testWindow.setLocation(frame.getX(),
                     (frame.getLocation().y + frame.getHeight() + 5));
         }
+        else if (position.equals(Position.LEFT_HALF)) {
+            frame.setLocation(0,0);
+            testWindow.setLocation(frame.getX(),
+                    (frame.getLocation().y + frame.getHeight() + 5));
+        }
+    }
+
+    /**
+     * Returns the current position and size of the test instruction frame.
+     * This method can be used in scenarios when custom positioning of
+     * multiple test windows w.r.t test instruction frame is necessary,
+     * at test-case level and the desired configuration is not available
+     * as a {@code Position} option.
+     *
+     * @return Rectangle bounds of test instruction frame
+     * @see #positionTestWindow
+     */
+    public static Rectangle getInstructionFrameBounds() {
+        Rectangle bounds = null;
+        if (frame != null) {
+            bounds = frame.getBounds();
+        }
+        return bounds;
     }
 
     /**
