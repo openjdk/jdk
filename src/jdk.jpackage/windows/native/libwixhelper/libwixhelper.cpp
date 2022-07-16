@@ -70,7 +70,7 @@ private:
 };
 
 
-void findInstalledPackages(const Guid& upgradeCode,
+void findInstalledProducts(const Guid& upgradeCode,
                                             std::vector<ProductInfo>& products) {
     const LPCTSTR upgradeCodeStr = upgradeCode.toMsiString().c_str();
     for (DWORD productCodeIdx = 0; true; ++productCodeIdx) {
@@ -119,7 +119,7 @@ bool dbContainsUpgradeTable(const msi::Database &db) {
 
 JP_CA(FindRelatedProductsEx) {
     if (ca.isInMode(MSIRUNMODE_MAINTENANCE)) {
-        // MSI skips tha standard FindRelatedProducts action is in maintenance mode,
+        // MSI skips standard FindRelatedProducts action in maintenance mode,
         // so should we do for custom FindRelatedProducts action
         LOG_TRACE("Not run in maintenance mode");
         return;
@@ -134,7 +134,7 @@ JP_CA(FindRelatedProductsEx) {
     const Guid upgradeCode = Guid(ca.getProperty(_T("UpgradeCode")));
 
     std::vector<ProductInfo> installedProducts;
-    findInstalledPackages(upgradeCode, installedProducts);
+    findInstalledProducts(upgradeCode, installedProducts);
 
     bool migratePropRemoved = false;
 
