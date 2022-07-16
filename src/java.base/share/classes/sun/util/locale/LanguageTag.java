@@ -34,6 +34,7 @@ package sun.util.locale;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.IllformedLocaleException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -366,10 +367,22 @@ public class LanguageTag {
                     break;
                 }
 
+                // parse transformed content
+                var extension = sb.toString();
+                if (isTransformedContentPrefix(singleton)) {
+                    try {
+                        extension = new TransformedContentExtension(extension.substring(2)).getID();
+                    } catch (IllformedLocaleException e) {
+                        sts.errorIndex = start + e.getErrorIndex();
+                        sts.errorMsg = e.getMessage();
+                        break;
+                    }
+                }
+
                 if (extensions.isEmpty()) {
                     extensions = new ArrayList<>(4);
                 }
-                extensions.add(sb.toString());
+                extensions.add(extension);
                 found = true;
             } else {
                 break;
@@ -665,6 +678,11 @@ public class LanguageTag {
         return (len >= 1) && (len <= 8) && LocaleUtils.isAlphaNumericString(s);
     }
 
+    public static boolean isTransformedContentPrefix(String s) {
+        return (s.length() == 1)
+                && LocaleUtils.caseIgnoreMatch(TRANSFORMED_CONTENT, s);
+    }
+
     public static boolean isTransformedContentPrefixChar(char c) {
         return (LocaleUtils.caseIgnoreMatch(TRANSFORMED_CONTENT, String.valueOf(c)));
     }
@@ -677,10 +695,6 @@ public class LanguageTag {
         return LocaleUtils.toLowerString(s);
     }
 
-    public static String canonicalizeExtlang(String s) {
-        return LocaleUtils.toLowerString(s);
-    }
-
     public static String canonicalizeScript(String s) {
         return LocaleUtils.toTitleString(s);
     }
@@ -689,27 +703,7 @@ public class LanguageTag {
         return LocaleUtils.toUpperString(s);
     }
 
-    public static String canonicalizeVariant(String s) {
-        return LocaleUtils.toLowerString(s);
-    }
-
     public static String canonicalizeExtension(String s) {
-        return LocaleUtils.toLowerString(s);
-    }
-
-    public static String canonicalizeExtensionSingleton(String s) {
-        return LocaleUtils.toLowerString(s);
-    }
-
-    public static String canonicalizeExtensionSubtag(String s) {
-        return LocaleUtils.toLowerString(s);
-    }
-
-    public static String canonicalizePrivateuse(String s) {
-        return LocaleUtils.toLowerString(s);
-    }
-
-    public static String canonicalizePrivateuseSubtag(String s) {
         return LocaleUtils.toLowerString(s);
     }
 

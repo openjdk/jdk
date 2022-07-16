@@ -34,6 +34,7 @@ package sun.util.locale;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
@@ -95,7 +96,7 @@ public class LocaleExtensions {
                     }
                 }
                 if (LanguageTag.isTransformedContentPrefixChar(key)) {
-                    map.put(key, new TransformedContentExtension(key, LocaleUtils.toLowerString(value)));
+                    map.put(key, new TransformedContentExtension(LocaleUtils.toLowerString(value)));
                 } else {
                     map.put(key, new Extension(key, LocaleUtils.toLowerString(value)));
                 }
@@ -180,6 +181,22 @@ public class LocaleExtensions {
         }
         assert (ext instanceof UnicodeLocaleExtension);
         return ((UnicodeLocaleExtension)ext).getUnicodeLocaleType(LocaleUtils.toLowerString(unicodeLocaleKey));
+    }
+
+    public String getTransformedContentSource() {
+        if (extensionMap.get(TransformedContentExtension.SINGLETON)
+                instanceof TransformedContentExtension t_ext) {
+            return t_ext.getSourceLang();
+        }
+        return null;
+    }
+
+    public SortedSet<TransformedContentExtension.Field> getTransformedContentFields() {
+        if (extensionMap.get(TransformedContentExtension.SINGLETON)
+                instanceof TransformedContentExtension t_ext) {
+            return t_ext.getFields();
+        }
+        return Collections.emptySortedSet();
     }
 
     public boolean isEmpty() {

@@ -49,7 +49,12 @@ public class TExtensionTests {
     private static final String T2 = "en-t0-und";
     private static final String T3 = "en-h0-hybrid";
     private static final String T4 = "en-latn-s0-ascii-d0-fwidth";
+    private static final String T4_CANON = "en-latn-d0-fwidth-s0-ascii";
     private static final String T5 = "s0-ascii-hex-d0-fwidth"; // no source lang
+    private static final String T5_CANON = "d0-fwidth-s0-ascii-hex"; // no source lang
+    private static final String DUPLICATE_FIELD = "s0-dup";
+    private static final String DUPLICATE = T4 + "-" + DUPLICATE_FIELD;
+    private static final String INVALID_SOURCE = "aa-bb-cc";
     private static final Locale L1 = Locale.forLanguageTag("und-Cyrl-t-" + T1);
     private static final Locale L2 = Locale.forLanguageTag("ja-Kana-t-" + T2);
     private static final Locale L3 = Locale.forLanguageTag("hi-Latn-t-" + T3); // Hinglish
@@ -63,8 +68,8 @@ public class TExtensionTests {
                 {L1, T1},
                 {L2, T2},
                 {L3, T3},
-                {L4, T4},
-                {L5, T5},
+                {L4, T4_CANON},
+                {L5, T5_CANON},
         };
     }
 
@@ -143,25 +148,35 @@ public class TExtensionTests {
     }
 
     @Test
-    public void test_FieldDuplicates() {
-        // Duplicated fields causes an exception
-        var lang = "und";
-        var t_ext = "-t-" + T1;
-        var field_dup = "-m0-2008-ungegn";
+    public void test_FieldDuplicatesForLanguageTag() {
+        // Locale.forLanguageTag() should ignore the t extension
+        assertEquals(Locale.forLanguageTag("en-t-" + DUPLICATE), Locale.ENGLISH);
+    }
+
+    @Test
+    public void test_FieldDuplicatesSetExtension() {
+        // Locale.Builder.setExtension() should throw IllformedLocaleException
         try {
-            Locale.forLanguageTag(lang + t_ext + field_dup);
+            LB.clear().setLocale(Locale.ENGLISH).setExtension('t', DUPLICATE).build();
             throw new RuntimeException("Duplicated fields should throw an exception.");
         } catch (IllformedLocaleException ile) {
-            assertEquals(ile.getErrorIndex(), t_ext.length());
+            assertEquals(ile.getErrorIndex(), DUPLICATE.indexOf(DUPLICATE_FIELD));
             // success
             System.out.println("IllformedLocaleException thrown correctly: " + ile.getMessage());
         }
     }
 
     @Test
-    public void test_InvalidSourceLang() {
+    public void test_InvalidSourceLangForLanguageTag() {
+        // Locale.forLanguageTag() should ignore the t extension
+        assertEquals(Locale.forLanguageTag("en-t-" + INVALID_SOURCE), Locale.ENGLISH);
+    }
+
+    @Test
+    public void test_InvalidSourceLangSetExtension() {
+        // Locale.Builder.setExtension() should throw IllformedLocaleException
         try {
-            Locale.forLanguageTag("en-t-aa-bb-cc");
+            LB.clear().setLocale(Locale.ENGLISH).setExtension('t', INVALID_SOURCE).build();
             throw new RuntimeException("Invalid source language tag should throw an exception");
         } catch (IllformedLocaleException ile) {
             // success

@@ -236,7 +236,10 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * <h2><a id="t_extension">Transformed Content extension</a></h2>
  * <a href="https://datatracker.ietf.org/doc/html/rfc6497">RFC 6497</a>
  * specifies an extension to BCP 47 that provides subtags for specifying
- * the source language or script of transformed content. For example,
+ * the source language or script of transformed content. Transformed content
+ * is content that has been transformed, including text that has been
+ * transliterated, transcribed, or translated, or in some other way
+ * influenced by the source locale. For example,
  * <table class="striped">
  * <caption style="display:none">Transformed Content extension examples</caption>
  * <thead>
@@ -254,24 +257,21 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *     <td>The content is in Cyrillic, transformed from Latin, according to a UNGEGN specification dated 2007.</td></tr>
  * </tbody>
  * </table>
- * <p>The transformed content extension starts with a well-formed BCP47 {@code source}
- * language tag, which is optional and may be omitted ({@code it}, {@code und-cyrl},
- * and {@code und-latn} in the above example). It may be followed by one or
- * more {@code field}s that consist of a field separator (one alpha + one digit, as {@code m0} above),
- * followed by one or more subtags of the length 3 to 8, each delimited by a hyphen ({@code ungegn-2007}
- * as above).
- * <p>The {@code Locale} class provides means to access this transformed content information
- * accompanying a locale object, either via {@link #getExtension(char)} with
- * {@link #TRANSFORMED_CONTENT_EXTENSION} which produces the string
- * representation of the transformed content, or via the specialized
- * methods; {@link #getTransformedContentSource()} and
- * {@link #getTransformedContentFields()}.
- * <p>To create a locale object that contains the transformed content, either use
+ * <p>The transformed content extension contains an optional well-formed BCP47 {@code source}
+ * language tag followed by zero or more {@code field}s. At least the {@code source} language tag
+ * or one {@code field} must be included. See the example above. Each {@code field} consists of a
+ * field separator (one alpha + one digit), followed by one or more subtags of the length 3 to 8,
+ * each delimited by a hyphen.
+ * <p>The transformed content information {@code source} language tag and {@code fields} are returned
+ * from a {@code Locale}, either via {@link #getExtension(char)} with
+ * {@link #TRANSFORMED_CONTENT_EXTENSION} which returns the string
+ * representation of the transformed content, or via the methods {@link getTransformedContentSource()}
+ * and {@link getTransformedContentFields()}.
+ * <p>To create a locale object that contains the transformed content extension, either use
  * the factory method {@link #forLanguageTag(String)} or use
  * {@link Locale.Builder#setExtension(char, String)} with
- * {@link #TRANSFORMED_CONTENT_EXTENSION} on a locale builder.
- * Although the Unicode Consortium maintains the valid field separators and
- * their valid subtags in <a href="http://www.unicode.org/reports/tr35/#BCP47_T_Extension">
+ * {@link #TRANSFORMED_CONTENT_EXTENSION}. Although the Unicode Consortium maintains the valid field
+ * separators and their valid subtags in <a href="http://www.unicode.org/reports/tr35/#BCP47_T_Extension">
  *     3.7 Unicode BCP 47 T Extension</a>, these methods do not check the validity,
  * only the well-formed check is done on creating a locale object with T extension.
  * <p>For more detail about the Transformed Content extension, refer to
@@ -674,9 +674,7 @@ public final class Locale implements Cloneable, Serializable {
     public static final char UNICODE_LOCALE_EXTENSION = 'u';
 
     /**
-     * The key for the transformed content extension ('t'), governed by
-     * <a href="https://datatracker.ietf.org/doc/html/rfc6497">RFC 6497: BCP 47 Extension
-     * T - Transformed Content</a>
+     * The key for the transformed content extension ('t').
      *
      * @see #getExtension(char)
      * @see Builder#setExtension(char, String)
@@ -1516,34 +1514,31 @@ public final class Locale implements Cloneable, Serializable {
      * @since 20
      */
     public Locale getTransformedContentSource() {
-        if (hasExtensions() &&
-            localeExtensions.getExtension(Locale.TRANSFORMED_CONTENT_EXTENSION)
-                    instanceof TransformedContentExtension t_ext) {
-                return t_ext.getSourceLang().map(sl -> Locale.forLanguageTag(sl)).orElse(null);
+        if (hasExtensions()) {
+            var source  = localeExtensions.getTransformedContentSource();
+            if (source != null && !source.isEmpty()) {
+                return forLanguageTag(source);
+            }
         }
         return null;
     }
 
     /**
      * Returns the map of fields in the T extension of this
-     * locale, or the empty map if it has no T extension fields.
-     * The returned map contains entries of a separator and its
-     * corresponding subtags pair. If there are multiple subtags
-     * in the map value, subtags are delimited by a hyphen. The
-     * returned map is unmodifiable.
+     * locale, or an empty map if it has no T extension fields.
+     * The returned map contains entries for each separator and its
+     * subtags. If there are multiple subtags in the map value,
+     * subtags are delimited by a hyphen. The returned map is unmodifiable.
      *
      * @return The map of fields in the T extension
      * @since 20
      */
     public Map<String, String> getTransformedContentFields() {
-        if (hasExtensions() &&
-                localeExtensions.getExtension(Locale.TRANSFORMED_CONTENT_EXTENSION)
-                    instanceof TransformedContentExtension t_ext) {
-            return t_ext.getFields().map(ss -> ss.stream()
-                        .collect(Collectors.toUnmodifiableMap(
-                                TransformedContentExtension.Field::fsep,
-                                TransformedContentExtension.Field::fval)))
-                .orElse(Collections.emptyMap());
+        if (hasExtensions()) {
+            return localeExtensions.getTransformedContentFields().stream()
+                    .collect(Collectors.toUnmodifiableMap(
+                            TransformedContentExtension.Field::fsep,
+                            TransformedContentExtension.Field::fval));
         }
         return Collections.emptyMap();
     }
@@ -1610,7 +1605,7 @@ public final class Locale implements Cloneable, Serializable {
      * @see #toLanguageTag
      */
     @Override
-    public final String toString() {
+    public String toString() {
         boolean l = !baseLocale.getLanguage().isEmpty();
         boolean s = !baseLocale.getScript().isEmpty();
         boolean r = !baseLocale.getRegion().isEmpty();
@@ -1999,7 +1994,7 @@ public final class Locale implements Cloneable, Serializable {
      *
      * @return The name of the display language.
      */
-    public final String getDisplayLanguage() {
+    public String getDisplayLanguage() {
         return getDisplayLanguage(getDefault(Category.DISPLAY));
     }
 
@@ -2072,7 +2067,7 @@ public final class Locale implements Cloneable, Serializable {
      *
      * @return The name of the country appropriate to the locale.
      */
-    public final String getDisplayCountry() {
+    public String getDisplayCountry() {
         return getDisplayCountry(getDefault(Category.DISPLAY));
     }
 
@@ -2122,7 +2117,7 @@ public final class Locale implements Cloneable, Serializable {
      *
      * @return The name of the display variant code appropriate to the locale.
      */
-    public final String getDisplayVariant() {
+    public String getDisplayVariant() {
         return getDisplayVariant(getDefault(Category.DISPLAY));
     }
 
@@ -2246,7 +2241,7 @@ public final class Locale implements Cloneable, Serializable {
         }
 
         if (localeExtensions != null) {
-            localeExtensions.getKeys().stream().forEach(key -> {
+            localeExtensions.getKeys().forEach(key -> {
                 switch (key) {
                     case UNICODE_LOCALE_EXTENSION -> {
                         localeExtensions.getUnicodeLocaleAttributes().stream()
@@ -2257,21 +2252,17 @@ public final class Locale implements Cloneable, Serializable {
                                 .forEach(names::add);
                     }
                     case TRANSFORMED_CONTENT_EXTENSION -> {
-                        if (localeExtensions.getExtension(TRANSFORMED_CONTENT_EXTENSION)
-                                instanceof TransformedContentExtension tce) {
-                            tce.getSourceLang().ifPresent(sourceLang ->
-                                names.add(getDisplayString(String.valueOf(TRANSFORMED_CONTENT_EXTENSION), null, inLocale, DISPLAY_UEXT_KEY) + ": " +
-                                        forLanguageTag(sourceLang).getDisplayName(inLocale))
-                            );
-                            tce.getFields().ifPresent(fields ->
-                                fields.stream()
-                                        .map(f -> getDisplayString(f.fsep(), null, inLocale, DISPLAY_UEXT_KEY) + ": " +
+                        var sourceLang = localeExtensions.getTransformedContentSource();
+                        if (sourceLang != null && !sourceLang.isEmpty()) {
+                            names.add(getDisplayString(String.valueOf(TRANSFORMED_CONTENT_EXTENSION), null, inLocale, DISPLAY_UEXT_KEY) + ": " +
+                                    forLanguageTag(sourceLang).getDisplayName(inLocale));
+                        }
+                        localeExtensions.getTransformedContentFields().stream()
+                            .map(f -> getDisplayString(f.fsep(), null, inLocale, DISPLAY_UEXT_KEY) + ": " +
                                                 Arrays.stream(f.fval().split("-"))
                                                         .map(v -> getDisplayString(v, f.fsep(), inLocale, DISPLAY_UEXT_TYPE))
                                                         .collect(Collectors.joining(" ")))
-                                        .forEach(names::add)
-                            );
-                        }
+                            .forEach(names::add);
                     }
                     default -> {
                         var ext = localeExtensions.getExtensionValue(key);
@@ -2926,11 +2917,11 @@ public final class Locale implements Cloneable, Serializable {
          * <p>
          * The key {@link #TRANSFORMED_CONTENT_EXTENSION
          * TRANSFORMED_CONTENT_EXTENSION} ('t') is used for the transformed content.
-         * The value for this key is a {@code source} language tag (optional), followed by zero
-         * (in case the "source" language tag does exist) or more {@code field}s, each consists
-         * of a {@code separator} (one alpha and one digit) followed by {@code subtags}
-         * (3 to 8 alphanumerics), delimited by a hyphen ('-'). Either {@code source} and/or
-         * a {@code field} must exist. For the detailed
+         * The transformed content extension contains an optional well-formed BCP47 {@code source}
+         * language tag followed by zero or more {@code field}s. At least the {@code source} language tag
+         * or one {@code field} must be included. Each {@code field} consists of a
+         * field separator (one alpha + one digit), followed by one or more subtags of
+         * the length 3 to 8, each delimited by a hyphen. For the detailed
          * specification for the well-formed T extension, refer to
          * <a href="https://datatracker.ietf.org/doc/html/rfc6497">RFC 6497: BCP 47 Extension
          * T - Transformed Content</a>.
