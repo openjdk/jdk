@@ -1132,14 +1132,13 @@ public final class Float extends Number
                 // the correct trailing bits of a binary16 subnormal.
                 exp = -15; // Subnormal encoding using -E_max.
                 float f_adjust = abs_f * 0x1.0p-125f;
-                signif_bits = (short)(Float.floatToRawIntBits(f_adjust) & 0x03ff);
-                if (signif_bits == 0) {
-                    // Since zero cases have already been handled, if
-                    // the significand is all zeros, there was a
-                    // round-up to normal range so the exponent needs
-                    // to be adjusted accordingly.
-                    exp++;
-                }
+
+                // In case the significand rounds up and has a carry
+                // propagate all the way up, take the bottom 11 bits
+                // rather than bottom 10 bits. Adding this value,
+                // rather than OR'ing htis value, will cause the right
+                // exponent adjustment.
+                signif_bits = (short)(Float.floatToRawIntBits(f_adjust) & 0x07ff);
             } else {
                 // All remaining values of f are in the normalized
                 // range of binary16 (which is also in the normalized
@@ -1172,16 +1171,16 @@ public final class Float extends Number
                 if (((lsb == 0) && (round != 0) && (sticky != 0)) ||
                     ( lsb != 0  &&  round != 0 ) ) { // sticky not needed
                     signif_bits++;
-                    // Check for carry-out after increment
-                    if (signif_bits == 0x0400) {
-                        exp++;
-                    }
                 }
             }
 
-            short result = 0;
-            result = (short)(((exp + 15) << 10) | (0x3ff & signif_bits));
-            return (short)(sign_bit | (0x7fff & result));
+            // No bits set in significand beyond the *first* exponent
+            // bit, not just the sigificand; quantity is added to the
+            // exponent to implement a carry out from rounding the
+            // significand.
+            assert (0xf800 & signif_bits) == 0x0;
+
+            return (short)(sign_bit | ( ((exp + 15) << 10) + signif_bits ) );
         }
     }
 

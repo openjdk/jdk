@@ -57,7 +57,7 @@ public class SixteenBitFormats {
             float f =  Float.binary16AsShortBitsToFloat(s);
             short s2 = Float.floatToBinary16AsShortBits(f);
 
-            if (Binary16.compare(s, s2) != 0) {
+            if (!Binary16.equivalent(s, s2)) {
                 errors++;
                 System.out.println("Roundtrip failure on " +
                                    Integer.toHexString(0xFFFF & (int)s) +
@@ -202,7 +202,7 @@ public class SixteenBitFormats {
     private static int compareAndReportError0(float input,
                                               short expected) {
         short actual = Float.floatToBinary16AsShortBits(input);
-        if (Binary16.compare(actual, expected) != 0) {
+        if (!Binary16.equivalent(actual, expected)) {
             System.out.println("Unexpected result of converting " +
                                Float.toHexString(input) +
                                " to short. Expected 0x" + Integer.toHexString(expected) +
@@ -324,19 +324,11 @@ public class SixteenBitFormats {
             return (short)(binary16 ^ 0x8000 ); // Flip only sign bit.
         }
 
-        public static int compare(short bin16_1, short bin16_2) {
+        public static boolean equivalent(short bin16_1, short bin16_2) {
             if (bin16_1 == bin16_2) {
-                return 0;
+                return true;
             } else {
-                if (isNaN(bin16_1)) {
-                    return isNaN(bin16_2) ? 0 : 1;
-                } else {
-                    if (isNaN(bin16_2)) {
-                        return -1;
-                    }
-                    return Integer.compare((int)(bin16_1 & 0xFFFF),
-                                           (int)(bin16_2 & 0xFFFF));
-                }
+                return isNaN(bin16_1) ? isNaN(bin16_2) : false;
             }
         }
     }
