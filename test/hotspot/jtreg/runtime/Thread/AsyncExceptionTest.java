@@ -54,13 +54,17 @@ public class AsyncExceptionTest extends Thread {
         try {
             internalRun1();
         } catch (ThreadDeath td) {
-            throw new RuntimeException("Catched ThreadDeath in run() instead of internalRun2() or internalRun1(). receivedThreadDeathinInternal1=" + receivedThreadDeathinInternal1 + "; receivedThreadDeathinInternal2=" + receivedThreadDeathinInternal2);
+            throw new RuntimeException("Catched ThreadDeath in run() instead of internalRun2() or internalRun1().\n"
+                    + "receivedThreadDeathinInternal1=" + receivedThreadDeathinInternal1
+                    + "; receivedThreadDeathinInternal2=" + receivedThreadDeathinInternal2);
         } catch (NoClassDefFoundError ncdfe) {
             // ignore because we're testing StopThread() which can cause it
         }
 
         if (receivedThreadDeathinInternal2 == false && receivedThreadDeathinInternal1 == false) {
-            throw new RuntimeException("Didn't catched ThreadDeath in internalRun2() nor in internalRun1(). receivedThreadDeathinInternal1=" + receivedThreadDeathinInternal1 + "; receivedThreadDeathinInternal2=" + receivedThreadDeathinInternal2);
+            throw new RuntimeException("Didn't catched ThreadDeath in internalRun2() nor in internalRun1().\n"
+                    + "receivedThreadDeathinInternal1=" + receivedThreadDeathinInternal1
+                    + "; receivedThreadDeathinInternal2=" + receivedThreadDeathinInternal2);
         }
         exitSyncObj.countDown();
     }
