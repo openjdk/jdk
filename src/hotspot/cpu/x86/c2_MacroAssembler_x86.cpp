@@ -5359,12 +5359,15 @@ void C2_MacroAssembler::udivmodI(Register rax, Register divisor, Register rdx, R
 void C2_MacroAssembler::reverseI(Register dst, Register src, XMMRegister xtmp1,
                                  XMMRegister xtmp2, Register rtmp) {
   if(VM_Version::supports_gfni()) {
+    // Galois field instruction based bit reversal based on following algorithm.
+    // http://0x80.pl/articles/avx512-galois-field-for-bit-shuffling.html
     mov64(rtmp, 0x8040201008040201L);
     movq(xtmp1, src);
     movq(xtmp2, rtmp);
     gf2p8affineqb(xtmp1, xtmp2, 0);
     movq(dst, xtmp1);
   } else {
+    // Swap even and odd numbered bits.
     movl(rtmp, src);
     andl(rtmp, 0x55555555);
     shll(rtmp, 1);
@@ -5373,6 +5376,7 @@ void C2_MacroAssembler::reverseI(Register dst, Register src, XMMRegister xtmp1,
     shrl(dst, 1);
     orl(dst, rtmp);
 
+    // Swap LSB and MSB 2 bits of each nibble.
     movl(rtmp, dst);
     andl(rtmp, 0x33333333);
     shll(rtmp, 2);
@@ -5380,6 +5384,7 @@ void C2_MacroAssembler::reverseI(Register dst, Register src, XMMRegister xtmp1,
     shrl(dst, 2);
     orl(dst, rtmp);
 
+    // Swap LSB and MSB 4 bits of each byte.
     movl(rtmp, dst);
     andl(rtmp, 0x0F0F0F0F);
     shll(rtmp, 4);
@@ -5393,12 +5398,15 @@ void C2_MacroAssembler::reverseI(Register dst, Register src, XMMRegister xtmp1,
 void C2_MacroAssembler::reverseL(Register dst, Register src, XMMRegister xtmp1,
                                  XMMRegister xtmp2, Register rtmp1, Register rtmp2) {
   if(VM_Version::supports_gfni()) {
+    // Galois field instruction based bit reversal based on following algorithm.
+    // http://0x80.pl/articles/avx512-galois-field-for-bit-shuffling.html
     mov64(rtmp1, 0x8040201008040201L);
     movq(xtmp1, src);
     movq(xtmp2, rtmp1);
     gf2p8affineqb(xtmp1, xtmp2, 0);
     movq(dst, xtmp1);
   } else {
+    // Swap even and odd numbered bits.
     movq(rtmp1, src);
     mov64(rtmp2, 0x5555555555555555L);
     andq(rtmp1, rtmp2);
@@ -5409,6 +5417,7 @@ void C2_MacroAssembler::reverseL(Register dst, Register src, XMMRegister xtmp1,
     shrq(dst, 1);
     orq(dst, rtmp1);
 
+    // Swap LSB and MSB 2 bits of each nibble.
     movq(rtmp1, dst);
     mov64(rtmp2, 0x3333333333333333L);
     andq(rtmp1, rtmp2);
@@ -5418,6 +5427,7 @@ void C2_MacroAssembler::reverseL(Register dst, Register src, XMMRegister xtmp1,
     shrq(dst, 2);
     orq(dst, rtmp1);
 
+    // Swap LSB and MSB 4 bits of each byte.
     movq(rtmp1, dst);
     mov64(rtmp2, 0x0F0F0F0F0F0F0F0FL);
     andq(rtmp1, rtmp2);
