@@ -23,18 +23,11 @@
 
 #include <string.h>
 #include "jvmti.h"
-#include "jvmti_common.h"
 
 extern "C" {
 
 static jvmtiEnv* jvmti = NULL;
 static jrawMonitorID monitor;
-
-JNIEXPORT void JNICALL
-Java_AsyncExceptionOnMonitorEnter_stopThread(JNIEnv *jni, jclass cls, jthread thread) {
-  stop_thread(jvmti, jni, thread);
-}
-
 
 JNIEXPORT jint JNICALL
 Java_AsyncExceptionOnMonitorEnter_createRawMonitor(JNIEnv *jni, jclass cls) {
@@ -84,14 +77,6 @@ JNIEXPORT jint JNICALL
 Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   // create JVMTI environment
   if (jvm->GetEnv((void **) (&jvmti), JVMTI_VERSION) != JNI_OK) {
-    return JNI_ERR;
-  }
-  jvmtiCapabilities caps;
-  memset(&caps, 0, sizeof (caps));
-  caps.can_signal_thread = 1;
-  jvmtiError err = jvmti->AddCapabilities(&caps);
-  if (err != JVMTI_ERROR_NONE) {
-    LOG("error in JVMTI AddCapabilities: %d\n", err);
     return JNI_ERR;
   }
   return JNI_OK;

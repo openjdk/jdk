@@ -92,13 +92,6 @@ check_jvmti_status(JNIEnv* jni, jvmtiError err, const char* msg) {
   }
 }
 
-static void
-assert_not_null(JNIEnv* jni, void* obj, const char* msg) {
-  if (obj == NULL) {
-    jni->FatalError(msg);
-  }
-}
-
 /* JVMTI helper wrappers. Check errors and fail or return null if jvmti operation failed. */
 
 // Monitors often created in Agent_Initialize(..) where JNIEnv* jni doesn't exist.
@@ -833,33 +826,12 @@ set_event_notification_mode(jvmtiEnv* jvmti, JNIEnv* jni, jvmtiEventMode mode, j
   check_jvmti_status(jni, err, "jvmti_common set_event_notification_mode: Error in JVMTI SetEventNotificationMode");
 }
 
-static int
+int
 enable_events_notifications(jvmtiEnv* jvmti, JNIEnv* jni, jvmtiEventMode enable, int size, jvmtiEvent list[], jthread thread) {
   for (int i = 0; i < size; i++) {
     check_jvmti_status(jni, jvmti->SetEventNotificationMode(enable, list[i], thread), "");
   }
   return JNI_TRUE;
-}
-
-static const char* THREAD_DEATH_CLASS_NAME = "java/lang/ThreadDeath";
-static const char* THREAD_DEATH_CTOR_NAME = "<init>";
-static const char* THREAD_DEATH_CTOR_SIGNATURE = "()V";
-
-static void
-stop_thread(jvmtiEnv* jvmti, JNIEnv *jni, jthread thread) {
-  jclass clz = jni->FindClass(THREAD_DEATH_CLASS_NAME);
-  assert_not_null(jni, clz, "stop_thread: FindClass returned NULL");
-  jmethodID ctor = jni->GetMethodID(clz, THREAD_DEATH_CTOR_NAME, THREAD_DEATH_CTOR_SIGNATURE);
-  assert_not_null(jni, ctor, "stop_thread: GetMethodID returned NULL");
-  jobject thread_death = jni->NewObject(clz, ctor);
-  assert_not_null(jni, thread_death, "stop_thread: NewObject returned NULL");
-
-  jvmtiError err =  jvmti->StopThread(thread, thread_death);
-  if (err == JVMTI_ERROR_THREAD_NOT_ALIVE) {
-    LOG("JVMTI_ERROR_THREAD_NOT_ALIVE happened");
-    return;
-  }
-  check_jvmti_status(jni, err, "Error during StopThread()");
 }
 
 void

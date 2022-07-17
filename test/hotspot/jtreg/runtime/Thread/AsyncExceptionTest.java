@@ -26,14 +26,16 @@
  * @bug 8283044
  * @requires vm.compiler1.enabled | vm.compiler2.enabled
  * @summary Stress delivery of asynchronous exceptions.
- * @library /test/lib /test/hotspot/jtreg
+ * @library /test/lib /test/hotspot/jtreg /test/hotspot/jtreg/testlibrary
  * @build AsyncExceptionTest
- * @run main/othervm/native -agentlib:AsyncException -Xcomp
+ * @run main/othervm -Xcomp
                      -XX:CompileCommand=dontinline,AsyncExceptionTest::internalRun2
                      -XX:CompileCommand=compileonly,AsyncExceptionTest::internalRun1
                      -XX:CompileCommand=compileonly,AsyncExceptionTest::internalRun2
                      AsyncExceptionTest
  */
+
+import jvmti.JVMTIUtils;
 
 import java.util.concurrent.CountDownLatch;
 
@@ -47,8 +49,6 @@ public class AsyncExceptionTest extends Thread {
     private boolean firstEntry = true;
     private boolean receivedThreadDeathinInternal1 = false;
     private boolean receivedThreadDeathinInternal2 = false;
-
-    public static native int stopThread(Thread thread);
 
     @Override
     public void run() {
@@ -122,7 +122,7 @@ public class AsyncExceptionTest extends Thread {
                 thread.startSyncObj.await();
                 while (true) {
                     // Send async exception and wait until it is thrown
-                    stopThread(thread);
+                    JVMTIUtils.stopThread(thread);
                     thread.exitSyncObj.await();
                     Thread.sleep(100);
 
