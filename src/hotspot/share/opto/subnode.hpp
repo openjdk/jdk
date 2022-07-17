@@ -580,6 +580,8 @@ public:
   virtual int Opcode() const;
   const Type *bottom_type() const { return TypeInt::INT; }
   virtual uint ideal_reg() const { return Op_RegI; }
+  virtual Node* Identity(PhaseGVN* phase);
+  virtual const Type* Value(PhaseGVN* phase) const;
 };
 
 //-------------------------------ReverseLNode--------------------------------
@@ -590,6 +592,8 @@ public:
   virtual int Opcode() const;
   const Type *bottom_type() const { return TypeLong::LONG; }
   virtual uint ideal_reg() const { return Op_RegL; }
+  virtual Node* Identity(PhaseGVN* phase);
+  virtual const Type* Value(PhaseGVN* phase) const;
 };
 
 #endif // SHARE_OPTO_SUBNODE_HPP

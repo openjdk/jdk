@@ -6721,6 +6721,50 @@ instruct countTrailingZerosL_bsf(rRegI dst, rRegL src, rFlagsReg cr) %{
   ins_pipe(ialu_reg);
 %}
 
+//--------------- Reverse Operation Instructions ----------------
+instruct bytes_reversebit_int(rRegI dst, rRegI src, rRegI rtmp, rFlagsReg cr) %{
+  predicate(!VM_Version::supports_gfni());
+  match(Set dst (ReverseI src));
+  effect(TEMP dst, TEMP rtmp, KILL cr);
+  format %{ "reverse_int $dst $src\t! using $rtmp as TEMP" %}
+  ins_encode %{
+    __ reverseI($dst$$Register, $src$$Register, xnoreg, xnoreg, $rtmp$$Register);
+  %}
+  ins_pipe( ialu_reg );
+%}
+
+instruct bytes_reversebit_int_gfni(rRegI dst, rRegI src, regF xtmp1, regF xtmp2, rRegL rtmp, rFlagsReg cr) %{
+  predicate(VM_Version::supports_gfni());
+  match(Set dst (ReverseI src));
+  effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP rtmp, KILL cr);
+  format %{ "reverse_int $dst $src\t! using $rtmp, $xtmp1 and $xtmp2 as TEMP" %}
+  ins_encode %{
+    __ reverseI($dst$$Register, $src$$Register, $xtmp1$$XMMRegister, $xtmp2$$XMMRegister, $rtmp$$Register);
+  %}
+  ins_pipe( ialu_reg );
+%}
+
+instruct bytes_reversebit_long(rRegL dst, rRegL src, rRegL rtmp1, rRegL rtmp2, rFlagsReg cr) %{
+  predicate(!VM_Version::supports_gfni());
+  match(Set dst (ReverseL src));
+  effect(TEMP dst, TEMP rtmp1, TEMP rtmp2, KILL cr);
+  format %{ "reverse_long $dst $src\t! using $rtmp1 and $rtmp2 as TEMP" %}
+  ins_encode %{
+    __ reverseL($dst$$Register, $src$$Register, xnoreg, xnoreg, $rtmp1$$Register, $rtmp2$$Register);
+  %}
+  ins_pipe( ialu_reg );
+%}
+
+instruct bytes_reversebit_long_gfni(rRegL dst, rRegL src, regD xtmp1, regD xtmp2, rRegL rtmp, rFlagsReg cr) %{
+  predicate(VM_Version::supports_gfni());
+  match(Set dst (ReverseL src));
+  effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP rtmp, KILL cr);
+  format %{ "reverse_long $dst $src\t! using $rtmp, $xtmp1 and $xtmp2 as TEMP" %}
+  ins_encode %{
+    __ reverseL($dst$$Register, $src$$Register, $xtmp1$$XMMRegister, $xtmp2$$XMMRegister, $rtmp$$Register, noreg);
+  %}
+  ins_pipe( ialu_reg );
+%}
 
 //---------- Population Count Instructions -------------------------------------
 

@@ -5356,6 +5356,80 @@ void C2_MacroAssembler::udivmodI(Register rax, Register divisor, Register rdx, R
 }
 
 #ifdef _LP64
+void C2_MacroAssembler::reverseI(Register dst, Register src, XMMRegister xtmp1,
+                                 XMMRegister xtmp2, Register rtmp) {
+  if(VM_Version::supports_gfni()) {
+    mov64(rtmp, 0x8040201008040201L);
+    movq(xtmp1, src);
+    movq(xtmp2, rtmp);
+    gf2p8affineqb(xtmp1, xtmp2, 0);
+    movq(dst, xtmp1);
+  } else {
+    movl(rtmp, src);
+    andl(rtmp, 0x55555555);
+    shll(rtmp, 1);
+    movl(dst, src);
+    andl(dst, 0xAAAAAAAA);
+    shrl(dst, 1);
+    orl(dst, rtmp);
+
+    movl(rtmp, dst);
+    andl(rtmp, 0x33333333);
+    shll(rtmp, 2);
+    andl(dst, 0xCCCCCCCC);
+    shrl(dst, 2);
+    orl(dst, rtmp);
+
+    movl(rtmp, dst);
+    andl(rtmp, 0x0F0F0F0F);
+    shll(rtmp, 4);
+    andl(dst, 0xF0F0F0F0);
+    shrl(dst, 4);
+    orl(dst, rtmp);
+  }
+  bswapl(dst);
+}
+
+void C2_MacroAssembler::reverseL(Register dst, Register src, XMMRegister xtmp1,
+                                 XMMRegister xtmp2, Register rtmp1, Register rtmp2) {
+  if(VM_Version::supports_gfni()) {
+    mov64(rtmp1, 0x8040201008040201L);
+    movq(xtmp1, src);
+    movq(xtmp2, rtmp1);
+    gf2p8affineqb(xtmp1, xtmp2, 0);
+    movq(dst, xtmp1);
+  } else {
+    movq(rtmp1, src);
+    mov64(rtmp2, 0x5555555555555555L);
+    andq(rtmp1, rtmp2);
+    shlq(rtmp1, 1);
+    movq(dst, src);
+    notq(rtmp2);
+    andq(dst, rtmp2);
+    shrq(dst, 1);
+    orq(dst, rtmp1);
+
+    movq(rtmp1, dst);
+    mov64(rtmp2, 0x3333333333333333L);
+    andq(rtmp1, rtmp2);
+    shlq(rtmp1, 2);
+    notq(rtmp2);
+    andq(dst, rtmp2);
+    shrq(dst, 2);
+    orq(dst, rtmp1);
+
+    movq(rtmp1, dst);
+    mov64(rtmp2, 0x0F0F0F0F0F0F0F0FL);
+    andq(rtmp1, rtmp2);
+    shlq(rtmp1, 4);
+    notq(rtmp2);
+    andq(dst, rtmp2);
+    shrq(dst, 4);
+    orq(dst, rtmp1);
+  }
+  bswapq(dst);
+}
+
 void C2_MacroAssembler::udivL(Register rax, Register divisor, Register rdx) {
   Label done;
   Label neg_divisor_fastpath;

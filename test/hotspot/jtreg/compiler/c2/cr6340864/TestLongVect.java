@@ -436,6 +436,10 @@ public class TestLongVect {
       for (int i=0; i<ARRLEN; i++) {
         errn += verify("test_reverse_bytes: ", i, a0[i], Long.reverseBytes(a1[i]));
       }
+      test_reverse(a0, a1);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_reverse: ", i, a0[i], Long.reverse(a1[i]));
+      }
     }
 
     if (errn > 0)
@@ -863,6 +867,12 @@ public class TestLongVect {
     end = System.currentTimeMillis();
     System.out.println("test_reverse_bytes: " + (end - start));
 
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test_reverse(a0, a1);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_reverse: " + (end - start));
     return errn;
   }
 
@@ -1133,9 +1143,16 @@ public class TestLongVect {
       a0[i] = (long)((a1[i] & b)>>VALUE);
     }
   }
+
   static void test_reverse_bytes(long[] a0, long[] a1) {
     for(int i = 0; i < a0.length; i++) {
       a0[i] = Long.reverseBytes(a1[i]);
+    }
+  }
+
+  static void test_reverse(long[] a0, long[] a1) {
+    for(int i = 0; i < a0.length; i++) {
+      a0[i] = Long.reverse(a1[i]);
     }
   }
 
