@@ -52,7 +52,6 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.inline.hpp"
-#include "runtime/safefetch.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -465,8 +464,7 @@ public:
     // We know the destination 4k page. Maybe we have a third
     // instruction.
     uint32_t insn = insn_at(insn_addr, 0);
-    int *insn3_addr = &((int*)insn_addr)[2];
-    uint32_t insn3 = (uint32_t)SafeFetch32(insn3_addr, -1);
+    uint32_t insn3 = insn_at(insn_addr, 2);
     ptrdiff_t byte_offset;
     if (offset_for(insn, insn3, byte_offset)) {
       target += byte_offset;
