@@ -44,7 +44,7 @@ const int ConcreteRegisterImpl::max_xmm = ConcreteRegisterImpl::max_fpr +
 const int ConcreteRegisterImpl::max_kpr = ConcreteRegisterImpl::max_xmm +
     KRegisterImpl::max_slots_per_register * KRegisterImpl::number_of_registers;
 
-const char * RegisterImpl::name() const {
+const char* RegisterImpl::name() const {
   static const char *const names[number_of_registers] = {
 #ifndef AMD64
     "eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi"
