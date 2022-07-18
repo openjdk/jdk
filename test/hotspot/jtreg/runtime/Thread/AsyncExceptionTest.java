@@ -54,7 +54,7 @@ public class AsyncExceptionTest extends Thread {
         try {
             internalRun1();
         } catch (ThreadDeath td) {
-            throw new RuntimeException("Catched ThreadDeath in run() instead of internalRun2() or internalRun1().\n"
+            throw new RuntimeException("Caught ThreadDeath in run() instead of internalRun2() or internalRun1().\n"
                     + "receivedThreadDeathinInternal1=" + receivedThreadDeathinInternal1
                     + "; receivedThreadDeathinInternal2=" + receivedThreadDeathinInternal2);
         } catch (NoClassDefFoundError ncdfe) {
@@ -62,7 +62,7 @@ public class AsyncExceptionTest extends Thread {
         }
 
         if (receivedThreadDeathinInternal2 == false && receivedThreadDeathinInternal1 == false) {
-            throw new RuntimeException("Didn't catched ThreadDeath in internalRun2() nor in internalRun1().\n"
+            throw new RuntimeException("Didn't catch ThreadDeath in internalRun2() nor in internalRun1().\n"
                     + "receivedThreadDeathinInternal1=" + receivedThreadDeathinInternal1
                     + "; receivedThreadDeathinInternal2=" + receivedThreadDeathinInternal2);
         }

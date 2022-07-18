@@ -39,7 +39,6 @@ public class AsyncExceptionOnMonitorEnter extends Thread {
     private final static String PROG_NAME = "AsyncExceptionOnMonitorEnter";
     private static int TEST_MODE = 0;
 
-    public static native int stopThread(Thread thread);
     public static native int createRawMonitor();
     public static native int enterRawMonitor();
     public static native int exitRawMonitor();
