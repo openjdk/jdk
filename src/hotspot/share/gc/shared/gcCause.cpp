@@ -72,9 +72,6 @@ const char* GCCause::to_string(GCCause::Cause cause) {
     case _allocation_failure:
       return "Allocation Failure";
 
-    case _tenured_generation_full:
-      return "Tenured Generation Full";
-
     case _codecache_GC_threshold:
       return "CodeCache GC Threshold";
 
@@ -83,12 +80,6 @@ const char* GCCause::to_string(GCCause::Cause cause) {
 
     case _metadata_GC_clear_soft_refs:
       return "Metadata GC Clear Soft References";
-
-    case _old_generation_expanded_on_last_scavenge:
-      return "Old Generation Expanded On Last Scavenge";
-
-    case _old_generation_too_full_to_scavenge:
-      return "Old Generation Too Full To Scavenge";
 
     case _adaptive_size_policy:
       return "Ergonomics";
