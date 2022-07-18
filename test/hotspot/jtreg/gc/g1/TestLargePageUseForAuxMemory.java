@@ -33,16 +33,20 @@ package gc.g1;
  * @requires vm.opt.LargePageSizeInBytes == null
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+IgnoreUnrecognizedVMOptions -XX:+UseLargePages gc.g1.TestLargePageUseForAuxMemory
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseLargePages gc.g1.TestLargePageUseForAuxMemory
  */
 
+import java.util.ArrayList;
+import java.util.List;
 import java.lang.Math;
+import java.util.Collections;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Platform;
-import jtreg.SkippedException;
 import jdk.test.whitebox.WhiteBox;
+
+import jtreg.SkippedException;
 
 public class TestLargePageUseForAuxMemory {
     static final long HEAP_REGION_SIZE = 1 * 1024 * 1024;
@@ -105,19 +109,22 @@ public class TestLargePageUseForAuxMemory {
         checkSize(output, expectedPageSize, "Mark Bitmap: .*page_size=([^ ]+)");
     }
 
+    static List<String> getOpts(long heapsize, boolean largePageEnabled) {
+        return List.of("-XX:+UseG1GC",
+                       "-XX:G1HeapRegionSize=" + HEAP_REGION_SIZE,
+                       "-Xmx" + heapsize,
+                       "-Xlog:pagesize,gc+init,gc+heap+coops=debug",
+                       "-XX:" + (largePageEnabled ? "+" : "-") + "UseLargePages",
+                       "-version");
+    }
+
     static void testVM(String what, long heapsize, boolean cardsShouldUseLargePages, boolean bitmapShouldUseLargePages) throws Exception {
         System.out.println(what + " heapsize " + heapsize + " card table should use large pages " + cardsShouldUseLargePages + " " +
                            "bitmaps should use large pages " + bitmapShouldUseLargePages);
         ProcessBuilder pb;
+
         // Test with large page enabled.
-        pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
-                                                   "-XX:G1HeapRegionSize=" + HEAP_REGION_SIZE,
-                                                   "-Xmx" + heapsize,
-                                                   "-Xlog:pagesize,gc+init,gc+heap+coops=debug",
-                                                   "-XX:+UseLargePages",
-                                                   "-XX:+IgnoreUnrecognizedVMOptions",  // there is no ObjectAlignmentInBytes in 32 bit builds
-                                                   "-XX:ObjectAlignmentInBytes=8",
-                                                   "-version");
+        pb = ProcessTools.createJavaProcessBuilder(getOpts(heapsize, true));
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         // Only expect large page size if large pages are enabled.
@@ -131,14 +138,7 @@ public class TestLargePageUseForAuxMemory {
         output.shouldHaveExitValue(0);
 
         // Test with large page disabled.
-        pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
-                                                   "-XX:G1HeapRegionSize=" + HEAP_REGION_SIZE,
-                                                   "-Xmx" + heapsize,
-                                                   "-Xlog:pagesize",
-                                                   "-XX:-UseLargePages",
-                                                   "-XX:+IgnoreUnrecognizedVMOptions",  // there is no ObjectAlignmentInBytes in 32 bit builds
-                                                   "-XX:ObjectAlignmentInBytes=8",
-                                                   "-version");
+        pb = ProcessTools.createJavaProcessBuilder(getOpts(heapsize, false));
 
         output = new OutputAnalyzer(pb.start());
         checkSmallTables(output, smallPageSize);

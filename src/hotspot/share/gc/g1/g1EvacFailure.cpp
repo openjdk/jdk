@@ -162,10 +162,8 @@ public:
     hr->clear_index_in_opt_cset();
 
     bool during_concurrent_start = _g1h->collector_state()->in_concurrent_start_gc();
-    bool during_concurrent_mark = _g1h->collector_state()->mark_or_rebuild_in_progress();
 
-    hr->note_self_forwarding_removal_start(during_concurrent_start,
-                                           during_concurrent_mark);
+    hr->note_self_forwarding_removal_start(during_concurrent_start);
 
     _phase_times->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreRetainedRegions,
                                                    _worker_id,

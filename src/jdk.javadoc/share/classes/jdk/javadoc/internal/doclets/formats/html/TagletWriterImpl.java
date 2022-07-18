@@ -662,32 +662,20 @@ public class TagletWriterImpl extends TagletWriter {
                     return;
                 } else if (linkEncountered) {
                     assert e != null;
-                    String line = sequence.toString();
-                    String strippedLine = line.strip();
-                    int idx = line.indexOf(strippedLine);
-                    assert idx >= 0; // because the stripped line is a substring of the line being stripped
-                    Text whitespace = Text.of(utils.normalizeNewlines(line.substring(0, idx)));
                     //disable preview tagging inside the snippets:
                     PreviewFlagProvider prevPreviewProvider = utils.setPreviewFlagProvider(el -> false);
                     try {
-                        // If the leading whitespace is not excluded from the link,
-                        // browsers might exhibit unwanted behavior. For example, a
-                        // browser might display hand-click cursor while user hovers
-                        // over that whitespace portion of the line; or use
-                        // underline decoration.
-                        Content lc = linkSeeReferenceOutput(element,
+                        c = linkSeeReferenceOutput(element,
                                 null,
                                 t,
                                 e,
                                 "link",
                                 false, // TODO: for now
-                                Text.of(strippedLine),
+                                Text.of(sequence.toString()),
                                 (key, args) -> { /* TODO: report diagnostic */ });
-                        c = new ContentBuilder(whitespace, lc);
                     } finally {
                         utils.setPreviewFlagProvider(prevPreviewProvider);
                     }
-                    // We don't care about trailing whitespace.
                 } else {
                     c = HtmlTree.SPAN(Text.of(text));
                     classes.forEach(((HtmlTree) c)::addStyle);
