@@ -36,11 +36,11 @@ import javax.swing.event.ChangeListener;
 public class TestMnemonicEvent implements ChangeListener {
 
     private static ChangeEvent lastEvent;
- 
+
     public void stateChanged(ChangeEvent e) {
         lastEvent = e;
     }
- 
+
     public static void main(String[] args) {
         TestMnemonicEvent test = new TestMnemonicEvent();
         DefaultButtonModel m = new DefaultButtonModel();
