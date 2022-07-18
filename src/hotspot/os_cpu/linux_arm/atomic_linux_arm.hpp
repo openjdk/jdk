@@ -25,27 +25,27 @@
 #ifndef OS_CPU_LINUX_ARM_ATOMIC_LINUX_ARM_HPP
 #define OS_CPU_LINUX_ARM_ATOMIC_LINUX_ARM_HPP
 
+#include "memory/allStatic.hpp"
 #include "runtime/os.hpp"
 #include "runtime/vm_version.hpp"
 
 // Implementation of class atomic
 
-struct arm_atomic_funcs {
-  int64_t (*cmpxchg_long_func)(int64_t compare_value,
-                               int64_t exchange_value,
-                               volatile int64_t *dest);
+class ARMAtomicFuncs : AllStatic {
+public:
+  typedef int64_t (*cmpxchg_long_func_t)(int64_t, int64_t, volatile int64_t*);
+  typedef int64_t (*load_long_func_t)(const volatile int64_t*);
+  typedef void (*store_long_func_t)(int64_t, volatile int64_t*);
+  typedef int32_t  (*atomic_add_func_t)(int32_t add_value, volatile int32_t *dest);
+  typedef int32_t  (*atomic_xchg_func_t)(int32_t exchange_value, volatile int32_t *dest);
+  typedef int32_t (*cmpxchg_func_t)(int32_t, int32_t, volatile int32_t*);
 
-  int64_t (*load_long_func)(const volatile int64_t*);
-
-  void (*store_long_func)(int64_t, volatile int64_t*);
-
-  int32_t  (*add_func)(int32_t add_value, volatile int32_t *dest);
-
-  int32_t  (*xchg_func)(int32_t exchange_value, volatile int32_t *dest);
-
-  int32_t  (*cmpxchg_func)(int32_t compare_value,
-                           int32_t exchange_value,
-                           volatile int32_t *dest);
+  static cmpxchg_long_func_t  _cmpxchg_long_func;
+  static load_long_func_t     _load_long_func;
+  static store_long_func_t    _store_long_func;
+  static atomic_add_func_t    _add_func;
+  static atomic_xchg_func_t   _xchg_func;
+  static cmpxchg_func_t       _cmpxchg_func;
 
   static int64_t cmpxchg_long_bootstrap(int64_t, int64_t, volatile int64_t*);
 
@@ -61,8 +61,6 @@ struct arm_atomic_funcs {
                                     int32_t exchange_value,
                                     volatile int32_t *dest);
 };
-
-extern arm_atomic_funcs _arm_atomic;
 
 /*
  * Atomic long operations on 32-bit ARM
@@ -83,7 +81,7 @@ template<typename T>
 inline T Atomic::PlatformLoad<8>::operator()(T const volatile* src) const {
   STATIC_ASSERT(8 == sizeof(T));
   return PrimitiveConversions::cast<T>(
-    (*_arm_atomic.load_long_func)(reinterpret_cast<const volatile int64_t*>(src)));
+    (*ARMAtomicFuncs::_load_long_func)(reinterpret_cast<const volatile int64_t*>(src)));
 }
 
 template<>
@@ -91,7 +89,7 @@ template<typename T>
 inline void Atomic::PlatformStore<8>::operator()(T volatile* dest,
                                                  T store_value) const {
   STATIC_ASSERT(8 == sizeof(T));
-  (*_arm_atomic.store_long_func)(
+  (*ARMAtomicFuncs::_store_long_func)(
     PrimitiveConversions::cast<int64_t>(store_value), reinterpret_cast<volatile int64_t*>(dest));
 }
 
@@ -117,7 +115,7 @@ inline D Atomic::PlatformAdd<4>::add_and_fetch(D volatile* dest, I add_value,
                                                atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(I));
   STATIC_ASSERT(4 == sizeof(D));
-  return add_using_helper<int32_t>(_arm_atomic.add_func, dest, add_value);
+  return add_using_helper<int32_t>(ARMAtomicFuncs::_add_func, dest, add_value);
 }
 
 
@@ -127,7 +125,7 @@ inline T Atomic::PlatformXchg<4>::operator()(T volatile* dest,
                                              T exchange_value,
                                              atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(T));
-  return xchg_using_helper<int32_t>(_arm_atomic.xchg_func, dest, exchange_value);
+  return xchg_using_helper<int32_t>(ARMAtomicFuncs::_xchg_func, dest, exchange_value);
 }
 
 
@@ -142,7 +140,7 @@ inline int32_t reorder_cmpxchg_func(int32_t exchange_value,
                                     int32_t volatile* dest,
                                     int32_t compare_value) {
   // Warning:  Arguments are swapped to avoid moving them for kernel call
-  return (*_arm_atomic.cmpxchg_func)(compare_value, exchange_value, dest);
+  return (*ARMAtomicFuncs::_cmpxchg_func)(compare_value, exchange_value, dest);
 }
 
 inline int64_t reorder_cmpxchg_long_func(int64_t exchange_value,
@@ -150,7 +148,7 @@ inline int64_t reorder_cmpxchg_long_func(int64_t exchange_value,
                                          int64_t compare_value) {
   assert(VM_Version::supports_cx8(), "Atomic compare and exchange int64_t not supported on this architecture!");
   // Warning:  Arguments are swapped to avoid moving them for kernel call
-  return (*_arm_atomic.cmpxchg_long_func)(compare_value, exchange_value, dest);
+  return (*ARMAtomicFuncs::_cmpxchg_long_func)(compare_value, exchange_value, dest);
 }
 
 

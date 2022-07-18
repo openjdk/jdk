@@ -583,7 +583,7 @@ extern "C" {
     }
   }
 
-  inline void atomic_copy64(const volatile void *src, volatile void *dst) {
+  static inline void atomic_copy64(const volatile void *src, volatile void *dst) {
     *(jlong *) dst = *(const jlong *) src;
   }
 
