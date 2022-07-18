@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,12 +19,25 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef OS_WINDOWS_OS_SHARE_WINDOWS_HPP
-#define OS_WINDOWS_OS_SHARE_WINDOWS_HPP
+import java.io.File;
+import java.io.FileOutputStream;
 
-// Defines the interfaces to Windows operating system that vary across platforms
+public class WaitForFlagFile {
+    public static void main(String[] args) throws Exception {
+        System.out.println("WaitForFlagFile: Entering");
 
-#endif // OS_WINDOWS_OS_SHARE_WINDOWS_HPP
+        File started = new File("/tmp/started");
+        FileOutputStream fout = new FileOutputStream(started);
+        fout.close();
+
+        File flag = new File("/tmp/flag");
+        while (!flag.exists()) {
+            System.out.println("WaitForFlagFile: Waiting");
+            Thread.sleep(500);
+        }
+        System.out.println("WaitForFlagFile: Exiting");
+
+    }
+}
