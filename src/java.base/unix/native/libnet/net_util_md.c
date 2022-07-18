@@ -680,7 +680,6 @@ int
 NET_Bind(int fd, SOCKETADDRESS *sa, int len)
 {
     int rv;
-    int arg, alen;
 
 #ifdef __linux__
     /*

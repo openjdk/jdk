@@ -1273,13 +1273,14 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
          * with just the very first value.  Additional values will be created
          * on demand.
          */
-        powerCache = new BigInteger[Character.MAX_RADIX+1][];
+        BigInteger[][] cache = new BigInteger[Character.MAX_RADIX+1][];
         logCache = new double[Character.MAX_RADIX+1];
 
         for (int i=Character.MIN_RADIX; i <= Character.MAX_RADIX; i++) {
-            powerCache[i] = new BigInteger[] { BigInteger.valueOf(i) };
+            cache[i] = new BigInteger[] { BigInteger.valueOf(i) };
             logCache[i] = Math.log(i);
         }
+        BigInteger.powerCache = cache;
     }
 
     /**

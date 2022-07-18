@@ -36,7 +36,7 @@ import sun.security.jca.GetInstance.Instance;
 import sun.security.util.Debug;
 
 /**
- * The KeyPairGenerator class is used to generate pairs of
+ * The {@code KeyPairGenerator} class is used to generate pairs of
  * public and private keys. Key pair generators are constructed using the
  * {@code getInstance} factory methods (static methods that
  * return instances of a given class).
@@ -57,7 +57,7 @@ import sun.security.util.Debug;
  * corresponds to the length of the modulus).
  * There is an
  * {@link #initialize(int, java.security.SecureRandom) initialize}
- * method in this KeyPairGenerator class that takes these two universally
+ * method in this {@code KeyPairGenerator} class that takes these two universally
  * shared types of arguments. There is also one that takes just a
  * {@code keysize} argument, and uses the {@code SecureRandom}
  * implementation of the highest-priority installed provider as the source
@@ -92,17 +92,18 @@ import sun.security.util.Debug;
  * used.)
  * </ul>
  *
- * <p>In case the client does not explicitly initialize the KeyPairGenerator
+ * <p>In case the client does not explicitly initialize the
+ * {@code KeyPairGenerator}
  * (via a call to an {@code initialize} method), each provider must
  * supply (and document) a default initialization.
  * See the Keysize Restriction sections of the
  * {@extLink security_guide_jdk_providers JDK Providers}
- * document for information on the KeyPairGenerator defaults used by
+ * document for information on the {@code KeyPairGenerator} defaults used by
  * JDK providers.
  * However, note that defaults may vary across different providers.
  * Additionally, the default value for a provider may change in a future
  * version. Therefore, it is recommended to explicitly initialize the
- * KeyPairGenerator instead of relying on provider-specific defaults.
+ * {@code KeyPairGenerator} instead of relying on provider-specific defaults.
  *
  * <p>Note that this class is abstract and extends from
  * {@code KeyPairGeneratorSpi} for historical reasons.
@@ -145,7 +146,7 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
     Provider provider;
 
     /**
-     * Creates a KeyPairGenerator object for the specified algorithm.
+     * Creates a {@code KeyPairGenerator} object for the specified algorithm.
      *
      * @param algorithm the standard string name of the algorithm.
      * See the KeyPairGenerator section in the <a href=
@@ -190,14 +191,14 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
     }
 
     /**
-     * Returns a KeyPairGenerator object that generates public/private
+     * Returns a {@code KeyPairGenerator} object that generates public/private
      * key pairs for the specified algorithm.
      *
      * <p> This method traverses the list of registered security Providers,
      * starting with the most preferred Provider.
-     * A new KeyPairGenerator object encapsulating the
-     * KeyPairGeneratorSpi implementation from the first
-     * Provider that supports the specified algorithm is returned.
+     * A new {@code KeyPairGenerator} object encapsulating the
+     * {@code KeyPairGeneratorSpi} implementation from the first
+     * provider that supports the specified algorithm is returned.
      *
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
@@ -258,11 +259,11 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
     }
 
     /**
-     * Returns a KeyPairGenerator object that generates public/private
+     * Returns a {@code KeyPairGenerator} object that generates public/private
      * key pairs for the specified algorithm.
      *
-     * <p> A new KeyPairGenerator object encapsulating the
-     * KeyPairGeneratorSpi implementation from the specified provider
+     * <p> A new {@code KeyPairGenerator} object encapsulating the
+     * {@code KeyPairGeneratorSpi} implementation from the specified provider
      * is returned.  The specified provider must be registered
      * in the security provider list.
      *
@@ -303,13 +304,13 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
     }
 
     /**
-     * Returns a KeyPairGenerator object that generates public/private
+     * Returns a {@code KeyPairGenerator} object that generates public/private
      * key pairs for the specified algorithm.
      *
-     * <p> A new KeyPairGenerator object encapsulating the
-     * KeyPairGeneratorSpi implementation from the specified Provider
-     * object is returned.  Note that the specified Provider object
-     * does not have to be registered in the provider list.
+     * <p> A new {@code KeyPairGenerator} object encapsulating the
+     * {@code KeyPairGeneratorSpi} implementation from the specified provider
+     * is returned.  Note that the specified provider does not
+     * have to be registered in the provider list.
      *
      * @param algorithm the standard string name of the algorithm.
      * See the KeyPairGenerator section in the <a href=
@@ -370,7 +371,7 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
      * number of bits.
      *
      * @throws    InvalidParameterException if the {@code keysize} is not
-     * supported by this KeyPairGenerator object.
+     * supported by this {@code KeyPairGenerator} object.
      */
     public void initialize(int keysize) {
         initialize(keysize, JCAUtil.getDefSecureRandom());
@@ -386,7 +387,7 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
      * @param random the source of randomness.
      *
      * @throws    InvalidParameterException if the {@code keysize} is not
-     * supported by this KeyPairGenerator object.
+     * supported by this {@code KeyPairGenerator} object.
      *
      * @since 1.2
      */
@@ -422,8 +423,8 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
      * from the highest-priority installed provider or system-provided if none
      * of the installed providers supply one).
      * That {@code initialize} method always throws an
-     * UnsupportedOperationException if it is not overridden by the provider.
-     *
+     * {@code UnsupportedOperationException} if it is not overridden
+     * by the provider.
      * @param params the parameter set used to generate the keys.
      *
      * @throws    InvalidAlgorithmParameterException if the given parameters
@@ -448,8 +449,8 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
      * java.security.SecureRandom) initialize} method,
      * passing it {@code params} and {@code random}.
      * That {@code initialize}
-     * method always throws an
-     * UnsupportedOperationException if it is not overridden by the provider.
+     * method always throws an {@code UnsupportedOperationException}
+     * if it is not overridden by the provider.
      *
      * @param params the parameter set used to generate the keys.
      * @param random the source of randomness.
@@ -478,7 +479,7 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
     /**
      * Generates a key pair.
      *
-     * <p>If this KeyPairGenerator has not been initialized explicitly,
+     * <p>If this {@code KeyPairGenerator} has not been initialized explicitly,
      * provider-specific defaults will be used for the size and other
      * (algorithm-specific) values of the generated keys.
      *
@@ -498,7 +499,7 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
     /**
      * Generates a key pair.
      *
-     * <p>If this KeyPairGenerator has not been initialized explicitly,
+     * <p>If this {@code KeyPairGenerator} has not been initialized explicitly,
      * provider-specific defaults will be used for the size and other
      * (algorithm-specific) values of the generated keys.
      *
@@ -604,8 +605,8 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
         /**
          * Update the active spi of this class and return the next
          * implementation for failover. If no more implementations are
-         * available, this method returns null. However, the active spi of
-         * this class is never set to null.
+         * available, this method returns {@code null}. However, the
+         * active spi of this class is never set to {@code null}.
          */
         private KeyPairGeneratorSpi nextSpi(KeyPairGeneratorSpi oldSpi,
                 boolean reinit) {

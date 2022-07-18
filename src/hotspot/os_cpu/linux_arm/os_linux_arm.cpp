@@ -31,7 +31,6 @@
 #include "interpreter/interpreter.hpp"
 #include "memory/allocation.inline.hpp"
 #include "nativeInst_arm.hpp"
-#include "os_share_linux.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
@@ -283,7 +282,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
           }
         } else if (overflow_state->in_stack_red_zone(addr)) {
           // Fatal red zone violation.  Disable the guard pages and fall through
-          // to handle_unexpected_exception way down below.
+          // to the exception handling code below.
           overflow_state->disable_stack_red_zone();
           tty->print_raw_cr("An irrecoverable stack overflow has occurred.");
         } else {

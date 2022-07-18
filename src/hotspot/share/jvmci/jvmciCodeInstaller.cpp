@@ -692,7 +692,7 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
   JVMCI::CodeInstallResult result = initialize_buffer(compiled_code, buffer, stream, code_flags, JVMCI_CHECK_OK);
 
   u4 available = stream->available();
-  if (available != 0) {
+  if (result == JVMCI::ok && available != 0) {
     JVMCI_ERROR_OK("%d bytes remaining in stream%s", available, stream->context());
   }
 

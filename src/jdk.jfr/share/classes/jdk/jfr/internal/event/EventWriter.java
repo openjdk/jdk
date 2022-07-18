@@ -81,7 +81,8 @@ public final class EventWriter {
 
     public void putBoolean(boolean i) {
         if (isValidForSize(Byte.BYTES)) {
-            currentPosition += Bits.putBoolean(currentPosition, i);
+            unsafe.putBoolean(null, currentPosition, i);
+            ++currentPosition;
         }
     }
 
@@ -289,7 +290,7 @@ public final class EventWriter {
             Bits.putInt(startPosition, makePaddedInt(eventSize));
         } else {
             if (eventSize < 128) {
-                Bits.putByte(startPosition, (byte) eventSize);
+                unsafe.putByte(startPosition, (byte) eventSize);
             } else {
                 eventType.setLargeSize();
                 reset();
