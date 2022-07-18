@@ -48,7 +48,6 @@ import java.io.Serializable;
 import java.text.MessageFormat;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.spi.LocaleNameProvider;
-import java.util.stream.Collectors;
 
 import jdk.internal.vm.annotation.Stable;
 
@@ -2332,12 +2331,6 @@ public final class Locale implements Cloneable, Serializable {
      * @return a string representing the list.
      */
     private static String formatList(String[] stringList, String pattern) {
-        // If we have no list patterns, compose the list in a simple,
-        // non-localized way.
-        if (pattern == null) {
-            return String.join(",", stringList);
-        }
-
         return switch (stringList.length) {
             case 0 -> "";
             case 1 -> stringList[0];
