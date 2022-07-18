@@ -546,6 +546,13 @@ static int raw_encode(XMMRegister xmmreg) {
   return xmmreg_enc;
 }
 
+static int raw_encode(KRegister kreg) {
+  assert(kreg == knoreg || kreg->is_valid(), "sanity");
+  int kreg_enc = kreg->raw_encoding();
+  assert(kreg_enc == -1 || is_valid_encoding(kreg_enc), "sanity");
+  return kreg_enc;
+}
+
 static int modrm_encoding(int mod, int dst_enc, int src_enc) {
   return (mod & 3) << 6 | (dst_enc & 7) << 3 | (src_enc & 7);
 }
@@ -717,6 +724,22 @@ void Assembler::emit_operand(XMMRegister xmmreg, Register base, XMMRegister xmmi
   assert(xmmindex->encoding() < 16 || UseAVX > 2, "not supported");
   emit_operand_helper(raw_encode(xmmreg), raw_encode(base), raw_encode(xmmindex),
                       scale, disp, rspec, /* rip_relative_correction */ 0);
+}
+
+void Assembler::emit_operand(KRegister kreg, Address adr,
+                             int rip_relative_correction) {
+  emit_operand(kreg, adr._base, adr._index, adr._scale, adr._disp,
+               adr._rspec,
+               rip_relative_correction);
+}
+
+void Assembler::emit_operand(KRegister kreg, Register base, Register index,
+                             Address::ScaleFactor scale, int disp,
+                             RelocationHolder const& rspec,
+                             int rip_relative_correction) {
+  assert(!index->is_valid() || index != rsp, "illegal addressing mode");
+  emit_operand_helper(raw_encode(kreg), raw_encode(base), raw_encode(index),
+                      scale, disp, rspec, rip_relative_correction);
 }
 
 // Secret local extension to Assembler::WhichOperand:
@@ -2589,7 +2612,7 @@ void Assembler::kmovwl(KRegister dst, Address src) {
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
   vex_prefix(src, 0, dst->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F, &attributes);
   emit_int8((unsigned char)0x90);
-  emit_operand(as_Register(dst->encoding()), src);
+  emit_operand(dst, src);
 }
 
 void Assembler::kmovwl(Address dst, KRegister src) {
