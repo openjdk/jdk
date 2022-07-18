@@ -925,11 +925,11 @@ void JVMCIEnv::call_HotSpotJVMCIRuntime_postTranslation(JVMCIObject object, JVMC
   }
 }
 
-JVMCIObject JVMCIEnv::call_JavaConstant_forPrimitive(JVMCIObject kind, jlong value, JVMCI_TRAPS) {
+JVMCIObject JVMCIEnv::call_JavaConstant_forPrimitive(jchar type_char, jlong value, JVMCI_TRAPS) {
   JavaThread* THREAD = JVMCI::compilation_tick(JavaThread::current()); // For exception macros.
   if (is_hotspot()) {
     JavaCallArguments jargs;
-    jargs.push_oop(Handle(THREAD, HotSpotJVMCI::resolve(kind)));
+    jargs.push_int(type_char);
     jargs.push_long(value);
     JavaValue result(T_OBJECT);
     JavaCalls::call_static(&result,
@@ -941,7 +941,7 @@ JVMCIObject JVMCIEnv::call_JavaConstant_forPrimitive(JVMCIObject kind, jlong val
     JNIAccessMark jni(this, THREAD);
     jobject result = (jstring) jni()->CallStaticObjectMethod(JNIJVMCI::JavaConstant::clazz(),
                                                              JNIJVMCI::JavaConstant::forPrimitive_method(),
-                                                             kind.as_jobject(), value);
+                                                             type_char, value);
     if (jni()->ExceptionCheck()) {
       return JVMCIObject();
     }
@@ -1142,7 +1142,7 @@ JVMCIObject JVMCIEnv::get_jvmci_method(const methodHandle& method, JVMCI_TRAPS) 
   }
 
   assert(asMethod(method_object) == method(), "must be");
-  if (get_HotSpotResolvedJavaMethodImpl_metadataHandle(method_object) != (jlong) handle) {
+  if (get_HotSpotResolvedJavaMethodImpl_methodHandle(method_object) != (jlong) handle) {
     _runtime->release_handle(handle);
   }
   assert(!method_object.is_null(), "must be");
@@ -1157,13 +1157,11 @@ JVMCIObject JVMCIEnv::get_jvmci_type(const JVMCIKlassHandle& klass, JVMCI_TRAPS)
 
   jlong pointer = (jlong) klass();
   JavaThread* THREAD = JVMCI::compilation_tick(JavaThread::current()); // For exception macros.
-  JVMCIObject signature = create_string(klass->signature_name(), JVMCI_CHECK_(JVMCIObject()));
   jboolean exception = false;
   if (is_hotspot()) {
     JavaValue result(T_OBJECT);
     JavaCallArguments args;
     args.push_long(pointer);
-    args.push_oop(Handle(THREAD, HotSpotJVMCI::resolve(signature)));
     JavaCalls::call_static(&result,
                            HotSpotJVMCI::HotSpotResolvedObjectTypeImpl::klass(),
                            vmSymbols::fromMetaspace_name(),
@@ -1180,7 +1178,7 @@ JVMCIObject JVMCIEnv::get_jvmci_type(const JVMCIKlassHandle& klass, JVMCI_TRAPS)
     HandleMark hm(THREAD);
     type = JNIJVMCI::wrap(jni()->CallStaticObjectMethod(JNIJVMCI::HotSpotResolvedObjectTypeImpl::clazz(),
                                                         JNIJVMCI::HotSpotResolvedObjectTypeImpl_fromMetaspace_method(),
-                                                        pointer, signature.as_jstring()));
+                                                        pointer));
     exception = jni()->ExceptionCheck();
   }
   if (exception) {
@@ -1224,7 +1222,7 @@ JVMCIObject JVMCIEnv::get_jvmci_constant_pool(const constantPoolHandle& cp, JVMC
 
   assert(!cp_object.is_null(), "must be");
   // Constant pools aren't cached so this is always a newly created object using the handle
-  assert(get_HotSpotConstantPool_metadataHandle(cp_object) == (jlong) handle, "must use same handle");
+  assert(get_HotSpotConstantPool_constantPoolHandle(cp_object) == (jlong) handle, "must use same handle");
   return cp_object;
 }
 
@@ -1461,11 +1459,7 @@ bool JVMCIEnv::equals(JVMCIObject a, JVMCIObject b) {
   }
 }
 
-BasicType JVMCIEnv::kindToBasicType(JVMCIObject kind, JVMCI_TRAPS) {
-  if (kind.is_null()) {
-    JVMCI_THROW_(NullPointerException, T_ILLEGAL);
-  }
-  jchar ch = get_JavaKind_typeChar(kind);
+BasicType JVMCIEnv::typeCharToBasicType(jchar ch, JVMCI_TRAPS) {
   switch(ch) {
     case 'Z': return T_BOOLEAN;
     case 'B': return T_BYTE;
@@ -1478,8 +1472,17 @@ BasicType JVMCIEnv::kindToBasicType(JVMCIObject kind, JVMCI_TRAPS) {
     case 'A': return T_OBJECT;
     case '-': return T_ILLEGAL;
     default:
-      JVMCI_ERROR_(T_ILLEGAL, "unexpected Kind: %c", ch);
+      JVMCI_ERROR_(T_ILLEGAL, "unexpected type char: %c", ch);
   }
+}
+
+BasicType JVMCIEnv::kindToBasicType(JVMCIObject kind, JVMCI_TRAPS) {
+  if (kind.is_null()) {
+    JVMCI_THROW_(NullPointerException, T_ILLEGAL);
+  }
+  jchar ch = get_JavaKind_typeChar(kind);
+  BasicType bt = typeCharToBasicType(ch, JVMCI_CHECK_(T_ILLEGAL));
+  return bt;
 }
 
 void JVMCIEnv::initialize_installed_code(JVMCIObject installed_code, CodeBlob* cb, JVMCI_TRAPS) {
@@ -1542,17 +1545,17 @@ void JVMCIEnv::invalidate_nmethod_mirror(JVMCIObject mirror, JVMCI_TRAPS) {
 }
 
 Klass* JVMCIEnv::asKlass(JVMCIObject obj) {
-  return (Klass*) get_HotSpotResolvedObjectTypeImpl_metadataPointer(obj);
+  return (Klass*) get_HotSpotResolvedObjectTypeImpl_klassPointer(obj);
 }
 
 Method* JVMCIEnv::asMethod(JVMCIObject obj) {
-  Method** metadataHandle = (Method**) get_HotSpotResolvedJavaMethodImpl_metadataHandle(obj);
-  return *metadataHandle;
+  Method** methodHandle = (Method**) get_HotSpotResolvedJavaMethodImpl_methodHandle(obj);
+  return *methodHandle;
 }
 
 ConstantPool* JVMCIEnv::asConstantPool(JVMCIObject obj) {
-  ConstantPool** metadataHandle = (ConstantPool**) get_HotSpotConstantPool_metadataHandle(obj);
-  return *metadataHandle;
+  ConstantPool** constantPoolHandle = (ConstantPool**) get_HotSpotConstantPool_constantPoolHandle(obj);
+  return *constantPoolHandle;
 }
 
 CodeBlob* JVMCIEnv::get_code_blob(JVMCIObject obj, nmethodLocker& locker) {

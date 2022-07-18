@@ -53,10 +53,13 @@ public:
 
 public:
   static int _return_pc_offset; // friend gen_continuation_enter
-  static void set_enter_code(CompiledMethod* nm); // friend SharedRuntime::generate_native_wrapper
+  static void set_enter_code(CompiledMethod* cm, int interpreted_entry_offset);
+  static bool is_interpreted_call(address call_address);
 
 private:
   static address _return_pc;
+  static CompiledMethod* _enter_special;
+  static int _interpreted_entry_offset;
 
 private:
   ContinuationEntry* _parent;
@@ -65,7 +68,11 @@ private:
   int _flags;
   int _argsize;
   intptr_t* _parent_cont_fastpath;
-  int _parent_held_monitor_count;
+#ifdef _LP64
+  int64_t   _parent_held_monitor_count;
+#else
+  int32_t   _parent_held_monitor_count;
+#endif
   uint _pin_count;
 
 public:
@@ -84,11 +91,16 @@ public:
   static size_t size() { return align_up((int)sizeof(ContinuationEntry), 2*wordSize); }
 
   ContinuationEntry* parent() const { return _parent; }
-  int parent_held_monitor_count() const { return _parent_held_monitor_count; }
+  int64_t parent_held_monitor_count() const { return (int64_t)_parent_held_monitor_count; }
 
   static address entry_pc() { return _return_pc; }
   intptr_t* entry_sp() const { return (intptr_t*)this; }
   intptr_t* entry_fp() const;
+
+  static address compiled_entry();
+  static address interpreted_entry();
+
+  static CompiledMethod* enter_special() { return _enter_special; }
 
   int argsize() const { return _argsize; }
   void set_argsize(int value) { _argsize = value; }

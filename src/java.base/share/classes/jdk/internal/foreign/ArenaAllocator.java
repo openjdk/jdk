@@ -78,7 +78,9 @@ public final class ArenaAllocator implements SegmentAllocator {
             return slice;
         } else {
             long maxPossibleAllocationSize = bytesSize + bytesAlignment - 1;
-            if (maxPossibleAllocationSize > blockSize) {
+            if (maxPossibleAllocationSize < 0) {
+                throw new OutOfMemoryError();
+            } else if (maxPossibleAllocationSize > blockSize) {
                 // too big
                 return newSegment(bytesSize, bytesAlignment);
             } else {

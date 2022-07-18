@@ -568,6 +568,8 @@ class PhaseCCP : public PhaseIterGVN {
   // Non-recursive.  Use analysis to transform single Node.
   virtual Node *transform_once( Node *n );
 
+  void push_and(Unique_Node_List& worklist, const Node* parent, const Node* use) const;
+
 public:
   PhaseCCP( PhaseIterGVN *igvn ); // Compute conditional constants
   NOT_PRODUCT( ~PhaseCCP(); )

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,16 +164,13 @@ class SubjectCodeSource extends CodeSource implements java.io.Serializable {
 
         LinkedList<PrincipalEntry> subjectList = null;
 
-        if (codesource == null ||
-            !(codesource instanceof SubjectCodeSource) ||
-            !(super.implies(codesource))) {
+        if (!(codesource instanceof SubjectCodeSource that) ||
+                !super.implies(codesource)) {
 
             if (debug != null)
                 debug.println("\tSubjectCodeSource.implies: FAILURE 1");
             return false;
         }
-
-        SubjectCodeSource that = (SubjectCodeSource)codesource;
 
         // if the principal list in the policy "implies"
         // the Subject associated with the current AccessControlContext,

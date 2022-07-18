@@ -70,40 +70,33 @@ public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegm
 
     private static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
 
-    static final int READ_ONLY = 1;
     static final long NONCE = new Random().nextLong();
-
-    static final int DEFAULT_MODES = 0;
 
     static final JavaNioAccess nioAccess = SharedSecrets.getJavaNioAccess();
 
     final long length;
-    final int mask;
+    final boolean readOnly;
     final MemorySession session;
 
     @ForceInline
-    AbstractMemorySegmentImpl(long length, int mask, MemorySession session) {
+    AbstractMemorySegmentImpl(long length, boolean readOnly, MemorySession session) {
         this.length = length;
-        this.mask = mask;
+        this.readOnly = readOnly;
         this.session = session;
     }
 
-    abstract long min();
-
-    abstract Object base();
-
-    abstract AbstractMemorySegmentImpl dup(long offset, long size, int mask, MemorySession session);
+    abstract AbstractMemorySegmentImpl dup(long offset, long size, boolean readOnly, MemorySession session);
 
     abstract ByteBuffer makeByteBuffer();
 
     @Override
     public AbstractMemorySegmentImpl asReadOnly() {
-        return dup(0, length, mask | READ_ONLY, session);
+        return dup(0, length, true, session);
     }
 
     @Override
     public boolean isReadOnly() {
-        return isSet(READ_ONLY);
+        return readOnly;
     }
 
     @Override
@@ -119,7 +112,7 @@ public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegm
     }
 
     private AbstractMemorySegmentImpl asSliceNoCheck(long offset, long newSize) {
-        return dup(offset, newSize, mask, session);
+        return dup(offset, newSize, readOnly, session);
     }
 
     @Override
@@ -147,7 +140,7 @@ public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegm
     @Override
     public final MemorySegment fill(byte value){
         checkAccess(0, length, false);
-        SCOPED_MEMORY_ACCESS.setMemory(sessionImpl(), base(), min(), length, value);
+        SCOPED_MEMORY_ACCESS.setMemory(sessionImpl(), unsafeGetBase(), unsafeGetOffset(), length, value);
         return this;
     }
 
@@ -176,8 +169,8 @@ public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegm
                 return 0;
             }
             i = vectorizedMismatchLargeForBytes(sessionImpl(), that.sessionImpl(),
-                    this.base(), this.min(),
-                    that.base(), that.min(),
+                    this.unsafeGetBase(), this.unsafeGetOffset(),
+                    that.unsafeGetBase(), that.unsafeGetOffset(),
                     length);
             if (i >= 0) {
                 return i;
@@ -235,7 +228,7 @@ public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegm
     public final ByteBuffer asByteBuffer() {
         checkArraySize("ByteBuffer", 1);
         ByteBuffer _bb = makeByteBuffer();
-        if (isSet(READ_ONLY)) {
+        if (readOnly) {
             //session is IMMUTABLE - obtain a RO byte buffer
             _bb = _bb.asReadOnlyBuffer();
         }
@@ -260,9 +253,9 @@ public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegm
     @Override
     public final Optional<MemorySegment> asOverlappingSlice(MemorySegment other) {
         AbstractMemorySegmentImpl that = (AbstractMemorySegmentImpl)Objects.requireNonNull(other);
-        if (base() == that.base()) {  // both either native or heap
-            final long thisStart = this.min();
-            final long thatStart = that.min();
+        if (unsafeGetBase() == that.unsafeGetBase()) {  // both either native or heap
+            final long thisStart = this.unsafeGetOffset();
+            final long thatStart = that.unsafeGetOffset();
             final long thisEnd = thisStart + this.byteSize();
             final long thatEnd = thatStart + that.byteSize();
 
@@ -278,8 +271,8 @@ public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegm
     @Override
     public final long segmentOffset(MemorySegment other) {
         AbstractMemorySegmentImpl that = (AbstractMemorySegmentImpl) Objects.requireNonNull(other);
-        if (base() == that.base()) {
-            return that.min() - this.min();
+        if (unsafeGetBase() == that.unsafeGetBase()) {
+            return that.unsafeGetOffset() - this.unsafeGetOffset();
         }
         throw new UnsupportedOperationException("Cannot compute offset from native to heap (or vice versa).");
     }
@@ -347,30 +340,23 @@ public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegm
         return arr;
     }
 
+    @ForceInline
     public void checkAccess(long offset, long length, boolean readOnly) {
-        if (!readOnly && isSet(READ_ONLY)) {
+        if (!readOnly && this.readOnly) {
             throw new UnsupportedOperationException("Attempt to write a read-only segment");
         }
         checkBounds(offset, length);
     }
 
     public void checkValidState() {
-        sessionImpl().checkValidStateSlow();
+        sessionImpl().checkValidState();
     }
 
-    public long unsafeGetOffset() {
-        return min();
-    }
+    public abstract long unsafeGetOffset();
 
-    public Object unsafeGetBase() {
-        return base();
-    }
+    public abstract Object unsafeGetBase();
 
     // Helper methods
-
-    private boolean isSet(int mask) {
-        return (this.mask & mask) != 0;
-    }
 
     public abstract long maxAlignMask();
 
@@ -408,24 +394,18 @@ public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegm
     }
 
     @Override
-    @ForceInline
-    public MemorySessionImpl sessionImpl() {
-        return MemorySessionImpl.toSessionImpl(session);
-    }
-
-    @Override
     public MemorySession session() {
         return session;
     }
 
     private IndexOutOfBoundsException outOfBoundException(long offset, long length) {
-        return new IndexOutOfBoundsException(String.format("Out of bound access on segment %s; offset = %d; length = %d",
+        return new IndexOutOfBoundsException(String.format("Out of bound access on segment %s; new offset = %d; new length = %d",
                         this, offset, length));
     }
 
     protected int id() {
         //compute a stable and random id for this memory segment
-        return Math.abs(Objects.hash(base(), min(), NONCE));
+        return Math.abs(Objects.hash(unsafeGetBase(), unsafeGetOffset(), NONCE));
     }
 
     static class SegmentSplitter implements Spliterator<MemorySegment> {
@@ -541,42 +521,37 @@ public abstract non-sealed class AbstractMemorySegmentImpl implements MemorySegm
         int size = limit - pos;
 
         AbstractMemorySegmentImpl bufferSegment = (AbstractMemorySegmentImpl)nioAccess.bufferSegment(bb);
-        final MemorySessionImpl bufferSession;
-        int modes;
+        final MemorySession bufferSession;
         if (bufferSegment != null) {
-            bufferSession = bufferSegment.sessionImpl();
-            modes = bufferSegment.mask;
+            bufferSession = bufferSegment.session;
         } else {
             bufferSession = MemorySessionImpl.heapSession(bb);
-            modes = DEFAULT_MODES;
         }
-        if (bb.isReadOnly()) {
-            modes |= READ_ONLY;
-        }
+        boolean readOnly = bb.isReadOnly();
         int scaleFactor = getScaleFactor(bb);
         if (base != null) {
             if (base instanceof byte[]) {
-                return new HeapMemorySegmentImpl.OfByte(bbAddress + (pos << scaleFactor), base, size << scaleFactor, modes);
+                return new HeapMemorySegmentImpl.OfByte(bbAddress + (pos << scaleFactor), base, size << scaleFactor, readOnly);
             } else if (base instanceof short[]) {
-                return new HeapMemorySegmentImpl.OfShort(bbAddress + (pos << scaleFactor), base, size << scaleFactor, modes);
+                return new HeapMemorySegmentImpl.OfShort(bbAddress + (pos << scaleFactor), base, size << scaleFactor, readOnly);
             } else if (base instanceof char[]) {
-                return new HeapMemorySegmentImpl.OfChar(bbAddress + (pos << scaleFactor), base, size << scaleFactor, modes);
+                return new HeapMemorySegmentImpl.OfChar(bbAddress + (pos << scaleFactor), base, size << scaleFactor, readOnly);
             } else if (base instanceof int[]) {
-                return new HeapMemorySegmentImpl.OfInt(bbAddress + (pos << scaleFactor), base, size << scaleFactor, modes);
+                return new HeapMemorySegmentImpl.OfInt(bbAddress + (pos << scaleFactor), base, size << scaleFactor, readOnly);
             } else if (base instanceof float[]) {
-                return new HeapMemorySegmentImpl.OfFloat(bbAddress + (pos << scaleFactor), base, size << scaleFactor, modes);
+                return new HeapMemorySegmentImpl.OfFloat(bbAddress + (pos << scaleFactor), base, size << scaleFactor, readOnly);
             } else if (base instanceof long[]) {
-                return new HeapMemorySegmentImpl.OfLong(bbAddress + (pos << scaleFactor), base, size << scaleFactor, modes);
+                return new HeapMemorySegmentImpl.OfLong(bbAddress + (pos << scaleFactor), base, size << scaleFactor, readOnly);
             } else if (base instanceof double[]) {
-                return new HeapMemorySegmentImpl.OfDouble(bbAddress + (pos << scaleFactor), base, size << scaleFactor, modes);
+                return new HeapMemorySegmentImpl.OfDouble(bbAddress + (pos << scaleFactor), base, size << scaleFactor, readOnly);
             } else {
                 throw new AssertionError("Cannot get here");
             }
         } else if (unmapper == null) {
-            return new NativeMemorySegmentImpl(bbAddress + (pos << scaleFactor), size << scaleFactor, modes, bufferSession);
+            return new NativeMemorySegmentImpl(bbAddress + (pos << scaleFactor), size << scaleFactor, readOnly, bufferSession);
         } else {
             // we can ignore scale factor here, a mapped buffer is always a byte buffer, so scaleFactor == 0.
-            return new MappedMemorySegmentImpl(bbAddress + pos, unmapper, size, modes, bufferSession);
+            return new MappedMemorySegmentImpl(bbAddress + pos, unmapper, size, readOnly, bufferSession);
         }
     }
 

@@ -36,7 +36,7 @@ import java.io.File;
 
 import jdk.test.lib.Utils;
 
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 public class VectorizationTestRunner {
 

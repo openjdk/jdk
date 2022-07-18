@@ -33,8 +33,8 @@
  * @modules java.base java.base/jdk.internal.vm.annotation
  * @library /test/lib
  * @build java.base/java.lang.StackWalkerHelper
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
  * @run main/othervm/timeout=300 --enable-preview -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. Fuzz
  * @run main/othervm/timeout=300 --enable-preview -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. -XX:+PreserveFramePointer Fuzz
@@ -62,7 +62,7 @@ import static java.lang.Math.max;
 import static java.lang.Math.min;
 import jdk.internal.vm.annotation.DontInline;
 import jdk.test.lib.Utils;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 public class Fuzz implements Runnable {
     static final boolean VERIFY_STACK = true; // could add significant time

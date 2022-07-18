@@ -25,7 +25,7 @@ package gc.testlibrary.g1;
 
 import static java.util.stream.IntStream.range;
 import static jdk.test.lib.Asserts.assertTrue;
-import static sun.hotspot.WhiteBox.getWhiteBox;
+import static jdk.test.whitebox.WhiteBox.getWhiteBox;
 
 import java.util.ArrayList;
 import java.util.List;
