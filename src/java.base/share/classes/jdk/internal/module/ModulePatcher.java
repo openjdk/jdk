@@ -134,8 +134,8 @@ public final class ModulePatcher {
                     try (Stream<Path> stream = Files.find(top, Integer.MAX_VALUE,
                             ((path, attrs) -> attrs.isRegularFile()))) {
                         stream.filter(path -> (!isAutomatic
-                            || path.toString().endsWith(".class"))
-                            && !isHidden(path))
+                                      || path.toString().endsWith(".class"))
+                                      && !isHidden(path))
                             .map(path -> toPackageName(top, path))
                             .filter(Checks::isPackageName)
                             .forEach(packages::add);

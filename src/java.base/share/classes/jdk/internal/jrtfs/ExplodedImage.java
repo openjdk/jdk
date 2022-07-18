@@ -259,7 +259,7 @@ class ExplodedImage extends SystemImage {
                         contentsStream.filter(Files::isDirectory).forEach((p) -> {
                             p = module.relativize(p);
                             String pkgName = slashesToDots(p.toString());
-                            // skip META-INFO and empty strings
+                            // skip META-INF and empty strings
                             if (!pkgName.isEmpty() && !pkgName.startsWith("META-INF")) {
                                 List<String> moduleNames = packageToModules.get(pkgName);
                                 if (moduleNames == null) {
@@ -269,6 +269,7 @@ class ExplodedImage extends SystemImage {
                                 moduleNames.add(moduleName);
                             }
                         });
+                    }
                 }
             }
         }
