@@ -213,8 +213,16 @@ public interface ModuleReader extends Closeable {
      * when using the stream to list the module contents and access is denied
      * by the security manager. </p>
      *
+     * <p> The returned stream contains references to one or more open directories
+     * in the module. The directories are closed by closing the stream. </p>
+     *
      * <p> The behavior of the stream when used after the module reader is
      * closed is implementation specific and therefore not specified. </p>
+     *
+     * @apiNote
+     * This method must be used within a try-with-resources statement or similar
+     * control structure to ensure that the stream's open directories are closed
+     * promptly after the stream's operations have completed.
      *
      * @return A stream of elements that are the names of all resources
      *         in the module
