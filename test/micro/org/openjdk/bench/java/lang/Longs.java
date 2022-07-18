@@ -50,6 +50,7 @@ public class Longs {
     private int size;
 
     private long bound;
+    private long[] res;
     private String[] strings;
     private long[] longArraySmall;
     private long[] longArrayBig;
@@ -59,6 +60,7 @@ public class Longs {
         var random = ThreadLocalRandom.current();
         bound = 20000L;
         strings = new String[size];
+        res = new long[size];
         longArraySmall = new long[size];
         longArrayBig = new long[size];
         for (int i = 0; i < size; i++) {
@@ -157,6 +159,13 @@ public class Longs {
         for (int i = 0; i < size; i++) {
             int r = Long.compareUnsigned(longArraySmall[i], bound - 16);
             bh.consume(r);
+        }
+    }
+
+    @Benchmark
+    public void reverseBytes() {
+        for (int i = 0; i < size; i++) {
+            res[i] = Long.reverseBytes(longArraySmall[i]);
         }
     }
 }

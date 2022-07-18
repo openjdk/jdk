@@ -24,7 +24,7 @@ package compiler.codecache.cli.common;
 
 import jdk.test.lib.Platform;
 import jdk.test.lib.cli.CommandLineOptionTest;
-import sun.hotspot.code.BlobType;
+import jdk.test.whitebox.code.BlobType;
 
 import java.util.Collections;
 import java.util.EnumSet;

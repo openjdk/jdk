@@ -141,8 +141,10 @@ REGISTER_DECLARATION(Register, xthread,   x23);
 REGISTER_DECLARATION(Register, xbcp,      x22);
 // Dispatch table base
 REGISTER_DECLARATION(Register, xdispatch, x21);
-// Java stack pointer
+// Java expression stack pointer
 REGISTER_DECLARATION(Register, esp,       x20);
+// Sender's SP while in interpreter
+REGISTER_DECLARATION(Register, x19_sender_sp, x19);
 
 // temporary register(caller-save registers)
 REGISTER_DECLARATION(Register, t0, x5);

@@ -78,9 +78,9 @@ bool JavaThread::pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, 
       // We observed a SIGSEGV with the following stack trace (openjdk.jdk11u-dev, 2021-07-07, linuxs390x fastdebug)
       // V  [libjvm.so+0x12c8f12]  JavaThread::pd_get_top_frame_for_profiling(frame*, void*, bool)+0x142
       // V  [libjvm.so+0xb1020c]  JfrGetCallTrace::get_topframe(void*, frame&)+0x3c
-      // V  [libjvm.so+0xba0b08]  OSThreadSampler::protected_task(os::SuspendedThreadTaskContext const&)+0x98
-      // V  [libjvm.so+0xff33c4]  os::SuspendedThreadTask::internal_do_task()+0x14c
-      // V  [libjvm.so+0xfe3c9c]  os::SuspendedThreadTask::run()+0x24
+      // V  [libjvm.so+0xba0b08]  OSThreadSampler::protected_task(SuspendedThreadTaskContext const&)+0x98
+      // V  [libjvm.so+0xff33c4]  SuspendedThreadTask::internal_do_task()+0x14c
+      // V  [libjvm.so+0xfe3c9c]  SuspendedThreadTask::run()+0x24
       // V  [libjvm.so+0xba0c66]  JfrThreadSampleClosure::sample_thread_in_java(JavaThread*, JfrStackFrame*, unsigned int)+0x66
       // V  [libjvm.so+0xba1718]  JfrThreadSampleClosure::do_sample_thread(JavaThread*, JfrStackFrame*, unsigned int, JfrSampleType)+0x278
       // V  [libjvm.so+0xba4f54]  JfrThreadSampler::task_stacktrace(JfrSampleType, JavaThread**) [clone .constprop.62]+0x284

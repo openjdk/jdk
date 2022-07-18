@@ -31,7 +31,7 @@
  * @requires vm.jvmti
  * @library /test/lib /test/hotspot/jtreg/serviceability/jvmti/RedefineClasses /test/hotspot/jtreg/runtime/cds/appcds
  * @run driver RedefineClassHelper
- * @build sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
  * @compile --enable-preview -source ${jdk.version} RedefineRunningMethods_SharedHelper.java
  * @run driver RedefineRunningMethods_Shared
  */
@@ -53,7 +53,7 @@ public class RedefineRunningMethods_Shared {
     };
 
     public static void main(String[] args) throws Exception {
-        String wbJar = ClassFileInstaller.writeJar("WhiteBox.jar", "sun.hotspot.WhiteBox");
+        String wbJar = ClassFileInstaller.writeJar("WhiteBox.jar", "jdk.test.whitebox.WhiteBox");
         String appJar = ClassFileInstaller.writeJar("RedefineRunningMethods_Shared.jar", shared_classes);
         String use_whitebox_jar = "-Xbootclasspath/a:" + wbJar;
 

@@ -109,7 +109,7 @@ public final class DomainLoadStoreParameter implements LoadStoreParameter {
     private final Map<String,ProtectionParameter> protectionParams;
 
     /**
-     * Constructs a DomainLoadStoreParameter for a keystore domain with
+     * Constructs a {@code DomainLoadStoreParameter} for a keystore domain with
      * the parameters used to protect keystore data.
      *
      * @param configuration identifier for the domain configuration data.

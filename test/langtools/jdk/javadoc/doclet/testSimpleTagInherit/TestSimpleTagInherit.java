@@ -44,14 +44,11 @@ public class TestSimpleTagInherit extends JavadocTester {
     public void test() {
         javadoc("-d", "out",
                 "-sourcepath", testSrc,
-                "-tag", "custom:optcm:<em>Custom:</em>",
+                "-tag", "custom:m:<em>Custom:</em>",
                 "p");
         checkExit(Exit.OK);
 
         checkOutput("p/TestClass.html", true,
-                """
-                    <dt><em>Custom:</em></dt>
-                    <dd>doc for BaseClass class</dd>""",
                 """
                     <dt><em>Custom:</em></dt>
                     <dd>doc for BaseClass method</dd>""");

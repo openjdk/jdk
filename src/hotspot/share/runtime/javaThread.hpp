@@ -441,7 +441,15 @@ class JavaThread: public Thread {
   intptr_t* _cont_fastpath; // the sp of the oldest known interpreted/call_stub frame inside the
                             // continuation that we know about
   int _cont_fastpath_thread_state; // whether global thread state allows continuation fastpath (JVMTI)
-  int _held_monitor_count;  // used by continuations for fast lock detection
+  // It's signed for error detection.
+#ifdef _LP64
+  int64_t _held_monitor_count;  // used by continuations for fast lock detection
+  int64_t _jni_monitor_count;
+#else
+  int32_t _held_monitor_count;  // used by continuations for fast lock detection
+  int32_t _jni_monitor_count;
+#endif
+
 private:
 
   friend class VMThread;
@@ -559,12 +567,10 @@ private:
   bool is_exiting() const;
   // thread's GC barrier is NOT detached and thread is NOT terminated
   bool is_oop_safe() const;
-  // thread is terminated (no longer on the threads list); we compare
-  // against the three non-terminated values so that a freed JavaThread
-  // will also be considered terminated.
+  // thread is terminated (no longer on the threads list); the thread must
+  // be protected by a ThreadsListHandle to avoid potential crashes.
   bool check_is_terminated(TerminatedTypes l_terminated) const {
-    return l_terminated != _not_terminated && l_terminated != _thread_exiting &&
-           l_terminated != _thread_gc_barrier_detached;
+    return l_terminated == _thread_terminated || l_terminated == _vm_exited;
   }
   bool is_terminated() const;
   void set_terminated(TerminatedTypes t);
@@ -591,10 +597,12 @@ private:
   bool cont_fastpath() const                   { return _cont_fastpath == NULL && _cont_fastpath_thread_state != 0; }
   bool cont_fastpath_thread_state() const      { return _cont_fastpath_thread_state != 0; }
 
-  int held_monitor_count()        { return _held_monitor_count; }
-  void reset_held_monitor_count() { _held_monitor_count = 0; }
-  void inc_held_monitor_count();
-  void dec_held_monitor_count();
+  void inc_held_monitor_count(int i = 1, bool jni = false);
+  void dec_held_monitor_count(int i = 1, bool jni = false);
+
+  int64_t held_monitor_count() { return (int64_t)_held_monitor_count; }
+  int64_t jni_monitor_count()  { return (int64_t)_jni_monitor_count;  }
+  void clear_jni_monitor_count() { _jni_monitor_count = 0;   }
 
   inline bool is_vthread_mounted() const;
   inline const ContinuationEntry* vthread_continuation() const;

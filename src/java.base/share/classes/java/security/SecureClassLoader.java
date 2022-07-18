@@ -32,7 +32,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * This class extends ClassLoader with additional support for defining
+ * This class extends {@code ClassLoader} with additional support for defining
  * classes with an associated code source and permissions which are
  * retrieved by the system policy by default.
  *
@@ -44,7 +44,7 @@ public class SecureClassLoader extends ClassLoader {
 
     /*
      * Map that maps the CodeSource to a ProtectionDomain. The key is a
-     * CodeSourceKey class that uses a String instead of a URL to avoid
+     * CodeSourceKey class that uses a {@code String} instead of a URL to avoid
      * potential expensive name service lookups. This does mean that URLs that
      * are equivalent after nameservice lookup will be placed in separate
      * ProtectionDomains; however during policy enforcement these URLs will be
@@ -59,7 +59,7 @@ public class SecureClassLoader extends ClassLoader {
     }
 
     /**
-     * Creates a new SecureClassLoader using the specified parent
+     * Creates a new {@code SecureClassLoader} using the specified parent
      * class loader for delegation.
      *
      * <p>If there is a security manager, this method first
@@ -77,7 +77,7 @@ public class SecureClassLoader extends ClassLoader {
     }
 
     /**
-     * Creates a new SecureClassLoader using the default parent class
+     * Creates a new {@code SecureClassLoader} using the default parent class
      * loader for delegation.
      *
      * <p>If there is a security manager, this method first
@@ -113,7 +113,7 @@ public class SecureClassLoader extends ClassLoader {
     }
 
     /**
-     * Converts an array of bytes into an instance of class Class,
+     * Converts an array of bytes into an instance of class {@code Class},
      * with an optional CodeSource. Before the
      * class can be used it must be resolved.
      * <p>
