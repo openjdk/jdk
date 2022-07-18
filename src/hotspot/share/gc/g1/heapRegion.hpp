@@ -280,7 +280,7 @@ private:
   inline HeapWord* oops_on_memregion_iterate(MemRegion mr, Closure* cl);
 
   template <class Closure>
-  inline HeapWord* oops_on_memregion_iterate_in_unparsable(MemRegion mr, HeapWord* pb, Closure* cl);
+  inline HeapWord* oops_on_memregion_iterate_in_unparsable(MemRegion mr, HeapWord* block_start, Closure* cl);
 
   // Iterate over the references covered by the given MemRegion in a humongous
   // object and apply the given closure to them.
@@ -521,8 +521,7 @@ public:
 
   // Notify the region that we are about to start processing
   // self-forwarded objects during evac failure handling.
-  void note_self_forwarding_removal_start(bool during_concurrent_start,
-                                          bool during_conc_mark);
+  void note_self_forwarding_removal_start(bool during_concurrent_start);
 
   // Notify the region that we have finished processing self-forwarded
   // objects during evac failure handling.

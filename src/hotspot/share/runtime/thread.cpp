@@ -552,7 +552,6 @@ bool Thread::set_as_starting_thread() {
   return os::create_main_thread(JavaThread::cast(this));
 }
 
-
 // Ad-hoc mutual exclusion primitives: SpinLock
 //
 // We employ SpinLocks _only for low-contention, fixed-length

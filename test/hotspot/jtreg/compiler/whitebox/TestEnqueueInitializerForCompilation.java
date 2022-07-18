@@ -26,15 +26,15 @@
  * @bug 8264395
  * @summary testing compilation of the class initializer of a class that is not initialized yet
  * @library /test/lib
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *      -XX:+WhiteBoxAPI compiler.whitebox.TestEnqueueInitializerForCompilation
  */
 
 package compiler.whitebox;
 
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 public class TestEnqueueInitializerForCompilation {
 

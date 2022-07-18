@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,28 +34,28 @@ import sun.security.util.SecurityConstants;
 
 
 /**
- * An AccessControlContext is used to make system resource access decisions
- * based on the context it encapsulates.
+ * An {@code AccessControlContext} is used to make system resource access
+ * decisions based on the context it encapsulates.
  *
  * <p>More specifically, it encapsulates a context and
  * has a single method, {@code checkPermission},
  * that is equivalent to the {@code checkPermission} method
- * in the AccessController class, with one difference: The AccessControlContext
- * {@code checkPermission} method makes access decisions based on the
+ * in the {@code AccessController} class, with one difference:
+ * The {@code checkPermission} method makes access decisions based on the
  * context it encapsulates,
  * rather than that of the current execution thread.
  *
- * <p>Thus, the purpose of AccessControlContext is for those situations where
- * a security check that should be made within a given context
+ * <p>Thus, the purpose of {@code AccessControlContext} is for those
+ * situations where a security check that should be made within a given context
  * actually needs to be done from within a
  * <i>different</i> context (for example, from within a worker thread).
  *
- * <p> An AccessControlContext is created by calling the
+ * <p> An {@code AccessControlContext} is created by calling the
  * {@code AccessController.getContext} method.
  * The {@code getContext} method takes a "snapshot"
  * of the current calling context, and places
- * it in an AccessControlContext object, which it returns. A sample call is
- * the following:
+ * it in an {@code AccessControlContext} object, which it returns.
+ * A sample call is the following:
  *
  * <pre>
  *   AccessControlContext acc = AccessController.getContext()
@@ -64,7 +64,7 @@ import sun.security.util.SecurityConstants;
  * <p>
  * Code within a different context can subsequently call the
  * {@code checkPermission} method on the
- * previously-saved AccessControlContext object. A sample call is the
+ * previously-saved {@code AccessControlContext} object. A sample call is the
  * following:
  *
  * <pre>
@@ -125,13 +125,14 @@ public final class AccessControlContext {
     }
 
     /**
-     * Create an AccessControlContext with the given array of ProtectionDomains.
-     * Context must not be null. Duplicate domains will be removed from the
-     * context.
+     * Create an {@code AccessControlContext} with the given array of
+     * {@code ProtectionDomain} objects.
+     * Context must not be {@code null}. Duplicate domains will be removed
+     * from the context.
      *
-     * @param context the ProtectionDomains associated with this context.
-     * The non-duplicate domains are copied from the array. Subsequent
-     * changes to the array will not affect this AccessControlContext.
+     * @param context the {@code ProtectionDomain} objects associated with this
+     * context. The non-duplicate domains are copied from the array. Subsequent
+     * changes to the array will not affect this {@code AccessControlContext}.
      * @throws NullPointerException if {@code context} is {@code null}
      */
     public AccessControlContext(ProtectionDomain[] context)
@@ -185,9 +186,9 @@ public final class AccessControlContext {
     }
 
     /**
-     * package private to allow calls from ProtectionDomain without performing
-     * the security check for {@linkplain SecurityConstants#CREATE_ACC_PERMISSION}
-     * permission
+     * package private to allow calls from (@code ProtectionDomain} without
+     * performing the security check for
+     * {@linkplain SecurityConstants#CREATE_ACC_PERMISSION} permission
      */
     AccessControlContext(AccessControlContext acc,
                         @SuppressWarnings("removal") DomainCombiner combiner,
@@ -215,7 +216,7 @@ public final class AccessControlContext {
     }
 
     /**
-     * package private for AccessController
+     * package private for {@code AccessController}
      *
      * This "argument wrapper" context will be passed as the actual context
      * parameter on an internal doPrivileged() call used in the implementation.
@@ -292,7 +293,7 @@ public final class AccessControlContext {
 
 
     /**
-     * package private constructor for AccessController.getContext()
+     * package private constructor for {@code AccessController.getContext()}
      */
 
     AccessControlContext(ProtectionDomain[] context,
@@ -304,7 +305,7 @@ public final class AccessControlContext {
     }
 
     /**
-     * Constructor for JavaSecurityAccess.doIntersectionPrivilege()
+     * Constructor for {@code JavaSecurityAccess.doIntersectionPrivilege()}
      */
     AccessControlContext(ProtectionDomain[] context,
                          AccessControlContext privilegedContext)
@@ -322,7 +323,7 @@ public final class AccessControlContext {
     }
 
     /**
-     * Returns true if this context is privileged.
+     * Returns {@code true} if this context is privileged.
      */
     boolean isPrivileged()
     {
@@ -370,7 +371,7 @@ public final class AccessControlContext {
     }
 
     /**
-     * package private for AccessController
+     * package private for {@code AccessController}
      */
     @SuppressWarnings("removal")
     DomainCombiner getCombiner() {
@@ -385,20 +386,22 @@ public final class AccessControlContext {
      * Determines whether the access request indicated by the
      * specified permission should be allowed or denied, based on
      * the security policy currently in effect, and the context in
-     * this object. The request is allowed only if every ProtectionDomain
-     * in the context implies the permission. Otherwise the request is
-     * denied.
+     * this object. The request is allowed only if every
+     * {@code ProtectionDomain} in the context implies the permission.
+     * Otherwise the request is denied.
      *
      * <p>
      * This method quietly returns if the access request
-     * is permitted, or throws a suitable AccessControlException otherwise.
+     * is permitted, or throws a suitable {@code AccessControlException}
+     * otherwise.
      *
      * @param perm the requested permission.
      *
      * @throws    AccessControlException if the specified permission
      * is not permitted, based on the current security policy and the
      * context encapsulated by this object.
-     * @throws    NullPointerException if the permission to check for is null.
+     * @throws    NullPointerException if the permission to check for is
+     * {@code null}.
      */
     @SuppressWarnings("removal")
     public void checkPermission(Permission perm)
@@ -751,14 +754,15 @@ public final class AccessControlContext {
 
 
     /**
-     * Checks two AccessControlContext objects for equality.
+     * Checks two {@code AccessControlContext} objects for equality.
      * Checks that {@code obj} is
-     * an AccessControlContext and has the same set of ProtectionDomains
-     * as this context.
+     * an {@code AccessControlContext} and has the same set of
+     * {@code ProtectionDomain} objects as this context.
      *
      * @param obj the object we are testing for equality with this object.
-     * @return true if {@code obj} is an AccessControlContext, and has the
-     * same set of ProtectionDomains as this context, false otherwise.
+     * @return {@code true} if {@code obj} is an {@code AccessControlContext},
+     * and has the same set of {@code ProtectionDomain} objects as this context,
+     * {@code false} otherwise.
      */
     public boolean equals(Object obj) {
         if (obj == this)

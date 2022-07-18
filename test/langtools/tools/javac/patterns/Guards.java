@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8262891 8268663
+ * @bug 8262891 8268663 8289894
  * @summary Check guards implementation.
  * @compile --enable-preview -source ${jdk.version} Guards.java
  * @run main/othervm --enable-preview Guards
@@ -164,21 +164,29 @@ public class Guards {
     }
 
     void testGuardNPE() {
-        assertEquals("empty", guardNPE(""));
-        assertEquals("A", guardNPE("A"));
-        assertEquals("other", guardNPE(1));
-        try {
-            guardNPE(null);
-            throw new AssertionError("Expected exception missing.");
-        } catch (NullPointerException ex) {
-            //expected
-        }
+        doTestGuardNPE(this::guardNPE1);
+        doTestGuardNPE(this::guardNPE2);
     }
 
-    String guardNPE(Object o) {
+    void doTestGuardNPE(Function<Object, String> test) {
+        assertEquals("empty", test.apply(""));
+        assertEquals("A", test.apply("A"));
+        assertEquals("other", test.apply(1));
+        assertEquals("empty", test.apply(null));
+    }
+
+    String guardNPE1(Object o) {
         return switch (o) {
             case null, String s when s.isEmpty() -> "empty";
             case String s -> s;
+            case Object x -> "other";
+        };
+    }
+
+    String guardNPE2(Object o) {
+        return switch (o) {
+            case null, ((((String s)))) when s.isEmpty() -> "empty";
+            case ((((String s)))) -> s;
             case Object x -> "other";
         };
     }

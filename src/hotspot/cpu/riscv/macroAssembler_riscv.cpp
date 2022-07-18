@@ -2955,19 +2955,47 @@ Address MacroAssembler::add_memory_helper(const Address dst) {
   }
 }
 
-void MacroAssembler::add_memory_int64(const Address dst, int64_t imm) {
+void MacroAssembler::increment(const Address dst, int64_t value) {
+  assert(((dst.getMode() == Address::base_plus_offset &&
+           is_offset_in_range(dst.offset(), 12)) || is_imm_in_range(value, 12, 0)),
+          "invalid value and address mode combination");
   Address adr = add_memory_helper(dst);
-  assert_different_registers(adr.base(), t0);
+  assert(!adr.uses(t0), "invalid dst for address increment");
   ld(t0, adr);
-  addi(t0, t0, imm);
+  add(t0, t0, value, t1);
   sd(t0, adr);
 }
 
-void MacroAssembler::add_memory_int32(const Address dst, int32_t imm) {
+void MacroAssembler::incrementw(const Address dst, int32_t value) {
+  assert(((dst.getMode() == Address::base_plus_offset &&
+           is_offset_in_range(dst.offset(), 12)) || is_imm_in_range(value, 12, 0)),
+          "invalid value and address mode combination");
   Address adr = add_memory_helper(dst);
-  assert_different_registers(adr.base(), t0);
+  assert(!adr.uses(t0), "invalid dst for address increment");
   lwu(t0, adr);
-  addiw(t0, t0, imm);
+  addw(t0, t0, value, t1);
+  sw(t0, adr);
+}
+
+void MacroAssembler::decrement(const Address dst, int64_t value) {
+  assert(((dst.getMode() == Address::base_plus_offset &&
+           is_offset_in_range(dst.offset(), 12)) || is_imm_in_range(value, 12, 0)),
+          "invalid value and address mode combination");
+  Address adr = add_memory_helper(dst);
+  assert(!adr.uses(t0), "invalid dst for address decrement");
+  ld(t0, adr);
+  sub(t0, t0, value, t1);
+  sd(t0, adr);
+}
+
+void MacroAssembler::decrementw(const Address dst, int32_t value) {
+  assert(((dst.getMode() == Address::base_plus_offset &&
+           is_offset_in_range(dst.offset(), 12)) || is_imm_in_range(value, 12, 0)),
+          "invalid value and address mode combination");
+  Address adr = add_memory_helper(dst);
+  assert(!adr.uses(t0), "invalid dst for address decrement");
+  lwu(t0, adr);
+  subw(t0, t0, value, t1);
   sw(t0, adr);
 }
 

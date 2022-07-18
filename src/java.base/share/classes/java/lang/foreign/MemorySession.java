@@ -51,7 +51,7 @@ import jdk.internal.javac.PreviewFeature;
  * As a result, resources associated with the global session are never released. Examples of resources associated with
  * the global memory session are {@linkplain MemorySegment#ofArray(int[]) heap segments}.
  *
- * <h2><a id = "thread-confinement">Thread confinement</a></h2>
+ * <h2 id = "thread-confinement">Thread confinement</h2>
  *
  * Memory sessions can be divided into two categories: <em>thread-confined</em> memory sessions, and <em>shared</em>
  * memory sessions.
@@ -66,7 +66,7 @@ import jdk.internal.javac.PreviewFeature;
  * can be accessed by multiple threads. This might be useful when multiple threads need to access the same resource concurrently
  * (e.g. in the case of parallel processing).
  *
- * <h2>Closeable memory sessions</h2>
+ * <h2 id="closeable">Closeable memory sessions</h2>
  *
  * When a session is associated with off-heap resources, it is often desirable for said resources to be released in a timely fashion,
  * rather than waiting for the session to be deemed <a href="../../../java/lang/ref/package.html#reachability">unreachable</a>
@@ -96,7 +96,7 @@ import jdk.internal.javac.PreviewFeature;
  * the session becomes unreachable; that is, {@linkplain #addCloseAction(Runnable) close actions} associated with a
  * memory session, whether managed or not, are called <em>exactly once</em>.
  *
- * <h2>Non-closeable views</h2>
+ * <h2 id="non-closeable">Non-closeable views</h2>
  *
  * There are situations in which it might not be desirable for a memory session to be reachable from one or
  * more resources associated with it. For instance, an API might create a private memory session, and allocate
