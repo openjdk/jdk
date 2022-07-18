@@ -61,7 +61,7 @@ public class PassFailJFrame {
     private static volatile String testFailedReason;
     private static JFrame frame;
 
-    public enum Position {HORIZONTAL, VERTICAL, LEFT_HALF}
+    public enum Position {HORIZONTAL, VERTICAL, TOP_LEFT_CORNER}
 
     public PassFailJFrame(String instructions) throws InterruptedException,
             InvocationTargetException {
@@ -264,13 +264,13 @@ public class PassFailJFrame {
      * testWindow.
      *
      * @param testWindow test window that the test is created
-     * @param position  position can be either HORIZONTAL (both test
-     *                  instruction frame and test window as arranged
-     *                  side by side) or VERTICAL (both test instruction
-     *                  frame and test window as arranged up and down) or
-     *                  LEFT_HALF (both test instruction frame and test
-     *                  window as arranged up and down, to the left half
-     *                  of the screen)
+     * @param position  position can either be:
+     *                  HORIZONTAL - both test instruction frame and test window
+     *                  as arranged side by side.
+     *                  VERTICAL - both test instruction frame and test window
+     *                  as arranged up and down.
+     *                  TOP_LEFT_CORNER - test instruction frame positioned at
+     *                  top left corner with main test window below it.
      */
     public static void positionTestWindow(Window testWindow, Position position) {
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
@@ -288,7 +288,7 @@ public class PassFailJFrame {
             testWindow.setLocation(frame.getX(),
                     (frame.getLocation().y + frame.getHeight() + 5));
         }
-        else if (position.equals(Position.LEFT_HALF)) {
+        else if (position.equals(Position.TOP_LEFT_CORNER)) {
             frame.setLocation(0,0);
             testWindow.setLocation(frame.getX(),
                     (frame.getLocation().y + frame.getHeight() + 5));
@@ -304,13 +304,24 @@ public class PassFailJFrame {
      *
      * @return Rectangle bounds of test instruction frame
      * @see #positionTestWindow
+     *
+     * @throws InterruptedException      exception thrown when thread is
+     *                                   interrupted
+     * @throws InvocationTargetException if an exception is thrown while
+     *                                   obtaining frame bounds on EDT
      */
-    public static Rectangle getInstructionFrameBounds() {
-        Rectangle bounds = null;
-        if (frame != null) {
-            bounds = frame.getBounds();
+    public static Rectangle getInstructionFrameBounds()
+            throws InterruptedException, InvocationTargetException {
+        final Rectangle[] bounds = {null};
+
+        if (isEventDispatchThread()) {
+            bounds[0] = frame != null ? frame.getBounds() : null;
+        } else {
+            invokeAndWait(() -> {
+                bounds[0] = frame != null ? frame.getBounds() : null;
+            });
         }
-        return bounds;
+        return bounds[0];
     }
 
     /**
