@@ -381,6 +381,9 @@ public class Arguments {
             setOptionValue("win-console", true);
         }),
 
+        WIN_CODEPAGE ("win-codepage",
+                OptionCategories.PLATFORM_WIN),
+
         LINUX_BUNDLE_NAME ("linux-package-name",
                 OptionCategories.PLATFORM_LINUX),
 

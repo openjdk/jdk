@@ -50,6 +50,12 @@ import java.util.stream.Stream;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
@@ -222,6 +228,13 @@ public class WinMsiBundler  extends AbstractBundler {
                 }
             },
             (s, p) -> s);
+
+    private static final BundlerParamInfo<String> CODEPAGE =
+            new StandardBundlerParam<>(
+                    Arguments.CLIOptions.WIN_CODEPAGE.getId(),
+                    String.class,
+                    null,
+                    (s, p) -> s);
 
     public WinMsiBundler() {
         appImageBundler = new WinAppBundler().setDependentTask(true);
@@ -512,13 +525,7 @@ public class WinMsiBundler  extends AbstractBundler {
             data.put("JpIsSystemWide", "yes");
         }
 
-        // Copy standard l10n files.
-        for (String loc : Arrays.asList("en", "ja", "zh_CN")) {
-            String fname = "MsiInstallerStrings_" + loc + ".wxl";
-            try (InputStream is = OverridableResource.readDefault(fname)) {
-                Files.copy(is, CONFIG_ROOT.fetchFrom(params).resolve(fname));
-            }
-        }
+        copyPrimaryWxlFile(params);
 
         createResource("main.wxs", params)
                 .setCategory(I18N.getString("resource.main-wix-file"))
@@ -529,6 +536,45 @@ public class WinMsiBundler  extends AbstractBundler {
                 .saveToFile(configDir.resolve("overrides.wxi"));
 
         return data;
+    }
+
+    private void copyPrimaryWxlFile(Map<String, ? super Object> params) throws IOException {
+        String fname = I18N.getString("resource.wxl-file-name");
+        Path dest = CONFIG_ROOT.fetchFrom(params).resolve(fname);
+        try (InputStream is = OverridableResource.readDefault(fname)) {
+            String codepage = CODEPAGE.fetchFrom(params);
+            if (codepage != null) {
+                DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+                factory.setNamespaceAware(false);
+                DocumentBuilder builder = factory.newDocumentBuilder();
+
+                Document doc = builder.parse(is);
+
+                XPath xPath = XPathFactory.newInstance().newXPath();
+                NodeList nodes = (NodeList) xPath.evaluate(
+                        "//WixLocalization/@Codepage", doc,
+                        XPathConstants.NODESET);
+                if (nodes.getLength() != 1) {
+                    throw new IOException(MessageFormat.format(I18N.getString(
+                            "error.rewrite-codepage-in-wix-l10n-file"),
+                            fname));
+                }
+
+                nodes.item(0).setNodeValue(codepage);
+
+                TransformerFactory transformerFactory = TransformerFactory.newInstance();
+                Transformer transformer = transformerFactory.newTransformer();
+                DOMSource source = new DOMSource(doc);
+                StreamResult result = new StreamResult(dest.toFile());
+                transformer.transform(source, result);
+            } else {
+                Files.copy(is, dest);
+            }
+        } catch (ParserConfigurationException | SAXException | TransformerException |
+                XPathExpressionException ex) {
+            throw new IOException(MessageFormat.format(I18N.getString(
+                    "error.write-wix-l10n-file"), dest.toAbsolutePath()), ex);
+        }
     }
 
     private Path buildMSI(Map<String, ? super Object> params,
