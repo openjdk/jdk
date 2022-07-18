@@ -1136,7 +1136,7 @@ void JvmtiTagMap::iterate_over_heap(jvmtiHeapObjectFilter object_filter,
                    object_filter == JVMTI_HEAP_OBJECT_EITHER,
                    JavaThread::current());
   eb.deoptimize_objects_all_threads();
-  Arena dead_object_arena(mtInternal);
+  Arena dead_object_arena(mtServiceability);
   GrowableArray <jlong> dead_objects(&dead_object_arena, 10, 0, 0);
   {
     MutexLocker ml(Heap_lock);
@@ -1164,7 +1164,7 @@ void JvmtiTagMap::iterate_through_heap(jint heap_filter,
   EscapeBarrier eb(!(heap_filter & JVMTI_HEAP_FILTER_UNTAGGED), JavaThread::current());
   eb.deoptimize_objects_all_threads();
 
-  Arena dead_object_arena(mtInternal);
+  Arena dead_object_arena(mtServiceability);
   GrowableArray<jlong> dead_objects(&dead_object_arena, 10, 0, 0);
   {
     MutexLocker ml(Heap_lock);
@@ -1220,7 +1220,6 @@ void JvmtiTagMap::flush_object_free_events() {
     {
       MonitorLocker ml(lock(), Mutex::_no_safepoint_check_flag);
       // If another thread is posting events, let it finish
-      bool posting = _posting_events;
       while (_posting_events) {
         ml.wait();
       }
@@ -2874,7 +2873,7 @@ void JvmtiTagMap::iterate_over_reachable_objects(jvmtiHeapRootCallback heap_root
   JavaThread* jt = JavaThread::current();
   EscapeBarrier eb(true, jt);
   eb.deoptimize_objects_all_threads();
-  Arena dead_object_arena(mtInternal);
+  Arena dead_object_arena(mtServiceability);
   GrowableArray<jlong> dead_objects(&dead_object_arena, 10, 0, 0);
   {
     MutexLocker ml(Heap_lock);
@@ -2893,7 +2892,7 @@ void JvmtiTagMap::iterate_over_objects_reachable_from_object(jobject object,
   oop obj = JNIHandles::resolve(object);
   Handle initial_object(Thread::current(), obj);
 
-  Arena dead_object_arena(mtInternal);
+  Arena dead_object_arena(mtServiceability);
   GrowableArray<jlong> dead_objects(&dead_object_arena, 10, 0, 0);
   {
     MutexLocker ml(Heap_lock);
@@ -2921,7 +2920,7 @@ void JvmtiTagMap::follow_references(jint heap_filter,
                    jt);
   eb.deoptimize_objects_all_threads();
 
-  Arena dead_object_arena(mtInternal);
+  Arena dead_object_arena(mtServiceability);
   GrowableArray<jlong> dead_objects(&dead_object_arena, 10, 0, 0);
   {
     MutexLocker ml(Heap_lock);
