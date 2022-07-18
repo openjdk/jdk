@@ -1999,17 +1999,16 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
          iid != vmIntrinsics::_invokeGeneric,
          "must be a known MH intrinsic iid=%d: %s", iid_as_int, vmIntrinsics::name_at(iid));
 
-  Method** met;
+  MutexLocker ml(THREAD, InvokeMethod_lock);
   InvokeMethodKey key(signature, iid_as_int);
-  {
-    MutexLocker ml(THREAD, SystemDictionary_lock);
-    met = _invoke_method_intrisic_table.get(key);
-  }
+  Method** met = _invoke_method_intrisic_table.get(key);
 
-  methodHandle m;
-  if (met == nullptr) {
+  Method* intrinsic;
+  if (met != nullptr) {
+    intrinsic = *met;
+  } else {
     // Must create lots of stuff here, but outside of the SystemDictionary lock.
-    m = Method::make_method_handle_intrinsic(iid, signature, CHECK_NULL);
+    methodHandle m = Method::make_method_handle_intrinsic(iid, signature, CHECK_NULL);
     if (!Arguments::is_interpreter_only() || iid == vmIntrinsics::_linkToNative) {
       // Generate a compiled form of the MH intrinsic
       // linkToNative doesn't have interpreter-specific implementation, so always has to go through compiled version.
@@ -2020,27 +2019,15 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
                        "Out of space in CodeCache for method handle intrinsic");
       }
     }
-    // Now grab the lock.  We might have to throw away the new method,
-    // if a racing thread has managed to install one at the same time.
-    {
-      MutexLocker ml(THREAD, InvokeMethod_lock);
-      if(UseNewCode){
-        ResourceMark rm;
-        tty->print_cr("finding symbol %s %d", signature->as_C_string(), iid_as_int);
-      }
-      bool created = false;
-      _invoke_method_intrisic_table.put_if_absent(key, m(), &created);
-    }
-
-  } else {
-    m = methodHandle(THREAD, *met);
+    intrinsic = m();
+    _invoke_method_intrisic_table.put(key, intrinsic);
   }
 
-  assert(m() != NULL, "");
-  assert(Arguments::is_interpreter_only() || (m->has_compiled_code() &&
-         m->code()->entry_point() == m->from_compiled_entry()),
+  assert(intrinsic != NULL, "");
+  assert(Arguments::is_interpreter_only() || (intrinsic->has_compiled_code() &&
+         intrinsic->code()->entry_point() == intrinsic->from_compiled_entry()),
          "MH intrinsic invariant");
-  return m();
+  return intrinsic;
 }
 
 // Helper for unpacking the return value from linkMethod and linkCallSite.
@@ -2239,6 +2226,7 @@ Handle SystemDictionary::find_method_handle_type(Symbol* signature,
     }
   }
   assert(arg == npts, "");
+  os::naked_short_sleep(10);
 
   // call java.lang.invoke.MethodHandleNatives::findMethodHandleType(Class rt, Class[] pts) -> MethodType
   JavaCallArguments args(Handle(THREAD, rt()));
@@ -2254,11 +2242,21 @@ Handle SystemDictionary::find_method_handle_type(Symbol* signature,
   if (can_be_cached) {
     // We can cache this MethodType inside the JVM.
     MutexLocker ml(THREAD, InvokeMethod_lock);
-    bool created = false;
-    assert(method_type != NULL, "THIS IS THE ERROR");
-    _invoke_method_type_table.put_if_absent(signature, OopHandle(Universe::vm_global(), method_type()), &created);
+    OopHandle* h = _invoke_method_type_table.get(signature);
+    if (h == nullptr) {
+      bool created;
+      OopHandle elem = OopHandle(Universe::vm_global(), method_type());
+      _invoke_method_type_table.put_if_absent(signature, elem, &created);
+      assert(created, "better be");
+    } else {
+      oop mt = h->resolve();
+      method_type = Handle(THREAD, mt);  // use this answer.
+    }
   }
+
   // report back to the caller with the MethodType
+  assert(java_lang_invoke_MethodType::is_instance(method_type()), "");
+  assert(method_type != NULL, "THIS IS THE ERROR");
   return method_type;
 }
 

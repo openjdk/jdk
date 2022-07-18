@@ -280,7 +280,6 @@ void mutex_init() {
   def(Terminator_lock              , PaddedMonitor, safepoint, true);
   def(InitCompleted_lock           , PaddedMonitor, nosafepoint);
   def(Notify_lock                  , PaddedMonitor, safepoint, true);
-  def(AdapterHandlerLibrary_lock   , PaddedMutex  , safepoint);
 
   def(Heap_lock                    , PaddedMonitor, safepoint); // Doesn't safepoint check during termination.
   def(JfieldIdCreation_lock        , PaddedMutex  , safepoint);
@@ -364,6 +363,7 @@ void mutex_init() {
   defl(ClassLoaderDataGraph_lock   , PaddedMutex  , MultiArray_lock);
   defl(VMOperation_lock            , PaddedMonitor, Compile_lock, true);
   defl(ClassInitError_lock         , PaddedMonitor, Threads_lock);
+  defl(AdapterHandlerLibrary_lock   , PaddedMutex,  InvokeMethod_lock);
 
   if (UseG1GC) {
     defl(G1OldGCCount_lock         , PaddedMonitor, Threads_lock, true);
