@@ -121,7 +121,7 @@ public class ShareTmpDir {
         if (file1.equals(file2)) {
             // This should be the common case -- the first started process in a container should
             // have pid==1.
-            // One of the two contains must fail to create the hsperf file.
+            // One of the two containers must fail to create the hsperf file.
             String s = "Cannot use file " + file1 + " because it is locked by another process";
             Asserts.assertTrue(out1.getStdout().contains(s) ||
                                out2.getStdout().contains(s));
