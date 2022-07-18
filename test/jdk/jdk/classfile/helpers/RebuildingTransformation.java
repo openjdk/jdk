@@ -27,6 +27,7 @@ package helpers;
 import java.lang.constant.ClassDesc;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Random;
 import jdk.classfile.*;
 import jdk.classfile.attribute.*;
 import jdk.classfile.constantpool.*;
@@ -35,6 +36,8 @@ import jdk.classfile.jdktypes.ModuleDesc;
 import jdk.classfile.jdktypes.PackageDesc;
 
 class RebuildingTransformation {
+
+    static private Random pathSwitch = new Random(1234);
 
     static byte[] transform(ClassModel clm) {
         return Classfile.build(clm.thisClass().asSymbol(), clb -> {
@@ -71,48 +74,375 @@ class RebuildingTransformation {
                                         var labels = new HashMap<Label, Label>();
                                         for (var coe : com) {
                                             switch (coe) {
-                                                case ArrayLoadInstruction i -> cob.arrayLoadInstruction(i.typeKind());
-                                                case ArrayStoreInstruction i -> cob.arrayStoreInstruction(i.typeKind());
-                                                case BranchInstruction i -> cob.branchInstruction(i.opcode(), labels.computeIfAbsent(i.target(), l -> cob.newLabel()));
-                                                case ConstantInstruction i -> cob.constantInstruction(i.constantValue());
-                                                case ConvertInstruction i -> cob.convertInstruction(i.fromType(), i.toType());
-                                                case FieldInstruction i -> cob.fieldInstruction(i.opcode(), i.owner().asSymbol(), i.name().stringValue(), i.typeSymbol());
-                                                case InvokeDynamicInstruction i -> cob.invokeDynamicInstruction(i.invokedynamic().asSymbol());
-                                                case InvokeInstruction i -> cob.invokeInstruction(i.opcode(), i.owner().asSymbol(), i.name().stringValue(), i.typeSymbol(), i.isInterface());
-                                                case LoadInstruction i -> cob.loadInstruction(i.typeKind(), i.slot());
-                                                case StoreInstruction i -> cob.storeInstruction(i.typeKind(), i.slot());
-                                                case IncrementInstruction i -> cob.incrementInstruction(i.slot(), i.constant());
-                                                case LookupSwitchInstruction i -> cob.lookupSwitchInstruction(labels.computeIfAbsent(i.defaultTarget(), l -> cob.newLabel()),
-                                                        i.cases().stream().map(sc -> SwitchCase.of(sc.caseValue(), labels.computeIfAbsent(sc.target(), l -> cob.newLabel()))).toList());
-                                                case MonitorInstruction i -> cob.monitorInstruction(i.opcode());
-                                                case NewMultiArrayInstruction i -> cob.newMultidimensionalArrayInstruction(i.dimensions(), i.arrayType().asSymbol());
-                                                case NewObjectInstruction i -> cob.newObjectInstruction(i.className().asSymbol());
-                                                case NewPrimitiveArrayInstruction i -> cob.newPrimitiveArrayInstruction(i.typeKind());
-                                                case NewReferenceArrayInstruction i -> cob.newReferenceArrayInstruction(i.componentType().asSymbol());
-                                                case NopInstruction i -> cob.nopInstruction();
-                                                case OperatorInstruction i -> cob.operatorInstruction(i.opcode());
-                                                case ReturnInstruction i -> cob.returnInstruction(i.typeKind());
-                                                case StackInstruction i -> cob.stackInstruction(i.opcode());
-                                                case TableSwitchInstruction i -> cob.tableSwitchInstruction(i.lowValue(), i.highValue(), labels.computeIfAbsent(i.defaultTarget(), l -> cob.newLabel()),
-                                                        i.cases().stream().map(sc -> SwitchCase.of(sc.caseValue(), labels.computeIfAbsent(sc.target(), l -> cob.newLabel()))).toList());
-                                                case ThrowInstruction i -> cob.throwInstruction();
-                                                case TypeCheckInstruction i -> cob.typeCheckInstruction(i.opcode(), i.type().asSymbol());
-                                                case CharacterRange pi -> cob.characterRange(labels.computeIfAbsent(pi.startScope(), l -> cob.newLabel()), labels.computeIfAbsent(pi.endScope(), l -> cob.newLabel()),
-                                                        pi.characterRangeStart(), pi.characterRangeEnd(), pi.flags());
-                                                case ExceptionCatch pi -> pi.catchType().ifPresentOrElse(
-                                                        catchType -> cob.exceptionCatch(labels.computeIfAbsent(pi.tryStart(), l -> cob.newLabel()), labels.computeIfAbsent(pi.tryEnd(), l -> cob.newLabel()),
-                                                                labels.computeIfAbsent(pi.handler(), l -> cob.newLabel()), catchType.asSymbol()),
-                                                        () -> cob.exceptionCatchAll(labels.computeIfAbsent(pi.tryStart(), l -> cob.newLabel()), labels.computeIfAbsent(pi.tryEnd(), l -> cob.newLabel()),
-                                                                labels.computeIfAbsent(pi.handler(), l -> cob.newLabel())));
-                                                case LabelTarget pi -> cob.labelBinding(labels.computeIfAbsent(pi.label(), l -> cob.newLabel()));
-                                                case LineNumber pi -> cob.lineNumber(pi.line());
-                                                case LocalVariable pi -> cob.localVariable(pi.slot(), pi.name().stringValue(), pi.typeSymbol(), labels.computeIfAbsent(pi.startScope(), l -> cob.newLabel()),
-                                                        labels.computeIfAbsent(pi.endScope(), l -> cob.newLabel()));
-                                                case LocalVariableType pi -> cob.localVariableType(pi.slot(), pi.name().stringValue(), Signature.parseFrom(pi.signatureSymbol().signatureString()),
-                                                        labels.computeIfAbsent(pi.startScope(), l -> cob.newLabel()), labels.computeIfAbsent(pi.endScope(), l -> cob.newLabel()));
-                                                case RuntimeInvisibleTypeAnnotationsAttribute a -> cob.with(RuntimeInvisibleTypeAnnotationsAttribute.of(transformTypeAnnotations(a.annotations(), cob, labels)));
-                                                case RuntimeVisibleTypeAnnotationsAttribute a -> cob.with(RuntimeVisibleTypeAnnotationsAttribute.of(transformTypeAnnotations(a.annotations(), cob, labels)));
-                                                case CustomAttribute a -> throw new AssertionError("Unexpected custom attribute: " + a.attributeName());
+                                                case ArrayLoadInstruction i -> {
+                                                    switch (i.typeKind()) {
+                                                        case ByteType -> cob.baload();
+                                                        case ShortType -> cob.saload();
+                                                        case IntType -> cob.iaload();
+                                                        case FloatType -> cob.faload();
+                                                        case LongType -> cob.laload();
+                                                        case DoubleType -> cob.daload();
+                                                        case ReferenceType -> cob.aaload();
+                                                        case CharType -> cob.caload();
+                                                        default -> throw new AssertionError("Should not reach here");
+                                                    }
+                                                }
+                                                case ArrayStoreInstruction i -> {
+                                                    switch (i.typeKind()) {
+                                                        case ByteType -> cob.bastore();
+                                                        case ShortType -> cob.sastore();
+                                                        case IntType -> cob.iastore();
+                                                        case FloatType -> cob.fastore();
+                                                        case LongType -> cob.lastore();
+                                                        case DoubleType -> cob.dastore();
+                                                        case ReferenceType -> cob.aastore();
+                                                        case CharType -> cob.castore();
+                                                        default -> throw new AssertionError("Should not reach here");
+                                                    }
+                                                }
+                                                case BranchInstruction i -> {
+                                                    var target = labels.computeIfAbsent(i.target(), l -> cob.newLabel());
+                                                    switch (i.opcode()) {
+                                                        case GOTO -> cob.goto_(target);
+                                                        case GOTO_W -> cob.goto_w(target);
+                                                        case IF_ACMPEQ -> cob.if_acmpeq(target);
+                                                        case IF_ACMPNE -> cob.if_acmpne(target);
+                                                        case IF_ICMPEQ -> cob.if_icmpeq(target);
+                                                        case IF_ICMPGE -> cob.if_icmpge(target);
+                                                        case IF_ICMPGT -> cob.if_icmpgt(target);
+                                                        case IF_ICMPLE -> cob.if_icmple(target);
+                                                        case IF_ICMPLT -> cob.if_icmplt(target);
+                                                        case IF_ICMPNE -> cob.if_icmpne(target);
+                                                        case IFNONNULL -> cob.if_nonnull(target);
+                                                        case IFNULL -> cob.if_null(target);
+                                                        case IFEQ -> cob.ifeq(target);
+                                                        case IFGE -> cob.ifge(target);
+                                                        case IFGT -> cob.ifgt(target);
+                                                        case IFLE -> cob.ifle(target);
+                                                        case IFLT -> cob.iflt(target);
+                                                        case IFNE -> cob.ifne(target);
+                                                        default -> throw new AssertionError("Should not reach here");
+                                                    }
+                                                }
+                                                case ConstantInstruction i -> {
+                                                    if (i.constantValue() == null)
+                                                        if (pathSwitch.nextBoolean()) cob.aconst_null();
+                                                        else cob.constantInstruction(null);
+                                                    else switch (i.constantValue()) {
+                                                        case Integer iVal -> {
+                                                            if (iVal == 1 && pathSwitch.nextBoolean()) cob.iconst_1();
+                                                            else if (iVal == 2 && pathSwitch.nextBoolean()) cob.iconst_2();
+                                                            else if (iVal == 3 && pathSwitch.nextBoolean()) cob.iconst_3();
+                                                            else if (iVal == 4 && pathSwitch.nextBoolean()) cob.iconst_4();
+                                                            else if (iVal == 5 && pathSwitch.nextBoolean()) cob.iconst_5();
+                                                            else if (iVal == -1 && pathSwitch.nextBoolean()) cob.iconst_m1();
+                                                            else if (iVal >= -128 && iVal <= 127 && pathSwitch.nextBoolean()) cob.bipush(iVal);
+                                                            else if (iVal >= -32768 && iVal <= 32767 && pathSwitch.nextBoolean()) cob.sipush(iVal);
+                                                            else cob.constantInstruction(iVal);
+                                                        }
+                                                        case Long lVal -> {
+                                                            if (lVal == 0 && pathSwitch.nextBoolean()) cob.lconst_0();
+                                                            else if (lVal == 1 && pathSwitch.nextBoolean()) cob.lconst_1();
+                                                            else cob.constantInstruction(lVal);
+                                                        }
+                                                        case Float fVal -> {
+                                                            if (fVal == 0.0 && pathSwitch.nextBoolean()) cob.fconst_0();
+                                                            else if (fVal == 1.0 && pathSwitch.nextBoolean()) cob.fconst_1();
+                                                            else if (fVal == 2.0 && pathSwitch.nextBoolean()) cob.fconst_2();
+                                                            else cob.constantInstruction(fVal);
+                                                        }
+                                                        case Double dVal -> {
+                                                            if (dVal == 0.0d && pathSwitch.nextBoolean()) cob.dconst_0();
+                                                            else if (dVal == 1.0d && pathSwitch.nextBoolean()) cob.dconst_1();
+                                                            else cob.constantInstruction(dVal);
+                                                        }
+                                                        default -> cob.constantInstruction(i.constantValue());
+                                                    }
+                                                }
+                                                case ConvertInstruction i -> {
+                                                    switch (i.fromType()) {
+                                                        case DoubleType -> {
+                                                            switch (i.toType()) {
+                                                                case FloatType -> cob.d2f();
+                                                                case IntType -> cob.d2i();
+                                                                case LongType -> cob.d2l();
+                                                                default -> throw new AssertionError("Should not reach here");
+                                                            }
+                                                        }
+                                                        case FloatType -> {
+                                                            switch (i.toType()) {
+                                                                case DoubleType -> cob.f2d();
+                                                                case IntType -> cob.f2i();
+                                                                case LongType -> cob.f2l();
+                                                                default -> throw new AssertionError("Should not reach here");
+                                                            }
+                                                        }
+                                                        case IntType -> {
+                                                            switch (i.toType()) {
+                                                                case ByteType -> cob.i2b();
+                                                                case CharType -> cob.i2c();
+                                                                case DoubleType -> cob.i2d();
+                                                                case FloatType -> cob.i2f();
+                                                                case LongType -> cob.i2l();
+                                                                case ShortType -> cob.i2s();
+                                                                default -> throw new AssertionError("Should not reach here");
+                                                            }
+                                                        }
+                                                        case LongType -> {
+                                                            switch (i.toType()) {
+                                                                case DoubleType -> cob.l2d();
+                                                                case FloatType -> cob.l2f();
+                                                                case IntType -> cob.l2i();
+                                                                default -> throw new AssertionError("Should not reach here");
+                                                            }
+                                                        }
+                                                        default -> throw new AssertionError("Should not reach here");
+                                                    }
+                                                }
+                                                case FieldInstruction i -> {
+                                                    if (pathSwitch.nextBoolean()) {
+                                                        switch (i.opcode()) {
+                                                            case GETFIELD -> cob.getfield(i.owner().asSymbol(), i.name().stringValue(), i.typeSymbol());
+                                                            case GETSTATIC -> cob.getstatic(i.owner().asSymbol(), i.name().stringValue(), i.typeSymbol());
+                                                            case PUTFIELD -> cob.putfield(i.owner().asSymbol(), i.name().stringValue(), i.typeSymbol());
+                                                            case PUTSTATIC -> cob.putstatic(i.owner().asSymbol(), i.name().stringValue(), i.typeSymbol());
+                                                            default -> throw new AssertionError("Should not reach here");
+                                                        }
+                                                    } else {
+                                                        switch (i.opcode()) {
+                                                            case GETFIELD -> cob.getfield(i.field());
+                                                            case GETSTATIC -> cob.getstatic(i.field());
+                                                            case PUTFIELD -> cob.putfield(i.field());
+                                                            case PUTSTATIC -> cob.putstatic(i.field());
+                                                            default -> throw new AssertionError("Should not reach here");
+                                                        }
+                                                    }
+                                                }
+                                                case InvokeDynamicInstruction i -> {
+                                                    if (pathSwitch.nextBoolean()) cob.invokedynamic(i.invokedynamic().asSymbol());
+                                                    else cob.invokedynamic(i.invokedynamic());
+                                                }
+                                                case InvokeInstruction i -> {
+                                                    if (pathSwitch.nextBoolean()) {
+                                                        if (i.isInterface()) {
+                                                            switch (i.opcode()) {
+                                                                case INVOKEINTERFACE -> cob.invokeinterface(i.owner().asSymbol(), i.name().stringValue(), i.typeSymbol());
+                                                                case INVOKESPECIAL -> cob.invokespecial(i.owner().asSymbol(), i.name().stringValue(), i.typeSymbol(), true);
+                                                                case INVOKESTATIC -> cob.invokestatic(i.owner().asSymbol(), i.name().stringValue(), i.typeSymbol(), true);
+                                                                default -> throw new AssertionError("Should not reach here");
+                                                            }
+                                                        } else {
+                                                            switch (i.opcode()) {
+                                                                case INVOKESPECIAL -> cob.invokespecial(i.owner().asSymbol(), i.name().stringValue(), i.typeSymbol());
+                                                                case INVOKESTATIC -> cob.invokestatic(i.owner().asSymbol(), i.name().stringValue(), i.typeSymbol());
+                                                                case INVOKEVIRTUAL -> cob.invokevirtual(i.owner().asSymbol(), i.name().stringValue(), i.typeSymbol());
+                                                                default -> throw new AssertionError("Should not reach here");
+                                                            }
+                                                        }
+                                                    } else {
+                                                        switch (i.method()) {
+                                                            case InterfaceMethodRefEntry en -> {
+                                                                switch (i.opcode()) {
+                                                                        case INVOKEINTERFACE -> cob.invokeinterface(en);
+                                                                        case INVOKESPECIAL -> cob.invokespecial(en);
+                                                                        case INVOKESTATIC -> cob.invokestatic(en);
+                                                                        default -> throw new AssertionError("Should not reach here");
+                                                                }
+                                                            }
+                                                            case MethodRefEntry en -> {
+                                                                switch (i.opcode()) {
+                                                                        case INVOKESPECIAL -> cob.invokespecial(en);
+                                                                        case INVOKESTATIC -> cob.invokestatic(en);
+                                                                        case INVOKEVIRTUAL -> cob.invokevirtual(en);
+                                                                        default -> throw new AssertionError("Should not reach here");
+                                                                }
+                                                            }
+                                                            default -> throw new AssertionError("Should not reach here");
+                                                        }
+                                                    }
+                                                }
+                                                case LoadInstruction i -> {
+                                                    switch (i.typeKind()) {
+                                                        case IntType -> cob.iload(i.slot());
+                                                        case FloatType -> cob.fload(i.slot());
+                                                        case LongType -> cob.lload(i.slot());
+                                                        case DoubleType -> cob.dload(i.slot());
+                                                        case ReferenceType -> cob.aload(i.slot());
+                                                        default -> throw new AssertionError("Should not reach here");
+                                                    }
+                                                }
+                                                case StoreInstruction i -> {
+                                                    switch (i.typeKind()) {
+                                                        case IntType -> cob.istore(i.slot());
+                                                        case FloatType -> cob.fstore(i.slot());
+                                                        case LongType -> cob.lstore(i.slot());
+                                                        case DoubleType -> cob.dstore(i.slot());
+                                                        case ReferenceType -> cob.astore(i.slot());
+                                                        default -> throw new AssertionError("Should not reach here");
+                                                    }
+                                                }
+                                                case IncrementInstruction i ->
+                                                    cob.iinc(i.slot(), i.constant());
+                                                case LookupSwitchInstruction i ->
+                                                    cob.lookupswitch(labels.computeIfAbsent(i.defaultTarget(), l -> cob.newLabel()),
+                                                                     i.cases().stream().map(sc ->
+                                                                             SwitchCase.of(sc.caseValue(), labels.computeIfAbsent(sc.target(), l -> cob.newLabel()))).toList());
+                                                case MonitorInstruction i -> {
+                                                    switch (i.opcode()) {
+                                                        case MONITORENTER ->  cob.monitorenter();
+                                                        case MONITOREXIT ->  cob.monitorexit();
+                                                        default -> throw new AssertionError("Should not reach here");
+                                                    }
+                                                }
+                                                case NewMultiArrayInstruction i -> {
+                                                    if (pathSwitch.nextBoolean()) {
+                                                        cob.multianewarray(i.arrayType().asSymbol(), i.dimensions());
+                                                    } else {
+                                                        cob.multianewarray(i.arrayType(), i.dimensions());
+                                                    }
+                                                }
+                                                case NewObjectInstruction i -> {
+                                                    if (pathSwitch.nextBoolean()) {
+                                                        cob.new_(i.className().asSymbol());
+                                                    } else {
+                                                        cob.new_(i.className());
+                                                    }
+                                                }
+                                                case NewPrimitiveArrayInstruction i ->
+                                                    cob.newarray(i.typeKind());
+                                                case NewReferenceArrayInstruction i -> {
+                                                    if (pathSwitch.nextBoolean()) {
+                                                        cob.anewarray(i.componentType().asSymbol());
+                                                    } else {
+                                                        cob.anewarray(i.componentType());
+                                                    }
+                                                }
+                                                case NopInstruction i ->
+                                                    cob.nop();
+                                                case OperatorInstruction i -> {
+                                                    switch (i.opcode()) {
+                                                        case IADD -> cob.iadd();
+                                                        case LADD -> cob.ladd();
+                                                        case FADD -> cob.fadd();
+                                                        case DADD -> cob.dadd();
+                                                        case ISUB -> cob.isub();
+                                                        case LSUB -> cob.lsub();
+                                                        case FSUB -> cob.fsub();
+                                                        case DSUB -> cob.dsub();
+                                                        case IMUL -> cob.imul();
+                                                        case LMUL -> cob.lmul();
+                                                        case FMUL -> cob.fmul();
+                                                        case DMUL -> cob.dmul();
+                                                        case IDIV -> cob.idiv();
+                                                        case LDIV -> cob.ldiv();
+                                                        case FDIV -> cob.fdiv();
+                                                        case DDIV -> cob.ddiv();
+                                                        case IREM -> cob.irem();
+                                                        case LREM -> cob.lrem();
+                                                        case FREM -> cob.frem();
+                                                        case DREM -> cob.drem();
+                                                        case INEG -> cob.ineg();
+                                                        case LNEG -> cob.lneg();
+                                                        case FNEG -> cob.fneg();
+                                                        case DNEG -> cob.dneg();
+                                                        case ISHL -> cob.ishl();
+                                                        case LSHL -> cob.lshl();
+                                                        case ISHR -> cob.ishr();
+                                                        case LSHR -> cob.lshr();
+                                                        case IUSHR -> cob.iushr();
+                                                        case LUSHR -> cob.lushr();
+                                                        case IAND -> cob.iand();
+                                                        case LAND -> cob.land();
+                                                        case IOR -> cob.ior();
+                                                        case LOR -> cob.lor();
+                                                        case IXOR -> cob.ixor();
+                                                        case LXOR -> cob.lxor();
+                                                        case LCMP -> cob.lcmp();
+                                                        case FCMPL -> cob.fcmpl();
+                                                        case FCMPG -> cob.fcmpg();
+                                                        case DCMPL -> cob.dcmpl();
+                                                        case DCMPG -> cob.dcmpg();
+                                                        case ARRAYLENGTH -> cob.arraylength();
+                                                        default -> throw new AssertionError("Should not reach here");
+                                                    }
+                                                }
+                                                case ReturnInstruction i -> {
+                                                    switch (i.typeKind()) {
+                                                        case IntType -> cob.ireturn();
+                                                        case FloatType -> cob.freturn();
+                                                        case LongType -> cob.lreturn();
+                                                        case DoubleType -> cob.dreturn();
+                                                        case ReferenceType -> cob.areturn();
+                                                        case VoidType -> cob.return_();
+                                                        default -> throw new AssertionError("Should not reach here");
+                                                    }
+                                                }
+                                                case StackInstruction i -> {
+                                                    switch (i.opcode()) {
+                                                        case POP -> cob.pop();
+                                                        case POP2 -> cob.pop2();
+                                                        case DUP -> cob.dup();
+                                                        case DUP_X1 -> cob.dup_x1();
+                                                        case DUP_X2 -> cob.dup_x2();
+                                                        case DUP2 -> cob.dup2();
+                                                        case DUP2_X1 -> cob.dup2_x1();
+                                                        case DUP2_X2 -> cob.dup2_x2();
+                                                        default -> throw new AssertionError("Should not reach here");
+                                                    }
+                                                }
+                                                case TableSwitchInstruction i ->
+                                                    cob.tableswitch(i.lowValue(), i.highValue(),
+                                                                    labels.computeIfAbsent(i.defaultTarget(), l -> cob.newLabel()),
+                                                                    i.cases().stream().map(sc ->
+                                                                            SwitchCase.of(sc.caseValue(), labels.computeIfAbsent(sc.target(), l -> cob.newLabel()))).toList());
+                                                case ThrowInstruction i -> cob.athrow();
+                                                case TypeCheckInstruction i -> {
+                                                    if (pathSwitch.nextBoolean()) {
+                                                        switch (i.opcode()) {
+                                                            case CHECKCAST -> cob.checkcast(i.type().asSymbol());
+                                                            case INSTANCEOF -> cob.instanceof_(i.type().asSymbol());
+                                                            default -> throw new AssertionError("Should not reach here");
+                                                        }
+                                                    } else {
+                                                        switch (i.opcode()) {
+                                                            case CHECKCAST -> cob.checkcast(i.type());
+                                                            case INSTANCEOF -> cob.instanceof_(i.type());
+                                                            default -> throw new AssertionError("Should not reach here");
+                                                        }
+                                                    }
+                                                }
+                                                case CharacterRange pi ->
+                                                    cob.characterRange(labels.computeIfAbsent(pi.startScope(), l -> cob.newLabel()),
+                                                                       labels.computeIfAbsent(pi.endScope(), l -> cob.newLabel()),
+                                                                       pi.characterRangeStart(), pi.characterRangeEnd(), pi.flags());
+                                                case ExceptionCatch pi ->
+                                                    pi.catchType().ifPresentOrElse(
+                                                            catchType -> cob.exceptionCatch(labels.computeIfAbsent(pi.tryStart(), l -> cob.newLabel()),
+                                                                                            labels.computeIfAbsent(pi.tryEnd(), l -> cob.newLabel()),
+                                                                                            labels.computeIfAbsent(pi.handler(), l -> cob.newLabel()),
+                                                                                            catchType.asSymbol()),
+                                                            () -> cob.exceptionCatchAll(labels.computeIfAbsent(pi.tryStart(), l -> cob.newLabel()),
+                                                                                        labels.computeIfAbsent(pi.tryEnd(), l -> cob.newLabel()),
+                                                                                        labels.computeIfAbsent(pi.handler(), l -> cob.newLabel())));
+                                                case LabelTarget pi ->
+                                                    cob.labelBinding(labels.computeIfAbsent(pi.label(), l -> cob.newLabel()));
+                                                case LineNumber pi ->
+                                                    cob.lineNumber(pi.line());
+                                                case LocalVariable pi ->
+                                                    cob.localVariable(pi.slot(), pi.name().stringValue(), pi.typeSymbol(),
+                                                                      labels.computeIfAbsent(pi.startScope(), l -> cob.newLabel()),
+                                                                       labels.computeIfAbsent(pi.endScope(), l -> cob.newLabel()));
+                                                case LocalVariableType pi ->
+                                                    cob.localVariableType(pi.slot(), pi.name().stringValue(),
+                                                                          Signature.parseFrom(pi.signatureSymbol().signatureString()),
+                                                                          labels.computeIfAbsent(pi.startScope(), l -> cob.newLabel()),
+                                                                          labels.computeIfAbsent(pi.endScope(), l -> cob.newLabel()));
+                                                case RuntimeInvisibleTypeAnnotationsAttribute a ->
+                                                    cob.with(RuntimeInvisibleTypeAnnotationsAttribute.of(transformTypeAnnotations(a.annotations(), cob, labels)));
+                                                case RuntimeVisibleTypeAnnotationsAttribute a ->
+                                                    cob.with(RuntimeVisibleTypeAnnotationsAttribute.of(transformTypeAnnotations(a.annotations(), cob, labels)));
+                                                case CustomAttribute a ->
+                                                    throw new AssertionError("Unexpected custom attribute: " + a.attributeName());
                                             }
                                         }
                                     });

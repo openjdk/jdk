@@ -41,6 +41,7 @@ import jdk.classfile.constantpool.InterfaceMethodRefEntry;
 import jdk.classfile.constantpool.InvokeDynamicEntry;
 import jdk.classfile.constantpool.LoadableConstantEntry;
 import jdk.classfile.constantpool.MemberRefEntry;
+import jdk.classfile.constantpool.MethodRefEntry;
 import jdk.classfile.constantpool.MethodHandleEntry;
 import jdk.classfile.constantpool.NameAndTypeEntry;
 import jdk.classfile.constantpool.Utf8Entry;
@@ -265,15 +266,9 @@ public sealed interface CodeBuilder
     }
 
     default CodeBuilder invokeInstruction(Opcode opcode, ClassDesc owner, String name, MethodTypeDesc desc, boolean isInterface) {
-        if (opcode == Opcode.INVOKEINTERFACE) {
-            with(InvokeInstruction.of(opcode, constantPool().interfaceMethodRefEntry(owner, name, desc)));
-        } else {
-            MemberRefEntry ref = isInterface
-                    ? constantPool().interfaceMethodRefEntry(owner, name, desc)
-                    : constantPool().methodRefEntry(owner, name, desc);
-            with(InvokeInstruction.of(opcode, ref));
-        }
-        return this;
+        return invokeInstruction(opcode,
+                isInterface ? constantPool().interfaceMethodRefEntry(owner, name, desc)
+                            : constantPool().methodRefEntry(owner, name, desc));
     }
 
     default CodeBuilder invokeDynamicInstruction(InvokeDynamicEntry ref) {
@@ -467,6 +462,10 @@ public sealed interface CodeBuilder
         return this;
     }
 
+
+    default CodeBuilder nop() {
+        return nopInstruction();
+    }
 
     // Base pseudo-instruction builder methods
 
@@ -979,56 +978,47 @@ public sealed interface CodeBuilder
     }
 
     default CodeBuilder invokeinterface(ClassDesc owner, String name, MethodTypeDesc type) {
-        with(InvokeInstruction.of(Opcode.INVOKEINTERFACE, constantPool().interfaceMethodRefEntry(owner, name, type)));
-        return this;
+        return invokeInstruction(Opcode.INVOKEINTERFACE, constantPool().interfaceMethodRefEntry(owner, name, type));
     }
 
     default CodeBuilder invokespecial(InterfaceMethodRefEntry ref) {
         return invokeInstruction(Opcode.INVOKESPECIAL, ref);
     }
 
+    default CodeBuilder invokespecial(MethodRefEntry ref) {
+        return invokeInstruction(Opcode.INVOKESPECIAL, ref);
+    }
+
     default CodeBuilder invokespecial(ClassDesc owner, String name, MethodTypeDesc type) {
-        return invokespecial(owner, name, type, false);
+        return invokeInstruction(Opcode.INVOKESPECIAL, owner, name, type, false);
     }
 
     default CodeBuilder invokespecial(ClassDesc owner, String name, MethodTypeDesc type, boolean isInterface) {
-        MemberRefEntry ref = isInterface
-                ? constantPool().interfaceMethodRefEntry(owner, name, type)
-                : constantPool().methodRefEntry(owner, name, type);
-        with(InvokeInstruction.of(Opcode.INVOKESPECIAL, ref));
-        return this;
+        return invokeInstruction(Opcode.INVOKESPECIAL, owner, name, type, isInterface);
     }
 
     default CodeBuilder invokestatic(InterfaceMethodRefEntry ref) {
         return invokeInstruction(Opcode.INVOKESTATIC, ref);
     }
 
+    default CodeBuilder invokestatic(MethodRefEntry ref) {
+        return invokeInstruction(Opcode.INVOKESTATIC, ref);
+    }
+
     default CodeBuilder invokestatic(ClassDesc owner, String name, MethodTypeDesc type) {
-        return invokestatic(owner, name, type, false);
+        return invokeInstruction(Opcode.INVOKESTATIC, owner, name, type, false);
     }
 
     default CodeBuilder invokestatic(ClassDesc owner, String name, MethodTypeDesc type, boolean isInterface) {
-        MemberRefEntry ref = isInterface
-                ? constantPool().interfaceMethodRefEntry(owner, name, type)
-                : constantPool().methodRefEntry(owner, name, type);
-        with(InvokeInstruction.of(Opcode.INVOKESTATIC, ref));
-        return this;
+        return invokeInstruction(Opcode.INVOKESTATIC, owner, name, type, isInterface);
     }
 
-    default CodeBuilder invokevirtual(InterfaceMethodRefEntry ref) {
+    default CodeBuilder invokevirtual(MethodRefEntry ref) {
         return invokeInstruction(Opcode.INVOKEVIRTUAL, ref);
     }
 
     default CodeBuilder invokevirtual(ClassDesc owner, String name, MethodTypeDesc type) {
-        return invokevirtual(owner, name, type, false);
-    }
-
-    default CodeBuilder invokevirtual(ClassDesc owner, String name, MethodTypeDesc type, boolean isInterface) {
-        MemberRefEntry ref = isInterface
-                ? constantPool().interfaceMethodRefEntry(owner, name, type)
-                : constantPool().methodRefEntry(owner, name, type);
-        with(InvokeInstruction.of(Opcode.INVOKEVIRTUAL, ref));
-        return this;
+        return invokeInstruction(Opcode.INVOKEVIRTUAL, owner, name, type, false);
     }
 
     default CodeBuilder ior() {
