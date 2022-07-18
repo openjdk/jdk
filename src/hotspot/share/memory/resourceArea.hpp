@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,7 +109,9 @@ public:
       free_malloced_objects(state._chunk, state._hwm, state._max, _hwm);
     }
 
-    if (state._chunk->next() != nullptr) { // Delete later chunks.
+    bool have_more_chunks = (state._chunk->next() != nullptr);
+
+    if (have_more_chunks) { // Delete later chunks.
       // Reset size before deleting chunks.  Otherwise, the total
       // size could exceed the total chunk size.
       assert(size_in_bytes() > state._size_in_bytes,
@@ -120,13 +122,28 @@ public:
     } else {
       assert(size_in_bytes() == state._size_in_bytes, "Sanity check");
     }
-    _chunk = state._chunk;      // Roll back to saved chunk.
-    _hwm = state._hwm;
-    _max = state._max;
 
-    // Clear out this chunk (to detect allocation bugs)
-    if (ZapResourceArea) {
-      memset(state._hwm, badResourceValue, state._max - state._hwm);
+    if (have_more_chunks || (_hwm != state._hwm)) {
+      // Resource area was modified: either there were new chunks, or
+      // HWM moved in this chunk. Roll back!
+
+      char* replaced_hwm = _hwm;
+
+      _chunk = state._chunk;
+      _hwm = state._hwm;
+      _max = state._max;
+
+      // Clear out this chunk (to detect allocation bugs).
+      // If we never got a new chunk, then we only need to clear
+      // up to replaced hwm.
+      if (ZapResourceArea) {
+        char* limit = have_more_chunks ? _max : replaced_hwm;
+        memset(_hwm, badResourceValue, limit - _hwm);
+      }
+    } else {
+      assert(_chunk == state._chunk, "Sanity check");
+      assert(_hwm == state._hwm,     "Sanity check");
+      assert(_max == state._max,     "Sanity check");
     }
   }
 };
