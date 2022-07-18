@@ -1640,8 +1640,7 @@ void MacroAssembler::atomic_incw(Register counter_addr, Register tmp, Register t
     return;
   }
   Label retry_load;
-  if (VM_Version::supports_stxr_prefetch())
-    prfm(Address(counter_addr), PSTL1STRM);
+  prfm(Address(counter_addr), PSTL1STRM);
   bind(retry_load);
   // flush and load exclusive from the memory location
   ldxrw(tmp, counter_addr);
@@ -2375,8 +2374,7 @@ void MacroAssembler::cmpxchgptr(Register oldv, Register newv, Register addr, Reg
     membar(AnyAny);
   } else {
     Label retry_load, nope;
-    if (VM_Version::supports_stxr_prefetch())
-      prfm(Address(addr), PSTL1STRM);
+    prfm(Address(addr), PSTL1STRM);
     bind(retry_load);
     // flush and load exclusive from the memory location
     // and fail if it is not what we expect
@@ -2418,8 +2416,7 @@ void MacroAssembler::cmpxchgw(Register oldv, Register newv, Register addr, Regis
     membar(AnyAny);
   } else {
     Label retry_load, nope;
-    if (VM_Version::supports_stxr_prefetch())
-      prfm(Address(addr), PSTL1STRM);
+    prfm(Address(addr), PSTL1STRM);
     bind(retry_load);
     // flush and load exclusive from the memory location
     // and fail if it is not what we expect
@@ -2460,8 +2457,7 @@ void MacroAssembler::cmpxchg(Register addr, Register expected,
     compare_eq(result, expected, size);
   } else {
     Label retry_load, done;
-    if (VM_Version::supports_stxr_prefetch())
-      prfm(Address(addr), PSTL1STRM);
+    prfm(Address(addr), PSTL1STRM);
     bind(retry_load);
     load_exclusive(result, addr, size, acquire);
     compare_eq(result, expected, size);
@@ -2519,8 +2515,7 @@ void MacroAssembler::atomic_##NAME(Register prev, RegisterOrConstant incr, Regis
     result = different(prev, incr, addr) ? prev : rscratch2;            \
                                                                         \
   Label retry_load;                                                     \
-  if (VM_Version::supports_stxr_prefetch())                             \
-    prfm(Address(addr), PSTL1STRM);                                     \
+  prfm(Address(addr), PSTL1STRM);                                       \
   bind(retry_load);                                                     \
   LDXR(result, addr);                                                   \
   OP(rscratch1, result, incr);                                          \
@@ -2550,8 +2545,7 @@ void MacroAssembler::atomic_##OP(Register prev, Register newv, Register addr) { 
     result = different(prev, newv, addr) ? prev : rscratch2;            \
                                                                         \
   Label retry_load;                                                     \
-  if (VM_Version::supports_stxr_prefetch())                             \
-    prfm(Address(addr), PSTL1STRM);                                     \
+  prfm(Address(addr), PSTL1STRM);                                       \
   bind(retry_load);                                                     \
   LDXR(result, addr);                                                   \
   STXR(rscratch1, newv, addr);                                          \
