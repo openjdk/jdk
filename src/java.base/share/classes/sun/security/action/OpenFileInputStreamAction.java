@@ -53,16 +53,14 @@ public class OpenFileInputStreamAction
     }
 
     /**
-     * Convenience method to get a property without going through doPrivileged
-     * if no security manager is present. This is unsafe for inclusion in a
-     * public API but allowable here since this class is now encapsulated.
+     * Opens a {@code FileInputStream} object as a privileged action.
      *
      * Note that this method performs a privileged action using caller-provided
      * inputs. The caller of this method should take care to ensure that the
      * inputs are not tainted and the returned property is not made accessible
      * to untrusted code if it contains sensitive information.
      *
-     * @param file the File object
+     * @param file the {@code File} object
      */
     @SuppressWarnings("removal")
     public static FileInputStream privilegedGetFileInputStream(File file)
@@ -86,16 +84,14 @@ public class OpenFileInputStreamAction
     }
 
     /**
-     * Convenience method to get a property without going through doPrivileged
-     * if no security manager is present. This is unsafe for inclusion in a
-     * public API but allowable here since this class is now encapsulated.
+     * Opens a {@code FileInputStream} object as a privileged action.
      *
      * Note that this method performs a privileged action using caller-provided
      * inputs. The caller of this method should take care to ensure that the
      * inputs are not tainted and the returned property is not made accessible
      * to untrusted code if it contains sensitive information.
      *
-     * @param file the File object
+     * @param filename the {@code String} object
      */
     @SuppressWarnings("removal")
     public static FileInputStream privilegedGetFileInputStream(String filename)
@@ -104,11 +100,7 @@ public class OpenFileInputStreamAction
             new PrivilegedExceptionAction<FileInputStream>() {
                 @Override
                 public FileInputStream run() throws Exception {
-                    try {
-                        return new FileInputStream(filename);
-                    } catch (FileNotFoundException e) {
-                        return null;
-                    }
+                    return new FileInputStream(filename);
                 }
             }
         );
