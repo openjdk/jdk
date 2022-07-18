@@ -30,9 +30,6 @@ import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.reflect.Field;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
@@ -1300,7 +1297,6 @@ public final class ProcessBuilder
                 }
                 processes.add(builder.start(redirects));
                 if (prevOutput instanceof RedirectPipeImpl redir) {
-                    debugFD(redir.getFd());
                     // Wrap the fd so it can be closed
                     new Process.PipeInputStream(redir.getFd()).close();
                 }
@@ -1320,25 +1316,5 @@ public final class ProcessBuilder
             throw ex;
         }
         return processes;
-    }
-
-    /**
-     * For debugging, print the symbolic link of the fd
-     * @param fd a FileDescriptor
-     */
-    static void debugFD(FileDescriptor fileDesc) {
-        if (System.getProperty("DEBUG") != null) {
-            try {
-                Field fFd = FileDescriptor.class.getDeclaredField("fd");
-                fFd.setAccessible(true);
-                int fd = fFd.getInt(fileDesc);
-                Path p = Path.of("/proc/" + ProcessHandle.current().pid() + "/fd/" + fd);
-                Path link = Files.readSymbolicLink(p);
-                System.out.println("PROC: " + p + ": " + link);
-            } catch (Exception ex) {
-                ex.printStackTrace();
-                return;
-            }
-        }
     }
 }
