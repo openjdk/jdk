@@ -30,6 +30,7 @@
 #include "oops/methodData.hpp"
 #include "opto/c2_MacroAssembler.hpp"
 #include "opto/intrinsicnode.hpp"
+#include "opto/output.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/subnode.hpp"
 #include "runtime/objectMonitor.hpp"
@@ -128,8 +129,36 @@ void C2_MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool 
 
   if (!is_stub) {
     BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-    bs->nmethod_entry_barrier(this);
+ #ifdef _LP64
+    if (BarrierSet::barrier_set()->barrier_set_nmethod() != NULL) {
+      // We put the non-hot code of the nmethod entry barrier out-of-line in a stub.
+      Label dummy_slow_path;
+      Label dummy_continuation;
+      Label* slow_path = &dummy_slow_path;
+      Label* continuation = &dummy_continuation;
+      if (!Compile::current()->output()->in_scratch_emit_size()) {
+        // Use real labels from actual stub when not emitting code for the purpose of measuring its size
+        C2EntryBarrierStub* stub = Compile::current()->output()->entry_barrier_table()->add_entry_barrier();
+        slow_path = &stub->slow_path();
+        continuation = &stub->continuation();
+      }
+      bs->nmethod_entry_barrier(this, slow_path, continuation);
+    }
+#else
+    // Don't bother with out-of-line nmethod entry barrier stub for x86_32.
+    bs->nmethod_entry_barrier(this, NULL /* slow_path */, NULL /* continuation */);
+#endif
   }
+}
+
+void C2_MacroAssembler::emit_entry_barrier_stub(C2EntryBarrierStub* stub) {
+  bind(stub->slow_path());
+  call(RuntimeAddress(StubRoutines::x86::method_entry_barrier()));
+  jmp(stub->continuation(), false /* maybe_short */);
+}
+
+int C2_MacroAssembler::entry_barrier_stub_size() {
+  return 10;
 }
 
 inline Assembler::AvxVectorLen C2_MacroAssembler::vector_length_encoding(int vlen_in_bytes) {

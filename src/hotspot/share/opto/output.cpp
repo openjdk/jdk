@@ -39,6 +39,7 @@
 #include "opto/ad.hpp"
 #include "opto/block.hpp"
 #include "opto/c2compiler.hpp"
+#include "opto/c2_MacroAssembler.hpp"
 #include "opto/callnode.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/locknode.hpp"
@@ -284,12 +285,51 @@ int C2SafepointPollStubTable::estimate_stub_size() const {
   return result;
 }
 
+// Nmethod entry barrier stubs
+C2EntryBarrierStub* C2EntryBarrierStubTable::add_entry_barrier() {
+  assert(_stub == NULL, "There can only be one entry barrier stub");
+  _stub = new (Compile::current()->comp_arena()) C2EntryBarrierStub();
+  return _stub;
+}
+
+void C2EntryBarrierStubTable::emit(CodeBuffer& cb) {
+  if (_stub == NULL) {
+    // No stub - nothing to do
+    return;
+  }
+
+  C2_MacroAssembler masm(&cb);
+  // Make sure there is enough space in the code buffer
+  if (cb.insts()->maybe_expand_to_ensure_remaining(PhaseOutput::MAX_inst_size) && cb.blob() == NULL) {
+    ciEnv::current()->record_failure("CodeCache is full");
+    return;
+  }
+
+  intptr_t before = masm.offset();
+  masm.emit_entry_barrier_stub(_stub);
+  intptr_t after = masm.offset();
+  int actual_size = (int)(after - before);
+  int expected_size = masm.entry_barrier_stub_size();
+  assert(actual_size == expected_size, "Estimated size is wrong, expected %d, was %d", expected_size, actual_size);
+}
+
+int C2EntryBarrierStubTable::estimate_stub_size() const {
+  if (BarrierSet::barrier_set()->barrier_set_nmethod() == NULL) {
+    // No nmethod entry barrier?
+    return 0;
+  }
+
+  return C2_MacroAssembler::entry_barrier_stub_size();
+}
+
 PhaseOutput::PhaseOutput()
   : Phase(Phase::Output),
     _code_buffer("Compile::Fill_buffer"),
     _first_block_size(0),
     _handler_table(),
     _inc_table(),
+    _safepoint_poll_table(),
+    _entry_barrier_table(),
     _oop_map_set(NULL),
     _scratch_buffer_blob(NULL),
     _scratch_locs_memory(NULL),
@@ -1302,6 +1342,7 @@ CodeBuffer* PhaseOutput::init_buffer() {
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   stub_req += bs->estimate_stub_size();
   stub_req += safepoint_poll_table()->estimate_stub_size();
+  stub_req += entry_barrier_table()->estimate_stub_size();
 
   // nmethod and CodeBuffer count stubs & constants as part of method's code.
   // class HandlerImpl is platform-specific and defined in the *.ad files.
@@ -1810,6 +1851,10 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
 
   // Fill in stubs for calling the runtime from safepoint polls.
   safepoint_poll_table()->emit(*cb);
+  if (C->failing())  return;
+
+  // Fill in stubs for calling the runtime from nmethod entries.
+  entry_barrier_table()->emit(*cb);
   if (C->failing())  return;
 
 #ifndef PRODUCT

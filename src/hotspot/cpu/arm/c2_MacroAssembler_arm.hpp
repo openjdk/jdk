@@ -28,6 +28,9 @@
 // C2_MacroAssembler contains high-level macros for C2
 
  public:
+  void emit_entry_barrier_stub(C2EntryBarrierStub* stub) {}
+  static int entry_barrier_stub_size() { return 0; }
+
   // Compare char[] arrays aligned to 4 bytes.
   void char_arrays_equals(Register ary1, Register ary2,
                           Register limit, Register result,

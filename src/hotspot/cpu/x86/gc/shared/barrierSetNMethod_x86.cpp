@@ -32,6 +32,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/macros.hpp"
 
 class NativeNMethodCmpBarrier: public NativeInstruction {
 public:
@@ -62,7 +63,7 @@ public:
 
 #ifdef _LP64
 void NativeNMethodCmpBarrier::verify() const {
-  if (((uintptr_t) instruction_address()) & 0x7) {
+  if (((uintptr_t) instruction_address()) & 0x3) {
     fatal("Not properly aligned");
   }
 
@@ -156,10 +157,20 @@ void BarrierSetNMethod::deoptimize(nmethod* nm, address* return_address_ptr) {
 // NativeNMethodCmpBarrier::verify() will immediately complain when it does
 // not find the expected native instruction at this offset, which needs updating.
 // Note that this offset is invariant of PreserveFramePointer.
-static const int entry_barrier_offset = LP64_ONLY(-19) NOT_LP64(-18);
+static const int entry_barrier_offset(nmethod* nm) {
+#ifdef _LP64
+  if (nm->is_compiled_by_c2()) {
+    return -14;
+  } else {
+    return -15;
+  }
+#else
+  return -18;
+#endif
+}
 
 static NativeNMethodCmpBarrier* native_nmethod_barrier(nmethod* nm) {
-  address barrier_address = nm->code_begin() + nm->frame_complete_offset() + entry_barrier_offset;
+  address barrier_address = nm->code_begin() + nm->frame_complete_offset() + entry_barrier_offset(nm);
   NativeNMethodCmpBarrier* barrier = reinterpret_cast<NativeNMethodCmpBarrier*>(barrier_address);
   debug_only(barrier->verify());
   return barrier;
