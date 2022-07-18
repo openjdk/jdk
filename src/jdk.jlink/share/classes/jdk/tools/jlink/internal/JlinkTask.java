@@ -827,10 +827,10 @@ public class JlinkTask {
 
                         return name.startsWith("META-INF/") && name.indexOf('/', 9) == -1 && (
                                 name.endsWith(".SF") ||
-                                        name.endsWith(".DSA") ||
-                                        name.endsWith(".RSA") ||
-                                        name.endsWith(".EC") ||
-                                        name.startsWith("META-INF/SIG-")
+                                name.endsWith(".DSA") ||
+                                name.endsWith(".RSA") ||
+                                name.endsWith(".EC") ||
+                                name.startsWith("META-INF/SIG-")
                         );
                     });
 
