@@ -60,49 +60,18 @@ public class OpenFileInputStreamAction
      * inputs are not tainted and the returned property is not made accessible
      * to untrusted code if it contains sensitive information.
      *
-     * @param file the {@code File} object
-     */
-    @SuppressWarnings("removal")
-    public static FileInputStream privilegedGetFileInputStream(File file)
-            throws Exception {
-        return AccessController.doPrivileged(
-            new PrivilegedExceptionAction<FileInputStream>() {
-                @Override
-                public FileInputStream run() throws Exception {
-                    try {
-                        if (file.exists()) {
-                            return new FileInputStream(file);
-                        } else {
-                            return null;
-                        }
-                    } catch (FileNotFoundException e) {
-                        return null;
-                    }
-                }
-            }
-        );
-    }
-
-    /**
-     * Opens a {@code FileInputStream} object as a privileged action.
-     *
-     * Note that this method performs a privileged action using caller-provided
-     * inputs. The caller of this method should take care to ensure that the
-     * inputs are not tainted and the returned property is not made accessible
-     * to untrusted code if it contains sensitive information.
-     *
      * @param filename the {@code String} object
      */
     @SuppressWarnings("removal")
     public static FileInputStream privilegedGetFileInputStream(String filename)
             throws Exception {
         return AccessController.doPrivileged(
-            new PrivilegedExceptionAction<FileInputStream>() {
-                @Override
-                public FileInputStream run() throws Exception {
-                    return new FileInputStream(filename);
+                new PrivilegedExceptionAction<>() {
+                    @Override
+                    public FileInputStream run() throws Exception {
+                        return new FileInputStream(filename);
+                    }
                 }
-            }
         );
     }
 }

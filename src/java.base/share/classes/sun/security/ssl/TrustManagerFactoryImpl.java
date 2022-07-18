@@ -30,7 +30,6 @@ import java.security.*;
 import java.security.cert.*;
 import java.util.*;
 import javax.net.ssl.*;
-import sun.security.action.OpenFileInputStreamAction;
 import sun.security.validator.TrustStoreUtil;
 import sun.security.validator.Validator;
 
@@ -63,7 +62,7 @@ abstract class TrustManagerFactoryImpl extends TrustManagerFactorySpi {
             } catch (RuntimeException re) {
                 if (SSLLogger.isOn && SSLLogger.isOn("trustmanager")) {
                     SSLLogger.fine(
-                        "SunX509: skip default keystor", re);
+                        "SunX509: skip default keystore", re);
                 }
                 throw re;
             } catch (Exception e) {
@@ -104,15 +103,6 @@ abstract class TrustManagerFactoryImpl extends TrustManagerFactorySpi {
                         "TrustManagerFactoryImpl is not initialized");
         }
         return new TrustManager[] { trustManager };
-    }
-
-    /*
-     * Try to get an InputStream based on the file we pass in.
-     */
-    @SuppressWarnings("removal")
-    private static FileInputStream getFileInputStream(final File file)
-            throws Exception {
-          return OpenFileInputStreamAction.privilegedGetFileInputStream(file);
     }
 
     public static final class SimpleFactory extends TrustManagerFactoryImpl {
