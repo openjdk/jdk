@@ -145,13 +145,13 @@ void ShenandoahEvacuateUpdateRootClosureBase<atomic, stable_thread>::do_oop_work
   if (!CompressedOops::is_null(o)) {
     oop obj = CompressedOops::decode_not_null(o);
     if (_heap->in_collection_set(obj)) {
-      Thread* thr = stable_thread ? _thread : Thread::current();
-      assert(thr == Thread::current(), "Wrong thread");
-
       assert(_heap->is_evacuation_in_progress(), "Only do this when evacuation is in progress");
       shenandoah_assert_marked(p, obj);
       oop resolved = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
       if (resolved == obj) {
+        Thread* thr = stable_thread ? _thread : Thread::current();
+        assert(thr == Thread::current(), "Wrong thread");
+
         resolved = _heap->evacuate_object(obj, thr);
       }
       if (atomic) {
