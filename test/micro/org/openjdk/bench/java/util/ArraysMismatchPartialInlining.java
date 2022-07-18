@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, cle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import org.openjdk.jmh.annotations.Warmup;
 @Fork(value = 3)
 public class ArraysMismatchPartialInlining {
 
-    @Param({"3", "4", "5", "6", "7", "15", "31", "63", "95", "800"})
+    @Param({"3", "7", "15", "31", "63", "95", "800"})
     private static int size;
 
     byte [] barray1;

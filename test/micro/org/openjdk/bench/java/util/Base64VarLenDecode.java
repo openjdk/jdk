@@ -34,6 +34,9 @@ package org.openjdk.micro.bench.java.util;
 import org.openjdk.jmh.annotations.*;
 import java.util.*;
 
+@Warmup(iterations = 4, time = 2)
+@Measurement(iterations = 4, time = 2)
+@Fork(value = 3)
 public class Base64VarLenDecode {
 
     @State(Scope.Thread)
@@ -84,9 +87,6 @@ public class Base64VarLenDecode {
     }
 
     @Benchmark
-    @Warmup(iterations = 4, time = 2)
-    @Measurement(iterations = 4, time = 2)
-    @Fork(value = 3)
     public void decodeMethod(MyState state) {
        state.decoder.decode(state.encoded, state.decoded);
     }

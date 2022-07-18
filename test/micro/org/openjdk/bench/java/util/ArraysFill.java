@@ -45,7 +45,7 @@ import java.util.concurrent.TimeUnit;
 @Fork(value = 3)
 public class ArraysFill {
 
-    @Param({"10", "16", "31", "59", "89", "126", "250", "266", "511", "1021", "2047", "2048", "4095", "8195"})
+    @Param({"16", "31", "250", "266", "511", "2047", "2048", "8195"})
     public int size;
 
     public byte[] testByteArray;
