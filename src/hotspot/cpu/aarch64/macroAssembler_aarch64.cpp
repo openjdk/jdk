@@ -300,17 +300,16 @@ public:
     assert(Instruction_aarch64::extract(_insn, 28, 24) == 0b10000, "must be");
 #endif
     ptrdiff_t offset = target - insn_addr;
-    if (inner) {
-      instructions = 2;
-      uintptr_t dest = (uintptr_t)target;
-      uintptr_t pc_page = (uintptr_t)insn_addr >> 12;
-      uintptr_t adr_page = (uintptr_t)target >> 12;
-      uint32_t offset_lo = dest & 0xfff;
-      offset = adr_page - pc_page;
-      instructions = (*inner)(insn_addr, target);
-    }
+    instructions = 2;
+    precond(inner != nullptr);
+    uintptr_t dest = (uintptr_t)target;
+    uintptr_t pc_page = (uintptr_t)insn_addr >> 12;
+    uintptr_t adr_page = (uintptr_t)target >> 12;
+    uint32_t offset_lo = dest & 0xfff;
+    offset = adr_page - pc_page;
+    instructions = (*inner)(insn_addr, target);
     // Now we extract the lower 21 bits of the signed offset field for
-    // the ADR or ADRP.
+    // the ADRP.
     offset = offset << (64-21) >> (64-21);
     int offset_lo = offset & 3;
     offset >>= 2;
@@ -428,6 +427,7 @@ public:
     target_page &= ((uint64_t)-1) << shift;
     uint32_t insn2 = ((uint32_t*)insn_addr)[1];
     target = address(target_page);
+    precond(inner != nullptr);
     (*inner)(insn_addr, target);
     return 2;
   }
