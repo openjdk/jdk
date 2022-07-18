@@ -21,7 +21,7 @@
  * questions.
  */
 
-/* 
+/*
  * @test
  * @bug 6463708
  * @summary Verifies if DefaultButtonModel.setMnemonic
@@ -36,18 +36,18 @@ import javax.swing.event.ChangeListener;
 public class TestMnemonicEvent implements ChangeListener {
 
     private static ChangeEvent lastEvent;
-  
+ 
     public void stateChanged(ChangeEvent e) {
         lastEvent = e;
     }
-  
+ 
     public static void main(String[] args) {
-        TestMnemonicEvent test = new TestMnemonicEvent();	    
+        TestMnemonicEvent test = new TestMnemonicEvent();
         DefaultButtonModel m = new DefaultButtonModel();
         m.addChangeListener(test);
         m.setMnemonic(70);
         System.out.println("Event triggered: " + (lastEvent != null));
-    
+
         // clear the recorded event, set the same mnemonic then check if another
         // event is triggered...
         lastEvent = null;
