@@ -2621,7 +2621,7 @@ void Assembler::kmovwl(Address dst, KRegister src) {
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
   vex_prefix(dst, 0, src->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F, &attributes);
   emit_int8((unsigned char)0x91);
-  emit_operand(as_Register(src->encoding()), dst);
+  emit_operand(src, dst);
 }
 
 void Assembler::kmovwl(KRegister dst, KRegister src) {
@@ -2658,7 +2658,7 @@ void Assembler::kmovql(KRegister dst, Address src) {
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
   vex_prefix(src, 0, dst->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F, &attributes);
   emit_int8((unsigned char)0x90);
-  emit_operand(as_Register(dst->encoding()), src);
+  emit_operand(dst, src);
 }
 
 void Assembler::kmovql(Address dst, KRegister src) {
@@ -2667,7 +2667,7 @@ void Assembler::kmovql(Address dst, KRegister src) {
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
   vex_prefix(dst, 0, src->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F, &attributes);
   emit_int8((unsigned char)0x91);
-  emit_operand(as_Register(src->encoding()), dst);
+  emit_operand(src, dst);
 }
 
 void Assembler::kmovql(KRegister dst, Register src) {
