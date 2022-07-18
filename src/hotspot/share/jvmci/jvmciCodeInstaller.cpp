@@ -37,6 +37,7 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/os.hpp" // malloc
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/align.hpp"
 
@@ -705,7 +706,7 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
     if (name == nullptr) {
       JVMCI_ERROR_OK("stub should have a name");
     }
-    name = strdup(name);
+    name = os::strdup(name); // Note: this leaks. See JDK-8289632
     cb = RuntimeStub::new_runtime_stub(name,
                                        &buffer,
                                        _offsets.value(CodeOffsets::Frame_Complete),
