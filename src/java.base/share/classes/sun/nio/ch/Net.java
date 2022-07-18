@@ -402,9 +402,10 @@ public class Net {
 
         // only simple values supported by this method
         Class<?> type = name.type();
+        boolean isIPv6 = (family == StandardProtocolFamily.INET6);
 
         if (extendedOptions.isOptionSupported(name)) {
-            extendedOptions.setOption(fd, name, value);
+            extendedOptions.setOption(fd, name, value, isIPv6);
             return;
         }
 
@@ -451,7 +452,6 @@ public class Net {
         }
 
         boolean mayNeedConversion = (family == UNSPEC);
-        boolean isIPv6 = (family == StandardProtocolFamily.INET6);
         setIntOption0(fd, mayNeedConversion, key.level(), key.name(), arg, isIPv6);
     }
 

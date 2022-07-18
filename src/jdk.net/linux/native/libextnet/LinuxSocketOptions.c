@@ -258,20 +258,15 @@ static int socketFamily(jint fd) {
 /*
  * Class:     jdk_net_LinuxSocketOptions
  * Method:    setIpDontFragment0
- * Signature: (IZ)V
+ * Signature: (IZZ)V
  */
 JNIEXPORT void JNICALL Java_jdk_net_LinuxSocketOptions_setIpDontFragment0
-(JNIEnv *env, jobject unused, jint fd, jboolean optval) {
+(JNIEnv *env, jobject unused, jint fd, jboolean optval, jboolean isIPv6) {
     jint rv, optsetting;
-    jint family = socketFamily(fd);
-    if (family == -1) {
-        handleError(env, family, "get socket family failed");
-        return;
-    }
 
     optsetting = optval ? IP_PMTUDISC_DO : IP_PMTUDISC_DONT;
 
-    if (family == AF_INET) {
+    if (!isIPv6) {
         rv = setsockopt(fd, IPPROTO_IP, IP_MTU_DISCOVER, &optsetting, sizeof (optsetting));
     } else {
         rv = setsockopt(fd, IPPROTO_IPV6, IPV6_MTU_DISCOVER, &optsetting, sizeof (optsetting));

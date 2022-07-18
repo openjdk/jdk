@@ -263,10 +263,9 @@ public final class ExtendedSocketOptions {
                 new sun.net.ext.ExtendedSocketOptions(extendedOptions) {
 
             @Override
-            @SuppressWarnings("removal")
             public void setOption(FileDescriptor fd,
                                   SocketOption<?> option,
-                                  Object value)
+                                  Object value, boolean isIPv6)
                 throws SocketException
             {
                 if (fd == null || !fd.valid())
@@ -277,7 +276,7 @@ public final class ExtendedSocketOptions {
                 } else if (option == TCP_KEEPCOUNT) {
                     setTcpkeepAliveProbes(fd, (Integer) value);
                 } else if (option == IP_DONTFRAGMENT) {
-                    setIpDontFragment(fd, (Boolean) value);
+                    setIpDontFragment(fd, (Boolean) value, isIPv6);
                 } else if (option == TCP_KEEPIDLE) {
                     setTcpKeepAliveTime(fd, (Integer) value);
                 } else if (option == TCP_KEEPINTERVAL) {
@@ -352,9 +351,9 @@ public final class ExtendedSocketOptions {
         platformSocketOptions.setTcpKeepAliveTime(fdAccess.get(fd), value);
     }
 
-    private static void setIpDontFragment(FileDescriptor fd, boolean value)
+    private static void setIpDontFragment(FileDescriptor fd, boolean value, boolean isIPv6)
             throws SocketException {
-        platformSocketOptions.setIpDontFragment(fdAccess.get(fd), value);
+        platformSocketOptions.setIpDontFragment(fdAccess.get(fd), value, isIPv6);
     }
 
     private static void setTcpKeepAliveIntvl(FileDescriptor fd, int value)
@@ -462,7 +461,7 @@ public final class ExtendedSocketOptions {
             throw new UnsupportedOperationException("unsupported TCP_KEEPINTVL option");
         }
 
-        void setIpDontFragment(int fd, final boolean value) throws SocketException {
+        void setIpDontFragment(int fd, final boolean value, boolean isIPv6) throws SocketException {
             throw new UnsupportedOperationException("unsupported IP_DONTFRAGMENT option");
         }
 

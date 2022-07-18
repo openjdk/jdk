@@ -42,8 +42,8 @@ class WindowsSocketOptions extends PlatformSocketOptions {
     }
 
     @Override
-    void setIpDontFragment(int fd, final boolean value) throws SocketException {
-        setIpDontFragment0(fd, value);
+    void setIpDontFragment(int fd, final boolean value, boolean isIPv6) throws SocketException {
+        setIpDontFragment0(fd, value, isIPv6);
     }
 
     @Override
@@ -51,7 +51,7 @@ class WindowsSocketOptions extends PlatformSocketOptions {
         return getIpDontFragment0(fd);
     }
 
-    private static native void setIpDontFragment0(int fd, boolean value) throws SocketException;
+    private static native void setIpDontFragment0(int fd, boolean value, boolean isIPv6) throws SocketException;
     private static native boolean getIpDontFragment0(int fd) throws SocketException;
 
     static {
