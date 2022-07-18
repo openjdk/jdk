@@ -877,7 +877,7 @@ public class JLabel extends JComponent implements SwingConstants, Accessible
      * If the component is not showing or either the icon or disabled
      * icon is not an <code>ImageIcon</code> with an <code>Image</code>
      * equal to the passed in <code>Image</code>, return <code>false</code>;
-     * Otherwise it will delegate to the super-class.
+     * otherwise it will delegate to the super-class.
      *
      * @see     java.awt.image.ImageObserver
      * @see     java.awt.Component#imageUpdate(java.awt.Image, int, int, int, int, int)
