@@ -1883,7 +1883,7 @@ public final class System {
     }
 
     /**
-     * Initiates the <a href="Runtime.html#shutdown>shutdown sequence</a> of the Java Virtual
+     * Initiates the <a href="Runtime.html#shutdown">shutdown sequence</a> of the Java Virtual
      * Machine. This method always blocks indefinitely. The
      * argument serves as a status code; by convention, a nonzero status
      * code indicates abnormal termination.

@@ -48,14 +48,14 @@ import jdk.internal.reflect.Reflection;
  * <p>
  * An application cannot create its own instance of this class.
  *
- * <h2><a id="shutdown">Shutdown</a></h2>
+ * <h2><a id="shutdown">Shutdown Sequence</a></h2>
  * <p>
  * The Java Virtual Machine initiates the <i>shutdown sequence</i> in response
  * to one of several events:
  * <ol>
  * <li>when the number of non-daemon threads drops to zero for the first time;</li>
- * <li>when the {@link #exit exit} or {@link System#exit System.exit} method is called; or<li>
- * <li>when some external event, such as an interrupt or a signal is received from
+ * <li>when the {@link #exit Runtime.exit} or {@link System#exit System.exit} method is called; or</li>
+ * <li>when some external event occurs, such as an interrupt or a signal received from
  * the operating system.</li>
  * </ol>
  *
@@ -71,34 +71,16 @@ import jdk.internal.reflect.Reflection;
  * is prohibited.
  * <p>
  * When all shutdown hooks have completed, the program exits and the Java Virtual Machine
- * {@linkplain #halt halts}. If for some reason one or more of the shutdown hooks do not
- * complete, this will prevent the shutdown sequence from proceeding to completion and
- * halting the JVM. In this case JVM can still be halted via the {@link #halt halt} method.
+ * {@linkplain #halt halts}. If for some reason one of the shutdown hooks does not
+ * complete, such as by calling {@link #exit exit},
+ * this will prevent the shutdown sequence from proceeding to completion and
+ * halting the JVM. In this case other threads (including shutdown hooks) continue to
+ * execute and can halt the JVM via the {@link #halt halt} method.
  * <p>
- * Notes on shutdown hooks.
- * <p>
- * Shutdown hooks run at a delicate time in the life cycle of a virtual
- * machine and should therefore be coded defensively. They should, in
- * particular, be written to be thread-safe and to avoid deadlocks insofar
- * as possible. They should also not rely blindly upon services that may
- * have registered their own shutdown hooks and therefore may themselves in
- * the process of shutting down. Attempts to use other thread-based
- * services such as the AWT event-dispatch thread, for example, may lead to
- * deadlocks.
- * <p>
- * Shutdown hooks should also finish their work quickly.  When a
- * program invokes {@link #exit exit}, the expectation is
- * that the virtual machine will promptly shut down and exit.  When the
- * virtual machine is terminated due to user logoff or system shutdown the
- * underlying operating system may only allow a limited amount of time in
- * which to shut down and exit. It is therefore inadvisable to attempt any
- * user interaction or to perform a long-running computation in a shutdown
- * hook.
- * <p>
- * Uncaught exceptions are handled in shutdown hooks just as in any other thread,
- * by invoking the {@link ThreadGroup#uncaughtException uncaughtException}
- * method of the thread's {@link ThreadGroup} object. After the uncaught exception
- * handler has completed, the shutdown hook is considered to have completed.
+ * When the JVM halts, all threads (daemon, non-daemon, and shutdown hooks) are immediately
+ * prevented from executing any further Java code. The threads' current methods do
+ * not complete normally or abruptly. No `finally` clause of any method
+ * is executed, nor is any uncaught exception handler.
  *
  * @see     java.lang.Runtime#getRuntime()
  * @since   1.0
@@ -125,7 +107,7 @@ public class Runtime {
     private Runtime() {}
 
     /**
-     * Initiates the <a href="#shutdown>shutdown sequence</a> of the Java Virtual
+     * Initiates the <a href="#shutdown">shutdown sequence</a> of the Java Virtual
      * Machine. This method blocks indefinitely; it never returns or throws an
      * exception (that is, it does not complete either normally or abruptly).
      * The argument
@@ -174,6 +156,32 @@ public class Runtime {
      * <p> A <i>shutdown hook</i> is simply an initialized but unstarted
      * thread. Shutdown hooks are started at the beginning of the
      * <a href="shutdown">shutdown sequence</a>.
+     * Registration and de-registration of shutdown hooks is disallowed
+     * once the shutdown sequence has begun.
+     * <p>
+     * Uncaught exceptions are handled in shutdown hooks just as in any other thread,
+     * by invoking the {@link ThreadGroup#uncaughtException uncaughtException}
+     * method of the thread's {@link ThreadGroup} object. After the uncaught exception
+     * handler has completed, the shutdown hook is considered to have completed and
+     * is not treated differently from a hook that has completed normally.
+     * @apiNote
+     * Shutdown hooks run at a delicate time in the life cycle of a virtual
+     * machine and should therefore be coded defensively. They should, in
+     * particular, be written to be thread-safe and to avoid deadlocks insofar
+     * as possible. They should also not rely blindly upon services that may
+     * have registered their own shutdown hooks and therefore may themselves in
+     * the process of shutting down. Attempts to use other thread-based
+     * services such as the AWT event-dispatch thread, for example, may lead to
+     * deadlocks.
+     * <p>
+     * Shutdown hooks should also finish their work quickly.  When a
+     * program invokes {@link #exit exit}, the expectation is
+     * that the virtual machine will promptly shut down and exit.  When the
+     * virtual machine is terminated due to user logoff or system shutdown the
+     * underlying operating system may only allow a limited amount of time in
+     * which to shut down and exit. It is therefore inadvisable to attempt any
+     * user interaction or to perform a long-running computation in a shutdown
+     * hook.
      *
      * @param   hook
      *          An initialized but unstarted {@link Thread} object
@@ -184,8 +192,7 @@ public class Runtime {
      *          has already been run
      *
      * @throws  IllegalStateException
-     *          If the virtual machine is already in the process
-     *          of shutting down
+     *          If the shutdown sequence has already begun
      *
      * @throws  SecurityException
      *          If a security manager is present and it denies
@@ -207,6 +214,8 @@ public class Runtime {
 
     /**
      * De-registers a previously-registered virtual-machine shutdown hook.
+     * Registration and de-registration of shutdown hooks is disallowed
+     * once the shutdown sequence has begun.
      *
      * @param hook the hook to remove
      * @return {@code true} if the specified hook had previously been
@@ -214,8 +223,7 @@ public class Runtime {
      * otherwise.
      *
      * @throws  IllegalStateException
-     *          If the virtual machine is already in the process of shutting
-     *          down
+     *          If the shutdown sequence has already begun
      *
      * @throws  SecurityException
      *          If a security manager is present and it denies
@@ -239,6 +247,11 @@ public class Runtime {
      * the shutdown sequence and run the shutdown hooks. If the shutdown sequence
      * is already in progress, this method does not await completion of the
      * shutdown hooks. This method never returns normally.
+     * <p>
+     * When the JVM halts, all threads (daemon, non-daemon, and shutdown hooks) are immediately
+     * prevented from executing any further Java code. The threads' current methods do
+     * not complete normally or abruptly. No `finally` clause of any method
+     * is executed, nor is any uncaught exception handler.
      *
      * @apiNote
      * This method should be used with extreme caution. Using it may disrupt
