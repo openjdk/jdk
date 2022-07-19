@@ -41,7 +41,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 /**
  * The result of hashing the contents of a number of module artifacts.
@@ -115,9 +114,9 @@ public final class ModuleHashes {
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalArgumentException(e);
         }
-        try (Stream<String> stream = reader.list()){
+        try {
             byte[] buf = new byte[32*1024];
-            stream.sorted().forEach(rn -> {
+            reader.list().sorted().forEach(rn -> {
                 md.update(rn.getBytes(StandardCharsets.UTF_8));
                 try (InputStream in = reader.open(rn).orElseThrow()) {
                     int n;

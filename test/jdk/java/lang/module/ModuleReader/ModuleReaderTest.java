@@ -54,7 +54,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.spi.ToolProvider;
-import java.util.stream.Stream;
 
 import jdk.internal.module.ModulePath;
 import jdk.test.lib.compiler.CompilerUtils;
@@ -414,10 +413,7 @@ public class ModuleReaderTest {
      * Test ModuleReader#list
      */
     void testList(ModuleReader reader, String name) throws IOException {
-        final List<String> list;
-        try (Stream<String> stream = reader.list()) {
-            list = stream.toList();
-        }
+        List<String> list = reader.list().collect(Collectors.toList());
         Set<String> names = new HashSet<>(list);
         assertTrue(names.size() == list.size()); // no duplicates
 

@@ -406,9 +406,8 @@ public class CallerSensitiveAccess {
         // transform the resource name to a class name
         // load every class in the exported packages
         // return the caller sensitive methods of the public classes
-        try (ModuleReader reader = mref.open();
-             Stream<String> stream = reader.list()) {
-            return stream
+        try (ModuleReader reader = mref.open()) {
+            return reader.list()
                     .filter(rn -> rn.endsWith(".class"))
                     .map(rn -> rn.substring(0, rn.length() - 6)
                                  .replace('/', '.'))
