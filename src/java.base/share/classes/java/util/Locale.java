@@ -265,8 +265,8 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * <p>The transformed content information {@code source} language tag and {@code fields} are returned
  * from a {@code Locale}, either via {@link #getExtension(char)} with
  * {@link #TRANSFORMED_CONTENT_EXTENSION} which returns the string
- * representation of the transformed content, or via the methods {@link getTransformedContentSource()}
- * and {@link getTransformedContentFields()}.
+ * representation of the transformed content, or via the methods {@link #getTransformedContentSource()}
+ * and {@link #getTransformedContentFields()}.
  * <p>To create a locale object that contains the transformed content extension, either use
  * the factory method {@link #forLanguageTag(String)} or use
  * {@link Locale.Builder#setExtension(char, String)} with

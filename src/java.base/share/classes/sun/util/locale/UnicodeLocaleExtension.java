@@ -40,7 +40,7 @@ import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.StringJoiner;
 
-public class UnicodeLocaleExtension extends Extension {
+public final class UnicodeLocaleExtension extends Extension {
     public static final char SINGLETON = 'u';
 
     private final Set<String> attributes;

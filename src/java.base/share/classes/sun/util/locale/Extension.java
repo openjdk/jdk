@@ -32,7 +32,7 @@
 package sun.util.locale;
 
 
-class Extension {
+sealed class Extension permits UnicodeLocaleExtension, TransformedContentExtension {
     private final char key;
     private String value, id;
 

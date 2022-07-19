@@ -35,7 +35,6 @@ import static org.testng.Assert.assertNotSame;
 import java.util.IllformedLocaleException;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;

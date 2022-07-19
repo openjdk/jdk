@@ -157,7 +157,7 @@ public final class InternalLocaleBuilder {
                 }
             }
             if (ukeywords == null) {
-                ukeywords = new HashMap<>(4);
+                ukeywords = HashMap.newHashMap(4);
             }
             ukeywords.put(cikey, type);
         }
@@ -211,7 +211,7 @@ public final class InternalLocaleBuilder {
                 setUnicodeLocaleExtension(val);
             } else {
                 if (extensions == null) {
-                    extensions = new HashMap<>(4);
+                    extensions = HashMap.newHashMap(4);
                 }
                 extensions.put(key, val);
             }
@@ -323,7 +323,7 @@ public final class InternalLocaleBuilder {
                         setUnicodeLocaleExtension(bcpExt.substring(2));
                     } else {
                         if (extensions == null) {
-                            extensions = new HashMap<>(4);
+                            extensions = HashMap.newHashMap(4);
                         }
                         extensions.put(key, bcpExt.substring(2));
                     }
@@ -334,7 +334,7 @@ public final class InternalLocaleBuilder {
         if (privateuse != null && !privateuse.isEmpty()) {
             // privateuse string contains prefix, e.g. "x-abc-def"
             if (extensions == null) {
-                extensions = new HashMap<>(1);
+                extensions = HashMap.newHashMap(1);
             }
             extensions.put(new CaseInsensitiveChar(privateuse), privateuse.substring(2));
         }
@@ -441,19 +441,19 @@ public final class InternalLocaleBuilder {
                 if (e instanceof UnicodeLocaleExtension ue) {
                     for (String uatr : ue.getUnicodeLocaleAttributes()) {
                         if (uattributes == null) {
-                            uattributes = new HashSet<>(4);
+                            uattributes = HashSet.newHashSet(4);
                         }
                         uattributes.add(new CaseInsensitiveString(uatr));
                     }
                     for (String ukey : ue.getUnicodeLocaleKeys()) {
                         if (ukeywords == null) {
-                            ukeywords = new HashMap<>(4);
+                            ukeywords = HashMap.newHashMap(4);
                         }
                         ukeywords.put(new CaseInsensitiveString(ukey), ue.getUnicodeLocaleType(ukey));
                     }
                 } else {
                     if (extensions == null) {
-                        extensions = new HashMap<>(4);
+                        extensions = HashMap.newHashMap(4);
                     }
                     extensions.put(new CaseInsensitiveChar(key), e.getValue());
                 }
@@ -603,7 +603,7 @@ public final class InternalLocaleBuilder {
                 break;
             }
             if (uattributes == null) {
-                uattributes = new HashSet<>(4);
+                uattributes = HashSet.newHashSet(4);
             }
             uattributes.add(new CaseInsensitiveString(itr.current()));
             itr.next();
@@ -621,7 +621,7 @@ public final class InternalLocaleBuilder {
                     assert(typeStart == -1 || typeEnd != -1);
                     type = (typeStart == -1) ? "" : subtags.substring(typeStart, typeEnd);
                     if (ukeywords == null) {
-                        ukeywords = new HashMap<>(4);
+                        ukeywords = HashMap.newHashMap(4);
                     }
                     ukeywords.put(key, type);
 
@@ -651,7 +651,7 @@ public final class InternalLocaleBuilder {
                     assert(typeStart == -1 || typeEnd != -1);
                     type = (typeStart == -1) ? "" : subtags.substring(typeStart, typeEnd);
                     if (ukeywords == null) {
-                        ukeywords = new HashMap<>(4);
+                        ukeywords = HashMap.newHashMap(4);
                     }
                     ukeywords.put(key, type);
                 }
