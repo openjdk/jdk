@@ -467,7 +467,8 @@ public class Net {
         Class<?> type = name.type();
 
         if (extendedOptions.isOptionSupported(name)) {
-            return extendedOptions.getOption(fd, name);
+            boolean isIPv6 = (family == StandardProtocolFamily.INET6);
+            return extendedOptions.getOption(fd, name, isIPv6);
         }
 
         // only simple values supported by this method

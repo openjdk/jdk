@@ -113,8 +113,8 @@ class LinuxSocketOptions extends PlatformSocketOptions {
     }
 
     @Override
-    boolean getIpDontFragment(int fd) throws SocketException {
-        return getIpDontFragment0(fd);
+    boolean getIpDontFragment(int fd, boolean isIPv6) throws SocketException {
+        return getIpDontFragment0(fd, isIPv6);
     }
 
     @Override
@@ -134,7 +134,7 @@ class LinuxSocketOptions extends PlatformSocketOptions {
     private static native int getTcpkeepAliveProbes0(int fd) throws SocketException;
     private static native int getTcpKeepAliveTime0(int fd) throws SocketException;
     private static native int getTcpKeepAliveIntvl0(int fd) throws SocketException;
-    private static native boolean getIpDontFragment0(int fd) throws SocketException;
+    private static native boolean getIpDontFragment0(int fd, boolean isIPv6) throws SocketException;
     private static native void setQuickAck0(int fd, boolean on) throws SocketException;
     private static native boolean getQuickAck0(int fd) throws SocketException;
     private static native long getSoPeerCred0(int fd) throws SocketException;

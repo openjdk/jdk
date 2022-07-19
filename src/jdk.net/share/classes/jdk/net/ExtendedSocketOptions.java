@@ -294,9 +294,8 @@ public final class ExtendedSocketOptions {
             }
 
             @Override
-            @SuppressWarnings("removal")
             public Object getOption(FileDescriptor fd,
-                                    SocketOption<?> option)
+                                    SocketOption<?> option, boolean isIPv6)
                 throws SocketException
             {
                 if (fd == null || !fd.valid())
@@ -307,7 +306,7 @@ public final class ExtendedSocketOptions {
                 } else if (option == TCP_KEEPCOUNT) {
                     return getTcpkeepAliveProbes(fd);
                 } else if (option == IP_DONTFRAGMENT) {
-                    return getIpDontFragment(fd);
+                    return getIpDontFragment(fd, isIPv6);
                 } else if (option == TCP_KEEPIDLE) {
                     return getTcpKeepAliveTime(fd);
                 } else if (option == TCP_KEEPINTERVAL) {
@@ -365,8 +364,8 @@ public final class ExtendedSocketOptions {
         return platformSocketOptions.getTcpkeepAliveProbes(fdAccess.get(fd));
     }
 
-    private static boolean getIpDontFragment(FileDescriptor fd) throws SocketException {
-        return platformSocketOptions.getIpDontFragment(fdAccess.get(fd));
+    private static boolean getIpDontFragment(FileDescriptor fd, boolean isIPv6) throws SocketException {
+        return platformSocketOptions.getIpDontFragment(fdAccess.get(fd), isIPv6);
     }
 
     private static int getTcpKeepAliveTime(FileDescriptor fd) throws SocketException {
@@ -465,7 +464,7 @@ public final class ExtendedSocketOptions {
             throw new UnsupportedOperationException("unsupported IP_DONTFRAGMENT option");
         }
 
-        boolean getIpDontFragment(int fd) throws SocketException {
+        boolean getIpDontFragment(int fd, boolean isIPv6) throws SocketException {
             throw new UnsupportedOperationException("unsupported IP_DONTFRAGMENT option");
         }
 

@@ -244,17 +244,6 @@ JNIEXPORT jint JNICALL Java_jdk_net_LinuxSocketOptions_getIncomingNapiId0
     return optval;
 }
 
-static int socketFamily(jint fd) {
-    struct sockaddr_storage st;
-    struct sockaddr *sa = (struct sockaddr *)&st;
-    socklen_t sa_len = sizeof(st);
-
-    if (getsockname(fd, sa, &sa_len) == 0) {
-        return sa->sa_family;
-    }
-    return -1;
-}
-
 /*
  * Class:     jdk_net_LinuxSocketOptions
  * Method:    setIpDontFragment0
@@ -277,18 +266,13 @@ JNIEXPORT void JNICALL Java_jdk_net_LinuxSocketOptions_setIpDontFragment0
 /*
  * Class:     jdk_net_LinuxSocketOptions
  * Method:    getIpDontFragment0
- * Signature: (I)Z;
+ * Signature: (IZ)Z;
  */
 JNIEXPORT jboolean JNICALL Java_jdk_net_LinuxSocketOptions_getIpDontFragment0
-(JNIEnv *env, jobject unused, jint fd) {
+(JNIEnv *env, jobject unused, jint fd, jboolean isIPv6) {
     jint optlevel, optname, optval, rv;
-    jint family = socketFamily(fd);
-    if (family == -1) {
-        handleError(env, family, "get socket family failed");
-        return JNI_FALSE;
-    }
 
-    if (family == AF_INET) {
+    if (!isIPv6) {
         optlevel = IPPROTO_IP;
         optname = IP_MTU_DISCOVER;
     } else {

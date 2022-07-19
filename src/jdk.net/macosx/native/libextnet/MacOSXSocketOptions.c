@@ -178,17 +178,6 @@ JNIEXPORT jint JNICALL Java_jdk_net_MacOSXSocketOptions_getTcpKeepAliveIntvl0
     return optval;
 }
 
-static int socketFamily(jint fd) {
-    struct sockaddr_storage st;
-    struct sockaddr* sa = (struct sockaddr *)&st;
-    socklen_t sa_len = sizeof(st);
-
-    if (getsockname(fd, sa, &sa_len) == 0) {
-        return sa->sa_family;
-    }
-    return -1;
-}
-
 /*
  * Class:     jdk_net_MacOSXSocketOptions
  * Method:    ipDontFragmentSupported0
@@ -239,18 +228,13 @@ JNIEXPORT void JNICALL Java_jdk_net_MacOSXSocketOptions_setIpDontFragment0
 /*
  * Class:     jdk_net_MacOSXSocketOptions
  * Method:    getIpDontFragment0
- * Signature: (I)Z;
+ * Signature: (IZ)Z;
  */
 JNIEXPORT jboolean JNICALL Java_jdk_net_MacOSXSocketOptions_getIpDontFragment0
-(JNIEnv *env, jobject unused, jint fd) {
+(JNIEnv *env, jobject unused, jint fd, jboolean isIPv6) {
     jint optval, rv;
     socklen_t sz = sizeof (optval);
-    jint family = socketFamily(fd);
-    if (family == -1) {
-        handleError(env, family, "get socket family failed");
-        return 0;
-    }
-    if (family == AF_INET) {
+    if (!isIPv6) {
         rv = getsockopt(fd, IPPROTO_IP, IP_DONTFRAG, &optval, &sz);
     } else {
         rv = getsockopt(fd, IPPROTO_IPV6, IPV6_DONTFRAG, &optval, &sz);

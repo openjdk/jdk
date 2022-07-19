@@ -89,8 +89,8 @@ class MacOSXSocketOptions extends PlatformSocketOptions {
     }
 
     @Override
-    boolean getIpDontFragment(int fd) throws SocketException {
-        return getIpDontFragment0(fd);
+    boolean getIpDontFragment(int fd, boolean isIPv6) throws SocketException {
+        return getIpDontFragment0(fd, isIPv6);
     }
 
     @Override
@@ -110,7 +110,7 @@ class MacOSXSocketOptions extends PlatformSocketOptions {
     private static native int getTcpkeepAliveProbes0(int fd) throws SocketException;
     private static native int getTcpKeepAliveTime0(int fd) throws SocketException;
     private static native int getTcpKeepAliveIntvl0(int fd) throws SocketException;
-    private static native boolean getIpDontFragment0(int fd) throws SocketException;
+    private static native boolean getIpDontFragment0(int fd, boolean isIPv6) throws SocketException;
     private static native long getSoPeerCred0(int fd) throws SocketException;
     private static native boolean keepAliveOptionsSupported0();
     private static native boolean ipDontFragmentSupported0();
