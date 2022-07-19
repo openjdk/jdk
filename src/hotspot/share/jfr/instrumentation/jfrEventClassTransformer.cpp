@@ -431,9 +431,13 @@ static bool java_base_can_read_jdk_jfr() {
     return false;
   }
   assert(java_base_module != NULL, "invariant");
-  ModuleEntry* const jdk_jfr_module = table->lookup_only(jdk_jfr_module_symbol);
-  if (jdk_jfr_module == NULL) {
-    return false;
+  ModuleEntry* jdk_jfr_module;
+  {
+    MutexLocker ml(Module_lock);
+    jdk_jfr_module = table->lookup_only(jdk_jfr_module_symbol);
+    if (jdk_jfr_module == NULL) {
+      return false;
+    }
   }
   assert(jdk_jfr_module != NULL, "invariant");
   if (java_base_module->can_read(jdk_jfr_module)) {
