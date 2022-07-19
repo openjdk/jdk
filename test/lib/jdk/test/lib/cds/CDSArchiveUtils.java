@@ -41,7 +41,7 @@ import static java.nio.file.StandardOpenOption.READ;
 import static java.nio.file.StandardOpenOption.WRITE;
 
 import jdk.test.lib.Utils;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 // This class performs operations on shared archive file
 public class CDSArchiveUtils {
@@ -457,6 +457,35 @@ public class CDSArchiveUtils {
             transferFrom(inputChannel, outputChannel, 0, offset);
             inputChannel.position(offset + nBytes);
             transferFrom(inputChannel, outputChannel, offset, orgSize - nBytes);
+        }
+        return dstFile;
+    }
+
+    // returns the size of the last region with used bytes > 0.
+    private static long getLastUsedRegionSize(File jsaFile) throws Exception {
+        int i = num_regions - 1;
+        long regionSize = 0;
+        while (i >= 0) {
+            regionSize = usedRegionSizeAligned(jsaFile, i);
+            if (regionSize > 0) {
+                break;
+            }
+            i--;
+        }
+        return regionSize;
+    }
+
+    // delete last regions's used bytes at the end, so new file will be smaller than the original
+    public static File deleteBytesAtTheEnd(File orgFile, String newFileName) throws Exception {
+        long offset = fileHeaderSize(orgFile);
+        long bytesToDelete = getLastUsedRegionSize(orgFile);
+        File dstFile = new File(newFileName);
+        try (FileChannel inputChannel = new FileInputStream(orgFile).getChannel();
+             FileChannel outputChannel = new FileOutputStream(dstFile).getChannel()) {
+            long orgSize = inputChannel.size();
+            transferFrom(inputChannel, outputChannel, 0, offset);
+            inputChannel.position(offset);
+            transferFrom(inputChannel, outputChannel, offset, orgSize - bytesToDelete);
         }
         return dstFile;
     }

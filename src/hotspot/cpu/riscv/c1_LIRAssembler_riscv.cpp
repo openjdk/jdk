@@ -1057,7 +1057,7 @@ void LIR_Assembler::type_profile_helper(Register mdo, ciMethodData *md, ciProfil
     __ ld(t1, Address(mdo, md->byte_offset_of_slot(data, ReceiverTypeData::receiver_offset(i))));
     __ bne(recv, t1, next_test);
     Address data_addr(mdo, md->byte_offset_of_slot(data, ReceiverTypeData::receiver_count_offset(i)));
-    __ add_memory_int64(data_addr, DataLayout::counter_increment);
+    __ increment(data_addr, DataLayout::counter_increment);
     __ j(*update_done);
     __ bind(next_test);
   }
@@ -1496,6 +1496,10 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   Register hdr = op->hdr_opr()->as_register();
   Register lock = op->lock_opr()->as_register();
   if (UseHeavyMonitors) {
+    if (op->info() != NULL) {
+      add_debug_info_for_null_check_here(op->info());
+      __ null_check(obj);
+    }
     __ j(*op->stub()->entry());
   } else if (op->code() == lir_lock) {
     assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
@@ -1563,7 +1567,7 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
         ciKlass* receiver = vc_data->receiver(i);
         if (known_klass->equals(receiver)) {
           Address data_addr(mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_count_offset(i)));
-          __ add_memory_int64(data_addr, DataLayout::counter_increment);
+          __ increment(data_addr, DataLayout::counter_increment);
           return;
         }
       }
@@ -1579,7 +1583,7 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
           __ mov_metadata(t1, known_klass->constant_encoding());
           __ sd(t1, recv_addr);
           Address data_addr(mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_count_offset(i)));
-          __ add_memory_int64(data_addr, DataLayout::counter_increment);
+          __ increment(data_addr, DataLayout::counter_increment);
           return;
         }
       }
@@ -1589,13 +1593,13 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
       type_profile_helper(mdo, md, data, recv, &update_done);
       // Receiver did not match any saved receiver and there is no empty row for it.
       // Increment total counter to indicate polymorphic case.
-      __ add_memory_int64(counter_addr, DataLayout::counter_increment);
+      __ increment(counter_addr, DataLayout::counter_increment);
 
       __ bind(update_done);
     }
   } else {
     // Static call
-    __ add_memory_int64(counter_addr, DataLayout::counter_increment);
+    __ increment(counter_addr, DataLayout::counter_increment);
   }
 }
 

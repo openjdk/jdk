@@ -24,7 +24,7 @@
 #include "precompiled.hpp"
 #include "logging/logMessageBuffer.hpp"
 #include "memory/allocation.inline.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
 
 template <typename T>
 static void grow(T*& buffer, size_t& capacity, size_t minimum_length = 0) {

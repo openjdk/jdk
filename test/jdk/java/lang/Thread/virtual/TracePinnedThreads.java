@@ -23,11 +23,13 @@
 
 /**
  * @test
+ * @bug 8284161 8289284
  * @summary Basic test of debugging option to trace pinned threads
  * @requires vm.continuations
- * @compile --enable-preview -source ${jdk.version} TracePinnedThreads.java
- * @run main/othervm --enable-preview -Djdk.tracePinnedThreads=full TracePinnedThreads
- * @run main/othervm --enable-preview -Djdk.tracePinnedThreads=short TracePinnedThreads
+ * @enablePreview
+ * @library /test/lib
+ * @run testng/othervm -Djdk.tracePinnedThreads=full TracePinnedThreads
+ * @run testng/othervm -Djdk.tracePinnedThreads=short TracePinnedThreads
  */
 
 import java.io.ByteArrayOutputStream;
@@ -35,32 +37,81 @@ import java.io.PrintStream;
 import java.time.Duration;
 import java.util.concurrent.locks.LockSupport;
 
+import jdk.test.lib.thread.VThreadRunner;
+import org.testng.annotations.Test;
+import static org.testng.Assert.*;
+
 public class TracePinnedThreads {
     static final Object lock = new Object();
 
-    public static void main(String[] args) throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    /**
+     * Parks current thread for 1 second.
+     */
+    private static void park() {
+        long nanos = Duration.ofSeconds(1).toNanos();
+        LockSupport.parkNanos(nanos);
+    }
 
+    /**
+     * Invokes the park method through a native frame to park the current
+     * thread for 1 second.
+     */
+    private static native void invokePark();
+
+    /**
+     * Test parking inside synchronized block.
+     */
+    @Test
+    public void testPinnedCausedBySynchronizedBlock() throws Exception {
+        String output = run(() -> {
+            synchronized (lock) {
+                park();
+            }
+        });
+        assertContains(output, "<== monitors:1");
+        assertDoesNotContain(output, "(Native Method)");
+    }
+
+    /**
+     * Test parking with native frame on stack.
+     */
+    @Test
+    public void testPinnedCausedByNativeMethod() throws Exception {
+        System.loadLibrary("TracePinnedThreads");
+        String output = run(() -> invokePark());
+        assertContains(output, "(Native Method)");
+        assertDoesNotContain(output, "<== monitors");
+    }
+
+    /**
+     * Runs a task in a virutal thread, returning a String with any output printed
+     * to standard output.
+     */
+    private static String run(Runnable task) throws Exception {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
         PrintStream original = System.out;
-        System.setOut(new PrintStream(baos));
+        System.setOut(new PrintStream(baos, true));
         try {
-            Thread.ofVirtual().start(() -> {
-                synchronized (lock) {
-                    long nanos = Duration.ofSeconds(1).toNanos();
-                    LockSupport.parkNanos(nanos);
-                }
-            }).join();
-            System.out.flush();
+            VThreadRunner.run(task::run);
         } finally {
             System.setOut(original);
         }
-
-        String output = new String(baos.toByteArray()); // default charset
+        String output = new String(baos.toByteArray());
         System.out.println(output);
+        return output;
+    }
 
-        String expected = "<== monitors:1";
-        if (!output.contains(expected)) {
-            throw new RuntimeException("expected: \"" + expected + "\"");
-        }
+    /**
+     * Tests that s1 contains s2.
+     */
+    private static void assertContains(String s1, String s2) {
+        assertTrue(s1.contains(s2), s2 + " not found!!!");
+    }
+
+    /**
+     * Tests that s1 does not contain s2.
+     */
+    private static void assertDoesNotContain(String s1, String s2) {
+        assertFalse(s1.contains(s2), s2 + " found!!");
     }
 }

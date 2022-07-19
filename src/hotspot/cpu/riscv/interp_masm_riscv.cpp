@@ -40,9 +40,9 @@
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/basicLock.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/thread.inline.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 void InterpreterMacroAssembler::narrow(Register result) {
@@ -466,7 +466,7 @@ void InterpreterMacroAssembler::load_double(Address src) {
 
 void InterpreterMacroAssembler::prepare_to_jump_from_interpreted() {
   // set sender sp
-  mv(x30, sp);
+  mv(x19_sender_sp, sp);
   // record last_sp
   sd(esp, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
 }

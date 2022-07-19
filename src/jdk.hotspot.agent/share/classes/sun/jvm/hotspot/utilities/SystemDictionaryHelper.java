@@ -98,8 +98,8 @@ public class SystemDictionaryHelper {
 
       // check whether we have a class of given name
       Klass klass = cldg.find(className);
-      if (klass != null && klass instanceof InstanceKlass) {
-         return (InstanceKlass) klass;
+      if (klass instanceof InstanceKlass ik) {
+         return ik;
       } else {
         // no match ..
         return null;

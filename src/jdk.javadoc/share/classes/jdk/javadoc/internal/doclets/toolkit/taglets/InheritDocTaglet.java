@@ -28,9 +28,8 @@ package jdk.javadoc.internal.doclets.toolkit.taglets;
 import java.util.EnumSet;
 
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.TypeElement;
-import javax.lang.model.type.TypeKind;
 
 import com.sun.source.doctree.DocTree;
 import jdk.javadoc.doclet.Taglet.Location;
@@ -42,9 +41,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
- * An inline taglet representing the {@code {@inheritDoc}} tag.
- * It is used to copy documentation from superclass (but not superinterface)
- * declarations and from overridden and implemented methods.
+ * A taglet that represents the {@code {@inheritDoc}} tag.
  */
 public class InheritDocTaglet extends BaseTaglet {
 
@@ -52,7 +49,7 @@ public class InheritDocTaglet extends BaseTaglet {
      * Construct a new InheritDocTaglet.
      */
     public InheritDocTaglet() {
-        super(DocTree.Kind.INHERIT_DOC, true, EnumSet.of(Location.TYPE, Location.METHOD));
+        super(DocTree.Kind.INHERIT_DOC, true, EnumSet.of(Location.METHOD));
     }
 
     /**
@@ -96,14 +93,6 @@ public class InheritDocTaglet extends BaseTaglet {
                         inheritedDoc.inlineTags, isFirstSentence);
             }
         } else {
-            // This is to assert that we don't reach here for a class declaration.
-            // Indeed, every class except for java.lang.Object has a superclass.
-            // If we ever reach here, we would need a different warning; because
-            // the below warning is about method declarations, not class declarations.
-            // Unless @inheritDoc is used inside java.lang.Object itself,
-            // which would clearly be an error, we shouldn't reach here.
-            assert !(e instanceof TypeElement typeElement)
-                    || typeElement.getSuperclass().getKind() == TypeKind.NONE;
             String signature = utils.getSimpleName(e) +
                     ((utils.isExecutableElement(e))
                             ? utils.flatSignature((ExecutableElement) e, writer.getCurrentPageElement())
@@ -115,6 +104,9 @@ public class InheritDocTaglet extends BaseTaglet {
 
     @Override
     public Content getInlineTagOutput(Element e, DocTree inheritDoc, TagletWriter tagletWriter) {
+        if (e.getKind() != ElementKind.METHOD) {
+            return tagletWriter.getOutputInstance();
+        }
         return retrieveInheritedDocumentation(tagletWriter, e, inheritDoc, tagletWriter.isFirstSentence);
     }
 }

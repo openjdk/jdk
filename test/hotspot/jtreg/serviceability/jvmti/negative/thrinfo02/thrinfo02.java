@@ -39,32 +39,19 @@
  * @run main/othervm/native -agentlib:thrinfo02 thrinfo02
  */
 
-import java.io.PrintStream;
-
 public class thrinfo02 {
 
-    final static int JCK_STATUS_BASE = 95;
-
     static {
-        try {
-            System.loadLibrary("thrinfo02");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load thrinfo02 library");
-            System.err.println("java.library.path:"
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
+        System.loadLibrary("thrinfo02");
     }
 
     native static int check(Thread thr, ThreadGroup group);
 
     public static void main(String args[]) {
         Thread.currentThread().setName("main");
-        // produce JCK-like exit status.
-        System.exit(run(args, System.out) + JCK_STATUS_BASE);
-    }
-
-    public static int run(String args[], PrintStream out) {
-        return check(Thread.currentThread(), Thread.currentThread().getThreadGroup());
+        int result = check(Thread.currentThread(), Thread.currentThread().getThreadGroup());
+        if (result != 0) {
+            throw new RuntimeException("check failed with result " + result);
+        }
     }
 }

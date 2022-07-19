@@ -738,28 +738,31 @@ public class Flow {
 
         private Set<Symbol> coveredSymbolsForCases(DiagnosticPosition pos,
                                                    JCExpression selector, List<JCCase> cases) {
-            HashSet<JCCaseLabel> labels = cases.stream()
+            HashSet<JCTree> labelValues = cases.stream()
                                                .flatMap(c -> c.labels.stream())
                                                .filter(TreeInfo::unguardedCaseLabel)
+                                               .filter(l -> !l.hasTag(DEFAULTCASELABEL))
+                                               .map(l -> l.hasTag(CONSTANTCASELABEL) ? ((JCConstantCaseLabel) l).expr
+                                                                                     : ((JCPatternCaseLabel) l).pat)
                                                .collect(Collectors.toCollection(HashSet::new));
-            return coveredSymbols(pos, selector.type, labels);
+            return coveredSymbols(pos, selector.type, labelValues);
         }
 
         private Set<Symbol> coveredSymbols(DiagnosticPosition pos, Type targetType,
-                                           Iterable<? extends JCCaseLabel> labels) {
+                                           Iterable<? extends JCTree> labels) {
             Set<Symbol> coveredSymbols = new HashSet<>();
             Map<Symbol, List<JCRecordPattern>> deconstructionPatternsBySymbol = new HashMap<>();
 
-            for (JCCaseLabel label : labels) {
-                switch (label.getTag()) {
+            for (JCTree labelValue : labels) {
+                switch (labelValue.getTag()) {
                     case BINDINGPATTERN, PARENTHESIZEDPATTERN -> {
-                        Type primaryPatternType = TreeInfo.primaryPatternType((JCPattern) label);
+                        Type primaryPatternType = TreeInfo.primaryPatternType((JCPattern) labelValue);
                         if (!primaryPatternType.hasTag(NONE)) {
                             coveredSymbols.add(primaryPatternType.tsym);
                         }
                     }
                     case RECORDPATTERN -> {
-                        JCRecordPattern dpat = (JCRecordPattern) label;
+                        JCRecordPattern dpat = (JCRecordPattern) labelValue;
                         Symbol type = dpat.record;
                         List<JCRecordPattern> augmentedPatterns =
                                 deconstructionPatternsBySymbol.getOrDefault(type, List.nil())
@@ -768,16 +771,11 @@ public class Flow {
                         deconstructionPatternsBySymbol.put(type, augmentedPatterns);
                     }
 
-
-                    case DEFAULTCASELABEL -> {}
                     default -> {
-                        if (label.isExpression()) {
-                            JCExpression expr = (JCExpression) label;
-                            if (expr.hasTag(IDENT) && ((JCIdent) expr).sym.isEnum())
-                                coveredSymbols.add(((JCIdent) expr).sym);
-                        } else {
-                            throw new AssertionError(label.getTag());
-                        }
+                        Assert.check(labelValue instanceof JCExpression, labelValue.getTag().name());
+                        JCExpression expr = (JCExpression) labelValue;
+                        if (expr.hasTag(IDENT) && ((JCIdent) expr).sym.isEnum())
+                            coveredSymbols.add(((JCIdent) expr).sym);
                     }
                 }
             }
@@ -2585,8 +2583,7 @@ public class Flow {
                 if (l.head.stats.isEmpty() &&
                     l.tail.nonEmpty() &&
                     l.tail.head.labels.size() == 1 &&
-                    l.tail.head.labels.head.isExpression() &&
-                    TreeInfo.isNull(l.tail.head.labels.head)) {
+                    TreeInfo.isNullCaseLabel(l.tail.head.labels.head)) {
                     //handling:
                     //case Integer i:
                     //case null:
@@ -2977,6 +2974,11 @@ public class Flow {
         public void visitBindingPattern(JCBindingPattern tree) {
             scan(tree.var);
             initParam(tree.var);
+        }
+
+        @Override
+        public void visitPatternCaseLabel(JCPatternCaseLabel tree) {
+            scan(tree.pat);
             scan(tree.guard);
         }
 
@@ -3077,7 +3079,7 @@ public class Flow {
                             }
                             break;
                         }
-                    case BINDINGPATTERN, PARENTHESIZEDPATTERN:
+                    case PATTERNCASELABEL:
                     case LAMBDA:
                         if ((sym.flags() & (EFFECTIVELY_FINAL | FINAL)) == 0) {
                            reportEffectivelyFinalError(pos, sym);
@@ -3112,7 +3114,7 @@ public class Flow {
         void reportEffectivelyFinalError(DiagnosticPosition pos, Symbol sym) {
             Fragment subKey = switch (currentTree.getTag()) {
                 case LAMBDA -> Fragments.Lambda;
-                case BINDINGPATTERN, PARENTHESIZEDPATTERN -> Fragments.Guard;
+                case PATTERNCASELABEL -> Fragments.Guard;
                 case CLASSDEF -> Fragments.InnerCls;
                 default -> throw new AssertionError("Unexpected tree kind: " + currentTree.getTag());
             };
@@ -3154,18 +3156,16 @@ public class Flow {
         @Override
         public void visitBindingPattern(JCBindingPattern tree) {
             scan(tree.var);
-            JCTree prevTree = currentTree;
-            try {
-                currentTree = tree;
-                scan(tree.guard);
-            } finally {
-                currentTree = prevTree;
-            }
         }
 
         @Override
         public void visitParenthesizedPattern(JCParenthesizedPattern tree) {
             scan(tree.pattern);
+        }
+
+        @Override
+        public void visitPatternCaseLabel(JCPatternCaseLabel tree) {
+             scan(tree.pat);
             JCTree prevTree = currentTree;
             try {
                 currentTree = tree;
@@ -3179,13 +3179,7 @@ public class Flow {
         public void visitRecordPattern(JCRecordPattern tree) {
             scan(tree.deconstructor);
             scan(tree.nested);
-            JCTree prevTree = currentTree;
-            try {
-                currentTree = tree;
-                scan(tree.guard);
-            } finally {
-                currentTree = prevTree;
-            }
+            scan(tree.var);
         }
 
         @Override

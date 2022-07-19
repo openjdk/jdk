@@ -28,6 +28,7 @@
 #include "jvmtifiles/jvmti.h"
 #include "memory/resourceArea.hpp"
 #include "prims/jvmtiEventController.hpp"
+#include "runtime/threads.hpp"
 
 ///////////////////////////////////////////////////////////////
 //

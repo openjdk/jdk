@@ -26,10 +26,10 @@
  * @summary Vectorization test on bug-prone shift operation
  * @library /test/lib /
  *
- * @build sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
  *        compiler.vectorization.runner.VectorizationTestRunner
  *
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
@@ -133,8 +133,6 @@ public class ArrayShiftOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    // Note that unsigned shift right on subword signed integer types can't
-    // be vectorized since the sign extension bits would be lost.
     public short[] vectorUnsignedShiftRight() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {

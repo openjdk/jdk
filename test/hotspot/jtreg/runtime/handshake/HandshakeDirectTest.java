@@ -28,7 +28,7 @@
  * @summary This test tries to stress direct handshakes between threads while suspending them.
  * @library /testlibrary /test/lib
  * @build HandshakeDirectTest
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI HandshakeDirectTest
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:GuaranteedSafepointInterval=10 -XX:+HandshakeALot -XX:+SafepointALot HandshakeDirectTest
  */
@@ -36,7 +36,7 @@
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.Semaphore;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 import java.io.*;
 
 public class HandshakeDirectTest  implements Runnable {

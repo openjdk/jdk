@@ -117,7 +117,7 @@ SystemProperty *Arguments::_jdk_boot_class_path_append = NULL;
 SystemProperty *Arguments::_vm_info = NULL;
 
 GrowableArray<ModulePatchPath*> *Arguments::_patch_mod_prefix = NULL;
-PathString *Arguments::_system_boot_class_path = NULL;
+PathString *Arguments::_boot_class_path = NULL;
 bool Arguments::_has_jimage = false;
 
 char* Arguments::_ext_dirs = NULL;
@@ -389,10 +389,10 @@ void Arguments::process_sun_java_launcher_properties(JavaVMInitArgs* args) {
 // Initialize system properties key and value.
 void Arguments::init_system_properties() {
 
-  // Set up _system_boot_class_path which is not a property but
+  // Set up _boot_class_path which is not a property but
   // relies heavily on argument processing and the jdk.boot.class.path.append
-  // property. It is used to store the underlying system boot class path.
-  _system_boot_class_path = new PathString(NULL);
+  // property. It is used to store the underlying boot class path.
+  _boot_class_path = new PathString(NULL);
 
   PropertyList_add(&_system_properties, new SystemProperty("java.vm.specification.name",
                                                            "Java Virtual Machine Specification",  false));
@@ -536,13 +536,6 @@ static SpecialFlag const special_jvm_flags[] = {
   { "DynamicDumpSharedSpaces",      JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "RequireSharedSpaces",          JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "UseSharedSpaces",              JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
-#ifdef PRODUCT
-  { "UseHeavyMonitors",             JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::jdk(20) },
-#endif
-  { "ExtendedDTraceProbes",         JDK_Version::jdk(19), JDK_Version::jdk(20), JDK_Version::jdk(21) },
-  { "UseContainerCpuShares",        JDK_Version::jdk(19), JDK_Version::jdk(20), JDK_Version::jdk(21) },
-  { "PreferContainerQuotaForCPUCount", JDK_Version::jdk(19), JDK_Version::jdk(20), JDK_Version::jdk(21) },
-  { "AliasLevel",                   JDK_Version::jdk(19), JDK_Version::jdk(20), JDK_Version::jdk(21) },
 
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::undefined(), JDK_Version::undefined() },
@@ -551,9 +544,11 @@ static SpecialFlag const special_jvm_flags[] = {
 
   // -------------- Obsolete Flags - sorted by expired_in --------------
 
-  { "FilterSpuriousWakeups",        JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::jdk(20) },
-  { "MinInliningThreshold",         JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::jdk(20) },
-  { "PrefetchFieldsAhead",          JDK_Version::undefined(), JDK_Version::jdk(19), JDK_Version::jdk(20) },
+  { "ExtendedDTraceProbes",         JDK_Version::jdk(19), JDK_Version::jdk(20), JDK_Version::jdk(21) },
+  { "UseContainerCpuShares",        JDK_Version::jdk(19), JDK_Version::jdk(20), JDK_Version::jdk(21) },
+  { "PreferContainerQuotaForCPUCount", JDK_Version::jdk(19), JDK_Version::jdk(20), JDK_Version::jdk(21) },
+  { "AliasLevel",                   JDK_Version::jdk(19), JDK_Version::jdk(20), JDK_Version::jdk(21) },
+
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
 #endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -325,11 +325,17 @@ public:
   // should generate this one.
   static const bool match_rule_supported(int opcode);
 
+  // Identify extra cases that we might want to vectorize automatically
+  // And exclude cases which are not profitable to auto-vectorize.
+  static const bool match_rule_supported_superword(int opcode, int vlen, BasicType bt);
+
   // identify extra cases that we might want to provide match rules for
   // e.g. Op_ vector nodes and other intrinsics while guarding with vlen
   static const bool match_rule_supported_vector(int opcode, int vlen, BasicType bt);
 
   static const bool match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt);
+
+  static const bool vector_needs_partial_operations(Node* node, const TypeVect* vt);
 
   static const RegMask* predicate_reg_mask(void);
   static const TypeVectMask* predicate_reg_type(const Type* elemTy, int length);

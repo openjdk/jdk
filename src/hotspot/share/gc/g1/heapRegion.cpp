@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,7 +104,6 @@ void HeapRegion::handle_evacuation_failure() {
   uninstall_surv_rate_group();
   clear_young_index_in_cset();
   set_old();
-  _next_marked_bytes = 0;
 }
 
 void HeapRegion::unlink_from_list() {
@@ -124,8 +123,6 @@ void HeapRegion::hr_clear(bool clear_space) {
   reset_pre_dummy_top();
 
   rem_set()->clear_locked();
-
-  zero_marked_bytes();
 
   init_top_at_mark_start();
   if (clear_space) clear(SpaceDecorator::Mangle);
@@ -238,8 +235,10 @@ HeapRegion::HeapRegion(uint hrm_index,
 #ifdef ASSERT
   _containing_set(NULL),
 #endif
-  _prev_top_at_mark_start(NULL), _next_top_at_mark_start(NULL),
-  _prev_marked_bytes(0), _next_marked_bytes(0),
+  _top_at_mark_start(NULL),
+  _parsable_bottom(NULL),
+  _garbage_bytes(0),
+  _marked_bytes(0),
   _young_index_in_cset(-1),
   _surv_rate_group(NULL), _age_index(G1SurvRateGroup::InvalidAgeIndex), _gc_efficiency(-1.0),
   _node_index(G1NUMA::UnknownNodeIndex)
@@ -272,33 +271,30 @@ void HeapRegion::report_region_type_change(G1HeapRegionTraceType::Type to) {
                                             used());
 }
 
-void HeapRegion::note_self_forwarding_removal_start(bool during_concurrent_start,
-                                                    bool during_conc_mark) {
-  // We always recreate the prev marking info and we'll explicitly
-  // mark all objects we find to be self-forwarded on the prev
-  // bitmap. So all objects need to be below PTAMS.
-  _prev_marked_bytes = 0;
+void HeapRegion::note_self_forwarding_removal_start(bool during_concurrent_start) {
+  // We always scrub the region to make sure the entire region is
+  // parsable after the self-forwarding point removal, and update _marked_bytes
+  // at the end.
+  _marked_bytes = 0;
+  _garbage_bytes = 0;
 
   if (during_concurrent_start) {
-    // During concurrent start, we'll also explicitly mark all objects
-    // we find to be self-forwarded on the next bitmap. So all
-    // objects need to be below NTAMS.
-    _next_top_at_mark_start = top();
-    _next_marked_bytes = 0;
-  } else if (during_conc_mark) {
-    // During concurrent mark, all objects in the CSet (including
-    // the ones we find to be self-forwarded) are implicitly live.
-    // So all objects need to be above NTAMS.
-    _next_top_at_mark_start = bottom();
-    _next_marked_bytes = 0;
+    // Self-forwarding marks all objects. Adjust TAMS so that these marks are
+    // below it.
+    set_top_at_mark_start(top());
+  } else {
+    // Outside of the mixed phase all regions that had an evacuation failure must
+    // be young regions, and their TAMS is always bottom. Similarly, before the
+    // start of the mixed phase, we scrubbed and reset TAMS to bottom.
+    assert(top_at_mark_start() == bottom(), "must be");
   }
 }
 
 void HeapRegion::note_self_forwarding_removal_end(size_t marked_bytes) {
   assert(marked_bytes <= used(),
          "marked: " SIZE_FORMAT " used: " SIZE_FORMAT, marked_bytes, used());
-  _prev_top_at_mark_start = top();
-  _prev_marked_bytes = marked_bytes;
+  _marked_bytes = marked_bytes;
+  _garbage_bytes = used() - marked_bytes;
 }
 
 // Code roots support
@@ -456,8 +452,8 @@ void HeapRegion::print_on(outputStream* st) const {
   } else {
     st->print("|  ");
   }
-  st->print("|TAMS " PTR_FORMAT ", " PTR_FORMAT "| %s ",
-               p2i(prev_top_at_mark_start()), p2i(next_top_at_mark_start()), rem_set()->get_state_str());
+  st->print("|TAMS " PTR_FORMAT "| PB " PTR_FORMAT "| %s ",
+               p2i(top_at_mark_start()), p2i(parsable_bottom_acquire()), rem_set()->get_state_str());
   if (UseNUMA) {
     G1NUMA* numa = G1NUMA::numa();
     if (node_index() < numa->num_active_nodes()) {
@@ -479,6 +475,7 @@ protected:
   VerifyOption _vo;
 
 public:
+
   G1VerificationClosure(G1CollectedHeap* g1h, VerifyOption vo) :
     _g1h(g1h), _ct(g1h->card_table()),
     _containing_obj(NULL), _failures(false), _n_failures(0), _vo(vo) {
@@ -523,14 +520,15 @@ public:
     if (!CompressedOops::is_null(heap_oop)) {
       oop obj = CompressedOops::decode_not_null(heap_oop);
       bool failed = false;
-      if (!_g1h->is_in(obj) || _g1h->is_obj_dead_cond(obj, _vo)) {
+      bool is_in_heap = _g1h->is_in(obj);
+      if (!is_in_heap || _g1h->is_obj_dead_cond(obj, _vo)) {
         MutexLocker x(ParGCRareEvent_lock, Mutex::_no_safepoint_check_flag);
 
         if (!_failures) {
           log.error("----------");
         }
         ResourceMark rm;
-        if (!_g1h->is_in(obj)) {
+        if (!is_in_heap) {
           HeapRegion* from = _g1h->heap_region_containing((HeapWord*)p);
           log.error("Field " PTR_FORMAT " of live obj " PTR_FORMAT " in region " HR_FORMAT,
                     p2i(p), p2i(_containing_obj), HR_FORMAT_PARAMS(from));
@@ -764,7 +762,7 @@ void HeapRegion::verify_rem_set(VerifyOption vo, bool* failures) const {
 
 void HeapRegion::verify_rem_set() const {
   bool failures = false;
-  verify_rem_set(VerifyOption::G1UsePrevMarking, &failures);
+  verify_rem_set(VerifyOption::G1UseConcMarking, &failures);
   guarantee(!failures, "HeapRegion RemSet verification failed");
 }
 
@@ -790,7 +788,7 @@ void HeapRegion::update_bot_for_block(HeapWord* start, HeapWord* end) {
 void HeapRegion::object_iterate(ObjectClosure* blk) {
   HeapWord* p = bottom();
   while (p < top()) {
-    if (block_is_obj(p)) {
+    if (block_is_obj(p, parsable_bottom())) {
       blk->do_object(cast_to_oop(p));
     }
     p += block_size(p);
@@ -804,4 +802,22 @@ void HeapRegion::fill_with_dummy_object(HeapWord* address, size_t word_size, boo
   }
   // Fill in the object.
   CollectedHeap::fill_with_object(address, word_size, zap);
+}
+
+void HeapRegion::fill_range_with_dead_objects(HeapWord* start, HeapWord* end) {
+  size_t range_size = pointer_delta(end, start);
+
+  // Fill the dead range with objects. G1 might need to create two objects if
+  // the range is larger than half a region, which is the max_fill_size().
+  CollectedHeap::fill_with_objects(start, range_size);
+  HeapWord* current = start;
+  do {
+    // Update the BOT if the a threshold is crossed.
+    size_t obj_size = cast_to_oop(current)->size();
+    update_bot_for_block(current, current + obj_size);
+
+    // Advance to the next object.
+    current += obj_size;
+    guarantee(current <= end, "Should never go past end");
+  } while (current != end);
 }
