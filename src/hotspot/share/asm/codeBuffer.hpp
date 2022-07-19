@@ -31,6 +31,8 @@
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/linkedlist.hpp"
+#include "utilities/resizeableResourceHash.hpp"
 #include "utilities/macros.hpp"
 
 class PhaseCFG;
@@ -397,8 +399,8 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
     SECT_STUBS,               // Outbound trampolines for supporting call sites.
     SECT_LIMIT, SECT_NONE = -1
   };
-  class SharedTrampolineRequest;
-  typedef GrowableArray<SharedTrampolineRequest> SharedTrampolineRequests;
+
+  typedef ResizeableResourceHashtable<address, LinkedListImpl<int>> SharedTrampolineRequests;
 
  private:
   enum {

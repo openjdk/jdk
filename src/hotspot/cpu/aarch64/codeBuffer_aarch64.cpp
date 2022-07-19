@@ -28,59 +28,50 @@
 
 void CodeBuffer::share_trampoline_for(address dest, int caller_offset) {
   if (_shared_trampoline_requests == nullptr) {
-    _shared_trampoline_requests = new SharedTrampolineRequests();
+    _shared_trampoline_requests = new SharedTrampolineRequests(4, 1024);
   }
-  SharedTrampolineRequest request(dest, caller_offset);
-  _shared_trampoline_requests->push(request);
+  _shared_trampoline_requests->maybe_grow();
+
+  bool p_created;
+  LinkedListImpl<int>* offsets = _shared_trampoline_requests->put_if_absent(dest, &p_created);
+  offsets->add(caller_offset);
   _finalize_stubs = true;
 }
 
-static bool emit_shared_stubs_to_runtime_call(CodeBuffer* cb, CodeBuffer::SharedTrampolineRequests* requests) {
-  if (requests == NULL) {
+static bool emit_shared_trampolines(CodeBuffer* cb, CodeBuffer::SharedTrampolineRequests* requests) {
+  if (requests == nullptr) {
     return true;
   }
 
-  const int length = requests->length();
-  const int table_length = length * 2 + 1;
-  const int UNUSED = length;
-  intArray last(table_length, table_length, UNUSED);  // maps an dest address to the last request of the address
-  intArray prev(length, length, UNUSED);              // points to the previous request with the same dest address
-
-  for (int i = 0; i < length; i++) {
-    const address dest = requests->at(i).dest();
-    int j = intptr_t(dest) % table_length;
-    for (; last.at(j) != UNUSED && requests->at(last.at(j)).dest() != dest; j = (j + 1) % table_length)
-      ;
-    prev.at(i) = last.at(j);
-    last.at(j) = i;
-  }
-
   MacroAssembler masm(cb);
-  for (int i = 0; i < table_length; i++) {
-    if (last.at(i) == UNUSED) {
-      continue;
-    }
-    int j = last.at(i);
-    const address dest = requests->at(j).dest();
 
+  bool p_succeeded = true;
+  auto emit = [&](address dest, LinkedListImpl<int> &offsets) {
     masm.set_code_section(cb->stubs());
     masm.align(wordSize);
-    for (; prev.at(j) != UNUSED; j = prev.at(j)) {
-      masm.relocate(trampoline_stub_Relocation::spec(cb->insts()->start() + requests->at(j).caller_offset()));
+
+    LinkedListIterator<int> it(offsets.head());
+    int offset = *it.next();
+    for (; !it.is_empty(); offset = *it.next()) {
+      masm.relocate(trampoline_stub_Relocation::spec(cb->insts()->start() + offset));
     }
     masm.set_code_section(cb->insts());
 
-    address stub = masm.emit_trampoline_stub(requests->at(j).caller_offset(), dest);
+    address stub = masm.emit_trampoline_stub(offset, dest);
     if (stub == nullptr) {
       ciEnv::current()->record_failure("CodeCache is full");
-      return false;
+      p_succeeded = false;
     }
-  }
 
-  return true;
+    return p_succeeded;
+  };
+
+  requests->iterate(emit);
+
+  return p_succeeded;
 }
 
 bool CodeBuffer::pd_finalize_stubs() {
   return emit_shared_stubs_to_interp<MacroAssembler>(this, _shared_stub_to_interp_requests)
-      && emit_shared_stubs_to_runtime_call(this, _shared_trampoline_requests);
+      && emit_shared_trampolines(this, _shared_trampoline_requests);
 }

@@ -26,21 +26,6 @@
 #ifndef CPU_AARCH64_CODEBUFFER_AARCH64_HPP
 #define CPU_AARCH64_CODEBUFFER_AARCH64_HPP
 
-public:
-  class SharedTrampolineRequest {
-   private:
-    address _dest;
-    int _caller_offset;
-
-   public:
-    SharedTrampolineRequest(address dest = nullptr, int caller_offset = -1):
-        _dest(dest),
-        _caller_offset(caller_offset) {}
-
-    address dest()      const { return _dest; }
-    int caller_offset() const { return _caller_offset; }
-  };
-
 private:
   void pd_initialize() {}
   bool pd_finalize_stubs();

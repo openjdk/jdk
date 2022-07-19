@@ -23,14 +23,14 @@
  */
 
 /**
- * @test SharedStubToRuntimeTest
+ * @test SharedTrampolineTest
  * @summary Checks that stubs to the interpreter can be shared for static or final method.
  * @bug 8280152
  * @library /test/lib
  *
  * @requires os.arch=="aarch64"
  *
- * @run driver compiler.sharedstubs.SharedStubToRuntimeTest
+ * @run driver compiler.sharedstubs.SharedTrampolineTest
  */
 
 package compiler.sharedstubs;
@@ -43,11 +43,11 @@ import java.util.regex.Pattern;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
-public class SharedStubToRuntimeTest {
+public class SharedTrampolineTest {
     private final static int ITERATIONS_TO_HEAT_LOOP = 20_000;
 
     private static void runTest(String compiler, String test) throws Exception {
-        String testClassName = SharedStubToRuntimeTest.class.getName() + "$" + test;
+        String testClassName = SharedTrampolineTest.class.getName() + "$" + test;
         ArrayList<String> command = new ArrayList<String>();
         command.add(compiler);
         command.add("-XX:+UnlockDiagnosticVMOptions");
