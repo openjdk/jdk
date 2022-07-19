@@ -1772,6 +1772,9 @@ void PhaseCCP::analyze() {
   // This loop is the meat of CCP.
   while (worklist.size() != 0) {
     Node* n = fetch_next_node(worklist);
+    if (n->is_SafePoint()) {
+      _safepoints.push(n);
+    }
     const Type* new_type = n->Value(this);
     if (new_type != type(n)) {
       assert(ccp_type_widens(new_type, type(n)), "ccp type must widen");
@@ -1955,6 +1958,16 @@ Node *PhaseCCP::transform( Node *n ) {
   GrowableArray <Node *> trstack(C->live_nodes() >> 1);
 
   trstack.push(new_node);           // Process children of cloned node
+
+  for (uint i = 0; i < _safepoints.size(); ++i) {
+    Node *nn = _safepoints.at(i);
+    Node *new_node = _nodes[nn->_idx];
+    assert(new_node == NULL, "");
+    new_node = transform_once(nn);
+    _nodes.map( nn->_idx, new_node );
+    trstack.push(new_node);
+  }
+
   while ( trstack.is_nonempty() ) {
     Node *clone = trstack.pop();
     uint cnt = clone->req();

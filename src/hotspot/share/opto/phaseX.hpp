@@ -582,6 +582,7 @@ class PhaseCCP : public PhaseIterGVN {
   void push_loadp(Unique_Node_List& worklist, const Node* use) const;
   static void push_load_barrier(Unique_Node_List& worklist, const BarrierSetC2* barrier_set, const Node* use);
   void push_and(Unique_Node_List& worklist, const Node* parent, const Node* use) const;
+  Unique_Node_List _safepoints;
 
  public:
   PhaseCCP( PhaseIterGVN *igvn ); // Compute conditional constants
