@@ -223,7 +223,6 @@ HeapRegion::HeapRegion(uint hrm_index,
   _bottom(mr.start()),
   _end(mr.end()),
   _top(NULL),
-  _compaction_top(NULL),
   _bot_part(bot, this),
   _pre_dummy_top(NULL),
   _rem_set(NULL),
@@ -258,7 +257,6 @@ void HeapRegion::initialize(bool clear_space, bool mangle_space) {
   }
 
   set_top(bottom());
-  set_compaction_top(bottom());
 
   hr_clear(false /*clear_space*/);
 }
@@ -768,7 +766,6 @@ void HeapRegion::verify_rem_set() const {
 
 void HeapRegion::clear(bool mangle_space) {
   set_top(bottom());
-  set_compaction_top(bottom());
 
   if (ZapUnusedHeapArea && mangle_space) {
     mangle_unused_area();

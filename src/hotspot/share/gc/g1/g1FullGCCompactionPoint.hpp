@@ -29,9 +29,11 @@
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/growableArray.hpp"
 
+class G1FullCollector;
 class HeapRegion;
 
 class G1FullGCCompactionPoint : public CHeapObj<mtGC> {
+  G1FullCollector* _collector;
   HeapRegion* _current_region;
   HeapWord*   _compaction_top;
   GrowableArray<HeapRegion*>* _compaction_regions;
@@ -43,7 +45,7 @@ class G1FullGCCompactionPoint : public CHeapObj<mtGC> {
   HeapRegion* next_region();
 
 public:
-  G1FullGCCompactionPoint();
+  G1FullGCCompactionPoint(G1FullCollector* collector);
   ~G1FullGCCompactionPoint();
 
   bool has_regions();

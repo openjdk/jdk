@@ -73,7 +73,6 @@ class HeapRegion : public CHeapObj<mtGC> {
   HeapWord* const _end;
 
   HeapWord* volatile _top;
-  HeapWord* _compaction_top;
 
   G1BlockOffsetTablePart _bot_part;
 
@@ -88,9 +87,6 @@ class HeapRegion : public CHeapObj<mtGC> {
 public:
   HeapWord* bottom() const         { return _bottom; }
   HeapWord* end() const            { return _end;    }
-
-  void set_compaction_top(HeapWord* compaction_top) { _compaction_top = compaction_top; }
-  HeapWord* compaction_top() const { return _compaction_top; }
 
   void set_top(HeapWord* value) { _top = value; }
   HeapWord* top() const { return _top; }
@@ -124,7 +120,6 @@ public:
   bool is_empty() const { return used() == 0; }
 
 private:
-  void reset_compaction_top_after_compaction();
 
   void reset_after_full_gc_common();
 
@@ -184,7 +179,7 @@ public:
   void update_bot_for_block(HeapWord* start, HeapWord* end);
 
   // Update heap region that has been compacted to be consistent after Full GC.
-  void reset_compacted_after_full_gc();
+  void reset_compacted_after_full_gc(HeapWord* new_top);
   // Update skip-compacting heap region to be consistent after Full GC.
   void reset_skip_compacting_after_full_gc();
 
