@@ -805,12 +805,11 @@ bool Method::is_default_method() const {
 bool Method::can_be_statically_bound(AccessFlags class_access_flags) const {
   if (is_final_method(class_access_flags))  return true;
 #ifdef ASSERT
-  ResourceMark rm;
   bool is_nonv = (vtable_index() == nonvirtual_vtable_index);
-  if (class_access_flags.is_interface()) {
-      assert(is_nonv == is_static() || is_nonv == is_private(),
-             "nonvirtual unexpected for non-static, non-private: %s",
-             name_and_sig_as_C_string());
+  if (class_access_flags.is_interface() && (is_nonv != is_static()) && (is_nonv != is_private())) {
+    ResourceMark rm;
+    fatal("nonvirtual unexpected for non-static, non-private: %s",
+          name_and_sig_as_C_string());
   }
 #endif
   assert(valid_vtable_index() || valid_itable_index(), "method must be linked before we ask this question");
