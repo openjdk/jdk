@@ -50,7 +50,7 @@ void G1OldGenAllocationTracker::reset_after_gc(size_t humongous_bytes_after_gc) 
   _humongous_bytes_after_last_gc = humongous_bytes_after_gc;
 
   log_debug(gc, alloc, stats)("Old generation allocation in the last mutator period, "
-                              "old gen allocated: " SIZE_FORMAT "B, humongous allocated: " SIZE_FORMAT "B,"
+                              "old gen allocated: " SIZE_FORMAT "B, humongous allocated: " SIZE_FORMAT "B, "
                               "old gen growth: " SIZE_FORMAT "B.",
                               _allocated_bytes_since_last_gc,
                               _allocated_humongous_bytes_since_last_gc,
