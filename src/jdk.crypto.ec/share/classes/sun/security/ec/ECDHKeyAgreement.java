@@ -176,7 +176,7 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
         // (point of infinity).  However, the point of infinity has no
         // affine coordinates, although the point of infinity could
         // be encoded.  Per IEEE 1363.3-2013 (see section A.6.4.1),
-        // the point of inifinity is represented by a pair of
+        // the point of infinity is represented by a pair of
         // coordinates (x, y) not on the curve.  For EC prime finite
         // field (q = p^m), the point of infinity is (0, 0) unless
         // b = 0; in which case it is (0, 1).
