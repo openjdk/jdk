@@ -2226,7 +2226,6 @@ Handle SystemDictionary::find_method_handle_type(Symbol* signature,
     }
   }
   assert(arg == npts, "");
-  os::naked_short_sleep(10);
 
   // call java.lang.invoke.MethodHandleNatives::findMethodHandleType(Class rt, Class[] pts) -> MethodType
   JavaCallArguments args(Handle(THREAD, rt()));
