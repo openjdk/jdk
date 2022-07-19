@@ -2003,9 +2003,8 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
   InvokeMethodKey key(signature, iid_as_int);
   Method** met = _invoke_method_intrisic_table.get(key);
 
-  Method* intrinsic;
   if (met != nullptr) {
-    intrinsic = *met;
+    return *met;
   } else {
     // Must create lots of stuff here, but outside of the SystemDictionary lock.
     methodHandle m = Method::make_method_handle_intrinsic(iid, signature, CHECK_NULL);
@@ -2019,15 +2018,15 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
                        "Out of space in CodeCache for method handle intrinsic");
       }
     }
-    intrinsic = m();
-    _invoke_method_intrisic_table.put(key, intrinsic);
-  }
+    signature->make_permanent(); // The signature is never unloaded.
+    _invoke_method_intrisic_table.put(key, m());
 
-  assert(intrinsic != NULL, "");
-  assert(Arguments::is_interpreter_only() || (intrinsic->has_compiled_code() &&
-         intrinsic->code()->entry_point() == intrinsic->from_compiled_entry()),
-         "MH intrinsic invariant");
-  return intrinsic;
+    assert(m() != NULL, "");
+    assert(Arguments::is_interpreter_only() || (m->has_compiled_code() &&
+           m->code()->entry_point() == m->from_compiled_entry()),
+           "MH intrinsic invariant");
+    return m();
+  }
 }
 
 // Helper for unpacking the return value from linkMethod and linkCallSite.
@@ -2243,13 +2242,10 @@ Handle SystemDictionary::find_method_handle_type(Symbol* signature,
     MutexLocker ml(THREAD, InvokeMethod_lock);
     OopHandle* h = _invoke_method_type_table.get(signature);
     if (h == nullptr) {
-      bool created;
+      signature->make_permanent(); // The signature is never unloaded.
       OopHandle elem = OopHandle(Universe::vm_global(), method_type());
-      _invoke_method_type_table.put_if_absent(signature, elem, &created);
+      bool created = _invoke_method_type_table.put(signature, elem);
       assert(created, "better be");
-    } else {
-      oop mt = h->resolve();
-      method_type = Handle(THREAD, mt);  // use this answer.
     }
   }
 
