@@ -22,17 +22,25 @@
  */
 
 /**
- * @test
+ * @test id=default
  * @bug 8284161
  * @summary Basic tests of virtual threads doing blocking I/O with NIO channels
  * @enablePreview
  * @library /test/lib
  * @run testng/othervm/timeout=300 BlockingChannelOps
+ */
+
+/**
+ * @test id=useDirectRegister
+ * @bug 8284161
+ * @summary Basic tests of virtual threads doing blocking I/O with NIO channels
+ * @enablePreview
+ * @library /test/lib
  * @run testng/othervm/timeout=300 -Djdk.useDirectRegister BlockingChannelOps
  */
 
 /**
- * @test
+ * @test id=no-continuations
  * @requires vm.continuations
  * @enablePreview
  * @library /test/lib
