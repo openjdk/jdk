@@ -42,8 +42,8 @@ import javax.swing.UIManager;
 
 public class JComboBoxActionEvent {
     private static final String instructionsText = " Click the arrow to display the menu.\n" +
-         "While the menu is displayed, edit the text to create a new value.\n" + 
-         "Type return.\n" + 
+         "While the menu is displayed, edit the text to create a new value.\n" +
+         "Type return.\n" +
          "If a dialog appears with \"ActionCommand received\"\n" +
          "press Pass, else Fail";
 
