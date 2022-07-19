@@ -270,7 +270,7 @@ public class PassFailJFrame {
      *                  VERTICAL - both test instruction frame and test window
      *                  as arranged up and down.
      *                  TOP_LEFT_CORNER - test instruction frame positioned at
-     *                  top left corner with main test window below it.
+     *                  top left corner with main test window beside it.
      */
     public static void positionTestWindow(Window testWindow, Position position) {
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
@@ -290,8 +290,8 @@ public class PassFailJFrame {
         }
         else if (position.equals(Position.TOP_LEFT_CORNER)) {
             frame.setLocation(0,0);
-            testWindow.setLocation(frame.getX(),
-                    (frame.getLocation().y + frame.getHeight() + 5));
+            testWindow.setLocation((frame.getLocation().x + frame.getWidth() + 5),
+                    frame.getY());
         }
     }
 
