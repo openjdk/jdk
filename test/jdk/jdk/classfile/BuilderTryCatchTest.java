@@ -272,7 +272,7 @@ public class BuilderTryCatchTest {
                                 // IndexOutOfBoundsException
                                 tb.aaload();
                                 // NullPointerException
-                                tb.invokevirtual(CD_String, "toString", MTD_String, false);
+                                tb.invokevirtual(CD_String, "toString", MTD_String);
                                 tb.astore(stringSlot);
                             }, c);
 
