@@ -167,7 +167,7 @@ class XMMRegisterImpl: public AbstractRegisterImpl {
   // accessors
   int raw_encoding() const                       { return this - first(); }
   int   encoding() const                         { assert(is_valid(), "invalid register"); return raw_encoding(); }
-  bool  is_valid() const                          { return 0 <= raw_encoding() && raw_encoding() < number_of_registers; }
+  bool  is_valid() const                         { return 0 <= raw_encoding() && raw_encoding() < number_of_registers; }
   const char* name() const;
   const char* sub_word_name(int offset) const;
 
