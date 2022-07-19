@@ -34,7 +34,7 @@ import jdk.test.whitebox.WhiteBox;
 import jdk.test.whitebox.code.BlobType;
 
 /**
- * @test TestCodeCacheFull
+ * @test TestJitRestart
  * @requires vm.hasJFR
  *
  * @library /test/lib
@@ -45,50 +45,47 @@ import jdk.test.whitebox.code.BlobType;
  *
  * @run main/othervm -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *     -XX:+SegmentedCodeCache -XX:-UseLargePages jdk.jfr.event.compiler.TestCodeCacheFull
- * @run main/othervm -Xbootclasspath/a:.
- *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *     -XX:-SegmentedCodeCache jdk.jfr.event.compiler.TestCodeCacheFull
+ *     -XX:+SegmentedCodeCache -XX:-UseLargePages jdk.jfr.event.compiler.TestJitRestart
  */
-public class TestCodeCacheFull {
+public class TestJitRestart {
 
     public static void main(String[] args) throws Exception {
+        boolean foundJitRestart = false;
         for (BlobType btype : BlobType.getAvailable()) {
-            testWithBlobType(btype, calculateAvailableSize(btype));
+            boolean jr = testWithBlobType(btype, calculateAvailableSize(btype));
+            if (jr) {
+                System.out.println("JIT restart event found for BlobType " + btype);
+                foundJitRestart = true;
+            }
         }
+        Asserts.assertTrue(foundJitRestart, "No JIT restart event found");
     }
 
-    private static void testWithBlobType(BlobType btype, long availableSize) throws Exception {
+    private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
+
+    private static boolean testWithBlobType(BlobType btype, long availableSize) throws Exception {
         Recording r = new Recording();
         r.enable(EventNames.CodeCacheFull);
+        r.enable(EventNames.JitRestart);
         r.start();
-        WhiteBox.getWhiteBox().allocateCodeBlob(availableSize, btype.id);
+        long addr = WHITE_BOX.allocateCodeBlob(availableSize, btype.id);
+        WHITE_BOX.freeCodeBlob(addr);
+        WHITE_BOX.forceNMethodSweep();
         r.stop();
 
         List<RecordedEvent> events = Events.fromRecording(r);
+        System.out.println("# events:" + events.size());
         Events.hasEvents(events);
-        RecordedEvent event = events.get(0);
 
-        String codeBlobType = Events.assertField(event, "codeBlobType").notNull().getValue();
-        BlobType blobType = blobTypeFromName(codeBlobType);
-        Asserts.assertTrue(blobType.allowTypeWhenOverflow(blobType), "Unexpected overflow BlobType " + blobType.id);
-        Events.assertField(event, "entryCount").atLeast(0);
-        Events.assertField(event, "methodCount").atLeast(0);
-        Events.assertEventThread(event);
-        Events.assertField(event, "fullCount").atLeast(0);
-        Events.assertField(event, "startAddress").notEqual(0L);
-        Events.assertField(event, "commitedTopAddress").notEqual(0L);
-        Events.assertField(event, "reservedTopAddress").notEqual(0L);
-        Events.assertField(event, "codeCacheMaxCapacity").notEqual(0L);
-    }
-
-    private static BlobType blobTypeFromName(String codeBlobTypeName) throws Exception {
-        for (BlobType t : BlobType.getAvailable()) {
-            if (t.beanName.equals(codeBlobTypeName)) {
-                return t;
+        for (RecordedEvent evt: events) {
+            System.out.println(evt);
+            if (evt.getEventType().getName().equals("jdk.JitRestart")) {
+                Events.assertField(evt, "codeCacheMaxCapacity").notEqual(0L);
+                Events.assertField(evt, "freedMemory").notEqual(0L);
+                return true;
             }
         }
-        throw new Exception("Unexpected event " + codeBlobTypeName);
+        return false;
     }
 
     // Compute the available size for this BlobType by taking into account

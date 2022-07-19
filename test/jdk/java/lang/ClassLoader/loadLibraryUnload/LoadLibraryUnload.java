@@ -166,7 +166,7 @@ public class LoadLibraryUnload {
         // before exiting the test.
         for (int i = 0; i < LOADER_COUNT; i++) {
             System.gc();
-            var res = refQueue.remove(Utils.adjustTimeout(5 * 1000L));
+            var res = refQueue.remove(Utils.adjustTimeout(30 * 1000L));
             System.out.println(i + " dequeued: " + res);
             if (res == null) {
                 Asserts.fail("Too few cleared WeakReferences");

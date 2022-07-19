@@ -114,7 +114,7 @@ public class ECDSAOperations {
      * @return the ECDSA signature value
      * @throws IntermediateValueException if the signature cannot be produced
      *      due to an unacceptable intermediate or final value. If this
-     *      exception is thrown, then the caller should discard the nonnce and
+     *      exception is thrown, then the caller should discard the nonce and
      *      try again with an entirely new nonce value.
      */
     public byte[] signDigest(byte[] privateKey, byte[] digest, Seed seed)
@@ -142,7 +142,7 @@ public class ECDSAOperations {
      * @return the ECDSA signature value
      * @throws IntermediateValueException if the signature cannot be produced
      *      due to an unacceptable intermediate or final value. If this
-     *      exception is thrown, then the caller should discard the nonnce and
+     *      exception is thrown, then the caller should discard the nonce and
      *      try again with an entirely new nonce value.
      */
     public byte[] signDigest(byte[] privateKey, byte[] digest, Nonce nonce)
