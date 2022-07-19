@@ -252,9 +252,8 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
                         if (editor instanceof AquaCustomComboTextField) {
                             ((AquaCustomComboTextField)editor).selectAll();
                         }
-                    } else {
-                        action.actionPerformed(e);
                     }
+                    action.actionPerformed(e);
                 }
             });
         }
