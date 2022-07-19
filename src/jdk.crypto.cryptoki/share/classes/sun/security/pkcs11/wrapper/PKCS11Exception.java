@@ -88,6 +88,7 @@ public class PKCS11Exception extends Exception {
         CKR_ATTRIBUTE_SENSITIVE(0x00000011L),
         CKR_ATTRIBUTE_TYPE_INVALID(0x00000012L),
         CKR_ATTRIBUTE_VALUE_INVALID(0x00000013L),
+        CKR_COPY_PROHIBITED(0x0000001AL),
         CKR_ACTION_PROHIBITED(0x0000001BL),
         CKR_DATA_INVALID(0x00000020L),
         CKR_DATA_LEN_RANGE(0x00000021L),
@@ -171,7 +172,9 @@ public class PKCS11Exception extends Exception {
         CKR_FUNCTION_REJECTED(0x00000200L),
         CKR_TOKEN_RESOURCE_EXCEEDED(0x00000201L),
         CKR_OPERATION_CANCEL_FAILED(0x00000202L),
-        CKR_VENDOR_DEFINED(0x80000000L);
+        CKR_VENDOR_DEFINED(0x80000000L),
+        CKR_NETSCAPE_CERTDB_FAILED(0xCE534351L),
+        CKR_NETSCAPE_KEYDB_FAILED(0xCE534352L);
 
         private final long value;
 
@@ -187,7 +190,7 @@ public class PKCS11Exception extends Exception {
             }
         }
         // for unknown PKCS11 return values, just use hex as its string
-        return "0x" + Functions.toFullHexString((int)errorCode);
+        return "unknown PKCS11 error code 0x" + Functions.toFullHexString((int)errorCode);
     }
 
     /**
