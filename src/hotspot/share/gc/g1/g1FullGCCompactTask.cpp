@@ -62,7 +62,7 @@ public:
              "should be quite full");
     }
 #endif
-    assert(_collector->compaction_top(r) == r->bottom(),
+    assert(_collector->compaction_top(r) == nullptr,
            "region %u compaction_top " PTR_FORMAT " must not be different from bottom " PTR_FORMAT,
            r->hrm_index(), p2i(_collector->compaction_top(r)), p2i(r->bottom()));
 
