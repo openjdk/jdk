@@ -1,7 +1,7 @@
 /*
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
  *
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  *
  * Oracle and Java are registered trademarks of Oracle and/or its affiliates.
  * Other names may be trademarks of their respective owners.
@@ -47,7 +47,6 @@ import com.sun.hotspot.igv.view.EditorTopComponent;
 import java.awt.Container;
 import java.awt.Point;
 import java.awt.Rectangle;
-import java.awt.Cursor;
 import javax.swing.JComponent;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
@@ -81,23 +80,33 @@ public class CustomizablePanAction extends WidgetAction.LockedAdapter {
         return scrollPane != null;
     }
 
+    private void lock() {
+        scrollPane = findScrollPane(scene.getView());
+    }
+
+    private void unlock() {
+        scrollPane = null;
+    }
+
     public void setEnabled(boolean enabled) {
         if (this.enabled != enabled) {
-            if (isLocked())
+            if (this.isLocked()) {
                 throw new IllegalStateException();
-
+            }
             this.enabled = enabled;
         }
     }
 
-    public State mouseEntered(Widget widget, WidgetAction.WidgetMouseEvent event) {
+    @Override
+    public State mouseEntered(Widget widget, WidgetMouseEvent event) {
         active = true;
-        return State.REJECTED;
+        return super.mouseEntered(widget, event);
     }
 
-    public State mouseExited(Widget widget, WidgetAction.WidgetMouseEvent event) {
+    @Override
+    public State mouseExited(Widget widget, WidgetMouseEvent event) {
         active = false;
-        return State.REJECTED;
+        return super.mouseExited(widget, event);
     }
 
     @Override
@@ -106,21 +115,16 @@ public class CustomizablePanAction extends WidgetAction.LockedAdapter {
         if (editor != null) {
             editor.requestActive();
         }
-        if (isLocked()) {
-            return State.createLocked(widget, this);
-        }
-        if (enabled && (event.getModifiersEx() == modifiersEx)) {
+        if (!this.isLocked() && active && enabled && (event.getModifiersEx() == modifiersEx)) {
             scene = widget.getScene();
-            scrollPane = findScrollPane(scene.getView());
-            if (scrollPane != null) {
-                rectangle = scene.getView().getVisibleRect();
-                lastLocation = scene.convertSceneToView(event.getPoint());
+            this.lock();
+            if (this.isLocked()) {
+                lastLocation = scene.convertSceneToView(widget.convertLocalToScene(event.getPoint()));
                 SwingUtilities.convertPointToScreen(lastLocation, scene.getView());
-                scene.getView().setCursor(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR));
-                return State.createLocked(widget, this);
+                rectangle = scene.getView().getVisibleRect();
             }
         }
-        return State.REJECTED;
+        return super.mousePressed(widget, event);
     }
 
     private JScrollPane findScrollPane(JComponent component) {
@@ -141,32 +145,24 @@ public class CustomizablePanAction extends WidgetAction.LockedAdapter {
 
     @Override
     public State mouseReleased(Widget widget, WidgetMouseEvent event) {
-        scene.getView().setCursor(Cursor.getDefaultCursor());
-        boolean state = pan(widget, event.getPoint());
-        if (state) {
-            scrollPane = null;
+        if (this.isLocked() && scene == widget.getScene()) {
+            this.unlock();
         }
-        return state ? State.REJECTED : State.REJECTED;
+        return super.mouseReleased(widget, event);
     }
 
     @Override
     public State mouseDragged(Widget widget, WidgetMouseEvent event) {
-        return pan(widget, event.getPoint()) ? State.createLocked(widget, this) : State.REJECTED;
-    }
-
-    private boolean pan(Widget widget, Point newLocation) {
-        if (!active || scrollPane == null || scene != widget.getScene()) {
-            return false;
+        if (active && this.isLocked() && scene == widget.getScene()) {
+            Point newLocation = event.getPoint();
+            newLocation = scene.convertSceneToView(widget.convertLocalToScene(newLocation));
+            SwingUtilities.convertPointToScreen(newLocation, scene.getView());
+            rectangle.x += lastLocation.x - newLocation.x;
+            rectangle.y += lastLocation.y - newLocation.y;
+            scene.getView().scrollRectToVisible(rectangle);
+            lastLocation = newLocation;
+            return State.createLocked(widget, this);
         }
-        newLocation = scene.convertSceneToView(newLocation);
-        SwingUtilities.convertPointToScreen(newLocation, scene.getView());
-        JComponent view = scene.getView();
-        int dx = lastLocation.x - newLocation.x;
-        int dy = lastLocation.y - newLocation.y;
-        rectangle.x += dx;
-        rectangle.y += dy;
-        view.scrollRectToVisible(rectangle);
-        lastLocation = newLocation;
-        return true;
+        return State.REJECTED;
     }
 }
