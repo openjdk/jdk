@@ -39,16 +39,16 @@ public class JSplitPaneTestNegDivSize {
    private static volatile int divSize;
 
    public static void main(String[] args) throws Exception {
-        SwingUtilities.invokeAndWait(() -> {	   
+        SwingUtilities.invokeAndWait(() -> {
             JFrame frame = new JFrame();
             frame.setSize(new Dimension(400,200));
             frame.setVisible(true);
             JSplitPane sp = new JSplitPane(JSplitPane.VERTICAL_SPLIT, true,
-                     new JTextArea("I am top text area!"),
-		     new JTextArea("I am bottom text area!"));
+                    new JTextArea("I am top text area!"),
+                    new JTextArea("I am bottom text area!"));
             frame.getContentPane().add(sp, BorderLayout.CENTER);
             sp.setDividerSize(-50);
-	    divSize = sp.getDividerSize();
+            divSize = sp.getDividerSize();
             System.out.println(divSize);
             frame.dispose();
         });
