@@ -1376,7 +1376,7 @@ InstanceKlass* SystemDictionaryShared::find_builtin_class(Symbol* name) {
     assert(check_alignment(record->_klass), "Address not aligned");
     // We did not save the classfile data of the generated LambdaForm invoker classes,
     // so we cannot support CLFH for such classes.
-    if (record->_klass->is_generated() && JvmtiExport::should_post_class_file_load_hook()) {
+    if (record->_klass->is_generated_shared_class() && JvmtiExport::should_post_class_file_load_hook()) {
        return NULL;
     }
     return record->_klass;

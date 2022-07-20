@@ -182,7 +182,7 @@ private:
     _has_archived_enum_objs                = 1 << 4,
     // This class was not loaded from a classfile in the module image
     // or classpath.
-    _generated                             = 1 << 5
+    _is_generated_shared_class             = 1 << 5
   };
 #endif
 
@@ -354,11 +354,11 @@ protected:
     NOT_CDS(return false;)
   }
 
-  void set_generated() {
-    CDS_ONLY(_shared_class_flags |= _generated;)
+  void set_is_generated_shared_class() {
+    CDS_ONLY(_shared_class_flags |= _is_generated_shared_class;)
   }
-  bool is_generated() const {
-    CDS_ONLY(return (_shared_class_flags & _generated) != 0;)
+  bool is_generated_shared_class() const {
+    CDS_ONLY(return (_shared_class_flags & _is_generated_shared_class) != 0;)
     NOT_CDS(return false;)
   }
 

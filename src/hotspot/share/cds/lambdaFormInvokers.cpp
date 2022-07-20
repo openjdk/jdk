@@ -177,7 +177,7 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
         klass->set_shared_classpath_index(0);
         // Set the "generated" bit, so it won't interfere with JVMTI.
         // See SystemDictionaryShared::find_builtin_class().
-        klass->set_generated();
+        klass->set_is_generated_shared_class();
       }
     } else {
       int len = h_bytes->length();
@@ -217,7 +217,7 @@ void LambdaFormInvokers::regenerate_class(char* class_name, ClassFileStream& st,
   MetaspaceShared::try_link_class(THREAD, result);
   assert(!HAS_PENDING_EXCEPTION, "Invariant");
 
-  result->set_generated();
+  result->set_is_generated_shared_class();
   SystemDictionaryShared::set_excluded(InstanceKlass::cast(klass)); // exclude the existing class from dump
   SystemDictionaryShared::init_dumptime_info(result);
   log_info(cds, lambda)("Regenerated class %s, old: " INTPTR_FORMAT " new: " INTPTR_FORMAT,
