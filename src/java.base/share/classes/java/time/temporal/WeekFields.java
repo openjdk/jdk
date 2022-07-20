@@ -196,7 +196,7 @@ public final class WeekFields implements Serializable {
      * The cache of rules by firstDayOfWeek plus minimalDays.
      * Initialized first to be available for definition of ISO, etc.
      */
-    private static final ConcurrentMap<WeekFieldsKey, WeekFields> CACHE = new ConcurrentHashMap<>(4, 0.75f, 2);
+    private static final ConcurrentMap<String, WeekFields> CACHE = new ConcurrentHashMap<>(4, 0.75f, 2);
 
     /**
      * The ISO-8601 definition, where a week starts on Monday and the first week
@@ -326,11 +326,16 @@ public final class WeekFields implements Serializable {
      *      or greater than 7
      */
     public static WeekFields of(DayOfWeek firstDayOfWeek, int minimalDaysInFirstWeek) {
-        WeekFieldsKey key = new WeekFieldsKey(firstDayOfWeek, minimalDaysInFirstWeek);
-        return CACHE.computeIfAbsent(key, k -> new WeekFields(k.firstDayOfWeek, k.minimalDaysInFirstWeek));
-    }
-
-    private record WeekFieldsKey(DayOfWeek firstDayOfWeek, int minimalDaysInFirstWeek) {
+        String key = firstDayOfWeek.toString() + minimalDaysInFirstWeek;
+        WeekFields rules = CACHE.get(key);
+        if (rules == null) {
+            rules = new WeekFields(firstDayOfWeek, minimalDaysInFirstWeek);
+            WeekFields prev = CACHE.putIfAbsent(key, rules);
+            if (prev != null) {
+                rules = prev;
+            }
+        }
+        return rules;
     }
 
     //-----------------------------------------------------------------------
