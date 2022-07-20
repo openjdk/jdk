@@ -894,7 +894,7 @@ void MachPrologNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
 
 void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   Compile* C = ra_->C;
-  MacroAssembler _masm(&cbuf);
+  C2_MacroAssembler _masm(&cbuf);
 
   int framesize = C->output()->frame_size_in_bytes();
   int bangsize = C->output()->bang_size_in_bytes();
@@ -2168,12 +2168,18 @@ encode %{
                                                   : static_call_Relocation::spec(method_index);
       emit_d32_reloc(cbuf, (int) ($meth$$method - ((intptr_t) cbuf.insts_end()) - 4),
                      rspec, RELOC_DISP32);
-      // Emit stubs for static call.
       address mark = cbuf.insts_mark();
-      address stub = CompiledStaticCall::emit_to_interp_stub(cbuf, mark);
-      if (stub == NULL) {
-        ciEnv::current()->record_failure("CodeCache is full");
-        return;
+      if (CodeBuffer::supports_shared_stubs() && _method->can_be_statically_bound()) {
+        // Calls of the same statically bound method can share
+        // a stub to the interpreter.
+        cbuf.shared_stub_to_interp_for(_method, cbuf.insts()->mark_off());
+      } else {
+        // Emit stubs for static call.
+        address stub = CompiledStaticCall::emit_to_interp_stub(cbuf, mark);
+        if (stub == NULL) {
+          ciEnv::current()->record_failure("CodeCache is full");
+          return;
+        }
       }
     }
     _masm.clear_inst_mark();
@@ -13022,6 +13028,32 @@ instruct testL_reg_mem2(rFlagsReg cr, rRegP src, memory mem, immL0 zero)
   ins_pipe(ialu_cr_reg_mem);
 %}
 
+// Manifest a CmpU result in an integer register.  Very painful.
+// This is the test to avoid.
+instruct cmpU3_reg_reg(rRegI dst, rRegI src1, rRegI src2, rFlagsReg flags)
+%{
+  match(Set dst (CmpU3 src1 src2));
+  effect(KILL flags);
+
+  ins_cost(275); // XXX
+  format %{ "cmpl    $src1, $src2\t# CmpL3\n\t"
+            "movl    $dst, -1\n\t"
+            "jb,u    done\n\t"
+            "setne   $dst\n\t"
+            "movzbl  $dst, $dst\n\t"
+    "done:" %}
+  ins_encode %{
+    Label done;
+    __ cmpl($src1$$Register, $src2$$Register);
+    __ movl($dst$$Register, -1);
+    __ jccb(Assembler::below, done);
+    __ setne($dst$$Register);
+    __ movzbl($dst$$Register, $dst$$Register);
+    __ bind(done);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 // Manifest a CmpL result in an integer register.  Very painful.
 // This is the test to avoid.
 instruct cmpL3_reg_reg(rRegI dst, rRegL src1, rRegL src2, rFlagsReg flags)
@@ -13041,6 +13073,32 @@ instruct cmpL3_reg_reg(rRegI dst, rRegL src1, rRegL src2, rFlagsReg flags)
     __ cmpq($src1$$Register, $src2$$Register);
     __ movl($dst$$Register, -1);
     __ jccb(Assembler::less, done);
+    __ setne($dst$$Register);
+    __ movzbl($dst$$Register, $dst$$Register);
+    __ bind(done);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// Manifest a CmpUL result in an integer register.  Very painful.
+// This is the test to avoid.
+instruct cmpUL3_reg_reg(rRegI dst, rRegL src1, rRegL src2, rFlagsReg flags)
+%{
+  match(Set dst (CmpUL3 src1 src2));
+  effect(KILL flags);
+
+  ins_cost(275); // XXX
+  format %{ "cmpq    $src1, $src2\t# CmpL3\n\t"
+            "movl    $dst, -1\n\t"
+            "jb,u    done\n\t"
+            "setne   $dst\n\t"
+            "movzbl  $dst, $dst\n\t"
+    "done:" %}
+  ins_encode %{
+    Label done;
+    __ cmpq($src1$$Register, $src2$$Register);
+    __ movl($dst$$Register, -1);
+    __ jccb(Assembler::below, done);
     __ setne($dst$$Register);
     __ movzbl($dst$$Register, $dst$$Register);
     __ bind(done);

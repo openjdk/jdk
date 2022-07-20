@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import java.net.URL;
 import java.nio.file.Paths;
 import java.util.List;
 
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.test.lib.classloader.FilterClassLoader;
@@ -45,8 +45,8 @@ import jdk.test.lib.Utils;
  * @requires vm.hasJFR
  * @library /test/lib
  * @requires vm.compMode!="Xint"
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:CompileOnly=jdk.jfr.event.compiler.TestCodeSweeperStats::dummyMethod

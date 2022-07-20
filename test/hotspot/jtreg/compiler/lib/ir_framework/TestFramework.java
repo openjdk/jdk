@@ -33,7 +33,7 @@ import compiler.lib.ir_framework.test.TestVM;
 import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
 import jdk.test.lib.helpers.ClassFileInstaller;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -133,6 +133,9 @@ public class TestFramework {
                     "CompileThreshold",
                     "Xmixed",
                     "server",
+                    "UseAVX",
+                    "UseSSE",
+                    "UseSVE",
                     "Xlog",
                     "LogCompilation"
             )

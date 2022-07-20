@@ -329,7 +329,7 @@ address ArchiveBuilder::reserve_buffer() {
   ReservedSpace rs(buffer_size, MetaspaceShared::core_region_alignment(), os::vm_page_size());
   if (!rs.is_reserved()) {
     log_error(cds)("Failed to reserve " SIZE_FORMAT " bytes of output buffer.", buffer_size);
-    vm_direct_exit(0);
+    os::_exit(0);
   }
 
   // buffer_bottom is the lowest address of the 2 core regions (rw, ro) when
@@ -379,7 +379,7 @@ address ArchiveBuilder::reserve_buffer() {
     log_error(cds)("my_archive_requested_top    = " INTPTR_FORMAT, p2i(my_archive_requested_top));
     log_error(cds)("SharedBaseAddress (" INTPTR_FORMAT ") is too high. "
                    "Please rerun java -Xshare:dump with a lower value", p2i(_requested_static_archive_bottom));
-    vm_direct_exit(0);
+    os::_exit(0);
   }
 
   if (DumpSharedSpaces) {

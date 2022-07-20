@@ -731,7 +731,6 @@ ciConstant ciEnv::get_resolved_constant(const constantPoolHandle& cpool, int obj
 ciConstant ciEnv::get_constant_by_index_impl(const constantPoolHandle& cpool,
                                              int index, int obj_index,
                                              ciInstanceKlass* accessor) {
-  bool ignore_will_link;
   if (obj_index >= 0) {
     ciConstant con = get_resolved_constant(cpool, obj_index);
     if (con.is_valid()) {
@@ -761,8 +760,10 @@ ciConstant ciEnv::get_constant_by_index_impl(const constantPoolHandle& cpool,
   } else if (tag.is_unresolved_klass_in_error()) {
     return ciConstant(T_OBJECT, get_unloaded_klass_mirror(NULL));
   } else if (tag.is_klass() || tag.is_unresolved_klass()) {
-    ciKlass* klass = get_klass_by_index_impl(cpool, index, ignore_will_link, accessor);
-    return ciConstant(T_OBJECT, klass->java_mirror());
+    bool will_link;
+    ciKlass* klass = get_klass_by_index_impl(cpool, index, will_link, accessor);
+    ciInstance* mirror = (will_link ? klass->java_mirror() : get_unloaded_klass_mirror(klass));
+    return ciConstant(T_OBJECT, mirror);
   } else if (tag.is_method_type() || tag.is_method_type_in_error()) {
     // must execute Java code to link this CP entry into cache[i].f1
     assert(obj_index >= 0, "should have an object index");
@@ -772,6 +773,7 @@ ciConstant ciEnv::get_constant_by_index_impl(const constantPoolHandle& cpool,
   } else if (tag.is_method_handle() || tag.is_method_handle_in_error()) {
     // must execute Java code to link this CP entry into cache[i].f1
     assert(obj_index >= 0, "should have an object index");
+    bool ignore_will_link;
     int ref_kind        = cpool->method_handle_ref_kind_at(index);
     int callee_index    = cpool->method_handle_klass_index_at(index);
     ciKlass* callee     = get_klass_by_index_impl(cpool, callee_index, ignore_will_link, accessor);
@@ -1116,6 +1118,10 @@ void ciEnv::register_method(ciMethod* target,
       record_failure("RTM state change invalidated rtm code");
     }
 #endif
+
+    if (!failing()) {
+      code_buffer->finalize_stubs();
+    }
 
     if (failing()) {
       // While not a true deoptimization, it is a preemptive decompile.

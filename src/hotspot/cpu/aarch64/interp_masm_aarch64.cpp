@@ -170,7 +170,12 @@ void InterpreterMacroAssembler::get_unsigned_2_byte_index_at_bcp(
 void InterpreterMacroAssembler::get_dispatch() {
   uint64_t offset;
   adrp(rdispatch, ExternalAddress((address)Interpreter::dispatch_table()), offset);
-  lea(rdispatch, Address(rdispatch, offset));
+  // Use add() here after ARDP, rather than lea().
+  // lea() does not generate anything if its offset is zero.
+  // However, relocs expect to find either an ADD or a load/store
+  // insn after an ADRP.  add() always generates an ADD insn, even
+  // for add(Rn, Rn, 0).
+  add(rdispatch, rdispatch, offset);
 }
 
 void InterpreterMacroAssembler::get_cache_index_at_bcp(Register index,
@@ -421,7 +426,7 @@ void InterpreterMacroAssembler::load_double(Address src) {
 
 void InterpreterMacroAssembler::prepare_to_jump_from_interpreted() {
   // set sender sp
-  mov(r13, sp);
+  mov(r19_sender_sp, sp);
   // record last_sp
   str(esp, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
 }
@@ -606,7 +611,6 @@ void InterpreterMacroAssembler::remove_activation(
 
   bind(unlock);
   unlock_object(c_rarg1);
-  dec_held_monitor_count(rthread);
   pop(state);
 
   // Check that for block-structured locking (i.e., that all locked
@@ -649,7 +653,6 @@ void InterpreterMacroAssembler::remove_activation(
 
       push(state);
       unlock_object(c_rarg1);
-      dec_held_monitor_count(rthread);
       pop(state);
 
       if (install_monitor_exception) {
@@ -732,7 +735,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
             CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
             lock_reg);
   } else {
-    Label done;
+    Label count, done;
 
     const Register swap_reg = r0;
     const Register tmp = c_rarg2;
@@ -766,7 +769,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
            "displached header must be first word in BasicObjectLock");
 
     Label fail;
-    cmpxchg_obj_header(swap_reg, lock_reg, obj_reg, rscratch1, done, /*fallthrough*/NULL);
+    cmpxchg_obj_header(swap_reg, lock_reg, obj_reg, rscratch1, count, /*fallthrough*/NULL);
 
     // Fast check for recursive lock.
     //
@@ -803,7 +806,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
 
     // Save the test result, for recursive case, the result is zero
     str(swap_reg, Address(lock_reg, mark_offset));
-    br(Assembler::EQ, done);
+    br(Assembler::EQ, count);
 
     bind(slow_case);
 
@@ -811,6 +814,10 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
     call_VM(noreg,
             CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
             lock_reg);
+    b(done);
+
+    bind(count);
+    increment(Address(rthread, JavaThread::held_monitor_count_offset()));
 
     bind(done);
   }
@@ -835,7 +842,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
   if (UseHeavyMonitors) {
     call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), lock_reg);
   } else {
-    Label done;
+    Label count, done;
 
     const Register swap_reg   = r0;
     const Register header_reg = c_rarg2;  // Will contain the old oopMark
@@ -858,17 +865,20 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
                             BasicLock::displaced_header_offset_in_bytes()));
 
     // Test for recursion
-    cbz(header_reg, done);
+    cbz(header_reg, count);
 
     // Atomic swap back the old header
-    cmpxchg_obj_header(swap_reg, header_reg, obj_reg, rscratch1, done, /*fallthrough*/NULL);
+    cmpxchg_obj_header(swap_reg, header_reg, obj_reg, rscratch1, count, /*fallthrough*/NULL);
 
     // Call the runtime routine for slow case.
     str(obj_reg, Address(lock_reg, BasicObjectLock::obj_offset_in_bytes())); // restore obj
     call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), lock_reg);
+    b(done);
+
+    bind(count);
+    decrement(Address(rthread, JavaThread::held_monitor_count_offset()));
 
     bind(done);
-
     restore_bcp();
   }
 }

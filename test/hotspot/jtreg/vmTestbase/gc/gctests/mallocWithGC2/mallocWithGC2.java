@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,8 +113,6 @@ public class mallocWithGC2 extends TestBase {
                                 tArray[i].start();
 
                         tArray[0].join(); // wait for the javaHeapEater Thread to finish
-                        tArray[1].stop(); // Once javaHeapEater is finished, stop the
-                        // the cHeapEater thread.
                 } catch (Exception e) {
                         throw new TestFailure("Test Failed.", e);
                 }

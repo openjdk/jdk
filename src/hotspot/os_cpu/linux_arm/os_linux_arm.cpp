@@ -31,7 +31,6 @@
 #include "interpreter/interpreter.hpp"
 #include "memory/allocation.inline.hpp"
 #include "nativeInst_arm.hpp"
-#include "os_share_linux.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
@@ -283,7 +282,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
           }
         } else if (overflow_state->in_stack_red_zone(addr)) {
           // Fatal red zone violation.  Disable the guard pages and fall through
-          // to handle_unexpected_exception way down below.
+          // to the exception handling code below.
           overflow_state->disable_stack_red_zone();
           tty->print_raw_cr("An irrecoverable stack overflow has occurred.");
         } else {
@@ -445,7 +444,20 @@ void os::print_context(outputStream *st, const void *context) {
   }
 #define U64_FORMAT "0x%016llx"
   // now print flag register
-  st->print_cr("  %-4s = 0x%08lx", "cpsr",uc->uc_mcontext.arm_cpsr);
+  uint32_t cpsr = uc->uc_mcontext.arm_cpsr;
+  st->print_cr("  %-4s = 0x%08x", "cpsr", cpsr);
+  // print out instruction set state
+  st->print("isetstate: ");
+  const int isetstate =
+      ((cpsr & (1 << 5))  ? 1 : 0) | // T
+      ((cpsr & (1 << 24)) ? 2 : 0); // J
+  switch (isetstate) {
+  case 0: st->print_cr("ARM"); break;
+  case 1: st->print_cr("Thumb"); break;
+  case 2: st->print_cr("Jazelle"); break;
+  case 3: st->print_cr("ThumbEE"); break;
+  default: ShouldNotReachHere();
+  };
   st->cr();
 }
 

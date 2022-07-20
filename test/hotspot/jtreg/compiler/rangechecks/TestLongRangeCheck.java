@@ -29,8 +29,8 @@
  * @requires vm.compMode != "Xcomp"
  * @library /test/lib /
  * @modules java.base/jdk.internal.util
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *
  * @run main/othervm -ea -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
  *                   -XX:+UnlockExperimentalVMOptions -XX:PerMethodSpecTrapLimit=5000 -XX:PerMethodTrapLimit=100
@@ -39,7 +39,7 @@
  */
 
 import jdk.internal.util.Preconditions;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 import java.lang.reflect.Method;
 import compiler.whitebox.CompilerWhiteBoxTest;
 import java.net.MalformedURLException;

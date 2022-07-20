@@ -3827,13 +3827,17 @@ void TemplateTable::monitorenter()
   {
     Label entry, loop;
     // 1. compute new pointers            // rsp: old expression stack top
+
+    __ check_extended_sp();
+    __ sub(sp, sp, entry_size);           // make room for the monitor
+    __ mov(rscratch1, sp);
+    __ str(rscratch1, Address(rfp, frame::interpreter_frame_extended_sp_offset * wordSize));
+
     __ ldr(c_rarg1, monitor_block_bot);   // c_rarg1: old expression stack bottom
     __ sub(esp, esp, entry_size);         // move expression stack top
     __ sub(c_rarg1, c_rarg1, entry_size); // move expression stack bottom
     __ mov(c_rarg3, esp);                 // set start value for copy loop
     __ str(c_rarg1, monitor_block_bot);   // set new monitor block bottom
-
-    __ sub(sp, sp, entry_size);           // make room for the monitor
 
     __ b(entry);
     // 2. move expression stack contents
@@ -3861,9 +3865,6 @@ void TemplateTable::monitorenter()
   // store object
   __ str(r0, Address(c_rarg1, BasicObjectLock::obj_offset_in_bytes()));
   __ lock_object(c_rarg1);
-
-  // The object is stored so counter should be increased even if stackoverflow is generated
-  __ inc_held_monitor_count(rthread);
 
   // check to make sure this monitor doesn't cause stack overflow after locking
   __ save_bcp();  // in case of exception
@@ -3923,7 +3924,6 @@ void TemplateTable::monitorexit()
   __ bind(found);
   __ push_ptr(r0); // make sure object is on stack (contract with oopMaps)
   __ unlock_object(c_rarg1);
-  __ dec_held_monitor_count(rthread);
   __ pop_ptr(r0); // discard object
 }
 

@@ -56,9 +56,9 @@ void G1MMUTracker::remove_expired_entries(double current_time) {
   guarantee(_no_entries == 0, "should have no entries in the array");
 }
 
-double G1MMUTracker::calculate_gc_time(double current_time) {
+double G1MMUTracker::calculate_gc_time(double current_timestamp) {
   double gc_time = 0.0;
-  double limit = current_time - _time_slice;
+  double limit = current_timestamp - _time_slice;
   for (int i = 0; i < _no_entries; ++i) {
     int index = trim_index(_tail_index + i);
     G1MMUTrackerElem *elem = &_array[index];
@@ -111,32 +111,44 @@ void G1MMUTracker::add_pause(double start, double end) {
   }
 }
 
-double G1MMUTracker::when_sec(double current_time, double pause_time) {
-  // if the pause is over the maximum, just assume that it's the maximum
+double G1MMUTracker::when_sec(double current_timestamp, double pause_time) {
+  // If the pause is over the maximum, just assume that it's the maximum.
   double adjusted_pause_time =
     (pause_time > max_gc_time()) ? max_gc_time() : pause_time;
-  double earliest_end = current_time + adjusted_pause_time;
-  double limit = earliest_end - _time_slice;
-  double gc_time = calculate_gc_time(earliest_end);
-  double diff = gc_time + adjusted_pause_time - max_gc_time();
-  if (is_double_leq_0(diff))
-    return 0.0;
 
-  if (adjusted_pause_time == max_gc_time()) {
-    G1MMUTrackerElem *elem = &_array[_head_index];
-    return elem->end_time() - limit;
+  // Earliest end time of a hypothetical pause starting now, taking pause_time.
+  double earliest_end_time = current_timestamp + adjusted_pause_time;
+  double gc_time_in_recent_time_slice = calculate_gc_time(earliest_end_time) + adjusted_pause_time;
+
+  // How much gc time is needed to pass within the MMU window to fit the given pause into the MMU.
+  double gc_time_to_pass = gc_time_in_recent_time_slice - max_gc_time();
+
+  // If that time to pass is zero or negative we could start the pause immediately.
+  if (is_double_leq_0(gc_time_to_pass)) {
+    return 0.0;
   }
 
+  // Trivially, if the pause is of maximum pause time, the required delay is what the MMU dictates by
+  // the time slice and maximum gc pause, counted from the end of the last pause.
+  if (adjusted_pause_time == max_gc_time()) {
+    G1MMUTrackerElem *elem = &_array[_head_index];
+    return (elem->end_time() + (_time_slice - max_gc_time())) - current_timestamp;
+  }
+
+  // Now go through the recent pause time events,
+  double limit = earliest_end_time - _time_slice;
   int index = _tail_index;
   while ( 1 ) {
     G1MMUTrackerElem *elem = &_array[index];
     if (elem->end_time() > limit) {
-      if (elem->start_time() > limit)
-        diff -= elem->duration();
-      else
-        diff -= elem->end_time() - limit;
-      if (is_double_leq_0(diff))
-        return elem->end_time() + diff - limit;
+      if (elem->start_time() > limit) {
+        gc_time_to_pass -= elem->duration();
+      } else {
+        gc_time_to_pass -= elem->end_time() - limit;
+      }
+      if (is_double_leq_0(gc_time_to_pass)) {
+        return elem->end_time() + (_time_slice + gc_time_to_pass) - earliest_end_time;
+      }
     }
     index = trim_index(index+1);
     guarantee(index != trim_index(_head_index + 1), "should not go past head");

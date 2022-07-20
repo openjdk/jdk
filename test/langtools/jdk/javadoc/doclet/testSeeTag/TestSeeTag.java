@@ -143,11 +143,95 @@ public class TestSeeTag extends JavadocTester {
                     <dt>See Also:</dt>
                     <dd>
                     <ul class="see-list">
-                    <li><span class="invalid-tag">invalid input: '&lt;a href="'</span></li>
+                    <li><span class="invalid-tag">invalid input: '&lt;'</span></li>
                     </ul>
                     </dd>
                     </dl>
                     """);
+    }
 
+    @Test
+    public void testSeeLongCommas(Path base) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src, """
+                package p;
+                /** Comment. */
+                public class C {
+                    private C() { }
+
+                    /**
+                     * Comment.
+                     * @see #noArgs() no args
+                     * @see #oneArg(int) one arg
+                     * @see #twoArgs(int, int) two args
+                     */
+                    public void noComma() { }
+
+                    /**
+                     * Comment.
+                     * @see #noArgs() no args
+                     * @see #oneArg(int) one arg
+                     * @see #twoArgs(int, int) two args with a comma , in the description
+                     */
+                    public void commaInDescription() { }
+
+                    /**
+                     * Comment.
+                     * @see #noArgs()
+                     * @see #oneArg(int)
+                     * @see #twoArgs(int, int)
+                     */
+                    public void commaInDefaultDescription() { }
+
+                    /**
+                     * No arg method.
+                     */
+                    public void noArgs() { }
+
+                    /**
+                     * One arg method.
+                     * @param a1 an arg
+                     */
+                    public void oneArg(int a1) { }
+
+                    /**
+                     * Two arg method.
+                     * @param a1 an arg
+                     * @param a2 an arg
+                     */
+                    public void twoArgs(int a1, int a2) { }
+                }
+                """);
+
+        javadoc("-d", base.resolve("api").toString(),
+                "-sourcepath", src.toString(),
+                "--no-platform-links",
+                "p");
+        checkExit(Exit.OK);
+
+        checkOrder("p/C.html",
+                "<section class=\"detail\" id=\"noComma()\">",
+                """
+                    <ul class="see-list">
+                    <li><a href="#noArgs()"><code>no args</code></a></li>
+                    <li><a href="#oneArg(int)"><code>one arg</code></a></li>
+                    <li><a href="#twoArgs(int,int)"><code>two args</code></a></li>
+                    </ul>""",
+
+                "<section class=\"detail\" id=\"commaInDescription()\">",
+                """
+                    <ul class="see-list-long">
+                    <li><a href="#noArgs()"><code>no args</code></a></li>
+                    <li><a href="#oneArg(int)"><code>one arg</code></a></li>
+                    <li><a href="#twoArgs(int,int)"><code>two args with a comma , in the description</code></a></li>
+                    </ul>""",
+
+                "<section class=\"detail\" id=\"commaInDefaultDescription()\">",
+                """
+                    <ul class="see-list-long">
+                    <li><a href="#noArgs()"><code>noArgs()</code></a></li>
+                    <li><a href="#oneArg(int)"><code>oneArg(int)</code></a></li>
+                    <li><a href="#twoArgs(int,int)"><code>twoArgs(int, int)</code></a></li>
+                    </ul>""");
     }
 }
