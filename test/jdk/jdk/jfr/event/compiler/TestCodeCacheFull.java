@@ -79,6 +79,7 @@ public class TestCodeCacheFull {
         Events.assertField(event, "startAddress").notEqual(0L);
         Events.assertField(event, "commitedTopAddress").notEqual(0L);
         Events.assertField(event, "reservedTopAddress").notEqual(0L);
+        Events.assertField(event, "codeCacheMaxCapacity").notEqual(0L);
     }
 
     private static BlobType blobTypeFromName(String codeBlobTypeName) throws Exception {
