@@ -86,7 +86,7 @@ inline HeapRegion* G1CollectedHeap::next_region_in_humongous(HeapRegion* hr) con
   return _hrm.next_region_in_humongous(hr);
 }
 
-inline uint G1CollectedHeap::addr_to_region(HeapWord* addr) const {
+inline uint G1CollectedHeap::addr_to_region(const HeapWord* addr) const {
   assert(is_in_reserved(addr),
          "Cannot calculate region index for address " PTR_FORMAT " that is outside of the heap [" PTR_FORMAT ", " PTR_FORMAT ")",
          p2i(addr), p2i(reserved().start()), p2i(reserved().end()));
@@ -98,12 +98,12 @@ inline HeapWord* G1CollectedHeap::bottom_addr_for_region(uint index) const {
 }
 
 inline HeapRegion* G1CollectedHeap::heap_region_containing(const void* addr) const {
-  uint const region_idx = addr_to_region((HeapWord*)addr);
+  uint const region_idx = addr_to_region(static_cast<const HeapWord*>(addr));
   return region_at(region_idx);
 }
 
-inline HeapRegion* G1CollectedHeap::heap_region_containing_or_null(const void* addr) const {
-  uint const region_idx = addr_to_region((HeapWord*)addr);
+inline HeapRegion* G1CollectedHeap::heap_region_containing_or_null(HeapWord* addr) const {
+  uint const region_idx = addr_to_region(addr);
   return region_at_or_null(region_idx);
 }
 
