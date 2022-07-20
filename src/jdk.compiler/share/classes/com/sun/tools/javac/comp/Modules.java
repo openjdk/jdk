@@ -165,6 +165,7 @@ public class Modules extends JCTree.Visitor {
     private final String limitModsOpt;
     private final Set<String> extraLimitMods = new HashSet<>();
     private final String moduleVersionOpt;
+    private final boolean sourceLauncher;
 
     private final boolean lintOptions;
 
@@ -214,6 +215,7 @@ public class Modules extends JCTree.Visitor {
         addModsOpt = options.get(Option.ADD_MODULES);
         limitModsOpt = options.get(Option.LIMIT_MODULES);
         moduleVersionOpt = options.get(Option.MODULE_VERSION);
+        sourceLauncher = options.isSet("sourceLauncher");
     }
 
     int depth = -1;
@@ -1341,9 +1343,9 @@ public class Modules extends JCTree.Visitor {
                 .forEach(result::add);
         }
 
-        String incubatingModules = result.stream()
+        String incubatingModules = filterAlreadyWarnedIncubatorModules(result.stream()
                 .filter(msym -> msym.resolutionFlags.contains(ModuleResolutionFlags.WARN_INCUBATING))
-                .map(msym -> msym.name.toString())
+                .map(msym -> msym.name.toString()))
                 .collect(Collectors.joining(","));
 
         if (!incubatingModules.isEmpty()) {
@@ -1359,6 +1361,15 @@ public class Modules extends JCTree.Visitor {
         }
     }
     //where:
+        private Stream<String> filterAlreadyWarnedIncubatorModules(Stream<String> incubatingModules) {
+            if (!sourceLauncher) return incubatingModules;
+            Set<String> bootModules = ModuleLayer.boot()
+                                                 .modules()
+                                                 .stream()
+                                                 .map(Module::getName)
+                                                 .collect(Collectors.toSet());
+            return incubatingModules.filter(module -> !bootModules.contains(module));
+        }
         private static final Predicate<ModuleSymbol> IS_AUTOMATIC =
                 m -> (m.flags_field & Flags.AUTOMATIC_MODULE) != 0;
 

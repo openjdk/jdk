@@ -368,6 +368,7 @@ public class Main {
         javacOpts.add("-Xlint:deprecation");
         javacOpts.add("-Xlint:unchecked");
         javacOpts.add("-Xlint:-options");
+        javacOpts.add("-XDsourceLauncher");
         return javacOpts;
     }
 
