@@ -24,10 +24,18 @@
 package jdk.classfile.transforms;
 
 import java.lang.constant.ClassDesc;
+import java.lang.constant.ConstantDesc;
+import java.lang.constant.DirectMethodHandleDesc;
 import java.lang.constant.DynamicCallSiteDesc;
+import java.lang.constant.DynamicConstantDesc;
+import java.lang.constant.MethodHandleDesc;
 import java.lang.constant.MethodTypeDesc;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import jdk.classfile.Annotation;
+import jdk.classfile.AnnotationElement;
+import jdk.classfile.AnnotationValue;
 import jdk.classfile.ClassBuilder;
 import jdk.classfile.ClassElement;
 import jdk.classfile.ClassModel;
@@ -51,7 +59,6 @@ import jdk.classfile.instruction.InvokeDynamicInstruction;
 import jdk.classfile.instruction.InvokeInstruction;
 import jdk.classfile.instruction.NewMultiArrayInstruction;
 import jdk.classfile.instruction.NewObjectInstruction;
-import jdk.classfile.instruction.NewPrimitiveArrayInstruction;
 import jdk.classfile.instruction.NewReferenceArrayInstruction;
 import jdk.classfile.instruction.TypeCheckInstruction;
 import jdk.classfile.MethodModel;
@@ -59,12 +66,28 @@ import jdk.classfile.MethodSignature;
 import jdk.classfile.MethodTransform;
 import jdk.classfile.Signature;
 import jdk.classfile.Superclass;
+import jdk.classfile.TypeAnnotation;
+import jdk.classfile.attribute.EnclosingMethodAttribute;
 import jdk.classfile.attribute.ExceptionsAttribute;
+import jdk.classfile.attribute.InnerClassInfo;
+import jdk.classfile.attribute.InnerClassesAttribute;
+import jdk.classfile.attribute.ModuleAttribute;
+import jdk.classfile.attribute.ModuleProvideInfo;
+import jdk.classfile.attribute.RecordAttribute;
+import jdk.classfile.attribute.RecordComponentInfo;
+import jdk.classfile.attribute.RuntimeInvisibleAnnotationsAttribute;
+import jdk.classfile.attribute.RuntimeInvisibleParameterAnnotationsAttribute;
+import jdk.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
+import jdk.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
+import jdk.classfile.attribute.RuntimeVisibleParameterAnnotationsAttribute;
+import jdk.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
 import jdk.classfile.attribute.SignatureAttribute;
+import jdk.classfile.constantpool.Utf8Entry;
 import jdk.classfile.instruction.ExceptionCatch;
 import jdk.classfile.instruction.LocalVariable;
 import jdk.classfile.instruction.LocalVariableType;
 import jdk.classfile.impl.Util;
+import jdk.classfile.instruction.ConstantInstruction.LoadConstantInstruction;
 
 /**
  *
@@ -116,6 +139,32 @@ public sealed interface ClassRemapper {
                         clb.withInterfaceSymbols(Util.mappedList(ins.interfaces(), in -> map(in.asSymbol())));
                     case SignatureAttribute sa ->
                         clb.with(SignatureAttribute.of(mapClassSignature(sa.asClassSignature())));
+                    case InnerClassesAttribute ica ->
+                        clb.with(InnerClassesAttribute.of(ica.classes().stream().map(ici ->
+                                InnerClassInfo.of(map(ici.innerClass().asSymbol()),
+                                        ici.outerClass().map(oc -> map(oc.asSymbol())),
+                                        ici.innerName().map(Utf8Entry::stringValue),
+                                        ici.flagsMask())).toList()));
+                    case EnclosingMethodAttribute ema ->
+                        clb.with(EnclosingMethodAttribute.of(map(ema.enclosingClass().asSymbol()),
+                                ema.enclosingMethodName().map(Utf8Entry::stringValue),
+                                ema.enclosingMethodTypeSymbol().map(this::mapMethodDesc)));
+                    case RecordAttribute ra ->
+                        clb.with(RecordAttribute.of(ra.components().stream().map(this::mapRecordComponent).toList()));
+                    case ModuleAttribute ma ->
+                        clb.with(ModuleAttribute.of(ma.moduleName(), ma.moduleFlagsMask(), ma.moduleVersion().orElse(null),
+                                ma.requires(), ma.exports(), ma.opens(),
+                                ma.uses().stream().map(ce -> clb.constantPool().classEntry(map(ce.asSymbol()))).toList(),
+                                ma.provides().stream().map(mp -> ModuleProvideInfo.of(map(mp.provides().asSymbol()),
+                                        mp.providesWith().stream().map(pw -> map(pw.asSymbol())).toList())).toList()));
+                    case RuntimeVisibleAnnotationsAttribute aa ->
+                        clb.with(RuntimeVisibleAnnotationsAttribute.of(mapAnnotations(aa.annotations())));
+                    case RuntimeInvisibleAnnotationsAttribute aa ->
+                        clb.with(RuntimeInvisibleAnnotationsAttribute.of(mapAnnotations(aa.annotations())));
+                    case RuntimeVisibleTypeAnnotationsAttribute aa ->
+                        clb.with(RuntimeVisibleTypeAnnotationsAttribute.of(mapTypeAnnotations(aa.annotations())));
+                    case RuntimeInvisibleTypeAnnotationsAttribute aa ->
+                        clb.with(RuntimeInvisibleTypeAnnotationsAttribute.of(mapTypeAnnotations(aa.annotations())));
                     default ->
                         clb.with(cle);
                 }
@@ -128,6 +177,14 @@ public sealed interface ClassRemapper {
                 switch (fe) {
                     case SignatureAttribute sa ->
                         fb.with(SignatureAttribute.of(mapSignature(sa.asTypeSignature())));
+                    case RuntimeVisibleAnnotationsAttribute aa ->
+                        fb.with(RuntimeVisibleAnnotationsAttribute.of(mapAnnotations(aa.annotations())));
+                    case RuntimeInvisibleAnnotationsAttribute aa ->
+                        fb.with(RuntimeInvisibleAnnotationsAttribute.of(mapAnnotations(aa.annotations())));
+                    case RuntimeVisibleTypeAnnotationsAttribute aa ->
+                        fb.with(RuntimeVisibleTypeAnnotationsAttribute.of(mapTypeAnnotations(aa.annotations())));
+                    case RuntimeInvisibleTypeAnnotationsAttribute aa ->
+                        fb.with(RuntimeInvisibleTypeAnnotationsAttribute.of(mapTypeAnnotations(aa.annotations())));
                     default ->
                         fb.with(fe);
                 }
@@ -144,6 +201,18 @@ public sealed interface ClassRemapper {
                         mb.with(ExceptionsAttribute.ofSymbols(ea.exceptions().stream().map(ce -> map(ce.asSymbol())).toList()));
                     case SignatureAttribute sa ->
                         mb.with(SignatureAttribute.of(mapMethodSignature(sa.asMethodSignature())));
+                    case RuntimeVisibleAnnotationsAttribute aa ->
+                        mb.with(RuntimeVisibleAnnotationsAttribute.of(mapAnnotations(aa.annotations())));
+                    case RuntimeInvisibleAnnotationsAttribute aa ->
+                        mb.with(RuntimeInvisibleAnnotationsAttribute.of(mapAnnotations(aa.annotations())));
+                    case RuntimeVisibleParameterAnnotationsAttribute paa ->
+                        mb.with(RuntimeVisibleParameterAnnotationsAttribute.of(paa.parameterAnnotations().stream().map(this::mapAnnotations).toList()));
+                    case RuntimeInvisibleParameterAnnotationsAttribute paa ->
+                        mb.with(RuntimeInvisibleParameterAnnotationsAttribute.of(paa.parameterAnnotations().stream().map(this::mapAnnotations).toList()));
+                    case RuntimeVisibleTypeAnnotationsAttribute aa ->
+                        mb.with(RuntimeVisibleTypeAnnotationsAttribute.of(mapTypeAnnotations(aa.annotations())));
+                    case RuntimeInvisibleTypeAnnotationsAttribute aa ->
+                        mb.with(RuntimeInvisibleTypeAnnotationsAttribute.of(mapTypeAnnotations(aa.annotations())));
                     default ->
                         mb.with(me);
                 }
@@ -162,20 +231,24 @@ public sealed interface ClassRemapper {
                         cob.invokeDynamicInstruction(DynamicCallSiteDesc.of(idi.bootstrapMethod(), idi.name().stringValue(), mapMethodDesc(idi.typeSymbol())));
                     case NewObjectInstruction c ->
                         cob.newObjectInstruction(map(c.className().asSymbol()));
-                    case NewPrimitiveArrayInstruction c ->
-                        cob.newPrimitiveArrayInstruction(c.typeKind());
                     case NewReferenceArrayInstruction c ->
-                        cob.anewarray(c.componentType().asSymbol());
+                        cob.anewarray(map(c.componentType().asSymbol()));
                     case NewMultiArrayInstruction c ->
-                        cob.multianewarray(c.arrayType().asSymbol(), c.dimensions());
+                        cob.multianewarray(map(c.arrayType().asSymbol()), c.dimensions());
                     case TypeCheckInstruction c ->
                         cob.typeCheckInstruction(c.opcode(), map(c.type().asSymbol()));
                     case ExceptionCatch c ->
-                        cob.exceptionCatch(c.tryStart(), c.tryEnd(), c.handler(), c.catchType().map(d -> TemporaryConstantPool.INSTANCE.classEntry(TemporaryConstantPool.INSTANCE.utf8Entry(Util.toInternalName(map(d.asSymbol()))))));
+                        cob.exceptionCatch(c.tryStart(), c.tryEnd(), c.handler(), c.catchType().map(d -> TemporaryConstantPool.INSTANCE.classEntry(map(d.asSymbol()))));
                     case LocalVariable c ->
                         cob.localVariable(c.slot(), c.name().stringValue(), map(c.typeSymbol()), c.startScope(), c.endScope());
                     case LocalVariableType c ->
                         cob.localVariableType(c.slot(), c.name().stringValue(), mapSignature(c.signatureSymbol()), c.startScope(), c.endScope());
+                    case LoadConstantInstruction ldc ->
+                        cob.constantInstruction(ldc.opcode(), mapConstantValue(ldc.constantValue()));
+                    case RuntimeVisibleTypeAnnotationsAttribute aa ->
+                        cob.with(RuntimeVisibleTypeAnnotationsAttribute.of(mapTypeAnnotations(aa.annotations())));
+                    case RuntimeInvisibleTypeAnnotationsAttribute aa ->
+                        cob.with(RuntimeInvisibleTypeAnnotationsAttribute.of(mapTypeAnnotations(aa.annotations())));
                     default ->
                         cob.with(coe);
                 }
@@ -207,6 +280,54 @@ public sealed interface ClassRemapper {
                     signature.throwableSignatures().stream().map(this::mapSignature).toList());
         }
 
+        RecordComponentInfo mapRecordComponent(RecordComponentInfo component) {
+            return RecordComponentInfo.of(component.name().stringValue(), map(component.descriptorSymbol()),
+                    component.attributes().stream().map(atr ->
+                        switch (atr) {
+                            case SignatureAttribute sa ->
+                                SignatureAttribute.of(mapSignature(sa.asTypeSignature()));
+                            case RuntimeVisibleAnnotationsAttribute aa ->
+                                RuntimeVisibleAnnotationsAttribute.of(mapAnnotations(aa.annotations()));
+                            case RuntimeInvisibleAnnotationsAttribute aa ->
+                                RuntimeInvisibleAnnotationsAttribute.of(mapAnnotations(aa.annotations()));
+                            case RuntimeVisibleTypeAnnotationsAttribute aa ->
+                                RuntimeVisibleTypeAnnotationsAttribute.of(mapTypeAnnotations(aa.annotations()));
+                            case RuntimeInvisibleTypeAnnotationsAttribute aa ->
+                                RuntimeInvisibleTypeAnnotationsAttribute.of(mapTypeAnnotations(aa.annotations()));
+                            default -> atr;
+                        }).toList());
+        }
+
+        DirectMethodHandleDesc mapDirectMethodHandle(DirectMethodHandleDesc dmhd) {
+            return switch (dmhd.kind()) {
+                case GETTER, SETTER, STATIC_GETTER, STATIC_SETTER ->
+                    MethodHandleDesc.ofField(dmhd.kind(), map(dmhd.owner()), dmhd.methodName(), map(ClassDesc.ofDescriptor(dmhd.lookupDescriptor())));
+                default ->
+                    MethodHandleDesc.ofMethod(dmhd.kind(), map(dmhd.owner()), dmhd.methodName(), mapMethodDesc(MethodTypeDesc.ofDescriptor(dmhd.lookupDescriptor())));
+            };
+        }
+
+        ConstantDesc mapConstantValue(ConstantDesc value) {
+            return switch (value) {
+                case ClassDesc cd ->
+                    map(cd);
+                case DynamicConstantDesc<?> dcd ->
+                    mapDynamicConstant(dcd);
+                case DirectMethodHandleDesc dmhd ->
+                    mapDirectMethodHandle(dmhd);
+                case MethodTypeDesc mtd ->
+                    mapMethodDesc(mtd);
+                default -> value;
+            };
+        }
+
+        DynamicConstantDesc<?> mapDynamicConstant(DynamicConstantDesc<?> dcd) {
+            return DynamicConstantDesc.ofNamed(mapDirectMethodHandle(dcd.bootstrapMethod()),
+                    dcd.constantName(),
+                    map(dcd.constantType()),
+                    dcd.bootstrapArgsList().stream().map(this::mapConstantValue).toArray(ConstantDesc[]::new));
+        }
+
         @SuppressWarnings("unchecked")
         <S extends Signature> S mapSignature(S signature) {
             return (S) switch (signature) {
@@ -217,6 +338,29 @@ public sealed interface ClassRemapper {
                             map(cts.classDesc()), cts.typeArgs().stream().map(this::mapSignature).toArray(Signature[]::new));
                 default -> signature;
             };
+        }
+
+        List<Annotation> mapAnnotations(List<Annotation> annotations) {
+            return annotations.stream().map(this::mapAnnotation).toList();
+        }
+
+        Annotation mapAnnotation(Annotation a) {
+            return Annotation.of(map(a.classSymbol()), a.elements().stream().map(el -> AnnotationElement.of(el.name(), mapAnnotationValue(el.value()))).toList());
+        }
+
+        AnnotationValue mapAnnotationValue(AnnotationValue val) {
+            return switch (val) {
+                case AnnotationValue.OfAnnotation oa -> AnnotationValue.ofAnnotation(mapAnnotation(oa.annotation()));
+                case AnnotationValue.OfArray oa -> AnnotationValue.ofArray(oa.values().stream().map(this::mapAnnotationValue).toList());
+                case AnnotationValue.OfConstant oc -> oc;
+                case AnnotationValue.OfClass oc -> AnnotationValue.ofClass(map(oc.classSymbol()));
+                case AnnotationValue.OfEnum oe -> AnnotationValue.ofEnum(map(oe.classSymbol()), oe.constantName().stringValue());
+            };
+        }
+
+        List<TypeAnnotation> mapTypeAnnotations(List<TypeAnnotation> typeAnnotations) {
+            return typeAnnotations.stream().map(a -> TypeAnnotation.of(a.targetInfo(), a.targetPath(), map(a.classSymbol()),
+                    a.elements().stream().map(el -> AnnotationElement.of(el.name(), mapAnnotationValue(el.value()))).toList())).toList();
         }
     }
 }

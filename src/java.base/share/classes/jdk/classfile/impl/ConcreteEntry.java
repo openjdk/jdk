@@ -840,7 +840,7 @@ public abstract sealed class ConcreteEntry {
         public DirectMethodHandleDesc asSymbol() {
             return MethodHandleDesc.of(
                     DirectMethodHandleDesc.Kind.valueOf(kind(), reference().isInterface()),
-                    ClassDesc.of(Util.toClassString(((jdk.classfile.constantpool.MemberRefEntry) reference()).owner().asInternalName())),
+                    ((jdk.classfile.constantpool.MemberRefEntry) reference()).owner().asSymbol(),
                     ((jdk.classfile.constantpool.MemberRefEntry) reference()).nameAndType().name().stringValue(),
                     ((jdk.classfile.constantpool.MemberRefEntry) reference()).nameAndType().type().stringValue());
         }

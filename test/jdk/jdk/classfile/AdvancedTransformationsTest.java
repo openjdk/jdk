@@ -53,12 +53,19 @@ import jdk.classfile.ClassModel;
 import jdk.classfile.CodeElement;
 import jdk.classfile.FieldModel;
 import jdk.classfile.Signature;
+import jdk.classfile.attribute.ModuleAttribute;
 import jdk.classfile.impl.AbstractInstruction;
 import jdk.classfile.impl.RawBytecodeHelper;
 import jdk.classfile.impl.Util;
 import jdk.classfile.instruction.InvokeInstruction;
 import java.lang.reflect.AccessFlag;
 import jdk.classfile.transforms.LabelsRemapper;
+import jdk.classfile.jdktypes.ModuleDesc;
+import jdk.classfile.util.ClassPrinter;
+import static java.lang.annotation.ElementType.*;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 public class AdvancedTransformationsTest {
 
@@ -116,6 +123,96 @@ public class AdvancedTransformationsTest {
                         verifySignature(md.parameterType(i), args.get(i));
                 }));
         }
+    }
+
+    @Target({TYPE, FIELD, METHOD, PARAMETER, CONSTRUCTOR, LOCAL_VARIABLE, TYPE_PARAMETER, TYPE_USE})
+    @Retention(RetentionPolicy.RUNTIME)
+    @interface FooAnno {
+    }
+
+    @interface BarAnno {
+    }
+
+    public static class Foo {
+        public static Foo fooField;
+        public static Foo fooMethod(Foo arg) {
+            return null;
+        }
+
+    };
+    public static class Bar {};
+
+    @FooAnno
+    public static record Rec(@FooAnno Foo foo) {
+        @FooAnno
+        public Rec(Foo foo) {
+            this.foo = new @FooAnno Foo();
+            Foo local @FooAnno [] = new Foo @FooAnno [0];
+            Foo.fooField = foo;
+            Foo.fooMethod(foo);
+        }
+    }
+
+    @Test
+    public void testRemapModule() throws Exception {
+        var foo = ClassDesc.ofDescriptor(Foo.class.descriptorString());
+        var bar = ClassDesc.ofDescriptor(Bar.class.descriptorString());
+
+        var ma = Classfile.parse(
+                ClassRemapper.of(Map.of(foo, bar)).remapClass(
+                        Classfile.parse(
+                                Classfile.buildModule(
+                                        ModuleAttribute.of(ModuleDesc.of("MyModule"), mab ->
+                                                mab.uses(foo).provides(foo, foo)))))).findAttribute(Attributes.MODULE).get();
+        assertEquals(ma.uses().get(0).asSymbol(), bar);
+        var provides = ma.provides().get(0);
+        assertEquals(provides.provides().asSymbol(), bar);
+        assertEquals(provides.providesWith().get(0).asSymbol(), bar);
+    }
+
+    @Test
+    public void testRemapDetails() throws Exception {
+        var foo = ClassDesc.ofDescriptor(Foo.class.descriptorString());
+        var bar = ClassDesc.ofDescriptor(Bar.class.descriptorString());
+        var fooAnno = ClassDesc.ofDescriptor(FooAnno.class.descriptorString());
+        var barAnno = ClassDesc.ofDescriptor(BarAnno.class.descriptorString());
+        var rec = ClassDesc.ofDescriptor(Rec.class.descriptorString());
+
+        var remapped = Classfile.parse(
+                ClassRemapper.of(Map.of(foo, bar, fooAnno, barAnno)).remapClass(
+                        Classfile.parse(
+                                Rec.class.getResourceAsStream(Rec.class.getName() + ".class")
+                                        .readAllBytes())));
+        var sb = new StringBuilder();
+        ClassPrinter.yamlPrinter(ClassPrinter.VerbosityLevel.TRACE_ALL, sb::append).printClass(remapped);
+        String out = sb.toString();
+        assertContains(out,
+                "type: 'LAdvancedTransformationsTest$Bar;'",
+                "['AdvancedTransformationsTest$Bar', 'AdvancedTransformationsTest', 'Foo', [PUBLIC, STATIC]]",
+                "descriptor: 'LAdvancedTransformationsTest$Bar;'",
+                "descriptor: '(LAdvancedTransformationsTest$Bar;)V'",
+                "[NEW, {type: 'AdvancedTransformationsTest$Bar'}]",
+                "[INVOKESPECIAL, {owner: 'AdvancedTransformationsTest$Bar', name: '<init>', descriptor: '()V'}]",
+                "[PUTFIELD, {owner: 'AdvancedTransformationsTest$Rec', name: 'foo', descriptor: 'LAdvancedTransformationsTest$Bar;'}]",
+                "[ANEWARRAY, {dimensions: 1, descriptor: 'AdvancedTransformationsTest$Bar'}]",
+                "[PUTSTATIC, {owner: 'AdvancedTransformationsTest$Bar', name: 'fooField', descriptor: 'LAdvancedTransformationsTest$Bar;'}]",
+                "[INVOKESTATIC, {owner: 'AdvancedTransformationsTest$Bar', name: 'fooMethod', descriptor: '(LAdvancedTransformationsTest$Bar;)LAdvancedTransformationsTest$Bar;'}]",
+                "descriptor: '()LAdvancedTransformationsTest$Bar;'",
+                "[GETFIELD, {owner: 'AdvancedTransformationsTest$Rec', name: 'foo', descriptor: 'LAdvancedTransformationsTest$Bar;'}]",
+                "{class: 'LAdvancedTransformationsTest$BarAnno;'}",
+                "{class: 'LAdvancedTransformationsTest$BarAnno;', target type: 'FIELD'}",
+                "{class: 'LAdvancedTransformationsTest$BarAnno;', target type: 'METHOD_RETURN'}",
+                "{class: 'LAdvancedTransformationsTest$BarAnno;', target type: 'NEW'}",
+                "{class: 'LAdvancedTransformationsTest$BarAnno;', target type: 'LOCAL_VARIABLE'}",
+                "#visible type annotation: {class: 'LAdvancedTransformationsTest$BarAnno;', target type: 'NEW'}",
+                "#visible type annotation: {class: 'LAdvancedTransformationsTest$BarAnno;', target type: 'LOCAL_VARIABLE'}");
+    }
+
+
+
+    private static void assertContains(String actual, String... expected) {
+        for (String exp : expected)
+            assertTrue(actual.contains(exp), "expected text: \"" + exp + "\" not found in:\n" + actual);
     }
 
     private static void verifySignature(ClassDesc desc, Signature sig) {
