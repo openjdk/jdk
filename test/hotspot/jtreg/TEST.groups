@@ -689,9 +689,6 @@ vmTestbase_vm_gc_juggle = \
 # GC Locker
 vmTestbase_vm_gc_locker = \
   vmTestbase/gc/lock \
-  vmTestbase/gc/gctests/mallocWithGC1/mallocWithGC1.java \
-  vmTestbase/gc/gctests/mallocWithGC2/mallocWithGC2.java \
-  vmTestbase/gc/gctests/mallocWithGC3/mallocWithGC3.java \
   vmTestbase/gc/gctests/nativeGC01/nativeGC01.java \
   vmTestbase/gc/gctests/nativeGC02/nativeGC02.java \
   vmTestbase/gc/gctests/nativeGC03/nativeGC03.java \
