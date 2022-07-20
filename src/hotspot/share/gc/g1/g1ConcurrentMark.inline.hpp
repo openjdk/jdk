@@ -48,7 +48,7 @@ inline bool G1CMIsAliveClosure::do_object_b(oop obj) {
     return true;
   }
 
-  HeapRegion* hr = _g1h->heap_region_containing(cast_from_oop<HeapWord*>(obj));
+  HeapRegion* hr = _g1h->heap_region_containing(obj);
   // All objects allocated since the start of marking are considered live.
   if (hr->obj_allocated_since_marking_start(obj)) {
     return true;

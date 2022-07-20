@@ -35,7 +35,7 @@ inline bool HeapRegionManager::is_available(uint region) const {
   return _committed_map.active(region);
 }
 
-inline HeapRegion* HeapRegionManager::addr_to_region(HeapWord* addr) const {
+inline HeapRegion* HeapRegionManager::addr_to_region(const HeapWord* addr) const {
   assert(addr < heap_end(),
         "addr: " PTR_FORMAT " end: " PTR_FORMAT, p2i(addr), p2i(heap_end()));
   assert(addr >= heap_bottom(),
