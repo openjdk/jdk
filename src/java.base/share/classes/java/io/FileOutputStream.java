@@ -328,16 +328,17 @@ public class FileOutputStream extends OutputStream
     }
 
     /**
-     * Writes a subarray as a sequence of bytes.
+     * Writes a subarray as a sequence of bytes via a temporary direct buffer.
+     *
      * @param     b the data to be written
      * @param     off the start offset in the data
      * @param     len the number of bytes to be written
-     * @param     address the address of the temporary direct buffer's array
-     * @param     size the size of the temporary direct buffer's array
+     * @param     bufAddr the address of the temporary direct buffer's array
+     * @param     bufSize the size of the temporary direct buffer's array
      * @throws    IOException If an I/O error has occurred.
      */
     private native void writeBytes0(byte[] b, int off, int len, boolean append,
-                                    long address, int capacity)
+                                    long bufAddr, int bufSize)
         throws IOException;
 
     /**
@@ -350,13 +351,13 @@ public class FileOutputStream extends OutputStream
     @Override
     public void write(byte[] b) throws IOException {
         boolean append = fdAccess.getAppend(fd);
-        int size = RandomAccessFile.bufferSize(b.length);
-        ByteBuffer buf = Util.getTemporaryDirectBuffer(size);
+        int bufSize = RandomAccessFile.bufferSize(b.length);
+        ByteBuffer buf = Util.getTemporaryDirectBuffer(bufSize);
         try {
             long comp = Blocker.begin();
             try {
-                long address = ((DirectBuffer)buf).address();
-                writeBytes0(b, 0, b.length, append, address, size);
+                long bufAddr = ((DirectBuffer)buf).address();
+                writeBytes0(b, 0, b.length, append, bufAddr, bufSize);
             } finally {
                 Blocker.end(comp);
             }

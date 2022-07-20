@@ -246,16 +246,21 @@ public class FileInputStream extends InputStream
     private native int read0() throws IOException;
 
     /**
-     * Reads a subarray as a sequence of bytes.
+     * Reads a subarray as a sequence of bytes via a temporary direct
+     * buffer.
+     *
      * @param     b the data to be read
      * @param     off the start offset in the data
      * @param     len the number of bytes to be read
-     * @param     address the address of the temporary direct buffer's array
-     * @param     size the size of the temporary direct buffer's array
+     * @param     bufAddr the address of the temporary direct buffer's array
+     * @param     bufSize the size of the temporary direct buffer's array
+     * @return    the total number of bytes read into the buffer, or -1
+     *            if there is no more data because the end of the stream
+     *            has been reached.
      * @throws    IOException If an I/O error has occurred.
      */
-    private native int readBytes0(byte[] b, int off, int len, long address,
-                                  int size) throws IOException;
+    private native int readBytes0(byte[] b, int off, int len, long bufAddr,
+                                  int bufSize) throws IOException;
 
     /**
      * Reads up to {@code b.length} bytes of data from this input
@@ -270,13 +275,13 @@ public class FileInputStream extends InputStream
      */
     @Override
     public int read(byte[] b) throws IOException {
-        int size = RandomAccessFile.bufferSize(b.length);
-        ByteBuffer buf = Util.getTemporaryDirectBuffer(size);
+        int bufSize = RandomAccessFile.bufferSize(b.length);
+        ByteBuffer buf = Util.getTemporaryDirectBuffer(bufSize);
         try {
             long comp = Blocker.begin();
             try {
-                long address = ((DirectBuffer)buf).address();
-                return readBytes0(b, 0, b.length, address, size);
+                long bufAddr = ((DirectBuffer)buf).address();
+                return readBytes0(b, 0, b.length, bufAddr, bufSize);
             } finally {
                 Blocker.end(comp);
             }

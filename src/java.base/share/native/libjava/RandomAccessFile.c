@@ -74,8 +74,9 @@ Java_java_io_RandomAccessFile_read0(JNIEnv *env, jobject this) {
 
 JNIEXPORT jint JNICALL
 Java_java_io_RandomAccessFile_readBytes0(JNIEnv *env,
-    jobject this, jbyteArray bytes, jint off, jint len, jlong addr, jint size) {
-    return readBytes(env, this, bytes, off, len, raf_fd, addr, size);
+    jobject this, jbyteArray bytes, jint off, jint len,
+    jlong bufAddr, jint bufSize) {
+    return readBytes(env, this, bytes, off, len, bufAddr, bufSize, raf_fd);
 }
 
 JNIEXPORT void JNICALL
@@ -85,8 +86,9 @@ Java_java_io_RandomAccessFile_write0(JNIEnv *env, jobject this, jint byte) {
 
 JNIEXPORT void JNICALL
 Java_java_io_RandomAccessFile_writeBytes0(JNIEnv *env,
-    jobject this, jbyteArray bytes, jint off, jint len, jlong addr, jint size) {
-    writeBytes(env, this, bytes, off, len, JNI_FALSE, raf_fd, addr, size);
+    jobject this, jbyteArray bytes, jint off, jint len,
+    jlong bufAddr, jint bufSize) {
+    writeBytes(env, this, bytes, off, len, JNI_FALSE, bufAddr, bufSize, raf_fd);
 }
 
 JNIEXPORT jlong JNICALL

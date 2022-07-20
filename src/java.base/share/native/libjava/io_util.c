@@ -53,12 +53,6 @@ readSingle(JNIEnv *env, jobject this, jfieldID fid) {
     return ret & 0xFF;
 }
 
-// The size of a stack-allocated buffer.
-#define STACK_BUF_SIZE 8192
-
-// The maximum size of a dynamically allocated buffer.
-#define MAX_MALLOC_SIZE 65536
-
 /*
  * Returns true if the array slice defined by the given offset and length
  * is out of bounds.
@@ -74,12 +68,12 @@ outOfBounds(JNIEnv *env, jint off, jint len, jbyteArray array) {
 
 jint
 readBytes(JNIEnv *env, jobject this, jbyteArray bytes,
-          jint off, jint len, jfieldID fid, jlong address, jint size)
+          jint off, jint len, jlong bufAddr, jint bufSize, jfieldID fid)
 {
-    char *buf = (char*)jlong_to_ptr(address);
-    const jint buf_size = size;
-    jint read_size;
-    jint n, nread;
+    jint remaining;
+    void* buf = (void*)jlong_to_ptr(bufAddr);
+    jint readSize;
+    jint n;
     FD fd;
 
     if (IS_NULL(bytes)) {
@@ -96,36 +90,33 @@ readBytes(JNIEnv *env, jobject this, jbyteArray bytes,
         return 0;
     }
 
-    nread = 0;
-    while (nread < len) {
-        read_size = len - nread;
-        if (read_size > buf_size)
-            read_size = buf_size;
-        fd = getFD(env, this, fid);
-        if (fd == -1) {
-            JNU_ThrowIOException(env, "Stream Closed");
-            nread = -1;
-            break;
-        }
-        n = IO_Read(fd, buf, read_size);
+    fd = getFD(env, this, fid);
+    if (fd == -1) {
+        JNU_ThrowIOException(env, "Stream Closed");
+        return -1;
+    }
+
+    remaining = len;
+    while (remaining > 0) {
+        readSize = remaining < bufSize ? remaining : bufSize;
+        n = IO_Read(fd, buf, readSize);
         if (n > 0) {
             (*env)->SetByteArrayRegion(env, bytes, off, n, (jbyte*)buf);
-            nread += n;
+            remaining -= n;
             // Exit loop on short read
-            if (n < read_size)
+            if (n < readSize)
                 break;
             off += n;
-        } else if (n == -1) {
+        } else if (n == 0) { // EOF
+            if (remaining == len)
+                return -1;
+        } else {
             JNU_ThrowIOExceptionWithLastError(env, "Read error");
-            break;
-        } else { // EOF
-            if (nread == 0)
-                nread = -1;
-            break;
+            return -1;
         }
     }
 
-    return nread;
+    return len - remaining;
 }
 
 void
@@ -150,12 +141,12 @@ writeSingle(JNIEnv *env, jobject this, jint byte, jboolean append, jfieldID fid)
 
 void
 writeBytes(JNIEnv *env, jobject this, jbyteArray bytes,
-           jint off, jint len, jboolean append, jfieldID fid,
-           jlong address, jint size)
+           jint off, jint len, jboolean append,
+           jlong bufAddr, jint bufSize, jfieldID fid)
 {
-    char *buf = (char*)jlong_to_ptr(address);
-    const jint buf_size = size;
-    jint write_size;
+    jint remaining;
+    void* buf = (void*)jlong_to_ptr(bufAddr);
+    jint writeSize;
     jint n;
     FD fd;
 
@@ -173,26 +164,28 @@ writeBytes(JNIEnv *env, jobject this, jbyteArray bytes,
         return;
     }
 
-    while (len > 0) {
-        write_size = len < buf_size ? len : buf_size;
-        (*env)->GetByteArrayRegion(env, bytes, off, write_size, (jbyte*)buf);
+    fd = getFD(env, this, fid);
+    if (fd == -1) {
+        JNU_ThrowIOException(env, "Stream Closed");
+        return;
+    }
+
+    remaining = len;
+    while (remaining > 0) {
+        writeSize = remaining < bufSize ? remaining : bufSize;
+        (*env)->GetByteArrayRegion(env, bytes, off, writeSize, (jbyte*)buf);
         if (!(*env)->ExceptionOccurred(env)) {
-            fd = getFD(env, this, fid);
-            if (fd == -1) {
-                JNU_ThrowIOException(env, "Stream Closed");
-                break;
-            }
             if (append == JNI_TRUE) {
-                n = IO_Append(fd, buf, write_size);
+                n = IO_Append(fd, buf, writeSize);
             } else {
-                n = IO_Write(fd, buf, write_size);
+                n = IO_Write(fd, buf, writeSize);
             }
             if (n == -1) {
                 JNU_ThrowIOExceptionWithLastError(env, "Write error");
                 break;
             }
             off += n;
-            len -= n;
+            remaining -= n;
         } else { // ArrayIndexOutOfBoundsException
             (*env)->ExceptionClear(env);
             break;
