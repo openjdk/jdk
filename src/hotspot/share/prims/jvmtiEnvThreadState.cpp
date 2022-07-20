@@ -38,7 +38,6 @@
 #include "runtime/vframe.hpp"
 #include "runtime/vmOperations.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 
@@ -414,5 +413,3 @@ void JvmtiEnvThreadState::reset_current_location(jvmtiEvent event_type, bool ena
     clear_current_location();
   }
 }
-
-PRAGMA_DIAG_POP

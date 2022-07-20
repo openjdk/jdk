@@ -100,7 +100,6 @@
 #include "jvmci/jvmciCompiler.hpp"
 #endif
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 static jint CurrentVersion = JNI_VERSION_19;
@@ -4063,5 +4062,3 @@ const struct JNIInvokeInterface_ jni_InvokeInterface = {
     jni_GetEnv,
     jni_AttachCurrentThreadAsDaemon
 };
-
-PRAGMA_DIAG_POP

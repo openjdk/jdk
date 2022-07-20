@@ -36,7 +36,6 @@
 #include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 // Portions of code courtesy of Clifford Click
@@ -2003,5 +2002,3 @@ Node* RangeCheckNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Replace dominated IfNode
   return dominated_by(prev_dom, igvn);
 }
-
-PRAGMA_DIAG_POP

@@ -41,7 +41,6 @@
 #include "jfr/support/jfrKlassExtension.hpp"
 #endif
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 
@@ -220,5 +219,3 @@ InstanceKlass* KlassFactory::create_from_stream(ClassFileStream* stream,
 
   return result;
 }
-
-PRAGMA_DIAG_POP

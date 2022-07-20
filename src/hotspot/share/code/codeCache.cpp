@@ -74,7 +74,6 @@
 #include "opto/node.hpp"
 #endif
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 // Helper class for printing in CodeCache
@@ -1760,5 +1759,3 @@ void CodeCache::print_names(outputStream *out) {
   }
 }
 //---<  END  >--- CodeHeap State Analytics.
-
-PRAGMA_DIAG_POP

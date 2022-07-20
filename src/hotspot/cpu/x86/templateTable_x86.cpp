@@ -44,7 +44,6 @@
 #include "runtime/synchronizer.hpp"
 #include "utilities/macros.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 #define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->
@@ -4450,5 +4449,3 @@ void TemplateTable::multianewarray() {
   __ load_unsigned_byte(rbx, at_bcp(3));
   __ lea(rsp, Address(rsp, rbx, Interpreter::stackElementScale()));  // get rid of counts
 }
-
-PRAGMA_DIAG_POP

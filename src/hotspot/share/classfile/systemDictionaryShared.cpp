@@ -73,7 +73,6 @@
 #include "utilities/resourceHash.hpp"
 #include "utilities/stringUtils.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 SystemDictionaryShared::ArchiveInfo SystemDictionaryShared::_static_archive;
@@ -1675,5 +1674,3 @@ void SystemDictionaryShared::update_archived_mirror_native_pointers() {
   ArchivedMirrorPatcher::update_array_klasses(Universe::fillerArrayKlassObj());
 }
 #endif
-
-PRAGMA_DIAG_POP

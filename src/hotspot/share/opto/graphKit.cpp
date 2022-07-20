@@ -51,7 +51,6 @@
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/growableArray.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 //----------------------------GraphKit-----------------------------------------
@@ -4183,5 +4182,3 @@ Node* GraphKit::make_constant_from_field(ciField* field, Node* obj) {
   }
   return NULL;
 }
-
-PRAGMA_DIAG_POP

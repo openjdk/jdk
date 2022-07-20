@@ -38,7 +38,6 @@
 #include "runtime/os.hpp" // malloc
 #include "utilities/events.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 JVMCIRuntime* JVMCI::_compiler_runtimes = nullptr;
@@ -330,5 +329,3 @@ void JVMCI::fatal_log(const char* buf, size_t count) {
   log.write(buf, count);
   log.flush();
 }
-
-PRAGMA_DIAG_POP

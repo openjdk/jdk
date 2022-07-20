@@ -59,7 +59,6 @@
 #include "utilities/events.hpp"
 #include "utilities/preserveException.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 class CleanupObjectMonitorsHashtable: StackObj {
@@ -1828,5 +1827,3 @@ void ObjectSynchronizer::log_in_use_monitor_details(outputStream* out) {
 
   out->flush();
 }
-
-PRAGMA_DIAG_POP

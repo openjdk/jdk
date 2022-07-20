@@ -38,7 +38,6 @@
 #include "runtime/timer.hpp"
 #include "utilities/align.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 // Standard closure for BytecodeTracer: prints the current bytecode
@@ -608,5 +607,3 @@ void BytecodePrinter::bytecode_epilog(int bci, outputStream* st) {
     }
   }
 }
-
-PRAGMA_DIAG_POP

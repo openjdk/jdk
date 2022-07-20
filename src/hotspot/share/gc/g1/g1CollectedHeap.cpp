@@ -117,7 +117,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/stack.inline.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 size_t G1CollectedHeap::_humongous_object_threshold_in_words = 0;
@@ -3450,5 +3449,3 @@ void G1CollectedHeap::start_codecache_marking_cycle_if_inactive() {
     Continuations::arm_all_nmethods();
   }
 }
-
-PRAGMA_DIAG_POP

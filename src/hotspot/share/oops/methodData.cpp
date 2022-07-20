@@ -44,7 +44,6 @@
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 // ==================================================================
@@ -1822,5 +1821,3 @@ void MethodData::clean_weak_method_links() {
   clean_extra_data(&cl);
   verify_extra_data_clean(&cl);
 }
-
-PRAGMA_DIAG_POP

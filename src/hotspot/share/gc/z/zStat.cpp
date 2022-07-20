@@ -43,7 +43,6 @@
 #include "utilities/debug.hpp"
 #include "utilities/ticks.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 #define ZSIZE_FMT                       SIZE_FORMAT "M(%.0f%%)"
@@ -1516,5 +1515,3 @@ void ZStatHeap::print() {
                      .left(ZTABLE_ARGS_NA)
                      .end());
 }
-
-PRAGMA_DIAG_POP

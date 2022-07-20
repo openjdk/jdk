@@ -53,7 +53,6 @@
 #include "opto/c2compiler.hpp"
 #endif
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 jlong CompilationPolicy::_start_time = 0;
@@ -1213,5 +1212,3 @@ void CompilationPolicy::method_back_branch_event(const methodHandle& mh, const m
     }
   }
 }
-
-PRAGMA_DIAG_POP

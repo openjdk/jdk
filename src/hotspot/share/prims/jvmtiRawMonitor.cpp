@@ -31,7 +31,6 @@
 #include "runtime/orderAccess.hpp"
 #include "runtime/threads.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 JvmtiRawMonitor::QNode::QNode(Thread* thread) : _next(NULL), _prev(NULL),
@@ -433,5 +432,3 @@ int JvmtiRawMonitor::raw_notifyAll(Thread* self) {
   simple_notify(self, true);
   return M_OK;
 }
-
-PRAGMA_DIAG_POP

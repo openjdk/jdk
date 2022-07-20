@@ -32,7 +32,6 @@
 #include "utilities/count_leading_zeros.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 //=============================================================================
@@ -356,5 +355,3 @@ const Type* ExpandBitsNode::Value(PhaseGVN* phase) const {
 
   return bitshuffle_value(src_type, mask_type, Op_ExpandBits, bt);
 }
-
-PRAGMA_DIAG_POP

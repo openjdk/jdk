@@ -35,7 +35,6 @@
 #include "utilities/macros.hpp"
 #include "vmreg_x86.inline.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 #define __ ce->masm()->
@@ -554,5 +553,3 @@ void ArrayCopyStub::emit_code(LIR_Assembler* ce) {
 }
 
 #undef __
-
-PRAGMA_DIAG_POP

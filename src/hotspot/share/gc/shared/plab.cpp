@@ -32,7 +32,6 @@
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 size_t PLAB::min_size() {
@@ -183,5 +182,3 @@ size_t PLABStats::compute_desired_plab_sz() {
   size_t recent_plab_sz = used / target_refills;
   return recent_plab_sz;
 }
-
-PRAGMA_DIAG_POP

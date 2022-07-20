@@ -80,7 +80,6 @@
  */
 #define TRACE_REQUEST_FUNC(id)    void JfrPeriodicEventSet::request##id(void)
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 TRACE_REQUEST_FUNC(JVMInformation) {
@@ -659,5 +658,3 @@ TRACE_REQUEST_FUNC(FinalizerStatistics) {
   log_debug(jfr, system)("Unable to generate requestable event FinalizerStatistics. The required jvm feature 'management' is missing.");
 #endif
 }
-
-PRAGMA_DIAG_POP

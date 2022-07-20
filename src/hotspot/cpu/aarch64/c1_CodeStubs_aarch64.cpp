@@ -35,7 +35,6 @@
 #include "runtime/sharedRuntime.hpp"
 #include "vmreg_aarch64.inline.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 
@@ -374,5 +373,3 @@ void ArrayCopyStub::emit_code(LIR_Assembler* ce) {
 }
 
 #undef __
-
-PRAGMA_DIAG_POP

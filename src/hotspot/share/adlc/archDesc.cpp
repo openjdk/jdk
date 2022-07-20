@@ -1119,12 +1119,15 @@ void ArchDesc::addInclude(ADLFILE &adlfile, const char* includeDir, const char* 
 
 }
 
-void ArchDesc::pragmaAllowUnsafeConversions(ADLFILE &adlfile) {
+void ArchDesc::pragmaDiagPush(ADLFILE& adlfile) {
   fprintf(adlfile._fp, "PRAGMA_DIAG_PUSH\n");
+}
+
+void ArchDesc::pragmaAllowUnsafeConversions(ADLFILE& adlfile) {
   fprintf(adlfile._fp, "PRAGMA_ALLOW_LOSSY_CONVERSIONS\n");
 }
 
-void ArchDesc::pragmaDiagPop(ADLFILE &adlfile) {
+void ArchDesc::pragmaDiagPop(ADLFILE& adlfile) {
   fprintf(adlfile._fp, "PRAGMA_DIAG_POP\n");
 }
 

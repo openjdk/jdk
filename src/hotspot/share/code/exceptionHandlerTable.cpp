@@ -27,7 +27,6 @@
 #include "code/nmethod.hpp"
 #include "memory/allocation.inline.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 void ExceptionHandlerTable::add_entry(HandlerTableEntry entry) {
@@ -260,5 +259,3 @@ void ImplicitExceptionTable::verify(nmethod *nm) const {
        fatal("Invalid offset in ImplicitExceptionTable at " PTR_FORMAT, p2i(_data));
   }
 }
-
-PRAGMA_DIAG_POP

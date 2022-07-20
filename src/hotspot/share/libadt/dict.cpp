@@ -32,7 +32,6 @@
 
 #include <assert.h>
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 //------------------------------data-----------------------------------------
@@ -310,5 +309,3 @@ void DictI::operator ++(void) {
   }
   _key = _value = NULL;
 }
-
-PRAGMA_DIAG_POP

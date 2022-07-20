@@ -62,7 +62,6 @@
 #include "runtime/vframe.inline.hpp"
 #include "utilities/copy.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 ConstantPool* ConstantPool::allocate(ClassLoaderData* loader_data, int length, TRAPS) {
@@ -2486,5 +2485,3 @@ void SymbolHashMap::initialize_table(int table_size) {
     _buckets[index].clear();
   }
 }
-
-PRAGMA_DIAG_POP

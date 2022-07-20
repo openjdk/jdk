@@ -46,7 +46,6 @@
 #include "jfr/jfr.hpp"
 #endif
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 void trace_type_profile(Compile* C, ciMethod *method, int depth, int bci, ciMethod *prof_method, ciKlass *prof_klass, int site_count, int receiver_count) {
@@ -1182,5 +1181,3 @@ ciMethod* Compile::optimize_inlining(ciMethod* caller, ciInstanceKlass* klass, c
 
   return NULL;
 }
-
-PRAGMA_DIAG_POP

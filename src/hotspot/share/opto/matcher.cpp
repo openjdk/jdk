@@ -45,7 +45,6 @@
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/align.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 OptoReg::Name OptoReg::c_frame_pointer;
@@ -3006,5 +3005,3 @@ void State::dump(int depth) {
   }
 }
 #endif
-
-PRAGMA_DIAG_POP

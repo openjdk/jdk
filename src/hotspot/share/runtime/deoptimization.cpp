@@ -97,7 +97,6 @@
 #include "jfr/metadata/jfrSerializer.hpp"
 #endif
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 bool DeoptimizationMarker::_is_active = false;
@@ -2777,5 +2776,3 @@ const char* Deoptimization::format_trap_state(char* buf, size_t buflen,
 }
 
 #endif // COMPILER2_OR_JVMCI
-
-PRAGMA_DIAG_POP

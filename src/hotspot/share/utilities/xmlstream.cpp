@@ -37,7 +37,6 @@
 #include "utilities/vmError.hpp"
 #include "utilities/xmlstream.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 // Do not assert this condition if there's already another error reported.
@@ -517,5 +516,3 @@ void xmlTextStream::write(const char* str, size_t len) {
   _outer_xmlStream->write_text(str, len);
   update_position(str, len);
 }
-
-PRAGMA_DIAG_POP

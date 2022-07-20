@@ -291,6 +291,7 @@ public:
   void addInclude(ADLFILE &adlfile, const char* includeDir, const char* fileName);
 
   // pragma
+  void pragmaDiagPush(ADLFILE& adlfile);
   void pragmaAllowUnsafeConversions(ADLFILE& adlfile);
   void pragmaDiagPop(ADLFILE& adlfile);
 

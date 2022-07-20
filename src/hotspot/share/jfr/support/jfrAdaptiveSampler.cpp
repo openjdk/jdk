@@ -35,7 +35,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include <cmath>
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 JfrSamplerWindow::JfrSamplerWindow() :
@@ -386,5 +385,3 @@ const JfrSamplerParams& JfrGTestFixedRateSampler::next_window_params(const JfrSa
   log(expired, &_sample_size_ewma);
   return _params;
 }
-
-PRAGMA_DIAG_POP

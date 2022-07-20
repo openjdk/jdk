@@ -29,7 +29,6 @@
 #include "logging/log.hpp"
 #include "runtime/timer.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 elapsedTimer AdaptiveSizePolicy::_minor_timer;
@@ -472,5 +471,3 @@ void AdaptiveSizePolicy::print_tenuring_threshold( uint new_tenuring_threshold_a
     assert(!tenuring_threshold_change(), "(no change was attempted)");
   }
 }
-
-PRAGMA_DIAG_POP

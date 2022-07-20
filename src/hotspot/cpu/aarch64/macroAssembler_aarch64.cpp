@@ -65,7 +65,6 @@
 #include "opto/output.hpp"
 #endif
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 #ifdef PRODUCT
@@ -5700,5 +5699,3 @@ void MacroAssembler::double_move(VMRegPair src, VMRegPair dst, Register tmp) {
       strd(src.first()->as_FloatRegister(), Address(sp, reg2offset_out(dst.first())));
   }
 }
-
-PRAGMA_DIAG_POP

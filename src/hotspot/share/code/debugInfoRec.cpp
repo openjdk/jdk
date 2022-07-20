@@ -29,7 +29,6 @@
 #include "prims/jvmtiExport.hpp"
 #include "runtime/globals_extension.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 // Private definition.
@@ -448,5 +447,3 @@ void DebugInformationRecorder::print_statistics() {
   dir_stats.print();
 }
 #endif //PRODUCT
-
-PRAGMA_DIAG_POP

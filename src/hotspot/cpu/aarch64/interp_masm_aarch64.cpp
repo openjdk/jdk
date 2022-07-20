@@ -45,7 +45,6 @@
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 void InterpreterMacroAssembler::narrow(Register result) {
@@ -1831,5 +1830,3 @@ void InterpreterMacroAssembler::profile_parameters_type(Register mdp, Register t
     bind(profile_continue);
   }
 }
-
-PRAGMA_DIAG_POP

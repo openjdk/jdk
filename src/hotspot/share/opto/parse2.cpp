@@ -45,7 +45,6 @@
 #include "runtime/deoptimization.hpp"
 #include "runtime/sharedRuntime.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 #ifndef PRODUCT
@@ -2771,5 +2770,3 @@ void Parse::do_one_bytecode() {
   }
 #endif
 }
-
-PRAGMA_DIAG_POP

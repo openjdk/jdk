@@ -28,7 +28,6 @@
 #include "utilities/debug.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 ZMarkStripe::ZMarkStripe() :
@@ -227,5 +226,3 @@ void ZMarkThreadLocalStacks::free(ZMarkStackAllocator* allocator) {
     _magazine = NULL;
   }
 }
-
-PRAGMA_DIAG_POP

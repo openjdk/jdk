@@ -66,7 +66,6 @@
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 /*
@@ -2489,5 +2488,3 @@ private:
 void Continuation::init() {
   ConfigResolve::resolve();
 }
-
-PRAGMA_DIAG_POP

@@ -57,7 +57,6 @@
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 //---------------------------make_vm_intrinsic----------------------------
@@ -7941,5 +7940,3 @@ bool LibraryCallKit::inline_blackhole() {
 
   return true;
 }
-
-PRAGMA_DIAG_POP

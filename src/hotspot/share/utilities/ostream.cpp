@@ -39,7 +39,6 @@
 #include "utilities/vmError.hpp"
 #include "utilities/xmlstream.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 // Declarations of jvm methods
@@ -1141,5 +1140,3 @@ bool networkStream::connect(const char *ip, short port) {
 }
 
 #endif
-
-PRAGMA_DIAG_POP

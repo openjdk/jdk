@@ -30,7 +30,6 @@
 #include "gc/shared/cardTableBarrierSetAssembler.hpp"
 #include "gc/shared/gc_globals.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 #define __ masm->
@@ -151,5 +150,3 @@ void CardTableBarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorS
     }
   }
 }
-
-PRAGMA_DIAG_POP

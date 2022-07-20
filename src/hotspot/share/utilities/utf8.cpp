@@ -28,7 +28,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/utf8.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 
@@ -537,5 +536,3 @@ template int UNICODE::quoted_ascii_length<jbyte>(const jbyte* base, int length);
 template int UNICODE::quoted_ascii_length<jchar>(const jchar* base, int length);
 template void UNICODE::as_quoted_ascii<jbyte>(const jbyte* base, int length, char* buf, int buflen);
 template void UNICODE::as_quoted_ascii<jchar>(const jchar* base, int length, char* buf, int buflen);
-
-PRAGMA_DIAG_POP

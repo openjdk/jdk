@@ -62,7 +62,6 @@
 #include "jfr/support/jfrIntrinsics.hpp"
 #endif
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 // Declaration and definition of StubGenerator (no .hpp file).
@@ -8375,5 +8374,3 @@ void continuation_enter_cleanup(MacroAssembler* masm) {
 }
 
 #undef __
-
-PRAGMA_DIAG_POP

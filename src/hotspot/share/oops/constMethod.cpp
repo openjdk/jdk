@@ -32,7 +32,6 @@
 #include "runtime/safepointVerifiers.hpp"
 #include "utilities/align.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 // Static initialization
@@ -512,5 +511,3 @@ void ConstMethod::verify_on(outputStream* st) {
   int max_gap = align_metadata_size(1)*BytesPerWord;
   guarantee(gap >= 0 && gap < max_gap, "invalid method layout");
 }
-
-PRAGMA_DIAG_POP

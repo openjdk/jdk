@@ -52,7 +52,6 @@
 #include "runtime/vm_version.hpp"
 #include "utilities/macros.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 // Implementation of ConstantPoolCacheEntry
@@ -867,5 +866,3 @@ void ConstantPoolCache::verify_on(outputStream* st) {
   // print constant pool cache entries
   for (int i = 0; i < length(); i++) entry_at(i)->verify(st);
 }
-
-PRAGMA_DIAG_POP

@@ -64,7 +64,6 @@
 #include "runtime/vframe_hp.hpp"
 #include "runtime/vframe.inline.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 JVMCIKlassHandle::JVMCIKlassHandle(Thread* thread, Klass* klass) {
@@ -2937,5 +2936,3 @@ JNINativeMethod CompilerToVM::methods[] = {
 int CompilerToVM::methods_count() {
   return sizeof(methods) / sizeof(JNINativeMethod);
 }
-
-PRAGMA_DIAG_POP

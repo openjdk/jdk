@@ -72,7 +72,6 @@
 #include "runtime/vm_version.hpp"
 #include "utilities/macros.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 #ifdef JVMTI_TRACE
@@ -3255,5 +3254,3 @@ JvmtiGCMarker::~JvmtiGCMarker() {
     JvmtiExport::post_garbage_collection_finish();
   }
 }
-
-PRAGMA_DIAG_POP

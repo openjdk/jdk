@@ -44,7 +44,6 @@
 #include "opto/matcher.hpp"
 #endif
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 // -----------------------------------------------------------------------------------------
@@ -334,5 +333,3 @@ extern "C" void bad_compiled_vtable_index(JavaThread* thread, oop receiver, int 
 }
 
 #endif // PRODUCT
-
-PRAGMA_DIAG_POP

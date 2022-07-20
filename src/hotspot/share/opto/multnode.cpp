@@ -34,7 +34,6 @@
 #include "opto/type.hpp"
 #include "utilities/vmError.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 //=============================================================================
@@ -247,5 +246,3 @@ ProjNode* ProjNode::other_if_proj() const {
   assert(_con == 0 || _con == 1, "not an if?");
   return in(0)->as_If()->proj_out(1-_con);
 }
-
-PRAGMA_DIAG_POP

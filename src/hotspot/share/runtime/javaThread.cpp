@@ -106,7 +106,6 @@
 #include "jfr/jfr.hpp"
 #endif
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 // Set by os layer.
@@ -2081,5 +2080,3 @@ void JavaThread::vm_exit_on_osthread_failure(JavaThread* thread) {
                                   os::native_thread_creation_failed_msg());
   }
 }
-
-PRAGMA_DIAG_POP

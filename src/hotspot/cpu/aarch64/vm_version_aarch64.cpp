@@ -35,7 +35,6 @@
 
 #include OS_HEADER_INLINE(os)
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 int VM_Version::_cpu;
@@ -566,5 +565,3 @@ void VM_Version::initialize_cpu_information(void) {
 
   _initialized = true;
 }
-
-PRAGMA_DIAG_POP

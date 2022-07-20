@@ -28,7 +28,6 @@
 #include "runtime/icache.hpp"
 #include "utilities/align.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 // The flush stub function address
@@ -112,5 +111,3 @@ void AbstractICache::invalidate_range(address start, int nbytes) {
 void icache_init() {
   ICache::initialize();
 }
-
-PRAGMA_DIAG_POP

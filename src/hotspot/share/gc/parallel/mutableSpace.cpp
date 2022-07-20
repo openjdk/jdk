@@ -35,7 +35,6 @@
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 MutableSpace::MutableSpace(size_t alignment) :
@@ -267,5 +266,3 @@ void MutableSpace::verify() {
   }
   guarantee(p == top(), "end of last object must match end of space");
 }
-
-PRAGMA_DIAG_POP

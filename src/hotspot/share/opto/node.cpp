@@ -51,7 +51,6 @@ class RegMask;
 class PhaseTransform;
 class PhaseGVN;
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 // Arena we are currently building Nodes in
@@ -3342,5 +3341,3 @@ const Type* TypeNode::Value(PhaseGVN* phase) const { return _type; }
 uint TypeNode::ideal_reg() const {
   return _type->ideal_reg();
 }
-
-PRAGMA_DIAG_POP

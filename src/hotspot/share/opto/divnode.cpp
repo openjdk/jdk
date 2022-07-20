@@ -42,7 +42,6 @@
 
 #include <math.h>
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 //----------------------magic_int_divide_constants-----------------------------
@@ -1469,5 +1468,3 @@ Node* UDivModLNode::match( const ProjNode *proj, const Matcher *match ) {
   }
   return new MachProjNode(this, proj->_con, rm, ideal_reg);
 }
-
-PRAGMA_DIAG_POP

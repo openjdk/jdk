@@ -41,7 +41,6 @@
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 //=============================================================================
@@ -2213,5 +2212,3 @@ void Type_Array::dump() const {
   }
 }
 #endif
-
-PRAGMA_DIAG_POP

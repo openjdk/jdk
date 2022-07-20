@@ -35,7 +35,6 @@
 #include "runtime/os.hpp"
 #include "runtime/vm_version.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 void LIR_Assembler::patching_epilog(PatchingStub* patch, LIR_PatchCode patch_code, Register obj, CodeEmitInfo* info) {
@@ -856,5 +855,3 @@ void LIR_Assembler::verify_oop_map(CodeEmitInfo* info) {
   }
 #endif
 }
-
-PRAGMA_DIAG_POP

@@ -84,7 +84,6 @@
 #include "opto/c2compiler.hpp"
 #endif
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 #ifdef DTRACE_ENABLED
@@ -2904,5 +2903,3 @@ void CompileBroker::print_heapinfo(outputStream* out, const char* function, size
   }
   out->print_cr("\n__ CodeHeapStateAnalytics total duration %10.3f seconds _________\n", ts_total.seconds());
 }
-
-PRAGMA_DIAG_POP

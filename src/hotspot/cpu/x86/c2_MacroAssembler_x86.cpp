@@ -33,7 +33,6 @@
 #include "runtime/objectMonitor.hpp"
 #include "runtime/stubRoutines.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 inline Assembler::AvxVectorLen C2_MacroAssembler::vector_length_encoding(int vlen_in_bytes) {
@@ -5439,5 +5438,3 @@ void C2_MacroAssembler::udivmodL(Register rax, Register divisor, Register rdx, R
   bind(done);
 }
 #endif
-
-PRAGMA_DIAG_POP

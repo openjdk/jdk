@@ -37,7 +37,6 @@
 #include "opto/rootnode.hpp"
 #include "utilities/align.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 // The functions in this file builds OopMaps after all scheduling is done.
@@ -691,5 +690,3 @@ void PhaseOutput::BuildOopMaps() {
 
   }
 }
-
-PRAGMA_DIAG_POP

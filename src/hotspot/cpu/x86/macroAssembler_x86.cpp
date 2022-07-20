@@ -54,7 +54,6 @@
 #include "utilities/macros.hpp"
 #include "crc32c.h"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 #ifdef PRODUCT
@@ -9496,5 +9495,3 @@ void MacroAssembler::get_thread(Register thread) {
 
 
 #endif // !WIN32 || _LP64
-
-PRAGMA_DIAG_POP

@@ -56,7 +56,6 @@
 #include "utilities/macros.hpp"
 #include "utilities/utf8.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 #ifndef PRODUCT
@@ -1625,5 +1624,3 @@ oop ciReplay::obj_field(oop obj, const char *name) {
   }
   return obj_field(obj, fname);
 }
-
-PRAGMA_DIAG_POP

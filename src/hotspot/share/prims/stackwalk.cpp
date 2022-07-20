@@ -45,7 +45,6 @@
 #include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 // setup and cleanup actions
@@ -598,5 +597,3 @@ void StackWalk::setContinuation(Handle stackStream, jlong magic, objArrayHandle 
 
   existing_stream->set_continuation(cont);
 }
-
-PRAGMA_DIAG_POP

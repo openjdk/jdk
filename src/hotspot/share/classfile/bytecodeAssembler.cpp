@@ -31,7 +31,6 @@
 #include "runtime/handles.inline.hpp"
 #include "utilities/bytes.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 u2 BytecodeConstantPool::find_or_add(BytecodeCPEntry const& bcpe) {
@@ -267,5 +266,3 @@ void BytecodeAssembler::_return(BasicType bt) {
       ShouldNotReachHere();
   }
 }
-
-PRAGMA_DIAG_POP

@@ -36,7 +36,6 @@
 #include "gc/shared/gcConfig.hpp"
 #include "utilities/defaultStream.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 const char* compilertype2name_tab[compiler_number_of_types] = {
@@ -652,5 +651,3 @@ void CompilerConfig::ergo_initialize() {
   }
 #endif // COMPILER2
 }
-
-PRAGMA_DIAG_POP

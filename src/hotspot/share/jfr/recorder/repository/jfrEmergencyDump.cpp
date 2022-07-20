@@ -41,7 +41,6 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/ostream.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 static const char vm_error_filename_fmt[] = "hs_err_pid%p.jfr";
@@ -594,5 +593,3 @@ void JfrEmergencyDump::on_vm_shutdown(bool exception_handler) {
   JfrRecorderService service;
   service.rotate(messages);
 }
-
-PRAGMA_DIAG_POP

@@ -43,7 +43,6 @@
 #include "runtime/globals_extension.hpp"
 #include "runtime/stubRoutines.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 //------------------------------is_loop_exit-----------------------------------
@@ -4283,5 +4282,3 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
 
   return true;
 }
-
-PRAGMA_DIAG_POP

@@ -30,7 +30,6 @@
 #include "services/virtualMemoryTracker.hpp"
 #include "services/threadStackTracker.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 volatile size_t ThreadStackTracker::_thread_count = 0;
@@ -121,5 +120,3 @@ bool ThreadStackTracker::walk_simple_thread_stack_site(MallocSiteWalker* walker)
   }
   return true;
 }
-
-PRAGMA_DIAG_POP

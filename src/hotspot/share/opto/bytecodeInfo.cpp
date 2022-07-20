@@ -37,7 +37,6 @@
 #include "runtime/handles.inline.hpp"
 #include "utilities/events.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 //=============================================================================
@@ -741,5 +740,3 @@ void InlineTree::print_value_on(outputStream* st) const {
   print_impl(st, 2);
 }
 #endif
-
-PRAGMA_DIAG_POP

@@ -31,7 +31,6 @@
 #include "opto/subnode.hpp"
 #include "runtime/stubRoutines.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 #ifdef PRODUCT
@@ -1641,5 +1640,3 @@ void C2_MacroAssembler::vector_round_sve(FloatRegister dst, FloatRegister src, F
   sve_fcvtzs(dst, T, ptrue, dst, T);
   // result in dst
 }
-
-PRAGMA_DIAG_POP

@@ -50,7 +50,6 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/sharedRuntime.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 CompiledMethod::CompiledMethod(Method* method, const char* name, CompilerType type, const CodeBlobLayout& layout,
@@ -808,5 +807,3 @@ bool CompiledMethod::has_evol_metadata() {
   }
   return check_evol.has_evol_dependency();
 }
-
-PRAGMA_DIAG_POP

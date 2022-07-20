@@ -39,7 +39,6 @@
 #include "code/vmreg.hpp"
 #include "vmreg_x86.inline.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 jint CodeInstaller::pd_next_offset(NativeInstruction* inst, jint pc_offset, JVMCI_TRAPS) {
@@ -227,5 +226,3 @@ VMReg CodeInstaller::get_hotspot_reg(jint jvmci_reg, JVMCI_TRAPS) {
 bool CodeInstaller::is_general_purpose_reg(VMReg hotspotRegister) {
   return !(hotspotRegister->is_FloatRegister() || hotspotRegister->is_XMMRegister());
 }
-
-PRAGMA_DIAG_POP

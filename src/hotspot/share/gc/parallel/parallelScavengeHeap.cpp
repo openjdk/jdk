@@ -56,7 +56,6 @@
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 PSYoungGen*  ParallelScavengeHeap::_young_gen = NULL;
@@ -867,5 +866,3 @@ GrowableArray<MemoryPool*> ParallelScavengeHeap::memory_pools() {
   memory_pools.append(_old_pool);
   return memory_pools;
 }
-
-PRAGMA_DIAG_POP

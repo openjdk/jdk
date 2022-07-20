@@ -52,7 +52,6 @@
 #include "jvmci/jvmci_globals.hpp"
 #endif
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 static_assert(sizeof(oop) == sizeof(intptr_t), "Derived pointer sanity check");
@@ -977,5 +976,3 @@ void DerivedPointerTable::update_pointers() {
 }
 
 #endif // COMPILER2_OR_JVMCI
-
-PRAGMA_DIAG_POP

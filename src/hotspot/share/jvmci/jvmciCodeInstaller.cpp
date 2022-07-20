@@ -41,7 +41,6 @@
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/align.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 // frequently used constants
@@ -1287,5 +1286,3 @@ void CodeInstaller::site_Mark(CodeBuffer& buffer, jint pc_offset, HotSpotCompile
       break;
   }
 }
-
-PRAGMA_DIAG_POP

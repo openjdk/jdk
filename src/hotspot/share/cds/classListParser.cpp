@@ -52,7 +52,6 @@
 #include "utilities/hashtable.inline.hpp"
 #include "utilities/macros.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 volatile Thread* ClassListParser::_parsing_thread = NULL;
@@ -720,5 +719,3 @@ InstanceKlass* ClassListParser::lookup_interface_for_current_class(Symbol* inter
   ShouldNotReachHere();
   return NULL;
 }
-
-PRAGMA_DIAG_POP

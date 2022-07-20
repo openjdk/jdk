@@ -78,7 +78,6 @@
 #include "opto/runtime.hpp"
 #endif
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 // Helper class to access current interpreter state
@@ -1520,5 +1519,3 @@ JRT_LEAF(intptr_t, InterpreterRuntime::trace_bytecode(JavaThread* current, intpt
   return preserve_this_value;
 JRT_END
 #endif // !PRODUCT
-
-PRAGMA_DIAG_POP

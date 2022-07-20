@@ -62,7 +62,6 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 static const u2 number_of_new_methods = 5;
@@ -1813,5 +1812,3 @@ bool JfrEventClassTransformer::is_instrumented(const InstanceKlass* ik) {
   }
   return is_instance_commit_method_blessed(methods);
 }
-
-PRAGMA_DIAG_POP

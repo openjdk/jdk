@@ -34,7 +34,6 @@
 #include "opto/loopnode.hpp"
 #include "opto/machnode.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 //------------------------------Split--------------------------------------
@@ -1458,5 +1457,3 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
   // Return updated count of live ranges
   return maxlrg;
 }
-
-PRAGMA_DIAG_POP

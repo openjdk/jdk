@@ -32,7 +32,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 void ZHeuristics::set_medium_page_size() {
@@ -105,5 +104,3 @@ uint ZHeuristics::nconcurrent_workers() {
   //  When in non-dynamic mode, use 12.5% of the active processors.
   return nworkers(UseDynamicNumberOfGCThreads ? 25.0 : 12.5);
 }
-
-PRAGMA_DIAG_POP

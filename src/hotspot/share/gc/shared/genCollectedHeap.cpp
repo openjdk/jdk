@@ -80,7 +80,6 @@
 #include "jvmci/jvmci.hpp"
 #endif
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 GenCollectedHeap::GenCollectedHeap(Generation::Name young,
@@ -1233,5 +1232,3 @@ void GenCollectedHeap::ensure_parsability(bool retire_tlabs) {
   GenEnsureParsabilityClosure ep_cl;
   generation_iterate(&ep_cl, false);
 }
-
-PRAGMA_DIAG_POP

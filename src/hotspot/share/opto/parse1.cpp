@@ -44,7 +44,6 @@
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/copy.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 // Static array so we can figure out which bytecodes stop us from compiling
@@ -2418,5 +2417,3 @@ void Parse::dump_bci(int bci) {
 }
 
 #endif
-
-PRAGMA_DIAG_POP

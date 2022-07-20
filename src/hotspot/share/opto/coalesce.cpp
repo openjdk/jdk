@@ -35,7 +35,6 @@
 #include "opto/matcher.hpp"
 #include "opto/regmask.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 #ifndef PRODUCT
@@ -831,5 +830,3 @@ void PhaseConservativeCoalesce::coalesce( Block *b ) {
     }
   }
 }
-
-PRAGMA_DIAG_POP

@@ -30,7 +30,6 @@
 #include "immediate_aarch64.hpp"
 #include "memory/resourceArea.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 #ifndef PRODUCT
@@ -510,5 +509,3 @@ static float unpack(unsigned value) {
 address Assembler::locate_next_instruction(address inst) {
   return inst + Assembler::instruction_size;
 }
-
-PRAGMA_DIAG_POP

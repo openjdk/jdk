@@ -79,7 +79,6 @@
 #include "c1/c1_Runtime1.hpp"
 #endif
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 // Shared stub locations
@@ -3433,5 +3432,3 @@ void SharedRuntime::on_slowpath_allocation_exit(JavaThread* current) {
   BarrierSet *bs = BarrierSet::barrier_set();
   bs->on_slowpath_allocation_exit(current, new_obj);
 }
-
-PRAGMA_DIAG_POP

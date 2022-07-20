@@ -91,7 +91,6 @@
 #include "jfr/support/jfrTraceIdExtension.hpp"
 #endif
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 // We generally try to create the oops directly when parsing, rather than
@@ -6135,5 +6134,3 @@ bool ClassFileParser::is_internal_format(Symbol* class_name) {
 }
 
 #endif
-
-PRAGMA_DIAG_POP

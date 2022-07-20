@@ -27,9 +27,6 @@
 #include "gc/shared/gcUtil.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 GCStats::GCStats() : _avg_promoted(new AdaptivePaddedNoZeroDevAverage(AdaptiveSizePolicyWeight, PromotedPadding)) {}
-
-PRAGMA_DIAG_POP

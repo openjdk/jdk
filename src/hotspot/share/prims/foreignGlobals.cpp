@@ -28,7 +28,6 @@
 #include "prims/foreignGlobals.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 #define FOREIGN_ABI "jdk/internal/foreign/abi/"
@@ -344,5 +343,3 @@ ArgumentShuffle::ArgumentShuffle(
                                                 num_out_args, out_regs,
                                                 in_sig_bt, tmp_vmreg);
 }
-
-PRAGMA_DIAG_POP

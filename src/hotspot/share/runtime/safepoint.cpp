@@ -72,7 +72,6 @@
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 static void post_safepoint_begin_event(EventSafepointBegin& event,
@@ -1144,5 +1143,3 @@ void SafepointTracing::end() {
 
   RuntimeService::record_safepoint_end(_last_safepoint_end_time_ns - _last_safepoint_cleanup_time_ns);
 }
-
-PRAGMA_DIAG_POP

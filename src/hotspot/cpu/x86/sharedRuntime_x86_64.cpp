@@ -67,7 +67,6 @@
 #include "jvmci/jvmciJavaClasses.hpp"
 #endif
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 #define __ masm->
@@ -3531,5 +3530,3 @@ void OptoRuntime::generate_exception_blob() {
 }
 #endif // COMPILER2
 
-
-PRAGMA_DIAG_POP

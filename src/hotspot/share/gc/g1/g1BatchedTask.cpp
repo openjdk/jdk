@@ -30,7 +30,6 @@
 #include "runtime/atomic.hpp"
 #include "utilities/growableArray.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 void G1AbstractSubTask::record_work_item(uint worker_id, uint index, size_t count) {
@@ -110,5 +109,3 @@ G1BatchedTask::~G1BatchedTask() {
     delete task;
   }
 }
-
-PRAGMA_DIAG_POP

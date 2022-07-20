@@ -29,7 +29,6 @@
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/align.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 //-----------------------------------------------------
@@ -326,5 +325,3 @@ VMReg FrameMap::regname(LIR_Opr opr) const {
   ShouldNotReachHere();
   return VMRegImpl::Bad();
 }
-
-PRAGMA_DIAG_POP

@@ -55,7 +55,6 @@
 #include "c1/c1_Runtime1.hpp"
 #endif
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 const char* CodeBlob::compiler_name() const {
@@ -798,5 +797,3 @@ void UpcallStub::print_on(outputStream* st) const {
 void UpcallStub::print_value_on(outputStream* st) const {
   st->print_cr("UpcallStub (" INTPTR_FORMAT  ") used for %s", p2i(this), name());
 }
-
-PRAGMA_DIAG_POP

@@ -29,7 +29,6 @@
 #include "utilities/align.hpp"
 #include "utilities/bytes.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 bool            Bytecodes::_is_initialized = false;
@@ -558,5 +557,3 @@ void bytecodes_init() {
 #ifdef _M_AMD64
 #pragma optimize ("", on)
 #endif
-
-PRAGMA_DIAG_POP

@@ -32,7 +32,6 @@
 #include "runtime/stubCodeGenerator.hpp"
 #include "utilities/formatBuffer.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 #define __ _masm->
@@ -337,5 +336,3 @@ void DowncallStubGenerator::generate() {
 
   __ flush();
 }
-
-PRAGMA_DIAG_POP

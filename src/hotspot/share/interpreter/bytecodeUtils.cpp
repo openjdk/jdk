@@ -34,7 +34,6 @@
 #include "utilities/events.hpp"
 #include "utilities/ostream.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 class SimulatedOperandStack;
@@ -1483,5 +1482,3 @@ bool BytecodeUtils::get_NPE_message_at(outputStream* ss, Method* method, int bci
   }
   return true;
 }
-
-PRAGMA_DIAG_POP

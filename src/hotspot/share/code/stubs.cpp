@@ -31,7 +31,6 @@
 #include "runtime/mutexLocker.hpp"
 #include "utilities/align.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 
@@ -245,5 +244,3 @@ void StubQueue::print() {
     stub_print(s);
   }
 }
-
-PRAGMA_DIAG_POP

@@ -77,7 +77,6 @@
 #include "utilities/vmError.hpp"
 #include "utilities/xmlstream.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 // Implementation of Method
@@ -2539,5 +2538,3 @@ void Method::verify_on(outputStream* st) {
   guarantee(md == NULL ||
       md->is_methodData(), "should be method data");
 }
-
-PRAGMA_DIAG_POP

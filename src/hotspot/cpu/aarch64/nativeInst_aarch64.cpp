@@ -40,7 +40,6 @@
 #include "c1/c1_Runtime1.hpp"
 #endif
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 void NativeCall::verify() {
@@ -589,5 +588,3 @@ void NativeDeoptInstruction::insert(address code_pos) {
   *(code_pos+3) = 0x00;*/
   ICache::invalidate_range(code_pos, 4);
 }
-
-PRAGMA_DIAG_POP

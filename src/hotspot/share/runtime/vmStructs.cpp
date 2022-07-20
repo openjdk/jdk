@@ -143,7 +143,6 @@
 #include "opto/vectornode.hpp"
 #endif // COMPILER2
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 // Note: the cross-product of (c1, c2, product, nonproduct, ...),
@@ -3176,5 +3175,3 @@ void vmStructs_init() {
   VMStructs::init();
 }
 #endif // ASSERT
-
-PRAGMA_DIAG_POP

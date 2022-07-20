@@ -32,7 +32,6 @@
 #include "runtime/globals_extension.hpp"
 #include "utilities/debug.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 GCName GCConfiguration::young_collector() const {
@@ -166,5 +165,3 @@ uintx GCYoungGenerationConfiguration::min_size() const {
 intx GCYoungGenerationConfiguration::new_ratio() const {
   return NewRatio;
 }
-
-PRAGMA_DIAG_POP

@@ -39,7 +39,6 @@
 #include "utilities/pair.hpp"
 #include <math.h>
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 G1ConcurrentRefineThread* G1ConcurrentRefineThreadControl::create_refinement_thread(uint worker_id, bool initializing) {
@@ -485,5 +484,3 @@ bool G1ConcurrentRefine::do_refinement_step(uint worker_id,
                                                    deactivation_threshold(worker_id),
                                                    stats);
 }
-
-PRAGMA_DIAG_POP

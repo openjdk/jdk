@@ -33,7 +33,6 @@
 #include "runtime/safepoint.hpp"
 #include "runtime/safepointMechanism.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 
@@ -190,5 +189,3 @@ void poll_Relocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffe
 
 void metadata_Relocation::pd_fix_value(address x) {
 }
-
-PRAGMA_DIAG_POP

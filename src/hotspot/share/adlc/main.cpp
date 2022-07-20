@@ -275,6 +275,7 @@ int main(int argc, char *argv[])
 
   // add pragma after includes
   AD.pragmaAllowUnsafeConversions(AD._CPP_file);
+  AD.pragmaDiagPush(AD._HPP_file);
   AD.pragmaAllowUnsafeConversions(AD._HPP_file);
   AD.pragmaAllowUnsafeConversions(AD._DFA_file);
 
@@ -325,9 +326,7 @@ int main(int argc, char *argv[])
   AD.buildDFA(AD._DFA_file._fp);
 
   // pragma pop
-  AD.pragmaDiagPop(AD._CPP_file);
   AD.pragmaDiagPop(AD._HPP_file);
-  AD.pragmaDiagPop(AD._DFA_file);
 
   // Add include guards for all .hpp files
   AD.addIncludeGuardEnd(AD._HPP_file, "GENERATED_ADFILES_AD_HPP");        // .hpp

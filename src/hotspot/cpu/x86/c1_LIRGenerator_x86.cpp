@@ -39,7 +39,6 @@
 #include "utilities/powerOfTwo.hpp"
 #include "vmreg_x86.inline.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 #ifdef ASSERT
@@ -1607,5 +1606,3 @@ void LIRGenerator::volatile_field_load(LIR_Address* address, LIR_Opr result,
     __ load(address, result, info);
   }
 }
-
-PRAGMA_DIAG_POP

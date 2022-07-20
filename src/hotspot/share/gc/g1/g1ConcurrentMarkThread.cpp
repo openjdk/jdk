@@ -45,7 +45,6 @@
 #include "utilities/formatBuffer.hpp"
 #include "utilities/ticks.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 G1ConcurrentMarkThread::G1ConcurrentMarkThread(G1ConcurrentMark* cm) :
@@ -336,5 +335,3 @@ void G1ConcurrentMarkThread::concurrent_cycle_end(bool mark_cycle_completed) {
   _cm->concurrent_cycle_end();
   ConcurrentGCBreakpoints::notify_active_to_idle();
 }
-
-PRAGMA_DIAG_POP

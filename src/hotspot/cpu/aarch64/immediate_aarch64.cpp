@@ -29,7 +29,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "immediate_aarch64.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 // there are at most 2^13 possible logical immediate encodings
@@ -452,5 +451,3 @@ uint32_t encoding_for_fp_immediate(float immediate)
   return res;
 }
 
-
-PRAGMA_DIAG_POP

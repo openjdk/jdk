@@ -43,7 +43,6 @@
 #include "opto/subtypenode.hpp"
 #include "utilities/macros.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 //=============================================================================
@@ -4164,5 +4163,3 @@ void PhaseIdealLoop::reorg_offsets(IdealLoopTree *loop) {
   }
 
 }
-
-PRAGMA_DIAG_POP

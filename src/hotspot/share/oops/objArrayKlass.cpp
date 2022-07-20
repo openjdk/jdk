@@ -45,7 +45,6 @@
 #include "runtime/mutexLocker.hpp"
 #include "utilities/macros.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 ObjArrayKlass* ObjArrayKlass::allocate(ClassLoaderData* loader_data, int n, Klass* k, Symbol* name, TRAPS) {
@@ -513,5 +512,3 @@ void ObjArrayKlass::oop_verify_on(oop obj, outputStream* st) {
     guarantee(oopDesc::is_oop_or_null(oa->obj_at(index)), "should be oop");
   }
 }
-
-PRAGMA_DIAG_POP

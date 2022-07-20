@@ -27,7 +27,6 @@
 #include "runtime/timer.hpp"
 #include "utilities/ticks.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 ZMetronome::ZMetronome(uint64_t hz) :
@@ -82,5 +81,3 @@ void ZMetronome::stop() {
   _stopped = true;
   ml.notify();
 }
-
-PRAGMA_DIAG_POP

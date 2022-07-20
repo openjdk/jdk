@@ -55,7 +55,6 @@
 #include "oops/method.hpp"
 #endif
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 // ciMethod
@@ -1489,5 +1488,3 @@ bool ciMethod::is_consistent_info(ciMethod* declared_method, ciMethod* resolved_
 }
 
 // ------------------------------------------------------------------
-
-PRAGMA_DIAG_POP

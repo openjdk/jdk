@@ -33,7 +33,6 @@
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "runtime/os.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 constexpr const char* G1SegmentedArrayFreeMemoryTask::_state_names[];
@@ -205,5 +204,3 @@ void G1SegmentedArrayFreeMemoryTask::notify_new_stats(G1SegmentedArrayMemoryStat
     G1CollectedHeap::heap()->service_thread()->schedule_task(this, 0);
   }
 }
-
-PRAGMA_DIAG_POP

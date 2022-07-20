@@ -30,7 +30,6 @@
 #include "gc/z/zStat.hpp"
 #include "logging/log.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 constexpr double one_in_1000 = 3.290527;
@@ -407,5 +406,3 @@ void ZDirector::run_service() {
 void ZDirector::stop_service() {
   _metronome.stop();
 }
-
-PRAGMA_DIAG_POP

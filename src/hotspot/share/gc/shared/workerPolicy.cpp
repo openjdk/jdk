@@ -31,7 +31,6 @@
 #include "runtime/os.hpp"
 #include "runtime/vm_version.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 uint WorkerPolicy::_parallel_worker_threads = 0;
@@ -182,5 +181,3 @@ uint WorkerPolicy::calc_active_conc_workers(uintx total_workers,
     return no_of_gc_threads;
   }
 }
-
-PRAGMA_DIAG_POP

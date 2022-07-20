@@ -44,7 +44,6 @@
 #include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 bool ShenandoahBarrierC2Support::expand(Compile* C, PhaseIterGVN& igvn) {
@@ -3003,5 +3002,3 @@ bool ShenandoahLoadReferenceBarrierNode::needs_barrier_impl(PhaseGVN* phase, Nod
 #endif
   return true;
 }
-
-PRAGMA_DIAG_POP

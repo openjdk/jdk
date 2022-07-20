@@ -32,7 +32,6 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/threadSMR.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 /*
@@ -334,5 +333,3 @@ void ShenandoahPacer::print_cycle_on(outputStream* out) {
   }
   out->cr();
 }
-
-PRAGMA_DIAG_POP

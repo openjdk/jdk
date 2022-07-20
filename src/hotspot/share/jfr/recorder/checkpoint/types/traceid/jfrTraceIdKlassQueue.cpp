@@ -34,7 +34,6 @@
 #include "oops/compressedOops.hpp"
 #include "utilities/macros.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 #ifdef VM_LITTLE_ENDIAN
@@ -263,5 +262,3 @@ void JfrTraceIdKlassQueue::iterate(klass_callback callback, bool previous_epoch)
   KlassFunctor functor(callback);
   _queue->iterate(functor, previous_epoch);
 }
-
-PRAGMA_DIAG_POP

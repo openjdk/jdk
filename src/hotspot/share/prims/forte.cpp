@@ -36,7 +36,6 @@
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vframeArray.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 // call frame copied from old .h file and renamed
@@ -718,5 +717,3 @@ extern "C" {
   }
 }
 #endif // INCLUDE_JVMTI
-
-PRAGMA_DIAG_POP

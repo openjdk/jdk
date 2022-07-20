@@ -37,7 +37,6 @@
 #include "utilities/concurrentHashTable.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 G1CardSet::ContainerPtr G1CardSet::FullCardSet = (G1CardSet::ContainerPtr)-1;
@@ -1012,5 +1011,3 @@ void G1CardSet::clear() {
   _num_occupied = 0;
   _mm->flush();
 }
-
-PRAGMA_DIAG_POP

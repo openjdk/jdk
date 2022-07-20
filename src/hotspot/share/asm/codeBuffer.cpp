@@ -37,7 +37,6 @@
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/xmlstream.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 // The structure of a CodeSection:
@@ -1340,5 +1339,3 @@ uint DbgStringCollection::clear() {
 }
 
 #endif // not PRODUCT
-
-PRAGMA_DIAG_POP

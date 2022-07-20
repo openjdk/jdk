@@ -37,7 +37,6 @@
 #include "utilities/align.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 void PhaseMacroExpand::insert_mem_bar(Node** ctrl, Node** mem, int opcode, Node* precedent) {
@@ -1425,5 +1424,3 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
                      // the length of the array can never be negative.
                      false, ac->has_negative_length_guard(), slow_region);
 }
-
-PRAGMA_DIAG_POP

@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "gc/shared/gcUtil.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 // Catch-all file for utility classes
@@ -170,5 +169,3 @@ bool LinearLeastSquareFit::decrement_will_decrease() {
 bool LinearLeastSquareFit::increment_will_decrease() {
   return (_slope <= 0.00);
 }
-
-PRAGMA_DIAG_POP

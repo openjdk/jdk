@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "gc/g1/g1FullGCScope.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 G1FullGCJFRTracerMark::G1FullGCJFRTracerMark(STWGCTimer* timer, GCTracer* tracer)
@@ -76,5 +75,3 @@ G1FullGCTracer* G1FullGCScope::tracer() {
 size_t G1FullGCScope::region_compaction_threshold() const {
   return _region_compaction_threshold;
 }
-
-PRAGMA_DIAG_POP

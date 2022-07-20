@@ -42,7 +42,6 @@
 #include "runtime/stubRoutines.hpp"
 #include "utilities/resourceHash.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 void*       Disassembler::_library               = NULL;
@@ -950,5 +949,3 @@ void Disassembler::decode(address start, address end, outputStream* st
 void Disassembler::_hook(const char* file, int line, MacroAssembler* masm) {
   decode_env::hook(file, line, masm->code_section()->end());
 }
-
-PRAGMA_DIAG_POP

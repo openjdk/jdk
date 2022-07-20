@@ -37,7 +37,6 @@
 #include "runtime/threadSMR.hpp"
 #include "utilities/copy.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 size_t       ThreadLocalAllocBuffer::_max_size = 0;
@@ -485,5 +484,3 @@ const HeapWord* ThreadLocalAllocBuffer::start_relaxed() const {
 const HeapWord* ThreadLocalAllocBuffer::top_relaxed() const {
   return Atomic::load(&_top);
 }
-
-PRAGMA_DIAG_POP

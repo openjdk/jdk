@@ -38,7 +38,6 @@
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/vmThread.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 // Support class to collect a list of the non-nmethod CodeBlobs in
@@ -297,5 +296,3 @@ void JvmtiCodeBlobEvents::build_jvmti_addr_location_map(nmethod *nm,
   *map_ptr = map;
   *map_length_ptr = map_length;
 }
-
-PRAGMA_DIAG_POP
