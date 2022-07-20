@@ -1294,7 +1294,7 @@ public sealed interface CodeBuilder
     }
 
     default CodeBuilder swap() {
-        return operatorInstruction(Opcode.SWAP);
+        return stackInstruction(Opcode.SWAP);
     }
 
     default CodeBuilder tableswitch(int low, int high, Label defaultTarget, List<SwitchCase> cases) {
