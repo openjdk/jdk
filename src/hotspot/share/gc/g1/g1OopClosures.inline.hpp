@@ -122,7 +122,6 @@ inline static void check_obj_during_refinement(T* p, oop const obj) {
 
   HeapRegion* from = g1h->heap_region_containing(p);
 
-  assert(from != NULL, "from region must be non-NULL");
   assert(from->is_in_reserved(p) ||
          (from->is_humongous() &&
           g1h->heap_region_containing(p)->is_humongous() &&

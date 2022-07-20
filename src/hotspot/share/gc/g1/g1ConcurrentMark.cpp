@@ -1973,7 +1973,7 @@ void G1ConcurrentMark::verify_no_collection_set_oops() {
   // Verify the global finger
   HeapWord* global_finger = finger();
   if (global_finger != nullptr && global_finger < _heap.end()) {
-    // Since we always iterate over all regions, we might get a NULL HeapRegion
+    // Since we always iterate over all regions, we might get a nullptr HeapRegion
     // here.
     HeapRegion* global_hr = _g1h->heap_region_containing_or_null(global_finger);
     guarantee(global_hr == nullptr || global_finger == global_hr->bottom(),

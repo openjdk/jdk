@@ -98,11 +98,8 @@ inline HeapWord* G1CollectedHeap::bottom_addr_for_region(uint index) const {
 }
 
 inline HeapRegion* G1CollectedHeap::heap_region_containing(const void* addr) const {
-  assert(addr != nullptr, "invariant");
-  assert(is_in_reserved(addr),
-         "Address " PTR_FORMAT " is outside of the heap ranging from [" PTR_FORMAT " to " PTR_FORMAT ")",
-         p2i((void*)addr), p2i(reserved().start()), p2i(reserved().end()));
-  return _hrm.addr_to_region((HeapWord*)addr);
+  uint const region_idx = addr_to_region(addr);
+  return region_at(region_idx);
 }
 
 inline HeapRegion* G1CollectedHeap::heap_region_containing_or_null(const void* addr) const {
