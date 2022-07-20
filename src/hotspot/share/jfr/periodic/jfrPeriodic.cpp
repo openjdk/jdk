@@ -73,6 +73,9 @@
 #if INCLUDE_SHENANDOAHGC
 #include "gc/shenandoah/shenandoahJfrSupport.hpp"
 #endif
+
+PRAGMA_ALLOW_LOSSY_CONVERSIONS
+
 /**
  *  JfrPeriodic class
  *  Implementation of declarations in
@@ -80,7 +83,6 @@
  */
 #define TRACE_REQUEST_FUNC(id)    void JfrPeriodicEventSet::request##id(void)
 
-PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 TRACE_REQUEST_FUNC(JVMInformation) {
   ResourceMark rm;

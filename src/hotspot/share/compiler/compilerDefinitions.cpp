@@ -651,3 +651,4 @@ void CompilerConfig::ergo_initialize() {
   }
 #endif // COMPILER2
 }
+

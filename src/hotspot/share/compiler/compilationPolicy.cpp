@@ -1212,3 +1212,4 @@ void CompilationPolicy::method_back_branch_event(const methodHandle& mh, const m
     }
   }
 }
+

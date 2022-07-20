@@ -325,3 +325,8 @@ VMReg FrameMap::regname(LIR_Opr opr) const {
   ShouldNotReachHere();
   return VMRegImpl::Bad();
 }
+
+
+
+
+// ------------ extra spill slots ---------------
