@@ -30,7 +30,6 @@
 
 #include <limits>
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 template <typename T> void one_or_two_set_bits() {
@@ -101,5 +100,3 @@ TEST(count_leading_zeros, high_ones_low_zeros) {
   high_ones_low_zeros<uint32_t>();
   high_ones_low_zeros<uint64_t>();
 }
-
-PRAGMA_DIAG_POP

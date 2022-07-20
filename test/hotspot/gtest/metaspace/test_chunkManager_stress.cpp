@@ -33,7 +33,6 @@
 #include "metaspaceGtestRangeHelpers.hpp"
 #include "metaspaceGtestSparseArray.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 using metaspace::ChunkManager;
@@ -293,5 +292,3 @@ DEFINE_TEST_2(test_with_limit_3, ChunkLevelRanges::small_chunks(), 1.0f)
 DEFINE_TEST_2(test_with_limit_4, ChunkLevelRanges::all_chunks(), 0.0f)
 DEFINE_TEST_2(test_with_limit_5, ChunkLevelRanges::all_chunks(), 0.5f)
 DEFINE_TEST_2(test_with_limit_6, ChunkLevelRanges::all_chunks(), 1.0f)
-
-PRAGMA_DIAG_POP

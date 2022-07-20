@@ -31,7 +31,6 @@
 #include <stdlib.h>
 #include "unittest.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 typedef BitMap::idx_t idx_t;
@@ -422,5 +421,3 @@ CHECK_MOD_SETOPS(set_intersection, even, even, even)
 CHECK_MOD_SETOPS(set_intersection, even, odd, zero)
 CHECK_MOD_SETOPS(set_intersection, even, one, even)
 CHECK_MOD_SETOPS(set_intersection, even, zero, zero)
-
-PRAGMA_DIAG_POP

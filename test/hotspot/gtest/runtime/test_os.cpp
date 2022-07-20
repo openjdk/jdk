@@ -35,7 +35,6 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/threads.hpp"
 
-PRAGMA_DIAG_PUSH
 PRAGMA_ALLOW_LOSSY_CONVERSIONS
 
 static size_t small_page_size() {
@@ -890,5 +889,3 @@ TEST_VM(os, is_first_C_frame) {
   EXPECT_FALSE(os::is_first_C_frame(&cur_frame));
 #endif // _WIN32
 }
-
-PRAGMA_DIAG_POP
