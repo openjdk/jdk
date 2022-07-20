@@ -579,7 +579,6 @@ ciKlass* ciEnv::get_klass_by_index(const constantPoolHandle& cpool,
 ciConstant ciEnv::get_constant_by_index_impl(const constantPoolHandle& cpool,
                                              int pool_index, int cache_index,
                                              ciInstanceKlass* accessor) {
-  bool ignore_will_link;
   int index = pool_index;
   if (cache_index >= 0) {
     assert(index < 0, "only one kind of index at a time");
@@ -651,10 +650,12 @@ ciConstant ciEnv::get_constant_by_index_impl(const constantPoolHandle& cpool,
   } else if (tag.is_unresolved_klass_in_error()) {
     return ciConstant(T_OBJECT, get_unloaded_klass_mirror(NULL));
   } else if (tag.is_klass() || tag.is_unresolved_klass()) {
-    ciKlass* klass = get_klass_by_index_impl(cpool, index, ignore_will_link, accessor);
+    bool will_link;
+    ciKlass* klass = get_klass_by_index_impl(cpool, index, will_link, accessor);
     assert (klass->is_instance_klass() || klass->is_array_klass(),
             "must be an instance or array klass ");
-    return ciConstant(T_OBJECT, klass->java_mirror());
+    ciInstance* mirror = (will_link ? klass->java_mirror() : get_unloaded_klass_mirror(klass));
+    return ciConstant(T_OBJECT, mirror);
   } else if (tag.is_method_type() || tag.is_method_type_in_error()) {
     // must execute Java code to link this CP entry into cache[i].f1
     ciSymbol* signature = get_symbol(cpool->method_type_signature_at(index));
@@ -662,6 +663,7 @@ ciConstant ciEnv::get_constant_by_index_impl(const constantPoolHandle& cpool,
     return ciConstant(T_OBJECT, ciobj);
   } else if (tag.is_method_handle() || tag.is_method_handle_in_error()) {
     // must execute Java code to link this CP entry into cache[i].f1
+    bool ignore_will_link;
     int ref_kind        = cpool->method_handle_ref_kind_at(index);
     int callee_index    = cpool->method_handle_klass_index_at(index);
     ciKlass* callee     = get_klass_by_index_impl(cpool, callee_index, ignore_will_link, accessor);
