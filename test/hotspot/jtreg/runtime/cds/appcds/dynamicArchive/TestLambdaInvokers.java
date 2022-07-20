@@ -42,12 +42,18 @@ public class TestLambdaInvokers extends DynamicArchiveTestBase {
     private static void doTest(String topArchiveName) throws Exception {
         dump(topArchiveName,
              "-Xlog:cds",
+             "-Xlog:cds+class=debug",
              "-Xlog:cds+dynamic=debug",
              "-cp",
              jarFile,
              mainClass)
              .assertNormalExit(output -> {
-                 output.shouldContain("Skip regenerating for shared");
+                 // This should be not be generated from the dynamic dump, as it should be included
+                 // by the base archive.
+                 output.shouldNotMatch("cds,class.*=.*java.lang.invoke.BoundMethodHandle.Species_IL");
+
+                 // This should be generated from the dynamic dump
+                 output.shouldMatch("cds,class.*=.*java.lang.invoke.BoundMethodHandle.Species_JL");
              });
         run(topArchiveName,
              "-Xlog:cds",
@@ -57,7 +63,11 @@ public class TestLambdaInvokers extends DynamicArchiveTestBase {
              jarFile,
              mainClass)
              .assertNormalExit(output -> {
-                 // java.lang.invoke.BoundMethodHandle$Species_JL is generated from CDSLambdaInvoker
+                 // java.lang.invoke.BoundMethodHandle$Species_IL is loaded from base archive
+                 output.shouldContain("java.lang.invoke.BoundMethodHandle$Species_IL source: shared objects file");
+
+                 // java.lang.invoke.BoundMethodHandle$Species_JL is generated from CDSLambdaInvoker and
+                 // stored in the dynamic archive
                  output.shouldContain("java.lang.invoke.BoundMethodHandle$Species_JL source: shared objects file (top)");
              });
     }
