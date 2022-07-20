@@ -202,10 +202,10 @@ void G1Policy::update_young_length_bounds(size_t rs_length) {
   _young_list_target_length = calculate_young_target_length(_young_list_desired_length);
   _young_list_max_length = calculate_young_max_length(_young_list_target_length);
 
-  log_debug(gc,ergo,heap)("Young list lengths: desired: %u, target: %u, max: %u",
-                          _young_list_desired_length,
-                          _young_list_target_length,
-                          _young_list_max_length);
+  log_debug(gc, ergo, heap)("Young list lengths: desired: %u, target: %u, max: %u",
+                            _young_list_desired_length,
+                            _young_list_target_length,
+                            _young_list_max_length);
 }
 
 // Calculates desired young gen length. It is calculated from:
