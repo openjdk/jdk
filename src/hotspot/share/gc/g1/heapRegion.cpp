@@ -529,7 +529,7 @@ public:
         }
         ResourceMark rm;
         if (!is_in_heap) {
-          HeapRegion* from = _g1h->heap_region_containing((HeapWord*)p);
+          HeapRegion* from = _g1h->heap_region_containing(p);
           log.error("Field " PTR_FORMAT " of live obj " PTR_FORMAT " in region " HR_FORMAT,
                     p2i(p), p2i(_containing_obj), HR_FORMAT_PARAMS(from));
           LogStream ls(log.error());
@@ -538,7 +538,7 @@ public:
           log.error("points to obj " PTR_FORMAT " in region " HR_FORMAT " remset %s",
                     p2i(obj), HR_FORMAT_PARAMS(to), to->rem_set()->get_state_str());
         } else {
-          HeapRegion* from = _g1h->heap_region_containing((HeapWord*)p);
+          HeapRegion* from = _g1h->heap_region_containing(p);
           HeapRegion* to = _g1h->heap_region_containing(obj);
           log.error("Field " PTR_FORMAT " of live obj " PTR_FORMAT " in region " HR_FORMAT,
                     p2i(p), p2i(_containing_obj), HR_FORMAT_PARAMS(from));
@@ -577,7 +577,7 @@ public:
     Log(gc, verify) log;
     if (!CompressedOops::is_null(heap_oop)) {
       oop obj = CompressedOops::decode_not_null(heap_oop);
-      HeapRegion* from = _g1h->heap_region_containing((HeapWord*)p);
+      HeapRegion* from = _g1h->heap_region_containing(p);
       HeapRegion* to = _g1h->heap_region_containing(obj);
       if (from != NULL && to != NULL &&
         from != to &&
