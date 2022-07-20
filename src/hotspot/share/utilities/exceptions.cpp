@@ -351,17 +351,14 @@ Handle Exceptions::new_exception(JavaThread* thread, Symbol* name,
   if (message == NULL) {
     signature = vmSymbols::void_method_signature();
   } else {
-    // We want to allocate storage, but we can't do that if there's
-    // a pending exception, so we preserve any pending exception
-    // around the allocation.
-    // If we get an exception from the allocation, prefer that to
-    // the exception we are trying to build, or the pending exception.
-    // This is sort of like what PreserveExceptionMark does, except
-    // for the preferencing and the early returns.
-    Handle incoming_exception(thread, NULL);
+    // There should be no pending exception. The caller is responsible for not calling
+    // this with a pending exception.
+    Handle incoming_exception;
     if (thread->has_pending_exception()) {
       incoming_exception = Handle(thread, thread->pending_exception());
       thread->clear_pending_exception();
+      ResourceMark rm(thread);
+      assert(incoming_exception.is_null(), "Pending exception while throwing %s %s", name->as_C_string(), message);
     }
     Handle msg;
     if (to_utf8_safe == safe_to_utf8) {
@@ -371,6 +368,8 @@ Handle Exceptions::new_exception(JavaThread* thread, Symbol* name,
       // Make a java string keeping the encoding scheme of the original string.
       msg = java_lang_String::create_from_platform_dependent_str(message, thread);
     }
+    // If we get an exception from the allocation, prefer that to
+    // the exception we are trying to build, or the pending exception (in product mode)
     if (thread->has_pending_exception()) {
       Handle exception(thread, thread->pending_exception());
       thread->clear_pending_exception();
