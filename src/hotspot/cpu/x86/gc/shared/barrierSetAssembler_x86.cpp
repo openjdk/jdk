@@ -336,7 +336,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
   }
 }
 #else
-void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
+void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slow_path, Label* continuation) {
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
   if (bs_nm == NULL) {
     return;
