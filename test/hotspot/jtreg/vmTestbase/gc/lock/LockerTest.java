@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,28 +22,25 @@
  */
 package gc.lock;
 
+import jdk.test.whitebox.WhiteBox;
 import nsk.share.runner.*;
 import nsk.share.gc.*;
-import nsk.share.gc.gp.*;
 import nsk.share.gc.lock.*;
-import nsk.share.test.ExecutionController;
 
 /**
  * Test how GC is affected by locking.
  *
  * A number of threads is started. Each one locks and eats memory.
  */
-public class LockerTest extends ThreadedGCTest implements GarbageProducerAware, GarbageProducer1Aware, LockersAware {
+public class LockerTest extends ThreadedGCTest implements LockersAware {
 
-    private GarbageProducer garbageProducer;
-    private GarbageProducer garbageProducer1;
     private Lockers lockers;
     private long objectSize = 1000;
 
     private class Worker implements Runnable {
 
         byte[] rezerve = new byte[1024 * 1024];
-        private Locker locker = lockers.createLocker(garbageProducer1.create(objectSize));
+        private Locker locker = lockers.createLocker(rezerve);
 
         public Worker() {
             locker.enable();
@@ -51,21 +48,13 @@ public class LockerTest extends ThreadedGCTest implements GarbageProducerAware, 
 
         public void run() {
             locker.lock();
-            GarbageUtils.eatMemory(getExecutionController(), garbageProducer);
+            WhiteBox.getWhiteBox().fullGC();
             locker.unlock();
         }
     }
 
     protected Runnable createRunnable(int i) {
         return new Worker();
-    }
-
-    public void setGarbageProducer(GarbageProducer garbageProducer) {
-        this.garbageProducer = garbageProducer;
-    }
-
-    public void setGarbageProducer1(GarbageProducer garbageProducer1) {
-        this.garbageProducer1 = garbageProducer1;
     }
 
     public void setLockers(Lockers lockers) {
