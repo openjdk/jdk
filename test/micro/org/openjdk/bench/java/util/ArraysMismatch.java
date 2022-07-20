@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
@@ -45,6 +46,9 @@ import org.openjdk.jmh.annotations.Warmup;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
+@Warmup(iterations = 4, time = 2)
+@Measurement(iterations = 4, time = 2)
+@Fork(value = 3)
 public abstract class ArraysMismatch {
 
     @Param({"90", "800"})
@@ -90,36 +94,26 @@ public abstract class ArraysMismatch {
         }
 
         @Benchmark
-        @Warmup(iterations = 3)
-        @Measurement(iterations = 3)
         public int matches() {
             return Arrays.mismatch(left, right_matches);
         }
 
         @Benchmark
-        @Warmup(iterations = 3)
-        @Measurement(iterations = 3)
         public int differentSubrangeMatches() {
             return Arrays.mismatch(left, leftStartRange, leftEndRange, right_matches, rightStartRange, rightEndRange);
         }
 
         @Benchmark
-        @Warmup(iterations = 3)
-        @Measurement(iterations = 3)
         public int mismatchEnd() {
             return Arrays.mismatch(left, right_endMismatch);
         }
 
         @Benchmark
-        @Warmup(iterations = 3)
-        @Measurement(iterations = 3)
         public int mismatchMid() {
             return Arrays.mismatch(left, right_midMismatch);
         }
 
         @Benchmark
-        @Warmup(iterations = 3)
-        @Measurement(iterations = 3)
         public int mismatchStart() {
             return Arrays.mismatch(left, right_startMismatch);
         }
@@ -146,36 +140,26 @@ public abstract class ArraysMismatch {
         }
 
         @Benchmark
-        @Warmup(iterations = 3)
-        @Measurement(iterations = 3)
         public int matches() {
             return Arrays.mismatch(left, right_matches);
         }
 
         @Benchmark
-        @Warmup(iterations = 3)
-        @Measurement(iterations = 3)
         public int differentSubrangeMatches() {
             return Arrays.mismatch(left, leftStartRange, leftEndRange, right_matches, rightStartRange, rightEndRange);
         }
 
         @Benchmark
-        @Warmup(iterations = 3)
-        @Measurement(iterations = 3)
         public int mismatchEnd() {
             return Arrays.mismatch(left, right_endMismatch);
         }
 
         @Benchmark
-        @Warmup(iterations = 3)
-        @Measurement(iterations = 3)
         public int mismatchMid() {
             return Arrays.mismatch(left, right_midMismatch);
         }
 
         @Benchmark
-        @Warmup(iterations = 3)
-        @Measurement(iterations = 3)
         public int mismatchStart() {
             return Arrays.mismatch(left, right_startMismatch);
         }
@@ -202,36 +186,26 @@ public abstract class ArraysMismatch {
         }
 
         @Benchmark
-        @Warmup(iterations = 3)
-        @Measurement(iterations = 3)
         public int matches() {
             return Arrays.mismatch(left, right_matches);
         }
 
         @Benchmark
-        @Warmup(iterations = 3)
-        @Measurement(iterations = 3)
         public int differentSubrangeMatches() {
             return Arrays.mismatch(left, leftStartRange, leftEndRange, right_matches, rightStartRange, rightEndRange);
         }
 
         @Benchmark
-        @Warmup(iterations = 3)
-        @Measurement(iterations = 3)
         public int mismatchEnd() {
             return Arrays.mismatch(left, right_endMismatch);
         }
 
         @Benchmark
-        @Warmup(iterations = 3)
-        @Measurement(iterations = 3)
         public int mismatchMid() {
             return Arrays.mismatch(left, right_midMismatch);
         }
 
         @Benchmark
-        @Warmup(iterations = 3)
-        @Measurement(iterations = 3)
         public int mismatchStart() {
             return Arrays.mismatch(left, right_startMismatch);
         }
@@ -258,36 +232,26 @@ public abstract class ArraysMismatch {
         }
 
         @Benchmark
-        @Warmup(iterations = 3)
-        @Measurement(iterations = 3)
         public int matches() {
             return Arrays.mismatch(left, right_matches);
         }
 
         @Benchmark
-        @Warmup(iterations = 3)
-        @Measurement(iterations = 3)
         public int differentSubrangeMatches() {
             return Arrays.mismatch(left, leftStartRange, leftEndRange, right_matches, rightStartRange, rightEndRange);
         }
 
         @Benchmark
-        @Warmup(iterations = 3)
-        @Measurement(iterations = 3)
         public int mismatchEnd() {
             return Arrays.mismatch(left, right_endMismatch);
         }
 
         @Benchmark
-        @Warmup(iterations = 3)
-        @Measurement(iterations = 3)
         public int mismatchMid() {
             return Arrays.mismatch(left, right_midMismatch);
         }
 
         @Benchmark
-        @Warmup(iterations = 3)
-        @Measurement(iterations = 3)
         public int mismatchStart() {
             return Arrays.mismatch(left, right_startMismatch);
         }
@@ -314,36 +278,26 @@ public abstract class ArraysMismatch {
         }
 
         @Benchmark
-        @Warmup(iterations = 3)
-        @Measurement(iterations = 3)
         public int matches() {
             return Arrays.mismatch(left, right_matches);
         }
 
         @Benchmark
-        @Warmup(iterations = 3)
-        @Measurement(iterations = 3)
         public int differentSubrangeMatches() {
             return Arrays.mismatch(left, leftStartRange, leftEndRange, right_matches, rightStartRange, rightEndRange);
         }
 
         @Benchmark
-        @Warmup(iterations = 3)
-        @Measurement(iterations = 3)
         public int mismatchEnd() {
             return Arrays.mismatch(left, right_endMismatch);
         }
 
         @Benchmark
-        @Warmup(iterations = 3)
-        @Measurement(iterations = 3)
         public int mismatchMid() {
             return Arrays.mismatch(left, right_midMismatch);
         }
 
         @Benchmark
-        @Warmup(iterations = 3)
-        @Measurement(iterations = 3)
         public int mismatchStart() {
             return Arrays.mismatch(left, right_startMismatch);
         }
@@ -370,36 +324,26 @@ public abstract class ArraysMismatch {
         }
 
         @Benchmark
-        @Warmup(iterations = 3)
-        @Measurement(iterations = 3)
         public int matches() {
             return Arrays.mismatch(left, right_matches);
         }
 
         @Benchmark
-        @Warmup(iterations = 3)
-        @Measurement(iterations = 3)
         public int differentSubrangeMatches() {
             return Arrays.mismatch(left, leftStartRange, leftEndRange, right_matches, rightStartRange, rightEndRange);
         }
 
         @Benchmark
-        @Warmup(iterations = 3)
-        @Measurement(iterations = 3)
         public int mismatchEnd() {
             return Arrays.mismatch(left, right_endMismatch);
         }
 
         @Benchmark
-        @Warmup(iterations = 3)
-        @Measurement(iterations = 3)
         public int mismatchMid() {
             return Arrays.mismatch(left, right_midMismatch);
         }
 
         @Benchmark
-        @Warmup(iterations = 3)
-        @Measurement(iterations = 3)
         public int mismatchStart() {
             return Arrays.mismatch(left, right_startMismatch);
         }
@@ -426,36 +370,26 @@ public abstract class ArraysMismatch {
         }
 
         @Benchmark
-        @Warmup(iterations = 3)
-        @Measurement(iterations = 3)
         public int matches() {
             return Arrays.mismatch(left, right_matches);
         }
 
         @Benchmark
-        @Warmup(iterations = 3)
-        @Measurement(iterations = 3)
         public int differentSubrangeMatches() {
             return Arrays.mismatch(left, leftStartRange, leftEndRange, right_matches, rightStartRange, rightEndRange);
         }
 
         @Benchmark
-        @Warmup(iterations = 3)
-        @Measurement(iterations = 3)
         public int mismatchEnd() {
             return Arrays.mismatch(left, right_endMismatch);
         }
 
         @Benchmark
-        @Warmup(iterations = 3)
-        @Measurement(iterations = 3)
         public int mismatchMid() {
             return Arrays.mismatch(left, right_midMismatch);
         }
 
         @Benchmark
-        @Warmup(iterations = 3)
-        @Measurement(iterations = 3)
         public int mismatchStart() {
             return Arrays.mismatch(left, right_startMismatch);
         }

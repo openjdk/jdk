@@ -105,7 +105,7 @@ public class Difference {
             }
         }
         g.getProperties().setProperty("name", "Difference");
-        InputGraph graph = new InputGraph(a.getName() + ", " + b.getName());
+        InputGraph graph = new InputGraph(a.getName() + ", " + b.getName(), true);
         g.addElement(graph);
 
         Map<InputBlock, InputBlock> blocksMap = new HashMap<>();
