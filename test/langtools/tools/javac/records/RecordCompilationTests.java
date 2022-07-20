@@ -1364,6 +1364,47 @@ public class RecordCompilationTests extends CompilationTestCase {
         }
     }
 
+    public void testMultipleAnnosInRecord() throws Exception {
+        String[] previousOptions = getCompileOptions();
+
+        try {
+            String imports = """
+                    import java.lang.annotation.ElementType;
+                    import java.lang.annotation.Target;
+                    """;
+
+            String annotTemplate =
+                    """
+                    @Target(ElementType.#TARGET)
+                    @interface anno#TARGET { }
+                    """;
+
+            String recordTemplate =
+                    """
+                    record R(#TARGETS String s) {}
+                    """;
+
+            String[] generalOptions = {
+                    "-processor", Processor.class.getName(),
+            };
+
+            List<String> targets = List.of("FIELD", "RECORD_COMPONENT", "PARAMETER", "METHOD");
+
+            var interfaces = targets.stream().map(t -> annotTemplate.replaceAll("#TARGET", t)).collect(Collectors.joining("\n"));
+            var recordAnnotations = targets.stream().map(t -> "@anno" + t).collect(Collectors.joining(" "));
+            String record = recordTemplate.replaceFirst("#TARGETS", recordAnnotations);
+            String code = String.format("%s\n%s\n%s\n",imports,interfaces,record);
+            String[] testOptions = generalOptions.clone();
+            setCompileOptions(testOptions);
+
+            assertOK(true, code);
+
+        // let's reset the default compiler options for other tests
+        } finally {
+            setCompileOptions(previousOptions);
+        }
+    }
+
     public void testAnnos() throws Exception {
         String[] previousOptions = getCompileOptions();
         try {
