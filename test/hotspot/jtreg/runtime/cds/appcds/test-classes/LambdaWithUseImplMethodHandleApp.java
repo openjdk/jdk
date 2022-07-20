@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,13 @@
  *
  */
 
-#ifndef OS_BSD_OS_SHARE_BSD_HPP
-#define OS_BSD_OS_SHARE_BSD_HPP
+import java.util.Optional;
+import pkg2.Child;
 
-// misc
-void handle_unexpected_exception(Thread* thread, int sig, siginfo_t* info, address pc, address adjusted_pc);
-#ifndef PRODUCT
-void continue_with_dump(void);
-#endif
-
-#define PROCFILE_LENGTH 128
-
-#endif // OS_BSD_OS_SHARE_BSD_HPP
+public class LambdaWithUseImplMethodHandleApp {
+    public static void main(String args[]) {
+        String name = "foo";
+        Optional<String> opt = Optional.of(name);
+        (new Child()).test(opt);
+    }
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,18 +19,24 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef OS_AIX_OS_SHARE_AIX_HPP
-#define OS_AIX_OS_SHARE_AIX_HPP
+package jvmti;
 
-// misc
-void handle_unexpected_exception(Thread* thread, int sig, siginfo_t* info, address pc, address adjusted_pc);
-#ifndef PRODUCT
-void continue_with_dump(void);
-#endif
+public class JVMTIUtils {
 
-#define PROCFILE_LENGTH 128
+    private static native int init();
 
-#endif // OS_AIX_OS_SHARE_AIX_HPP
+    static {
+        System.loadLibrary("JvmtiUtils");
+        if (init() != 0) {
+            throw new RuntimeException("Error during native lib utilization.");
+        }
+    }
+
+    private static native void stopThread(Thread t, Throwable ex);
+
+    public static void stopThread(Thread t) {
+        stopThread(t, new ThreadDeath());
+    }
+}

@@ -84,6 +84,7 @@ hotspot_containers_extended = \
 
 hotspot_vector_1 = \
   compiler/c2/cr6340864 \
+  compiler/c2/irTests \
   compiler/codegen \
   compiler/loopopts/superword \
   compiler/vectorapi \
@@ -435,6 +436,7 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/LambdaProxyClasslist.java \
  -runtime/cds/appcds/LambdaVerificationFailedDuringDump.java \
  -runtime/cds/appcds/LambdaWithJavaAgent.java \
+ -runtime/cds/appcds/LambdaWithUseImplMethodHandle.java \
  -runtime/cds/appcds/LambdaWithOldClass.java \
  -runtime/cds/appcds/LongClassListPath.java \
  -runtime/cds/appcds/LotsOfClasses.java \

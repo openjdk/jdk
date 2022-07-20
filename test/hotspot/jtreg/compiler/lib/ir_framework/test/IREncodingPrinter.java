@@ -280,30 +280,7 @@ public class IREncodingPrinter {
             return false;
         }
         String cpuFeatures = WHITE_BOX.getCPUFeatures();
-        // Following feature list is in sync with suppressed feature list for KNL target.
-        // Please refer vm_version_x86.cpp for details.
-        HashSet<String> knlFeatureSet = new HashSet<>();
-        knlFeatureSet.add("AVX512BW");
-        knlFeatureSet.add("AVX512VL");
-        knlFeatureSet.add("AVX512DQ");
-        knlFeatureSet.add("AVX512_VNNI");
-        knlFeatureSet.add("AVX512_VAES");
-        knlFeatureSet.add("AVX512_VPOPCNTDQ");
-        knlFeatureSet.add("AVX512_VPCLMULQDQ");
-        knlFeatureSet.add("AVX512_VBMI");
-        knlFeatureSet.add("AVX512_VBMI2");
-        knlFeatureSet.add("CLWB");
-        knlFeatureSet.add("FLUSHOPT");
-        knlFeatureSet.add("GFNI");
-        knlFeatureSet.add("AVX512_BITALG");
-        Boolean isKNLFlagEnabled = WHITE_BOX.getBooleanVMFlag("UseKNLSetting");
-        // Perform the feature check if UseKNLSetting flag is set to off or if
-        // feature is supported by KNL target.
-        if (isKNLFlagEnabled == null ||
-             (isKNLFlagEnabled && (!knlFeatureSet.contains(feature.toUpperCase()) || falseValue))) {
-            return (trueValue && cpuFeatures.contains(feature)) || (falseValue && !cpuFeatures.contains(feature));
-        }
-        return false;
+        return (trueValue && cpuFeatures.contains(feature)) || (falseValue && !cpuFeatures.contains(feature));
     }
 
     private boolean hasNoRequiredFlags(String[] orRules, String ruleType) {

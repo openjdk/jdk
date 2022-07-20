@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,18 +19,34 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
+/*
+ * @test
+ * @bug 8290379
+ * @summary Parse error with parenthesized pattern and guard using an array
+ * @compile --enable-preview -source ${jdk.version} T8290379.java
+ * @run main/othervm --enable-preview T8290379
+ */
+public class T8290379 {
+    public static void main(String... args) {
+        assertEquals(0, test("test"));
+        assertEquals(1, test(Integer.valueOf(42)));
+    }
 
-#ifndef OS_LINUX_OS_SHARE_LINUX_HPP
-#define OS_LINUX_OS_SHARE_LINUX_HPP
+    public static int test(Object o)
+    {
+        int[] arr = {0, 1};
 
-// misc
-void handle_unexpected_exception(Thread* thread, int sig, siginfo_t* info, address pc, address adjusted_pc);
-#ifndef PRODUCT
-void continue_with_dump(void);
-#endif
+        return switch (o) {
+            case (String s) when (arr[0] == 0) -> 0;
+            case (Integer i) when arr[1] == 1 -> 1;
+            default -> 2;
+        };
+    }
 
-#define PROCFILE_LENGTH 128
-
-#endif // OS_LINUX_OS_SHARE_LINUX_HPP
+    static void assertEquals(int expected, int actual) {
+        if (expected != actual) {
+            throw new AssertionError("Expected: " + expected + ", actual: " + actual);
+        }
+    }
+}

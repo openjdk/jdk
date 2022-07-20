@@ -38,7 +38,6 @@
 #include "oops/oop.inline.hpp"
 #include "os_linux.inline.hpp"
 #include "os_posix.inline.hpp"
-#include "os_share_linux.hpp"
 #include "osContainer_linux.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
@@ -4809,9 +4808,6 @@ void
 os::os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandle& method,
                          JavaCallArguments* args, JavaThread* thread) {
   f(value, method, args, thread);
-}
-
-void os::print_statistics() {
 }
 
 // This code originates from JDK's sysOpen and open64_w
