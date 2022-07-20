@@ -225,24 +225,6 @@ class Generation: public CHeapObj<mtGC> {
   // Like "allocate", but performs any necessary locking internally.
   virtual HeapWord* par_allocate(size_t word_size, bool is_tlab) = 0;
 
-  // Some generation may offer a region for shared, contiguous allocation,
-  // via inlined code (by exporting the address of the top and end fields
-  // defining the extent of the contiguous allocation region.)
-
-  // This function returns "true" iff the heap supports this kind of
-  // allocation.  (More precisely, this means the style of allocation that
-  // increments *top_addr()" with a CAS.) (Default is "no".)
-  // A generation that supports this allocation style must use lock-free
-  // allocation for *all* allocation, since there are times when lock free
-  // allocation will be concurrent with plain "allocate" calls.
-  virtual bool supports_inline_contig_alloc() const { return false; }
-
-  // These functions return the addresses of the fields that define the
-  // boundaries of the contiguous allocation area.  (These fields should be
-  // physically near to one another.)
-  virtual HeapWord* volatile* top_addr() const { return NULL; }
-  virtual HeapWord** end_addr() const { return NULL; }
-
   // Thread-local allocation buffers
   virtual bool supports_tlab_allocation() const { return false; }
   virtual size_t tlab_capacity() const {

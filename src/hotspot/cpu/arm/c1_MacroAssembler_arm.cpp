@@ -81,7 +81,7 @@ void C1_MacroAssembler::try_allocate(Register obj, Register obj_end, Register tm
   if (UseTLAB) {
     tlab_allocate(obj, obj_end, tmp1, size_expression, slow_case);
   } else {
-    eden_allocate(obj, obj_end, tmp1, tmp2, size_expression, slow_case);
+    b(slow_case);
   }
 }
 

@@ -58,7 +58,6 @@ public:
     _igvn.register_new_node_with_optimizer(n);
     return n;
   }
-  void set_eden_pointers(Node* &eden_top_adr, Node* &eden_end_adr);
   Node* make_load( Node* ctl, Node* mem, Node* base, int offset,
                    const Type* value_type, BasicType bt);
   Node* make_store(Node* ctl, Node* mem, Node* base, int offset,
