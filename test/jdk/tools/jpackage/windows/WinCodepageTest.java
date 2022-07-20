@@ -41,17 +41,22 @@ import java.nio.file.Path;
  * @requires (os.family == "windows")
  * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile WinCodepageTest.java
- * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
+ * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=WinCodepageTest
  */
 public class WinCodepageTest {
 
     @Test
-    public static void testFailure() {
+    public static void testDefault() {
+        // Default codepage is determined by the Codepage attribute in a
+        // jpackage primary l10n .wxl file. Primary file is chosen based on
+        // user.languages and user.country system properties.
+        // Neither of en, de, ja or zh_CN files use 1251 codepage, so the
+        // failure below is expected to happen always.
         new PackageTest()
                 .forTypes(PackageType.WINDOWS)
                 .configureHelloApp()
-                .addInitializer(WinCodepageTest::addFileWithNonAsciiName)
+                .addInitializer(cmd -> addFileWithName(cmd, FILENAME_1251))
                 .addInitializer(cmd -> cmd.saveConsoleOutput(true))
                 .setExpectedExitCode(1).addBundleVerifier((cmd, result) -> {
                     TKit.assertTextStream("error LGHT0311")
@@ -61,27 +66,64 @@ public class WinCodepageTest {
     }
 
     @Test
-    public static void testSuccess() {
+    public static void test1251() {
+        // success with 1251 file
         new PackageTest()
                 .forTypes(PackageType.WINDOWS)
                 .configureHelloApp()
-                .addInitializer(WinCodepageTest::addFileWithNonAsciiName)
-                .addInitializer(cmd -> cmd.addArguments("--win-codepage", NON_ASCII_FILE_NAME_CODEPAGE))
+                .addInitializer(cmd -> addFileWithName(cmd, FILENAME_1251))
+                .addInitializer(cmd -> cmd.addArguments("--win-codepage", "1251"))
                 .addInstallVerifier(cmd -> {
                     final Path appDir = cmd.pathToUnpackedPackageFile(cmd.appInstallationDirectory());
-                    TKit.assertFileExists(appDir.resolve("app").resolve(NON_ASCII_FILE_NAME));
+                    TKit.assertFileExists(appDir.resolve("app").resolve(FILENAME_1251));
+                })
+                .run();
+
+        // failure with both 1251 and 1257 files
+        new PackageTest()
+                .forTypes(PackageType.WINDOWS)
+                .configureHelloApp()
+                .addInitializer(cmd -> {
+                    addFileWithName(cmd, FILENAME_1251);
+                    addFileWithName(cmd, FILENAME_1257);
+                })
+                .addInitializer(cmd -> cmd.addArguments("--win-codepage", "1251"))
+                .addInitializer(cmd -> cmd.saveConsoleOutput(true))
+                .setExpectedExitCode(1).addBundleVerifier((cmd, result) -> {
+                    TKit.assertTextStream("error LGHT0311")
+                            .apply(result.getOutput().stream());
                 })
                 .run();
     }
 
-    private static void addFileWithNonAsciiName(JPackageCommand cmd) throws IOException {
+    @Test
+    public static void testUtf8() {
+        // utf-8 is not officially supported by Windows Installer
+        new PackageTest()
+                .forTypes(PackageType.WINDOWS)
+                .configureHelloApp()
+                .addInitializer(cmd -> {
+                    addFileWithName(cmd, FILENAME_1251);
+                    addFileWithName(cmd, FILENAME_1257);
+                })
+                .addInitializer(cmd -> cmd.addArguments("--win-codepage", "utf-8"))
+                .addInstallVerifier(cmd -> {
+                    final Path appDir = cmd.pathToUnpackedPackageFile(cmd.appInstallationDirectory());
+                    TKit.assertFileExists(appDir.resolve("app").resolve(FILENAME_1251));
+                    TKit.assertFileExists(appDir.resolve("app").resolve(FILENAME_1257));
+                })
+                .run();
+    }
+
+    private static void addFileWithName(JPackageCommand cmd, String name) throws IOException {
         Path input = Path.of(cmd.getArgumentValue("--input"));
         Files.createDirectories(input);
-        Path helloBgTxt = input.resolve(NON_ASCII_FILE_NAME);
+        Path helloBgTxt = input.resolve(name);
         Files.writeString(helloBgTxt, "hello", StandardCharsets.UTF_8);
     }
 
     // Hello in Bulgarian
-    private static final String NON_ASCII_FILE_NAME = "\u0417\u0434\u0440\u0430\u0432\u0435\u0439\u0442\u0435.txt";
-    private static final String NON_ASCII_FILE_NAME_CODEPAGE = "1251";
+    private static final String FILENAME_1251 = "\u0417\u0434\u0440\u0430\u0432\u0435\u0439\u0442\u0435.txt";
+    // Hello in Swedish
+    private static final String FILENAME_1257 = "Hall\u00e5.txt";
 }
