@@ -1077,7 +1077,7 @@ public:
 
   // Calculate the region index of the given address. Given address must be
   // within the heap.
-  inline uint addr_to_region(const HeapWord* addr) const;
+  inline uint addr_to_region(const void* addr) const;
 
   inline HeapWord* bottom_addr_for_region(uint index) const;
 

@@ -2226,7 +2226,7 @@ void G1CollectedHeap::start_concurrent_gc_for_metadata_allocation(GCCause::Cause
 }
 
 bool G1CollectedHeap::is_in(const void* p) const {
-  return is_in_reserved(p) && _hrm.is_available(addr_to_region((HeapWord*)p));
+  return is_in_reserved(p) && _hrm.is_available(addr_to_region(p));
 }
 
 // Iteration functions.

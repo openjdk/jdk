@@ -197,7 +197,7 @@ void G1ParScanThreadState::do_oop_evac(T* p) {
   // as they are not added to the collection set due to above precondition.
   assert(!region_attr.is_humongous(),
          "Obj " PTR_FORMAT " should not refer to humongous region %u from " PTR_FORMAT,
-         p2i(obj), _g1h->addr_to_region(cast_from_oop<HeapWord*>(obj)), p2i(p));
+         p2i(obj), _g1h->addr_to_region(obj), p2i(p));
 
   if (!region_attr.is_in_cset()) {
     // In this case somebody else already did all the work.
