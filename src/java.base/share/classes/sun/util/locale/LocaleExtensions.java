@@ -34,6 +34,7 @@ package sun.util.locale;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
@@ -182,12 +183,12 @@ public class LocaleExtensions {
         return ((UnicodeLocaleExtension)ext).getUnicodeLocaleType(LocaleUtils.toLowerString(unicodeLocaleKey));
     }
 
-    public String getTransformedContentSource() {
+    public Optional<String> getTransformedContentSource() {
         if (extensionMap.get(TransformedContentExtension.SINGLETON)
                 instanceof TransformedContentExtension t_ext) {
             return t_ext.getSourceLang();
         }
-        return null;
+        return Optional.empty();
     }
 
     public SortedSet<TransformedContentExtension.Field> getTransformedContentFields() {

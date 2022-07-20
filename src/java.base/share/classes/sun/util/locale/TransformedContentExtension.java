@@ -26,6 +26,7 @@ package sun.util.locale;
 
 import java.util.Collections;
 import java.util.IllformedLocaleException;
+import java.util.Optional;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
@@ -48,7 +49,7 @@ public final class TransformedContentExtension extends Extension {
         Matcher m = FIELD.matcher(value);
         if (m.find()) {
             var sourceEnd = m.start();
-            sourceLang = sourceEnd != 0 ? value.substring(0, sourceEnd) : "";
+            sourceLang = sourceEnd != 0 ? value.substring(0, sourceEnd) : null;
             fields = new TreeSet<>();
             do {
                 var f = new Field(m.group("fsep"), m.group("fval"));
@@ -66,7 +67,7 @@ public final class TransformedContentExtension extends Extension {
         }
 
         // validate source lang
-        if (!sourceLang.isEmpty()) {
+        if (sourceLang != null) {
             var pp = new ParseStatus();
             LanguageTag.parse(sourceLang, pp);
             if (pp.isError()) {
@@ -75,15 +76,17 @@ public final class TransformedContentExtension extends Extension {
             }
         }
 
-        setValue(sourceLang +
-                (!sourceLang.isEmpty() && !fields.isEmpty() ? "-" : "") +
-                fields.stream()
-                    .map(f -> f.fsep() + "-" + f.fval())
-                    .collect(Collectors.joining("-")));
+        // set the canonical ID as the value
+        var sourceLangStr = (sourceLang != null) ? sourceLang : "";
+        var fieldsStr = fields.stream()
+            .map(f -> f.fsep() + "-" + f.fval())
+            .collect(Collectors.joining("-"));
+        var delim = (!sourceLangStr.isEmpty() && !fieldsStr.isEmpty()) ? "-" : "";
+        setValue(sourceLangStr + delim + fieldsStr);
     }
 
-    public String getSourceLang() {
-        return sourceLang;
+    public Optional<String> getSourceLang() {
+        return Optional.ofNullable(sourceLang);
     }
 
     public SortedSet<Field> getFields() {

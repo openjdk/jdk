@@ -26,7 +26,7 @@
  * @bug 8289227
  * @summary BCP47 Transformed Content extension tests
  * @modules jdk.localedata
- * @run testng/othervm -Djava.locale.providers=CLDR TExtensionTests
+ * @run testng TExtensionTests
  */
 
 import static org.testng.Assert.assertEquals;

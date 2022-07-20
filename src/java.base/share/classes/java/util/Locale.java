@@ -238,7 +238,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * specifies an extension to BCP 47 that provides subtags for specifying
  * the source language or script of transformed content. Transformed content
  * is content that has been transformed, including text that has been
- * transliterated, transcribed, or translated, or in some other way
+ * transliterated, transcribed, translated, or in some other way
  * influenced by the source locale. For example,
  * <table class="striped">
  * <caption style="display:none">Transformed Content extension examples</caption>
@@ -1515,10 +1515,9 @@ public final class Locale implements Cloneable, Serializable {
      */
     public Locale getTransformedContentSource() {
         if (hasExtensions()) {
-            var source  = localeExtensions.getTransformedContentSource();
-            if (source != null && !source.isEmpty()) {
-                return forLanguageTag(source);
-            }
+            return localeExtensions.getTransformedContentSource()
+                    .map(Locale::forLanguageTag)
+                    .orElse(null);
         }
         return null;
     }
@@ -1526,8 +1525,8 @@ public final class Locale implements Cloneable, Serializable {
     /**
      * Returns the map of fields in the T extension of this
      * locale, or an empty map if it has no T extension fields.
-     * The returned map contains entries for each separator and its
-     * subtags. If there are multiple subtags in the map value,
+     * The returned map contains entries for each field separator
+     * and its subtags. If there are multiple subtags in the map value,
      * subtags are delimited by a hyphen. The returned map is unmodifiable.
      *
      * @return The map of fields in the T extension
@@ -1537,8 +1536,8 @@ public final class Locale implements Cloneable, Serializable {
         if (hasExtensions()) {
             return localeExtensions.getTransformedContentFields().stream()
                     .collect(Collectors.toUnmodifiableMap(
-                            TransformedContentExtension.Field::fsep,
-                            TransformedContentExtension.Field::fval));
+                        TransformedContentExtension.Field::fsep,
+                        TransformedContentExtension.Field::fval));
         }
         return Collections.emptyMap();
     }
@@ -2252,17 +2251,17 @@ public final class Locale implements Cloneable, Serializable {
                                 .forEach(names::add);
                     }
                     case TRANSFORMED_CONTENT_EXTENSION -> {
-                        var sourceLang = localeExtensions.getTransformedContentSource();
-                        if (sourceLang != null && !sourceLang.isEmpty()) {
-                            names.add(getDisplayString(String.valueOf(TRANSFORMED_CONTENT_EXTENSION), null, inLocale, DISPLAY_UEXT_KEY) + ": " +
-                                    forLanguageTag(sourceLang).getDisplayName(inLocale));
-                        }
+                        localeExtensions.getTransformedContentSource()
+                                .ifPresent(sourceLang ->
+                                    names.add(getDisplayString(String.valueOf(TRANSFORMED_CONTENT_EXTENSION),
+                                                            null, inLocale, DISPLAY_UEXT_KEY) + ": " +
+                                            forLanguageTag(sourceLang).getDisplayName(inLocale)));
                         localeExtensions.getTransformedContentFields().stream()
-                            .map(f -> getDisplayString(f.fsep(), null, inLocale, DISPLAY_UEXT_KEY) + ": " +
-                                                Arrays.stream(f.fval().split("-"))
-                                                        .map(v -> getDisplayString(v, f.fsep(), inLocale, DISPLAY_UEXT_TYPE))
-                                                        .collect(Collectors.joining(" ")))
-                            .forEach(names::add);
+                                .map(f -> getDisplayString(f.fsep(), null, inLocale, DISPLAY_UEXT_KEY) + ": " +
+                                        Arrays.stream(f.fval().split("-"))
+                                                .map(v -> getDisplayString(v, f.fsep(), inLocale, DISPLAY_UEXT_TYPE))
+                                                .collect(Collectors.joining(" ")))
+                                .forEach(names::add);
                     }
                     default -> {
                         var ext = localeExtensions.getExtensionValue(key);
