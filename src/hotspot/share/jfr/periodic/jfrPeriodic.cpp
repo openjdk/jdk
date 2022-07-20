@@ -83,7 +83,6 @@ PRAGMA_ALLOW_LOSSY_CONVERSIONS
  */
 #define TRACE_REQUEST_FUNC(id)    void JfrPeriodicEventSet::request##id(void)
 
-
 TRACE_REQUEST_FUNC(JVMInformation) {
   ResourceMark rm;
   EventJVMInformation event;
