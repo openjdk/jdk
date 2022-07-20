@@ -57,9 +57,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.text.DateFormat;
 import java.text.MessageFormat;
-import java.text.ChoiceFormat;
-import java.text.Format;
-import java.text.NumberFormat;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -1196,22 +1194,24 @@ public class FilePane extends JPanel implements PropertyChangeListener {
                     if(len == 0) {
                         text = MessageFormat.format(kiloByteString, len);
                     } else {
-                        len /= 1024L;
+                        len /= 1000L;
                         text = MessageFormat.format(kiloByteString, len + 1);
                     }
-                } else if (len < 1024L) {
+                } else if (len < 1000L) {
                     text = MessageFormat.format(kiloByteString, (len==0 ? 0L : 1L));
                 } else {
-                    len /= 1024L;
-                    if (len < 1024L) {
-                        text = MessageFormat.format(kiloByteString, len);
+                    double kbVal = formatToDoubleValue(len);
+                    len = (long)kbVal;
+                    if (kbVal < 1000.0) {
+                        text = MessageFormat.format(kiloByteString, kbVal);
                     } else {
-                        len /= 1024L;
-                        if (len < 1024L) {
-                            text = MessageFormat.format(megaByteString, len);
+                        double mbVal = formatToDoubleValue(len);
+                        len = (long)mbVal;
+                        if (mbVal < 1000.0) {
+                            text = MessageFormat.format(megaByteString, mbVal);
                         } else {
-                            len /= 1024L;
-                            text = MessageFormat.format(gigaByteString, len);
+                            double gbVal = formatToDoubleValue(len);
+                            text = MessageFormat.format(gigaByteString, gbVal);
                         }
                     }
                 }
@@ -1227,6 +1227,12 @@ public class FilePane extends JPanel implements PropertyChangeListener {
 
             return this;
         }
+    }
+
+    public double formatToDoubleValue(long len) {
+        DecimalFormat df = new DecimalFormat("0.0");
+        double val = len/1000.0;
+        return  Double.valueOf(df.format(val));
     }
 
     public JPanel createDetailsView() {
