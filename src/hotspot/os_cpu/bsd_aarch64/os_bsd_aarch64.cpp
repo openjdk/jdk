@@ -549,6 +549,10 @@ void os::current_thread_enable_wx(WXMode mode) {
   pthread_jit_write_protect_np(mode == WXExec);
 }
 
+static inline void atomic_copy64(const volatile void *src, volatile void *dst) {
+  *(jlong *) dst = *(const jlong *) src;
+}
+
 extern "C" {
   int SpinPause() {
     return 0;
@@ -581,10 +585,6 @@ extern "C" {
       while (from >= end)
         *(to--) = *(from--);
     }
-  }
-
-  static inline void atomic_copy64(const volatile void *src, volatile void *dst) {
-    *(jlong *) dst = *(const jlong *) src;
   }
 
   void _Copy_conjoint_jlongs_atomic(const jlong* from, jlong* to, size_t count) {
