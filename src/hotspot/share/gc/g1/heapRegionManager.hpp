@@ -189,7 +189,7 @@ public:
 
   // If addr is within the committed space return its corresponding
   // HeapRegion, otherwise return NULL.
-  inline HeapRegion* addr_to_region(const HeapWord* addr) const;
+  inline HeapRegion* addr_to_region(HeapWord* addr) const;
 
   // Insert the given region into the free region list.
   inline void insert_into_free_list(HeapRegion* hr);

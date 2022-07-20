@@ -128,7 +128,7 @@ public:
 
   // Return the element of the given array that covers the given word in the
   // heap. Assumes the index is valid.
-  T get_by_address(const HeapWord* value) const {
+  T get_by_address(HeapWord* value) const {
     idx_t biased_index = ((uintptr_t)value) >> this->shift_by();
     this->verify_biased_index(biased_index);
     return biased_base()[biased_index];
