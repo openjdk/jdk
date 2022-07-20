@@ -424,6 +424,9 @@ public class JSplitPane extends JComponent implements Accessible
     @BeanProperty(description
             = "The size of the divider.")
     public void setDividerSize(int newSize) {
+        if (newSize < 0) {
+            newSize = 0;
+        }
         int           oldSize = dividerSize;
 
         dividerSizeSet = true;
