@@ -71,7 +71,6 @@ class ClassFileStream;
 class ClassLoadInfo;
 class Dictionary;
 template <MEMFLAGS F> class HashtableBucket;
-class ResolutionErrorTable;
 class SymbolPropertyTable;
 class PackageEntry;
 class ProtectionDomainCacheTable;
@@ -293,9 +292,6 @@ public:
  private:
   // Static tables owned by the SystemDictionary
 
-  // Resolution errors
-  static ResolutionErrorTable*   _resolution_errors;
-
   // Invoke methods (JSR 292)
   static SymbolPropertyTable*    _invoke_method_table;
 
@@ -312,15 +308,10 @@ private:
   static OopHandle  _java_system_loader;
   static OopHandle  _java_platform_loader;
 
-  static ResolutionErrorTable* resolution_errors() { return _resolution_errors; }
   static SymbolPropertyTable* invoke_method_table() { return _invoke_method_table; }
 
 private:
   // Basic loading operations
-  static InstanceKlass* resolve_instance_class_or_null_helper(Symbol* name,
-                                                              Handle class_loader,
-                                                              Handle protection_domain,
-                                                              TRAPS);
   static InstanceKlass* resolve_instance_class_or_null(Symbol* class_name,
                                                        Handle class_loader,
                                                        Handle protection_domain, TRAPS);

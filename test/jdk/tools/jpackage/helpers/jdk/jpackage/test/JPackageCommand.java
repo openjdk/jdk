@@ -45,6 +45,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.IOUtils;
 import jdk.jpackage.internal.AppImageFile;
 import jdk.jpackage.internal.ApplicationLayout;
 import jdk.jpackage.internal.PackageFile;
@@ -296,6 +297,42 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         });
 
         return this;
+    }
+
+    public void createJPackageXMLFile(String mainLauncher, String mainClass)
+            throws IOException {
+        Path jpackageXMLFile = AppImageFile.getPathInAppImage(
+                Optional.ofNullable(getArgumentValue("--app-image")).map(
+                        Path::of).orElseThrow(() -> {
+                            return new RuntimeException(
+                                    "Error: --app-image expected");
+                        }));
+
+        IOUtils.createXml(jpackageXMLFile, xml -> {
+                xml.writeStartElement("jpackage-state");
+                xml.writeAttribute("version", AppImageFile.getVersion());
+                xml.writeAttribute("platform", AppImageFile.getPlatform());
+
+                xml.writeStartElement("app-version");
+                xml.writeCharacters("1.0");
+                xml.writeEndElement();
+
+                xml.writeStartElement("main-launcher");
+                xml.writeCharacters(mainLauncher);
+                xml.writeEndElement();
+
+                xml.writeStartElement("main-class");
+                xml.writeCharacters(mainClass);
+                xml.writeEndElement();
+
+                xml.writeStartElement("signed");
+                xml.writeCharacters("false");
+                xml.writeEndElement();
+
+                xml.writeStartElement("app-store");
+                xml.writeCharacters("false");
+                xml.writeEndElement();
+            });
     }
 
     JPackageCommand addPrerequisiteAction(ThrowingConsumer<JPackageCommand> action) {
@@ -783,7 +820,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
     private void assertAppImageFile() {
         final Path lookupPath = AppImageFile.getPathInAppImage(Path.of(""));
 
-        if (isRuntime() || !isImagePackageType()) {
+        if (isRuntime() || (!isImagePackageType() && !TKit.isOSX())) {
             assertFileInAppImage(lookupPath, null);
         } else {
             assertFileInAppImage(lookupPath, lookupPath);
@@ -796,7 +833,17 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         if (isRuntime() || isImagePackageType() || TKit.isLinux()) {
             assertFileInAppImage(lookupPath, null);
         } else {
-            assertFileInAppImage(lookupPath, lookupPath);
+            if (TKit.isOSX() && hasArgument("--app-image")) {
+                String appImage = getArgumentValue("--app-image",
+                        () -> null);
+                if (AppImageFile.load(Path.of(appImage)).isSigned()) {
+                    assertFileInAppImage(lookupPath, null);
+                } else {
+                    assertFileInAppImage(lookupPath, lookupPath);
+                }
+            } else {
+                assertFileInAppImage(lookupPath, lookupPath);
+            }
         }
     }
 

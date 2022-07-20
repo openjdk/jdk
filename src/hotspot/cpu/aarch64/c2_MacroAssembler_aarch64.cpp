@@ -27,6 +27,7 @@
 #include "asm/assembler.inline.hpp"
 #include "opto/c2_MacroAssembler.hpp"
 #include "opto/intrinsicnode.hpp"
+#include "opto/matcher.hpp"
 #include "opto/subnode.hpp"
 #include "runtime/stubRoutines.hpp"
 
@@ -1030,6 +1031,66 @@ void C2_MacroAssembler::sve_vmask_tolong(Register dst, PRegister src, BasicType 
   }
 }
 
+// Unpack the mask, a long value in src, into predicate register dst based on the
+// corresponding data type. Note that dst can support at most 64 lanes.
+// Below example gives the expected dst predicate register in different types, with
+// a valid src(0x658D) on a 1024-bit vector size machine.
+// BYTE:  dst = 0x00 00 00 00 00 00 00 00 00 00 00 00 00 00 65 8D
+// SHORT: dst = 0x00 00 00 00 00 00 00 00 00 00 00 00 14 11 40 51
+// INT:   dst = 0x00 00 00 00 00 00 00 00 01 10 01 01 10 00 11 01
+// LONG:  dst = 0x00 01 01 00 00 01 00 01 01 00 00 00 01 01 00 01
+//
+// The number of significant bits of src must be equal to lane_cnt. E.g., 0xFF658D which
+// has 24 significant bits would be an invalid input if dst predicate register refers to
+// a LONG type 1024-bit vector, which has at most 16 lanes.
+void C2_MacroAssembler::sve_vmask_fromlong(PRegister dst, Register src, BasicType bt, int lane_cnt,
+                                           FloatRegister vtmp1, FloatRegister vtmp2) {
+  assert(UseSVE == 2 && VM_Version::supports_svebitperm() &&
+         lane_cnt <= 64 && is_power_of_2(lane_cnt), "unsupported");
+  Assembler::SIMD_RegVariant size = elemType_to_regVariant(bt);
+  // Example:   src = 0x658D, bt = T_BYTE, size = B, lane_cnt = 16
+  // Expected:  dst = 0b01101001 10001101
+
+  // Put long value from general purpose register into the first lane of vector.
+  // vtmp1 = 0x0000000000000000 | 0x000000000000658D
+  sve_dup(vtmp1, B, 0);
+  mov(vtmp1, D, 0, src);
+
+  // As sve_cmp generates mask value with the minimum unit in byte, we should
+  // transform the value in the first lane which is mask in bit now to the
+  // mask in byte, which can be done by SVE2's BDEP instruction.
+
+  // The first source input of BDEP instruction. Deposite each byte in every 8 bytes.
+  // vtmp1 = 0x0000000000000065 | 0x000000000000008D
+  if (lane_cnt <= 8) {
+    // Nothing. As only one byte exsits.
+  } else if (lane_cnt <= 16) {
+    ins(vtmp1, B, vtmp1, 8, 1);
+    mov(vtmp1, B, 1, zr);
+  } else {
+    sve_vector_extend(vtmp1, D, vtmp1, B);
+  }
+
+  // The second source input of BDEP instruction, initialized with 0x01 for each byte.
+  // vtmp2 = 0x01010101 0x01010101 0x01010101 0x01010101
+  sve_dup(vtmp2, B, 1);
+
+  // BDEP vtmp1.D, vtmp1.D, vtmp2.D
+  // vtmp1 = 0x0000000000000065 | 0x000000000000008D
+  // vtmp2 = 0x0101010101010101 | 0x0101010101010101
+  //         ---------------------------------------
+  // vtmp1 = 0x0001010000010001 | 0x0100000001010001
+  sve_bdep(vtmp1, D, vtmp1, vtmp2);
+
+  if (bt != T_BYTE) {
+    sve_vector_extend(vtmp1, size, vtmp1, B);
+  }
+  // Generate mask according to the given vector, in which the elements have been
+  // extended to expected type.
+  // dst = 0b01101001 10001101
+  sve_cmp(Assembler::NE, dst, size, ptrue, vtmp1, 0);
+}
+
 void C2_MacroAssembler::sve_compare(PRegister pd, BasicType bt, PRegister pg,
                                     FloatRegister zn, FloatRegister zm, int cond) {
   assert(pg->is_governing(), "This register has to be a governing predicate register");
@@ -1278,39 +1339,70 @@ void C2_MacroAssembler::sve_reduce_integral(int opc, Register dst, BasicType bt,
   }
 }
 
-// Set elements of the dst predicate to true if the element number is
-// in the range of [0, lane_cnt), or to false otherwise.
-void C2_MacroAssembler::sve_ptrue_lanecnt(PRegister dst, SIMD_RegVariant size, int lane_cnt) {
+// Set elements of the dst predicate to true for lanes in the range of [0, lane_cnt), or
+// to false otherwise. The input "lane_cnt" should be smaller than or equal to the supported
+// max vector length of the basic type. Clobbers: rscratch1 and the rFlagsReg.
+void C2_MacroAssembler::sve_gen_mask_imm(PRegister dst, BasicType bt, uint32_t lane_cnt) {
+  uint32_t max_vector_length = Matcher::max_vector_size(bt);
+  assert(lane_cnt <= max_vector_length, "unsupported input lane_cnt");
+
+  // Set all elements to false if the input "lane_cnt" is zero.
+  if (lane_cnt == 0) {
+    sve_pfalse(dst);
+    return;
+  }
+
+  SIMD_RegVariant size = elemType_to_regVariant(bt);
   assert(size != Q, "invalid size");
+
+  // Set all true if "lane_cnt" equals to the max lane count.
+  if (lane_cnt == max_vector_length) {
+    sve_ptrue(dst, size, /* ALL */ 0b11111);
+    return;
+  }
+
+  // Fixed numbers for "ptrue".
   switch(lane_cnt) {
-    case 1: /* VL1 */
-    case 2: /* VL2 */
-    case 3: /* VL3 */
-    case 4: /* VL4 */
-    case 5: /* VL5 */
-    case 6: /* VL6 */
-    case 7: /* VL7 */
-    case 8: /* VL8 */
-      sve_ptrue(dst, size, lane_cnt);
-      break;
-    case 16:
-      sve_ptrue(dst, size, /* VL16 */ 0b01001);
-      break;
-    case 32:
-      sve_ptrue(dst, size, /* VL32 */ 0b01010);
-      break;
-    case 64:
-      sve_ptrue(dst, size, /* VL64 */ 0b01011);
-      break;
-    case 128:
-      sve_ptrue(dst, size, /* VL128 */ 0b01100);
-      break;
-    case 256:
-      sve_ptrue(dst, size, /* VL256 */ 0b01101);
-      break;
-    default:
-      assert(false, "unsupported");
-      ShouldNotReachHere();
+  case 1: /* VL1 */
+  case 2: /* VL2 */
+  case 3: /* VL3 */
+  case 4: /* VL4 */
+  case 5: /* VL5 */
+  case 6: /* VL6 */
+  case 7: /* VL7 */
+  case 8: /* VL8 */
+    sve_ptrue(dst, size, lane_cnt);
+    return;
+  case 16:
+    sve_ptrue(dst, size, /* VL16 */ 0b01001);
+    return;
+  case 32:
+    sve_ptrue(dst, size, /* VL32 */ 0b01010);
+    return;
+  case 64:
+    sve_ptrue(dst, size, /* VL64 */ 0b01011);
+    return;
+  case 128:
+    sve_ptrue(dst, size, /* VL128 */ 0b01100);
+    return;
+  case 256:
+    sve_ptrue(dst, size, /* VL256 */ 0b01101);
+    return;
+  default:
+    break;
+  }
+
+  // Special patterns for "ptrue".
+  if (lane_cnt == round_down_power_of_2(max_vector_length)) {
+    sve_ptrue(dst, size, /* POW2 */ 0b00000);
+  } else if (lane_cnt == max_vector_length - (max_vector_length % 4)) {
+    sve_ptrue(dst, size, /* MUL4 */ 0b11101);
+  } else if (lane_cnt == max_vector_length - (max_vector_length % 3)) {
+    sve_ptrue(dst, size, /* MUL3 */ 0b11110);
+  } else {
+    // Encode to "whilelow" for the remaining cases.
+    mov(rscratch1, lane_cnt);
+    sve_whilelow(dst, size, zr, rscratch1);
   }
 }
 

@@ -64,12 +64,13 @@
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/sweeper.hpp"
 #include "runtime/task.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
@@ -243,7 +244,6 @@ void print_statistics() {
 #ifndef COMPILER1
     SharedRuntime::print_statistics();
 #endif //COMPILER1
-    os::print_statistics();
   }
 
   if (PrintLockStatistics || PrintPreciseRTMLockingStatistics) {
@@ -400,7 +400,7 @@ void print_statistics() {
 // Note: before_exit() can be executed only once, if more than one threads
 //       are trying to shutdown the VM at the same time, only one thread
 //       can run before_exit() and all other threads must wait.
-void before_exit(JavaThread* thread) {
+void before_exit(JavaThread* thread, bool halt) {
   #define BEFORE_EXIT_NOT_RUN 0
   #define BEFORE_EXIT_RUNNING 1
   #define BEFORE_EXIT_DONE    2
@@ -447,7 +447,7 @@ void before_exit(JavaThread* thread) {
     event.commit();
   }
 
-  JFR_ONLY(Jfr::on_vm_shutdown();)
+  JFR_ONLY(Jfr::on_vm_shutdown(false, halt);)
 
   // Stop the WatcherThread. We do this before disenrolling various
   // PeriodicTasks to reduce the likelihood of races.

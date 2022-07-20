@@ -48,9 +48,11 @@
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
 #include "runtime/continuationHelper.inline.hpp"
+#include "runtime/continuationJavaClasses.inline.hpp"
 #include "runtime/continuationWrapper.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/keepStackGCProcessed.hpp"
 #include "runtime/orderAccess.hpp"
@@ -1405,7 +1407,8 @@ static inline int freeze_internal(JavaThread* current, intptr_t* const sp) {
 
   assert(entry->is_virtual_thread() == (entry->scope() == java_lang_VirtualThread::vthread_scope()), "");
 
-  assert(monitors_on_stack(current) == (current->held_monitor_count() > 0), "");
+  assert(monitors_on_stack(current) == ((current->held_monitor_count() - current->jni_monitor_count()) > 0),
+         "Held monitor count and locks on stack invariant: " INT64_FORMAT " JNI: " INT64_FORMAT, (int64_t)current->held_monitor_count(), (int64_t)current->jni_monitor_count());
 
   if (entry->is_pinned() || current->held_monitor_count() > 0) {
     log_develop_debug(continuations)("PINNED due to critical section/hold monitor");
@@ -1965,6 +1968,10 @@ inline void ThawBase::patch(frame& f, const frame& caller, bool bottom) {
   if (bottom) {
     ContinuationHelper::Frame::patch_pc(caller, _cont.is_empty() ? caller.pc()
                                                                  : StubRoutines::cont_returnBarrier());
+  } else {
+    // caller might have been deoptimized during thaw but we've overwritten the return address when copying f from the heap.
+    // If the caller is not deoptimized, pc is unchanged.
+    ContinuationHelper::Frame::patch_pc(caller, caller.raw_pc());
   }
 
   patch_pd(f, caller);
@@ -2061,6 +2068,9 @@ void ThawBase::recurse_thaw_compiled_frame(const frame& hf, frame& caller, int n
     _align_size += frame::align_wiggle; // we add one whether or not we've aligned because we add it in freeze_interpreted_frame
   }
 
+  // new_stack_frame must construct the resulting frame using hf.pc() rather than hf.raw_pc() because the frame is not
+  // yet laid out in the stack, and so the original_pc is not stored in it.
+  // As a result, f.is_deoptimized_frame() is always false and we must test hf to know if the frame is deoptimized.
   frame f = new_stack_frame<ContinuationHelper::CompiledFrame>(hf, caller, is_bottom_frame);
   intptr_t* const stack_frame_top = f.sp();
   intptr_t* const heap_frame_top = hf.unextended_sp();
@@ -2082,7 +2092,9 @@ void ThawBase::recurse_thaw_compiled_frame(const frame& hf, frame& caller, int n
 
   patch(f, caller, is_bottom_frame);
 
-  if (f.is_deoptimized_frame()) {
+  // f.is_deoptimized_frame() is always false and we must test hf.is_deoptimized_frame() (see comment above)
+  assert(!f.is_deoptimized_frame(), "");
+  if (hf.is_deoptimized_frame()) {
     maybe_set_fastpath(f.sp());
   } else if (_thread->is_interp_only_mode()
               || (_cont.is_preempted() && f.cb()->as_compiled_method()->is_marked_for_deoptimization())) {
@@ -2242,7 +2254,7 @@ static inline intptr_t* thaw_internal(JavaThread* thread, const Continuation::th
   assert(is_aligned(sp, frame::frame_alignment), "");
 
   // All the frames have been thawed so we know they don't hold any monitors
-  thread->reset_held_monitor_count();
+  assert(thread->held_monitor_count() == 0, "Must be");
 
 #ifdef ASSERT
   intptr_t* sp0 = sp;

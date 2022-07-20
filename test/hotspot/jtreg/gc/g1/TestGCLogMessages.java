@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,8 @@ package gc.g1;
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   gc.g1.TestGCLogMessages
  */
@@ -41,7 +41,7 @@ package gc.g1;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
-import sun.hotspot.code.Compiler;
+import jdk.test.whitebox.code.Compiler;
 
 public class TestGCLogMessages {
 
@@ -96,7 +96,7 @@ public class TestGCLogMessages {
         }
 
         public boolean isAvailable() {
-            sun.hotspot.WhiteBox WB = sun.hotspot.WhiteBox.getWhiteBox();
+            jdk.test.whitebox.WhiteBox WB = jdk.test.whitebox.WhiteBox.getWhiteBox();
             return WB.isJFRIncluded();
         }
     }
@@ -367,7 +367,7 @@ public class TestGCLogMessages {
 
     static class GCTestWithConcurrentStart {
         public static void main(String [] args) {
-            sun.hotspot.WhiteBox WB = sun.hotspot.WhiteBox.getWhiteBox();
+            jdk.test.whitebox.WhiteBox WB = jdk.test.whitebox.WhiteBox.getWhiteBox();
             WB.g1StartConcMarkCycle();
         }
     }

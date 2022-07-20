@@ -78,10 +78,10 @@ public class PrintLatinCJKTest implements Printable {
             frame.setVisible(true);
 
             // add the test frame to dispose
-            PassFailJFrame.addTestFrame(frame);
+            PassFailJFrame.addTestWindow(frame);
 
             // Arrange the test instruction frame and test frame side by side
-            PassFailJFrame.positionTestFrame(frame,
+            PassFailJFrame.positionTestWindow(frame,
                     PassFailJFrame.Position.HORIZONTAL);
         });
     }

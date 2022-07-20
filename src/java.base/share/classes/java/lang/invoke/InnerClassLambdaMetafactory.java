@@ -260,8 +260,8 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
      * registers the lambda proxy class for including into the CDS archive.
      */
     private Class<?> spinInnerClass() throws LambdaConversionException {
-        // CDS does not handle disableEagerInitialization.
-        if (!disableEagerInitialization) {
+        // CDS does not handle disableEagerInitialization or useImplMethodHandle
+        if (!disableEagerInitialization && !useImplMethodHandle) {
             // include lambda proxy class in CDS archive at dump time
             if (CDS.isDumpingArchive()) {
                 Class<?> innerClass = generateInnerClass();
@@ -310,7 +310,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
             interfaceNames = new String[]{interfaceName};
         } else {
             // Assure no duplicate interfaces (ClassFormatError)
-            Set<String> itfs = new LinkedHashSet<>(altInterfaces.length + 1);
+            Set<String> itfs = LinkedHashSet.newLinkedHashSet(altInterfaces.length + 1);
             itfs.add(interfaceName);
             for (Class<?> i : altInterfaces) {
                 itfs.add(i.getName().replace('.', '/'));

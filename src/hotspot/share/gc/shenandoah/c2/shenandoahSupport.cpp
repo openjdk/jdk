@@ -1335,6 +1335,7 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
     Node* orig_ctrl = ctrl;
 
     Node* raw_mem = fixer.find_mem(ctrl, lrb);
+    Node* raw_mem_for_ctrl = fixer.find_mem(ctrl, NULL);
 
     IdealLoopTree *loop = phase->get_loop(ctrl);
 
@@ -1436,6 +1437,7 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
       phase->set_ctrl(n, region);
       follow_barrier_uses(n, ctrl, uses, phase);
     }
+    fixer.record_new_ctrl(ctrl, region, raw_mem, raw_mem_for_ctrl);
   }
   // Done expanding load-reference-barriers.
   assert(ShenandoahBarrierSetC2::bsc2()->state()->load_reference_barriers_count() == 0, "all load reference barrier nodes should have been replaced");
@@ -2669,6 +2671,13 @@ void MemoryGraphFixer::fix_mem(Node* ctrl, Node* new_ctrl, Node* mem, Node* mem_
     assert(n->outcnt() > 0, "new phi must have uses now");
   }
 #endif
+}
+
+void MemoryGraphFixer::record_new_ctrl(Node* ctrl, Node* new_ctrl, Node* mem, Node* mem_for_ctrl) {
+  if (mem_for_ctrl != mem && new_ctrl != ctrl) {
+    _memory_nodes.map(ctrl->_idx, mem);
+    _memory_nodes.map(new_ctrl->_idx, mem_for_ctrl);
+  }
 }
 
 MergeMemNode* MemoryGraphFixer::allocate_merge_mem(Node* mem, Node* rep_proj, Node* rep_ctrl) const {

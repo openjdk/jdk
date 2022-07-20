@@ -61,6 +61,7 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/continuationEntry.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
@@ -804,9 +805,9 @@ bool Method::is_default_method() const {
 bool Method::can_be_statically_bound(AccessFlags class_access_flags) const {
   if (is_final_method(class_access_flags))  return true;
 #ifdef ASSERT
-  ResourceMark rm;
   bool is_nonv = (vtable_index() == nonvirtual_vtable_index);
   if (class_access_flags.is_interface()) {
+      ResourceMark rm;
       assert(is_nonv == is_static() || is_nonv == is_private(),
              "nonvirtual unexpected for non-static, non-private: %s",
              name_and_sig_as_C_string());
@@ -1328,7 +1329,7 @@ void Method::set_code(const methodHandle& mh, CompiledMethod *code) {
     assert(mh->_from_interpreted_entry == NULL, "initialized incorrectly"); // see link_method
 
     // This is the entry used when we're in interpreter-only mode; see InterpreterMacroAssembler::jump_from_interpreted
-    mh->_i2i_entry = mh->get_i2c_entry();
+    mh->_i2i_entry = ContinuationEntry::interpreted_entry();
     // This must come last, as it is what's tested in LinkResolver::resolve_static_call
     Atomic::release_store(&mh->_from_interpreted_entry , mh->get_i2c_entry());
   } else if (!mh->is_method_handle_intrinsic()) {
@@ -1494,8 +1495,8 @@ methodHandle Method::make_method_handle_intrinsic(vmIntrinsics::ID iid,
   if (iid == vmIntrinsics::_linkToNative) {
     m->set_interpreter_entry(m->adapter()->get_i2c_entry());
   }
-  if (log_is_enabled(Info, methodhandles) && (Verbose || WizardMode)) {
-    LogTarget(Info, methodhandles) lt;
+  if (log_is_enabled(Debug, methodhandles)) {
+    LogTarget(Debug, methodhandles) lt;
     LogStream ls(lt);
     m->print_on(&ls);
   }

@@ -32,7 +32,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "utilities/exceptions.hpp"
 
 static jbyteArray metadata_blob = NULL;

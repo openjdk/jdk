@@ -455,10 +455,8 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
      */
     protected final boolean hasMoreReferrals() throws NamingException {
         try {
-            if ((refEx != null) &&
-                (refEx.hasMoreReferrals() ||
-                 refEx.hasMoreReferralExceptions()
-                    && !(errEx instanceof LimitExceededException))) {
+            if ((refEx != null) && !(errEx instanceof LimitExceededException) &&
+                (refEx.hasMoreReferrals() || refEx.hasMoreReferralExceptions())) {
 
                 if (enumCtx.homeCtx.handleReferrals == LdapClient.LDAP_REF_THROW) {
                     throw (NamingException)(refEx.fillInStackTrace());
@@ -478,9 +476,13 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
 
                     } catch (LdapReferralException re) {
 
-                        // record a previous exception
-                        if (errEx == null) {
-                            errEx = re.getNamingException();
+                        // record a previous exception and quit if any limit is reached
+                        var namingException = re.getNamingException();
+                        if (namingException instanceof LimitExceededException) {
+                            errEx = namingException;
+                            break;
+                        } else if (errEx == null) {
+                            errEx = namingException;
                         }
                         refEx = re;
                         continue;
@@ -534,6 +536,10 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
             entries = ne.entries;
             refEx = ne.refEx;
             listArg = ne.listArg;
+			// record a previous exception and quit if any limit is reached
+            if (errEx == null || ne.errEx instanceof LimitExceededException) {
+                errEx = ne.errEx;
+            }
         } finally {
             // Ensure writes are visible to the Cleaner thread
             VarHandle.fullFence();
@@ -541,7 +547,7 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
             Reference.reachabilityFence(ne);
             Reference.reachabilityFence(this);
         }
-    }
+	}
 
     protected final void cleanup() {
         // Run the cleaning action (if it has not run already)

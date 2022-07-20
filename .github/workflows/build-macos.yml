@@ -1,0 +1,114 @@
+#
+# Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+name: 'Build (macos)'
+
+on:
+  workflow_call:
+    inputs:
+      platform:
+        required: true
+        type: string
+      extra-conf-options:
+        required: false
+        type: string
+      make-target:
+        required: false
+        type: string
+        default: 'product-bundles test-bundles'
+      debug-levels:
+        required: false
+        type: string
+        default: '[ "debug", "release" ]'
+      xcode-toolset-version:
+        required: true
+        type: string
+
+jobs:
+  build-macos:
+    name: build
+    runs-on: macos-11
+
+    strategy:
+      fail-fast: false
+      matrix:
+        debug-level: ${{ fromJSON(inputs.debug-levels) }}
+        include:
+          - debug-level: debug
+            flags: --with-debug-level=fastdebug
+            suffix: -debug
+
+    steps:
+      - name: 'Checkout the JDK source'
+        uses: actions/checkout@v3
+
+      - name: 'Get the BootJDK'
+        id: bootjdk
+        uses: ./.github/actions/get-bootjdk
+        with:
+          platform: macos-x64
+
+      - name: 'Get JTReg'
+        id: jtreg
+        uses: ./.github/actions/get-jtreg
+
+      - name: 'Get GTest'
+        id: gtest
+        uses: ./.github/actions/get-gtest
+
+      - name: 'Install toolchain and dependencies'
+        run: |
+          # Run Homebrew installation and xcode-select
+          brew install make
+          sudo xcode-select --switch /Applications/Xcode_${{ inputs.xcode-toolset-version }}.app/Contents/Developer
+          # This will make GNU make available as 'make' and not only as 'gmake'
+          echo '/usr/local/opt/make/libexec/gnubin' >> $GITHUB_PATH
+
+      - name: 'Configure'
+        run: >
+          bash configure
+          --with-conf-name=${{ inputs.platform }}
+          ${{ matrix.flags }}
+          --with-version-opt=${GITHUB_ACTOR}-${GITHUB_SHA}
+          --with-boot-jdk=${{ steps.bootjdk.outputs.path }}
+          --with-jtreg=${{ steps.jtreg.outputs.path }}
+          --with-gtest=${{ steps.gtest.outputs.path }}
+          --enable-jtreg-failure-handler
+          --with-zlib=system
+          ${{ inputs.extra-conf-options }}
+
+      - name: 'Build'
+        id: build
+        uses: ./.github/actions/do-build
+        with:
+          make-target: '${{ inputs.make-target }}'
+          platform: ${{ inputs.platform }}
+          debug-suffix: '${{ matrix.suffix }}'
+
+      - name: 'Upload bundles'
+        uses: ./.github/actions/upload-bundles
+        with:
+          platform: ${{ inputs.platform }}
+          debug-suffix: '${{ matrix.suffix }}'
