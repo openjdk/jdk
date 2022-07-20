@@ -387,6 +387,7 @@ class RebuildingTransformation {
                                                         case DUP2 -> cob.dup2();
                                                         case DUP2_X1 -> cob.dup2_x1();
                                                         case DUP2_X2 -> cob.dup2_x2();
+                                                        case SWAP -> cob.swap();
                                                         default -> throw new AssertionError("Should not reach here");
                                                     }
                                                 }
