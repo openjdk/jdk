@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,25 +20,24 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-#include <jni.h>
-#include <stdlib.h>
-#include <time.h>
 
-extern "C" {
+import java.io.File;
+import java.io.FileOutputStream;
 
-JNIEXPORT void JNICALL Java_gc_gctests_mallocWithGC1_mallocWithGC1_getMallocLock01
-(JNIEnv *env, jobject obj) {
-        char *c_ptr;
-        time_t current_time, old_time;
+public class WaitForFlagFile {
+    public static void main(String[] args) throws Exception {
+        System.out.println("WaitForFlagFile: Entering");
 
-        old_time = time(NULL);
-        current_time = 0;
+        File started = new File("/tmp/started");
+        FileOutputStream fout = new FileOutputStream(started);
+        fout.close();
 
-        while (current_time - old_time < 180) {
-                c_ptr = (char *) malloc(1);
-                free(c_ptr);
-                current_time = time(NULL);
+        File flag = new File("/tmp/flag");
+        while (!flag.exists()) {
+            System.out.println("WaitForFlagFile: Waiting");
+            Thread.sleep(500);
         }
-}
+        System.out.println("WaitForFlagFile: Exiting");
 
+    }
 }

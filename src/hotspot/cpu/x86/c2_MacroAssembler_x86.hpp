@@ -28,6 +28,9 @@
 // C2_MacroAssembler contains high-level macros for C2
 
 public:
+  // C2 compiled method's prolog code.
+  void verified_entry(int framesize, int stack_bang_size, bool fp_mode_24b, bool is_stub);
+
   Assembler::AvxVectorLen vector_length_encoding(int vlen_in_bytes);
 
   // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.

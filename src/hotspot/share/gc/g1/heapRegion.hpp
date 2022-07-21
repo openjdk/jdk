@@ -521,8 +521,7 @@ public:
 
   // Notify the region that we are about to start processing
   // self-forwarded objects during evac failure handling.
-  void note_self_forwarding_removal_start(bool during_concurrent_start,
-                                          bool during_conc_mark);
+  void note_self_forwarding_removal_start(bool during_concurrent_start);
 
   // Notify the region that we have finished processing self-forwarded
   // objects during evac failure handling.

@@ -1350,6 +1350,7 @@ int VectorCastNode::opcode(BasicType bt, bool is_signed) {
 
 bool VectorCastNode::implemented(int opc, uint vlen, BasicType src_type, BasicType dst_type) {
   if (is_java_primitive(dst_type) &&
+      is_java_primitive(src_type) &&
       (vlen > 1) && is_power_of_2(vlen) &&
       VectorNode::vector_size_supported(dst_type, vlen)) {
     int vopc = VectorCastNode::opcode(src_type);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,18 +19,28 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef OS_BSD_OS_SHARE_BSD_HPP
-#define OS_BSD_OS_SHARE_BSD_HPP
+/*
+ * @test
+ * @bug 8268312
+ * @summary Compilation error with nested generic functional interface
+ * @compile DiagnosticRewriterTest3.java
+ */
 
-// misc
-void handle_unexpected_exception(Thread* thread, int sig, siginfo_t* info, address pc, address adjusted_pc);
-#ifndef PRODUCT
-void continue_with_dump(void);
-#endif
+import java.util.Optional;
 
-#define PROCFILE_LENGTH 128
+class DiagnosticRewriterTest3 {
+    void m() {
+        Optional.of("").map(outer -> {
+            Optional.of("")
+                    .map(inner -> returnGeneric(outer))
+                    .ifPresent(String::toString);
+            return "";
+        });
+    }
 
-#endif // OS_BSD_OS_SHARE_BSD_HPP
+    <T> T returnGeneric(T generic) {
+        return generic;
+    }
+}
