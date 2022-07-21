@@ -37,6 +37,9 @@ import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Hashtable;
@@ -738,7 +741,12 @@ public class BasicFileChooserUI extends FileChooserUI {
                         setDirectorySelected(true);
                         setDirectory(file);
                         if (usesSingleFilePane) {
-                            chooser.setSelectedFile(null);
+                            Path path = Paths.get(file.getPath());
+                            if (Files.isSymbolicLink(path)) {
+                                chooser.setSelectedFile(file);
+                            } else {
+                                chooser.setSelectedFile(null);
+                            }
                         }
                     } else {
                         setDirectorySelected(false);
