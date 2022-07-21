@@ -83,7 +83,7 @@ public class FileChooserSymLinkTest{
         PassFailJFrame.addTestWindow(frame);
         PassFailJFrame.positionTestWindow(frame, PassFailJFrame.Position.HORIZONTAL);
 
-        frame.setPreferredSize(new Dimension(800, 600));
+        frame.setPreferredSize(new Dimension(600, 600));
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         JFileChooser jfc = new JFileChooser();
         jfc.setDialogType(JFileChooser.CUSTOM_DIALOG);
