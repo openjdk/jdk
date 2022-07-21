@@ -161,6 +161,7 @@ public class TestTFMBuilder extends JavadocTester {
 
             try {
                 setFileManager(tfm);
+                setAutomaticCheckNoStacktrace(false);
                 javadoc("-d", base.resolve("api").toString(),
                         "-sourcepath", srcDir.toString(),
                         "p");
