@@ -3981,7 +3981,7 @@ void TemplateTable::_new() {
       // initialize both the header and fields
       __ jmp(initialize_object);
     }
-  } else {
+  } else if (allow_shared_alloc) {
     // Allocation in the shared Eden, if allowed.
     //
     // rdx: instance size in bytes
