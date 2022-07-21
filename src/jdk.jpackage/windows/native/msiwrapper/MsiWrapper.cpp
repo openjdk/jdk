@@ -50,8 +50,9 @@ void launchApp() {
                 (const char*)productCodeUtf8.data(), productCodeUtf8.size()));
 
         // Uninstall product.
-        msi::uninstall().setProductCode(productCode)();
-        exitCode = 0;
+        msi::SuppressUI suppressUI;
+        exitCode = (int)msi::uninstall().setProductCode(productCode)(
+                                                    std::nothrow).getValue();
         return;
     }
 

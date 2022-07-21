@@ -81,7 +81,7 @@
 
     if ( char_code < 255 )
     {
-      FT_UInt  code = (FT_UInt)(char_code + 1);
+      FT_UInt  code = (FT_UInt)( char_code + 1 );
 
 
       for (;;)

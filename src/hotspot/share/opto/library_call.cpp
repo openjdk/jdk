@@ -1837,14 +1837,6 @@ bool LibraryCallKit::inline_math_native(vmIntrinsics::ID id) {
   }
 }
 
-static bool is_simple_name(Node* n) {
-  return (n->req() == 1         // constant
-          || (n->is_Type() && n->as_Type()->type()->singleton())
-          || n->is_Proj()       // parameter or return value
-          || n->is_Phi()        // local of some sort
-          );
-}
-
 //----------------------------inline_notify-----------------------------------*
 bool LibraryCallKit::inline_notify(vmIntrinsics::ID id) {
   const TypeFunc* ftype = OptoRuntime::monitor_notify_Type();
@@ -1943,179 +1935,21 @@ bool LibraryCallKit::inline_math_unsignedMultiplyHigh() {
 
 Node*
 LibraryCallKit::generate_min_max(vmIntrinsics::ID id, Node* x0, Node* y0) {
-  // These are the candidate return value:
-  Node* xvalue = x0;
-  Node* yvalue = y0;
-
-  if (xvalue == yvalue) {
-    return xvalue;
-  }
-
-  bool want_max = (id == vmIntrinsics::_max || id == vmIntrinsics::_max_strict);
-
-  const TypeInt* txvalue = _gvn.type(xvalue)->isa_int();
-  const TypeInt* tyvalue = _gvn.type(yvalue)->isa_int();
-  if (txvalue == NULL || tyvalue == NULL)  return top();
-  // This is not really necessary, but it is consistent with a
-  // hypothetical MaxINode::Value method:
-  int widen = MAX2(txvalue->_widen, tyvalue->_widen);
-
-  // %%% This folding logic should (ideally) be in a different place.
-  // Some should be inside IfNode, and there to be a more reliable
-  // transformation of ?: style patterns into cmoves.  We also want
-  // more powerful optimizations around cmove and min/max.
-
-  // Try to find a dominating comparison of these guys.
-  // It can simplify the index computation for Arrays.copyOf
-  // and similar uses of System.arraycopy.
-  // First, compute the normalized version of CmpI(x, y).
-  int   cmp_op = Op_CmpI;
-  Node* xkey = xvalue;
-  Node* ykey = yvalue;
-  Node* ideal_cmpxy = _gvn.transform(new CmpINode(xkey, ykey));
-  if (ideal_cmpxy->is_Cmp()) {
-    // E.g., if we have CmpI(length - offset, count),
-    // it might idealize to CmpI(length, count + offset)
-    cmp_op = ideal_cmpxy->Opcode();
-    xkey = ideal_cmpxy->in(1);
-    ykey = ideal_cmpxy->in(2);
-  }
-
-  // Start by locating any relevant comparisons.
-  Node* start_from = (xkey->outcnt() < ykey->outcnt()) ? xkey : ykey;
-  Node* cmpxy = NULL;
-  Node* cmpyx = NULL;
-  for (DUIterator_Fast kmax, k = start_from->fast_outs(kmax); k < kmax; k++) {
-    Node* cmp = start_from->fast_out(k);
-    if (cmp->outcnt() > 0 &&            // must have prior uses
-        cmp->in(0) == NULL &&           // must be context-independent
-        cmp->Opcode() == cmp_op) {      // right kind of compare
-      if (cmp->in(1) == xkey && cmp->in(2) == ykey)  cmpxy = cmp;
-      if (cmp->in(1) == ykey && cmp->in(2) == xkey)  cmpyx = cmp;
-    }
-  }
-
-  const int NCMPS = 2;
-  Node* cmps[NCMPS] = { cmpxy, cmpyx };
-  int cmpn;
-  for (cmpn = 0; cmpn < NCMPS; cmpn++) {
-    if (cmps[cmpn] != NULL)  break;     // find a result
-  }
-  if (cmpn < NCMPS) {
-    // Look for a dominating test that tells us the min and max.
-    int depth = 0;                // Limit search depth for speed
-    Node* dom = control();
-    for (; dom != NULL; dom = IfNode::up_one_dom(dom, true)) {
-      if (++depth >= 100)  break;
-      Node* ifproj = dom;
-      if (!ifproj->is_Proj())  continue;
-      Node* iff = ifproj->in(0);
-      if (!iff->is_If())  continue;
-      Node* bol = iff->in(1);
-      if (!bol->is_Bool())  continue;
-      Node* cmp = bol->in(1);
-      if (cmp == NULL)  continue;
-      for (cmpn = 0; cmpn < NCMPS; cmpn++)
-        if (cmps[cmpn] == cmp)  break;
-      if (cmpn == NCMPS)  continue;
-      BoolTest::mask btest = bol->as_Bool()->_test._test;
-      if (ifproj->is_IfFalse())  btest = BoolTest(btest).negate();
-      if (cmp->in(1) == ykey)    btest = BoolTest(btest).commute();
-      // At this point, we know that 'x btest y' is true.
-      switch (btest) {
-      case BoolTest::eq:
-        // They are proven equal, so we can collapse the min/max.
-        // Either value is the answer.  Choose the simpler.
-        if (is_simple_name(yvalue) && !is_simple_name(xvalue))
-          return yvalue;
-        return xvalue;
-      case BoolTest::lt:          // x < y
-      case BoolTest::le:          // x <= y
-        return (want_max ? yvalue : xvalue);
-      case BoolTest::gt:          // x > y
-      case BoolTest::ge:          // x >= y
-        return (want_max ? xvalue : yvalue);
-      default:
-        break;
-      }
-    }
-  }
-
-  // We failed to find a dominating test.
-  // Let's pick a test that might GVN with prior tests.
-  Node*          best_bol   = NULL;
-  BoolTest::mask best_btest = BoolTest::illegal;
-  for (cmpn = 0; cmpn < NCMPS; cmpn++) {
-    Node* cmp = cmps[cmpn];
-    if (cmp == NULL)  continue;
-    for (DUIterator_Fast jmax, j = cmp->fast_outs(jmax); j < jmax; j++) {
-      Node* bol = cmp->fast_out(j);
-      if (!bol->is_Bool())  continue;
-      BoolTest::mask btest = bol->as_Bool()->_test._test;
-      if (btest == BoolTest::eq || btest == BoolTest::ne)  continue;
-      if (cmp->in(1) == ykey)   btest = BoolTest(btest).commute();
-      if (bol->outcnt() > (best_bol == NULL ? 0 : best_bol->outcnt())) {
-        best_bol   = bol->as_Bool();
-        best_btest = btest;
-      }
-    }
-  }
-
-  Node* answer_if_true  = NULL;
-  Node* answer_if_false = NULL;
-  switch (best_btest) {
-  default:
-    if (cmpxy == NULL)
-      cmpxy = ideal_cmpxy;
-    best_bol = _gvn.transform(new BoolNode(cmpxy, BoolTest::lt));
-    // and fall through:
-  case BoolTest::lt:          // x < y
-  case BoolTest::le:          // x <= y
-    answer_if_true  = (want_max ? yvalue : xvalue);
-    answer_if_false = (want_max ? xvalue : yvalue);
-    break;
-  case BoolTest::gt:          // x > y
-  case BoolTest::ge:          // x >= y
-    answer_if_true  = (want_max ? xvalue : yvalue);
-    answer_if_false = (want_max ? yvalue : xvalue);
-    break;
-  }
-
-  jint hi, lo;
-  if (want_max) {
-    // We can sharpen the minimum.
-    hi = MAX2(txvalue->_hi, tyvalue->_hi);
-    lo = MAX2(txvalue->_lo, tyvalue->_lo);
-  } else {
-    // We can sharpen the maximum.
-    hi = MIN2(txvalue->_hi, tyvalue->_hi);
-    lo = MIN2(txvalue->_lo, tyvalue->_lo);
-  }
-
-  // Use a flow-free graph structure, to avoid creating excess control edges
-  // which could hinder other optimizations.
-  // Since Math.min/max is often used with arraycopy, we want
-  // tightly_coupled_allocation to be able to see beyond min/max expressions.
-  Node* cmov = CMoveNode::make(NULL, best_bol,
-                               answer_if_false, answer_if_true,
-                               TypeInt::make(lo, hi, widen));
-
-  return _gvn.transform(cmov);
-
-  /*
-  // This is not as desirable as it may seem, since Min and Max
-  // nodes do not have a full set of optimizations.
-  // And they would interfere, anyway, with 'if' optimizations
-  // and with CMoveI canonical forms.
+  Node* result_val = NULL;
   switch (id) {
   case vmIntrinsics::_min:
-    result_val = _gvn.transform(new (C, 3) MinINode(x,y)); break;
+  case vmIntrinsics::_min_strict:
+    result_val = _gvn.transform(new MinINode(x0, y0));
+    break;
   case vmIntrinsics::_max:
-    result_val = _gvn.transform(new (C, 3) MaxINode(x,y)); break;
+  case vmIntrinsics::_max_strict:
+    result_val = _gvn.transform(new MaxINode(x0, y0));
+    break;
   default:
-    ShouldNotReachHere();
+    fatal_unexpected_iid(id);
+    break;
   }
-  */
+  return result_val;
 }
 
 inline int

@@ -155,10 +155,6 @@ void Address::lea(MacroAssembler *as, Register r) const {
   }
 }
 
-void Assembler::adrp(Register reg1, const Address &dest, uint64_t &byte_offset) {
-  ShouldNotReachHere();
-}
-
 #undef __
 
 #define starti Instruction_aarch64 current_insn(this);
@@ -189,7 +185,7 @@ void Assembler::adrp(Register reg1, const Address &dest, uint64_t &byte_offset) 
     offset >>= 2;
     starti;
     f(1, 31), f(offset_lo, 30, 29), f(0b10000, 28, 24), sf(offset, 23, 5);
-    rf(Rd, 0);
+    zrf(Rd, 0);
   }
 
 // An "all-purpose" add/subtract immediate, per ARM documentation:

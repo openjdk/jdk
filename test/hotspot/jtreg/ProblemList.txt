@@ -69,6 +69,7 @@ compiler/c2/Test8004741.java 8235801 generic-all
 
 compiler/codecache/jmx/PoolsIndependenceTest.java 8264632 macosx-all
 
+compiler/vectorization/TestAutoVecIntMinMax.java 8290730 generic-x64
 
 #############################################################################
 

@@ -37,7 +37,7 @@ import com.sun.hotspot.igv.hierarchicallayout.LinearLayoutManager;
 import com.sun.hotspot.igv.hierarchicallayout.HierarchicalLayoutManager;
 import com.sun.hotspot.igv.layout.LayoutGraph;
 import com.sun.hotspot.igv.layout.Link;
-import com.sun.hotspot.igv.selectioncoordinator.*;
+import com.sun.hotspot.igv.selectioncoordinator.SelectionCoordinator;
 import com.sun.hotspot.igv.util.ColorIcon;
 import com.sun.hotspot.igv.util.CustomSelectAction;
 import com.sun.hotspot.igv.util.DoubleClickAction;
@@ -91,7 +91,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
     private Widget bottomRight;
     private DiagramViewModel model;
     private DiagramViewModel modelCopy;
-    private WidgetAction zoomAction;
     private boolean rebuilding;
 
     /**
@@ -267,16 +266,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         }
     };
 
-    private MouseWheelListener mouseWheelListener = new MouseWheelListener() {
-
-        @Override
-        public void mouseWheelMoved(MouseWheelEvent e) {
-            if (e.isControlDown()) {
-                DiagramScene.this.relayoutWithoutLayout(null);
-            }
-        }
-    };
-
     public Point getScrollPosition() {
         return getScrollPane().getViewport().getViewPosition();
     }
@@ -406,7 +395,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         // This panAction handles the event only when the left mouse button is
         // pressed without any modifier keys, otherwise it will not consume it
         // and the selection action (below) will handle the event
-        panAction = new CustomizablePanAction(~0, MouseEvent.BUTTON1_DOWN_MASK);
+        panAction = new CustomizablePanAction(MouseEvent.BUTTON1_DOWN_MASK);
         this.getActions().addAction(panAction);
 
         selectAction = new CustomSelectAction(new SelectProvider() {
@@ -455,17 +444,10 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         bottomRight.setPreferredLocation(new Point(-BORDER_SIZE, -BORDER_SIZE));
         this.addChild(bottomRight);
 
-        LayerWidget selectionLayer = new LayerWidget(this);
-        this.addChild(selectionLayer);
-
         this.setLayout(LayoutFactory.createAbsoluteLayout());
-
         this.getInputBindings().setZoomActionModifiers(Utilities.isMac() ? KeyEvent.META_MASK : KeyEvent.CTRL_MASK);
-        zoomAction = ActionFactory.createMouseCenteredZoomAction(1.2);
-        this.getActions().addAction(zoomAction);
-        this.getView().addMouseWheelListener(mouseWheelListener);
+        this.getActions().addAction(ActionFactory.createMouseCenteredZoomAction(1.1));
         this.getActions().addAction(ActionFactory.createPopupMenuAction(popupMenuProvider));
-
         this.getActions().addAction(ActionFactory.createWheelPanAction());
 
         LayerWidget selectLayer = new LayerWidget(this);
