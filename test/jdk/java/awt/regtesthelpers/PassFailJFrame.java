@@ -23,6 +23,9 @@
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsEnvironment;
+import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.Window;
@@ -41,6 +44,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.Timer;
+
 
 import static javax.swing.SwingUtilities.invokeAndWait;
 import static javax.swing.SwingUtilities.isEventDispatchThread;
@@ -265,12 +269,20 @@ public class PassFailJFrame {
      *
      * @param testWindow test window that the test is created
      * @param position  position can either be:
-     *                  HORIZONTAL - both test instruction frame and test window
-     *                  as arranged side by side.
-     *                  VERTICAL - both test instruction frame and test window
-     *                  as arranged up and down.
-     *                  TOP_LEFT_CORNER - test instruction frame positioned at
-     *                  top left corner with main test window beside it.
+     *                  HORIZONTAL - the test instruction frame is positioned
+     *                  such that the right edge aligns with screen's vertical
+     *                  center and the test window is placed to the right of
+     *                  the instruction frame.
+     *
+     *                  VERTICAL - the test instruction frame is positioned such
+     *                  that the bottom edge aligns with the screen's horizontal
+     *                  center and the test window is placed below the instruction
+     *                  frame.
+     *
+     *                  TOP_LEFT_CORNER - the test instruction frame is positioned
+     *                  such that its top left corner is at the top left corner of
+     *                  the screen and the test window is placed to the right of
+     *                  the instruction frame.
      */
     public static void positionTestWindow(Window testWindow, Position position) {
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
@@ -279,18 +291,21 @@ public class PassFailJFrame {
             int newX = ((screenSize.width / 2) - frame.getWidth());
             frame.setLocation(newX, frame.getY());
 
-            testWindow.setLocation((frame.getLocation().x + frame.getWidth() + 5),
+            testWindow.setLocation((frame.getX() + frame.getWidth() + 5),
                     frame.getY());
         } else if (position.equals(Position.VERTICAL)) {
             int newY = ((screenSize.height / 2) - frame.getHeight());
             frame.setLocation(frame.getX(), newY);
 
             testWindow.setLocation(frame.getX(),
-                    (frame.getLocation().y + frame.getHeight() + 5));
-        }
-        else if (position.equals(Position.TOP_LEFT_CORNER)) {
-            frame.setLocation(0,0);
-            testWindow.setLocation((frame.getLocation().x + frame.getWidth() + 5),
+                    (frame.getY() + frame.getHeight() + 5));
+        } else if (position.equals(Position.TOP_LEFT_CORNER)) {
+            GraphicsConfiguration gc = GraphicsEnvironment.getLocalGraphicsEnvironment()
+                    .getDefaultScreenDevice().getDefaultConfiguration();
+            Insets screenInsets = Toolkit.getDefaultToolkit().getScreenInsets(gc);
+
+            frame.setLocation(screenInsets.left, screenInsets.top);
+            testWindow.setLocation((frame.getX() + frame.getWidth() + 5),
                     frame.getY());
         }
     }
