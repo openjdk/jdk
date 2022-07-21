@@ -453,22 +453,26 @@ public class TagletWriterImpl extends TagletWriter {
      * in a {@code {@snippet ...}} tag.
      *
      * @param holder        the element that has the documentation comment containing the information
-     * @param refTree       the tree node containing the information, or {@code null} if not avaiable
+     * @param refTree       the tree node containing the information, or {@code null} if not available
      * @param refSignature  the normalized signature of the target of the reference
      * @param ref           the target of the reference
      * @param tagName       the name of the tag in the source, to be used in diagnostics
      * @param isLinkPlain   {@code true} if the link should be presented in "plain" font,
-     *                      or {@code false} for "code" font.
+     *                      or {@code false} for "code" font
      * @param label         the label for the link,
-     *                      or an empty list to use a default label derived from the signature
+     *                      or an empty item to use a default label derived from the signature
      * @param reportWarning a function to report warnings about issues found in the reference
      *
      * @return the output containing the generated link, or content indicating an error
      */
-    Content linkSeeReferenceOutput(Element holder, DocTree refTree, String refSignature, Element ref,
-                                   String tagName, boolean isLinkPlain,
-                                   Content label,
-                                   BiConsumer<String, Object[]> reportWarning) {
+    private Content linkSeeReferenceOutput(Element holder,
+                                           DocTree refTree,
+                                           String refSignature,
+                                           Element ref,
+                                           String tagName,
+                                           boolean isLinkPlain,
+                                           Content label,
+                                           BiConsumer<String, Object[]> reportWarning) {
         Content labelContent = plainOrCode(isLinkPlain, label);
 
         // The signature from the @see tag. We will output this text when a label is not specified.
