@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ public final class VersionHelper {
         // System property to control whether classes is allowed to be loaded from
         // 'javaSerializedData' attribute
         String trustSerialDataSp = getPrivilegedProperty(
-                "com.sun.jndi.ldap.object.trustSerialData", "true");
+                "com.sun.jndi.ldap.object.trustSerialData", "false");
         trustSerialData = "true".equalsIgnoreCase(trustSerialDataSp);
     }
 
