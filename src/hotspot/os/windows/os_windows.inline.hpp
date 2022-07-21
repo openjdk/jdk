@@ -30,6 +30,11 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/os.hpp"
+#include "os_windows.hpp"
+
+inline bool os::zero_page_read_protected() {
+  return true;
+}
 
 inline bool os::uses_stack_guard_pages() {
   return true;

@@ -45,6 +45,7 @@
 #include "misc_aix.hpp"
 #include "oops/oop.inline.hpp"
 #include "os_aix.inline.hpp"
+#include "os_posix.hpp"
 #include "porting_aix.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
@@ -2998,3 +2999,11 @@ bool os::supports_map_sync() {
 }
 
 void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {}
+
+void os::print_user_info(outputStream* st) {
+  os::Posix::print_user_info(st);
+}
+
+void os::print_active_locale(outputStream* st) {
+  os::Posix::print_active_locale(st);
+}

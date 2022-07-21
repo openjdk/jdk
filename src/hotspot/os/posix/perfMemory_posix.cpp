@@ -38,6 +38,10 @@
 #include "services/memTracker.hpp"
 #include "utilities/exceptions.hpp"
 
+#if defined(LINUX)
+#include "os_linux.hpp"
+#endif
+
 // put OS-includes here
 # include <sys/types.h>
 # include <sys/mman.h>

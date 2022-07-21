@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "pdh_interface.hpp"
+#include "os_windows.hpp"
 #include "runtime/os.hpp"
 #include "utilities/macros.hpp"
 

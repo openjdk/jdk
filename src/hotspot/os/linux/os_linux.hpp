@@ -25,12 +25,11 @@
 #ifndef OS_LINUX_OS_LINUX_HPP
 #define OS_LINUX_OS_LINUX_HPP
 
-// Linux_OS defines the interface to Linux operating systems
+#include "runtime/os.hpp"
 
-// Information about the protection of the page at address '0' on this os.
-static bool zero_page_read_protected() { return true; }
+// os::Linux defines the interface to Linux operating systems
 
-class Linux {
+class os::Linux {
   friend class CgroupSubsystem;
   friend class os;
   friend class OSContainer;
@@ -428,6 +427,23 @@ class Linux {
   static const GrowableArray<int>* numa_nindex_to_node() {
     return _nindex_to_node;
   }
+
+#if defined(IA32) && !defined(ZERO)
+  /*
+   * Work-around for broken NX emulation using CS limit, Red Hat patch "Exec-Shield"
+   * (IA32 only).
+   *
+   * Map and execute at a high VA to prevent CS lazy updates race with SMP MM
+   * invalidation.Further code generation by the JVM will no longer cause CS limit
+   * updates.
+   *
+   * Affects IA32: RHEL 5 & 6, Ubuntu 10.04 (LTS), 10.10, 11.04, 11.10, 12.04.
+   * @see JDK-8023956
+   */
+  static void workaround_expand_exec_shield_cs_limit();
+#endif
+
+  void* resolve_function_descriptor(void* p);
 };
 
 #endif // OS_LINUX_OS_LINUX_HPP

@@ -27,6 +27,7 @@
 #include "cds/metaspaceShared.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
+#include "os_posix.hpp"
 #include "runtime/safefetch.hpp"
 #include "signals_posix.hpp"
 #include "utilities/debug.hpp"

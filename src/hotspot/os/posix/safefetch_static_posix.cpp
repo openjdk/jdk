@@ -28,6 +28,7 @@
 #include "runtime/os.hpp"
 #include "runtime/safefetch.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "os_posix.hpp"
 
 #ifdef SAFEFETCH_METHOD_STATIC_ASSEMBLY
 

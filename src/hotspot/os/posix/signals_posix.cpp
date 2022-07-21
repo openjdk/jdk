@@ -35,6 +35,7 @@
 #include "runtime/java.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
+#include "os_posix.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safefetch.hpp"
 #include "runtime/semaphore.inline.hpp"

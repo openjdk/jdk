@@ -32,6 +32,8 @@
 #include "interpreter/interpreter.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
+#include "os_linux.hpp"
+#include "os_posix.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/frame.inline.hpp"
@@ -652,12 +654,12 @@ void os::verify_stack_alignment() {
 #endif
 
 
+#if defined(IA32) && !defined(ZERO)
 /*
  * IA32 only: execute code at a high address in case buggy NX emulation is present. I.e. avoid CS limit
  * updates (JDK-8023956).
  */
-void os::workaround_expand_exec_shield_cs_limit() {
-#if defined(IA32)
+void os::Linux::workaround_expand_exec_shield_cs_limit() {
   assert(Linux::initial_thread_stack_bottom() != NULL, "sanity");
   size_t page_size = os::vm_page_size();
 
@@ -725,8 +727,8 @@ void os::workaround_expand_exec_shield_cs_limit() {
   __asm__ volatile("call *%0" : : "r"(codebuf));
 
   // keep the page mapped so CS limit isn't reduced.
-#endif
 }
+#endif // defined(IA32) && !defined(ZERO)
 
 int os::extra_bang_size_in_bytes() {
   // JDK-8050147 requires the full cache line bang for x86.

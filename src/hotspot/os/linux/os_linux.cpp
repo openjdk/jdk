@@ -4489,7 +4489,7 @@ jint os::init_2(void) {
   // Need to ensure we've determined the process's initial stack to
   // perform the workaround
   Linux::capture_initial_stack(JavaThread::stack_size_at_create());
-  workaround_expand_exec_shield_cs_limit();
+  Linux::workaround_expand_exec_shield_cs_limit();
 #else
   suppress_primordial_thread_resolution = Arguments::created_by_java_launcher();
   if (!suppress_primordial_thread_resolution) {
@@ -5330,4 +5330,12 @@ void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {
     }
     st->cr();
   }
+}
+
+void os::print_user_info(outputStream* st) {
+  os::Posix::print_user_info(st);
+}
+
+void os::print_active_locale(outputStream* st) {
+  os::Posix::print_active_locale(st);
 }

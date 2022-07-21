@@ -2459,3 +2459,11 @@ bool os::start_debugging(char *buf, int buflen) {
 }
 
 void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {}
+
+void os::print_user_info(outputStream* st) {
+  os::Posix::print_user_info(st);
+}
+
+void os::print_active_locale(outputStream* st) {
+  os::Posix::print_active_locale(st);
+}

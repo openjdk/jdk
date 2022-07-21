@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,30 +22,9 @@
  *
  */
 
-#ifndef OS_CPU_LINUX_X86_OS_LINUX_X86_HPP
-#define OS_CPU_LINUX_X86_OS_LINUX_X86_HPP
+#ifndef OS_CPU_LINUX_ZERO_OS_LINUX_ZERO_INLINE_HPP
+#define OS_CPU_LINUX_ZERO_OS_LINUX_ZERO_INLINE_HPP
 
-  static void setup_fpu();
-  static bool supports_sse();
-  static juint cpu_microcode_revision();
 
-  static jlong rdtsc();
 
-  // Used to register dynamic code cache area with the OS
-  // Note: Currently only used in 64 bit Windows implementations
-  static bool register_code_area(char *low, char *high) { return true; }
-
-  /*
-   * Work-around for broken NX emulation using CS limit, Red Hat patch "Exec-Shield"
-   * (IA32 only).
-   *
-   * Map and execute at a high VA to prevent CS lazy updates race with SMP MM
-   * invalidation.Further code generation by the JVM will no longer cause CS limit
-   * updates.
-   *
-   * Affects IA32: RHEL 5 & 6, Ubuntu 10.04 (LTS), 10.10, 11.04, 11.10, 12.04.
-   * @see JDK-8023956
-   */
-  static void workaround_expand_exec_shield_cs_limit();
-
-#endif // OS_CPU_LINUX_X86_OS_LINUX_X86_HPP
+#endif // OS_CPU_LINUX_ZERO_OS_LINUX_ZERO_INLINE_HPP
