@@ -55,8 +55,8 @@ public class Binary16Conversion {
         int errors = 0;
         for (int i = Short.MIN_VALUE; i < Short.MAX_VALUE; i++) {
             short s = (short)i;
-            float f =  Float.binary16AsShortBitsToFloat(s);
-            short s2 = Float.floatToBinary16AsShortBits(f);
+            float f =  Float.float16ToFloat(s);
+            short s2 = Float.floatToFloat16(f);
 
             if (!Binary16.equivalent(s, s2)) {
                 errors++;
@@ -163,8 +163,8 @@ public class Binary16Conversion {
             short lower = (short) i;
             short upper = (short)(i+1);
 
-            float lowerFloat = Float.binary16AsShortBitsToFloat(lower);
-            float upperFloat = Float.binary16AsShortBitsToFloat(upper);
+            float lowerFloat = Float.float16ToFloat(lower);
+            float upperFloat = Float.float16ToFloat(upper);
             assert lowerFloat < upperFloat;
 
             float midway = (lowerFloat + upperFloat) * 0.5f; // Exact midpoint
@@ -182,7 +182,7 @@ public class Binary16Conversion {
 
         // More testing around the overflow threshold
         // Binary16.ulp(Binary16.MAX_VALUE) == 32.0f; test around Binary16.MAX_VALUE + 1/2 ulp
-        float binary16_MAX_VALUE = Float.binary16AsShortBitsToFloat(Binary16.MAX_VALUE);
+        float binary16_MAX_VALUE = Float.float16ToFloat(Binary16.MAX_VALUE);
         float binary16_MAX_VALUE_halfUlp = binary16_MAX_VALUE + 16.0f;
 
         errors += compareAndReportError(Math.nextDown(binary16_MAX_VALUE), Binary16.MAX_VALUE);
@@ -208,7 +208,7 @@ public class Binary16Conversion {
 
     private static int compareAndReportError0(float input,
                                               short expected) {
-        short actual = Float.floatToBinary16AsShortBits(input);
+        short actual = Float.floatToFloat16(input);
         if (!Binary16.equivalent(actual, expected)) {
             System.out.println("Unexpected result of converting " +
                                Float.toHexString(input) +
@@ -221,7 +221,7 @@ public class Binary16Conversion {
 
     private static int compareAndReportError0(short input,
                                               float expected) {
-        float actual = Float.binary16AsShortBitsToFloat(input);
+        float actual = Float.float16ToFloat(input);
         if (Float.compare(actual, expected) != 0) {
             System.out.println("Unexpected result of converting " +
                                Integer.toHexString(input & 0xFFFF) +
@@ -261,7 +261,7 @@ public class Binary16Conversion {
             // etc.)
 
             float f = Float.intBitsToFloat(i);
-            short f_as_bin16 = Float.floatToBinary16AsShortBits(f);
+            short f_as_bin16 = Float.floatToFloat16(f);
             short f_as_bin16_down = (short)(f_as_bin16 - 1);
             short f_as_bin16_up   = (short)(f_as_bin16 + 1);
 
@@ -282,9 +282,9 @@ public class Binary16Conversion {
             // close as either of its neighbors to the original value
             // of f.
 
-            float f_prime_down = Float.binary16AsShortBitsToFloat(f_as_bin16_down);
-            float f_prime      = Float.binary16AsShortBitsToFloat(f_as_bin16);
-            float f_prime_up   = Float.binary16AsShortBitsToFloat(f_as_bin16_up);
+            float f_prime_down = Float.float16ToFloat(f_as_bin16_down);
+            float f_prime      = Float.float16ToFloat(f_as_bin16);
+            float f_prime_up   = Float.float16ToFloat(f_as_bin16_up);
 
             float f_prime_diff = Math.abs(f - f_prime);
             if (f_prime_diff == 0.0) {
@@ -313,8 +313,8 @@ public class Binary16Conversion {
              ell       <= Float.floatToIntBits(4.0f);
              ell++) {
             float f = Float.intBitsToFloat((int)ell);
-            short s1 = Float.floatToBinary16AsShortBits(f);
-            short s2 =    altFloatToBinary16AsShortBits(f);
+            short s1 = Float.floatToFloat16(f);
+            short s2 =    altFloatToFloat16(f);
 
             if (s1 != s2) {
                 errors++;
@@ -329,7 +329,7 @@ public class Binary16Conversion {
      * Rely on float operations to do rounding in both normal and
      * subnormal binary16 cases.
      */
-    public static short altFloatToBinary16AsShortBits(float f) {
+    public static short altFloatToFloat16(float f) {
         int doppel = Float.floatToRawIntBits(f);
         short sign_bit = (short)((doppel & 0x8000_0000) >> 16);
 

@@ -978,9 +978,9 @@ public final class Float extends Number
 
     /**
      * {@return the {@code float} value closest to the numerical value
-     * of the argument, a binary16 value encoded in a {@code short}}
-     * The conversion is exact; all binary16 values can be exactly
-     * represented in {@code float}.
+     * of the argument, a floating-point binary16 value encoded in a
+     * {@code short}} The conversion is exact; all binary16 values can
+     * be exactly represented in {@code float}.
      *
      * Special cases:
      * <ul>
@@ -1009,16 +1009,16 @@ public final class Float extends Number
      * The operation of this method is analogous to a primitive
      * widening conversion (JLS {@jls 5.1.2}).
      *
-     * @param binary16asShort the binary16 value to convert to {@code float}
+     * @param floatBinary16 the binary16 value to convert to {@code float}
      * @since 20
      */
     // @IntrinsicCandidate
-    public static float binary16AsShortBitsToFloat(short binary16asShort) {
+    public static float float16ToFloat(short floatBinary16) {
         /*
          * The binary16 format has 1 sign bit, 5 exponent bits, and 10
          * significand bits. The exponent bias is 15.
          */
-        int bin16arg = (int)binary16asShort;
+        int bin16arg = (int)floatBinary16;
         int bin16SignBit     = 0x8000 & bin16arg;
         int bin16ExpBits     = 0x7c00 & bin16arg;
         int bin16SignifBits  = 0x03FF & bin16arg;
@@ -1060,8 +1060,8 @@ public final class Float extends Number
     }
 
     /**
-     * {@return the binary16 value, encoded in a {@code short},
-     * closest in value to the argument}
+     * {@return the floating-point binary16 value, encoded in a {@code
+     * short}, closest in value to the argument}
      * The conversion is computed under the {@linkplain
      * java.math.RoundingMode#HALF_EVEN round to nearest even rounding
      * mode}.
@@ -1076,7 +1076,7 @@ public final class Float extends Number
      * </ul>
      *
      * The <a href="#binary16Format">binary16 format</a> is discussed in
-     * more detail in the {@link #binary16AsShortBitsToFloat} method.
+     * more detail in the {@link #float16ToFloat} method.
      *
      * @apiNote
      * This method corresponds to the convertFormat operation defined
@@ -1088,7 +1088,7 @@ public final class Float extends Number
      * @since 20
      */
     // @IntrinsicCandidate
-    public static short floatToBinary16AsShortBits(float f) {
+    public static short floatToFloat16(float f) {
         int doppel = Float.floatToRawIntBits(f);
         short sign_bit = (short)((doppel & 0x8000_0000) >> 16);
 

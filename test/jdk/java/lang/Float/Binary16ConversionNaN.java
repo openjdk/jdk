@@ -76,8 +76,8 @@ public class Binary16ConversionNaN {
     private static int testRoundTrip(int i) {
         int errors = 0;
         short s = (short)i;
-        float f =  Float.binary16AsShortBitsToFloat(s);
-        short s2 = Float.floatToBinary16AsShortBits(f);
+        float f =  Float.float16ToFloat(s);
+        short s2 = Float.floatToFloat16(f);
 
         if (s != s2) {
             errors++;
