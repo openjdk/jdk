@@ -151,7 +151,7 @@ public class ECOperations {
         // and throw IntermediateValueException in the (unlikely) event
         // that the result is 0.
 
-        // Get 64 extra bits and reduce in to the nonce
+        // Get 64 extra bits and reduce into the nonce
         int seedBits = orderField.getSize().bitLength() + 64;
         if (seedBytes.length * 8 < seedBits) {
             throw new ProviderException("Incorrect seed length: " +
