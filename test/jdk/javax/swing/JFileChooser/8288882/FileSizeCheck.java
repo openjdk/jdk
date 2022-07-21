@@ -48,7 +48,7 @@ public class FileSizeCheck {
             "Click on the \"Details\" button in right-top corner.\n\nScroll Down if required. \n\n" +
                     "Test 1: If the size of 2.5-KB-File shows 2.5 KB\n" +
                     "Test 2: If the size of 2.8-MB-File shows 2.8 MB\n" +
-                    "Test 3: If the size of 999-KB-File shows 999.0 KB\n" +
+                    "Test 3: If the size of 999-KB-File shows 999 KB\n" +
                     "Test 4: If the size of 1000-KB-File shows 1 MB\n" +
                     "Test 5: If the size of 2047-Byte-File shows 2 KB\n" +
                     "Test 6: If the size of TEST-EMPTY-FILE shows 0 KB\n\n" +
