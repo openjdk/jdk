@@ -41,6 +41,6 @@ static void start(void* ctxt) {
 
 extern "C" {
 EXPORT void asyncStackWalk(CB_t cb) {
-    run_async(start, cb);
+    run_async(start, (void*) cb);
 }
 }

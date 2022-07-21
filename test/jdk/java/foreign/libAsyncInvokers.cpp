@@ -32,7 +32,7 @@ void proc_v(void* v_cb) {
 
 template<typename CB>
 void launch_v(CB cb) {
-    run_async(&proc_v<CB>, cb);
+    run_async(&proc_v<CB>, (void*) cb);
 }
 
 template<typename O, typename CB>
@@ -49,11 +49,10 @@ void proc(void* context) {
 
 template<typename O, typename CB>
 O launch(CB cb) {
-    PROCEDURE target = &proc<O, CB>;
     Context<O, CB> ctxt;
     ctxt.cb = cb;
 
-    run_async(target, &ctxt);
+    run_async(&proc<O, CB>, &ctxt);
 
     return ctxt.o;
 }
