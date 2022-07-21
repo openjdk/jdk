@@ -1170,8 +1170,7 @@ public final class Float extends Number
                 int round =  doppel & 0x0000_1000;
                 int sticky = doppel & 0x0000_0fff;
 
-                if (((lsb == 0) && (round != 0) && (sticky != 0)) ||
-                    ( lsb != 0  &&  round != 0 ) ) { // sticky not needed
+                if (round != 0 && (lsb != 0 || sticky != 0 )) {
                     signif_bits++;
                 }
             }
@@ -1184,7 +1183,7 @@ public final class Float extends Number
 
             return (short)(sign_bit | ( ((exp + 15) << 10) + signif_bits ) );
         }
-    }
+}
 
     /**
      * Compares two {@code Float} objects numerically.

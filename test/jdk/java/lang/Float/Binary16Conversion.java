@@ -24,15 +24,15 @@
 /*
  * @test
  * @bug 8289551
- * @summary Verify conversion between float and 16-bit formats
+ * @summary Verify conversion between float and the binary16 format
  * @library ../Math
  * @build FloatConsts
- * @run main SixteenBitFormats
+ * @run main Binary16Conversion
  */
 
 import static java.lang.Float.*;
 
-public class SixteenBitFormats {
+public class Binary16Conversion {
     public static void main(String... argv) {
         int errors = 0;
         errors += binary16RoundTrip();
@@ -41,6 +41,7 @@ public class SixteenBitFormats {
         errors += roundFloatToBinary16();
         errors += roundFloatToBinary16HalfWayCases();
         errors += roundFloatToBinary16FullBinade();
+        errors += alternativeImplementation();
 
         if (errors > 0)
             throw new RuntimeException(errors + " errors");
@@ -48,7 +49,7 @@ public class SixteenBitFormats {
 
     /*
      * Put all 16-bit values through a conversion loop and make sure
-     * the values are preserved. (NaN bit patterns notwithstanding.)
+     * the values are preserved (NaN bit patterns notwithstanding).
      */
     private static int binary16RoundTrip() {
         int errors = 0;
@@ -72,13 +73,13 @@ public class SixteenBitFormats {
         // Encode short value for different binary16 cardinal values as an
         // integer-valued float.
         float[][] testCases = {
-            {Binary16.POSITIVE_INFINITY,      Float.POSITIVE_INFINITY},
             {Binary16.POSITIVE_ZERO,         +0.0f},
             {Binary16.MIN_VALUE,              0x1.0p-24f},
             {Binary16.MAX_SUBNORMAL,          0x1.ff8p-15f},
             {Binary16.MIN_NORMAL,             0x1.0p-14f},
             {Binary16.ONE,                    1.0f},
             {Binary16.MAX_VALUE,              65504.0f},
+            {Binary16.POSITIVE_INFINITY,      Float.POSITIVE_INFINITY},
         };
 
         // Check conversions in both directions
@@ -97,7 +98,6 @@ public class SixteenBitFormats {
 
         return errors;
     };
-
 
     private static int roundFloatToBinary16() {
         int errors = 0;
@@ -158,9 +158,9 @@ public class SixteenBitFormats {
         // that doesn't need to be tested here.)
 
         for (int i = Binary16.POSITIVE_ZERO; // 0x0000
-             i <= Binary16.MAX_VALUE;        // 0x7bff
+             i    <= Binary16.MAX_VALUE;     // 0x7bff
              i += 2) {     // Check every even/odd pair once
-            short lower = (short)i;
+            short lower = (short) i;
             short upper = (short)(i+1);
 
             float lowerFloat = Float.binary16AsShortBitsToFloat(lower);
@@ -199,24 +199,24 @@ public class SixteenBitFormats {
         return errors;
     }
 
+    private static int compareAndReportError(float input,
+                                             short expected) {
+        // Round to nearest even is sign symmetric
+        return compareAndReportError0( input,                 expected) +
+               compareAndReportError0(-input, Binary16.negate(expected));
+    }
+
     private static int compareAndReportError0(float input,
                                               short expected) {
         short actual = Float.floatToBinary16AsShortBits(input);
         if (!Binary16.equivalent(actual, expected)) {
             System.out.println("Unexpected result of converting " +
                                Float.toHexString(input) +
-                               " to short. Expected 0x" + Integer.toHexString(expected) +
-                               " got 0x" + Integer.toHexString(actual));
+                               " to short. Expected 0x" + Integer.toHexString(0xFFFF & expected) +
+                               " got 0x" + Integer.toHexString(0xFFFF & actual));
             return 1;
             }
         return 0;
-    }
-
-    private static int compareAndReportError(float input,
-                                             short expected) {
-        // Round to nearest even is sign symmetric
-        return compareAndReportError0( input, expected) +
-               compareAndReportError0(-input, Binary16.negate(expected));
     }
 
     private static int compareAndReportError0(short input,
@@ -242,13 +242,13 @@ public class SixteenBitFormats {
     private static int roundFloatToBinary16FullBinade() {
         int errors = 0;
 
-        // For each float value between 1.0 and less than two
+        // For each float value between 1.0 and less than 2.0
         // (i.e. set of float values with an exponent of 0), convert
         // each value to binary16 and then convert that binary16 value
         // back to float.
         //
         // Any exponent could be used; the maximum exponent for normal
-        // values would not exercise the full set of code path since
+        // values would not exercise the full set of code paths since
         // there is an up-front check on values that would overflow,
         // which correspond to a ripple-carry of the significand that
         // bumps the exponent.
@@ -300,20 +300,114 @@ public class SixteenBitFormats {
                                    Float.toHexString(f) + " to binary16 and back.");
             }
         }
+        return errors;
+    }
+
+    private static int alternativeImplementation() {
+        int errors = 0;
+
+        // For exhaustive test of all float values use
+        // for (long ell = Integer.MIN_VALUE; ell <= Integer.MAX_VALUE; ell++) {
+
+        for (long ell   = Float.floatToIntBits(2.0f);
+             ell       <= Float.floatToIntBits(4.0f);
+             ell++) {
+            float f = Float.intBitsToFloat((int)ell);
+            short s1 = Float.floatToBinary16AsShortBits(f);
+            short s2 =    altFloatToBinary16AsShortBits(f);
+
+            if (s1 != s2) {
+                errors++;
+                System.out.println("Different conversion of float value " + Float.toHexString(f));
+            }
+        }
 
         return errors;
+    }
+
+    /*
+     * Rely on float operations to do rounding in both normal and
+     * subnormal binary16 cases.
+     */
+    public static short altFloatToBinary16AsShortBits(float f) {
+        int doppel = Float.floatToRawIntBits(f);
+        short sign_bit = (short)((doppel & 0x8000_0000) >> 16);
+
+        if (Float.isNaN(f)) {
+            // Preserve sign and attempt to preserve significand bits
+            return (short)(sign_bit
+                    | 0x7c00 // max exponent + 1
+                    // Preserve high order bit of float NaN in the
+                    // binary16 result NaN (tenth bit); OR in remaining
+                    // bits into lower 9 bits of binary 16 significand.
+                    | (doppel & 0x007f_e000) >> 13 // 10 bits
+                    | (doppel & 0x0000_1ff0) >> 4  //  9 bits
+                    | (doppel & 0x0000_000f));     //  4 bits
+        }
+
+        float abs_f = Math.abs(f);
+
+        // The overflow threshold is binary16 MAX_VALUE + 1/2 ulp
+        if (abs_f >= (65504.0f + 16.0f) ) {
+            return (short)(sign_bit | 0x7c00); // Positive or negative infinity
+        } else {
+            // Smallest magnitude nonzero representable binary16 value
+            // is equal to 0x1.0p-24; half-way and smaller rounds to zero.
+            if (abs_f <= 0x1.0p-25f) { // Covers float zeros and subnormals.
+                return sign_bit; // Positive or negative zero
+            }
+
+            // Dealing with finite values in exponent range of
+            // binary16 (when rounding is done, could still round up)
+            int exp = Math.getExponent(f);
+            assert -25 <= exp && exp <= 15;
+            short signif_bits;
+
+            if (exp <= -15) { // scale down to float subnormal range to do rounding
+                // Use a float multiply to compute the correct
+                // trailing significand bits for a binary16 subnormal.
+                //
+                // The exponent range of normalized binary16 subnormal
+                // values is [-24, -15]. The exponent range of float
+                // subnormals is [-149, -140]. Multiply abs_f down by
+                // 2^(-125) -- since (-125 = -149 - (-24)) -- so that
+                // the trailing bits of a subnormal float represent
+                // the correct trailing bits of a binary16 subnormal.
+                exp = -15; // Subnormal encoding using -E_max.
+                float f_adjust = abs_f * 0x1.0p-125f;
+
+                // In case the significand rounds up and has a carry
+                // propagate all the way up, take the bottom 11 bits
+                // rather than bottom 10 bits. Adding this value,
+                // rather than OR'ing htis value, will cause the right
+                // exponent adjustment.
+                signif_bits = (short)(Float.floatToRawIntBits(f_adjust) & 0x07ff);
+                return (short)(sign_bit | ( ((exp + 15) << 10) + signif_bits ) );
+            } else {
+                // Scale down to subnormal range to round off excess bits
+                int scalingExp = -139 - exp;
+                float scaled = Math.scalb(Math.scalb(f, scalingExp),
+                                                       -scalingExp);
+                exp = Math.getExponent(scaled);
+                doppel = Float.floatToRawIntBits(scaled);
+
+                signif_bits = (short)((doppel & 0x007f_e000) >>
+                                      (FloatConsts.SIGNIFICAND_WIDTH - 11));
+                return (short)(sign_bit | ( ((exp + 15) << 10) | signif_bits ) );
+            }
+        }
     }
 
     public static class Binary16 {
         public static final short POSITIVE_INFINITY = (short)0x7c00;
         public static final short NEGATIVE_INFINITY = (short)0xfc00;
-        public static final short MAX_VALUE = 0x7bff;
-        public static final short ONE = 0x3c00;
-        public static final short MIN_NORMAL = 0x0400;
-        public static final short MAX_SUBNORMAL = 0x03ff;
-        public static final short MIN_VALUE = 0x0001;
-        public static final short NEGATIVE_ZERO = (short)0x8000;
-        public static final short POSITIVE_ZERO = 0x0000;
+        public static final short MAX_VALUE         = 0x7bff;
+        public static final short ONE               = 0x3c00;
+        public static final short MIN_NORMAL        = 0x0400;
+        public static final short MAX_SUBNORMAL     = 0x03ff;
+        public static final short MIN_VALUE         = 0x0001;
+        public static final short NEGATIVE_ZERO     = (short)0x8000;
+        public static final short POSITIVE_ZERO     = 0x0000;
 
         public static boolean isNaN(short binary16) {
             return ((binary16 & 0x7c00) == 0x7c00) // Max exponent and...
