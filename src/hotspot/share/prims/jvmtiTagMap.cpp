@@ -1351,9 +1351,6 @@ jvmtiError JvmtiTagMap::get_objects_with_tags(const jlong* tags,
     // it is collected yet.
     entry_iterate(&collector);
   }
-  if (collector.some_dead_found() && env()->is_enabled(JVMTI_EVENT_OBJECT_FREE)) {
-    remove_and_post_dead_objects();
-  }
   return collector.result(count_ptr, object_result_ptr, tag_result_ptr);
 }
 
