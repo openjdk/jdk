@@ -411,11 +411,6 @@ void NMethodSweeper::sweep_code_cache() {
     _peak_sweep_time = MAX2(_peak_sweep_time, _total_time_this_sweep);
   }
 
-  EventSweepCodeCache event(UNTIMED);
-  if (event.should_commit()) {
-    post_sweep_event(&event, sweep_start_counter, sweep_end_counter, (s4)_traversals, swept_count, flushed_count, zombified_count);
-  }
-
 #ifdef ASSERT
   if(PrintMethodFlushing) {
     tty->print_cr("### sweeper:      sweep time(" JLONG_FORMAT "): ", sweep_time.value());
@@ -442,6 +437,15 @@ void NMethodSweeper::sweep_code_cache() {
     CompileBroker::set_should_compile_new_jobs(CompileBroker::run_compilation);
     log.debug("restart compiler");
     log_sweep("restart_compiler");
+    EventJitRestart event;
+    event.set_freedMemory(freed_memory);
+    event.set_codeCacheMaxCapacity(CodeCache::max_capacity());
+    event.commit();
+  }
+
+  EventSweepCodeCache event(UNTIMED);
+  if (event.should_commit()) {
+    post_sweep_event(&event, sweep_start_counter, sweep_end_counter, (s4)_traversals, swept_count, flushed_count, zombified_count);
   }
 }
 

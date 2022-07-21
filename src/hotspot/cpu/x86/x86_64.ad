@@ -894,7 +894,7 @@ void MachPrologNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
 
 void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   Compile* C = ra_->C;
-  MacroAssembler _masm(&cbuf);
+  C2_MacroAssembler _masm(&cbuf);
 
   int framesize = C->output()->frame_size_in_bytes();
   int bangsize = C->output()->bang_size_in_bytes();

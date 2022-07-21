@@ -416,7 +416,9 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
       cl->mark_passed_slp();
     }
     cl->mark_was_slp();
-    cl->set_slp_max_unroll(local_loop_unroll_factor);
+    if (cl->is_main_loop() || cl->is_rce_post_loop()) {
+      cl->set_slp_max_unroll(local_loop_unroll_factor);
+    }
   }
 }
 
@@ -1449,6 +1451,12 @@ void SuperWord::extend_packlist() {
 //------------------------------adjust_alignment_for_type_conversion---------------------------------
 // Adjust the target alignment if conversion between different data size exists in def-use nodes.
 int SuperWord::adjust_alignment_for_type_conversion(Node* s, Node* t, int align) {
+  // Do not use superword for non-primitives
+  BasicType bt1 = velt_basic_type(s);
+  BasicType bt2 = velt_basic_type(t);
+  if (!is_java_primitive(bt1) || !is_java_primitive(bt2)) {
+    return align;
+  }
   if (longer_type_for_conversion(s) != T_ILLEGAL ||
       longer_type_for_conversion(t) != T_ILLEGAL) {
     align = align / data_size(s) * data_size(t);
@@ -3413,32 +3421,23 @@ void SuperWord::compute_max_depth() {
 }
 
 BasicType SuperWord::longer_type_for_conversion(Node* n) {
-  int opcode = n->Opcode();
-  switch (opcode) {
-    case Op_ConvD2I:
-    case Op_ConvI2D:
-    case Op_ConvF2D:
-    case Op_ConvD2F: return T_DOUBLE;
-    case Op_ConvF2L:
-    case Op_ConvL2F:
-    case Op_ConvL2I:
-    case Op_ConvI2L: return T_LONG;
-    case Op_ConvI2F: {
-      BasicType src_t = velt_basic_type(n->in(1));
-      if (src_t == T_BYTE || src_t == T_SHORT) {
-        return T_FLOAT;
-      }
-      return T_ILLEGAL;
-    }
-    case Op_ConvF2I: {
-      BasicType dst_t = velt_basic_type(n);
-      if (dst_t == T_BYTE || dst_t == T_SHORT) {
-        return T_FLOAT;
-      }
-      return T_ILLEGAL;
-    }
+  if (!VectorNode::is_convert_opcode(n->Opcode()) ||
+      !in_bb(n->in(1))) {
+    return T_ILLEGAL;
   }
-  return T_ILLEGAL;
+  assert(in_bb(n), "must be in the bb");
+  BasicType src_t = velt_basic_type(n->in(1));
+  BasicType dst_t = velt_basic_type(n);
+  // Do not use superword for non-primitives.
+  // Superword does not support casting involving unsigned types.
+  if (!is_java_primitive(src_t) || is_unsigned_subword_type(src_t) ||
+      !is_java_primitive(dst_t) || is_unsigned_subword_type(dst_t)) {
+    return T_ILLEGAL;
+  }
+  int src_size = type2aelembytes(src_t);
+  int dst_size = type2aelembytes(dst_t);
+  return src_size == dst_size ? T_ILLEGAL
+                              : (src_size > dst_size ? src_t : dst_t);
 }
 
 int SuperWord::max_vector_size_in_def_use_chain(Node* n) {

@@ -564,9 +564,10 @@ bool JavaThread::is_interrupted(bool clear_interrupted) {
 void JavaThread::block_if_vm_exited() {
   if (_terminated == _vm_exited) {
     // _vm_exited is set at safepoint, and Threads_lock is never released
-    // we will block here forever.
+    // so we will block here forever.
     // Here we can be doing a jump from a safe state to an unsafe state without
-    // proper transition, but it happens after the final safepoint has begun.
+    // proper transition, but it happens after the final safepoint has begun so
+    // this jump won't cause any safepoint problems.
     set_thread_state(_thread_in_vm);
     Threads_lock->lock();
     ShouldNotReachHere();

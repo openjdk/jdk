@@ -27,9 +27,11 @@ import com.sun.hotspot.igv.connection.Server;
 import com.sun.hotspot.igv.coordinator.actions.*;
 import com.sun.hotspot.igv.data.GraphDocument;
 import com.sun.hotspot.igv.data.Group;
+import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.services.GroupCallback;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
 import com.sun.hotspot.igv.util.LookupHistory;
+import com.sun.hotspot.igv.view.EditorTopComponent;
 import java.awt.BorderLayout;
 import java.io.IOException;
 import java.io.ObjectInput;
@@ -133,13 +135,22 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     // Fetch and select the latest active graph.
     private void updateGraphSelection() {
         final InputGraphProvider p = LookupHistory.getLast(InputGraphProvider.class);
-        if (p == null) {
-            return;
-        }
-        try {
-            manager.setSelectedNodes(new GraphNode[]{FolderNode.getGraphNode(p.getGraph())});
-        } catch (Exception e) {
-            Exceptions.printStackTrace(e);
+        if (p != null) {
+            try {
+                InputGraph graph = p.getGraph();
+                if (graph.isDiffGraph()) {
+                    EditorTopComponent editor = EditorTopComponent.getActive();
+                    if (editor != null) {
+                        InputGraph firstGraph = editor.getModel().getFirstGraph();
+                        InputGraph secondGraph = editor.getModel().getSecondGraph();
+                        manager.setSelectedNodes(new GraphNode[]{FolderNode.getGraphNode(firstGraph), FolderNode.getGraphNode(secondGraph)});
+                    }
+                } else {
+                    manager.setSelectedNodes(new GraphNode[]{FolderNode.getGraphNode(graph)});
+                }
+            } catch (Exception e) {
+                Exceptions.printStackTrace(e);
+            }
         }
     }
 

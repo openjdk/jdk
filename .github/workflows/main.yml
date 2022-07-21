@@ -204,7 +204,7 @@ jobs:
     uses: ./.github/workflows/build-macos.yml
     with:
       platform: macos-x64
-      xcode-toolset-version: '11.3.1'
+      xcode-toolset-version: '11.7'
     if: needs.select.outputs.macos-x64 == 'true'
 
   build-macos-aarch64:
@@ -271,7 +271,7 @@ jobs:
     with:
       platform: macos-x64
       bootjdk-platform: macos-x64
-      runs-on: macos-10.15
+      runs-on: macos-11
 
   test-windows-x64:
     name: windows-x64
