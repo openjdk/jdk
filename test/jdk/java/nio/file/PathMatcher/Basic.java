@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887 6866397 8073445
+ * @bug 4313887 6866397 8073445 8290047
  * @summary Unit test for java.nio.file.PathMatcher
  */
 
@@ -65,6 +65,18 @@ public class Basic {
             failures++;
         } catch (PatternSyntaxException e) {
             System.out.println("Failed to compile ==> OKAY");
+        }
+    }
+
+    static void assertBadSyntaxAndPattern(String syntaxAndPattern) {
+        try {
+            FileSystems.getDefault().getPathMatcher(syntaxAndPattern);
+            System.out.printf("\"%s\" ==> no IllegalArgumentException%n",
+                              syntaxAndPattern);
+            failures++;
+        } catch (IllegalArgumentException iae) {
+            System.out.printf("IllegalArgumentException for \"%s\" ==> OKAY%n",
+                              syntaxAndPattern);
         }
     }
 
@@ -137,6 +149,8 @@ public class Basic {
         assertBadPattern("foo.html", "*{class,java");       // missing }
         assertBadPattern("foo.html", "*.{class,{.java}}");  // nested group
         assertBadPattern("foo.html", "*.html\\");           // nothing to escape
+        assertBadSyntaxAndPattern(":glob");                 // colon at head
+        assertBadSyntaxAndPattern("glob:");                 // colon at tail
 
         // platform specific
         if (System.getProperty("os.name").startsWith("Windows")) {
