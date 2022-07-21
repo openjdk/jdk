@@ -710,6 +710,12 @@ void Compilation::print_timers() {
 
 
 #ifndef PRODUCT
+void CompilationResourceObj::print() const       { print_on(tty); }
+
+void CompilationResourceObj::print_on(outputStream* st) const {
+  st->print_cr("CompilationResourceObj(" INTPTR_FORMAT ")", p2i(this));
+}
+
 void Compilation::compile_only_this_method() {
   ResourceMark rm;
   fileStream stream(os::fopen("c1_compile_only", "wt"));

@@ -2520,7 +2520,7 @@ public:
     if (occupied == 0) {
       tty->print_cr("  RSet is empty");
     } else {
-      hrrs->print();
+      tty->print_cr("hrrs " INTPTR_FORMAT, p2i(hrrs));
     }
     tty->print_cr("----------");
     return false;

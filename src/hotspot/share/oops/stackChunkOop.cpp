@@ -509,7 +509,7 @@ public:
     LogTarget(Trace, continuations) lt;
     if (lt.develop_is_enabled()) {
       LogStream ls(lt);
-      f.print_value_on(&ls);
+      f.print_on(&ls);
     }
     assert(f.pc() != nullptr,
            "young: %d num_frames: %d sp: " INTPTR_FORMAT " start: " INTPTR_FORMAT " end: " INTPTR_FORMAT,
