@@ -1182,8 +1182,7 @@ public:
   // - relocInfo::virtual_call_type
   //
   // Return: NULL if CodeCache is full.
-  address trampoline_call(Address entry, CodeBuffer* cbuf = NULL) { return trampoline_call1(entry, cbuf, true); }
-  address trampoline_call1(Address entry, CodeBuffer* cbuf, bool check_emit_size = true);
+  address trampoline_call(Address entry, CodeBuffer* cbuf = NULL);
 
   static bool far_branches() {
     return ReservedCodeCacheSize > branch_range;
