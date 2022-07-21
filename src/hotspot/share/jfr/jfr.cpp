@@ -92,8 +92,8 @@ bool Jfr::is_excluded(Thread* t) {
   return t != NULL && t->jfr_thread_local()->is_excluded();
 }
 
-void Jfr::on_vm_shutdown(bool exception_handler) {
-  if (JfrRecorder::is_recording()) {
+void Jfr::on_vm_shutdown(bool exception_handler, bool halt) {
+  if (!halt && JfrRecorder::is_recording()) {
     JfrEmergencyDump::on_vm_shutdown(exception_handler);
   }
 }
