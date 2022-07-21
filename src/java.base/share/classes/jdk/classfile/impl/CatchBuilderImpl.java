@@ -37,12 +37,12 @@ import java.util.function.Consumer;
 
 public final class CatchBuilderImpl implements CodeBuilder.CatchBuilder {
     final CodeBuilder b;
-    final BlockCodeBuilder tryBlock;
+    final BlockCodeBuilderImpl tryBlock;
     final Label tryCatchEnd;
     final Set<ConstantDesc> catchTypes;
-    BlockCodeBuilder catchBlock;
+    BlockCodeBuilderImpl catchBlock;
 
-    public CatchBuilderImpl(CodeBuilder b, BlockCodeBuilder tryBlock, Label tryCatchEnd) {
+    public CatchBuilderImpl(CodeBuilder b, BlockCodeBuilderImpl tryBlock, Label tryCatchEnd) {
         this.b = b;
         this.tryBlock = tryBlock;
         this.tryCatchEnd = tryCatchEnd;
@@ -50,7 +50,7 @@ public final class CatchBuilderImpl implements CodeBuilder.CatchBuilder {
     }
 
     @Override
-    public CodeBuilder.CatchBuilder catching(ClassDesc exceptionType, Consumer<CodeBuilder> catchHandler) {
+    public CodeBuilder.CatchBuilder catching(ClassDesc exceptionType, Consumer<CodeBuilder.BlockCodeBuilder> catchHandler) {
         Objects.requireNonNull(catchHandler);
 
         if (catchBlock == null) {
@@ -71,7 +71,7 @@ public final class CatchBuilderImpl implements CodeBuilder.CatchBuilder {
             }
         }
 
-        catchBlock = new BlockCodeBuilder(b);
+        catchBlock = new BlockCodeBuilderImpl(b, tryCatchEnd);
         Label tryStart = tryBlock.startLabel();
         Label tryEnd = tryBlock.endLabel();
         catchBlock.start();
@@ -87,14 +87,14 @@ public final class CatchBuilderImpl implements CodeBuilder.CatchBuilder {
     }
 
     @Override
-    public void catchingAll(Consumer<CodeBuilder> catchAllHandler) {
+    public void catchingAll(Consumer<CodeBuilder.BlockCodeBuilder> catchAllHandler) {
         catching(null, catchAllHandler);
     }
 
     public void finish() {
         if (catchBlock != null) {
             catchBlock.end();
-            b.labelBinding(tryCatchEnd);
         }
+        b.labelBinding(tryCatchEnd);
     }
 }

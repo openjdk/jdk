@@ -31,11 +31,8 @@ import java.lang.constant.DirectMethodHandleDesc;
 import java.lang.constant.DynamicCallSiteDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Consumer;
 
 import jdk.classfile.constantpool.ClassEntry;
@@ -49,7 +46,7 @@ import jdk.classfile.constantpool.MethodHandleEntry;
 import jdk.classfile.constantpool.NameAndTypeEntry;
 import jdk.classfile.constantpool.Utf8Entry;
 import jdk.classfile.impl.AbstractInstruction;
-import jdk.classfile.impl.BlockCodeBuilder;
+import jdk.classfile.impl.BlockCodeBuilderImpl;
 import jdk.classfile.impl.BytecodeHelpers;
 import jdk.classfile.impl.CatchBuilderImpl;
 import jdk.classfile.impl.ChainedCodeBuilder;
@@ -99,7 +96,7 @@ import static jdk.classfile.impl.BytecodeHelpers.handleDescToHandleInfo;
  */
 public sealed interface CodeBuilder
         extends ClassfileBuilder<CodeElement, CodeBuilder>
-        permits BlockCodeBuilder, ChainedCodeBuilder, TerminalCodeBuilder, NonterminalCodeBuilder {
+        permits CodeBuilder.BlockCodeBuilder, ChainedCodeBuilder, TerminalCodeBuilder, NonterminalCodeBuilder {
 
     /**
      * {@return the {@link CodeModel} representing the method body being transformed,
@@ -159,58 +156,140 @@ public sealed interface CodeBuilder
     int allocateLocal(TypeKind typeKind);
 
     /**
-     * Add a lexical block to the method being built.  Within this block, the
-     * {@link #startLabel()} and {@link #endLabel()} correspond to the start
-     * and end of the block.
+     * A builder for blocks of code.
      */
-    default CodeBuilder block(Consumer<CodeBuilder> handler) {
-        BlockCodeBuilder child = new BlockCodeBuilder(this);
+    sealed interface BlockCodeBuilder extends CodeBuilder
+            permits BlockCodeBuilderImpl {
+        /**
+         * {@return the label locating where control is passed back to the parent block.}
+         * A branch to this label "break"'s out of the current block.
+         * <p>
+         * If an instruction occurring immediately after the built block's last instruction would
+         * be reachable from that last instruction, then a {@linkplain #goto_ goto} instruction
+         * targeting the "break" label is appended to the built block.
+         */
+        Label breakLabel();
+    }
+
+    /**
+     * Add a lexical block to the method being built.
+     * <p>
+     * Within this block, the {@link #startLabel()} and {@link #endLabel()} correspond
+     * to the start and end of the block, and the {@link BlockCodeBuilder#breakLabel()}
+     * also corresponds to the end of the block.
+     *
+     * @param handler handler that receives a {@linkplain BlockCodeBuilder} to
+     * generate the body of the lexical block.
+     */
+    default CodeBuilder block(Consumer<BlockCodeBuilder> handler) {
+        Label breakLabel = newLabel();
+        BlockCodeBuilderImpl child = new BlockCodeBuilderImpl(this, breakLabel);
         child.start();
         handler.accept(child);
         child.end();
+        labelBinding(breakLabel);
         return this;
     }
 
     /**
      * Add an "if-then" block that is conditional on the boolean value
      * on top of the operand stack.
+     * <p>
+     * The {@link BlockCodeBuilder#breakLabel()} for the "then" block corresponds to the
+     * end of that block.
      *
-     * @param thenHandler handler that receives a {@linkplain CodeBuilder} to
+     * @param thenHandler handler that receives a {@linkplain BlockCodeBuilder} to
      *                    generate the body of the {@code if}
      * @return this builder
      */
-    default CodeBuilder ifThen(Consumer<CodeBuilder> thenHandler) {
-        BlockCodeBuilder thenBlock = new BlockCodeBuilder(this);
-        branchInstruction(Opcode.IFEQ, thenBlock.endLabel());
+    default CodeBuilder ifThen(Consumer<BlockCodeBuilder> thenHandler) {
+        return ifThen(Opcode.IFNE, thenHandler);
+    }
+
+    /**
+     * Add an "if-then" block that is conditional on the value(s) on top of the operand stack
+     * in accordance with the given opcode.
+     * <p>
+     * The {@link BlockCodeBuilder#breakLabel()} for the "then" block corresponds to the
+     * end of that block.
+     *
+     * @param opcode the operation code for a branch instructions that accepts one or two operands on the stack
+     * @param thenHandler handler that receives a {@linkplain BlockCodeBuilder} to
+     *                    generate the body of the {@code if}
+     * @return this builder
+     * @throws java.lang.IllegalArgumentException if the operation code is not for a branch instruction that accepts
+     * one or two operands
+     */
+    default CodeBuilder ifThen(Opcode opcode,
+                               Consumer<BlockCodeBuilder> thenHandler) {
+        if (opcode.kind() != CodeElement.Kind.BRANCH || opcode.primaryTypeKind() == TypeKind.VoidType) {
+            throw new IllegalArgumentException("Illegal branch opcode: " + opcode);
+        }
+
+        Label breakLabel = newLabel();
+        BlockCodeBuilderImpl thenBlock = new BlockCodeBuilderImpl(this, breakLabel);
+        branchInstruction(BytecodeHelpers.reverseBranchOpcode(opcode), thenBlock.endLabel());
         thenBlock.start();
         thenHandler.accept(thenBlock);
         thenBlock.end();
+        labelBinding(breakLabel);
         return this;
     }
 
     /**
      * Add an "if-then-else" block that is conditional on the boolean value
      * on top of the operand stack.
+     * <p>
+     * The {@link BlockCodeBuilder#breakLabel()} for each block corresponds to the
+     * end of the "else" block.
      *
-     * @param thenHandler handler that receives a {@linkplain CodeBuilder} to
+     * @param thenHandler handler that receives a {@linkplain BlockCodeBuilder} to
      *                    generate the body of the {@code if}
-     * @param elseHandler handler that receives a {@linkplain CodeBuilder} to
+     * @param elseHandler handler that receives a {@linkplain BlockCodeBuilder} to
      *                    generate the body of the {@code else}
      * @return this builder
      */
-    default CodeBuilder ifThenElse(Consumer<CodeBuilder> thenHandler,
-                                   Consumer<CodeBuilder> elseHandler) {
-        BlockCodeBuilder thenBlock = new BlockCodeBuilder(this);
-        BlockCodeBuilder elseBlock = new BlockCodeBuilder(this);
-        branchInstruction(Opcode.IFEQ, elseBlock.startLabel());
+    default CodeBuilder ifThenElse(Consumer<BlockCodeBuilder> thenHandler,
+                                   Consumer<BlockCodeBuilder> elseHandler) {
+        return ifThenElse(Opcode.IFNE, thenHandler, elseHandler);
+    }
+
+    /**
+     * Add an "if-then-else" block that is conditional on the value(s) on top of the operand stack
+     * in accordance with the given opcode.
+     * <p>
+     * The {@link BlockCodeBuilder#breakLabel()} for each block corresponds to the
+     * end of the "else" block.
+     *
+     * @param opcode the operation code for a branch instructions that accepts one or two operands on the stack
+     * @param thenHandler handler that receives a {@linkplain BlockCodeBuilder} to
+     *                    generate the body of the {@code if}
+     * @param elseHandler handler that receives a {@linkplain BlockCodeBuilder} to
+     *                    generate the body of the {@code else}
+     * @return this builder
+     * @throws java.lang.IllegalArgumentException if the operation code is not for a branch instruction that accepts
+     * one or two operands
+     */
+    default CodeBuilder ifThenElse(Opcode opcode,
+                                   Consumer<BlockCodeBuilder> thenHandler,
+                                   Consumer<BlockCodeBuilder> elseHandler) {
+        if (opcode.kind() != CodeElement.Kind.BRANCH || opcode.primaryTypeKind() == TypeKind.VoidType) {
+            throw new IllegalArgumentException("Illegal branch opcode: " + opcode);
+        }
+
+        Label breakLabel = newLabel();
+        BlockCodeBuilderImpl thenBlock = new BlockCodeBuilderImpl(this, breakLabel);
+        BlockCodeBuilderImpl elseBlock = new BlockCodeBuilderImpl(this, breakLabel);
+        branchInstruction(BytecodeHelpers.reverseBranchOpcode(opcode), elseBlock.startLabel());
         thenBlock.start();
         thenHandler.accept(thenBlock);
         if (thenBlock.reachable())
-            thenBlock.branchInstruction(Opcode.GOTO, elseBlock.endLabel());
+            thenBlock.branchInstruction(Opcode.GOTO, thenBlock.breakLabel());
         thenBlock.end();
         elseBlock.start();
         elseHandler.accept(elseBlock);
         elseBlock.end();
+        labelBinding(breakLabel);
         return this;
     }
 
@@ -234,7 +313,7 @@ public sealed interface CodeBuilder
          * @throws java.lang.IllegalArgumentException if an existing catch block catches an exception of the given type.
          * @see #catchingAll
          */
-        CatchBuilder catching(ClassDesc exceptionType, Consumer<CodeBuilder> catchHandler);
+        CatchBuilder catching(ClassDesc exceptionType, Consumer<BlockCodeBuilder> catchHandler);
 
         /**
          * Adds a "catch" block that catches all exceptions.
@@ -246,7 +325,7 @@ public sealed interface CodeBuilder
          * @throws java.lang.IllegalArgumentException if an existing catch block catches all exceptions.
          * @see #catching
          */
-        void catchingAll(Consumer<CodeBuilder> catchAllHandler);
+        void catchingAll(Consumer<BlockCodeBuilder> catchAllHandler);
     }
 
     /**
@@ -260,12 +339,12 @@ public sealed interface CodeBuilder
      * @return this builder
      * @see CatchBuilder
      */
-    default CodeBuilder trying(Consumer<CodeBuilder> tryHandler,
+    default CodeBuilder trying(Consumer<BlockCodeBuilder> tryHandler,
                                Consumer<CatchBuilder> catchesHandler) {
         Label tryCatchEnd = newLabel();
 
         // @@@ the tryHandler does not have access to tryCatchEnd
-        BlockCodeBuilder tryBlock = new BlockCodeBuilder(this);
+        BlockCodeBuilderImpl tryBlock = new BlockCodeBuilderImpl(this, tryCatchEnd);
         tryBlock.start();
         tryHandler.accept(tryBlock);
         tryBlock.end();

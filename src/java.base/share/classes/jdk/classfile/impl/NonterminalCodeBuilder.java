@@ -35,13 +35,13 @@ import jdk.classfile.constantpool.ConstantPoolBuilder;
  * NonterminalCodeBuilder
  */
 public abstract sealed class NonterminalCodeBuilder implements CodeBuilder
-    permits ChainedCodeBuilder, BlockCodeBuilder {
+    permits ChainedCodeBuilder, BlockCodeBuilderImpl {
     protected final TerminalCodeBuilder terminal;
 
     public NonterminalCodeBuilder(CodeBuilder downstream) {
         this.terminal = switch (downstream) {
             case ChainedCodeBuilder cb -> cb.terminal;
-            case BlockCodeBuilder cb -> cb.terminal;
+            case BlockCodeBuilderImpl cb -> cb.terminal;
             case TerminalCodeBuilder cb -> cb;
         };
     }

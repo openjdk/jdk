@@ -193,7 +193,7 @@ public class BytecodeHelpers {
         };
     }
 
-    static Opcode reverseBranchOpcode(Opcode op) {
+    public static Opcode reverseBranchOpcode(Opcode op) {
         return switch (op) {
             case IFEQ -> IFNE;
             case IFNE -> IFEQ;

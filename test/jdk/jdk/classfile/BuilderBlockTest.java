@@ -42,8 +42,10 @@ import jdk.classfile.AccessFlags;
 import java.lang.reflect.AccessFlag;
 import jdk.classfile.Classfile;
 import jdk.classfile.Label;
+import jdk.classfile.Opcode;
 import jdk.classfile.TypeKind;
 import jdk.classfile.impl.LabelImpl;
+import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
@@ -100,7 +102,7 @@ public class BuilderBlockTest {
         assertEquals(((LabelImpl) startEnd[3]).getContextInfo(), 2);
     }
 
-    public void testIfThen() throws Exception {
+    public void testIfThenReturn() throws Exception {
         byte[] bytes = Classfile.build(ClassDesc.of("Foo"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withMethod("foo", MethodTypeDesc.of(CD_int, CD_int),
@@ -113,12 +115,12 @@ public class BuilderBlockTest {
 
         Method fooMethod = new ByteArrayClassLoader(BuilderBlockTest.class.getClassLoader(), "Foo", bytes)
                 .getMethod("Foo", "foo");
-        assertEquals((Integer) fooMethod.invoke(null, 3), (Integer) 1);
-        assertEquals((Integer) fooMethod.invoke(null, 0), (Integer) 2);
+        assertEquals(fooMethod.invoke(null, 3), 1);
+        assertEquals(fooMethod.invoke(null, 0), 2);
 
     }
 
-    public void testIfThenElse() throws Exception {
+    public void testIfThenElseReturn() throws Exception {
         byte[] bytes = Classfile.build(ClassDesc.of("Foo"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withMethod("foo", MethodTypeDesc.of(CD_int, CD_int),
@@ -130,12 +132,31 @@ public class BuilderBlockTest {
 
         Method fooMethod = new ByteArrayClassLoader(BuilderBlockTest.class.getClassLoader(), "Foo", bytes)
                 .getMethod("Foo", "foo");
-        assertEquals((Integer) fooMethod.invoke(null, 3), (Integer) 1);
-        assertEquals((Integer) fooMethod.invoke(null, 0), (Integer) 2);
+        assertEquals(fooMethod.invoke(null, 3), 1);
+        assertEquals(fooMethod.invoke(null, 0), 2);
 
     }
 
-    public void testIfThenElse2() throws Exception {
+    public void testIfThenBadOpcode()  {
+        Classfile.build(ClassDesc.of("Foo"), cb -> {
+            cb.withFlags(AccessFlag.PUBLIC);
+            cb.withMethod("foo", MethodTypeDesc.of(CD_int, CD_int, CD_int),
+                    AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(),
+                    mb -> mb.withCode(xb -> {
+                        xb.iload(0);
+                        xb.iload(1);
+                        Assert.assertThrows(IllegalArgumentException.class, () -> {
+                            xb.ifThen(
+                                    Opcode.GOTO,
+                                    xxb -> xxb.iconst_1().istore(2));
+                        });
+                        xb.iload(2);
+                        xb.ireturn();
+                    }));
+        });
+    }
+
+    public void testIfThenElseImplicitBreak() throws Exception {
         byte[] bytes = Classfile.build(ClassDesc.of("Foo"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withMethod("foo", MethodTypeDesc.of(CD_int, CD_int),
@@ -149,9 +170,71 @@ public class BuilderBlockTest {
 
         Method fooMethod = new ByteArrayClassLoader(BuilderBlockTest.class.getClassLoader(), "Foo", bytes)
                 .getMethod("Foo", "foo");
-        assertEquals((Integer) fooMethod.invoke(null, 3), (Integer) 1);
-        assertEquals((Integer) fooMethod.invoke(null, 0), (Integer) 2);
+        assertEquals(fooMethod.invoke(null, 3), 1);
+        assertEquals(fooMethod.invoke(null, 0), 2);
 
+    }
+
+    public void testIfThenElseExplicitBreak() throws Exception {
+        byte[] bytes = Classfile.build(ClassDesc.of("Foo"), cb -> {
+            cb.withFlags(AccessFlag.PUBLIC);
+            cb.withMethod("foo", MethodTypeDesc.of(CD_int, CD_int),
+                    AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(),
+                    mb -> mb.withCode(xb -> xb.iload(0)
+                            .ifThenElse(xxb -> xxb.iconst_1().istore(2).goto_(xxb.breakLabel()),
+                                    xxb -> xxb.iconst_2().istore(2).goto_(xxb.breakLabel()))
+                            .iload(2)
+                            .ireturn()));
+        });
+
+        Method fooMethod = new ByteArrayClassLoader(BuilderBlockTest.class.getClassLoader(), "Foo", bytes)
+                .getMethod("Foo", "foo");
+        assertEquals(fooMethod.invoke(null, 3), 1);
+        assertEquals(fooMethod.invoke(null, 0), 2);
+    }
+
+    public void testIfThenElseOpcode() throws Exception {
+        byte[] bytes = Classfile.build(ClassDesc.of("Foo"), cb -> {
+            cb.withFlags(AccessFlag.PUBLIC);
+            cb.withMethod("foo", MethodTypeDesc.of(CD_int, CD_int, CD_int),
+                    AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(),
+                    mb -> mb.withCode(xb ->
+                            xb.iload(0)
+                            .iload(1)
+                            .ifThenElse(
+                                    Opcode.IF_ICMPLT,
+                                    xxb -> xxb.iconst_1().istore(2),
+                                    xxb -> xxb.iconst_2().istore(2))
+                            .iload(2)
+                            .ireturn()));
+        });
+
+        Method fooMethod = new ByteArrayClassLoader(BuilderBlockTest.class.getClassLoader(), "Foo", bytes)
+                .getMethod("Foo", "foo");
+        assertEquals(fooMethod.invoke(null, 1, 10), 1);
+        assertEquals(fooMethod.invoke(null, 9, 10), 1);
+        assertEquals(fooMethod.invoke(null, 10, 10), 2);
+        assertEquals(fooMethod.invoke(null, 11, 10), 2);
+    }
+
+    public void testIfThenElseBadOpcode()  {
+        Classfile.build(ClassDesc.of("Foo"), cb -> {
+            cb.withFlags(AccessFlag.PUBLIC);
+            cb.withMethod("foo", MethodTypeDesc.of(CD_int, CD_int, CD_int),
+                    AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(),
+                    mb -> mb.withCode(xb -> {
+                        xb.iload(0);
+                        xb.iload(1);
+                        Assert.assertThrows(IllegalArgumentException.class, () -> {
+                            xb.ifThenElse(
+                                    Opcode.GOTO,
+                                    xxb -> xxb.iconst_1().istore(2),
+                                    xxb -> xxb.iconst_2().istore(2));
+                        });
+                        xb.iload(2);
+                        xb.ireturn();
+                    }));
+        });
     }
 
     public void testAllocateLocal() {
