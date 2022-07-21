@@ -26,7 +26,8 @@
  * @bug 8288882
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
- * @summary To test if the TEST-EMPTY-FILE size shows 0 bytes.
+ * @requires (os.family == "linux")
+ * @summary To test if the TEST-EMPTY-FILE size shows 0 KB and other files show correct size.
  * @run main/manual FileSizeCheck
  */
 
