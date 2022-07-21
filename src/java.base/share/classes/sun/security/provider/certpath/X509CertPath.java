@@ -250,13 +250,6 @@ public class X509CertPath extends CertPath {
         return Collections.unmodifiableList(certList);
     }
 
-    /*
-     * Reads the entire contents of an InputStream into a byte array.
-     *
-     * @param is the InputStream to read from
-     * @return the bytes read from the InputStream
-     */
-
     /**
      * Returns the encoded form of this certification path, using the
      * default encoding.
