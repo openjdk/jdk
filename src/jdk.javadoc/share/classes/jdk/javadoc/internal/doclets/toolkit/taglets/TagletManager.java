@@ -259,8 +259,7 @@ public class TagletManager {
             jdk.javadoc.doclet.Taglet instance = customTagClass.getConstructor().newInstance();
             registerTaglet(instance);
         } catch (ReflectiveOperationException | ExceptionInInitializerError | ClassCastException exc) {
-            messages.error("doclet.Error_taglet_not_registered", exc.getClass().getName(),
-                    classname);
+            messages.error("doclet.Error_taglet_not_registered", classname, exc);
         }
     }
 

@@ -491,7 +491,8 @@ public abstract class JavadocTester {
 
         if (Files.exists(outputDir)) {
             if (automaticCheckNoStacktrace) {
-                checkOutput(Output.STDERR, false, " at com.sun.");
+                // Any stacktrace will have javadoc near the bottom of the stack
+                checkOutput(Output.STDERR, false, "at jdk.javadoc/jdk.javadoc.internal.");
             }
 
             if (exitCode == Exit.OK.code) {
