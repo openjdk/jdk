@@ -98,7 +98,7 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
     private final Cleanable cleanable;
 
     // Subclasses interact directly with the LdapCtx. This method provides
-    // access to the LdapCtx in the EnumCtx.
+    // access to the LdapCtx within the EnumCtx.
     protected final LdapCtx getHomeCtx() { return enumCtx.homeCtx; }
 
     /*
@@ -164,12 +164,9 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
             try {
                 return next();
             } finally {
-                // An interesting one.
-
-                // A similar case to nextImpl(), except in this case, next()
-                // *is* overridable. Add fences here; otherwise, next() could
-                // be incorrectly overridden in the future to access the
-                // cleanable state without the proper fences.
+                // See comment in nextImpl(). This is similar, but in this case, next()
+                // *is* overridable. Fences are included here, in case next() is
+                // overridden to access the cleanable state without the proper fences.
 
                 // Ensure writes are visible to the Cleaner thread
                 VarHandle.fullFence();
@@ -179,24 +176,6 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
         } catch (NamingException e) {
             // can't throw exception
             cleanup();
-            // Re: automagically adding fences someday...
-            // Methods which do explicit cleanup() like this are...interesting. If
-            // fences are added after *every* method call, in this case the
-            // fences would "happen" after cleanup had already happened.
-            //
-            // Is there a way for such an automatically-added reachabilityFence
-            // to cause problems? Could the method require some object to
-            // became unreachable? I don't think so: the reachabilityFence keeps
-            // 'this' from becoming unreachable, and a method could not reset the
-            // value of 'this', e.g. to null, to cause it to become unreachable.
-            //
-            // In the cases like this of an explicit call to cleanup(),
-            // the cleanup happens on the main/program thread, not on the cleaner
-            // thread. So there's no visibility issues with the cleaner thread
-            // (but perhaps still could be with some other thread?).
-            //
-            // So automatic reachability and full fences in this would be strange,
-            // but not harmful AFAICT.
             return null;
         }
     }
@@ -207,7 +186,7 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
             try {
                 return hasMore();
             } finally {
-                // See nextElement(), above - same situation
+                // Same situation as nextElement() - see comment above
 
                 // Ensure writes are visible to the Cleaner thread
                 VarHandle.fullFence();
@@ -375,9 +354,8 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
             cleanup();
             throw cont.fillInException(e);
         }
-        // No fences, but another interesting one.
-        // nextAux() (source just below) has its own fences. The only other thing
-        // this method does is to *call cleanup*.
+        // No fences here. nextAux() (source just below) has its own fences. The
+        // only other thing this method does is call cleanup().
         // If nextAux() were overrideable, this method should probably have
         // fences, but it seems OK for now without.
     }

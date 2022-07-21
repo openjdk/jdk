@@ -53,7 +53,7 @@ final class LdapSearchEnumeration
         // fully qualified name of starting context of search
         startName = new LdapName(starter);
         searchArgs = args;
-        // No fences here?
+        // No fences here for now.
         // super() call (aka AbstrctLdapNamingEnumeration ctor) keeps 'this'
         // reachable until end of Cleaner registration. Code after that
         // clearly does not touch cleanable state.
@@ -194,7 +194,7 @@ final class LdapSearchEnumeration
         // a referral has been followed so do not create relative names
         startName = null;
         super.appendUnprocessedReferrals(ex);
-        // No fences here?
+        // No fences here for now.
         // Rely on fences in the super call.
         // Other code in this method clearly doesn't access cleanable state.
     }
@@ -221,7 +221,7 @@ final class LdapSearchEnumeration
         // Update search-specific variables
         LdapSearchEnumeration se = (LdapSearchEnumeration)ne;
         startName = se.startName;
-        // No fences here?
+        // No fences here for now.
         // super.update() (aka AbstractLdapNamingEnumeration.update()) already
         // keeps 'this' and 'ne' reachable throughout that method call.
         // After that, we're clearly not accessing cleanable state from 'this'
