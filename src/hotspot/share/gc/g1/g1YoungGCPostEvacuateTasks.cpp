@@ -670,7 +670,9 @@ G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2
 #if COMPILER2_OR_JVMCI
   add_serial_task(new UpdateDerivedPointersTask());
 #endif
-  add_serial_task(new EagerlyReclaimHumongousObjectsTask());
+  if (G1CollectedHeap::heap()->has_humongous_reclaim_candidates()) {
+    add_serial_task(new EagerlyReclaimHumongousObjectsTask());
+  }
 
   if (evac_failure_regions->evacuation_failed()) {
     add_parallel_task(new RestorePreservedMarksTask(per_thread_states->preserved_marks_set()));
