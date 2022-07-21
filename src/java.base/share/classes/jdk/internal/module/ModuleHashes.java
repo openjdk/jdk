@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,15 +115,11 @@ public final class ModuleHashes {
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalArgumentException(e);
         }
-        byte[] buf = new byte[32*1024];
         try (Stream<String> stream = reader.list()) {
             stream.sorted().forEach(rn -> {
                 md.update(rn.getBytes(StandardCharsets.UTF_8));
                 try (InputStream in = reader.open(rn).orElseThrow()) {
-                    int n;
-                    while ((n = in.read(buf)) > 0) {
-                        md.update(buf, 0, n);
-                    }
+                    md.update(in.readAllBytes());
                 } catch (IOException ioe) {
                     throw new UncheckedIOException(ioe);
                 }
