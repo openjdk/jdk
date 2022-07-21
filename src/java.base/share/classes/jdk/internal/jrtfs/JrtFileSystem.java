@@ -175,7 +175,7 @@ class JrtFileSystem extends FileSystem {
     @Override
     public PathMatcher getPathMatcher(String syntaxAndInput) {
         int pos = syntaxAndInput.indexOf(':');
-        if (pos <= 0 || pos == syntaxAndInput.length()) {
+        if (pos <= 0) {
             throw new IllegalArgumentException("pos is " + pos);
         }
         String syntax = syntaxAndInput.substring(0, pos);
