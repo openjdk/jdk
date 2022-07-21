@@ -24,6 +24,7 @@
 import java.nio.file.Path;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.AdditionalLauncher;
 
 /**
  * Tests generation of app image with --mac-sign and related arguments. Test will
@@ -65,10 +66,16 @@ public class SigningAppImageTest {
         cmd.addArguments("--mac-sign", "--mac-signing-key-user-name",
                 SigningBase.DEV_NAME, "--mac-signing-keychain",
                 SigningBase.KEYCHAIN);
+
+        AdditionalLauncher testAL = new AdditionalLauncher("testAL");
+        testAL.applyTo(cmd);
         cmd.executeAndAssertHelloAppImageCreated();
 
         Path launcherPath = cmd.appLauncherPath();
         SigningBase.verifyCodesign(launcherPath, true);
+
+        Path testALPath = launcherPath.getParent().resolve("testAL");
+        SigningBase.verifyCodesign(testALPath, true);
 
         Path appImage = cmd.outputBundle();
         SigningBase.verifyCodesign(appImage, true);
