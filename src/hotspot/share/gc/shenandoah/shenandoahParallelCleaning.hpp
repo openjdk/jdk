@@ -27,13 +27,13 @@
 
 #include "gc/shared/parallelCleaning.hpp"
 #include "gc/shared/weakProcessor.hpp"
-#include "gc/shared/workgroup.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "memory/iterator.hpp"
 
 // Perform weak root cleaning at a pause
 template <typename IsAlive, typename KeepAlive>
-class ShenandoahParallelWeakRootsCleaningTask : public AbstractGangTask {
+class ShenandoahParallelWeakRootsCleaningTask : public WorkerTask {
 protected:
   ShenandoahPhaseTimings::Phase const _phase;
   WeakProcessor::Task                 _weak_processing_task;
@@ -51,7 +51,7 @@ public:
 };
 
 // Perform class unloading at a pause
-class ShenandoahClassUnloadingTask : public AbstractGangTask {
+class ShenandoahClassUnloadingTask : public WorkerTask {
 private:
   ShenandoahPhaseTimings::Phase const _phase;
   bool                                _unloading_occurred;

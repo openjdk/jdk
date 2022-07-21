@@ -33,34 +33,15 @@
 #include "runtime/safepoint.hpp"
 
 void Relocation::pd_set_data_value(address x, intptr_t o, bool verify_only) {
-  // The following comment is from the declaration of DataRelocation:
-  //
-  //  "The "o" (displacement) argument is relevant only to split relocations
-  //   on RISC machines.  In some CPUs (SPARC), the set-hi and set-lo ins'ns
-  //   can encode more than 32 bits between them.  This allows compilers to
-  //   share set-hi instructions between addresses that differ by a small
-  //   offset (e.g., different static variables in the same class).
-  //   On such machines, the "x" argument to set_value on all set-lo
-  //   instructions must be the same as the "x" argument for the
-  //   corresponding set-hi instructions.  The "o" arguments for the
-  //   set-hi instructions are ignored, and must not affect the high-half
-  //   immediate constant.  The "o" arguments for the set-lo instructions are
-  //   added into the low-half immediate constant, and must not overflow it."
-  //
-  // Currently we don't support splitting of relocations, so o must be
-  // zero:
+  // Currently we don't support splitting of relocations.
   assert(o == 0, "tried to split relocations");
 
   if (!verify_only) {
     if (format() != 1) {
       nativeMovConstReg_at(addr())->set_data_plain(((intptr_t)x), code());
     } else {
-      assert(type() == relocInfo::oop_type || type() == relocInfo::metadata_type,
-             "how to encode else?");
-      narrowOop no = (type() == relocInfo::oop_type) ?
-          CompressedOops::encode(cast_to_oop(x)) :
-          // Type punning compressed klass pointer as narrowOop.
-          CompressedOops::narrow_oop_cast(CompressedKlassPointers::encode((Klass*)x));
+      assert(type() == relocInfo::oop_type, "how to encode else?");
+      narrowOop no = CompressedOops::encode(cast_to_oop(x));
       nativeMovConstReg_at(addr())->set_narrow_oop(no, code());
     }
   } else {

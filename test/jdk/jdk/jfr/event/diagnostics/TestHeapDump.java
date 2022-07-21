@@ -63,8 +63,8 @@ public class TestHeapDump {
             RecordedEvent e = events.get(0);
             Events.assertField(e, "destination").equal(path.toString());
             Events.assertField(e, "gcBeforeDump").equal(true);
-            Events.assertField(e, "onOutOfMemoryError").equals(false);
-            Events.assertField(e, "size").equals(Files.size(path));
+            Events.assertField(e, "onOutOfMemoryError").equal(false);
+            Events.assertField(e, "size").equal(Files.size(path));
             System.out.println(e);
         }
     }

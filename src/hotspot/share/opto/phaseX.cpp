@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -792,9 +792,7 @@ ConLNode* PhaseTransform::longcon(jlong l) {
 }
 ConNode* PhaseTransform::integercon(jlong l, BasicType bt) {
   if (bt == T_INT) {
-    jint int_con = (jint)l;
-    assert(((long)int_con) == l, "not an int");
-    return intcon(int_con);
+    return intcon(checked_cast<jint>(l));
   }
   assert(bt == T_LONG, "not an integer");
   return longcon(l);
@@ -1509,14 +1507,14 @@ void PhaseIterGVN::add_users_to_worklist0( Node *n ) {
 }
 
 // Return counted loop Phi if as a counted loop exit condition, cmp
-// compares the the induction variable with n
-static PhiNode* countedloop_phi_from_cmp(CmpINode* cmp, Node* n) {
+// compares the induction variable with n
+static PhiNode* countedloop_phi_from_cmp(CmpNode* cmp, Node* n) {
   for (DUIterator_Fast imax, i = cmp->fast_outs(imax); i < imax; i++) {
     Node* bol = cmp->fast_out(i);
     for (DUIterator_Fast i2max, i2 = bol->fast_outs(i2max); i2 < i2max; i2++) {
       Node* iff = bol->fast_out(i2);
-      if (iff->is_CountedLoopEnd()) {
-        CountedLoopEndNode* cle = iff->as_CountedLoopEnd();
+      if (iff->is_BaseCountedLoopEnd()) {
+        BaseCountedLoopEndNode* cle = iff->as_BaseCountedLoopEnd();
         if (cle->limit() == n) {
           PhiNode* phi = cle->phi();
           if (phi != NULL) {
@@ -1693,7 +1691,7 @@ bool PhaseIterGVN::no_dependent_zero_check(Node* n) const {
     case Op_DivI:
     case Op_ModI: {
       // Type of divisor includes 0?
-      if (n->in(2)->is_top()) {
+      if (type(n->in(2)) == Type::TOP) {
         // 'n' is dead. Treat as if zero check is still there to avoid any further optimizations.
         return false;
       }
@@ -1703,7 +1701,7 @@ bool PhaseIterGVN::no_dependent_zero_check(Node* n) const {
     case Op_DivL:
     case Op_ModL: {
       // Type of divisor includes 0?
-      if (n->in(2)->is_top()) {
+      if (type(n->in(2)) == Type::TOP) {
         // 'n' is dead. Treat as if zero check is still there to avoid any further optimizations.
         return false;
       }
@@ -1834,8 +1832,8 @@ void PhaseCCP::analyze() {
         // If n is used in a counted loop exit condition then the type
         // of the counted loop's Phi depends on the type of n. See
         // PhiNode::Value().
-        if (m_op == Op_CmpI) {
-          PhiNode* phi = countedloop_phi_from_cmp((CmpINode*)m, n);
+        if (m_op == Op_CmpI || m_op == Op_CmpL) {
+          PhiNode* phi = countedloop_phi_from_cmp(m->as_Cmp(), n);
           if (phi != NULL) {
             worklist.push(phi);
           }
@@ -1863,6 +1861,24 @@ void PhaseCCP::analyze() {
             }
           }
         }
+        push_and(worklist, n, m);
+      }
+    }
+  }
+}
+
+// AndI/L::Value() optimizes patterns similar to (v << 2) & 3 to zero if they are bitwise disjoint.
+// Add the AndI/L nodes back to the worklist to re-apply Value() in case the shift value changed.
+void PhaseCCP::push_and(Unique_Node_List& worklist, const Node* parent, const Node* use) const {
+  uint use_op = use->Opcode();
+  if ((use_op == Op_LShiftI || use_op == Op_LShiftL)
+      && use->in(2) == parent) { // is shift value (right-hand side of LShift)
+    for (DUIterator_Fast imax, i = use->fast_outs(imax); i < imax; i++) {
+      Node* and_node = use->fast_out(i);
+      uint and_node_op = and_node->Opcode();
+      if ((and_node_op == Op_AndI || and_node_op == Op_AndL)
+          && and_node->bottom_type() != type(and_node)) {
+        worklist.push(and_node);
       }
     }
   }
@@ -1967,7 +1983,9 @@ Node *PhaseCCP::transform_once( Node *n ) {
 
   // TEMPORARY fix to ensure that 2nd GVN pass eliminates NULL checks
   switch( n->Opcode() ) {
-  case Op_FastLock:      // Revisit FastLocks for lock coarsening
+  case Op_CallStaticJava:  // Give post-parse call devirtualization a chance
+  case Op_CallDynamicJava:
+  case Op_FastLock:        // Revisit FastLocks for lock coarsening
   case Op_If:
   case Op_CountedLoopEnd:
   case Op_Region:

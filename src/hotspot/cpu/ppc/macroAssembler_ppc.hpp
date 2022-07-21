@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -87,6 +87,16 @@ class MacroAssembler: public Assembler {
 
   // nop padding
   void align(int modulus, int max = 252, int rem = 0);
+
+  // Align prefix opcode to make sure it's not on the last word of a
+  // 64-byte block.
+  //
+  // Note: do not call align_prefix() in a .ad file (e.g. ppc.ad).  Instead
+  // add ins_alignment(2) to the instruct definition and implement the
+  // compute_padding() method of the instruct node to use
+  // compute_prefix_padding().  See loadConI32Node::compute_padding() in
+  // ppc.ad for an example.
+  void align_prefix();
 
   //
   // Constants, loading constants, TOC support
@@ -898,7 +908,7 @@ class MacroAssembler: public Assembler {
   void _verify_klass_ptr(Register reg, const char * msg, const char * file, int line) {}
 
   // Convenience method returning function entry. For the ELFv1 case
-  // creates function descriptor at the current address and returs
+  // creates function descriptor at the current address and returns
   // the pointer to it. For the ELFv2 case returns the current address.
   inline address function_entry();
 

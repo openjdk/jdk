@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "cds/classListParser.hpp"
 #include "cds/lambdaFormInvokers.hpp"
 #include "cds/metaspaceShared.hpp"
+#include "cds/unregisteredClasses.hpp"
 #include "classfile/classLoaderExt.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
@@ -63,7 +64,7 @@ ClassListParser::ClassListParser(const char* file) : _id2klass_table(INITIAL_TAB
   if (fd != -1) {
     // Obtain a File* from the file descriptor so that fgets()
     // can be used in parse_one_line()
-    _file = os::open(fd, "r");
+    _file = os::fdopen(fd, "r");
   }
   if (_file == NULL) {
     char errmsg[JVM_MAXPATHLEN];
@@ -120,6 +121,13 @@ int ClassListParser::parse(TRAPS) {
         return 0; // THROW
       }
 
+      ResourceMark rm(THREAD);
+      char* ex_msg = (char*)"";
+      oop message = java_lang_Throwable::message(PENDING_EXCEPTION);
+      if (message != NULL) {
+        ex_msg = java_lang_String::as_utf8_string(message);
+      }
+      log_warning(cds)("%s: %s", PENDING_EXCEPTION->klass()->external_name(), ex_msg);
       // We might have an invalid class name or an bad class. Warn about it
       // and keep going to the next line.
       CLEAR_PENDING_EXCEPTION;
@@ -438,9 +446,9 @@ void ClassListParser::error(const char* msg, ...) {
 // This function is used for loading classes for customized class loaders
 // during archive dumping.
 InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS) {
-#if !(defined(_LP64) && (defined(LINUX) || defined(__APPLE__)))
+#if !(defined(_LP64) && (defined(LINUX) || defined(__APPLE__) || defined(_WINDOWS)))
   // The only supported platforms are: (1) Linux/64-bit and (2) Solaris/64-bit and
-  // (3) MacOSX/64-bit
+  // (3) MacOSX/64-bit and (4) Windowss/64-bit
   // This #if condition should be in sync with the areCustomLoadersSupportedForCDS
   // method in test/lib/jdk/test/lib/Platform.java.
   error("AppCDS custom class loaders not supported on this platform");
@@ -458,7 +466,7 @@ InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS
     THROW_NULL(vmSymbols::java_lang_ClassNotFoundException());
   }
 
-  InstanceKlass* k = ClassLoaderExt::load_class(class_name, _source, CHECK_NULL);
+  InstanceKlass* k = UnregisteredClasses::load_class(class_name, _source, CHECK_NULL);
   if (k->local_interfaces()->length() != _interfaces->length()) {
     print_specified_interfaces();
     print_actual_interfaces(k);
@@ -466,15 +474,13 @@ InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS
           _interfaces->length(), k->local_interfaces()->length());
   }
 
-  bool added = SystemDictionaryShared::add_unregistered_class_for_static_archive(THREAD, k);
+  assert(k->is_shared_unregistered_class(), "must be");
+
+  bool added = SystemDictionaryShared::add_unregistered_class(THREAD, k);
   if (!added) {
     // We allow only a single unregistered class for each unique name.
     error("Duplicated class %s", _class_name);
   }
-
-  // This tells JVM_FindLoadedClass to not find this class.
-  k->set_shared_classpath_index(UNREGISTERED_INDEX);
-  k->clear_shared_class_loader_type();
 
   return k;
 }

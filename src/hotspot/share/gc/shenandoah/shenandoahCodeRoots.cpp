@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2017, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@ void ShenandoahParallelCodeHeapIterator::parallel_blobs_do(CodeBlobClosure* f) {
     int current = count++;
     if ((current & stride_mask) == 0) {
       process_block = (current >= _claimed_idx) &&
-                      (Atomic::cmpxchg(&_claimed_idx, current, current + stride) == current);
+                      (Atomic::cmpxchg(&_claimed_idx, current, current + stride, memory_order_relaxed) == current);
     }
     if (process_block) {
       if (cb->is_alive()) {
@@ -111,7 +111,7 @@ void ShenandoahCodeRoots::initialize() {
 }
 
 void ShenandoahCodeRoots::register_nmethod(nmethod* nm) {
-  assert_locked_or_safepoint(CodeCache_lock);
+  assert(CodeCache_lock->owned_by_self(), "Must have CodeCache_lock held");
   _nmethod_table->register_nmethod(nm);
 }
 
@@ -121,22 +121,13 @@ void ShenandoahCodeRoots::unregister_nmethod(nmethod* nm) {
 }
 
 void ShenandoahCodeRoots::flush_nmethod(nmethod* nm) {
-  assert_locked_or_safepoint(CodeCache_lock);
+  assert(CodeCache_lock->owned_by_self(), "Must have CodeCache_lock held");
   _nmethod_table->flush_nmethod(nm);
 }
 
 void ShenandoahCodeRoots::arm_nmethods() {
-  assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
-  _disarmed_value ++;
-  // 0 is reserved for new nmethod
-  if (_disarmed_value == 0) {
-    _disarmed_value = 1;
-  }
-
-  JavaThreadIteratorWithHandle jtiwh;
-  for (JavaThread *thr = jtiwh.next(); thr != NULL; thr = jtiwh.next()) {
-    ShenandoahThreadLocalData::set_disarmed_value(thr, _disarmed_value);
-  }
+  assert(BarrierSet::barrier_set()->barrier_set_nmethod() != NULL, "Sanity");
+  BarrierSet::barrier_set()->barrier_set_nmethod()->arm_all_nmethods();
 }
 
 class ShenandoahDisarmNMethodClosure : public NMethodClosure {
@@ -153,14 +144,14 @@ public:
   }
 };
 
-class ShenandoahDisarmNMethodsTask : public AbstractGangTask {
+class ShenandoahDisarmNMethodsTask : public WorkerTask {
 private:
   ShenandoahDisarmNMethodClosure      _cl;
   ShenandoahConcurrentNMethodIterator _iterator;
 
 public:
   ShenandoahDisarmNMethodsTask() :
-    AbstractGangTask("Shenandoah Disarm NMethods"),
+    WorkerTask("Shenandoah Disarm NMethods"),
     _iterator(ShenandoahCodeRoots::table()) {
     assert(SafepointSynchronize::is_at_safepoint(), "Only at a safepoint");
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
@@ -244,7 +235,13 @@ public:
     if (_bs->is_armed(nm)) {
       ShenandoahEvacOOMScope oom_evac_scope;
       ShenandoahNMethod::heal_nmethod_metadata(nm_data);
-      _bs->disarm(nm);
+      if (Continuations::enabled()) {
+        // Loom needs to know about visited nmethods. Arm the nmethods to get
+        // mark_as_maybe_on_continuation() callbacks when they are used again.
+        _bs->arm(nm, 0);
+      } else {
+        _bs->disarm(nm);
+      }
     }
 
     // Clear compiled ICs and exception caches
@@ -258,7 +255,7 @@ public:
   }
 };
 
-class ShenandoahUnlinkTask : public AbstractGangTask {
+class ShenandoahUnlinkTask : public WorkerTask {
 private:
   ShenandoahNMethodUnlinkClosure      _cl;
   ICRefillVerifier*                   _verifier;
@@ -266,7 +263,7 @@ private:
 
 public:
   ShenandoahUnlinkTask(bool unloading_occurred, ICRefillVerifier* verifier) :
-    AbstractGangTask("Shenandoah Unlink NMethods"),
+    WorkerTask("Shenandoah Unlink NMethods"),
     _cl(unloading_occurred),
     _verifier(verifier),
     _iterator(ShenandoahCodeRoots::table()) {
@@ -289,7 +286,7 @@ public:
   }
 };
 
-void ShenandoahCodeRoots::unlink(WorkGang* workers, bool unloading_occurred) {
+void ShenandoahCodeRoots::unlink(WorkerThreads* workers, bool unloading_occurred) {
   assert(ShenandoahHeap::heap()->unload_classes(), "Only when running concurrent class unloading");
 
   for (;;) {
@@ -320,14 +317,14 @@ public:
   }
 };
 
-class ShenandoahNMethodPurgeTask : public AbstractGangTask {
+class ShenandoahNMethodPurgeTask : public WorkerTask {
 private:
   ShenandoahNMethodPurgeClosure       _cl;
   ShenandoahConcurrentNMethodIterator _iterator;
 
 public:
   ShenandoahNMethodPurgeTask() :
-    AbstractGangTask("Shenandoah Purge NMethods"),
+    WorkerTask("Shenandoah Purge NMethods"),
     _cl(),
     _iterator(ShenandoahCodeRoots::table()) {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
@@ -344,7 +341,7 @@ public:
   }
 };
 
-void ShenandoahCodeRoots::purge(WorkGang* workers) {
+void ShenandoahCodeRoots::purge(WorkerThreads* workers) {
   assert(ShenandoahHeap::heap()->unload_classes(), "Only when running concurrent class unloading");
 
   ShenandoahNMethodPurgeTask task;
@@ -355,15 +352,15 @@ ShenandoahCodeRootsIterator::ShenandoahCodeRootsIterator() :
         _par_iterator(CodeCache::heaps()),
         _table_snapshot(NULL) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at safepoint");
-  assert(!Thread::current()->is_Worker_thread(), "Should not be acquired by workers");
-  CodeCache_lock->lock_without_safepoint_check();
+  MutexLocker locker(CodeCache_lock, Mutex::_no_safepoint_check_flag);
   _table_snapshot = ShenandoahCodeRoots::table()->snapshot_for_iteration();
 }
 
 ShenandoahCodeRootsIterator::~ShenandoahCodeRootsIterator() {
+  MonitorLocker locker(CodeCache_lock, Mutex::_no_safepoint_check_flag);
   ShenandoahCodeRoots::table()->finish_iteration(_table_snapshot);
   _table_snapshot = NULL;
-  CodeCache_lock->unlock();
+  locker.notify_all();
 }
 
 void ShenandoahCodeRootsIterator::possibly_parallel_blobs_do(CodeBlobClosure *f) {

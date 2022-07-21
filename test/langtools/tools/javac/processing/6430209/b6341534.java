@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
 import javax.lang.model.util.*;
 import static javax.lang.model.util.ElementFilter.*;
-import static javax.tools.Diagnostic.Kind.*;
 import java.util.*;
 import java.util.Set;
 
@@ -48,7 +47,7 @@ public class b6341534 extends JavacTestingAbstractProcessor {
                     System.out.println("found " + e.toString() + " in dir1.");
             }
             catch(NullPointerException npe) {
-                messager.printMessage(ERROR,npe.toString());
+                messager.printError(npe.toString());
                 //npe.printStackTrace();
                 return false;
             }
@@ -56,9 +55,9 @@ public class b6341534 extends JavacTestingAbstractProcessor {
         // on round 1, expect errorRaised == false && processingOver == false
         // on round 2, expect errorRaised == true && processingOver == true
         if( renv.errorRaised() != renv.processingOver()) {
-            messager.printMessage(ERROR, "FAILED: round:" + r
-                + ", errorRaised:" + renv.errorRaised()
-                + ", processingOver:" + renv.processingOver());
+            messager.printError("FAILED: round:" + r
+                                + ", errorRaised:" + renv.errorRaised()
+                                + ", processingOver:" + renv.processingOver());
         }
         return true;
     }

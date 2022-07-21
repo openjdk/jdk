@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,10 +55,7 @@ address CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf, address mark) 
   }
   // Static stub relocation stores the instruction address of the call.
   __ relocate(static_stub_Relocation::spec(mark), Assembler::imm_operand);
-  // Static stub relocation also tags the Method* in the code-stream.
-  __ mov_metadata(rbx, (Metadata*) NULL);  // Method is zapped till fixup time.
-  // This is recognized as unresolved by relocs/nativeinst/ic code.
-  __ jump(RuntimeAddress(__ pc()));
+  __ emit_static_call_stub();
 
   assert(__ pc() - base <= to_interp_stub_size(), "wrong stub size");
 

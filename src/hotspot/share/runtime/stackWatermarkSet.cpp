@@ -26,11 +26,11 @@
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/stackWatermark.inline.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/preserveException.hpp"
@@ -126,6 +126,15 @@ void StackWatermarkSet::start_processing(JavaThread* jt, StackWatermarkKind kind
   // We don't call SafepointMechanism::update_poll_values here, because the thread
   // calling this might not be Thread::current(). The thread the stack belongs to
   // will always update the poll values when waking up from a safepoint.
+}
+
+bool StackWatermarkSet::processing_started(JavaThread* jt) {
+  for (StackWatermark* current = head(jt); current != NULL; current = current->next()) {
+    if (!current->processing_started()) {
+      return false;
+    }
+  }
+  return true;
 }
 
 void StackWatermarkSet::finish_processing(JavaThread* jt, void* context, StackWatermarkKind kind) {

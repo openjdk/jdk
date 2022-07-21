@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -24,23 +24,22 @@
 
 /*
  * @test
+ * @enablePreview
  * @bug 8248421
  * @summary SystemCLinker should have a way to free memory allocated outside Java
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestFree
  */
 
-import jdk.incubator.foreign.MemoryAccess;
-import jdk.incubator.foreign.MemoryAddress;
-import jdk.incubator.foreign.MemoryLayout;
-import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.ResourceScope;
+import java.lang.foreign.MemoryAddress;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.MemorySession;
 
-import static jdk.incubator.foreign.CLinker.*;
 import static org.testng.Assert.assertEquals;
 
-public class TestFree {
+public class TestFree extends NativeTestHelper {
     private static MemorySegment asArray(MemoryAddress addr, MemoryLayout layout, int numElements) {
-        return addr.asSegment(numElements * layout.byteSize(), ResourceScope.globalScope());
+        return MemorySegment.ofAddress(addr, numElements * layout.byteSize(), MemorySession.global());
     }
 
     public void test() throws Throwable {
@@ -48,8 +47,8 @@ public class TestFree {
         MemoryAddress addr = allocateMemory(str.length() + 1);
         MemorySegment seg = asArray(addr, C_CHAR, str.length() + 1);
         seg.copyFrom(MemorySegment.ofArray(str.getBytes()));
-        MemoryAccess.setByteAtOffset(seg, str.length(), (byte)0);
-        assertEquals(str, toJavaString(seg));
+        seg.set(C_CHAR, str.length(), (byte)0);
+        assertEquals(str, seg.getUtf8String(0));
         freeMemory(addr);
     }
 }

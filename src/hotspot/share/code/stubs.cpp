@@ -109,17 +109,22 @@ Stub* StubQueue::stub_containing(address pc) const {
 
 Stub* StubQueue::request_committed(int code_size) {
   Stub* s = request(code_size);
-  CodeStrings strings;
-  if (s != NULL) commit(code_size, strings);
+  if (s != NULL) commit(code_size);
   return s;
 }
 
+int StubQueue::compute_stub_size(Stub* stub, int code_size) {
+  address stub_begin = (address) stub;
+  address code_begin = stub_code_begin(stub);
+  address code_end = align_up(code_begin + code_size, stub_alignment());
+  return (int)(code_end - stub_begin);
+}
 
 Stub* StubQueue::request(int requested_code_size) {
   assert(requested_code_size > 0, "requested_code_size must be > 0");
   if (_mutex != NULL) _mutex->lock_without_safepoint_check();
   Stub* s = current_stub();
-  int requested_size = align_up(stub_code_size_to_size(requested_code_size), CodeEntryAlignment);
+  int requested_size = compute_stub_size(s, requested_code_size);
   if (requested_size <= available_space()) {
     if (is_contiguous()) {
       // Queue: |...|XXXXXXX|.............|
@@ -127,8 +132,7 @@ Stub* StubQueue::request(int requested_code_size) {
       assert(_buffer_limit == _buffer_size, "buffer must be fully usable");
       if (_queue_end + requested_size <= _buffer_size) {
         // code fits in at the end => nothing to do
-        CodeStrings strings;
-        stub_initialize(s, requested_size, strings);
+        stub_initialize(s, requested_size);
         return s;
       } else {
         // stub doesn't fit in at the queue end
@@ -145,8 +149,7 @@ Stub* StubQueue::request(int requested_code_size) {
     // Queue: |XXX|.......|XXXXXXX|.......|
     //        ^0  ^end    ^begin  ^limit  ^size
     s = current_stub();
-    CodeStrings strings;
-    stub_initialize(s, requested_size, strings);
+    stub_initialize(s, requested_size);
     return s;
   }
   // Not enough space left
@@ -155,12 +158,12 @@ Stub* StubQueue::request(int requested_code_size) {
 }
 
 
-void StubQueue::commit(int committed_code_size, CodeStrings& strings) {
+void StubQueue::commit(int committed_code_size) {
   assert(committed_code_size > 0, "committed_code_size must be > 0");
-  int committed_size = align_up(stub_code_size_to_size(committed_code_size), CodeEntryAlignment);
   Stub* s = current_stub();
+  int committed_size = compute_stub_size(s, committed_code_size);
   assert(committed_size <= stub_size(s), "committed size must not exceed requested size");
-  stub_initialize(s, committed_size, strings);
+  stub_initialize(s, committed_size);
   _queue_end += committed_size;
   _number_of_stubs++;
   if (_mutex != NULL) _mutex->unlock();
@@ -214,10 +217,10 @@ void StubQueue::verify() {
   guarantee(0 <= _queue_begin  && _queue_begin  <  _buffer_limit, "_queue_begin out of bounds");
   guarantee(0 <= _queue_end    && _queue_end    <= _buffer_limit, "_queue_end   out of bounds");
   // verify alignment
-  guarantee(_buffer_size  % CodeEntryAlignment == 0, "_buffer_size  not aligned");
-  guarantee(_buffer_limit % CodeEntryAlignment == 0, "_buffer_limit not aligned");
-  guarantee(_queue_begin  % CodeEntryAlignment == 0, "_queue_begin  not aligned");
-  guarantee(_queue_end    % CodeEntryAlignment == 0, "_queue_end    not aligned");
+  guarantee(_buffer_size  % stub_alignment() == 0, "_buffer_size  not aligned");
+  guarantee(_buffer_limit % stub_alignment() == 0, "_buffer_limit not aligned");
+  guarantee(_queue_begin  % stub_alignment() == 0, "_queue_begin  not aligned");
+  guarantee(_queue_end    % stub_alignment() == 0, "_queue_end    not aligned");
   // verify buffer limit/size relationship
   if (is_contiguous()) {
     guarantee(_buffer_limit == _buffer_size, "_buffer_limit must equal _buffer_size");

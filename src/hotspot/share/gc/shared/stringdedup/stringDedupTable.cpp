@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -228,7 +228,7 @@ void StringDedup::Table::Bucket::verify(size_t bucket_index,
 // If a dead count report is received while cleaning, further cleaning may
 // reduce the number of dead entries.  With STW reference processing one
 // could maintain an accurate dead count by deducting cleaned entries.  But
-// that doesn't work for concurrent reference processsing.  In that case the
+// that doesn't work for concurrent reference processing.  In that case the
 // dead count being reported may include entries that have already been
 // removed by concurrent cleaning.
 //

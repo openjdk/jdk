@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,17 +26,18 @@
  * @summary Test that touching noaccess area in class ReservedHeapSpace results in SIGSEGV/ACCESS_VIOLATION
  * @library /test/lib
  * @requires vm.bits == 64
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run driver ReadFromNoaccessArea
  */
 
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 import jtreg.SkippedException;
 
 public class ReadFromNoaccessArea {
@@ -62,6 +63,7 @@ public class ReadFromNoaccessArea {
     if (output.getStdout() != null && output.getStdout().contains("WB_ReadFromNoaccessArea method is useless")) {
       throw new SkippedException("There is no protected page in ReservedHeapSpace in these circumstance");
     }
+    output.shouldNotHaveExitValue(0);
     if (Platform.isWindows()) {
       output.shouldContain("EXCEPTION_ACCESS_VIOLATION");
     } else if (Platform.isOSX()) {
@@ -76,7 +78,6 @@ public class ReadFromNoaccessArea {
     // This method calls whitebox method reading from noaccess area
     public static void main(String args[]) throws Exception {
       WhiteBox.getWhiteBox().readFromNoaccessArea();
-      throw new Exception("Call of readFromNoaccessArea succeeded! This is wrong. Crash expected. Test failed.");
     }
   }
 

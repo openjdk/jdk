@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,17 +46,22 @@ public:
 template<
     class STORAGE,
     typename K, typename V,
-    unsigned (*HASH)  (K const&),
-    bool     (*EQUALS)(K const&, K const&),
     ResourceObj::allocation_type ALLOC_TYPE,
-    MEMFLAGS MEM_TYPE
+    MEMFLAGS MEM_TYPE,
+    unsigned (*HASH)  (K const&),
+    bool     (*EQUALS)(K const&, K const&)
     >
 class ResourceHashtableBase : public STORAGE {
   using Node = ResourceHashtableNode<K, V>;
  private:
   int _number_of_entries;
 
-  Node** bucket_at(unsigned index) const {
+  Node** bucket_at(unsigned index) {
+    Node** t = table();
+    return &t[index];
+  }
+
+  const Node* const* bucket_at(unsigned index) const {
     Node** t = table();
     return &t[index];
   }
@@ -198,18 +203,62 @@ class ResourceHashtableBase : public STORAGE {
   // the iteration is cancelled.
   template<class ITER>
   void iterate(ITER* iter) const {
+    auto function = [&] (K& k, V& v) {
+      return iter->do_entry(k, v);
+    };
+    iterate(function);
+  }
+
+  template<typename Function>
+  void iterate(Function function) const { // lambda enabled API
     Node* const* bucket = table();
     const unsigned sz = table_size();
     while (bucket < bucket_at(sz)) {
       Node* node = *bucket;
       while (node != NULL) {
-        bool cont = iter->do_entry(node->_key, node->_value);
+        bool cont = function(node->_key, node->_value);
         if (!cont) { return; }
         node = node->_next;
       }
       ++bucket;
     }
   }
+
+  // same as above, but unconditionally iterate all entries
+  template<typename Function>
+  void iterate_all(Function function) const { // lambda enabled API
+    auto wrapper = [&] (K& k, V& v) {
+      function(k, v);
+      return true;
+    };
+    iterate(wrapper);
+  }
+
+  // ITER contains bool do_entry(K const&, V const&), which will be
+  // called for each entry in the table.  If do_entry() returns true,
+  // the entry is deleted.
+  template<class ITER>
+  void unlink(ITER* iter) {
+    const unsigned sz = table_size();
+    for (unsigned index = 0; index < sz; index++) {
+      Node** ptr = bucket_at(index);
+      while (*ptr != NULL) {
+        Node* node = *ptr;
+        // do_entry must clean up the key and value in Node.
+        bool clean = iter->do_entry(node->_key, node->_value);
+        if (clean) {
+          *ptr = node->_next;
+          if (ALLOC_TYPE == ResourceObj::C_HEAP) {
+            delete node;
+          }
+          _number_of_entries --;
+        } else {
+          ptr = &(node->_next);
+        }
+      }
+    }
+  }
+
 };
 
 template<unsigned TABLE_SIZE, typename K, typename V>
@@ -232,19 +281,19 @@ protected:
 
 template<
     typename K, typename V,
-    unsigned (*HASH)  (K const&)           = primitive_hash<K>,
-    bool     (*EQUALS)(K const&, K const&) = primitive_equals<K>,
     unsigned SIZE = 256,
     ResourceObj::allocation_type ALLOC_TYPE = ResourceObj::RESOURCE_AREA,
-    MEMFLAGS MEM_TYPE = mtInternal
+    MEMFLAGS MEM_TYPE = mtInternal,
+    unsigned (*HASH)  (K const&)           = primitive_hash<K>,
+    bool     (*EQUALS)(K const&, K const&) = primitive_equals<K>
     >
 class ResourceHashtable : public ResourceHashtableBase<
   FixedResourceHashtableStorage<SIZE, K, V>,
-    K, V, HASH, EQUALS, ALLOC_TYPE, MEM_TYPE> {
+    K, V, ALLOC_TYPE, MEM_TYPE, HASH, EQUALS> {
   NONCOPYABLE(ResourceHashtable);
 public:
   ResourceHashtable() : ResourceHashtableBase<FixedResourceHashtableStorage<SIZE, K, V>,
-                                              K, V, HASH, EQUALS, ALLOC_TYPE, MEM_TYPE>() {}
+                                              K, V, ALLOC_TYPE, MEM_TYPE, HASH, EQUALS>() {}
 };
 
 #endif // SHARE_UTILITIES_RESOURCEHASH_HPP

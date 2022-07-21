@@ -241,7 +241,7 @@ public final class MarlinProperties {
     // system property utilities
     @SuppressWarnings("removal")
     static boolean getBoolean(final String key, final String def) {
-        return Boolean.valueOf(AccessController.doPrivileged(
+        return Boolean.parseBoolean(AccessController.doPrivileged(
                   new GetPropertyAction(key, def)));
     }
 

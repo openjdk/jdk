@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,27 +62,29 @@ public class DocLintTest {
     JavaFileObject file;
 
     final String code =
-        /* 01 */    "/** Class comment. */\n" +
-        /* 02 */    "public class Test {\n" +
-        /* 03 */    "    /** Method comment. */\n" +
-        /* 04 */    "    public void method() { }\n" +
-        /* 05 */    "\n" +
-        /* 06 */    "    /** Syntax < error. */\n" +
-        /* 07 */    "    private void syntaxError() { }\n" +
-        /* 08 */    "\n" +
-        /* 09 */    "    /** @see DoesNotExist */\n" +
-        /* 10 */    "    protected void referenceError() { }\n" +
-        /* 08 */    "\n" +
-        /* 09 */    "    /** @return */\n" +
-        /* 10 */    "    public int emptyReturn() { return 0; }\n" +
-        /* 11 */    "}\n";
+            /* 01 */    "/** Class comment. */\n" +
+            /* 02 */    "public class Test { /** Constructor comment. */ Test() { }\n" +
+            /* 03 */    "    /** Method comment. */\n" +
+            /* 04 */    "    public void method() { }\n" +
+            /* 05 */    "\n" +
+            /* 06 */    "    /** Syntax < error. */\n" +
+            /* 07 */    "    private void syntaxError() { }\n" +
+            /* 08 */    "\n" +
+            /* 09 */    "    /** Description. \n" +
+            /* 10 */     "     * @see DoesNotExist */\n" +
+            /* 11 */    "    protected void referenceError() { }\n" +
+            /* 12 */    "\n" +
+            /* 13 */    "    /** Description. \n" +
+            /* 14 */    "     * @return */\n" +
+            /* 15 */    "    public int emptyReturn() { return 0; }\n" +
+            /* 16 */    "}\n";
 
     final String rawDiags = "-XDrawDiagnostics";
     private enum Message {
         // doclint messages
         DL_ERR6(ERROR, "Test.java:6:16: compiler.err.proc.messager: malformed HTML"),
-        DL_ERR9(ERROR, "Test.java:9:14: compiler.err.proc.messager: reference not found"),
-        DL_WRN12(WARNING, "Test.java:12:9: compiler.warn.proc.messager: no description for @return"),
+        DL_ERR10(ERROR, "Test.java:10:13: compiler.err.proc.messager: reference not found"),
+        DL_WRN14(WARNING, "Test.java:14:8: compiler.warn.proc.messager: no description for @return"),
 
         OPT_BADARG(ERROR, "error: invalid flag: -Xdoclint:badarg");
 
@@ -129,19 +131,19 @@ public class DocLintTest {
 
             test(Arrays.asList(rawDiags, "-Xdoclint"),
                     Main.Result.ERROR,
-                    EnumSet.of(Message.DL_ERR6, Message.DL_ERR9, Message.DL_WRN12));
+                    EnumSet.of(Message.DL_ERR6, Message.DL_ERR10, Message.DL_WRN14));
 
             test(Arrays.asList(rawDiags, "-Xdoclint:all/public"),
                     Main.Result.OK,
-                    EnumSet.of(Message.DL_WRN12));
+                    EnumSet.of(Message.DL_WRN14));
 
             test(Arrays.asList(rawDiags, "-Xdoclint:syntax,missing"),
                     Main.Result.ERROR,
-                    EnumSet.of(Message.DL_ERR6, Message.DL_WRN12));
+                    EnumSet.of(Message.DL_ERR6, Message.DL_WRN14));
 
             test(Arrays.asList(rawDiags, "-Xdoclint:reference"),
                     Main.Result.ERROR,
-                    EnumSet.of(Message.DL_ERR9));
+                    EnumSet.of(Message.DL_ERR10));
 
             test(Arrays.asList(rawDiags, "-Xdoclint:badarg"),
                     Main.Result.CMDERR,

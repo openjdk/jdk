@@ -387,7 +387,7 @@ public abstract class Point2D implements Cloneable {
      * Creates a new object of the same class and with the
      * same contents as this object.
      * @return     a clone of this instance.
-     * @exception  OutOfMemoryError            if there is not enough memory.
+     * @throws  OutOfMemoryError            if there is not enough memory.
      * @see        java.lang.Cloneable
      * @since      1.2
      */

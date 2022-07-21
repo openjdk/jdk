@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@
 #include "oops/method.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
+#include "runtime/continuationEntry.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/safepoint.hpp"
@@ -421,7 +422,7 @@ bool CompiledIC::set_to_monomorphic(CompiledICInfo& info) {
   // callsites. In addition ic_miss code will update a site to monomorphic if it determines
   // that an monomorphic call to the interpreter can now be monomorphic to compiled code.
   //
-  // In both of these cases the only thing being modifed is the jump/call target and these
+  // In both of these cases the only thing being modified is the jump/call target and these
   // transitions are mt_safe
 
   Thread *thread = Thread::current();
@@ -650,6 +651,13 @@ void CompiledStaticCall::compute_entry(const methodHandle& m, bool caller_is_nme
     assert(!m->is_method_handle_intrinsic(), "Compiled code should never call interpreter MH intrinsics");
     info._to_interpreter = true;
     info._entry      = m()->get_c2i_entry();
+  }
+}
+
+void CompiledStaticCall::compute_entry_for_continuation_entry(const methodHandle& m, StaticCallInfo& info) {
+  if (ContinuationEntry::is_interpreted_call(instruction_address())) {
+    info._to_interpreter = true;
+    info._entry = m()->get_c2i_entry();
   }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -281,11 +281,15 @@ void outputStream::print_julong(julong value) {
  *
  * indent is applied to each line.  Ends with a CR.
  */
-void outputStream::print_data(void* data, size_t len, bool with_ascii) {
+void outputStream::print_data(void* data, size_t len, bool with_ascii, bool rel_addr) {
   size_t limit = (len + 16) / 16 * 16;
   for (size_t i = 0; i < limit; ++i) {
     if (i % 16 == 0) {
-      indent().print(INTPTR_FORMAT_W(07) ":", i);
+      if (rel_addr) {
+        indent().print(INTPTR_FORMAT_W(07) ":", i);
+      } else {
+        indent().print(INTPTR_FORMAT ":", p2i((unsigned char*)data + i));
+      }
     }
     if (i % 2 == 0) {
       print(" ");
@@ -545,7 +549,7 @@ const char* make_log_name(const char* log_name, const char* force_directory) {
 }
 
 fileStream::fileStream(const char* file_name) {
-  _file = fopen(file_name, "w");
+  _file = os::fopen(file_name, "w");
   if (_file != NULL) {
     _need_close = true;
   } else {
@@ -555,7 +559,7 @@ fileStream::fileStream(const char* file_name) {
 }
 
 fileStream::fileStream(const char* file_name, const char* opentype) {
-  _file = fopen(file_name, opentype);
+  _file = os::fopen(file_name, opentype);
   if (_file != NULL) {
     _need_close = true;
   } else {
@@ -614,7 +618,7 @@ void fileStream::flush() {
 void fdStream::write(const char* s, size_t len) {
   if (_fd != -1) {
     // Make an unused local variable to avoid warning from gcc compiler.
-    size_t count = ::write(_fd, s, (int)len);
+    ssize_t count = ::write(_fd, s, (int)len);
     update_position(s, len);
   }
 }
@@ -746,7 +750,7 @@ void defaultStream::start_log() {
       outputStream *text = xs->text();
       for (SystemProperty* p = Arguments::system_properties(); p != NULL; p = p->next()) {
         assert(p->key() != NULL, "p->key() is NULL");
-        if (p->is_readable()) {
+        if (p->readable()) {
           // Print in two stages to avoid problems with long
           // keys/values.
           text->print_raw(p->key());
@@ -1079,7 +1083,7 @@ networkStream::networkStream() : bufferedStream(1024*10, 1024*10) {
 
   _socket = -1;
 
-  int result = os::socket(AF_INET, SOCK_STREAM, 0);
+  int result = ::socket(AF_INET, SOCK_STREAM, 0);
   if (result <= 0) {
     assert(false, "Socket could not be created!");
   } else {

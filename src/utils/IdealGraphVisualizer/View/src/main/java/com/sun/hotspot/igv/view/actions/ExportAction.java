@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import javax.swing.KeyStroke;
 import javax.swing.filechooser.FileFilter;
 import org.openide.util.*;
 import org.openide.util.actions.CallableSystemAction;
+import org.openide.util.Utilities;
 
 /**
  *
@@ -45,8 +46,9 @@ public final class ExportAction extends CallableSystemAction implements LookupLi
     private final Lookup.Result<ExportCookie> result;
 
     public ExportAction() {
-        putValue(Action.SHORT_DESCRIPTION, "Export current graph as SVG file");
-        putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_E, InputEvent.CTRL_MASK));
+        putValue(Action.SHORT_DESCRIPTION, "Export current graph as image file");
+        // D is the Control key on most platforms, the Command (meta) key on Macintosh
+        putValue(Action.ACCELERATOR_KEY, Utilities.stringToKey("D-E"));
         lookup = Utilities.actionsGlobalContext();
         result = lookup.lookup(new Lookup.Template<>(ExportCookie.class));
         result.addLookupListener(this);
@@ -66,12 +68,15 @@ public final class ExportAction extends CallableSystemAction implements LookupLi
 
             @Override
             public boolean accept(File f) {
-                return true;
+                String lcFileName = f.getName().toLowerCase();
+                return lcFileName.endsWith(".pdf") ||
+                       lcFileName.endsWith(".svg") ||
+                       f.isDirectory();
             }
 
             @Override
             public String getDescription() {
-                return "SVG files (*.svg)";
+                return "Image files (*.pdf, *.svg)";
             }
         });
         fc.setCurrentDirectory(new File(Settings.get().get(Settings.DIRECTORY, Settings.DIRECTORY_DEFAULT)));
@@ -80,7 +85,7 @@ public final class ExportAction extends CallableSystemAction implements LookupLi
         if (fc.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
             File file = fc.getSelectedFile();
             if (!file.getName().contains(".")) {
-                file = new File(file.getAbsolutePath() + ".svg");
+                file = new File(file.getAbsolutePath() + ".pdf");
             }
 
             File dir = file;

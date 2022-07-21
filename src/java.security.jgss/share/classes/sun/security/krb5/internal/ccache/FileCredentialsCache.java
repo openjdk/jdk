@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import sun.security.krb5.internal.*;
 import sun.security.util.SecurityProperties;
 
 import java.nio.charset.StandardCharsets;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -54,7 +55,7 @@ import java.io.InputStreamReader;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
 /**
- * CredentialsCache stores credentials(tickets, session keys, etc) in a
+ * CredentialsCache stores credentials(tickets, session keys, etc.) in a
  * semi-permanent store
  * for later use by different program.
  *
@@ -68,8 +69,7 @@ public class FileCredentialsCache extends CredentialsCache
     public Tag tag; // optional
     public PrincipalName primaryPrincipal;
     private Vector<Credentials> credentialsList;
-    private static String dir;
-    private static boolean DEBUG = Krb5.DEBUG;
+    private static final boolean DEBUG = Krb5.DEBUG;
 
     public static synchronized FileCredentialsCache acquireInstance(
                 PrincipalName principal, String cache) {
@@ -89,12 +89,7 @@ public class FileCredentialsCache extends CredentialsCache
             }
             fcc.load(cacheName);
             return fcc;
-        } catch (IOException e) {
-            // we don't handle it now, instead we return a null at the end.
-            if (DEBUG) {
-                e.printStackTrace();
-            }
-        } catch (KrbException e) {
+        } catch (IOException | KrbException e) {
             // we don't handle it now, instead we return a null at the end.
             if (DEBUG) {
                 e.printStackTrace();
@@ -119,9 +114,7 @@ public class FileCredentialsCache extends CredentialsCache
             fcc.init(principal, cacheName);
             return fcc;
         }
-        catch (IOException e) {
-        }
-        catch (KrbException e) {
+        catch (IOException | KrbException e) {
         }
         return null;
     }
@@ -133,15 +126,10 @@ public class FileCredentialsCache extends CredentialsCache
             fcc.init(principal, cacheName);
             return fcc;
         }
-        catch (IOException e) {
+        catch (IOException | KrbException e) {
             if (DEBUG) {
                 e.printStackTrace();
             }
-        } catch (KrbException e) {
-            if (DEBUG) {
-                e.printStackTrace();
-            }
-
         }
         return null;
     }
@@ -151,9 +139,7 @@ public class FileCredentialsCache extends CredentialsCache
 
     boolean exists(String cache) {
         File file = new File(cache);
-        if (file.exists()) {
-            return true;
-        } else return false;
+        return file.exists();
     }
 
     synchronized void init(PrincipalName principal, String name)
@@ -188,7 +174,7 @@ public class FileCredentialsCache extends CredentialsCache
                 }
             } else
                 primaryPrincipal = p;
-            credentialsList = new Vector<Credentials>();
+            credentialsList = new Vector<>();
             while (cis.available() > 0) {
                 Object cred = cis.readCred(version);
                 if (cred != null) {
@@ -215,7 +201,7 @@ public class FileCredentialsCache extends CredentialsCache
             if (credentialsList.isEmpty()) {
                 credentialsList.addElement(c);
             } else {
-                Credentials tmp = null;
+                Credentials tmp;
                 boolean matched = false;
 
                 for (int i = 0; i < credentialsList.size(); i++) {
@@ -236,7 +222,7 @@ public class FileCredentialsCache extends CredentialsCache
                         }
                     }
                 }
-                if (matched == false) {
+                if (!matched) {
                     if (DEBUG) {
                         System.out.println(" >>> FileCredentialsCache Ticket "
                                         +   "not exactly matched, "
@@ -261,7 +247,7 @@ public class FileCredentialsCache extends CredentialsCache
         try (FileOutputStream fos = new FileOutputStream(cacheName);
              CCacheOutputStream cos = new CCacheOutputStream(fos)) {
             cos.writeHeader(primaryPrincipal, version);
-            Credentials[] tmp = null;
+            Credentials[] tmp;
             if ((tmp = getCredsList()) != null) {
                 for (int i = 0; i < tmp.length; i++) {
                     cos.addCreds(tmp[i]);
@@ -322,7 +308,7 @@ public class FileCredentialsCache extends CredentialsCache
         }
     }
 
-    private List<ConfigEntry> configEntries = new ArrayList<>();
+    private final List<ConfigEntry> configEntries = new ArrayList<>();
 
     @Override
     public void addConfigEntry(ConfigEntry e) {
@@ -463,18 +449,15 @@ public class FileCredentialsCache extends CredentialsCache
         // http://docs.oracle.com/cd/E19082-01/819-2252/6n4i8rtr3/index.html
         @SuppressWarnings("removal")
         String name = java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<String>() {
-            @Override
-            public String run() {
-                String cache = System.getenv("KRB5CCNAME");
-                if (cache != null &&
-                        (cache.length() >= 5) &&
-                        cache.regionMatches(true, 0, "FILE:", 0, 5)) {
-                    cache = cache.substring(5);
-                }
-                return cache;
-            }
-        });
+                (PrivilegedAction<String>) () -> {
+                    String cache = System.getenv("KRB5CCNAME");
+                    if (cache != null &&
+                            (cache.length() >= 5) &&
+                            cache.regionMatches(true, 0, "FILE:", 0, 5)) {
+                        cache = cache.substring(5);
+                    }
+                    return cache;
+                });
         if (name != null) {
             if (DEBUG) {
                 System.out.println(">>>KinitOptions cache name is " + name);
@@ -540,7 +523,7 @@ public class FileCredentialsCache extends CredentialsCache
     }
 
     public static String checkValidation(String name) {
-        String fullname = null;
+        String fullname;
         if (name == null) {
             return null;
         }
@@ -567,29 +550,26 @@ public class FileCredentialsCache extends CredentialsCache
 
     private static String exec(String c) {
         StringTokenizer st = new StringTokenizer(c);
-        Vector<String> v = new Vector<>();
+        ArrayList<String> v = new ArrayList<>();
         while (st.hasMoreTokens()) {
-            v.addElement(st.nextToken());
+            v.add(st.nextToken());
         }
-        final String[] command = new String[v.size()];
-        v.copyInto(command);
+        final String[] command = v.toArray(new String[0]);
         try {
 
             @SuppressWarnings("removal")
             Process p =
                 java.security.AccessController.doPrivileged
-                (new java.security.PrivilegedAction<Process> () {
-                        public Process run() {
-                            try {
-                                return (Runtime.getRuntime().exec(command));
-                            } catch (java.io.IOException e) {
-                                if (DEBUG) {
-                                    e.printStackTrace();
-                                }
-                                return null;
-                            }
+                ((PrivilegedAction<Process>) () -> {
+                    try {
+                        return (Runtime.getRuntime().exec(command));
+                    } catch (IOException e) {
+                        if (DEBUG) {
+                            e.printStackTrace();
                         }
-                    });
+                        return null;
+                    }
+                });
             if (p == null) {
                 // exception occurred during executing the command
                 return null;
@@ -598,7 +578,7 @@ public class FileCredentialsCache extends CredentialsCache
             BufferedReader commandResult =
                 new BufferedReader
                     (new InputStreamReader(p.getInputStream(), ISO_8859_1));
-            String s1 = null;
+            String s1;
             if ((command.length == 1) &&
                 (command[0].equals("/usr/bin/env"))) {
                 while ((s1 = commandResult.readLine()) != null) {

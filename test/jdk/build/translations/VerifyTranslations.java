@@ -45,7 +45,7 @@ public class VerifyTranslations {
      * The set of translations we want to see in an Oracle built image
      */
     private static final Set<String> VALID_TRANSLATION_SUFFIXES = Set.of(
-            "_en", "_en_US", "_en_US_POSIX", "_ja", "_zh_CN"
+            "_en", "_en_US", "_en_US_POSIX", "_ja", "_zh_CN", "_de"
     );
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -52,7 +52,7 @@ class FreeChunkListVector;
 //  which may be committed or uncommitted independently from each other.
 //
 // (Both root chunk areas and commit granules have not much to do with each other - one is a way to
-//   reserve memory for the upper regions, see ChunkManager. One is a way to manage commited memory.)
+//   reserve memory for the upper regions, see ChunkManager. One is a way to manage committed memory.)
 //
 // VirtualSpaceNode:
 //  - exposes a function to allocate a new root chunk (see VirtualSpaceNode::allocate_root_chunk()).
@@ -207,15 +207,6 @@ public:
   //
   // On success, true is returned, false otherwise.
   bool attempt_enlarge_chunk(Metachunk* c, FreeChunkListVector* freelists);
-
-  // Attempts to purge the node:
-  //
-  // If all chunks living in this node are free, they will all be removed from
-  //  the freelist they currently reside in. Then, the node will be deleted.
-  //
-  // Returns true if the node has been deleted, false if not.
-  // !! If this returns true, do not access the node from this point on. !!
-  bool attempt_purge(FreeChunkListVector* freelists);
 
   // Attempts to uncommit free areas according to the rules set in settings.
   // Returns number of words uncommitted.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,9 +36,9 @@ import com.sun.net.httpserver.*;
  */
 class Request {
 
-    final static int BUF_LEN = 2048;
-    final static byte CR = 13;
-    final static byte LF = 10;
+    static final int BUF_LEN = 2048;
+    static final byte CR = 13;
+    static final byte LF = 10;
 
     private String startLine;
     private SocketChannel chan;
@@ -208,7 +208,9 @@ class Request {
                         "sun.net.httpserver.maxReqHeaders) exceeded, " +
                         ServerConfig.getMaxReqHeaders() + ".");
             }
-
+            if (k == null) {  // Headers disallows null keys, use empty string
+                k = "";       // instead to represent invalid key
+            }
             hdrs.add (k,v);
             len = 0;
         }
@@ -230,7 +232,7 @@ class Request {
         int readlimit;
         static long readTimeout;
         ServerImpl server;
-        final static int BUFSIZE = 8 * 1024;
+        static final int BUFSIZE = 8 * 1024;
 
         public ReadStream (ServerImpl server, SocketChannel chan) throws IOException {
             this.channel = chan;

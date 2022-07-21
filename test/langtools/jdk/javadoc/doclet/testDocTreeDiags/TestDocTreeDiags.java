@@ -181,7 +181,11 @@ public class TestDocTreeDiags extends JavadocTester {
             fm.setLocationFromPaths(DocumentationTool.Location.DOCUMENTATION_OUTPUT, List.of(outDir));
             fm.setLocationFromPaths(DocumentationTool.Location.TAGLET_PATH, List.of(Path.of(System.getProperty("test.classes"))));
             Iterable<? extends JavaFileObject> files = Collections.emptyList();
-            Iterable<String> options = List.of("-taglet", MyTaglet.class.getName(), "-XDaccessInternalAPI", "p");
+            Iterable<String> options = List.of(
+                    "-taglet", MyTaglet.class.getName(),
+                    "-XDaccessInternalAPI",
+                    "-Xdoclint:all,-missing",
+                    "p");
             DocumentationTool.DocumentationTask t = tool.getTask(writer, fm, dl, null, options, files);
 
             checking("exit");

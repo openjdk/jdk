@@ -75,7 +75,7 @@ public abstract class FileTypeDetector {
      * <p> The means by which this method determines the file type is highly
      * implementation specific. It may simply examine the file name, it may use
      * a file <a href="../attribute/package-summary.html">attribute</a>,
-     * or it may examines bytes in the file.
+     * or it may examine bytes in the file.
      *
      * <p> The probe result is the string form of the value of a
      * Multipurpose Internet Mail Extension (MIME) content type as

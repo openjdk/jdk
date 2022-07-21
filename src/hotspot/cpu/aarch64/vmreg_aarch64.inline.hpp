@@ -26,17 +26,17 @@
 #ifndef CPU_AARCH64_VMREG_AARCH64_INLINE_HPP
 #define CPU_AARCH64_VMREG_AARCH64_INLINE_HPP
 
-inline VMReg RegisterImpl::as_VMReg() {
+inline VMReg RegisterImpl::as_VMReg() const {
   if( this==noreg ) return VMRegImpl::Bad();
   return VMRegImpl::as_VMReg(encoding() * RegisterImpl::max_slots_per_register);
 }
 
-inline VMReg FloatRegisterImpl::as_VMReg() {
+inline VMReg FloatRegisterImpl::as_VMReg() const {
   return VMRegImpl::as_VMReg((encoding() * FloatRegisterImpl::max_slots_per_register) +
                              ConcreteRegisterImpl::max_gpr);
 }
 
-inline VMReg PRegisterImpl::as_VMReg() {
+inline VMReg PRegisterImpl::as_VMReg() const {
   return VMRegImpl::as_VMReg(encoding() + ConcreteRegisterImpl::max_fpr);
 }
 

@@ -22,14 +22,17 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package sun.awt;
 
 import java.io.ByteArrayOutputStream;
-import java.io.OutputStreamWriter;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
-import java.nio.charset.StandardCharsets;
+
+import static java.nio.charset.StandardCharsets.UTF_16BE;
+import static java.nio.charset.StandardCharsets.UTF_16LE;
 
 public class FontDescriptor implements Cloneable {
 
@@ -109,9 +112,8 @@ public class FontDescriptor implements Cloneable {
     public boolean useUnicode() {
         if (useUnicode && unicodeEncoder == null) {
             try {
-                this.unicodeEncoder = isLE?
-                    StandardCharsets.UTF_16LE.newEncoder():
-                    StandardCharsets.UTF_16BE.newEncoder();
+                this.unicodeEncoder = isLE ? UTF_16LE.newEncoder():
+                                             UTF_16BE.newEncoder();
             } catch (IllegalArgumentException x) {}
         }
         return useUnicode;

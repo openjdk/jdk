@@ -45,7 +45,7 @@ class ArrayKlass: public Klass {
   // Constructors
   // The constructor with the Symbol argument does the real array
   // initialization, the other is a dummy
-  ArrayKlass(Symbol* name, KlassID id);
+  ArrayKlass(Symbol* name, KlassKind kind);
   ArrayKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for cds"); }
 
  public:
@@ -103,10 +103,6 @@ class ArrayKlass: public Klass {
   static int static_size(int header_size);
 
   virtual void metaspace_pointers_do(MetaspaceClosure* iter);
-
-  // Iterators
-  void array_klasses_do(void f(Klass* k));
-  void array_klasses_do(void f(Klass* k, TRAPS), TRAPS);
 
   // Return a handle.
   static void     complete_create_array_klass(ArrayKlass* k, Klass* super_klass, ModuleEntry* module, TRAPS);

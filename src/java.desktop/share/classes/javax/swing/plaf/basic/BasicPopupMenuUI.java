@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,26 +28,19 @@ package javax.swing.plaf.basic;
 import javax.swing.*;
 import javax.swing.event.*;
 import javax.swing.plaf.*;
-import javax.swing.plaf.basic.*;
-import javax.swing.border.*;
 
 import java.applet.Applet;
 
 import java.awt.Component;
-import java.awt.Container;
-import java.awt.Dimension;
+import java.awt.ComponentOrientation;
 import java.awt.KeyboardFocusManager;
 import java.awt.Window;
 import java.awt.event.*;
 import java.awt.AWTEvent;
 import java.awt.Toolkit;
 
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeEvent;
-
 import java.util.*;
 
-import sun.swing.DefaultLookup;
 import sun.swing.UIAction;
 
 import sun.awt.AppContext;
@@ -294,7 +287,7 @@ public class BasicPopupMenuUI extends PopupMenuUI {
      *
      * @since 1.4
      */
-    private class BasicPopupMenuListener implements PopupMenuListener {
+    private static class BasicPopupMenuListener implements PopupMenuListener {
         public void popupMenuCanceled(PopupMenuEvent e) {
         }
 
@@ -544,6 +537,11 @@ public class BasicPopupMenuUI extends PopupMenuUI {
             // If this is the case, we select another toplevel menu
             if (len > 1 && path[0] instanceof JMenuBar) {
                 MenuElement currentMenu = path[1];
+                // direction traversal to be reversed for RTL orientation
+                if (path[0].getComponent().getComponentOrientation().
+                        equals(ComponentOrientation.RIGHT_TO_LEFT)) {
+                    direction = !direction;
+                }
                 MenuElement nextMenu = findEnabledChild(
                     path[0].getSubElements(), currentMenu, direction);
 
@@ -958,12 +956,9 @@ public class BasicPopupMenuUI extends PopupMenuUI {
                     popup.putClientProperty("JPopupMenu.firePopupMenuCanceled", Boolean.TRUE);
                 }
                 MenuSelectionManager.defaultManager().clearSelectedPath();
-            } catch (RuntimeException ex) {
+            } catch (RuntimeException | Error e) {
                 realUngrabWindow();
-                throw ex;
-            } catch (Error err) {
-                realUngrabWindow();
-                throw err;
+                throw e;
             }
         }
 

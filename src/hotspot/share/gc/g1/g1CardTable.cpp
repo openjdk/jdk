@@ -62,7 +62,7 @@ void G1CardTable::initialize(G1RegionToSpaceMapper* mapper) {
   _covered[0] = _whole_heap;
 
   _byte_map = (CardValue*) mapper->reserved().start();
-  _byte_map_base = _byte_map - (uintptr_t(low_bound) >> card_shift);
+  _byte_map_base = _byte_map - (uintptr_t(low_bound) >> _card_shift);
   assert(byte_for(low_bound) == &_byte_map[0], "Checking start of map");
   assert(byte_for(high_bound-1) <= &_byte_map[_last_valid_index], "Checking end of map");
 

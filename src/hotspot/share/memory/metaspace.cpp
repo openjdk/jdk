@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,6 +31,7 @@
 #include "logging/logStream.hpp"
 #include "memory/classLoaderMetaspace.hpp"
 #include "memory/metaspace.hpp"
+#include "memory/metaspaceCriticalAllocation.hpp"
 #include "memory/metaspace/chunkHeaderPool.hpp"
 #include "memory/metaspace/chunkManager.hpp"
 #include "memory/metaspace/commitLimiter.hpp"
@@ -456,7 +457,7 @@ void MetaspaceGC::compute_new_size() {
     if (expand_bytes >= MinMetaspaceExpansion) {
       size_t new_capacity_until_GC = 0;
       bool succeeded = MetaspaceGC::inc_capacity_until_GC(expand_bytes, &new_capacity_until_GC);
-      assert(succeeded, "Should always succesfully increment HWM when at safepoint");
+      assert(succeeded, "Should always successfully increment HWM when at safepoint");
 
       Metaspace::tracer()->report_gc_threshold(capacity_until_GC,
                                                new_capacity_until_GC,
@@ -749,10 +750,6 @@ void Metaspace::global_initialize() {
     // If any of the archived space fails to map, UseSharedSpaces
     // is reset to false.
   }
-
-  if (DynamicDumpSharedSpaces && !UseSharedSpaces) {
-    vm_exit_during_initialization("DynamicDumpSharedSpaces is unsupported when base CDS archive is not loaded", NULL);
-  }
 #endif // INCLUDE_CDS
 
 #ifdef _LP64
@@ -767,7 +764,7 @@ void Metaspace::global_initialize() {
 
     // If CompressedClassSpaceBaseAddress is set, we attempt to force-map class space to
     // the given address. This is a debug-only feature aiding tests. Due to the ASLR lottery
-    // this may fail, in which case the VM will exit after printing an appropiate message.
+    // this may fail, in which case the VM will exit after printing an appropriate message.
     // Tests using this switch should cope with that.
     if (CompressedClassSpaceBaseAddress != 0) {
       base = (address)CompressedClassSpaceBaseAddress;
@@ -780,7 +777,7 @@ void Metaspace::global_initialize() {
       rs = ReservedSpace(size, Metaspace::reserve_alignment(),
                          os::vm_page_size() /* large */, (char*)base);
       if (rs.is_reserved()) {
-        log_info(metaspace)("Sucessfully forced class space address to " PTR_FORMAT, p2i(base));
+        log_info(metaspace)("Successfully forced class space address to " PTR_FORMAT, p2i(base));
       } else {
         vm_exit_during_initialization(
             err_msg("CompressedClassSpaceBaseAddress=" PTR_FORMAT " given, but reserving class space failed.",
@@ -867,8 +864,7 @@ void Metaspace::post_initialize() {
 }
 
 size_t Metaspace::max_allocation_word_size() {
-  const size_t max_overhead_words = metaspace::get_raw_word_size_for_requested_word_size(1);
-  return metaspace::chunklevel::MAX_CHUNK_WORD_SIZE - max_overhead_words;
+  return metaspace::chunklevel::MAX_CHUNK_WORD_SIZE;
 }
 
 // This version of Metaspace::allocate does not throw OOM but simply returns NULL, and
@@ -881,6 +877,9 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
 
   assert(loader_data != NULL, "Should never pass around a NULL loader_data. "
         "ClassLoaderData::the_null_class_loader_data() should have been used.");
+
+  // Deal with concurrent unloading failed allocation starvation
+  MetaspaceCriticalAllocation::block_if_concurrent_purge();
 
   MetadataType mdtype = (type == MetaspaceObj::ClassType) ? ClassType : NonClassType;
 
@@ -997,6 +996,10 @@ const char* Metaspace::metadata_type_name(Metaspace::MetadataType mdtype) {
 }
 
 void Metaspace::purge() {
+  // The MetaspaceCritical_lock is used by a concurrent GC to block out concurrent metaspace
+  // allocations, that would starve critical metaspace allocations, that are about to throw
+  // OOM if they fail; they need precedence for correctness.
+  MutexLocker ml(MetaspaceCritical_lock, Mutex::_no_safepoint_check_flag);
   ChunkManager* cm = ChunkManager::chunkmanager_nonclass();
   if (cm != NULL) {
     cm->purge();
@@ -1007,6 +1010,8 @@ void Metaspace::purge() {
       cm->purge();
     }
   }
+
+  MetaspaceCriticalAllocation::satisfy();
 }
 
 bool Metaspace::contains(const void* ptr) {

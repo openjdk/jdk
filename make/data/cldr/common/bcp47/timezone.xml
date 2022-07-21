@@ -176,7 +176,8 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="fotho" description="Faroe Islands" alias="Atlantic/Faeroe Atlantic/Faroe"/>
             <type name="frpar" description="Paris, France" alias="Europe/Paris"/>
             <type name="galbv" description="Libreville, Gabon" alias="Africa/Libreville"/>
-            <type name="gaza" description="Gaza Strip, Palestinian Territories" alias="Asia/Gaza"/>
+            <type name="gaza" description="Gaza Strip, Palestinian Territories" deprecated="true" preferred="gazastrp"/>
+            <type name="gazastrp" description="Gaza Strip, Palestinian Territories" alias="Asia/Gaza"/>
             <type name="gblon" description="London, United Kingdom" alias="Europe/London Europe/Belfast GB GB-Eire"/>
             <type name="gdgnd" description="Grenada" alias="America/Grenada"/>
             <type name="getbs" description="Tbilisi, Georgia" alias="Asia/Tbilisi"/>
@@ -228,7 +229,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="kgfru" description="Bishkek, Kyrgyzstan" alias="Asia/Bishkek"/>
             <type name="khpnh" description="Phnom Penh, Cambodia" alias="Asia/Phnom_Penh"/>
             <type name="kicxi" description="Kiritimati, Kiribati" alias="Pacific/Kiritimati"/>
-            <type name="kipho" description="Enderbury Island, Kiribati" alias="Pacific/Enderbury"/>
+            <type name="kipho" description="Enderbury Island, Kiribati" alias="Pacific/Enderbury Pacific/Kanton"/>
             <type name="kitrw" description="Tarawa, Kiribati" alias="Pacific/Tarawa"/>
             <type name="kmyva" description="Comoros" alias="Indian/Comoro"/>
             <type name="knbas" description="Saint Kitts" alias="America/St_Kitts"/>
@@ -393,7 +394,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="tvfun" description="Funafuti, Tuvalu" alias="Pacific/Funafuti"/>
             <type name="twtpe" description="Taipei, Taiwan" alias="Asia/Taipei ROC"/>
             <type name="tzdar" description="Dar es Salaam, Tanzania" alias="Africa/Dar_es_Salaam"/>
-            <type name="uaiev" description="Kiev, Ukraine" alias="Europe/Kiev"/>
+            <type name="uaiev" description="Kyiv, Ukraine" alias="Europe/Kiev"/>
             <type name="uaozh" description="Zaporizhia (Zaporozhye), Ukraine" alias="Europe/Zaporozhye"/>
             <type name="uasip" description="Simferopol, Ukraine" alias="Europe/Simferopol"/>
             <type name="uauzh" description="Uzhhorod (Uzhgorod), Ukraine" alias="Europe/Uzhgorod"/>

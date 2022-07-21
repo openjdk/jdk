@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,7 +91,11 @@ public class KeyStoreUtil {
     public static boolean isWindowsKeyStore(String storetype) {
         return storetype != null
                 && (storetype.equalsIgnoreCase("Windows-MY")
-                    || storetype.equalsIgnoreCase("Windows-ROOT"));
+                    || storetype.equalsIgnoreCase("Windows-ROOT")
+                    || storetype.equalsIgnoreCase("Windows-MY-CURRENTUSER")
+                    || storetype.equalsIgnoreCase("Windows-ROOT-CURRENTUSER")
+                    || storetype.equalsIgnoreCase("Windows-MY-LOCALMACHINE")
+                    || storetype.equalsIgnoreCase("Windows-ROOT-LOCALMACHINE"));
     }
 
     /**
@@ -102,6 +106,14 @@ public class KeyStoreUtil {
             return "Windows-MY";
         } else if(storetype.equalsIgnoreCase("Windows-ROOT")) {
             return "Windows-ROOT";
+        } else if(storetype.equalsIgnoreCase("Windows-MY-CURRENTUSER")) {
+            return "Windows-MY-CURRENTUSER";
+        } else if(storetype.equalsIgnoreCase("Windows-ROOT-CURRENTUSER")) {
+            return "Windows-ROOT-CURRENTUSER";
+        } else if(storetype.equalsIgnoreCase("Windows-MY-LOCALMACHINE")) {
+            return "Windows-MY-LOCALMACHINE";
+        } else if(storetype.equalsIgnoreCase("Windows-ROOT-LOCALMACHINE")) {
+            return "Windows-ROOT-LOCALMACHINE";
         } else {
             return storetype.toUpperCase(Locale.ENGLISH);
         }
@@ -225,7 +237,9 @@ public class KeyStoreUtil {
 
         List<String> result = new ArrayList<>();
         Properties p = new Properties();
-        p.load(new FileInputStream(file));
+        try (FileInputStream is = new FileInputStream(file)) {
+            p.load(is);
+        }
 
         String s = p.getProperty(tool + ".all");
         if (s != null) {

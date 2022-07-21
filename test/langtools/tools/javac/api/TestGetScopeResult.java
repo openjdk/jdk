@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8205418 8207229 8207230 8230847 8245786 8247334 8248641 8240658 8246774
+ * @bug 8205418 8207229 8207230 8230847 8245786 8247334 8248641 8240658 8246774 8274347
  * @summary Test the outcomes from Trees.getScope
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.comp
@@ -88,6 +88,7 @@ public class TestGetScopeResult {
         new TestGetScopeResult().testRecord();
         new TestGetScopeResult().testLocalRecordAnnotation();
         new TestGetScopeResult().testRuleCases();
+        new TestGetScopeResult().testNestedSwitchExpression();
     }
 
     public void run() throws IOException {
@@ -744,6 +745,77 @@ public class TestGetScopeResult {
                                                 "super:java.lang.Object",
                                                 "this:Test"
                                             ));
+
+            if (!expected.equals(actual)) {
+                throw new AssertionError("Unexpected Scope content: " + actual);
+            }
+        }
+    }
+
+    void testNestedSwitchExpression() throws IOException {
+        JavacTool c = JavacTool.create();
+        try (StandardJavaFileManager fm = c.getStandardFileManager(null, null, null)) {
+            String code = """
+                          class Test {
+                              void t(Object o1, Object o2) {
+                                  System.err.println(switch (o1) {
+                                    case String s -> switch (j) {
+                                        case Integer i -> {
+                                            int scopeHere;
+                                            yield "";
+                                        }
+                                        default -> "";
+                                    };
+                                    default -> "";
+                                  });
+                              }
+                          }
+                          """;
+            class MyFileObject extends SimpleJavaFileObject {
+                MyFileObject() {
+                    super(URI.create("myfo:///Test.java"), SOURCE);
+                }
+                @Override
+                public String getCharContent(boolean ignoreEncodingErrors) {
+                    return code;
+                }
+            }
+            Context ctx = new Context();
+            TestAnalyzer.preRegister(ctx);
+            JavacTask t = (JavacTask) c.getTask(null, fm, null, null, null,
+                                                List.of(new MyFileObject()), ctx);
+            CompilationUnitTree cut = t.parse().iterator().next();
+            t.analyze();
+
+            List<List<String>> actual = new ArrayList<>();
+
+            new TreePathScanner<Void, Void>() {
+                @Override
+                public Void visitVariable(VariableTree node, Void p) {
+                    if (node.getName().contentEquals("scopeHere")) {
+                        Scope scope = Trees.instance(t).getScope(getCurrentPath());
+                        actual.add(dumpScope(scope));
+                        JCTree body = getCaseBody(scope);
+                        if (body == null) {
+                            throw new AssertionError("Unexpected null body.");
+                        }
+                    }
+                    return super.visitVariable(node, p);
+                }
+                JCTree getCaseBody(Scope scope) {
+                    return ((JCCase) ((JavacScope) scope).getEnv().next.next.tree).body;
+                }
+            }.scan(cut, null);
+
+            List<List<String>> expected =
+                    List.of(List.of("scopeHere:int",
+                                    "i:java.lang.Integer",
+                                    "s:java.lang.String",
+                                    "o2:java.lang.Object",
+                                    "o1:java.lang.Object",
+                                    "super:java.lang.Object",
+                                    "this:Test"
+                                ));
 
             if (!expected.equals(actual)) {
                 throw new AssertionError("Unexpected Scope content: " + actual);

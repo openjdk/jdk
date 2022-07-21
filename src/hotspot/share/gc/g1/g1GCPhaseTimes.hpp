@@ -77,7 +77,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     RebuildFreeList,
     SampleCollectionSetCandidates,
     MergePSS,
-    RemoveSelfForwardingPtr,
+    RestoreRetainedRegions,
     ClearCardTable,
     RecalculateUsed,
     ResetHotCardCache,
@@ -87,6 +87,9 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 #endif
     EagerlyReclaimHumongousObjects,
     RestorePreservedMarks,
+    CLDClearClaimedMarks,
+    ResetMarkingState,
+    NoteStartOfMark,
     GCParPhasesSentinel
   };
 
@@ -120,6 +123,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     ScanHRScannedCards,
     ScanHRScannedBlocks,
     ScanHRClaimedChunks,
+    ScanHRFoundRoots,
     ScanHRScannedOptRefs,
     ScanHRUsedMemory
   };
@@ -140,6 +144,10 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     MergePSSLABUndoWasteBytes
   };
 
+  enum RestoreRetainedRegionsWorkItems {
+    RestoreRetainedRegionsNum,
+  };
+
   enum GCEagerlyReclaimHumongousObjectsItems {
     EagerlyReclaimNumTotal,
     EagerlyReclaimNumCandidates,
@@ -154,7 +162,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   double _cur_collection_initial_evac_time_ms;
   double _cur_optional_evac_time_ms;
-  double _cur_collection_code_root_fixup_time_ms;
+  double _cur_collection_nmethod_list_cleanup_time_ms;
 
   double _cur_merge_heap_roots_time_ms;
   double _cur_optional_merge_heap_roots_time_ms;
@@ -180,12 +188,8 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   double _recorded_prepare_heap_roots_time_ms;
 
-  double _recorded_clear_claimed_marks_time_ms;
-
   double _recorded_young_cset_choice_time_ms;
   double _recorded_non_young_cset_choice_time_ms;
-
-  double _recorded_sample_collection_set_candidates_time_ms;
 
   double _recorded_preserve_cm_referents_time_ms;
 
@@ -228,14 +232,14 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double print_merge_heap_roots_time() const;
   double print_evacuate_initial_collection_set() const;
   double print_evacuate_optional_collection_set() const;
-  double print_post_evacuate_collection_set() const;
+  double print_post_evacuate_collection_set(bool evacuation_failed) const;
   void print_other(double accounted_ms) const;
 
  public:
   G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads);
   void record_gc_pause_start();
   void record_gc_pause_end();
-  void print();
+  void print(bool evacuation_failed);
   static const char* phase_name(GCParPhases phase);
 
   // record the time a phase took in seconds
@@ -255,7 +259,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   size_t get_thread_work_item(GCParPhases phase, uint worker_id, uint index = 0);
 
   // return the average time for a phase in milliseconds
-  double average_time_ms(GCParPhases phase);
+  double average_time_ms(GCParPhases phase) const;
 
   size_t sum_thread_work_items(GCParPhases phase, uint index = 0);
 
@@ -283,8 +287,8 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     _cur_optional_evac_time_ms += ms;
   }
 
-  void record_or_add_code_root_fixup_time(double ms) {
-    _cur_collection_code_root_fixup_time_ms += ms;
+  void record_or_add_nmethod_list_cleanup_time(double ms) {
+    _cur_collection_nmethod_list_cleanup_time_ms += ms;
   }
 
   void record_merge_heap_roots_time(double ms) {
@@ -343,10 +347,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     _recorded_non_young_cset_choice_time_ms = time_ms;
   }
 
-  void record_sample_collection_set_candidates_time_ms(double time_ms) {
-    _recorded_sample_collection_set_candidates_time_ms = time_ms;
-  }
-
   void record_preserve_cm_referents_time_ms(double time_ms) {
     _recorded_preserve_cm_referents_time_ms = time_ms;
   }
@@ -373,10 +373,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   void record_prepare_heap_roots_time_ms(double recorded_prepare_heap_roots_time_ms) {
     _recorded_prepare_heap_roots_time_ms = recorded_prepare_heap_roots_time_ms;
-  }
-
-  void record_clear_claimed_marks_time_ms(double recorded_clear_claimed_marks_time_ms) {
-    _recorded_clear_claimed_marks_time_ms = recorded_clear_claimed_marks_time_ms;
   }
 
   double cur_collection_start_sec() {

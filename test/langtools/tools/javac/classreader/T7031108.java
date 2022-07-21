@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,10 +150,9 @@ public class T7031108 extends JavacTestingAbstractProcessor {
             List<? extends Element> elems = p.getEnclosedElements();
             System.err.println("contents of package p: " + elems);
             if (elems.size() != 1 || !elems.get(0).getSimpleName().contentEquals("C")) {
-                messager.printMessage(Diagnostic.Kind.ERROR, PACKAGE_CONTENT_ERROR);
+                messager.printError(PACKAGE_CONTENT_ERROR);
             }
         }
         return true;
     }
 }
-

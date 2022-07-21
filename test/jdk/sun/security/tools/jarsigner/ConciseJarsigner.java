@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6802846 8172529 8227758
+ * @bug 6802846 8172529 8227758 8260960
  * @summary jarsigner needs enhanced cert validation(options)
  * @library /test/lib
  * @run main/timeout=240 ConciseJarsigner
@@ -112,23 +112,26 @@ public class ConciseJarsigner {
                 .filter(s -> s.contains(year))
                 .count() == 12);
 
-        // 4 groups: MANIFST, unrelated, signed, unsigned
+        // 5 groups: MANIFEST, signature related entries, directory entries,
+        // signed entries, and unsigned entries.
         Asserts.assertTrue(js("-verify a.jar -verbose:summary")
                 .asLines().stream()
                 .filter(s -> s.contains(year))
-                .count() == 4);
+                .count() == 5);
 
-        // still 4 groups, but MANIFEST group has no other file
+        // still 5 groups, but MANIFEST group and directiry entry group
+        // have no other file
         Asserts.assertTrue(js("-verify a.jar -verbose:summary")
                 .asLines().stream()
                 .filter(s -> s.contains("more)"))
                 .count() == 3);
 
-        // 5 groups: MANIFEST, unrelated, signed by a1/a2, signed by a2, unsigned
+        // 6 groups: MANIFEST, signature related entries, directory entries,
+        // signed entries by a1/a2, signed entries by a2, and unsigned entries.
         Asserts.assertTrue(js("-verify a.jar -verbose:summary -certs")
                 .asLines().stream()
                 .filter(s -> s.contains(year))
-                .count() == 5);
+                .count() == 6);
 
         // 2 for MANIFEST, 2*2 for A1/A2, 2 for A3/A4
         Asserts.assertTrue(js("-verify a.jar -verbose -certs")
@@ -148,7 +151,8 @@ public class ConciseJarsigner {
                 .filter(s -> s.contains("[certificate"))
                 .count() == 5);
 
-        // still 5 groups, but MANIFEST group has no other file
+        // still 6 groups, but MANIFEST group and directory entry group
+        // have no other file
         Asserts.assertTrue(js("-verify a.jar -verbose:summary -certs")
                 .asLines().stream()
                 .filter(s -> s.contains("more)"))

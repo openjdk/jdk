@@ -92,7 +92,7 @@ abstract class PBKDF2Core extends SecretKeyFactorySpi {
         if (key instanceof javax.crypto.interfaces.PBEKey) {
             // Check if requested key spec is amongst the valid ones
             if ((keySpecCl != null)
-                && PBEKeySpec.class.isAssignableFrom(keySpecCl)) {
+                    && keySpecCl.isAssignableFrom(PBEKeySpec.class)) {
                 javax.crypto.interfaces.PBEKey pKey =
                     (javax.crypto.interfaces.PBEKey) key;
                 char[] passwd = pKey.getPassword();
@@ -151,10 +151,8 @@ abstract class PBKDF2Core extends SecretKeyFactorySpi {
                 try {
                     return new PBKDF2KeyImpl(spec, prfAlgo);
                 } catch (InvalidKeySpecException re) {
-                    InvalidKeyException ike = new InvalidKeyException
-                        ("Invalid key component(s)");
-                    ike.initCause(re);
-                    throw ike;
+                    throw new InvalidKeyException
+                        ("Invalid key component(s)", re);
                 } finally {
                     if (password != null) {
                         Arrays.fill(password, (char) 0);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -177,8 +177,8 @@ void TemplateInterpreterGenerator::generate_all() {
 
 
 
-#define method_entry(kind)                                              \
-  { CodeletMark cm(_masm, "method entry point (kind = " #kind ")"); \
+#define method_entry(kind)                                                                   \
+  { CodeletMark cm(_masm, "method entry point (kind = " #kind ")");                          \
     Interpreter::_entry_table[Interpreter::kind] = generate_method_entry(Interpreter::kind); \
   }
 
@@ -201,7 +201,9 @@ void TemplateInterpreterGenerator::generate_all() {
   method_entry(java_lang_math_fmaF )
   method_entry(java_lang_math_fmaD )
   method_entry(java_lang_ref_reference_get)
-
+#ifdef AMD64
+  method_entry(java_lang_Thread_currentThread)
+#endif
   AbstractInterpreter::initialize_method_handle_entries();
 
   // all native method kinds (must be one contiguous block)
@@ -220,6 +222,8 @@ void TemplateInterpreterGenerator::generate_all() {
   method_entry(java_lang_Float_floatToRawIntBits);
   method_entry(java_lang_Double_longBitsToDouble);
   method_entry(java_lang_Double_doubleToRawLongBits);
+
+  method_entry(java_lang_continuation_doYield)
 
 #undef method_entry
 
@@ -421,6 +425,8 @@ address TemplateInterpreterGenerator::generate_method_entry(
   case Interpreter::java_lang_math_fmaF    : entry_point = generate_math_entry(kind);      break;
   case Interpreter::java_lang_ref_reference_get
                                            : entry_point = generate_Reference_get_entry(); break;
+  case Interpreter::java_lang_continuation_doYield
+                                           : entry_point = generate_Continuation_doYield_entry(); break;
   case Interpreter::java_util_zip_CRC32_update
                                            : native = true; entry_point = generate_CRC32_update_entry();  break;
   case Interpreter::java_util_zip_CRC32_updateBytes
@@ -431,6 +437,11 @@ address TemplateInterpreterGenerator::generate_method_entry(
                                            : // fall thru
   case Interpreter::java_util_zip_CRC32C_updateDirectByteBuffer
                                            : entry_point = generate_CRC32C_updateBytes_entry(kind); break;
+#ifdef AMD64
+  case Interpreter::java_lang_Thread_currentThread
+                                           : entry_point = generate_currentThread(); break;
+#endif
+
 #ifdef IA32
   // On x86_32 platforms, a special entry is generated for the following four methods.
   // On other platforms the normal entry is used to enter these methods.

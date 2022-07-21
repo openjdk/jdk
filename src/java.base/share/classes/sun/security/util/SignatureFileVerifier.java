@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -270,7 +270,7 @@ public class SignatureFileVerifier {
      *
      */
     public void process(Hashtable<String, CodeSigner[]> signers,
-            List<Object> manifestDigests)
+            List<Object> manifestDigests, String manifestName)
         throws IOException, SignatureException, NoSuchAlgorithmException,
             JarException, CertificateException
     {
@@ -279,7 +279,7 @@ public class SignatureFileVerifier {
         Object obj = null;
         try {
             obj = Providers.startJarVerification();
-            processImpl(signers, manifestDigests);
+            processImpl(signers, manifestDigests, manifestName);
         } finally {
             Providers.stopJarVerification(obj);
         }
@@ -287,7 +287,7 @@ public class SignatureFileVerifier {
     }
 
     private void processImpl(Hashtable<String, CodeSigner[]> signers,
-            List<Object> manifestDigests)
+            List<Object> manifestDigests, String manifestName)
         throws IOException, SignatureException, NoSuchAlgorithmException,
             JarException, CertificateException
     {
@@ -368,7 +368,7 @@ public class SignatureFileVerifier {
         }
 
         // MANIFEST.MF is always regarded as signed
-        updateSigners(newSigners, signers, JarFile.MANIFEST_NAME);
+        updateSigners(newSigners, signers, manifestName);
     }
 
     /**
@@ -383,10 +383,11 @@ public class SignatureFileVerifier {
             try {
                 params.setExtendedExceptionMsg(name + ".SF", key + " attribute");
                 DisabledAlgorithmConstraints
-                    .jarConstraints().permits(algorithm, params);
+                    .jarConstraints().permits(algorithm, params, false);
             } catch (GeneralSecurityException e) {
                 permittedAlgs.put(algorithm, Boolean.FALSE);
-                permittedAlgs.put(key.toUpperCase(), Boolean.FALSE);
+                permittedAlgs.put(key.toUpperCase(Locale.ENGLISH),
+                        Boolean.FALSE);
                 if (debug != null) {
                     if (e.getMessage() != null) {
                         debug.println(key + ":  " + e.getMessage());
@@ -543,6 +544,10 @@ public class SignatureFileVerifier {
                 MessageDigest digest = getDigest(algorithm);
                 if (digest != null) {
                     ManifestDigester.Entry mde = md.getMainAttsEntry(false);
+                    if (mde == null) {
+                        throw new SignatureException("Manifest Main Attribute check " +
+                                "failed due to missing main attributes entry");
+                    }
                     byte[] computedHash = mde.digest(digest);
                     byte[] expectedHash =
                         Base64.getMimeDecoder().decode((String)se.getValue());

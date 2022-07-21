@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@
 #include "oops/klass.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/symbol.hpp"
+#include "opto/phasetype.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.hpp"
@@ -341,7 +342,49 @@ bool CompilerOracle::has_option_value(const methodHandle& method, enum CompileCo
   return false;
 }
 
+static bool resolve_inlining_predicate(enum CompileCommand option, const methodHandle& method) {
+  assert(option == CompileCommand::Inline || option == CompileCommand::DontInline, "Sanity");
+  bool v1 = false;
+  bool v2 = false;
+  bool has_inline = CompilerOracle::has_option_value(method, CompileCommand::Inline, v1);
+  bool has_dnotinline = CompilerOracle::has_option_value(method, CompileCommand::DontInline, v2);
+  if (has_inline && has_dnotinline) {
+    if (v1 && v2) {
+      // Conflict options detected
+      // Find the last one for that method and return the predicate accordingly
+      // option_list lists options in reverse order. So the first option we find is the last which was specified.
+      enum CompileCommand last_one = CompileCommand::Unknown;
+      TypedMethodOptionMatcher* current = option_list;
+      while (current != NULL) {
+        last_one = current->option();
+        if (last_one == CompileCommand::Inline || last_one == CompileCommand::DontInline) {
+          if (current->matches(method)) {
+            return last_one == option;
+          }
+        }
+        current = current->next();
+      }
+      ShouldNotReachHere();
+      return false;
+    } else {
+      // No conflicts
+      return option == CompileCommand::Inline ? v1 : v2;
+    }
+  } else {
+    if (option == CompileCommand::Inline) {
+      return has_inline ? v1 : false;
+    } else {
+      return has_dnotinline ? v2 : false;
+    }
+  }
+}
+
 static bool check_predicate(enum CompileCommand option, const methodHandle& method) {
+  // Special handling for Inline and DontInline since conflict options may be specified
+  if (option == CompileCommand::Inline || option == CompileCommand::DontInline) {
+    return resolve_inlining_predicate(option, method);
+  }
+
   bool value = false;
   if (CompilerOracle::has_option_value(method, option, value)) {
     return value;
@@ -641,6 +684,21 @@ static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
           jio_snprintf(errorbuf, buf_size, "Unrecognized intrinsic detected in %s: %s", option2name(option), validator.what());
         }
       }
+#ifndef PRODUCT
+      else if (option == CompileCommand::PrintIdealPhase) {
+        uint64_t mask = 0;
+        PhaseNameValidator validator(value, mask);
+
+        if (!validator.is_valid()) {
+          jio_snprintf(errorbuf, buf_size, "Unrecognized phase name in %s: %s", option2name(option), validator.what());
+        }
+      } else if (option == CompileCommand::TestOptionList) {
+        // all values are ok
+      }
+#endif
+      else {
+        assert(false, "Ccstrlist type option missing validator");
+      }
 
       register_command(matcher, option, (ccstr) value);
       return;
@@ -890,7 +948,7 @@ bool CompilerOracle::_quiet = false;
 
 void CompilerOracle::parse_from_file() {
   assert(has_command_file(), "command file must be specified");
-  FILE* stream = fopen(cc_file(), "rt");
+  FILE* stream = os::fopen(cc_file(), "rt");
   if (stream == NULL) return;
 
   char token[1024];

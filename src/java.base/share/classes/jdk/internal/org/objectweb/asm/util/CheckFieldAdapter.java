@@ -56,6 +56,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package jdk.internal.org.objectweb.asm.util;
 
 import jdk.internal.org.objectweb.asm.AnnotationVisitor;
@@ -83,7 +84,7 @@ public class CheckFieldAdapter extends FieldVisitor {
       * @throws IllegalStateException If a subclass calls this constructor.
       */
     public CheckFieldAdapter(final FieldVisitor fieldVisitor) {
-        this(/* latest api = */ Opcodes.ASM8, fieldVisitor);
+        this(/* latest api = */ Opcodes.ASM9, fieldVisitor);
         if (getClass() != CheckFieldAdapter.class) {
             throw new IllegalStateException();
         }
@@ -92,9 +93,8 @@ public class CheckFieldAdapter extends FieldVisitor {
     /**
       * Constructs a new {@link CheckFieldAdapter}.
       *
-      * @param api the ASM API version implemented by this visitor. Must be one of {@link
-      *     Opcodes#ASM4}, {@link Opcodes#ASM5}, {@link Opcodes#ASM6}, {@link Opcodes#ASM7} or {@link
-      *     Opcodes#ASM8}.
+      * @param api the ASM API version implemented by this visitor. Must be one of the {@code
+      *     ASM}<i>x</i> values in {@link Opcodes}.
       * @param fieldVisitor the field visitor to which this adapter must delegate calls.
       */
     protected CheckFieldAdapter(final int api, final FieldVisitor fieldVisitor) {
@@ -146,3 +146,4 @@ public class CheckFieldAdapter extends FieldVisitor {
         }
     }
 }
+

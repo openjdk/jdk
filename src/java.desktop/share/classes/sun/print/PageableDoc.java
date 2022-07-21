@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,10 @@
 
 package sun.print;
 
+import java.awt.print.Pageable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
-import java.io.UnsupportedEncodingException;
-
-import java.awt.print.Pageable;
 
 import javax.print.Doc;
 import javax.print.DocFlavor;
@@ -57,9 +55,7 @@ public class PageableDoc implements Doc {
       return pageable;
    }
 
-   public Reader getReaderForText()
-      throws UnsupportedEncodingException, IOException {
-
+   public Reader getReaderForText() throws IOException {
       return null;
    }
 

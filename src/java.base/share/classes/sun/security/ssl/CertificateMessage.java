@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -573,7 +573,7 @@ final class CertificateMessage {
                     if ((subAltDnsName != null) && !subAltDnsName.isEmpty()) {
                         if (subAltDnsNames == null) {
                             subAltDnsNames =
-                                    new HashSet<>(subjectAltNames.size());
+                                    HashSet.newHashSet(subjectAltNames.size());
                         }
                         subAltDnsNames.add(subAltDnsName);
                     }
@@ -1042,58 +1042,28 @@ final class CertificateMessage {
                 return null;
             }
 
-            Collection<String> checkedKeyTypes = new HashSet<>();
-            for (SignatureScheme ss : hc.peerRequestedCertSignSchemes) {
-                if (checkedKeyTypes.contains(ss.keyAlgorithm)) {
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                        SSLLogger.warning(
-                            "Unsupported authentication scheme: " + ss.name);
-                    }
-                    continue;
+            String[] supportedKeyTypes = hc.peerRequestedCertSignSchemes
+                    .stream()
+                    .map(ss -> ss.keyAlgorithm)
+                    .distinct()
+                    .filter(ka -> SignatureScheme.getPreferableAlgorithm(   // Don't select a signature scheme unless
+                            hc.algorithmConstraints,                        //  we will be able to produce
+                            hc.peerRequestedSignatureSchemes,               //  a CertificateVerify message later
+                            ka, hc.negotiatedProtocol) != null
+                            || SSLLogger.logWarning("ssl,handshake",
+                                    "Unable to produce CertificateVerify for key algorithm: " + ka))
+                    .filter(ka -> X509Authentication.valueOfKeyAlgorithm(ka) != null
+                            || SSLLogger.logWarning("ssl,handshake", "Unsupported key algorithm: " + ka))
+                    .toArray(String[]::new);
+
+            SSLPossession pos = X509Authentication
+                    .createPossession(hc, supportedKeyTypes);
+            if (pos == null) {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    SSLLogger.warning("No available authentication scheme");
                 }
-
-                // Don't select a signature scheme unless we will be able to
-                // produce a CertificateVerify message later
-                if (SignatureScheme.getPreferableAlgorithm(
-                        hc.algorithmConstraints,
-                        hc.peerRequestedSignatureSchemes,
-                        ss, hc.negotiatedProtocol) == null) {
-
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                        SSLLogger.warning(
-                            "Unable to produce CertificateVerify for " +
-                            "signature scheme: " + ss.name);
-                    }
-                    checkedKeyTypes.add(ss.keyAlgorithm);
-                    continue;
-                }
-
-                SSLAuthentication ka = X509Authentication.valueOf(ss);
-                if (ka == null) {
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                        SSLLogger.warning(
-                            "Unsupported authentication scheme: " + ss.name);
-                    }
-                    checkedKeyTypes.add(ss.keyAlgorithm);
-                    continue;
-                }
-
-                SSLPossession pos = ka.createPossession(hc);
-                if (pos == null) {
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                        SSLLogger.warning(
-                            "Unavailable authentication scheme: " + ss.name);
-                    }
-                    continue;
-                }
-
-                return pos;
             }
-
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                SSLLogger.warning("No available authentication scheme");
-            }
-            return null;
+            return pos;
         }
 
         private byte[] onProduceCertificate(ClientHandshakeContext chc,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -525,8 +525,8 @@ public final class SunJCE extends Provider {
         ps("AlgorithmParameters", "RC2",
                 "com.sun.crypto.provider.RC2Parameters");
 
-        ps("AlgorithmParameters", "OAEP",
-                "com.sun.crypto.provider.OAEPParameters");
+        psA("AlgorithmParameters", "OAEP",
+                "com.sun.crypto.provider.OAEPParameters", null);
 
         psA("AlgorithmParameters", "ChaCha20-Poly1305",
                 "com.sun.crypto.provider.ChaCha20Poly1305Parameters", null);

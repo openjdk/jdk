@@ -4,7 +4,7 @@
  * @summary Add new doclint package
  * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
- * @run main DocLintTester -ref AnchorTest.out AnchorTest.java
+ * @run main DocLintTester -Xmsgs:all,-missing -ref AnchorTest.out AnchorTest.java
  */
 
 /** */

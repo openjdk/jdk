@@ -95,9 +95,11 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
   jcc(Assembler::notZero, slow_case);
   // done
   bind(done);
+
+  inc_held_monitor_count();
+
   return null_check_offset;
 }
-
 
 void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_hdr, Label& slow_case) {
   const int aligned_mask = BytesPerWord -1;
@@ -126,6 +128,8 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
   jcc(Assembler::notEqual, slow_case);
   // done
   bind(done);
+
+  dec_held_monitor_count();
 }
 
 
@@ -331,18 +335,18 @@ void C1_MacroAssembler::remove_frame(int frame_size_in_bytes) {
 }
 
 
-void C1_MacroAssembler::verified_entry() {
-  if (C1Breakpoint || VerifyFPU) {
+void C1_MacroAssembler::verified_entry(bool breakAtEntry) {
+  if (breakAtEntry || VerifyFPU) {
     // Verified Entry first instruction should be 5 bytes long for correct
     // patching by patch_verified_entry().
     //
-    // C1Breakpoint and VerifyFPU have one byte first instruction.
+    // Breakpoint and VerifyFPU have one byte first instruction.
     // Also first instruction will be one byte "push(rbp)" if stack banging
     // code is not generated (see build_frame() above).
     // For all these cases generate long instruction first.
     fat_nop();
   }
-  if (C1Breakpoint)int3();
+  if (breakAtEntry) int3();
   // build frame
   IA32_ONLY( verify_FPU(0, "method_entry"); )
 }

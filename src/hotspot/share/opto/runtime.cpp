@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -302,7 +302,7 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_nozero_C(Klass* array_type, int len
   if ((len > 0) && (result != NULL) &&
       is_deoptimized_caller_frame(current)) {
     // Zero array here if the caller is deoptimized.
-    int size = ((typeArrayOop)result)->object_size();
+    const size_t size = TypeArrayKlass::cast(array_type)->oop_size(result);
     BasicType elem_type = TypeArrayKlass::cast(array_type)->element_type();
     const size_t hs = arrayOopDesc::header_size(elem_type);
     // Align to next 8 bytes to avoid trashing arrays's length.
@@ -715,6 +715,60 @@ const TypeFunc* OptoRuntime::void_long_Type() {
   return TypeFunc::make(domain, range);
 }
 
+const TypeFunc* OptoRuntime::void_void_Type() {
+   // create input type (domain)
+   const Type **fields = TypeTuple::fields(0);
+   const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+0, fields);
+
+   // create result type (range)
+   fields = TypeTuple::fields(0);
+   const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+0, fields);
+   return TypeFunc::make(domain, range);
+ }
+
+ const TypeFunc* OptoRuntime::continuation_doYield_Type() {
+   // create input type (domain)
+   const Type **fields = TypeTuple::fields(0);
+   const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+0, fields);
+
+   // create result type (range)
+   fields = TypeTuple::fields(1);
+   fields[TypeFunc::Parms+0] = TypeInt::INT;
+   const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+1, fields);
+
+   return TypeFunc::make(domain, range);
+ }
+
+ const TypeFunc* OptoRuntime::continuation_jump_Type() {
+  // create input type (domain)
+  const Type **fields = TypeTuple::fields(6);
+  fields[TypeFunc::Parms+0] = TypeLong::LONG;
+  fields[TypeFunc::Parms+1] = Type::HALF;
+  fields[TypeFunc::Parms+2] = TypeLong::LONG;
+  fields[TypeFunc::Parms+3] = Type::HALF;
+  fields[TypeFunc::Parms+4] = TypeLong::LONG;
+  fields[TypeFunc::Parms+5] = Type::HALF;
+  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+6, fields);
+
+  // create result type (range)
+  fields = TypeTuple::fields(0);
+  const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+0, fields);
+  return TypeFunc::make(domain, range);
+ }
+
+
+ const TypeFunc* OptoRuntime::jfr_write_checkpoint_Type() {
+   // create input type (domain)
+   const Type **fields = TypeTuple::fields(0);
+   const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms, fields);
+
+   // create result type (range)
+   fields = TypeTuple::fields(0);
+   const TypeTuple *range = TypeTuple::make(TypeFunc::Parms, fields);
+   return TypeFunc::make(domain, range);
+ }
+
+
 // arraycopy stub variations:
 enum ArrayCopyType {
   ac_fast,                      // void(ptr, ptr, size_t)
@@ -946,6 +1000,31 @@ const TypeFunc* OptoRuntime::counterMode_aescrypt_Type() {
   fields[argp++] = TypeInt::INT; // src len
   fields[argp++] = TypePtr::NOTNULL; // saved_encCounter
   fields[argp++] = TypePtr::NOTNULL; // saved used addr
+  assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
+  // returning cipher len (int)
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms + 0] = TypeInt::INT;
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+  return TypeFunc::make(domain, range);
+}
+
+//for counterMode calls of aescrypt encrypt/decrypt, four pointers and a length, returning int
+const TypeFunc* OptoRuntime::galoisCounterMode_aescrypt_Type() {
+  // create input type (domain)
+  int num_args = 8;
+  int argcnt = num_args;
+  const Type** fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypePtr::NOTNULL; // byte[] in + inOfs
+  fields[argp++] = TypeInt::INT;     // int len
+  fields[argp++] = TypePtr::NOTNULL; // byte[] ct + ctOfs
+  fields[argp++] = TypePtr::NOTNULL; // byte[] out + outOfs
+  fields[argp++] = TypePtr::NOTNULL; // byte[] key from AESCrypt obj
+  fields[argp++] = TypePtr::NOTNULL; // long[] state from GHASH obj
+  fields[argp++] = TypePtr::NOTNULL; // long[] subkeyHtbl from GHASH obj
+  fields[argp++] = TypePtr::NOTNULL; // byte[] counter from GCTR obj
+
   assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
   const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
   // returning cipher len (int)
@@ -1254,6 +1333,11 @@ static void trace_exception(outputStream* st, oop exception_oop, address excepti
 // directly from compiled code. Compiled code will call the C++ method following.
 // We can't allow async exception to be installed during  exception processing.
 JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* current, nmethod* &nm))
+  // The frame we rethrow the exception to might not have been processed by the GC yet.
+  // The stack watermark barrier takes care of detecting that and ensuring the frame
+  // has updated oops.
+  StackWatermarkSet::after_unwind(current);
+
   // Do not confuse exception_oop with pending_exception. The exception_oop
   // is only used to pass arguments into the method. Not for general
   // exception handling.  DO NOT CHANGE IT to use pending_exception, since
@@ -1396,7 +1480,7 @@ address OptoRuntime::handle_exception_C(JavaThread* current) {
   // deoptimized frame
 
   if (nm != NULL) {
-    RegisterMap map(current, false);
+    RegisterMap map(current, false /* update_map */, false /* process_frames */);
     frame caller = current->last_frame().sender(&map);
 #ifdef ASSERT
     assert(caller.is_compiled_frame(), "must be");
@@ -1435,10 +1519,11 @@ address OptoRuntime::rethrow_C(oopDesc* exception, JavaThread* thread, address r
   // Enable WXWrite: the function called directly by compiled code.
   MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, thread));
 
-  // The frame we rethrow the exception to might not have been processed by the GC yet.
-  // The stack watermark barrier takes care of detecting that and ensuring the frame
-  // has updated oops.
-  StackWatermarkSet::after_unwind(thread);
+  // ret_pc will have been loaded from the stack, so for AArch64 will be signed.
+  // This needs authenticating, but to do that here requires the fp of the previous frame.
+  // A better way of doing it would be authenticate in the caller by adding a
+  // AuthPAuthNode and using it in GraphKit::gen_stub. For now, just strip it.
+  AARCH64_PORT_ONLY(ret_pc = pauth_strip_pointer(ret_pc));
 
 #ifndef PRODUCT
   SharedRuntime::_rethrow_ctr++;               // count rethrows
@@ -1519,7 +1604,7 @@ const TypeFunc *OptoRuntime::register_finalizer_Type() {
 }
 
 #if INCLUDE_JFR
-const TypeFunc *OptoRuntime::get_class_id_intrinsic_Type() {
+const TypeFunc *OptoRuntime::class_id_load_barrier_Type() {
   // create input type (domain)
   const Type **fields = TypeTuple::fields(1);
   fields[TypeFunc::Parms+0] = TypeInstPtr::KLASS;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,19 +91,19 @@ Node* BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) cons
   MemNode::MemOrd mo = access.mem_node_mo();
 
   Node* store;
+  BasicType bt = access.type();
   if (access.is_parse_access()) {
     C2ParseAccess& parse_access = static_cast<C2ParseAccess&>(access);
 
     GraphKit* kit = parse_access.kit();
-    if (access.type() == T_DOUBLE) {
-      Node* new_val = kit->dstore_rounding(val.node());
+    if (bt == T_DOUBLE) {
+      Node* new_val = kit->dprecision_rounding(val.node());
       val.set_node(new_val);
     }
 
-    store = kit->store_to_memory(kit->control(), access.addr().node(), val.node(), access.type(),
-                                     access.addr().type(), mo, requires_atomic_access, unaligned, mismatched, unsafe);
+    store = kit->store_to_memory(kit->control(), access.addr().node(), val.node(), bt,
+                                 access.addr().type(), mo, requires_atomic_access, unaligned, mismatched, unsafe);
   } else {
-    assert(!requires_atomic_access, "not yet supported");
     assert(access.is_opt_access(), "either parse or opt access");
     C2OptAccess& opt_access = static_cast<C2OptAccess&>(access);
     Node* ctl = opt_access.ctl();
@@ -113,7 +113,7 @@ Node* BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) cons
     int alias = gvn.C->get_alias_index(adr_type);
     Node* mem = mm->memory_at(alias);
 
-    StoreNode* st = StoreNode::make(gvn, ctl, mem, access.addr().node(), adr_type, val.node(), access.type(), mo);
+    StoreNode* st = StoreNode::make(gvn, ctl, mem, access.addr().node(), adr_type, val.node(), bt, mo, requires_atomic_access);
     if (unaligned) {
       st->set_unaligned_access();
     }
@@ -156,12 +156,11 @@ Node* BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) con
     Node* control = control_dependent ? kit->control() : NULL;
 
     if (immutable) {
-      assert(!requires_atomic_access, "can't ensure atomicity");
       Compile* C = Compile::current();
       Node* mem = kit->immutable_memory();
       load = LoadNode::make(kit->gvn(), control, mem, adr,
-                            adr_type, val_type, access.type(), mo, dep, unaligned,
-                            mismatched, unsafe, access.barrier_data());
+                            adr_type, val_type, access.type(), mo, dep, requires_atomic_access,
+                            unaligned, mismatched, unsafe, access.barrier_data());
       load = kit->gvn().transform(load);
     } else {
       load = kit->make_load(control, adr, val_type, access.type(), adr_type, mo,
@@ -169,15 +168,14 @@ Node* BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) con
                             access.barrier_data());
     }
   } else {
-    assert(!requires_atomic_access, "not yet supported");
     assert(access.is_opt_access(), "either parse or opt access");
     C2OptAccess& opt_access = static_cast<C2OptAccess&>(access);
     Node* control = control_dependent ? opt_access.ctl() : NULL;
     MergeMemNode* mm = opt_access.mem();
     PhaseGVN& gvn = opt_access.gvn();
     Node* mem = mm->memory_at(gvn.C->get_alias_index(adr_type));
-    load = LoadNode::make(gvn, control, mem, adr, adr_type, val_type, access.type(), mo,
-                          dep, unaligned, mismatched, unsafe, access.barrier_data());
+    load = LoadNode::make(gvn, control, mem, adr, adr_type, val_type, access.type(), mo, dep,
+                          requires_atomic_access, unaligned, mismatched, unsafe, access.barrier_data());
     load = gvn.transform(load);
   }
   access.set_raw_access(load);
@@ -374,7 +372,7 @@ void C2Access::fixup_decorators() {
       intptr_t offset = Type::OffsetBot;
       AddPNode::Ideal_base_and_offset(adr, &gvn(), offset);
       if (offset >= 0) {
-        int s = Klass::layout_helper_size_in_bytes(adr_type->isa_instptr()->klass()->layout_helper());
+        int s = Klass::layout_helper_size_in_bytes(adr_type->isa_instptr()->instance_klass()->layout_helper());
         if (offset < s) {
           // Guaranteed to be a valid access, no need to pin it
           _decorators ^= C2_CONTROL_DEPENDENT_LOAD;
@@ -388,9 +386,6 @@ void C2Access::fixup_decorators() {
 //--------------------------- atomic operations---------------------------------
 
 void BarrierSetC2::pin_atomic_op(C2AtomicParseAccess& access) const {
-  if (!access.needs_pinning()) {
-    return;
-  }
   // SCMemProjNodes represent the memory state of a LoadStore. Their
   // main role is to prevent LoadStore nodes from being optimized away
   // when their results aren't used.

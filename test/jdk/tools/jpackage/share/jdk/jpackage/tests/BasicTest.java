@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -347,6 +347,17 @@ public final class BasicTest {
         // Verify output of jpackage command.
         cmd.assertImageCreated();
         HelloApp.executeLauncherAndVerifyOutput(cmd);
+    }
+
+    @Test
+    @Parameter("1")
+    @Parameter("123")
+    public void testExitCode(int exitCode) {
+        JPackageCommand cmd = JPackageCommand
+                .helloAppImage()
+                .addArguments("--java-options", String.format(
+                        "-Djpackage.test.exitCode=%d", exitCode));
+        cmd.executeAndAssertHelloAppImageCreated();
     }
 
     private static Executor getJPackageToolProvider() {

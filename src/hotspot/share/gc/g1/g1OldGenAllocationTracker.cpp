@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Amazon.com, Inc. or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ void G1OldGenAllocationTracker::reset_after_gc(size_t humongous_bytes_after_gc) 
   if (humongous_bytes_after_gc > _humongous_bytes_after_last_gc) {
     last_period_humongous_increase = humongous_bytes_after_gc - _humongous_bytes_after_last_gc;
     assert(last_period_humongous_increase <= _allocated_humongous_bytes_since_last_gc,
-           "Increase larger than allocated " SIZE_FORMAT " <= " SIZE_FORMAT,
+           "Increase larger than allocated %zu <= %zu",
            last_period_humongous_increase, _allocated_humongous_bytes_since_last_gc);
   }
   _last_period_old_gen_growth = _allocated_bytes_since_last_gc + last_period_humongous_increase;
@@ -50,8 +50,8 @@ void G1OldGenAllocationTracker::reset_after_gc(size_t humongous_bytes_after_gc) 
   _humongous_bytes_after_last_gc = humongous_bytes_after_gc;
 
   log_debug(gc, alloc, stats)("Old generation allocation in the last mutator period, "
-                              "old gen allocated: " SIZE_FORMAT "B, humongous allocated: " SIZE_FORMAT "B,"
-                              "old gen growth: " SIZE_FORMAT "B.",
+                              "old gen allocated: %zuB, humongous allocated: %zuB, "
+                              "old gen growth: %zuB.",
                               _allocated_bytes_since_last_gc,
                               _allocated_humongous_bytes_since_last_gc,
                               _last_period_old_gen_growth);

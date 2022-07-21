@@ -59,7 +59,7 @@ import sun.awt.AppContext;
  *   <li> It tracks the animation state for every UI component involved in the
  *        animation and paints {@code Skin} in new {@code State} over the
  *        {@code Skin} in last {@code State} using
- *        {@code AlphaComposite.SrcOver.derive(alpha)} where {code alpha}
+ *        {@code AlphaComposite.SrcOver.derive(alpha)} where {@code alpha}
  *        depends on the state of animation
  * </ul>
  *

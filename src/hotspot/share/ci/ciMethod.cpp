@@ -70,6 +70,7 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
   _holder(holder)
 {
   assert(h_m() != NULL, "no null method");
+  assert(_holder->get_instanceKlass() == h_m->method_holder(), "");
 
   if (LogTouchedMethods) {
     h_m->log_touched(Thread::current());
@@ -81,7 +82,6 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
   _max_stack          = h_m->max_stack();
   _max_locals         = h_m->max_locals();
   _code_size          = h_m->code_size();
-  _intrinsic_id       = h_m->intrinsic_id();
   _handler_count      = h_m->exception_table_length();
   _size_of_parameters = h_m->size_of_parameters();
   _uses_monitors      = h_m->access_flags().has_monitor_bytecodes();
@@ -101,6 +101,10 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
   _bcea               = NULL;
 #endif // COMPILER2
 
+  // Check for blackhole intrinsic and then populate the intrinsic ID.
+  CompilerOracle::tag_blackhole_if_possible(h_m);
+  _intrinsic_id       = h_m->intrinsic_id();
+
   ciEnv *env = CURRENT_ENV;
   if (env->jvmti_can_hotswap_or_post_breakpoint()) {
     // 6328518 check hotswap conditions under the right lock.
@@ -116,9 +120,11 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
 
   if (h_m->method_holder()->is_linked()) {
     _can_be_statically_bound = h_m->can_be_statically_bound();
+    _can_omit_stack_trace = h_m->can_omit_stack_trace();
   } else {
     // Have to use a conservative value in this case.
     _can_be_statically_bound = false;
+    _can_omit_stack_trace = true;
   }
 
   // Adjust the definition of this condition to be more useful:
@@ -154,8 +160,6 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
     ciReplay::initialize(this);
   }
 #endif
-
-  CompilerOracle::tag_blackhole_if_possible(h_m);
 }
 
 
@@ -175,6 +179,7 @@ ciMethod::ciMethod(ciInstanceKlass* holder,
   _intrinsic_id(           vmIntrinsics::_none),
   _instructions_size(-1),
   _can_be_statically_bound(false),
+  _can_omit_stack_trace(true),
   _liveness(               NULL)
 #if defined(COMPILER2)
   ,
@@ -766,6 +771,20 @@ bool ciMethod::can_be_statically_bound(ciInstanceKlass* context) const {
 }
 
 // ------------------------------------------------------------------
+// ciMethod::can_omit_stack_trace
+//
+// Tries to determine whether a method can omit stack trace in throw in compiled code.
+bool ciMethod::can_omit_stack_trace() const {
+  if (!StackTraceInThrowable) {
+    return true; // stack trace is switched off.
+  }
+  if (!OmitStackTraceInFastThrow) {
+    return false; // Have to provide stack trace.
+  }
+  return _can_omit_stack_trace;
+}
+
+// ------------------------------------------------------------------
 // ciMethod::resolve_invoke
 //
 // Given a known receiver klass, find the target for the call.
@@ -880,17 +899,16 @@ ciKlass* ciMethod::get_declared_method_holder_at_bci(int bci) {
 // invocation counts in methods.
 int ciMethod::scale_count(int count, float prof_factor) {
   if (count > 0 && method_data() != NULL) {
-    int counter_life;
+    int counter_life = method_data()->invocation_count();
     int method_life = interpreter_invocation_count();
-    // In tiered the MDO's life is measured directly, so just use the snapshotted counters
-    counter_life = MAX2(method_data()->invocation_count(), method_data()->backedge_count());
-
-    // counter_life due to backedge_counter could be > method_life
-    if (counter_life > method_life)
-      counter_life = method_life;
-    if (0 < counter_life && counter_life <= method_life) {
+    if (method_life < counter_life) { // may happen because of the snapshot timing
+      method_life = counter_life;
+    }
+    if (counter_life > 0) {
       count = (int)((double)count * prof_factor * method_life / counter_life + 0.5);
       count = (count > 0) ? count : 1;
+    } else {
+      count = 1;
     }
   }
   return count;
@@ -1289,17 +1307,25 @@ ciMethodBlocks  *ciMethod::get_method_blocks() {
 
 #undef FETCH_FLAG_FROM_VM
 
-void ciMethod::dump_name_as_ascii(outputStream* st) {
-  Method* method = get_Method();
+void ciMethod::dump_name_as_ascii(outputStream* st, Method* method) {
   st->print("%s %s %s",
-            method->klass_name()->as_quoted_ascii(),
+            CURRENT_ENV->replay_name(method->method_holder()),
             method->name()->as_quoted_ascii(),
             method->signature()->as_quoted_ascii());
+}
+
+void ciMethod::dump_name_as_ascii(outputStream* st) {
+  Method* method = get_Method();
+  dump_name_as_ascii(st, method);
 }
 
 void ciMethod::dump_replay_data(outputStream* st) {
   ResourceMark rm;
   Method* method = get_Method();
+  if (MethodHandles::is_signature_polymorphic_method(method)) {
+    // ignore for now
+    return;
+  }
   MethodCounters* mcs = method->method_counters();
   st->print("ciMethod ");
   dump_name_as_ascii(st);

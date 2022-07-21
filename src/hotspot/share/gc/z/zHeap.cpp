@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,8 +47,8 @@
 #include "memory/resourceArea.hpp"
 #include "prims/jvmtiTagMap.hpp"
 #include "runtime/handshake.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/debug.hpp"
 
 static const ZStatCounter ZCounterUndoPageAllocation("Memory", "Undo Page Allocation", ZStatUnitOpsPerSecond);
@@ -433,13 +433,18 @@ void ZHeap::relocate() {
   ZStatHeap::set_at_relocate_end(_page_allocator.stats(), _object_allocator.relocated());
 }
 
+bool ZHeap::is_allocating(uintptr_t addr) const {
+  const ZPage* const page = _page_table.get(addr);
+  return page->is_allocating();
+}
+
 void ZHeap::object_iterate(ObjectClosure* cl, bool visit_weaks) {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
   ZHeapIterator iter(1 /* nworkers */, visit_weaks);
   iter.object_iterate(cl, 0 /* worker_id */);
 }
 
-ParallelObjectIterator* ZHeap::parallel_object_iterator(uint nworkers, bool visit_weaks) {
+ParallelObjectIteratorImpl* ZHeap::parallel_object_iterator(uint nworkers, bool visit_weaks) {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
   return new ZHeapIterator(nworkers, visit_weaks);
 }

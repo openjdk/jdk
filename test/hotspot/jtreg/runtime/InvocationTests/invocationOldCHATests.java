@@ -23,19 +23,39 @@
  */
 
 /*
- * @test
+ * @test id=special
  * @summary Run invocation tests with old CHA (-XX:-UseVtableBasedCHA)
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.misc
- * @compile shared/AbstractGenerator.java shared/AccessCheck.java shared/AccessType.java
- *          shared/Caller.java shared/ExecutorGenerator.java shared/Utils.java
- *          shared/ByteArrayClassLoader.java shared/Checker.java shared/GenericClassGenerator.java
  * @compile invokespecial/Checker.java invokespecial/ClassGenerator.java invokespecial/Generator.java
- *          invokevirtual/Checker.java invokevirtual/ClassGenerator.java invokevirtual/Generator.java
- *          invokeinterface/Checker.java invokeinterface/ClassGenerator.java invokeinterface/Generator.java
  *
- * @run driver/timeout=1800 invocationOldCHATests
+ * @run driver/timeout=1800 invocationOldCHATests special
+ */
+
+/*
+ * @test id=virtual
+ * @summary Run invocation tests with old CHA (-XX:-UseVtableBasedCHA)
+ * @requires vm.flagless
+ * @library /test/lib
+ * @modules java.base/jdk.internal.org.objectweb.asm
+ *          java.base/jdk.internal.misc
+ * @compile invokevirtual/Checker.java invokevirtual/ClassGenerator.java invokevirtual/Generator.java
+ *
+ * @run driver/timeout=1800 invocationOldCHATests virtual
+ */
+
+/*
+ * @test id=interface
+ * @summary Run invocation tests with old CHA (-XX:-UseVtableBasedCHA)
+ * @requires vm.flagless
+ * @library /test/lib
+ * @modules java.base/jdk.internal.org.objectweb.asm
+ *          java.base/jdk.internal.misc
+ * @compile invokeinterface/Checker.java invokeinterface/ClassGenerator.java invokeinterface/Generator.java
+ *
+ * @run driver/timeout=1800 invocationOldCHATests interface
  */
 
 import jdk.test.lib.process.ProcessTools;
@@ -71,11 +91,27 @@ public class invocationOldCHATests {
     }
 
     public static void main(String args[]) throws Throwable {
+        if (args.length < 1) {
+            throw new IllegalArgumentException("Should provide the test name");
+        }
+        String testName = args[0];
+
         // Get current major class file version and test with it.
         byte klassbuf[] = InMemoryJavaCompiler.compile("blah", "public class blah { }");
         int major_version = klassbuf[6] << 8 | klassbuf[7];
-        runTest("invokespecial.Generator", String.valueOf(major_version));
-        runTest("invokeinterface.Generator", String.valueOf(major_version));
-        runTest("invokevirtual.Generator", String.valueOf(major_version));
+
+        switch (testName) {
+            case "special":
+                runTest("invokespecial.Generator", String.valueOf(major_version));
+                break;
+            case "virtual":
+                runTest("invokevirtual.Generator", String.valueOf(major_version));
+                break;
+            case "interface":
+                runTest("invokeinterface.Generator", String.valueOf(major_version));
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown test name: " + testName);
+        }
     }
 }

@@ -31,6 +31,7 @@
 #include "gc/shared/generation.hpp"
 #include "gc/shared/generationCounters.hpp"
 #include "gc/shared/preservedMarks.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "utilities/align.hpp"
 #include "utilities/stack.hpp"
@@ -139,6 +140,8 @@ protected:
 
   STWGCTimer* _gc_timer;
 
+  StringDedup::Requests _string_dedup_requests;
+
   enum SomeProtectedConstants {
     // Generations are GenGrain-aligned and have size that are multiples of
     // GenGrain.
@@ -198,8 +201,6 @@ protected:
                    size_t min_byte_size,
                    size_t max_byte_size,
                    const char* policy="Serial young collection pauses");
-
-  virtual void ref_processor_init();
 
   virtual Generation::Name kind() { return Generation::DefNew; }
 

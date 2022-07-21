@@ -4,7 +4,7 @@
  * @summary Module summary page should display information based on "api" or "detail" mode.
  * @modules jdk.javadoc/jdk.javadoc.internal.doclint
  * @build DocLintTester
- * @run main DocLintTester -ref ProvidesTest.out ProvidesTest.java
+ * @run main DocLintTester -Xmsgs:all,-missing -ref ProvidesTest.out ProvidesTest.java
  */
 
 /**

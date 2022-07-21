@@ -36,12 +36,23 @@
 #include "memory/universe.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 
+bool VM_G1CollectFull::skip_operation() const {
+  // There is a race between the periodic collection task's checks for
+  // wanting a collection and processing its request.  A collection in that
+  // gap should cancel the request.
+  if ((_gc_cause == GCCause::_g1_periodic_collection) &&
+      (G1CollectedHeap::heap()->total_collections() != _gc_count_before)) {
+    return true;
+  }
+  return VM_GC_Operation::skip_operation();
+}
+
 void VM_G1CollectFull::doit() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   GCCauseSetter x(g1h, _gc_cause);
   _gc_succeeded = g1h->do_full_collection(true  /* explicit_gc */,
                                           false /* clear_all_soft_refs */,
-                                          false /* do_maximum_compaction */);
+                                          false /* do_maximal_compaction */);
 }
 
 VM_G1TryInitiateConcMark::VM_G1TryInitiateConcMark(uint gc_count_before,
@@ -74,7 +85,7 @@ void VM_G1TryInitiateConcMark::doit() {
   GCCauseSetter x(g1h, _gc_cause);
 
   // Record for handling by caller.
-  _terminating = g1h->_cm_thread->should_terminate();
+  _terminating = g1h->concurrent_mark_is_terminating();
 
   if (_terminating && GCCause::is_user_requested_gc(_gc_cause)) {
     // When terminating, the request to initiate a concurrent cycle will be
@@ -159,7 +170,7 @@ void VM_G1CollectForAllocation::doit() {
   }
 }
 
-void VM_G1Concurrent::doit() {
+void VM_G1PauseConcurrent::doit() {
   GCIdMark gc_id_mark(_gc_id);
   GCTraceCPUTime tcpu;
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
@@ -170,20 +181,31 @@ void VM_G1Concurrent::doit() {
   GCTraceTimePauseTimer       timer(_message, g1h->concurrent_mark()->gc_timer_cm());
   GCTraceTimeDriver           t(&logger, &timer);
 
-  TraceCollectorStats tcs(g1h->g1mm()->conc_collection_counters());
+  TraceCollectorStats tcs(g1h->monitoring_support()->conc_collection_counters());
   SvcGCMarker sgcm(SvcGCMarker::CONCURRENT);
   IsGCActiveMark x;
-  _cl->do_void();
+
+  work();
 }
 
-bool VM_G1Concurrent::doit_prologue() {
+bool VM_G1PauseConcurrent::doit_prologue() {
   Heap_lock->lock();
   return true;
 }
 
-void VM_G1Concurrent::doit_epilogue() {
+void VM_G1PauseConcurrent::doit_epilogue() {
   if (Universe::has_reference_pending_list()) {
     Heap_lock->notify_all();
   }
   Heap_lock->unlock();
+}
+
+void VM_G1PauseRemark::work() {
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  g1h->concurrent_mark()->remark();
+}
+
+void VM_G1PauseCleanup::work() {
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  g1h->concurrent_mark()->cleanup();
 }

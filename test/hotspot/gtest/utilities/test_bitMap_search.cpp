@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,9 +92,9 @@ bool TestIteratorFn::do_bit(size_t offset) {
 }
 
 static idx_t compute_expected(idx_t search_start,
-                              idx_t search_end,
-                              idx_t left_bit,
-                              idx_t right_bit) {
+                                         idx_t search_end,
+                                         idx_t left_bit,
+                                         idx_t right_bit) {
   idx_t expected = search_end;
   if (search_start <= left_bit) {
     if (left_bit < search_end) {

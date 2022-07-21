@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
     private CgroupV1SubsystemController cpuacct;
     private CgroupV1SubsystemController cpuset;
     private CgroupV1SubsystemController blkio;
+    private CgroupV1SubsystemController pids;
 
     private static volatile CgroupV1Subsystem INSTANCE;
 
@@ -126,6 +127,15 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
                 }
                 break;
             }
+            case "pids": {
+                if (info.getMountRoot() != null && info.getMountPoint() != null) {
+                    CgroupV1SubsystemController controller = new CgroupV1SubsystemController(info.getMountRoot(), info.getMountPoint());
+                    controller.setPath(info.getCgroupPath());
+                    subsystem.setPidsController(controller);
+                    anyActiveControllers = true;
+                }
+                break;
+            }
             default:
                 throw new AssertionError("Unrecognized controller in infos: " + info.getName());
             }
@@ -140,8 +150,9 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
     }
 
     private static boolean getSwapEnabled(CgroupV1MemorySubSystemController controller) {
-         long retval = getLongValue(controller, "memory.memsw.limit_in_bytes");
-         return retval > 0;
+        long memswBytes = getLongValue(controller, "memory.memsw.limit_in_bytes");
+        long swappiness = getLongValue(controller, "memory.swappiness");
+        return (memswBytes > 0 && swappiness > 0);
      }
 
 
@@ -170,10 +181,14 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
         this.blkio = blkio;
     }
 
+    private void setPidsController(CgroupV1SubsystemController pids) {
+        this.pids = pids;
+    }
+
     private static long getLongValue(CgroupSubsystemController controller,
-                              String parm) {
+                              String param) {
         return CgroupSubsystemController.getLongValue(controller,
-                                                      parm,
+                                                      param,
                                                       CgroupV1SubsystemController::convertStringToLong,
                                                       CgroupSubsystem.LONG_RETVAL_UNLIMITED);
     }
@@ -318,10 +333,6 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
         return getLongValue(memory, "memory.kmem.failcnt");
     }
 
-    public long getKernelMemoryLimit() {
-        return CgroupV1SubsystemController.longValOrUnlimited(getLongValue(memory, "memory.kmem.limit_in_bytes"));
-    }
-
     public long getKernelMemoryMaxUsage() {
         return getLongValue(memory, "memory.kmem.max_usage_in_bytes");
     }
@@ -332,10 +343,6 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
 
     public long getTcpMemoryFailCount() {
         return getLongValue(memory, "memory.kmem.tcp.failcnt");
-    }
-
-    public long getTcpMemoryLimit() {
-        return CgroupV1SubsystemController.longValOrUnlimited(getLongValue(memory, "memory.kmem.tcp.limit_in_bytes"));
     }
 
     public long getTcpMemoryMaxUsage() {
@@ -394,6 +401,17 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
         return CgroupV1SubsystemController.longValOrUnlimited(getLongValue(memory, "memory.soft_limit_in_bytes"));
     }
 
+    /*****************************************************************
+     *  pids subsystem
+     ****************************************************************/
+    public long getPidsMax() {
+        String pidsMaxStr = CgroupSubsystemController.getStringValue(pids, "pids.max");
+        return CgroupSubsystem.limitFromString(pidsMaxStr);
+    }
+
+    public long getPidsCurrent() {
+        return getLongValue(pids, "pids.current");
+    }
 
     /*****************************************************************
      * BlKIO Subsystem

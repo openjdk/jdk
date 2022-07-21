@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,9 @@
 
 package sun.security.validator;
 
-import java.util.*;
-
 import java.security.*;
 import java.security.cert.*;
-
+import java.util.*;
 import javax.security.auth.x500.X500Principal;
 import sun.security.action.GetBooleanAction;
 import sun.security.provider.certpath.AlgorithmChecker;
@@ -81,8 +79,6 @@ public final class PKIXValidator extends Validator {
     private final Map<X500Principal, List<PublicKey>> trustedSubjects;
     private final CertificateFactory factory;
 
-    private final boolean plugin;
-
     PKIXValidator(String variant, Collection<X509Certificate> trustedCerts) {
         super(TYPE_PKIX, variant);
         this.trustedCerts = (trustedCerts instanceof Set) ?
@@ -104,7 +100,6 @@ public final class PKIXValidator extends Validator {
         }
 
         setDefaultParameters(variant);
-        plugin = variant.equals(VAR_PLUGIN_CODE_SIGNING);
 
         trustedSubjects = setTrustedSubjects();
     }
@@ -125,8 +120,6 @@ public final class PKIXValidator extends Validator {
         } catch (CertificateException e) {
             throw new RuntimeException("Internal error", e);
         }
-
-        plugin = variant.equals(VAR_PLUGIN_CODE_SIGNING);
 
         trustedSubjects = setTrustedSubjects();
     }
@@ -270,56 +263,12 @@ public final class PKIXValidator extends Validator {
         X509Certificate last = chain[chain.length - 1];
         X500Principal issuer = last.getIssuerX500Principal();
         X500Principal subject = last.getSubjectX500Principal();
-        if (trustedSubjects.containsKey(issuer) &&
-                isSignatureValid(trustedSubjects.get(issuer), last)) {
+        if (trustedSubjects.containsKey(issuer)) {
             return doValidate(chain, pkixParameters);
         }
 
-        // don't fallback to builder if called from plugin/webstart
-        if (plugin) {
-            // Validate chain even if no trust anchor is found. This
-            // allows plugin/webstart to make sure the chain is
-            // otherwise valid
-            if (chain.length > 1) {
-                X509Certificate[] newChain =
-                    new X509Certificate[chain.length-1];
-                System.arraycopy(chain, 0, newChain, 0, newChain.length);
-
-                // temporarily set last cert as sole trust anchor
-                try {
-                    pkixParameters.setTrustAnchors
-                        (Collections.singleton(new TrustAnchor
-                            (chain[chain.length-1], null)));
-                } catch (InvalidAlgorithmParameterException iape) {
-                    // should never occur, but ...
-                    throw new CertificateException(iape);
-                }
-                doValidate(newChain, pkixParameters);
-            }
-            // if the rest of the chain is valid, throw exception
-            // indicating no trust anchor was found
-            throw new ValidatorException
-                (ValidatorException.T_NO_TRUST_ANCHOR);
-        }
         // otherwise, fall back to builder
-
         return doBuild(chain, otherCerts, pkixParameters);
-    }
-
-    private boolean isSignatureValid(List<PublicKey> keys,
-            X509Certificate sub) {
-        if (plugin) {
-            for (PublicKey key: keys) {
-                try {
-                    sub.verify(key);
-                    return true;
-                } catch (Exception ex) {
-                    continue;
-                }
-            }
-            return false;
-        }
-        return true; // only check if PLUGIN is set
     }
 
     private static X509Certificate[] toArray(CertPath path, TrustAnchor anchor)

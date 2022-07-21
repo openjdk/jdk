@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,12 +39,10 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.security.Principal;
 import java.security.cert.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.StringTokenizer;
-import java.util.Vector;
-
-import javax.security.auth.x500.X500Principal;
 
 import javax.net.ssl.*;
 import sun.net.www.http.HttpClient;
@@ -148,14 +146,14 @@ final class HttpsClient extends HttpClient
             ciphers = null;
         } else {
             StringTokenizer     tokenizer;
-            Vector<String>      v = new Vector<String>();
+            ArrayList<String>   v = new ArrayList<>();
 
             tokenizer = new StringTokenizer(cipherString, ",");
             while (tokenizer.hasMoreTokens())
-                v.addElement(tokenizer.nextToken());
+                v.add(tokenizer.nextToken());
             ciphers = new String [v.size()];
             for (int i = 0; i < ciphers.length; i++)
-                ciphers [i] = v.elementAt(i);
+                ciphers [i] = v.get(i);
         }
         return ciphers;
     }
@@ -172,14 +170,14 @@ final class HttpsClient extends HttpClient
             protocols = null;
         } else {
             StringTokenizer     tokenizer;
-            Vector<String>      v = new Vector<String>();
+            ArrayList<String>   v = new ArrayList<>();
 
             tokenizer = new StringTokenizer(protocolString, ",");
             while (tokenizer.hasMoreTokens())
-                v.addElement(tokenizer.nextToken());
+                v.add(tokenizer.nextToken());
             protocols = new String [v.size()];
             for (int i = 0; i < protocols.length; i++) {
-                protocols [i] = v.elementAt(i);
+                protocols [i] = v.get(i);
             }
         }
         return protocols;
@@ -331,7 +329,7 @@ final class HttpsClient extends HttpClient
             ret = (HttpsClient) kac.get(url, sf);
             if (ret != null && httpuc != null &&
                 httpuc.streaming() &&
-                httpuc.getRequestMethod() == "POST") {
+                "POST".equals(httpuc.getRequestMethod())) {
                 if (!ret.available())
                     ret = null;
             }
@@ -565,13 +563,13 @@ final class HttpsClient extends HttpClient
                 if (isDefaultHostnameVerifier) {
                     // If the HNV is the default from HttpsURLConnection, we
                     // will do the spoof checks in SSLSocket.
-                    SSLParameters paramaters = s.getSSLParameters();
-                    paramaters.setEndpointIdentificationAlgorithm("HTTPS");
+                    SSLParameters parameters = s.getSSLParameters();
+                    parameters.setEndpointIdentificationAlgorithm("HTTPS");
                     // host has been set previously for SSLSocketImpl
                     if (!(s instanceof SSLSocketImpl)) {
-                        paramaters.setServerNames(List.of(new SNIHostName(host)));
+                        parameters.setServerNames(List.of(new SNIHostName(host)));
                     }
-                    s.setSSLParameters(paramaters);
+                    s.setSSLParameters(parameters);
 
                     needToCheckSpoofing = false;
                 }
@@ -647,7 +645,7 @@ final class HttpsClient extends HttpClient
             // ignore
         }
 
-        if ((cipher != null) && (cipher.indexOf("_anon_") != -1)) {
+        if ((cipher != null) && (cipher.contains("_anon_"))) {
             return;
         } else if ((hostnameVerifier != null) &&
                    (hostnameVerifier.verify(host, session))) {
@@ -663,12 +661,17 @@ final class HttpsClient extends HttpClient
 
     @Override
     protected void putInKeepAliveCache() {
-        if (inCache) {
-            assert false : "Duplicate put to keep alive cache";
-            return;
+        lock();
+        try {
+            if (inCache) {
+                assert false : "Duplicate put to keep alive cache";
+                return;
+            }
+            inCache = true;
+            kac.put(url, sslSocketFactory, this);
+        } finally {
+            unlock();
         }
-        inCache = true;
-        kac.put(url, sslSocketFactory, this);
     }
 
     /*

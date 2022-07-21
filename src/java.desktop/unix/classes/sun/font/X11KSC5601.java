@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ public class X11KSC5601 extends Charset {
         return cs instanceof X11KSC5601;
     }
 
-    private class Encoder extends CharsetEncoder {
+    private static class Encoder extends CharsetEncoder {
         private DoubleByte.Encoder enc = (DoubleByte.Encoder)new EUC_KR().newEncoder();
 
         public Encoder(Charset cs) {
@@ -97,7 +97,7 @@ public class X11KSC5601 extends Charset {
         }
     }
 
-    private class Decoder extends  CharsetDecoder {
+    private static class Decoder extends  CharsetDecoder {
         private DoubleByte.Decoder dec = (DoubleByte.Decoder)new EUC_KR().newDecoder();
 
         public Decoder(Charset cs) {

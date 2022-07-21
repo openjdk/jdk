@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 package compiler.lib.ir_framework;
 
-import compiler.lib.ir_framework.driver.IRViolationException;
+import compiler.lib.ir_framework.driver.irmatching.IRViolationException;
 
 import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
@@ -58,8 +58,8 @@ import java.lang.annotation.RetentionPolicy;
  * If the specified preconditions fail, then the framework does not apply the IR rule. These preconditions can be
  * set with {@link #applyIf()}, {@link #applyIfNot()}, {@link #applyIfAnd()}, or {@link #applyIfOr()}.
  * <p>
- * Examples on how to write tests with IR rules can be found in {@link jdk.test.lib.hotspot.ir_framework.examples.IRExample}
- * and also as part of the internal testing in {@link jdk.test.lib.hotspot.ir_framework.tests.TestIRMatching}.
+ * Examples on how to write tests with IR rules can be found in {@link ir_framework.examples.IRExample}
+ * and also as part of the internal testing in {@link ir_framework.tests.TestIRMatching}.
  *
  * @see Test
  * @see IRNode
@@ -97,6 +97,27 @@ public @interface IR {
      * {@link #applyIfOr()} depending on the use case.
      */
     String[] applyIf() default {};
+
+    /**
+     * Accepts a single feature pair which is composed of CPU feature string followed by a true/false
+     * value where a true value necessities existence of CPU feature and vice-versa.
+     * IR verifications checks are enforced only if the specified feature constraint is met.
+     */
+    String[] applyIfCPUFeature() default {};
+
+    /**
+     * Accepts a list of feature pairs where each pair is composed of target feature string followed by a true/false
+     * value where a true value necessities existence of target feature and vice-versa.
+     * IR verifications checks are enforced only if all the specified feature constraints are met.
+     */
+    String[] applyIfCPUFeatureAnd() default {};
+
+     /**
+     * Accepts a list of feature pairs where each pair is composed of target feature string followed by a true/false
+     * value where a true value necessities existence of target feature and vice-versa.
+     * IR verifications checks are enforced if any of the specified feature constraint is met.
+     */
+    String[] applyIfCPUFeatureOr() default {};
 
     /**
      * Define a single VM flag precondition which <i>must <b>not</b> hold</i> when applying the IR rule. If, however,

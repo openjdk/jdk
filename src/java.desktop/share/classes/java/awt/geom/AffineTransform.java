@@ -2667,7 +2667,7 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
      * @return a new {@code AffineTransform} object representing the
      * inverse transformation.
      * @see #getDeterminant
-     * @exception NoninvertibleTransformException
+     * @throws NoninvertibleTransformException
      * if the matrix cannot be inverted.
      * @since 1.2
      */
@@ -2762,7 +2762,7 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
      * transform has no inverse, in which case an exception will be
      * thrown if the {@code invert} method is called.
      * @see #getDeterminant
-     * @exception NoninvertibleTransformException
+     * @throws NoninvertibleTransformException
      * if the matrix cannot be inverted.
      * @since 1.6
      */
@@ -3464,7 +3464,7 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
      * @param ptDst the resulting transformed point
      * @return {@code ptDst}, which contains the result of the
      * inverse transform.
-     * @exception NoninvertibleTransformException  if the matrix cannot be
+     * @throws NoninvertibleTransformException  if the matrix cannot be
      *                                         inverted.
      * @since 1.2
      */
@@ -3550,7 +3550,7 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
      * @param dstOff the offset to the location of the first
      * transformed point that is stored in the destination array
      * @param numPts the number of point objects to be transformed
-     * @exception NoninvertibleTransformException  if the matrix cannot be
+     * @throws NoninvertibleTransformException  if the matrix cannot be
      *                                         inverted.
      * @since 1.2
      */

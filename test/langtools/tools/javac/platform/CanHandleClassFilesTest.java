@@ -64,7 +64,7 @@ public class CanHandleClassFilesTest {
                 Path test = d.resolve("make/langtools/src/classes/build/tools/symbolgenerator/CreateSymbols.java");
                 if (Files.exists(test)) {
                     createSymbols = test;
-                    includeList = d.resolve("make/data/symbols/include.list");
+                    includeList = d.resolve("src/jdk.compiler/share/data/symbols/include.list");
                     break;
                 }
             }

@@ -33,10 +33,11 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
@@ -78,7 +79,7 @@ VMNativeEntryWrapper::~VMNativeEntryWrapper() {
 
 unsigned int InterfaceSupport::_scavenge_alot_counter = 1;
 unsigned int InterfaceSupport::_fullgc_alot_counter   = 1;
-int InterfaceSupport::_fullgc_alot_invocation = 0;
+intx InterfaceSupport::_fullgc_alot_invocation = 0;
 
 void InterfaceSupport::gc_alot() {
   Thread *thread = Thread::current();

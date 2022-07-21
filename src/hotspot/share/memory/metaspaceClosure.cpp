@@ -29,9 +29,7 @@
 void MetaspaceClosure::Ref::update(address new_loc) const {
   log_trace(cds)("Ref: [" PTR_FORMAT "] -> " PTR_FORMAT " => " PTR_FORMAT,
                  p2i(mpp()), p2i(obj()), p2i(new_loc));
-  uintx p = (uintx)new_loc;
-  p |= flag_bits(); // Make sure the flag bits are copied to the new pointer.
-  *(address*)mpp() = (address)p;
+  *addr() = new_loc;
 }
 
 void MetaspaceClosure::push_impl(MetaspaceClosure::Ref* ref) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -230,7 +230,7 @@ public class Annotate {
      *
      * @param annotations the list of JCAnnotations to attribute and enter
      * @param localEnv    the enclosing env
-     * @param s           ths Symbol on which to enter the annotations
+     * @param s           the Symbol on which to enter the annotations
      * @param deferPos    report errors here
      */
     public void annotateLater(List<JCAnnotation> annotations, Env<AttrContext> localEnv,
@@ -345,7 +345,7 @@ public class Annotate {
 
             Assert.checkNonNull(c, "Failed to create annotation");
 
-            if (a.type.tsym.isAnnotationType()) {
+            if (a.type.isErroneous() || a.type.tsym.isAnnotationType()) {
                 if (annotated.containsKey(a.type.tsym)) {
                     if (!allowRepeatedAnnos) {
                         log.error(DiagnosticFlag.SOURCE_LEVEL, a.pos(), Feature.REPEATED_ANNOTATIONS.error(sourceName));
@@ -442,7 +442,7 @@ public class Annotate {
      *
      * @param a the tree representing an annotation
      * @param expectedAnnotationType the expected (super)type of the annotation
-     * @param env the the current env in where the annotation instance is found
+     * @param env the current env in where the annotation instance is found
      */
     public Attribute.TypeCompound attributeTypeAnnotation(JCAnnotation a, Type expectedAnnotationType,
                                                           Env<AttrContext> env)
@@ -672,6 +672,12 @@ public class Annotate {
             log.error(tree.pos(), Errors.AttributeValueMustBeConstant);
             return new Attribute.Error(expectedElementType);
         }
+
+        // Scan the annotation element value and then attribute nested annotations if present
+        if (tree.type != null && tree.type.tsym != null) {
+            queueScanTreeAndTypeAnnotate(tree, env, tree.type.tsym, tree.pos());
+        }
+
         result = cfolder.coerce(result, expectedElementType);
         return new Attribute.Constant(expectedElementType, result.constValue());
     }

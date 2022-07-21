@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/g1/g1EvacuationInfo.hpp"
+#include "gc/g1/g1EvacInfo.hpp"
 #include "gc/g1/g1HeapRegionTraceType.hpp"
 #include "gc/g1/g1Trace.hpp"
 #include "gc/g1/g1GCPauseType.hpp"
@@ -83,7 +83,7 @@ void G1NewTracer::report_gc_end_impl(const Ticks& timestamp, TimePartitions* tim
   send_g1_young_gc_event();
 }
 
-void G1NewTracer::report_evacuation_info(G1EvacuationInfo* info) {
+void G1NewTracer::report_evacuation_info(G1EvacInfo* info) {
   send_evacuation_info_event(info);
 }
 
@@ -141,7 +141,7 @@ void G1NewTracer::send_g1_young_gc_event() {
   }
 }
 
-void G1NewTracer::send_evacuation_info_event(G1EvacuationInfo* info) {
+void G1NewTracer::send_evacuation_info_event(G1EvacInfo* info) {
   EventEvacuationInformation e;
   if (e.should_commit()) {
     e.set_gcId(GCId::current());
@@ -163,9 +163,9 @@ void G1NewTracer::send_evacuation_failed_event(const EvacuationFailedInfo& ef_in
     // Create JFR structured failure data
     JfrStructCopyFailed evac_failed;
     evac_failed.set_objectCount(ef_info.failed_count());
-    evac_failed.set_firstSize(ef_info.first_size());
-    evac_failed.set_smallestSize(ef_info.smallest_size());
-    evac_failed.set_totalSize(ef_info.total_size());
+    evac_failed.set_firstSize(ef_info.first_size() * HeapWordSize);
+    evac_failed.set_smallestSize(ef_info.smallest_size() * HeapWordSize);
+    evac_failed.set_totalSize(ef_info.total_size() * HeapWordSize);
     // Add to the event
     e.set_gcId(GCId::current());
     e.set_evacuationFailed(evac_failed);

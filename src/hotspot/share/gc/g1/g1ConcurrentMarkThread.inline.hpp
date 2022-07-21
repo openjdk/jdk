@@ -60,4 +60,8 @@ inline bool G1ConcurrentMarkThread::in_progress() const {
   return !idle();
 }
 
+inline bool G1ConcurrentMarkThread::in_undo_mark() const {
+  return _state == UndoMark;
+}
+
 #endif // SHARE_GC_G1_G1CONCURRENTMARKTHREAD_INLINE_HPP

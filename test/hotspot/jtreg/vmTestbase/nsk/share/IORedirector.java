@@ -24,6 +24,9 @@
 package nsk.share;
 
 import java.io.*;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * This class implements a thread transfering bytes from
@@ -31,13 +34,7 @@ import java.io.*;
  */
 public class IORedirector extends Thread {
     private BufferedReader bin  = null;
-    private PrintStream    pout = null;
-    private Log            log  = null;
-
-    /**
-     * Few symbols to precede every text line being redirected.
-     */
-    private String prefix = "";
+    private List<Consumer<String>> processors = new LinkedList<>();
 
     /**
      * Input and output streams must be specified.
@@ -54,10 +51,16 @@ public class IORedirector extends Thread {
      * @see #IORedirector(BufferedReader,Log,String)
      */
     @Deprecated
-    public IORedirector(InputStream in, OutputStream out) {
+    public IORedirector(InputStream in, OutputStream out, String prefix) {
         this();
         bin  = new BufferedReader(new InputStreamReader(in));
-        pout = new PrintStream(out);
+        PrintStream pout = new PrintStream(out);
+        addProcessor(s -> {
+            synchronized (pout) {
+                pout.println(prefix + s);
+                pout.flush();
+            }
+        });
     }
 
     /**
@@ -67,16 +70,16 @@ public class IORedirector extends Thread {
      */
     public IORedirector(BufferedReader in, Log log, String prefix) {
         this();
-        this.prefix = prefix;
         this.bin  = in;
-        this.log = log;
+        addProcessor(s -> log.println(prefix + s));
     }
 
-    /**
-     * Set the prefix for redirected messages;
-     */
-    public void setPrefix(String prefix) {
-        this.prefix = prefix;
+    public void addProcessor(Consumer<String> lineProcessor) {
+        processors.add(lineProcessor);
+    }
+
+    private void processLine(String line) {
+        processors.stream().forEach(processor -> processor.accept(line));
     }
 
     private boolean cancelled = false;
@@ -104,39 +107,20 @@ public class IORedirector extends Thread {
      */
     public void run () {
         started = true;
-        String logPrefix = "IORedirector-" + prefix;
-        if (bin == null || (pout == null && log == null))
+        if (bin == null || processors.isEmpty()) {
             return;
+        }
         try {
             while (!cancelled) {
                 String line = bin.readLine();
                 if (line == null)
                     break; //EOF
-                String message = prefix + line;
-                if (log != null) {
-                    // It's synchronized and auto-flushed:
-                    log.println(message);
-                } else if (pout != null) {
-                    synchronized (pout) {
-                        pout.println(message);
-                        pout.flush();
-                    }
-                }
+                processLine(line);
             }
         } catch (IOException e) {
             // e.printStackTrace(log.getOutStream());
             String msg = "# WARNING: Caught IOException while redirecting output stream:\n\t" + e;
-            if (log != null) {
-                log.println(msg);
-            } else if (pout != null) {
-                synchronized (pout) {
-                    pout.println(msg);
-                    pout.flush();
-                }
-            } else {
-                System.err.println(msg);
-                System.err.flush();
-            }
+            processLine(msg);
         };
         stopped = true;
     }

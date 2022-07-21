@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,8 @@
 /*
  * @test
  * @bug 4290801 4692419 4693631 5101540 5104960 6296410 6336600 6371531
- *    6488442 7036905 8008577 8039317 8074350 8074351 8150324 8167143
+ *      6488442 7036905 8008577 8039317 8074350 8074351 8150324 8167143
+ *      8264792
  * @summary Basic tests for Currency class.
  * @modules java.base/java.util:open
  *          jdk.localedata
@@ -104,7 +105,7 @@ public class CurrencyTest {
             int ctryLength = ctryCode.length();
             if (ctryLength == 0 ||
                 ctryLength == 3 || // UN M.49 code
-                ctryCode.matches("AA|Q[M-Z]|X[A-Z]|ZZ" + // user defined codes
+                ctryCode.matches("AA|Q[M-Z]|X[A-JL-Z]|ZZ" + // user defined codes, excluding "XK" (Kosovo)
                                  "AC|CP|DG|EA|EU|FX|IC|SU|TA|UK")) { // exceptional reservation codes
                 boolean gotException = false;
                 try {
@@ -138,7 +139,7 @@ public class CurrencyTest {
 
         /*
         * check currency changes
-        * In current implementation, there is no data of old currency and transition date at jdk/make/data/currency/CurrencyData.properties.
+        * In current implementation, there is no data of old currency and transition date at jdk/src/java.base/share/data/currency/CurrencyData.properties.
         * So, all the switch data arrays are empty. In the future, if data of old currency and transition date are necessary for any country, the
         * arrays here can be updated so that the program can check the currency switch.
         */
@@ -165,7 +166,7 @@ public class CurrencyTest {
         // check an invalid country code
         boolean gotException = false;
         try {
-            Currency.getInstance(new Locale("", "EU"));
+            Currency.getInstance(Locale.of("", "EU"));
         } catch (IllegalArgumentException e) {
             gotException = true;
         }
@@ -175,7 +176,7 @@ public class CurrencyTest {
     }
 
     static void checkCountryCurrency(String countryCode, String expected) {
-        Locale locale = new Locale("", countryCode);
+        Locale locale = Locale.of("", countryCode);
         Currency currency = Currency.getInstance(locale);
         String code = (currency != null) ? currency.getCurrencyCode() : null;
         if (!(expected == null ? code == null : expected.equals(code))) {
@@ -256,11 +257,11 @@ public class CurrencyTest {
         testDisplayName("USD", Locale.ENGLISH, "US Dollar");
         testDisplayName("FRF", Locale.FRENCH, "franc fran\u00e7ais");
         testDisplayName("DEM", Locale.GERMAN, "Deutsche Mark");
-        testDisplayName("ESP", new Locale("es"), "peseta espa\u00f1ola");
-        testDisplayName("ITL", new Locale("it"), "lira italiana");
+        testDisplayName("ESP", Locale.of("es"), "peseta espa\u00f1ola");
+        testDisplayName("ITL", Locale.ITALIAN, "lira italiana");
         testDisplayName("JPY", Locale.JAPANESE, "\u65e5\u672c\u5186");
         testDisplayName("KRW", Locale.KOREAN, "\ub300\ud55c\ubbfc\uad6d \uc6d0");
-        testDisplayName("SEK", new Locale("sv"), "svensk krona");
+        testDisplayName("SEK", Locale.of("sv"), "svensk krona");
         testDisplayName("CNY", Locale.SIMPLIFIED_CHINESE, "\u4eba\u6c11\u5e01");
         testDisplayName("TWD", Locale.TRADITIONAL_CHINESE, "\u65b0\u53f0\u5e63");
     }

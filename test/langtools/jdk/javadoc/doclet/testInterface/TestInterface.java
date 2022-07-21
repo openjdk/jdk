@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,8 +45,8 @@
  * In Child.html
  *  Specified by:  method in interface<IE>
  *  Overrides:     method in class Parent<PE>
- * In otherwords the TypeParameter in scope should be used ex: Interface<IE>, Parent<PE>
-   and Child<CE>
+ * In other words the TypeParameter in scope should be used ex: Interface<IE>, Parent<PE>
+ * and Child<CE>
  */
 
 import javadoc.tester.JavadocTester;
@@ -150,7 +150,7 @@ public class TestInterface extends JavadocTester {
                     <div class="member-signature"><span class="modifiers">public static</span>&nbsp;\
                     <span class="return-type">void</span>&nbsp;<span class="element-name">staticMethod</span\
                     >()</div>
-                    <div class="block"><span class="descfrm-type-label">Description copied from inte\
+                    <div class="block"><span class="description-from-type-label">Description copied from inte\
                     rface:&nbsp;<code><a href="InterfaceWithStaticMembers.html#staticMethod()">Inter\
                     faceWithStaticMembers</a></code></span></div>
                     <div class="block">A static method</div>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,14 +38,14 @@ public class UnrecoverableKeyException extends UnrecoverableEntryException {
     private static final long serialVersionUID = 7275063078190151277L;
 
     /**
-     * Constructs an UnrecoverableKeyException with no detail message.
+     * Constructs an {@code UnrecoverableKeyException} with no detail message.
      */
     public UnrecoverableKeyException() {
         super();
     }
 
     /**
-     * Constructs an UnrecoverableKeyException with the specified detail
+     * Constructs an {@code UnrecoverableKeyException} with the specified detail
      * message, which provides more information about why this exception
      * has been thrown.
      *

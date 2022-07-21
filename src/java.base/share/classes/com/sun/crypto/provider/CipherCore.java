@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,8 +201,7 @@ final class CipherCore {
         if (mode.length() > offset) {
             int numInt;
             try {
-                Integer num = Integer.valueOf(mode.substring(offset));
-                numInt = num.intValue();
+                numInt = Integer.parseInt(mode.substring(offset));
                 result = numInt >> 3;
             } catch (NumberFormatException e) {
                 throw new NoSuchAlgorithmException
@@ -813,10 +812,13 @@ final class CipherCore {
             if (outputCapacity < estOutSize) {
                 cipher.save();
             }
-            // create temporary output buffer if the estimated size is larger
-            // than the user-provided buffer.
-            internalOutput = new byte[estOutSize];
-            offset = 0;
+            if (outputCapacity < estOutSize || padding != null) {
+                // create temporary output buffer if the estimated size is larger
+                // than the user-provided buffer or a padding needs to be removed
+                // before copying the unpadded result to the output buffer
+                internalOutput = new byte[estOutSize];
+                offset = 0;
+            }
         }
 
         byte[] outBuffer = (internalOutput != null) ? internalOutput : output;

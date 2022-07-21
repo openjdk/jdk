@@ -442,7 +442,7 @@ void G1BarrierSetC2::post_barrier(GraphKit* kit,
   Node* cast =  __ CastPX(__ ctrl(), adr);
 
   // Divide pointer by card size
-  Node* card_offset = __ URShiftX( cast, __ ConI(CardTable::card_shift) );
+  Node* card_offset = __ URShiftX( cast, __ ConI(CardTable::card_shift()) );
 
   // Combine card table base and card offset
   Node* card_adr = __ AddP(no_base, byte_map_base_node(kit), card_offset );
@@ -528,8 +528,8 @@ void G1BarrierSetC2::insert_pre_barrier(GraphKit* kit, Node* base_oop, Node* off
     if (itype != NULL) {
       // Can the klass of base_oop be statically determined to be
       // _not_ a sub-class of Reference and _not_ Object?
-      ciKlass* klass = itype->klass();
-      if ( klass->is_loaded() &&
+      ciKlass* klass = itype->instance_klass();
+      if (klass->is_loaded() &&
           !klass->is_subtype_of(kit->env()->Reference_klass()) &&
           !kit->env()->Object_klass()->is_subtype_of(klass)) {
         return;

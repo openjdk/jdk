@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,13 +115,15 @@ public final class DecimalStyle {
     /**
      * Lists all the locales that are supported.
      * <p>
-     * The locale 'en_US' will always be present.
+     * At a minimum, the returned {@code Set} must contain a {@code Locale} instance equal to
+     * {@link Locale#ROOT Locale.ROOT} and a {@code Locale} instance equal to
+     * {@link Locale#US Locale.US}.
      *
      * @return a Set of Locales for which localization is supported
      */
     public static Set<Locale> getAvailableLocales() {
         Locale[] l = DecimalFormatSymbols.getAvailableLocales();
-        Set<Locale> locales = new HashSet<>(l.length);
+        Set<Locale> locales = HashSet.newHashSet(l.length);
         Collections.addAll(locales, l);
         return locales;
     }
@@ -158,13 +160,7 @@ public final class DecimalStyle {
      */
     public static DecimalStyle of(Locale locale) {
         Objects.requireNonNull(locale, "locale");
-        DecimalStyle info = CACHE.get(locale);
-        if (info == null) {
-            info = create(locale);
-            CACHE.putIfAbsent(locale, info);
-            info = CACHE.get(locale);
-        }
-        return info;
+        return CACHE.computeIfAbsent(locale, DecimalStyle::create);
     }
 
     private static DecimalStyle create(Locale locale) {

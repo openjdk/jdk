@@ -427,6 +427,11 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
                                 return defineClass(name, res);
                             } catch (IOException e) {
                                 throw new ClassNotFoundException(name, e);
+                            } catch (ClassFormatError e2) {
+                                if (res.getDataError() != null) {
+                                    e2.addSuppressed(res.getDataError());
+                                }
+                                throw e2;
                             }
                         } else {
                             return null;

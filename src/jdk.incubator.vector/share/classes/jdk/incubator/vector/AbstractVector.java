@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,10 @@
  */
 package jdk.incubator.vector;
 
+import java.lang.foreign.MemorySegment;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.vector.VectorSupport;
 
-import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.function.IntUnaryOperator;
 
@@ -61,6 +61,12 @@ abstract class AbstractVector<E> extends Vector<E> {
      */
     /*package-private*/
     static final ByteOrder REGISTER_ENDIAN = ByteOrder.LITTLE_ENDIAN;
+
+    /*package-private*/
+    static final int OFFSET_IN_RANGE = 1;
+
+    /*package-private*/
+    static final int OFFSET_OUT_OF_RANGE = 0;
 
     /*package-private*/
     AbstractVector(Object bits) {
@@ -194,7 +200,7 @@ abstract class AbstractVector<E> extends Vector<E> {
     abstract AbstractShuffle<E> shuffleFromOp(IntUnaryOperator fn);
 
     /*package-private*/
-    abstract AbstractVector<E> fromByteArray0(byte[] a, int offset);
+    abstract AbstractVector<E> fromMemorySegment0(MemorySegment ms, long offset);
 
     /*package-private*/
     abstract AbstractVector<E> maybeSwap(ByteOrder bo);
@@ -504,23 +510,23 @@ abstract class AbstractVector<E> extends Vector<E> {
     AbstractVector<F> defaultReinterpret(AbstractSpecies<F> rsp) {
         int blen = Math.max(this.bitSize(), rsp.vectorBitSize()) / Byte.SIZE;
         ByteOrder bo = ByteOrder.nativeOrder();
-        ByteBuffer bb = ByteBuffer.allocate(blen);
-        this.intoByteBuffer(bb, 0, bo);
+        MemorySegment ms = MemorySegment.ofArray(new byte[blen]);
+        this.intoMemorySegment(ms, 0, bo);
         VectorMask<F> m = rsp.maskAll(true);
         // enum-switches don't optimize properly JDK-8161245
         switch (rsp.laneType.switchKey) {
         case LaneType.SK_BYTE:
-            return ByteVector.fromByteBuffer(rsp.check(byte.class), bb, 0, bo, m.check(byte.class)).check0(rsp);
+            return ByteVector.fromMemorySegment(rsp.check(byte.class), ms, 0, bo, m.check(byte.class)).check0(rsp);
         case LaneType.SK_SHORT:
-            return ShortVector.fromByteBuffer(rsp.check(short.class), bb, 0, bo, m.check(short.class)).check0(rsp);
+            return ShortVector.fromMemorySegment(rsp.check(short.class), ms, 0, bo, m.check(short.class)).check0(rsp);
         case LaneType.SK_INT:
-            return IntVector.fromByteBuffer(rsp.check(int.class), bb, 0, bo, m.check(int.class)).check0(rsp);
+            return IntVector.fromMemorySegment(rsp.check(int.class), ms, 0, bo, m.check(int.class)).check0(rsp);
         case LaneType.SK_LONG:
-            return LongVector.fromByteBuffer(rsp.check(long.class), bb, 0, bo, m.check(long.class)).check0(rsp);
+            return LongVector.fromMemorySegment(rsp.check(long.class), ms, 0, bo, m.check(long.class)).check0(rsp);
         case LaneType.SK_FLOAT:
-            return FloatVector.fromByteBuffer(rsp.check(float.class), bb, 0, bo, m.check(float.class)).check0(rsp);
+            return FloatVector.fromMemorySegment(rsp.check(float.class), ms, 0, bo, m.check(float.class)).check0(rsp);
         case LaneType.SK_DOUBLE:
-            return DoubleVector.fromByteBuffer(rsp.check(double.class), bb, 0, bo, m.check(double.class)).check0(rsp);
+            return DoubleVector.fromMemorySegment(rsp.check(double.class), ms, 0, bo, m.check(double.class)).check0(rsp);
         default:
             throw new AssertionError(rsp.toString());
         }
@@ -639,6 +645,25 @@ abstract class AbstractVector<E> extends Vector<E> {
         throw new AssertionError();
     }
 
+    /**
+     * Helper function for all sorts of lane-wise unsigned conversions.
+     * This function kicks in after intrinsic failure.
+     */
+    /*package-private*/
+    @ForceInline
+    final <F>
+    AbstractVector<F> defaultUCast(AbstractSpecies<F> dsp) {
+        AbstractSpecies<?> vsp = this.vspecies();
+        if (vsp.elementSize() >= dsp.elementSize()) {
+            // clip in place
+            return this.convert0('C', dsp);
+        } else {
+            // extend in place, but remove unwanted sign extension
+            long mask = -1L >>> -vsp.elementSize();
+            return (AbstractVector<F>) this.convert0('C', dsp).lanewise(AND, dsp.broadcast(mask));
+        }
+    }
+
     // Constant-folded access to conversion intrinsics:
 
     /**
@@ -658,6 +683,7 @@ abstract class AbstractVector<E> extends Vector<E> {
     final <F>
     AbstractVector<F> convert0(char kind, AbstractSpecies<F> rsp) {
         // Derive some JIT-time constants:
+        Class<?> vtype;
         Class<?> etype;   // fill in after switch (constant)
         int vlength;      // fill in after switch (mark type profile?)
         Class<?> rvtype;  // fill in after switch (mark type profile)
@@ -665,9 +691,22 @@ abstract class AbstractVector<E> extends Vector<E> {
         int rlength;
         switch (kind) {
         case 'Z':  // lane-wise size change, maybe with sign clip
-            // Maybe this should be an intrinsic also.
             AbstractSpecies<?> rspi = rsp.asIntegral();
-            AbstractVector<?> bitv = resizeLanes0(this, rspi);
+            AbstractSpecies<?> vsp = this.vspecies();
+            AbstractSpecies<?> vspi = vsp.asIntegral();
+            AbstractVector<?> biti = vspi == vsp ? this : this.convert0('X', vspi);
+            rtype = rspi.elementType();
+            rlength = rspi.laneCount();
+            etype = vspi.elementType();
+            vlength = vspi.laneCount();
+            rvtype = rspi.dummyVector().getClass();
+            vtype = vspi.dummyVector().getClass();
+            int opc = vspi.elementSize() < rspi.elementSize() ? VectorSupport.VECTOR_OP_UCAST : VectorSupport.VECTOR_OP_CAST;
+            AbstractVector<?> bitv = VectorSupport.convert(opc,
+                    vtype, etype, vlength,
+                    rvtype, rtype, rlength,
+                    biti, rspi,
+                    AbstractVector::defaultUCast);
             return (rspi == rsp ? bitv.check0(rsp) : bitv.convert0('X', rsp));
         case 'C':  // lane-wise cast (but not identity)
             rtype = rsp.elementType();
@@ -675,8 +714,9 @@ abstract class AbstractVector<E> extends Vector<E> {
             etype = this.elementType(); // (profile)
             vlength = this.length();  // (profile)
             rvtype = rsp.dummyVector().getClass();  // (profile)
+            vtype = this.getClass();
             return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
-                    this.getClass(), etype, vlength,
+                    vtype, etype, vlength,
                     rvtype, rtype, rlength,
                     this, rsp,
                     AbstractVector::defaultCast);
@@ -686,40 +726,14 @@ abstract class AbstractVector<E> extends Vector<E> {
             etype = this.elementType(); // (profile)
             vlength = this.length();  // (profile)
             rvtype = rsp.dummyVector().getClass();  // (profile)
+            vtype = this.getClass();
             return VectorSupport.convert(VectorSupport.VECTOR_OP_REINTERPRET,
-                    this.getClass(), etype, vlength,
+                    vtype, etype, vlength,
                     rvtype, rtype, rlength,
                     this, rsp,
                     AbstractVector::defaultReinterpret);
         }
         throw new AssertionError();
-    }
-
-    @ForceInline
-    private static <F>
-    AbstractVector<F>
-    resizeLanes0(AbstractVector<?> v, AbstractSpecies<F> rspi) {
-        AbstractSpecies<?> dsp = v.vspecies();
-        int sizeChange = rspi.elementSize() - dsp.elementSize();
-        AbstractSpecies<?> dspi = dsp.asIntegral();
-        if (dspi != dsp)  v = v.convert0('R', dspi);
-        if (sizeChange <= 0) {  // clip in place
-            return v.convert0('C', rspi);
-        }
-        // extend in place, but remove unwanted sign extension
-        long mask = -1L >>> sizeChange;
-        return (AbstractVector<F>)
-            v.convert0('C', rspi)
-            .lanewise(AND, rspi.broadcast(mask));
-    }
-
-    // Byte buffer wrappers.
-    static ByteBuffer wrapper(ByteBuffer bb, ByteOrder bo) {
-        return bb.duplicate().order(bo);
-    }
-
-    static ByteBuffer wrapper(byte[] a, ByteOrder bo) {
-        return ByteBuffer.wrap(a).order(bo);
     }
 
     static {

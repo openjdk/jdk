@@ -56,6 +56,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package jdk.internal.org.objectweb.asm.commons;
 
 import java.io.ByteArrayOutputStream;
@@ -181,7 +182,7 @@ public class SerialVersionUIDAdder extends ClassVisitor {
       * @throws IllegalStateException If a subclass calls this constructor.
       */
     public SerialVersionUIDAdder(final ClassVisitor classVisitor) {
-        this(/* latest api = */ Opcodes.ASM8, classVisitor);
+        this(/* latest api = */ Opcodes.ASM9, classVisitor);
         if (getClass() != SerialVersionUIDAdder.class) {
             throw new IllegalStateException();
         }
@@ -190,9 +191,8 @@ public class SerialVersionUIDAdder extends ClassVisitor {
     /**
       * Constructs a new {@link SerialVersionUIDAdder}.
       *
-      * @param api the ASM API version implemented by this visitor. Must be one of {@link
-      *     Opcodes#ASM4}, {@link Opcodes#ASM5}, {@link Opcodes#ASM6}, {@link Opcodes#ASM7} or {@link
-      *     Opcodes#ASM8}.
+      * @param api the ASM API version implemented by this visitor. Must be one of the {@code
+      *     ASM}<i>x</i> values in {@link Opcodes}.
       * @param classVisitor a {@link ClassVisitor} to which this visitor will delegate calls.
       */
     protected SerialVersionUIDAdder(final int api, final ClassVisitor classVisitor) {
@@ -349,7 +349,7 @@ public class SerialVersionUIDAdder extends ClassVisitor {
     }
 
     /**
-      * Adds a static final serialVersionUID field to the class, with the given value.
+      * Adds a final static serialVersionUID field to the class, with the given value.
       *
       * @param svuid the serialVersionUID field value.
       */
@@ -522,3 +522,4 @@ public class SerialVersionUIDAdder extends ClassVisitor {
         }
     }
 }
+

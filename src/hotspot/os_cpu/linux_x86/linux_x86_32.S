@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
 	# point or use it in the same manner as does the server
 	# compiler.
 
-        .globl _Copy_conjoint_bytes
         .globl _Copy_arrayof_conjoint_bytes
         .globl _Copy_conjoint_jshorts_atomic
 	.globl _Copy_arrayof_conjoint_jshorts
@@ -51,117 +50,10 @@ SpinPause:
         movl    $1, %eax
         ret
 
-        # Support for void Copy::conjoint_bytes(void* from,
-        #                                       void* to,
-        #                                       size_t count)
-        .p2align 4,,15
-	.type    _Copy_conjoint_bytes,@function
-_Copy_conjoint_bytes:
-        pushl    %esi
-        movl     4+12(%esp),%ecx      # count
-        pushl    %edi
-        movl     8+ 4(%esp),%esi      # from
-        movl     8+ 8(%esp),%edi      # to
-        cmpl     %esi,%edi
-        leal     -1(%esi,%ecx),%eax   # from + count - 1
-        jbe      cb_CopyRight
-        cmpl     %eax,%edi
-        jbe      cb_CopyLeft
-        # copy from low to high
-cb_CopyRight:
-        cmpl     $3,%ecx
-        jbe      5f                   # <= 3 bytes
-        # align source address at dword address boundary
-        movl     %ecx,%eax            # original count
-        movl     $4,%ecx
-        subl     %esi,%ecx
-        andl     $3,%ecx              # prefix byte count
-        jz       1f                   # no prefix
-        subl     %ecx,%eax            # byte count less prefix
-        # copy prefix
-        subl     %esi,%edi
-0:      movb     (%esi),%dl
-        movb     %dl,(%edi,%esi,1)
-        addl     $1,%esi
-        subl     $1,%ecx
-        jnz      0b
-        addl     %esi,%edi
-1:      movl     %eax,%ecx            # byte count less prefix
-        shrl     $2,%ecx              # dword count
-        jz       4f                   # no dwords to move
-        cmpl     $32,%ecx
-        jbe      2f                   # <= 32 dwords
-        # copy aligned dwords
-        rep;     smovl
-        jmp      4f
-        # copy aligned dwords
-2:      subl     %esi,%edi
-        .p2align 4,,15
-3:      movl     (%esi),%edx
-        movl     %edx,(%edi,%esi,1)
-        addl     $4,%esi
-        subl     $1,%ecx
-        jnz      3b
-        addl     %esi,%edi
-4:      movl     %eax,%ecx            # byte count less prefix
-5:      andl     $3,%ecx              # suffix byte count
-        jz       7f                   # no suffix
-        # copy suffix
-        xorl     %eax,%eax
-6:      movb     (%esi,%eax,1),%dl
-        movb     %dl,(%edi,%eax,1)
-        addl     $1,%eax
-        subl     $1,%ecx
-        jnz      6b
-7:      popl     %edi
-        popl     %esi
-        ret
-        # copy from high to low
-cb_CopyLeft:
-        std
-        leal     -4(%edi,%ecx),%edi   # to + count - 4
-        movl     %eax,%esi            # from + count - 1
-        movl     %ecx,%eax
-        subl     $3,%esi              # from + count - 4
-        cmpl     $3,%ecx
-        jbe      5f                   # <= 3 bytes
-1:      shrl     $2,%ecx              # dword count
-        jz       4f                   # no dwords to move
-        cmpl     $32,%ecx
-        ja       3f                   # > 32 dwords
-        # copy dwords, aligned or not
-        subl     %esi,%edi
-        .p2align 4,,15
-2:      movl     (%esi),%edx
-        movl     %edx,(%edi,%esi,1)
-        subl     $4,%esi
-        subl     $1,%ecx
-        jnz      2b
-        addl     %esi,%edi
-        jmp      4f
-        # copy dwords, aligned or not
-3:      rep;     smovl
-4:      movl     %eax,%ecx            # byte count
-5:      andl     $3,%ecx              # suffix byte count
-        jz       7f                   # no suffix
-        # copy suffix
-        subl     %esi,%edi
-        addl     $3,%esi
-6:      movb     (%esi),%dl
-        movb     %dl,(%edi,%esi,1)
-	subl     $1,%esi
-        subl     $1,%ecx
-        jnz      6b
-7:      cld
-        popl     %edi
-        popl     %esi
-        ret
-
         # Support for void Copy::arrayof_conjoint_bytes(void* from,
         #                                               void* to,
         #                                               size_t count)
         #
-        # Same as _Copy_conjoint_bytes, except no source alignment check.
         .p2align 4,,15
 	.type    _Copy_arrayof_conjoint_bytes,@function
 _Copy_arrayof_conjoint_bytes:

@@ -78,11 +78,11 @@ template<
     >
 class ResizeableResourceHashtable : public ResourceHashtableBase<
     ResizeableResourceHashtableStorage<K, V, ALLOC_TYPE, MEM_TYPE>,
-    K, V, HASH, EQUALS, ALLOC_TYPE, MEM_TYPE> {
+    K, V, ALLOC_TYPE, MEM_TYPE, HASH, EQUALS> {
   unsigned _max_size;
 
   using BASE = ResourceHashtableBase<ResizeableResourceHashtableStorage<K, V, ALLOC_TYPE, MEM_TYPE>,
-                                     K, V, HASH, EQUALS, ALLOC_TYPE, MEM_TYPE>;
+                                     K, V, ALLOC_TYPE, MEM_TYPE, HASH, EQUALS>;
   using Node = ResourceHashtableNode<K, V>;
   NONCOPYABLE(ResizeableResourceHashtable);
 public:

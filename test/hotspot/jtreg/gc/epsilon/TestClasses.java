@@ -31,16 +31,14 @@ package gc.epsilon;
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.misc
  *
- * @run main/othervm -Xmx1g -XX:MetaspaceSize=1m -XX:MaxMetaspaceSize=64m -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC -Xlog:gc -Xlog:gc+metaspace gc.epsilon.TestClasses
+ * @run main/othervm -Xmx256m
+ *                   -XX:MetaspaceSize=1m -XX:MaxMetaspaceSize=64m -Xlog:gc -Xlog:gc+metaspace
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
+ *                   gc.epsilon.TestClasses
  */
 
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.Opcodes;
-
-import java.util.*;
-import java.io.*;
-import java.nio.*;
-import java.nio.file.*;
 
 public class TestClasses {
 

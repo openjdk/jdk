@@ -28,7 +28,6 @@ package java.lang;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleDescriptor.Exports;
 import java.lang.module.ModuleDescriptor.Opens;
-import java.lang.reflect.Member;
 import java.io.FileDescriptor;
 import java.io.File;
 import java.io.FilePermission;
@@ -48,7 +47,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import jdk.internal.module.ModuleLoaderMap;
-import jdk.internal.reflect.CallerSensitive;
 import sun.security.util.SecurityConstants;
 
 /**
@@ -77,7 +75,7 @@ import sun.security.util.SecurityConstants;
  * manager routine simply returns if the operation is permitted, but
  * throws a {@code SecurityException} if the operation is not
  * permitted.
- * <p>
+ * <h2><a id="set-security-manager">Setting a Security Manager</a></h2>
  * Environments using a security manager will typically set the security
  * manager at startup. In the JDK implementation, this is done by setting the
  * system property {@systemProperty java.security.manager} on the command line
@@ -96,13 +94,13 @@ import sun.security.util.SecurityConstants;
  * {@link System#setSecurityManager(SecurityManager) setSecurityManager} method.
  * In the JDK implementation, if the Java virtual machine is started with
  * the {@code java.security.manager} system property set to the special token
- * "{@code disallow}" then a security manager will not be set at startup and
- * cannot be set dynamically (the
+ * "{@code allow}", then a security manager will not be set at startup but can
+ * be set dynamically. If the Java virtual machine is started with the
+ * {@code java.security.manager} system property not set or set to the special
+ * token "{@code disallow}", then a security manager will not be set at startup
+ * and cannot be set dynamically (the
  * {@link System#setSecurityManager(SecurityManager) setSecurityManager}
- * method will throw an {@code UnsupportedOperationException}). If the
- * {@code java.security.manager} system property is not set or is set to the
- * special token "{@code allow}", then a security manager will not be set at
- * startup but can be set dynamically. Finally, if the
+ * method will throw an {@code UnsupportedOperationException}). Finally, if the
  * {@code java.security.manager} system property is set to the class name of
  * the security manager, or to the empty String ("") or the special token
  * "{@code default}", then a security manager is set at startup (as described
@@ -127,8 +125,7 @@ import sun.security.util.SecurityConstants;
  * <tr>
  *   <th scope="row">null</th>
  *   <td>None</td>
- *   <td>Success or throws {@code SecurityException} if not permitted by
- * the currently installed security manager</td>
+ *   <td>Throws {@code UnsupportedOperationException}</td>
  * </tr>
  *
  * <tr>
@@ -148,7 +145,7 @@ import sun.security.util.SecurityConstants;
  * <tr>
  *   <th scope="row">"disallow"</th>
  *   <td>None</td>
- *   <td>Always throws {@code UnsupportedOperationException}</td>
+ *   <td>Throws {@code UnsupportedOperationException}</td>
  * </tr>
  *
  * <tr>
@@ -167,12 +164,10 @@ import sun.security.util.SecurityConstants;
  *
  * </tbody>
  * </table>
- * <p> A future release of the JDK may change the default value of the
- * {@code java.security.manager} system property to "{@code disallow}".
  * <p>
  * The current security manager is returned by the
  * {@link System#getSecurityManager() getSecurityManager} method.
- * <p>
+ * <h2><a id="check-permission">Checking Permissions</a></h2>
  * The special method
  * {@link SecurityManager#checkPermission(java.security.Permission)}
  * determines whether an access request indicated by a specified

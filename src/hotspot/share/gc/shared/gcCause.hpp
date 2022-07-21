@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,8 @@
 #ifndef SHARE_GC_SHARED_GCCAUSE_HPP
 #define SHARE_GC_SHARED_GCCAUSE_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
+#include "utilities/debug.hpp"
 
 //
 // This class exposes implementation details of the various
@@ -63,6 +64,7 @@ class GCCause : public AllStatic {
     /* implementation specific */
 
     _tenured_generation_full,
+    _codecache_GC_threshold,
     _metadata_GC_threshold,
     _metadata_GC_clear_soft_refs,
 
@@ -124,7 +126,7 @@ class GCCause : public AllStatic {
   // Causes for collection of the young generation
   inline static bool is_allocation_failure_gc(GCCause::Cause cause) {
     // _allocation_failure is the generic cause a collection for allocation failure
-    // _adaptive_size_policy is for a collecton done before a full GC
+    // _adaptive_size_policy is for a collection done before a full GC
     return (cause == GCCause::_allocation_failure ||
             cause == GCCause::_adaptive_size_policy ||
             cause == GCCause::_shenandoah_allocation_failure_evac);

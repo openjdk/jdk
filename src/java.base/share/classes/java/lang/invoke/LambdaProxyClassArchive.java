@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ final class LambdaProxyClassArchive {
     /**
      * Registers the lambdaProxyClass into CDS archive.
      * The VM will store the lambdaProxyClass into a hash table
-     * using the first six argumennts as the key.
+     * using the first six arguments as the key.
      *
      * CDS only archives lambda proxy class if it's not serializable
      * and no marker interfaces and no additional bridges, and if it is

@@ -143,6 +143,7 @@ final class GHASH implements Cloneable, GCM {
             throw new ProviderException("Internal error");
         }
         state = new long[2];
+        // 8 for avx-ghash implementation and 1 for the original key
         subkeyHtbl = new long[2*9];
         subkeyHtbl[0] = (long)asLongView.get(subkeyH, 0);
         subkeyHtbl[1] = (long)asLongView.get(subkeyH, 8);

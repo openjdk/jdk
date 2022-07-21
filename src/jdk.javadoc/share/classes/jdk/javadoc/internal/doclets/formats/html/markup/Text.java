@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,11 +33,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 
 /**
  * Class for containing immutable string content for HTML tags of javadoc output.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
+ * Any special HTML characters will be escaped if and when the content is written out.
  */
 public class Text extends Content {
     private final String string;
@@ -60,7 +56,7 @@ public class Text extends Content {
      * @param content content for the object
      */
     private Text(CharSequence content) {
-        string = Entity.escapeHtmlChars(content);
+        string = content.toString();
     }
 
     @Override
@@ -70,7 +66,20 @@ public class Text extends Content {
 
     @Override
     public int charCount() {
-        return RawHtml.charCount(string);
+        return charCount(string);
+    }
+
+    static int charCount(CharSequence cs) {
+        int count = 0;
+        for (int i = 0; i < cs.length(); i++) {
+            // Windows uses "\r\n" as line separator while UNIX uses "\n".
+            // Skip the "\r" to get consistent results across platforms.
+            if (cs.charAt(i) == '\r' && (i + 1 < cs.length()) && cs.charAt(i + 1) == '\n') {
+                i++;
+            }
+            count++;
+        }
+        return count;
     }
 
     @Override
@@ -80,7 +89,7 @@ public class Text extends Content {
 
     @Override
     public boolean write(Writer out, boolean atNewline) throws IOException {
-        out.write(string);
+        out.write(Entity.escapeHtmlChars(string));
         return string.endsWith(DocletConstants.NL);
     }
 

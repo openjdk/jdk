@@ -47,6 +47,12 @@
 
 #include "fontscaler.h"
 
+#define CHECK_EXCEPTION(env, describe)                 \
+    if ((*(env))->ExceptionCheck(env)) {               \
+        if (describe) (*(env))->ExceptionDescribe(env);\
+        else          (*(env))->ExceptionClear(env);   \
+    }
+
 #define  ftFixed1  (FT_Fixed) (1 << 16)
 #define  FloatToFTFixed(f) (FT_Fixed)((f) * (float)(ftFixed1))
 #define  FTFixedToFloat(x) ((x) / (float)(ftFixed1))
@@ -118,12 +124,18 @@ void z_error(char *s) {}
 /**************** Error handling utilities *****************/
 
 static jmethodID invalidateScalerMID;
+static jboolean  debugFonts; // Stores the value of FontUtilities.debugFonts()
 
 JNIEXPORT void JNICALL
 Java_sun_font_FreetypeFontScaler_initIDs(
         JNIEnv *env, jobject scaler, jclass FFSClass) {
     invalidateScalerMID =
         (*env)->GetMethodID(env, FFSClass, "invalidateScaler", "()V");
+
+    jboolean ignoreException;
+    debugFonts = JNU_CallStaticMethodByName(env, &ignoreException,
+                                            "sun/font/FontUtilities",
+                                            "debugFonts", "()Z").z;
 }
 
 static void freeNativeResources(JNIEnv *env, FTScalerInfo* scalerInfo) {
@@ -158,6 +170,9 @@ static void invalidateJavaScaler(JNIEnv *env,
                                  FTScalerInfo* scalerInfo) {
     freeNativeResources(env, scalerInfo);
     (*env)->CallVoidMethod(env, scaler, invalidateScalerMID);
+    // NB: Exceptions must not be cleared (and therefore no JNI calls
+    // performed) after calling this method because it intentionally
+    // leaves an exception pending.
 }
 
 /******************* I/O handlers ***************************/
@@ -208,6 +223,7 @@ static unsigned long ReadTTFontFileFunc(FT_Stream stream,
                                           scalerInfo->font2D,
                                           sunFontIDs.ttReadBlockMID,
                                           bBuffer, offset, numBytes);
+            CHECK_EXCEPTION(env, debugFonts);
             if (bread < 0) {
                 return 0;
             } else {
@@ -227,7 +243,8 @@ static unsigned long ReadTTFontFileFunc(FT_Stream stream,
             (*env)->CallObjectMethod(env, scalerInfo->font2D,
                                      sunFontIDs.ttReadBytesMID,
                                      offset, numBytes);
-            /* If there's an OutofMemoryError then byteArray will be null */
+            CHECK_EXCEPTION(env, debugFonts);
+            /* If there's an OutOfMemoryError then byteArray will be null */
             if (byteArray == NULL) {
                 return 0;
             } else {
@@ -260,6 +277,7 @@ static unsigned long ReadTTFontFileFunc(FT_Stream stream,
                                       sunFontIDs.ttReadBlockMID,
                                       bBuffer, offset,
                                       scalerInfo->fontDataLength);
+        CHECK_EXCEPTION(env, debugFonts);
         if (bread <= 0) {
             return 0;
         } else if ((unsigned long)bread < numBytes) {
