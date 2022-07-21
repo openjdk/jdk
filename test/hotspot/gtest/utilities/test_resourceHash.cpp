@@ -295,6 +295,8 @@ class ResourceHashtableDeleteTest : public ::testing::Test {
         Symbol* _s;
       public:
         // Never have ctors and dtors fix refcounts without copy ctors and assignment operators!
+        // Unless it's declared and used as a CHeapObj with
+        // NONCOPYABLE(TestValue)
         TestValue(Symbol* name) : _s(name) { _s->increment_refcount(); }
         TestValue(const TestValue& tv) { _s = tv.s(); _s->increment_refcount(); }
         TestValue& operator=(const TestValue& tv) { _s = tv.s(); _s->increment_refcount(); return *this; }
