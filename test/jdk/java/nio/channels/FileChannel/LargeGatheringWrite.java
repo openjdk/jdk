@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  * @library ..
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
- * @run main/othervm/timeout=240 -Xmx4G LargeGatheringWrite
+ * @run main/othervm/timeout=480 -Xmx4G LargeGatheringWrite
  * @key randomness
  */
 import java.io.IOException;
@@ -51,7 +51,17 @@ public class LargeGatheringWrite {
 
     private static final Random RND = RandomFactory.getRandom();
 
+    private static long t0;
+
+    private static void printTime(String msg) {
+        System.out.printf("TIMESTAMP: %-16s: %f seconds%n", msg,
+            (System.nanoTime() - t0)/1000000000.0);
+    }
+
     public static void main(String[] args) throws IOException {
+        t0 = System.nanoTime();
+        printTime("start");
+
         // Create direct and heap buffers
         ByteBuffer direct = ByteBuffer.allocateDirect(GB);
         ByteBuffer heap   = ByteBuffer.allocate(GB);
@@ -83,6 +93,7 @@ public class LargeGatheringWrite {
         // Write the data to a temporary file
         Path tempFile = Files.createTempFile("LargeGatheringWrite", ".dat");
 
+        printTime("before writing");
         System.out.printf("Writing %d bytes of data...%n", totalLength);
         try (FileChannel fcw = FileChannel.open(tempFile, CREATE, WRITE);) {
             // Print size of individual writes and total number written
@@ -93,11 +104,14 @@ public class LargeGatheringWrite {
                 bytesWritten += n;
             }
             System.out.printf("Total of %d bytes written\n", bytesWritten);
+            printTime("after writing");
 
             // Verify the content written
             try (FileChannel fcr = FileChannel.open(tempFile, READ);) {
                 byte[] bytes = null;
                 for (ByteBuffer buf : bigBuffers) {
+                    printTime("before verifying");
+
                     // For each buffer read the corresponding number of bytes
                     buf.rewind();
                     int length = buf.remaining();
@@ -117,10 +131,13 @@ public class LargeGatheringWrite {
                         String msg = String.format("mismatch: %d%n", mismatch);
                         throw new RuntimeException(msg);
                     }
+
+                    printTime("after verifying");
                 }
             }
         } finally {
             Files.delete(tempFile);
         }
+        printTime("end");
     }
 }

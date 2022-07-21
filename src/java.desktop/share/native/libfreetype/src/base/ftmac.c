@@ -314,7 +314,7 @@
                                     NULL, NULL, NULL ) )
       return ( OSType ) 0;
 
-    return ((FInfo *)(info.finderInfo))->fdType;
+    return ( (FInfo *)( info.finderInfo ) )->fdType;
   }
 
 
@@ -462,7 +462,7 @@
 
         if ( ps_name_len != 0 )
         {
-          ft_memcpy(ps_name, names[0] + 1, ps_name_len);
+          ft_memcpy( ps_name, names[0] + 1, ps_name_len );
           ps_name[ps_name_len] = 0;
         }
         if ( style->indexes[face_index] > 1 &&

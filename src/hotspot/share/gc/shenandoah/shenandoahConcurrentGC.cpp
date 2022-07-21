@@ -834,7 +834,7 @@ void ShenandoahConcurrentGC::op_class_unloading() {
 class ShenandoahEvacUpdateCodeCacheClosure : public NMethodClosure {
 private:
   BarrierSetNMethod* const                  _bs;
-  ShenandoahEvacuateUpdateMetadataClosure<> _cl;
+  ShenandoahEvacuateUpdateMetadataClosure   _cl;
 
 public:
   ShenandoahEvacUpdateCodeCacheClosure() :
@@ -893,7 +893,7 @@ public:
       }
 
       {
-        ShenandoahEvacuateUpdateMetadataClosure<> cl;
+        ShenandoahEvacuateUpdateMetadataClosure cl;
         CLDToOopClosure clds(&cl, ClassLoaderData::_claim_strong);
         _cld_roots.cld_do(&clds, worker_id);
       }

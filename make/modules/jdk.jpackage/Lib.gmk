@@ -129,6 +129,10 @@ ifeq ($(call isTargetOs, windows), true)
 
   JPACKAGE_TARGETS += $(BUILD_LIB_JPACKAGE)
 
+  JPACKAGE_WIXHELPER_SRC := \
+      $(call FindSrcDirsForComponent, jdk.jpackage, libwixhelper) \
+      $(call FindSrcDirsForComponent, jdk.jpackage, common)
+
   # Build Wix custom action helper
   # Output library in resources dir, and symbols in the object dir
   $(eval $(call SetupJdkLibrary, BUILD_LIB_WIXHELPER, \
@@ -136,11 +140,12 @@ ifeq ($(call isTargetOs, windows), true)
       OUTPUT_DIR := $(JPACKAGE_OUTPUT_DIR), \
       SYMBOLS_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libwixhelper, \
       OPTIMIZATION := LOW, \
+      SRC := $(JPACKAGE_WIXHELPER_SRC), \
       CXXFLAGS := $(call JpackageWithStaticCrt, $(CXXFLAGS_JDKLIB)) \
-          $(JPACKAGE_CXXFLAGS_windows), \
+          $(addprefix -I, $(JPACKAGE_WIXHELPER_SRC)) $(JPACKAGE_CXXFLAGS_windows), \
       LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK), \
       LIBS := $(LIBCXX), \
-      LIBS_windows := msi.lib Shlwapi.lib User32.lib, \
+      LIBS_windows := User32.lib, \
   ))
 
   JPACKAGE_TARGETS += $(BUILD_LIB_WIXHELPER)

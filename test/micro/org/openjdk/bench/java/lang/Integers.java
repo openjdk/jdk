@@ -57,6 +57,7 @@ public class Integers {
     private int[] intsTiny;
     private int[] intsSmall;
     private int[] intsBig;
+    private int[] res;
 
     @Setup
     public void setup() {
@@ -66,6 +67,7 @@ public class Integers {
         intsTiny  = new int[size];
         intsSmall = new int[size];
         intsBig   = new int[size];
+        res       = new int[size];
         for (int i = 0; i < size; i++) {
             strings[i] = "" + (r.nextInt(10000) - (5000));
             intsTiny[i] = r.nextInt(99);
@@ -162,6 +164,13 @@ public class Integers {
         for (int i = 0; i < size; i++) {
             int r = Integer.compareUnsigned(intsSmall[i], bound - 16);
             bh.consume(r);
+        }
+    }
+
+    @Benchmark
+    public void reverseBytes() {
+        for (int i = 0; i < size; i++) {
+            res[i] = Integer.reverseBytes(intsSmall[i]);
         }
     }
 }

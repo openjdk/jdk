@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2020, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,9 @@ void ShenandoahIUMode::initialize_flags() const {
   if (FLAG_IS_DEFAULT(ShenandoahSATBBarrier)) {
     FLAG_SET_DEFAULT(ShenandoahSATBBarrier, false);
   }
+
+  // Disable Loom
+  SHENANDOAH_ERGO_DISABLE_FLAG(VMContinuations);
 
   SHENANDOAH_ERGO_ENABLE_FLAG(ExplicitGCInvokesConcurrent);
   SHENANDOAH_ERGO_ENABLE_FLAG(ShenandoahImplicitGCInvokesConcurrent);

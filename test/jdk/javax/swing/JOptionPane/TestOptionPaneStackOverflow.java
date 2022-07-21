@@ -22,7 +22,7 @@
  */
 
 /* @test
-   @bug 8224267
+   @bug 8224267 8290162
    @key headful
    @summary Verifies if StackOverflowError is not thrown for multiple newlines
    @run main TestOptionPaneStackOverflow

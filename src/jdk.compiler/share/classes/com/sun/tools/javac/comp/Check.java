@@ -4351,6 +4351,9 @@ public class Check {
                     wasDefault = true;
                 } else {
                     JCPattern pat = ((JCPatternCaseLabel) label).pat;
+                    while (pat instanceof JCParenthesizedPattern parenthesized) {
+                        pat = parenthesized.pattern;
+                    }
                     boolean isTypePattern = pat.hasTag(BINDINGPATTERN);
                     if (wasPattern || wasConstant || wasDefault ||
                         (wasNullPattern && (!isTypePattern || wasNonEmptyFallThrough))) {

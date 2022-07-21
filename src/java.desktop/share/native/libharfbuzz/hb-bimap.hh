@@ -33,42 +33,39 @@
 /* Bi-directional map */
 struct hb_bimap_t
 {
-  hb_bimap_t () { init (); }
-  ~hb_bimap_t () { fini (); }
-
-  void init ()
-  {
-    forw_map.init ();
-    back_map.init ();
-  }
-
-  void fini ()
-  {
-    forw_map.fini ();
-    back_map.fini ();
-  }
-
   void reset ()
   {
     forw_map.reset ();
     back_map.reset ();
   }
 
+  void resize (unsigned pop)
+  {
+    forw_map.resize (pop);
+    back_map.resize (pop);
+  }
+
   bool in_error () const { return forw_map.in_error () || back_map.in_error (); }
 
   void set (hb_codepoint_t lhs, hb_codepoint_t rhs)
   {
+    if (in_error ()) return;
     if (unlikely (lhs == HB_MAP_VALUE_INVALID)) return;
     if (unlikely (rhs == HB_MAP_VALUE_INVALID)) { del (lhs); return; }
+
     forw_map.set (lhs, rhs);
+    if (unlikely (in_error ())) return;
+
     back_map.set (rhs, lhs);
+    if (unlikely (in_error ())) forw_map.del (lhs);
   }
 
   hb_codepoint_t get (hb_codepoint_t lhs) const { return forw_map.get (lhs); }
   hb_codepoint_t backward (hb_codepoint_t rhs) const { return back_map.get (rhs); }
 
   hb_codepoint_t operator [] (hb_codepoint_t lhs) const { return get (lhs); }
-  bool has (hb_codepoint_t lhs, hb_codepoint_t *vp = nullptr) const { return forw_map.has (lhs, vp); }
+  bool has (hb_codepoint_t lhs) const { return forw_map.has (lhs); }
+
 
   void del (hb_codepoint_t lhs)
   {
@@ -82,7 +79,7 @@ struct hb_bimap_t
     back_map.clear ();
   }
 
-  bool is_empty () const { return get_population () == 0; }
+  bool is_empty () const { return forw_map.is_empty (); }
 
   unsigned int get_population () const { return forw_map.get_population (); }
 
@@ -94,14 +91,6 @@ struct hb_bimap_t
 /* Inremental bimap: only lhs is given, rhs is incrementally assigned */
 struct hb_inc_bimap_t : hb_bimap_t
 {
-  hb_inc_bimap_t () { init (); }
-
-  void init ()
-  {
-    hb_bimap_t::init ();
-    next_value = 0;
-  }
-
   /* Add a mapping from lhs to rhs with a unique value if lhs is unknown.
    * Return the rhs value as the result.
    */
@@ -160,7 +149,7 @@ struct hb_inc_bimap_t : hb_bimap_t
   }
 
   protected:
-  unsigned int  next_value;
+  unsigned int next_value = 0;
 };
 
 #endif /* HB_BIMAP_HH */

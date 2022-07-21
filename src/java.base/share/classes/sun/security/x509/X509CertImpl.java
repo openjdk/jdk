@@ -739,7 +739,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
         id = attr.getPrefix();
 
         if (id.equalsIgnoreCase(INFO)) {
-            if (attr.getSuffix() != null) {
+            if (attr.getSuffix() == null) {
                 info = null;
             } else {
                 info.delete(attr.getSuffix());

@@ -567,12 +567,10 @@ private:
   bool is_exiting() const;
   // thread's GC barrier is NOT detached and thread is NOT terminated
   bool is_oop_safe() const;
-  // thread is terminated (no longer on the threads list); we compare
-  // against the three non-terminated values so that a freed JavaThread
-  // will also be considered terminated.
+  // thread is terminated (no longer on the threads list); the thread must
+  // be protected by a ThreadsListHandle to avoid potential crashes.
   bool check_is_terminated(TerminatedTypes l_terminated) const {
-    return l_terminated != _not_terminated && l_terminated != _thread_exiting &&
-           l_terminated != _thread_gc_barrier_detached;
+    return l_terminated == _thread_terminated || l_terminated == _vm_exited;
   }
   bool is_terminated() const;
   void set_terminated(TerminatedTypes t);

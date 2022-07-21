@@ -56,16 +56,11 @@ final class ConfinedSession extends MemorySessionImpl {
     }
 
     @Override
-    public boolean isAlive() {
-        return state != CLOSED;
-    }
-
-    @Override
     @ForceInline
     public void acquire0() {
-        checkValidStateSlow();
+        checkValidState();
         if (state == MAX_FORKS) {
-            throw new IllegalStateException("Session keep alive limit exceeded");
+            throw tooManyAcquires();
         }
         state++;
     }
@@ -85,11 +80,11 @@ final class ConfinedSession extends MemorySessionImpl {
     }
 
     void justClose() {
-        checkValidStateSlow();
+        checkValidState();
         if (state == 0 || state - ((int)ASYNC_RELEASE_COUNT.getVolatile(this)) == 0) {
             state = CLOSED;
         } else {
-            throw new IllegalStateException("Session is acquired by " + state + " clients");
+            throw alreadyAcquired(state);
         }
     }
 
@@ -103,7 +98,7 @@ final class ConfinedSession extends MemorySessionImpl {
                 cleanup.next = fst;
                 fst = cleanup;
             } else {
-                throw new IllegalStateException("Already closed!");
+                throw alreadyClosed();
             }
         }
 
@@ -114,7 +109,7 @@ final class ConfinedSession extends MemorySessionImpl {
                 fst = ResourceCleanup.CLOSED_LIST;
                 cleanup(prev);
             } else {
-                throw new IllegalStateException("Attempt to cleanup an already closed resource list");
+                throw alreadyClosed();
             }
         }
     }
