@@ -26,11 +26,10 @@ package sun.font;
 import jdk.internal.misc.Unsafe;
 
 import java.awt.*;
+import java.awt.color.ColorSpace;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
-import java.awt.image.BufferedImage;
-import java.awt.image.ColorModel;
-import java.awt.image.DirectColorModel;
+import java.awt.image.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -127,27 +126,28 @@ public class GlyphRenderData {
         colorLayers.add(new ColorLayer(new Color(r, g, b, a), outline));
     }
 
-    private static ColorModel colorModel(int bits, int r, int g, int b, int a) {
+    private static DirectColorModel colorModel(boolean premultiplied, int bits, int r, int g, int b, int a) {
         if (Unsafe.getUnsafe().isBigEndian()) {
             r = Integer.reverse(r) >>> (32 - bits);
             g = Integer.reverse(g) >>> (32 - bits);
             b = Integer.reverse(b) >>> (32 - bits);
             a = Integer.reverse(a) >>> (32 - bits);
         }
-        return new DirectColorModel(bits, r, g, b, a);
+        return new DirectColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB),
+                bits, r, g, b, a, premultiplied, DataBuffer.TYPE_INT);
     }
-    private static final ColorModel[] BITMAP_COLOR_MODELS = {
-            colorModel(32, // macOS RGBA
+    private static final DirectColorModel[] BITMAP_COLOR_MODELS = {
+            colorModel(false, 32, // macOS RGBA
                     0x000000ff,
                     0x0000ff00,
                     0x00ff0000,
                     0xff000000),
-            colorModel(32, // macOS ARGB
+            colorModel(false, 32, // macOS ARGB
                     0x0000ff00,
                     0x00ff0000,
                     0xff000000,
                     0x000000ff),
-            colorModel(32, // Freetype BGRA
+            colorModel(true, 32, // Freetype BGRA
                     0x00ff0000,
                     0x0000ff00,
                     0x000000ff,
@@ -159,13 +159,10 @@ public class GlyphRenderData {
                            int width, int height, int pitch,
                            int colorModel, int[] data) {
         if (bitmaps == null) bitmaps = new ArrayList<>();
-        ColorModel color = BITMAP_COLOR_MODELS[colorModel];
-        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                image.setRGB(x, y, color.getRGB(data[pitch * y + x]));
-            }
-        }
+        DirectColorModel color = BITMAP_COLOR_MODELS[colorModel];
+        DataBuffer buffer = new DataBufferInt(data, data.length);
+        WritableRaster raster = Raster.createPackedRaster(buffer, width, height, pitch, color.getMasks(), null);
+        BufferedImage image = new BufferedImage(color, raster, color.isAlphaPremultiplied(), null);
         bitmaps.add(new Bitmap(new AffineTransform(m00, m10, m01, m11, m02, m12), image));
     }
 }

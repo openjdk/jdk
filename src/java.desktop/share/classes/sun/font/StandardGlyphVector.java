@@ -877,15 +877,11 @@ public class StandardGlyphVector extends GlyphVector {
     }
 
     public GlyphRenderData getGlyphRenderData(float x, float y) {
-        return getGlyphRenderData(0, glyphs.length, x, y);
-    }
-
-    public GlyphRenderData getGlyphRenderData(int start, int count, float x, float y) {
         setFRCTX();
         initPositions();
 
         GlyphRenderData result = new GlyphRenderData();
-        for (int i = start, e = start + count, n = start * 2; i < e; ++i, n += 2) {
+        for (int i = 0, n = 0; i < glyphs.length; ++i, n += 2) {
             float px = x + positions[n];
             float py = y + positions[n+1];
 

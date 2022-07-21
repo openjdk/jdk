@@ -326,8 +326,11 @@ static bool addBitmapRenderData(JNIEnv *env, AWTStrike *awtStrike,
     if (sbixTable == NULL) goto cleanup;
 
     // Parse sbix table
+    CFIndex sbixSize = CFDataGetLength(sbixTable);
+    if (sbixSize < 8) goto cleanup; // Corrupted table
     const UInt8* sbix = CFDataGetBytePtr(sbixTable);
     UInt32 numStrikes = GET_BE_INT32(sbix, 4);
+    if (8 + 4 * numStrikes > sbixSize) goto cleanup; // Corrupted table
     // Find last strike which has data for our glyph
     // Last is usually the biggest
     const UInt8* glyphData = NULL;
@@ -335,6 +338,7 @@ static bool addBitmapRenderData(JNIEnv *env, AWTStrike *awtStrike,
     UInt16 ppem, ppi;
     for (int i = numStrikes - 1; i >= 0; i--) {
         const UInt8* strike = sbix + GET_BE_INT32(sbix, 8 + 4 * i);
+        if (strike + 12 + 4 * glyph > sbix + sbixSize) goto cleanup; // Corrupted table
         UInt32 offset = GET_BE_INT32(strike, 4 + 4 * glyph);
         size = GET_BE_INT32(strike, 8 + 4 * glyph) - offset;
         if (size > 0) {
@@ -345,11 +349,13 @@ static bool addBitmapRenderData(JNIEnv *env, AWTStrike *awtStrike,
         }
     }
     if (glyphData == NULL) goto cleanup;
+    if (glyphData + 4 > sbix + sbixSize) goto cleanup; // Corrupted table
 
     // Read glyph data
     FourCharCode graphicType = GET_BE_INT32(glyphData, 4);
     glyphData += 8;
     size -= 8;
+    if (glyphData + size > sbix + sbixSize) goto cleanup; // Corrupted table
 
     // Decode glyph image
     CGDataProviderRef dataProvider = CGDataProviderCreateWithData(NULL, glyphData, size, NULL);
@@ -400,6 +406,7 @@ static bool addBitmapRenderData(JNIEnv *env, AWTStrike *awtStrike,
 
     // Cleanup
     cleanup:
+    if (sbixTable) CFRelease(sbixTable);
     if (cgFont) CFRelease(cgFont);
     if (descriptor) CFRelease(descriptor);
 

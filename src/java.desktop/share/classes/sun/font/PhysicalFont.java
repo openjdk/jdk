@@ -98,7 +98,7 @@ public abstract class PhysicalFont extends Font2D {
 
     abstract long getGlyphImage(long pScalerContext, int glyphCode);
 
-    /* These 4 outline methods should be implemented to return
+    /* These 3 outline methods should be implemented to return
      * values in device space. Callers need to be aware of this
      * as typically Java client code will need to have them in user space.
      */
@@ -111,7 +111,4 @@ public abstract class PhysicalFont extends Font2D {
     abstract GeneralPath getGlyphVectorOutline(long pScalerContext,
                                                int[] glyphs, int numGlyphs,
                                                float x, float y);
-
-    abstract GlyphRenderData getGlyphRenderData(long pScalerContext, int glyphCode,
-                                                float x, float y);
 }

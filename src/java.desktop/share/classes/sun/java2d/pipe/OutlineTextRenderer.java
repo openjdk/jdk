@@ -80,28 +80,8 @@ public class OutlineTextRenderer implements TextPipe {
         TextLayout tl = new TextLayout(str, g2d.getFont(),
                                        g2d.getFontRenderContext());
 
-        int textAAHint = g2d.getFontInfo().aaHint;
-
-        int prevaaHint = - 1;
-        if (textAAHint != SunHints.INTVAL_TEXT_ANTIALIAS_OFF &&
-            g2d.antialiasHint != SunHints.INTVAL_ANTIALIAS_ON) {
-            prevaaHint = g2d.antialiasHint;
-            g2d.antialiasHint =  SunHints.INTVAL_ANTIALIAS_ON;
-            g2d.validatePipe();
-        } else if (textAAHint == SunHints.INTVAL_TEXT_ANTIALIAS_OFF
-            && g2d.antialiasHint != SunHints.INTVAL_ANTIALIAS_OFF) {
-            prevaaHint = g2d.antialiasHint;
-            g2d.antialiasHint =  SunHints.INTVAL_ANTIALIAS_OFF;
-            g2d.validatePipe();
-        }
-
         // This will end up calling our drawGlyphVector
         tl.draw(g2d, (float) x, (float) y);
-
-        if (prevaaHint != -1) {
-             g2d.antialiasHint = prevaaHint;
-             g2d.validatePipe();
-        }
     }
 
     public void drawGlyphVector(SunGraphics2D g2d, GlyphVector gv,

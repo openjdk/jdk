@@ -33,6 +33,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.awt.RenderingHints.KEY_TEXT_ANTIALIASING;
 import static java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_OFF;
@@ -84,17 +85,20 @@ public class EmojiVariation {
     }
 
     public static void main(String[] args) {
+        requireFont("Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji");
+        requireFont("Zapf Dingbats", "Segoe UI Symbol", "DejaVu Sans");
+
         // Platform-specific tricks
        if (System.getProperty("os.name").toLowerCase().contains("linux")) {
            // Many emoji on Linux don't have monochrome variants
            Arrays.fill(SYMBOLS, 28, 37, null);
-            Arrays.fill(SYMBOLS, 83, 94, null);
-            Arrays.fill(SYMBOLS, 117, SYMBOLS.length, null);
+           Arrays.fill(SYMBOLS, 83, 94, null);
+           Arrays.fill(SYMBOLS, 117, SYMBOLS.length, null);
         } else if (System.getProperty("os.name").toLowerCase().contains("mac")) {
            // Many emoji on macOS don't have monochrome variants
            Arrays.fill(SYMBOLS, 28, 36, null);
-            Arrays.fill(SYMBOLS, 83, 94, null);
-            Arrays.fill(SYMBOLS, 127, SYMBOLS.length, null);
+           Arrays.fill(SYMBOLS, 81, 94, null);
+           Arrays.fill(SYMBOLS, 127, SYMBOLS.length, null);
         }
 
         BufferedImage img = new BufferedImage(IMG_WIDTH, IMG_HEIGHT, BufferedImage.TYPE_INT_RGB);
@@ -170,5 +174,18 @@ public class EmojiVariation {
             return expectColor ? "Expected color but rendered mono" : "Expected mono but rendered color";
         }
         return null;
+    }
+
+    private static void requireFont(String macOS, String windows, String linux) {
+        String os = System.getProperty("os.name").toLowerCase();
+        String font;
+        if (os.contains("mac")) font = macOS;
+        else if (os.contains("windows")) font = windows;
+        else if (os.contains("linux")) font = linux;
+        else return;
+        String[] fs = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
+        if (Stream.of(fs).noneMatch(s -> s.equals(font))) {
+            throw new Error("Required font not found: " + font);
+        }
     }
 }

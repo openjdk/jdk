@@ -31,6 +31,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.stream.Stream;
 
 public class ComplexEmoji {
     private static final int IMG_WIDTH = 60;
@@ -46,6 +47,8 @@ public class ComplexEmoji {
     };
 
     public static void main(String[] args) {
+        requireFont("Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji");
+
         // Platform-specific tricks
         if (System.getProperty("os.name").toLowerCase().contains("windows")) {
             EMOJI[4] = EMOJI[5] = null; // Flags and tags are not supported on Windows
@@ -105,5 +108,18 @@ public class ComplexEmoji {
             return "Too wide image, is there few glyphs instead of one?";
         }
         return null;
+    }
+
+    private static void requireFont(String macOS, String windows, String linux) {
+        String os = System.getProperty("os.name").toLowerCase();
+        String font;
+        if (os.contains("mac")) font = macOS;
+        else if (os.contains("windows")) font = windows;
+        else if (os.contains("linux")) font = linux;
+        else return;
+        String[] fs = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
+        if (Stream.of(fs).noneMatch(s -> s.equals(font))) {
+            throw new Error("Required font not found: " + font);
+        }
     }
 }
