@@ -41,7 +41,7 @@ class frame;
 // ===================================================================
 //
 // The "os" class defines a large part of the interfaces for porting HotSpot
-// to different operating systems. For example, I/O, memory, timing, etc. 
+// to different operating systems. For example, I/O, memory, timing, etc.
 // Note that additional classes such as Semaphore, Mutex, etc., are used for
 // porting specific groups of features.
 //
@@ -55,7 +55,7 @@ class frame;
 //
 //   To use any of the inline methods declared in the "os" class, this
 //   header file must be included.
-// 
+//
 // - src/hotspot/os/<os>/os_<os>.hpp
 // - src/hotspot/os/posix/os_posix.hpp
 //
@@ -97,7 +97,7 @@ class frame;
 //   If the implementation of such a method is too complex to fit in a
 //   header file, the actual implementation can be deferred to another
 //   method defined in the .cpp files described below.
-//   
+//
 // - src/hotspot/os/<os>/os_<os>.cpp
 // - src/hotspot/os_cpu/<os>_<cpu>/os_<os>_<cpu>.cpp
 //
