@@ -105,7 +105,7 @@ inline HeapRegion* G1CollectedHeap::heap_region_containing(const void* addr) con
   return _hrm.addr_to_region((HeapWord*)addr);
 }
 
-inline HeapRegion* G1CollectedHeap::heap_region_containing_or_null(HeapWord* addr) const {
+inline HeapRegion* G1CollectedHeap::heap_region_containing_or_null(const void* addr) const {
   uint const region_idx = addr_to_region(addr);
   return region_at_or_null(region_idx);
 }
