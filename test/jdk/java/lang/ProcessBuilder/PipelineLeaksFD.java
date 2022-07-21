@@ -40,7 +40,7 @@ import java.util.Set;
  * @bug 8289643
  * @requires (os.family == "linux" & !vm.musl)
  * @summary file descriptor leak with ProcessBuilder.startPipeline
- * @run testng/othervm -DDEBUG PipelineLeaksFD
+ * @run testng/othervm PipelineLeaksFD
  */
 
 @Test
@@ -116,7 +116,6 @@ public class PipelineLeaksFD {
     /**
      * Collect a Set of pairs of /proc fd paths and the symbol links that are pipes.
      * @return A set of PipeRecords, possibly empty
-     * @throws IOException if reading the directory entries of "/proc/<pid>/fd/*" fails
      */
     static Set<PipeRecord> myPipes() {
         Path path = Path.of("/proc/" + ProcessHandle.current().pid() + "/fd");
