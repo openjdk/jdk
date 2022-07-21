@@ -40,6 +40,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="am">amhara</language>
 			<language type="an">aragonia</language>
 			<language type="ang">muinaisenglanti</language>
+			<language type="ann">obolo</language>
 			<language type="anp">angika</language>
 			<language type="ar">arabia</language>
 			<language type="ar_001">yleisarabia</language>
@@ -56,6 +57,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="asa">asu</language>
 			<language type="ase">amerikkalainen viittomakieli</language>
 			<language type="ast">asturia</language>
+			<language type="atj">atikamekw</language>
 			<language type="av">avaari</language>
 			<language type="avk">kotava</language>
 			<language type="awa">awadhi</language>
@@ -122,15 +124,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="chy">cheyenne</language>
 			<language type="ckb">soranî</language>
 			<language type="ckb" alt="menu">kurdi – soranî</language>
+			<language type="clc">chilcotin</language>
 			<language type="co">korsika</language>
 			<language type="cop">kopti</language>
 			<language type="cps">capiznon</language>
 			<language type="cr">cree</language>
+			<language type="crg">michif</language>
 			<language type="crh">krimintataari</language>
 			<language type="crh" alt="secondary">kriminturkki</language>
+			<language type="crj">east cree (eteläinen)</language>
+			<language type="crk">plains cree</language>
+			<language type="crl">east cree (pohjoinen)</language>
+			<language type="crm">moose cree</language>
+			<language type="crr">pamlico</language>
 			<language type="crs">seychellienkreoli</language>
 			<language type="cs">tšekki</language>
 			<language type="csb">kašubi</language>
+			<language type="csw">swampy cree</language>
 			<language type="cu">kirkkoslaavi</language>
 			<language type="cv">tšuvassi</language>
 			<language type="cy">kymri</language>
@@ -236,8 +246,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="hai">haida</language>
 			<language type="hak">hakka-kiina</language>
 			<language type="haw">havaiji</language>
+			<language type="hax">haida (eteläinen)</language>
 			<language type="he">heprea</language>
 			<language type="hi">hindi</language>
+			<language type="hi_Latn" alt="variant">hinglish</language>
 			<language type="hif">fidžinhindi</language>
 			<language type="hil">hiligaino</language>
 			<language type="hit">heetti</language>
@@ -249,6 +261,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ht">haiti</language>
 			<language type="hu">unkari</language>
 			<language type="hup">hupa</language>
+			<language type="hur">halkomelem</language>
 			<language type="hy">armenia</language>
 			<language type="hz">herero</language>
 			<language type="ia">interlingua</language>
@@ -259,6 +272,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ig">igbo</language>
 			<language type="ii">sichuanin-yi</language>
 			<language type="ik">inupiaq</language>
+			<language type="ikt">Länsi-Kanadan inuktitut</language>
 			<language type="ilo">iloko</language>
 			<language type="inh">inguuši</language>
 			<language type="io">ido</language>
@@ -326,6 +340,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kut">kutenai</language>
 			<language type="kv">komi</language>
 			<language type="kw">korni</language>
+			<language type="kwk">kwakʼwala</language>
 			<language type="ky">kirgiisi</language>
 			<language type="la">latina</language>
 			<language type="lad">ladino</language>
@@ -339,6 +354,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lg">ganda</language>
 			<language type="li">limburg</language>
 			<language type="lij">liguuri</language>
+			<language type="lil">lillooet</language>
 			<language type="liv">liivi</language>
 			<language type="lkt">lakota</language>
 			<language type="lmo">lombardi</language>
@@ -348,6 +364,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lou">louisianankreoli</language>
 			<language type="loz">lozi</language>
 			<language type="lrc">pohjoisluri</language>
+			<language type="lsm">samia</language>
 			<language type="lt">liettua</language>
 			<language type="ltg">latgalli</language>
 			<language type="lu">katanganluba</language>
@@ -386,6 +403,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="mn">mongoli</language>
 			<language type="mnc">mantšu</language>
 			<language type="mni">manipuri</language>
+			<language type="moe">innu-aimun</language>
 			<language type="moh">mohawk</language>
 			<language type="mos">mossi</language>
 			<language type="mr">marathi</language>
@@ -438,6 +456,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="nzi">nzima</language>
 			<language type="oc">oksitaani</language>
 			<language type="oj">odžibwa</language>
+			<language type="ojb">luoteis-odžibwa</language>
+			<language type="ojc">keskiojibwa</language>
+			<language type="ojs">oji-cree</language>
+			<language type="ojw">länsi-odžibwa</language>
+			<language type="oka">okanagan</language>
 			<language type="om">oromo</language>
 			<language type="or">orija</language>
 			<language type="os">osseetti</language>
@@ -457,10 +480,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="pfl">pfaltsi</language>
 			<language type="phn">foinikia</language>
 			<language type="pi">paali</language>
+			<language type="pis">pijin</language>
 			<language type="pl">puola</language>
 			<language type="pms">piemonte</language>
 			<language type="pnt">pontoksenkreikka</language>
 			<language type="pon">pohnpei</language>
+			<language type="pqm">maliseet-passamaquoddy</language>
 			<language type="prg">muinaispreussi</language>
 			<language type="pro">muinaisprovensaali</language>
 			<language type="ps">paštu</language>
@@ -522,6 +547,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="sid">sidamo</language>
 			<language type="sk">slovakki</language>
 			<language type="sl">sloveeni</language>
+			<language type="slh">lushootseed (eteläinen)</language>
 			<language type="sli">sleesiansaksa</language>
 			<language type="sly">selayar</language>
 			<language type="sm">samoa</language>
@@ -541,18 +567,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ssy">saho</language>
 			<language type="st">eteläsotho</language>
 			<language type="stq">saterlandinfriisi</language>
+			<language type="str">straits-salish</language>
 			<language type="su">sunda</language>
 			<language type="suk">sukuma</language>
 			<language type="sus">susu</language>
 			<language type="sux">sumeri</language>
 			<language type="sv">ruotsi</language>
 			<language type="sw">swahili</language>
-			<language type="sw_CD">kingwana</language>
+			<language type="sw_CD">kongonswahili</language>
 			<language type="swb">komori</language>
 			<language type="syc">muinaissyyria</language>
 			<language type="syr">syyria</language>
 			<language type="szl">sleesia</language>
 			<language type="ta">tamili</language>
+			<language type="tce">etelätutchone</language>
 			<language type="tcy">tulu</language>
 			<language type="te">telugu</language>
 			<language type="tem">temne</language>
@@ -560,7 +588,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ter">tereno</language>
 			<language type="tet">tetum</language>
 			<language type="tg">tadžikki</language>
+			<language type="tgx">tagish</language>
 			<language type="th">thai</language>
+			<language type="tht">tahlta</language>
 			<language type="ti">tigrinja</language>
 			<language type="tig">tigre</language>
 			<language type="tiv">tiv</language>
@@ -575,6 +605,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="tn">tswana</language>
 			<language type="to">tonga</language>
 			<language type="tog">malawintonga</language>
+			<language type="tok">toki pona</language>
 			<language type="tpi">tok-pisin</language>
 			<language type="tr">turkki</language>
 			<language type="tru">turojo</language>
@@ -583,6 +614,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="tsd">tsakonia</language>
 			<language type="tsi">tsimši</language>
 			<language type="tt">tataari</language>
+			<language type="ttm">pohjoinen tutchone</language>
 			<language type="ttt">tati</language>
 			<language type="tum">tumbuka</language>
 			<language type="tvl">tuvalu</language>
@@ -653,7 +685,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Ahom">ahom</script>
 			<script type="Arab">arabialainen</script>
 			<script type="Arab" alt="variant">persialaisarabialainen</script>
-			<script type="Aran" draft="contributed">nastaliq</script>
+			<script type="Aran">nastaliq</script>
 			<script type="Armi">valtakunnanaramealainen</script>
 			<script type="Armn">armenialainen</script>
 			<script type="Avst">avestalainen</script>
@@ -677,20 +709,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Chrs">horemzi</script>
 			<script type="Cirt">cirth</script>
 			<script type="Copt">koptilainen</script>
-			<script type="Cpmn" draft="contributed">kypro-minolainen</script>
+			<script type="Cpmn">kypro-minolainen</script>
 			<script type="Cprt">muinaiskyproslainen</script>
 			<script type="Cyrl">kyrillinen</script>
 			<script type="Cyrs">kyrillinen muinaiskirkkoslaavimuunnelma</script>
 			<script type="Deva">devanagari</script>
 			<script type="Diak">dives akuru</script>
-			<script type="Dogr" draft="contributed">dogri</script>
+			<script type="Dogr">dogri</script>
 			<script type="Dsrt">deseret</script>
 			<script type="Dupl">Duployén pikakirjoitus</script>
 			<script type="Egyd">egyptiläinen demoottinen</script>
 			<script type="Egyh">egyptiläinen hieraattinen</script>
 			<script type="Egyp">egyptiläiset hieroglyfit</script>
 			<script type="Elba">elbasanilainen</script>
-			<script type="Elym" draft="contributed">elymealainen</script>
+			<script type="Elym">elymealainen</script>
 			<script type="Ethi">etiopialainen</script>
 			<script type="Ethi" alt="secondary">ge’ez</script>
 			<script type="Geok">muinaisgeorgialainen</script>
@@ -751,12 +783,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Lyci">lyykialainen</script>
 			<script type="Lydi">lyydialainen</script>
 			<script type="Mahj">mahajanilainen</script>
-			<script type="Maka" draft="contributed">makassar</script>
+			<script type="Maka">makassar</script>
 			<script type="Mand">mandealainen</script>
 			<script type="Mani">manikealainen</script>
 			<script type="Marc">tiibetiläinen marchan-kirjoitus</script>
 			<script type="Maya">maya-hieroglyfit</script>
-			<script type="Medf" draft="contributed">medefaidrin</script>
+			<script type="Medf">medefaidrin</script>
 			<script type="Mend">mende</script>
 			<script type="Merc">meroiittinen kursiivikirjoitus</script>
 			<script type="Mero">meroiittinen</script>
@@ -769,7 +801,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Mtei" alt="secondary">meitei mayek</script>
 			<script type="Mult">multanilainen</script>
 			<script type="Mymr">burmalainen</script>
-			<script type="Nand" draft="contributed">nandinagari</script>
+			<script type="Nand">nandinagari</script>
 			<script type="Narb">muinaispohjoisarabialainen</script>
 			<script type="Nbat">nabatealainen</script>
 			<script type="Newa">newarin newa-tavukirjoitus</script>
@@ -782,7 +814,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Orya">orijalainen</script>
 			<script type="Osge">osagen aakkosto</script>
 			<script type="Osma">osmanjalainen</script>
-			<script type="Ougr" draft="contributed">vanha uiguurilainen</script>
+			<script type="Ougr">vanha uiguurilainen</script>
 			<script type="Palm">palmyralainen</script>
 			<script type="Pauc">zotuallai</script>
 			<script type="Perm">muinaispermiläinen</script>
@@ -808,8 +840,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Sidd">siddham-tavukirjoitus</script>
 			<script type="Sind">khudabadi</script>
 			<script type="Sinh">sinhalilainen</script>
-			<script type="Sogd" draft="contributed">sogdialainen</script>
-			<script type="Sogo" draft="contributed">muinaissogdialainen</script>
+			<script type="Sogd">sogdialainen</script>
+			<script type="Sogo">muinaissogdialainen</script>
 			<script type="Sora">sorang sompeng</script>
 			<script type="Soyo">soyombo-kirjaimisto</script>
 			<script type="Sund">sundalainen</script>
@@ -833,19 +865,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Thai">thailainen</script>
 			<script type="Tibt">tiibetiläinen</script>
 			<script type="Tirh">tirhuta</script>
-			<script type="Tnsa" draft="contributed">tangsa</script>
-			<script type="Toto" draft="contributed">toto</script>
+			<script type="Tnsa">tangsa</script>
+			<script type="Toto">toto</script>
 			<script type="Ugar">ugaritilainen</script>
 			<script type="Vaii">vailainen</script>
 			<script type="Visp">näkyvä puhe</script>
 			<script type="Visp" alt="secondary">Visible Speech</script>
-			<script type="Vith" draft="contributed">vithkuqi</script>
+			<script type="Vith">vithkuqi</script>
 			<script type="Wara">varang kshiti</script>
-			<script type="Wcho" draft="contributed">wancholainen</script>
+			<script type="Wcho">wancholainen</script>
 			<script type="Wole">woleai</script>
 			<script type="Xpeo">muinaispersialainen</script>
 			<script type="Xsux">sumerilais-akkadilainen nuolenpääkirjoitus</script>
-			<script type="Yezi" draft="contributed">jesidi</script>
+			<script type="Yezi">jesidi</script>
 			<script type="Yiii">yiläinen</script>
 			<script type="Zanb">zanabazar-neliökirjaimisto</script>
 			<script type="Zinh">peritty</script>
@@ -1074,6 +1106,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="NR">Nauru</territory>
 			<territory type="NU">Niue</territory>
 			<territory type="NZ">Uusi-Seelanti</territory>
+			<territory type="NZ" alt="variant">Aotearoa</territory>
 			<territory type="OM">Oman</territory>
 			<territory type="PA">Panama</territory>
 			<territory type="PE">Peru</territory>
@@ -6023,11 +6056,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>#,##0.00 ¤</pattern>
-					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
+					<pattern alt="noCurrency" draft="contributed">#,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00 ¤</pattern>
-					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
@@ -7833,7 +7866,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>CFA-frangi BCEAO</displayName>
 				<displayName count="one">CFA-frangi BCEAO</displayName>
 				<displayName count="other">CFA-frangia BCEAO</displayName>
-				<symbol draft="contributed">F CFA</symbol>
+				<symbol>F CFA</symbol>
 			</currency>
 			<currency type="XPD">
 				<displayName>palladium</displayName>
@@ -7987,7 +8020,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<pluralMinimalPairs count="other">{0} päivää</pluralMinimalPairs>
 			<ordinalMinimalPairs ordinal="other">Käänny {0}. risteyksestä oikealle.</ordinalMinimalPairs>
 			<caseMinimalPairs case="elative">{0} päivästä</caseMinimalPairs>
-			<caseMinimalPairs case="genitive">tarjous voimassa {0} ajan</caseMinimalPairs>
+			<caseMinimalPairs case="genitive">{0} päivän</caseMinimalPairs>
 			<caseMinimalPairs case="illative">{0} päivään</caseMinimalPairs>
 			<caseMinimalPairs case="nominative">{0} päivä</caseMinimalPairs>
 			<caseMinimalPairs case="partitive">{0} päivää</caseMinimalPairs>
@@ -8597,6 +8630,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="illative">{0} vuoteen</unitPattern>
 				<unitPattern count="other" case="partitive">{0} vuoteen</unitPattern>
 				<perUnitPattern>{0} / vuosi</perUnitPattern>
+			</unit>
+			<unit type="duration-quarter">
+				<displayName>neljännekset</displayName>
+				<unitPattern count="one">{0} neljännes</unitPattern>
+				<unitPattern count="one" case="elative">{0} neljänneksestä</unitPattern>
+				<unitPattern count="one" case="genitive">{0} neljänneksen</unitPattern>
+				<unitPattern count="one" case="illative">{0} neljännekseen</unitPattern>
+				<unitPattern count="one" case="partitive">{0} neljännestä</unitPattern>
+				<unitPattern count="other">{0} neljännestä</unitPattern>
+				<unitPattern count="other" case="elative">{0} neljänneksestä</unitPattern>
+				<unitPattern count="other" case="genitive">{0} neljänneksen</unitPattern>
+				<unitPattern count="other" case="illative">{0} neljännekseen</unitPattern>
+				<unitPattern count="other" case="partitive">{0} neljännestä</unitPattern>
+				<perUnitPattern>{0}/neljännes</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>kuukaudet</displayName>
@@ -10124,6 +10171,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} v</unitPattern>
 				<perUnitPattern>{0}/v</perUnitPattern>
 			</unit>
+			<unit type="duration-quarter">
+				<displayName>q</displayName>
+			</unit>
 			<unit type="duration-month">
 				<displayName>kk</displayName>
 				<unitPattern count="one">{0} kk</unitPattern>
@@ -10982,6 +11032,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}v</unitPattern>
 				<perUnitPattern>{0}/v</perUnitPattern>
 			</unit>
+			<unit type="duration-quarter">
+				<displayName>q</displayName>
+			</unit>
 			<unit type="duration-month">
 				<displayName>kk</displayName>
 				<unitPattern count="one">{0}kk</unitPattern>
@@ -11164,8 +11217,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}pistettä</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
-				<unitPattern count="one" draft="contributed">{0}R⊕</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}R⊕</unitPattern>
+				<unitPattern count="one">{0}R⊕</unitPattern>
+				<unitPattern count="other">{0}R⊕</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>km</displayName>
@@ -11901,4 +11954,130 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<featureName type="tnum">sarkautuvat numerot</featureName>
 		<featureName type="zero">lävistetty nolla</featureName>
 	</typographicNames>
+	<personNames>
+		<nameOrderLocales order="givenFirst">und fi</nameOrderLocales>
+		<personName order="givenFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{given} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname} {surname2}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{given} {given2} {surname} {surname2}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{given-initial} {given2-initial} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname-initial}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
+			<namePattern>{surname} {surname2} {given} {given2}, {prefix} {suffix}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{surname} {given}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname} {surname2} {given}, {prefix}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname} {given}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{surname} {given-initial} {given2-initial}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{surname} {given-initial}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="formal">
+			<namePattern>{surname-prefix} {surname-core}, {given} {given2}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="informal">
+			<namePattern>{surname}, {given-informal}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname-prefix} {surname-core}, {given} {given2-initial}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname}, {given-informal}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="formal">
+			<namePattern>{surname-prefix} {surname-core}, {given-initial} {given2-initial}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="informal">
+			<namePattern>{surname}, {given-informal}</namePattern>
+		</personName>
+		<sampleName item="givenOnly">
+			<nameField type="given">Louhi</nameField>
+		</sampleName>
+		<sampleName item="givenSurnameOnly">
+			<nameField type="given">Seppo</nameField>
+			<nameField type="surname">Ilmarinen</nameField>
+		</sampleName>
+		<sampleName item="given12Surname">
+			<nameField type="given">Ulrika</nameField>
+			<nameField type="given2">Wilhelmina</nameField>
+			<nameField type="surname">Johnson</nameField>
+		</sampleName>
+		<sampleName item="full">
+			<nameField type="prefix">Professori</nameField>
+			<nameField type="given">Kristiina</nameField>
+			<nameField type="given-informal">Krisse</nameField>
+			<nameField type="given2">Julia</nameField>
+			<nameField type="surname-prefix">von</nameField>
+			<nameField type="surname-core">Wright</nameField>
+			<nameField type="suffix">LT FT</nameField>
+		</sampleName>
+	</personNames>
 </ldml>

@@ -270,6 +270,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">hace {0} días</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="dayperiod">
+				<displayName draft="contributed">a. m./p. m.</displayName>
+			</field>
 			<field type="second-short">
 				<displayName draft="contributed">seg.</displayName>
 				<relativeTime type="future">

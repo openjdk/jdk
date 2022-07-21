@@ -1333,7 +1333,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yyyyQQQQ">QQQQ y. G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d–d</greatestDifference>
 						</intervalFormatItem>
@@ -1684,9 +1684,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
 							<dayPeriod type="midnight">ponoć</dayPeriod>
-							<dayPeriod type="am">pre podne</dayPeriod>
+							<dayPeriod type="am">pre podne</dayPeriod>
 							<dayPeriod type="noon">podne</dayPeriod>
-							<dayPeriod type="pm">po podne</dayPeriod>
+							<dayPeriod type="pm">po podne</dayPeriod>
 							<dayPeriod type="morning1">jutro</dayPeriod>
 							<dayPeriod type="afternoon1">popodne</dayPeriod>
 							<dayPeriod type="evening1">veče</dayPeriod>
@@ -1855,7 +1855,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<appendItem request="Timezone">{0} {1}</appendItem>
 					</appendItems>
 					<intervalFormats>
-						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d–d</greatestDifference>
 						</intervalFormatItem>

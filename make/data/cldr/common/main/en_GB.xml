@@ -1481,10 +1481,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>WEST</daylight>
 				</short>
 			</metazone>
+			<metazone type="Gulf">
+				<short>
+					<standard>GTS</standard>
+				</short>
+			</metazone>
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<minimumGroupingDigits draft="contributed">1</minimumGroupingDigits>
+		<minimumGroupingDigits>1</minimumGroupingDigits>
 		<miscPatterns numberSystem="latn">
 			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
@@ -1521,4 +1526,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<durationUnitPattern>m:ss</durationUnitPattern>
 		</durationUnit>
 	</units>
+	<personNames>
+		<sampleName item="full">
+			<nameField type="prefix">Prof. Dr</nameField>
+		</sampleName>
+	</personNames>
 </ldml>

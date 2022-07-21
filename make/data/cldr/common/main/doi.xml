@@ -206,7 +206,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="7">जुलाई</month>
 							<month type="8">अगस्त</month>
 							<month type="9">सितंबर</month>
-							<month type="10">अत्तूबर</month>
+							<month type="10">अक्तूबर</month>
 							<month type="11">नवंबर</month>
 							<month type="12">दिसंबर</month>
 						</monthWidth>
@@ -292,7 +292,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="wed">बुधबार</day>
 							<day type="thu">बीरबार</day>
 							<day type="fri">शुक्रबार</day>
-							<day type="sat">शनीबार</day>
+							<day type="sat">शनिबार</day>
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
@@ -388,7 +388,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="am">सवेर</dayPeriod>
-							<dayPeriod type="pm">बाद दपैहर</dayPeriod>
+							<dayPeriod type="pm">दपैहर बाद</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
@@ -986,6 +986,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</currencies>
 	</numbers>
 	<units>
+		<unitLength type="long">
+			<unit type="mass-kilogram">
+				<displayName>किल्लो</displayName>
+			</unit>
+			<unit type="mass-gram">
+				<displayName>ग्राम</displayName>
+			</unit>
+		</unitLength>
 		<unitLength type="narrow">
 			<unit type="consumption-mile-per-gallon-imperial">
 				<unitPattern count="one">{0}m/gUK</unitPattern>

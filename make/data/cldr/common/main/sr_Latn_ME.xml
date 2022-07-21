@@ -104,9 +104,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
 							<dayPeriod type="midnight" draft="contributed">ponoć</dayPeriod>
-							<dayPeriod type="am" draft="contributed">prije podne</dayPeriod>
+							<dayPeriod type="am" draft="contributed">prije podne</dayPeriod>
 							<dayPeriod type="noon" draft="contributed">podne</dayPeriod>
-							<dayPeriod type="pm" draft="contributed">po podne</dayPeriod>
+							<dayPeriod type="pm" draft="contributed">po podne</dayPeriod>
 							<dayPeriod type="morning1" draft="contributed">jutro</dayPeriod>
 							<dayPeriod type="afternoon1" draft="contributed">po pod.</dayPeriod>
 							<dayPeriod type="evening1" draft="contributed">veče</dayPeriod>
@@ -127,8 +127,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am" draft="contributed">prije podne</dayPeriod>
-							<dayPeriod type="pm" draft="contributed">po podne</dayPeriod>
+							<dayPeriod type="am" draft="contributed">prije podne</dayPeriod>
+							<dayPeriod type="pm" draft="contributed">po podne</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
 							<dayPeriod type="am" draft="contributed">a</dayPeriod>

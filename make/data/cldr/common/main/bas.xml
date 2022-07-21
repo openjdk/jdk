@@ -450,8 +450,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dayPeriods>
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am">I bikɛ̂glà</dayPeriod>
-							<dayPeriod type="pm">I ɓugajɔp</dayPeriod>
+							<dayPeriod type="am">I bikɛ̂glà</dayPeriod>
+							<dayPeriod type="pm">I ɓugajɔp</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="am">I bikɛ̂glà</dayPeriod>

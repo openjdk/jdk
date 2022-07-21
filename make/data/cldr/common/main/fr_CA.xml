@@ -28,6 +28,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ckb">kurde central</language>
 			<language type="ckb" alt="menu">sorani</language>
 			<language type="cr">cri</language>
+			<language type="crg">michif</language>
+			<language type="crl">cri du Nord-Est</language>
+			<language type="crr">algonquin de la Caroline</language>
 			<language type="den">slave</language>
 			<language type="dgr">tlicho</language>
 			<language type="ebu">embou</language>
@@ -57,11 +60,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="nmg">kwasio</language>
 			<language type="nwc">newari classique</language>
 			<language type="nyn">nkole</language>
+			<language type="oka">okanagan</language>
 			<language type="pau">palauan</language>
 			<language type="pdc">allemand de Pennsylvanie</language>
 			<language type="pdt">bas allemand mennonite</language>
 			<language type="peo">vieux perse</language>
 			<language type="pfl">palatin</language>
+			<language type="pis">pidgin</language>
 			<language type="pro">ancien occitan</language>
 			<language type="quc">k’iche’</language>
 			<language type="rar">rarotonga</language>
@@ -91,7 +96,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Hant">idéogrammes han traditionnels</script>
 			<script type="Hant" alt="stand-alone">caractères chinois traditionnels</script>
 			<script type="Hrkt">syllabaires japonais</script>
-			<script type="Olck" draft="contributed">ol chiki</script>
+			<script type="Olck">ol chiki</script>
 			<script type="Zsye">émoji</script>
 		</scripts>
 		<territories>
@@ -136,12 +141,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="VN">Vietnam</territory>
 		</territories>
 		<types>
-			<type key="calendar" type="ethiopic-amete-alem" draft="contributed">Calendrier éthiopien de l’An de grâce</type>
 			<type key="calendar" type="islamic-umalqura">calendrier musulman (calculé, Umm al-Qura)</type>
-			<type key="collation" type="dictionary" draft="contributed">Ordre de tri du dictionnaire</type>
+			<type key="collation" type="big5han">ordre de tri chinois traditionnel - Big5</type>
+			<type key="collation" type="dictionary">ordre de tri du dictionnaire</type>
 			<type key="collation" type="eor">ordre multilingue européen</type>
-			<type key="collation" type="reformed" draft="contributed">Ordre de tri réformé</type>
+			<type key="collation" type="gb2312han">ordre de tri chinois simplifié - GB2312</type>
+			<type key="collation" type="phonebook">ordre de tri de l’annuaire</type>
+			<type key="collation" type="pinyin">ordre de tri pinyin</type>
+			<type key="collation" type="reformed">ordre de tri réformé</type>
 			<type key="collation" type="searchjl" draft="contributed">Rechercher par consonne initiale en hangeul</type>
+			<type key="collation" type="stroke">ordre de tri des traits</type>
+			<type key="collation" type="traditional">ordre de tri traditionnel</type>
+			<type key="collation" type="zhuyin">ordre de tri zhuyin</type>
 			<type key="d0" type="fwidth">pleine chasse</type>
 			<type key="d0" type="hwidth">demi-chasse</type>
 			<type key="m0" type="bgn">BGN (commission de toponymie des États-Unis)</type>
@@ -660,20 +671,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="y">E y-MM-dd – E y-MM-dd GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMM">
-							<greatestDifference id="G">MMM y G – MMM y G</greatestDifference>
 							<greatestDifference id="M">MMM y – MMM y G</greatestDifference>
-							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="GyMMMd">
-							<greatestDifference id="G">d MMM y G – d MMM y G</greatestDifference>
-							<greatestDifference id="M">d MMM – d MMM y G</greatestDifference>
-							<greatestDifference id="y">d MMM y – d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMEd">
 							<greatestDifference id="d">E d MMM – E d MMM y G</greatestDifference>
-							<greatestDifference id="G">E d MMM y G – E d MMM y G</greatestDifference>
-							<greatestDifference id="M">E d MMM – E d MMM y G</greatestDifference>
-							<greatestDifference id="y">E d MMM y – E d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">h 'h' a – h 'h' a</greatestDifference>
@@ -1109,6 +1110,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<timeZoneNames>
 			<regionFormat type="daylight">{0} (heure avancée)</regionFormat>
 			<regionFormat type="standard">{0} (heure normale)</regionFormat>
+			<zone type="Antarctica/DumontDUrville">
+				<exemplarCity>Dumont d’Urville</exemplarCity>
+			</zone>
 			<zone type="America/Barbados">
 				<exemplarCity>Barbade (La)</exemplarCity>
 			</zone>
@@ -1132,6 +1136,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>heure avancée britannique</daylight>
 				</long>
 			</zone>
+			<zone type="America/Tegucigalpa">
+				<exemplarCity>Tégucigalpa</exemplarCity>
+			</zone>
 			<zone type="Europe/Dublin">
 				<long>
 					<daylight>heure avancée irlandaise</daylight>
@@ -1148,6 +1155,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Africa/Tripoli">
 				<exemplarCity>Tripoli [Libye]</exemplarCity>
+			</zone>
+			<zone type="Pacific/Palau">
+				<exemplarCity>Palau</exemplarCity>
 			</zone>
 			<zone type="Africa/Ndjamena">
 				<exemplarCity>Ndjamena</exemplarCity>
@@ -1382,6 +1392,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>heure de Brasilia</generic>
 					<standard>heure normale de Brasilia</standard>
 					<daylight>heure avancée de Brasilia</daylight>
+				</long>
+			</metazone>
+			<metazone type="Brunei">
+				<long>
+					<standard>heure du Brunéi</standard>
 				</long>
 			</metazone>
 			<metazone type="Cape_Verde">
@@ -1653,6 +1668,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>HAT</daylight>
 				</short>
 			</metazone>
+			<metazone type="Niue">
+				<long>
+					<standard>heure de Nioué</standard>
+				</long>
+			</metazone>
 			<metazone type="Norfolk">
 				<long>
 					<generic>heure de l’île Norfolk</generic>
@@ -1845,53 +1865,53 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
 					<pattern type="1000" count="one">0 k¤</pattern>
-					<pattern type="1000" count="one" alt="alphaNextToNumber" draft="provisional">0 k ¤</pattern>
+					<pattern type="1000" count="one" alt="alphaNextToNumber">0 k ¤</pattern>
 					<pattern type="1000" count="other">0 k¤</pattern>
-					<pattern type="1000" count="other" alt="alphaNextToNumber" draft="provisional">0 k ¤</pattern>
+					<pattern type="1000" count="other" alt="alphaNextToNumber">0 k ¤</pattern>
 					<pattern type="10000" count="one">00 k¤</pattern>
-					<pattern type="10000" count="one" alt="alphaNextToNumber" draft="provisional">00 k ¤</pattern>
+					<pattern type="10000" count="one" alt="alphaNextToNumber">00 k ¤</pattern>
 					<pattern type="10000" count="other">00 k¤</pattern>
-					<pattern type="10000" count="other" alt="alphaNextToNumber" draft="provisional">00 k ¤</pattern>
+					<pattern type="10000" count="other" alt="alphaNextToNumber">00 k ¤</pattern>
 					<pattern type="100000" count="one">000 k¤</pattern>
-					<pattern type="100000" count="one" alt="alphaNextToNumber" draft="provisional">000 k ¤</pattern>
+					<pattern type="100000" count="one" alt="alphaNextToNumber">000 k ¤</pattern>
 					<pattern type="100000" count="other">000 k¤</pattern>
-					<pattern type="100000" count="other" alt="alphaNextToNumber" draft="provisional">000 k ¤</pattern>
+					<pattern type="100000" count="other" alt="alphaNextToNumber">000 k ¤</pattern>
 					<pattern type="1000000" count="one">0 M¤</pattern>
-					<pattern type="1000000" count="one" alt="alphaNextToNumber" draft="provisional">0 M ¤</pattern>
+					<pattern type="1000000" count="one" alt="alphaNextToNumber">0 M ¤</pattern>
 					<pattern type="1000000" count="other">0 M¤</pattern>
-					<pattern type="1000000" count="other" alt="alphaNextToNumber" draft="provisional">0 M ¤</pattern>
+					<pattern type="1000000" count="other" alt="alphaNextToNumber">0 M ¤</pattern>
 					<pattern type="10000000" count="one">00 M¤</pattern>
-					<pattern type="10000000" count="one" alt="alphaNextToNumber" draft="provisional">00 M ¤</pattern>
+					<pattern type="10000000" count="one" alt="alphaNextToNumber">00 M ¤</pattern>
 					<pattern type="10000000" count="other">00 M¤</pattern>
-					<pattern type="10000000" count="other" alt="alphaNextToNumber" draft="provisional">00 M ¤</pattern>
+					<pattern type="10000000" count="other" alt="alphaNextToNumber">00 M ¤</pattern>
 					<pattern type="100000000" count="one">000 M¤</pattern>
-					<pattern type="100000000" count="one" alt="alphaNextToNumber" draft="provisional">000 M ¤</pattern>
+					<pattern type="100000000" count="one" alt="alphaNextToNumber">000 M ¤</pattern>
 					<pattern type="100000000" count="other">000 M¤</pattern>
-					<pattern type="100000000" count="other" alt="alphaNextToNumber" draft="provisional">000 M ¤</pattern>
+					<pattern type="100000000" count="other" alt="alphaNextToNumber">000 M ¤</pattern>
 					<pattern type="1000000000" count="one">0 G¤</pattern>
-					<pattern type="1000000000" count="one" alt="alphaNextToNumber" draft="provisional">0 G ¤</pattern>
+					<pattern type="1000000000" count="one" alt="alphaNextToNumber">0 G ¤</pattern>
 					<pattern type="1000000000" count="other">0 G¤</pattern>
-					<pattern type="1000000000" count="other" alt="alphaNextToNumber" draft="provisional">0 G ¤</pattern>
+					<pattern type="1000000000" count="other" alt="alphaNextToNumber">0 G ¤</pattern>
 					<pattern type="10000000000" count="one">00 G¤</pattern>
-					<pattern type="10000000000" count="one" alt="alphaNextToNumber" draft="provisional">00 G ¤</pattern>
+					<pattern type="10000000000" count="one" alt="alphaNextToNumber">00 G ¤</pattern>
 					<pattern type="10000000000" count="other">00 G¤</pattern>
-					<pattern type="10000000000" count="other" alt="alphaNextToNumber" draft="provisional">00 G ¤</pattern>
+					<pattern type="10000000000" count="other" alt="alphaNextToNumber">00 G ¤</pattern>
 					<pattern type="100000000000" count="one">000 G¤</pattern>
-					<pattern type="100000000000" count="one" alt="alphaNextToNumber" draft="provisional">000 G ¤</pattern>
+					<pattern type="100000000000" count="one" alt="alphaNextToNumber">000 G ¤</pattern>
 					<pattern type="100000000000" count="other">000 G¤</pattern>
-					<pattern type="100000000000" count="other" alt="alphaNextToNumber" draft="provisional">000 G ¤</pattern>
+					<pattern type="100000000000" count="other" alt="alphaNextToNumber">000 G ¤</pattern>
 					<pattern type="1000000000000" count="one">0 T¤</pattern>
-					<pattern type="1000000000000" count="one" alt="alphaNextToNumber" draft="provisional">0 T ¤</pattern>
+					<pattern type="1000000000000" count="one" alt="alphaNextToNumber">0 T ¤</pattern>
 					<pattern type="1000000000000" count="other">0 T¤</pattern>
-					<pattern type="1000000000000" count="other" alt="alphaNextToNumber" draft="provisional">0 T ¤</pattern>
+					<pattern type="1000000000000" count="other" alt="alphaNextToNumber">0 T ¤</pattern>
 					<pattern type="10000000000000" count="one">00 T¤</pattern>
-					<pattern type="10000000000000" count="one" alt="alphaNextToNumber" draft="provisional">00 T ¤</pattern>
+					<pattern type="10000000000000" count="one" alt="alphaNextToNumber">00 T ¤</pattern>
 					<pattern type="10000000000000" count="other">00 T¤</pattern>
-					<pattern type="10000000000000" count="other" alt="alphaNextToNumber" draft="provisional">00 T ¤</pattern>
+					<pattern type="10000000000000" count="other" alt="alphaNextToNumber">00 T ¤</pattern>
 					<pattern type="100000000000000" count="one">000 T¤</pattern>
-					<pattern type="100000000000000" count="one" alt="alphaNextToNumber" draft="provisional">000 T ¤</pattern>
+					<pattern type="100000000000000" count="one" alt="alphaNextToNumber">000 T ¤</pattern>
 					<pattern type="100000000000000" count="other">000 T¤</pattern>
-					<pattern type="100000000000000" count="other" alt="alphaNextToNumber" draft="provisional">000 T ¤</pattern>
+					<pattern type="100000000000000" count="other" alt="alphaNextToNumber">000 T ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -2288,7 +2308,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} kilowattheures</unitPattern>
 			</unit>
 			<unit type="energy-british-thermal-unit">
-				<displayName>Unités thermiques britanniques</displayName>
+				<displayName>unités thermiques britanniques</displayName>
 				<unitPattern count="one">{0} unité thermique britannique</unitPattern>
 				<unitPattern count="other">{0} unités thermiques britanniques</unitPattern>
 			</unit>
@@ -2701,9 +2721,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} bit</unitPattern>
 				<unitPattern count="other">{0} bit</unitPattern>
 			</unit>
-			<unit type="duration-century">
-				<displayName>s.</displayName>
-			</unit>
 			<unit type="duration-year">
 				<unitPattern count="one">{0} an</unitPattern>
 				<unitPattern count="other">{0} ans</unitPattern>
@@ -3115,10 +3132,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} %</unitPattern>
 				<unitPattern count="other">{0} %</unitPattern>
 			</unit>
-			<unit type="duration-century">
-				<unitPattern count="one">´{0}s.</unitPattern>
-				<unitPattern count="other">´{0}s.</unitPattern>
-			</unit>
 			<unit type="duration-decade">
 				<displayName>déc</displayName>
 				<unitPattern count="one">{0}déc</unitPattern>
@@ -3127,7 +3140,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="duration-month">
 				<unitPattern count="one">{0}m</unitPattern>
 				<unitPattern count="other">{0}m</unitPattern>
-				<perUnitPattern>{0}/m</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName>sem</displayName>

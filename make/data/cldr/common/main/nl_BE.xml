@@ -136,6 +136,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<personName order="givenFirst" length="medium" usage="monogram" formality="formal">
 			<namePattern draft="provisional">{given-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
 		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="informal">
+			<namePattern draft="provisional">{given-informal}</namePattern>
+		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
 			<namePattern draft="provisional">{prefix} {surname-initialCap}</namePattern>
 		</personName>
@@ -145,20 +148,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<personName order="sorting" length="long" usage="referring" formality="formal">
 			<namePattern draft="provisional">{surname}, {prefix} {given} {given2}, {suffix}</namePattern>
 		</personName>
-		<personName order="sorting" length="long" usage="referring" formality="informal">
-			<namePattern draft="provisional">{surname}, {given-informal}</namePattern>
-		</personName>
-		<personName order="sorting" length="medium" usage="referring" formality="formal">
-			<namePattern draft="provisional">{surname}, {given} {given2-initial} {suffix}</namePattern>
-		</personName>
-		<personName order="sorting" length="medium" usage="referring" formality="informal">
-			<namePattern draft="provisional">{surname}, {given-informal}</namePattern>
-		</personName>
 		<personName order="sorting" length="short" usage="referring" formality="formal">
 			<namePattern draft="provisional">{surname}, {given-initial}{given2-initial}</namePattern>
-		</personName>
-		<personName order="sorting" length="short" usage="referring" formality="informal">
-			<namePattern draft="provisional">{surname}, {given-informal}</namePattern>
 		</personName>
 		<sampleName item="givenOnly">
 			<nameField type="given" draft="provisional">Liam</nameField>
@@ -176,6 +167,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<nameField type="given" draft="provisional">Juliette</nameField>
 			<nameField type="given-informal" draft="provisional">Juli</nameField>
 			<nameField type="surname" draft="provisional">Van den Berg</nameField>
+			<nameField type="surname-prefix">Van den</nameField>
 		</sampleName>
 	</personNames>
 </ldml>

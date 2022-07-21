@@ -791,9 +791,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 		</fields>
 		<timeZoneNames>
+			<gmtFormat>जी.एम.टी. {0}</gmtFormat>
+			<gmtZeroFormat>जी.एम.टी.</gmtZeroFormat>
 			<regionFormat>{0} समय:</regionFormat>
-			<regionFormat type="daylight">{0} डेलाइट समय:</regionFormat>
-			<regionFormat type="standard">{0} मानक समय:</regionFormat>
+			<regionFormat type="daylight">{0} अयामसमयः</regionFormat>
+			<regionFormat type="standard">{0} प्रमाणसमयः</regionFormat>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>समन्वितः वैश्विक समय:</standard>

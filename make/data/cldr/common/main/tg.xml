@@ -47,7 +47,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="dv">дивеҳӣ</language>
 			<language type="dz">дзонгха</language>
 			<language type="el">юнонӣ</language>
-			<language type="en">англисӣ</language>
+			<language type="en">Англисӣ</language>
 			<language type="en_AU">англисии австралиягӣ</language>
 			<language type="en_CA">англисии канадагӣ</language>
 			<language type="en_GB">англисии британӣ</language>
@@ -466,9 +466,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<measurementSystemName type="US">ИМА</measurementSystemName>
 		</measurementSystemNames>
 		<codePatterns>
-			<codePattern type="language">{0}</codePattern>
-			<codePattern type="script">{0}</codePattern>
-			<codePattern type="territory">{0}</codePattern>
+			<codePattern type="language">Забон: {0}</codePattern>
+			<codePattern type="script">Скрипт: {0}</codePattern>
+			<codePattern type="territory">Минтақа: {0}</codePattern>
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
@@ -1888,11 +1888,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</fields>
 		<timeZoneNames>
 			<hourFormat>+HH:mm;-HH:mm</hourFormat>
-			<gmtFormat>GMT{0}</gmtFormat>
-			<gmtZeroFormat>GMT</gmtZeroFormat>
-			<regionFormat>{0}</regionFormat>
-			<regionFormat type="daylight">{0} (+1)</regionFormat>
-			<regionFormat type="standard">{0} (+0)</regionFormat>
+			<gmtFormat>Вақти GMT {0}</gmtFormat>
+			<gmtZeroFormat>Вақти GMT</gmtZeroFormat>
+			<regionFormat>Вақти {0}</regionFormat>
+			<regionFormat type="daylight">Вақти рӯзонаи {0}</regionFormat>
+			<regionFormat type="standard">Вақти стандартии {0}</regionFormat>
 			<fallbackFormat>{1} ({0})</fallbackFormat>
 			<zone type="Etc/UTC">
 				<long>
@@ -1963,7 +1963,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="GMT">
 				<long>
-					<standard>Ба вақти Гринвич</standard>
+					<standard>Вақти миёнаи Гринвич</standard>
 				</long>
 			</metazone>
 		</timeZoneNames>

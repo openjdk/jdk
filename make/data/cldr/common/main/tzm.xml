@@ -452,8 +452,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dayPeriods>
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am">Zdat azal</dayPeriod>
-							<dayPeriod type="pm">Ḍeffir aza</dayPeriod>
+							<dayPeriod type="am">Zdat azal</dayPeriod>
+							<dayPeriod type="pm">Ḍeffir aza</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="am">Zdat azal</dayPeriod>

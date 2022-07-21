@@ -453,7 +453,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
 							<dayPeriod type="am">Subbaahi</dayPeriod>
-							<dayPeriod type="pm">Zaarikay b</dayPeriod>
+							<dayPeriod type="pm">Zaarikay b</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="am">Subbaahi</dayPeriod>

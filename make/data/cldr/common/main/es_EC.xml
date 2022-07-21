@@ -165,6 +165,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</dateTimeFormats>
 			</calendar>
 		</calendars>
+		<fields>
+			<field type="dayperiod">
+				<displayName draft="contributed">a. m./p. m.</displayName>
+			</field>
+		</fields>
 		<timeZoneNames>
 			<metazone type="Ecuador">
 				<short>

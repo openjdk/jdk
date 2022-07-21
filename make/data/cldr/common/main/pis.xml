@@ -91,7 +91,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</dayPeriods>
 				<dateTimeFormats>
 					<intervalFormats>
-						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>

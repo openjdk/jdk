@@ -24,7 +24,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="am" draft="unconfirmed">amaric</language>
 			<language type="an" draft="unconfirmed">aragonés</language>
 			<language type="ar" draft="unconfirmed">arabi</language>
-			<language type="ar_001" draft="unconfirmed">arabi estandard modèrn</language>
 			<language type="arn" draft="unconfirmed">mapoche</language>
 			<language type="ast" draft="unconfirmed">asturian</language>
 			<language type="ay" draft="unconfirmed">aimara</language>
@@ -35,7 +34,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="bg" draft="unconfirmed">bulgar</language>
 			<language type="bi" draft="unconfirmed">bislama</language>
 			<language type="bm" draft="unconfirmed">bambara</language>
-			<language type="bn" draft="unconfirmed">Bengla</language>
+			<language type="bn" draft="unconfirmed">bengalin</language>
 			<language type="bo" draft="unconfirmed">tibetan</language>
 			<language type="br" draft="unconfirmed">breton</language>
 			<language type="bs" draft="unconfirmed">bosniac</language>
@@ -51,14 +50,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="cv" draft="unconfirmed">chovash</language>
 			<language type="da" draft="unconfirmed">danés</language>
 			<language type="de" draft="unconfirmed">alemand</language>
-			<language type="de_AT" draft="unconfirmed">alemand austrian</language>
-			<language type="de_CH" draft="unconfirmed">naut alemand soïsse</language>
 			<language type="el" draft="unconfirmed">grèc</language>
 			<language type="en" draft="unconfirmed">anglés</language>
-			<language type="en_AU" draft="unconfirmed">anglés australian</language>
-			<language type="en_CA" draft="unconfirmed">anglés canadian</language>
-			<language type="en_GB" draft="unconfirmed">anglés britanic</language>
-			<language type="en_GB" alt="short" draft="unconfirmed">anglés (Reialme Unit)</language>
 			<language type="eo" draft="unconfirmed">esperanto</language>
 			<language type="es" draft="unconfirmed">espanhòl</language>
 			<language type="et" draft="unconfirmed">estonian</language>
@@ -70,8 +63,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="fo" draft="unconfirmed">feroés</language>
 			<language type="fon" draft="unconfirmed">fòn</language>
 			<language type="fr" draft="unconfirmed">francés</language>
-			<language type="fr_CA" draft="unconfirmed">francés canadian</language>
-			<language type="fr_CH" draft="unconfirmed">francés soïsse</language>
 			<language type="frm" draft="unconfirmed">francés mejan</language>
 			<language type="fur" draft="unconfirmed">friolan</language>
 			<language type="ga" draft="unconfirmed">irlandés</language>
@@ -82,7 +73,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="grc" draft="unconfirmed">grec ancian</language>
 			<language type="gsw" draft="unconfirmed">aleman de Soïssa</language>
 			<language type="gu" draft="unconfirmed">gujarati</language>
-			<language type="he" draft="unconfirmed">ebreu</language>
+			<language type="he" draft="unconfirmed">ebrèu</language>
 			<language type="hi" draft="unconfirmed">Indi</language>
 			<language type="hr" draft="unconfirmed">croat</language>
 			<language type="hsb" draft="unconfirmed">naut sorab</language>
@@ -109,7 +100,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="la" draft="unconfirmed">latin</language>
 			<language type="lad" draft="unconfirmed">ladin</language>
 			<language type="lb" draft="unconfirmed">luxemborgés</language>
-			<language type="lo" draft="unconfirmed">lao</language>
+			<language type="lo" draft="unconfirmed">laosian</language>
 			<language type="lt" draft="unconfirmed">lituan</language>
 			<language type="lv" draft="unconfirmed">leton</language>
 			<language type="mg" draft="unconfirmed">malgash</language>
@@ -178,14 +169,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="yo" draft="unconfirmed">yoruba</language>
 			<language type="yue" draft="unconfirmed">cantonés</language>
 			<language type="zh" draft="unconfirmed">chinés (chinés mandarin)</language>
+			<language type="zh" alt="menu" draft="unconfirmed">chinés, mandarin</language>
 			<language type="zh_Hans" draft="unconfirmed">chinés simplificat</language>
 			<language type="zh_Hans" alt="long" draft="unconfirmed">chinés mandarin simplificat</language>
 			<language type="zh_Hant" draft="unconfirmed">chinés tradicional</language>
+			<language type="zh_Hant" alt="long" draft="unconfirmed">chinés mandarin tradicional</language>
 			<language type="zu" draft="unconfirmed">zólo</language>
 			<language type="zun" draft="unconfirmed">zuni</language>
 		</languages>
 		<scripts>
-			<script type="Arab" draft="unconfirmed">arabi</script>
 			<script type="Armn" draft="unconfirmed">armèni</script>
 			<script type="Bopo" draft="unconfirmed">bopomofó</script>
 			<script type="Brai" draft="unconfirmed">Bralha</script>
@@ -252,8 +244,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="155" draft="unconfirmed">Euròpa de l’oèst</territory>
 			<territory type="202" draft="unconfirmed">Africa subsahariana</territory>
 			<territory type="419" draft="unconfirmed">America latina</territory>
+			<territory type="AC" draft="unconfirmed">Isla Ascension</territory>
 			<territory type="AD" draft="unconfirmed">Andòrra</territory>
-			<territory type="AE" draft="unconfirmed">Emirats arabes units</territory>
+			<territory type="AE" draft="unconfirmed">Emirats Arabs Units</territory>
 			<territory type="AF" draft="unconfirmed">Afganistan</territory>
 			<territory type="AG" draft="unconfirmed">Antigua e Barbuda</territory>
 			<territory type="AI" draft="unconfirmed">Anguilla</territory>
@@ -266,6 +259,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="AT" draft="unconfirmed">Àustria</territory>
 			<territory type="AU" draft="unconfirmed">Austràlia</territory>
 			<territory type="AW" draft="unconfirmed">Aruba</territory>
+			<territory type="AX" draft="unconfirmed">llas Åland</territory>
 			<territory type="AZ" draft="unconfirmed">Azerbaijan</territory>
 			<territory type="BA" draft="unconfirmed">Bòsnia e Ercegovina</territory>
 			<territory type="BB" draft="unconfirmed">Barbados</territory>
@@ -289,11 +283,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="BY" draft="unconfirmed">Bielorussia</territory>
 			<territory type="BZ" draft="unconfirmed">Belize</territory>
 			<territory type="CA" draft="unconfirmed">Canadà</territory>
-			<territory type="CD" draft="unconfirmed">Còngo - Kinshasa</territory>
+			<territory type="CC" draft="unconfirmed">Illas Còcos</territory>
+			<territory type="CD" draft="unconfirmed">Còngo de Kinshasa</territory>
+			<territory type="CD" alt="variant" draft="unconfirmed">Republica Democratica de Còngo</territory>
 			<territory type="CF" draft="unconfirmed">Republica Centraficana</territory>
-			<territory type="CG" draft="unconfirmed">Còngo - Brazzaville</territory>
+			<territory type="CG" draft="unconfirmed">Còngo de Brazzavila</territory>
+			<territory type="CG" alt="variant" draft="unconfirmed">Republica de Còngo</territory>
 			<territory type="CH" draft="unconfirmed">Soïssa</territory>
 			<territory type="CI" draft="unconfirmed">Còsta d’Evòri</territory>
+			<territory type="CK" draft="unconfirmed">Illas Cook</territory>
 			<territory type="CL" draft="unconfirmed">Chile</territory>
 			<territory type="CM" draft="unconfirmed">Cameron</territory>
 			<territory type="CN" draft="unconfirmed">China</territory>
@@ -303,9 +301,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="CU" draft="unconfirmed">Cuba</territory>
 			<territory type="CV" draft="unconfirmed">Cap Verd</territory>
 			<territory type="CW" draft="unconfirmed">Curaçao</territory>
+			<territory type="CX" draft="unconfirmed">Illa Christmas</territory>
 			<territory type="CY" draft="unconfirmed">Chipre</territory>
-			<territory type="CZ" draft="unconfirmed">Republica chèca</territory>
+			<territory type="CZ" draft="unconfirmed">Chequia</territory>
+			<territory type="CZ" alt="variant" draft="unconfirmed">Republica chèca</territory>
 			<territory type="DE" draft="unconfirmed">Alemanha</territory>
+			<territory type="DG" draft="unconfirmed">Diego Garcia</territory>
 			<territory type="DJ" draft="unconfirmed">Jiboti</territory>
 			<territory type="DK" draft="unconfirmed">Danemarc</territory>
 			<territory type="DM" draft="unconfirmed">Dominica</territory>
@@ -325,110 +326,191 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="FJ" draft="unconfirmed">Fiji</territory>
 			<territory type="FK" draft="unconfirmed">Isclas Falkland</territory>
 			<territory type="FK" alt="variant" draft="unconfirmed">Malvinas</territory>
+			<territory type="FM" draft="unconfirmed">Micronesia</territory>
+			<territory type="FO" draft="unconfirmed">Illas Feròe</territory>
 			<territory type="FR" draft="unconfirmed">França</territory>
+			<territory type="GA" draft="unconfirmed">Gabon</territory>
 			<territory type="GB" draft="unconfirmed">Reiaume Unit</territory>
+			<territory type="GB" alt="short" draft="unconfirmed">RU</territory>
 			<territory type="GD" draft="unconfirmed">Grenada</territory>
+			<territory type="GE" draft="unconfirmed">Geòrgia</territory>
 			<territory type="GF" draft="unconfirmed">Guiana francesa</territory>
+			<territory type="GG" draft="unconfirmed">Guernsey</territory>
 			<territory type="GH" draft="unconfirmed">Ganà</territory>
+			<territory type="GI" draft="unconfirmed">Gibartar</territory>
 			<territory type="GL" draft="unconfirmed">Groenlàndia</territory>
+			<territory type="GM" draft="unconfirmed">Gàmbia</territory>
 			<territory type="GN" draft="unconfirmed">Guinèa</territory>
 			<territory type="GP" draft="unconfirmed">Guadalope</territory>
 			<territory type="GQ" draft="unconfirmed">Guinèa Eqüatoriala</territory>
+			<territory type="GR" draft="unconfirmed">Grècia</territory>
 			<territory type="GT" draft="unconfirmed">Guatemala</territory>
+			<territory type="GU" draft="unconfirmed">Guam</territory>
 			<territory type="GW" draft="unconfirmed">Guinèa-Bissau</territory>
 			<territory type="GY" draft="unconfirmed">Guianà</territory>
+			<territory type="HK">Hong Kong</territory>
+			<territory type="HM" draft="unconfirmed">Illas Heard e McDonald</territory>
 			<territory type="HN" draft="unconfirmed">Onduras</territory>
 			<territory type="HR" draft="unconfirmed">Croàcia</territory>
-			<territory type="HT" draft="unconfirmed">Aïti</territory>
+			<territory type="HT" draft="unconfirmed">Haití</territory>
 			<territory type="HU" draft="unconfirmed">Ongria</territory>
 			<territory type="IC" draft="unconfirmed">Isclas Canàrias</territory>
+			<territory type="ID" draft="unconfirmed">Indonesia</territory>
 			<territory type="IE" draft="unconfirmed">Irlanda</territory>
 			<territory type="IL" draft="unconfirmed">Israèl</territory>
+			<territory type="IM" draft="unconfirmed">Illa de Man</territory>
 			<territory type="IN" draft="unconfirmed">Índia</territory>
+			<territory type="IO" draft="unconfirmed">Territòri Britanic de l’Ocean Indian</territory>
+			<territory type="IQ" draft="unconfirmed">Iraq</territory>
+			<territory type="IR" draft="unconfirmed">Iran</territory>
 			<territory type="IS" draft="unconfirmed">Islàndia</territory>
 			<territory type="IT" draft="unconfirmed">Itàlia</territory>
+			<territory type="JE" draft="unconfirmed">Jersey</territory>
 			<territory type="JM" draft="unconfirmed">Jamaïca</territory>
+			<territory type="JO" draft="unconfirmed">Jordania</territory>
 			<territory type="JP" draft="unconfirmed">Japon</territory>
+			<territory type="KE" draft="unconfirmed">Kenya</territory>
+			<territory type="KG" draft="unconfirmed">Kirguizstan</territory>
 			<territory type="KH" draft="unconfirmed">Cambòja</territory>
-			<territory type="KM" draft="unconfirmed">Comòros</territory>
+			<territory type="KI" draft="unconfirmed">Kiribatí</territory>
+			<territory type="KM" draft="unconfirmed">Comòras</territory>
 			<territory type="KN" draft="unconfirmed">Sant Kitts e Nevis</territory>
 			<territory type="KP" draft="unconfirmed">Corèa del Nòrd</territory>
 			<territory type="KR" draft="unconfirmed">Corèa del Sud</territory>
+			<territory type="KW" draft="unconfirmed">Kowait</territory>
 			<territory type="KY" draft="unconfirmed">Islas Caiman</territory>
 			<territory type="KZ" draft="unconfirmed">Cazacstan</territory>
+			<territory type="LA" draft="unconfirmed">Laos</territory>
 			<territory type="LB" draft="unconfirmed">Liban</territory>
 			<territory type="LC" draft="unconfirmed">Santa Lucia</territory>
+			<territory type="LI" draft="unconfirmed">Liechtenstein</territory>
+			<territory type="LK" draft="unconfirmed">Sri Lanka</territory>
 			<territory type="LR" draft="unconfirmed">Liberià</territory>
 			<territory type="LS" draft="unconfirmed">Lesotho</territory>
+			<territory type="LT" draft="unconfirmed">Lituània</territory>
 			<territory type="LU" draft="unconfirmed">Luxemborg</territory>
+			<territory type="LV" draft="unconfirmed">Letònia</territory>
 			<territory type="LY" draft="unconfirmed">Libia</territory>
 			<territory type="MA" draft="unconfirmed">Marròc</territory>
 			<territory type="MC" draft="unconfirmed">Mónegue</territory>
 			<territory type="MD" draft="unconfirmed">Moldàvia</territory>
-			<territory type="MF" draft="unconfirmed">Sant Martin</territory>
+			<territory type="ME" draft="unconfirmed">Montenegro</territory>
+			<territory type="MF" draft="unconfirmed">St. Martin</territory>
+			<territory type="MG" draft="unconfirmed">Madagascar</territory>
+			<territory type="MH" draft="unconfirmed">Illas Marshall</territory>
 			<territory type="MK" draft="unconfirmed">Macedónia del Nòrd</territory>
 			<territory type="ML" draft="unconfirmed">Mali</territory>
 			<territory type="MM" draft="unconfirmed">Birmania</territory>
 			<territory type="MN" draft="unconfirmed">Mongolia</territory>
+			<territory type="MO" draft="unconfirmed">Macau</territory>
+			<territory type="MP" draft="unconfirmed">Illas Mariannas del Nòrd</territory>
 			<territory type="MQ" draft="unconfirmed">Martinica</territory>
 			<territory type="MR" draft="unconfirmed">Mauritània</territory>
-			<territory type="MS" draft="unconfirmed">Mont Serrat</territory>
+			<territory type="MS" draft="unconfirmed">Montserrat</territory>
 			<territory type="MT" draft="unconfirmed">Malta</territory>
 			<territory type="MU" draft="unconfirmed">Maurici</territory>
+			<territory type="MV" draft="unconfirmed">Maldivas</territory>
+			<territory type="MW" draft="unconfirmed">Malavi</territory>
 			<territory type="MX" draft="unconfirmed">Mexic</territory>
 			<territory type="MY" draft="unconfirmed">Malàisia</territory>
 			<territory type="MZ" draft="unconfirmed">Moçambic</territory>
+			<territory type="NA" draft="unconfirmed">Namibia</territory>
 			<territory type="NC" draft="unconfirmed">Nòva Caledonia</territory>
 			<territory type="NE" draft="unconfirmed">Nigèr</territory>
+			<territory type="NF" draft="unconfirmed">Illas Norfòlk</territory>
 			<territory type="NG" draft="unconfirmed">Nigèria</territory>
 			<territory type="NI" draft="unconfirmed">Nicaragüa</territory>
 			<territory type="NL" draft="unconfirmed">Païses Basses</territory>
 			<territory type="NO" draft="unconfirmed">Norvègia</territory>
+			<territory type="NP" draft="unconfirmed">Nepal</territory>
+			<territory type="NR" draft="unconfirmed">Nauru</territory>
+			<territory type="NU" draft="unconfirmed">Niue</territory>
 			<territory type="NZ" draft="unconfirmed">Nòva Zelanda</territory>
+			<territory type="OM" draft="unconfirmed">Òman</territory>
 			<territory type="PA" draft="unconfirmed">Panamà</territory>
 			<territory type="PE" draft="unconfirmed">Peró</territory>
 			<territory type="PF" draft="unconfirmed">Polinesia francesa</territory>
+			<territory type="PG" draft="unconfirmed">Papoa-Nòva Guinèa</territory>
 			<territory type="PH" draft="unconfirmed">Filipinas</territory>
+			<territory type="PK" draft="unconfirmed">Paquistan</territory>
 			<territory type="PL" draft="unconfirmed">Polonha</territory>
 			<territory type="PM" draft="unconfirmed">Sant Pèire e Miquelon</territory>
 			<territory type="PN" draft="unconfirmed">Iscla Pitcairn</territory>
-			<territory type="PR" draft="unconfirmed">Puèrto Rico</territory>
+			<territory type="PR" draft="unconfirmed">Puerto Rico</territory>
 			<territory type="PS" draft="unconfirmed">Territòris palestinians</territory>
 			<territory type="PS" alt="short" draft="unconfirmed">Palestina</territory>
 			<territory type="PT" draft="unconfirmed">Portugal</territory>
 			<territory type="PW" draft="unconfirmed">Belau</territory>
 			<territory type="PY" draft="unconfirmed">Paraguai</territory>
+			<territory type="QA" draft="unconfirmed">Catar</territory>
 			<territory type="QO" draft="unconfirmed">Oceania exteriora</territory>
+			<territory type="RE" draft="unconfirmed">Reünion</territory>
 			<territory type="RO" draft="unconfirmed">Romania</territory>
+			<territory type="RS" draft="unconfirmed">Serbia</territory>
 			<territory type="RU" draft="unconfirmed">Russia</territory>
+			<territory type="RW" draft="unconfirmed">Roanda</territory>
 			<territory type="SA" draft="unconfirmed">Arabia Saudita</territory>
+			<territory type="SB" draft="unconfirmed">Illas Salamon</territory>
+			<territory type="SC" draft="unconfirmed">Seissèlas</territory>
 			<territory type="SD" draft="unconfirmed">Sodan</territory>
 			<territory type="SE" draft="unconfirmed">Suècia</territory>
 			<territory type="SG" draft="unconfirmed">Singapor</territory>
 			<territory type="SH" draft="unconfirmed">Santa Elena</territory>
 			<territory type="SI" draft="unconfirmed">Eslovènia</territory>
+			<territory type="SJ" draft="unconfirmed">Svalbard e Jan Mayen</territory>
 			<territory type="SK" draft="unconfirmed">Eslovaquia</territory>
+			<territory type="SL" draft="unconfirmed">Sierra Leone</territory>
 			<territory type="SM" draft="unconfirmed">Sant Marin</territory>
+			<territory type="SN" draft="unconfirmed">Senegal</territory>
+			<territory type="SO" draft="unconfirmed">Somalia</territory>
 			<territory type="SR" draft="unconfirmed">Surinam</territory>
+			<territory type="SS" draft="unconfirmed">Sodan del Sud</territory>
+			<territory type="ST" draft="unconfirmed">Sant Tomàs e Prince</territory>
 			<territory type="SV" draft="unconfirmed">Lo Salvador</territory>
+			<territory type="SX" draft="unconfirmed">Sant Martin</territory>
 			<territory type="SY" draft="unconfirmed">Súria</territory>
+			<territory type="SZ" draft="unconfirmed">Eswatini</territory>
+			<territory type="TA" draft="unconfirmed">Tristan da Cunha</territory>
+			<territory type="TC" draft="unconfirmed">Illas Turcas e Caïcas</territory>
 			<territory type="TD" draft="unconfirmed">Chad</territory>
+			<territory type="TF" draft="unconfirmed">Territòris del Sud franceses</territory>
 			<territory type="TG" draft="unconfirmed">Tògo</territory>
 			<territory type="TH" draft="unconfirmed">Tailàndia</territory>
+			<territory type="TJ" draft="unconfirmed">Tatgiquistan</territory>
+			<territory type="TK" draft="unconfirmed">Tokelau</territory>
 			<territory type="TL" draft="unconfirmed">Timòr Èst</territory>
+			<territory type="TM" draft="unconfirmed">Turcmenistan</territory>
 			<territory type="TN" draft="unconfirmed">Tunisia</territory>
+			<territory type="TO" draft="unconfirmed">Tònga</territory>
 			<territory type="TR" draft="unconfirmed">Turquia</territory>
+			<territory type="TT" draft="unconfirmed">Trinidad e Tobago</territory>
+			<territory type="TV" draft="unconfirmed">Tuvalu</territory>
+			<territory type="TW" draft="unconfirmed">Taiwan</territory>
+			<territory type="TZ" draft="unconfirmed">Tanzania</territory>
 			<territory type="UA" draft="unconfirmed">Ucraïna</territory>
+			<territory type="UG" draft="unconfirmed">Oganda</territory>
 			<territory type="UN" draft="unconfirmed">Nacions Unidas</territory>
 			<territory type="US" draft="unconfirmed">Estats Units</territory>
 			<territory type="US" alt="short" draft="unconfirmed">EU</territory>
 			<territory type="UY" draft="unconfirmed">Uruguai</territory>
+			<territory type="UZ" draft="unconfirmed">Ozbequistan</territory>
 			<territory type="VA" draft="unconfirmed">Ciutat del Vatican</territory>
+			<territory type="VC" draft="unconfirmed">St Vincent e Granadinas</territory>
 			<territory type="VE" draft="unconfirmed">Veneçuèla</territory>
+			<territory type="VG" draft="unconfirmed">Illas Verges britanicas</territory>
+			<territory type="VI" draft="unconfirmed">Illas Verges estatsunidencas</territory>
 			<territory type="VN" draft="unconfirmed">Vietnam</territory>
+			<territory type="VU" draft="unconfirmed">Vanuatú</territory>
 			<territory type="WF" draft="unconfirmed">Wallis e Futuna</territory>
+			<territory type="WS" draft="unconfirmed">Samoa</territory>
+			<territory type="XA" draft="unconfirmed">Lenga-artificiala-accentuada</territory>
+			<territory type="XB" draft="unconfirmed">Lenga-artificiala-bidireccionala</territory>
 			<territory type="XK" draft="unconfirmed">Kosova</territory>
 			<territory type="YE" draft="unconfirmed">Iémen</territory>
+			<territory type="YT" draft="unconfirmed">Maiòta</territory>
+			<territory type="ZA" draft="unconfirmed">Africa del Sud</territory>
+			<territory type="ZM" draft="unconfirmed">Zambia</territory>
+			<territory type="ZW" draft="unconfirmed">Zimbabwe</territory>
 			<territory type="ZZ" draft="unconfirmed">Region indeterminada</territory>
 		</territories>
 		<keys>
@@ -440,6 +522,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="gregorian" draft="unconfirmed">calendièr gregorian</type>
 			<type key="calendar" type="iso8601" draft="unconfirmed">calendièr ISO-8601</type>
 			<type key="collation" type="standard" draft="unconfirmed">òrdre per defaut</type>
+			<type key="numbers" type="latn" draft="unconfirmed">chifras occidentalas</type>
 		</types>
 		<codePatterns>
 			<codePattern type="language" draft="unconfirmed">Lenga : {0}</codePattern>
@@ -518,7 +601,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="Ed" draft="unconfirmed">E d</dateFormatItem>
 						<dateFormatItem id="Gy" draft="unconfirmed">y G</dateFormatItem>
 						<dateFormatItem id="M" draft="unconfirmed">L</dateFormatItem>
+						<dateFormatItem id="Md" draft="unconfirmed">M/d</dateFormatItem>
+						<dateFormatItem id="MEd" draft="unconfirmed">E M/d</dateFormatItem>
 					</availableFormats>
+					<intervalFormats>
+						<intervalFormatItem id="d">
+							<greatestDifference id="d" draft="unconfirmed">d – d</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
 			<calendar type="gregorian">
@@ -720,7 +810,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<timeFormats>
 					<timeFormatLength type="full">
 						<timeFormat>
-							<pattern draft="unconfirmed">H'h'mm:ss a zzzz</pattern>
+							<pattern draft="unconfirmed">HH:mm:ss zzzz</pattern>
 							<datetimeSkeleton draft="unconfirmed">Hmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
@@ -771,18 +861,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="EBhm" draft="unconfirmed">E h'h'mm B</dateFormatItem>
 						<dateFormatItem id="EBhms" draft="unconfirmed">E h'h'mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed" draft="unconfirmed">ccc d</dateFormatItem>
-						<dateFormatItem id="Ehm" draft="unconfirmed">E h'h'mm a</dateFormatItem>
+						<dateFormatItem id="Ehm" draft="unconfirmed">E h'h'mm a</dateFormatItem>
 						<dateFormatItem id="EHm" draft="unconfirmed">E HH'h'mm</dateFormatItem>
 						<dateFormatItem id="EHms" draft="unconfirmed">E HH'h'mm ss 'seg'.</dateFormatItem>
 						<dateFormatItem id="Gy" draft="unconfirmed">y G</dateFormatItem>
+						<dateFormatItem id="GyMd" draft="unconfirmed">dd/MM/Y G</dateFormatItem>
 						<dateFormatItem id="GyMMM" draft="unconfirmed">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd" draft="unconfirmed">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd" draft="unconfirmed">E d MMM y G</dateFormatItem>
 						<dateFormatItem id="h" draft="unconfirmed">h'h' a</dateFormatItem>
+						<dateFormatItem id="hm" draft="unconfirmed">h'h'mm a</dateFormatItem>
 						<dateFormatItem id="Hm" draft="unconfirmed">HH'h'mm</dateFormatItem>
-						<dateFormatItem id="hms" draft="unconfirmed">h'h'mm:ss a</dateFormatItem>
+						<dateFormatItem id="hms" draft="unconfirmed">h'h'mm:ss a</dateFormatItem>
 						<dateFormatItem id="Hms" draft="unconfirmed">HH'h'mm ss 'seg'.</dateFormatItem>
 						<dateFormatItem id="Hmsv" draft="unconfirmed">HH'h'mm ss 'seg'. v</dateFormatItem>
+						<dateFormatItem id="hmv" draft="unconfirmed">h'h'mm a v</dateFormatItem>
 						<dateFormatItem id="Hmv" draft="unconfirmed">HH'h'mm v</dateFormatItem>
 						<dateFormatItem id="Md" draft="unconfirmed">dd/MM</dateFormatItem>
 						<dateFormatItem id="MEd" draft="unconfirmed">E dd/MM</dateFormatItem>
@@ -803,129 +896,137 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yw" count="other" draft="unconfirmed">'setmana' w 'de' Y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
+						<intervalFormatItem id="Bhm">
+							<greatestDifference id="B" draft="unconfirmed">h'h'mm B – h'h'mm B</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h'h'mm – h'h'mm B</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">h'h'mm – h'h'mm B</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="d">
-							<greatestDifference id="d" draft="unconfirmed">d – d</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">d – d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Gy">
-							<greatestDifference id="G" draft="unconfirmed">y G 'fins' 'a' y G</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">y – y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">y – y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyM">
-							<greatestDifference id="G" draft="unconfirmed">MM/y G 'fins' 'a' MM/y G</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">MM/y – MM/y GGGGG</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">MM/y – MM/y GGGGG</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">MM/y – MM/y GGGGG</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">MM/y – MM/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMd">
-							<greatestDifference id="d" draft="unconfirmed">d/MM/y – d/MM/y GGGGG</greatestDifference>
-							<greatestDifference id="G" draft="unconfirmed">d/MM/y GGGGG – d/MM/y GGGGG</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">d/MM/y – d/MM/y GGGGG</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">d/MM/y – d/MM/y GGGGG</greatestDifference>
+							<greatestDifference id="G" draft="unconfirmed">d/MM/y GGGGG – d/MM/y GGGGG</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">d/MM/y – d/MM/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMEd">
-							<greatestDifference id="G" draft="unconfirmed">E d/M/y GGGGG – E d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">E d/M/y – E d/M/y GGGGG</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">E dd-MM-y GGGGG – E dd-MM-y GGGGG</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">E d – E d/MM/y G</greatestDifference>
+							<greatestDifference id="G" draft="unconfirmed">E d/M/y GGGGG – E d/M/y GGGGG</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E d/MM – E d/MM/y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E d/MM/y – E d/MM/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMM">
-							<greatestDifference id="G" draft="unconfirmed">MMM y G – MMM y G</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">MMM – MMM y G</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">MMM y – MMM y G</greatestDifference>
+							<greatestDifference id="G" draft="unconfirmed">MMM y G – MMM y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">MMM – MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">MMM y – MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMd">
-							<greatestDifference id="d" draft="unconfirmed">MMM d – d, y G</greatestDifference>
-							<greatestDifference id="G" draft="unconfirmed">MMM d y G – MMM d y G</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">MMM d – MMM d y G</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">d MMM y – d MMM y G</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">d – d MMM y G</greatestDifference>
+							<greatestDifference id="G" draft="unconfirmed">d MMM y G – d MMM y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">d MMM – d MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">d MMM y – d MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMEd">
-							<greatestDifference id="d" draft="unconfirmed">E d MMM – E d MMM y G</greatestDifference>
-							<greatestDifference id="G" draft="unconfirmed">E d MMM 'de' y G – E d MMM 'de' y G</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">E d MMM – E d MMM 'de' y G</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">E d MMM 'de' y – E d MMM 'de' y G</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">E d MMM – E d MMM y G</greatestDifference>
+							<greatestDifference id="G" draft="unconfirmed">E d MMM 'de' y G – E d MMM 'de' y G</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E d MMM – E d MMM 'de' y G</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E d MMM 'de' y – E d MMM 'de' y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="h" draft="unconfirmed">h – h a</greatestDifference>
+							<greatestDifference id="a" draft="unconfirmed">h'h' a – h'h' a</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h'h' – h'h' a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
-							<greatestDifference id="H" draft="unconfirmed">HH – HH</greatestDifference>
+							<greatestDifference id="H" draft="unconfirmed">HH'h' – HH'h'</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="h" draft="unconfirmed">h:mm – h:mm a</greatestDifference>
-							<greatestDifference id="m" draft="unconfirmed">h:mm – h:mm a</greatestDifference>
+							<greatestDifference id="a" draft="unconfirmed">h'h'mm a – h'h'mm a</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h'h'mm – h'h'mm a</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">h'h'mm – h'h'mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
-							<greatestDifference id="H" draft="unconfirmed">HH'h'mm – HH'h'mm</greatestDifference>
-							<greatestDifference id="m" draft="unconfirmed">HH:mm – HH:mm</greatestDifference>
+							<greatestDifference id="H" draft="unconfirmed">HH'h'mm – HH'h'mm</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">HH'h'mm – HH'h'mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="h" draft="unconfirmed">h:mm – h:mm a v</greatestDifference>
-							<greatestDifference id="m" draft="unconfirmed">h:mm – h:mm a v</greatestDifference>
+							<greatestDifference id="a" draft="unconfirmed">h'h'mm a – h'h'mm a v</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h'h'mm – h'h'mm a v</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">h'h'mm – h'h'mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
-							<greatestDifference id="H" draft="unconfirmed">HH:mm – HH:mm v</greatestDifference>
-							<greatestDifference id="m" draft="unconfirmed">HH:mm – HH:mm v</greatestDifference>
+							<greatestDifference id="H" draft="unconfirmed">HH'h'mm – HH'h'mm v</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">HH'h'mm – HH'h'mm v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="h" draft="unconfirmed">h – h a v</greatestDifference>
+							<greatestDifference id="a" draft="unconfirmed">h'h' a – h'h' a v</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h'h' – h'h' a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
-							<greatestDifference id="H" draft="unconfirmed">HH – HH v</greatestDifference>
+							<greatestDifference id="H" draft="unconfirmed">HH'h' – HH'h' v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
-							<greatestDifference id="M" draft="unconfirmed">MM – MM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">MM – MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d" draft="unconfirmed">dd/MM – dd/MM</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">dd/MM – dd/MM</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">dd/MM – dd/MM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">dd/MM – dd/MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d" draft="unconfirmed">E dd/MM – E dd/MM</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">E dd-MM – E dd/MM</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">E dd/MM – E dd/MM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E dd-MM – E dd/MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
-							<greatestDifference id="M" draft="unconfirmed">LLL – LLL</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">LLL – LLL</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
-							<greatestDifference id="d" draft="unconfirmed">d – d MMM</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">d MMM – d MMM</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">d – d MMM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">d MMM – d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d" draft="unconfirmed">E d MMM – e d MMM</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">E d MMM – E d MMM</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">E d MMM – E d MMM</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E d MMM – E d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
-							<greatestDifference id="y" draft="unconfirmed">y – y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">y – y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M" draft="unconfirmed">MM/y – MM/y</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">MM/y – MM/y</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">MM/y – MM/y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">MM/y – MM/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d" draft="unconfirmed">dd/MM/y – dd/MM/y</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">dd/MM/y – dd/MM/y</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">dd/MM/y – dd/MM/y</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">dd/MM/y – dd/MM/y</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">dd/MM/y – dd/MM/y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">dd/MM/y – dd/MM/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d" draft="unconfirmed">E dd/MM/y – E dd/MM/y</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">E dd/MM/y – E dd/MM/y</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">E dd/MM/y – E dd/MM/y</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">E dd/MM/y – E dd/MM/y</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E dd/MM/y – E dd/MM/y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E dd/MM/y – E dd/MM/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
-							<greatestDifference id="M" draft="unconfirmed">MMM – MMM y</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">MMM y – MMM y</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">MMM – MMM y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">MMM y – MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
-							<greatestDifference id="d" draft="unconfirmed">d – d MMM y</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">d MMM – MMM 'de' y</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">d LLL 'de' y – d LLL 'de' y</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">d – d MMM y</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">d MMM – d MMM 'de' y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">d LLL 'de' y – d LLL 'de' y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d" draft="unconfirmed">E d MMM – E d MMM 'de' y</greatestDifference>
-							<greatestDifference id="M" draft="unconfirmed">E d MMM – E d MMM 'de' y</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">E d MMM 'de' y – E d MMM 'de' y</greatestDifference>
+							<greatestDifference id="d" draft="unconfirmed">E d MMM – E d MMM 'de' y</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">E d MMM – E d MMM 'de' y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">E d MMM 'de' y – E d MMM 'de' y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
-							<greatestDifference id="M" draft="unconfirmed">LLLL – LLLL 'de' y</greatestDifference>
-							<greatestDifference id="y" draft="unconfirmed">LLLL 'de' y – LLLL 'de' y</greatestDifference>
+							<greatestDifference id="M" draft="unconfirmed">LLLL – LLLL 'de' y</greatestDifference>
+							<greatestDifference id="y" draft="unconfirmed">LLLL 'de' y – LLLL 'de' y</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -981,7 +1082,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">mes</displayName>
 				<relative type="-1" draft="unconfirmed">lo mes passat</relative>
 				<relative type="0" draft="unconfirmed">aqueste mes</relative>
-				<relative type="1" draft="unconfirmed">lo mes venent</relative>
+				<relative type="1" draft="unconfirmed">lo mes que ven</relative>
 			</field>
 			<field type="week">
 				<displayName draft="unconfirmed">setmana</displayName>
@@ -1004,11 +1105,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0" draft="unconfirmed">uèi</relative>
 				<relative type="1" draft="unconfirmed">deman</relative>
 			</field>
+			<field type="day-short">
+				<displayName draft="unconfirmed">jorn</displayName>
+			</field>
 			<field type="day-narrow">
 				<displayName draft="unconfirmed">jorn</displayName>
 			</field>
 			<field type="weekday">
 				<displayName draft="unconfirmed">jorn de la setmana</displayName>
+			</field>
+			<field type="sun">
+				<relative type="-1" draft="unconfirmed">dimenge passat</relative>
+				<relative type="0" draft="unconfirmed">aqueste dimenge</relative>
+				<relative type="1" draft="unconfirmed">dimenge que ven</relative>
 			</field>
 			<!-- <field type="sun">
 				 <relative type="-1" draft="unconfirmed">Dimenge passat</relative>
@@ -1019,6 +1128,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="hour">
 				<displayName draft="unconfirmed">ora</displayName>
+			</field>
+			<field type="hour-short">
+				<displayName draft="unconfirmed">h</displayName>
+			</field>
+			<field type="hour-narrow">
+				<displayName draft="unconfirmed">h</displayName>
 			</field>
 			<field type="minute">
 				<displayName draft="unconfirmed">minuta</displayName>
@@ -1046,13 +1161,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 		</fields>
 		<timeZoneNames>
-			<hourFormat draft="unconfirmed">+HH:mm;-HH:mm</hourFormat>
-			<gmtFormat draft="unconfirmed">GMT{0}</gmtFormat>
-			<gmtZeroFormat draft="unconfirmed">GMT</gmtZeroFormat>
-			<regionFormat draft="unconfirmed">Ora : {0}</regionFormat>
+			<regionFormat draft="unconfirmed">ora de {0}</regionFormat>
 			<regionFormat type="daylight" draft="unconfirmed">{0} (ora d’estiu)</regionFormat>
 			<regionFormat type="standard" draft="unconfirmed">{0} (ora estandard)</regionFormat>
-			<fallbackFormat draft="unconfirmed">{1} ({0})</fallbackFormat>
 			<zone type="Etc/UTC">
 				<long>
 					<standard draft="unconfirmed">ora coordonada universala</standard>
@@ -1064,8 +1175,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Europe/Andorra">
 				<exemplarCity draft="unconfirmed">Andòrra</exemplarCity>
 			</zone>
-			<zone type="Africa/Gaborone">
-				<exemplarCity draft="unconfirmed">Gabon</exemplarCity>
+			<zone type="Australia/Perth">
+				<exemplarCity draft="unconfirmed">Perth</exemplarCity>
+			</zone>
+			<zone type="Australia/Adelaide">
+				<exemplarCity draft="unconfirmed">Adelaïda</exemplarCity>
+			</zone>
+			<zone type="Australia/Melbourne">
+				<exemplarCity draft="unconfirmed">Melbourne</exemplarCity>
+			</zone>
+			<zone type="Australia/Sydney">
+				<exemplarCity draft="unconfirmed">Sydney</exemplarCity>
+			</zone>
+			<zone type="Europe/Brussels">
+				<exemplarCity draft="unconfirmed">Brussèlas</exemplarCity>
 			</zone>
 			<zone type="Africa/Douala">
 				<exemplarCity draft="unconfirmed">Doala</exemplarCity>
@@ -1073,30 +1196,75 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Atlantic/Cape_Verde">
 				<exemplarCity draft="unconfirmed">Cap Verd</exemplarCity>
 			</zone>
+			<zone type="Europe/Prague">
+				<exemplarCity draft="unconfirmed">Praga</exemplarCity>
+			</zone>
+			<zone type="Europe/Berlin">
+				<exemplarCity draft="unconfirmed">Berlin</exemplarCity>
+			</zone>
 			<zone type="Africa/Djibouti">
 				<exemplarCity draft="unconfirmed">Jiboti</exemplarCity>
 			</zone>
 			<zone type="Africa/Algiers">
 				<exemplarCity draft="unconfirmed">Argièrs</exemplarCity>
 			</zone>
+			<zone type="Europe/Madrid">
+				<exemplarCity draft="unconfirmed">Madrid</exemplarCity>
+			</zone>
+			<zone type="Europe/Helsinki">
+				<exemplarCity draft="unconfirmed">Helsinki</exemplarCity>
+			</zone>
 			<zone type="Europe/Paris">
 				<exemplarCity draft="unconfirmed">París</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
+				<long>
+					<daylight draft="unconfirmed">ora d’estiu anglesa</daylight>
+				</long>
 				<exemplarCity draft="unconfirmed">Londres</exemplarCity>
 			</zone>
 			<zone type="Europe/Athens">
 				<exemplarCity draft="unconfirmed">Atenas</exemplarCity>
 			</zone>
+			<zone type="Europe/Dublin">
+				<long>
+					<daylight draft="unconfirmed">ora estandarda irlandesa</daylight>
+				</long>
+				<exemplarCity draft="unconfirmed">Dublin</exemplarCity>
+			</zone>
+			<zone type="Europe/Rome">
+				<exemplarCity draft="unconfirmed">Roma</exemplarCity>
+			</zone>
+			<zone type="Europe/Jersey">
+				<exemplarCity draft="unconfirmed">Jersey</exemplarCity>
+			</zone>
+			<zone type="Europe/Luxembourg">
+				<exemplarCity draft="unconfirmed">Luxemborg</exemplarCity>
+			</zone>
+			<zone type="Africa/Casablanca">
+				<exemplarCity draft="unconfirmed">Casablanca</exemplarCity>
+			</zone>
+			<zone type="Europe/Monaco">
+				<exemplarCity draft="unconfirmed">Mónegue</exemplarCity>
+			</zone>
 			<zone type="Europe/Amsterdam">
 				<exemplarCity draft="unconfirmed">Amsterdam</exemplarCity>
+			</zone>
+			<zone type="Pacific/Auckland">
+				<exemplarCity draft="unconfirmed">Auckland</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Azores">
 				<exemplarCity draft="unconfirmed">Azores</exemplarCity>
 			</zone>
+			<zone type="Europe/Lisbon">
+				<exemplarCity draft="unconfirmed">Lisbona</exemplarCity>
+			</zone>
+			<zone type="Europe/Belgrade">
+				<exemplarCity draft="unconfirmed">Belgrad</exemplarCity>
+			</zone>
 			<metazone type="Africa_Central">
 				<long>
-					<standard draft="unconfirmed">Ora d’Africa centrala</standard>
+					<standard draft="unconfirmed">ora d’Africa centrala</standard>
 				</long>
 			</metazone>
 			<metazone type="Africa_Eastern">
@@ -1104,10 +1272,71 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard draft="unconfirmed">ora d’Africa de l’èst</standard>
 				</long>
 			</metazone>
+			<metazone type="Alaska">
+				<long>
+					<generic draft="unconfirmed">ora d’Alaska</generic>
+					<standard draft="unconfirmed">ora estandarda d’Alaska</standard>
+					<daylight draft="unconfirmed">ora d’estiu d’Alaska</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Central">
+				<long>
+					<generic draft="unconfirmed">ora centrala</generic>
+					<standard draft="unconfirmed">ora estandarda centrala</standard>
+					<daylight draft="unconfirmed">ora d’estiu centrala</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Eastern">
+				<long>
+					<generic draft="unconfirmed">ora de l’Èst</generic>
+					<standard draft="unconfirmed">ora estandarda de l’Èst</standard>
+					<daylight draft="unconfirmed">ora d’estiu de l’Èst</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Mountain">
+				<long>
+					<generic draft="unconfirmed">ora de la montanha</generic>
+					<standard draft="unconfirmed">ora estandarda de la montanha</standard>
+					<daylight draft="unconfirmed">ora d’estiu de la montanha</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Pacific">
+				<long>
+					<generic draft="unconfirmed">ora del Pacific</generic>
+					<standard draft="unconfirmed">ora estandarda del Pacific</standard>
+					<daylight draft="unconfirmed">ora d’estiu del Pacific</daylight>
+				</long>
+			</metazone>
+			<metazone type="Argentina">
+				<long>
+					<generic draft="unconfirmed">ora d’Argentina</generic>
+					<standard draft="unconfirmed">ora estandarda d’Argentina</standard>
+					<daylight draft="unconfirmed">ora d’estiu d’Argentina</daylight>
+				</long>
+			</metazone>
+			<metazone type="Atlantic">
+				<long>
+					<generic draft="unconfirmed">ora de l’Atlantic</generic>
+					<standard draft="unconfirmed">ora estandarda de l’Atlantic</standard>
+					<daylight draft="unconfirmed">ora d’estiu de l’Atlantic</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bolivia">
+				<long>
+					<standard draft="unconfirmed">ora de Bolivia</standard>
+				</long>
+			</metazone>
+			<metazone type="Cuba">
+				<long>
+					<generic draft="unconfirmed">ora de Cuba</generic>
+					<standard draft="unconfirmed">ora estandarda de Cuba</standard>
+					<daylight draft="unconfirmed">ora d’estiu de Cuba</daylight>
+				</long>
+			</metazone>
 			<metazone type="Europe_Central">
 				<long>
 					<generic draft="unconfirmed">ora d’Euròpa centrala</generic>
-					<standard draft="unconfirmed">ora d’Euròpa centrala estandard</standard>
+					<standard draft="unconfirmed">ora d’Euròpa centrala estandarda</standard>
 					<daylight draft="unconfirmed">ora d’estiu, Euròpa centrala</daylight>
 				</long>
 			</metazone>
@@ -1128,6 +1357,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="GMT">
 				<long>
 					<standard draft="unconfirmed">ora al meridian de Greenwich</standard>
+				</long>
+			</metazone>
+			<metazone type="Pierre_Miquelon">
+				<long>
+					<generic draft="unconfirmed">ora de St. Pierre e Miquelon</generic>
+					<standard draft="unconfirmed">ora estandarda de St. Pierre e Miquelon</standard>
+					<daylight draft="unconfirmed">ora d’estiu de St. Pierre e Miquelon</daylight>
+				</long>
+			</metazone>
+			<metazone type="Reunion">
+				<long>
+					<standard draft="unconfirmed">ora de la Reünion</standard>
+				</long>
+			</metazone>
+			<metazone type="Yukon">
+				<long>
+					<standard draft="unconfirmed">ora de Yukon</standard>
 				</long>
 			</metazone>
 		</timeZoneNames>
@@ -1167,6 +1413,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern draft="unconfirmed">#,##0.00¤;(#,##0.00¤)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<currencyFormatLength type="short">
+				<currencyFormat type="standard">
+					<pattern type="1000" count="other" draft="unconfirmed">0K¤</pattern>
+					<pattern type="10000" count="other" draft="unconfirmed">00K¤</pattern>
+					<pattern type="100000" count="other" draft="unconfirmed">000K¤</pattern>
+					<pattern type="1000000" count="other" draft="unconfirmed">0M¤</pattern>
+					<pattern type="10000000" count="other" draft="unconfirmed">00M¤</pattern>
+					<pattern type="100000000" count="other" draft="unconfirmed">000M¤</pattern>
+					<pattern type="1000000000" count="other" draft="unconfirmed">0G¤</pattern>
+					<pattern type="10000000000" count="other" draft="unconfirmed">00G¤</pattern>
+					<pattern type="100000000000" count="other" draft="unconfirmed">000G¤</pattern>
+					<pattern type="1000000000000" count="other" draft="unconfirmed">0T¤</pattern>
+					<pattern type="10000000000000" count="other" draft="unconfirmed">00T¤</pattern>
+					<pattern type="100000000000000" count="other" draft="unconfirmed">000T¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -1788,9 +2050,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">direccion</displayName>
 			</coordinateUnit>
 		</unitLength>
-		<durationUnit type="hm">
-			<durationUnitPattern draft="unconfirmed">h'h'mm</durationUnitPattern>
-		</durationUnit>
 	</units>
 	<listPatterns>
 		<listPattern>

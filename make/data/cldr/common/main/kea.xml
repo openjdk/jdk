@@ -652,7 +652,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</localeDisplayNames>
 	<characters>
 		<exemplarCharacters>[a b d {dj} e f g h i j k l {lh} m n ñ {nh} o p r s t {tx} u v x y z]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[ª á à ă â å ä ã ā æ c ç é è ĕ ê ë ẽ ē í ì ĭ î ï ĩ ī {n\u0308} º ó ò ŏ ô ö õ ø ō œ q {rr} ú ù ŭ û ü ũ ū w ÿ]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[ª á à ă â å ä ã ā æ c ç é è ĕ ê ë ẽ ē í ì ĭ î ï ĩ ī {n\u0308} º ó ò ŏ ô ö õ ø ō œ q {rr} ᵘ ú ù ŭ û ü ũ ū w ÿ]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B D E F G H I J K L M N O P R S T U V X Z]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[  \- ‑ , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” « » ( ) \[ \] § @ * / \&amp; # † ‡]</exemplarCharacters>
@@ -773,7 +773,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yyyyQQQQ">QQQQ 'di' y G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d">d – d</greatestDifference>
 						</intervalFormatItem>
@@ -1270,7 +1270,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<appendItem request="Timezone">{0} {1}</appendItem>
 					</appendItems>
 					<intervalFormats>
-						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="Bh">
 							<greatestDifference id="h">h – h B</greatestDifference>
 						</intervalFormatItem>
@@ -4343,4 +4343,52 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<nostr>Nãu:N</nostr>
 		</messages>
 	</posix>
+	<typographicNames>
+		<axisName type="ital">itáliku</axisName>
+		<axisName type="opsz">tamanhu ótiku</axisName>
+		<axisName type="slnt">inklinason</axisName>
+		<axisName type="wdth">largura</axisName>
+		<axisName type="wght">pezu</axisName>
+		<styleName type="ital" subtype="1">kursivu</styleName>
+		<styleName type="opsz" subtype="12">testu</styleName>
+		<styleName type="opsz" subtype="144">poster</styleName>
+		<styleName type="slnt" subtype="12">inklinadu</styleName>
+		<styleName type="slnt" subtype="24">extra-inklinadu</styleName>
+		<styleName type="wdth" subtype="50">ultra-kondensadu</styleName>
+		<styleName type="wdth" subtype="50" alt="compressed">ultra-komprimidu</styleName>
+		<styleName type="wdth" subtype="50" alt="narrow">ultra-stretu</styleName>
+		<styleName type="wdth" subtype="62.5">extra-kondensadu</styleName>
+		<styleName type="wdth" subtype="62.5" alt="compressed">extra-komprimidu</styleName>
+		<styleName type="wdth" subtype="62.5" alt="narrow">extra-stretu</styleName>
+		<styleName type="wdth" subtype="75">kondensadu</styleName>
+		<styleName type="wdth" subtype="75" alt="compressed">komprimidu</styleName>
+		<styleName type="wdth" subtype="75" alt="narrow">stretu</styleName>
+		<styleName type="wdth" subtype="87.5">semi-kondensadu</styleName>
+		<styleName type="wdth" subtype="87.5" alt="compressed">semi-komprimidu</styleName>
+		<styleName type="wdth" subtype="87.5" alt="narrow">semi-stretu</styleName>
+		<styleName type="wdth" subtype="100">normal</styleName>
+		<styleName type="wdth" subtype="112.5">semi-spandidu</styleName>
+		<styleName type="wdth" subtype="112.5" alt="extended">semi-stikadu</styleName>
+		<styleName type="wdth" subtype="112.5" alt="wide">semi-largu</styleName>
+		<styleName type="wdth" subtype="125">spandidu</styleName>
+		<styleName type="wdth" subtype="125" alt="extended">stikadu</styleName>
+		<styleName type="wdth" subtype="125" alt="wide">largu</styleName>
+		<styleName type="wdth" subtype="150">extra-spandidu</styleName>
+		<styleName type="wdth" subtype="150" alt="extended">extra-stikadu</styleName>
+		<styleName type="wdth" subtype="150" alt="wide">extra-largu</styleName>
+		<styleName type="wdth" subtype="200">ultra-spandidu</styleName>
+		<styleName type="wdth" subtype="200" alt="extended">ultra-stikadu</styleName>
+		<styleName type="wdth" subtype="200" alt="wide">ultra-largu</styleName>
+		<styleName type="wght" subtype="100">finu</styleName>
+		<styleName type="wght" subtype="200">extra-lebi</styleName>
+		<styleName type="wght" subtype="200" alt="ultra">ultra-lebi</styleName>
+		<styleName type="wght" subtype="300">lebi</styleName>
+		<styleName type="wght" subtype="350">semi-lebi</styleName>
+		<styleName type="wght" subtype="500">médiu</styleName>
+		<styleName type="wght" subtype="900">pretu</styleName>
+		<styleName type="wght" subtype="900" alt="heavy">pizadu</styleName>
+		<styleName type="wght" subtype="950">extra-pretu</styleName>
+		<styleName type="wght" subtype="950" alt="ultrablack">ultra-pretu</styleName>
+		<styleName type="wght" subtype="950" alt="ultraheavy">ultra-pizadu</styleName>
+	</typographicNames>
 </ldml>

@@ -11,8 +11,300 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<language type="ha"/>
 		<territory type="NE"/>
 	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="fa_AF">Vote Farisanci na Afaganistan</language>
+		</languages>
+		<territories>
+			<territory type="NG">Najeriya</territory>
+		</territories>
+		<measurementSystemNames>
+			<measurementSystemName type="US">Tsarin awo kasar Amirka</measurementSystemName>
+		</measurementSystemNames>
+	</localeDisplayNames>
 	<characters>
 		<exemplarCharacters type="auxiliary">[á à â é è ê í ì î ó ò ô p q {r\u0303} ú ù û v x {ʼy}]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B Ɓ C D Ɗ E F G H I J K Ƙ L M N O P Q R S T U V W X Y Ƴ Z]</exemplarCharacters>
 	</characters>
+	<dates>
+		<fields>
+			<field type="year">
+				<relativeTime type="past">
+					<relativeTimePattern count="one">shekara da suka gabata {0}</relativeTimePattern>
+					<relativeTimePattern count="other">shekara da suka gabata {0}</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="year-short">
+				<relativeTime type="past">
+					<relativeTimePattern count="other">shekara da suka gabata {0}</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="year-narrow">
+				<displayName>shekara</displayName>
+			</field>
+			<field type="quarter-short">
+				<relativeTime type="past">
+					<relativeTimePattern count="one">kwata da suka gabata {0}</relativeTimePattern>
+					<relativeTimePattern count="other">kwatas da suka gabata {0}</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="week-short">
+				<relativePeriod>sati na {0}</relativePeriod>
+			</field>
+			<field type="day-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">a cikin rana {0}</relativeTimePattern>
+					<relativeTimePattern count="other">a cikin kwanaki {0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">rana da ya gabata {0}</relativeTimePattern>
+					<relativeTimePattern count="other">kwanaki da suka gabata {0}</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="day-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">a cikin rana {0}</relativeTimePattern>
+					<relativeTimePattern count="other">a cikin kwanaki {0}</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName>Ranar Aikin Wata</displayName>
+			</field>
+			<field type="sun">
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Lahadin da ta gabata</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Lahadin da ta gabata</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="mon">
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Litinin din da ta gabata</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Litinin din da ta gabata</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue">
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Talatar da ta gabata</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Talatar da ta gabata</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue-short">
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Talatar da ta gabata</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed">
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Laraba da ta gabata</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Laraba da ta gabata</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">cikin {0} Alhamis</relativeTimePattern>
+					<relativeTimePattern count="other">cikin {0} Alhamis</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Alhamis din da ya gabata</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Alhamis din da ya gabata</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">cikin {0} Jumaʼa</relativeTimePattern>
+					<relativeTimePattern count="other">cikin {0} Jumaʼa</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Jumaʼa da ta wuce</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Jumaʼa da ta wuce</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">cikin {0} Jumaʼa</relativeTimePattern>
+					<relativeTimePattern count="other">cikin {0} Jumaʼa</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">cikin {0} Asabar</relativeTimePattern>
+					<relativeTimePattern count="other">cikin {0} Asabar</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Asabar din da ya wuce</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Asabar din da ya wuce</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat-short">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">cikin {0} Asabar</relativeTimePattern>
+					<relativeTimePattern count="other">cikin {0} Asabar</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat-narrow">
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Asabar din da ya wuce</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Asabar din da ya wuce</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="hour">
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} awa da ya gabata</relativeTimePattern>
+					<relativeTimePattern count="other">{0} awa da ya gabata</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="hour-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="one">cikin {0} awa</relativeTimePattern>
+					<relativeTimePattern count="other">cikin {0} awa</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="minute">
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} minti da ya gabata</relativeTimePattern>
+					<relativeTimePattern count="other">{0} minti da ya gabata</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="second">
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} dakika da ya gabata</relativeTimePattern>
+					<relativeTimePattern count="other">{0} dakika da ya gabata</relativeTimePattern>
+				</relativeTime>
+			</field>
+		</fields>
+	</dates>
+	<numbers>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength type="short">
+				<currencyFormat type="standard">
+					<pattern type="1000" count="one">¤ 0D</pattern>
+					<pattern type="1000" count="other">¤ 0D</pattern>
+					<pattern type="1000000000" count="one" alt="alphaNextToNumber" draft="provisional">¤ 0B</pattern>
+					<pattern type="1000000000" count="other" alt="alphaNextToNumber" draft="provisional">¤ 0B</pattern>
+					<pattern type="10000000000" count="one">¤00B</pattern>
+					<pattern type="10000000000" count="other">¤00B</pattern>
+					<pattern type="100000000000" count="one">¤000B</pattern>
+					<pattern type="100000000000" count="other">¤000B</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencies>
+			<currency type="BBD">
+				<displayName count="one">Dalar Barbados</displayName>
+			</currency>
+			<currency type="BMD">
+				<displayName count="one">Dalar Bermuda</displayName>
+			</currency>
+			<currency type="BND">
+				<displayName count="one">Dalar Brunei</displayName>
+				<displayName count="other">Dalolin Brunei</displayName>
+			</currency>
+			<currency type="FJD">
+				<displayName count="one">Dalar Fiji</displayName>
+				<displayName count="other">Dalolin Fiji</displayName>
+			</currency>
+			<currency type="FKP">
+				<displayName count="one">Fam na Tsibirai na Falkland</displayName>
+			</currency>
+			<currency type="MDL">
+				<displayName>kuɗaɗen Moldova</displayName>
+			</currency>
+			<currency type="NZD">
+				<displayName count="one">Dalar New Zealand</displayName>
+				<displayName count="other">Dalolin New Zealand</displayName>
+			</currency>
+			<currency type="SBD">
+				<displayName count="one">Dalar Tsibirai na Solomon</displayName>
+				<displayName count="other">Dalolin Tsibirai na Solomon</displayName>
+			</currency>
+			<currency type="SGD">
+				<displayName count="one">dalar Singapore</displayName>
+				<displayName count="other">Dalolin Singapore</displayName>
+			</currency>
+			<currency type="SHP">
+				<displayName count="one">Fam na San Helena</displayName>
+				<displayName count="other">Fam na San Helena</displayName>
+			</currency>
+			<currency type="TRY">
+				<displayName count="one">kudin Turkish</displayName>
+				<displayName count="other">Kuɗin Turkiyya</displayName>
+			</currency>
+			<currency type="UGX">
+				<displayName count="one">Sulen Yuganda</displayName>
+				<displayName count="other">Sulallan Yuganda</displayName>
+			</currency>
+		</currencies>
+	</numbers>
+	<units>
+		<unitLength type="long">
+			<unit type="duration-decade">
+				<unitPattern count="one">shekaru goma {0}</unitPattern>
+				<unitPattern count="other">shekaru goma-goma {0}</unitPattern>
+			</unit>
+			<unit type="duration-hour">
+				<unitPattern count="one">sa'a {0}</unitPattern>
+				<unitPattern count="other">sa'o'i {0}</unitPattern>
+			</unit>
+			<unit type="mass-microgram">
+				<unitPattern count="one">makirogiram {0}</unitPattern>
+				<unitPattern count="other">makirogiramgiram {0}</unitPattern>
+			</unit>
+			<unit type="mass-pound">
+				<unitPattern count="one">laba {0}</unitPattern>
+				<unitPattern count="other">laba-laba {0}</unitPattern>
+			</unit>
+			<unit type="pressure-atmosphere">
+				<unitPattern count="one">yanayi {0}</unitPattern>
+				<unitPattern count="other">yanaye-yanaye {0}</unitPattern>
+			</unit>
+			<unit type="speed-kilometer-per-hour">
+				<unitPattern count="one">kilomita a sa'a {0}</unitPattern>
+				<unitPattern count="other">kilomitoci a sa'a {0}</unitPattern>
+			</unit>
+			<unit type="speed-mile-per-hour">
+				<unitPattern count="one">mil a sa'a {0}</unitPattern>
+				<unitPattern count="other">mil-mil a sa'a {0}</unitPattern>
+			</unit>
+			<unit type="temperature-generic">
+				<unitPattern count="one">digiri {0}</unitPattern>
+				<unitPattern count="other">digiri-digiri {0}</unitPattern>
+			</unit>
+			<unit type="temperature-celsius">
+				<unitPattern count="one">digiri Selsiyas {0}</unitPattern>
+				<unitPattern count="other">digiri-digiri Selsiyas {0}</unitPattern>
+			</unit>
+			<unit type="temperature-fahrenheit">
+				<unitPattern count="one">digiri Faranhit {0}</unitPattern>
+				<unitPattern count="other">digiri-digiri faranhit {0}</unitPattern>
+			</unit>
+			<unit type="torque-pound-force-foot">
+				<unitPattern count="one">pound-force-foot {0}</unitPattern>
+				<unitPattern count="other">pound-feet {0}</unitPattern>
+			</unit>
+			<coordinateUnit>
+				<displayName>cardinal direction</displayName>
+				<coordinateUnitPattern type="north">arewa {0}</coordinateUnitPattern>
+			</coordinateUnit>
+		</unitLength>
+		<unitLength type="short">
+			<unit type="duration-decade">
+				<unitPattern count="one">shkr gm {0}</unitPattern>
+				<unitPattern count="other">shkr gm {0}</unitPattern>
+			</unit>
+			<unit type="duration-day">
+				<unitPattern count="one">rana {0}</unitPattern>
+				<unitPattern count="other">ranaku {0}</unitPattern>
+			</unit>
+		</unitLength>
+		<unitLength type="narrow">
+			<unit type="duration-decade">
+				<unitPattern count="one">shkr gm{0}</unitPattern>
+				<unitPattern count="other">shkr gm{0}</unitPattern>
+			</unit>
+		</unitLength>
+	</units>
+	<characterLabels>
+		<characterLabelPattern type="strokes" count="one">bugu {0}</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="other">bugu-bugu {0}</characterLabelPattern>
+	</characterLabels>
 </ldml>

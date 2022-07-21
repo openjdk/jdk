@@ -156,6 +156,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="weekday">
 				<displayName draft="contributed">Día de la semana</displayName>
 			</field>
+			<field type="dayperiod">
+				<displayName draft="contributed">a. m./p. m.</displayName>
+			</field>
 			<field type="minute">
 				<displayName draft="contributed">Minuto</displayName>
 			</field>
