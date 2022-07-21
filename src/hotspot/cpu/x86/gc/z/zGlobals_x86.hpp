@@ -24,7 +24,6 @@
 #ifndef CPU_X86_GC_Z_ZGLOBALS_X86_HPP
 #define CPU_X86_GC_Z_ZGLOBALS_X86_HPP
 
-const size_t ZPlatformGranuleSizeShift = 21; // 2MB
 const size_t ZPlatformHeapViews        = 3;
 const size_t ZPlatformCacheLineSize    = 64;
 
