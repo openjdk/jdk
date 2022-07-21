@@ -29,7 +29,7 @@ import java.lang.invoke.MethodType;
 public class CDSLambdaInvoker {
     public static void main(String args[]) throws Throwable {
         // The following calls trigger the generation of new Species classes
-        // that are not included in the base archive (or the default modules image.
+        // that are not included in the base archive (or the default modules image).
         // - java.lang.invoke.BoundMethodHandle$Species_F
         // - java.lang.invoke.BoundMethodHandle$Species_FL
         // - java.lang.invoke.BoundMethodHandle$Species_J
