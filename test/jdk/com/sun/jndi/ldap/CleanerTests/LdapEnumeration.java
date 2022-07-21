@@ -143,7 +143,7 @@ public class LdapEnumeration {
 
             // If the Cleaner holds a reference to 'results', it won't be cleared from the map
             ForceGC gc = new ForceGC();
-            if (!gc.await(() -> whm.size() == 0)) {
+            if (!gc.wait(() -> whm.size() == 0)) {
                 throw new RuntimeException("NamingEnumeration is still strongly reachable");
             }
 
