@@ -115,8 +115,8 @@ public final class ModuleHashes {
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalArgumentException(e);
         }
+        byte[] buf = new byte[32*1024];
         try (Stream<String> stream = reader.list()) {
-            byte[] buf = new byte[32*1024];
             stream.sorted().forEach(rn -> {
                 md.update(rn.getBytes(StandardCharsets.UTF_8));
                 try (InputStream in = reader.open(rn).orElseThrow()) {

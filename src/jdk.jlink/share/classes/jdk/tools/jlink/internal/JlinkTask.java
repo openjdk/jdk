@@ -821,23 +821,25 @@ public class JlinkTask {
             } else if (path.toString().endsWith(".jar")) {
                 ModularJarArchive modularJarArchive = new ModularJarArchive(module, path, version);
 
-                Stream<Archive.Entry> signatures = modularJarArchive.entries().filter((entry) -> {
-                    String name = entry.name().toUpperCase(Locale.ENGLISH);
+                try (Stream<Archive.Entry> entries = modularJarArchive.entries()) {
+                    boolean hasSignatures = entries.anyMatch((entry) -> {
+                        String name = entry.name().toUpperCase(Locale.ENGLISH);
 
-                    return name.startsWith("META-INF/") && name.indexOf('/', 9) == -1 && (
+                        return name.startsWith("META-INF/") && name.indexOf('/', 9) == -1 && (
                                 name.endsWith(".SF") ||
                                 name.endsWith(".DSA") ||
                                 name.endsWith(".RSA") ||
                                 name.endsWith(".EC") ||
                                 name.startsWith("META-INF/SIG-")
-                            );
-                });
+                        );
+                    });
 
-                if (signatures.count() != 0) {
-                    if (ignoreSigning) {
-                        System.err.println(taskHelper.getMessage("warn.signing", path));
-                    } else {
-                        throw new IllegalArgumentException(taskHelper.getMessage("err.signing", path));
+                    if (hasSignatures) {
+                        if (ignoreSigning) {
+                            System.err.println(taskHelper.getMessage("warn.signing", path));
+                        } else {
+                            throw new IllegalArgumentException(taskHelper.getMessage("err.signing", path));
+                        }
                     }
                 }
 
