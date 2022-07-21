@@ -336,27 +336,27 @@ TEST_VM_F(ResourceHashtableDeleteTest, check_delete) {
   int s_orig_count = s->refcount();
   {
     TestValue tv(s);
-    // If you put a Symbol* as key in the ResourceHashtable, you must increment the
+    // If you use a Symbol* as key in the ResourceHashtable, you must increment the
     // refcount outside the hashtable functions.
     s->increment_refcount();
     _test_table.put(s, tv);
     ASSERT_EQ(s->refcount(), s_orig_count + 3) << "refcount incremented";
   }
   ASSERT_EQ(s->refcount(), s_orig_count + 2) << "refcount not copied";
-  // removing entry
+
   // Deleting this value from a hashtable calls the destructor!
   _test_table.remove(s);
   // Now decrement the refcount for s since it's no longer in the table.
   s->decrement_refcount();
-  // Removal should get make the refcount be the original refcount.
+  // Removal should make the refcount be the original refcount.
   ASSERT_EQ(s->refcount(), s_orig_count) << "refcount now decremented";
 
   TempNewSymbol d = SymbolTable::new_symbol("defghijklmnop");
   int d_orig_count = d->refcount();
   {
     TestValue tv(d);
-    // On the other hand, if the Key Symbol* is already a member of the entry, maybe it's not necessary
-    // to increment the refcount on the symbol.
+    // On the other hand, if the Key Symbol* is already a member of the entry, it's not strictly
+    // necessary to increment the refcount on the symbol.
     _test_table.put(d, tv);
     ASSERT_EQ(d->refcount(), d_orig_count + 2) << "refcount incremented";
   }
@@ -371,17 +371,18 @@ TEST_VM_F(ResourceHashtableDeleteTest, check_delete_ptr) {
   int s_orig_count = s->refcount();
   {
     TestValue* tv = new TestValue(s);
-    // If you put a Symbol* as key in the ResourceHashtable, you must increment the
+    // If you use a Symbol* as key in the ResourceHashtable, you must increment the
     // refcount outside the hashtable functions.
     s->increment_refcount();
     _ptr_test_table.put(s, tv);
     ASSERT_EQ(s->refcount(), s_orig_count + 2) << "refcount incremented";
   }
   ASSERT_EQ(s->refcount(), s_orig_count + 2) << "refcount not copied";
-  // removing entry
-  // Deleting this value from a hashtable calls the destructor!
+
+  // Deleting this value from a hashtable must call the destructor in the
+  // do_entry function.
   Deleter deleter;
   _ptr_test_table.unlink(&deleter);
-  // Removal should get make the refcount be the original refcount.
+  // Removal should make the refcount be the original refcount.
   ASSERT_EQ(s->refcount(), s_orig_count) << "refcount now decremented";
 }
