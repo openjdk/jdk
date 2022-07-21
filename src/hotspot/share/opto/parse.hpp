@@ -149,6 +149,8 @@ public:
 //------------------------------Parse------------------------------------------
 // Parse bytecodes, build a Graph
 class Parse : public GraphKit {
+ friend class UnstableIfTrap;
+
  public:
   // Per-block information needed by the parser:
   class Block {
@@ -167,6 +169,7 @@ class Parse : public GraphKit {
     int                _num_successors; // Includes only normal control flow.
     int                _all_successors; // Include exception paths also.
     Block**            _successors;
+    GrowableArray<UnstableIfTrap* > _unstable_if_traps;
 
    public:
 
@@ -186,6 +189,9 @@ class Parse : public GraphKit {
 
     SafePointNode* start_map() const       { assert(is_merged(),"");   return _start_map; }
     void set_start_map(SafePointNode* m)   { assert(!is_merged(), ""); _start_map = m; }
+
+    void add_unstable_if_trap(UnstableIfTrap* trap) { _unstable_if_traps.append(trap); }
+    GrowableArray<UnstableIfTrap* >& unstable_if_traps() { return _unstable_if_traps; }
 
     // True after any predecessor flows control into this block
     bool is_merged() const                 { return _start_map != NULL; }
@@ -543,8 +549,7 @@ class Parse : public GraphKit {
   void    do_ifnull(BoolTest::mask btest, Node* c);
   void    do_if(BoolTest::mask btest, Node* c);
   int     repush_if_args();
-  void    adjust_map_after_if(BoolTest::mask btest, Node* c, float prob,
-                              Block* path, Block* other_path);
+  void    adjust_map_after_if(BoolTest::mask btest, Node* c, float prob, Block* path);
   void    sharpen_type_after_if(BoolTest::mask btest,
                                 Node* con, const Type* tcon,
                                 Node* val, const Type* tval);
@@ -606,14 +611,23 @@ class Parse : public GraphKit {
 // Specialized uncommon_trap of unstable_if. C2 uses next_bci of path to update the live locals of it.
 class UnstableIfTrap {
   CallStaticJavaNode* const _unc;
+  Parse::Block*  const _block;
+  SafePointNode* const _sfpt;
+  BoolTest::mask _btest;
+  Node* const _cmp;
   bool _modified;            // modified locals based on next_bci()
   int _next_bci;
 
 public:
-  UnstableIfTrap(CallStaticJavaNode* call, Parse::Block* path): _unc(call), _modified(false) {
+  UnstableIfTrap(CallStaticJavaNode* call, Parse::Block* target, Parse::Block* block, SafePointNode* sfpt,
+                 BoolTest::mask btest, Node* cmp): _unc(call), _block(block), _sfpt(sfpt),
+                                                   _btest(btest), _cmp(cmp), _modified(false), _next_bci(-1) {
     assert(_unc != NULL && Deoptimization::trap_request_reason(_unc->uncommon_trap_request()) == Deoptimization::Reason_unstable_if,
           "invalid uncommon_trap call!");
-    _next_bci = path != nullptr ? path->start() : -1;
+    if (target != nullptr) {
+      _next_bci = target->start();
+      target->add_unstable_if_trap(this);
+    }
   }
 
   // The starting point of the pruned block, where control goes when
@@ -629,6 +643,8 @@ public:
   void set_modified() {
     _modified = true;
   }
+
+  void suppress(Parse* parser, Parse::Block* path);
 
   CallStaticJavaNode* uncommon_trap() const {
     return _unc;

@@ -1410,7 +1410,7 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
         branch_block->next_path_num();
       }
     } else {                    // Path is live.
-      adjust_map_after_if(btest, c, prob, branch_block, next_block);
+      adjust_map_after_if(btest, c, prob, branch_block);
       if (!stopped()) {
         merge(target_bci);
       }
@@ -1428,8 +1428,7 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
       next_block->next_path_num();
     }
   } else  {                     // Path is live.
-    adjust_map_after_if(BoolTest(btest).negate(), c, 1.0-prob,
-                        next_block, branch_block);
+    adjust_map_after_if(BoolTest(btest).negate(), c, 1.0-prob, next_block);
   }
 }
 
@@ -1523,7 +1522,7 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
         branch_block->next_path_num();
       }
     } else {
-      adjust_map_after_if(taken_btest, c, prob, branch_block, next_block);
+      adjust_map_after_if(taken_btest, c, prob, branch_block);
       if (!stopped()) {
         merge(target_bci);
       }
@@ -1540,8 +1539,7 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
       next_block->next_path_num();
     }
   } else {
-    adjust_map_after_if(untaken_btest, c, untaken_prob,
-                        next_block, branch_block);
+    adjust_map_after_if(untaken_btest, c, untaken_prob, next_block);
   }
 }
 
@@ -1571,8 +1569,7 @@ void Parse::maybe_add_predicate_after_if(Block* path) {
 // branch, seeing how it constrains a tested value, and then
 // deciding if it's worth our while to encode this constraint
 // as graph nodes in the current abstract interpretation map.
-void Parse::adjust_map_after_if(BoolTest::mask btest, Node* c, float prob,
-                                Block* path, Block* other_path) {
+void Parse::adjust_map_after_if(BoolTest::mask btest, Node* c, float prob, Block* path) {
   if (!c->is_Cmp()) {
     maybe_add_predicate_after_if(path);
     return;
@@ -1584,15 +1581,18 @@ void Parse::adjust_map_after_if(BoolTest::mask btest, Node* c, float prob,
 
   bool is_fallthrough = (path == successor_for_bci(iter().next_bci()));
 
-  if (path_is_suitable_for_uncommon_trap(prob)) {
+  if (path_is_suitable_for_uncommon_trap(prob) && (!OptimizeUnstableIf || !path->is_merged())) {
+    sync_jvms();
+    SafePointNode* sfpt = clone_map();
+
     repush_if_args();
     Node* call = uncommon_trap(Deoptimization::Reason_unstable_if,
-                  Deoptimization::Action_reinterpret,
-                  NULL,
-                  (is_fallthrough ? "taken always" : "taken never"));
+                               Deoptimization::Action_reinterpret,
+                               NULL, (is_fallthrough ? "taken always" : "taken never"));
 
-    if (call != nullptr) {
-      C->record_unstable_if_trap(new UnstableIfTrap(call->as_CallStaticJava(), path));
+    if (call != nullptr && OptimizeUnstableIf) {
+      UnstableIfTrap* trap = new UnstableIfTrap(call->as_CallStaticJava(), path, block(), sfpt, btest, c);
+      C->record_unstable_if_trap(trap);
     }
     return;
   }
@@ -2767,4 +2767,15 @@ void Parse::do_one_bytecode() {
     printer->set_traverse_outs(old);
   }
 #endif
+}
+
+void UnstableIfTrap::suppress(Parse* parser, Parse::Block* path) {
+  parser->set_block(_block);
+  parser->set_map(_sfpt);
+  parser->set_sp(_sfpt->jvms()->sp());
+  parser->adjust_map_after_if(_btest, _cmp, PROB_MAX, path);
+
+  int pnum = path->next_path_num();
+  parser->merge_common(path, pnum);
+  _next_bci = -1;
 }

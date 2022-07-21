@@ -54,6 +54,30 @@ public class TestOptimizeUnstableIf {
         return sum;
     }
 
+    // a custom "boxing" class
+    public static class Value {
+        public int _value;
+
+        public Value(int value) {
+          this._value = value;
+        }
+    }
+
+    @Test
+    @Arguments({Argument.TRUE, Argument.DEFAULT, Argument.RANDOM_EACH, Argument.RANDOM_EACH})
+    @IR(failOn = {IRNode.UNSTABLE_IF_TRAP})
+    public static int superficial_if(boolean cond, int i, int j, int k) {
+        Value x = new Value(i);
+        Value y = new Value(j);
+        Value z = new Value(k);
+
+        if (cond) { // likely
+            i++;
+        } // else section is superficial
+
+        return x._value + y._value + z._value + i;
+    }
+
     @Check(test = "boxing_object")
     public void checkWithTestInfo(int result, TestInfo info) {
         if (info.isWarmUp()) {

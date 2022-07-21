@@ -1861,9 +1861,8 @@ void Compile::process_for_post_loop_opts_igvn(PhaseIterGVN& igvn) {
 }
 
 void Compile::record_unstable_if_trap(UnstableIfTrap* trap) {
-  if (OptimizeUnstableIf) {
-    _unstable_if_traps.append(trap);
-  }
+  assert(OptimizeUnstableIf, "only valid OptimizeUnstableIf is on.");
+  _unstable_if_traps.append(trap);
 }
 
 void Compile::remove_useless_unstable_if_traps(Unique_Node_List& useful) {

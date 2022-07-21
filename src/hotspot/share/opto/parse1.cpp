@@ -650,6 +650,21 @@ void Parse::do_all_blocks() {
         continue;
       }
 
+      if (OptimizeUnstableIf) {
+        // C2 is about to parse block, so the unstable_if traps associated with it
+        // are 'superficial'. suppress them.
+        auto unstable_if_traps = block->unstable_if_traps();
+        while (unstable_if_traps.length() > 0) {
+          UnstableIfTrap* trap = unstable_if_traps.pop();
+
+          trap->suppress(this, block);
+          CallStaticJavaNode* unc = trap->uncommon_trap();
+          unc->set_req(0, top());
+          record_for_igvn(unc);
+          //tty->print("mark dead: ");
+          //unc->dump();
+        }
+      }
       // Prepare to parse this block.
       load_state_from(block);
 
