@@ -31,9 +31,9 @@
  * @build pkg1.BaseWithProtectedMethod
  * @build pkg2.Child
  * @build LambdaWithUseImplMethodHandleApp
- * @build sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar test.jar pkg1.BaseWithProtectedMethod pkg2.Child LambdaWithUseImplMethodHandleApp
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. DynamicLambdaWithUseImplMethodHandle
  */
 

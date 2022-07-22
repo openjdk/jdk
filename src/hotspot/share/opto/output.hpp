@@ -129,6 +129,7 @@ public:
   Label& slow_path() { return _slow_path; }
   Label& continuation() { return _continuation; }
   Label& guard() { return _guard; }
+
 };
 
 class C2EntryBarrierStubTable {
