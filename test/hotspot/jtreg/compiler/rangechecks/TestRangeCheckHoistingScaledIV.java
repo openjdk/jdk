@@ -26,75 +26,79 @@
  * @bug 8289996
  * @summary Test range check hoisting for some scaled iv at array index
  * @library /test/lib /
- * @requires vm.compiler2.enabled
- * @run driver compiler.rangechecks.TestRangeCheckHoistingScaledIV
+ * @requires vm.debug & vm.compiler2.enabled
+ * @modules jdk.incubator.vector
+ * @compile --enable-preview -source ${jdk.version} TestRangeCheckHoistingScaledIV.java
+ * @run main/othervm --enable-preview compiler.rangechecks.TestRangeCheckHoistingScaledIV
  */
 
 package compiler.rangechecks;
 
-import compiler.lib.ir_framework.*;
+import java.lang.foreign.MemorySegment;
+import java.nio.ByteOrder;
+
+import jdk.incubator.vector.ByteVector;
+import jdk.incubator.vector.VectorSpecies;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class TestRangeCheckHoistingScaledIV {
 
-    private static final int SIZE = 16000;
+    // Inner class for test loops
+    class Launcher {
+        private static final int SIZE = 16000;
+        private static final VectorSpecies<Byte> SPECIES = ByteVector.SPECIES_64;
+        private static final ByteOrder ORDER = ByteOrder.nativeOrder();
 
-    private static int[] a = new int[SIZE];
-    private static int[] b = new int[SIZE];
-    private static int count = 567;
+        private static byte[] ta = new byte[SIZE];
+        private static byte[] tb = new byte[SIZE];
 
-    // If the loop predication successfully hoists range checks in below
-    // loops, there is only uncommon trap with reason='predicate' and no
-    // uncommon trap with reason='range_check'.
+        private static MemorySegment sa = MemorySegment.ofArray(ta);
+        private static MemorySegment sb = MemorySegment.ofArray(tb);
 
-    @Test
-    @IR(failOn = {IRNode.RANGE_CHECK_TRAP})
-    public static void ivMul3() {
-        for (int i = 0; i < count; i++) {
-            b[3 * i] = a[3 * i];
+        private static int count = 789;
+
+        // Normal array accesses with int range checks
+        public static void scaledIntIV() {
+            for (int i = 0; i < count; i += 2) {
+                tb[7 * i] = ta[3 * i];
+            }
+        }
+
+        // Memory segment accesses with long range checks
+        public static void scaledLongIV() {
+            for (long l = 0; l < count; l += 64) {
+                ByteVector v = ByteVector.fromMemorySegment(SPECIES, sa, l * 6, ORDER);
+                v.intoMemorySegment(sb, l * 15, ORDER);
+            }
+        }
+
+        public static void main(String[] args) {
+            for (int i = 0; i < 20000; i++) {
+                scaledIntIV();
+                scaledLongIV();
+            }
         }
     }
 
-    @Test
-    @IR(failOn = {IRNode.RANGE_CHECK_TRAP})
-    public static void ivMul6() {
-        for (int i = 0; i < count; i++) {
-            b[6 * i] = a[6 * i];
-        }
-    }
+    public static void main(String[] args) throws Exception {
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+                "--enable-preview", "--add-modules", "jdk.incubator.vector",
+                "-Xbatch", "-XX:+TraceLoopPredicate", Launcher.class.getName());
+        OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
+        analyzer.shouldHaveExitValue(0);
+        analyzer.outputTo(System.out);
 
-    @Test
-    @IR(failOn = {IRNode.RANGE_CHECK_TRAP})
-    public static void ivMul7() {
-        for (int i = 0; i < count; i++) {
-            b[7 * i] = a[7 * i];
-        }
-    }
+        // Check if int range checks are hoisted
+        analyzer.stdoutShouldContain("rc_predicate init * 3 <u range");
+        analyzer.stdoutShouldContain("rc_predicate (limit - 2) * 3 <u range");
+        analyzer.stdoutShouldContain("rc_predicate init * 7 <u range");
+        analyzer.stdoutShouldContain("rc_predicate (limit - 2) * 7 <u range");
 
-    @Test
-    @IR(failOn = {IRNode.RANGE_CHECK_TRAP})
-    public static void ivMulMinus3() {
-        for (int i = 0; i > -count; i--) {
-            b[-3 * i] = a[-3 * i];
-        }
-    }
-
-    @Test
-    @IR(failOn = {IRNode.RANGE_CHECK_TRAP})
-    public static void ivMulMinus6() {
-        for (int i = 0; i > -count; i--) {
-            b[-6 * i] = a[-6 * i];
-        }
-    }
-
-    @Test
-    @IR(failOn = {IRNode.RANGE_CHECK_TRAP})
-    public static void ivMulMinus9() {
-        for (int i = 0; i > -count; i--) {
-            b[-9 * i] = a[-9 * i];
-        }
-    }
-
-    public static void main(String[] args) {
-        TestFramework.run();
+        // Check if long range checks are hoisted
+        analyzer.stdoutShouldContain("rc_predicate init * 6 <u range");
+        analyzer.stdoutShouldContain("rc_predicate (limit - 64) * 6 <u range");
+        analyzer.stdoutShouldContain("rc_predicate init * 15 <u range");
+        analyzer.stdoutShouldContain("rc_predicate (limit - 64) * 15 <u range");
     }
 }

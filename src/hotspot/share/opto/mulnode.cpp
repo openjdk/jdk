@@ -262,7 +262,7 @@ Node *MulINode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // Get low bit; check for being the only bit
   Node *res = NULL;
-  unsigned int bit1 = abs_con & (0-abs_con);       // Extract low bit
+  unsigned int bit1 = submultiple_power_of_2(abs_con);
   if (bit1 == abs_con) {           // Found a power of 2?
     res = new LShiftINode(in(1), phase->intcon(log2i_exact(bit1)));
   } else {
@@ -365,7 +365,7 @@ Node *MulLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // Get low bit; check for being the only bit
   Node *res = NULL;
-  julong bit1 = abs_con & (0-abs_con);      // Extract low bit
+  julong bit1 = submultiple_power_of_2(abs_con);
   if (bit1 == abs_con) {           // Found a power of 2?
     res = new LShiftLNode(in(1), phase->intcon(log2i_exact(bit1)));
   } else {
