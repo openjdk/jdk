@@ -35,7 +35,6 @@
 #include "interpreter/interpreter.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
-#include "os_share_bsd.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
@@ -550,6 +549,10 @@ void os::current_thread_enable_wx(WXMode mode) {
   pthread_jit_write_protect_np(mode == WXExec);
 }
 
+static inline void atomic_copy64(const volatile void *src, volatile void *dst) {
+  *(jlong *) dst = *(const jlong *) src;
+}
+
 extern "C" {
   int SpinPause() {
     return 0;
@@ -583,18 +586,19 @@ extern "C" {
         *(to--) = *(from--);
     }
   }
+
   void _Copy_conjoint_jlongs_atomic(const jlong* from, jlong* to, size_t count) {
     if (from > to) {
       const jlong *end = from + count;
       while (from < end)
-        os::atomic_copy64(from++, to++);
+        atomic_copy64(from++, to++);
     }
     else if (from < to) {
       const jlong *end = from;
       from += count - 1;
       to   += count - 1;
       while (from >= end)
-        os::atomic_copy64(from--, to--);
+        atomic_copy64(from--, to--);
     }
   }
 

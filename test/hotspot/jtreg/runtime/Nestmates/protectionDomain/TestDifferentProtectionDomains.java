@@ -33,8 +33,8 @@
  *           vm.compiler2.enabled &
  *           (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4)
  * @library /test/lib /
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @compile Host.java
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *                   -Xlog:class+nestmates=trace,protectiondomain=trace
@@ -50,7 +50,7 @@ import java.nio.file.Path;
 import java.security.ProtectionDomain;
 
 import compiler.whitebox.CompilerWhiteBoxTest;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 public class TestDifferentProtectionDomains {
 

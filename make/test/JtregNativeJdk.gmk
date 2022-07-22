@@ -77,6 +77,7 @@ ifeq ($(call isTargetOs, windows), true)
   BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libLinkerInvokerUnnamed := $(LIBCXX)
   BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libLinkerInvokerModule := $(LIBCXX)
   BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libLoaderLookupInvoker := $(LIBCXX)
+  BUILD_JDK_JTREG_LIBRARIES_LIBS_libTracePinnedThreads := jvm.lib
 else
   BUILD_JDK_JTREG_LIBRARIES_LIBS_libstringPlatformChars := -ljava
   BUILD_JDK_JTREG_LIBRARIES_LIBS_libDirectIO := -ljava
@@ -89,6 +90,7 @@ else
   BUILD_JDK_JTREG_LIBRARIES_LIBS_libExplicitAttach := -ljvm
   BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libExplicitAttach := -pthread
   BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libImplicitAttach := -pthread
+  BUILD_JDK_JTREG_LIBRARIES_LIBS_libTracePinnedThreads := -ljvm
   BUILD_JDK_JTREG_EXCLUDE += exerevokeall.c
   ifeq ($(call isTargetOs, linux), true)
     BUILD_JDK_JTREG_LIBRARIES_LIBS_libInheritedChannel := -ljava

@@ -31,13 +31,13 @@ package java.security;
  * as well as abstract functions for defining the semantics of the
  * particular Permission subclass.
  *
- * <p>Most Permission objects also include an "actions" list that tells the actions
- * that are permitted for the object.  For example,
+ * <p>Most {@code Permission} objects also include an "actions" list that
+ * tells the actions that are permitted for the object.  For example,
  * for a {@code java.io.FilePermission} object, the permission name is
  * the pathname of a file (or directory), and the actions list
  * (such as "read, write") specifies which actions are granted for the
  * specified file (or for files in the specified directory).
- * The actions list is optional for Permission objects, such as
+ * The actions list is optional for {@code Permission} objects, such as
  * {@code java.lang.RuntimePermission},
  * that don't need such a list; you either have the named permission (such
  * as "system.exit") or you don't.
@@ -49,8 +49,8 @@ package java.security;
  * Thus, this is not an equality test, but rather more of a
  * subset test.
  *
- * <P> Permission objects are similar to String objects in that they
- * are immutable once they have been created. Subclasses should not
+ * <P> {@code Permission} objects are similar to {@code String} objects
+ * in that they are immutable once they have been created. Subclasses should not
  * provide methods that can change the state of a permission
  * once it has been created.
  *
@@ -76,7 +76,7 @@ public abstract class Permission implements Guard, java.io.Serializable {
     /**
      * Constructs a permission with the specified name.
      *
-     * @param name name of the Permission object being created.
+     * @param name name of the {@code Permission} object being created.
      *
      */
 
@@ -89,7 +89,7 @@ public abstract class Permission implements Guard, java.io.Serializable {
      * {@code SecurityManager.checkPermission} method is called,
      * passing this permission object as the permission to check.
      * Returns silently if access is granted. Otherwise, throws
-     * a SecurityException.
+     * a {@code SecurityException}.
      *
      * @param object the object being guarded (currently ignored).
      *
@@ -112,8 +112,9 @@ public abstract class Permission implements Guard, java.io.Serializable {
      * Checks if the specified permission's actions are "implied by"
      * this object's actions.
      * <P>
-     * This must be implemented by subclasses of Permission, as they are the
-     * only ones that can impose semantics on a Permission object.
+     * This must be implemented by subclasses of {@code Permission}, as they
+     * are the only ones that can impose semantics on a {@code Permission}
+     * object.
      *
      * <p>The {@code implies} method is used by the AccessController to determine
      * whether a requested permission is implied by another permission that
@@ -121,41 +122,41 @@ public abstract class Permission implements Guard, java.io.Serializable {
      *
      * @param permission the permission to check against.
      *
-     * @return true if the specified permission is implied by this object,
-     * false if not.
+     * @return {@code true} if the specified permission is implied by this
+     * object, {@code false} if not.
      */
 
     public abstract boolean implies(Permission permission);
 
     /**
-     * Checks two Permission objects for equality.
+     * Checks two {@code Permission} objects for equality.
      * <P>
      * Do not use the {@code equals} method for making access control
      * decisions; use the {@code implies} method.
      *
      * @param obj the object we are testing for equality with this object.
      *
-     * @return true if both Permission objects are equivalent.
+     * @return {@code true} if both {@code Permission} objects are equivalent.
      */
 
     public abstract boolean equals(Object obj);
 
     /**
-     * Returns the hash code value for this Permission object.
+     * Returns the hash code value for this {@code Permission} object.
      * <P>
-     * The required {@code hashCode} behavior for Permission Objects is
+     * The required {@code hashCode} behavior for {@code Permission} Objects is
      * the following:
      * <ul>
-     * <li>Whenever it is invoked on the same Permission object more than
-     *     once during an execution of a Java application, the
+     * <li>Whenever it is invoked on the same {@code Permission} object more
+     *     than once during an execution of a Java application, the
      *     {@code hashCode} method
      *     must consistently return the same integer. This integer need not
      *     remain consistent from one execution of an application to another
      *     execution of the same application.
-     * <li>If two Permission objects are equal according to the
+     * <li>If two {@code Permission} objects are equal according to the
      *     {@code equals}
      *     method, then calling the {@code hashCode} method on each of the
-     *     two Permission objects must produce the same integer result.
+     *     two {@code Permission} objects must produce the same integer result.
      * </ul>
      *
      * @return a hash code value for this object.
@@ -164,11 +165,11 @@ public abstract class Permission implements Guard, java.io.Serializable {
     public abstract int hashCode();
 
     /**
-     * Returns the name of this Permission.
+     * Returns the name of this {@code Permission}.
      * For example, in the case of a {@code java.io.FilePermission},
      * the name will be a pathname.
      *
-     * @return the name of this Permission.
+     * @return the name of this {@code Permission}.
      *
      */
 
@@ -177,8 +178,8 @@ public abstract class Permission implements Guard, java.io.Serializable {
     }
 
     /**
-     * Returns the actions as a String. This is abstract
-     * so subclasses can defer creating a String representation until
+     * Returns the actions as a {@code String}. This is abstract
+     * so subclasses can defer creating a {@code String} representation until
      * one is needed. Subclasses should always return actions in what they
      * consider to be their
      * canonical form. For example, two FilePermission objects created via
@@ -192,25 +193,26 @@ public abstract class Permission implements Guard, java.io.Serializable {
      * both return
      * "read,write" when the {@code getActions} method is invoked.
      *
-     * @return the actions of this Permission.
+     * @return the actions of this {@code Permission}.
      *
      */
 
     public abstract String getActions();
 
     /**
-     * Returns an empty PermissionCollection for a given Permission object, or null if
-     * one is not defined. Subclasses of class Permission should
+     * Returns an empty {@code PermissionCollection} for a given
+     * {@code Permission} object, or {@code null} if
+     * one is not defined. Subclasses of class {@code Permission} should
      * override this if they need to store their permissions in a particular
-     * PermissionCollection object in order to provide the correct semantics
-     * when the {@code PermissionCollection.implies} method is called.
-     * If null is returned,
+     * {@code PermissionCollection} object in order to provide the correct
+     * semantics when the {@code PermissionCollection.implies} method is called.
+     * If {@code null} is returned,
      * then the caller of this method is free to store permissions of this
-     * type in any PermissionCollection they choose (one that uses a Hashtable,
-     * one that uses a Vector, etc.).
+     * type in any {@code PermissionCollection} they choose (one that uses
+     * a Hashtable, one that uses a Vector, etc.).
      *
-     * @return a new PermissionCollection object for this type of Permission, or
-     * null if one is not defined.
+     * @return a new {@code PermissionCollection} object for this type of
+     * {@code Permission}, or {@code null} if one is not defined.
      */
 
     public PermissionCollection newPermissionCollection() {
@@ -218,12 +220,12 @@ public abstract class Permission implements Guard, java.io.Serializable {
     }
 
     /**
-     * Returns a string describing this Permission.  The convention is to
-     * specify the class name, the permission name, and the actions in
+     * Returns a string describing this {@code Permission}.  The convention
+     * is to specify the class name, the permission name, and the actions in
      * the following format: '("ClassName" "name" "actions")', or
-     * '("ClassName" "name")' if actions list is null or empty.
+     * '("ClassName" "name")' if actions list is {@code null} or empty.
      *
-     * @return information about this Permission.
+     * @return information about this {@code Permission}.
      */
     public String toString() {
         String actions = getActions();

@@ -68,7 +68,7 @@ public class GuardedObject implements java.io.Serializable {
 
     /**
      * Constructs a GuardedObject using the specified object and guard.
-     * If the Guard object is null, then no restrictions will
+     * If the Guard object is {@code null}, then no restrictions will
      * be placed on who can access the object.
      *
      * @param object the object to be guarded.

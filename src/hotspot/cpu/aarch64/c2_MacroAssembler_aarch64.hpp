@@ -93,9 +93,11 @@
   void sve_reduce_integral(int opc, Register dst, BasicType bt, Register src1,
                            FloatRegister src2, PRegister pg, FloatRegister tmp);
 
-  // Set elements of the dst predicate to true if the element number is
-  // in the range of [0, lane_cnt), or to false otherwise.
-  void sve_ptrue_lanecnt(PRegister dst, SIMD_RegVariant size, int lane_cnt);
+  // Set elements of the dst predicate to true for lanes in the range of
+  // [0, lane_cnt), or to false otherwise. The input "lane_cnt" should be
+  // smaller than or equal to the supported max vector length of the basic
+  // type. Clobbers: rscratch1 and the rFlagsReg.
+  void sve_gen_mask_imm(PRegister dst, BasicType bt, uint32_t lane_cnt);
 
   // Extract a scalar element from an sve vector at position 'idx'.
   // The input elements in src are expected to be of integral type.

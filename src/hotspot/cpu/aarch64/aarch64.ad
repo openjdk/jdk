@@ -2479,6 +2479,7 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
         return false;
       }
       break;
+    case Op_VectorMaskGen:
     case Op_LoadVectorGather:
     case Op_StoreVectorScatter:
     case Op_CompressV:
@@ -2500,6 +2501,11 @@ const bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, Bas
   }
   return match_rule_supported(opcode) &&
          masked_op_sve_supported(opcode, vlen, bt);
+}
+
+const bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
+  // Only SVE has partial vector operations
+  return (UseSVE > 0) && partial_op_sve_needed(node, vt);
 }
 
 const RegMask* Matcher::predicate_reg_mask(void) {
@@ -3835,11 +3841,17 @@ encode %{
         ciEnv::current()->record_failure("CodeCache is full");
         return;
       }
-      // Emit stub for static call
-      address stub = CompiledStaticCall::emit_to_interp_stub(cbuf);
-      if (stub == NULL) {
-        ciEnv::current()->record_failure("CodeCache is full");
-        return;
+      if (CodeBuffer::supports_shared_stubs() && _method->can_be_statically_bound()) {
+        // Calls of the same statically bound method can share
+        // a stub to the interpreter.
+        cbuf.shared_stub_to_interp_for(_method, cbuf.insts()->mark_off());
+      } else {
+        // Emit stub for static call
+        address stub = CompiledStaticCall::emit_to_interp_stub(cbuf);
+        if (stub == NULL) {
+          ciEnv::current()->record_failure("CodeCache is full");
+          return;
+        }
       }
     }
 
@@ -3947,7 +3959,7 @@ encode %{
     Register tmp = as_Register($tmp2$$reg);
     Label cont;
     Label object_has_monitor;
-    Label cas_failed;
+    Label no_count;
 
     assert_different_registers(oop, box, tmp, disp_hdr);
 
@@ -3982,9 +3994,6 @@ encode %{
 
       // If the compare-and-exchange succeeded, then we found an unlocked
       // object, will have now locked it will continue at label cont
-
-      __ bind(cas_failed);
-      // We did not see an unlocked object so try the fast recursive case.
 
       // Check if the owner is self by comparing the value in the
       // markWord of object (disp_hdr) with the stack pointer.
@@ -4030,6 +4039,11 @@ encode %{
     __ bind(cont);
     // flag == EQ indicates success
     // flag == NE indicates failure
+    __ br(Assembler::NE, no_count);
+
+    __ increment(Address(rthread, JavaThread::held_monitor_count_offset()));
+
+    __ bind(no_count);
   %}
 
   enc_class aarch64_enc_fast_unlock(iRegP object, iRegP box, iRegP tmp, iRegP tmp2) %{
@@ -4040,6 +4054,7 @@ encode %{
     Register tmp = as_Register($tmp2$$reg);
     Label cont;
     Label object_has_monitor;
+    Label no_count;
 
     assert_different_registers(oop, box, tmp, disp_hdr);
 
@@ -4098,6 +4113,11 @@ encode %{
     __ bind(cont);
     // flag == EQ indicates success
     // flag == NE indicates failure
+    __ br(Assembler::NE, no_count);
+
+    __ decrement(Address(rthread, JavaThread::held_monitor_count_offset()));
+
+    __ bind(no_count);
   %}
 
 %}

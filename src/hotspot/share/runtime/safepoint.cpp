@@ -516,19 +516,9 @@ bool SafepointSynchronize::is_cleanup_needed() {
   return false;
 }
 
-class ParallelSPCleanupThreadClosure : public ThreadClosure {
-public:
-  void do_thread(Thread* thread) {
-    if (thread->is_Java_thread()) {
-      StackWatermarkSet::start_processing(JavaThread::cast(thread), StackWatermarkKind::gc);
-    }
-  }
-};
-
-class ParallelSPCleanupTask : public WorkerTask {
+class ParallelCleanupTask : public WorkerTask {
 private:
   SubTasksDone _subtasks;
-  uint _num_workers;
   bool _do_lazy_roots;
 
   class Tracer {
@@ -548,32 +538,14 @@ private:
   };
 
 public:
-  ParallelSPCleanupTask(uint num_workers) :
+  ParallelCleanupTask() :
     WorkerTask("Parallel Safepoint Cleanup"),
     _subtasks(SafepointSynchronize::SAFEPOINT_CLEANUP_NUM_TASKS),
-    _num_workers(num_workers),
     _do_lazy_roots(!VMThread::vm_operation()->skip_thread_oop_barriers() &&
                    Universe::heap()->uses_stack_watermark_barrier()) {}
 
   void work(uint worker_id) {
-    if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_LAZY_ROOT_PROCESSING)) {
-      if (_do_lazy_roots) {
-        Tracer t("lazy partial thread root processing");
-        ParallelSPCleanupThreadClosure cl;
-        Threads::threads_do(&cl);
-      }
-    }
-
-    if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_UPDATE_INLINE_CACHES)) {
-      Tracer t("updating inline caches");
-      InlineCacheBuffer::update_inline_caches();
-    }
-
-    if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_COMPILATION_POLICY)) {
-      Tracer t("compilation policy safepoint handler");
-      CompilationPolicy::do_safepoint_work();
-    }
-
+    // These tasks are ordered by relative length of time to execute so that potentially longer tasks start first.
     if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_SYMBOL_TABLE_REHASH)) {
       if (SymbolTable::needs_rehashing()) {
         Tracer t("rehashing symbol table");
@@ -595,6 +567,25 @@ public:
       }
     }
 
+    if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_LAZY_ROOT_PROCESSING)) {
+      if (_do_lazy_roots) {
+        Tracer t("lazy partial thread root processing");
+        class LazyRootClosure : public ThreadClosure {
+        public:
+          void do_thread(Thread* thread) {
+            StackWatermarkSet::start_processing(JavaThread::cast(thread), StackWatermarkKind::gc);
+          }
+        };
+        LazyRootClosure cl;
+        Threads::java_threads_do(&cl);
+      }
+    }
+
+    if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_UPDATE_INLINE_CACHES)) {
+      Tracer t("updating inline caches");
+      InlineCacheBuffer::update_inline_caches();
+    }
+
     if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_REQUEST_OOPSTORAGE_CLEANUP)) {
       // Don't bother reporting event or time for this very short operation.
       // To have any utility we'd also want to report whether needed.
@@ -612,15 +603,13 @@ void SafepointSynchronize::do_cleanup_tasks() {
 
   CollectedHeap* heap = Universe::heap();
   assert(heap != NULL, "heap not initialized yet?");
+  ParallelCleanupTask cleanup;
   WorkerThreads* cleanup_workers = heap->safepoint_workers();
   if (cleanup_workers != NULL) {
     // Parallel cleanup using GC provided thread pool.
-    uint num_cleanup_workers = cleanup_workers->active_workers();
-    ParallelSPCleanupTask cleanup(num_cleanup_workers);
     cleanup_workers->run_task(&cleanup);
   } else {
     // Serial cleanup using VMThread.
-    ParallelSPCleanupTask cleanup(1);
     cleanup.work(0);
   }
 

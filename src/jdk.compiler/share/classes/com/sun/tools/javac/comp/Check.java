@@ -4351,6 +4351,9 @@ public class Check {
                     wasDefault = true;
                 } else {
                     JCPattern pat = ((JCPatternCaseLabel) label).pat;
+                    while (pat instanceof JCParenthesizedPattern parenthesized) {
+                        pat = parenthesized.pattern;
+                    }
                     boolean isTypePattern = pat.hasTag(BINDINGPATTERN);
                     if (wasPattern || wasConstant || wasDefault ||
                         (wasNullPattern && (!isTypePattern || wasNonEmptyFallThrough))) {
@@ -4375,6 +4378,93 @@ public class Check {
             wasNonEmptyFallThrough = c.stats.nonEmpty() && completesNormally;
         }
     }
+
+    void checkSwitchCaseLabelDominated(List<JCCase> cases) {
+        List<JCCaseLabel> caseLabels = List.nil();
+        for (List<JCCase> l = cases; l.nonEmpty(); l = l.tail) {
+            JCCase c = l.head;
+            for (JCCaseLabel label : c.labels) {
+                if (label.hasTag(DEFAULTCASELABEL) || TreeInfo.isNullCaseLabel(label)) {
+                    continue;
+                }
+                Type currentType = labelType(label);
+                for (JCCaseLabel testCaseLabel : caseLabels) {
+                    Type testType = labelType(testCaseLabel);
+                    if (types.isSubtype(currentType, testType) &&
+                        !currentType.hasTag(ERROR) && !testType.hasTag(ERROR)) {
+                        //the current label is potentially dominated by the existing (test) label, check:
+                        boolean dominated = false;
+                        if (label instanceof JCConstantCaseLabel) {
+                            dominated |= !(testCaseLabel instanceof JCConstantCaseLabel);
+                        } else if (label instanceof JCPatternCaseLabel patternCL &&
+                                   testCaseLabel instanceof JCPatternCaseLabel testPatternCaseLabel &&
+                                   TreeInfo.unguardedCaseLabel(testCaseLabel)) {
+                            dominated = patternDominated(testPatternCaseLabel.pat,
+                                                         patternCL.pat);
+                        }
+                        if (dominated) {
+                            log.error(label.pos(), Errors.PatternDominated);
+                        }
+                    }
+                }
+                caseLabels = caseLabels.prepend(label);
+            }
+        }
+    }
+        //where:
+        private Type labelType(JCCaseLabel label) {
+            return types.erasure(switch (label.getTag()) {
+                case PATTERNCASELABEL -> ((JCPatternCaseLabel) label).pat.type;
+                case CONSTANTCASELABEL -> types.boxedTypeOrType(((JCConstantCaseLabel) label).expr.type);
+                default -> throw Assert.error("Unexpected tree kind: " + label.getTag());
+            });
+        }
+        private boolean patternDominated(JCPattern existingPattern, JCPattern currentPattern) {
+            Type existingPatternType = types.erasure(existingPattern.type);
+            Type currentPatternType = types.erasure(currentPattern.type);
+            if (existingPatternType.isPrimitive() ^ currentPatternType.isPrimitive()) {
+                return false;
+            }
+            if (existingPatternType.isPrimitive()) {
+                return types.isSameType(existingPatternType, currentPatternType);
+            } else {
+                if (!types.isSubtype(currentPatternType, existingPatternType)) {
+                    return false;
+                }
+            }
+            while (existingPattern instanceof JCParenthesizedPattern parenthesized) {
+                existingPattern = parenthesized.pattern;
+            }
+            while (currentPattern instanceof JCParenthesizedPattern parenthesized) {
+                currentPattern = parenthesized.pattern;
+            }
+            if (currentPattern instanceof JCBindingPattern) {
+                return existingPattern instanceof JCBindingPattern;
+            } else if (currentPattern instanceof JCRecordPattern currentRecordPattern) {
+                if (existingPattern instanceof JCBindingPattern) {
+                    return true;
+                } else if (existingPattern instanceof JCRecordPattern existingRecordPattern) {
+                    List<JCPattern> existingNested = existingRecordPattern.nested;
+                    List<JCPattern> currentNested = currentRecordPattern.nested;
+                    if (existingNested.size() != currentNested.size()) {
+                        return false;
+                    }
+                    while (existingNested.nonEmpty()) {
+                        if (!patternDominated(existingNested.head, currentNested.head)) {
+                            return false;
+                        }
+                        existingNested = existingNested.tail;
+                        currentNested = currentNested.tail;
+                    }
+                    return true;
+                } else {
+                    Assert.error("Unknown pattern: " + existingPattern.getTag());
+                }
+            } else {
+                Assert.error("Unknown pattern: " + currentPattern.getTag());
+            }
+            return false;
+        }
 
     /** check if a type is a subtype of Externalizable, if that is available. */
     boolean isExternalizable(Type t) {

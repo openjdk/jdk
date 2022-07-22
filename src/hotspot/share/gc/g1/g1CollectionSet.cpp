@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -375,10 +375,10 @@ public:
 
   virtual bool do_heap_region(HeapRegion* r) {
     assert(r->in_collection_set(), "Region %u should be in collection set", r->hrm_index());
-    _st->print_cr("  " HR_FORMAT ", P: " PTR_FORMAT "N: " PTR_FORMAT ", age: %4d",
+    _st->print_cr("  " HR_FORMAT ", TAMS: " PTR_FORMAT " PB: " PTR_FORMAT ", age: %4d",
                   HR_FORMAT_PARAMS(r),
-                  p2i(r->prev_top_at_mark_start()),
-                  p2i(r->next_top_at_mark_start()),
+                  p2i(r->top_at_mark_start()),
+                  p2i(r->parsable_bottom()),
                   r->has_surv_rate_group() ? r->age_in_surv_rate_group() : -1);
     return false;
   }
@@ -415,9 +415,6 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
 
   verify_young_cset_indices();
 
-  // Clear the fields that point to the survivor list - they are all young now.
-  survivors->convert_to_eden();
-
   _bytes_used_before = _inc_bytes_used_before;
 
   // The number of recorded young regions is the incremental
@@ -432,6 +429,9 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
                             "predicted eden time: %1.2fms, predicted base time: %1.2fms, target pause time: %1.2fms, remaining time: %1.2fms",
                             eden_region_length, survivor_region_length,
                             predicted_eden_time, predicted_base_time_ms, target_pause_time_ms, remaining_time_ms);
+
+  // Clear the fields that point to the survivor list - they are all young now.
+  survivors->convert_to_eden();
 
   phase_times()->record_young_cset_choice_time_ms((Ticks::now() - start_time).seconds() * 1000.0);
 

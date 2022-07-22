@@ -1064,8 +1064,6 @@ void InterpreterMacroAssembler::remove_activation(
 
   bind(unlock);
   unlock_object(robj);
-  dec_held_monitor_count();
-
   pop(state);
 
   // Check that for block-structured locking (i.e., that all locked
@@ -1110,7 +1108,6 @@ void InterpreterMacroAssembler::remove_activation(
       push(state);
       mov(robj, rmon);   // nop if robj and rmon are the same
       unlock_object(robj);
-      dec_held_monitor_count();
       pop(state);
 
       if (install_monitor_exception) {
@@ -1205,7 +1202,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
             CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
             lock_reg);
   } else {
-    Label done;
+    Label count_locking, done, slow_case;
 
     const Register swap_reg = rax; // Must use rax for cmpxchg instruction
     const Register tmp_reg = rbx;
@@ -1216,8 +1213,6 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
     const int lock_offset = BasicObjectLock::lock_offset_in_bytes ();
     const int mark_offset = lock_offset +
                             BasicLock::displaced_header_offset_in_bytes();
-
-    Label slow_case;
 
     // Load object pointer into obj_reg
     movptr(obj_reg, Address(lock_reg, obj_offset));
@@ -1243,7 +1238,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
 
     lock();
     cmpxchgptr(lock_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-    jcc(Assembler::zero, done);
+    jcc(Assembler::zero, count_locking);
 
     const int zero_bits = LP64_ONLY(7) NOT_LP64(3);
 
@@ -1279,7 +1274,11 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
 
     // Save the test result, for recursive case, the result is zero
     movptr(Address(lock_reg, mark_offset), swap_reg);
-    jcc(Assembler::zero, done);
+    jcc(Assembler::notZero, slow_case);
+
+    bind(count_locking);
+    inc_held_monitor_count();
+    jmp(done);
 
     bind(slow_case);
 
@@ -1312,7 +1311,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg) {
   if (UseHeavyMonitors) {
     call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), lock_reg);
   } else {
-    Label done;
+    Label count_locking, done, slow_case;
 
     const Register swap_reg   = rax;  // Must use rax for cmpxchg instruction
     const Register header_reg = LP64_ONLY(c_rarg2) NOT_LP64(rbx);  // Will contain the old oopMark
@@ -1338,16 +1337,20 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg) {
     testptr(header_reg, header_reg);
 
     // zero for recursive case
-    jcc(Assembler::zero, done);
+    jcc(Assembler::zero, count_locking);
 
     // Atomic swap back the old header
     lock();
     cmpxchgptr(header_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
 
     // zero for simple unlock of a stack-lock case
-    jcc(Assembler::zero, done);
+    jcc(Assembler::notZero, slow_case);
 
+    bind(count_locking);
+    dec_held_monitor_count();
+    jmp(done);
 
+    bind(slow_case);
     // Call the runtime routine for slow case.
     movptr(Address(lock_reg, BasicObjectLock::obj_offset_in_bytes()), obj_reg); // restore obj
     call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), lock_reg);

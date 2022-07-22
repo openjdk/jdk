@@ -938,8 +938,6 @@ void VM_Version::get_processor_features() {
     _features &= ~CPU_HT;
   }
 
-  // Note: Any modifications to following suppressed feature list for KNL target
-  // should also be applied to test/hotspot/jtreg/compiler/lib/ir_framework/test/IREncodingPrinter.java
   if (is_intel()) { // Intel cpus specific settings
     if (is_knights_family()) {
       _features &= ~CPU_VZEROUPPER;
@@ -2843,3 +2841,321 @@ int64_t VM_Version::maximum_qualified_cpu_frequency(void) {
   return _max_qualified_cpu_frequency;
 }
 
+uint64_t VM_Version::feature_flags() {
+  uint64_t result = 0;
+  if (_cpuid_info.std_cpuid1_edx.bits.cmpxchg8 != 0)
+    result |= CPU_CX8;
+  if (_cpuid_info.std_cpuid1_edx.bits.cmov != 0)
+    result |= CPU_CMOV;
+  if (_cpuid_info.std_cpuid1_edx.bits.clflush != 0)
+    result |= CPU_FLUSH;
+#ifdef _LP64
+  // clflush should always be available on x86_64
+  // if not we are in real trouble because we rely on it
+  // to flush the code cache.
+  assert ((result & CPU_FLUSH) != 0, "clflush should be available");
+#endif
+  if (_cpuid_info.std_cpuid1_edx.bits.fxsr != 0 || (is_amd_family() &&
+      _cpuid_info.ext_cpuid1_edx.bits.fxsr != 0))
+    result |= CPU_FXSR;
+  // HT flag is set for multi-core processors also.
+  if (threads_per_core() > 1)
+    result |= CPU_HT;
+  if (_cpuid_info.std_cpuid1_edx.bits.mmx != 0 || (is_amd_family() &&
+      _cpuid_info.ext_cpuid1_edx.bits.mmx != 0))
+    result |= CPU_MMX;
+  if (_cpuid_info.std_cpuid1_edx.bits.sse != 0)
+    result |= CPU_SSE;
+  if (_cpuid_info.std_cpuid1_edx.bits.sse2 != 0)
+    result |= CPU_SSE2;
+  if (_cpuid_info.std_cpuid1_ecx.bits.sse3 != 0)
+    result |= CPU_SSE3;
+  if (_cpuid_info.std_cpuid1_ecx.bits.ssse3 != 0)
+    result |= CPU_SSSE3;
+  if (_cpuid_info.std_cpuid1_ecx.bits.sse4_1 != 0)
+    result |= CPU_SSE4_1;
+  if (_cpuid_info.std_cpuid1_ecx.bits.sse4_2 != 0)
+    result |= CPU_SSE4_2;
+  if (_cpuid_info.std_cpuid1_ecx.bits.popcnt != 0)
+    result |= CPU_POPCNT;
+  if (_cpuid_info.std_cpuid1_ecx.bits.avx != 0 &&
+      _cpuid_info.std_cpuid1_ecx.bits.osxsave != 0 &&
+      _cpuid_info.xem_xcr0_eax.bits.sse != 0 &&
+      _cpuid_info.xem_xcr0_eax.bits.ymm != 0) {
+    result |= CPU_AVX;
+    result |= CPU_VZEROUPPER;
+    if (_cpuid_info.sef_cpuid7_ebx.bits.avx2 != 0)
+      result |= CPU_AVX2;
+    if (_cpuid_info.sef_cpuid7_ebx.bits.avx512f != 0 &&
+        _cpuid_info.xem_xcr0_eax.bits.opmask != 0 &&
+        _cpuid_info.xem_xcr0_eax.bits.zmm512 != 0 &&
+        _cpuid_info.xem_xcr0_eax.bits.zmm32 != 0) {
+      result |= CPU_AVX512F;
+      if (_cpuid_info.sef_cpuid7_ebx.bits.avx512cd != 0)
+        result |= CPU_AVX512CD;
+      if (_cpuid_info.sef_cpuid7_ebx.bits.avx512dq != 0)
+        result |= CPU_AVX512DQ;
+      if (_cpuid_info.sef_cpuid7_ebx.bits.avx512pf != 0)
+        result |= CPU_AVX512PF;
+      if (_cpuid_info.sef_cpuid7_ebx.bits.avx512er != 0)
+        result |= CPU_AVX512ER;
+      if (_cpuid_info.sef_cpuid7_ebx.bits.avx512bw != 0)
+        result |= CPU_AVX512BW;
+      if (_cpuid_info.sef_cpuid7_ebx.bits.avx512vl != 0)
+        result |= CPU_AVX512VL;
+      if (_cpuid_info.sef_cpuid7_ecx.bits.avx512_vpopcntdq != 0)
+        result |= CPU_AVX512_VPOPCNTDQ;
+      if (_cpuid_info.sef_cpuid7_ecx.bits.avx512_vpclmulqdq != 0)
+        result |= CPU_AVX512_VPCLMULQDQ;
+      if (_cpuid_info.sef_cpuid7_ecx.bits.vaes != 0)
+        result |= CPU_AVX512_VAES;
+      if (_cpuid_info.sef_cpuid7_ecx.bits.gfni != 0)
+        result |= CPU_GFNI;
+      if (_cpuid_info.sef_cpuid7_ecx.bits.avx512_vnni != 0)
+        result |= CPU_AVX512_VNNI;
+      if (_cpuid_info.sef_cpuid7_ecx.bits.avx512_bitalg != 0)
+        result |= CPU_AVX512_BITALG;
+      if (_cpuid_info.sef_cpuid7_ecx.bits.avx512_vbmi != 0)
+        result |= CPU_AVX512_VBMI;
+      if (_cpuid_info.sef_cpuid7_ecx.bits.avx512_vbmi2 != 0)
+        result |= CPU_AVX512_VBMI2;
+    }
+  }
+  if (_cpuid_info.std_cpuid1_ecx.bits.hv != 0)
+    result |= CPU_HV;
+  if (_cpuid_info.sef_cpuid7_ebx.bits.bmi1 != 0)
+    result |= CPU_BMI1;
+  if (_cpuid_info.std_cpuid1_edx.bits.tsc != 0)
+    result |= CPU_TSC;
+  if (_cpuid_info.ext_cpuid7_edx.bits.tsc_invariance != 0)
+    result |= CPU_TSCINV_BIT;
+  if (_cpuid_info.std_cpuid1_ecx.bits.aes != 0)
+    result |= CPU_AES;
+  if (_cpuid_info.sef_cpuid7_ebx.bits.erms != 0)
+    result |= CPU_ERMS;
+  if (_cpuid_info.sef_cpuid7_edx.bits.fast_short_rep_mov != 0)
+    result |= CPU_FSRM;
+  if (_cpuid_info.std_cpuid1_ecx.bits.clmul != 0)
+    result |= CPU_CLMUL;
+  if (_cpuid_info.sef_cpuid7_ebx.bits.rtm != 0)
+    result |= CPU_RTM;
+  if (_cpuid_info.sef_cpuid7_ebx.bits.adx != 0)
+     result |= CPU_ADX;
+  if (_cpuid_info.sef_cpuid7_ebx.bits.bmi2 != 0)
+    result |= CPU_BMI2;
+  if (_cpuid_info.sef_cpuid7_ebx.bits.sha != 0)
+    result |= CPU_SHA;
+  if (_cpuid_info.std_cpuid1_ecx.bits.fma != 0)
+    result |= CPU_FMA;
+  if (_cpuid_info.sef_cpuid7_ebx.bits.clflushopt != 0)
+    result |= CPU_FLUSHOPT;
+  if (_cpuid_info.ext_cpuid1_edx.bits.rdtscp != 0)
+    result |= CPU_RDTSCP;
+  if (_cpuid_info.sef_cpuid7_ecx.bits.rdpid != 0)
+    result |= CPU_RDPID;
+
+  // AMD|Hygon features.
+  if (is_amd_family()) {
+    if ((_cpuid_info.ext_cpuid1_edx.bits.tdnow != 0) ||
+        (_cpuid_info.ext_cpuid1_ecx.bits.prefetchw != 0))
+      result |= CPU_3DNOW_PREFETCH;
+    if (_cpuid_info.ext_cpuid1_ecx.bits.lzcnt != 0)
+      result |= CPU_LZCNT;
+    if (_cpuid_info.ext_cpuid1_ecx.bits.sse4a != 0)
+      result |= CPU_SSE4A;
+  }
+
+  // Intel features.
+  if (is_intel()) {
+    if (_cpuid_info.ext_cpuid1_ecx.bits.lzcnt != 0) {
+      result |= CPU_LZCNT;
+    }
+    if (_cpuid_info.ext_cpuid1_ecx.bits.prefetchw != 0) {
+      result |= CPU_3DNOW_PREFETCH;
+    }
+    if (_cpuid_info.sef_cpuid7_ebx.bits.clwb != 0) {
+      result |= CPU_CLWB;
+    }
+    if (_cpuid_info.sef_cpuid7_edx.bits.serialize != 0)
+      result |= CPU_SERIALIZE;
+  }
+
+  // ZX features.
+  if (is_zx()) {
+    if (_cpuid_info.ext_cpuid1_ecx.bits.lzcnt != 0) {
+      result |= CPU_LZCNT;
+    }
+    if (_cpuid_info.ext_cpuid1_ecx.bits.prefetchw != 0) {
+      result |= CPU_3DNOW_PREFETCH;
+    }
+  }
+
+  // Composite features.
+  if (supports_tscinv_bit() &&
+      ((is_amd_family() && !is_amd_Barcelona()) ||
+       is_intel_tsc_synched_at_init())) {
+    result |= CPU_TSCINV;
+  }
+
+  return result;
+}
+
+bool VM_Version::os_supports_avx_vectors() {
+  bool retVal = false;
+  int nreg = 2 LP64_ONLY(+2);
+  if (supports_evex()) {
+    // Verify that OS save/restore all bits of EVEX registers
+    // during signal processing.
+    retVal = true;
+    for (int i = 0; i < 16 * nreg; i++) { // 64 bytes per zmm register
+      if (_cpuid_info.zmm_save[i] != ymm_test_value()) {
+        retVal = false;
+        break;
+      }
+    }
+  } else if (supports_avx()) {
+    // Verify that OS save/restore all bits of AVX registers
+    // during signal processing.
+    retVal = true;
+    for (int i = 0; i < 8 * nreg; i++) { // 32 bytes per ymm register
+      if (_cpuid_info.ymm_save[i] != ymm_test_value()) {
+        retVal = false;
+        break;
+      }
+    }
+    // zmm_save will be set on a EVEX enabled machine even if we choose AVX code gen
+    if (retVal == false) {
+      // Verify that OS save/restore all bits of EVEX registers
+      // during signal processing.
+      retVal = true;
+      for (int i = 0; i < 16 * nreg; i++) { // 64 bytes per zmm register
+        if (_cpuid_info.zmm_save[i] != ymm_test_value()) {
+          retVal = false;
+          break;
+        }
+      }
+    }
+  }
+  return retVal;
+}
+
+uint VM_Version::cores_per_cpu() {
+  uint result = 1;
+  if (is_intel()) {
+    bool supports_topology = supports_processor_topology();
+    if (supports_topology) {
+      result = _cpuid_info.tpl_cpuidB1_ebx.bits.logical_cpus /
+               _cpuid_info.tpl_cpuidB0_ebx.bits.logical_cpus;
+    }
+    if (!supports_topology || result == 0) {
+      result = (_cpuid_info.dcp_cpuid4_eax.bits.cores_per_cpu + 1);
+    }
+  } else if (is_amd_family()) {
+    result = (_cpuid_info.ext_cpuid8_ecx.bits.cores_per_cpu + 1);
+  } else if (is_zx()) {
+    bool supports_topology = supports_processor_topology();
+    if (supports_topology) {
+      result = _cpuid_info.tpl_cpuidB1_ebx.bits.logical_cpus /
+               _cpuid_info.tpl_cpuidB0_ebx.bits.logical_cpus;
+    }
+    if (!supports_topology || result == 0) {
+      result = (_cpuid_info.dcp_cpuid4_eax.bits.cores_per_cpu + 1);
+    }
+  }
+  return result;
+}
+
+uint VM_Version::threads_per_core() {
+  uint result = 1;
+  if (is_intel() && supports_processor_topology()) {
+    result = _cpuid_info.tpl_cpuidB0_ebx.bits.logical_cpus;
+  } else if (is_zx() && supports_processor_topology()) {
+    result = _cpuid_info.tpl_cpuidB0_ebx.bits.logical_cpus;
+  } else if (_cpuid_info.std_cpuid1_edx.bits.ht != 0) {
+    if (cpu_family() >= 0x17) {
+      result = _cpuid_info.ext_cpuid1E_ebx.bits.threads_per_core + 1;
+    } else {
+      result = _cpuid_info.std_cpuid1_ebx.bits.threads_per_cpu /
+                 cores_per_cpu();
+    }
+  }
+  return (result == 0 ? 1 : result);
+}
+
+intx VM_Version::L1_line_size() {
+  intx result = 0;
+  if (is_intel()) {
+    result = (_cpuid_info.dcp_cpuid4_ebx.bits.L1_line_size + 1);
+  } else if (is_amd_family()) {
+    result = _cpuid_info.ext_cpuid5_ecx.bits.L1_line_size;
+  } else if (is_zx()) {
+    result = (_cpuid_info.dcp_cpuid4_ebx.bits.L1_line_size + 1);
+  }
+  if (result < 32) // not defined ?
+    result = 32;   // 32 bytes by default on x86 and other x64
+  return result;
+}
+
+bool VM_Version::is_intel_tsc_synched_at_init() {
+  if (is_intel_family_core()) {
+    uint32_t ext_model = extended_cpu_model();
+    if (ext_model == CPU_MODEL_NEHALEM_EP     ||
+        ext_model == CPU_MODEL_WESTMERE_EP    ||
+        ext_model == CPU_MODEL_SANDYBRIDGE_EP ||
+        ext_model == CPU_MODEL_IVYBRIDGE_EP) {
+      // <= 2-socket invariant tsc support. EX versions are usually used
+      // in > 2-socket systems and likely don't synchronize tscs at
+      // initialization.
+      // Code that uses tsc values must be prepared for them to arbitrarily
+      // jump forward or backward.
+      return true;
+    }
+  }
+  return false;
+}
+
+intx VM_Version::allocate_prefetch_distance(bool use_watermark_prefetch) {
+  // Hardware prefetching (distance/size in bytes):
+  // Pentium 3 -  64 /  32
+  // Pentium 4 - 256 / 128
+  // Athlon    -  64 /  32 ????
+  // Opteron   - 128 /  64 only when 2 sequential cache lines accessed
+  // Core      - 128 /  64
+  //
+  // Software prefetching (distance in bytes / instruction with best score):
+  // Pentium 3 - 128 / prefetchnta
+  // Pentium 4 - 512 / prefetchnta
+  // Athlon    - 128 / prefetchnta
+  // Opteron   - 256 / prefetchnta
+  // Core      - 256 / prefetchnta
+  // It will be used only when AllocatePrefetchStyle > 0
+
+  if (is_amd_family()) { // AMD | Hygon
+    if (supports_sse2()) {
+      return 256; // Opteron
+    } else {
+      return 128; // Athlon
+    }
+  } else { // Intel
+    if (supports_sse3() && cpu_family() == 6) {
+      if (supports_sse4_2() && supports_ht()) { // Nehalem based cpus
+        return 192;
+      } else if (use_watermark_prefetch) { // watermark prefetching on Core
+#ifdef _LP64
+        return 384;
+#else
+        return 320;
+#endif
+      }
+    }
+    if (supports_sse2()) {
+      if (cpu_family() == 6) {
+        return 256; // Pentium M, Core, Core2
+      } else {
+        return 512; // Pentium 4
+      }
+    } else {
+      return 128; // Pentium 3 (and all other old CPUs)
+    }
+  }
+}

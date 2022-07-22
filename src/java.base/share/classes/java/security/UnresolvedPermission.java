@@ -37,7 +37,7 @@ import java.security.cert.*;
 import java.util.List;
 
 /**
- * The UnresolvedPermission class is used to hold Permissions that
+ * The {@code UnresolvedPermission} class is used to hold Permissions that
  * were "unresolved" when the Policy was initialized.
  * An unresolved permission is one whose actual Permission class
  * does not yet exist at the time the Policy is initialized (see below).
@@ -60,33 +60,33 @@ import java.util.List;
  * <p>Other permission classes may not yet exist during Policy
  * initialization. For example, a referenced permission class may
  * be in a JAR file that will later be loaded.
- * For each such class, an UnresolvedPermission is instantiated.
- * Thus, an UnresolvedPermission is essentially a "placeholder"
+ * For each such class, an {@code UnresolvedPermission} is instantiated.
+ * Thus, an {@code UnresolvedPermission} is essentially a "placeholder"
  * containing information about the permission.
  *
- * <p>Later, when code calls AccessController.checkPermission
+ * <p>Later, when code calls {@link AccessController#checkPermission}
  * on a permission of a type that was previously unresolved,
  * but whose class has since been loaded, previously-unresolved
  * permissions of that type are "resolved". That is,
- * for each such UnresolvedPermission, a new object of
+ * for each such {@code UnresolvedPermission}, a new object of
  * the appropriate class type is instantiated, based on the
- * information in the UnresolvedPermission.
+ * information in the {@code UnresolvedPermission}.
  *
- * <p> To instantiate the new class, UnresolvedPermission assumes
+ * <p> To instantiate the new class, {@code UnresolvedPermission} assumes
  * the class provides a zero, one, and/or two-argument constructor.
  * The zero-argument constructor would be used to instantiate
  * a permission without a name and without actions.
  * A one-arg constructor is assumed to take a {@code String}
  * name as input, and a two-arg constructor is assumed to take a
  * {@code String} name and {@code String} actions
- * as input.  UnresolvedPermission may invoke a
+ * as input.  {@code UnresolvedPermission} may invoke a
  * constructor with a {@code null} name and/or actions.
  * If an appropriate permission constructor is not available,
- * the UnresolvedPermission is ignored and the relevant permission
+ * the {@code UnresolvedPermission} is ignored and the relevant permission
  * will not be granted to executing code.
  *
  * <p> The newly created permission object replaces the
- * UnresolvedPermission, which is removed.
+ * {@code UnresolvedPermission}, which is removed.
  *
  * <p> Note that the {@code getName} method for an
  * {@code UnresolvedPermission} returns the
@@ -139,7 +139,7 @@ implements java.io.Serializable
     private transient java.security.cert.Certificate[] certs;
 
     /**
-     * Creates a new UnresolvedPermission containing the permission
+     * Creates a new {@code UnresolvedPermission} containing the permission
      * information needed later to actually create a Permission of the
      * specified class, when the permission is resolved.
      *
@@ -302,21 +302,21 @@ implements java.io.Serializable
     }
 
     /**
-     * This method always returns false for unresolved permissions.
-     * That is, an UnresolvedPermission is never considered to
+     * This method always returns {@code false} for unresolved permissions.
+     * That is, an {@code UnresolvedPermission} is never considered to
      * imply another permission.
      *
      * @param p the permission to check against.
      *
-     * @return false.
+     * @return {@code false}.
      */
     public boolean implies(Permission p) {
         return false;
     }
 
     /**
-     * Checks two UnresolvedPermission objects for equality.
-     * Checks that {@code obj} is an UnresolvedPermission, and has
+     * Checks two {@code UnresolvedPermission} objects for equality.
+     * Checks that {@code obj} is an {@code UnresolvedPermission}, and has
      * the same type (class) name, permission name, actions, and
      * certificates as this object.
      *
@@ -326,8 +326,8 @@ implements java.io.Serializable
      *
      * @param obj the object we are testing for equality with this object.
      *
-     * @return true if obj is an UnresolvedPermission, and has the same
-     * type (class) name, permission name, actions, and
+     * @return true if {@code obj} is an {@code UnresolvedPermission},
+     * and has the same type (class) name, permission name, actions, and
      * certificates as this object.
      */
     public boolean equals(Object obj) {
@@ -415,9 +415,9 @@ implements java.io.Serializable
     /**
      * Returns the canonical string representation of the actions,
      * which currently is the empty string "", since there are no actions for
-     * an UnresolvedPermission. That is, the actions for the
-     * permission that will be created when this UnresolvedPermission
-     * is resolved may be non-null, but an UnresolvedPermission
+     * an {@code UnresolvedPermission}. That is, the actions for the
+     * permission that will be created when this {@code UnresolvedPermission}
+     * is resolved may be non-null, but an {@code UnresolvedPermission}
      * itself is never considered to have any actions.
      *
      * @return the empty string "".
@@ -473,7 +473,8 @@ implements java.io.Serializable
      * for the underlying permission that has not been resolved.
      *
      * @return the signer certificates for the underlying permission that
-     * has not been resolved, or null, if there are no signer certificates.
+     * has not been resolved, or {@code null}, if there are no signer
+     * certificates.
      * Returns a new array each time this method is called.
      *
      * @since 1.5
@@ -483,11 +484,12 @@ implements java.io.Serializable
     }
 
     /**
-     * Returns a string describing this UnresolvedPermission.  The convention
-     * is to specify the class name, the permission name, and the actions, in
-     * the following format: '(unresolved "ClassName" "name" "actions")'.
+     * Returns a string describing this {@code UnresolvedPermission}.
+     * The convention is to specify the class name, the permission name,
+     * and the actions, in the following format:
+     * '(unresolved "ClassName" "name" "actions")'.
      *
-     * @return information about this UnresolvedPermission.
+     * @return information about this {@code UnresolvedPermission}.
      */
     public String toString() {
         return "(unresolved " + type + " " + name + " " + actions + ")";
@@ -495,10 +497,10 @@ implements java.io.Serializable
 
     /**
      * Returns a new PermissionCollection object for storing
-     * UnresolvedPermission  objects.
+     * {@code UnresolvedPermission} objects.
      *
      * @return a new PermissionCollection object suitable for
-     * storing UnresolvedPermissions.
+     * storing {@code UnresolvedPermissions}.
      */
 
     public PermissionCollection newPermissionCollection() {
