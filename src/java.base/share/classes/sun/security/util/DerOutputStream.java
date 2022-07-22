@@ -175,7 +175,7 @@ extends ByteArrayOutputStream implements DerEncoder {
     /**
      * Marshals a DER integer on the output stream.
      *
-     * @param buf buffered data, which must be DER-encoded
+     * @param i the integer in bytes, equivalent to BigInteger::toByteArray.
      */
     public void putInteger(byte[] buf) throws IOException {
         write(DerValue.tag_Integer);
@@ -461,8 +461,8 @@ extends ByteArrayOutputStream implements DerEncoder {
      * @param s the string to write
      * @param stringTag one of the DER string tags that indicate which
      * encoding should be used to write the string out.
-     * @param charset the specified character set encodes a string into a
-     * sequence of bytes using
+     * @param charset the charset that is should use corresponding to the
+     * above tag.
      */
     private void writeString(String s, byte stringTag, Charset charset)
         throws IOException {
