@@ -6950,18 +6950,31 @@ class StubGenerator: public StubCodeGenerator {
     __ leave();
 
 #ifdef ASSERT
+    // {
+    //   // Stress relocs for adrp() by trying to reach a page beyond
+    //   // the range of a simple ADRP instruction.
+    //   ExternalAddress longWayAway(__ pc() - (1ll << 34));
+    //   if (! __ is_valid_AArch64_address(longWayAway.target())) {
+    //     longWayAway = ExternalAddress(__ pc() + (1ll << 34));
+    //   }
+    //   if (__ is_valid_AArch64_address(longWayAway.target())) {
+    //     uint64_t offset;
+    //     __ adrp(rscratch1, longWayAway, offset);
+    //     __ add(rscratch1, rscratch1, offset);
+    //   }
+    // }
     {
-      // Stress relocs for adrp() by trying to reach a page beyond
-      // the range of a simple ADRP instruction.
-      ExternalAddress longWayAway(__ pc() - (1ll << 34));
-      if (! __ is_valid_AArch64_address(longWayAway.target())) {
-        longWayAway = ExternalAddress(__ pc() + (1ll << 34));
-      }
-      if (__ is_valid_AArch64_address(longWayAway.target())) {
+      ExternalAddress longWayAway((address)(size_t)os::vm_page_size() + 42);
         uint64_t offset;
         __ adrp(rscratch1, longWayAway, offset);
         __ add(rscratch1, rscratch1, offset);
-      }
+    }
+    {
+        uint64_t offset;
+      ExternalAddress justOutOfReach(__ pc() - 4 * G - 4096);
+      fprintf(stderr, "adrp; movk: pc=%p, dest=%p\n", __ pc(), justOutOfReach.target());
+      __ adrp(rscratch1, justOutOfReach, offset);
+      __ add(rscratch1, rscratch1, offset);
     }
 #endif // ASSERT
 

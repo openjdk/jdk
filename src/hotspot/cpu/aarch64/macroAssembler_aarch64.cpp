@@ -148,6 +148,7 @@ extern "C" void disnm(intptr_t p);
 class RelocActions {
 protected:
   typedef int (*reloc_insn)(address insn_addr, address &target);
+  typedef int (*reloc_insn1)(address insn_addr, address &target);
 
   virtual reloc_insn adrpMem() = 0;
   virtual reloc_insn adrpAdd() = 0;
@@ -310,14 +311,12 @@ public:
     ptrdiff_t offset = target - insn_addr;
     instructions = 2;
     precond(inner != nullptr);
-    uintptr_t dest = (uintptr_t)target;
+    // Give the inner reloc a chance to modify the target.
+    address adjusted_target = target;
+    instructions = (*inner)(insn_addr, adjusted_target);
     uintptr_t pc_page = (uintptr_t)insn_addr >> 12;
-    uintptr_t adr_page = (uintptr_t)target >> 12;
+    uintptr_t adr_page = (uintptr_t)adjusted_target >> 12;
     offset = adr_page - pc_page;
-    instructions = (*inner)(insn_addr, target);
-    // Now we extract the lower 21 bits of the signed offset field for
-    // the ADRP.
-    offset = offset << (64-21) >> (64-21);
     int offset_lo = offset & 3;
     offset >>= 2;
     Instruction_aarch64::spatch(insn_addr, 23, 5, offset);
@@ -340,8 +339,10 @@ public:
     return 2;
   }
   static int adrpMovk_impl(address insn_addr, address &target) {
-    uintptr_t dest = (uintptr_t)target;
+    fprintf(stderr, "Patch adrp; movk: pc=%p, dest=%p\n", insn_addr, target);
     Instruction_aarch64::patch(insn_addr + sizeof (uint32_t), 20, 5, (uintptr_t)target >> 32);
+    uintptr_t dest = (dest & 0xffffffffULL) | (uintptr_t(insn_addr) & 0xffff00000000ULL);
+    target = address(dest);
     return 2;
   }
   virtual int immediate(address insn_addr, address &target) {
@@ -457,7 +458,7 @@ public:
   static int adrpMovk_impl(address insn_addr, address &target) {
     uint32_t insn2 = insn_at(insn_addr, 1);
     uint64_t dest = uint64_t(target);
-    dest = (dest & 0xffffffff) |
+    dest = (dest & 0xffff0000ffffffff) |
       ((uint64_t)Instruction_aarch64::extract(insn2, 20, 5) << 32);
     target = address(dest);
 
@@ -468,6 +469,7 @@ public:
     ptrdiff_t byte_offset;
     if (offset_for(insn, insn3, byte_offset)) {
       target += byte_offset;
+      fprintf(stderr, "Decod adrp; movk: pc=%p, dest=%p\n", insn_addr, target);
       return 3;
     } else {
       return 2;
@@ -4613,7 +4615,7 @@ void MacroAssembler::adrp(Register reg1, const Address &dest, uint64_t &byte_off
   int64_t offset_low = dest_page - low_page;
   int64_t offset_high = dest_page - high_page;
 
-  assert(is_valid_AArch64_address(dest.target()), "bad address");
+  //   assert(is_valid_AArch64_address(dest.target()), "bad address");
   assert(dest.getMode() == Address::literal, "ADRP must be applied to a literal address");
 
   InstructionMark im(this);
@@ -4629,6 +4631,7 @@ void MacroAssembler::adrp(Register reg1, const Address &dest, uint64_t &byte_off
 
     _adrp(reg1, (address)adrp_target);
     movk(reg1, target >> 32, 32);
+    fprintf(stderr, "creat; movk: pc=%p, adrp_target=%p\n", pc(), (address)adrp_target);
   }
   byte_offset = (uint64_t)dest.target() & 0xfff;
 }
