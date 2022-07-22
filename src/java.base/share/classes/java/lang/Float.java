@@ -1138,7 +1138,7 @@ public final class Float extends Number
                 // In case the significand rounds up and has a carry
                 // propagate all the way up, take the bottom 11 bits
                 // rather than bottom 10 bits. Adding this value,
-                // rather than OR'ing htis value, will cause the right
+                // rather than OR'ing this value, will cause the right
                 // exponent adjustment.
                 signif_bits = (short)(Float.floatToRawIntBits(f_adjust) & 0x07ff);
             } else {
@@ -1170,7 +1170,7 @@ public final class Float extends Number
                 int round =  doppel & 0x0000_1000;
                 int sticky = doppel & 0x0000_0fff;
 
-                if (round != 0 && (lsb != 0 || sticky != 0 )) {
+                if (round != 0 && ((lsb | sticky) != 0 )) {
                     signif_bits++;
                 }
             }
