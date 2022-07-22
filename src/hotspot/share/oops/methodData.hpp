@@ -38,8 +38,8 @@
 class BytecodeStream;
 
 // The MethodData object collects counts and other profile information
-// during zeroth-tier (interpreter) and third-tier (C1 with full profiling)
-// execution.
+// during execution at the zeroth-tier (interpreter) and third-tier (C1
+// with full profiling).
 // The profile is used later by compilation heuristics.  Some heuristics
 // enable use of aggressive (or "heroic") optimizations.  An aggressive
 // optimization often has a down-side, a corner case that it handles
