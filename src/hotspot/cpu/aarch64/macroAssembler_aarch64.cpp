@@ -338,8 +338,9 @@ public:
     return 2;
   }
   static int adrpMovk_impl(address insn_addr, address &target) {
+    uintptr_t dest = uintptr_t(target);
     Instruction_aarch64::patch(insn_addr + sizeof (uint32_t), 20, 5, (uintptr_t)target >> 32);
-    uintptr_t dest = (dest & 0xffffffffULL) | (uintptr_t(insn_addr) & 0xffff00000000ULL);
+    dest = (dest & 0xffffffffULL) | (uintptr_t(insn_addr) & 0xffff00000000ULL);
     target = address(dest);
     return 2;
   }
