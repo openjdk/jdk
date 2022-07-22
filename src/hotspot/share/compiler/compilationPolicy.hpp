@@ -42,9 +42,9 @@ class CompileQueue;
  *
  * Note: The MethodData object is specific to the interpreter, when execution progresses to
  * levels 2 and 3, profile data collection utilizes the separate ciMethodData instead. If any
- * profiling information was collected from the interpreter (The method has a non-null
- * MDO), all data from the MDO will be loaded into the ciMethodData when it is first created.
- * (See ciMethod::method_data(), in ciMethod.cpp)
+ * profiling information was collected from the interpreter (The method has a non-null MDO),
+ * all data from the MDO will be loaded into the ciMethodData when it is first created.
+ * (See ciMethod::method_data() in ciMethod.cpp for more details)
  *
  * Levels 0, 2 and 3 periodically notify the runtime about the current value of the counters
  * (invocation counters and backedge counters). The frequency of these notifications is
