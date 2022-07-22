@@ -221,6 +221,14 @@ void ZHeap::flip_to_remapped() {
 void ZHeap::mark_start() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
 
+  if (ZHeap::heap()->has_alloc_stalled()) {
+    // If there are stalled allocations, ensure that regardless of the
+    // cause of the GC, we have to clear soft references, as we are just
+    // about to increment the sequence number, and all previous allocations
+    // will throw if not presented with enough memory.
+    ZHeap::heap()->set_soft_reference_policy(true);
+  }
+
   // Flip address view
   flip_to_marked();
 
