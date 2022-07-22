@@ -514,7 +514,7 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
             entries = ne.entries;
             refEx = ne.refEx;
             listArg = ne.listArg;
-			// record a previous exception and quit if any limit is reached
+            // record a previous exception and quit if any limit is reached
             if (errEx == null || ne.errEx instanceof LimitExceededException) {
                 errEx = ne.errEx;
             }
@@ -525,7 +525,7 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
             Reference.reachabilityFence(ne);
             Reference.reachabilityFence(this);
         }
-	}
+    }
 
     protected final void cleanup() {
         // Run the cleaning action (if it has not run already)
