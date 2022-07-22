@@ -461,8 +461,8 @@ extends ByteArrayOutputStream implements DerEncoder {
      * @param s the string to write
      * @param stringTag one of the DER string tags that indicate which
      * encoding should be used to write the string out.
-     * @param charset the charset should be used corresponding to the
-     * above tag.
+     * @param charset the charset that should be used corresponding to
+     * the above tag.
      */
     private void writeString(String s, byte stringTag, Charset charset)
         throws IOException {
