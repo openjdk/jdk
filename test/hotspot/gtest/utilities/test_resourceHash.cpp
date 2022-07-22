@@ -304,6 +304,7 @@ class ResourceHashtableDeleteTest : public ::testing::Test {
         Symbol* s() const { return _s; }
     };
 
+    // ResourceHashtable whose value is a copy of TestValue.
     ResourceHashtable<Symbol*, TestValue, 107, ResourceObj::C_HEAP, mtTest> _test_table;
 
     class Deleter : public StackObj {
@@ -316,6 +317,13 @@ class ResourceHashtableDeleteTest : public ::testing::Test {
           // entry will be gone at once.
           return true;
         }
+    };
+
+    // ResourceHashtable whose value is a pointer to TestValue.
+    ResourceHashtable<Symbol*, TestValue*, 107, ResourceObj::C_HEAP, mtTest> _ptr_test_table;
+
+    class PtrDeleter : public StackObj {
+      public:
         bool do_entry(Symbol*& key, TestValue*& value) {
           // decrement the refcount in key or not?
           // Since we incremented the key, in this case, we should decrement it.
@@ -330,7 +338,6 @@ class ResourceHashtableDeleteTest : public ::testing::Test {
         }
     };
 
-    ResourceHashtable<Symbol*, TestValue*, 107, ResourceObj::C_HEAP, mtTest> _ptr_test_table;
 };
 
 TEST_VM_F(ResourceHashtableDeleteTest, check_delete) {
@@ -381,9 +388,9 @@ TEST_VM_F(ResourceHashtableDeleteTest, check_delete_ptr) {
   }
   ASSERT_EQ(s->refcount(), s_orig_count + 2) << "refcount not copied";
 
-  // Deleting this value from a hashtable must call the destructor in the
+  // Deleting this pointer value from a hashtable must call the destructor in the
   // do_entry function.
-  Deleter deleter;
+  PtrDeleter deleter;
   _ptr_test_table.unlink(&deleter);
   // Removal should make the refcount be the original refcount.
   ASSERT_EQ(s->refcount(), s_orig_count) << "refcount now decremented";
