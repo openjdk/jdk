@@ -95,7 +95,7 @@ public class TestJitRestart {
             }
         }
         // in some seldom cases we do not see the JitRestart event; but then
-        // do not fail (as long as no compilation happened before) 
+        // do not fail (as long as no compilation happened before)
         return true;
     }
 
