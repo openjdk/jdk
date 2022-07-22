@@ -119,6 +119,23 @@ public class ProgressMonitorInputStream extends FilterInputStream
         return c;
     }
 
+    private void setProgress(int nr) throws IOException {
+        if (nr > 0) {
+            if (nread + nr > nread) {
+                monitor.setProgress(nread += nr);
+            } else {
+                monitor.setProgress(monitor.getMaximum() - 1);
+            }
+        } else { // if EOF reached
+            monitor.setProgress(monitor.getMaximum());
+        }
+        if (monitor.isCanceled()) {
+            InterruptedIOException exc =
+                    new InterruptedIOException("progress");
+            exc.bytesTransferred = nread;
+            throw exc;
+        }
+    }
 
     /**
      * Overrides <code>FilterInputStream.read</code>
@@ -126,19 +143,7 @@ public class ProgressMonitorInputStream extends FilterInputStream
      */
     public int read(byte[] b) throws IOException {
         int nr = in.read(b);
-        if (nr > 0) {
-            if (nread + nr > nread) {
-                monitor.setProgress(nread += nr);
-            } else {
-                monitor.setProgress(monitor.getMaximum());
-            }
-        }
-        if (monitor.isCanceled()) {
-            InterruptedIOException exc =
-                                    new InterruptedIOException("progress");
-            exc.bytesTransferred = nread;
-            throw exc;
-        }
+        setProgress(nr);
         return nr;
     }
 
@@ -151,19 +156,7 @@ public class ProgressMonitorInputStream extends FilterInputStream
                     int off,
                     int len) throws IOException {
         int nr = in.read(b, off, len);
-        if (nr > 0) {
-            if (nread + nr > nread) {
-                monitor.setProgress(nread += nr);
-            } else {
-                monitor.setProgress(monitor.getMaximum());
-            }
-        }
-        if (monitor.isCanceled()) {
-            InterruptedIOException exc =
-                                    new InterruptedIOException("progress");
-            exc.bytesTransferred = nread;
-            throw exc;
-        }
+        setProgress(nr);
         return nr;
     }
 
@@ -175,7 +168,7 @@ public class ProgressMonitorInputStream extends FilterInputStream
     public long skip(long n) throws IOException {
         long nr = in.skip(n);
         if (nr > 0) {
-            if (nread + nr > nread) {
+            if ((int)(nread + nr) > nread) {
                 monitor.setProgress(nread += nr);
             } else {
                 monitor.setProgress(monitor.getMaximum());
