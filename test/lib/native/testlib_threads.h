@@ -30,16 +30,11 @@
 #include <stdio.h>
 
 #ifdef _WIN32
-
 #include <windows.h>
-typedef HANDLE THREAD_ID;
-
-#else // !_WIN32
-
+#else
 #include <unistd.h>
 #include <pthread.h>
-typedef pthread_t THREAD_ID;
-#endif // !_WIN32
+#endif
 
 extern "C" {
 
@@ -50,9 +45,14 @@ struct Helper {
     void* context;
 };
 
+static void fatal(const char* message) {
+    perror(message);
+    exit(-1);
+}
+
 #ifdef _WIN32
 static DWORD __stdcall procedure(void* ctxt) {
-#else // !windows
+#else
 void* procedure(void* ctxt) {
 #endif
     Helper* helper = (Helper*)ctxt;
@@ -67,19 +67,19 @@ void run_async(PROCEDURE proc, void* context) {
 #ifdef _WIN32
     HANDLE thread = CreateThread(NULL, 0, procedure, &helper, 0, NULL);
     if (thread == NULL) {
-        perror("failed to create thread");
+        fatal("failed to create thread");
     }
     if (WaitForSingleObject(thread, INFINITE) != WAIT_OBJECT_0) {
-        perror("failed to join thread");
+        fatal("failed to join thread");
     }
 #else
     pthread_t thread;
     int result = pthread_create(&thread, NULL, procedure, &helper);
     if (result != 0) {
-        perror("failed to create thread");
+        fatal("failed to create thread");
     }
     if (pthread_join(thread, NULL) != 0) {
-        perror("failed to join thread");
+        fatal("failed to join thread");
     }
 #endif
 }
