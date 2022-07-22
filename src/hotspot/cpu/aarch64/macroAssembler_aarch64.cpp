@@ -148,7 +148,6 @@ extern "C" void disnm(intptr_t p);
 class RelocActions {
 protected:
   typedef int (*reloc_insn)(address insn_addr, address &target);
-  typedef int (*reloc_insn1)(address insn_addr, address &target);
 
   virtual reloc_insn adrpMem() = 0;
   virtual reloc_insn adrpAdd() = 0;
@@ -339,7 +338,6 @@ public:
     return 2;
   }
   static int adrpMovk_impl(address insn_addr, address &target) {
-    fprintf(stderr, "Patch adrp; movk: pc=%p, dest=%p\n", insn_addr, target);
     Instruction_aarch64::patch(insn_addr + sizeof (uint32_t), 20, 5, (uintptr_t)target >> 32);
     uintptr_t dest = (dest & 0xffffffffULL) | (uintptr_t(insn_addr) & 0xffff00000000ULL);
     target = address(dest);
@@ -469,7 +467,6 @@ public:
     ptrdiff_t byte_offset;
     if (offset_for(insn, insn3, byte_offset)) {
       target += byte_offset;
-      fprintf(stderr, "Decod adrp; movk: pc=%p, dest=%p\n", insn_addr, target);
       return 3;
     } else {
       return 2;
@@ -4615,7 +4612,7 @@ void MacroAssembler::adrp(Register reg1, const Address &dest, uint64_t &byte_off
   int64_t offset_low = dest_page - low_page;
   int64_t offset_high = dest_page - high_page;
 
-  //   assert(is_valid_AArch64_address(dest.target()), "bad address");
+  assert(is_valid_AArch64_address(dest.target()), "bad address");
   assert(dest.getMode() == Address::literal, "ADRP must be applied to a literal address");
 
   InstructionMark im(this);
@@ -4631,7 +4628,6 @@ void MacroAssembler::adrp(Register reg1, const Address &dest, uint64_t &byte_off
 
     _adrp(reg1, (address)adrp_target);
     movk(reg1, target >> 32, 32);
-    fprintf(stderr, "creat; movk: pc=%p, adrp_target=%p\n", pc(), (address)adrp_target);
   }
   byte_offset = (uint64_t)dest.target() & 0xfff;
 }
