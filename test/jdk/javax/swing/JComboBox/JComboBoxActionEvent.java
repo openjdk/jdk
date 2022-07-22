@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8290399
+ * @requires (os.family == "mac")
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @summary Tests if AquaL&F fire actionevent if combobox menu is displayed.
