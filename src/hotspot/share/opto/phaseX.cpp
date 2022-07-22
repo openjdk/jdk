@@ -1640,6 +1640,13 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
         if (imem != NULL)  add_users_to_worklist0(imem);
       }
     }
+    if (use_op == Op_AllocateArray && n == use->in(AllocateNode::ValidLengthTest)) {
+      Node* p = use->as_AllocateArray()->proj_out_or_null(TypeFunc::Control);
+      if (p != NULL) {
+        add_users_to_worklist0(p);
+      }
+    }
+
     if (use_op == Op_Initialize) {
       Node* imem = use->as_Initialize()->proj_out_or_null(TypeFunc::Memory);
       if (imem != NULL)  add_users_to_worklist0(imem);
@@ -1843,8 +1850,9 @@ void PhaseCCP::push_phis(Unique_Node_List& worklist, const Node* use) const {
 
 // If we changed the receiver type to a call, we need to revisit the Catch node following the call. It's looking for a
 // non-NULL receiver to know when to enable the regular fall-through path in addition to the NullPtrException path.
+// Same if true if the type of a ValidLengthTest input to an AllocateArrayNode changes
 void PhaseCCP::push_catch(Unique_Node_List& worklist, const Node* use) {
-  if (use->is_Call()) {
+  if (use->is_Call() || use->is_AllocateArray()) {
     for (DUIterator_Fast imax, i = use->fast_outs(imax); i < imax; i++) {
       Node* proj = use->fast_out(i);
       if (proj->is_Proj() && proj->as_Proj()->_con == TypeFunc::Control) {
