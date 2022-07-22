@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "code/compressedStream.hpp"
 #include "code/nmethod.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/deoptimization.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/hashtable.hpp"
@@ -683,7 +684,7 @@ class DepChange : public StackObj {
   virtual bool is_klass_init_change() const { return false; }
   virtual bool is_call_site_change()  const { return false; }
 
-  virtual void mark_for_deoptimization(nmethod* nm) = 0;
+  virtual void mark_for_deoptimization(nmethod* nm, Deoptimization::MarkFn mark_fn) = 0;
 
   // Subclass casting with assertions.
   KlassDepChange*    as_klass_change() {
@@ -781,8 +782,8 @@ class KlassDepChange : public DepChange {
   // What kind of DepChange is this?
   virtual bool is_klass_change() const { return true; }
 
-  virtual void mark_for_deoptimization(nmethod* nm) {
-    nm->mark_for_deoptimization(/*inc_recompile_counts=*/true);
+  virtual void mark_for_deoptimization(nmethod* nm, Deoptimization::MarkFn mark_fn) {
+    mark_fn(nm, true /* inc_recompile_counts */);
   }
 
   InstanceKlass* type() { return _type; }
@@ -823,8 +824,8 @@ class CallSiteDepChange : public DepChange {
   // What kind of DepChange is this?
   virtual bool is_call_site_change() const { return true; }
 
-  virtual void mark_for_deoptimization(nmethod* nm) {
-    nm->mark_for_deoptimization(/*inc_recompile_counts=*/false);
+  virtual void mark_for_deoptimization(nmethod* nm, Deoptimization::MarkFn mark_fn) {
+    mark_fn(nm, false /* inc_recompile_counts */);
   }
 
   oop call_site()     const { return _call_site();     }

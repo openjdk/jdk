@@ -30,6 +30,7 @@
 #include "classfile/vmClasses.hpp"
 #include "code/codeCache.hpp"
 #include "code/debugInfoRec.hpp"
+#include "code/dependencies.hpp"
 #include "code/nmethod.hpp"
 #include "code/pcDesc.hpp"
 #include "code/scopeDesc.hpp"
@@ -920,19 +921,171 @@ class DeoptimizeMarkedClosure : public HandshakeClosure {
   }
 };
 
-void Deoptimization::deoptimize_all_marked(nmethod* nmethod_only) {
+bool Deoptimization::deoptimize_all_marked() {
+  assert_locked_or_safepoint(Compile_lock);
+  CompiledMethod* nm = CompiledMethod::take_root();
+  bool anything_deoptimized = false;
+  if (nm != nullptr) {
+    SweeperBlocker sw;
+    anything_deoptimized = true;
+    do {
+      assert(nm->is_marked_for_deoptimization(), "All methods in list must be marked");
+      if (!nm->has_been_deoptimized() && nm->can_be_deoptimized()) {
+        nm->make_not_entrant();
+        make_nmethod_deoptimized(nm);
+      }
+      nm = nm->next_marked();
+    } while(nm != nullptr);
+  }
+  return anything_deoptimized;
+}
+
+void Deoptimization::make_nmethod_deoptimized(CompiledMethod* nm) {
+  assert_locked_or_safepoint(Compile_lock);
+  if (nm->is_marked_for_deoptimization() && nm->can_be_deoptimized()) {
+    nm->make_deoptimized();
+  }
+}
+
+void Deoptimization::mark_and_deoptimize_all() {
+  assert_locked_or_safepoint(Compile_lock);
+  struct MarkAndDeoptimizeAllClosure : DeoptimizationMarkerClosure {
+    void marker_do(Deoptimization::MarkFn mark_fn) override {
+      MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+      CompiledMethodIterator iter(CompiledMethodIterator::only_alive_and_not_unloading);
+      while(iter.next()) {
+        CompiledMethod* nm = iter.method();
+        if (!nm->is_native_method()) {
+          mark_fn(nm);
+        }
+      }
+    }
+  };
+  MarkAndDeoptimizeAllClosure closure;
+  mark_and_deoptimize(closure);
+}
+
+// Keeps track of time spent for checking dependencies
+NOT_PRODUCT(static elapsedTimer dependentCheckTime;)
+#ifndef PRODUCT
+  void Deoptimization::print_dependency_checking_time(outputStream* stream) {
+    stream->print_cr("nmethod dependency checking time %fs", dependentCheckTime.seconds());
+  }
+#endif
+
+void Deoptimization::mark_and_deoptimize(KlassDepChange& changes) {
+  struct MarkAndDeoptimizeClosure: DeoptimizationMarkerClosure {
+    KlassDepChange& _changes;
+    MarkAndDeoptimizeClosure(KlassDepChange& changes) : _changes(changes) {}
+    void marker_do(Deoptimization::MarkFn mark_fn) override {
+      MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+      // nmethod::check_all_dependencies works only correctly, if no safepoint
+      // can happen
+      NoSafepointVerifier nsv;
+      for (DepChange::ContextStream str(_changes, nsv); str.next(); ) {
+        Klass* d = str.klass();
+        InstanceKlass::cast(d)->mark_dependent_nmethods(_changes, mark_fn);
+      }
+
+#ifndef PRODUCT
+      if (VerifyDependencies) {
+        // Object pointers are used as unique identifiers for dependency arguments. This
+        // is only possible if no safepoint, i.e., GC occurs during the verification code.
+        dependentCheckTime.start();
+        nmethod::check_all_dependencies(_changes);
+        dependentCheckTime.stop();
+      }
+#endif
+    }
+  };
+  MarkAndDeoptimizeClosure closure(changes);
+  Deoptimization::mark_and_deoptimize(closure);
+}
+
+
+// Flushes compiled methods dependent on dependee.
+void Deoptimization::mark_and_deoptimize_dependents_on(InstanceKlass* dependee) {
+  assert_lock_strong(Compile_lock);
+
+  if (CodeCache::number_of_nmethods_with_dependencies() == 0) return;
+
+  if (dependee->is_linked()) {
+    // Class initialization state change.
+    KlassInitDepChange changes(dependee);
+    mark_and_deoptimize(changes);
+  } else {
+    // New class is loaded.
+    NewKlassDepChange changes(dependee);
+    mark_and_deoptimize(changes);
+  }
+}
+
+void Deoptimization::MarkFn::operator()(CompiledMethod* cm, bool inc_recompile_counts) {
+  cm->mark_for_deoptimization(inc_recompile_counts);
+}
+
+void Deoptimization::mark_and_deoptimize(DeoptimizationMarkerClosure& marker_closure) {
+  DeoptimizationMarker dm;
+  bool anything_deoptimized = false;
+  {
+    NoSafepointVerifier nsv;
+    assert_locked_or_safepoint(Compile_lock);
+    marker_closure.marker_do(MarkFn());
+    anything_deoptimized = deoptimize_all_marked();
+  }
+  if (anything_deoptimized) {
+    run_deoptimize_closure();
+  }
+}
+
+void Deoptimization::mark_and_deoptimize_dependents(const methodHandle& m_h) {
+  assert_locked_or_safepoint(Compile_lock);
+  Deoptimization::mark_and_deoptimize_dependents(m_h());
+}
+
+int Deoptimization::mark_dependents(Method* dependee, Deoptimization::MarkFn mark_fn) {
+  MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+  int number_marked = 0;
+  CompiledMethodIterator iter(CompiledMethodIterator::only_alive_and_not_unloading);
+  while(iter.next()) {
+    CompiledMethod* nm = iter.method();
+    if (nm->is_dependent_on_method(dependee)) {
+      mark_fn(nm);
+      ++number_marked;
+    }
+  }
+  return number_marked;
+}
+
+void Deoptimization::mark_and_deoptimize_dependents(Method* dependee) {
+  assert_locked_or_safepoint(Compile_lock);
+  struct MarkAandDeoptimizeDependentsClosure : DeoptimizationMarkerClosure {
+    Method* _dependee;
+    MarkAandDeoptimizeDependentsClosure(Method* dependee) : _dependee(dependee) {}
+    void marker_do(Deoptimization::MarkFn mark_fn) override {
+      mark_dependents(_dependee, mark_fn);
+    }
+  };
+  MarkAandDeoptimizeDependentsClosure closure(dependee);
+  mark_and_deoptimize(closure);
+}
+
+void Deoptimization::mark_and_deoptimize_nmethod(nmethod* nmethod) {
   ResourceMark rm;
   DeoptimizationMarker dm;
+  {
+    assert_locked_or_safepoint(Compile_lock);
+    assert(nmethod != nullptr, "nmethod connot be null");
 
-  // Make the dependent methods not entrant
-  if (nmethod_only != NULL) {
-    nmethod_only->mark_for_deoptimization();
-    nmethod_only->make_not_entrant();
-    CodeCache::make_nmethod_deoptimized(nmethod_only);
-  } else {
-    CodeCache::make_marked_nmethods_deoptimized();
+    nmethod->mark_for_deoptimization();
+    nmethod->make_not_entrant();
+    Deoptimization::make_nmethod_deoptimized(nmethod);
   }
 
+  run_deoptimize_closure();
+}
+
+void Deoptimization::run_deoptimize_closure() {
   DeoptimizeMarkedClosure deopt;
   if (SafepointSynchronize::is_at_safepoint()) {
     Threads::java_threads_do(&deopt);

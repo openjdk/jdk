@@ -68,6 +68,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/deoptimization.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
@@ -1580,7 +1581,7 @@ void SystemDictionary::add_to_hierarchy(InstanceKlass* k) {
   // Now flush all code that depended on old class hierarchy.
   // Note: must be done *after* linking k into the hierarchy (was bug 12/9/97)
   if (Universe::is_fully_initialized()) {
-    CodeCache::flush_dependents_on(k);
+    Deoptimization::mark_and_deoptimize_dependents_on(k);
   }
 }
 

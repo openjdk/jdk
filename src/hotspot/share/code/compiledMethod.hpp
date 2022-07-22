@@ -141,6 +141,7 @@ public:
 class CompiledMethod : public CodeBlob {
   friend class VMStructs;
   friend class NMethodSweeper;
+  friend class Deoptimization;
 
   void init_defaults();
 protected:
@@ -151,8 +152,22 @@ protected:
     deoptimize_done
   };
 
-  MarkForDeoptimizationStatus _mark_for_deoptimization_status; // Used for stack deoptimization
+  struct MarkedCompiledMethodLink;
 
+  static CompiledMethod* _root_mark_link;
+  MarkedCompiledMethodLink* _mark_link;
+
+  static MarkedCompiledMethodLink* mark_link(CompiledMethod* cm, MarkForDeoptimizationStatus mark) {
+    assert(((uintptr_t)cm & 0x3) == 0, "cm pointer must have zero lower two LSB");
+    return (MarkedCompiledMethodLink*)(((uintptr_t)cm & ~0x3) | static_cast<u1>(mark));
+  }
+
+  static MarkForDeoptimizationStatus extract_mark(MarkedCompiledMethodLink* link) {
+    return static_cast<MarkForDeoptimizationStatus>((uintptr_t)link & 0x3);
+  }
+  static CompiledMethod* extract_compiled_method(MarkedCompiledMethodLink* link) {
+    return (CompiledMethod*)((uintptr_t)link & ~0x3);
+  }
   // set during construction
   unsigned int _has_unsafe_access:1;         // May fault due to unsafe access.
   unsigned int _has_method_handle_invokes:1; // Has this method MethodHandle invokes?
@@ -242,11 +257,17 @@ public:
   bool is_at_poll_return(address pc);
   bool is_at_poll_or_poll_return(address pc);
 
-  bool  is_marked_for_deoptimization() const { return _mark_for_deoptimization_status != not_marked; }
-  void  mark_for_deoptimization(bool inc_recompile_counts = true);
+  bool  is_marked_for_deoptimization() const { return extract_mark(_mark_link) != not_marked; }
 
-  bool  has_been_deoptimized() const { return _mark_for_deoptimization_status == deoptimize_done; }
-  void  mark_deoptimized() { _mark_for_deoptimization_status = deoptimize_done; }
+  bool  has_been_deoptimized() const { return extract_mark(_mark_link) == deoptimize_done; }
+
+private:
+  void  mark_for_deoptimization(bool inc_recompile_counts = true);
+  CompiledMethod* next_marked() const;
+  static CompiledMethod* take_root();
+protected:
+  void  mark_deoptimized();
+public:
 
   virtual void  make_deoptimized() { assert(false, "not supported"); };
 
@@ -254,8 +275,8 @@ public:
     // Update recompile counts when either the update is explicitly requested (deoptimize)
     // or the nmethod is not marked for deoptimization at all (not_marked).
     // The latter happens during uncommon traps when deoptimized nmethod is made not entrant.
-    return _mark_for_deoptimization_status != deoptimize_noupdate &&
-           _mark_for_deoptimization_status != deoptimize_done;
+    MarkForDeoptimizationStatus mark_status = extract_mark(_mark_link);
+    return mark_status != deoptimize_noupdate && mark_status != deoptimize_done;
   }
 
   // tells whether frames described by this nmethod can be deoptimized

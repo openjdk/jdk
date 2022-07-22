@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -534,6 +534,9 @@ class VM_RedefineClasses: public VM_Operation {
   bool allow_nested_vm_operations() const        { return true; }
   jvmtiError check_error()                       { return _res; }
   u8 id()                                        { return _id; }
+
+  static void old_nmethods_do(MetadataClosure* f);
+  static void unregister_old_nmethod(CompiledMethod* c);
 
   // Modifiable test must be shared between IsModifiableClass query
   // and redefine implementation

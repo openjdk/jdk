@@ -83,6 +83,9 @@
 #if INCLUDE_JVMCI
 #include "jvmci/jvmciRuntime.hpp"
 #endif
+#if INCLUDE_JVMTI
+#include "prims/jvmtiRedefineClasses.hpp"
+#endif
 
 #ifdef DTRACE_ENABLED
 
@@ -1615,7 +1618,9 @@ void nmethod::flush() {
   }
 
   Universe::heap()->flush_nmethod(this);
-  CodeCache::unregister_old_nmethod(this);
+#if INCLUDE_JVMTI
+  VM_RedefineClasses::unregister_old_nmethod(this);
+#endif
 
   CodeBlob::flush();
   CodeCache::free(this);

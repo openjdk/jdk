@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "oops/oop.hpp"
+#include "runtime/deoptimization.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/safepoint.hpp"
@@ -85,6 +86,7 @@ class DependencyContext : public StackObj {
   void set_dependencies(nmethodBucket* b);
   nmethodBucket* dependencies();
   nmethodBucket* dependencies_not_unloading();
+  nmethodBucket* release_and_get_next_not_unloading(nmethodBucket* b);
 
   static PerfCounter*            _perf_total_buckets_allocated_count;
   static PerfCounter*            _perf_total_buckets_deallocated_count;
@@ -117,10 +119,11 @@ class DependencyContext : public StackObj {
 
   static void init();
 
-  int  mark_dependent_nmethods(DepChange& changes);
+  int  mark_dependent_nmethods(DepChange& changes, Deoptimization::MarkFn mark_fn);
   void add_dependent_nmethod(nmethod* nm);
   void remove_dependent_nmethod(nmethod* nm);
-  int  remove_all_dependents();
+  int  remove_and_mark_all_dependents(Deoptimization::MarkFn mark_fn);
+  void remove_all_dependents();
   void clean_unloading_dependents();
   static void purge_dependency_contexts();
   static void release(nmethodBucket* b);

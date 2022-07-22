@@ -1071,21 +1071,23 @@ void MethodHandles::clean_dependency_context(oop call_site) {
 
 void MethodHandles::flush_dependent_nmethods(Handle call_site, Handle target) {
   assert_lock_strong(Compile_lock);
-
-  int marked = 0;
   CallSiteDepChange changes(call_site, target);
-  {
-    NoSafepointVerifier nsv;
-    MutexLocker mu2(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+  struct FlushDependentNmethodsClosure : DeoptimizationMarkerClosure {
+    Handle& _call_site;
+    CallSiteDepChange& _changes;
+    FlushDependentNmethodsClosure(Handle& call_site, CallSiteDepChange& changes)
+      : _call_site(call_site), _changes(changes) {}
+    void marker_do(Deoptimization::MarkFn mark_fn) override {
+      NoSafepointVerifier nsv;
+      MutexLocker mu2(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
-    oop context = java_lang_invoke_CallSite::context_no_keepalive(call_site());
-    DependencyContext deps = java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(context);
-    marked = deps.mark_dependent_nmethods(changes);
-  }
-  if (marked > 0) {
-    // At least one nmethod has been marked for deoptimization.
-    Deoptimization::deoptimize_all_marked();
-  }
+      oop context = java_lang_invoke_CallSite::context_no_keepalive(_call_site());
+      DependencyContext deps = java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(context);
+      deps.mark_dependent_nmethods(_changes, mark_fn);
+    }
+  };
+  FlushDependentNmethodsClosure closure(call_site, changes);
+  Deoptimization::mark_and_deoptimize(closure);
 }
 
 void MethodHandles::trace_method_handle_interpreter_entry(MacroAssembler* _masm, vmIntrinsics::ID iid) {
@@ -1489,18 +1491,20 @@ JVM_ENTRY(void, MHN_clearCallSiteContext(JNIEnv* env, jobject igcls, jobject con
   {
     // Walk all nmethods depending on this call site.
     MutexLocker mu1(thread, Compile_lock);
-
-    int marked = 0;
-    {
-      NoSafepointVerifier nsv;
-      MutexLocker mu2(THREAD, CodeCache_lock, Mutex::_no_safepoint_check_flag);
-      DependencyContext deps = java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(context());
-      marked = deps.remove_all_dependents();
-    }
-    if (marked > 0) {
-      // At least one nmethod has been marked for deoptimization
-      Deoptimization::deoptimize_all_marked();
-    }
+    struct ClearCallSiteContextDependenciesClosure : DeoptimizationMarkerClosure {
+      Thread* _thread;
+      Handle& _context;
+      ClearCallSiteContextDependenciesClosure(Thread* thread, Handle& context)
+        : _thread(thread), _context(context) {}
+      void marker_do(Deoptimization::MarkFn mark_fn) override {
+        NoSafepointVerifier nsv;
+        MutexLocker mu2(_thread, CodeCache_lock, Mutex::_no_safepoint_check_flag);
+        DependencyContext deps = java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(_context());
+        deps.remove_and_mark_all_dependents(mark_fn);
+      }
+    };
+    ClearCallSiteContextDependenciesClosure closure(THREAD,context);
+    Deoptimization::mark_and_deoptimize(closure);
   }
 }
 JVM_END

@@ -778,8 +778,8 @@ WB_ENTRY(jboolean, WB_IsFrameDeoptimized(JNIEnv* env, jobject o, jint depth))
 WB_END
 
 WB_ENTRY(void, WB_DeoptimizeAll(JNIEnv* env, jobject o))
-  CodeCache::mark_all_nmethods_for_deoptimization();
-  Deoptimization::deoptimize_all_marked();
+  MutexLocker ml(Compile_lock);
+  Deoptimization::mark_and_deoptimize_all();
 WB_END
 
 WB_ENTRY(jint, WB_DeoptimizeMethod(JNIEnv* env, jobject o, jobject method, jboolean is_osr))
@@ -788,16 +788,24 @@ WB_ENTRY(jint, WB_DeoptimizeMethod(JNIEnv* env, jobject o, jobject method, jbool
   CHECK_JNI_EXCEPTION_(env, result);
   MutexLocker mu(Compile_lock);
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
-  if (is_osr) {
-    result += mh->mark_osr_nmethods();
-  } else if (mh->code() != NULL) {
-    mh->code()->mark_for_deoptimization();
-    ++result;
-  }
-  result += CodeCache::mark_for_deoptimization(mh());
-  if (result > 0) {
-    Deoptimization::deoptimize_all_marked();
-  }
+  struct DeoptimizeMethodClosure : DeoptimizationMarkerClosure {
+    jboolean _is_osr;
+    methodHandle& _mh;
+    int& _result;
+    DeoptimizeMethodClosure(jboolean is_osr, methodHandle& mh, int& result)
+      : _is_osr(is_osr), _mh(mh), _result(result) {}
+    void marker_do(Deoptimization::MarkFn mark_fn) override {
+      if (_is_osr) {
+        _result = _mh->mark_osr_nmethods(mark_fn);
+      } else if (_mh->code() != NULL) {
+        mark_fn(_mh->code());
+        ++_result;
+      }
+      _result += Deoptimization::mark_dependents(_mh(), mark_fn);
+    }
+  };
+  DeoptimizeMethodClosure closure(is_osr, mh, result);
+  Deoptimization::mark_and_deoptimize(closure);
   return result;
 WB_END
 

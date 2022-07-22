@@ -4075,6 +4075,51 @@ void VM_RedefineClasses::transfer_old_native_function_registrations(InstanceKlas
   transfer.transfer_registrations(_matching_old_methods, _matching_methods_length);
 }
 
+// RedefineClasses support for saving nmethods that are dependent on "old" methods.
+// We don't really expect this table to grow very large.  If it does, it can become a hashtable.
+static GrowableArray<CompiledMethod*>* old_compiled_method_table = NULL;
+
+static void add_to_old_table(CompiledMethod* c) {
+  if (old_compiled_method_table == NULL) {
+    old_compiled_method_table = new (ResourceObj::C_HEAP, mtCode) GrowableArray<CompiledMethod*>(100, mtCode);
+  }
+  old_compiled_method_table->push(c);
+}
+
+static void reset_old_method_table() {
+  if (old_compiled_method_table != NULL) {
+    delete old_compiled_method_table;
+    old_compiled_method_table = NULL;
+  }
+}
+
+// Remove this method when zombied or unloaded.
+void VM_RedefineClasses::unregister_old_nmethod(CompiledMethod* c) {
+  assert_lock_strong(CodeCache_lock);
+  if (old_compiled_method_table != NULL) {
+    int index = old_compiled_method_table->find(c);
+    if (index != -1) {
+      old_compiled_method_table->delete_at(index);
+    }
+  }
+}
+
+void VM_RedefineClasses::old_nmethods_do(MetadataClosure* f) {
+  // Walk old method table and mark those on stack.
+  int length = 0;
+  if (old_compiled_method_table != NULL) {
+    length = old_compiled_method_table->length();
+    for (int i = 0; i < length; i++) {
+      CompiledMethod* cm = old_compiled_method_table->at(i);
+      // Only walk alive nmethods, the dead ones will get removed by the sweeper or GC.
+      if (cm->is_alive() && !cm->is_unloading()) {
+        old_compiled_method_table->at(i)->metadata_do(f);
+      }
+    }
+  }
+  log_debug(redefine, class, nmethod)("Walked %d nmethods for mark_on_stack", length);
+}
+
 // Deoptimize all compiled code that depends on the classes redefined.
 //
 // If the can_redefine_classes capability is obtained in the onload
@@ -4093,24 +4138,46 @@ void VM_RedefineClasses::transfer_old_native_function_registrations(InstanceKlas
 
 void VM_RedefineClasses::flush_dependent_code() {
   assert(SafepointSynchronize::is_at_safepoint(), "sanity check");
-
-  bool deopt_needed;
-
-  // This is the first redefinition, mark all the nmethods for deoptimization
-  if (!JvmtiExport::all_dependencies_are_recorded()) {
-    log_debug(redefine, class, nmethod)("Marked all nmethods for deopt");
-    CodeCache::mark_all_nmethods_for_evol_deoptimization();
-    deopt_needed = true;
-  } else {
-    int deopt = CodeCache::mark_dependents_for_evol_deoptimization();
-    log_debug(redefine, class, nmethod)("Marked %d dependent nmethods for deopt", deopt);
-    deopt_needed = (deopt != 0);
-  }
-
-  if (deopt_needed) {
-    CodeCache::flush_evol_dependents();
-  }
-
+  struct FlushDependentCodeClosure : DeoptimizationMarkerClosure {
+    void marker_do(Deoptimization::MarkFn mark_fn) override {
+      const bool first_call = !JvmtiExport::all_dependencies_are_recorded();
+      assert(SafepointSynchronize::is_at_safepoint(), "Can only do this at a safepoint!");
+      CompiledMethodIterator iter(CompiledMethodIterator::only_alive);
+      if (first_call) {
+        while(iter.next()) {
+          CompiledMethod* nm = iter.method();
+          if (!nm->method()->is_method_handle_intrinsic()) {
+            if (nm->can_be_deoptimized()) {
+              mark_fn(nm);
+            }
+            if (nm->has_evol_metadata()) {
+              add_to_old_table(nm);
+            }
+          }
+        }
+        log_debug(redefine, class, nmethod)("Marked all nmethods for deopt");
+      } else {
+        // Each redefinition creates a new set of nmethods that have references to "old" Methods
+        // So delete old method table and create a new one.
+        reset_old_method_table();
+        int number_marked = 0;
+        while(iter.next()) {
+          CompiledMethod* nm = iter.method();
+          // Walk all alive nmethods to check for old Methods.
+          // This includes methods whose inline caches point to old methods, so
+          // inline cache clearing is unnecessary.
+          if (nm->has_evol_metadata()) {
+            mark_fn(nm);
+            add_to_old_table(nm);
+            number_marked++;
+          }
+        }
+        log_debug(redefine, class, nmethod)("Marked %d dependent nmethods for deopt", number_marked);
+      }
+    }
+  };
+  FlushDependentCodeClosure closure;
+  Deoptimization::mark_and_deoptimize(closure);
   // From now on we know that the dependency information is complete
   JvmtiExport::set_all_dependencies_are_recorded(true);
 }

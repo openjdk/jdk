@@ -35,6 +35,7 @@
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.hpp"
 #include "oops/typeArrayOop.hpp"
+#include "runtime/deoptimization.hpp"
 #include "utilities/accessFlags.hpp"
 #include "utilities/align.hpp"
 #include "utilities/growableArray.hpp"
@@ -914,8 +915,8 @@ public:
    return method_holder()->lookup_osr_nmethod(this, InvocationEntryBci, level, match_level) != NULL;
   }
 
-  int mark_osr_nmethods() {
-    return method_holder()->mark_osr_nmethods(this);
+  int mark_osr_nmethods(Deoptimization::MarkFn mark_fn) {
+    return method_holder()->mark_osr_nmethods(this, mark_fn);
   }
 
   nmethod* lookup_osr_nmethod_for(int bci, int level, bool match_level) {

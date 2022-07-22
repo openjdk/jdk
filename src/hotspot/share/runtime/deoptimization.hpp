@@ -37,6 +37,8 @@ class ObjectValue;
 class AutoBoxObjectValue;
 class ScopeValue;
 class compiledVFrame;
+class DeoptimizationMarkerClosure;
+class KlassDepChange;
 
 template<class E> class GrowableArray;
 
@@ -148,11 +150,30 @@ class Deoptimization : AllStatic {
   static const int _support_large_access_byte_array_virtualization = 1;
 #endif
 
-  // Make all nmethods that are marked_for_deoptimization not_entrant and deoptimize any live
-  // activations using those nmethods.  If an nmethod is passed as an argument then it is
-  // marked_for_deoptimization and made not_entrant.  Otherwise a scan of the code cache is done to
-  // find all marked nmethods and they are made not_entrant.
-  static void deoptimize_all_marked(nmethod* nmethod_only = NULL);
+private:
+  static void mark_and_deoptimize(KlassDepChange& changes);
+  static bool deoptimize_all_marked();
+  static void make_nmethod_deoptimized(CompiledMethod* nm);
+  static void run_deoptimize_closure();
+
+public:
+  static void mark_and_deoptimize(DeoptimizationMarkerClosure& marker_closure);
+  static void mark_and_deoptimize_nmethod(nmethod* nmethod);
+  static void mark_and_deoptimize_all();
+  static void mark_and_deoptimize_dependents(const methodHandle& dependee);
+  static void mark_and_deoptimize_dependents(Method* dependee);
+  static void mark_and_deoptimize_dependents_on(InstanceKlass* dependee);
+  class MarkFn : StackObj {
+    friend void Deoptimization::mark_and_deoptimize(DeoptimizationMarkerClosure&);
+    MarkFn() {};
+  public:
+    void operator()(CompiledMethod* cm, bool inc_recompile_counts = true);
+  };
+  static int mark_dependents(Method* dependee, Deoptimization::MarkFn mark_fn);
+
+#ifndef PRODUCT
+  static void print_dependency_checking_time(outputStream* stream);
+#endif
 
  public:
   // Deoptimizes a frame lazily. Deopt happens on return to the frame.
@@ -480,6 +501,11 @@ public:
   DeoptimizationMarker()  { _is_active = true; }
   ~DeoptimizationMarker() { _is_active = false; }
   static bool is_active() { return _is_active; }
+};
+
+class DeoptimizationMarkerClosure : StackObj {
+public:
+  virtual void marker_do(Deoptimization::MarkFn mark_fn) = 0;
 };
 
 #endif // SHARE_RUNTIME_DEOPTIMIZATION_HPP

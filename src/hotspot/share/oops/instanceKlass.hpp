@@ -30,6 +30,7 @@
 #include "oops/constMethod.hpp"
 #include "oops/fieldInfo.hpp"
 #include "oops/instanceOop.hpp"
+#include "runtime/deoptimization.hpp"
 #include "runtime/handles.hpp"
 #include "utilities/accessFlags.hpp"
 #include "utilities/align.hpp"
@@ -937,7 +938,7 @@ public:
 
   // maintenance of deoptimization dependencies
   inline DependencyContext dependencies();
-  int  mark_dependent_nmethods(KlassDepChange& changes);
+  int  mark_dependent_nmethods(KlassDepChange& changes, Deoptimization::MarkFn mark_fn);
   void add_dependent_nmethod(nmethod* nm);
   void remove_dependent_nmethod(nmethod* nm);
   void clean_dependency_context();
@@ -947,7 +948,7 @@ public:
   void set_osr_nmethods_head(nmethod* h)     { _osr_nmethods_head = h; };
   void add_osr_nmethod(nmethod* n);
   bool remove_osr_nmethod(nmethod* n);
-  int mark_osr_nmethods(const Method* m);
+  int mark_osr_nmethods(const Method* m, Deoptimization::MarkFn mark_fn);
   nmethod* lookup_osr_nmethod(const Method* m, int bci, int level, bool match_level) const;
 
 #if INCLUDE_JVMTI

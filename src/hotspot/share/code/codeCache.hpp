@@ -73,7 +73,6 @@
 // Solaris and BSD.
 
 class ExceptionCache;
-class KlassDepChange;
 class OopClosure;
 class ShenandoahParallelCodeHeapIterator;
 class NativePostCallNop;
@@ -121,6 +120,7 @@ class CodeCache : AllStatic {
   class Sweep {
     friend class CodeCache;
     template <class T, class Filter, bool is_compiled_method> friend class CodeBlobIterator;
+    friend class SweeperBlocker;
   private:
     static int _compiled_method_iterators;
     static bool _pending_sweep;
@@ -282,30 +282,7 @@ class CodeCache : AllStatic {
   static void verify_clean_inline_caches();
   static void verify_icholder_relocations();
 
-  // Deoptimization
- private:
-  static int  mark_for_deoptimization(KlassDepChange& changes);
-
  public:
-  static void mark_all_nmethods_for_deoptimization();
-  static int  mark_for_deoptimization(Method* dependee);
-  static void make_marked_nmethods_deoptimized();
-  static void make_nmethod_deoptimized(CompiledMethod* nm);
-
-  // Flushing and deoptimization
-  static void flush_dependents_on(InstanceKlass* dependee);
-
-  // RedefineClasses support
-  // Flushing and deoptimization in case of evolution
-  static int  mark_dependents_for_evol_deoptimization();
-  static void mark_all_nmethods_for_evol_deoptimization();
-  static void flush_evol_dependents();
-  static void old_nmethods_do(MetadataClosure* f) NOT_JVMTI_RETURN;
-  static void unregister_old_nmethod(CompiledMethod* c) NOT_JVMTI_RETURN;
-
-  // Support for fullspeed debugging
-  static void flush_dependents_on_method(const methodHandle& dependee);
-
   // tells how many nmethods have dependencies
   static int number_of_nmethods_with_dependencies();
 
@@ -326,6 +303,15 @@ class CodeCache : AllStatic {
   static void print_names(outputStream *out);
 };
 
+class SweeperBlocker : public StackObj {
+  public:
+    SweeperBlocker() {
+      CodeCache::Sweep::begin_compiled_method_iteration();
+    }
+    ~SweeperBlocker() {
+      CodeCache::Sweep::end_compiled_method_iteration();
+    }
+};
 
 // Iterator to iterate over code blobs in the CodeCache.
 template <class T, class Filter, bool is_compiled_method> class CodeBlobIterator : public StackObj {

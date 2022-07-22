@@ -28,6 +28,7 @@
 #include "code/dependencyContext.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/deoptimization.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/perfData.hpp"
@@ -64,7 +65,7 @@ void DependencyContext::init() {
 // are dependent on the changes that were passed in and mark them for
 // deoptimization.  Returns the number of nmethods found.
 //
-int DependencyContext::mark_dependent_nmethods(DepChange& changes) {
+int DependencyContext::mark_dependent_nmethods(DepChange& changes, Deoptimization::MarkFn mark_fn) {
   int found = 0;
   for (nmethodBucket* b = dependencies_not_unloading(); b != NULL; b = b->next_not_unloading()) {
     nmethod* nm = b->get_nmethod();
@@ -78,7 +79,7 @@ int DependencyContext::mark_dependent_nmethods(DepChange& changes) {
         nm->print();
         nm->print_dependencies();
       }
-      changes.mark_for_deoptimization(nm);
+      changes.mark_for_deoptimization(nm, mark_fn);
       found++;
     }
   }
@@ -205,9 +206,28 @@ void DependencyContext::clean_unloading_dependents() {
   }
 }
 
+nmethodBucket* DependencyContext::release_and_get_next_not_unloading(nmethodBucket* b) {
+    nmethodBucket* next = b->next_not_unloading();
+    release(b);
+    return next;
+}
+
 //
 // Invalidate all dependencies in the context
-int DependencyContext::remove_all_dependents() {
+void DependencyContext::remove_all_dependents() {
+  nmethodBucket* b = dependencies_not_unloading();
+  set_dependencies(NULL);
+  int removed = 0;
+  while (b != NULL) {
+    b = release_and_get_next_not_unloading(b);
+    ++removed;
+  }
+  if (UsePerfData && removed > 0) {
+    _perf_total_buckets_deallocated_count->inc(removed);
+  }
+}
+
+int DependencyContext::remove_and_mark_all_dependents(Deoptimization::MarkFn mark_fn) {
   nmethodBucket* b = dependencies_not_unloading();
   set_dependencies(NULL);
   int marked = 0;
@@ -215,13 +235,11 @@ int DependencyContext::remove_all_dependents() {
   while (b != NULL) {
     nmethod* nm = b->get_nmethod();
     if (b->count() > 0 && nm->is_alive() && !nm->is_marked_for_deoptimization()) {
-      nm->mark_for_deoptimization();
-      marked++;
+      mark_fn(nm, true /* inc_recompile_counts */);
+      ++marked;
     }
-    nmethodBucket* next = b->next_not_unloading();
-    removed++;
-    release(b);
-    b = next;
+    b = release_and_get_next_not_unloading(b);
+    ++removed;
   }
   if (UsePerfData && removed > 0) {
     _perf_total_buckets_deallocated_count->inc(removed);

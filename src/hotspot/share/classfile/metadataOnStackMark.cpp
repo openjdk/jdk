@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,9 @@
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci.hpp"
 #endif
+#if INCLUDE_JVMTI
+#include "prims/jvmtiRedefineClasses.hpp"
+#endif
 
 MetadataOnStackBuffer* MetadataOnStackMark::_used_buffers = NULL;
 MetadataOnStackBuffer* MetadataOnStackMark::_free_buffers = NULL;
@@ -67,7 +70,9 @@ MetadataOnStackMark::MetadataOnStackMark(bool walk_all_metadata, bool redefiniti
       // We have to walk the whole code cache during redefinition.
       CodeCache::metadata_do(&md_on_stack);
     } else {
-      CodeCache::old_nmethods_do(&md_on_stack);
+#if INCLUDE_JVMTI
+      VM_RedefineClasses::old_nmethods_do(&md_on_stack);
+#endif
     }
     CompileBroker::mark_on_stack();
     ThreadService::metadata_do(Metadata::mark_on_stack);

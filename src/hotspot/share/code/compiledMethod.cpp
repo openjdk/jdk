@@ -50,11 +50,13 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/sharedRuntime.hpp"
 
+CompiledMethod* CompiledMethod::_root_mark_link = nullptr;
+
 CompiledMethod::CompiledMethod(Method* method, const char* name, CompilerType type, const CodeBlobLayout& layout,
                                int frame_complete_offset, int frame_size, ImmutableOopMapSet* oop_maps,
                                bool caller_must_gc_arguments, bool compiled)
   : CodeBlob(name, type, layout, frame_complete_offset, frame_size, oop_maps, caller_must_gc_arguments, compiled),
-    _mark_for_deoptimization_status(not_marked),
+    _mark_link(nullptr),
     _method(method),
     _gc_data(NULL)
 {
@@ -66,7 +68,7 @@ CompiledMethod::CompiledMethod(Method* method, const char* name, CompilerType ty
                                OopMapSet* oop_maps, bool caller_must_gc_arguments, bool compiled)
   : CodeBlob(name, type, CodeBlobLayout((address) this, size, header_size, cb), cb,
              frame_complete_offset, frame_size, oop_maps, caller_must_gc_arguments, compiled),
-    _mark_for_deoptimization_status(not_marked),
+    _mark_link(nullptr),
     _method(method),
     _gc_data(NULL)
 {
@@ -118,12 +120,35 @@ const char* CompiledMethod::state() const {
 
 //-----------------------------------------------------------------------------
 void CompiledMethod::mark_for_deoptimization(bool inc_recompile_counts) {
-  // assert(can_be_deoptimized(), ""); // in some places we check before marking, in others not.
-  MutexLocker ml(CompiledMethod_lock->owned_by_self() ? NULL : CompiledMethod_lock,
-                 Mutex::_no_safepoint_check_flag);
-  if (_mark_for_deoptimization_status != deoptimize_done) { // can't go backwards
-     _mark_for_deoptimization_status = (inc_recompile_counts ? deoptimize : deoptimize_noupdate);
+  assert_locked_or_safepoint(Compile_lock);
+  MarkForDeoptimizationStatus old_mark = extract_mark(_mark_link);
+  if (old_mark != deoptimize_done) { // can't go backwards
+    MarkForDeoptimizationStatus new_mark = (inc_recompile_counts ? deoptimize : deoptimize_noupdate);
+    if (old_mark == not_marked) {
+      assert(extract_compiled_method(_mark_link) == nullptr, "Compiled Method should not already be linked");
+      _mark_link = mark_link(_root_mark_link, new_mark);
+      _root_mark_link = this;
+    } else {
+      _mark_link = mark_link(nullptr, new_mark);
+    }
   }
+}
+
+CompiledMethod* CompiledMethod::next_marked() const {
+  assert_locked_or_safepoint(Compile_lock);
+  return extract_compiled_method(_mark_link);
+}
+
+CompiledMethod* CompiledMethod::take_root() {
+  assert_locked_or_safepoint(Compile_lock);
+  CompiledMethod* root = _root_mark_link;
+  _root_mark_link = nullptr;
+  return root;
+}
+
+void  CompiledMethod::mark_deoptimized() {
+  assert_locked_or_safepoint(Compile_lock);
+  _mark_link = mark_link(extract_compiled_method(_mark_link), deoptimize_done);
 }
 
 //-----------------------------------------------------------------------------
