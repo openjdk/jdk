@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,10 @@
 /*
  * @test
  * @library /test/lib
- * @bug 8189134
+ * @bug 8189134 8289227
  * @summary Tests the system properties
- * @modules jdk.localedata
  * @build DefaultLocaleTest
- * @run testng/othervm SystemPropertyTests
+ * @run testng SystemPropertyTests
  */
 
 import static jdk.test.lib.process.ProcessTools.executeTestJava;
@@ -40,8 +39,7 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 /**
- * Test Locale.getDefault() reflects the system property. Note that the
- * result may change depending on the CLDR releases.
+ * Test Locale.getDefault() reflects the system property.
  */
 @Test
 public class SystemPropertyTests {
@@ -82,6 +80,23 @@ public class SystemPropertyTests {
              "en_US",
              "en_US",
              "en_US_#u-ca-japanese",
+            },
+
+            // 't' extension
+            {"-Duser.extensions=t-ja",
+             "en_US_#t-ja",
+             "en_US_#t-ja",
+             "en_US_#t-ja",
+            },
+            {"-Duser.extensions=t-ja-m0-bbb-aaa-s0-src-d0-dst",
+             "en_US_#t-ja-d0-dst-m0-bbb-aaa-s0-src",
+             "en_US_#t-ja-d0-dst-m0-bbb-aaa-s0-src",
+             "en_US_#t-ja-d0-dst-m0-bbb-aaa-s0-src",
+            },
+            {"-Duser.extensions=t-aa-bb-cc",
+             "en_US",
+             "en_US",
+             "en_US",
             },
         };
     }

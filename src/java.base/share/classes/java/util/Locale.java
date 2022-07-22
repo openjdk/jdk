@@ -1160,7 +1160,7 @@ public final class Locale implements Cloneable, Serializable {
             exts = new InternalLocaleBuilder()
                 .setExtensions(extensionsProp)
                 .getLocaleExtensions();
-        } catch (LocaleSyntaxException e) {
+        } catch (LocaleSyntaxException | IllformedLocaleException e) {
             // just ignore this incorrect property
         }
 
