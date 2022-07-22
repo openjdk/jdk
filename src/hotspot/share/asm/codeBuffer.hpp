@@ -400,7 +400,8 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
     SECT_LIMIT, SECT_NONE = -1
   };
 
-  typedef ResizeableResourceHashtable<address, LinkedListImpl<int>> SharedTrampolineRequests;
+  typedef LinkedListImpl<int> Offsets;
+  typedef ResizeableResourceHashtable<address, Offsets> SharedTrampolineRequests;
 
  private:
   enum {

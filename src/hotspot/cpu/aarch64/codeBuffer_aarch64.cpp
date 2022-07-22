@@ -28,12 +28,14 @@
 
 void CodeBuffer::share_trampoline_for(address dest, int caller_offset) {
   if (_shared_trampoline_requests == nullptr) {
-    _shared_trampoline_requests = new SharedTrampolineRequests(4, 1024);
+    constexpr unsigned init_size = 8;
+    constexpr unsigned max_size  = 256;
+    _shared_trampoline_requests = new SharedTrampolineRequests(init_size, max_size);
   }
   _shared_trampoline_requests->maybe_grow();
 
   bool p_created;
-  LinkedListImpl<int>* offsets = _shared_trampoline_requests->put_if_absent(dest, &p_created);
+  Offsets* offsets = _shared_trampoline_requests->put_if_absent(dest, &p_created);
   offsets->add(caller_offset);
   _finalize_stubs = true;
 }
@@ -46,7 +48,7 @@ static bool emit_shared_trampolines(CodeBuffer* cb, CodeBuffer::SharedTrampoline
   MacroAssembler masm(cb);
 
   bool p_succeeded = true;
-  auto emit = [&](address dest, LinkedListImpl<int> &offsets) {
+  auto emit = [&](address dest, const CodeBuffer::Offsets &offsets) {
     masm.set_code_section(cb->stubs());
     masm.align(wordSize);
 

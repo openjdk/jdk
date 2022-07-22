@@ -24,7 +24,7 @@
 
 /**
  * @test SharedTrampolineTest
- * @summary Checks that stubs to the interpreter can be shared for static or final method.
+ * @summary Checks that trampolines can be shared for static method.
  * @bug 8280152
  * @library /test/lib
  *
@@ -71,8 +71,8 @@ public class SharedTrampolineTest {
     }
 
     public static void main(String[] args) throws Exception {
-        List<String> compilers = java.util.Arrays.asList("-XX:-TieredCompilation" /* C2 */);
-        List<String> tests = java.util.Arrays.asList("StaticMethodTest");
+        List<String> compilers = List.of("-XX:-TieredCompilation" /* C2 */);
+        List<String> tests = List.of("StaticMethodTest");
         for (String compiler : compilers) {
             for (String test : tests) {
                 runTest(compiler, test);
@@ -103,9 +103,6 @@ public class SharedTrampolineTest {
 
     public static class StaticMethodTest {
         private static void log(int i, String msg) {
-            if (i > ITERATIONS_TO_HEAT_LOOP) {
-                throw new RuntimeException(msg);
-            }
         }
 
         static void test(int i, String[] args) {
