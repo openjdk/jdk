@@ -1123,6 +1123,7 @@ public class FilePane extends JPanel implements PropertyChangeListener {
     class DetailsTableCellRenderer extends DefaultTableCellRenderer {
         JFileChooser chooser;
         DateFormat df;
+        double baseFileSize = 1000.0;
 
         DetailsTableCellRenderer(JFileChooser chooser) {
             this.chooser = chooser;
@@ -1202,12 +1203,12 @@ public class FilePane extends JPanel implements PropertyChangeListener {
                 } else {
                     double kbVal = formatToDoubleValue(len);
                     len = (long)kbVal;
-                    if (kbVal < 1000.0) {
+                    if (kbVal < baseFileSize) {
                         text = MessageFormat.format(kiloByteString, kbVal);
                     } else {
                         double mbVal = formatToDoubleValue(len);
                         len = (long)mbVal;
-                        if (mbVal < 1000.0) {
+                        if (mbVal < baseFileSize) {
                             text = MessageFormat.format(megaByteString, mbVal);
                         } else {
                             double gbVal = formatToDoubleValue(len);
@@ -1227,12 +1228,12 @@ public class FilePane extends JPanel implements PropertyChangeListener {
 
             return this;
         }
-    }
 
-    public double formatToDoubleValue(long len) {
-        DecimalFormat df = new DecimalFormat("0.0");
-        double val = len/1000.0;
-        return  Double.valueOf(df.format(val));
+        public double formatToDoubleValue(long len) {
+            DecimalFormat df = new DecimalFormat("0.0");
+            double val = len/baseFileSize;
+            return  Double.valueOf(df.format(val));
+        }
     }
 
     public JPanel createDetailsView() {
