@@ -21,7 +21,7 @@
  * questions.
  */
 
-/*
+/**
  * @test
  * @bug 8288976
  * @library /test/lib
@@ -31,7 +31,6 @@
  *          java.management
  * @compile C.java
  * @run driver Bad_NCDFE_Msg
- */
 
 import java.io.File;
 import jdk.test.lib.process.ProcessTools;

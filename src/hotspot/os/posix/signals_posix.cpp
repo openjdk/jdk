@@ -38,6 +38,7 @@
 #include "runtime/osThread.hpp"
 #include "runtime/safefetch.hpp"
 #include "runtime/semaphore.inline.hpp"
+#include "runtime/threadCrashProtection.hpp"
 #include "signals_posix.hpp"
 #include "utilities/events.hpp"
 #include "utilities/ostream.hpp"
@@ -584,7 +585,7 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
   // Handle JFR thread crash protection.
   //  Note: this may cause us to longjmp away. Do not use any code before this
   //  point which really needs any form of epilogue code running, eg RAII objects.
-  os::ThreadCrashProtection::check_crash_protection(sig, t);
+  ThreadCrashProtection::check_crash_protection(sig, t);
 
   bool signal_was_handled = false;
 

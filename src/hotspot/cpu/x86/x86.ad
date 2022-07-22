@@ -2164,6 +2164,10 @@ const bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, Bas
   }
 }
 
+const bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
+  return false;
+}
+
 MachOper* Matcher::pd_specialize_generic_vector_operand(MachOper* generic_opnd, uint ideal_reg, bool is_temp) {
   assert(Matcher::is_generic_vector(generic_opnd), "not generic");
   bool legacy = (generic_opnd->opcode() == LEGVEC);

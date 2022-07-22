@@ -229,26 +229,6 @@ private:
   // Helper for monitoring and management support.
   G1MonitoringSupport* _monitoring_support;
 
-  // Records whether the region at the given index is (still) a
-  // candidate for eager reclaim.  Only valid for humongous start
-  // regions; other regions have unspecified values.  Humongous start
-  // regions are initialized at start of collection pause, with
-  // candidates removed from the set as they are found reachable from
-  // roots or the young generation.
-  class HumongousReclaimCandidates : public G1BiasedMappedArray<bool> {
-  protected:
-    bool default_value() const override { return false; }
-  public:
-    void clear() { G1BiasedMappedArray<bool>::clear(); }
-    void set_candidate(uint region, bool value) {
-      set_by_index(region, value);
-    }
-    bool is_candidate(uint region) {
-      return get_by_index(region);
-    }
-  };
-
-  HumongousReclaimCandidates _humongous_reclaim_candidates;
   uint _num_humongous_objects; // Current amount of (all) humongous objects found in the heap.
   uint _num_humongous_reclaim_candidates; // Number of humongous object eager reclaim candidates.
 public:
@@ -590,9 +570,6 @@ public:
   // Does the given region fulfill remembered set based eager reclaim candidate requirements?
   bool is_potential_eager_reclaim_candidate(HeapRegion* r) const;
 
-  // Modify the reclaim candidate set and test for presence.
-  // These are only valid for starts_humongous regions.
-  inline void set_humongous_reclaim_candidate(uint region, bool value);
   inline bool is_humongous_reclaim_candidate(uint region);
 
   // Remove from the reclaim candidate set.  Also remove from the

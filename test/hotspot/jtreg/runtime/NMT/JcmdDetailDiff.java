@@ -57,7 +57,7 @@ public class JcmdDetailDiff {
         pb.start().waitFor();
 
         output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Baseline succeeded");
+        output.shouldContain("Baseline taken");
 
         addr = wb.NMTReserveMemory(reserveSize);
         pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "detail.diff", "scale=KB"});

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -226,13 +226,6 @@ else
   JMOD_FLAGS += --exclude '**{_the.*,_*.marker*,*.diz,*.debuginfo,*.dSYM/**,*.dSYM}'
 endif
 
-# For reproducible builds specify the jmod --date using SOURCE_DATE in ISO-8601
-ifeq ($(ENABLE_REPRODUCIBLE_BUILD), true)
-  JMOD_SOURCE_DATE := --date $(SOURCE_DATE_ISO_8601)
-else
-  JMOD_SOURCE_DATE :=
-endif
-
 # Create jmods in the support dir and then move them into place to keep the
 # module path in $(IMAGES_OUTPUTDIR)/jmods valid at all times.
 $(eval $(call SetupExecute, create_$(JMOD_FILE), \
@@ -244,7 +237,7 @@ $(eval $(call SetupExecute, create_$(JMOD_FILE), \
     COMMAND := $(JMOD) create --module-version $(VERSION_SHORT) \
         --target-platform '$(OPENJDK_MODULE_TARGET_PLATFORM)' \
         --module-path $(JMODS_DIR) $(JMOD_FLAGS) \
-        $(JMOD_SOURCE_DATE) \
+        --date $(SOURCE_DATE_ISO_8601) \
         $(JMODS_SUPPORT_DIR)/$(JMOD_FILE), \
     POST_COMMAND := $(MV) $(JMODS_SUPPORT_DIR)/$(JMOD_FILE) $(JMODS_DIR)/$(JMOD_FILE), \
 ))

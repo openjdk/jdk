@@ -2519,7 +2519,7 @@ int FileMapHeader::compute_crc() {
 bool FileMapHeader::validate() {
   if (_obj_alignment != ObjectAlignmentInBytes) {
     FileMapInfo::fail_continue("The shared archive file's ObjectAlignmentInBytes of %d"
-                  " does not equal the current ObjectAlignmentInBytes of " INTX_FORMAT ".",
+                  " does not equal the current ObjectAlignmentInBytes of %d.",
                   _obj_alignment, ObjectAlignmentInBytes);
     return false;
   }

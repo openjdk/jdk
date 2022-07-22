@@ -129,7 +129,7 @@ const size_t minimumSymbolTableSize = 1024;
           "Use 32-bit class pointers in 64-bit VM. "                        \
           "lp64_product means flag is always constant in 32 bit VM")        \
                                                                             \
-  product(intx, ObjectAlignmentInBytes, 8,                                  \
+  product(int, ObjectAlignmentInBytes, 8,                                   \
           "Default object alignment in bytes, 8 is minimum")                \
           range(8, 256)                                                     \
           constraint(ObjectAlignmentInBytesConstraintFunc, AtParse)
@@ -146,7 +146,7 @@ const size_t minimumSymbolTableSize = 1024;
                            constraint)
 const bool UseCompressedOops = false;
 const bool UseCompressedClassPointers = false;
-const intx ObjectAlignmentInBytes = 8;
+const int ObjectAlignmentInBytes = 8;
 
 #endif // _LP64
 
@@ -474,13 +474,13 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, ExecutingUnitTests, false,                                  \
           "Whether the JVM is running unit tests or not")                   \
                                                                             \
-  develop(uintx, ErrorHandlerTest, 0,                                       \
+  develop(uint, ErrorHandlerTest, 0,                                        \
           "If > 0, provokes an error after VM initialization; the value "   \
           "determines which error to provoke. See controlled_crash() "      \
           "in vmError.cpp.")                                                \
           range(0, 17)                                                      \
                                                                             \
-  develop(uintx, TestCrashInErrorHandler, 0,                                \
+  develop(uint, TestCrashInErrorHandler, 0,                                 \
           "If > 0, provokes an error inside VM error handler (a secondary " \
           "crash). see controlled_crash() in vmError.cpp")                  \
           range(0, 17)                                                      \
@@ -796,7 +796,7 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, RestrictContended, true,                                    \
           "Restrict @Contended to trusted classes")                         \
                                                                             \
-  product(intx, DiagnoseSyncOnValueBasedClasses, 0, DIAGNOSTIC,             \
+  product(int, DiagnoseSyncOnValueBasedClasses, 0, DIAGNOSTIC,              \
              "Detect and take action upon identifying synchronization on "  \
              "value based classes. Modes: "                                 \
              "0: off; "                                                     \
@@ -1609,7 +1609,7 @@ const intx ObjectAlignmentInBytes = 8;
   /* Priorities */                                                          \
   product_pd(bool, UseThreadPriorities,  "Use native thread priorities")    \
                                                                             \
-  product(intx, ThreadPriorityPolicy, 0,                                    \
+  product(int, ThreadPriorityPolicy, 0,                                     \
           "0 : Normal.                                                     "\
           "    VM chooses priorities that are appropriate for normal       "\
           "    applications.                                               "\
@@ -1634,53 +1634,53 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, ThreadPriorityVerbose, false,                               \
           "Print priority changes")                                         \
                                                                             \
-  product(intx, CompilerThreadPriority, -1,                                 \
+  product(int, CompilerThreadPriority, -1,                                  \
           "The native priority at which compiler threads should run "       \
           "(-1 means no change)")                                           \
           range(min_jint, max_jint)                                         \
                                                                             \
-  product(intx, VMThreadPriority, -1,                                       \
+  product(int, VMThreadPriority, -1,                                        \
           "The native priority at which the VM thread should run "          \
           "(-1 means no change)")                                           \
           range(-1, 127)                                                    \
                                                                             \
-  product(intx, JavaPriority1_To_OSPriority, -1,                            \
+  product(int, JavaPriority1_To_OSPriority, -1,                             \
           "Map Java priorities to OS priorities")                           \
           range(-1, 127)                                                    \
                                                                             \
-  product(intx, JavaPriority2_To_OSPriority, -1,                            \
+  product(int, JavaPriority2_To_OSPriority, -1,                             \
           "Map Java priorities to OS priorities")                           \
           range(-1, 127)                                                    \
                                                                             \
-  product(intx, JavaPriority3_To_OSPriority, -1,                            \
+  product(int, JavaPriority3_To_OSPriority, -1,                             \
           "Map Java priorities to OS priorities")                           \
           range(-1, 127)                                                    \
                                                                             \
-  product(intx, JavaPriority4_To_OSPriority, -1,                            \
+  product(int, JavaPriority4_To_OSPriority, -1,                             \
           "Map Java priorities to OS priorities")                           \
           range(-1, 127)                                                    \
                                                                             \
-  product(intx, JavaPriority5_To_OSPriority, -1,                            \
+  product(int, JavaPriority5_To_OSPriority, -1,                             \
           "Map Java priorities to OS priorities")                           \
           range(-1, 127)                                                    \
                                                                             \
-  product(intx, JavaPriority6_To_OSPriority, -1,                            \
+  product(int, JavaPriority6_To_OSPriority, -1,                             \
           "Map Java priorities to OS priorities")                           \
           range(-1, 127)                                                    \
                                                                             \
-  product(intx, JavaPriority7_To_OSPriority, -1,                            \
+  product(int, JavaPriority7_To_OSPriority, -1,                             \
           "Map Java priorities to OS priorities")                           \
           range(-1, 127)                                                    \
                                                                             \
-  product(intx, JavaPriority8_To_OSPriority, -1,                            \
+  product(int, JavaPriority8_To_OSPriority, -1,                             \
           "Map Java priorities to OS priorities")                           \
           range(-1, 127)                                                    \
                                                                             \
-  product(intx, JavaPriority9_To_OSPriority, -1,                            \
+  product(int, JavaPriority9_To_OSPriority, -1,                             \
           "Map Java priorities to OS priorities")                           \
           range(-1, 127)                                                    \
                                                                             \
-  product(intx, JavaPriority10_To_OSPriority,-1,                            \
+  product(int, JavaPriority10_To_OSPriority,-1,                             \
           "Map Java priorities to OS priorities")                           \
           range(-1, 127)                                                    \
                                                                             \
@@ -1760,12 +1760,12 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, PerfDisableSharedMem, false,                                \
           "Store performance data in standard memory")                      \
                                                                             \
-  product(intx, PerfDataMemorySize, 32*K,                                   \
+  product(int, PerfDataMemorySize, 32*K,                                    \
           "Size of performance data memory region. Will be rounded "        \
           "up to a multiple of the native os page size.")                   \
           range(128, 32*64*K)                                               \
                                                                             \
-  product(intx, PerfMaxStringConstLength, 1024,                             \
+  product(int, PerfMaxStringConstLength, 1024,                              \
           "Maximum PerfStringConstant string length before truncation")     \
           range(32, 32*K)                                                   \
                                                                             \
@@ -1775,7 +1775,7 @@ const intx ObjectAlignmentInBytes = 8;
   product(bool, PerfBypassFileSystemCheck, false,                           \
           "Bypass Win32 file system criteria checks (Windows Only)")        \
                                                                             \
-  product(intx, UnguardOnExecutionViolation, 0,                             \
+  product(int, UnguardOnExecutionViolation, 0,                              \
           "Unguard page and retry on no-execute fault (Win32 only) "        \
           "0=off, 1=conservative, 2=aggressive")                            \
           range(0, 2)                                                       \
@@ -1823,7 +1823,7 @@ const intx ObjectAlignmentInBytes = 8;
   product(ccstr, SharedArchiveConfigFile, NULL,                             \
           "Data to add to the CDS archive file")                            \
                                                                             \
-  product(uintx, SharedSymbolTableBucketSize, 4,                            \
+  product(uint, SharedSymbolTableBucketSize, 4,                             \
           "Average number of symbols per bucket in shared table")           \
           range(2, 246)                                                     \
                                                                             \
@@ -1949,7 +1949,7 @@ const intx ObjectAlignmentInBytes = 8;
   product(ccstr, ExtraSharedClassListFile, NULL,                            \
           "Extra classlist for building the CDS archive file")              \
                                                                             \
-  product(intx, ArchiveRelocationMode, 0, DIAGNOSTIC,                       \
+  product(int, ArchiveRelocationMode, 0, DIAGNOSTIC,                        \
            "(0) first map at preferred address, and if "                    \
            "unsuccessful, map at alternative address (default); "           \
            "(1) always map at alternative address; "                        \
@@ -2056,8 +2056,8 @@ const intx ObjectAlignmentInBytes = 8;
              "Mark all threads after a safepoint, and clear on a modify "   \
              "fence. Add cleanliness checks.")                              \
                                                                             \
-  develop(bool, TraceOptimizedUpcallStubs, false,                              \
-                "Trace optimized upcall stub generation")                      \
+  develop(bool, TraceOptimizedUpcallStubs, false,                           \
+                "Trace optimized upcall stub generation")                   \
 
 // end of RUNTIME_FLAGS
 

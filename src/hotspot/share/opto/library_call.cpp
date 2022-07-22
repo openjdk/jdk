@@ -535,6 +535,9 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_expand_i:
   case vmIntrinsics::_expand_l:                 return inline_bitshuffle_methods(intrinsic_id());
 
+  case vmIntrinsics::_compareUnsigned_i:
+  case vmIntrinsics::_compareUnsigned_l:        return inline_compare_unsigned(intrinsic_id());
+
   case vmIntrinsics::_divideUnsigned_i:
   case vmIntrinsics::_divideUnsigned_l:
   case vmIntrinsics::_remainderUnsigned_i:
@@ -1103,7 +1106,7 @@ bool LibraryCallKit::inline_preconditions_checkIndex(BasicType bt) {
 
   // length is now known positive, add a cast node to make this explicit
   jlong upper_bound = _gvn.type(length)->is_integer(bt)->hi_as_long();
-  Node* casted_length = ConstraintCastNode::make(control(), length, TypeInteger::make(0, upper_bound, Type::WidenMax, bt), bt);
+  Node* casted_length = ConstraintCastNode::make(control(), length, TypeInteger::make(0, upper_bound, Type::WidenMax, bt), ConstraintCastNode::RegularDependency, bt);
   casted_length = _gvn.transform(casted_length);
   replace_in_map(length, casted_length);
   length = casted_length;
@@ -1131,7 +1134,7 @@ bool LibraryCallKit::inline_preconditions_checkIndex(BasicType bt) {
   }
 
   // index is now known to be >= 0 and < length, cast it
-  Node* result = ConstraintCastNode::make(control(), index, TypeInteger::make(0, upper_bound, Type::WidenMax, bt), bt);
+  Node* result = ConstraintCastNode::make(control(), index, TypeInteger::make(0, upper_bound, Type::WidenMax, bt), ConstraintCastNode::RegularDependency, bt);
   result = _gvn.transform(result);
   set_result(result);
   replace_in_map(index, result);
@@ -2241,6 +2244,22 @@ bool LibraryCallKit::inline_bitshuffle_methods(vmIntrinsics::ID id) {
     case vmIntrinsics::_expand_i:    n = new ExpandBitsNode(argument(0),  argument(1), TypeInt::INT); break;
     case vmIntrinsics::_compress_l:  n = new CompressBitsNode(argument(0), argument(2), TypeLong::LONG); break;
     case vmIntrinsics::_expand_l:    n = new ExpandBitsNode(argument(0), argument(2), TypeLong::LONG); break;
+    default:  fatal_unexpected_iid(id);  break;
+  }
+  set_result(_gvn.transform(n));
+  return true;
+}
+
+//--------------------------inline_number_methods-----------------------------
+// inline int Integer.compareUnsigned(int, int)
+// inline int    Long.compareUnsigned(long, long)
+bool LibraryCallKit::inline_compare_unsigned(vmIntrinsics::ID id) {
+  Node* arg1 = argument(0);
+  Node* arg2 = (id == vmIntrinsics::_compareUnsigned_l) ? argument(2) : argument(1);
+  Node* n = NULL;
+  switch (id) {
+    case vmIntrinsics::_compareUnsigned_i:   n = new CmpU3Node(arg1, arg2);  break;
+    case vmIntrinsics::_compareUnsigned_l:   n = new CmpUL3Node(arg1, arg2); break;
     default:  fatal_unexpected_iid(id);  break;
   }
   set_result(_gvn.transform(n));

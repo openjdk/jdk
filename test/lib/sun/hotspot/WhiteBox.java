@@ -488,6 +488,12 @@ public class WhiteBox {
   public final String AFTER_CONCURRENT_REFERENCE_PROCESSING_STARTED =
     "AFTER CONCURRENT REFERENCE PROCESSING STARTED";
 
+  // G1 specific GC breakpoints.
+  public final String G1_AFTER_REBUILD_STARTED = "AFTER REBUILD STARTED";
+  public final String G1_BEFORE_REBUILD_COMPLETED = "BEFORE REBUILD COMPLETED";
+  public final String G1_AFTER_CLEANUP_STARTED = "AFTER CLEANUP STARTED";
+  public final String G1_BEFORE_CLEANUP_COMPLETED = "BEFORE CLEANUP COMPLETED";
+
   public void concurrentGCAcquireControl() {
     checkConcurrentGCBreakpointsSupported();
     if (concurrentGCIsControlled) {

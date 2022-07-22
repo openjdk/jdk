@@ -234,6 +234,7 @@ bool G1ConcurrentMarkThread::subphase_remark() {
 }
 
 bool G1ConcurrentMarkThread::phase_rebuild_remembered_sets() {
+  ConcurrentGCBreakpoints::at("AFTER REBUILD STARTED");
   G1ConcPhaseTimer p(_cm, "Concurrent Rebuild Remembered Sets");
   _cm->rebuild_rem_set_concurrently();
   return _cm->has_aborted();
@@ -245,12 +246,14 @@ bool G1ConcurrentMarkThread::phase_delay_to_keep_mmu_before_cleanup() {
 }
 
 bool G1ConcurrentMarkThread::phase_cleanup() {
+  ConcurrentGCBreakpoints::at("BEFORE REBUILD COMPLETED");
   VM_G1PauseCleanup op;
   VMThread::execute(&op);
   return _cm->has_aborted();
 }
 
 bool G1ConcurrentMarkThread::phase_clear_bitmap_for_next_mark() {
+  ConcurrentGCBreakpoints::at("AFTER CLEANUP STARTED");
   G1ConcPhaseTimer p(_cm, "Concurrent Cleanup for Next Mark");
   _cm->cleanup_for_next_mark();
   return _cm->has_aborted();
@@ -318,6 +321,7 @@ void G1ConcurrentMarkThread::concurrent_undo_cycle_do() {
 }
 
 void G1ConcurrentMarkThread::concurrent_cycle_end(bool mark_cycle_completed) {
+  ConcurrentGCBreakpoints::at("BEFORE CLEANUP COMPLETED");
   // Update the number of full collections that have been
   // completed. This will also notify the G1OldGCCount_lock in case a
   // Java thread is waiting for a full GC to happen (e.g., it

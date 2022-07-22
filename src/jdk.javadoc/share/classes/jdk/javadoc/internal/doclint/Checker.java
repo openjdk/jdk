@@ -33,6 +33,7 @@ import java.util.Deque;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -47,6 +48,7 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Name;
 import javax.lang.model.element.NestingKind;
+import javax.lang.model.element.RecordComponentElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeKind;
@@ -244,8 +246,10 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         } else if (isExecutable()) {
             if (!isOverridingMethod) {
                 ExecutableElement ee = (ExecutableElement) env.currElement;
-                checkParamsDocumented(ee.getTypeParameters());
-                checkParamsDocumented(ee.getParameters());
+                if (!isCanonicalRecordConstructor(ee)) {
+                    checkParamsDocumented(ee.getTypeParameters());
+                    checkParamsDocumented(ee.getParameters());
+                }
                 switch (ee.getReturnType().getKind()) {
                     case VOID, NONE -> { }
                     default -> {
@@ -261,6 +265,31 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         }
 
         return null;
+    }
+
+    private boolean isCanonicalRecordConstructor(ExecutableElement ee) {
+        TypeElement te = (TypeElement) ee.getEnclosingElement();
+        if (te.getKind() != ElementKind.RECORD) {
+            return false;
+        }
+        List<? extends RecordComponentElement> stateComps = te.getRecordComponents();
+        List<? extends VariableElement> params = ee.getParameters();
+        if (stateComps.size() != params.size()) {
+            return false;
+        }
+
+        Iterator<? extends RecordComponentElement> stateIter = stateComps.iterator();
+        Iterator<? extends VariableElement> paramIter = params.iterator();
+        while (paramIter.hasNext() && stateIter.hasNext()) {
+            VariableElement param = paramIter.next();
+            RecordComponentElement comp = stateIter.next();
+            if (!Objects.equals(param.getSimpleName(), comp.getSimpleName())
+                    || !env.types.isSameType(param.asType(), comp.asType())) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private void reportMissing(String code, Object... args) {

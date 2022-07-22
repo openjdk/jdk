@@ -2735,8 +2735,11 @@ void CompileBroker::print_times(bool per_compiler, bool aggregate) {
   }
 #if INCLUDE_JVMCI
   if (EnableJVMCI) {
-    tty->cr();
-    JVMCICompiler::print_hosted_timers();
+    JVMCICompiler *jvmci_comp = JVMCICompiler::instance(false, JavaThread::current_or_null());
+    if (jvmci_comp != nullptr && jvmci_comp != comp) {
+      tty->cr();
+      jvmci_comp->print_timers();
+    }
   }
 #endif
 

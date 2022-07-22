@@ -96,6 +96,8 @@ vmTestbase/nsk/jdb/repeat/repeat001/repeat001.java
 ####
 ## NSK JDI tests failing with wrapper
 
+vmTestbase/nsk/jdi/ClassType/invokeMethod/invokemethod011/TestDescription.java 8282379 generic-all
+
 ####
 ## The test expects an NPE to be uncaught, but nsk.share.MainWrapper
 ## introduces exception handlers.

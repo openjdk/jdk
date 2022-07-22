@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,6 @@ private:
   SATBMarkQueue           _satb_mark_queue;
   PLAB* _gclab;
   size_t _gclab_size;
-  int  _disarmed_value;
   double _paced_time;
 
   ShenandoahThreadLocalData() :
@@ -54,12 +53,7 @@ private:
     _satb_mark_queue(&ShenandoahBarrierSet::satb_mark_queue_set()),
     _gclab(NULL),
     _gclab_size(0),
-    _disarmed_value(0),
     _paced_time(0) {
-
-    // At least on x86_64, nmethod entry barrier encodes _disarmed_value offset
-    // in instruction as disp8 immed
-    assert(in_bytes(disarmed_value_offset()) < 128, "Offset range check");
   }
 
   ~ShenandoahThreadLocalData() {
@@ -129,10 +123,6 @@ public:
     data(thread)->_paced_time = 0;
   }
 
-  static void set_disarmed_value(Thread* thread, int value) {
-    data(thread)->_disarmed_value = value;
-  }
-
   // Evacuation OOM handling
   static bool is_oom_during_evac(Thread* thread) {
     return data(thread)->_oom_during_evac;
@@ -181,10 +171,6 @@ public:
 
   static ByteSize gc_state_offset() {
     return Thread::gc_data_offset() + byte_offset_of(ShenandoahThreadLocalData, _gc_state);
-  }
-
-  static ByteSize disarmed_value_offset() {
-    return Thread::gc_data_offset() + byte_offset_of(ShenandoahThreadLocalData, _disarmed_value);
   }
 };
 

@@ -28,6 +28,7 @@ import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.cli.*;
+import sun.hotspot.WhiteBox;
 
 /*
  * @test
@@ -35,10 +36,14 @@ import jdk.test.lib.cli.*;
  * @summary Test that various options are deprecated. See deprecated_jvm_flags in arguments.cpp.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @run driver VMDeprecatedOptions
+ * @build sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI VMDeprecatedOptions
+
  */
 public class VMDeprecatedOptions {
 
+    private final static WhiteBox wb = WhiteBox.getWhiteBox();
     /**
      * each entry is {[0]: option name, [1]: value to set
      * (true/false/n/string)}.
@@ -62,6 +67,9 @@ public class VMDeprecatedOptions {
             {"CreateMinidumpOnCrash", "false"}
           }
         ));
+        if (wb.isJFRIncluded()) {
+            deprecated.add(new String[] {"FlightRecorder", "false"});
+        }
         DEPRECATED_OPTIONS = deprecated.toArray(new String[][]{});
     };
 

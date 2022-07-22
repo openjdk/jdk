@@ -691,7 +691,7 @@ Enables or disables specific groups of checks in documentation comments.
 .PP
 \f[I]group\f[R] can have one of the following values:
 \f[CB]accessibility\f[R], \f[CB]html\f[R], \f[CB]missing\f[R],
-\f[CB]reference\f[R], \f[CB]syntax\f[R]
+\f[CB]reference\f[R], \f[CB]syntax\f[R].
 .PP
 The variable \f[I]access\f[R] specifies the minimum visibility level of
 classes and members that the \f[CB]\-Xdoclint\f[R] option checks.
@@ -700,6 +700,11 @@ visible): \f[CB]public\f[R], \f[CB]protected\f[R], \f[CB]package\f[R],
 \f[CB]private\f[R].
 .PP
 The default \f[I]access\f[R] level is \f[CB]private\f[R].
+.PP
+When prefixed by \f[CB]doclint:\f[R], the \f[I]group\f[R] names and
+\f[CB]all\f[R] can be used with \f[CB]\@SuppressWarnings\f[R] to suppress
+warnings about documentation comments in parts of the code being
+compiled.
 .PP
 For more information about these groups of checks, see the
 \f[B]DocLint\f[R] section of the \f[CB]javadoc\f[R] command documentation.
@@ -837,6 +842,10 @@ in text block indentation.
 methods.
 .IP \[bu] 2
 \f[CB]none\f[R]: Disables all warnings.
+.PP
+With the exception of \f[CB]all\f[R] and \f[CB]none\f[R], the keys can be
+used with the \f[CB]\@SuppressWarnings\f[R] annotation to suppress
+warnings in a part of the source code being compiled.
 .PP
 See \f[B]Examples of Using \-Xlint keys\f[R].
 .RE

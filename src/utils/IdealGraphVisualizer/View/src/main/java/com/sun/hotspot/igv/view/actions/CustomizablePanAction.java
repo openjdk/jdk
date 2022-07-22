@@ -43,6 +43,7 @@
  */
 package com.sun.hotspot.igv.view.actions;
 
+import com.sun.hotspot.igv.view.EditorTopComponent;
 import java.awt.Container;
 import java.awt.Point;
 import java.awt.Rectangle;
@@ -90,6 +91,10 @@ public class CustomizablePanAction extends WidgetAction.LockedAdapter {
 
     @Override
     public State mousePressed (Widget widget, WidgetMouseEvent event) {
+        EditorTopComponent editor = EditorTopComponent.getActive();
+        if (editor != null) {
+            editor.requestActive();
+        }
         if (isLocked ())
             return State.createLocked (widget, this);
         if (enabled && (event.getModifiersEx() & modifiersExMask) == modifiersEx) {

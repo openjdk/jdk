@@ -42,6 +42,13 @@ public class TestConcurrentGCBreakpoints {
 
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
 
+    private static void testG1SpecificBreakpoints() {
+        WB.concurrentGCRunTo(WB.G1_AFTER_REBUILD_STARTED);
+        WB.concurrentGCRunTo(WB.G1_BEFORE_REBUILD_COMPLETED);
+        WB.concurrentGCRunTo(WB.G1_AFTER_CLEANUP_STARTED);
+        WB.concurrentGCRunTo(WB.G1_BEFORE_CLEANUP_COMPLETED);
+    }
+
     // All testN() assume initial state is idle, and restore that state.
 
     // Step through the common breakpoints.
@@ -51,10 +58,16 @@ public class TestConcurrentGCBreakpoints {
             // Run one cycle.
             WB.concurrentGCRunTo(WB.AFTER_MARKING_STARTED);
             WB.concurrentGCRunTo(WB.BEFORE_MARKING_COMPLETED);
+            if (GC.G1.isSelected()) {
+                testG1SpecificBreakpoints();
+            }
             WB.concurrentGCRunToIdle();
             // Run a second cycle.
             WB.concurrentGCRunTo(WB.AFTER_MARKING_STARTED);
             WB.concurrentGCRunTo(WB.BEFORE_MARKING_COMPLETED);
+            if (GC.G1.isSelected()) {
+                testG1SpecificBreakpoints();
+            }
             WB.concurrentGCRunToIdle();
         } finally {
             WB.concurrentGCRunToIdle();

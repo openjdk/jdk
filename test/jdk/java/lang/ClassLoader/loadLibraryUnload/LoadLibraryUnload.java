@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, BELLSOFT. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -152,8 +152,7 @@ public class LoadLibraryUnload {
         clazz = null;
         threads = null;
         exceptions.clear();
-        ForceGC gc = new ForceGC();
-        if (!gc.await(() -> wClass.refersTo(null))) {
+        if (!ForceGC.wait(() -> wClass.refersTo(null))) {
             throw new RuntimeException("Class1 hasn't been GC'ed");
         }
     }
