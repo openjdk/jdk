@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -351,6 +351,7 @@ public final class HelloApp {
     public final static class AppOutputVerifier {
         AppOutputVerifier(Path helloAppLauncher) {
             this.launcherPath = helloAppLauncher;
+            this.outputFilePath = TKit.workDir().resolve(OUTPUT_FILENAME);
             this.params = new HashMap<>();
             this.defaultLauncherArgs = new ArrayList<>();
         }
@@ -367,6 +368,8 @@ public final class HelloApp {
         public AppOutputVerifier addParam(String name, String value) {
             if (name.startsWith("param")) {
                 params.put(name, value);
+            } else if ("jpackage.test.appOutput".equals(name)) {
+                outputFilePath = Path.of(value);
             }
             return this;
         }
@@ -397,6 +400,18 @@ public final class HelloApp {
             .collect(Collectors.toList()));
         }
 
+        public void verifyOutput(String... args) {
+            final List<String> launcherArgs = List.of(args);
+            final List<String> appArgs;
+            if (launcherArgs.isEmpty()) {
+                appArgs = defaultLauncherArgs;
+            } else {
+                appArgs = launcherArgs;
+            }
+
+            verifyOutputFile(outputFilePath, appArgs, params);
+        }
+
         public void executeAndVerifyOutput(String... args) {
             executeAndVerifyOutput(false, args);
         }
@@ -408,8 +423,7 @@ public final class HelloApp {
             getExecutor(launcherArgs.toArray(new String[0])).dumpOutput().setRemovePath(
                     removePath).executeAndRepeatUntilExitCode(0, attempts,
                             waitBetweenAttemptsSeconds);
-            Path outputFile = TKit.workDir().resolve(OUTPUT_FILENAME);
-            verifyOutputFile(outputFile, appArgs, params);
+            verifyOutputFile(outputFilePath, appArgs, params);
         }
 
         public void executeAndVerifyOutput(boolean removePath, String... args) {
@@ -453,6 +467,7 @@ public final class HelloApp {
         }
 
         private final Path launcherPath;
+        private Path outputFilePath;
         private final List<String> defaultLauncherArgs;
         private final Map<String, String> params;
     }
