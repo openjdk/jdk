@@ -1029,7 +1029,8 @@ bool StringConcat::validate_control_flow() {
 #ifndef PRODUCT
           if (PrintOptimizeStringConcat) {
             tty->print_cr("unexpected control use of Initialize");
-            use->dump(2);
+            ptr->in(0)->dump(); // Initialize node
+            use->dump(1);
           }
 #endif
           fail = true;
