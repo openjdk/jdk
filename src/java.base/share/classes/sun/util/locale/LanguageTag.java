@@ -34,7 +34,6 @@ package sun.util.locale;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.IllformedLocaleException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -372,7 +371,7 @@ public class LanguageTag {
                 if (isTransformedContentPrefix(singleton)) {
                     try {
                         extension = new TransformedContentExtension(extension.substring(2)).getID();
-                    } catch (IllformedLocaleException e) {
+                    } catch (LocaleSyntaxException e) {
                         sts.errorIndex = start + e.getErrorIndex();
                         sts.errorMsg = e.getMessage();
                         break;

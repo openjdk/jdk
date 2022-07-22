@@ -1160,7 +1160,7 @@ public final class Locale implements Cloneable, Serializable {
             exts = new InternalLocaleBuilder()
                 .setExtensions(extensionsProp)
                 .getLocaleExtensions();
-        } catch (LocaleSyntaxException | IllformedLocaleException e) {
+        } catch (LocaleSyntaxException e) {
             // just ignore this incorrect property
         }
 
@@ -1896,7 +1896,12 @@ public final class Locale implements Cloneable, Serializable {
         InternalLocaleBuilder bldr = new InternalLocaleBuilder();
         bldr.setLanguageTag(tag);
         BaseLocale base = bldr.getBaseLocale();
-        LocaleExtensions exts = bldr.getLocaleExtensions();
+        LocaleExtensions exts = null;
+        try {
+            exts = bldr.getLocaleExtensions();
+        } catch (LocaleSyntaxException e) {
+            // ignore
+        }
         if (exts == null && !base.getVariant().isEmpty()) {
             exts = getCompatibilityExtensions(base.getLanguage(), base.getScript(),
                                               base.getRegion(), base.getVariant());
@@ -3050,7 +3055,12 @@ public final class Locale implements Cloneable, Serializable {
          */
         public Locale build() {
             BaseLocale baseloc = localeBuilder.getBaseLocale();
-            LocaleExtensions extensions = localeBuilder.getLocaleExtensions();
+            LocaleExtensions extensions;
+            try {
+                extensions = localeBuilder.getLocaleExtensions();
+            } catch (LocaleSyntaxException e) {
+                throw new IllformedLocaleException(e.getMessage(), e.getErrorIndex());
+            }
             if (extensions == null && !baseloc.getVariant().isEmpty()) {
                 extensions = getCompatibilityExtensions(baseloc.getLanguage(), baseloc.getScript(),
                         baseloc.getRegion(), baseloc.getVariant());

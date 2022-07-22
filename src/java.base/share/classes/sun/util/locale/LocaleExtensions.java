@@ -70,7 +70,7 @@ public class LocaleExtensions {
      */
     LocaleExtensions(Map<CaseInsensitiveChar, String> extensions,
                      Set<CaseInsensitiveString> uattributes,
-                     Map<CaseInsensitiveString, String> ukeywords) {
+                     Map<CaseInsensitiveString, String> ukeywords) throws LocaleSyntaxException {
         boolean hasExtension = !LocaleUtils.isEmpty(extensions);
         boolean hasUAttributes = !LocaleUtils.isEmpty(uattributes);
         boolean hasUKeywords = !LocaleUtils.isEmpty(ukeywords);

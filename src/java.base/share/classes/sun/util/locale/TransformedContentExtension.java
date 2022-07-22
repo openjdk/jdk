@@ -25,7 +25,6 @@
 package sun.util.locale;
 
 import java.util.Collections;
-import java.util.IllformedLocaleException;
 import java.util.Optional;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -43,7 +42,7 @@ public final class TransformedContentExtension extends Extension {
     private final String sourceLang;
     private final SortedSet<Field> fields;
 
-    TransformedContentExtension(String value) {
+    TransformedContentExtension(String value) throws LocaleSyntaxException {
         super(SINGLETON);
 
         Matcher m = FIELD.matcher(value);
@@ -54,7 +53,7 @@ public final class TransformedContentExtension extends Extension {
             do {
                 var f = new Field(m.group("fsep"), m.group("fval"));
                 if (fields.contains(f)) {
-                    throw new IllformedLocaleException("Field duplicates for the separator '" +
+                    throw new LocaleSyntaxException("Field duplicates for the separator '" +
                             f.fsep() + "' within the Transformed Content extension",
                             m.start() + 1); // +1 for the leading '-' of the duplicated field
                 } else {
@@ -71,7 +70,7 @@ public final class TransformedContentExtension extends Extension {
             var pp = new ParseStatus();
             LanguageTag.parse(sourceLang, pp);
             if (pp.isError()) {
-                throw new IllformedLocaleException("Source language tag is invalid within the t extension: " +
+                throw new LocaleSyntaxException("Source language tag is invalid within the t extension: " +
                         sourceLang);
             }
         }

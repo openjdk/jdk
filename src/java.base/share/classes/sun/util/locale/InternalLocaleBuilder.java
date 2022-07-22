@@ -523,7 +523,7 @@ public final class InternalLocaleBuilder {
         return BaseLocale.getInstance(language, script, region, variant);
     }
 
-    public LocaleExtensions getLocaleExtensions() {
+    public LocaleExtensions getLocaleExtensions() throws LocaleSyntaxException {
         if (LocaleUtils.isEmpty(extensions) && LocaleUtils.isEmpty(uattributes)
             && LocaleUtils.isEmpty(ukeywords)) {
             return null;
