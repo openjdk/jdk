@@ -470,9 +470,9 @@ nmethod* nmethod::new_native_nmethod(const methodHandle& method,
   code_buffer->finalize_oop_references(method);
   // create nmethod
   nmethod* nm = NULL;
+  int native_nmethod_size = CodeBlob::allocation_size(code_buffer, sizeof(nmethod));
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    int native_nmethod_size = CodeBlob::allocation_size(code_buffer, sizeof(nmethod));
 
     CodeOffsets offsets;
     offsets.set_value(CodeOffsets::Verified_Entry, vep_offset);
@@ -525,21 +525,22 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
   code_buffer->finalize_oop_references(method);
   // create nmethod
   nmethod* nm = NULL;
-  { MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 #if INCLUDE_JVMCI
-    int jvmci_data_size = !compiler->is_jvmci() ? 0 : JVMCINMethodData::compute_size(nmethod_mirror_name);
+  int jvmci_data_size = !compiler->is_jvmci() ? 0 : JVMCINMethodData::compute_size(nmethod_mirror_name);
 #endif
-    int nmethod_size =
-      CodeBlob::allocation_size(code_buffer, sizeof(nmethod))
-      + adjust_pcs_size(debug_info->pcs_size())
-      + align_up((int)dependencies->size_in_bytes(), oopSize)
-      + align_up(handler_table->size_in_bytes()    , oopSize)
-      + align_up(nul_chk_table->size_in_bytes()    , oopSize)
+  int nmethod_size =
+    CodeBlob::allocation_size(code_buffer, sizeof(nmethod))
+    + adjust_pcs_size(debug_info->pcs_size())
+    + align_up((int)dependencies->size_in_bytes(), oopSize)
+    + align_up(handler_table->size_in_bytes()    , oopSize)
+    + align_up(nul_chk_table->size_in_bytes()    , oopSize)
 #if INCLUDE_JVMCI
-      + align_up(speculations_len                  , oopSize)
-      + align_up(jvmci_data_size                   , oopSize)
+    + align_up(speculations_len                  , oopSize)
+    + align_up(jvmci_data_size                   , oopSize)
 #endif
-      + align_up(debug_info->data_size()           , oopSize);
+    + align_up(debug_info->data_size()           , oopSize);
+  {
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
     nm = new (nmethod_size, comp_level)
     nmethod(method(), compiler->type(), nmethod_size, compile_id, entry_bci, offsets,

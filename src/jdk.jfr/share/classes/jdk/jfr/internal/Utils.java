@@ -25,9 +25,11 @@
 
 package jdk.jfr.internal;
 
+import static java.util.concurrent.TimeUnit.DAYS;
+import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.NANOSECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.io.FileOutputStream;
@@ -94,7 +96,6 @@ public final class Utils {
      * This field will be lazily initialized and the access is not synchronized.
      * The possible data race is benign and is worth of not introducing any contention here.
      */
-    private static Metrics[] metrics;
     private static Instant lastTimestamp;
 
     public static void checkAccessFlightRecorder() throws SecurityException {
@@ -311,22 +312,22 @@ public final class Utils {
             return Long.parseLong(s.substring(0, s.length() - 2).trim());
         }
         if (s.endsWith("us")) {
-            return NANOSECONDS.convert(Long.parseLong(s.substring(0, s.length() - 2).trim()), MICROSECONDS);
+            return MICROSECONDS.toNanos(Long.parseLong(s.substring(0, s.length() - 2).trim()));
         }
         if (s.endsWith("ms")) {
-            return NANOSECONDS.convert(Long.parseLong(s.substring(0, s.length() - 2).trim()), MILLISECONDS);
+            return MILLISECONDS.toNanos(Long.parseLong(s.substring(0, s.length() - 2).trim()));
         }
         if (s.endsWith("s")) {
-            return NANOSECONDS.convert(Long.parseLong(s.substring(0, s.length() - 1).trim()), SECONDS);
+            return SECONDS.toNanos(Long.parseLong(s.substring(0, s.length() - 1).trim()));
         }
         if (s.endsWith("m")) {
-            return 60 * NANOSECONDS.convert(Long.parseLong(s.substring(0, s.length() - 1).trim()), SECONDS);
+            return MINUTES.toNanos(Long.parseLong(s.substring(0, s.length() - 1).trim()));
         }
         if (s.endsWith("h")) {
-            return 60 * 60 * NANOSECONDS.convert(Long.parseLong(s.substring(0, s.length() - 1).trim()), SECONDS);
+            return HOURS.toNanos(Long.parseLong(s.substring(0, s.length() - 1).trim()));
         }
         if (s.endsWith("d")) {
-            return 24 * 60 * 60 * NANOSECONDS.convert(Long.parseLong(s.substring(0, s.length() - 1).trim()), SECONDS);
+            return DAYS.toNanos(Long.parseLong(s.substring(0, s.length() - 1).trim()));
         }
 
         try {
@@ -698,18 +699,15 @@ public final class Utils {
         }
     }
 
-    public static boolean shouldSkipBytecode(String eventName, Class<?> superClass) {
-        if (superClass.getClassLoader() != null || !superClass.getName().equals("jdk.jfr.events.AbstractJDKEvent")) {
-            return false;
+    public static boolean shouldInstrument(boolean isJDK, String name) {
+        if (!isJDK) {
+            return true;
         }
-        return eventName.startsWith("jdk.Container") && getMetrics() == null;
-    }
-
-    private static Metrics getMetrics() {
-        if (metrics == null) {
-            metrics = new Metrics[]{Metrics.systemMetrics()};
+        if (!name.contains(".Container")) {
+            // Didn't match @Name("jdk.jfr.Container*") or class name "jdk.jfr.events.Container*"
+            return true;
         }
-        return metrics[0];
+        return JVM.getJVM().isContainerized();
     }
 
     private static String formatPositiveDuration(Duration d){

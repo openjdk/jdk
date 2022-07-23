@@ -31,6 +31,7 @@
 #include "memory/allocation.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/universe.hpp"
+#include "oops/stackChunkOop.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/perfDataTypes.hpp"
 #include "runtime/safepoint.hpp"

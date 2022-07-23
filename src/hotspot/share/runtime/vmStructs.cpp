@@ -91,6 +91,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/monitorDeflationThread.hpp"
 #include "runtime/notificationThread.hpp"
@@ -101,7 +102,6 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vframeArray.hpp"
 #include "runtime/vmStructs.hpp"
@@ -238,7 +238,7 @@
   nonstatic_field(InstanceKlass,               _nonstatic_oop_map_size,                       int)                                   \
   nonstatic_field(InstanceKlass,               _is_marked_dependent,                          bool)                                  \
   nonstatic_field(InstanceKlass,               _misc_flags,                                   u2)                                    \
-  nonstatic_field(InstanceKlass,               _init_state,                                   u1)                                    \
+  nonstatic_field(InstanceKlass,               _init_state,                                   InstanceKlass::ClassState)             \
   nonstatic_field(InstanceKlass,               _init_thread,                                  Thread*)                               \
   nonstatic_field(InstanceKlass,               _itable_len,                                   int)                                   \
   nonstatic_field(InstanceKlass,               _reference_type,                               u1)                                    \
@@ -1708,11 +1708,13 @@
   declare_c2_type(CmpNode, SubNode)                                       \
   declare_c2_type(CmpINode, CmpNode)                                      \
   declare_c2_type(CmpUNode, CmpNode)                                      \
+  declare_c2_type(CmpU3Node, CmpUNode)                                    \
   declare_c2_type(CmpPNode, CmpNode)                                      \
   declare_c2_type(CmpNNode, CmpNode)                                      \
   declare_c2_type(CmpLNode, CmpNode)                                      \
   declare_c2_type(CmpULNode, CmpNode)                                     \
   declare_c2_type(CmpL3Node, CmpLNode)                                    \
+  declare_c2_type(CmpUL3Node, CmpULNode)                                  \
   declare_c2_type(CmpFNode, CmpNode)                                      \
   declare_c2_type(CmpF3Node, CmpFNode)                                    \
   declare_c2_type(CmpDNode, CmpNode)                                      \
@@ -2280,6 +2282,7 @@
                                                                           \
   declare_constant(InstanceKlass::allocated)                              \
   declare_constant(InstanceKlass::loaded)                                 \
+  declare_constant(InstanceKlass::being_linked)                           \
   declare_constant(InstanceKlass::linked)                                 \
   declare_constant(InstanceKlass::being_initialized)                      \
   declare_constant(InstanceKlass::fully_initialized)                      \

@@ -33,7 +33,6 @@
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
 #include "memory/allocation.inline.hpp"
-#include "os_share_linux.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
@@ -41,12 +40,12 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/timer.hpp"
 #include "signals_posix.hpp"
 #include "utilities/debug.hpp"
@@ -396,6 +395,10 @@ int os::extra_bang_size_in_bytes() {
   return 0;
 }
 
+static inline void atomic_copy64(const volatile void *src, volatile void *dst) {
+  *(jlong *) dst = *(const jlong *) src;
+}
+
 extern "C" {
   int SpinPause() {
     return 0;
@@ -431,18 +434,19 @@ extern "C" {
       }
     }
   }
+
   void _Copy_conjoint_jlongs_atomic(const jlong* from, jlong* to, size_t count) {
     if (from > to) {
       const jlong *end = from + count;
       while (from < end) {
-        os::atomic_copy64(from++, to++);
+        atomic_copy64(from++, to++);
       }
     } else if (from < to) {
       const jlong *end = from;
       from += count - 1;
       to   += count - 1;
       while (from >= end) {
-        os::atomic_copy64(from--, to--);
+        atomic_copy64(from--, to--);
       }
     }
   }

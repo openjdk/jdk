@@ -30,9 +30,9 @@
 #include "jfr/utilities/jfrTypes.hpp"
 #include "oops/method.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/registerMap.hpp"
-#include "runtime/thread.inline.hpp"
 
 bool JfrGetCallTrace::find_top_frame(frame& top_frame, Method** method, frame& first_frame) {
   assert(top_frame.cb() != NULL, "invariant");

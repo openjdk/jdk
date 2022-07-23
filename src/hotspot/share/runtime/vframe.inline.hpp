@@ -27,10 +27,12 @@
 
 #include "runtime/vframe.hpp"
 
+#include "classfile/javaClasses.inline.hpp"
 #include "oops/stackChunkOop.inline.hpp"
+#include "runtime/continuationJavaClasses.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 
 inline vframeStreamCommon::vframeStreamCommon(RegisterMap reg_map) : _reg_map(reg_map), _cont_entry(NULL) {
   _thread = _reg_map.thread();

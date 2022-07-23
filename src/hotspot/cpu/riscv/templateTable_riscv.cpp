@@ -3834,12 +3834,16 @@ void TemplateTable::monitorenter()
    {
      Label entry, loop;
      // 1. compute new pointers            // esp: old expression stack top
+
+     __ check_extended_sp();
+     __ sub(sp, sp, entry_size);           // make room for the monitor
+     __ sd(sp, Address(fp, frame::interpreter_frame_extended_sp_offset * wordSize));
+
      __ ld(c_rarg1, monitor_block_bot);    // c_rarg1: old expression stack bottom
      __ sub(esp, esp, entry_size);         // move expression stack top
      __ sub(c_rarg1, c_rarg1, entry_size); // move expression stack bottom
      __ mv(c_rarg3, esp);                  // set start value for copy loop
      __ sd(c_rarg1, monitor_block_bot);    // set new monitor block bottom
-     __ sub(sp, sp, entry_size);           // make room for the monitor
 
      __ j(entry);
      // 2. move expression stack contents

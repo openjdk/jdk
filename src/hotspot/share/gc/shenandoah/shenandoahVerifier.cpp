@@ -39,6 +39,7 @@
 #include "oops/compressedOops.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/orderAccess.hpp"
+#include "runtime/threads.hpp"
 #include "utilities/align.hpp"
 
 // Avoid name collision on verify_oop (defined in macroAssembler_arm.hpp)

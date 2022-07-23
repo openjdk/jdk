@@ -354,6 +354,11 @@ void frame::interpreter_frame_set_last_sp(intptr_t* sp) {
     *((intptr_t**)addr_at(interpreter_frame_last_sp_offset)) = sp;
 }
 
+// Used by template based interpreter deoptimization
+void frame::interpreter_frame_set_extended_sp(intptr_t* sp) {
+  *((intptr_t**)addr_at(interpreter_frame_extended_sp_offset)) = sp;
+}
+
 frame frame::sender_for_entry_frame(RegisterMap* map) const {
   assert(map != NULL, "map must be set");
   // Java frame called from C; skip all C frames and return top C
@@ -599,6 +604,7 @@ void frame::describe_pd(FrameValues& values, int frame_no) {
     DESCRIBE_FP_OFFSET(interpreter_frame_last_sp);
     DESCRIBE_FP_OFFSET(interpreter_frame_method);
     DESCRIBE_FP_OFFSET(interpreter_frame_mdp);
+    DESCRIBE_FP_OFFSET(interpreter_frame_extended_sp);
     DESCRIBE_FP_OFFSET(interpreter_frame_mirror);
     DESCRIBE_FP_OFFSET(interpreter_frame_cache);
     DESCRIBE_FP_OFFSET(interpreter_frame_locals);
@@ -670,6 +676,8 @@ void internal_pf(uintptr_t sp, uintptr_t fp, uintptr_t pc, uintptr_t bcx) {
   DESCRIBE_FP_OFFSET(interpreter_frame_last_sp);
   DESCRIBE_FP_OFFSET(interpreter_frame_method);
   DESCRIBE_FP_OFFSET(interpreter_frame_mdp);
+  DESCRIBE_FP_OFFSET(interpreter_frame_extended_sp);
+  DESCRIBE_FP_OFFSET(interpreter_frame_mirror);
   DESCRIBE_FP_OFFSET(interpreter_frame_cache);
   DESCRIBE_FP_OFFSET(interpreter_frame_locals);
   DESCRIBE_FP_OFFSET(interpreter_frame_bcp);
@@ -772,4 +780,3 @@ void JavaFrameAnchor::make_walkable() {
   _last_Java_pc = (address)_last_Java_sp[-1];
   vmassert(walkable(), "something went wrong");
 }
-

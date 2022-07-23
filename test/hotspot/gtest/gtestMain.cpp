@@ -40,6 +40,7 @@
 
 #include "runtime/os.hpp"
 #include "runtime/thread.inline.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // Default value for -new-thread option: true on AIX because we run into
 // problems when attempting to initialize the JVM on the primordial thread.
@@ -193,7 +194,7 @@ static int num_args_to_skip(char* arg) {
 
 static char** remove_test_runner_arguments(int* argcp, char **argv) {
   int argc = *argcp;
-  char** new_argv = (char**) malloc(sizeof(char*) * argc);
+  ALLOW_C_FUNCTION(::malloc, char** new_argv = (char**) malloc(sizeof(char*) * argc);)
   int new_argc = 0;
 
   int i = 0;
@@ -288,6 +289,8 @@ static void runUnitTestsInner(int argc, char** argv) {
   }
 
   int result = RUN_ALL_TESTS();
+
+  ALLOW_C_FUNCTION(::free, ::free(argv);)
 
   // vm_assert and other_vm tests never reach this point as they either abort, or call
   // exit() - see TEST_OTHER_VM macro. We will reach here when all same_vm tests have

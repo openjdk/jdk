@@ -742,7 +742,6 @@ JRT_BLOCK_ENTRY(void, Runtime1::monitorenter(JavaThread* current, oopDesc* obj, 
   }
   assert(obj == lock->obj(), "must match");
   SharedRuntime::monitor_enter_helper(obj, lock->lock(), current);
-  current->inc_held_monitor_count();
 JRT_END
 
 

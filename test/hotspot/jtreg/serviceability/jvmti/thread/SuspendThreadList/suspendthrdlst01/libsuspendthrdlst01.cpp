@@ -176,7 +176,7 @@ static int find_threads_by_name(jvmtiEnv *jvmti, JNIEnv *jni, const char *name, 
         "#   expected: %d",
         name, found, found_count);
     set_agent_fail_status();
-    return NSK_FALSE;
+    return JNI_FALSE;
   }
 
   LOG("Make global references for threads: %d threads\n", found_count);
@@ -184,12 +184,12 @@ static int find_threads_by_name(jvmtiEnv *jvmti, JNIEnv *jni, const char *name, 
     found_threads[i] = (jthread) jni->NewGlobalRef(found_threads[i]);
     if (found_threads[i] == NULL) {
       set_agent_fail_status();
-      return NSK_FALSE;
+      return JNI_FALSE;
     }
     LOG("  ... thread #%d: %p\n", i, found_threads[i]);
   }
 
-  return NSK_TRUE;
+  return JNI_TRUE;
 }
 
 JNIEXPORT jint JNICALL

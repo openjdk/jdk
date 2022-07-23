@@ -72,7 +72,7 @@ public interface ThreadStartRequest extends EventRequest {
      *
      * @since 19
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.VIRTUAL_THREADS)
+    @PreviewFeature(feature = PreviewFeature.Feature.VIRTUAL_THREADS, reflective = true)
     default void addPlatformThreadsOnlyFilter() {
         throw new UnsupportedOperationException("Method not implemented");
     }

@@ -320,18 +320,6 @@ public final class Subject implements java.io.Serializable {
         });
     }
 
-    // Store the current subject in a ThreadLocal when a system property is set.
-    private static final boolean USE_TL = GetBooleanAction
-            .privilegedGetProperty("jdk.security.auth.subject.useTL");
-
-    private static final InheritableThreadLocal<Subject> SUBJECT_THREAD_LOCAL =
-            USE_TL ?
-            new InheritableThreadLocal<>() {
-                @Override protected Subject initialValue() {
-                    return null;
-                }
-            } : null;
-
     /**
      * Returns the current subject.
      * <p>
@@ -347,14 +335,11 @@ public final class Subject implements java.io.Serializable {
      * its parent thread's current subject is changed to another value.
      *
      * @implNote
-     * By default, this method returns the same value as
+     * This method returns the same value as
      * {@code Subject.getSubject(AccessController.getContext())}. This
      * preserves compatibility with code that may still be calling {@code doAs}
-     * which installs the subject in an {@code AccessControlContext}. However,
-     * if the system property {@systemProperty jdk.security.auth.subject.useTL}
-     * is set to {@code true}, the subject is retrieved from an inheritable
-     * {@code ThreadLocal} object. This behavior is subject to
-     * change in a future version.
+     * which installs the subject in an {@code AccessControlContext}. This
+     * behavior is subject to change in a future version.
      *
      * @return the current subject, or {@code null} if a current subject is
      *      not installed or the current subject is set to {@code null}.
@@ -363,9 +348,7 @@ public final class Subject implements java.io.Serializable {
      */
     @SuppressWarnings("removal")
     public static Subject current() {
-        return USE_TL
-            ? SUBJECT_THREAD_LOCAL.get()
-            : getSubject(AccessController.getContext());
+        return getSubject(AccessController.getContext());
     }
 
     /**
@@ -373,18 +356,15 @@ public final class Subject implements java.io.Serializable {
      * current subject.
      *
      * @implNote
-     * By default, this method calls {@link #doAs(Subject, PrivilegedExceptionAction)
+     * This method calls {@link #doAs(Subject, PrivilegedExceptionAction)
      * Subject.doAs(subject, altAction)} which stores the subject in
      * a new {@code AccessControlContext}, where {@code altAction.run()}
      * is equivalent to {@code action.call()} and the exception thrown is
      * modified to match the specification of this method. This preserves
      * compatibility with code that may still be calling
      * {@code getSubject(AccessControlContext)} which retrieves the subject
-     * from an {@code AccessControlContext}. However,
-     * if the system property {@code jdk.security.auth.subject.useTL}
-     * is set to {@code true}, the current subject will be stored in an inheritable
-     * {@code ThreadLocal} object. This behavior is subject to change in a
-     * future version.
+     * from an {@code AccessControlContext}. This behavior is subject
+     * to change in a future version.
      *
      * @param subject the {@code Subject} that the specified {@code action}
      *               will run as.  This parameter may be {@code null}.
@@ -403,27 +383,15 @@ public final class Subject implements java.io.Serializable {
     public static <T> T callAs(final Subject subject,
             final Callable<T> action) throws CompletionException {
         Objects.requireNonNull(action);
-        if (USE_TL) {
-            Subject oldSubject = SUBJECT_THREAD_LOCAL.get();
-            SUBJECT_THREAD_LOCAL.set(subject);
-            try {
-                return action.call();
-            } catch (Exception e) {
-                throw new CompletionException(e);
-            } finally {
-                SUBJECT_THREAD_LOCAL.set(oldSubject);
-            }
-        } else {
-            try {
-                PrivilegedExceptionAction<T> pa = () -> action.call();
-                @SuppressWarnings("removal")
-                var result = doAs(subject, pa);
-                return result;
-            } catch (PrivilegedActionException e) {
-                throw new CompletionException(e.getCause());
-            } catch (Exception e) {
-                throw new CompletionException(e);
-            }
+        try {
+            PrivilegedExceptionAction<T> pa = () -> action.call();
+            @SuppressWarnings("removal")
+            var result = doAs(subject, pa);
+            return result;
+        } catch (PrivilegedActionException e) {
+            throw new CompletionException(e.getCause());
+        } catch (Exception e) {
+            throw new CompletionException(e);
         }
     }
 

@@ -30,10 +30,10 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "memory/universe.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.hpp"
 
 
 #define __ masm->

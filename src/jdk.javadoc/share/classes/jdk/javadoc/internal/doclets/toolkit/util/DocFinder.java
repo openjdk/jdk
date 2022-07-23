@@ -30,7 +30,6 @@ import java.util.*;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.type.TypeMirror;
 
 import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
@@ -252,17 +251,6 @@ public class DocFinder {
             List<ExecutableElement> implementedMethods = vmt.getImplementedMethods(m);
             for (ExecutableElement implementedMethod : implementedMethods) {
                 inheritedSearchInput.element = implementedMethod;
-                output = search(configuration, inheritedSearchInput);
-                output.isValidInheritDocTag = true;
-                if (!output.inlineTags.isEmpty()) {
-                    return output;
-                }
-            }
-        } else if (utils.isTypeElement(input.element)) {
-            TypeMirror t = ((TypeElement) input.element).getSuperclass();
-            Element superclass = utils.asTypeElement(t);
-            if (superclass != null) {
-                inheritedSearchInput.element = superclass;
                 output = search(configuration, inheritedSearchInput);
                 output.isValidInheritDocTag = true;
                 if (!output.inlineTags.isEmpty()) {

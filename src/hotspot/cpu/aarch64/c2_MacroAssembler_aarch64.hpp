@@ -28,6 +28,8 @@
 // C2_MacroAssembler contains high-level macros for C2
 
  public:
+  void emit_entry_barrier_stub(C2EntryBarrierStub* stub) {}
+  static int entry_barrier_stub_size() { return 0; }
 
   void string_compare(Register str1, Register str2,
                       Register cnt1, Register cnt2, Register result,
@@ -64,6 +66,11 @@
   void sve_vmask_tolong(Register dst, PRegister src, BasicType bt, int lane_cnt,
                         FloatRegister vtmp1, FloatRegister vtmp2);
 
+  // Unpack the mask, a long value in src, into predicate register dst based on the
+  // corresponding data type. Note that dst can support at most 64 lanes.
+  void sve_vmask_fromlong(PRegister dst, Register src, BasicType bt, int lane_cnt,
+                          FloatRegister vtmp1, FloatRegister vtmp2);
+
   // SIMD&FP comparison
   void neon_compare(FloatRegister dst, BasicType bt, FloatRegister src1,
                     FloatRegister src2, int cond, bool isQ);
@@ -88,9 +95,11 @@
   void sve_reduce_integral(int opc, Register dst, BasicType bt, Register src1,
                            FloatRegister src2, PRegister pg, FloatRegister tmp);
 
-  // Set elements of the dst predicate to true if the element number is
-  // in the range of [0, lane_cnt), or to false otherwise.
-  void sve_ptrue_lanecnt(PRegister dst, SIMD_RegVariant size, int lane_cnt);
+  // Set elements of the dst predicate to true for lanes in the range of
+  // [0, lane_cnt), or to false otherwise. The input "lane_cnt" should be
+  // smaller than or equal to the supported max vector length of the basic
+  // type. Clobbers: rscratch1 and the rFlagsReg.
+  void sve_gen_mask_imm(PRegister dst, BasicType bt, uint32_t lane_cnt);
 
   // Extract a scalar element from an sve vector at position 'idx'.
   // The input elements in src are expected to be of integral type.

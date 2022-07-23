@@ -41,13 +41,14 @@
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/os.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safefetch.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
@@ -552,14 +553,14 @@ void VMError::report(outputStream* st, bool _verbose) {
   // error handler after a secondary crash works.
   STEP("test secondary crash 1")
     if (_verbose && TestCrashInErrorHandler == TEST_SECONDARY_CRASH) {
-      st->print_cr("Will crash now (TestCrashInErrorHandler=" UINTX_FORMAT ")...",
+      st->print_cr("Will crash now (TestCrashInErrorHandler=%u)...",
         TestCrashInErrorHandler);
       controlled_crash(TestCrashInErrorHandler);
     }
 
   STEP("test secondary crash 2")
     if (_verbose && TestCrashInErrorHandler == TEST_SECONDARY_CRASH) {
-      st->print_cr("Will crash now (TestCrashInErrorHandler=" UINTX_FORMAT ")...",
+      st->print_cr("Will crash now (TestCrashInErrorHandler=%u)...",
         TestCrashInErrorHandler);
       controlled_crash(TestCrashInErrorHandler);
     }

@@ -31,8 +31,8 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.inline.hpp"
-#include "runtime/thread.hpp"
 
 // Constructors
 

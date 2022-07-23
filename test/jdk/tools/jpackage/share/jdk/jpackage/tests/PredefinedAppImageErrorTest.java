@@ -113,6 +113,7 @@ public final class PredefinedAppImageErrorTest {
         Files.createFile(dummyAppFile);
 
         cmd.addArguments("--app-image", dummyAppFolder.toString());
+        cmd.createJPackageXMLFile("PredefinedAppImageErrorTest", "Hello");
     }
 
 }

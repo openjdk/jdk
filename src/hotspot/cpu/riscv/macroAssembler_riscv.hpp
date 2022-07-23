@@ -642,8 +642,19 @@ class MacroAssembler: public Assembler {
   address trampoline_call(Address entry, CodeBuffer* cbuf = NULL);
   address ic_call(address entry, jint method_index = 0);
 
-  void add_memory_int64(const Address dst, int64_t imm);
-  void add_memory_int32(const Address dst, int32_t imm);
+  // Support for memory inc/dec
+  // n.b. increment/decrement calls with an Address destination will
+  // need to use a scratch register to load the value to be
+  // incremented. increment/decrement calls which add or subtract a
+  // constant value other than sign-extended 12-bit immediate will need
+  // to use a 2nd scratch register to hold the constant. so, an address
+  // increment/decrement may trash both t0 and t1.
+
+  void increment(const Address dst, int64_t value = 1);
+  void incrementw(const Address dst, int32_t value = 1);
+
+  void decrement(const Address dst, int64_t value = 1);
+  void decrementw(const Address dst, int32_t value = 1);
 
   void cmpptr(Register src1, Address src2, Label& equal);
 

@@ -58,6 +58,7 @@
 #include "runtime/os.hpp"
 #include "runtime/os_perf.hpp"
 #include "runtime/thread.inline.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/sweeper.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_version.hpp"

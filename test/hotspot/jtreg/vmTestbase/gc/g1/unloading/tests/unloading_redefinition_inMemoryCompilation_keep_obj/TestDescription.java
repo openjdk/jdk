@@ -40,8 +40,8 @@
  * @requires vm.gc.G1
  * @requires vm.opt.ClassUnloading != false
  * @requires vm.opt.ClassUnloadingWithConcurrentMark != false
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm
  *      -Xbootclasspath/a:.
  *      -XX:+UnlockDiagnosticVMOptions
