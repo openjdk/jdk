@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -204,7 +204,7 @@ struct SizeDistributionElement : public CHeapObj<mtCode> {
 //----------------
 //  Because we have to deal with multiple CodeHeaps, we need to
 //  collect "global" information in a segment-specific way as well.
-//  Thats what the CodeHeapStat and CodeHeapStatArray are used for.
+//  That's what the CodeHeapStat and CodeHeapStatArray are used for.
 //  Before a heap segment is processed, the contents of the CodeHeapStat
 //  element is copied to the global variables (get_HeapStatGlobals).
 //  When processing is done, the possibly modified global variables are

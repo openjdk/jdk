@@ -23,14 +23,7 @@
 
 #include <thread>
 
-#include "libTestUpcall.h"
-#ifdef __clang__
-#pragma clang optimize off
-#elif defined __GNUC__
-#pragma GCC optimize ("O0")
-#elif defined _MSC_BUILD
-#pragma optimize( "", off )
-#endif
+#include "shared.h"
 
 template<typename CB>
 void launch_v(CB cb) {

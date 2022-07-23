@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 # This file defines macros that sets up rules for generating java classes
 # from resource bundle properties files.
+
+include JavaCompilation.gmk
 
 ################################################################################
 # Helper macro for SetupCopy-zh_HK.
@@ -56,8 +58,10 @@ endef
 #
 # Remaining parameters are named arguments. These include:
 # SRC_DIRS   Directories containing properties files to process.
+# EXTRA_FILES Also include these specifically named files
 # EXCLUDE   Exclude files matching this pattern.
 # CLASS   The super class for the generated classes.
+# TYPE    Whether to use "langtools" or normal compiler.
 # MODULE_PATH_ROOT   Module path root, defaults to $(TOPDIR)/src.
 # KEEP_ALL_TRANSLATIONS Set to true to skip filtering of excluded translations.
 SetupCompileProperties = $(NamedParamsMacroTemplate)
@@ -69,6 +73,8 @@ define SetupCompilePropertiesBody
 
   # Locate all properties files in the given source dirs.
   $1_SRC_FILES := $$(call FindFiles, $$($1_SRC_DIRS), *.properties)
+
+  $1_SRC_FILES += $$($1_EXTRA_FILES)
 
   ifneq ($$($1_EXCLUDE), )
     $1_SRC_FILES := $$(filter-out $$($1_EXCLUDE), $$($1_SRC_FILES))
@@ -102,13 +108,29 @@ define SetupCompilePropertiesBody
 
   $1_TARGET := $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/_the.$1.marker
   $1_CMDLINE_FILE := $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/_the.$1.cmdline
+  $1_EXEC_MARKER := $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/_the.$1.exec
+
+  ifeq ($$($1_TYPE), langtools)
+    $1_TOOL := -cp $(BUILDTOOLS_OUTPUTDIR)/langtools_tools_classes \
+    compileproperties.CompileProperties
+    $1_TOOL_DEPS := $(BUILD_TOOLS_LANGTOOLS)
+  else
+    $1_TOOL := -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
+    build.tools.compileproperties.CompileProperties
+    $1_TOOL_DEPS := $(BUILD_TOOLS_JDK)
+  endif
+
+  ifeq ($(findstring $(LOG_LEVEL), debug trace), )
+    $1_QUIET := -quiet
+  endif
 
   # Now setup the rule for the generation of the resource bundles.
-  $$($1_TARGET): $$($1_SRC_FILES) $$($1_JAVAS) $(BUILD_TOOLS_JDK)
+  $$($1_TARGET): $$($1_SRC_FILES) $$($1_JAVAS) $$($1_TOOL_DEPS)
 	$$(call LogWarn, Compiling $$(words $$($1_SRC_FILES)) properties into resource bundles for $(MODULE))
 	$$(call MakeDir, $$(@D) $$($1_DIRS))
 	$$(eval $$(call ListPathsSafely, $1_CMDLINE, $$($1_CMDLINE_FILE)))
-	$(TOOL_COMPILEPROPERTIES) -quiet @$$($1_CMDLINE_FILE)
+	$$(call ExecuteWithLog, $$($1_EXEC_MARKER), \
+	    $(JAVA_SMALL) $$($1_TOOL) $$($1_QUIET) @$$($1_CMDLINE_FILE))
 	$(TOUCH) $$@
 
   $$($1_JAVAS): $$($1_SRC_FILES)
@@ -120,5 +142,3 @@ define SetupCompilePropertiesBody
 
   $1 += $$($1_JAVAS) $$($1_TARGET) $$($1_HK)
 endef
-
-################################################################################

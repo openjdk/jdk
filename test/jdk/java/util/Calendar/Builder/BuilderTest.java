@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,8 @@ import java.util.*;
 import static java.util.Calendar.*;
 
 public class BuilderTest {
-    private static final Locale jaJPJP = new Locale("ja", "JP", "JP");
-    private static final Locale thTH = new Locale("th", "TH");
+    private static final Locale jaJPJP = Locale.of("ja", "JP", "JP");
+    private static final Locale thTH = Locale.of("th", "TH");
     private static final TimeZone LA = TimeZone.getTimeZone("America/Los_Angeles");
     private static final TimeZone TOKYO = TimeZone.getTimeZone("Asia/Tokyo");
     private static int error;

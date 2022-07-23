@@ -24,33 +24,120 @@
 
 #include "precompiled.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
-#include "runtime/safefetch.inline.hpp"
+#include "runtime/safefetch.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/vmError.hpp"
 #include "unittest.hpp"
+#include "testutils.hpp"
 
-static const intptr_t pattern = LP64_ONLY(0xABCDABCDABCDABCDULL) NOT_LP64(0xABCDABCD);
-static intptr_t* invalid_address = (intptr_t*)VMError::segfault_address;
+// Note: beyond these tests, there exist additional tests testing that safefetch in error handling
+// (in the context of signal handling) works, see runtime/ErrorHandling
 
-TEST_VM(os, safefetch_can_use) {
-  // Once VM initialization is through,
-  // safefetch should work on every platform.
-  ASSERT_TRUE(CanUseSafeFetch32());
+static const intptr_t patternN = LP64_ONLY(0xABCDABCDABCDABCDULL) NOT_LP64(0xABCDABCD);
+static const int pattern32 = 0xABCDABCD;
+
+static intptr_t* const  bad_addressN = (intptr_t*) VMError::segfault_address;
+static int* const       bad_address32 = (int*) VMError::segfault_address;
+
+static intptr_t dataN[3] =  { 0, patternN, 0 };
+static int data32[3] = { 0, pattern32, 0 };
+static intptr_t* const  good_addressN = dataN + 1;
+static int* const       good_address32 = data32 + 1;
+
+
+void test_safefetchN_positive() {
+  intptr_t a = SafeFetchN(good_addressN, 1);
+  ASSERT_EQ(patternN, a);
 }
 
-TEST_VM(os, safefetch_positive) {
-  intptr_t v = pattern;
-  intptr_t a = SafeFetchN(&v, 1);
-  ASSERT_EQ(v, a);
+static void test_safefetch32_positive() {
+  uint64_t a = SafeFetch32(good_address32, 1);
+  ASSERT_EQ((uint64_t)pattern32, a);
 }
 
-TEST_VM(os, safefetch_negative) {
-  intptr_t a = SafeFetchN(invalid_address, pattern);
-  ASSERT_EQ(pattern, a);
-  a = SafeFetchN(invalid_address, ~pattern);
-  ASSERT_EQ(~pattern, a);
+static void test_safefetchN_negative() {
+  intptr_t a = SafeFetchN(bad_addressN, 0);
+  ASSERT_EQ(0, a);
+  a = SafeFetchN(bad_addressN, -1);
+  ASSERT_EQ(-1, a);
+  a = SafeFetchN(bad_addressN, ~patternN);
+  ASSERT_EQ(~patternN, a);
+  // Also test NULL, but not on AIX, where NULL is readable
+#ifndef AIX
+  a = SafeFetchN(NULL, 0);
+  ASSERT_EQ(0, a);
+  a = SafeFetchN(NULL, ~patternN);
+  ASSERT_EQ(~patternN, a);
+#endif
+}
+
+static void test_safefetch32_negative() {
+  int a = SafeFetch32(bad_address32, 0);
+  ASSERT_EQ(0, a);
+  a = SafeFetch32(bad_address32, -1);
+  ASSERT_EQ(-1, a);
+  a = SafeFetch32(bad_address32, ~pattern32);
+  ASSERT_EQ(~pattern32, a);
+  // Also test NULL, but not on AIX, where NULL is readable
+#ifndef AIX
+  a = SafeFetch32(NULL, 0);
+  ASSERT_EQ(0, a);
+  a = SafeFetch32(NULL, ~pattern32);
+  ASSERT_EQ(~pattern32, a);
+#endif
+}
+
+TEST_VM(os, safefetchN_positive) {
+  test_safefetchN_positive();
+}
+
+TEST_VM(os, safefetch32_positive) {
+  test_safefetch32_positive();
+}
+
+TEST_VM(os, safefetchN_negative) {
+  test_safefetchN_negative();
+}
+
+TEST_VM(os, safefetch32_negative) {
+  test_safefetch32_negative();
+}
+
+// Try with Thread::current being NULL. SafeFetch should work then too.
+// See JDK-8282475
+
+class ThreadCurrentNullMark : public StackObj {
+  Thread* _saved;
+public:
+  ThreadCurrentNullMark() {
+    _saved = Thread::current();
+    Thread::clear_thread_current();
+  }
+  ~ThreadCurrentNullMark() {
+    _saved->initialize_thread_current();
+  }
+};
+
+TEST_VM(os, safefetchN_positive_current_null) {
+  ThreadCurrentNullMark tcnmark;
+  test_safefetchN_positive();
+}
+
+TEST_VM(os, safefetch32_positive_current_null) {
+  ThreadCurrentNullMark tcnmark;
+  test_safefetch32_positive();
+}
+
+TEST_VM(os, safefetchN_negative_current_null) {
+  ThreadCurrentNullMark tcnmark;
+  test_safefetchN_negative();
+}
+
+TEST_VM(os, safefetch32_negative_current_null) {
+  ThreadCurrentNullMark tcnmark;
+  test_safefetch32_negative();
 }
 
 class VM_TestSafeFetchAtSafePoint : public VM_GTestExecuteAtSafepoint {
@@ -58,10 +145,7 @@ public:
   void doit() {
     // Regression test for JDK-8257828
     // Should not crash.
-    intptr_t a = SafeFetchN(invalid_address, pattern);
-    ASSERT_EQ(pattern, a);
-    a = SafeFetchN(invalid_address, ~pattern);
-    ASSERT_EQ(~pattern, a);
+    test_safefetchN_negative();
   }
 };
 

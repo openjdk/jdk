@@ -103,7 +103,7 @@ class MallocSiteTable : AllStatic {
   // The statistics data can be obtained via Jcmd
   // jcmd <pid> VM.native_memory statistics.
 
-  // Currently, (number of buckets / number of entires) ratio is
+  // Currently, (number of buckets / number of entries) ratio is
   // about 1 / 6
   enum {
     table_base_size = 128,   // The base size is calculated from statistics to give
@@ -174,10 +174,6 @@ class MallocSiteTable : AllStatic {
 
  private:
   static MallocSiteHashtableEntry* new_entry(const NativeCallStack& key, MEMFLAGS flags);
-  static void reset();
-
-  // Delete a bucket linked list
-  static void delete_linked_list(MallocSiteHashtableEntry* head);
 
   static MallocSite* lookup_or_add(const NativeCallStack& key, uint32_t* marker, MEMFLAGS flags);
   static MallocSite* malloc_site(uint32_t marker);

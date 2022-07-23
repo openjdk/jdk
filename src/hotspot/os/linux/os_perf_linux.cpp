@@ -153,7 +153,7 @@
                      The bitmap of ignored signals.
 
               34. sigcatch %lu
-                     The bitmap of catched signals.
+                     The bitmap of caught signals.
 
               35. wchan %lu
                      This  is the "channel" in which the process is waiting.  It is the address of a system call, and can be looked up in a namelist if you need
@@ -785,7 +785,7 @@ char* SystemProcessInterface::SystemProcesses::ProcessIterator::get_exe_path() {
 
   jio_snprintf(buffer, PATH_MAX, "/proc/%s/exe", _entry->d_name);
   buffer[PATH_MAX - 1] = '\0';
-  return realpath(buffer, _exePath);
+  return os::Posix::realpath(buffer, _exePath, PATH_MAX);
 }
 
 char* SystemProcessInterface::SystemProcesses::ProcessIterator::allocate_string(const char* str) const {

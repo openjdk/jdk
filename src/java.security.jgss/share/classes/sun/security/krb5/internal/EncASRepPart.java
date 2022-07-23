@@ -65,7 +65,7 @@ public class EncASRepPart extends EncKDCRepPart {
                 Krb5.KRB_ENC_AS_REP_PART
                 );
         //may need to use Krb5.KRB_ENC_TGS_REP_PART to mimic
-        //behavior of other implementaions, instead of above
+        //behavior of other implementations, instead of above
     }
 
     public EncASRepPart(byte[] data) throws Asn1Exception,

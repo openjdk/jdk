@@ -32,9 +32,9 @@
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/thread.inline.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 
@@ -145,7 +145,7 @@ bool JNIHandles::is_global_weak_cleared(jweak handle) {
 
 void JNIHandles::destroy_global(jobject handle) {
   if (handle != NULL) {
-    assert(!is_jweak(handle), "wrong method for detroying jweak");
+    assert(!is_jweak(handle), "wrong method for destroying jweak");
     oop* oop_ptr = jobject_ptr(handle);
     NativeAccess<>::oop_store(oop_ptr, (oop)NULL);
     global_handles()->release(oop_ptr);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,10 @@ bool ZBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
 
   // Heal oops
   ZNMethod::nmethod_oops_barrier(nm);
+
+
+  // CodeCache sweeper support
+  nm->mark_as_maybe_on_continuation();
 
   // Disarm
   disarm(nm);

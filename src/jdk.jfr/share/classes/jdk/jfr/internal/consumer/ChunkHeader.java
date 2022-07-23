@@ -31,7 +31,6 @@ import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
 import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.MetadataDescriptor;
-import jdk.jfr.internal.Utils;
 
 public final class ChunkHeader {
     public static final long HEADER_SIZE = 68;
@@ -109,14 +108,19 @@ public final class ChunkHeader {
         input.position(absoluteEventStart);
     }
 
+    private byte readFileState() throws IOException {
+        byte fs;
+        input.positionPhysical(absoluteChunkStart + FILE_STATE_POSITION);
+        while ((fs = input.readPhysicalByte()) == UPDATING_CHUNK_HEADER) {
+            input.pollWait();
+            input.positionPhysical(absoluteChunkStart + FILE_STATE_POSITION);
+        }
+        return fs;
+    }
+
     public void refresh() throws IOException {
         while (true) {
-            byte fileState1;
-            input.positionPhysical(absoluteChunkStart + FILE_STATE_POSITION);
-            while ((fileState1 = input.readPhysicalByte()) == UPDATING_CHUNK_HEADER) {
-                Utils.takeNap(1);
-                input.positionPhysical(absoluteChunkStart + FILE_STATE_POSITION);
-            }
+            byte fileState1 = readFileState();
             input.positionPhysical(absoluteChunkStart + CHUNK_SIZE_POSITION);
             long chunkSize = input.readPhysicalLong();
             long constantPoolPosition = input.readPhysicalLong();
@@ -169,14 +173,13 @@ public final class ChunkHeader {
         }
         long pos = input.position();
         try {
-            input.positionPhysical(absoluteChunkStart + FILE_STATE_POSITION);
             while (true) {
-                byte filestate = input.readPhysicalByte();
-                if (filestate == 0) {
+                byte fileState = readFileState();
+                if (fileState == 0) {
                     finished = true;
                     return;
                 }
-                Utils.takeNap(1);
+                input.pollWait();
             }
         } finally {
             input.position(pos);

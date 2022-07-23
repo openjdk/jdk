@@ -43,7 +43,9 @@ public class AddINodeIdealizationTests {
                  "test8", "test9", "test10",
                  "test11", "test12", "test13",
                  "test14", "test15", "test16",
-                 "test17", "test18", "test19"})
+                 "test17", "test18", "test19",
+                 "test20", "test21", "test22",
+                 "test23"})
     public void runMethod() {
         int a = RunInfo.getRandom().nextInt();
         int b = RunInfo.getRandom().nextInt();
@@ -82,6 +84,10 @@ public class AddINodeIdealizationTests {
         Asserts.assertEQ(a*b + b*c        , test17(a, b, c));
         Asserts.assertEQ(a*c + b*c        , test18(a, b, c));
         Asserts.assertEQ(a*b + c*a        , test19(a, b, c));
+        Asserts.assertEQ((a - b) + 210    , test20(a, b));
+        Asserts.assertEQ((a - b) + 190    , test21(a, b));
+        Asserts.assertEQ((a - b) + 210    , test22(a, b));
+        Asserts.assertEQ((a - b) + 190    , test23(a, b));
     }
 
     @Test
@@ -246,5 +252,45 @@ public class AddINodeIdealizationTests {
     // Checks a*b + c*a => a*(b+c)
     public int test19(int a, int b, int c) {
         return a*b + c*a;
+    }
+
+    @Test
+    @IR(counts = {IRNode.SUB_I, "1",
+                  IRNode.ADD_I, "1",
+                  IRNode.CON_I, "1"})
+    // Checks x + (con - y) => (x - y) + con
+    // where con > 0
+    public int test20(int x, int y) {
+        return x + (10 - y) + 200; // transformed to (x - y) + 210;
+    }
+
+    @Test
+    @IR(counts = {IRNode.SUB_I, "1",
+                  IRNode.ADD_I, "1",
+                  IRNode.CON_I, "1"})
+    // Checks x + (con - y) => (x - y) + con
+    // where con < 0
+    public int test21(int x, int y) {
+        return x + (-10 - y) + 200; // transformed to (x - y) + 190;
+    }
+
+    @Test
+    @IR(counts = {IRNode.SUB_I, "1",
+                  IRNode.ADD_I, "1",
+                  IRNode.CON_I, "1"})
+    // Checks (con - y) + x => (x - y) + con
+    // where con > 0
+    public int test22(int x, int y) {
+        return (10 - y) + x + 200; // transformed to (x - y) + 210;
+    }
+
+    @Test
+    @IR(counts = {IRNode.SUB_I, "1",
+                  IRNode.ADD_I, "1",
+                  IRNode.CON_I, "1"})
+    // Checks (con - y) + x => (x - y) + con
+    // where con < 0
+    public int test23(int x, int y) {
+        return x + (-10 - y) + 200; // transformed to (x - y) + 190;
     }
 }

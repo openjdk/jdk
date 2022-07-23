@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -537,7 +537,7 @@ void BranchData::print_data_on(outputStream* st, const char* extra) const {
 // A MultiBranchData is used to access profiling information for
 // a multi-way branch (*switch bytecodes).  It consists of a series
 // of (count, displacement) pairs, which count the number of times each
-// case was taken and specify the data displacment for each branch target.
+// case was taken and specify the data displacement for each branch target.
 
 int MultiBranchData::compute_cell_count(BytecodeStream* stream) {
   int cell_count = 0;
@@ -1245,7 +1245,9 @@ void MethodData::initialize() {
   int extra_size = extra_data_count * DataLayout::compute_size_in_bytes(0);
 
   // Let's zero the space for the extra data
-  Copy::zero_to_bytes(((address)_data) + data_size, extra_size);
+  if (extra_size > 0) {
+    Copy::zero_to_bytes(((address)_data) + data_size, extra_size);
+  }
 
   // Add a cell to record information about modified arguments.
   // Set up _args_modified array after traps cells so that

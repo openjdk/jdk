@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,7 +151,6 @@ findZoneinfoFile(char *buf, size_t size, const char *dir)
     struct dirent *dp = NULL;
     char *pathname = NULL;
     char *tz = NULL;
-    int res;
 
     if (strcmp(dir, ZONEINFO_DIR) == 0) {
         /* fast path for 1st iteration */
@@ -497,7 +496,7 @@ tzerr:
 /*
  * findJavaTZ_md() maps platform time zone ID to Java time zone ID
  * using <java_home>/lib/tzmappings. If the TZ value is not found, it
- * trys some libc implementation dependent mappings. If it still
+ * tries some libc implementation dependent mappings. If it still
  * can't map to a Java time zone ID, it falls back to the GMT+/-hh:mm
  * form.
  */

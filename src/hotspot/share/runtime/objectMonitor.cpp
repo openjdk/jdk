@@ -41,16 +41,16 @@
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/perfData.hpp"
-#include "runtime/safefetch.inline.hpp"
+#include "runtime/safefetch.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/thread.inline.hpp"
 #include "services/threadService.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/macros.hpp"
@@ -1486,7 +1486,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   // Enter the waiting queue, which is a circular doubly linked list in this case
   // but it could be a priority queue or any data structure.
   // _WaitSetLock protects the wait queue.  Normally the wait queue is accessed only
-  // by the the owner of the monitor *except* in the case where park()
+  // by the owner of the monitor *except* in the case where park()
   // returns because of a timeout of interrupt.  Contention is exceptionally rare
   // so we use a simple spin-lock instead of a heavier-weight blocking lock.
 
@@ -1631,8 +1631,10 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   current->set_current_waiting_monitor(NULL);
 
   guarantee(_recursions == 0, "invariant");
-  _recursions = save      // restore the old recursion count
-                + JvmtiDeferredUpdates::get_and_reset_relock_count_after_wait(current); //  increased by the deferred relock count
+  int relock_count = JvmtiDeferredUpdates::get_and_reset_relock_count_after_wait(current);
+  _recursions =   save          // restore the old recursion count
+                + relock_count; //  increased by the deferred relock count
+  current->inc_held_monitor_count(relock_count); // Deopt never entered these counts.
   _waiters--;             // decrement the number of waiters
 
   // Verify a few postconditions
@@ -1897,7 +1899,10 @@ int ObjectMonitor::TrySpin(JavaThread* current) {
     // This is in keeping with the "no loitering in runtime" rule.
     // We periodically check to see if there's a safepoint pending.
     if ((ctr & 0xFF) == 0) {
-      if (SafepointMechanism::should_process(current)) {
+      // Can't call SafepointMechanism::should_process() since that
+      // might update the poll values and we could be in a thread_blocked
+      // state here which is not allowed so just check the poll.
+      if (SafepointMechanism::local_poll_armed(current)) {
         goto Abort;           // abrupt spin egress
       }
       SpinPause();

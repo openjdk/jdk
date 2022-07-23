@@ -345,7 +345,7 @@ public class BasicTextFieldUI extends BasicTextUI {
          * @param pos the position to convert >= 0
          * @param a the allocated region to render into
          * @return the bounding box of the given position
-         * @exception BadLocationException  if the given position does not
+         * @throws BadLocationException  if the given position does not
          *   represent a valid location in the associated document
          * @see View#modelToView
          */
@@ -367,9 +367,9 @@ public class BasicTextFieldUI extends BasicTextUI {
          *  position is a boundary of two views.
          * @param a the allocated region to render into
          * @return the bounding box of the given position is returned
-         * @exception BadLocationException  if the given position does
+         * @throws BadLocationException  if the given position does
          *   not represent a valid location in the associated document
-         * @exception IllegalArgumentException for an invalid bias argument
+         * @throws IllegalArgumentException for an invalid bias argument
          * @see View#viewToModel
          */
         public Shape modelToView(int p0, Position.Bias b0,

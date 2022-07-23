@@ -87,7 +87,7 @@ public class StringDecode {
         bh.consume(new String(asciiString, charset));
         bh.consume(new String(longAsciiString, 0, 15, charset));
         bh.consume(new String(asciiString, 0, 3, charset));
-        bh.consume(new String(longAsciiString, 512, 512 + 7, charset));
+        bh.consume(new String(longAsciiString, 512, 7, charset));
     }
 
     @Benchmark
@@ -103,7 +103,7 @@ public class StringDecode {
         bh.consume(new String(latin1String, charset));
         bh.consume(new String(latin1String, 0, 15, charset));
         bh.consume(new String(latin1String, 0, 3, charset));
-        bh.consume(new String(longLatin1OnlyString, 512, 512 + 7, charset));
+        bh.consume(new String(longLatin1OnlyString, 512, 7, charset));
     }
 
     @Benchmark

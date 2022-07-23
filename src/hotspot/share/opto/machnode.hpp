@@ -39,7 +39,6 @@ class JVMState;
 class MachCallDynamicJavaNode;
 class MachCallJavaNode;
 class MachCallLeafNode;
-class MachCallNativeNode;
 class MachCallNode;
 class MachCallRuntimeNode;
 class MachCallStaticJavaNode;
@@ -260,10 +259,10 @@ public:
   virtual const RegMask *cisc_RegMask() const { return NULL; }
 
   // If this instruction is a 2-address instruction, then return the
-  // index of the input which must match the output.  Not nessecary
+  // index of the input which must match the output.  Not necessary
   // for instructions which bind the input and output register to the
-  // same singleton regiser (e.g., Intel IDIV which binds AX to be
-  // both an input and an output).  It is nessecary when the input and
+  // same singleton register (e.g., Intel IDIV which binds AX to be
+  // both an input and an output).  It is necessary when the input and
   // output have choices - but they must use the same choice.
   virtual uint two_adr( ) const { return 0; }
 
@@ -1014,25 +1013,6 @@ public:
   MachCallLeafNode() : MachCallRuntimeNode() {
     init_class_id(Class_MachCallLeaf);
   }
-};
-
-class MachCallNativeNode: public MachCallNode {
-  virtual bool cmp( const Node &n ) const;
-  virtual uint size_of() const;
-  void print_regs(const GrowableArray<VMReg>& regs, outputStream* st) const;
-public:
-  const char *_name;
-  GrowableArray<VMReg> _arg_regs;
-  GrowableArray<VMReg> _ret_regs;
-
-  MachCallNativeNode() : MachCallNode() {
-    init_class_id(Class_MachCallNative);
-  }
-
-  virtual int ret_addr_offset();
-#ifndef PRODUCT
-  virtual void dump_spec(outputStream *st) const;
-#endif
 };
 
 //------------------------------MachHaltNode-----------------------------------

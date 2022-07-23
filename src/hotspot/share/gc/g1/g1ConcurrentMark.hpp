@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -216,7 +216,7 @@ private:
 // Root MemRegions are memory areas that contain objects which references are
 // roots wrt to the marking. They must be scanned before marking to maintain the
 // SATB invariant.
-// Typically they contain the areas from nTAMS to top of the regions.
+// Typically they contain the areas from TAMS to top of the regions.
 // We could scan and mark through these objects during the concurrent start pause,
 // but for pause time reasons we move this work to the concurrent phase.
 // We need to complete this procedure before the next GC because it might determine
@@ -292,10 +292,7 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   G1CollectedHeap*        _g1h;           // The heap
 
   // Concurrent marking support structures
-  G1CMBitMap              _mark_bitmap_1;
-  G1CMBitMap              _mark_bitmap_2;
-  G1CMBitMap*             _prev_mark_bitmap; // Completed mark bitmap
-  G1CMBitMap*             _next_mark_bitmap; // Under-construction mark bitmap
+  G1CMBitMap              _mark_bitmap;
 
   // Heap bounds
   MemRegion const         _heap;
@@ -359,7 +356,16 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   uint      _num_concurrent_workers; // The number of marking worker threads we're using
   uint      _max_concurrent_workers; // Maximum number of marking worker threads
 
-  void verify_during_pause(G1HeapVerifier::G1VerifyType type, VerifyOption vo, const char* caller);
+  enum class VerifyLocation {
+    RemarkBefore,
+    RemarkAfter,
+    RemarkOverflow,
+    CleanupBefore,
+    CleanupAfter
+  };
+  static const char* verify_location_string(VerifyLocation location);
+  void verify_during_pause(G1HeapVerifier::G1VerifyType type,
+                           VerifyLocation location);
 
   void finalize_marking();
 
@@ -443,7 +449,7 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
 
   // Clear the next marking bitmap in parallel using the given WorkerThreads. If may_yield is
   // true, periodically insert checks to see if this method should exit prematurely.
-  void clear_next_bitmap(WorkerThreads* workers, bool may_yield);
+  void clear_bitmap(WorkerThreads* workers, bool may_yield);
 
   // Region statistics gathered during marking.
   G1RegionMarkStats* _region_mark_stats;
@@ -455,9 +461,11 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   // True when Remark pause selected regions for rebuilding.
   bool _needs_remembered_set_rebuild;
 public:
+  // To be called when an object is marked the first time, e.g. after a successful
+  // mark_in_bitmap call. Updates various statistics data.
   void add_to_liveness(uint worker_id, oop const obj, size_t size);
   // Live words in the given region as determined by concurrent marking, i.e. the amount of
-  // live words between bottom and nTAMS.
+  // live words between bottom and TAMS.
   size_t live_words(uint region) const { return _region_mark_stats[region]._live_words; }
   // Returns the liveness value in bytes.
   size_t live_bytes(uint region) const { return live_words(region) * HeapWordSize; }
@@ -493,7 +501,7 @@ public:
 
   void concurrent_cycle_start();
   // Abandon current marking iteration due to a Full GC.
-  void concurrent_cycle_abort();
+  bool concurrent_cycle_abort();
   void concurrent_cycle_end();
 
   // Notifies marking threads to abort. This is a best-effort notification. Does not
@@ -516,14 +524,12 @@ public:
   bool try_stealing(uint worker_id, G1TaskQueueEntry& task_entry);
 
   G1ConcurrentMark(G1CollectedHeap* g1h,
-                   G1RegionToSpaceMapper* prev_bitmap_storage,
-                   G1RegionToSpaceMapper* next_bitmap_storage);
+                   G1RegionToSpaceMapper* bitmap_storage);
   ~G1ConcurrentMark();
 
   G1ConcurrentMarkThread* cm_thread() { return _cm_thread; }
 
-  const G1CMBitMap* const prev_mark_bitmap() const { return _prev_mark_bitmap; }
-  G1CMBitMap* next_mark_bitmap() const { return _next_mark_bitmap; }
+  G1CMBitMap* mark_bitmap() const { return (G1CMBitMap*)&_mark_bitmap; }
 
   // Calculates the number of concurrent GC threads to be used in the marking phase.
   uint calc_active_marking_workers();
@@ -540,7 +546,7 @@ public:
   void cleanup_for_next_mark();
 
   // Clear the next marking bitmap during safepoint.
-  void clear_next_bitmap(WorkerThreads* workers);
+  void clear_bitmap(WorkerThreads* workers);
 
   // These two methods do the work that needs to be done at the start and end of the
   // concurrent start pause.
@@ -563,19 +569,16 @@ public:
 
   void remark();
 
-  void swap_mark_bitmaps();
-
   void cleanup();
-  // Mark in the previous bitmap. Caution: the prev bitmap is usually read-only, so use
-  // this carefully.
-  inline void par_mark_in_prev_bitmap(oop p);
 
-  // Clears marks for all objects in the given range, for the prev or
-  // next bitmaps.  Caution: the previous bitmap is usually
-  // read-only, so use this carefully!
-  void clear_range_in_prev_bitmap(MemRegion mr);
+  // Mark in the marking bitmap. Used during evacuation failure to
+  // remember what objects need handling. Not for use during marking.
+  inline void raw_mark_in_bitmap(oop p);
 
-  inline bool is_marked_in_prev_bitmap(oop p) const;
+  // Clears marks for all objects in the given region in the marking
+  // bitmap. This should only be used clean the bitmap during a
+  // safepoint.
+  void clear_bitmap_for_region(HeapRegion* hr);
 
   // Verify that there are no collection set oops on the stacks (taskqueues /
   // global mark stack) and fingers (global / per-task).
@@ -592,17 +595,17 @@ public:
 
   void print_on_error(outputStream* st) const;
 
-  // Mark the given object on the next bitmap if it is below nTAMS.
-  inline bool mark_in_next_bitmap(uint worker_id, HeapRegion* const hr, oop const obj);
-  inline bool mark_in_next_bitmap(uint worker_id, oop const obj);
+  // Mark the given object on the marking bitmap if it is below TAMS.
+  inline bool mark_in_bitmap(uint worker_id, oop const obj);
 
-  inline bool is_marked_in_next_bitmap(oop p) const;
+  inline bool is_marked_in_bitmap(oop p) const;
 
   ConcurrentGCTimer* gc_timer_cm() const { return _gc_timer_cm; }
 
 private:
-  // Rebuilds the remembered sets for chosen regions in parallel and concurrently to the application.
-  void rebuild_rem_set_concurrently();
+  // Rebuilds the remembered sets for chosen regions in parallel and concurrently
+  // to the application. Also scrubs dead objects to ensure region is parsable.
+  void rebuild_and_scrub();
 
   uint needs_remembered_set_rebuild() const { return _needs_remembered_set_rebuild; }
 
@@ -627,7 +630,7 @@ private:
   uint                        _worker_id;
   G1CollectedHeap*            _g1h;
   G1ConcurrentMark*           _cm;
-  G1CMBitMap*                 _next_mark_bitmap;
+  G1CMBitMap*                 _mark_bitmap;
   // the task queue of this task
   G1CMTaskQueue*              _task_queue;
 
@@ -733,7 +736,7 @@ public:
   // scanned.
   inline size_t scan_objArray(objArrayOop obj, MemRegion mr);
   // Resets the task; should be called right at the beginning of a marking phase.
-  void reset(G1CMBitMap* next_mark_bitmap);
+  void reset(G1CMBitMap* mark_bitmap);
   // Clears all the fields that correspond to a claimed region.
   void clear_region_fields();
 
@@ -777,14 +780,14 @@ public:
   void increment_refs_reached() { ++_refs_reached; }
 
   // Grey the object by marking it.  If not already marked, push it on
-  // the local queue if below the finger. obj is required to be below its region's NTAMS.
+  // the local queue if below the finger. obj is required to be below its region's TAMS.
   // Returns whether there has been a mark to the bitmap.
   inline bool make_reference_grey(oop obj);
 
   // Grey the object (by calling make_grey_reference) if required,
-  // e.g. obj is below its containing region's NTAMS.
+  // e.g. obj is below its containing region's TAMS.
   // Precondition: obj is a valid heap object.
-  // Returns true if the reference caused a mark to be set in the next bitmap.
+  // Returns true if the reference caused a mark to be set in the marking bitmap.
   template <class T>
   inline bool deal_with_reference(T* p);
 
@@ -841,8 +844,7 @@ class G1PrintRegionLivenessInfoClosure : public HeapRegionClosure {
   // Accumulators for these values.
   size_t _total_used_bytes;
   size_t _total_capacity_bytes;
-  size_t _total_prev_live_bytes;
-  size_t _total_next_live_bytes;
+  size_t _total_live_bytes;
 
   // Accumulator for the remembered set size
   size_t _total_remset_bytes;

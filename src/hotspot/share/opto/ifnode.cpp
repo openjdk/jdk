@@ -186,7 +186,7 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
         } else if( v->Opcode() == Op_CastII ) {
           tty->print_cr("Phi has CastII use");
         } else {
-          tty->print_cr("Phi has use I cant be bothered with");
+          tty->print_cr("Phi has use I can't be bothered with");
         }
         */
       }
@@ -838,7 +838,9 @@ bool IfNode::has_only_uncommon_traps(ProjNode* proj, ProjNode*& success, ProjNod
       ciMethod* dom_method = dom_unc->jvms()->method();
       int dom_bci = dom_unc->jvms()->bci();
       if (!igvn->C->too_many_traps(dom_method, dom_bci, Deoptimization::Reason_unstable_fused_if) &&
-          !igvn->C->too_many_traps(dom_method, dom_bci, Deoptimization::Reason_range_check)) {
+          !igvn->C->too_many_traps(dom_method, dom_bci, Deoptimization::Reason_range_check) &&
+          // Return true if c2 manages to reconcile with UnstableIf optimization. See the comments for it.
+          igvn->C->remove_unstable_if_trap(dom_unc, true/*yield*/)) {
         success = unc_proj;
         fail = unc_proj->other_if_proj();
         return true;
@@ -1786,7 +1788,7 @@ static IfNode* idealize_test(PhaseGVN* phase, IfNode* iff) {
   Node* old_if_f = iff->proj_out(false);
   Node* old_if_t = iff->proj_out(true);
 
-  // CountedLoopEnds want the back-control test to be TRUE, irregardless of
+  // CountedLoopEnds want the back-control test to be TRUE, regardless of
   // whether they are testing a 'gt' or 'lt' condition.  The 'gt' condition
   // happens in count-down loops
   if (iff->is_BaseCountedLoopEnd())  return NULL;

@@ -37,7 +37,8 @@ class ClassLoaderDataGraph : public AllStatic {
   friend class ClassLoaderDataGraphMetaspaceIterator;
   friend class ClassLoaderDataGraphKlassIteratorAtomic;
   friend class ClassLoaderDataGraphKlassIteratorStatic;
-  friend class ClassLoaderDataGraphIterator;
+  template <bool keep_alive>
+  friend class ClassLoaderDataGraphIteratorBase;
   friend class VMStructs;
  private:
   // All CLDs (except the null CLD) can be reached by walking _head->_next->...

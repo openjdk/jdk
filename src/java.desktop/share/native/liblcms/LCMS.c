@@ -734,34 +734,43 @@ static cmsHPROFILE _writeCookedTag(const cmsHPROFILE pfTarget,
 
     // now we have all tags moved to the new profile.
     // do some sanity checks: write it to a memory buffer and read again.
+    void* buf = NULL;
     if (cmsSaveProfileToMem(p, NULL, &pfSize)) {
-        void* buf = malloc(pfSize);
+        buf = malloc(pfSize);
         if (buf != NULL) {
             // load raw profile data into the buffer
             if (cmsSaveProfileToMem(p, buf, &pfSize)) {
                 pfSanity = cmsOpenProfileFromMem(buf, pfSize);
             }
-            free(buf);
         }
     }
+
+    cmsCloseProfile(p); // No longer needed.
 
     if (pfSanity == NULL) {
         // for some reason, we failed to save and read the updated profile
         // It likely indicates that the profile is not correct, so we report
         // a failure here.
-        cmsCloseProfile(p);
-        p =  NULL;
+        free(buf);
+        return NULL;
     } else {
         // do final check whether we can read and handle the target tag.
         const void* pTag = cmsReadTag(pfSanity, sig);
         if (pTag == NULL) {
             // the tag can not be cooked
-            cmsCloseProfile(p);
-            p = NULL;
+            free(buf);
+            cmsCloseProfile(pfSanity);
+            return NULL;
         }
+        // The profile we used for sanity checking needs to be returned
+        // since the one we updated is raw - not cooked.
+        // Except we want to re-open it since the call to cmsReadTag()
+        // means we may not get back the same bytes as we set.
+        // Whilst this may change later anyway, we can at least prevent
+        // it from happening immediately.
         cmsCloseProfile(pfSanity);
-        pfSanity = NULL;
+        pfSanity = cmsOpenProfileFromMem(buf, pfSize);
+        free(buf);
+        return pfSanity;
     }
-
-    return p;
 }

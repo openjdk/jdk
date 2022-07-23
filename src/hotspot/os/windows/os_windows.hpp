@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,6 @@ class win32 {
   static int    _processor_type;
   static int    _processor_level;
   static julong _physical_memory;
-  static size_t _default_stack_size;
   static bool   _is_windows_server;
   static bool   _has_exit_bug;
 
@@ -83,10 +82,6 @@ class win32 {
  public:
   // Generic interface:
 
-  // Trace number of created threads
-  static          intx  _os_thread_limit;
-  static volatile intx  _os_thread_count;
-
   // Tells whether this is a server version of Windows
   static bool is_windows_server() { return _is_windows_server; }
 
@@ -102,9 +97,6 @@ class win32 {
   // Read the headers for the executable that started the current process into
   // the structure passed in (see winnt.h).
   static void read_executable_headers(PIMAGE_NT_HEADERS);
-
-  // Default stack size for the current process.
-  static size_t default_stack_size() { return _default_stack_size; }
 
   static bool get_frame_at_stack_banging_point(JavaThread* thread,
                           struct _EXCEPTION_POINTERS* exceptionInfo,
@@ -125,7 +117,7 @@ class win32 {
   static bool find_mapping(address p, mapping_info_t* mapping_info);
 
 #ifndef _WIN64
-  // A wrapper to install a structured exception handler for fast JNI accesors.
+  // A wrapper to install a structured exception handler for fast JNI accessors.
   static address fast_jni_accessor_wrapper(BasicType);
 #endif
 
@@ -139,101 +131,6 @@ public:
     _thread_ptr_offset = offset;
   }
   static inline int get_thread_ptr_offset() { return _thread_ptr_offset; }
-};
-
-/*
- * Crash protection for the JfrSampler thread. Wrap the callback
- * with a __try { call() }
- * To be able to use this - don't take locks, don't rely on destructors,
- * don't make OS library calls, don't allocate memory, don't print,
- * don't call code that could leave the heap / memory in an inconsistent state,
- * or anything else where we are not in control if we suddenly jump out.
- */
-class ThreadCrashProtection : public StackObj {
-public:
-  static bool is_crash_protected(Thread* thr) {
-    return _crash_protection != NULL && _protected_thread == thr;
-  }
-
-  ThreadCrashProtection();
-  bool call(os::CrashProtectionCallback& cb);
-private:
-  static Thread* _protected_thread;
-  static ThreadCrashProtection* _crash_protection;
-};
-
-class PlatformEvent : public CHeapObj<mtSynchronizer> {
-  private:
-    double CachePad [4] ;   // increase odds that _Event is sole occupant of cache line
-    volatile int _Event ;
-    HANDLE _ParkHandle ;
-
-  public:       // TODO-FIXME: make dtor private
-    ~PlatformEvent() { guarantee (0, "invariant") ; }
-
-  public:
-    PlatformEvent() {
-      _Event   = 0 ;
-      _ParkHandle = CreateEvent (NULL, false, false, NULL) ;
-      guarantee (_ParkHandle != NULL, "invariant") ;
-    }
-
-    // Exercise caution using reset() and fired() - they may require MEMBARs
-    void reset() { _Event = 0 ; }
-    int  fired() { return _Event; }
-    void park () ;
-    void unpark () ;
-    int  park (jlong millis) ;
-} ;
-
-
-
-class PlatformParker {
-  NONCOPYABLE(PlatformParker);
-
- protected:
-  HANDLE _ParkHandle;
-
- public:
-  PlatformParker() {
-    _ParkHandle = CreateEvent (NULL, true, false, NULL) ;
-    guarantee(_ParkHandle != NULL, "invariant") ;
-  }
-  ~PlatformParker() {
-    CloseHandle(_ParkHandle);
-  }
-};
-
-// Platform specific implementations that underpin VM Mutex/Monitor classes.
-// Note that CRITICAL_SECTION supports recursive locking, while the semantics
-// of the VM Mutex class does not. It is up to the Mutex class to hide this
-// difference in behaviour.
-
-class PlatformMutex : public CHeapObj<mtSynchronizer> {
-  NONCOPYABLE(PlatformMutex);
-
- protected:
-  CRITICAL_SECTION   _mutex; // Native mutex for locking
-
- public:
-  PlatformMutex();
-  ~PlatformMutex();
-  void lock();
-  void unlock();
-  bool try_lock();
-};
-
-class PlatformMonitor : public PlatformMutex {
- private:
-  CONDITION_VARIABLE _cond;  // Native condition variable for blocking
-  NONCOPYABLE(PlatformMonitor);
-
- public:
-  PlatformMonitor();
-  ~PlatformMonitor();
-  int wait(jlong millis);
-  void notify();
-  void notify_all();
 };
 
 #endif // OS_WINDOWS_OS_WINDOWS_HPP

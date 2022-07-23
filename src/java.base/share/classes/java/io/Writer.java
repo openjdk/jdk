@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 
 package java.io;
 
-
 import java.util.Objects;
+import jdk.internal.misc.InternalLock;
 
 /**
  * Abstract class for writing to character streams.  The only methods that a
@@ -163,6 +163,21 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
     }
 
     /**
+     * For use by BufferedWriter to create a character-stream writer that uses an
+     * internal lock when BufferedWriter is not extended and the given writer is
+     * trusted, otherwise critical sections will synchronize on the given writer.
+     */
+    Writer(Writer writer) {
+        Class<?> clazz = writer.getClass();
+        if (getClass() == BufferedWriter.class &&
+                (clazz == OutputStreamWriter.class || clazz == FileWriter.class)) {
+            this.lock = InternalLock.newLockOr(writer);
+        } else {
+            this.lock = writer;
+        }
+    }
+
+    /**
      * Creates a new character-stream writer whose critical sections will
      * synchronize on the given object.
      *
@@ -191,13 +206,27 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
      *          If an I/O error occurs
      */
     public void write(int c) throws IOException {
-        synchronized (lock) {
-            if (writeBuffer == null){
-                writeBuffer = new char[WRITE_BUFFER_SIZE];
+        Object lock = this.lock;
+        if (lock instanceof InternalLock locker) {
+            locker.lock();
+            try {
+                implWrite(c);
+            } finally {
+                locker.unlock();
             }
-            writeBuffer[0] = (char) c;
-            write(writeBuffer, 0, 1);
+        } else {
+            synchronized (lock) {
+                implWrite(c);
+            }
         }
+    }
+
+    private void implWrite(int c) throws IOException {
+        if (writeBuffer == null){
+            writeBuffer = new char[WRITE_BUFFER_SIZE];
+        }
+        writeBuffer[0] = (char) c;
+        write(writeBuffer, 0, 1);
     }
 
     /**
@@ -276,19 +305,33 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
      *          If an I/O error occurs
      */
     public void write(String str, int off, int len) throws IOException {
-        synchronized (lock) {
-            char cbuf[];
-            if (len <= WRITE_BUFFER_SIZE) {
-                if (writeBuffer == null) {
-                    writeBuffer = new char[WRITE_BUFFER_SIZE];
-                }
-                cbuf = writeBuffer;
-            } else {    // Don't permanently allocate very large buffers.
-                cbuf = new char[len];
+        Object lock = this.lock;
+        if (lock instanceof InternalLock locker) {
+            locker.lock();
+            try {
+                implWrite(str, off, len);
+            } finally {
+                locker.unlock();
             }
-            str.getChars(off, (off + len), cbuf, 0);
-            write(cbuf, 0, len);
+        } else {
+            synchronized (lock) {
+                implWrite(str, off, len);
+            }
         }
+    }
+
+    private void implWrite(String str, int off, int len) throws IOException {
+        char cbuf[];
+        if (len <= WRITE_BUFFER_SIZE) {
+            if (writeBuffer == null) {
+                writeBuffer = new char[WRITE_BUFFER_SIZE];
+            }
+            cbuf = writeBuffer;
+        } else {    // Don't permanently allocate very large buffers.
+            cbuf = new char[len];
+        }
+        str.getChars(off, (off + len), cbuf, 0);
+        write(cbuf, 0, len);
     }
 
     /**

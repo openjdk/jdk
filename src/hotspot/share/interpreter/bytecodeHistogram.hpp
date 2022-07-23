@@ -71,7 +71,7 @@ class BytecodeHistogram: AllStatic {
 
 
 // BytecodePairHistogram collects number of executions of bytecode pairs.
-// A bytecode pair is any sequence of two consequtive bytecodes.
+// A bytecode pair is any sequence of two consecutive bytecodes.
 
 class BytecodePairHistogram: AllStatic {
  public: // for solstudio

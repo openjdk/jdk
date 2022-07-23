@@ -166,8 +166,8 @@ public class Canvas extends Component implements Accessible {
      * Each time this method is called,
      * the existing buffer strategy for this component is discarded.
      * @param numBuffers number of buffers to create, including the front buffer
-     * @exception IllegalArgumentException if numBuffers is less than 1.
-     * @exception IllegalStateException if the component is not displayable
+     * @throws IllegalArgumentException if numBuffers is less than 1.
+     * @throws IllegalStateException if the component is not displayable
      * @see #isDisplayable
      * @see #getBufferStrategy
      * @since 1.4
@@ -187,11 +187,11 @@ public class Canvas extends Component implements Accessible {
      * @param numBuffers number of buffers to create
      * @param caps the required capabilities for creating the buffer strategy;
      * cannot be {@code null}
-     * @exception AWTException if the capabilities supplied could not be
+     * @throws AWTException if the capabilities supplied could not be
      * supported or met; this may happen, for example, if there is not enough
      * accelerated memory currently available, or if page flipping is specified
      * but not possible.
-     * @exception IllegalArgumentException if numBuffers is less than 1, or if
+     * @throws IllegalArgumentException if numBuffers is less than 1, or if
      * caps is {@code null}
      * @see #getBufferStrategy
      * @since 1.4

@@ -25,8 +25,10 @@
 #include "precompiled.hpp"
 #include "code/codeCache.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/continuation.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/flags/jvmFlagAccess.hpp"
+#include "runtime/flags/jvmFlagConstraintsCompiler.hpp"
 #include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
@@ -124,10 +126,24 @@ intx CompilerConfig::scaled_freq_log(intx freq_log) {
 // Returns threshold scaled with the value of scale.
 // If scale < 0.0, threshold is returned without scaling.
 intx CompilerConfig::scaled_compile_threshold(intx threshold, double scale) {
+  assert(threshold >= 0, "must be");
   if (scale == 1.0 || scale < 0.0) {
     return threshold;
   } else {
-    return (intx)(threshold * scale);
+    double v = threshold * scale;
+    assert(v >= 0, "must be");
+    if (g_isnan(v) || !g_isfinite(v)) {
+      return max_intx;
+    }
+    int exp;
+    (void) frexp(v, &exp);
+    int max_exp = sizeof(intx) * BitsPerByte - 1;
+    if (exp > max_exp) {
+      return max_intx;
+    }
+    intx r = (intx)(v);
+    assert(r >= 0, "must be");
+    return r;
   }
 }
 
@@ -260,12 +276,11 @@ void CompilerConfig::set_legacy_emulation_flags() {
         FLAG_SET_ERGO(Tier0BackedgeNotifyFreqLog, MAX2<intx>(10, osr_threshold_log));
       }
       // Adjust the tiered policy flags to approximate the legacy behavior.
-      if (CompilerConfig::is_c1_only()) {
-        FLAG_SET_ERGO(Tier3InvocationThreshold, threshold);
-        FLAG_SET_ERGO(Tier3MinInvocationThreshold, threshold);
-        FLAG_SET_ERGO(Tier3CompileThreshold, threshold);
-        FLAG_SET_ERGO(Tier3BackEdgeThreshold, osr_threshold);
-      } else {
+      FLAG_SET_ERGO(Tier3InvocationThreshold, threshold);
+      FLAG_SET_ERGO(Tier3MinInvocationThreshold, threshold);
+      FLAG_SET_ERGO(Tier3CompileThreshold, threshold);
+      FLAG_SET_ERGO(Tier3BackEdgeThreshold, osr_threshold);
+      if (CompilerConfig::is_c2_or_jvmci_compiler_only()) {
         FLAG_SET_ERGO(Tier4InvocationThreshold, threshold);
         FLAG_SET_ERGO(Tier4MinInvocationThreshold, threshold);
         FLAG_SET_ERGO(Tier4CompileThreshold, threshold);
@@ -279,7 +294,10 @@ void CompilerConfig::set_legacy_emulation_flags() {
   // Scale CompileThreshold
   // CompileThresholdScaling == 0.0 is equivalent to -Xint and leaves CompileThreshold unchanged.
   if (!FLAG_IS_DEFAULT(CompileThresholdScaling) && CompileThresholdScaling > 0.0 && CompileThreshold > 0) {
-    FLAG_SET_ERGO(CompileThreshold, scaled_compile_threshold(CompileThreshold));
+    intx scaled_value = scaled_compile_threshold(CompileThreshold);
+    if (CompileThresholdConstraintFunc(scaled_value, true) != JVMFlag::VIOLATES_CONSTRAINT) {
+      FLAG_SET_ERGO(CompileThreshold, scaled_value);
+    }
   }
 }
 
@@ -331,6 +349,20 @@ void CompilerConfig::set_compilation_policy_flags() {
     if (FLAG_IS_DEFAULT(Tier4BackEdgeThreshold)) {
       FLAG_SET_DEFAULT(Tier4BackEdgeThreshold, 15000);
     }
+
+    if (FLAG_IS_DEFAULT(Tier3InvocationThreshold)) {
+      FLAG_SET_DEFAULT(Tier3InvocationThreshold, Tier4InvocationThreshold);
+    }
+    if (FLAG_IS_DEFAULT(Tier3MinInvocationThreshold)) {
+      FLAG_SET_DEFAULT(Tier3MinInvocationThreshold, Tier4MinInvocationThreshold);
+    }
+    if (FLAG_IS_DEFAULT(Tier3CompileThreshold)) {
+      FLAG_SET_DEFAULT(Tier3CompileThreshold, Tier4CompileThreshold);
+    }
+    if (FLAG_IS_DEFAULT(Tier3BackEdgeThreshold)) {
+      FLAG_SET_DEFAULT(Tier3BackEdgeThreshold, Tier4BackEdgeThreshold);
+    }
+
   }
 
   // Scale tiered compilation thresholds.
@@ -563,7 +595,13 @@ void CompilerConfig::ergo_initialize() {
 #endif
 
   if (FLAG_IS_DEFAULT(SweeperThreshold)) {
-    if ((SweeperThreshold * ReservedCodeCacheSize / 100) > (1.2 * M)) {
+    if (Continuations::enabled()) {
+      // When continuations are enabled, the sweeper needs to trigger GC to
+      // be able to sweep nmethods. Therefore, it's in general a good idea
+      // to be significantly less aggressive with sweeping, in order not to
+      // trigger excessive GC work.
+      FLAG_SET_ERGO(SweeperThreshold, SweeperThreshold * 10.0);
+    } else if ((SweeperThreshold * ReservedCodeCacheSize / 100) > (1.2 * M)) {
       // Cap default SweeperThreshold value to an equivalent of 1.2 Mb
       FLAG_SET_ERGO(SweeperThreshold, (1.2 * M * 100) / ReservedCodeCacheSize);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ void MacroAssembler::int3() {
 // Warning: This mechanism assumes that we only attempt to get the
 //          thread when we are nested below a call wrapper.
 //
-// movl reg, fs:[0]                        Get exeception pointer
+// movl reg, fs:[0]                        Get exception pointer
 // movl reg, [reg + thread_ptr_offset]     Load thread
 //
 void MacroAssembler::get_thread(Register thread) {

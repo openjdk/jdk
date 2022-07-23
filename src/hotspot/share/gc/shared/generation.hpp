@@ -41,8 +41,7 @@
 //
 // Generation                      - abstract base class
 // - DefNewGeneration              - allocation area (copy collected)
-// - CardGeneration                 - abstract class adding offset array behavior
-//   - TenuredGeneration             - tenured (old object) space (markSweepCompact)
+// - TenuredGeneration             - tenured (old object) space (markSweepCompact)
 //
 // The system configuration currently allowed is:
 //

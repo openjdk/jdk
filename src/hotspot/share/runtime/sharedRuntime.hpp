@@ -282,7 +282,7 @@ class SharedRuntime: AllStatic {
   static jlong get_java_tid(Thread* thread);
 
 
-  // used by native wrappers to reenable yellow if overflow happened in native code
+  // used by native wrappers to re-enable yellow if overflow happened in native code
   static void reguard_yellow_pages();
 
   // Fill in the "X cannot be cast to a Y" message for ClassCastException
@@ -506,19 +506,6 @@ class SharedRuntime: AllStatic {
   static address handle_wrong_method_ic_miss(JavaThread* current);
 
   static address handle_unsafe_access(JavaThread* thread, address next_pc);
-
-#ifdef COMPILER2
-  static RuntimeStub* make_native_invoker(address call_target,
-                                          int shadow_space_bytes,
-                                          const GrowableArray<VMReg>& input_registers,
-                                          const GrowableArray<VMReg>& output_registers);
-#endif
-
-  static void compute_move_order(const BasicType* in_sig_bt,
-                                 int total_in_args, const VMRegPair* in_regs,
-                                 int total_out_args, VMRegPair* out_regs,
-                                 GrowableArray<int>& arg_order,
-                                 VMRegPair tmp_vmreg);
 
 #ifndef PRODUCT
 

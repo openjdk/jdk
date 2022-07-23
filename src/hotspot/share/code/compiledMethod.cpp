@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,17 +40,20 @@
 #include "oops/klass.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/method.inline.hpp"
+#include "oops/weakHandle.inline.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/deoptimization.hpp"
+#include "runtime/frame.inline.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/sharedRuntime.hpp"
 
 CompiledMethod::CompiledMethod(Method* method, const char* name, CompilerType type, const CodeBlobLayout& layout,
                                int frame_complete_offset, int frame_size, ImmutableOopMapSet* oop_maps,
-                               bool caller_must_gc_arguments)
-  : CodeBlob(name, type, layout, frame_complete_offset, frame_size, oop_maps, caller_must_gc_arguments),
+                               bool caller_must_gc_arguments, bool compiled)
+  : CodeBlob(name, type, layout, frame_complete_offset, frame_size, oop_maps, caller_must_gc_arguments, compiled),
     _mark_for_deoptimization_status(not_marked),
     _method(method),
     _gc_data(NULL)
@@ -60,9 +63,9 @@ CompiledMethod::CompiledMethod(Method* method, const char* name, CompilerType ty
 
 CompiledMethod::CompiledMethod(Method* method, const char* name, CompilerType type, int size,
                                int header_size, CodeBuffer* cb, int frame_complete_offset, int frame_size,
-                               OopMapSet* oop_maps, bool caller_must_gc_arguments)
+                               OopMapSet* oop_maps, bool caller_must_gc_arguments, bool compiled)
   : CodeBlob(name, type, CodeBlobLayout((address) this, size, header_size, cb), cb,
-             frame_complete_offset, frame_size, oop_maps, caller_must_gc_arguments),
+             frame_complete_offset, frame_size, oop_maps, caller_must_gc_arguments, compiled),
     _mark_for_deoptimization_status(not_marked),
     _method(method),
     _gc_data(NULL)
@@ -80,6 +83,7 @@ void CompiledMethod::init_defaults() {
   _has_unsafe_access          = 0;
   _has_method_handle_invokes  = 0;
   _has_wide_vectors           = 0;
+  _has_monitors               = 0;
 }
 
 bool CompiledMethod::is_method_handle_return(address return_pc) {
@@ -114,9 +118,12 @@ const char* CompiledMethod::state() const {
 
 //-----------------------------------------------------------------------------
 void CompiledMethod::mark_for_deoptimization(bool inc_recompile_counts) {
+  // assert(can_be_deoptimized(), ""); // in some places we check before marking, in others not.
   MutexLocker ml(CompiledMethod_lock->owned_by_self() ? NULL : CompiledMethod_lock,
                  Mutex::_no_safepoint_check_flag);
-  _mark_for_deoptimization_status = (inc_recompile_counts ? deoptimize : deoptimize_noupdate);
+  if (_mark_for_deoptimization_status != deoptimize_done) { // can't go backwards
+     _mark_for_deoptimization_status = (inc_recompile_counts ? deoptimize : deoptimize_noupdate);
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -166,7 +173,7 @@ void CompiledMethod::clean_exception_cache() {
   // first ExceptionCache node that has a Klass* that is alive. That is fine,
   // as long as there is no concurrent cleanup of next pointers from concurrent writers.
   // And the concurrent writers do not clean up next pointers, only the head.
-  // Also note that concurent readers will walk through Klass* pointers that are not
+  // Also note that concurrent readers will walk through Klass* pointers that are not
   // alive. That does not cause ABA problems, because Klass* is deleted after
   // a handshake with all threads, after all stale ExceptionCaches have been
   // unlinked. That is also when the CodeCache::exception_cache_purge_list()
@@ -319,7 +326,7 @@ address CompiledMethod::oops_reloc_begin() const {
 
   // It is not safe to read oops concurrently using entry barriers, if their
   // location depend on whether the nmethod is entrant or not.
-  assert(BarrierSet::barrier_set()->barrier_set_nmethod() == NULL, "Not safe oop scan");
+  // assert(BarrierSet::barrier_set()->barrier_set_nmethod() == NULL, "Not safe oop scan");
 
   address low_boundary = verified_entry_point();
   if (!is_in_use() && is_nmethod()) {
@@ -357,14 +364,20 @@ int CompiledMethod::verify_icholder_relocations() {
 // Method that knows how to preserve outgoing arguments at call. This method must be
 // called with a frame corresponding to a Java invoke
 void CompiledMethod::preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map, OopClosure* f) {
-  if (method() != NULL && !method()->is_native()) {
+  if (method() == NULL) {
+    return;
+  }
+
+  // handle the case of an anchor explicitly set in continuation code that doesn't have a callee
+  JavaThread* thread = reg_map->thread();
+  if (thread->has_last_Java_frame() && fr.sp() == thread->last_Java_sp()) {
+    return;
+  }
+
+  if (!method()->is_native()) {
     address pc = fr.pc();
-    SimpleScopeDesc ssd(this, pc);
-    if (ssd.is_optimized_linkToNative()) return; // call was replaced
-    Bytecode_invoke call(methodHandle(Thread::current(), ssd.method()), ssd.bci());
-    bool has_receiver = call.has_receiver();
-    bool has_appendix = call.has_appendix();
-    Symbol* signature = call.signature();
+    bool has_receiver, has_appendix;
+    Symbol* signature;
 
     // The method attached by JIT-compilers should be used, if present.
     // Bytecode can be inaccurate in such case.
@@ -372,10 +385,21 @@ void CompiledMethod::preserve_callee_argument_oops(frame fr, const RegisterMap *
     if (callee != NULL) {
       has_receiver = !(callee->access_flags().is_static());
       has_appendix = false;
-      signature = callee->signature();
+      signature    = callee->signature();
+    } else {
+      SimpleScopeDesc ssd(this, pc);
+
+      Bytecode_invoke call(methodHandle(Thread::current(), ssd.method()), ssd.bci());
+      has_receiver = call.has_receiver();
+      has_appendix = call.has_appendix();
+      signature    = call.signature();
     }
 
     fr.oops_compiled_arguments_do(signature, has_receiver, has_appendix, reg_map, f);
+  } else if (method()->is_continuation_enter_intrinsic()) {
+    // This method only calls Continuation.enter()
+    Symbol* signature = vmSymbols::continuationEnter_signature();
+    fr.oops_compiled_arguments_do(signature, false, false, reg_map, f);
   }
 }
 
@@ -455,7 +479,7 @@ bool CompiledMethod::clean_ic_if_metadata_is_dead(CompiledIC *ic) {
     return true;
   }
   if (ic->is_icholder_call()) {
-    // The only exception is compiledICHolder metdata which may
+    // The only exception is compiledICHolder metadata which may
     // yet be marked below. (We check this further below).
     CompiledICHolder* cichk_metdata = ic->cached_icholder();
 
@@ -587,7 +611,7 @@ void CompiledMethod::run_nmethod_entry_barrier() {
     // By calling this nmethod entry barrier, it plays along and acts
     // like any other nmethod found on the stack of a thread (fewer surprises).
     nmethod* nm = as_nmethod_or_null();
-    if (nm != NULL) {
+    if (nm != NULL && bs_nm->is_armed(nm)) {
       bool alive = bs_nm->nmethod_entry_barrier(nm);
       assert(alive, "should be alive");
     }
@@ -604,8 +628,20 @@ void CompiledMethod::cleanup_inline_caches(bool clean_all) {
     }
     // Call this nmethod entry barrier from the sweeper.
     run_nmethod_entry_barrier();
+    if (!clean_all) {
+      MutexLocker ml(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+      CodeCache::Sweep::end();
+    }
     InlineCacheBuffer::refill_ic_stubs();
+    if (!clean_all) {
+      MutexLocker ml(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+      CodeCache::Sweep::begin();
+    }
   }
+}
+
+address* CompiledMethod::orig_pc_addr(const frame* fr) {
+  return (address*) ((address)fr->unextended_sp() + orig_pc_offset());
 }
 
 // Called to clean up after class unloading for live nmethods and from the sweeper

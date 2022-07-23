@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1444,7 +1444,7 @@ void ArchDesc::declareClasses(FILE *fp) {
       }
       else if (oper->_interface->is_RegInterface() != NULL) {
         // make sure that a fixed format string isn't used for an
-        // operand which might be assiged to multiple registers.
+        // operand which might be assigned to multiple registers.
         // Otherwise the opto assembly output could be misleading.
         if (oper->_format->_strings.count() != 0 && !oper->is_bound_register()) {
           syntax_err(oper->_linenum,
@@ -1648,7 +1648,7 @@ void ArchDesc::declareClasses(FILE *fp) {
     }
 
     if (instr->needs_constant_base() &&
-        !instr->is_mach_constant()) {  // These inherit the funcion from MachConstantNode.
+        !instr->is_mach_constant()) {  // These inherit the function from MachConstantNode.
       fprintf(fp,"  virtual uint           mach_constant_base_node_input() const { ");
       if (instr->is_ideal_call() != Form::invalid_type &&
           instr->is_ideal_call() != Form::JAVA_LEAF) {
@@ -2071,7 +2071,7 @@ void ArchDesc::defineStateClass(FILE *fp) {
 //---------------------------buildMachOperEnum---------------------------------
 // Build enumeration for densely packed operands.
 // This enumeration is used to index into the arrays in the State objects
-// that indicate cost and a successfull rule match.
+// that indicate cost and a successful rule match.
 
 // Information needed to generate the ReduceOp mapping for the DFA
 class OutputMachOperands : public OutputMap {

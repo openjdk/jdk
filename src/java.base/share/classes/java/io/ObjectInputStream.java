@@ -1017,8 +1017,9 @@ public class ObjectInputStream
      * Reads a byte of data. This method will block if no input is available.
      *
      * @return  the byte read, or -1 if the end of the stream is reached.
-     * @throws  IOException If an I/O error has occurred.
+     * @throws  IOException {@inheritDoc}
      */
+    @Override
     public int read() throws IOException {
         return bin.read();
     }
@@ -1031,8 +1032,9 @@ public class ObjectInputStream
      * @param   buf the buffer into which the data is read
      * @param   off the start offset in the destination array {@code buf}
      * @param   len the maximum number of bytes read
-     * @return  the actual number of bytes read, -1 is returned when the end of
-     *          the stream is reached.
+     * @return  the total number of bytes read into the buffer, or
+     *          {@code -1} if there is no more data because the end of
+     *          the stream has been reached.
      * @throws  NullPointerException if {@code buf} is {@code null}.
      * @throws  IndexOutOfBoundsException if {@code off} is negative,
      *          {@code len} is negative, or {@code len} is greater than
@@ -1040,6 +1042,7 @@ public class ObjectInputStream
      * @throws  IOException If an I/O error has occurred.
      * @see java.io.DataInputStream#readFully(byte[],int,int)
      */
+    @Override
     public int read(byte[] buf, int off, int len) throws IOException {
         if (buf == null) {
             throw new NullPointerException();
@@ -1055,16 +1058,17 @@ public class ObjectInputStream
      * @throws  IOException if there are I/O errors while reading from the
      *          underlying {@code InputStream}
      */
+    @Override
     public int available() throws IOException {
         return bin.available();
     }
 
     /**
-     * Closes the input stream. Must be called to release any resources
-     * associated with the stream.
+     * {@inheritDoc}
      *
-     * @throws  IOException If an I/O error has occurred.
+     * @throws  IOException {@inheritDoc}
      */
+    @Override
     public void close() throws IOException {
         /*
          * Even if stream already closed, propagate redundant close to
@@ -1224,6 +1228,7 @@ public class ObjectInputStream
      * @return  the actual number of bytes skipped.
      * @throws  IOException If an I/O error has occurred.
      */
+    @Override
     public int skipBytes(int len) throws IOException {
         return bin.skipBytes(len);
     }

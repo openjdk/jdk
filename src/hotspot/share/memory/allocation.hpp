@@ -77,7 +77,7 @@ typedef AllocFailStrategy::AllocFailEnum AllocFailType;
 // destructor are not called. The preferable way to allocate objects
 // is using the new operator.
 //
-// WARNING: The array variant must only be used for a homogenous array
+// WARNING: The array variant must only be used for a homogeneous array
 // where all objects are of the exact type specified. If subtypes are
 // stored in the array then must pay attention to calling destructors
 // at needed.
@@ -549,7 +549,7 @@ class ArrayAllocator : public AllStatic {
   static void free(E* addr, size_t length);
 };
 
-// Uses mmaped memory for all allocations. All allocations are initially
+// Uses mmapped memory for all allocations. All allocations are initially
 // zero-filled. No pre-touching.
 template <class E>
 class MmapArrayAllocator : public AllStatic {

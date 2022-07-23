@@ -363,7 +363,7 @@ u2 JvmtiClassFileReconstituter::inner_classes_attribute_length() {
 }
 
 // Write an annotation attribute.  The VM stores them in raw form, so all we need
-// to do is add the attrubute name and fill in the length.
+// to do is add the attribute name and fill in the length.
 // JSR202|   *Annotations_attribute {
 // JSR202|     u2 attribute_name_index;
 // JSR202|     u4 attribute_length;

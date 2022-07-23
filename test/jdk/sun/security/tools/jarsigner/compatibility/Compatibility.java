@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8217375 8260286
+ * @bug 8217375 8260286 8267319
  * @summary This test is used to verify the compatibility of jarsigner across
  *     different JDK releases. It also can be used to check jar signing (w/
  *     and w/o TSA) and to verify some specific signing and digest algorithms.
@@ -1192,9 +1192,9 @@ public class Compatibility {
 
             // defaults
             if (RSA.equals(keyAlgorithm) || DSA.equals(keyAlgorithm)) {
-                return 2048;
+                return 3072;
             } else if (EC.equals(keyAlgorithm)) {
-                return 256;
+                return 384;
             } else {
                 throw new RuntimeException("problem determining key size");
             }

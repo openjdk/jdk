@@ -27,8 +27,8 @@
 
 #include "classfile/javaClasses.hpp"
 #include "jvmci/jvmciJavaClasses.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.hpp"
-#include "runtime/thread.hpp"
 
 class CompileTask;
 class JVMCIObject;
@@ -146,7 +146,6 @@ class JVMCICompileState : public ResourceObj {
   jint compilation_ticks() const { return _compilation_ticks; }
   void inc_compilation_ticks();
 };
-
 
 // This class is a top level wrapper around interactions between HotSpot
 // and the JVMCI Java code.  It supports both a HotSpot heap based
@@ -316,12 +315,16 @@ public:
 
   JVMCIObject call_HotSpotJVMCIRuntime_callToString(JVMCIObject object, JVMCI_TRAPS);
 
-  JVMCIObject call_JavaConstant_forPrimitive(JVMCIObject kind, jlong value, JVMCI_TRAPS);
+  JVMCIObject call_JavaConstant_forPrimitive(jchar type_char, jlong value, JVMCI_TRAPS);
 
   jboolean call_HotSpotJVMCIRuntime_isGCSupported(JVMCIObject runtime, jint gcIdentifier);
 
   void call_HotSpotJVMCIRuntime_postTranslation(JVMCIObject object, JVMCI_TRAPS);
 
+  // Converts the JavaKind.typeChar value in `ch` to a BasicType
+  BasicType typeCharToBasicType(jchar ch, JVMCI_TRAPS);
+
+  // Converts the JavaKind value in `kind` to a BasicType
   BasicType kindToBasicType(JVMCIObject kind, JVMCI_TRAPS);
 
 #define DO_THROW(name) \
@@ -349,19 +352,13 @@ public:
   // nmethodLocker is required to keep the nmethod alive.
   nmethod* get_nmethod(JVMCIObject code, nmethodLocker& locker);
 
-  MethodData* asMethodData(jlong metaspaceMethodData) {
-    return (MethodData*) (address) metaspaceMethodData;
-  }
-
   const char* klass_name(JVMCIObject object);
 
   // Unpack an instance of HotSpotResolvedJavaMethodImpl into the original Method*
   Method* asMethod(JVMCIObject jvmci_method);
-  Method* asMethod(jobject jvmci_method) { return asMethod(wrap(jvmci_method)); }
 
   // Unpack an instance of HotSpotResolvedObjectTypeImpl into the original Klass*
   Klass* asKlass(JVMCIObject jvmci_type);
-  Klass* asKlass(jobject jvmci_type)  { return asKlass(wrap(jvmci_type)); }
 
   JVMCIObject get_jvmci_method(const methodHandle& method, JVMCI_TRAPS);
 
@@ -392,10 +389,13 @@ public:
   JVMCIObject new_HotSpotStackFrameReference(JVMCI_TRAPS);
   JVMCIObject new_JVMCIError(JVMCI_TRAPS);
 
-  jlong make_handle(const Handle& obj);
-  oop resolve_handle(jlong objectHandle);
+  // Makes a handle to a HotSpot heap object. These handles are
+  // individually reclaimed by JVMCIRuntime::destroy_oop_handle and
+  // bulk reclaimed by JVMCIRuntime::release_and_clear_globals.
+  jlong make_oop_handle(const Handle& obj);
+  oop resolve_oop_handle(jlong oopHandle);
 
-  // These are analagous to the JNI routines
+  // These are analogous to the JNI routines
   JVMCIObject make_local(JVMCIObject object);
   void destroy_local(JVMCIObject object);
 

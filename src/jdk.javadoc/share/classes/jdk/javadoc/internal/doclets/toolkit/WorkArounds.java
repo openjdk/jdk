@@ -76,12 +76,6 @@ import static javax.lang.model.element.ElementKind.*;
  * A quarantine class to isolate all the workarounds and bridges to
  * a locality. This class should eventually disappear once all the
  * standard APIs support the needed interfaces.
- *
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class WorkArounds {
 
@@ -504,22 +498,6 @@ public class WorkArounds {
             }
             return findMethod(encl, methodName, paramTypes);
         }
-    }
-
-    // TODO: we need to eliminate this, as it is hacky.
-    /**
-     * Returns a representation of the package truncated to two levels.
-     * For instance if the given package represents foo.bar.baz will return
-     * a representation of foo.bar
-     * @param pkg the PackageElement
-     * @return an abbreviated PackageElement
-     */
-    public PackageElement getAbbreviatedPackageElement(PackageElement pkg) {
-        String parsedPackageName = utils.parsePackageName(pkg);
-        ModuleElement encl = (ModuleElement) pkg.getEnclosingElement();
-        return encl == null
-                ? utils.elementUtils.getPackageElement(parsedPackageName)
-                : ((JavacElements) utils.elementUtils).getPackageElement(encl, parsedPackageName);
     }
 
     public boolean isPreviewAPI(Element el) {

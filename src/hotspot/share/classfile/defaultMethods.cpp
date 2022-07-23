@@ -38,8 +38,8 @@
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/signature.hpp"
-#include "runtime/thread.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.hpp"
 #include "oops/method.hpp"
@@ -585,7 +585,7 @@ void StatefulMethodFamily::record_method_and_dq_further(StateRestorerScope* scop
 }
 
 // Represents a location corresponding to a vtable slot for methods that
-// neither the class nor any of it's ancestors provide an implementaion.
+// neither the class nor any of it's ancestors provide an implementation.
 // Default methods may be present to fill this slot.
 class EmptyVtableSlot : public ResourceObj {
  private:

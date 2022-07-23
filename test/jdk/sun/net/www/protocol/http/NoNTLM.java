@@ -27,8 +27,9 @@
  * @summary Sanity check that NTLM will not be selected by the http protocol
  *    handler when running on a profile that does not support NTLM
  * @modules java.base/sun.net.www.protocol.http:open
- * @run main/othervm NoNTLM
- * @run main/othervm -Djava.net.preferIPv6Addresses=true NoNTLM
+ * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5 NoNTLM
+ * @run main/othervm -Dhttp.auth.digest.reEnabledAlgorithms=MD5
+ *                   -Djava.net.preferIPv6Addresses=true NoNTLM
  */
 
 import java.io.IOException;

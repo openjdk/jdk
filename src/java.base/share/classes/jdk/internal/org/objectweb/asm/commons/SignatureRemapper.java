@@ -56,6 +56,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 package jdk.internal.org.objectweb.asm.commons;
 
 import java.util.ArrayList;
@@ -79,21 +80,19 @@ public class SignatureRemapper extends SignatureVisitor {
       * Constructs a new {@link SignatureRemapper}. <i>Subclasses must not use this constructor</i>.
       * Instead, they must use the {@link #SignatureRemapper(int,SignatureVisitor,Remapper)} version.
       *
-      * @param signatureVisitor the signature visitor this remapper must deleted to.
+      * @param signatureVisitor the signature visitor this remapper must delegate to.
       * @param remapper the remapper to use to remap the types in the visited signature.
       */
     public SignatureRemapper(final SignatureVisitor signatureVisitor, final Remapper remapper) {
-        this(/* latest api = */ Opcodes.ASM8, signatureVisitor, remapper);
+        this(/* latest api = */ Opcodes.ASM9, signatureVisitor, remapper);
     }
 
     /**
       * Constructs a new {@link SignatureRemapper}.
       *
-      * @param api the ASM API version supported by this remapper. Must be one of {@link
-      *     jdk.internal.org.objectweb.asm.Opcodes#ASM4}, {@link jdk.internal.org.objectweb.asm.Opcodes#ASM5},{@link
-      *     jdk.internal.org.objectweb.asm.Opcodes#ASM6}, {@link jdk.internal.org.objectweb.asm.Opcodes#ASM7} or {@link
-      *     jdk.internal.org.objectweb.asm.Opcodes#ASM8}.
-      * @param signatureVisitor the signature visitor this remapper must deleted to.
+      * @param api the ASM API version supported by this remapper. Must be one of the {@code
+      *     ASM}<i>x</i> values in {@link Opcodes}.
+      * @param signatureVisitor the signature visitor this remapper must delegate to.
       * @param remapper the remapper to use to remap the types in the visited signature.
       */
     protected SignatureRemapper(
@@ -203,3 +202,4 @@ public class SignatureRemapper extends SignatureVisitor {
         classNames.remove(classNames.size() - 1);
     }
 }
+

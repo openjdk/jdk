@@ -260,7 +260,13 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
       }
     }
     if (is_cgroupsV2) {
+      // On some systems we have mixed cgroups v1 and cgroups v2 controllers (e.g. freezer on cg1 and
+      // all relevant controllers on cg2). Only set the cgroup path when we see a hierarchy id of 0.
+      if (hierarchy_id != 0) {
+        continue;
+      }
       for (int i = 0; i < CG_INFO_LENGTH; i++) {
+        assert(cg_infos[i]._cgroup_path == NULL, "cgroup path must only be set once");
         cg_infos[i]._cgroup_path = os::strdup(cgroup_path);
       }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -31,7 +31,7 @@ import java.util.ListResourceBundle;
   * Also you need to  update the count of messages(MAX_CODE)or
  * the count of warnings(MAX_WARNING) [ Information purpose only]
  * @xsl.usage advanced
- * @LastModified: May 2019
+ * @LastModified: May 2022
  */
 public class XPATHErrorResources_ja extends ListResourceBundle
 {
@@ -322,6 +322,10 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
   public static final String ER_SECUREPROCESSING_FEATURE = "ER_SECUREPROCESSING_FEATURE";
   public static final String ER_NULL_XPATH_FUNCTION_RESOLVER = "ER_NULL_XPATH_FUNCTION_RESOLVER";
   public static final String ER_NULL_XPATH_VARIABLE_RESOLVER = "ER_NULL_XPATH_VARIABLE_RESOLVER";
+  public static final String ER_PROPERTY_NAME_NULL = "ER_PROPERTY_NAME_NULL";
+  public static final String ER_PROPERTY_UNKNOWN = "ER_PROPERTY_UNKNOWN";
+  public static final String ER_GETTING_NULL_PROPERTY = "ER_GETTING_NULL_PROPERTY";
+  public static final String ER_GETTING_UNKNOWN_PROPERTY = "ER_GETTING_UNKNOWN_PROPERTY";
   //END: Keys needed for exception messages of  JAXP 1.3 XPath API implementation
 
   public static final String WG_LOCALE_NAME_NOT_HANDLED =
@@ -588,7 +592,7 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
   { ER_RTF_NOT_SUPPORTED_XRTREEFRAGSELECTWRAPPER,
        "rtf()\u306FXRTreeFragSelectWrapper\u306B\u3088\u3063\u3066\u30B5\u30DD\u30FC\u30C8\u3055\u308C\u3066\u3044\u307E\u305B\u3093"},
 
-  { ER_RTF_NOT_SUPPORTED_XRTREEFRAGSELECTWRAPPER,
+  { ER_ASNODEITERATOR_NOT_SUPPORTED_XRTREEFRAGSELECTWRAPPER,
        "asNodeIterator()\u306FXRTreeFragSelectWrapper\u306B\u3088\u3063\u3066\u30B5\u30DD\u30FC\u30C8\u3055\u308C\u3066\u3044\u307E\u305B\u3093"},
 
         /**  detach() not supported by XRTreeFragSelectWrapper   */
@@ -835,6 +839,26 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
 
   { ER_NULL_XPATH_VARIABLE_RESOLVER,
        "null\u306EXPathVariableResolver\u3092\u8A2D\u5B9A\u3057\u3088\u3046\u3068\u3057\u307E\u3057\u305F: {0}#setXPathVariableResolver(null)"},
+
+  /** Field ER_PROPERTY_NAME_NULL                       */
+
+  { ER_PROPERTY_NAME_NULL,
+       "\u30D7\u30ED\u30D1\u30C6\u30A3\u306Bnull\u306E\u540D\u524D\u3092\u8A2D\u5B9A\u3057\u3088\u3046\u3068\u3057\u307E\u3057\u305F: {0}#setProperty( null, {1})"},
+
+  /** Field ER_PROPERTY_UNKNOWN                       */
+
+  { ER_PROPERTY_UNKNOWN,
+       "\u4E0D\u660E\u306A\u30D7\u30ED\u30D1\u30C6\u30A3\"{0}\"\u3092\u8A2D\u5B9A\u3057\u3088\u3046\u3068\u3057\u307E\u3057\u305F:{1}#setProperty({0},{2})"},
+
+  /** Field ER_GETTING_NULL_PROPERTY                       */
+
+  { ER_GETTING_NULL_PROPERTY,
+       "null\u540D\u306E\u30D7\u30ED\u30D1\u30C6\u30A3\u3092\u53D6\u5F97\u3057\u3088\u3046\u3068\u3057\u307E\u3057\u305F: {0}#getProperty(null)"},
+
+  /** Field ER_GETTING_NULL_PROPERTY                       */
+
+  { ER_GETTING_UNKNOWN_PROPERTY,
+       "\u4E0D\u660E\u306A\u30D7\u30ED\u30D1\u30C6\u30A3\"{0}\"\u3092\u53D6\u5F97\u3057\u3088\u3046\u3068\u3057\u307E\u3057\u305F:{1}#getProperty({0})"},
 
   //END:  Definitions of error keys used  in exception messages of  JAXP 1.3 XPath API implementation
 

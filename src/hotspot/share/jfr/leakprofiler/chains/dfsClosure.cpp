@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,10 @@
  */
 
 #include "precompiled.hpp"
-#include "jfr/leakprofiler/chains/bitset.inline.hpp"
 #include "jfr/leakprofiler/chains/dfsClosure.hpp"
 #include "jfr/leakprofiler/chains/edge.hpp"
 #include "jfr/leakprofiler/chains/edgeStore.hpp"
+#include "jfr/leakprofiler/chains/jfrbitset.hpp"
 #include "jfr/leakprofiler/chains/rootSetClosure.hpp"
 #include "jfr/leakprofiler/utilities/granularTimer.hpp"
 #include "jfr/leakprofiler/utilities/rootType.hpp"
@@ -40,19 +40,19 @@
 UnifiedOopRef DFSClosure::_reference_stack[max_dfs_depth];
 
 void DFSClosure::find_leaks_from_edge(EdgeStore* edge_store,
-                                      BitSet* mark_bits,
+                                      JFRBitSet* mark_bits,
                                       const Edge* start_edge) {
   assert(edge_store != NULL, "invariant");
   assert(mark_bits != NULL," invariant");
   assert(start_edge != NULL, "invariant");
 
-  // Depth-first search, starting from a BFS egde
+  // Depth-first search, starting from a BFS edge
   DFSClosure dfs(edge_store, mark_bits, start_edge);
   start_edge->pointee()->oop_iterate(&dfs);
 }
 
 void DFSClosure::find_leaks_from_root_set(EdgeStore* edge_store,
-                                          BitSet* mark_bits) {
+                                          JFRBitSet* mark_bits) {
   assert(edge_store != NULL, "invariant");
   assert(mark_bits != NULL, "invariant");
 
@@ -68,7 +68,7 @@ void DFSClosure::find_leaks_from_root_set(EdgeStore* edge_store,
   rs.process();
 }
 
-DFSClosure::DFSClosure(EdgeStore* edge_store, BitSet* mark_bits, const Edge* start_edge)
+DFSClosure::DFSClosure(EdgeStore* edge_store, JFRBitSet* mark_bits, const Edge* start_edge)
   :_edge_store(edge_store), _mark_bits(mark_bits), _start_edge(start_edge),
   _max_depth(max_dfs_depth), _depth(0), _ignore_root_set(false) {
 }

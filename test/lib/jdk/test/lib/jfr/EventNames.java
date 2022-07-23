@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,6 +167,7 @@ public class EventNames {
     public final static String ObjectAllocationOutsideTLAB = PREFIX + "ObjectAllocationOutsideTLAB";
     public final static String ObjectAllocationSample = PREFIX + "ObjectAllocationSample";
     public final static String Deoptimization = PREFIX + "Deoptimization";
+    public final static String JitRestart = PREFIX + "JitRestart";
 
     // OS
     public final static String OSInformation = PREFIX + "OSInformation";
@@ -199,6 +200,10 @@ public class EventNames {
     public final static String SecurityProperty = PREFIX + "SecurityPropertyModification";
     public final static String DirectBufferStatistics = PREFIX + "DirectBufferStatistics";
     public final static String Deserialization = PREFIX + "Deserialization";
+    public static final String VirtualThreadStart = PREFIX + "VirtualThreadStart";
+    public static final String VirtualThreadEnd = PREFIX + "VirtualThreadEnd";
+    public static final String VirtualThreadPinned = PREFIX + "VirtualThreadPinned";
+    public static final String VirtualThreadSubmitFailed = PREFIX + "VirtualThreadSubmitFailed";
 
     // Containers
     public static final String ContainerConfiguration = PREFIX + "ContainerConfiguration";

@@ -638,11 +638,9 @@ jdk.certpath.disabledAlgorithms=MD2, MD5, SHA1 jdkCA & usage TLSServer, \
     SHA1 usage SignedJAR & denyAfter 2019-01-01
 
 #
-# Legacy algorithms for certification path (CertPath) processing and
-# signed JAR files.
+# Legacy cryptographic algorithms and key lengths.
 #
-# In some environments, a certain algorithm or key length may be undesirable
-# but is not yet disabled.
+# In some environments, a certain algorithm or key length may be undesirable.
 #
 # Tools such as keytool and jarsigner may emit warnings when these legacy
 # algorithms are used. See the man pages for those tools for more information.
@@ -655,7 +653,8 @@ jdk.certpath.disabledAlgorithms=MD2, MD5, SHA1 jdkCA & usage TLSServer, \
 # implementations.
 
 jdk.security.legacyAlgorithms=SHA1, \
-    RSA keySize < 2048, DSA keySize < 2048
+    RSA keySize < 2048, DSA keySize < 2048, \
+    DES, DESede, MD5, RC2, ARCFOUR
 
 #
 # Algorithm restrictions for signed JAR files
@@ -700,6 +699,16 @@ jdk.security.legacyAlgorithms=SHA1, \
 #
 jdk.jar.disabledAlgorithms=MD2, MD5, RSA keySize < 1024, \
       DSA keySize < 1024, SHA1 denyAfter 2019-01-01
+
+#
+# Disabled message digest algorithms for use with plaintext
+# HTTP Digest authentication (java.net.HttpURLConnection).
+# This includes HTTPS Digest authentication to proxies.
+# This may be overridden by setting the networking (or system)
+# property "http.auth.digest.reEnabledAlgorithms" to a comma
+# separated list of algorithms to be allowed.
+#
+http.auth.digest.disabledAlgorithms = MD5, SHA-1
 
 #
 # Algorithm restrictions for Secure Socket Layer/Transport Layer Security
@@ -1156,10 +1165,30 @@ jceks.key.serialFilter = java.base/java.lang.Enum;java.base/java.security.KeyRep
 # If a system property of the same name is also specified, it supersedes the
 # security property value defined here.
 #
-# If the property is set to an illegal value,
-# an iteration count that is not a positive integer, or an unknown algorithm
-# name, an exception will be thrown when the property is used.
-# If the property is not set or empty, a default value will be used.
+# If the property is set to an illegal value, an iteration count that is not
+# a positive integer, or an unknown algorithm name, an exception will be thrown
+# when the property is used. If the property is not set or empty, a default
+# value will be used.
+#
+# Some PKCS12 tools and libraries may not support algorithms based on PBES2
+# and AES. To create a PKCS12 keystore which they can load, set the system
+# property "keystore.pkcs12.legacy" which overrides the values of the properties
+# defined below with legacy algorithms. Setting this system property (which can
+# only be enabled and has no value) is equivalent to
+#
+#   -Dkeystore.pkcs12.certProtectionAlgorithm=PBEWithSHA1AndRC2_40
+#   -Dkeystore.pkcs12.keyProtectionAlgorithm=PBEWithSHA1AndDESede
+#   -Dkeystore.pkcs12.macAlgorithm=HmacPBESHA1
+#   -Dkeystore.pkcs12.certPbeIterationCount=50000
+#   -Dkeystore.pkcs12.keyPbeIterationCount=50000
+#   -Dkeystore.pkcs12.macIterationCount=100000
+#
+# Also, you can downgrade an existing PKCS12 keystore created with stronger
+# algorithms to legacy algorithms with
+#
+#    keytool -J-Dkeystore.pkcs12.legacy -importkeystore -srckeystore ks -destkeystore ks
+#
+# This system property should be used at your own risk.
 #
 # Note: These properties are currently used by the JDK Reference implementation.
 # They are not guaranteed to be examined and used by other implementations.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,7 @@ public final class ConstantBootstraps {
      * descriptor is specified by {@code name}.
      *
      * @param lookup unused
-     * @param name the descriptor (JVMS 4.3) of the desired primitive type
+     * @param name the descriptor (JVMS {@jvms 4.3}) of the desired primitive type
      * @param type the required result type (must be {@code Class.class})
      * @return the {@link Class} mirror
      * @throws IllegalArgumentException if the name is not a descriptor for a

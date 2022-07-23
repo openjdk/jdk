@@ -2373,7 +2373,7 @@ public abstract class TIFFDecompressor {
      * and instead override the {@code decodeRaw} and/or
      * {@code getRawImageType} methods.
      *
-     * @exception IOException if an error occurs in
+     * @throws IOException if an error occurs in
      * {@code decodeRaw}.
      */
     public void decode() throws IOException {

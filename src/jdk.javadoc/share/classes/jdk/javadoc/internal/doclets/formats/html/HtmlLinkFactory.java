@@ -51,11 +51,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.links.LinkInfo;
 
 /**
  * A factory that returns a link given the information about it.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
  */
 public class HtmlLinkFactory extends LinkFactory {
 
@@ -258,10 +253,10 @@ public class HtmlLinkFactory extends LinkFactory {
         if (isTypeLink) {
             return resources.getText("doclet.Href_Type_Param_Title",
                     utils.getSimpleName(typeElement));
-        } else if (utils.isInterface(typeElement)){
+        } else if (utils.isPlainInterface(typeElement)){
             return resources.getText("doclet.Href_Interface_Title",
                 m_writer.getLocalizedPackageName(utils.containingPackage(typeElement)));
-        } else if (utils.isAnnotationType(typeElement)) {
+        } else if (utils.isAnnotationInterface(typeElement)) {
             return resources.getText("doclet.Href_Annotation_Title",
                 m_writer.getLocalizedPackageName(utils.containingPackage(typeElement)));
         } else if (utils.isEnum(typeElement)) {

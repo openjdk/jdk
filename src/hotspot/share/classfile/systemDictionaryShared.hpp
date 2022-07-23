@@ -137,6 +137,20 @@ class SharedClassLoadingMark {
 class SystemDictionaryShared: public SystemDictionary {
   friend class ExcludeDumpTimeSharedClasses;
   friend class CleanupDumpTimeLambdaProxyClassTable;
+
+  struct ArchiveInfo {
+    RunTimeSharedDictionary _builtin_dictionary;
+    RunTimeSharedDictionary _unregistered_dictionary;
+    LambdaProxyClassDictionary _lambda_proxy_class_dictionary;
+
+    const RunTimeLambdaProxyClassInfo* lookup_lambda_proxy_class(LambdaProxyClassKey* key) {
+      return _lambda_proxy_class_dictionary.lookup(key, key->hash(), 0);
+    }
+
+    void print_on(const char* prefix, outputStream* st);
+    void print_table_statistics(const char* prefix, outputStream* st);
+  };
+
 public:
   enum {
     FROM_FIELD_IS_PROTECTED = 1 << 0,
@@ -150,14 +164,13 @@ private:
   static DumpTimeSharedClassTable* _cloned_dumptime_table;
   static DumpTimeLambdaProxyClassDictionary* _dumptime_lambda_proxy_class_dictionary;
   static DumpTimeLambdaProxyClassDictionary* _cloned_dumptime_lambda_proxy_class_dictionary;
-  // SystemDictionaries in the base layer static archive
-  static RunTimeSharedDictionary _builtin_dictionary;
-  static RunTimeSharedDictionary _unregistered_dictionary;
-  static LambdaProxyClassDictionary _lambda_proxy_class_dictionary;
-  // SystemDictionaries in the top layer dynamic archive
-  static RunTimeSharedDictionary _dynamic_builtin_dictionary;
-  static RunTimeSharedDictionary _dynamic_unregistered_dictionary;
-  static LambdaProxyClassDictionary _dynamic_lambda_proxy_class_dictionary;
+
+  static ArchiveInfo _static_archive;
+  static ArchiveInfo _dynamic_archive;
+
+  static ArchiveInfo* get_archive(bool is_static_archive) {
+    return is_static_archive ? &_static_archive : &_dynamic_archive;
+  }
 
   static InstanceKlass* load_shared_class_for_builtin_loader(
                                                Symbol* class_name,
@@ -184,11 +197,6 @@ private:
 
   static bool _dump_in_progress;
   DEBUG_ONLY(static bool _no_class_loading_should_happen;)
-  static void print_on(const char* prefix,
-                       RunTimeSharedDictionary* builtin_dictionary,
-                       RunTimeSharedDictionary* unregistered_dictionary,
-                       LambdaProxyClassDictionary* lambda_dictionary,
-                       outputStream* st) NOT_CDS_RETURN;
 
 public:
   static bool is_hidden_lambda_proxy(InstanceKlass* ik);

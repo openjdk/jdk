@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ public class BundleParams {
     }
 
     // NOTE: we do not care about application parameters here
-    // as they will be embeded into jar file manifest and
+    // as they will be embedded into jar file manifest and
     // java launcher will take care of them!
 
     public Map<String, ? super Object> getBundleParamsAsMap() {

@@ -36,7 +36,7 @@ class TypeArrayKlass : public ArrayKlass {
   friend class VMStructs;
 
  public:
-  static const KlassID ID = TypeArrayKlassID;
+  static const KlassKind Kind = TypeArrayKlassKind;
 
  private:
   jint _max_length;            // maximum number of elements allowed in an array

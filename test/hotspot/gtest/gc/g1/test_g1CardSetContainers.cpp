@@ -83,7 +83,7 @@ void G1CardSetContainersTest::cardset_inlineptr_test(uint bits_per_card) {
 
   G1AddCardResult res;
 
-  G1CardSet::CardSetPtr value = G1CardSetInlinePtr();
+  G1CardSet::ContainerPtr value = G1CardSetInlinePtr();
 
   for (uint i = 0; i < CardsPerSet; i++) {
     {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8138766 8227059 8227595
+ * @bug 8138766 8227059 8227595 8267319
  * @summary New default -sigalg for keytool
  * @library /test/lib
  * @build java.base/sun.security.rsa.RSAKeyPairGenerator
@@ -46,8 +46,8 @@ public class DefaultSignatureAlgorithm {
     static int pos = 0;
 
     public static void main(String[] args) throws Exception {
-        check("RSA", 1024, null, "SHA256withRSA");
-        check("RSA", 3072, null, "SHA256withRSA");
+        check("RSA", 1024, null, "SHA384withRSA");
+        check("RSA", 3072, null, "SHA384withRSA");
         check("RSA", 3073, null, "SHA384withRSA");
         check("RSA", 7680, null, "SHA384withRSA");
         check("RSA", 7681, null, "SHA512withRSA");

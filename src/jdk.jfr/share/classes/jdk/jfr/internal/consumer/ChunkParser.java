@@ -41,7 +41,7 @@ import jdk.jfr.internal.LongMap;
 import jdk.jfr.internal.MetadataDescriptor;
 import jdk.jfr.internal.Type;
 import jdk.jfr.internal.Utils;
-import jdk.jfr.internal.consumer.filter.CheckPointEvent;
+import jdk.jfr.internal.consumer.filter.CheckpointEvent;
 import jdk.jfr.internal.consumer.filter.ChunkWriter;
 
 /**
@@ -50,34 +50,21 @@ import jdk.jfr.internal.consumer.filter.ChunkWriter;
  */
 public final class ChunkParser {
 
-    public static final class ParserConfiguration {
-        private final boolean reuse;
-        private final boolean ordered;
-        private final ParserFilter eventFilter;
-        private final ChunkWriter chunkWriter;
-
-        long filterStart;
-        long filterEnd;
-
-        public ParserConfiguration(long filterStart, long filterEnd, boolean reuse, boolean ordered, ParserFilter filter, ChunkWriter chunkWriter) {
-            this.filterStart = filterStart;
-            this.filterEnd = filterEnd;
-            this.reuse = reuse;
-            this.ordered = ordered;
-            this.eventFilter = filter;
-            this.chunkWriter = chunkWriter;
-        }
+    public record ParserConfiguration(long filterStart, long filterEnd, boolean reuse,  boolean ordered, ParserFilter filter, ChunkWriter chunkWriter) {
 
         public ParserConfiguration() {
             this(0, Long.MAX_VALUE, false, false, ParserFilter.ACCEPT_ALL, null);
         }
 
-        public boolean isOrdered() {
-            return ordered;
+        ParserConfiguration withRange(long filterStart, long filterEnd) {
+            if (filterStart == this.filterStart && filterEnd == this.filterEnd) {
+                return this;
+            }
+            return new ParserConfiguration(filterStart, filterEnd, reuse, ordered, filter, chunkWriter);
         }
     }
 
-    private enum CheckPointType {
+    private enum CheckpointType {
         // Checkpoint that finishes a flush segment
         FLUSH(1),
         // Checkpoint contains chunk header information in the first pool
@@ -87,7 +74,7 @@ public final class ChunkParser {
         // Checkpoint contains thread related information
         THREAD(8);
         private final int mask;
-        private CheckPointType(int mask) {
+        private CheckpointType(int mask) {
             this.mask = mask;
         }
 
@@ -178,7 +165,7 @@ public final class ChunkParser {
                 ep.setReuse(configuration.reuse);
                 ep.setFilterStart(configuration.filterStart);
                 ep.setFilterEnd(configuration.filterEnd);
-                long threshold = configuration.eventFilter.getThreshold(name);
+                long threshold = configuration.filter().getThreshold(name);
                 if (threshold >= 0) {
                     ep.setEnabled(true);
                     ep.setThresholdNanos(threshold);
@@ -267,7 +254,7 @@ public final class ChunkParser {
                 // Not accepted by filter
             } else {
                 if (typeId == 1) { // checkpoint event
-                    if (CheckPointType.FLUSH.is(parseCheckpointType())) {
+                    if (CheckpointType.FLUSH.is(parseCheckpointType())) {
                         input.position(pos + size);
                         return FLUSH_MARKER;
                     }
@@ -317,9 +304,9 @@ public final class ChunkParser {
         long delta = -1;
         boolean logTrace = Logger.shouldLog(LogTag.JFR_SYSTEM_PARSER, LogLevel.TRACE);
         while (thisCP != abortCP && delta != 0) {
-            CheckPointEvent cp = null;
+            CheckpointEvent cp = null;
             if (configuration.chunkWriter != null) {
-                cp = configuration.chunkWriter.newCheckPointEvent(thisCP);
+                cp = configuration.chunkWriter.newCheckpointEvent(thisCP);
             }
             input.position(thisCP);
             lastCP = thisCP;

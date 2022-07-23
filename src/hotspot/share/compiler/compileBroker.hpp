@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,7 +108,7 @@ class CompileQueue : public CHeapObj<mtCompiler> {
   CompileTask* first()                           { return _first; }
   CompileTask* last()                            { return _last;  }
 
-  CompileTask* get();
+  CompileTask* get(CompilerThread* thread);
 
   bool         is_empty() const                  { return _first == NULL; }
   int          size()     const                  { return _size;          }
@@ -370,7 +370,7 @@ public:
   // Redefine Classes support
   static void mark_on_stack();
 
-  // Print curent compilation time stats for a given compiler
+  // Print current compilation time stats for a given compiler
   static void print_times(const char* name, CompilerStatistics* stats);
 
   // Print a detailed accounting of compilation time

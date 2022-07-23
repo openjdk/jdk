@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
 
 public class CDS {
@@ -224,7 +223,7 @@ public class CDS {
                     prt.println(line);
                 }
             } catch (IOException e) {
-                throw new RuntimeException("IOExeption happens during drain stream to file " +
+                throw new RuntimeException("IOException happens during drain stream to file " +
                                            fileName + ": " + e.getMessage());
             }}).start();
         return fileName;
@@ -329,7 +328,7 @@ public class CDS {
         if (!tempArchiveFile.renameTo(archiveFile)) {
             throw new RuntimeException("Cannot rename temp file " + tempArchiveFileName + " to archive file" + archiveFileName);
         }
-        // Everyting goes well, print out the file name.
+        // Everything goes well, print out the file name.
         String archiveFilePath = new File(archiveFileName).getAbsolutePath();
         System.out.println("The process was attached by jcmd and dumped a " + (isStatic ? "static" : "dynamic") + " archive " + archiveFilePath);
         return archiveFilePath;

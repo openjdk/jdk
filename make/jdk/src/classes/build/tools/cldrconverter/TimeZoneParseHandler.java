@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,9 @@ class TimeZoneParseHandler extends AbstractLDMLHandler<Object> {
     public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
         switch (qName) {
         case "type":
-            if (!isIgnored(attributes) && !attributes.getValue("deprecated").equals("true")) {
+            if (!isIgnored(attributes) &&
+                    !attributes.getValue("deprecated").equals("true") &&
+                    !attributes.getValue("description").equals("Metazone")) {
                 put(attributes.getValue("name"), attributes.getValue("alias"));
             }
             break;

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2021 Unicode, Inc.
+<!-- Copyright © 1991-2022 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -164,14 +164,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="GyMMMd" draft="contributed">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd" draft="contributed">E, d 'de' MMM 'de' y G</dateFormatItem>
 						<dateFormatItem id="hms" draft="contributed">hh:mm:ss</dateFormatItem>
-						<dateFormatItem id="Hmsv" draft="contributed">HH:mm:ss v</dateFormatItem>
 						<dateFormatItem id="Hmsvvvv" draft="contributed">HH:mm:ss (vvvv)</dateFormatItem>
-						<dateFormatItem id="Hmv" draft="contributed">HH:mm v</dateFormatItem>
 						<dateFormatItem id="MEd" draft="contributed">E d-M</dateFormatItem>
 						<dateFormatItem id="yM" draft="contributed">M-y</dateFormatItem>
 						<dateFormatItem id="yMEd" draft="contributed">E, d/M/y</dateFormatItem>
-						<dateFormatItem id="yMMM" draft="contributed">MMM y</dateFormatItem>
-						<dateFormatItem id="yMMMEd" draft="contributed">E, d MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMd" draft="contributed">d 'de' MMM 'de' y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
 						<intervalFormatFallback draft="contributed">{0} a el {1}</intervalFormatFallback>
@@ -331,9 +328,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<currencies>
 			<currency type="ARS">
 				<symbol>$</symbol>
-			</currency>
-			<currency type="GEL">
-				<symbol alt="variant" draft="contributed">GEL</symbol>
 			</currency>
 			<currency type="USD">
 				<symbol>US$</symbol>

@@ -1147,7 +1147,7 @@ void klassItable::initialize_itable(GrowableArray<Method*>* supers) {
       _klass->is_interface() ||
       _klass->itable_length() == itableOffsetEntry::size()) return;
 
-  // There's alway an extra itable entry so we can null-terminate it.
+  // There's always an extra itable entry so we can null-terminate it.
   guarantee(size_offset_table() >= 1, "too small");
   int num_interfaces = size_offset_table() - 1;
   if (num_interfaces > 0) {
@@ -1508,7 +1508,7 @@ int klassItable::compute_itable_size(Array<InstanceKlass*>* transitive_interface
   CountInterfacesClosure cic;
   visit_all_interfaces(transitive_interfaces, &cic);
 
-  // There's alway an extra itable entry so we can null-terminate it.
+  // There's always an extra itable entry so we can null-terminate it.
   int itable_size = calc_itable_size(cic.nof_interfaces() + 1, cic.nof_methods());
 
   return itable_size;

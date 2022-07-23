@@ -281,11 +281,15 @@ void outputStream::print_julong(julong value) {
  *
  * indent is applied to each line.  Ends with a CR.
  */
-void outputStream::print_data(void* data, size_t len, bool with_ascii) {
+void outputStream::print_data(void* data, size_t len, bool with_ascii, bool rel_addr) {
   size_t limit = (len + 16) / 16 * 16;
   for (size_t i = 0; i < limit; ++i) {
     if (i % 16 == 0) {
-      indent().print(INTPTR_FORMAT_W(07) ":", i);
+      if (rel_addr) {
+        indent().print(INTPTR_FORMAT_W(07) ":", i);
+      } else {
+        indent().print(INTPTR_FORMAT ":", p2i((unsigned char*)data + i));
+      }
     }
     if (i % 2 == 0) {
       print(" ");
@@ -746,7 +750,7 @@ void defaultStream::start_log() {
       outputStream *text = xs->text();
       for (SystemProperty* p = Arguments::system_properties(); p != NULL; p = p->next()) {
         assert(p->key() != NULL, "p->key() is NULL");
-        if (p->is_readable()) {
+        if (p->readable()) {
           // Print in two stages to avoid problems with long
           // keys/values.
           text->print_raw(p->key());

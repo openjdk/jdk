@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -367,11 +367,13 @@ OopMap *OopFlow::build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, i
 #endif
 
 #ifdef ASSERT
+  bool has_derived_oops = false;
   for( OopMapStream oms1(omap); !oms1.is_done(); oms1.next()) {
     OopMapValue omv1 = oms1.current();
     if (omv1.type() != OopMapValue::derived_oop_value) {
       continue;
     }
+    has_derived_oops = true;
     bool found = false;
     for( OopMapStream oms2(omap); !oms2.is_done(); oms2.next()) {
       OopMapValue omv2 = oms2.current();
@@ -383,8 +385,18 @@ OopMap *OopFlow::build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, i
         break;
       }
     }
+    assert(has_derived_oops == omap->has_derived_oops(), "");
     assert( found, "derived with no base in oopmap" );
   }
+
+  int num_oops = 0;
+  for (OopMapStream oms2(omap); !oms2.is_done(); oms2.next()) {
+    OopMapValue omv = oms2.current();
+    if (omv.type() == OopMapValue::oop_value || omv.type() == OopMapValue::narrowoop_value) {
+      num_oops++;
+    }
+  }
+  assert(num_oops == omap->num_oops(), "num_oops: %d omap->num_oops(): %d", num_oops, omap->num_oops());
 #endif
 
   return omap;

@@ -514,7 +514,7 @@ public class PKCS7 {
         // CRLs (optional)
         if (crls != null && crls.length != 0) {
             // cast to X509CRLImpl[] since X509CRLImpl implements DerEncoder
-            Set<X509CRLImpl> implCRLs = new HashSet<>(crls.length);
+            Set<X509CRLImpl> implCRLs = HashSet.newHashSet(crls.length);
             for (X509CRL crl: crls) {
                 if (crl instanceof X509CRLImpl)
                     implCRLs.add((X509CRLImpl) crl);
@@ -940,7 +940,7 @@ public class PKCS7 {
 
     /**
      * Examine the certificate for a Subject Information Access extension
-     * (<a href="http://tools.ietf.org/html/rfc5280">RFC 5280</a>).
+     * (<a href="https://tools.ietf.org/html/rfc5280">RFC 5280</a>).
      * The extension's {@code accessMethod} field should contain the object
      * identifier defined for timestamping: 1.3.6.1.5.5.7.48.3 and its
      * {@code accessLocation} field should contain an HTTP or HTTPS URL.

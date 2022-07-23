@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,12 @@ import java.lang.reflect.Method;
 import java.net.Authenticator;
 import java.net.CookieHandler;
 import java.net.CookieManager;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ProxySelector;
 import java.net.URI;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.BodyHandlers;
@@ -40,7 +40,6 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import javax.net.ssl.SSLContext;
@@ -55,6 +54,7 @@ import static org.testng.Assert.*;
 
 /*
  * @test
+ * @bug 8209137
  * @summary HttpClient[.Builder] API and behaviour checks
  * @library /test/lib
  * @build jdk.test.lib.net.SimpleSSLContext
@@ -65,6 +65,7 @@ public class HttpClientBuilderTest {
 
     static final Class<NullPointerException> NPE = NullPointerException.class;
     static final Class<IllegalArgumentException> IAE = IllegalArgumentException.class;
+    static final Class<UnsupportedOperationException> UOE = UnsupportedOperationException.class;
 
     @Test
     public void testDefaults() throws Exception {
@@ -262,6 +263,89 @@ public class HttpClientBuilderTest {
         builder.build();
     }
 
+    /**
+     * Tests the {@link java.net.http.HttpClient.Builder#localAddress(InetAddress)} method
+     * behaviour when that method is called on a builder returned by {@link HttpClient#newBuilder()}
+     */
+    @Test
+    public void testLocalAddress() throws Exception {
+        HttpClient.Builder builder = HttpClient.newBuilder();
+        // setting null should work fine
+        builder.localAddress(null);
+        builder.localAddress(InetAddress.getLoopbackAddress());
+        // resetting back to null should work fine
+        builder.localAddress(null);
+    }
+
+    /**
+     * Tests that the default method implementation of
+     * {@link java.net.http.HttpClient.Builder#localAddress(InetAddress)} throws
+     * an {@link UnsupportedOperationException}
+     */
+    @Test
+    public void testDefaultMethodImplForLocalAddress() throws Exception {
+        HttpClient.Builder noOpBuilder = new HttpClient.Builder() {
+            @Override
+            public HttpClient.Builder cookieHandler(CookieHandler cookieHandler) {
+                return null;
+            }
+
+            @Override
+            public HttpClient.Builder connectTimeout(Duration duration) {
+                return null;
+            }
+
+            @Override
+            public HttpClient.Builder sslContext(SSLContext sslContext) {
+                return null;
+            }
+
+            @Override
+            public HttpClient.Builder sslParameters(SSLParameters sslParameters) {
+                return null;
+            }
+
+            @Override
+            public HttpClient.Builder executor(Executor executor) {
+                return null;
+            }
+
+            @Override
+            public HttpClient.Builder followRedirects(Redirect policy) {
+                return null;
+            }
+
+            @Override
+            public HttpClient.Builder version(Version version) {
+                return null;
+            }
+
+            @Override
+            public HttpClient.Builder priority(int priority) {
+                return null;
+            }
+
+            @Override
+            public HttpClient.Builder proxy(ProxySelector proxySelector) {
+                return null;
+            }
+
+            @Override
+            public HttpClient.Builder authenticator(Authenticator authenticator) {
+                return null;
+            }
+
+            @Override
+            public HttpClient build() {
+                return null;
+            }
+        };
+        // expected to throw a UnsupportedOperationException
+        assertThrows(UOE, () -> noOpBuilder.localAddress(null));
+        // a non-null address should also throw a UnsupportedOperationException
+        assertThrows(UOE, () -> noOpBuilder.localAddress(InetAddress.getLoopbackAddress()));
+    }
+
     // ---
 
     static final URI uri = URI.create("http://foo.com/");
@@ -302,9 +386,6 @@ public class HttpClientBuilderTest {
     }
 
     // ---
-
-    static final Class<UnsupportedOperationException> UOE =
-            UnsupportedOperationException.class;
 
     @Test
     static void testUnsupportedWebSocket() throws Exception {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -434,7 +434,7 @@ CodeEmitInfo* LIRGenerator::state_for(Instruction* x, ValueStack* state, bool ig
     } else {
       assert((int)liveness.size() == s->locals_size(), "error in use of liveness");
       for_each_local_value(s, index, value) {
-        assert(value->subst() == value, "missed substition");
+        assert(value->subst() == value, "missed substitution");
         if (liveness.at(index) && !value->type()->is_illegal()) {
           if (!value->is_pinned() && value->as_Constant() == NULL && value->as_Local() == NULL) {
             walk(value);
@@ -1187,7 +1187,7 @@ void LIRGenerator::do_Return(Return* x) {
   set_no_result(x);
 }
 
-// Examble: ref.get()
+// Example: ref.get()
 // Combination of LoadField and g1 pre-write barrier
 void LIRGenerator::do_Reference_get(Intrinsic* x) {
 
@@ -1198,7 +1198,7 @@ void LIRGenerator::do_Reference_get(Intrinsic* x) {
   LIRItem reference(x->argument_at(0), this);
   reference.load_item();
 
-  // need to perform the null check on the reference objecy
+  // need to perform the null check on the reference object
   CodeEmitInfo* info = NULL;
   if (x->needs_null_check()) {
     info = state_for(x);
@@ -1298,31 +1298,27 @@ void LIRGenerator::do_getModifiers(Intrinsic* x) {
     info = state_for(x);
   }
 
-  LabelObj* L_not_prim = new LabelObj();
-  LabelObj* L_done = new LabelObj();
+  // While reading off the universal constant mirror is less efficient than doing
+  // another branch and returning the constant answer, this branchless code runs into
+  // much less risk of confusion for C1 register allocator. The choice of the universe
+  // object here is correct as long as it returns the same modifiers we would expect
+  // from the primitive class itself. See spec for Class.getModifiers that provides
+  // the typed array klasses with similar modifiers as their component types.
 
+  Klass* univ_klass_obj = Universe::byteArrayKlassObj();
+  assert(univ_klass_obj->modifier_flags() == (JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC), "Sanity");
+  LIR_Opr prim_klass = LIR_OprFact::metadataConst(univ_klass_obj);
+
+  LIR_Opr recv_klass = new_register(T_METADATA);
+  __ move(new LIR_Address(receiver.result(), java_lang_Class::klass_offset(), T_ADDRESS), recv_klass, info);
+
+  // Check if this is a Java mirror of primitive type, and select the appropriate klass.
   LIR_Opr klass = new_register(T_METADATA);
-  // Checking if it's a java mirror of primitive type
-  __ move(new LIR_Address(receiver.result(), java_lang_Class::klass_offset(), T_ADDRESS), klass, info);
-  __ cmp(lir_cond_notEqual, klass, LIR_OprFact::metadataConst(0));
-  __ branch(lir_cond_notEqual, L_not_prim->label());
-  __ move(LIR_OprFact::intConst(JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC), result);
-  __ branch(lir_cond_always, L_done->label());
+  __ cmp(lir_cond_equal, recv_klass, LIR_OprFact::metadataConst(0));
+  __ cmove(lir_cond_equal, prim_klass, recv_klass, klass, T_ADDRESS);
 
-  __ branch_destination(L_not_prim->label());
+  // Get the answer.
   __ move(new LIR_Address(klass, in_bytes(Klass::modifier_flags_offset()), T_INT), result);
-  __ branch_destination(L_done->label());
-}
-
-// Example: Thread.currentThread()
-void LIRGenerator::do_currentThread(Intrinsic* x) {
-  assert(x->number_of_arguments() == 0, "wrong type");
-  LIR_Opr temp = new_register(T_ADDRESS);
-  LIR_Opr reg = rlock_result(x);
-  __ move(new LIR_Address(getThreadPointer(), in_bytes(JavaThread::threadObj_offset()), T_ADDRESS), temp);
-  // threadObj = ((OopHandle)_threadObj)->resolve();
-  access_load(IN_NATIVE, T_OBJECT,
-              LIR_OprFact::address(new LIR_Address(temp, T_OBJECT)), reg);
 }
 
 void LIRGenerator::do_getObjectSize(Intrinsic* x) {
@@ -1345,11 +1341,12 @@ void LIRGenerator::do_getObjectSize(Intrinsic* x) {
 
   // Instance case: the layout helper gives us instance size almost directly,
   // but we need to mask out the _lh_instance_slow_path_bit.
-  __ convert(Bytecodes::_i2l, layout, result_reg);
 
   assert((int) Klass::_lh_instance_slow_path_bit < BytesPerLong, "clear bit");
-  jlong mask = ~(jlong) right_n_bits(LogBytesPerLong);
-  __ logical_and(result_reg, LIR_OprFact::longConst(mask), result_reg);
+
+  LIR_Opr mask = load_immediate(~(jint) right_n_bits(LogBytesPerLong), T_INT);
+  __ logical_and(layout, mask, layout);
+  __ convert(Bytecodes::_i2l, layout, result_reg);
 
   __ branch(lir_cond_always, L_done->label());
 
@@ -1362,8 +1359,8 @@ void LIRGenerator::do_getObjectSize(Intrinsic* x) {
   int round_mask = MinObjAlignmentInBytes - 1;
 
   // Figure out header sizes first.
-  LIR_Opr hss = LIR_OprFact::intConst(Klass::_lh_header_size_shift);
-  LIR_Opr hsm = LIR_OprFact::intConst(Klass::_lh_header_size_mask);
+  LIR_Opr hss = load_immediate(Klass::_lh_header_size_shift, T_INT);
+  LIR_Opr hsm = load_immediate(Klass::_lh_header_size_mask, T_INT);
 
   LIR_Opr header_size = new_register(T_INT);
   __ move(layout, header_size);
@@ -1374,7 +1371,7 @@ void LIRGenerator::do_getObjectSize(Intrinsic* x) {
 
   // Figure out the array length in bytes
   assert(Klass::_lh_log2_element_size_shift == 0, "use shift in place");
-  LIR_Opr l2esm = LIR_OprFact::intConst(Klass::_lh_log2_element_size_mask);
+  LIR_Opr l2esm = load_immediate(Klass::_lh_log2_element_size_mask, T_INT);
   __ logical_and(layout, l2esm, layout);
 
   LIR_Opr length_int = new_register(T_INT);
@@ -1414,18 +1411,42 @@ void LIRGenerator::do_getObjectSize(Intrinsic* x) {
   __ convert(Bytecodes::_i2l, header_size, header_size_long);
   __ add(length, header_size_long, length);
   if (round_mask != 0) {
-    __ logical_and(length, LIR_OprFact::longConst(~round_mask), length);
+    LIR_Opr round_mask_opr = load_immediate(~(jlong)round_mask, T_LONG);
+    __ logical_and(length, round_mask_opr, length);
   }
   __ move(length, result_reg);
 #else
   __ add(length_int, header_size, length_int);
   if (round_mask != 0) {
-    __ logical_and(length_int, LIR_OprFact::intConst(~round_mask), length_int);
+    LIR_Opr round_mask_opr = load_immediate(~round_mask, T_INT);
+    __ logical_and(length_int, round_mask_opr, length_int);
   }
   __ convert(Bytecodes::_i2l, length_int, result_reg);
 #endif
 
   __ branch_destination(L_done->label());
+}
+
+void LIRGenerator::do_extentLocalCache(Intrinsic* x) {
+  do_JavaThreadField(x, JavaThread::extentLocalCache_offset());
+}
+
+// Example: Thread.currentCarrierThread()
+void LIRGenerator::do_currentCarrierThread(Intrinsic* x) {
+  do_JavaThreadField(x, JavaThread::threadObj_offset());
+}
+
+void LIRGenerator::do_vthread(Intrinsic* x) {
+  do_JavaThreadField(x, JavaThread::vthread_offset());
+}
+
+void LIRGenerator::do_JavaThreadField(Intrinsic* x, ByteSize offset) {
+  assert(x->number_of_arguments() == 0, "wrong type");
+  LIR_Opr temp = new_register(T_ADDRESS);
+  LIR_Opr reg = rlock_result(x);
+  __ move(new LIR_Address(getThreadPointer(), in_bytes(offset), T_ADDRESS), temp);
+  access_load(IN_NATIVE, T_OBJECT,
+              LIR_OprFact::address(new LIR_Address(temp, T_OBJECT)), reg);
 }
 
 void LIRGenerator::do_RegisterFinalizer(Intrinsic* x) {
@@ -1568,7 +1589,7 @@ void LIRGenerator::do_CompareAndSwap(Intrinsic* x, ValueType* type) {
 //
 // According to the new Java Memory Model (JMM):
 // (1) All volatiles are serialized wrt to each other.
-// ALSO reads & writes act as aquire & release, so:
+// ALSO reads & writes act as acquire & release, so:
 // (2) A read cannot let unrelated NON-volatile memory refs that happen after
 // the read float up to before the read.  It's OK for non-volatile memory refs
 // that happen before the volatile read to float down below it.
@@ -2884,31 +2905,6 @@ void LIRGenerator::do_IfOp(IfOp* x) {
   __ cmove(lir_cond(x->cond()), t_val.result(), f_val.result(), reg, as_BasicType(x->x()->type()));
 }
 
-#ifdef JFR_HAVE_INTRINSICS
-
-void LIRGenerator::do_getEventWriter(Intrinsic* x) {
-  LabelObj* L_end = new LabelObj();
-
-  // FIXME T_ADDRESS should actually be T_METADATA but it can't because the
-  // meaning of these two is mixed up (see JDK-8026837).
-  LIR_Address* jobj_addr = new LIR_Address(getThreadPointer(),
-                                           in_bytes(THREAD_LOCAL_WRITER_OFFSET_JFR),
-                                           T_ADDRESS);
-  LIR_Opr result = rlock_result(x);
-  __ move(LIR_OprFact::oopConst(NULL), result);
-  LIR_Opr jobj = new_register(T_METADATA);
-  __ move_wide(jobj_addr, jobj);
-  __ cmp(lir_cond_equal, jobj, LIR_OprFact::metadataConst(0));
-  __ branch(lir_cond_equal, L_end->label());
-
-  access_load(IN_NATIVE, T_OBJECT, LIR_OprFact::address(new LIR_Address(jobj, T_OBJECT)), result);
-
-  __ branch_destination(L_end->label());
-}
-
-#endif
-
-
 void LIRGenerator::do_RuntimeCall(address routine, Intrinsic* x) {
   assert(x->number_of_arguments() == 0, "wrong type");
   // Enforce computation of _reserved_argument_area_size which is required on some platforms.
@@ -2934,11 +2930,8 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   }
 
 #ifdef JFR_HAVE_INTRINSICS
-  case vmIntrinsics::_getEventWriter:
-    do_getEventWriter(x);
-    break;
   case vmIntrinsics::_counterTime:
-    do_RuntimeCall(CAST_FROM_FN_PTR(address, JFR_TIME_FUNCTION), x);
+    do_RuntimeCall(CAST_FROM_FN_PTR(address, JfrTime::time_function()), x);
     break;
 #endif
 
@@ -2955,8 +2948,10 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   case vmIntrinsics::_isPrimitive:    do_isPrimitive(x);   break;
   case vmIntrinsics::_getModifiers:   do_getModifiers(x);  break;
   case vmIntrinsics::_getClass:       do_getClass(x);      break;
-  case vmIntrinsics::_currentThread:  do_currentThread(x); break;
   case vmIntrinsics::_getObjectSize:  do_getObjectSize(x); break;
+  case vmIntrinsics::_currentCarrierThread: do_currentCarrierThread(x); break;
+  case vmIntrinsics::_currentThread:  do_vthread(x);       break;
+  case vmIntrinsics::_extentLocalCache: do_extentLocalCache(x); break;
 
   case vmIntrinsics::_dlog:           // fall through
   case vmIntrinsics::_dlog10:         // fall through
@@ -3022,6 +3017,10 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
 
   case vmIntrinsics::_vectorizedMismatch:
     do_vectorizedMismatch(x);
+    break;
+
+  case vmIntrinsics::_Continuation_doYield:
+    do_continuation_doYield(x);
     break;
 
   case vmIntrinsics::_blackhole:

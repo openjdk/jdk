@@ -241,7 +241,7 @@ void ADLParser::instr_parse(void) {
       parse_err(SYNERR, "Instructions do not specify an interface\n");
     }
     else if (!strcmp(ident, "ins_pipe"))        ins_pipe_parse(*instr);
-    else {  // Done with staticly defined parts of instruction definition
+    else {  // Done with statically defined parts of instruction definition
       // Check identifier to see if it is the name of an attribute
       const Form    *form = _globalNames[ident];
       AttributeForm *attr = form ? form->is_attribute() : NULL;
@@ -922,7 +922,7 @@ void ADLParser::enc_class_parse_block(EncClass* encoding, char* ec_name) {
 
   // Collect the parts of the encode description
   // (1) strings that are passed through to output
-  // (2) replacement/substitution variable, preceeded by a '$'
+  // (2) replacement/substitution variable, preceded by a '$'
   while ( (_curchar != '%') && (*(_ptr+1) != '}') ) {
 
     // (1)
@@ -1558,7 +1558,7 @@ void ADLParser::pipe_parse(void) {
       if (!vsi_seen)
         parse_err(SYNERR, "\"variable_size_instruction\" or \"fixed_size_instruction\" unspecified\n");
     }
-    else {  // Done with staticly defined parts of instruction definition
+    else {  // Done with statically defined parts of instruction definition
       parse_err(SYNERR, "expected one of \"resources\", \"pipe_desc\", \"pipe_class\", found \"%s\"\n", ident);
       return;
     }
@@ -2863,7 +2863,7 @@ void ADLParser::ins_encode_parse_block_impl(InstructForm& inst, EncClass* encodi
 
   // Collect the parts of the encode description
   // (1) strings that are passed through to output
-  // (2) replacement/substitution variable, preceeded by a '$'
+  // (2) replacement/substitution variable, preceded by a '$'
   while ((_curchar != '%') && (*(_ptr+1) != '}')) {
 
     // (1)
@@ -3329,7 +3329,7 @@ void ADLParser::constant_parse_expression(EncClass* encoding, char* ec_name) {
 
   // Collect the parts of the constant expression.
   // (1) strings that are passed through to output
-  // (2) replacement/substitution variable, preceeded by a '$'
+  // (2) replacement/substitution variable, preceded by a '$'
   while (parens_depth > 0) {
     if (_curchar == '(') {
       parens_depth++;
@@ -3818,7 +3818,7 @@ FormatRule* ADLParser::format_parse(void) {
 
       // Collect the parts of the format description
       // (1) strings that are passed through to tty->print
-      // (2) replacement/substitution variable, preceeded by a '$'
+      // (2) replacement/substitution variable, preceded by a '$'
       // (3) multi-token ANSIY C style strings
       while ( true ) {
         if ( _curchar == '%' || _curchar == '\n' ) {
@@ -3955,7 +3955,7 @@ FormatRule* ADLParser::template_parse(void) {
 
           // Collect the parts of the format description
           // (1) strings that are passed through to tty->print
-          // (2) replacement/substitution variable, preceeded by a '$'
+          // (2) replacement/substitution variable, preceded by a '$'
           // (3) multi-token ANSIY C style strings
           while ( true ) {
             if ( _curchar == '%' || _curchar == '\n' ) {

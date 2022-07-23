@@ -90,7 +90,7 @@ public final class StringContent implements AbstractDocument.Content, Serializab
      * @param where the starting position &gt;= 0 &amp;&amp; &lt; length()
      * @param str the non-null string to insert
      * @return an UndoableEdit object for undoing
-     * @exception BadLocationException if the specified position is invalid
+     * @throws BadLocationException if the specified position is invalid
      * @see AbstractDocument.Content#insertString
      */
     public UndoableEdit insertString(int where, String str) throws BadLocationException {
@@ -111,7 +111,7 @@ public final class StringContent implements AbstractDocument.Content, Serializab
      * @param where the starting position &gt;= 0
      * @param nitems the number of characters to remove &gt;= 0
      * @return an UndoableEdit object for undoing
-     * @exception BadLocationException if the specified position is invalid
+     * @throws BadLocationException if the specified position is invalid
      * @see AbstractDocument.Content#remove
      */
     public UndoableEdit remove(int where, int nitems) throws BadLocationException {
@@ -134,7 +134,7 @@ public final class StringContent implements AbstractDocument.Content, Serializab
      * @param where the starting position &gt;= 0
      * @param len the length to retrieve &gt;= 0
      * @return a string representing the content; may be empty
-     * @exception BadLocationException if the specified position is invalid
+     * @throws BadLocationException if the specified position is invalid
      * @see AbstractDocument.Content#getString
      */
     public String getString(int where, int len) throws BadLocationException {
@@ -150,7 +150,7 @@ public final class StringContent implements AbstractDocument.Content, Serializab
      * @param where the starting position &gt;= 0
      * @param len the number of characters to retrieve &gt;= 0
      * @param chars the Segment object to return the characters in
-     * @exception BadLocationException if the specified position is invalid
+     * @throws BadLocationException if the specified position is invalid
      * @see AbstractDocument.Content#getChars
      */
     public void getChars(int where, int len, Segment chars) throws BadLocationException {
@@ -168,7 +168,7 @@ public final class StringContent implements AbstractDocument.Content, Serializab
      *
      * @param offset the offset to create a position for &gt;= 0
      * @return the position
-     * @exception BadLocationException if the specified position is invalid
+     * @throws BadLocationException if the specified position is invalid
      */
     public Position createPosition(int offset) throws BadLocationException {
         // some small documents won't have any sticky positions

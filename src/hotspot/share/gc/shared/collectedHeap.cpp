@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,8 +49,8 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/perfData.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmThread.hpp"
 #include "services/heapDumper.hpp"
@@ -60,7 +60,10 @@
 
 class ClassLoaderData;
 
+size_t CollectedHeap::_lab_alignment_reserve = ~(size_t)0;
+Klass* CollectedHeap::_filler_object_klass = NULL;
 size_t CollectedHeap::_filler_array_max_size = 0;
+size_t CollectedHeap::_stack_chunk_max_size = 0;
 
 class GCMessage : public FormatBuffer<1024> {
  public:
@@ -240,6 +243,14 @@ CollectedHeap::CollectedHeap() :
   _gc_cause(GCCause::_no_gc),
   _gc_lastcause(GCCause::_no_gc)
 {
+  // If the minimum object size is greater than MinObjAlignment, we can
+  // end up with a shard at the end of the buffer that's smaller than
+  // the smallest object.  We can't allow that because the buffer must
+  // look like it's full of objects when we retire it, so we make
+  // sure we have enough space for a filler int array object.
+  size_t min_size = min_dummy_object_size();
+  _lab_alignment_reserve = min_size > (size_t)MinObjAlignment ? align_object_size(min_size) : 0;
+
   const size_t max_len = size_t(arrayOopDesc::max_array_length(T_INT));
   const size_t elements_per_word = HeapWordSize / sizeof(jint);
   _filler_array_max_size = align_object_size(filler_array_hdr_size() +
@@ -278,6 +289,7 @@ void CollectedHeap::collect_as_vm_thread(GCCause::Cause cause) {
   assert(Heap_lock->is_locked(), "Precondition#2");
   GCCauseSetter gcs(this, cause);
   switch (cause) {
+    case GCCause::_codecache_GC_threshold:
     case GCCause::_heap_inspection:
     case GCCause::_heap_dump:
     case GCCause::_metadata_GC_threshold : {
@@ -417,6 +429,11 @@ size_t CollectedHeap::filler_array_min_size() {
   return align_object_size(filler_array_hdr_size()); // align to MinObjAlignment
 }
 
+void CollectedHeap::zap_filler_array_with(HeapWord* start, size_t words, juint value) {
+  Copy::fill_to_words(start + filler_array_hdr_size(),
+                      words - filler_array_hdr_size(), value);
+}
+
 #ifdef ASSERT
 void CollectedHeap::fill_args_check(HeapWord* start, size_t words)
 {
@@ -427,8 +444,7 @@ void CollectedHeap::fill_args_check(HeapWord* start, size_t words)
 void CollectedHeap::zap_filler_array(HeapWord* start, size_t words, bool zap)
 {
   if (ZapFillerObjects && zap) {
-    Copy::fill_to_words(start + filler_array_hdr_size(),
-                        words - filler_array_hdr_size(), 0XDEAFBABE);
+    zap_filler_array_with(start, words, 0XDEAFBABE);
   }
 }
 #endif // ASSERT
@@ -443,9 +459,15 @@ CollectedHeap::fill_with_array(HeapWord* start, size_t words, bool zap)
   const size_t len = payload_size * HeapWordSize / sizeof(jint);
   assert((int)len >= 0, "size too large " SIZE_FORMAT " becomes %d", words, (int)len);
 
-  ObjArrayAllocator allocator(Universe::intArrayKlassObj(), words, (int)len, /* do_zero */ false);
+  ObjArrayAllocator allocator(Universe::fillerArrayKlassObj(), words, (int)len, /* do_zero */ false);
   allocator.initialize(start);
-  DEBUG_ONLY(zap_filler_array(start, words, zap);)
+  if (DumpSharedSpaces) {
+    // This array is written into the CDS archive. Make sure it
+    // has deterministic contents.
+    zap_filler_array_with(start, words, 0);
+  } else {
+    DEBUG_ONLY(zap_filler_array(start, words, zap);)
+  }
 }
 
 void
@@ -457,7 +479,7 @@ CollectedHeap::fill_with_object_impl(HeapWord* start, size_t words, bool zap)
     fill_with_array(start, words, zap);
   } else if (words > 0) {
     assert(words == min_fill_size(), "unaligned size");
-    ObjAllocator allocator(vmClasses::Object_klass(), words);
+    ObjAllocator allocator(CollectedHeap::filler_object_klass(), words);
     allocator.initialize(start);
   }
 }
@@ -491,11 +513,6 @@ void CollectedHeap::fill_with_objects(HeapWord* start, size_t words, bool zap)
 
 void CollectedHeap::fill_with_dummy_object(HeapWord* start, HeapWord* end, bool zap) {
   CollectedHeap::fill_with_object(start, end, zap);
-}
-
-size_t CollectedHeap::tlab_alloc_reserve() const {
-  size_t min_size = min_dummy_object_size();
-  return min_size > (size_t)MinObjAlignment ? align_object_size(min_size) : 0;
 }
 
 HeapWord* CollectedHeap::allocate_new_tlab(size_t min_size,

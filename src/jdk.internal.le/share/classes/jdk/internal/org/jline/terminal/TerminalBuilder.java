@@ -521,7 +521,7 @@ public final class TerminalBuilder {
      * build tool uses a <code>LineReader</code> to implement an interactive shell.
      * One of its supported commands is <code>console</code> which invokes
      * the scala REPL. The scala REPL also uses a <code>LineReader</code> and it
-     * is necessary to override the {@link Terminal} used by the the REPL to
+     * is necessary to override the {@link Terminal} used by the REPL to
      * share the same {@link Terminal} instance used by sbt.
      *
      * <p>

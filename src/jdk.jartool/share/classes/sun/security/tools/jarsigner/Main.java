@@ -30,6 +30,7 @@ import java.net.UnknownHostException;
 import java.net.URLClassLoader;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.PKIXBuilderParameters;
+import java.security.interfaces.ECKey;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.zip.*;
@@ -125,6 +126,8 @@ public class Main {
     static final int NOT_ALIAS = 0x04;          // alias list is NOT empty and
     // signer is not in alias list
     static final int SIGNED_BY_ALIAS = 0x08;    // signer is in alias list
+    static final int SOME_ALIASES_NOT_FOUND = 0x10;
+    // at least one signer alias is not in keystore
 
     static final JavaUtilZipFileAccess JUZFA = SharedSecrets.getJavaUtilZipFileAccess();
 
@@ -221,6 +224,7 @@ public class Main {
     private boolean badExtendedKeyUsage = false;
     private boolean badNetscapeCertType = false;
     private boolean signerSelfSigned = false;
+    private boolean allAliasesFound = true;
 
     private Throwable chainNotValidatedReason = null;
     private Throwable tsaChainNotValidatedReason = null;
@@ -853,6 +857,8 @@ public class Main {
                         aliasNotInStore |= isSigned && !inStore;
                     }
 
+                    allAliasesFound =
+                        (inStoreWithAlias & SOME_ALIASES_NOT_FOUND) == 0;
                     // Only used when -verbose provided
                     StringBuilder sb = null;
                     if (verbose != null) {
@@ -1194,8 +1200,8 @@ public class Main {
         }
 
         // only in verifying
-        if (aliasNotInStore) {
-            errors.add(rb.getString("This.jar.contains.signed.entries.that.s.not.signed.by.alias.in.this.keystore."));
+        if (!allAliasesFound) {
+            warnings.add(rb.getString("This.jar.contains.signed.entries.that.s.not.signed.by.alias.in.this.keystore."));
         }
 
         if (signerSelfSigned) {
@@ -1244,13 +1250,13 @@ public class Main {
             if ((legacyAlg & 8) == 8) {
                 warnings.add(String.format(
                         rb.getString("The.1.signing.key.has.a.keysize.of.2.which.is.considered.a.security.risk..This.key.size.will.be.disabled.in.a.future.update."),
-                        privateKey.getAlgorithm(), KeyUtil.getKeySize(privateKey)));
+                        KeyUtil.fullDisplayAlgName(privateKey), KeyUtil.getKeySize(privateKey)));
             }
 
             if ((disabledAlg & 8) == 8) {
                 errors.add(String.format(
                         rb.getString("The.1.signing.key.has.a.keysize.of.2.which.is.considered.a.security.risk.and.is.disabled."),
-                        privateKey.getAlgorithm(), KeyUtil.getKeySize(privateKey)));
+                        KeyUtil.fullDisplayAlgName(privateKey), KeyUtil.getKeySize(privateKey)));
             }
         } else {
             if ((legacyAlg & 1) != 0) {
@@ -1274,7 +1280,7 @@ public class Main {
             if ((legacyAlg & 8) == 8) {
                 warnings.add(String.format(
                         rb.getString("The.1.signing.key.has.a.keysize.of.2.which.is.considered.a.security.risk..This.key.size.will.be.disabled.in.a.future.update."),
-                        weakPublicKey.getAlgorithm(), KeyUtil.getKeySize(weakPublicKey)));
+                        KeyUtil.fullDisplayAlgName(weakPublicKey), KeyUtil.getKeySize(weakPublicKey)));
             }
         }
 
@@ -1451,7 +1457,12 @@ public class Main {
             JAR_DISABLED_CHECK.permits(key.getAlgorithm(), jcp, true);
         } catch (CertPathValidatorException e) {
             disabledAlgFound = true;
-            return String.format(rb.getString("key.bit.disabled"), kLen);
+            if (key instanceof ECKey) {
+                return String.format(rb.getString("key.bit.eccurve.disabled"), kLen,
+                        KeyUtil.fullDisplayAlgName(key));
+            } else {
+                return String.format(rb.getString("key.bit.disabled"), kLen);
+            }
         }
         try {
             LEGACY_CHECK.permits(key.getAlgorithm(), jcp, true);
@@ -1463,7 +1474,12 @@ public class Main {
         } catch (CertPathValidatorException e) {
             weakPublicKey = key;
             legacyAlg |= 8;
-            return String.format(rb.getString("key.bit.weak"), kLen);
+            if (key instanceof ECKey) {
+                return String.format(rb.getString("key.bit.eccurve.weak"), kLen,
+                        KeyUtil.fullDisplayAlgName(key));
+            } else {
+                return String.format(rb.getString("key.bit.weak"), kLen);
+            }
         }
     }
 
@@ -1516,7 +1532,12 @@ public class Main {
         try {
             CERTPATH_DISABLED_CHECK.permits(key.getAlgorithm(), cpcp, true);
         } catch (CertPathValidatorException e) {
-            return String.format(rb.getString("key.bit.disabled"), kLen);
+            if (key instanceof ECKey) {
+                return String.format(rb.getString("key.bit.eccurve.disabled"), kLen,
+                        KeyUtil.fullDisplayAlgName(key));
+            } else {
+                return String.format(rb.getString("key.bit.disabled"), kLen);
+            }
         }
         try {
             LEGACY_CHECK.permits(key.getAlgorithm(), cpcp, true);
@@ -1526,7 +1547,12 @@ public class Main {
                 return rb.getString("unknown.size");
             }
         } catch (CertPathValidatorException e) {
-            return String.format(rb.getString("key.bit.weak"), kLen);
+            if (key instanceof ECKey) {
+                return String.format(rb.getString("key.bit.eccurve.weak"), kLen,
+                        KeyUtil.fullDisplayAlgName(key));
+            } else {
+                return String.format(rb.getString("key.bit.weak"), kLen);
+            }
         }
     }
 
@@ -1727,6 +1753,7 @@ public class Main {
         }
 
         int result = 0;
+        boolean allAliasesFound = true;
         if (store != null) {
             try {
                 List<? extends Certificate> certs =
@@ -1737,6 +1764,8 @@ public class Main {
                         alias = store.getCertificateAlias(c);
                         if (alias != null) {
                             storeHash.put(c, alias);
+                        } else {
+                            allAliasesFound = false;
                         }
                     }
                     if (alias != null) {
@@ -1755,6 +1784,9 @@ public class Main {
             } catch (KeyStoreException kse) {
                 // never happens, because keystore has been loaded
             }
+        }
+        if (!allAliasesFound) {
+            result |= SOME_ALIASES_NOT_FOUND;
         }
         cacheForInKS.put(signer, result);
         return result;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -232,9 +232,7 @@ public abstract class ShellFolder extends File {
                 managerClass = null;
             }
         // swallow the exceptions below and use default shell folder
-        } catch(ClassNotFoundException e) {
-        } catch(NullPointerException e) {
-        } catch(SecurityException e) {
+        } catch (ClassNotFoundException | SecurityException | NullPointerException e) {
         }
 
         if (managerClass == null) {
@@ -253,13 +251,12 @@ public abstract class ShellFolder extends File {
 
     /**
      * Return a shell folder from a file object
-     * @exception FileNotFoundException if file does not exist
+     * @throws FileNotFoundException if file does not exist
      */
     public static ShellFolder getShellFolder(File file) throws FileNotFoundException {
         if (file instanceof ShellFolder) {
             return (ShellFolder)file;
         }
-
         if (!Files.exists(Paths.get(file.getPath()), LinkOption.NOFOLLOW_LINKS)) {
             throw new FileNotFoundException();
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ public class Bug4512215 {
     private static void testCountryCurrency(String country, String currencyCode,
             int digits) {
         testCurrencyDefined(currencyCode, digits);
-        Currency currency = Currency.getInstance(new Locale("", country));
+        Currency currency = Currency.getInstance(Locale.of("", country));
         if (!currency.getCurrencyCode().equals(currencyCode)) {
             throw new RuntimeException("[" + country
                     + "] expected: " + currencyCode

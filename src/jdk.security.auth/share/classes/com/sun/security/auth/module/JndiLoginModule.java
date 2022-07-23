@@ -154,13 +154,13 @@ import static sun.security.util.ResourcesMgr.getAuthResourceString;
 public class JndiLoginModule implements LoginModule {
 
     /**
-     * Directory service/path where this module can access the relevent
+     * Directory service/path where this module can access the relevant
      * user information.
      */
     public final String USER_PROVIDER = "user.provider.url";
 
     /**
-     * Directory service/path where this module can access the relevent
+     * Directory service/path where this module can access the relevant
      * group information.
      */
     public final String GROUP_PROVIDER = "group.provider.url";

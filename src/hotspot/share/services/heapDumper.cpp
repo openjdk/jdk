@@ -45,10 +45,11 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/os.hpp"
 #include "runtime/reflectionUtils.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vmOperations.hpp"
@@ -576,12 +577,12 @@ void AbstractDumpWriter::start_sub_record(u1 tag, u4 len) {
     // Will be fixed up later if we add more sub-records.  If this is a huge sub-record,
     // this is already the correct length, since we don't add more sub-records.
     write_u4(len);
-    assert(Bytes::get_Java_u4((address)(buffer() + 5)) == len, "Inconsitent size!");
+    assert(Bytes::get_Java_u4((address)(buffer() + 5)) == len, "Inconsistent size!");
     _in_dump_segment = true;
     _is_huge_sub_record = len > buffer_size() - dump_segment_header_size;
   } else if (_is_huge_sub_record || (len > buffer_size() - position())) {
     // This object will not fit in completely or the last sub-record was huge.
-    // Finish the current segement and try again.
+    // Finish the current segment and try again.
     finish_dump_segment();
     start_sub_record(tag, len);
 
@@ -664,7 +665,7 @@ class ParWriterBufferQueue : public CHeapObj<mtInternal> {
       _tail = entry;
     }
     _length++;
-    assert(_tail->_next == NULL, "Bufer queue is polluted");
+    assert(_tail->_next == NULL, "Buffer queue is polluted");
   }
 
   ParWriterBufferQueueElem* dequeue() {
@@ -1126,14 +1127,6 @@ u4 DumperSupport::get_static_fields_size(InstanceKlass* ik, u2& field_count) {
     }
   }
 
-  // Also provide a pointer to the init_lock if present, so there aren't unreferenced int[0]
-  // arrays.
-  oop init_lock = ik->init_lock();
-  if (init_lock != NULL) {
-    field_count++;
-    size += sizeof(address);
-  }
-
   // We write the value itself plus a name and a one byte type tag per field.
   return size + field_count * (sizeof(address) + 1);
 }
@@ -1170,14 +1163,6 @@ void DumperSupport::dump_static_fields(AbstractDumpWriter* writer, Klass* k) {
       writer->write_objectID(prev->constants()->resolved_references());
       prev = prev->previous_versions();
     }
-  }
-
-  // Add init lock to the end if the class is not yet initialized
-  oop init_lock = ik->init_lock();
-  if (init_lock != NULL) {
-    writer->write_symbolID(vmSymbols::init_lock_name());         // name
-    writer->write_u1(sig2tag(vmSymbols::int_array_signature())); // type
-    writer->write_objectID(init_lock);
   }
 }
 
@@ -2334,7 +2319,7 @@ void VM_HeapDumper::dump_stack_traces() {
       HandleMark hm(current_thread);
 
       ThreadStackTrace* stack_trace = new ThreadStackTrace(thread, false);
-      stack_trace->dump_stack_at_safepoint(-1, /* ObjectMonitorsHashtable is not needed here */ nullptr);
+      stack_trace->dump_stack_at_safepoint(-1, /* ObjectMonitorsHashtable is not needed here */ nullptr, true);
       _stack_traces[_num_threads++] = stack_trace;
 
       // write HPROF_FRAME records for this thread's stack trace

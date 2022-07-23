@@ -273,7 +273,7 @@
 <tbody>
 <tr class="odd">
 <td style="text-align: left;">Linux</td>
-<td style="text-align: left;">gcc 10.2.0</td>
+<td style="text-align: left;">gcc 11.2.0</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">macOS</td>
@@ -281,14 +281,14 @@
 </tr>
 <tr class="odd">
 <td style="text-align: left;">Windows</td>
-<td style="text-align: left;">Microsoft Visual Studio 2019 update 16.7.2</td>
+<td style="text-align: left;">Microsoft Visual Studio 2022 update 17.1.0</td>
 </tr>
 </tbody>
 </table>
 <p>All compilers are expected to be able to compile to the C99 language standard, as some C99 features are used in the source code. Microsoft Visual Studio doesn't fully support C99 so in practice shared code is limited to using C99 features that it does support.</p>
 <h3 id="gcc">gcc</h3>
 <p>The minimum accepted version of gcc is 5.0. Older versions will generate a warning by <code>configure</code> and are unlikely to work.</p>
-<p>The JDK is currently known to be able to compile with at least version 10.2 of gcc.</p>
+<p>The JDK is currently known to be able to compile with at least version 11.2 of gcc.</p>
 <p>In general, any version between these two should be usable.</p>
 <h3 id="clang">clang</h3>
 <p>The minimum accepted version of clang is 3.5. Older versions will not be accepted by <code>configure</code>.</p>
@@ -810,7 +810,7 @@ ls build/linux-aarch64-server-release/</code></pre></li>
 <p><a href="http://github.com/icecc/icecream">icecc/icecream</a> is a simple way to setup a distributed compiler network. If you have multiple machines available for building the JDK, you can drastically cut individual build times by utilizing it.</p>
 <p>To use, setup an icecc network, and install icecc on the build machine. Then run <code>configure</code> using <code>--enable-icecc</code>.</p>
 <h3 id="using-sjavac">Using sjavac</h3>
-<p>To speed up Java compilation, especially incremental compilations, you can try the experimental sjavac compiler by using <code>--enable-sjavac</code>.</p>
+<p>To speed up compilation of Java code, especially during incremental compilations, the sjavac server is automatically enabled in the configuration step by default. To explicitly enable or disable sjavac, use either <code>--enable-javac-server</code> or <code>--disable-javac-server</code>.</p>
 <h3 id="building-the-right-target">Building the Right Target</h3>
 <p>Selecting the proper target to build can have dramatic impact on build time. For normal usage, <code>jdk</code> or the default target is just fine. You only need to build <code>images</code> for shipping, or if your tests require it.</p>
 <p>See also <a href="#using-fine-grained-make-targets">Using Fine-Grained Make Targets</a> on how to build an even smaller subset of the product.</p>

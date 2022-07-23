@@ -421,8 +421,6 @@ Form::CallType InstructForm::is_ideal_call() const {
   idx = 0;
   if(_matrule->find_type("CallLeafVector",idx))   return Form::JAVA_LEAF;
   idx = 0;
-  if(_matrule->find_type("CallNative",idx))       return Form::JAVA_NATIVE;
-  idx = 0;
 
   return Form::invalid_type;
 }
@@ -612,7 +610,7 @@ bool InstructForm::needs_anti_dependence_check(FormDict &globals) const {
         strcmp(_matrule->_rChild->_opType,"StrEquals"  )==0 ||
         strcmp(_matrule->_rChild->_opType,"StrIndexOf" )==0 ||
         strcmp(_matrule->_rChild->_opType,"StrIndexOfChar" )==0 ||
-        strcmp(_matrule->_rChild->_opType,"HasNegatives" )==0 ||
+        strcmp(_matrule->_rChild->_opType,"CountPositives" )==0 ||
         strcmp(_matrule->_rChild->_opType,"AryEq"      )==0 ))
     return true;
 
@@ -902,7 +900,7 @@ uint InstructForm::oper_input_base(FormDict &globals) {
         strcmp(_matrule->_rChild->_opType,"StrCompressedCopy" )==0 ||
         strcmp(_matrule->_rChild->_opType,"StrIndexOf")==0 ||
         strcmp(_matrule->_rChild->_opType,"StrIndexOfChar")==0 ||
-        strcmp(_matrule->_rChild->_opType,"HasNegatives")==0 ||
+        strcmp(_matrule->_rChild->_opType,"CountPositives")==0 ||
         strcmp(_matrule->_rChild->_opType,"EncodeISOArray")==0)) {
         // String.(compareTo/equals/indexOf) and Arrays.equals
         // and sun.nio.cs.iso8859_1$Encoder.EncodeISOArray
@@ -1143,9 +1141,6 @@ const char *InstructForm::mach_base_class(FormDict &globals)  const {
   else if( is_ideal_call() == Form::JAVA_LEAF ) {
     return "MachCallLeafNode";
   }
-  else if( is_ideal_call() == Form::JAVA_NATIVE ) {
-    return "MachCallNativeNode";
-  }
   else if (is_ideal_return()) {
     return "MachReturnNode";
   }
@@ -1354,7 +1349,7 @@ void InstructForm::rep_var_format(FILE *fp, const char *rep_var) {
   }
 }
 
-// Seach through operands to determine parameters unique positions.
+// Search through operands to determine parameters unique positions.
 void InstructForm::set_unique_opnds() {
   uint* uniq_idx = NULL;
   uint  nopnds = num_opnds();
@@ -4097,6 +4092,7 @@ int MatchRule::is_expensive() const {
         strcmp(opType,"ReverseBytesL")==0 ||
         strcmp(opType,"ReverseBytesUS")==0 ||
         strcmp(opType,"ReverseBytesS")==0 ||
+        strcmp(opType,"PopulateIndex")==0 ||
         strcmp(opType,"AddReductionVI")==0 ||
         strcmp(opType,"AddReductionVL")==0 ||
         strcmp(opType,"AddReductionVF")==0 ||
@@ -4207,10 +4203,11 @@ bool MatchRule::is_vector() const {
     "CMoveVD", "CMoveVF",
     "DivVF","DivVD",
     "AbsVB","AbsVS","AbsVI","AbsVL","AbsVF","AbsVD",
-    "NegVF","NegVD","NegVI",
+    "NegVF","NegVD","NegVI","NegVL",
     "SqrtVD","SqrtVF",
     "AndV" ,"XorV" ,"OrV",
     "MaxV", "MinV",
+    "CompressV", "ExpandV", "CompressM",
     "AddReductionVI", "AddReductionVL",
     "AddReductionVF", "AddReductionVD",
     "MulReductionVI", "MulReductionVL",
@@ -4222,7 +4219,7 @@ bool MatchRule::is_vector() const {
     "LShiftVB","LShiftVS","LShiftVI","LShiftVL",
     "RShiftVB","RShiftVS","RShiftVI","RShiftVL",
     "URShiftVB","URShiftVS","URShiftVI","URShiftVL",
-    "ReplicateB","ReplicateS","ReplicateI","ReplicateL","ReplicateF","ReplicateD",
+    "ReplicateB","ReplicateS","ReplicateI","ReplicateL","ReplicateF","ReplicateD","ReverseV","ReverseBytesV",
     "RoundDoubleModeV","RotateLeftV" , "RotateRightV", "LoadVector","StoreVector",
     "LoadVectorGather", "StoreVectorScatter", "LoadVectorGatherMasked", "StoreVectorScatterMasked",
     "VectorTest", "VectorLoadMask", "VectorStoreMask", "VectorBlend", "VectorInsert",
@@ -4231,9 +4228,11 @@ bool MatchRule::is_vector() const {
     "VectorCastL2X", "VectorCastF2X", "VectorCastD2X",
     "VectorUCastB2X", "VectorUCastS2X", "VectorUCastI2X",
     "VectorMaskWrapper","VectorMaskCmp","VectorReinterpret","LoadVectorMasked","StoreVectorMasked",
-    "FmaVD","FmaVF","PopCountVI", "PopCountVL", "VectorLongToMask",
+    "FmaVD","FmaVF","PopCountVI","PopCountVL","PopulateIndex","VectorLongToMask",
+    "CountLeadingZerosV", "CountTrailingZerosV", "SignumVF", "SignumVD",
     // Next are vector mask ops.
     "MaskAll", "AndVMask", "OrVMask", "XorVMask", "VectorMaskCast",
+    "RoundVF", "RoundVD",
     // Next are not supported currently.
     "PackB","PackS","PackI","PackL","PackF","PackD","Pack2L","Pack2D",
     "ExtractB","ExtractUB","ExtractC","ExtractS","ExtractI","ExtractL","ExtractF","ExtractD"

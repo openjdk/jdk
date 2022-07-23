@@ -57,6 +57,7 @@
   flags(AFTER_BEAUTIFY_LOOPS,         "After beautify loops") \
   flags(BEFORE_MATCHING,              "Before matching") \
   flags(MATCHING,                     "After matching") \
+  flags(MACHANALYSIS,                 "After mach analysis") \
   flags(INCREMENTAL_INLINE,           "Incremental Inline") \
   flags(INCREMENTAL_INLINE_STEP,      "Incremental Inline Step") \
   flags(INCREMENTAL_INLINE_CLEANUP,   "Incremental Inline Cleanup") \
@@ -96,8 +97,8 @@ class CompilerPhaseTypeHelper {
   static const char* to_description(CompilerPhaseType cpt) {
     return phase_descriptions[cpt];
   }
-  static int to_bitmask(CompilerPhaseType cpt) {
-    return (1 << cpt);
+  static uint64_t to_bitmask(CompilerPhaseType cpt) {
+    return (UINT64_C(1) << cpt);
   }
 };
 

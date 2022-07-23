@@ -43,12 +43,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
 
 /**
- *  Generates the Serialized Form Information Page, <i>serialized-form.html</i>.
- *
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
+ * Generates the Serialized Form Information Page, <i>serialized-form.html</i>.
  */
 public class SerializedFormWriterImpl extends SubWriterHolderWriter
     implements SerializedFormWriter {
@@ -68,24 +63,24 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
      * Get the given header.
      *
      * @param header the header to write
-     * @return the body content tree
+     * @return the body content
      */
     @Override
     public Content getHeader(String header) {
-        HtmlTree bodyTree = getBody(getWindowTitle(header));
+        HtmlTree body = getBody(getWindowTitle(header));
         Content h1Content = Text.of(header);
-        Content heading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
+        var heading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, h1Content);
-        Content div = HtmlTree.DIV(HtmlStyle.header, heading);
+        var div = HtmlTree.DIV(HtmlStyle.header, heading);
         bodyContents.setHeader(getHeader(PageMode.SERIALIZED_FORM))
                 .addMainContent(div);
-        return bodyTree;
+        return body;
     }
 
     /**
      * Get the serialized form summaries header.
      *
-     * @return the serialized form summary header tree
+     * @return the serialized form summaries header
      */
     @Override
     public Content getSerializedSummariesHeader() {
@@ -102,30 +97,18 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
         return HtmlTree.SECTION(HtmlStyle.serializedPackageContainer);
     }
 
-    /**
-     * Get the given package header.
-     *
-     * @param packageElement the package element to write
-     * @return a content tree for the package header
-     */
     @Override
     public Content getPackageHeader(PackageElement packageElement) {
-        Content heading = HtmlTree.HEADING_TITLE(Headings.SerializedForm.PACKAGE_HEADING,
+        var heading = HtmlTree.HEADING_TITLE(Headings.SerializedForm.PACKAGE_HEADING,
                 contents.packageLabel);
         heading.add(Entity.NO_BREAK_SPACE);
         heading.add(getPackageLink(packageElement, Text.of(utils.getPackageName(packageElement))));
         return heading;
     }
 
-    /**
-     * Get the serialized class header.
-     *
-     * @return a content tree for the serialized class header
-     */
     @Override
     public Content getClassSerializedHeader() {
         return HtmlTree.UL(HtmlStyle.blockList);
-
     }
 
     /**
@@ -139,19 +122,13 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
                 && !utils.hasHiddenTag(typeElement);
     }
 
-    /**
-     * Get the serializable class heading.
-     *
-     * @param typeElement the class being processed
-     * @return a content tree for the class header
-     */
     @Override
     public Content getClassHeader(TypeElement typeElement) {
         Content classLink = (isVisibleClass(typeElement))
                 ? getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.DEFAULT, typeElement)
                         .label(configuration.getClassName(typeElement)))
                 : Text.of(utils.getFullyQualifiedName(typeElement));
-        Content section = HtmlTree.SECTION(HtmlStyle.serializedClassDetails)
+        var section = HtmlTree.SECTION(HtmlStyle.serializedClassDetails)
                 .setId(htmlIds.forClass(typeElement));
         Content superClassLink = typeElement.getSuperclass() != null
                 ? getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.SERIALIZED_FORM,
@@ -180,11 +157,6 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
         return section;
     }
 
-    /**
-     * Get the serial UID info header.
-     *
-     * @return a content tree for the serial uid info header
-     */
     @Override
     public Content getSerialUIDInfoHeader() {
         return HtmlTree.DL(HtmlStyle.nameValue);
@@ -195,46 +167,40 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
      *
      * @param header the header that will show up before the UID.
      * @param serialUID the serial UID to print.
-     * @param serialUidTree the serial UID content tree to which the serial UID
-     *                      content will be added
+     * @param target the serial UID content to which the serial UID
+     *               content will be added
      */
     @Override
     public void addSerialUIDInfo(String header,
                                  String serialUID,
-                                 Content serialUidTree)
+                                 Content target)
     {
         Content headerContent = Text.of(header);
-        serialUidTree.add(HtmlTree.DT(headerContent));
+        target.add(HtmlTree.DT(headerContent));
         Content serialContent = Text.of(serialUID);
-        serialUidTree.add(HtmlTree.DD(serialContent));
+        target.add(HtmlTree.DD(serialContent));
     }
 
-    /**
-     * Get the class serialize content header.
-     *
-     * @return a content tree for the class serialize content header
-     */
     @Override
     public Content getClassContentHeader() {
         return HtmlTree.UL(HtmlStyle.blockList);
-
     }
 
     /**
-     * Add the serialized content tree section.
+     * Add the serialized content section.
      *
-     * @param serializedTreeContent the serialized content tree to be added
+     * @param source the serialized content to be added
      */
     @Override
-    public void addSerializedContent(Content serializedTreeContent) {
-        bodyContents.addMainContent(serializedTreeContent);
+    public void addSerializedContent(Content source) {
+        bodyContents.addMainContent(source);
     }
 
     @Override
-    public void addPackageSerializedTree(Content serializedSummariesTree,
-                                         Content packageSerializedTree)
+    public void addPackageSerialized(Content serializedSummaries,
+                                     Content packageSerialized)
     {
-        serializedSummariesTree.add(HtmlTree.LI(packageSerializedTree));
+        serializedSummaries.add(HtmlTree.LI(packageSerialized));
     }
 
     /**
@@ -246,9 +212,9 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter
     }
 
     @Override
-    public void printDocument(Content serializedTree) throws DocFileIOException {
-        serializedTree.add(bodyContents);
-        printHtmlDocument(null, "serialized forms", serializedTree);
+    public void printDocument(Content source) throws DocFileIOException {
+        source.add(bodyContents);
+        printHtmlDocument(null, "serialized forms", source);
 
         if (configuration.mainIndex != null) {
             configuration.mainIndex.add(IndexItem.of(IndexItem.Category.TAGS,

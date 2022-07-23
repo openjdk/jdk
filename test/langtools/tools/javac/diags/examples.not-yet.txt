@@ -57,7 +57,6 @@ compiler.misc.bad.runtime.invisible.param.annotations   # bad class file
 compiler.misc.bad.signature                             # bad class file
 compiler.misc.bad.requires.flag                         # bad class file
 compiler.misc.bad.type.annotation.value
-compiler.misc.base.membership                           # UNUSED
 compiler.misc.class.file.not.found                      # ClassReader
 compiler.misc.class.file.wrong.class
 compiler.misc.exception.message                         # uncommon completion failure based on a string

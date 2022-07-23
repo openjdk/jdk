@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -631,7 +631,7 @@ public class ConstantPool extends Metadata implements ClassConstants {
 
               case JVM_CONSTANT_Class: {
                   dos.writeByte(cpConstType);
-                  // Klass already resolved. ConstantPool constains Klass*.
+                  // Klass already resolved. ConstantPool contains Klass*.
                   Klass refKls = (Klass)Metadata.instantiateWrapperFor(getAddressAtRaw(ci));
                   String klassName = refKls.getName().asString();
                   Short s = (Short) utf8ToIndex.get(klassName);

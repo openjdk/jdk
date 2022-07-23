@@ -31,12 +31,15 @@ import java.util.Objects;
  * @bug 8259609 8276116
  * @summary C2: optimize long range checks in long counted loops
  * @library /test/lib /
+ * @requires vm.compiler2.enabled
  * @run driver compiler.c2.irTests.TestLongRangeChecks
  */
 
 public class TestLongRangeChecks {
     public static void main(String[] args) {
-        TestFramework.run();
+        TestFramework.runWithFlags("-XX:-UseCountedLoopSafepoints");
+        TestFramework.runWithFlags("-XX:+UseCountedLoopSafepoints", "-XX:LoopStripMiningIter=1");
+        TestFramework.runWithFlags("-XX:+UseCountedLoopSafepoints", "-XX:LoopStripMiningIter=1000");
     }
 
 

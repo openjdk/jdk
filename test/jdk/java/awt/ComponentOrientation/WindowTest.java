@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,12 +98,12 @@ public class WindowTest {
                         ResourceBundle.getBundle("TestBundle1", Locale.getDefault())));
 
         System.out.println("  Applying TestBundle_iw and verifying...");
-        rb = ResourceBundle.getBundle("TestBundle", new Locale("iw", ""));
+        rb = ResourceBundle.getBundle("TestBundle", Locale.of("iw"));
         myFrame.applyResourceBundle(rb);
         verifyOrientation(myFrame, ComponentOrientation.RIGHT_TO_LEFT);
 
         System.out.println("  Applying TestBundle_es and verifying...");
-        rb = ResourceBundle.getBundle("TestBundle", new Locale("es", ""));
+        rb = ResourceBundle.getBundle("TestBundle", Locale.of("es"));
         myFrame.applyResourceBundle(rb);
         verifyOrientation(myFrame, ComponentOrientation.LEFT_TO_RIGHT);
 

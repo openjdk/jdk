@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,8 @@
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/threadCritical.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/events.hpp"
@@ -116,7 +116,7 @@ bool Exceptions::special_exception(JavaThread* thread, const char* file, int lin
   // bootstrapping check
   if (!Universe::is_fully_initialized()) {
     if (h_name == NULL) {
-      // atleast an informative message.
+      // at least an informative message.
       vm_exit_during_initialization("Exception", message);
     } else {
       vm_exit_during_initialization(h_name, message);
@@ -250,12 +250,6 @@ void Exceptions::throw_stack_overflow_exception(JavaThread* THREAD, const char* 
   _throw(THREAD, file, line, exception);
 }
 
-void Exceptions::throw_unsafe_access_internal_error(JavaThread* thread, const char* file, int line, const char* message) {
-  Handle h_exception = new_exception(thread, vmSymbols::java_lang_InternalError(), message);
-  java_lang_InternalError::set_during_unsafe_access(h_exception());
-  _throw(thread, file, line, h_exception, message);
-}
-
 void Exceptions::fthrow(JavaThread* thread, const char* file, int line, Symbol* h_name, const char* format, ...) {
   const int max_msg_size = 1024;
   va_list ap;
@@ -357,17 +351,14 @@ Handle Exceptions::new_exception(JavaThread* thread, Symbol* name,
   if (message == NULL) {
     signature = vmSymbols::void_method_signature();
   } else {
-    // We want to allocate storage, but we can't do that if there's
-    // a pending exception, so we preserve any pending exception
-    // around the allocation.
-    // If we get an exception from the allocation, prefer that to
-    // the exception we are trying to build, or the pending exception.
-    // This is sort of like what PreserveExceptionMark does, except
-    // for the preferencing and the early returns.
-    Handle incoming_exception(thread, NULL);
+    // There should be no pending exception. The caller is responsible for not calling
+    // this with a pending exception.
+    Handle incoming_exception;
     if (thread->has_pending_exception()) {
       incoming_exception = Handle(thread, thread->pending_exception());
       thread->clear_pending_exception();
+      ResourceMark rm(thread);
+      assert(incoming_exception.is_null(), "Pending exception while throwing %s %s", name->as_C_string(), message);
     }
     Handle msg;
     if (to_utf8_safe == safe_to_utf8) {
@@ -377,6 +368,8 @@ Handle Exceptions::new_exception(JavaThread* thread, Symbol* name,
       // Make a java string keeping the encoding scheme of the original string.
       msg = java_lang_String::create_from_platform_dependent_str(message, thread);
     }
+    // If we get an exception from the allocation, prefer that to
+    // the exception we are trying to build, or the pending exception (in product mode)
     if (thread->has_pending_exception()) {
       Handle exception(thread, thread->pending_exception());
       thread->clear_pending_exception();
@@ -538,7 +531,11 @@ void Exceptions::debug_check_abort(const char *value_string, const char* message
       strstr(value_string, AbortVMOnException)) {
     if (AbortVMOnExceptionMessage == NULL || (message != NULL &&
         strstr(message, AbortVMOnExceptionMessage))) {
-      fatal("Saw %s, aborting", value_string);
+      if (message == NULL) {
+        fatal("Saw %s, aborting", value_string);
+      } else {
+        fatal("Saw %s: %s, aborting", value_string, message);
+      }
     }
   }
 }

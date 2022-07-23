@@ -40,6 +40,7 @@
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
+#include "runtime/continuation.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/jniHandles.hpp"
@@ -365,8 +366,12 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(
         TosState state,
         address runtime_entry) {
   address entry = __ pc();
+
   __ push(state);
+  __ push_cont_fastpath();
   __ call_VM(noreg, runtime_entry);
+  __ pop_cont_fastpath();
+
   __ dispatch_via(vtos, Interpreter::_normal_table.table_for(vtos));
   return entry;
 }
@@ -388,7 +393,6 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(
 void TemplateInterpreterGenerator::generate_counter_incr(Label* overflow) {
   Label done;
   // Note: In tiered we increment either counters in Method* or in MDO depending if we're profiling or not.
-  int increment = InvocationCounter::count_increment;
   Label no_mdo;
   if (ProfileInterpreter) {
     // Are we profiling?
@@ -399,7 +403,7 @@ void TemplateInterpreterGenerator::generate_counter_incr(Label* overflow) {
     const Address mdo_invocation_counter(rax, in_bytes(MethodData::invocation_counter_offset()) +
         in_bytes(InvocationCounter::counter_offset()));
     const Address mask(rax, in_bytes(MethodData::invoke_mask_offset()));
-    __ increment_mask_and_jump(mdo_invocation_counter, increment, mask, rcx, false, Assembler::zero, overflow);
+    __ increment_mask_and_jump(mdo_invocation_counter, mask, rcx, overflow);
     __ jmp(done);
   }
   __ bind(no_mdo);
@@ -409,8 +413,7 @@ void TemplateInterpreterGenerator::generate_counter_incr(Label* overflow) {
       InvocationCounter::counter_offset());
   __ get_method_counters(rbx, rax, done);
   const Address mask(rax, in_bytes(MethodCounters::invoke_mask_offset()));
-  __ increment_mask_and_jump(invocation_counter, increment, mask, rcx,
-      false, Assembler::zero, overflow);
+  __ increment_mask_and_jump(invocation_counter, mask, rcx, overflow);
   __ bind(done);
 }
 
@@ -652,6 +655,20 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 
 // End of helpers
 
+address TemplateInterpreterGenerator::generate_Continuation_doYield_entry(void) {
+  if (!Continuations::enabled()) return nullptr;
+
+  address entry = __ pc();
+  assert(StubRoutines::cont_doYield() != NULL, "stub not yet generated");
+
+  __ push_cont_fastpath();
+
+  __ jump(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::cont_doYield())));
+  // return value is in rax
+
+  return entry;
+}
+
 // Method entry for java.lang.ref.Reference.get.
 address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
   // Code: _aload_0, _getfield, _areturn
@@ -888,7 +905,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ movptr(rax, monitor_block_top);
     __ cmpptr(rax, rsp);
     __ jcc(Assembler::equal, L);
-    __ stop("broken stack frame setup in interpreter");
+    __ stop("broken stack frame setup in interpreter 5");
     __ bind(L);
   }
 #endif
@@ -1049,7 +1066,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // It is safe to do this push because state is _thread_in_native and return address will be found
   // via _last_native_pc and not via _last_jave_sp
 
-  // NOTE: the order of theses push(es) is known to frame::interpreter_frame_result.
+  // NOTE: the order of these push(es) is known to frame::interpreter_frame_result.
   // If the order changes or anything else is added to the stack the code in
   // interpreter_frame_result will have to be changed.
 
@@ -1313,7 +1330,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   bool inc_counter  = UseCompiler || CountCompiledCalls || LogTouchedMethods;
 
   // ebx: Method*
-  // rbcp: sender sp
+  // rbcp: sender sp (set in InterpreterMacroAssembler::prepare_to_jump_from_interpreted / generate_call_stub)
   address entry_point = __ pc();
 
   const Address constMethod(rbx, Method::const_offset());
@@ -1441,7 +1458,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
     __ movptr(rax, monitor_block_top);
     __ cmpptr(rax, rsp);
     __ jcc(Assembler::equal, L);
-    __ stop("broken stack frame setup in interpreter");
+    __ stop("broken stack frame setup in interpreter 6");
     __ bind(L);
   }
 #endif

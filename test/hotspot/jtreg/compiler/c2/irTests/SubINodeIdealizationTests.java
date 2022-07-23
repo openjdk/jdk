@@ -112,14 +112,14 @@ public class SubINodeIdealizationTests {
     @Test
     @IR(failOn = {IRNode.ADD})
     @IR(counts = {IRNode.SUB, "1"})
-    // Checks x - (x + y) => -y
+    // Checks x - (x + y) => 0 - y
     public int test4(int x, int y) {
         return x - (x + y);
     }
 
     @Test
     @IR(counts = {IRNode.SUB, "1"})
-    // Checks (x - y) - x => -y
+    // Checks (x - y) - x => 0 - y
     public int test5(int x, int y) {
         return (x - y) - x;
     }
@@ -127,7 +127,7 @@ public class SubINodeIdealizationTests {
     @Test
     @IR(failOn = {IRNode.ADD})
     @IR(counts = {IRNode.SUB, "1"})
-    // Checks x - (y + x) => -y
+    // Checks x - (y + x) => 0 - y
     public int test6(int x, int y) {
         return x - (y + x);
     }
@@ -206,7 +206,7 @@ public class SubINodeIdealizationTests {
 
     @Test
     @IR(failOn = {IRNode.SUB, IRNode.ADD})
-    // Checks (x + y) - y => y
+    // Checks (x + y) - y => x
     public int test16(int x, int y) {
         return (x + y) - y;
     }
