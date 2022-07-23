@@ -66,7 +66,7 @@ extends ByteArrayOutputStream implements DerEncoder {
     public DerOutputStream(int size) { super(size); }
 
     /**
-     * Construct an DER output stream.
+     * Construct a DER output stream.
      */
     public DerOutputStream() { }
 
@@ -175,7 +175,7 @@ extends ByteArrayOutputStream implements DerEncoder {
     /**
      * Marshals a DER integer on the output stream.
      *
-     * @param i the integer in bytes, equivalent to BigInteger::toByteArray.
+     * @param buf the integer in bytes, equivalent to BigInteger::toByteArray.
      */
     public void putInteger(byte[] buf) throws IOException {
         write(DerValue.tag_Integer);
