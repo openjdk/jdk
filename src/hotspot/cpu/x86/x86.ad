@@ -4188,7 +4188,7 @@ instruct ReplS_reg(vec dst, rRegI src) %{
 %}
 
 instruct ReplS_mem(vec dst, memory mem) %{
-  predicate(VM_Version::supports_avx2());
+  predicate(UseAVX >= 2);
   match(Set dst (ReplicateS (LoadS mem)));
   format %{ "replicateS $dst,$mem" %}
   ins_encode %{
@@ -4510,7 +4510,7 @@ instruct ReplF_zero(vec dst, immF0 zero) %{
 
 // Replicate double (8 bytes) scalar to be vector
 instruct vReplD_reg(vec dst, vlRegD src) %{
-  predicate(VM_Version::supports_sse3());
+  predicate(UseSSE >= 3);
   match(Set dst (ReplicateD src));
   format %{ "replicateD $dst,$src" %}
   ins_encode %{
@@ -4530,7 +4530,7 @@ instruct vReplD_reg(vec dst, vlRegD src) %{
 %}
 
 instruct ReplD_reg(vec dst, vlRegD src) %{
-  predicate(!VM_Version::supports_sse3());
+  predicate(UseSSE < 3);
   match(Set dst (ReplicateD src));
   format %{ "replicateD $dst,$src" %}
   ins_encode %{
@@ -4540,7 +4540,7 @@ instruct ReplD_reg(vec dst, vlRegD src) %{
 %}
 
 instruct ReplD_mem(vec dst, memory mem) %{
-  predicate(VM_Version::supports_sse3());
+  predicate(UseSSE >= 3);
   match(Set dst (ReplicateD (LoadD mem)));
   format %{ "replicateD $dst,$mem" %}
   ins_encode %{
