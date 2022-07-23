@@ -32,7 +32,7 @@ import org.openjdk.jmh.annotations.*;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @Fork(1)
-public class SpilledReplicate {
+public class SpiltReplicate {
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     public long broadcastInt() {
         var species = IntVector.SPECIES_PREFERRED;
