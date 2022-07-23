@@ -43,15 +43,15 @@ import java.io.File;
  * @run main TestIndyStringConcat false
  *
  * @clean *
- * @compile -XDstringConcat=inline -source 9 -target 9 TestIndyStringConcat.java
+ * @compile -XDstringConcat=inline TestIndyStringConcat.java
  * @run main TestIndyStringConcat false
  *
  * @clean *
- * @compile -XDstringConcat=indy -source 9 -target 9 TestIndyStringConcat.java
+ * @compile -XDstringConcat=indy TestIndyStringConcat.java
  * @run main TestIndyStringConcat true
  *
  * @clean *
- * @compile -XDstringConcat=indyWithConstants -source 9 -target 9 TestIndyStringConcat.java
+ * @compile -XDstringConcat=indyWithConstants TestIndyStringConcat.java
  * @run main TestIndyStringConcat true
  */
 public class TestIndyStringConcat {

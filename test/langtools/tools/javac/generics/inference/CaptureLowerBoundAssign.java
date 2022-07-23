@@ -26,7 +26,7 @@
  * @bug 8075793
  * @summary Capture variable as an inference lower bound followed by an invariant assignment
  * @compile CaptureLowerBoundAssign.java
- * @compile -Xlint:-options -source 7 CaptureLowerBoundAssign.java
+ * @compile -Xlint:-options --release 7 CaptureLowerBoundAssign.java
  */
 
 class CaptureLowerBoundAssign {

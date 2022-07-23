@@ -25,7 +25,7 @@
  * @test
  * @bug 8211102
  * @summary Verify javac does not crash in lambda analyzer
- * @compile -Werror -XDfind=lambda -source 7 -Xlint:-options T8211102.java
+ * @compile -Werror -XDfind=lambda --release 7 -Xlint:-options T8211102.java
  */
 import java.util.*;
 

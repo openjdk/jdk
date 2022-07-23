@@ -26,7 +26,7 @@
  * @bug 8039214
  * @summary Nested generic methods that work on wildcard-parameterized types
  * @compile NestedWildcards.java
- * @compile -Xlint:-options -source 7 NestedWildcards.java
+ * @compile -Xlint:-options --release 7 NestedWildcards.java
  */
 
 public class NestedWildcards {
