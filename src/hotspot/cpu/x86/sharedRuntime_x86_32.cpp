@@ -1518,7 +1518,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
 
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->nmethod_entry_barrier(masm);
+  bs->nmethod_entry_barrier(masm, NULL /* slow_path */, NULL /* continuation */);
 
   // Frame is now completed as far as size and linkage.
   int frame_complete = ((intptr_t)__ pc()) - start;
@@ -1692,6 +1692,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   // Lock a synchronized method
   if (method->is_synchronized()) {
+    Label count_mon;
 
     const int mark_word_offset = BasicLock::displaced_header_offset_in_bytes();
 
@@ -1719,7 +1720,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       // *obj_reg = lock_reg iff *obj_reg == rax, else rax, = *(obj_reg)
       __ lock();
       __ cmpxchgptr(lock_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-      __ jcc(Assembler::equal, lock_done);
+      __ jcc(Assembler::equal, count_mon);
 
       // Test if the oopMark is an obvious stack pointer, i.e.,
       //  1) (mark & 3) == 0, and
@@ -1739,6 +1740,8 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     } else {
       __ jmp(slow_path_lock);
     }
+    __ bind(count_mon);
+    __ inc_held_monitor_count();
 
     // Slow path will re-enter here
     __ bind(lock_done);
@@ -1852,16 +1855,19 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   Label unlock_done;
   if (method->is_synchronized()) {
 
-    Label done;
+    Label fast_done;
 
     // Get locked oop from the handle we passed to jni
     __ movptr(obj_reg, Address(oop_handle_reg, 0));
 
     if (!UseHeavyMonitors) {
+      Label not_recur;
       // Simple recursive lock?
-
       __ cmpptr(Address(rbp, lock_slot_rbp_offset), (int32_t)NULL_WORD);
-      __ jcc(Assembler::equal, done);
+      __ jcc(Assembler::notEqual, not_recur);
+      __ dec_held_monitor_count();
+      __ jmpb(fast_done);
+      __ bind(not_recur);
     }
 
     // Must save rax, if it is live now because cmpxchg must use it
@@ -1882,6 +1888,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       __ lock();
       __ cmpxchgptr(rbx, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
       __ jcc(Assembler::notEqual, slow_path_unlock);
+      __ dec_held_monitor_count();
     } else {
       __ jmp(slow_path_unlock);
     }
@@ -1892,8 +1899,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       restore_native_result(masm, ret_type, stack_slots);
     }
 
-    __ bind(done);
-
+    __ bind(fast_done);
   }
 
   {

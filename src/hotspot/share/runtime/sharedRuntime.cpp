@@ -997,9 +997,6 @@ JRT_END
 
 jlong SharedRuntime::get_java_tid(Thread* thread) {
   if (thread != NULL && thread->is_Java_thread()) {
-    Thread* current = Thread::current();
-    guarantee(current != thread || JavaThread::cast(thread)->is_oop_safe(),
-              "current cannot touch oops after its GC barrier is detached.");
     oop obj = JavaThread::cast(thread)->threadObj();
     return (obj == NULL) ? 0 : java_lang_Thread::thread_id(obj);
   }
@@ -1346,6 +1343,9 @@ bool SharedRuntime::resolve_sub_helper_internal(methodHandle callee_method, cons
           return true; // skip patching for JVMCI
         }
         CompiledStaticCall* ssc = caller_nm->compiledStaticCall_before(caller_frame.pc());
+        if (is_nmethod && caller_nm->method()->is_continuation_enter_intrinsic()) {
+          ssc->compute_entry_for_continuation_entry(callee_method, static_call_info);
+        }
         if (ssc->is_clean()) ssc->set(static_call_info);
       }
     }
@@ -1560,10 +1560,32 @@ JRT_END
 // resolve a static call and patch code
 JRT_BLOCK_ENTRY(address, SharedRuntime::resolve_static_call_C(JavaThread* current ))
   methodHandle callee_method;
+  bool enter_special = false;
   JRT_BLOCK
     callee_method = SharedRuntime::resolve_helper(false, false, CHECK_NULL);
     current->set_vm_result_2(callee_method());
+
+    if (current->is_interp_only_mode()) {
+      RegisterMap reg_map(current, false);
+      frame stub_frame = current->last_frame();
+      assert(stub_frame.is_runtime_frame(), "must be a runtimeStub");
+      frame caller = stub_frame.sender(&reg_map);
+      enter_special = caller.cb() != NULL && caller.cb()->is_compiled()
+        && caller.cb()->as_compiled_method()->method()->is_continuation_enter_intrinsic();
+    }
   JRT_BLOCK_END
+
+  if (current->is_interp_only_mode() && enter_special) {
+    // enterSpecial is compiled and calls this method to resolve the call to Continuation::enter
+    // but in interp_only_mode we need to go to the interpreted entry
+    // The c2i won't patch in this mode -- see fixup_callers_callsite
+    //
+    // This should probably be done in all cases, not just enterSpecial (see JDK-8218403),
+    // but that's part of a larger fix, and the situation is worse for enterSpecial, as it has no
+    // interpreted version.
+    return callee_method->get_c2i_entry();
+  }
+
   // return compiled code entry point after potential safepoints
   assert(callee_method->verified_code_entry() != NULL, " Jump to zero!");
   return callee_method->verified_code_entry();
@@ -1994,6 +2016,9 @@ JRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address cal
   // Get the return PC for the passed caller PC.
   address return_pc = caller_pc + frame::pc_return_offset;
 
+  assert(!JavaThread::current()->is_interp_only_mode() || !nm->method()->is_continuation_enter_intrinsic()
+    || ContinuationEntry::is_interpreted_call(return_pc), "interp_only_mode but not in enterSpecial interpreted entry");
+
   // There is a benign race here. We could be attempting to patch to a compiled
   // entry point at the same time the callee is being deoptimized. If that is
   // the case then entry_point may in fact point to a c2i and we'd patch the
@@ -2029,6 +2054,13 @@ JRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address cal
            typ != relocInfo::opt_virtual_call_type &&
            typ != relocInfo::static_stub_type) {
         return;
+      }
+      if (nm->method()->is_continuation_enter_intrinsic()) {
+        assert(ContinuationEntry::is_interpreted_call(call->instruction_address()) == JavaThread::current()->is_interp_only_mode(),
+          "mode: %d", JavaThread::current()->is_interp_only_mode());
+        if (ContinuationEntry::is_interpreted_call(call->instruction_address())) {
+          return;
+        }
       }
       address destination = call->destination();
       if (should_fixup_call_destination(destination, entry_point, caller_pc, moop, cb)) {
@@ -2135,7 +2167,9 @@ void SharedRuntime::monitor_enter_helper(oopDesc* obj, BasicLock* lock, JavaThre
   if (!SafepointSynchronize::is_synchronizing()) {
     // Only try quick_enter() if we're not trying to reach a safepoint
     // so that the calling thread reaches the safepoint more quickly.
-    if (ObjectSynchronizer::quick_enter(obj, current, lock)) return;
+    if (ObjectSynchronizer::quick_enter(obj, current, lock)) {
+      return;
+    }
   }
   // NO_ASYNC required because an async exception on the state transition destructor
   // would leave you with the lock held and it would never be released.
@@ -2151,11 +2185,6 @@ void SharedRuntime::monitor_enter_helper(oopDesc* obj, BasicLock* lock, JavaThre
 // Handles the uncommon case in locking, i.e., contention or an inflated lock.
 JRT_BLOCK_ENTRY(void, SharedRuntime::complete_monitor_locking_C(oopDesc* obj, BasicLock* lock, JavaThread* current))
   SharedRuntime::monitor_enter_helper(obj, lock, current);
-JRT_END
-
-JRT_BLOCK_ENTRY(void, SharedRuntime::complete_monitor_locking_C_inc_held_monitor_count(oopDesc* obj, BasicLock* lock, JavaThread* current))
-  SharedRuntime::monitor_enter_helper(obj, lock, current);
-  current->inc_held_monitor_count();
 JRT_END
 
 void SharedRuntime::monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThread* current) {
@@ -2684,16 +2713,20 @@ extern "C" void unexpected_adapter_call() {
 }
 
 static void post_adapter_creation(const AdapterBlob* new_adapter, const AdapterHandlerEntry* entry) {
-  char blob_id[256];
-  jio_snprintf(blob_id,
-                sizeof(blob_id),
-                "%s(%s)",
-                new_adapter->name(),
-                entry->fingerprint()->as_string());
-  Forte::register_stub(blob_id, new_adapter->content_begin(), new_adapter->content_end());
+  if (Forte::is_enabled() || JvmtiExport::should_post_dynamic_code_generated()) {
+    char blob_id[256];
+    jio_snprintf(blob_id,
+                 sizeof(blob_id),
+                 "%s(%s)",
+                 new_adapter->name(),
+                 entry->fingerprint()->as_string());
+    if (Forte::is_enabled()) {
+      Forte::register_stub(blob_id, new_adapter->content_begin(), new_adapter->content_end());
+    }
 
-  if (JvmtiExport::should_post_dynamic_code_generated()) {
-    JvmtiExport::post_dynamic_code_generated(blob_id, new_adapter->content_begin(), new_adapter->content_end());
+    if (JvmtiExport::should_post_dynamic_code_generated()) {
+      JvmtiExport::post_dynamic_code_generated(blob_id, new_adapter->content_begin(), new_adapter->content_end());
+    }
   }
 }
 
@@ -3059,7 +3092,7 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
       CodeBuffer buffer(buf);
 
       if (method->is_continuation_enter_intrinsic()) {
-        buffer.initialize_stubs_size(64);
+        buffer.initialize_stubs_size(128);
       }
 
       struct { double data[20]; } locs_buf;

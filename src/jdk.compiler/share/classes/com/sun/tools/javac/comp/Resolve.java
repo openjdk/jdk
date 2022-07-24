@@ -68,6 +68,7 @@ import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -4174,16 +4175,11 @@ public class Resolve {
                 return null;
 
             Pair<Symbol, JCDiagnostic> c = errCandidate();
-            if (compactMethodDiags) {
-                JCDiagnostic simpleDiag =
-                    MethodResolutionDiagHelper.rewrite(diags, pos, log.currentSource(), dkind, c.snd);
-                if (simpleDiag != null) {
-                    return simpleDiag;
-                }
-            }
             Symbol ws = c.fst.asMemberOf(site, types);
             return diags.create(dkind, log.currentSource(), pos,
                       "cant.apply.symbol",
+                      compactMethodDiags ?
+                              d -> MethodResolutionDiagHelper.rewrite(diags, pos, log.currentSource(), dkind, c.snd) : null,
                       kindName(ws),
                       ws.name == names.init ? ws.owner.name : ws.name,
                       methodArguments(ws.type.getParameterTypes()),
@@ -4244,8 +4240,8 @@ public class Resolve {
                 JCDiagnostic err = diags.create(dkind,
                         null,
                         truncatedDiag ?
-                            EnumSet.of(DiagnosticFlag.COMPRESSED) :
-                            EnumSet.noneOf(DiagnosticFlag.class),
+                                EnumSet.of(DiagnosticFlag.COMPRESSED) :
+                                EnumSet.noneOf(DiagnosticFlag.class),
                         log.currentSource(),
                         pos,
                         "cant.apply.symbols",

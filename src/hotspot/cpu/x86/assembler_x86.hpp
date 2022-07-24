@@ -1804,6 +1804,13 @@ private:
   void vmovmskps(Register dst, XMMRegister src, int vec_enc);
   void vmovmskpd(Register dst, XMMRegister src, int vec_enc);
   void vpmaskmovd(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+  void vpmaskmovq(XMMRegister dst, XMMRegister mask, Address src, int vector_len);
+
+
+  void vmaskmovps(XMMRegister dst, Address src, XMMRegister mask, int vector_len);
+  void vmaskmovpd(XMMRegister dst, Address src, XMMRegister mask, int vector_len);
+  void vmaskmovps(Address dst, XMMRegister src, XMMRegister mask, int vector_len);
+  void vmaskmovpd(Address dst, XMMRegister src, XMMRegister mask, int vector_len);
 
   // SSE 4.1 extract
   void pextrd(Register dst, XMMRegister src, int imm8);

@@ -29,6 +29,7 @@
 
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CollectorState.hpp"
+#include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1EvacFailureRegions.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RemSet.hpp"
@@ -159,8 +160,8 @@ inline G1ScannerTasksQueue* G1CollectedHeap::task_queue(uint i) const {
   return _task_queues->queue(i);
 }
 
-inline bool G1CollectedHeap::is_marked_next(oop obj) const {
-  return _cm->next_mark_bitmap()->is_marked(obj);
+inline bool G1CollectedHeap::is_marked(oop obj) const {
+  return _cm->mark_bitmap()->is_marked(obj);
 }
 
 inline bool G1CollectedHeap::is_in_cset(oop obj) const {
@@ -221,7 +222,7 @@ inline bool G1CollectedHeap::requires_barriers(stackChunkOop obj) const {
 }
 
 inline bool G1CollectedHeap::is_obj_dead(const oop obj, const HeapRegion* hr) const {
-  return hr->is_obj_dead(obj, _cm->prev_mark_bitmap());
+  return hr->is_obj_dead(obj, hr->parsable_bottom());
 }
 
 inline bool G1CollectedHeap::is_obj_dead(const oop obj) const {
@@ -232,37 +233,27 @@ inline bool G1CollectedHeap::is_obj_dead(const oop obj) const {
 }
 
 inline bool G1CollectedHeap::is_obj_dead_full(const oop obj, const HeapRegion* hr) const {
-   return !is_marked_next(obj) && !hr->is_closed_archive();
+   return !is_marked(obj) && !hr->is_closed_archive();
 }
 
 inline bool G1CollectedHeap::is_obj_dead_full(const oop obj) const {
     return is_obj_dead_full(obj, heap_region_containing(obj));
 }
 
-inline void G1CollectedHeap::set_humongous_reclaim_candidate(uint region, bool value) {
-  assert(_hrm.at(region)->is_starts_humongous(), "Must start a humongous object");
-  _humongous_reclaim_candidates.set_candidate(region, value);
-}
-
 inline bool G1CollectedHeap::is_humongous_reclaim_candidate(uint region) {
   assert(_hrm.at(region)->is_starts_humongous(), "Must start a humongous object");
-  return _humongous_reclaim_candidates.is_candidate(region);
+  return _region_attr.is_humongous(region);
 }
 
 inline void G1CollectedHeap::set_humongous_is_live(oop obj) {
   uint region = addr_to_region(cast_from_oop<HeapWord*>(obj));
-  // Clear the flag in the humongous_reclaim_candidates table.  Also
-  // reset the entry in the region attribute table so that subsequent references
-  // to the same humongous object do not go into the slow path again.
-  // This is racy, as multiple threads may at the same time enter here, but this
-  // is benign.
-  // During collection we only ever clear the "candidate" flag, and only ever clear the
-  // entry in the in_cset_fast_table.
-  // We only ever evaluate the contents of these tables (in the VM thread) after
-  // having synchronized the worker threads with the VM thread, or in the same
-  // thread (i.e. within the VM thread).
-  if (is_humongous_reclaim_candidate(region)) {
-    set_humongous_reclaim_candidate(region, false);
+  // Reset the entry in the region attribute table so that subsequent
+  // references to the same humongous object do not go into the slow path
+  // again. This is racy, as multiple threads may at the same time enter here,
+  // but this is benign because the transition is unidirectional, from
+  // humongous-candidate to not, and the write, in evacuation, is
+  // separated from the read, in post-evacuation.
+  if (_region_attr.is_humongous(region)) {
     _region_attr.clear_humongous(region);
   }
 }

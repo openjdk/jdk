@@ -25,13 +25,141 @@
 #include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "oops/methodData.hpp"
 #include "opto/c2_MacroAssembler.hpp"
 #include "opto/intrinsicnode.hpp"
+#include "opto/output.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/subnode.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/stubRoutines.hpp"
+
+#ifdef PRODUCT
+#define BLOCK_COMMENT(str) /* nothing */
+#define STOP(error) stop(error)
+#else
+#define BLOCK_COMMENT(str) block_comment(str)
+#define STOP(error) block_comment(error); stop(error)
+#endif
+
+// C2 compiled method's prolog code.
+void C2_MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool fp_mode_24b, bool is_stub) {
+
+  // WARNING: Initial instruction MUST be 5 bytes or longer so that
+  // NativeJump::patch_verified_entry will be able to patch out the entry
+  // code safely. The push to verify stack depth is ok at 5 bytes,
+  // the frame allocation can be either 3 or 6 bytes. So if we don't do
+  // stack bang then we must use the 6 byte frame allocation even if
+  // we have no frame. :-(
+  assert(stack_bang_size >= framesize || stack_bang_size <= 0, "stack bang size incorrect");
+
+  assert((framesize & (StackAlignmentInBytes-1)) == 0, "frame size not aligned");
+  // Remove word for return addr
+  framesize -= wordSize;
+  stack_bang_size -= wordSize;
+
+  // Calls to C2R adapters often do not accept exceptional returns.
+  // We require that their callers must bang for them.  But be careful, because
+  // some VM calls (such as call site linkage) can use several kilobytes of
+  // stack.  But the stack safety zone should account for that.
+  // See bugs 4446381, 4468289, 4497237.
+  if (stack_bang_size > 0) {
+    generate_stack_overflow_check(stack_bang_size);
+
+    // We always push rbp, so that on return to interpreter rbp, will be
+    // restored correctly and we can correct the stack.
+    push(rbp);
+    // Save caller's stack pointer into RBP if the frame pointer is preserved.
+    if (PreserveFramePointer) {
+      mov(rbp, rsp);
+    }
+    // Remove word for ebp
+    framesize -= wordSize;
+
+    // Create frame
+    if (framesize) {
+      subptr(rsp, framesize);
+    }
+  } else {
+    // Create frame (force generation of a 4 byte immediate value)
+    subptr_imm32(rsp, framesize);
+
+    // Save RBP register now.
+    framesize -= wordSize;
+    movptr(Address(rsp, framesize), rbp);
+    // Save caller's stack pointer into RBP if the frame pointer is preserved.
+    if (PreserveFramePointer) {
+      movptr(rbp, rsp);
+      if (framesize > 0) {
+        addptr(rbp, framesize);
+      }
+    }
+  }
+
+  if (VerifyStackAtCalls) { // Majik cookie to verify stack depth
+    framesize -= wordSize;
+    movptr(Address(rsp, framesize), (int32_t)0xbadb100d);
+  }
+
+#ifndef _LP64
+  // If method sets FPU control word do it now
+  if (fp_mode_24b) {
+    fldcw(ExternalAddress(StubRoutines::x86::addr_fpu_cntrl_wrd_24()));
+  }
+  if (UseSSE >= 2 && VerifyFPU) {
+    verify_FPU(0, "FPU stack must be clean on entry");
+  }
+#endif
+
+#ifdef ASSERT
+  if (VerifyStackAtCalls) {
+    Label L;
+    push(rax);
+    mov(rax, rsp);
+    andptr(rax, StackAlignmentInBytes-1);
+    cmpptr(rax, StackAlignmentInBytes-wordSize);
+    pop(rax);
+    jcc(Assembler::equal, L);
+    STOP("Stack is not properly aligned!");
+    bind(L);
+  }
+#endif
+
+  if (!is_stub) {
+    BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+ #ifdef _LP64
+    if (BarrierSet::barrier_set()->barrier_set_nmethod() != NULL) {
+      // We put the non-hot code of the nmethod entry barrier out-of-line in a stub.
+      Label dummy_slow_path;
+      Label dummy_continuation;
+      Label* slow_path = &dummy_slow_path;
+      Label* continuation = &dummy_continuation;
+      if (!Compile::current()->output()->in_scratch_emit_size()) {
+        // Use real labels from actual stub when not emitting code for the purpose of measuring its size
+        C2EntryBarrierStub* stub = Compile::current()->output()->entry_barrier_table()->add_entry_barrier();
+        slow_path = &stub->slow_path();
+        continuation = &stub->continuation();
+      }
+      bs->nmethod_entry_barrier(this, slow_path, continuation);
+    }
+#else
+    // Don't bother with out-of-line nmethod entry barrier stub for x86_32.
+    bs->nmethod_entry_barrier(this, NULL /* slow_path */, NULL /* continuation */);
+#endif
+  }
+}
+
+void C2_MacroAssembler::emit_entry_barrier_stub(C2EntryBarrierStub* stub) {
+  bind(stub->slow_path());
+  call(RuntimeAddress(StubRoutines::x86::method_entry_barrier()));
+  jmp(stub->continuation(), false /* maybe_short */);
+}
+
+int C2_MacroAssembler::entry_barrier_stub_size() {
+  return 10;
+}
 
 inline Assembler::AvxVectorLen C2_MacroAssembler::vector_length_encoding(int vlen_in_bytes) {
   switch (vlen_in_bytes) {
@@ -460,7 +588,7 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
   //    -- by other
   //
 
-  Label IsInflated, DONE_LABEL;
+  Label IsInflated, DONE_LABEL, NO_COUNT, COUNT;
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(tmpReg, objReg, cx1Reg);
@@ -488,7 +616,7 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
     movptr(Address(boxReg, 0), tmpReg);          // Anticipate successful CAS
     lock();
     cmpxchgptr(boxReg, Address(objReg, oopDesc::mark_offset_in_bytes()));      // Updates tmpReg
-    jcc(Assembler::equal, DONE_LABEL);           // Success
+    jcc(Assembler::equal, COUNT);           // Success
 
     // Recursive locking.
     // The object is stack-locked: markword contains stack pointer to BasicLock.
@@ -544,7 +672,7 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
   movptr(Address(scrReg, 0), 3);          // box->_displaced_header = 3
   // If we weren't able to swing _owner from NULL to the BasicLock
   // then take the slow path.
-  jccb  (Assembler::notZero, DONE_LABEL);
+  jccb  (Assembler::notZero, NO_COUNT);
   // update _owner from BasicLock to thread
   get_thread (scrReg);                    // beware: clobbers ICCs
   movptr(Address(boxReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), scrReg);
@@ -567,10 +695,10 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
   // Without cast to int32_t this style of movptr will destroy r10 which is typically obj.
   movptr(Address(boxReg, 0), (int32_t)intptr_t(markWord::unused_mark().value()));
   // Propagate ICC.ZF from CAS above into DONE_LABEL.
-  jcc(Assembler::equal, DONE_LABEL);           // CAS above succeeded; propagate ZF = 1 (success)
+  jccb(Assembler::equal, COUNT);          // CAS above succeeded; propagate ZF = 1 (success)
 
-  cmpptr(r15_thread, rax);                     // Check if we are already the owner (recursive lock)
-  jcc(Assembler::notEqual, DONE_LABEL);        // If not recursive, ZF = 0 at this point (fail)
+  cmpptr(r15_thread, rax);                // Check if we are already the owner (recursive lock)
+  jccb(Assembler::notEqual, NO_COUNT);    // If not recursive, ZF = 0 at this point (fail)
   incq(Address(scrReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)));
   xorq(rax, rax); // Set ZF = 1 (success) for recursive lock, denoting locking success
 #endif // _LP64
@@ -584,7 +712,24 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
   // Unfortunately none of our alignment mechanisms suffice.
   bind(DONE_LABEL);
 
-  // At DONE_LABEL the icc ZFlag is set as follows ...
+  // ZFlag == 1 count in fast path
+  // ZFlag == 0 count in slow path
+  jccb(Assembler::notZero, NO_COUNT); // jump if ZFlag == 0
+
+  bind(COUNT);
+  // Count monitors in fast path
+#ifndef _LP64
+  get_thread(tmpReg);
+  incrementl(Address(tmpReg, JavaThread::held_monitor_count_offset()));
+#else // _LP64
+  incrementq(Address(r15_thread, JavaThread::held_monitor_count_offset()));
+#endif
+
+  xorl(tmpReg, tmpReg); // Set ZF == 1
+
+  bind(NO_COUNT);
+
+  // At NO_COUNT the icc ZFlag is set as follows ...
   // fast_unlock uses the same protocol.
   // ZFlag == 1 -> Success
   // ZFlag == 0 -> Failure - force control through the slow path
@@ -626,7 +771,7 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   assert(boxReg == rax, "");
   assert_different_registers(objReg, boxReg, tmpReg);
 
-  Label DONE_LABEL, Stacked, CheckSucc;
+  Label DONE_LABEL, Stacked, CheckSucc, COUNT, NO_COUNT;
 
 #if INCLUDE_RTM_OPT
   if (UseRTMForStackLocks && use_rtm) {
@@ -644,12 +789,12 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
 
   if (!UseHeavyMonitors) {
     cmpptr(Address(boxReg, 0), (int32_t)NULL_WORD);                   // Examine the displaced header
-    jcc   (Assembler::zero, DONE_LABEL);                              // 0 indicates recursive stack-lock
+    jcc   (Assembler::zero, COUNT);                                   // 0 indicates recursive stack-lock
   }
-  movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes())); // Examine the object's markword
+  movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes()));   // Examine the object's markword
   if (!UseHeavyMonitors) {
     testptr(tmpReg, markWord::monitor_value);                         // Inflated?
-    jccb  (Assembler::zero, Stacked);
+    jccb   (Assembler::zero, Stacked);
   }
 
   // It's inflated.
@@ -800,6 +945,23 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   }
 #endif
   bind(DONE_LABEL);
+
+  // ZFlag == 1 count in fast path
+  // ZFlag == 0 count in slow path
+  jccb(Assembler::notZero, NO_COUNT);
+
+  bind(COUNT);
+  // Count monitors in fast path
+#ifndef _LP64
+  get_thread(tmpReg);
+  decrementl(Address(tmpReg, JavaThread::held_monitor_count_offset()));
+#else // _LP64
+  decrementq(Address(r15_thread, JavaThread::held_monitor_count_offset()));
+#endif
+
+  xorl(tmpReg, tmpReg); // Set ZF == 1
+
+  bind(NO_COUNT);
 }
 
 //-------------------------------------------------------------------------------------------
@@ -1991,6 +2153,39 @@ void C2_MacroAssembler::evmovdqu(BasicType type, KRegister kmask, Address dst, X
   MacroAssembler::evmovdqu(type, kmask, dst, src, merge, vector_len);
 }
 
+void C2_MacroAssembler::vmovmask(BasicType elem_bt, XMMRegister dst, Address src, XMMRegister mask,
+                                 int vec_enc) {
+  switch(elem_bt) {
+    case T_INT:
+    case T_FLOAT:
+      vmaskmovps(dst, src, mask, vec_enc);
+      break;
+    case T_LONG:
+    case T_DOUBLE:
+      vmaskmovpd(dst, src, mask, vec_enc);
+      break;
+    default:
+      fatal("Unsupported type %s", type2name(elem_bt));
+      break;
+  }
+}
+
+void C2_MacroAssembler::vmovmask(BasicType elem_bt, Address dst, XMMRegister src, XMMRegister mask,
+                                 int vec_enc) {
+  switch(elem_bt) {
+    case T_INT:
+    case T_FLOAT:
+      vmaskmovps(dst, src, mask, vec_enc);
+      break;
+    case T_LONG:
+    case T_DOUBLE:
+      vmaskmovpd(dst, src, mask, vec_enc);
+      break;
+    default:
+      fatal("Unsupported type %s", type2name(elem_bt));
+      break;
+  }
+}
 
 void C2_MacroAssembler::reduceFloatMinMax(int opcode, int vlen, bool is_dst_valid,
                                           XMMRegister dst, XMMRegister src,
@@ -4937,6 +5132,7 @@ void C2_MacroAssembler::vector_reverse_byte64(BasicType bt, XMMRegister dst, XMM
       evprord(xtmp1, k0, src, 16, true, vec_enc);
       vector_swap_nbits(8, 0x00FF00FF, dst, xtmp1, xtmp2, rtmp, vec_enc);
       break;
+    case T_CHAR:
     case T_SHORT:
       // Swap upper and lower byte of each word.
       vector_swap_nbits(8, 0x00FF00FF, dst, src, xtmp2, rtmp, vec_enc);
@@ -4968,6 +5164,7 @@ void C2_MacroAssembler::vector_reverse_byte(BasicType bt, XMMRegister dst, XMMRe
     case T_INT:
       vmovdqu(dst, ExternalAddress(StubRoutines::x86::vector_reverse_byte_perm_mask_int()), rtmp, vec_enc);
       break;
+    case T_CHAR:
     case T_SHORT:
       vmovdqu(dst, ExternalAddress(StubRoutines::x86::vector_reverse_byte_perm_mask_short()), rtmp, vec_enc);
       break;

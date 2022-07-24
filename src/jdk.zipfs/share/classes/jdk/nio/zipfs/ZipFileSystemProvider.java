@@ -192,6 +192,15 @@ public class ZipFileSystemProvider extends FileSystemProvider {
     }
 
     @Override
+    public boolean exists(Path path, LinkOption... options) {
+        if (options.length == 0) {
+            return toZipPath(path).exists();
+        } else {
+            return super.exists(path, options);
+        }
+    }
+
+    @Override
     public <V extends FileAttributeView> V
         getFileAttributeView(Path path, Class<V> type, LinkOption... options)
     {
@@ -282,6 +291,16 @@ public class ZipFileSystemProvider extends FileSystemProvider {
         throws IOException
     {
         return toZipPath(path).readAttributes(attributes, options);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked") // Cast to A
+    public <A extends BasicFileAttributes> A readAttributesIfExists(Path path,
+                                                                    Class<A> type,
+                                                                    LinkOption... options)
+        throws IOException
+    {
+        return (A) toZipPath(path).readAttributesIfExists();
     }
 
     @Override

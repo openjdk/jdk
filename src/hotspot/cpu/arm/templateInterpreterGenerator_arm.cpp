@@ -893,7 +893,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ ldr(Rtemp, Address(FP, frame::interpreter_frame_monitor_block_top_offset * wordSize));
     __ cmp(Rtemp, Rstack_top);
     __ b(L, eq);
-    __ stop("broken stack frame setup in interpreter");
+    __ stop("broken stack frame setup in interpreter 3");
     __ bind(L);
   }
 #endif
@@ -1247,7 +1247,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
     __ ldr(Rtemp, Address(FP, frame::interpreter_frame_monitor_block_top_offset * wordSize));
     __ cmp(Rtemp, Rstack_top);
     __ b(L, eq);
-    __ stop("broken stack frame setup in interpreter");
+    __ stop("broken stack frame setup in interpreter 4");
     __ bind(L);
   }
 #endif

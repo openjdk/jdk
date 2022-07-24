@@ -285,6 +285,8 @@ public:
   bool  has_reinterpret_variant(const Type* rt);
   Node* convert_to_reinterpret_load(PhaseGVN& gvn, const Type* rt);
 
+  ControlDependency control_dependency() {return _control_dependency; }
+
   bool has_unknown_control_dependency() const { return _control_dependency == UnknownControl; }
 
 #ifndef PRODUCT

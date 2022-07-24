@@ -191,7 +191,7 @@
   nonstatic_field(JavaThread,                  _jni_environment,                              JNIEnv)                                \
   nonstatic_field(JavaThread,                  _poll_data,                                    SafepointMechanism::ThreadData)        \
   nonstatic_field(JavaThread,                  _stack_overflow_state._reserved_stack_activation, address)                            \
-  nonstatic_field(JavaThread,                  _held_monitor_count,                           int)                                   \
+  nonstatic_field(JavaThread,                  _held_monitor_count,                           int64_t)                               \
                                                                                                                                      \
   static_field(java_lang_Class,                _klass_offset,                                 int)                                   \
   static_field(java_lang_Class,                _array_klass_offset,                           int)                                   \

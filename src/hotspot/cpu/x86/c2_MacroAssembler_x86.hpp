@@ -28,6 +28,12 @@
 // C2_MacroAssembler contains high-level macros for C2
 
 public:
+  // C2 compiled method's prolog code.
+  void verified_entry(int framesize, int stack_bang_size, bool fp_mode_24b, bool is_stub);
+
+  void emit_entry_barrier_stub(C2EntryBarrierStub* stub);
+  static int entry_barrier_stub_size();
+
   Assembler::AvxVectorLen vector_length_encoding(int vlen_in_bytes);
 
   // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
@@ -442,4 +448,9 @@ public:
 
   void vector_signum_evex(int opcode, XMMRegister dst, XMMRegister src, XMMRegister zero, XMMRegister one,
                           KRegister ktmp1, int vec_enc);
+
+  void vmovmask(BasicType elem_bt, XMMRegister dst, Address src, XMMRegister mask, int vec_enc);
+
+  void vmovmask(BasicType elem_bt, Address dst, XMMRegister src, XMMRegister mask, int vec_enc);
+
 #endif // CPU_X86_C2_MACROASSEMBLER_X86_HPP

@@ -3038,6 +3038,60 @@ void Assembler::vmovdqu(Address dst, XMMRegister src) {
   emit_operand(src, dst);
 }
 
+void Assembler::vpmaskmovd(XMMRegister dst, XMMRegister mask, Address src, int vector_len) {
+  assert((VM_Version::supports_avx2() && vector_len == AVX_256bit), "");
+  InstructionMark im(this);
+  InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ false, /* uses_vl */ false);
+  vex_prefix(src, mask->encoding(), dst->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
+  emit_int8((unsigned char)0x8C);
+  emit_operand(dst, src);
+}
+
+void Assembler::vpmaskmovq(XMMRegister dst, XMMRegister mask, Address src, int vector_len) {
+  assert((VM_Version::supports_avx2() && vector_len == AVX_256bit), "");
+  InstructionMark im(this);
+  InstructionAttr attributes(vector_len, /* vex_w */ true, /* legacy_mode */ true, /* no_mask_reg */ false, /* uses_vl */ false);
+  vex_prefix(src, mask->encoding(), dst->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
+  emit_int8((unsigned char)0x8C);
+  emit_operand(dst, src);
+}
+
+void Assembler::vmaskmovps(XMMRegister dst, Address src, XMMRegister mask, int vector_len) {
+  assert(UseAVX > 0, "requires some form of AVX");
+  InstructionMark im(this);
+  InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
+  vex_prefix(src, mask->encoding(), dst->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
+  emit_int8(0x2C);
+  emit_operand(dst, src);
+}
+
+void Assembler::vmaskmovpd(XMMRegister dst, Address src, XMMRegister mask, int vector_len) {
+  assert(UseAVX > 0, "requires some form of AVX");
+  InstructionMark im(this);
+  InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
+  vex_prefix(src, mask->encoding(), dst->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
+  emit_int8(0x2D);
+  emit_operand(dst, src);
+}
+
+void Assembler::vmaskmovps(Address dst, XMMRegister src, XMMRegister mask, int vector_len) {
+  assert(UseAVX > 0, "");
+  InstructionMark im(this);
+  InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
+  vex_prefix(dst, mask->encoding(), src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
+  emit_int8(0x2E);
+  emit_operand(src, dst);
+}
+
+void Assembler::vmaskmovpd(Address dst, XMMRegister src, XMMRegister mask, int vector_len) {
+  assert(UseAVX > 0, "");
+  InstructionMark im(this);
+  InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
+  vex_prefix(dst, mask->encoding(), src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
+  emit_int8(0x2F);
+  emit_operand(src, dst);
+}
+
 // Move Unaligned EVEX enabled Vector (programmable : 8,16,32,64)
 void Assembler::evmovdqub(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len) {
   assert(VM_Version::supports_avx512vlbw(), "");
@@ -4394,14 +4448,6 @@ void Assembler::vmovmskpd(Register dst, XMMRegister src, int vec_enc) {
   emit_int16(0x50, (0xC0 | encode));
 }
 
-void Assembler::vpmaskmovd(XMMRegister dst, XMMRegister nds, Address src, int vector_len) {
-  assert((VM_Version::supports_avx2() && vector_len == AVX_256bit), "");
-  InstructionMark im(this);
-  InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ false, /* uses_vl */ true);
-  vex_prefix(src, nds->encoding(), dst->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
-  emit_int8((unsigned char)0x8C);
-  emit_operand(dst, src);
-}
 
 void Assembler::pextrd(Register dst, XMMRegister src, int imm8) {
   assert(VM_Version::supports_sse4_1(), "");

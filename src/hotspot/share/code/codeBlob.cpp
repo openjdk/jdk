@@ -195,7 +195,9 @@ void RuntimeBlob::trace_new_stub(RuntimeBlob* stub, const char* name1, const cha
   // Do not hold the CodeCache lock during name formatting.
   assert(!CodeCache_lock->owned_by_self(), "release CodeCache before registering the stub");
 
-  if (stub != NULL) {
+  if (stub != NULL && (PrintStubCode ||
+                       Forte::is_enabled() ||
+                       JvmtiExport::should_post_dynamic_code_generated())) {
     char stub_id[256];
     assert(strlen(name1) + strlen(name2) < sizeof(stub_id), "");
     jio_snprintf(stub_id, sizeof(stub_id), "%s%s", name1, name2);
@@ -212,7 +214,9 @@ void RuntimeBlob::trace_new_stub(RuntimeBlob* stub, const char* name1, const cha
       tty->print_cr("- - - [END] - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -");
       tty->cr();
     }
-    Forte::register_stub(stub_id, stub->code_begin(), stub->code_end());
+    if (Forte::is_enabled()) {
+      Forte::register_stub(stub_id, stub->code_begin(), stub->code_end());
+    }
 
     if (JvmtiExport::should_post_dynamic_code_generated()) {
       const char* stub_name = name2;

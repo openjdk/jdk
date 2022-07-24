@@ -142,16 +142,18 @@ REGISTER_DECLARATION(Register, rthread,   r28);
 REGISTER_DECLARATION(Register, rheapbase, r27);
 // constant pool cache
 REGISTER_DECLARATION(Register, rcpool,    r26);
-// monitors allocated on stack
-REGISTER_DECLARATION(Register, rmonitors, r25);
+// r25 is a callee-saved temp
+// REGISTER_DECLARATION(Register, unused, r25);
 // locals on stack
 REGISTER_DECLARATION(Register, rlocals,   r24);
 // bytecode pointer
 REGISTER_DECLARATION(Register, rbcp,      r22);
 // Dispatch table base
 REGISTER_DECLARATION(Register, rdispatch, r21);
-// Java stack pointer
+// Java expression stack pointer
 REGISTER_DECLARATION(Register, esp,      r20);
+// Sender's SP while in interpreter
+REGISTER_DECLARATION(Register, r19_sender_sp, r19);
 
 // Preserved predicate register with all elements set TRUE.
 REGISTER_DECLARATION(PRegister, ptrue, p7);
@@ -218,7 +220,7 @@ public:
     return extend(uval, msb - lsb);
   }
 
-  static void patch(address a, int msb, int lsb, uint64_t val) {
+  static ALWAYSINLINE void patch(address a, int msb, int lsb, uint64_t val) {
     int nbits = msb - lsb + 1;
     guarantee(val < (1ULL << nbits), "Field too big for insn");
     assert_cond(msb >= lsb);
@@ -716,7 +718,7 @@ public:
     wrap_label(Rd, L, &Assembler::_adrp);
   }
 
-  void adrp(Register Rd, const Address &dest, uint64_t &offset);
+  void adrp(Register Rd, const Address &dest, uint64_t &offset) = delete;
 
 #undef INSN
 
@@ -3633,20 +3635,27 @@ void sve_fcm(Condition cond, PRegister Pd, SIMD_RegVariant T,
   INSN(sve_uzp2, 0b1); // Concatenate odd elements from two predicates
 #undef INSN
 
-// Predicate counted loop (SVE) (32-bit variants are not included)
-#define INSN(NAME, decode)                                                \
+// SVE integer compare scalar count and limit
+#define INSN(NAME, sf, op)                                                \
   void NAME(PRegister Pd, SIMD_RegVariant T, Register Rn, Register Rm) {  \
     starti;                                                               \
     assert(T != Q, "invalid register variant");                           \
     f(0b00100101, 31, 24), f(T, 23, 22), f(1, 21),                        \
-    zrf(Rm, 16), f(0, 15, 13), f(1, 12), f(decode >> 1, 11, 10),          \
-    zrf(Rn, 5), f(decode & 1, 4), prf(Pd, 0);                             \
+    zrf(Rm, 16), f(0, 15, 13), f(sf, 12), f(op >> 1, 11, 10),             \
+    zrf(Rn, 5), f(op & 1, 4), prf(Pd, 0);                                 \
   }
-
-  INSN(sve_whilelt, 0b010);  // While incrementing signed scalar less than scalar
-  INSN(sve_whilele, 0b011);  // While incrementing signed scalar less than or equal to scalar
-  INSN(sve_whilelo, 0b110);  // While incrementing unsigned scalar lower than scalar
-  INSN(sve_whilels, 0b111);  // While incrementing unsigned scalar lower than or the same as scalar
+  // While incrementing signed scalar less than scalar
+  INSN(sve_whileltw, 0b0, 0b010);
+  INSN(sve_whilelt,  0b1, 0b010);
+  // While incrementing signed scalar less than or equal to scalar
+  INSN(sve_whilelew, 0b0, 0b011);
+  INSN(sve_whilele,  0b1, 0b011);
+  // While incrementing unsigned scalar lower than scalar
+  INSN(sve_whilelow, 0b0, 0b110);
+  INSN(sve_whilelo,  0b1, 0b110);
+  // While incrementing unsigned scalar lower than or the same as scalar
+  INSN(sve_whilelsw, 0b0, 0b111);
+  INSN(sve_whilels,  0b1, 0b111);
 #undef INSN
 
   // SVE predicate reverse
