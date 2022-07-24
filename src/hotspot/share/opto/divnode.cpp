@@ -49,14 +49,14 @@
 //
 // Borrowed almost verbatim from Hacker's Delight by Henry S. Warren, Jr. with
 // minor type name and parameter changes.
-static bool magic_int_divide_constants(jint d, jint &M, jint &s) {
+static bool magic_int_divide_constants(juint d, jlong &M, jint &s) {
   int32_t p;
-  uint32_t ad, anc, delta, q1, r1, q2, r2, t;
-  const uint32_t two31 = 0x80000000L;     // 2**31.
+  jlong ad, anc, delta, q1, r1, q2, r2, t;
+  const jlong two31 = 0x80000000L;     // 2**31.
 
-  ad = ABS(d);
+  ad = jlong(d);
   if (d == 0 || d == 1) return false;
-  t = two31 + ((uint32_t)d >> 31);
+  t = two31 + (ad >> 31);
   anc = t - 1 - t%ad;     // Absolute value of nc.
   p = 31;                 // Init. p.
   q1 = two31/anc;         // Init. q1 = 2**p/|nc|.
@@ -81,7 +81,6 @@ static bool magic_int_divide_constants(jint d, jint &M, jint &s) {
   } while (q1 < delta || (q1 == delta && r1 == 0));
 
   M = q2 + 1;
-  if (d < 0) M = -M;      // Magic number and
   s = p - 32;             // shift amount to return.
 
   return true;
@@ -163,33 +162,18 @@ static Node *transform_int_divide( PhaseGVN *phase, Node *dividend, jint divisor
     //     by Granlund and Montgomery
     // See also "Hacker's Delight", chapter 10 by Warren.
 
-    jint magic_const;
+    jlong magic_const;
     jint shift_const;
-    if (magic_int_divide_constants(d, magic_const, shift_const)) {
+    if (magic_int_divide_constants(juint(d), magic_const, shift_const)) {
       Node *magic = phase->longcon(magic_const);
       Node *dividend_long = phase->transform(new ConvI2LNode(dividend));
 
       // Compute the high half of the dividend x magic multiplication
       Node *mul_hi = phase->transform(new MulLNode(dividend_long, magic));
 
-      if (magic_const < 0) {
-        mul_hi = phase->transform(new RShiftLNode(mul_hi, phase->intcon(N)));
-        mul_hi = phase->transform(new ConvL2INode(mul_hi));
-
-        // The magic multiplier is too large for a 32 bit constant. We've adjusted
-        // it down by 2^32, but have to add 1 dividend back in after the multiplication.
-        // This handles the "overflow" case described by Granlund and Montgomery.
-        mul_hi = phase->transform(new AddINode(dividend, mul_hi));
-
-        // Shift over the (adjusted) mulhi
-        if (shift_const != 0) {
-          mul_hi = phase->transform(new RShiftINode(mul_hi, phase->intcon(shift_const)));
-        }
-      } else {
-        // No add is required, we can merge the shifts together.
-        mul_hi = phase->transform(new RShiftLNode(mul_hi, phase->intcon(N + shift_const)));
-        mul_hi = phase->transform(new ConvL2INode(mul_hi));
-      }
+      // No add is required, we can merge the shifts together.
+      mul_hi = phase->transform(new RShiftLNode(mul_hi, phase->intcon(N + shift_const)));
+      mul_hi = phase->transform(new ConvL2INode(mul_hi));
 
       // Get a 0 or -1 from the sign of the dividend.
       Node *addend0 = mul_hi;
