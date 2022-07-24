@@ -80,7 +80,7 @@ static bool magic_int_divide_constants(juint d, jlong &M, jint &s) {
     delta = ad - r2;
   } while (q1 < delta || (q1 == delta && r1 == 0));
 
-  M = q2 + 1;
+  M = q2 + 1;             // Magic number and
   s = p - 32;             // shift amount to return.
 
   return true;
@@ -201,14 +201,13 @@ static Node *transform_int_divide( PhaseGVN *phase, Node *dividend, jint divisor
 //
 // Borrowed almost verbatim from Hacker's Delight by Henry S. Warren, Jr. with
 // minor type name and parameter changes.  Adjusted to 64 bit word width.
-static bool magic_long_divide_constants(jlong d, jlong &M, jint &s) {
+static bool magic_long_divide_constants(julong ad, jlong &M, jint &s) {
   int64_t p;
   uint64_t ad, anc, delta, q1, r1, q2, r2, t;
   const uint64_t two63 = UCONST64(0x8000000000000000);     // 2**63.
 
-  ad = ABS(d);
-  if (d == 0 || d == 1) return false;
-  t = two63 + ((uint64_t)d >> 63);
+  if (ad == 0 || ad == 1) return false;
+  t = two63 + (ad >> 63);
   anc = t - 1 - t%ad;     // Absolute value of nc.
   p = 63;                 // Init. p.
   q1 = two63/anc;         // Init. q1 = 2**p/|nc|.
@@ -232,8 +231,7 @@ static bool magic_long_divide_constants(jlong d, jlong &M, jint &s) {
     delta = ad - r2;
   } while (q1 < delta || (q1 == delta && r1 == 0));
 
-  M = q2 + 1;
-  if (d < 0) M = -M;      // Magic number and
+  M = jlong(q2 + 1);      // Magic number and
   s = p - 64;             // shift amount to return.
 
   return true;
@@ -396,7 +394,7 @@ static Node *transform_long_divide( PhaseGVN *phase, Node *dividend, jlong divis
 
     jlong magic_const;
     jint shift_const;
-    if (magic_long_divide_constants(d, magic_const, shift_const)) {
+    if (magic_long_divide_constants(julong(d), magic_const, shift_const)) {
       // Compute the high half of the dividend x magic multiplication
       Node *mul_hi = phase->transform(long_by_long_mulhi(phase, dividend, magic_const));
 
