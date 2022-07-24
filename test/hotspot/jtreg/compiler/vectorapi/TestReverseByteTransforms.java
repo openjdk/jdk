@@ -77,7 +77,7 @@ public class TestReverseByteTransforms {
     }
 
     @Test
-    @IR(applyIfCPUFeature={"sve", "true"}, failOn = {"ReverseBytesV" , " > 0 "})
+    @IR(applyIfCPUFeature={"sve", "true"}, failOn = {"ReverseBytesV"})
     public void test_reversebytes_long_transform1(long[] lout, long[] linp) {
         VectorMask<Long> mask = VectorMask.fromLong(LSPECIES, 3);
         for (int i = 0; i < LSPECIES.loopBound(linp.length); i+=LSPECIES.length()) {
@@ -135,7 +135,7 @@ public class TestReverseByteTransforms {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr={"sve", "true", "simd", "true", "avx2", "true"}, failOn = {"ReverseBytesV" , " > 0 "})
+    @IR(applyIfCPUFeatureOr={"sve", "true", "simd", "true", "avx2", "true"}, failOn = {"ReverseBytesV"})
     public void test_reversebytes_long_transform4(long[] lout, long[] linp) {
         for (int i = 0; i < LSPECIES.loopBound(linp.length); i+=LSPECIES.length()) {
             LongVector.fromArray(LSPECIES, linp, i)
@@ -153,7 +153,7 @@ public class TestReverseByteTransforms {
     }
 
     @Test
-    @IR(applyIfCPUFeature={"sve", "true"}, failOn = {"ReverseBytesV" , " > 0 "})
+    @IR(applyIfCPUFeature={"sve", "true"}, failOn = {"ReverseBytesV"})
     public void test_reversebytes_int_transform1(int[] iout, int[] iinp) {
         VectorMask<Integer> mask = VectorMask.fromLong(ISPECIES, 3);
         for (int i = 0; i < ISPECIES.loopBound(iinp.length); i+=ISPECIES.length()) {
@@ -211,7 +211,7 @@ public class TestReverseByteTransforms {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr={"sve", "true", "simd", "true", "avx2", "true"}, failOn = {"ReverseBytesV" , " > 0 "})
+    @IR(applyIfCPUFeatureOr={"sve", "true", "simd", "true", "avx2", "true"}, failOn = {"ReverseBytesV"})
     public void test_reversebytes_int_transform4(int[] iout, int[] iinp) {
         for (int i = 0; i < ISPECIES.loopBound(iinp.length); i+=ISPECIES.length()) {
             IntVector.fromArray(ISPECIES, iinp, i)
@@ -229,7 +229,7 @@ public class TestReverseByteTransforms {
     }
 
     @Test
-    @IR(applyIfCPUFeature={"sve", "true"}, failOn = {"ReverseBytesV" , " > 0 "})
+    @IR(applyIfCPUFeature={"sve", "true"}, failOn = {"ReverseBytesV"})
     public void test_reversebytes_short_transform1(short[] sout, short[] sinp) {
         VectorMask<Short> mask = VectorMask.fromLong(SSPECIES, 3);
         for (int i = 0; i < SSPECIES.loopBound(sinp.length); i+=SSPECIES.length()) {
@@ -287,7 +287,7 @@ public class TestReverseByteTransforms {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr={"sve", "true", "simd", "true", "avx2", "true"}, failOn = {"ReverseBytesV" , " > 0 "})
+    @IR(applyIfCPUFeatureOr={"sve", "true", "simd", "true", "avx2", "true"}, failOn = {"ReverseBytesV"})
     public void test_reversebytes_short_transform4(short[] sout, short[] sinp) {
         for (int i = 0; i < SSPECIES.loopBound(sinp.length); i+=SSPECIES.length()) {
             ShortVector.fromArray(SSPECIES, sinp, i)
