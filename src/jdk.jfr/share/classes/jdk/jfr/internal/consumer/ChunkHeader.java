@@ -31,7 +31,6 @@ import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
 import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.MetadataDescriptor;
-import jdk.jfr.internal.Utils;
 
 public final class ChunkHeader {
     public static final long HEADER_SIZE = 68;
@@ -120,8 +119,7 @@ public final class ChunkHeader {
     }
 
     public void refresh() throws IOException {
-        int retryCount = 1000; // Same as RecordingInput::pollCount
-        while (retryCount-- > 0) {
+        while (true) {
             byte fileState1 = readFileState();
             input.positionPhysical(absoluteChunkStart + CHUNK_SIZE_POSITION);
             long chunkSize = input.readPhysicalLong();
@@ -166,9 +164,7 @@ public final class ChunkHeader {
                     return;
                 }
             }
-            Utils.takeNap(1);
         }
-        throw new IOException("Recording file is stuck or invalid.");
     }
 
     public void awaitFinished() throws IOException {
