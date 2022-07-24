@@ -90,9 +90,6 @@ public final class ChunkHeader {
             throw new IOException("File version " + major + "." + minor + ". Only Flight Recorder files of version 1.x and 2.x can be read by this JDK.");
         }
         long c = input.readRawLong(); // chunk size
-        if (c <= 0) {
-           throw new IOException("Invalid chunk size: " + c);
-        }
         Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: chunkSize=" + c);
         long cp = input.readRawLong(); // constant pool position
         Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: constantPoolPosition=" + cp);
