@@ -76,7 +76,9 @@ public abstract class AbstractAppImageBuilder {
             IOUtils.copyRecursive(SOURCE_DIR.fetchFrom(params),
                     appLayout.appDirectory());
         }
+
         AppImageFile.save(root, params);
+
         List<String> items = APP_CONTENT.fetchFrom(params);
         for (String item : items) {
             IOUtils.copyRecursive(Path.of(item),

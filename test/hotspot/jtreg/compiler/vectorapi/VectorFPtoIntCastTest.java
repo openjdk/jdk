@@ -49,19 +49,22 @@ public class VectorFPtoIntCastTest {
     private static final VectorSpecies<Byte> bspec128 = ByteVector.SPECIES_128;
     private static final VectorSpecies<Byte> bspec64  = ByteVector.SPECIES_64;
 
-    private float [] float_arr;
-    private double [] double_arr;
-    private long [] long_arr;
-    private int [] int_arr;
-    private short [] short_arr;
-    private byte [] byte_arr;
+    private float[] float_arr;
+    private double[] double_arr;
+    private long[] long_arr;
+    private int[] int_arr;
+    private short[] short_arr;
+    private byte[] byte_arr;
 
     private FloatVector fvec256;
     private FloatVector fvec512;
     private DoubleVector dvec512;
 
-    public static void main(String args[]) {
-        TestFramework.runWithFlags("--add-modules=jdk.incubator.vector");
+    public static void main(String[] args) {
+        TestFramework testFramework = new TestFramework();
+        testFramework.setDefaultWarmup(5000)
+                     .addFlags("--add-modules=jdk.incubator.vector")
+                     .start();
     }
 
     public VectorFPtoIntCastTest() {

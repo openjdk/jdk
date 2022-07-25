@@ -1459,6 +1459,12 @@ Node *SafePointNode::peek_monitor_obj() const {
   return monitor_obj(jvms(), mon);
 }
 
+Node* SafePointNode::peek_operand(uint off) const {
+  assert(jvms()->sp() > 0, "must have an operand");
+  assert(off < jvms()->sp(), "off is out-of-range");
+  return stack(jvms(), jvms()->sp() - off - 1);
+}
+
 // Do we Match on this edge index or not?  Match no edges
 uint SafePointNode::match_edge(uint idx) const {
   return (TypeFunc::Parms == idx);
@@ -1616,13 +1622,16 @@ Node *AllocateArrayNode::make_ideal_length(const TypeOopPtr* oop_type, PhaseTran
              "narrow type must be narrower than length type");
 
       // Return NULL if new nodes are not allowed
-      if (!allow_new_nodes) return NULL;
+      if (!allow_new_nodes) {
+        return NULL;
+      }
       // Create a cast which is control dependent on the initialization to
       // propagate the fact that the array length must be positive.
       InitializeNode* init = initialization();
-      assert(init != NULL, "initialization not found");
-      length = new CastIINode(length, narrow_length_type);
-      length->set_req(TypeFunc::Control, init->proj_out_or_null(TypeFunc::Control));
+      if (init != NULL) {
+        length = new CastIINode(length, narrow_length_type);
+        length->set_req(TypeFunc::Control, init->proj_out_or_null(TypeFunc::Control));
+      }
     }
   }
 

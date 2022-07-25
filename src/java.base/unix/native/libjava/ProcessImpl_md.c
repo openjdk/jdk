@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -399,10 +399,8 @@ copyPipe(int from[2], int to[2])
  */
 static void arraysize(const char * const *arg, int *nelems, int *nbytes)
 {
-    int i, bytes, count;
+    int bytes, count;
     const char * const *a = arg;
-    char *p;
-    int *q;
     if (arg == 0) {
         *nelems = 0;
         *nbytes = 0;
@@ -488,7 +486,6 @@ forkChild(ChildStuff *c) {
 static pid_t
 spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) {
     pid_t resultPid;
-    jboolean isCopy;
     int i, offset, rval, bufsize, magic;
     char *buf, buf1[16];
     char *hlpargs[2];

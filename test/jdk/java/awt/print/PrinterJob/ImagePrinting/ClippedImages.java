@@ -125,8 +125,8 @@ public class ClippedImages {
         frame.pack();
         frame.setVisible(true);
 
-        PassFailJFrame.addTestFrame(frame);
-        PassFailJFrame.positionTestFrame(frame, PassFailJFrame.Position.HORIZONTAL);
+        PassFailJFrame.addTestWindow(frame);
+        PassFailJFrame.positionTestWindow(frame, PassFailJFrame.Position.HORIZONTAL);
     }
 
     private static void printOne() {

@@ -86,6 +86,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Stream;
 
 import sun.util.logging.PlatformLogger;
 
@@ -1035,9 +1036,8 @@ public final class HijrahChronology extends AbstractChronology implements Serial
         AccessController.doPrivileged(
             (PrivilegedAction<Void>)() -> {
                 if (Files.isDirectory(CONF_PATH)) {
-                    try {
-                        Files.list(CONF_PATH)
-                            .map(p -> p.getFileName().toString())
+                    try (Stream<Path> stream = Files.list(CONF_PATH)) {
+                        stream.map(p -> p.getFileName().toString())
                             .filter(fn -> fn.matches("hijrah-config-[^\\.]+\\.properties"))
                             .map(fn -> fn.replaceAll("(hijrah-config-|\\.properties)", ""))
                             .forEach(idtype -> {

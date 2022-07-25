@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "runtime/os.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
+#include "runtime/threadCrashProtection.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
 
@@ -56,7 +57,7 @@ void Mutex::check_block_state(Thread* thread) {
     fatal("VM thread could block on lock that may be held by a JavaThread during safepoint: %s", name());
   }
 
-  assert(!os::ThreadCrashProtection::is_crash_protected(thread),
+  assert(!ThreadCrashProtection::is_crash_protected(thread),
          "locking not allowed when crash protection is set");
 }
 
@@ -354,6 +355,10 @@ void Mutex::print_on(outputStream* st) const {
   }
   DEBUG_ONLY(st->print(" %s", rank_name()));
   st->cr();
+}
+
+void Mutex::print() const {
+  print_on(::tty);
 }
 #endif // PRODUCT
 

@@ -31,6 +31,7 @@
 #include "gc/shared/oopStorage.inline.hpp"
 #include "jvmci/jniAccessMark.inline.hpp"
 #include "jvmci/jvmciCompilerToVM.hpp"
+#include "jvmci/jvmciCodeInstaller.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 #include "jvmci/metadataHandles.hpp"
 #include "logging/log.hpp"
@@ -1413,6 +1414,8 @@ void JVMCIRuntime::initialize(JVMCIEnv* JVMCIENV) {
     create_jvmci_primitive_type(T_FLOAT, JVMCI_CHECK_EXIT_((void)0));
     create_jvmci_primitive_type(T_DOUBLE, JVMCI_CHECK_EXIT_((void)0));
     create_jvmci_primitive_type(T_VOID, JVMCI_CHECK_EXIT_((void)0));
+
+    DEBUG_ONLY(CodeInstaller::verify_bci_constants(JVMCIENV);)
 
     if (!JVMCIENV->is_hotspot()) {
       JVMCIENV->copy_saved_properties();

@@ -52,14 +52,7 @@ public class framecnt01 {
     }
 
     static {
-        try {
-            System.loadLibrary("framecnt01");
-        } catch (UnsatisfiedLinkError ule) {
-            System.err.println("Could not load framecnt01 library");
-            System.err.println("java.library.path:"
-                + System.getProperty("java.library.path"));
-            throw ule;
-        }
+        System.loadLibrary("framecnt01");
     }
     static volatile boolean vThread1Started = false;
     static volatile boolean pThread1Started = false;

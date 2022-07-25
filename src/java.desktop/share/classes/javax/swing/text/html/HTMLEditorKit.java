@@ -1299,6 +1299,29 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      *     <td>FrameView
      * </tbody>
      * </table>
+     *
+     * @implNote
+     * Parsed tags that are unrecognized or are recognized but unsupported are
+     * handled differently by the editor.
+     *
+     * <ul>
+     * <li>When the container is editable:
+     *     <ul>
+     *         <li>The tags will be displayed as editable text fields with the
+     *         tag name.</li>
+     *         <li>The content within the tags will be handled by the editor as
+     *         regular text.</li>
+     *     </ul>
+     * </li>
+     * <li>When the container is not editable:
+     *     <ul>
+     *         <li>If the tag is recognized but not supported, such as script tags,
+     *         the tag and its contents will be hidden.</li>
+     *         <li>If the tag is unknown, the tag will be hidden but its contents
+     *         will display as regular text.</li>
+     *     </ul>
+     * </li>
+     * </ul>
      */
     public static class HTMLFactory implements ViewFactory {
         /**

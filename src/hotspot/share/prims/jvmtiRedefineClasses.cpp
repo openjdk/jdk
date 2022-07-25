@@ -237,6 +237,10 @@ bool VM_RedefineClasses::doit_prologue() {
 void VM_RedefineClasses::doit() {
   Thread* current = Thread::current();
 
+  if (log_is_enabled(Info, redefine, class, timer)) {
+    _timer_vm_op_doit.start();
+  }
+
 #if INCLUDE_CDS
   if (UseSharedSpaces) {
     // Sharing is enabled so we remap the shared readonly space to
@@ -246,6 +250,7 @@ void VM_RedefineClasses::doit() {
     if (!MetaspaceShared::remap_shared_readonly_as_readwrite()) {
       log_info(redefine, class, load)("failed to remap shared readonly space to readwrite, private");
       _res = JVMTI_ERROR_INTERNAL;
+      _timer_vm_op_doit.stop();
       return;
     }
   }
@@ -295,6 +300,8 @@ void VM_RedefineClasses::doit() {
 
   // Clean up any metadata now unreferenced while MetadataOnStackMark is set.
   ClassLoaderDataGraph::clean_deallocate_lists(false);
+
+  _timer_vm_op_doit.stop();
 }
 
 void VM_RedefineClasses::doit_epilogue() {
@@ -309,8 +316,7 @@ void VM_RedefineClasses::doit_epilogue() {
   if (log_is_enabled(Info, redefine, class, timer)) {
     // Used to have separate timers for "doit" and "all", but the timer
     // overhead skewed the measurements.
-    julong doit_time = _timer_rsc_phase1.milliseconds() +
-                       _timer_rsc_phase2.milliseconds();
+    julong doit_time = _timer_vm_op_doit.milliseconds();
     julong all_time = _timer_vm_op_prologue.milliseconds() + doit_time;
 
     log_info(redefine, class, timer)

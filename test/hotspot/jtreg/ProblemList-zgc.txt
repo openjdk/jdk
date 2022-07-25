@@ -44,3 +44,5 @@ serviceability/sa/TestJmapCoreMetaspace.java                  8268722,8268636   
 serviceability/sa/TestJhsdbJstackMixed.java                   8248912   generic-all
 serviceability/sa/ClhsdbPstack.java#process                   8248912   generic-all
 serviceability/sa/ClhsdbPstack.java#core                      8248912   generic-all
+
+vmTestbase/gc/gctests/MemoryEaterMT/MemoryEaterMT.java        8289582   windows-x64

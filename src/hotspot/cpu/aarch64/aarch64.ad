@@ -1920,7 +1920,24 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 
   if (C->stub_function() == NULL) {
     BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-    bs->nmethod_entry_barrier(&_masm);
+    if (BarrierSet::barrier_set()->barrier_set_nmethod() != NULL) {
+      // Dummy labels for just measuring the code size
+      Label dummy_slow_path;
+      Label dummy_continuation;
+      Label dummy_guard;
+      Label* slow_path = &dummy_slow_path;
+      Label* continuation = &dummy_continuation;
+      Label* guard = &dummy_guard;
+      if (!Compile::current()->output()->in_scratch_emit_size()) {
+        // Use real labels from actual stub when not emitting code for the purpose of measuring its size
+        C2EntryBarrierStub* stub = Compile::current()->output()->entry_barrier_table()->add_entry_barrier();
+        slow_path = &stub->slow_path();
+        continuation = &stub->continuation();
+        guard = &stub->guard();
+      }
+      // In the C2 code, we move the non-hot part of nmethod entry barriers out-of-line to a stub.
+      bs->nmethod_entry_barrier(&_masm, slow_path, continuation, guard);
+    }
   }
 
   if (VerifyStackAtCalls) {
@@ -2479,6 +2496,7 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
         return false;
       }
       break;
+    case Op_VectorMaskGen:
     case Op_LoadVectorGather:
     case Op_StoreVectorScatter:
     case Op_CompressV:
@@ -2500,6 +2518,11 @@ const bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, Bas
   }
   return match_rule_supported(opcode) &&
          masked_op_sve_supported(opcode, vlen, bt);
+}
+
+const bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
+  // Only SVE has partial vector operations
+  return (UseSVE > 0) && partial_op_sve_needed(node, vt);
 }
 
 const RegMask* Matcher::predicate_reg_mask(void) {
@@ -2713,11 +2736,17 @@ bool size_fits_all_mem_uses(AddPNode* addp, int shift) {
   return true;
 }
 
-bool can_combine_with_imm(Node* binary_node, Node* replicate_node) {
-  if (UseSVE == 0 || !VectorNode::is_invariant_vector(replicate_node)){
+// Binary src (Replicate con)
+bool is_valid_sve_arith_imm_pattern(Node* n, Node* m) {
+  if (n == NULL || m == NULL) {
     return false;
   }
-  Node* imm_node = replicate_node->in(1);
+
+  if (UseSVE == 0 || !VectorNode::is_invariant_vector(m)) {
+    return false;
+  }
+
+  Node* imm_node = m->in(1);
   if (!imm_node->is_Con()) {
     return false;
   }
@@ -2727,11 +2756,11 @@ bool can_combine_with_imm(Node* binary_node, Node* replicate_node) {
     return false;
   }
 
-  switch (binary_node->Opcode()) {
+  switch (n->Opcode()) {
   case Op_AndV:
   case Op_OrV:
   case Op_XorV: {
-    Assembler::SIMD_RegVariant T = Assembler::elemType_to_regVariant(Matcher::vector_element_basic_type(binary_node));
+    Assembler::SIMD_RegVariant T = Assembler::elemType_to_regVariant(Matcher::vector_element_basic_type(n));
     uint64_t value = t->isa_long() ? (uint64_t)imm_node->get_long() : (uint64_t)imm_node->get_int();
     return Assembler::operand_valid_for_sve_logical_immediate(Assembler::regVariant_to_elemBits(T), value);
   }
@@ -2747,22 +2776,24 @@ bool can_combine_with_imm(Node* binary_node, Node* replicate_node) {
   }
 }
 
-bool is_vector_arith_imm_pattern(Node* n, Node* m) {
+// (XorV src (Replicate m1))
+// (XorVMask src (MaskAll m1))
+bool is_vector_bitwise_not_pattern(Node* n, Node* m) {
   if (n != NULL && m != NULL) {
-    return can_combine_with_imm(n, m);
+    return (n->Opcode() == Op_XorV || n->Opcode() == Op_XorVMask) &&
+           VectorNode::is_all_ones_vector(m);
   }
   return false;
 }
 
 // Should the matcher clone input 'm' of node 'n'?
 bool Matcher::pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
-  // ShiftV src (ShiftCntV con)
-  // Binary src (Replicate con)
-  if (is_vshift_con_pattern(n, m) || is_vector_arith_imm_pattern(n, m)) {
+  if (is_vshift_con_pattern(n, m) ||
+      is_vector_bitwise_not_pattern(n, m) ||
+      is_valid_sve_arith_imm_pattern(n, m)) {
     mstack.push(m, Visit);
     return true;
   }
-
   return false;
 }
 
@@ -3827,11 +3858,17 @@ encode %{
         ciEnv::current()->record_failure("CodeCache is full");
         return;
       }
-      // Emit stub for static call
-      address stub = CompiledStaticCall::emit_to_interp_stub(cbuf);
-      if (stub == NULL) {
-        ciEnv::current()->record_failure("CodeCache is full");
-        return;
+      if (CodeBuffer::supports_shared_stubs() && _method->can_be_statically_bound()) {
+        // Calls of the same statically bound method can share
+        // a stub to the interpreter.
+        cbuf.shared_stub_to_interp_for(_method, cbuf.insts()->mark_off());
+      } else {
+        // Emit stub for static call
+        address stub = CompiledStaticCall::emit_to_interp_stub(cbuf);
+        if (stub == NULL) {
+          ciEnv::current()->record_failure("CodeCache is full");
+          return;
+        }
       }
     }
 
@@ -3939,7 +3976,7 @@ encode %{
     Register tmp = as_Register($tmp2$$reg);
     Label cont;
     Label object_has_monitor;
-    Label cas_failed;
+    Label no_count;
 
     assert_different_registers(oop, box, tmp, disp_hdr);
 
@@ -3974,9 +4011,6 @@ encode %{
 
       // If the compare-and-exchange succeeded, then we found an unlocked
       // object, will have now locked it will continue at label cont
-
-      __ bind(cas_failed);
-      // We did not see an unlocked object so try the fast recursive case.
 
       // Check if the owner is self by comparing the value in the
       // markWord of object (disp_hdr) with the stack pointer.
@@ -4022,6 +4056,11 @@ encode %{
     __ bind(cont);
     // flag == EQ indicates success
     // flag == NE indicates failure
+    __ br(Assembler::NE, no_count);
+
+    __ increment(Address(rthread, JavaThread::held_monitor_count_offset()));
+
+    __ bind(no_count);
   %}
 
   enc_class aarch64_enc_fast_unlock(iRegP object, iRegP box, iRegP tmp, iRegP tmp2) %{
@@ -4032,6 +4071,7 @@ encode %{
     Register tmp = as_Register($tmp2$$reg);
     Label cont;
     Label object_has_monitor;
+    Label no_count;
 
     assert_different_registers(oop, box, tmp, disp_hdr);
 
@@ -4090,6 +4130,11 @@ encode %{
     __ bind(cont);
     // flag == EQ indicates success
     // flag == NE indicates failure
+    __ br(Assembler::NE, no_count);
+
+    __ decrement(Address(rthread, JavaThread::held_monitor_count_offset()));
+
+    __ bind(no_count);
   %}
 
 %}
@@ -4447,6 +4492,16 @@ operand immI_255()
 operand immI_65535()
 %{
   predicate(n->get_int() == 65535);
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immI_positive()
+%{
+  predicate(n->get_int() > 0);
   match(ConI);
 
   op_cost(0);

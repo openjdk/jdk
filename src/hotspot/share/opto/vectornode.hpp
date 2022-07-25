@@ -71,6 +71,8 @@ class VectorNode : public TypeNode {
     return type()->ideal_reg();
   }
 
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+
   static VectorNode* scalar2vector(Node* s, uint vlen, const Type* opd_t, bool is_mask = false);
   static VectorNode* shift_count(int opc, Node* cnt, uint vlen, BasicType bt);
   static VectorNode* make(int opc, Node* n1, Node* n2, uint vlen, BasicType bt, bool is_var_shift = false);
@@ -103,10 +105,14 @@ class VectorNode : public TypeNode {
   static bool is_vector_integral_negate_supported(int opc, uint vlen, BasicType bt, bool use_predicate);
   static bool is_populate_index_supported(BasicType bt);
   static bool is_invariant_vector(Node* n);
+  // Return true if every bit in this vector is 1.
   static bool is_all_ones_vector(Node* n);
+  // Return true if every bit in this vector is 0.
+  static bool is_all_zeros_vector(Node* n);
   static bool is_vector_bitwise_not_pattern(Node* n);
   static Node* degenerate_vector_rotate(Node* n1, Node* n2, bool is_rotate_left, int vlen,
                                         BasicType bt, PhaseGVN* phase);
+  static Node* try_to_gen_masked_vector(PhaseGVN* gvn, Node* node, const TypeVect* vt);
 
   // [Start, end) half-open range defining which operands are vectors
   static void vector_operands(Node* n, uint* start, uint* end);
@@ -179,9 +185,11 @@ public:
 class ReductionNode : public Node {
  private:
   const Type* _bottom_type;
+  const TypeVect* _vect_type;
  public:
   ReductionNode(Node *ctrl, Node* in1, Node* in2) : Node(ctrl, in1, in2),
-               _bottom_type(Type::get_const_basic_type(in1->bottom_type()->basic_type())) {}
+               _bottom_type(Type::get_const_basic_type(in1->bottom_type()->basic_type())),
+               _vect_type(in2->bottom_type()->is_vect()) {}
 
   static ReductionNode* make(int opc, Node *ctrl, Node* in1, Node* in2, BasicType bt);
   static int  opcode(int opc, BasicType bt);
@@ -192,9 +200,15 @@ class ReductionNode : public Node {
     return _bottom_type;
   }
 
+  virtual const TypeVect* vect_type() const {
+    return _vect_type;
+  }
+
   virtual uint ideal_reg() const {
     return bottom_type()->ideal_reg();
   }
+
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 
   // Needed for proper cloning.
   virtual uint size_of() const { return sizeof(*this); }
@@ -714,6 +728,7 @@ class AndVNode : public VectorNode {
  public:
   AndVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
   virtual int Opcode() const;
+  virtual Node* Identity(PhaseGVN* phase);
 };
 
 //------------------------------AndReductionVNode--------------------------------------
@@ -730,6 +745,7 @@ class OrVNode : public VectorNode {
  public:
   OrVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
   virtual int Opcode() const;
+  virtual Node* Identity(PhaseGVN* phase);
 };
 
 //------------------------------OrReductionVNode--------------------------------------
@@ -754,6 +770,7 @@ class XorVNode : public VectorNode {
  public:
   XorVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
   virtual int Opcode() const;
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
 //------------------------------MinReductionVNode--------------------------------------
@@ -823,6 +840,7 @@ class LoadVectorNode : public LoadNode {
   virtual uint ideal_reg() const  { return Matcher::vector_ideal_reg(memory_size()); }
   virtual BasicType memory_type() const { return T_VOID; }
   virtual int memory_size() const { return vect_type()->length_in_bytes(); }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 
   virtual int store_Opcode() const { return Op_StoreVector; }
 
@@ -869,10 +887,10 @@ class StoreVectorNode : public StoreNode {
   virtual uint ideal_reg() const  { return Matcher::vector_ideal_reg(memory_size()); }
   virtual BasicType memory_type() const { return T_VOID; }
   virtual int memory_size() const { return vect_type()->length_in_bytes(); }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 
-  static StoreVectorNode* make(int opc, Node* ctl, Node* mem,
-                               Node* adr, const TypePtr* atyp, Node* val,
-                               uint vlen);
+  static StoreVectorNode* make(int opc, Node* ctl, Node* mem, Node* adr,
+                               const TypePtr* atyp, Node* val, uint vlen);
 
   uint element_size(void) { return type2aelembytes(vect_type()->element_basic_type()); }
 
@@ -904,8 +922,7 @@ class StoreVectorMaskedNode : public StoreVectorNode {
  public:
   StoreVectorMaskedNode(Node* c, Node* mem, Node* dst, Node* src, const TypePtr* at, Node* mask)
    : StoreVectorNode(c, mem, dst, at, src) {
-    assert(mask->bottom_type()->isa_vectmask(), "sanity");
-    init_class_id(Class_StoreVector);
+    init_class_id(Class_StoreVectorMasked);
     set_mismatched_access();
     add_req(mask);
   }
@@ -915,17 +932,17 @@ class StoreVectorMaskedNode : public StoreVectorNode {
   virtual uint match_edge(uint idx) const {
     return idx > 1;
   }
-  Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
 //------------------------------LoadVectorMaskedNode--------------------------------
 // Load Vector from memory under the influence of a predicate register(mask).
 class LoadVectorMaskedNode : public LoadVectorNode {
  public:
-  LoadVectorMaskedNode(Node* c, Node* mem, Node* src, const TypePtr* at, const TypeVect* vt, Node* mask)
-   : LoadVectorNode(c, mem, src, at, vt) {
-    assert(mask->bottom_type()->isa_vectmask(), "sanity");
-    init_class_id(Class_LoadVector);
+  LoadVectorMaskedNode(Node* c, Node* mem, Node* src, const TypePtr* at, const TypeVect* vt, Node* mask,
+                       ControlDependency control_dependency = LoadNode::DependsOnlyOnTest)
+   : LoadVectorNode(c, mem, src, at, vt, control_dependency) {
+    init_class_id(Class_LoadVectorMasked);
     set_mismatched_access();
     add_req(mask);
   }
@@ -935,7 +952,7 @@ class LoadVectorMaskedNode : public LoadVectorNode {
   virtual uint match_edge(uint idx) const {
     return idx > 1;
   }
-  Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
 //-------------------------------LoadVectorGatherMaskedNode---------------------------------
@@ -944,7 +961,7 @@ class LoadVectorGatherMaskedNode : public LoadVectorNode {
  public:
   LoadVectorGatherMaskedNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, Node* indices, Node* mask)
     : LoadVectorNode(c, mem, adr, at, vt) {
-    init_class_id(Class_LoadVector);
+    init_class_id(Class_LoadVectorGatherMasked);
     assert(indices->bottom_type()->is_vect(), "indices must be in vector");
     assert(mask->bottom_type()->isa_vectmask(), "sanity");
     add_req(indices);
@@ -964,7 +981,7 @@ class StoreVectorScatterMaskedNode : public StoreVectorNode {
   public:
    StoreVectorScatterMaskedNode(Node* c, Node* mem, Node* adr, const TypePtr* at, Node* val, Node* indices, Node* mask)
      : StoreVectorNode(c, mem, adr, at, val) {
-     init_class_id(Class_StoreVector);
+     init_class_id(Class_StoreVectorScatterMasked);
      assert(indices->bottom_type()->is_vect(), "indices must be in vector");
      assert(mask->bottom_type()->isa_vectmask(), "sanity");
      add_req(indices);
@@ -1001,25 +1018,28 @@ class VectorMaskGenNode : public TypeNode {
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegVectMask; }
   static Node* make(Node* length, BasicType vmask_bt);
+  static Node* make(Node* length, BasicType vmask_bt, int vmask_len);
 };
 
 //------------------------------VectorMaskOpNode-----------------------------------
 class VectorMaskOpNode : public TypeNode {
+ private:
+  int _mopc;
+  const TypeVect* _vect_type;
  public:
   VectorMaskOpNode(Node* mask, const Type* ty, int mopc):
-    TypeNode(ty, 2), _mopc(mopc) {
-    assert(Matcher::has_predicated_vectors() || mask->bottom_type()->is_vect()->element_basic_type() == T_BOOLEAN, "");
+    TypeNode(ty, 2), _mopc(mopc), _vect_type(mask->bottom_type()->is_vect()) {
+    assert(Matcher::has_predicated_vectors() || _vect_type->element_basic_type() == T_BOOLEAN, "");
     init_req(1, mask);
   }
 
+  virtual const TypeVect* vect_type() { return _vect_type; }
   virtual int Opcode() const;
   virtual  uint  size_of() const { return sizeof(VectorMaskOpNode); }
   virtual uint  ideal_reg() const { return Op_RegI; }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   int get_mask_Opcode() const { return _mopc;}
   static Node* make(Node* mask, const Type* ty, int mopc);
-
-  private:
-    int _mopc;
 };
 
 class VectorMaskTrueCountNode : public VectorMaskOpNode {
@@ -1058,7 +1078,7 @@ class VectorLongToMaskNode : public VectorNode {
     VectorNode(mask, ty) {
   }
   virtual int Opcode() const;
-  Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
 //-------------------------- Vector mask broadcast -----------------------------------
@@ -1069,23 +1089,23 @@ class MaskAllNode : public VectorNode {
 };
 
 //--------------------------- Vector mask logical and --------------------------------
-class AndVMaskNode : public VectorNode {
+class AndVMaskNode : public AndVNode {
  public:
-  AndVMaskNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  AndVMaskNode(Node* in1, Node* in2, const TypeVect* vt) : AndVNode(in1, in2, vt) {}
   virtual int Opcode() const;
 };
 
 //--------------------------- Vector mask logical or ---------------------------------
-class OrVMaskNode : public VectorNode {
+class OrVMaskNode : public OrVNode {
  public:
-  OrVMaskNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  OrVMaskNode(Node* in1, Node* in2, const TypeVect* vt) : OrVNode(in1, in2, vt) {}
   virtual int Opcode() const;
 };
 
 //--------------------------- Vector mask logical xor --------------------------------
-class XorVMaskNode : public VectorNode {
+class XorVMaskNode : public XorVNode {
  public:
-  XorVMaskNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  XorVMaskNode(Node* in1, Node* in2, const TypeVect* vt) : XorVNode(in1, in2, vt) {}
   virtual int Opcode() const;
 };
 

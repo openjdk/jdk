@@ -713,30 +713,9 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_REPRODUCIBLE_BUILD],
     fi
   fi
 
-  REPRODUCIBLE_BUILD_DEFAULT=$with_source_date_present
-
-  if test "x$OPENJDK_BUILD_OS" = xwindows && \
-      test "x$ALLOW_ABSOLUTE_PATHS_IN_OUTPUT" = xfalse; then
-    # To support banning absolute paths on Windows, we must use the -pathmap
-    # method, which requires reproducible builds.
-    REPRODUCIBLE_BUILD_DEFAULT=true
-  fi
-
-  UTIL_ARG_ENABLE(NAME: reproducible-build, DEFAULT: $REPRODUCIBLE_BUILD_DEFAULT,
-      RESULT: ENABLE_REPRODUCIBLE_BUILD,
-      DESC: [enable reproducible builds (not yet fully functional)],
-      DEFAULT_DESC: [enabled if --with-source-date is given or on Windows without absolute paths])
-
-  if test "x$OPENJDK_BUILD_OS" = xwindows && \
-      test "x$ALLOW_ABSOLUTE_PATHS_IN_OUTPUT" = xfalse && \
-      test "x$ENABLE_REPRODUCIBLE_BUILD" = xfalse; then
-    AC_MSG_NOTICE([On Windows it is not possible to combine  --disable-reproducible-build])
-    AC_MSG_NOTICE([with --disable-absolute-paths-in-output.])
-    AC_MSG_ERROR([Cannot continue])
-  fi
-
   AC_SUBST(SOURCE_DATE)
-  AC_SUBST(ENABLE_REPRODUCIBLE_BUILD)
   AC_SUBST(ISO_8601_FORMAT_STRING)
   AC_SUBST(SOURCE_DATE_ISO_8601)
+
+  UTIL_DEPRECATED_ARG_ENABLE(reproducible-build)
 ])

@@ -416,6 +416,8 @@ public:
   void pop_monitor ();
   Node *peek_monitor_box() const;
   Node *peek_monitor_obj() const;
+  // Peek Operand Stacks, JVMS 2.6.2
+  Node* peek_operand(uint off = 0) const;
 
   // Access functions for the JVM
   Node *control  () const { return in(TypeFunc::Control  ); }

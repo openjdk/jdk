@@ -43,8 +43,6 @@
  * @run main/othervm/native --enable-preview  -agentlib:thrstat03 thrstat03 5
  */
 
-import java.io.PrintStream;
-
 public class thrstat03 {
 
     static final int NOT_STARTED = 0;
@@ -87,7 +85,7 @@ public class thrstat03 {
             throw new Error("Unexpected: " + e);
         }
 
-        if (!check(t, t.isVirtual() ? NOT_STARTED : ZOMBIE)) {
+        if (!check(t, ZOMBIE)) {
             throw new RuntimeException();
         }
     }
