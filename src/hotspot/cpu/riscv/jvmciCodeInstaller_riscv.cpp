@@ -39,7 +39,7 @@ jint CodeInstaller::pd_next_offset(NativeInstruction* inst, jint pc_offset, JVMC
     return pc_offset + NativeJump::instruction_size;
   } else if (inst->is_movptr()) {
     return pc_offset + NativeMovConstReg::instruction_size;
-  } else if (inst->is_lui()) {
+  } else if (NativeInstruction::is_lui_at((address)inst)) {
     NativeInstruction* nextInst;
     unsigned offset = 0;
     do {
@@ -82,7 +82,7 @@ void CodeInstaller::pd_patch_DataSectionReference(int pc_offset, int data_offset
 
 void CodeInstaller::pd_relocate_ForeignCall(NativeInstruction* inst, jlong foreign_call_destination, JVMCI_TRAPS) {
   address pc = (address) inst;
-  if (inst->is_call()) {
+  if (inst->is_jal()) {
     NativeCall* call = nativeCall_at(pc);
     call->set_destination((address) foreign_call_destination);
     _instructions->relocate(call->instruction_address(), runtime_call_Relocation::spec());
@@ -90,16 +90,10 @@ void CodeInstaller::pd_relocate_ForeignCall(NativeInstruction* inst, jlong forei
     NativeJump* jump = nativeJump_at(pc);
     jump->set_jump_destination((address) foreign_call_destination);
     _instructions->relocate(jump->instruction_address(), runtime_call_Relocation::spec());
-  } else if (inst->is_lui()) {
-    NativeInstruction* nextInst;
-    unsigned offset = 0;
-    do {
-      offset += 1;
-      nextInst = nativeInstruction_at(pc + NativeInstruction::instruction_size * offset);
-    } while (!nextInst->is_call());
-    NativeCall* call = nativeCall_at(pc + NativeInstruction::instruction_size * offset);
-    call->set_destination((address) foreign_call_destination);
-    _instructions->relocate(call->instruction_address(), runtime_call_Relocation::spec());
+  } else if (inst->is_call() || NativeInstruction::is_lui_at((address)inst)) {
+    // jalr, lui + jalr;
+    MacroAssembler::pd_patch_instruction_size((address)inst,
+                                              (address)foreign_call_destination);
   } else {
     JVMCI_ERROR("unknown call or jump instruction at " PTR_FORMAT, p2i(pc));
   }
