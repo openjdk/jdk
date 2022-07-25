@@ -63,7 +63,7 @@ class XPathTestBase {
                <!ATTLIST Customer id ID #REQUIRED>
                <!ATTLIST Email id ID #REQUIRED>
             ]>
-                        
+
             """;
 
     static final String RAW_XML
