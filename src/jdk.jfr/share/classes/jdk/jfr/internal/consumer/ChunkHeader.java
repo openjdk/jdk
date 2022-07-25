@@ -163,7 +163,7 @@ public final class ChunkHeader {
                     absoluteChunkEnd = absoluteChunkStart + chunkSize;
                     return;
                 } else if (finished) {
-                    throw new IOException("No metadata event found in finished chunk.")
+                    throw new IOException("No metadata event found in finished chunk.");
                 }
             }
         }
