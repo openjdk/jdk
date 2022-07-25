@@ -495,9 +495,11 @@ void SystemDictionaryShared::set_shared_class_misc_info(InstanceKlass* k, ClassF
 }
 
 void SystemDictionaryShared::initialize() {
-  _dumptime_table = new (ResourceObj::C_HEAP, mtClass) DumpTimeSharedClassTable;
-  _dumptime_lambda_proxy_class_dictionary =
-      new (ResourceObj::C_HEAP, mtClass) DumpTimeLambdaProxyClassDictionary;
+  if (Arguments::is_dumping_archive()) {
+    _dumptime_table = new (ResourceObj::C_HEAP, mtClass) DumpTimeSharedClassTable;
+    _dumptime_lambda_proxy_class_dictionary =
+                      new (ResourceObj::C_HEAP, mtClass) DumpTimeLambdaProxyClassDictionary;
+  }
 }
 
 void SystemDictionaryShared::init_dumptime_info(InstanceKlass* k) {
