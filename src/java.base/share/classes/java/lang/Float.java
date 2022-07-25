@@ -1033,7 +1033,7 @@ public final class Float extends Number
         // of a float exponent and shift to correct bit location
         // (significand width includes the implicit bit so shift one
         // less).
-        int bin16Exp = (((bin16ExpBits >> 10) - 15));
+        int bin16Exp = (bin16ExpBits >> 10) - 15;
         if (bin16Exp == -15) {
             // For subnormal binary16 values and 0, the numerical
             // value is 2^24 * the significand as an integer (no
@@ -1048,15 +1048,15 @@ public final class Float extends Number
                                      ( bin16SignifBits << SIGNIF_SHIFT ));
         }
 
-        assert -14 <= bin16Exp  && bin16Exp <= 15;
+        assert -15 < bin16Exp  && bin16Exp < 16;
 
         int floatExpBits = (bin16Exp + FloatConsts.EXP_BIAS)
             << (FloatConsts.SIGNIFICAND_WIDTH - 1);
 
         // Compute and combine result sign, exponent, and significand bits.
-        int result = (floatExpBits |
-                      (bin16SignifBits << SIGNIF_SHIFT));
-        return sign * Float.intBitsToFloat(result);
+        return Float.intBitsToFloat((bin16SignBit << 16) |
+                                    floatExpBits |
+                                    (bin16SignifBits << SIGNIF_SHIFT));
     }
 
     /**
@@ -1107,83 +1107,81 @@ public final class Float extends Number
         float abs_f = Math.abs(f);
 
         // The overflow threshold is binary16 MAX_VALUE + 1/2 ulp
-        if (abs_f >= (65504.0f + 16.0f) ) {
+        if (abs_f >= (0x1.ffcp15f + 0x0.002p15f) ) {
             return (short)(sign_bit | 0x7c00); // Positive or negative infinity
-        } else {
-            // Smallest magnitude nonzero representable binary16 value
-            // is equal to 0x1.0p-24; half-way and smaller rounds to zero.
-            if (abs_f <= 0x1.0p-25f) { // Covers float zeros and subnormals.
-                return sign_bit; // Positive or negative zero
-            }
-
-            // Dealing with finite values in exponent range of
-            // binary16 (when rounding is done, could still round up)
-            int exp = Math.getExponent(f);
-            assert -25 <= exp && exp <= 15;
-            short signif_bits;
-
-            if (exp <= -15) { // scale down to float subnormal range to do rounding
-                // Use a float multiply to compute the correct
-                // trailing significand bits for a binary16 subnormal.
-                //
-                // The exponent range of normalized binary16 subnormal
-                // values is [-24, -15]. The exponent range of float
-                // subnormals is [-149, -140]. Multiply abs_f down by
-                // 2^(-125) -- since (-125 = -149 - (-24)) -- so that
-                // the trailing bits of a subnormal float represent
-                // the correct trailing bits of a binary16 subnormal.
-                exp = -15; // Subnormal encoding using -E_max.
-                float f_adjust = abs_f * 0x1.0p-125f;
-
-                // In case the significand rounds up and has a carry
-                // propagate all the way up, take the bottom 11 bits
-                // rather than bottom 10 bits. Adding this value,
-                // rather than OR'ing this value, will cause the right
-                // exponent adjustment.
-                signif_bits = (short)(Float.floatToRawIntBits(f_adjust) & 0x07ff);
-            } else {
-                // All remaining values of f are in the normalized
-                // range of binary16 (which is also in the normalized
-                // range of float).
-
-                // Significand bits as if using rounding to zero (truncation).
-                signif_bits = (short)((doppel & 0x007f_e000) >>
-                                      (FloatConsts.SIGNIFICAND_WIDTH - 11));
-
-                // For round to nearest even, determining whether or
-                // not to round up (in magnitude) is a function of the
-                // least significant bit (LSB), the next bit position
-                // (the round position), and the sticky bit (whether
-                // there are any nonzero bits in the exact result to
-                // the right of the round digit). An increment occurs
-                // in three cases:
-                //
-                // LSB  Round Sticky
-                // 0    1     1
-                // 1    1     0
-                // 1    1     1
-                // See "Computer Arithmetic Algorithms," Koren, Table 4.9
-
-                // Bits of binary16 significand in a float: 0x0007f_e000;
-                // therefore, the other quantities of interest are:
-                int lsb   =  doppel & 0x0000_2000;
-                int round =  doppel & 0x0000_1000;
-                int sticky = doppel & 0x0000_0fff;
-
-                if (round != 0 && ((lsb | sticky) != 0 )) {
-                    signif_bits++;
-                }
-            }
-
-            // No bits set in significand beyond the *first* exponent
-            // bit, not just the sigificand; quantity is added to the
-            // exponent to implement a carry out from rounding the
-            // significand.
-            assert (0xf800 & signif_bits) == 0x0;
-
-            return (short)(sign_bit | ( ((exp + 15) << 10) + signif_bits ) );
         }
-}
+
+        // Smallest magnitude nonzero representable binary16 value
+        // is equal to 0x1.0p-24; half-way and smaller rounds to zero.
+        if (abs_f <= 0x1.0p-25f) { // Covers float zeros and subnormals.
+            return sign_bit; // Positive or negative zero
+        }
+
+        // Dealing with finite values in exponent range of
+        // binary16 (when rounding is done, could still round up)
+        int exp = Math.getExponent(f);
+        assert -25 <= exp && exp <= 15;
+        short signif_bits;
+
+        if (exp <= -15) { // scale down to float subnormal range to do rounding
+            // Use a float multiply to compute the correct trailing
+            // significand bits for a binary16 subnormal.
+            //
+            // The exponent range of normalized binary16 subnormal
+            // values is [-24, -15]. The exponent range of float
+            // subnormals is [-149, -140]. Multiply abs_f down by
+            // 2^(-125) -- since (-125 = -149 - (-24)) -- so that the
+            // trailing bits of a subnormal float represent the
+            // correct trailing bits of a binary16 subnormal.
+            exp = -15; // Subnormal encoding using -E_max.
+            float f_adjust = abs_f * 0x1.0p-125f;
+
+            // In case the significand rounds up and has a carry
+            // propagate all the way up, take the bottom 11 bits
+            // rather than bottom 10 bits. Adding this value, rather
+            // than OR'ing this value, will cause the right exponent
+            // adjustment.
+            signif_bits = (short)(Float.floatToRawIntBits(f_adjust) & 0x07ff);
+        } else {
+            // All remaining values of f are in the normalized range
+            // of binary16 (which is also in the normalized range of
+            // float).
+
+            // Significand bits as if using rounding to zero (truncation).
+            signif_bits = (short)((doppel & 0x007f_e000) >>
+                                  (FloatConsts.SIGNIFICAND_WIDTH - 11));
+
+            // For round to nearest even, determining whether or not
+            // to round up (in magnitude) is a function of the least
+            // significant bit (LSB), the next bit position (the round
+            // position), and the sticky bit (whether there are any
+            // nonzero bits in the exact result to the right of the
+            // round digit). An increment occurs in three cases:
+            //
+            // LSB  Round Sticky
+            // 0    1     1
+            // 1    1     0
+            // 1    1     1
+            // See "Computer Arithmetic Algorithms," Koren, Table 4.9
+
+            // Bits of binary16 significand in a float: 0x0007f_e000;
+            // therefore, the other quantities of interest are:
+            int lsb   =  doppel & 0x0000_2000;
+            int round =  doppel & 0x0000_1000;
+            int sticky = doppel & 0x0000_0fff;
+
+            if (round != 0 && ((lsb | sticky) != 0 )) {
+                signif_bits++;
+            }
+        }
+
+        // No bits set in significand beyond the *first* exponent bit,
+        // not just the sigificand; quantity is added to the exponent
+        // to implement a carry out from rounding the significand.
+        assert (0xf800 & signif_bits) == 0x0;
+
+        return (short)(sign_bit | ( ((exp + 15) << 10) + signif_bits ) );
+    }
 
     /**
      * Compares two {@code Float} objects numerically.

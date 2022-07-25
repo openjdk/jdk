@@ -27,8 +27,6 @@
  * @summary Verify NaN sign and significand bits are preserved across conversions
  */
 
-import static java.lang.Float.*;
-
 /*
  * The behavior tested below is an implementation property not
  * required by the specification. It would be acceptable for this

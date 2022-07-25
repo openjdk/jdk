@@ -30,8 +30,6 @@
  * @run main Binary16Conversion
  */
 
-import static java.lang.Float.*;
-
 public class Binary16Conversion {
     public static void main(String... argv) {
         int errors = 0;
@@ -97,7 +95,7 @@ public class Binary16Conversion {
         }
 
         return errors;
-    };
+    }
 
     private static int roundFloatToBinary16() {
         int errors = 0;
@@ -400,13 +398,11 @@ public class Binary16Conversion {
 
     public static class Binary16 {
         public static final short POSITIVE_INFINITY = (short)0x7c00;
-        public static final short NEGATIVE_INFINITY = (short)0xfc00;
         public static final short MAX_VALUE         = 0x7bff;
         public static final short ONE               = 0x3c00;
         public static final short MIN_NORMAL        = 0x0400;
         public static final short MAX_SUBNORMAL     = 0x03ff;
         public static final short MIN_VALUE         = 0x0001;
-        public static final short NEGATIVE_ZERO     = (short)0x8000;
         public static final short POSITIVE_ZERO     = 0x0000;
 
         public static boolean isNaN(short binary16) {
