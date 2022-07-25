@@ -40,7 +40,7 @@ class frame;
 // Rules for using and implementing methods declared in the "os" class
 // ===================================================================
 //
-// The "os" class defines a large part of the interfaces for porting HotSpot
+// The "os" class defines a number of the interfaces for porting HotSpot
 // to different operating systems. For example, I/O, memory, timing, etc.
 // Note that additional classes such as Semaphore, Mutex, etc., are used for
 // porting specific groups of features.
@@ -59,7 +59,7 @@ class frame;
 // - src/hotspot/os/<os>/os_<os>.hpp
 // - src/hotspot/os/posix/os_posix.hpp
 //
-//   These headers declare of APIs that should be used only within the
+//   These headers declare APIs that should be used only within the
 //   platform-specific source files for that particular OS.
 //
 //   For example, os_linux.hpp declares the os::Linux class, which provides
@@ -79,31 +79,28 @@ class frame;
 //   the porting interface. E.g., os::print_function_and_library_name().
 //
 // The methods declared in os.hpp but not implemented in os.cpp are
-// a part the HotSpot Porting APIs. They must be implemented in
-// the following files:
+// a part the HotSpot Porting APIs. They must be implemented in one of
+// the following four files:
 //
 // - src/hotspot/os/<os>/os_<os>.inline.hpp
 // - src/hotspot/os_cpu/<os>_<cpu>/os_<os>_<cpu>.inline.hpp
-//
-//   The Porting APIs declared as "inline" in os.hpp must be
-//   implemented in one of the above two files, depending on whether the
-//   feature is generic to the OS, or specific to a particular CPU
-//   architecture.
-//
-//   These two files are automatically included by os.inline.hpp.
-//   Platform-independent source files must not include these two files
-//   directly.
-//
-//   If the implementation of such a method is too complex to fit in a
-//   header file, the actual implementation can be deferred to another
-//   method defined in the .cpp files described below.
-//
 // - src/hotspot/os/<os>/os_<os>.cpp
 // - src/hotspot/os_cpu/<os>_<cpu>/os_<os>_<cpu>.cpp
 //
-//   These files implement the Porting APIs that are *not* declared as "inline"
-//   in os.hpp. OS-specific APIs such as os::Linux, os::Posix, etc., are also
-//   implemented here.
+//   The Porting APIs declared as "inline" in os.hpp must be
+//   implemented in one of the two .inline.hpp files, depending on whether
+//   the feature is generic to the OS, or specific to a particular CPU
+//   architecture. These two files are automatically included by
+//   os.inline.hpp. Platform-independent source files must not include
+//   these two files directly.
+//
+//   If the full definition of an inline method is too complex to fit in a
+//   header file, the actual implementation can be deferred to another
+//   method defined in the .cpp files.
+//
+//   The two .cpp files implement the Porting APIs that are *not* declared as
+//   "inline" in os.hpp. They also implement OS-specific APIs such as os::Linux,
+//   os::Posix, etc.
 
 class Thread;
 class JavaThread;
