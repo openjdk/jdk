@@ -52,12 +52,10 @@ public final class TransformedContentExtension extends Extension {
             fields = new TreeSet<>();
             do {
                 var f = new Field(m.group("fsep"), m.group("fval"));
-                if (fields.contains(f)) {
+                if (!fields.add(f)) {
                     throw new LocaleSyntaxException("Field duplicates for the separator '" +
                             f.fsep() + "' within the Transformed Content extension",
                             m.start() + 1); // +1 for the leading '-' of the duplicated field
-                } else {
-                    fields.add(f);
                 }
             } while (m.find());
         } else {
