@@ -456,6 +456,7 @@ JavaThread::JavaThread() :
   _cont_fastpath(0),
   _cont_fastpath_thread_state(1),
   _held_monitor_count(0),
+  _jni_monitor_count(0),
 
   _handshake(this),
 
@@ -563,9 +564,10 @@ bool JavaThread::is_interrupted(bool clear_interrupted) {
 void JavaThread::block_if_vm_exited() {
   if (_terminated == _vm_exited) {
     // _vm_exited is set at safepoint, and Threads_lock is never released
-    // we will block here forever.
+    // so we will block here forever.
     // Here we can be doing a jump from a safe state to an unsafe state without
-    // proper transition, but it happens after the final safepoint has begun.
+    // proper transition, but it happens after the final safepoint has begun so
+    // this jump won't cause any safepoint problems.
     set_thread_state(_thread_in_vm);
     Threads_lock->lock();
     ShouldNotReachHere();
@@ -850,7 +852,18 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
     assert(!this->has_pending_exception(), "release_monitors should have cleared");
   }
 
-  assert(!Continuations::enabled() || this->held_monitor_count() == 0, "held monitor count should be zero");
+  // Since above code may not release JNI monitors and if someone forgot to do an
+  // JNI monitorexit, held count should be equal jni count.
+  // Consider scan all object monitor for this owner if JNI count > 0 (at least on detach).
+  assert(this->held_monitor_count() == this->jni_monitor_count(),
+         "held monitor count should be equal to jni: " INT64_FORMAT " != " INT64_FORMAT,
+         (int64_t)this->held_monitor_count(), (int64_t)this->jni_monitor_count());
+  if (CheckJNICalls && this->jni_monitor_count() > 0) {
+    // We would like a fatal here, but due to we never checked this before there
+    // is a lot of tests which breaks, even with an error log.
+    log_debug(jni)("JavaThread %s (tid: " UINTX_FORMAT ") with Objects still locked by JNI MonitorEnter.",
+      exit_type == JavaThread::normal_exit ? "exiting" : "detaching", os::current_thread_id());
+  }
 
   // These things needs to be done while we are still a Java Thread. Make sure that thread
   // is in a consistent state, in case GC happens
@@ -1844,19 +1857,26 @@ void JavaThread::trace_stack() {
 
 #endif // PRODUCT
 
-void JavaThread::inc_held_monitor_count() {
-  if (!Continuations::enabled()) {
-    return;
+void JavaThread::inc_held_monitor_count(int i, bool jni) {
+#ifdef SUPPORT_MONITOR_COUNT
+  assert(_held_monitor_count >= 0, "Must always be greater than 0: " INT64_FORMAT, (int64_t)_held_monitor_count);
+  _held_monitor_count += i;
+  if (jni) {
+    assert(_jni_monitor_count >= 0, "Must always be greater than 0: " INT64_FORMAT, (int64_t)_jni_monitor_count);
+    _jni_monitor_count += i;
   }
-  _held_monitor_count++;
+#endif
 }
 
-void JavaThread::dec_held_monitor_count() {
-  if (!Continuations::enabled()) {
-    return;
+void JavaThread::dec_held_monitor_count(int i, bool jni) {
+#ifdef SUPPORT_MONITOR_COUNT
+  _held_monitor_count -= i;
+  assert(_held_monitor_count >= 0, "Must always be greater than 0: " INT64_FORMAT, (int64_t)_held_monitor_count);
+  if (jni) {
+    _jni_monitor_count -= i;
+    assert(_jni_monitor_count >= 0, "Must always be greater than 0: " INT64_FORMAT, (int64_t)_jni_monitor_count);
   }
-  assert(_held_monitor_count > 0, "");
-  _held_monitor_count--;
+#endif
 }
 
 frame JavaThread::vthread_last_frame() {

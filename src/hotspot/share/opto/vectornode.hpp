@@ -922,7 +922,6 @@ class StoreVectorMaskedNode : public StoreVectorNode {
  public:
   StoreVectorMaskedNode(Node* c, Node* mem, Node* dst, Node* src, const TypePtr* at, Node* mask)
    : StoreVectorNode(c, mem, dst, at, src) {
-    assert(mask->bottom_type()->isa_vectmask(), "sanity");
     init_class_id(Class_StoreVectorMasked);
     set_mismatched_access();
     add_req(mask);
@@ -943,7 +942,6 @@ class LoadVectorMaskedNode : public LoadVectorNode {
   LoadVectorMaskedNode(Node* c, Node* mem, Node* src, const TypePtr* at, const TypeVect* vt, Node* mask,
                        ControlDependency control_dependency = LoadNode::DependsOnlyOnTest)
    : LoadVectorNode(c, mem, src, at, vt, control_dependency) {
-    assert(mask->bottom_type()->isa_vectmask(), "sanity");
     init_class_id(Class_LoadVectorMasked);
     set_mismatched_access();
     add_req(mask);

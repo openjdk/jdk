@@ -167,6 +167,7 @@ public class EventNames {
     public final static String ObjectAllocationOutsideTLAB = PREFIX + "ObjectAllocationOutsideTLAB";
     public final static String ObjectAllocationSample = PREFIX + "ObjectAllocationSample";
     public final static String Deoptimization = PREFIX + "Deoptimization";
+    public final static String JitRestart = PREFIX + "JitRestart";
 
     // OS
     public final static String OSInformation = PREFIX + "OSInformation";

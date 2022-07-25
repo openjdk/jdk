@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ package java.security;
 /**
  * This is the general key management exception for all operations
  * dealing with key management. Examples of subclasses of
- * KeyManagementException that developers might create for
+ * {@code KeyManagementException} that developers might create for
  * giving more detailed information could include:
  *
  * <ul>
@@ -50,8 +50,8 @@ public class KeyManagementException extends KeyException {
     private static final long serialVersionUID = 947674216157062695L;
 
     /**
-     * Constructs a KeyManagementException with no detail message. A
-     * detail message is a String that describes this particular
+     * Constructs a {@code KeyManagementException} with no detail message. A
+     * detail message is a {@code String} that describes this particular
      * exception.
      */
     public KeyManagementException() {
@@ -59,8 +59,8 @@ public class KeyManagementException extends KeyException {
     }
 
     /**
-     * Constructs a KeyManagementException with the specified detail
-     * message. A detail message is a String that describes this
+     * Constructs a {@code KeyManagementException} with the specified detail
+     * message. A detail message is a {@code String} that describes this
      * particular exception.
      *
      * @param msg the detail message.

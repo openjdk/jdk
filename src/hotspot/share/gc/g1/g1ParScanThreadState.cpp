@@ -624,8 +624,8 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m, siz
     HeapRegion* r = _g1h->heap_region_containing(old);
 
     // Objects failing evacuation will turn into old objects since the regions
-    // are relabeled as such. We mark the failing objects in the prev bitmap and
-    // later use it to handle all failed objects.
+    // are relabeled as such. We mark the failing objects in the marking bitmap
+    // and later use it to handle all failed objects.
     _g1h->mark_evac_failure_object(old);
 
     if (_evac_failure_regions->record(r->hrm_index())) {

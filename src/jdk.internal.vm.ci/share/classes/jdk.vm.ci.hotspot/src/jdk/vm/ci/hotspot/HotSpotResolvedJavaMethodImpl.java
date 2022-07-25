@@ -35,6 +35,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
+import java.util.Objects;
 
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.Option;
@@ -89,12 +90,11 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
      */
     private static HotSpotResolvedObjectTypeImpl getHolder(long metaspaceHandle) {
         HotSpotVMConfig config = config();
-        long metaspaceMethod = UNSAFE.getLong(metaspaceHandle);
-        assert metaspaceMethod != 0 : metaspaceHandle;
-        final long metaspaceConstMethod = UNSAFE.getAddress(metaspaceMethod + config.methodConstMethodOffset);
-        final long metaspaceConstantPool = UNSAFE.getAddress(metaspaceConstMethod + config.constMethodConstantsOffset);
-        long klassPointer = UNSAFE.getAddress(metaspaceConstantPool + config.constantPoolHolderOffset);
-        return runtime().fromMetaspace(klassPointer);
+        long methodPointer = UNSAFE.getLong(metaspaceHandle);
+        assert methodPointer != 0 : metaspaceHandle;
+        final long constMethodPointer = UNSAFE.getAddress(methodPointer + config.methodConstMethodOffset);
+        final long constantPoolPointer = UNSAFE.getAddress(constMethodPointer + config.constMethodConstantsOffset);
+        return Objects.requireNonNull(compilerToVM().getResolvedJavaType(constantPoolPointer + config.constantPoolHolderOffset));
     }
 
     /**

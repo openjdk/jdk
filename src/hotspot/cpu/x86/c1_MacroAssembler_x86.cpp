@@ -95,9 +95,11 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
   jcc(Assembler::notZero, slow_case);
   // done
   bind(done);
+
+  inc_held_monitor_count();
+
   return null_check_offset;
 }
-
 
 void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_hdr, Label& slow_case) {
   const int aligned_mask = BytesPerWord -1;
@@ -126,6 +128,8 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
   jcc(Assembler::notEqual, slow_case);
   // done
   bind(done);
+
+  dec_held_monitor_count();
 }
 
 
