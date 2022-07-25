@@ -328,17 +328,33 @@ HeapWord* G1PLABAllocator::allocate_direct_or_new_plab(G1HeapRegionAttr dest,
                                                        bool* plab_refill_failed,
                                                        uint node_index) {
   size_t plab_word_size = _g1h->desired_plab_sz(dest);
+  size_t old_plab_word_size = plab_word_size;
   size_t required_in_plab = PLAB::size_required_for_allocation(word_sz);
 
   // Only get a new PLAB if the allocation fits and it would not waste more than
-  // ParallelGCBufferWastePct in the existing buffer.
+  // ParallelGCBufferWastePct in the (new!) buffer. This increasingly allows more waste
+  // to occur.
   if ((required_in_plab <= plab_word_size) &&
-    may_throw_away_buffer(required_in_plab, plab_word_size)) {
-
+    may_throw_away_buffer(required_in_plab, old_plab_word_size)) {
+  
     PLAB* alloc_buf = alloc_buffer(dest, node_index);
-    alloc_buf->retire();
+    guarantee(alloc_buf->words_remaining() <= required_in_plab, "must be");
 
-    _num_plab_fills[dest.type()]++;
+    size_t num_refills = _num_plab_fills[dest.type()]++;
+
+    if (UseNewCode) {
+      // Two refills per region are allowed, plus the initial one; since we increase
+      // the counter before the check, add another one.
+      size_t necessary_refills = (_g1h->alloc_buffer_stats(dest)->regions_filled()) * 2 + 1 + 1;
+      size_t new_plab_word_size = MIN2(plab_word_size << MIN2(num_refills / necessary_refills, (size_t)29 - LogHeapWordSize), _g1h->max_tlab_size());
+
+      if (num_refills % necessary_refills == 0 && num_refills >= necessary_refills && plab_word_size != new_plab_word_size) {
+        log_debug(gc, plab)("%s PLAB boost from %zu to %zu, refills %zu forced-refills %zu", dest.get_type_str(), plab_word_size, new_plab_word_size, num_refills, necessary_refills);
+      }
+      plab_word_size = new_plab_word_size;
+    }
+
+    alloc_buf->retire();
 
     size_t actual_plab_size = 0;
     HeapWord* buf = _allocator->par_allocate_during_gc(dest,
