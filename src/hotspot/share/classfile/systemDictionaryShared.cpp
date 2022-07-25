@@ -177,6 +177,8 @@ InstanceKlass* SystemDictionaryShared::acquire_class_for_current_thread(
   return shared_klass;
 }
 
+// Guaranteed to return non-NULL value for non-shared classes.
+// k must not be a shared class.
 DumpTimeClassInfo* SystemDictionaryShared::get_info(InstanceKlass* k) {
   MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
   return get_info_locked(k);

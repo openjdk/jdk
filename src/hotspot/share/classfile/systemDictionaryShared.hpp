@@ -182,8 +182,12 @@ private:
                                  Handle protection_domain,
                                  const ClassFileStream* cfs,
                                  TRAPS);
+
+  // Guaranteed to return non-NULL value for non-shared classes.
+  // k must not be a shared class.
   static DumpTimeClassInfo* get_info(InstanceKlass* k);
   static DumpTimeClassInfo* get_info_locked(InstanceKlass* k);
+
   static void write_dictionary(RunTimeSharedDictionary* dictionary,
                                bool is_builtin);
   static void write_lambda_proxy_class_dictionary(LambdaProxyClassDictionary* dictionary);
