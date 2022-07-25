@@ -75,6 +75,7 @@ TOOL_MAKEJAVASECURITY = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_clas
     build.tools.makejavasecurity.MakeJavaSecurity
 
 TOOL_GENERATECACERTS = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
+    --add-exports java.base/sun.security.util=ALL-UNNAMED \
     -Dkeystore.pkcs12.certProtectionAlgorithm=NONE \
     -Dkeystore.pkcs12.macAlgorithm=NONE \
     build.tools.generatecacerts.GenerateCacerts

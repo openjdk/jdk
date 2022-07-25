@@ -1,3 +1,4 @@
+TrustedKeyUsage: codeSigning
 Owner: CN=QuoVadis Root Certification Authority, OU=Root Certification Authority, O=QuoVadis Limited, C=BM
 Issuer: CN=QuoVadis Root Certification Authority, OU=Root Certification Authority, O=QuoVadis Limited, C=BM
 Serial number: 3ab6508b

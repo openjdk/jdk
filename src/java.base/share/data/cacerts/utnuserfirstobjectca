@@ -1,3 +1,4 @@
+TrustedKeyUsage: codeSigning
 Owner: CN=UTN-USERFirst-Object, OU=http://www.usertrust.com, O=The USERTRUST Network, L=Salt Lake City, ST=UT, C=US
 Issuer: CN=UTN-USERFirst-Object, OU=http://www.usertrust.com, O=The USERTRUST Network, L=Salt Lake City, ST=UT, C=US
 Serial number: 44be0c8b500024b411d3362de0b35f1b

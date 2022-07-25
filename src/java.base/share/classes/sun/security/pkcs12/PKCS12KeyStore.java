@@ -1024,9 +1024,29 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             throw new KeyStoreException("Cannot overwrite own certificate");
         }
 
+        ObjectIdentifier[] tku = AnyUsage;
+        if (attributes != null) {
+            // check attrs for TKU
+            for (KeyStore.Entry.Attribute attr : attributes) {
+                if (attr instanceof PKCS12Attribute pa) {
+                    if (pa.getName().equals(TrustedKeyUsage_OID.toString())) {
+                        List<ObjectIdentifier> oids = new ArrayList<>();
+                        for (String s: pa.getValue().split(",")) {
+                            try {
+                                oids.add(ObjectIdentifier.of(s));
+                            } catch (IOException ioe) {
+                                 // ignore?
+                            }
+                        }
+                        tku = oids.toArray(new ObjectIdentifier[0]);
+                        // fixme - but the attribute is still there!
+                    }
+                }
+            }
+        }
+
         CertEntry certEntry =
-            new CertEntry((X509Certificate) cert, null, alias, AnyUsage,
-                attributes);
+            new CertEntry((X509Certificate) cert, null, alias, tku, attributes);
         certificateCount++;
         entries.put(alias.toLowerCase(Locale.ENGLISH), certEntry);
 

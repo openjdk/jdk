@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,15 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyStore;
+import java.security.KeyStore.Entry.Attribute;
+import java.security.KeyStore.TrustedCertificateEntry;
+import java.security.PKCS12Attribute;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -43,6 +48,13 @@ import java.util.stream.Collectors;
  *    args[1]: Full path string to the generated cacerts
  */
 public class GenerateCacerts {
+
+    // name of attribute that indicates what usages the CA is trusted for
+    private static final String TKU_ATTR = "TrustedKeyUsage";
+
+    // OID for Trusted Key Usage 
+    private static final String TKU_OID = "2.16.840.1.113894.746875.1.1";
+
     public static void main(String[] args) throws Exception {
         try (FileOutputStream fos = new FileOutputStream(args[1])) {
             store(args[0], fos);
@@ -68,12 +80,55 @@ public class GenerateCacerts {
         for (String entry : entries) {
             String alias = entry + " [jdk]";
             X509Certificate cert;
-            try (InputStream fis = Files.newInputStream(Path.of(dir, entry))) {
-                cert = (X509Certificate) cf.generateCertificate(fis);
+            Path p = Path.of(dir, entry);
+            try (var is = Files.newInputStream(p);
+                 var br = Files.newBufferedReader(p)) {
+                // read first line to see if the "TrustedKeyUsage" attribute
+                // is specified
+                var attrs = attributes(br.readLine());
+                cert = (X509Certificate) cf.generateCertificate(is);
+                var tce = new TrustedCertificateEntry(cert, attrs);
+                ks.setEntry(alias, tce, null);
             }
-            ks.setCertificateEntry(alias, cert);
         }
 
         ks.store(stream, null);
+    }
+
+    private static Set<Attribute> attributes(String line) throws Exception {
+        if (line.startsWith(TKU_ATTR)) {
+            List<String> oids = new ArrayList<>();
+            String value = line.substring(TKU_ATTR.length() + 1);
+            for (String s: value.split(",")) {
+                TrustedKeyUsage tku = TrustedKeyUsage.valueOf(s.trim());
+                oids.add(tku.oid());
+            }
+            if (oids.isEmpty()) {
+                throw new Exception("No usages specified for " + TKU_ATTR);
+            }
+            return Set.of(new PKCS12Attribute(TKU_OID, oids.toString()));
+        } else {
+            // anyExtendedKeyUsage will be assumed
+            return Set.of();
+        }
+    }
+
+    // Put this somewhere else so it can be reused?
+    private static enum TrustedKeyUsage {
+        anyExtendedKeyUsage("2.5.29.37.0"),
+        serverAuth("1.3.6.1.5.5.7.3.1"),
+        clientAuth("1.3.6.1.5.5.7.3.2"),
+        codeSigning("1.3.6.1.5.5.7.3.3");
+
+        private String oid;
+
+        TrustedKeyUsage(String oid) {
+            this.oid = oid;
+        }
+
+        // returns the oid string associated with this enum
+        String oid() {
+            return oid;
+        }
     }
 }

@@ -2244,15 +2244,18 @@ public final class Main {
         } else if (keyStore.entryInstanceOf(alias,
                 KeyStore.TrustedCertificateEntry.class)) {
             // We have a trusted certificate entry
-            Certificate cert = keyStore.getCertificate(alias);
+            var entry = (TrustedCertificateEntry)keyStore.getEntry(alias, null);
+            Certificate cert = entry.getTrustedCertificate();
             Object[] source = {"trustedCertEntry"};
             String mf = new MessageFormat(
-                    rb.getString("Entry.type.type.")).format(source) + "\n";
+                    rb.getString("Entry.type.type.")).format(source);
             if (verbose && (cert instanceof X509Certificate)) {
                 out.println(mf);
+                printTrustSettings(entry.getAttributes(), out);
                 printX509Cert((X509Certificate)cert, out);
             } else if (rfc) {
                 out.println(mf);
+                printTrustSettings(entry.getAttributes(), out);
                 dumpCert(cert, out);
             } else if (debug) {
                 out.println(cert.toString());
@@ -2265,6 +2268,30 @@ public final class Main {
             checkWeakConstraint(label, cert, cpcp);
         } else {
             out.println(rb.getString("Unknown.Entry.Type"));
+        }
+    }
+
+    void printTrustSettings(Set<Entry.Attribute> attributes, PrintStream out) {
+        for (Entry.Attribute attr : attributes) {
+            if (attr.getName().equals("2.16.840.1.113894.746875.1.1")) {
+                String[] oids = attr.getValue().split(",");
+                out.print("Trust settings: ");
+                for (String oid : oids) {
+                    out.print(trust(oid));
+                }
+                out.println();
+                break;
+            }
+        }
+        out.println();
+    }
+
+    String trust(String oid) {
+        switch (oid) {
+            case "2.5.29.37.0" :
+                return "any";
+            default:
+                return "unknown";
         }
     }
 
@@ -3374,7 +3401,11 @@ public final class Main {
         }
         if (reply != null) {
             if ("YES".equals(reply)) {
-                keyStore.setCertificateEntry(alias, cert);
+//                keyStore.setCertificateEntry(alias, cert);
+                var attr = new PKCS12Attribute("2.16.840.1.113894.746875.1.1",
+                    "2.5.29.37.0");
+                keyStore.setEntry(alias,
+                    new TrustedCertificateEntry(cert, Set.of(attr)), null);
                 return true;
             } else {
                 return false;

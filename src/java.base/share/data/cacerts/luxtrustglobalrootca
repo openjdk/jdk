@@ -1,3 +1,4 @@
+TrustedKeyUsage: codeSigning
 Owner: CN=LuxTrust Global Root, O=LuxTrust s.a., C=LU
 Issuer: CN=LuxTrust Global Root, O=LuxTrust s.a., C=LU
 Serial number: bb8

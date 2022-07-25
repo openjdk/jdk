@@ -29,26 +29,29 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.security.AccessController;
 import java.security.KeyStore;
+import java.security.KeyStore.Entry.Attribute;
+import java.security.KeyStore.TrustedCertificateEntry;
 import java.security.PrivilegedAction;
 import java.security.cert.X509Certificate;
-import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import javax.security.auth.x500.X500Principal;
 import sun.security.x509.X509CertImpl;
 
 /**
- * The purpose of this class is to determine the trust anchor certificates is in
+ * The purpose of this class is to determine if a trust anchor certificate is in
  * the cacerts file.  This is used for PKIX CertPath checking.
  */
 public class AnchorCertificates {
 
     private static final Debug debug = Debug.getInstance("certpath");
     private static final String HASH = "SHA-256";
-    private static Set<String> certs = Collections.emptySet();
-    private static Set<X500Principal> certIssuers = Collections.emptySet();
+    private static Set<String> certs = Set.of();
+    private static Map<X500Principal, Set<Attribute>> certIssuers = Map.of();
 
     static  {
         @SuppressWarnings("removal")
@@ -62,21 +65,25 @@ public class AnchorCertificates {
                     try (FileInputStream fis = new FileInputStream(f)) {
                         cacerts.load(fis, null);
                         certs = new HashSet<>();
-                        certIssuers = new HashSet<>();
+                        certIssuers = new HashMap<>();
                         Enumeration<String> list = cacerts.aliases();
                         while (list.hasMoreElements()) {
                             String alias = list.nextElement();
                             // Check if this cert is labeled a trust anchor.
                             if (alias.contains(" [jdk")) {
-                                X509Certificate cert = (X509Certificate) cacerts
-                                        .getCertificate(alias);
+                                var entry = (TrustedCertificateEntry)
+                                    cacerts.getEntry(alias, null);
+                                X509Certificate cert = (X509Certificate)
+                                    entry.getTrustedCertificate();
+                                var attrs = entry.getAttributes();
                                 String fp =
                                     X509CertImpl.getFingerprint(HASH, cert, debug);
                                 // only add trust anchor if fingerprint can
                                 // be calculated
                                 if (fp != null) {
                                     certs.add(fp);
-                                    certIssuers.add(cert.getSubjectX500Principal());
+                                    certIssuers.put(
+                                        cert.getSubjectX500Principal(), attrs);
                                 }
                             }
                         }
@@ -115,7 +122,11 @@ public class AnchorCertificates {
      * @return true if the certificate is issued by a trust anchor
      */
     public static boolean issuerOf(X509Certificate cert) {
-        return certIssuers.contains(cert.getIssuerX500Principal());
+        return certIssuers.containsKey(cert.getIssuerX500Principal());
+    }
+
+    public static Set<Attribute> attributes(X509Certificate cert) {
+        return certIssuers.get(cert.getIssuerX500Principal());
     }
 
     private AnchorCertificates() {}

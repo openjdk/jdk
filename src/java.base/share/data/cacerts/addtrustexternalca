@@ -1,3 +1,4 @@
+TrustedKeyUsage: codeSigning
 Owner: CN=AddTrust External CA Root, OU=AddTrust External TTP Network, O=AddTrust AB, C=SE
 Issuer: CN=AddTrust External CA Root, OU=AddTrust External TTP Network, O=AddTrust AB, C=SE
 Serial number: 1
