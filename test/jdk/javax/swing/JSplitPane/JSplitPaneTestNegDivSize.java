@@ -33,26 +33,39 @@ import javax.swing.JFrame;
 import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.plaf.basic.BasicSplitPaneUI;
 
 public class JSplitPaneTestNegDivSize {
 
-   private static volatile int divSize;
+    private static volatile int divSize;
+    private static volatile int basicDivSize;
+    private static JFrame frame;
+    private static JSplitPane sp;
 
-   public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws Exception {
         SwingUtilities.invokeAndWait(() -> {
-            JFrame frame = new JFrame();
-            frame.setSize(new Dimension(400,200));
-            frame.setVisible(true);
-            JSplitPane sp = new JSplitPane(JSplitPane.VERTICAL_SPLIT, true,
+            frame = new JFrame();
+            sp = new JSplitPane(JSplitPane.VERTICAL_SPLIT, true,
                     new JTextArea("I am top text area!"),
                     new JTextArea("I am bottom text area!"));
             frame.getContentPane().add(sp, BorderLayout.CENTER);
             sp.setDividerSize(-50);
             divSize = sp.getDividerSize();
-            System.out.println(divSize);
-            frame.dispose();
+            ((BasicSplitPaneUI)sp.getUI()).getDivider().setDividerSize(-50);
+            basicDivSize = ((BasicSplitPaneUI)sp.getUI()).getDivider().
+                                              getDividerSize();
+            frame.setSize(new Dimension(400,200));
+            frame.setVisible(true);
         });
-        if (divSize < 0) {
+        try {
+            Thread.sleep(1000);
+        } catch(Exception e){}
+        SwingUtilities.invokeAndWait(()->frame.dispose());
+        System.out.println(divSize);
+        System.out.println(basicDivSize);
+        System.out.println((Integer)UIManager.get("SplitPane.dividerSize"));
+        if (divSize < 0 || basicDivSize < 0) {
             throw new RuntimeException("Negative divider size");
         }
     }
