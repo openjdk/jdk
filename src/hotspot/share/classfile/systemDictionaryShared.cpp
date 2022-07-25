@@ -496,6 +496,8 @@ void SystemDictionaryShared::set_shared_class_misc_info(InstanceKlass* k, ClassF
 
 void SystemDictionaryShared::initialize() {
   _dumptime_table = new (ResourceObj::C_HEAP, mtClass) DumpTimeSharedClassTable;
+  _dumptime_lambda_proxy_class_dictionary =
+      new (ResourceObj::C_HEAP, mtClass) DumpTimeLambdaProxyClassDictionary;
 }
 
 void SystemDictionaryShared::init_dumptime_info(InstanceKlass* k) {
@@ -706,15 +708,13 @@ void SystemDictionaryShared::dumptime_classes_do(class MetaspaceClosure* it) {
   };
   _dumptime_table->iterate_all_live_classes(do_klass);
 
-  if (_dumptime_lambda_proxy_class_dictionary != NULL) {
-    auto do_lambda = [&] (LambdaProxyClassKey& key, DumpTimeLambdaProxyClassInfo& info) {
-      if (key.caller_ik()->is_loader_alive()) {
-        info.metaspace_pointers_do(it);
-        key.metaspace_pointers_do(it);
-      }
-    };
-    _dumptime_lambda_proxy_class_dictionary->iterate_all(do_lambda);
-  }
+  auto do_lambda = [&] (LambdaProxyClassKey& key, DumpTimeLambdaProxyClassInfo& info) {
+    if (key.caller_ik()->is_loader_alive()) {
+      info.metaspace_pointers_do(it);
+      key.metaspace_pointers_do(it);
+    }
+  };
+  _dumptime_lambda_proxy_class_dictionary->iterate_all(do_lambda);
 }
 
 bool SystemDictionaryShared::add_verification_constraint(InstanceKlass* k, Symbol* name,
@@ -752,10 +752,7 @@ void SystemDictionaryShared::add_enum_klass_static_field(InstanceKlass* ik, int 
 void SystemDictionaryShared::add_to_dump_time_lambda_proxy_class_dictionary(LambdaProxyClassKey& key,
                                                            InstanceKlass* proxy_klass) {
   assert_lock_strong(DumpTimeTable_lock);
-  if (_dumptime_lambda_proxy_class_dictionary == NULL) {
-    _dumptime_lambda_proxy_class_dictionary =
-      new (ResourceObj::C_HEAP, mtClass) DumpTimeLambdaProxyClassDictionary;
-  }
+
   DumpTimeLambdaProxyClassInfo* lambda_info = _dumptime_lambda_proxy_class_dictionary->get(key);
   if (lambda_info == NULL) {
     DumpTimeLambdaProxyClassInfo info;
@@ -1136,14 +1133,12 @@ size_t SystemDictionaryShared::estimate_size_for_archive() {
   size_t total_size = est.total() +
     CompactHashtableWriter::estimate_size(_dumptime_table->count_of(true)) +
     CompactHashtableWriter::estimate_size(_dumptime_table->count_of(false));
-  if (_dumptime_lambda_proxy_class_dictionary != NULL) {
-    size_t bytesize = align_up(sizeof(RunTimeLambdaProxyClassInfo), SharedSpaceObjectAlignment);
-    total_size +=
+
+  size_t bytesize = align_up(sizeof(RunTimeLambdaProxyClassInfo), SharedSpaceObjectAlignment);
+  total_size +=
       (bytesize * _dumptime_lambda_proxy_class_dictionary->_count) +
       CompactHashtableWriter::estimate_size(_dumptime_lambda_proxy_class_dictionary->_count);
-  } else {
-    total_size += CompactHashtableWriter::estimate_size(0);
-  }
+
   return total_size;
 }
 
@@ -1279,16 +1274,12 @@ void SystemDictionaryShared::write_to_archive(bool is_static_archive) {
   write_dictionary(&archive->_builtin_dictionary, true);
   write_dictionary(&archive->_unregistered_dictionary, false);
 
-  if (_dumptime_lambda_proxy_class_dictionary != NULL) {
-    write_lambda_proxy_class_dictionary(&archive->_lambda_proxy_class_dictionary);
-  }
+  write_lambda_proxy_class_dictionary(&archive->_lambda_proxy_class_dictionary);
 }
 
 void SystemDictionaryShared::adjust_lambda_proxy_class_dictionary() {
-  if (_dumptime_lambda_proxy_class_dictionary != NULL) {
-    AdjustLambdaProxyClassInfo adjuster;
-    _dumptime_lambda_proxy_class_dictionary->iterate(&adjuster);
-  }
+  AdjustLambdaProxyClassInfo adjuster;
+  _dumptime_lambda_proxy_class_dictionary->iterate(&adjuster);
 }
 
 void SystemDictionaryShared::serialize_dictionary_headers(SerializeClosure* soc,
@@ -1524,15 +1515,13 @@ void SystemDictionaryShared::clone_dumptime_tables() {
   _dumptime_table->iterate_all_live_classes(&copy_classes);
   _cloned_dumptime_table->update_counts();
 
-  if (_dumptime_lambda_proxy_class_dictionary != NULL) {
-    assert(_cloned_dumptime_lambda_proxy_class_dictionary == NULL,
-           "_cloned_dumptime_lambda_proxy_class_dictionary must be cleaned");
-    _cloned_dumptime_lambda_proxy_class_dictionary =
-                                          new (ResourceObj::C_HEAP, mtClass) DumpTimeLambdaProxyClassDictionary;
-    CloneDumpTimeLambdaProxyClassTable copy_proxy_classes(_dumptime_lambda_proxy_class_dictionary,
-                                                          _cloned_dumptime_lambda_proxy_class_dictionary);
-    _dumptime_lambda_proxy_class_dictionary->iterate(&copy_proxy_classes);
-  }
+  assert(_cloned_dumptime_lambda_proxy_class_dictionary == NULL,
+         "_cloned_dumptime_lambda_proxy_class_dictionary must be cleaned");
+  _cloned_dumptime_lambda_proxy_class_dictionary =
+                                        new (ResourceObj::C_HEAP, mtClass) DumpTimeLambdaProxyClassDictionary;
+  CloneDumpTimeLambdaProxyClassTable copy_proxy_classes(_dumptime_lambda_proxy_class_dictionary,
+                                                        _cloned_dumptime_lambda_proxy_class_dictionary);
+  _dumptime_lambda_proxy_class_dictionary->iterate(&copy_proxy_classes);
 }
 
 void SystemDictionaryShared::restore_dumptime_tables() {
@@ -1571,10 +1560,8 @@ class CleanupDumpTimeLambdaProxyClassTable: StackObj {
 
 void SystemDictionaryShared::cleanup_lambda_proxy_class_dictionary() {
   assert_lock_strong(DumpTimeTable_lock);
-  if (_dumptime_lambda_proxy_class_dictionary != NULL) {
-    CleanupDumpTimeLambdaProxyClassTable cleanup_proxy_classes;
-    _dumptime_lambda_proxy_class_dictionary->unlink(&cleanup_proxy_classes);
-  }
+  CleanupDumpTimeLambdaProxyClassTable cleanup_proxy_classes;
+  _dumptime_lambda_proxy_class_dictionary->unlink(&cleanup_proxy_classes);
 }
 
 #if INCLUDE_CDS_JAVA_HEAP
