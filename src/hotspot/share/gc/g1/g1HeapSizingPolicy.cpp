@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,10 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/g1/g1Analytics.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1HeapSizingPolicy.hpp"
-#include "gc/g1/g1Analytics.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "logging/log.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/debug.hpp"
