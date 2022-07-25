@@ -101,6 +101,9 @@ class frame;
 //   The two .cpp files implement the Porting APIs that are *not* declared as
 //   "inline" in os.hpp. They also implement OS-specific APIs such as os::Linux,
 //   os::Posix, etc.
+//
+// (Note: on the POSIX-like platforms, some of the Porting APIs are implemented
+// in os_posix.cpp instead).
 
 class Thread;
 class JavaThread;

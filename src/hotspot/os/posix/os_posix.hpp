@@ -91,8 +91,6 @@ public:
 
   static void print_umask(outputStream* st, mode_t umsk);
 
-  static void print_user_info(outputStream* st);
-
   // Set PC into context. Needed for continuation after signal.
   static address ucontext_get_pc(const ucontext_t* ctx);
   static void    ucontext_set_pc(ucontext_t* ctx, address pc);
@@ -102,8 +100,6 @@ public:
   static bool handle_stack_overflow(JavaThread* thread, address addr, address pc,
                                     const void* ucVoid,
                                     address* stub);
-
-  static void print_active_locale(outputStream* st);
 };
 
 #endif // OS_POSIX_OS_POSIX_HPP

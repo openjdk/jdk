@@ -556,7 +556,7 @@ void os::Posix::print_umask(outputStream* st, mode_t umsk) {
   st->print((umsk & S_IXOTH) ? "x" : "-");
 }
 
-void os::Posix::print_user_info(outputStream* st) {
+void os::print_user_info(outputStream* st) {
   unsigned id = (unsigned) ::getuid();
   st->print("uid  : %u ", id);
   id = (unsigned) ::geteuid();
@@ -570,13 +570,13 @@ void os::Posix::print_user_info(outputStream* st) {
   mode_t umsk = ::umask(0);
   ::umask(umsk);
   st->print("umask: %04o (", (unsigned) umsk);
-  print_umask(st, umsk);
+  os::Posix::print_umask(st, umsk);
   st->print_cr(")");
   st->cr();
 }
 
 // Print all active locale categories, one line each
-void os::Posix::print_active_locale(outputStream* st) {
+void os::print_active_locale(outputStream* st) {
   st->print_cr("Active Locale:");
   // Posix is quiet about how exactly LC_ALL is implemented.
   // Just print it out too, in case LC_ALL is held separately
