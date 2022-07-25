@@ -33,19 +33,19 @@
 
 jint CodeInstaller::pd_next_offset(NativeInstruction* inst, jint pc_offset, JVMCI_TRAPS) {
   address pc = (address) inst;
-  if (inst->is_call() || inst->is_jal()) {
+  if (inst->is_call()) {
     return pc_offset + NativeCall::instruction_size;
   } else if (inst->is_jump()) {
     return pc_offset + NativeJump::instruction_size;
   } else if (inst->is_movptr()) {
     return pc_offset + NativeMovConstReg::instruction_size;
   } else if (inst->is_lui()) {
-    NativeCall* call = nativeCall_at(pc + NativeInstruction::instruction_size);
-    unsigned offset = 1;
-    while (!call->is_call()) {
-      call = nativeCall_at(pc + NativeInstruction::instruction_size * offset);
+    NativeInstruction* nextInst;
+    unsigned offset = 0;
+    do {
       offset += 1;
-    }
+      nextInst = nativeInstruction_at(pc + NativeInstruction::instruction_size * offset);
+    } while (!nextInst->is_call());
     return pc_offset + NativeInstruction::instruction_size * (offset + 1);
   } else {
     JVMCI_ERROR_0("unsupported type of instruction for call site");
@@ -82,7 +82,7 @@ void CodeInstaller::pd_patch_DataSectionReference(int pc_offset, int data_offset
 
 void CodeInstaller::pd_relocate_ForeignCall(NativeInstruction* inst, jlong foreign_call_destination, JVMCI_TRAPS) {
   address pc = (address) inst;
-  if (inst->is_call() || inst->is_jal()) {
+  if (inst->is_call()) {
     NativeCall* call = nativeCall_at(pc);
     call->set_destination((address) foreign_call_destination);
     _instructions->relocate(call->instruction_address(), runtime_call_Relocation::spec());
