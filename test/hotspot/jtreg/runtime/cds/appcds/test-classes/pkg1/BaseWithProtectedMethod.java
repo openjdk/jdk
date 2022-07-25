@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,27 +19,14 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
-#include <jni.h>
-#include <stdlib.h>
-#include <time.h>
 
-extern "C" {
+package pkg1;
 
-JNIEXPORT void JNICALL
-Java_gc_gctests_mallocWithGC3_mallocWithGC3_getMallocLock03
-(JNIEnv *env, jobject obj) {
-        char *c_ptr;
-        time_t current_time, old_time;
-
-        old_time = time(NULL);
-        current_time = 0;
-
-        while (current_time - old_time < 180) {
-                c_ptr = (char *) malloc(1);
-                free(c_ptr);
-                current_time = time(NULL);
-        }
-}
-
+public class BaseWithProtectedMethod {
+    protected void protectedMethod(String s) {
+        Thread.dumpStack();
+        System.out.println("Called BaseWithProtectedMethod::protectedMethod(" + s + ")");
+    }
 }
