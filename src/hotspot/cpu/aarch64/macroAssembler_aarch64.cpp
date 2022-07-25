@@ -132,10 +132,25 @@ int MacroAssembler::pd_patch_instruction_size(address branch, address target) {
       } else if (Instruction_aarch64::extract(insn2, 31, 22) == 0b1001000100 &&
                 Instruction_aarch64::extract(insn, 4, 0) ==
                         Instruction_aarch64::extract(insn2, 4, 0)) {
+        address branch3 = (address)(((unsigned*)branch) + 2);
+        unsigned insn3 = ((unsigned*)branch)[2];
+        uint64_t distance = (branch3 < target) ? (target - branch3) : (branch3 - target);
         // add (immediate)
         Instruction_aarch64::patch(branch + sizeof (unsigned),
                                    21, 10, offset_lo);
-        instructions = 2;
+        if (Instruction_aarch64::extract(insn3, 31, 10) == 0b1101011000011111000000 && distance <= branch_range) {
+          // Unconditional branch (immediate)
+          Instruction_aarch64::patch(branch3, 31, 26, 0b000101);
+          Instruction_aarch64::spatch(branch3, 25, 0, (target - branch3) >> 2);
+          instructions = 3;
+        } else if (Instruction_aarch64::extract(insn3, 31, 26) == 0b000101) {
+          Instruction_aarch64::patch(branch3, 31, 10, 0b1101011000011111000000);    // br
+          Instruction_aarch64::patch(branch3, 9, 5, Instruction_aarch64::extract(insn, 4, 0));
+          Instruction_aarch64::patch(branch3, 4, 0, 0);
+          instructions = 3;
+        } else {
+          instructions = 2;
+        }
       } else if (Instruction_aarch64::extract(insn2, 31, 21) == 0b11110010110 &&
                    Instruction_aarch64::extract(insn, 4, 0) ==
                      Instruction_aarch64::extract(insn2, 4, 0)) {
@@ -252,6 +267,7 @@ address MacroAssembler::target_addr_for_insn(address insn_addr, unsigned insn) {
       // the target page only.
       //
       unsigned insn2 = ((unsigned*)insn_addr)[1];
+      unsigned insn3 = ((unsigned*)insn_addr)[2];
       if (Instruction_aarch64::extract(insn2, 29, 24) == 0b111001 &&
                 Instruction_aarch64::extract(insn, 4, 0) ==
                         Instruction_aarch64::extract(insn2, 9, 5)) {
@@ -265,6 +281,8 @@ address MacroAssembler::target_addr_for_insn(address insn_addr, unsigned insn) {
         // add (immediate)
         unsigned int byte_offset = Instruction_aarch64::extract(insn2, 21, 10);
         return address(target_page + byte_offset);
+      } else if (Instruction_aarch64::extract(insn3, 31, 26) == 0b000101) {
+        offset = Instruction_aarch64::sextract(insn3, 25, 0) + 2;
       } else {
         if (Instruction_aarch64::extract(insn2, 31, 21) == 0b11110010110  &&
                Instruction_aarch64::extract(insn, 4, 0) ==
