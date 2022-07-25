@@ -1920,7 +1920,24 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 
   if (C->stub_function() == NULL) {
     BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-    bs->nmethod_entry_barrier(&_masm);
+    if (BarrierSet::barrier_set()->barrier_set_nmethod() != NULL) {
+      // Dummy labels for just measuring the code size
+      Label dummy_slow_path;
+      Label dummy_continuation;
+      Label dummy_guard;
+      Label* slow_path = &dummy_slow_path;
+      Label* continuation = &dummy_continuation;
+      Label* guard = &dummy_guard;
+      if (!Compile::current()->output()->in_scratch_emit_size()) {
+        // Use real labels from actual stub when not emitting code for the purpose of measuring its size
+        C2EntryBarrierStub* stub = Compile::current()->output()->entry_barrier_table()->add_entry_barrier();
+        slow_path = &stub->slow_path();
+        continuation = &stub->continuation();
+        guard = &stub->guard();
+      }
+      // In the C2 code, we move the non-hot part of nmethod entry barriers out-of-line to a stub.
+      bs->nmethod_entry_barrier(&_masm, slow_path, continuation, guard);
+    }
   }
 
   if (VerifyStackAtCalls) {
