@@ -31,6 +31,12 @@
 #include "memory/allocation.hpp"
 #include "oops/access.hpp"
 
+enum class NMethodPatchingType {
+  stw_instruction_and_data_patch,
+  conc_instruction_and_data_patch,
+  conc_data_patch
+};
+
 class BarrierSetAssembler: public CHeapObj<mtGC> {
 private:
   void incr_allocated_bytes(MacroAssembler* masm,
@@ -68,9 +74,9 @@ public:
   );
   virtual void barrier_stubs_init() {}
 
-  virtual bool nmethod_code_patching() { return true; }
+  virtual NMethodPatchingType nmethod_patching_type() { return NMethodPatchingType::stw_instruction_and_data_patch; }
 
-  virtual void nmethod_entry_barrier(MacroAssembler* masm);
+  virtual void nmethod_entry_barrier(MacroAssembler* masm, Label* slow_path, Label* continuation, Label* guard);
   virtual void c2i_entry_barrier(MacroAssembler* masm);
 
   static address patching_epoch_addr();

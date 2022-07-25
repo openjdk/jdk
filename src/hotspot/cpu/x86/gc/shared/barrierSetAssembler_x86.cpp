@@ -309,22 +309,34 @@ void BarrierSetAssembler::incr_allocated_bytes(MacroAssembler* masm, Register th
 }
 
 #ifdef _LP64
-void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
+void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slow_path, Label* continuation) {
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
   if (bs_nm == NULL) {
     return;
   }
-  Label continuation;
   Register thread = r15_thread;
   Address disarmed_addr(thread, in_bytes(bs_nm->thread_disarmed_offset()));
-  __ align(8);
+  // The immediate is the last 4 bytes, so if we align the start of the cmp
+  // instruction to 4 bytes, we know that the second half of it is also 4
+  // byte aligned, which means that the immediate will not cross a cache line
+  __ align(4);
+  uintptr_t before_cmp = (uintptr_t)__ pc();
   __ cmpl(disarmed_addr, 0);
-  __ jcc(Assembler::equal, continuation);
-  __ call(RuntimeAddress(StubRoutines::x86::method_entry_barrier()));
-  __ bind(continuation);
+  uintptr_t after_cmp = (uintptr_t)__ pc();
+  guarantee(after_cmp - before_cmp == 8, "Wrong assumed instruction length");
+
+  if (slow_path != NULL) {
+    __ jcc(Assembler::notEqual, *slow_path);
+    __ bind(*continuation);
+  } else {
+    Label done;
+    __ jccb(Assembler::equal, done);
+    __ call(RuntimeAddress(StubRoutines::x86::method_entry_barrier()));
+    __ bind(done);
+  }
 }
 #else
-void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
+void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label*, Label*) {
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
   if (bs_nm == NULL) {
     return;

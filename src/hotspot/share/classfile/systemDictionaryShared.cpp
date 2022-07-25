@@ -1341,7 +1341,8 @@ SystemDictionaryShared::find_record(RunTimeSharedDictionary* static_dict, RunTim
   unsigned int hash = SystemDictionaryShared::hash_for_shared_dictionary_quick(name);
   const RunTimeClassInfo* record = NULL;
   if (DynamicArchive::is_mapped()) {
-    // Those regenerated holder classes are in dynamic archive
+    // Use the regenerated holder classes in the dynamic archive as they
+    // have more methods than those in the base archive.
     if (name == vmSymbols::java_lang_invoke_Invokers_Holder() ||
         name == vmSymbols::java_lang_invoke_DirectMethodHandle_Holder() ||
         name == vmSymbols::java_lang_invoke_LambdaForm_Holder() ||
@@ -1373,9 +1374,9 @@ InstanceKlass* SystemDictionaryShared::find_builtin_class(Symbol* name) {
   if (record != NULL) {
     assert(!record->_klass->is_hidden(), "hidden class cannot be looked up by name");
     assert(check_alignment(record->_klass), "Address not aligned");
-    // We did not save the classfile data of the regenerated LambdaForm invoker classes,
+    // We did not save the classfile data of the generated LambdaForm invoker classes,
     // so we cannot support CLFH for such classes.
-    if (record->_klass->is_regenerated() && JvmtiExport::should_post_class_file_load_hook()) {
+    if (record->_klass->is_generated_shared_class() && JvmtiExport::should_post_class_file_load_hook()) {
        return NULL;
     }
     return record->_klass;
