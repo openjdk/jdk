@@ -47,13 +47,24 @@ import nsk.share.gc.gp.classload.*;
 import java.lang.reflect.Array;
 
 public class LoadUnloadGC2 extends GCTestBase {
+        private static int CYCLE = 1000;
         public void run() {
                 Stresser stresser = new Stresser(runParams.getStressOptions());
                 stresser.start(500000);
+                int iteration = 0;
                 try {
+                        GarbageProducer garbageProducer = new GeneratedClassProducer();
                         while (stresser.iteration()) {
-                                log.info("Iteration: " + stresser.getIteration());
-                                WhiteBox.getWhiteBox().fullGC();
+                                garbageProducer.create(512L);
+                                if(iteration++ > CYCLE) {
+                                    // Unload once every cycle.
+                                    iteration = 0;
+                                    garbageProducer = null;
+                                    // Perform GC so that
+                                    // class gets unloaded
+                                    WhiteBox.getWhiteBox().fullGC();
+                                    garbageProducer = new GeneratedClassProducer();
+                               }
                         }
                 } finally {
                         stresser.finish();
