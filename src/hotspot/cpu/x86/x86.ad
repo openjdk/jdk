@@ -3973,8 +3973,7 @@ instruct loadV(vec dst, memory mem) %{
   ins_cost(125);
   format %{ "load_vector $dst,$mem" %}
   ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    __ load_vector(bt, $dst$$XMMRegister, $mem$$Address, Matcher::vector_length_in_bytes(this));
+    __ load_vector($dst$$XMMRegister, $mem$$Address, Matcher::vector_length_in_bytes(this));
   %}
   ins_pipe( pipe_slow );
 %}
@@ -4248,14 +4247,12 @@ instruct ReplI_imm(vec dst, immI con) %{
                 type2aelembytes(Matcher::vector_element_basic_type(this))));
     BasicType bt = Matcher::vector_element_basic_type(this);
     int vlen_enc = vector_length_encoding(this);
-    if (VM_Version::supports_avx2()) {
-      __ vpbroadcastd($dst$$XMMRegister, addr, vlen_enc);
-    } else if (VM_Version::supports_avx()) {
+    if (VM_Version::supports_avx()) {
       __ vbroadcastss($dst$$XMMRegister, addr, vlen_enc);
     } else if (VM_Version::supports_sse3()) {
       __ movddup($dst$$XMMRegister, addr);
     } else {
-      __ load_vector(bt, $dst$$XMMRegister, addr, Matcher::vector_length_in_bytes(this));
+      __ load_vector($dst$$XMMRegister, addr, Matcher::vector_length_in_bytes(this));
     }
   %}
   ins_pipe( pipe_slow );
@@ -4399,7 +4396,7 @@ instruct ReplL_imm(vec dst, immL con) %{
     } else if (VM_Version::supports_sse3()) {
       __ movddup($dst$$XMMRegister, addr);
     } else {
-      __ load_vector(T_LONG, $dst$$XMMRegister, addr, Matcher::vector_length_in_bytes(this));
+      __ load_vector($dst$$XMMRegister, addr, Matcher::vector_length_in_bytes(this));
     }
   %}
   ins_pipe( pipe_slow );
@@ -4486,7 +4483,7 @@ instruct ReplF_imm(vec dst, immF con) %{
     } else if (VM_Version::supports_sse3()) {
       __ movddup($dst$$XMMRegister, addr);
     } else {
-      __ load_vector(T_FLOAT, $dst$$XMMRegister, addr, Matcher::vector_length_in_bytes(this));
+      __ load_vector($dst$$XMMRegister, addr, Matcher::vector_length_in_bytes(this));
     }
   %}
   ins_pipe( pipe_slow );
@@ -4567,7 +4564,7 @@ instruct ReplD_imm(vec dst, immD con) %{
     } else if (VM_Version::supports_sse3()) {
       __ movddup($dst$$XMMRegister, addr);
     } else {
-      __ load_vector(T_DOUBLE, $dst$$XMMRegister, addr, Matcher::vector_length_in_bytes(this));
+      __ load_vector($dst$$XMMRegister, addr, Matcher::vector_length_in_bytes(this));
     }
   %}
   ins_pipe( pipe_slow );

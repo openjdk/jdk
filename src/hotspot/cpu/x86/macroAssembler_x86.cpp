@@ -4385,14 +4385,14 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
 }
 
 void MacroAssembler::vallones(XMMRegister dst, int vector_len) {
-  // vpcmpeqd has special dependency treatment so it should be preferred to vpternlogd
-  if (vector_len == AVX_512bit || dst->encoding() >= 16) {
-    assert(vector_len == AVX_512bit || VM_Version::supports_avx512vl(), "");
+  if (UseAVX > 2 && (vector_len == Assembler::AVX_512bit || VM_Version::supports_avx512vl())) {
+    // Only pcmpeq has dependency breaking treatment (i.e the execution can begin without
+    // waiting for the previous result on dst), not vpcmpeqd, so just use vpternlog
     vpternlogd(dst, 0xFF, dst, dst, vector_len);
-  } else if (UseAVX > 0) {
+  } else if (VM_Version::supports_avx()) {
     vpcmpeqd(dst, dst, dst, vector_len);
   } else {
-    NOT_LP64(assert(UseSSE >= 2, ""));
+    assert(VM_Version::supports_sse2(), "");
     pcmpeqd(dst, dst);
   }
 }
