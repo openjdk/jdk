@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,11 +31,14 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run main/othervm -Xlog:gc=debug:gc.log gc.ArrayJuggle.Juggle01.Juggle01 -gp byteArr -ms low
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xlog:gc=debug:gc.log gc.ArrayJuggle.Juggle01.Juggle01 -gp byteArr -ms low
  */
 
 package gc.ArrayJuggle.Juggle01;
 
+import jdk.test.whitebox.WhiteBox;
 import nsk.share.test.*;
 import nsk.share.gc.*;
 import nsk.share.gc.gp.*;
@@ -54,7 +57,12 @@ public class Juggle01 extends ThreadedGCTest implements GarbageProducerAware, Me
                 public void run() {
                         synchronized (this) {
                                 int index = LocalRandom.nextInt(array.length);
-                                array[index] = garbageProducer.create(objectSize);
+                                try {
+                                    array[index] = garbageProducer.create(objectSize);
+                                } catch (OutOfMemoryError e) {
+                                    // Do some cleanup for further juggling
+                                    WhiteBox.getWhiteBox().youngGC();
+                                }
                         }
                 }
         }
