@@ -802,6 +802,8 @@ void MacroAssembler::aesctr_encrypt(Register src_addr, Register dest_addr, Regis
     bind(PRELOOP_START);
     cmpl(used, 16);
     jcc(Assembler::aboveEqual, EXIT_PRELOOP);
+    cmpl(len_reg, 0);
+    jcc(Assembler::belowEqual, EXIT_PRELOOP);
     movb(rbx, Address(saved_encCounter_start, used));
     xorb(rbx, Address(src_addr, pos));
     movb(Address(dest_addr, pos), rbx);
