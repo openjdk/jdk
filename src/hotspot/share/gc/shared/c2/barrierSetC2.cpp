@@ -715,10 +715,10 @@ Node* BarrierSetC2::obj_allocate(PhaseMacroExpand* macro, Node* mem, Node* toobi
   //       this will require extensive changes to the loop optimization in order to
   //       prevent a degradation of the optimization.
   //       See comment in memnode.hpp, around line 227 in class LoadPNode.
-  Node *tlab_end = macro->make_load(toobig_false, mem, tlab_end_adr, 0, TypeRawPtr::BOTTOM, T_ADDRESS);
+  Node* tlab_end = macro->make_load(toobig_false, mem, tlab_end_adr, 0, TypeRawPtr::BOTTOM, T_ADDRESS);
 
   // Load the TLAB top.
-  Node *old_tlab_top = new LoadPNode(toobig_false, mem, tlab_top_adr, TypeRawPtr::BOTTOM, TypeRawPtr::BOTTOM, MemNode::unordered);
+  Node* old_tlab_top = new LoadPNode(toobig_false, mem, tlab_top_adr, TypeRawPtr::BOTTOM, TypeRawPtr::BOTTOM, MemNode::unordered);
   macro->transform_later(old_tlab_top);
 
   // Add to heap top to get a new TLAB top
@@ -735,12 +735,12 @@ Node* BarrierSetC2::obj_allocate(PhaseMacroExpand* macro, Node* mem, Node* toobi
   macro->transform_later(needgc_iff);
 
   // Plug the failing-heap-space-need-gc test into the slow-path region
-  Node *needgc_true = new IfTrueNode(needgc_iff);
+  Node* needgc_true = new IfTrueNode(needgc_iff);
   macro->transform_later(needgc_true);
   needgc_ctrl = needgc_true;
 
   // No need for a GC.
-  Node *needgc_false = new IfFalseNode(needgc_iff);
+  Node* needgc_false = new IfFalseNode(needgc_iff);
   macro->transform_later(needgc_false);
 
   // Fast path:
