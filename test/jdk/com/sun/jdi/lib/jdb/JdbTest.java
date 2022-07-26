@@ -119,7 +119,7 @@ public abstract class JdbTest {
 
         // launch jdb
         try {
-            jdb = new Jdb("-J-Duser.language=en", "-J-Duser.country=US", "-connect", "com.sun.jdi.SocketAttach:port=" + debuggee.getAddress());
+            jdb = new Jdb("-connect", "com.sun.jdi.SocketAttach:port=" + debuggee.getAddress());
         } catch (Throwable ex) {
             // terminate debuggee if something went wrong
             debuggee.shutdown();
