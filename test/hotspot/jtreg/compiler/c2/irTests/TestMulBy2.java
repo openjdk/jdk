@@ -64,6 +64,4 @@ public class TestMulBy2 {
     public void runTestDouble() {
         testDouble(RANDOM.nextDouble());
     }
-
-
 }

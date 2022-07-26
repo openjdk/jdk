@@ -50,7 +50,6 @@ public class MulBy2 {
         private double d;
 
         public BenchState() {
-
         }
 
         @Setup
