@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,24 +19,36 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef CPU_ARM_C2_MACROASSEMBLER_ARM_HPP
-#define CPU_ARM_C2_MACROASSEMBLER_ARM_HPP
+package org.openjdk.bench.vm.compiler;
 
-// C2_MacroAssembler contains high-level macros for C2
+import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.Param;
+import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.State;
 
- public:
-  void emit_entry_barrier_stub(C2EntryBarrierStub* stub) {}
-  static int entry_barrier_stub_size() { return 0; }
+@State(Scope.Benchmark)
+public class RangeCheckHoisting {
 
-  // Compare char[] arrays aligned to 4 bytes.
-  void char_arrays_equals(Register ary1, Register ary2,
-                          Register limit, Register result,
-                          Register chr1, Register chr2, Label& Ldone);
+    private static final int SIZE = 65536;
 
-  void fast_lock(Register obj, Register box, Register scratch, Register scratch2);
-  void fast_unlock(Register obj, Register box, Register scratch, Register scratch2);
+    @Param("6789") private int count;
 
-#endif // CPU_ARM_C2_MACROASSEMBLER_ARM_HPP
+    private static int[] a = new int[SIZE];
+    private static int[] b = new int[SIZE];
+
+    @Benchmark
+    public void ivScaled3() {
+        for (int i = 0; i < count; i++) {
+            b[3 * i] = a[3 * i];
+        }
+    }
+
+    @Benchmark
+    public void ivScaled7() {
+        for (int i = 0; i < count; i++) {
+            b[7 * i] = a[7 * i];
+        }
+    }
+}

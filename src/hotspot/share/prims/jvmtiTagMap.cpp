@@ -77,7 +77,8 @@ JvmtiTagMap::JvmtiTagMap(JvmtiEnv* env) :
   _env(env),
   _lock(Mutex::nosafepoint, "JvmtiTagMap_lock"),
   _needs_rehashing(false),
-  _needs_cleaning(false) {
+  _needs_cleaning(false),
+  _posting_events(false) {
 
   assert(JvmtiThreadState_lock->is_locked(), "sanity check");
   assert(((JvmtiEnvBase *)env)->tag_map() == NULL, "tag map already exists for environment");
@@ -136,18 +137,16 @@ bool JvmtiTagMap::is_empty() {
 }
 
 // This checks for posting and rehashing before operations that
-// this tagmap table.  The calls from a JavaThread only rehash, posting is
-// only done before heap walks.
-void JvmtiTagMap::check_hashmap(bool post_events) {
-  assert(!post_events || SafepointSynchronize::is_at_safepoint(), "precondition");
+// this tagmap table.
+void JvmtiTagMap::check_hashmap(GrowableArray<jlong>* objects) {
   assert(is_locked(), "checking");
 
   if (is_empty()) { return; }
 
   if (_needs_cleaning &&
-      post_events &&
+      objects != NULL &&
       env()->is_enabled(JVMTI_EVENT_OBJECT_FREE)) {
-    remove_dead_entries_locked(true /* post_object_free */);
+    remove_dead_entries_locked(objects);
   }
   if (_needs_rehashing) {
     log_info(jvmti, table)("TagMap table needs rehashing");
@@ -157,7 +156,7 @@ void JvmtiTagMap::check_hashmap(bool post_events) {
 }
 
 // This checks for posting and rehashing and is called from the heap walks.
-void JvmtiTagMap::check_hashmaps_for_heapwalk() {
+void JvmtiTagMap::check_hashmaps_for_heapwalk(GrowableArray<jlong>* objects) {
   assert(SafepointSynchronize::is_at_safepoint(), "called from safepoints");
 
   // Verify that the tag map tables are valid and unconditionally post events
@@ -168,7 +167,7 @@ void JvmtiTagMap::check_hashmaps_for_heapwalk() {
     if (tag_map != NULL) {
       // The ZDriver may be walking the hashmaps concurrently so this lock is needed.
       MutexLocker ml(tag_map->lock(), Mutex::_no_safepoint_check_flag);
-      tag_map->check_hashmap(/*post_events*/ true);
+      tag_map->check_hashmap(objects);
     }
   }
 }
@@ -359,7 +358,7 @@ void JvmtiTagMap::set_tag(jobject object, jlong tag) {
   // SetTag should not post events because the JavaThread has to
   // transition to native for the callback and this cannot stop for
   // safepoints with the hashmap lock held.
-  check_hashmap(/*post_events*/ false);
+  check_hashmap(NULL);  /* don't collect dead objects */
 
   // resolve the object
   oop o = JNIHandles::resolve_non_null(object);
@@ -394,7 +393,7 @@ jlong JvmtiTagMap::get_tag(jobject object) {
   // GetTag should not post events because the JavaThread has to
   // transition to native for the callback and this cannot stop for
   // safepoints with the hashmap lock held.
-  check_hashmap(/*post_events*/ false);
+  check_hashmap(NULL); /* don't collect dead objects */
 
   // resolve the object
   oop o = JNIHandles::resolve_non_null(object);
@@ -889,15 +888,17 @@ static jint invoke_primitive_field_callback_for_instance_fields(
 class VM_HeapIterateOperation: public VM_Operation {
  private:
   ObjectClosure* _blk;
+  GrowableArray<jlong>* const _dead_objects;
  public:
-  VM_HeapIterateOperation(ObjectClosure* blk) { _blk = blk; }
+  VM_HeapIterateOperation(ObjectClosure* blk, GrowableArray<jlong>* objects) :
+    _blk(blk), _dead_objects(objects) { }
 
   VMOp_Type type() const { return VMOp_HeapIterateOperation; }
   void doit() {
     // allows class files maps to be cached during iteration
     ClassFieldMapCacheMark cm;
 
-    JvmtiTagMap::check_hashmaps_for_heapwalk();
+    JvmtiTagMap::check_hashmaps_for_heapwalk(_dead_objects);
 
     // make sure that heap is parsable (fills TLABs with filler objects)
     Universe::heap()->ensure_parsability(false);  // no need to retire TLABs
@@ -911,7 +912,6 @@ class VM_HeapIterateOperation: public VM_Operation {
     // do the iteration
     Universe::heap()->object_iterate(_blk);
   }
-
 };
 
 
@@ -1136,14 +1136,20 @@ void JvmtiTagMap::iterate_over_heap(jvmtiHeapObjectFilter object_filter,
                    object_filter == JVMTI_HEAP_OBJECT_EITHER,
                    JavaThread::current());
   eb.deoptimize_objects_all_threads();
-  MutexLocker ml(Heap_lock);
-  IterateOverHeapObjectClosure blk(this,
-                                   klass,
-                                   object_filter,
-                                   heap_object_callback,
-                                   user_data);
-  VM_HeapIterateOperation op(&blk);
-  VMThread::execute(&op);
+  Arena dead_object_arena(mtServiceability);
+  GrowableArray <jlong> dead_objects(&dead_object_arena, 10, 0, 0);
+  {
+    MutexLocker ml(Heap_lock);
+    IterateOverHeapObjectClosure blk(this,
+                                     klass,
+                                     object_filter,
+                                     heap_object_callback,
+                                     user_data);
+    VM_HeapIterateOperation op(&blk, &dead_objects);
+    VMThread::execute(&op);
+  }
+  // Post events outside of Heap_lock
+  post_dead_objects(&dead_objects);
 }
 
 
@@ -1157,67 +1163,83 @@ void JvmtiTagMap::iterate_through_heap(jint heap_filter,
   // disabled if vritual threads are enabled with --enable-preview
   EscapeBarrier eb(!(heap_filter & JVMTI_HEAP_FILTER_UNTAGGED), JavaThread::current());
   eb.deoptimize_objects_all_threads();
-  MutexLocker ml(Heap_lock);
-  IterateThroughHeapObjectClosure blk(this,
-                                      klass,
-                                      heap_filter,
-                                      callbacks,
-                                      user_data);
-  VM_HeapIterateOperation op(&blk);
-  VMThread::execute(&op);
+
+  Arena dead_object_arena(mtServiceability);
+  GrowableArray<jlong> dead_objects(&dead_object_arena, 10, 0, 0);
+  {
+    MutexLocker ml(Heap_lock);
+    IterateThroughHeapObjectClosure blk(this,
+                                        klass,
+                                        heap_filter,
+                                        callbacks,
+                                        user_data);
+    VM_HeapIterateOperation op(&blk, &dead_objects);
+    VMThread::execute(&op);
+  }
+  // Post events outside of Heap_lock
+  post_dead_objects(&dead_objects);
 }
 
-void JvmtiTagMap::remove_dead_entries_locked(bool post_object_free) {
+void JvmtiTagMap::remove_dead_entries_locked(GrowableArray<jlong>* objects) {
   assert(is_locked(), "precondition");
   if (_needs_cleaning) {
     // Recheck whether to post object free events under the lock.
-    post_object_free = post_object_free && env()->is_enabled(JVMTI_EVENT_OBJECT_FREE);
+    if (!env()->is_enabled(JVMTI_EVENT_OBJECT_FREE)) {
+      objects = NULL;
+    }
     log_info(jvmti, table)("TagMap table needs cleaning%s",
-                           (post_object_free ? " and posting" : ""));
-    hashmap()->remove_dead_entries(env(), post_object_free);
+                           ((objects != NULL) ? " and posting" : ""));
+    hashmap()->remove_dead_entries(objects);
     _needs_cleaning = false;
   }
 }
 
-void JvmtiTagMap::remove_dead_entries(bool post_object_free) {
+void JvmtiTagMap::remove_dead_entries(GrowableArray<jlong>* objects) {
   MutexLocker ml(lock(), Mutex::_no_safepoint_check_flag);
-  remove_dead_entries_locked(post_object_free);
+  remove_dead_entries_locked(objects);
 }
 
-class VM_JvmtiPostObjectFree: public VM_Operation {
-  JvmtiTagMap* _tag_map;
- public:
-  VM_JvmtiPostObjectFree(JvmtiTagMap* tag_map) : _tag_map(tag_map) {}
-  VMOp_Type type() const { return VMOp_Cleanup; }
-  void doit() {
-    _tag_map->remove_dead_entries(true /* post_object_free */);
+void JvmtiTagMap::post_dead_objects(GrowableArray<jlong>* const objects) {
+  assert(Thread::current()->is_Java_thread(), "Must post from JavaThread");
+  if (objects != NULL && objects->length() > 0) {
+    JvmtiExport::post_object_free(env(), objects);
+    log_info(jvmti)("%d free object posted", objects->length());
   }
+}
 
-  // Doesn't need a safepoint, just the VM thread
-  virtual bool evaluate_at_safepoint() const { return false; }
-};
-
-// PostObjectFree can't be called by JavaThread, so call it from the VM thread.
-void JvmtiTagMap::post_dead_objects_on_vm_thread() {
-  VM_JvmtiPostObjectFree op(this);
-  VMThread::execute(&op);
+void JvmtiTagMap::remove_and_post_dead_objects() {
+  ResourceMark rm;
+  GrowableArray<jlong> objects;
+  remove_dead_entries(&objects);
+  post_dead_objects(&objects);
 }
 
 void JvmtiTagMap::flush_object_free_events() {
   assert_not_at_safepoint();
   if (env()->is_enabled(JVMTI_EVENT_OBJECT_FREE)) {
     {
-      MutexLocker ml(lock(), Mutex::_no_safepoint_check_flag);
+      MonitorLocker ml(lock(), Mutex::_no_safepoint_check_flag);
+      // If another thread is posting events, let it finish
+      while (_posting_events) {
+        ml.wait();
+      }
+
       if (!_needs_cleaning || is_empty()) {
         _needs_cleaning = false;
         return;
       }
+      _posting_events = true;
     } // Drop the lock so we can do the cleaning on the VM thread.
     // Needs both cleaning and event posting (up to some other thread
     // getting there first after we dropped the lock).
-    post_dead_objects_on_vm_thread();
+    remove_and_post_dead_objects();
+    {
+      MonitorLocker ml(lock(), Mutex::_no_safepoint_check_flag);
+      _posting_events = false;
+      ml.notify_all();
+    }
   } else {
-    remove_dead_entries(false);
+    remove_dead_entries(NULL);
   }
 }
 
@@ -1328,9 +1350,6 @@ jvmtiError JvmtiTagMap::get_objects_with_tags(const jlong* tags,
     // window where the object is not marked but hasn't been notified that
     // it is collected yet.
     entry_iterate(&collector);
-  }
-  if (collector.some_dead_found() && env()->is_enabled(JVMTI_EVENT_OBJECT_FREE)) {
-    post_dead_objects_on_vm_thread();
   }
   return collector.result(count_ptr, object_result_ptr, tag_result_ptr);
 }
@@ -2252,6 +2271,9 @@ class VM_HeapWalkOperation: public VM_Operation {
 
   JVMTIBitSet _bitset;
 
+  // Dead object tags in JvmtiTagMap
+  GrowableArray<jlong>* _dead_objects;
+
   bool _following_object_refs;                      // are we following object references
 
   bool _reporting_primitive_fields;                 // optional reporting
@@ -2293,12 +2315,14 @@ class VM_HeapWalkOperation: public VM_Operation {
   VM_HeapWalkOperation(JvmtiTagMap* tag_map,
                        Handle initial_object,
                        BasicHeapWalkContext callbacks,
-                       const void* user_data);
+                       const void* user_data,
+                       GrowableArray<jlong>* objects);
 
   VM_HeapWalkOperation(JvmtiTagMap* tag_map,
                        Handle initial_object,
                        AdvancedHeapWalkContext callbacks,
-                       const void* user_data);
+                       const void* user_data,
+                       GrowableArray<jlong>* objects);
 
   ~VM_HeapWalkOperation();
 
@@ -2310,7 +2334,8 @@ class VM_HeapWalkOperation: public VM_Operation {
 VM_HeapWalkOperation::VM_HeapWalkOperation(JvmtiTagMap* tag_map,
                                            Handle initial_object,
                                            BasicHeapWalkContext callbacks,
-                                           const void* user_data) {
+                                           const void* user_data,
+                                           GrowableArray<jlong>* objects) {
   _is_advanced_heap_walk = false;
   _tag_map = tag_map;
   _initial_object = initial_object;
@@ -2319,6 +2344,7 @@ VM_HeapWalkOperation::VM_HeapWalkOperation(JvmtiTagMap* tag_map,
   _reporting_primitive_array_values = false;
   _reporting_string_values = false;
   _visit_stack = create_visit_stack();
+  _dead_objects = objects;
 
   CallbackInvoker::initialize_for_basic_heap_walk(tag_map, _visit_stack, user_data, callbacks, &_bitset);
 }
@@ -2326,7 +2352,8 @@ VM_HeapWalkOperation::VM_HeapWalkOperation(JvmtiTagMap* tag_map,
 VM_HeapWalkOperation::VM_HeapWalkOperation(JvmtiTagMap* tag_map,
                                            Handle initial_object,
                                            AdvancedHeapWalkContext callbacks,
-                                           const void* user_data) {
+                                           const void* user_data,
+                                           GrowableArray<jlong>* objects) {
   _is_advanced_heap_walk = true;
   _tag_map = tag_map;
   _initial_object = initial_object;
@@ -2335,6 +2362,7 @@ VM_HeapWalkOperation::VM_HeapWalkOperation(JvmtiTagMap* tag_map,
   _reporting_primitive_array_values = (callbacks.array_primitive_value_callback() != NULL);;
   _reporting_string_values = (callbacks.string_primitive_value_callback() != NULL);;
   _visit_stack = create_visit_stack();
+  _dead_objects = objects;
   CallbackInvoker::initialize_for_advanced_heap_walk(tag_map, _visit_stack, user_data, callbacks, &_bitset);
 }
 
@@ -2803,7 +2831,7 @@ void VM_HeapWalkOperation::doit() {
   ResourceMark rm;
   ClassFieldMapCacheMark cm;
 
-  JvmtiTagMap::check_hashmaps_for_heapwalk();
+  JvmtiTagMap::check_hashmaps_for_heapwalk(_dead_objects);
 
   assert(visit_stack()->is_empty(), "visit stack must be empty");
 
@@ -2842,10 +2870,16 @@ void JvmtiTagMap::iterate_over_reachable_objects(jvmtiHeapRootCallback heap_root
   JavaThread* jt = JavaThread::current();
   EscapeBarrier eb(true, jt);
   eb.deoptimize_objects_all_threads();
-  MutexLocker ml(Heap_lock);
-  BasicHeapWalkContext context(heap_root_callback, stack_ref_callback, object_ref_callback);
-  VM_HeapWalkOperation op(this, Handle(), context, user_data);
-  VMThread::execute(&op);
+  Arena dead_object_arena(mtServiceability);
+  GrowableArray<jlong> dead_objects(&dead_object_arena, 10, 0, 0);
+  {
+    MutexLocker ml(Heap_lock);
+    BasicHeapWalkContext context(heap_root_callback, stack_ref_callback, object_ref_callback);
+    VM_HeapWalkOperation op(this, Handle(), context, user_data, &dead_objects);
+    VMThread::execute(&op);
+  }
+  // Post events outside of Heap_lock
+  post_dead_objects(&dead_objects);
 }
 
 // iterate over all objects that are reachable from a given object
@@ -2855,10 +2889,16 @@ void JvmtiTagMap::iterate_over_objects_reachable_from_object(jobject object,
   oop obj = JNIHandles::resolve(object);
   Handle initial_object(Thread::current(), obj);
 
-  MutexLocker ml(Heap_lock);
-  BasicHeapWalkContext context(NULL, NULL, object_ref_callback);
-  VM_HeapWalkOperation op(this, initial_object, context, user_data);
-  VMThread::execute(&op);
+  Arena dead_object_arena(mtServiceability);
+  GrowableArray<jlong> dead_objects(&dead_object_arena, 10, 0, 0);
+  {
+    MutexLocker ml(Heap_lock);
+    BasicHeapWalkContext context(NULL, NULL, object_ref_callback);
+    VM_HeapWalkOperation op(this, initial_object, context, user_data, &dead_objects);
+    VMThread::execute(&op);
+  }
+  // Post events outside of Heap_lock
+  post_dead_objects(&dead_objects);
 }
 
 // follow references from an initial object or the GC roots
@@ -2876,10 +2916,17 @@ void JvmtiTagMap::follow_references(jint heap_filter,
                    !(heap_filter & JVMTI_HEAP_FILTER_UNTAGGED),
                    jt);
   eb.deoptimize_objects_all_threads();
-  MutexLocker ml(Heap_lock);
-  AdvancedHeapWalkContext context(heap_filter, klass, callbacks);
-  VM_HeapWalkOperation op(this, initial_object, context, user_data);
-  VMThread::execute(&op);
+
+  Arena dead_object_arena(mtServiceability);
+  GrowableArray<jlong> dead_objects(&dead_object_arena, 10, 0, 0);
+  {
+    MutexLocker ml(Heap_lock);
+    AdvancedHeapWalkContext context(heap_filter, klass, callbacks);
+    VM_HeapWalkOperation op(this, initial_object, context, user_data, &dead_objects);
+    VMThread::execute(&op);
+  }
+  // Post events outside of Heap_lock
+  post_dead_objects(&dead_objects);
 }
 
 // Concurrent GC needs to call this in relocation pause, so after the objects are moved

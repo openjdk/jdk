@@ -1868,6 +1868,10 @@ static Node* reverse_operations_identity(Node* n, Node* in1) {
 }
 
 Node* ReverseBytesVNode::Identity(PhaseGVN* phase) {
+  // "(ReverseBytesV X) => X" if the element type is T_BYTE.
+  if (vect_type()->element_basic_type() == T_BYTE) {
+    return in(1);
+  }
   return reverse_operations_identity(this, in(1));
 }
 
@@ -1962,6 +1966,14 @@ Node* XorVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
                                      bottom_type()->isa_vectmask() != NULL);
   }
   return NULL;
+}
+
+Node* VectorBlendNode::Identity(PhaseGVN* phase) {
+  // (VectorBlend X X MASK) => X
+  if (in(1) == in(2)) {
+    return in(1);
+  }
+  return this;
 }
 
 #ifndef PRODUCT

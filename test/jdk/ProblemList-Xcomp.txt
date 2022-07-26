@@ -29,3 +29,5 @@
 
 java/lang/invoke/MethodHandles/CatchExceptionTest.java 8146623 generic-all
 java/lang/ref/ReferenceEnqueue.java 8284236 generic-all
+java/lang/ClassLoader/loadLibraryUnload/LoadLibraryUnload.java  8290848 generic-all
+java/lang/ProcessBuilder/PipelineLeaksFD.java                   8290885 generic-all

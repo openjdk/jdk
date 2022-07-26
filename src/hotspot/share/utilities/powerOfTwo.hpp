@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,6 +117,16 @@ template <typename T, ENABLE_IF(std::is_integral<T>::value)>
 inline T next_power_of_2(T value)  {
   assert(value < std::numeric_limits<T>::max(), "Overflow");
   return round_up_power_of_2(value + 1);
+}
+
+// Return the largest power of two that is a submultiple of the given value.
+// This is the same as the numeric value of the least-significant set bit.
+// For unsigned values, it replaces the old trick of (value & -value).
+// precondition: value > 0.
+template<typename T, ENABLE_IF(std::is_integral<T>::value)>
+inline T submultiple_power_of_2(T value) {
+  assert(value > 0, "Invalid value");
+  return value & -value;
 }
 
 #endif // SHARE_UTILITIES_POWEROFTWO_HPP
