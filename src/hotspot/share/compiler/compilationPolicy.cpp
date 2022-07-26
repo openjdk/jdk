@@ -950,7 +950,7 @@ void CompilationPolicy::create_mdo(const methodHandle& mh, JavaThread* THREAD) {
     return;
   }
   if (mh->method_data() == NULL) {
-    Method::build_interpreter_method_data(mh, CHECK_AND_CLEAR);
+    Method::build_profiling_method_data(mh, CHECK_AND_CLEAR);
   }
   if (ProfileInterpreter) {
     MethodData* mdo = mh->method_data();
