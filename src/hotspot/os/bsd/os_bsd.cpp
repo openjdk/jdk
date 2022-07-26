@@ -1989,16 +1989,19 @@ jint os::init_2(void) {
     if (status != 0) {
       log_info(os)("os::init_2 getrlimit failed: %s", os::strerror(errno));
     } else {
+      // On macOS >= 10.6 if we define _DARWIN_UNLIMITED_STREAMS or _DARWIN_C_SOURCE
+      // (we define _DARWIN_C_SOURCE) we can ask for RLIM_INFINITY
       nbr_files.rlim_cur = nbr_files.rlim_max;
-
-#ifdef __APPLE__
-      // Darwin returns RLIM_INFINITY for rlim_max, but fails with EINVAL if
-      // you attempt to use RLIM_INFINITY. As per setrlimit(2), OPEN_MAX must
-      // be used instead
-      nbr_files.rlim_cur = MIN(OPEN_MAX, nbr_files.rlim_cur);
-#endif
-
       status = setrlimit(RLIMIT_NOFILE, &nbr_files);
+#ifdef __APPLE__
+      if (status != 0) {
+        // On macOS < 10.6 Darwin returns RLIM_INFINITY for rlim_max,
+        // but fails with EINVAL if you attempt to use RLIM_INFINITY.
+        // As per setrlimit(2), OPEN_MAX must be used instead.
+        nbr_files.rlim_cur = MIN(OPEN_MAX, nbr_files.rlim_cur);
+        status = setrlimit(RLIMIT_NOFILE, &nbr_files);
+      }
+#endif // #ifdef __APPLE__
       if (status != 0) {
         log_info(os)("os::init_2 setrlimit failed: %s", os::strerror(errno));
       }
