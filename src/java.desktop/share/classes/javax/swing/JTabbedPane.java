@@ -722,10 +722,10 @@ public class JTabbedPane extends JComponent
      * @param component the component to be displayed when this tab is clicked.
      * @param tip the tooltip to be displayed for this tab
      * @param index the position to insert this new tab
-     *       ({@code >= 0 and <= getTabCount()})
+     *       {@code (index >= 0 && index <= tab count)}
      *
      * @throws IndexOutOfBoundsException if the index is out of range
-     *         ({@code < 0 or > getTabCount()})
+     *         {@code (index < 0 || index > tab count)}
      *
      * @see #addTab
      * @see #removeTabAt
