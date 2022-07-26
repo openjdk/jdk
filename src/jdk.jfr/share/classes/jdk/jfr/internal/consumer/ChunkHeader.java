@@ -105,7 +105,7 @@ public final class ChunkHeader {
         ticksPerSecond = input.readRawLong();
         Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Chunk: ticksPerSecond=" + ticksPerSecond);
 
-        // File state and flag bit, updated by JVM and not reliable to read 
+        // File state and flag bit, updated by JVM and not reliable to read
         input.skipBytes(Integer.BYTES);
 
         refresh();
