@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,8 @@
 package javax.security.auth.spi;
 
 import javax.security.auth.Subject;
-import javax.security.auth.AuthPermission;
-import javax.security.auth.callback.*;
-import javax.security.auth.login.*;
+import javax.security.auth.callback.CallbackHandler;
+import javax.security.auth.login.LoginException;
 import java.util.Map;
 
 /**
@@ -40,7 +39,7 @@ import java.util.Map;
  * authentication technology providers implement the
  * {@code LoginModule} interface.
  * A {@code Configuration} specifies the LoginModule(s)
- * to be used with a particular login application.  Therefore different
+ * to be used with a particular login application.  Therefore, different
  * LoginModules can be plugged in under the application without
  * requiring any modifications to the application itself.
  *
