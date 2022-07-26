@@ -56,6 +56,7 @@ import java.lang.ref.Reference;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -382,13 +383,15 @@ public class SharedUtils {
         return firstPos != -1 && argIndex >= firstPos;
     }
 
+    public static NoSuchElementException newVaListNSEE(MemoryLayout layout) {
+        return new NoSuchElementException("No such element: " + layout);
+    }
+
     public static class SimpleVaArg {
-        public final Class<?> carrier;
         public final MemoryLayout layout;
         public final Object value;
 
-        public SimpleVaArg(Class<?> carrier, MemoryLayout layout, Object value) {
-            this.carrier = carrier;
+        public SimpleVaArg(MemoryLayout layout, Object value) {
             this.layout = layout;
             this.value = value;
         }
@@ -442,11 +445,6 @@ public class SharedUtils {
 
         @Override
         public MemorySession session() {
-            return MemorySessionImpl.GLOBAL;
-        }
-
-        @Override
-        public MemorySessionImpl sessionImpl() {
             return MemorySessionImpl.GLOBAL;
         }
 

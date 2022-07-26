@@ -722,8 +722,15 @@ public final class StringConcatFactory {
     private static final int[] PREPEND_FILTER_SECOND_PAIR_ARGS = new int[] { 0, 1, 4, 5 };
 
     // Base MH for complex prepender combinators.
-    private static final MethodHandle PREPEND_BASE = MethodHandles.dropArguments(
-            MethodHandles.identity(long.class), 1, byte[].class);
+    private static @Stable MethodHandle PREPEND_BASE;
+    private static MethodHandle prependBase() {
+        MethodHandle base = PREPEND_BASE;
+        if (base == null) {
+            base = PREPEND_BASE = MethodHandles.dropArguments(
+                    MethodHandles.identity(long.class), 1, byte[].class);
+        }
+        return base;
+    }
 
     private static final @Stable MethodHandle[][] DOUBLE_PREPENDERS = new MethodHandle[TYPE_COUNT][TYPE_COUNT];
 
@@ -733,7 +740,7 @@ public final class StringConcatFactory {
         MethodHandle prepend = DOUBLE_PREPENDERS[idx1][idx2];
         if (prepend == null) {
             prepend = DOUBLE_PREPENDERS[idx1][idx2] =
-                    MethodHandles.dropArguments(PREPEND_BASE, 2, cl, cl2);
+                    MethodHandles.dropArguments(prependBase(), 2, cl, cl2);
         }
         prepend = MethodHandles.filterArgumentsWithCombiner(prepend, 0, prepender(prefix, cl),
                 PREPEND_FILTER_FIRST_ARGS);
@@ -750,7 +757,7 @@ public final class StringConcatFactory {
             return prepender(constants[pos], ptypes[pos], constants[pos + 1], ptypes[pos + 1]);
         }
         // build a tree from an unbound prepender, allowing us to bind the constants in a batch as a final step
-        MethodHandle prepend = PREPEND_BASE;
+        MethodHandle prepend = prependBase();
         if (count == 3) {
             prepend = MethodHandles.dropArguments(prepend, 2,
                     ptypes[pos], ptypes[pos + 1], ptypes[pos + 2]);

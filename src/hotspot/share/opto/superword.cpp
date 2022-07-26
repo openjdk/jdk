@@ -414,7 +414,9 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
       cl->mark_passed_slp();
     }
     cl->mark_was_slp();
-    cl->set_slp_max_unroll(local_loop_unroll_factor);
+    if (cl->is_main_loop() || cl->is_rce_post_loop()) {
+      cl->set_slp_max_unroll(local_loop_unroll_factor);
+    }
   }
 }
 
@@ -2610,6 +2612,8 @@ bool SuperWord::output() {
                  opc == Op_NegF || opc == Op_NegD ||
                  opc == Op_RoundF || opc == Op_RoundD ||
                  opc == Op_PopCountI || opc == Op_PopCountL ||
+                 opc == Op_ReverseBytesI || opc == Op_ReverseBytesL ||
+                 opc == Op_ReverseBytesUS || opc == Op_ReverseBytesS ||
                  opc == Op_CountLeadingZerosI || opc == Op_CountLeadingZerosL ||
                  opc == Op_CountTrailingZerosI || opc == Op_CountTrailingZerosL) {
         assert(n->req() == 2, "only one input expected");
@@ -2691,7 +2695,7 @@ bool SuperWord::output() {
         vlen_in_bytes = vn->as_Vector()->length_in_bytes();
       } else {
         if (do_reserve_copy()) {
-          NOT_PRODUCT(if(is_trace_loop_reverse() || TraceLoopOpts) {tty->print_cr("SWPointer::output: ShouldNotReachHere, exiting SuperWord");})
+          NOT_PRODUCT(if(is_trace_loop_reverse() || TraceLoopOpts) {tty->print_cr("SWPointer::output: Unhandled scalar opcode (%s), ShouldNotReachHere, exiting SuperWord", NodeClassNames[opc]);})
           return false; //and reverse to backup IG
         }
         ShouldNotReachHere();

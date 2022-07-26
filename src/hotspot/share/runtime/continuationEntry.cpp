@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "code/compiledIC.hpp"
 #include "code/nmethod.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
@@ -34,10 +35,32 @@
 
 int ContinuationEntry::_return_pc_offset = 0;
 address ContinuationEntry::_return_pc = nullptr;
+CompiledMethod* ContinuationEntry::_enter_special = nullptr;
+int ContinuationEntry::_interpreted_entry_offset = 0;
 
-void ContinuationEntry::set_enter_code(CompiledMethod* cm) {
+void ContinuationEntry::set_enter_code(CompiledMethod* cm, int interpreted_entry_offset) {
   assert(_return_pc_offset != 0, "");
   _return_pc = cm->code_begin() + _return_pc_offset;
+
+  _enter_special = cm;
+  _interpreted_entry_offset = interpreted_entry_offset;
+  assert(_enter_special->code_contains(compiled_entry()),    "entry not in enterSpecial");
+  assert(_enter_special->code_contains(interpreted_entry()), "entry not in enterSpecial");
+  assert(interpreted_entry() < compiled_entry(), "unexpected code layout");
+}
+
+address ContinuationEntry::compiled_entry() {
+  return _enter_special->verified_entry_point();
+}
+
+address ContinuationEntry::interpreted_entry() {
+  return _enter_special->code_begin() + _interpreted_entry_offset;
+}
+
+bool ContinuationEntry::is_interpreted_call(address call_address) {
+  assert(_enter_special->code_contains(call_address), "call not in enterSpecial");
+  assert(call_address >= interpreted_entry(), "unexpected location");
+  return call_address < compiled_entry();
 }
 
 ContinuationEntry* ContinuationEntry::from_frame(const frame& f) {

@@ -163,7 +163,8 @@ void ThreadService::remove_thread(JavaThread* thread, bool daemon) {
 
   assert(!thread->is_terminated(), "must not be terminated");
   if (!thread->is_exiting()) {
-    // JavaThread::exit() skipped calling current_thread_exiting()
+    // We did not get here via JavaThread::exit() so current_thread_exiting()
+    // was not called, e.g., JavaThread::cleanup_failed_attach_current_thread().
     decrement_thread_counts(thread, daemon);
   }
 

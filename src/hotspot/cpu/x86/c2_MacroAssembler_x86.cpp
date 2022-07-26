@@ -4886,6 +4886,7 @@ void C2_MacroAssembler::vector_reverse_byte64(BasicType bt, XMMRegister dst, XMM
       evprord(xtmp1, k0, src, 16, true, vec_enc);
       vector_swap_nbits(8, 0x00FF00FF, dst, xtmp1, xtmp2, rtmp, vec_enc);
       break;
+    case T_CHAR:
     case T_SHORT:
       // Swap upper and lower byte of each word.
       vector_swap_nbits(8, 0x00FF00FF, dst, src, xtmp2, rtmp, vec_enc);
@@ -4917,6 +4918,7 @@ void C2_MacroAssembler::vector_reverse_byte(BasicType bt, XMMRegister dst, XMMRe
     case T_INT:
       vmovdqu(dst, ExternalAddress(StubRoutines::x86::vector_reverse_byte_perm_mask_int()), rtmp, vec_enc);
       break;
+    case T_CHAR:
     case T_SHORT:
       vmovdqu(dst, ExternalAddress(StubRoutines::x86::vector_reverse_byte_perm_mask_short()), rtmp, vec_enc);
       break;

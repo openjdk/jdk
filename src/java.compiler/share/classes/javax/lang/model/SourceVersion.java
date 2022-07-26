@@ -619,7 +619,8 @@ public enum SourceVersion {
      * {@code "17"}, to the corresponding source version, {@code
      * RELEASE_17}, is:
      *
-     * <pre>{@code SourceVersion.valueOf(Runtime.Version.parse("17"))}</pre>
+     * {@snippet lang="java" :
+     * SourceVersion.valueOf(Runtime.Version.parse("17"))}
      *
      * @param rv runtime version to map to a source version
      * @throws IllegalArgumentException if the feature of version

@@ -2348,6 +2348,12 @@ void G1CollectedHeap::par_iterate_regions_array(HeapRegionClosure* cl,
 
 HeapWord* G1CollectedHeap::block_start(const void* addr) const {
   HeapRegion* hr = heap_region_containing(addr);
+  // The CollectedHeap API requires us to not fail for any given address within
+  // the heap. HeapRegion::block_start() has been optimized to not accept addresses
+  // outside of the allocated area.
+  if (addr >= hr->top()) {
+    return nullptr;
+  }
   return hr->block_start(addr);
 }
 

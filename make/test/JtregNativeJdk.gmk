@@ -55,7 +55,9 @@ BUILD_JDK_JTREG_EXECUTABLES_CFLAGS_exeJliLaunchTest := \
 
 # Platform specific setup
 ifeq ($(call isTargetOs, windows), true)
-  BUILD_JDK_JTREG_EXCLUDE += libDirectIO.c libInheritedChannel.c exelauncher.c
+  BUILD_JDK_JTREG_EXCLUDE += libDirectIO.c libInheritedChannel.c \
+      libExplicitAttach.c libImplicitAttach.c \
+      exelauncher.c
 
   WIN_LIB_JAVA := $(SUPPORT_OUTPUTDIR)/native/java.base/libjava/java.lib
   BUILD_JDK_JTREG_LIBRARIES_LIBS_libstringPlatformChars := $(WIN_LIB_JAVA)
@@ -84,6 +86,9 @@ else
   BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libLinkerInvokerUnnamed := $(LIBCXX) -pthread
   BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libLinkerInvokerModule := $(LIBCXX) -pthread
   BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libLoaderLookupInvoker := $(LIBCXX) -pthread
+  BUILD_JDK_JTREG_LIBRARIES_LIBS_libExplicitAttach := -ljvm
+  BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libExplicitAttach := -pthread
+  BUILD_JDK_JTREG_LIBRARIES_LDFLAGS_libImplicitAttach := -pthread
   BUILD_JDK_JTREG_EXCLUDE += exerevokeall.c
   ifeq ($(call isTargetOs, linux), true)
     BUILD_JDK_JTREG_LIBRARIES_LIBS_libInheritedChannel := -ljava

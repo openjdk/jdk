@@ -3654,7 +3654,7 @@ public final class Files {
      *          if {@code options} contains an invalid combination of options
      * @throws  IOException
      *          if an I/O error occurs writing to or creating the file, or the
-     *          text cannot be encoded using the specified charset
+     *          text cannot be encoded using UTF-8
      * @throws  UnsupportedOperationException
      *          if an unsupported option is specified
      * @throws  SecurityException

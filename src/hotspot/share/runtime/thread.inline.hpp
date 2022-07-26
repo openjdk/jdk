@@ -147,6 +147,12 @@ class AsyncExceptionHandshake : public AsyncHandshakeClosure {
   }
 
   ~AsyncExceptionHandshake() {
+    Thread* current = Thread::current();
+    // Can get here from the VMThread via install_async_exception() bail out.
+    if (current->is_Java_thread()) {
+      guarantee(JavaThread::cast(current)->is_oop_safe(),
+                "JavaThread cannot touch oops after its GC barrier is detached.");
+    }
     assert(!_exception.is_empty(), "invariant");
     _exception.release(Universe::vm_global());
   }
@@ -260,21 +266,24 @@ inline void JavaThread::set_done_attaching_via_jni() {
 }
 
 inline bool JavaThread::is_exiting() const {
-  // Use load-acquire so that setting of _terminated by
-  // JavaThread::exit() is seen more quickly.
   TerminatedTypes l_terminated = Atomic::load_acquire(&_terminated);
-  return l_terminated == _thread_exiting || check_is_terminated(l_terminated);
+  return l_terminated == _thread_exiting ||
+         l_terminated == _thread_gc_barrier_detached ||
+         check_is_terminated(l_terminated);
+}
+
+inline bool JavaThread::is_oop_safe() const {
+  TerminatedTypes l_terminated = Atomic::load_acquire(&_terminated);
+  return l_terminated != _thread_gc_barrier_detached &&
+         !check_is_terminated(l_terminated);
 }
 
 inline bool JavaThread::is_terminated() const {
-  // Use load-acquire so that setting of _terminated by
-  // JavaThread::exit() is seen more quickly.
   TerminatedTypes l_terminated = Atomic::load_acquire(&_terminated);
   return check_is_terminated(l_terminated);
 }
 
 inline void JavaThread::set_terminated(TerminatedTypes t) {
-  // use release-store so the setting of _terminated is seen more quickly
   Atomic::release_store(&_terminated, t);
 }
 

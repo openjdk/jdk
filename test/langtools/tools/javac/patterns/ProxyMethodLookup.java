@@ -21,30 +21,27 @@
  * questions.
  */
 
-/*
+/**
  * @test
- * @bug 8286287
- * @summary Verifies newStringNoRepl() does not throw an Error.
+ * @bug 8288120
+ * @summary Verify an appropriate accessor method is looked up.
+ * @compile --enable-preview -source ${jdk.version} ProxyMethodLookup.java
+ * @run main/othervm --enable-preview ProxyMethodLookup
  */
+public class ProxyMethodLookup {
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.HexFormat;
-import static java.nio.charset.StandardCharsets.UTF_16;
+    public static void main(String[] args) {
+        Object val = new R(new Component());
+        boolean b = val instanceof R(var c);
+   }
 
-public class NewStringNoRepl {
-    private final static byte[] MALFORMED_UTF16 = {(byte)0x00, (byte)0x20, (byte)0x00};
+    interface ComponentBase {}
 
-    public static void main(String... args) throws IOException {
-        var f = Files.createTempFile(null, null);
-        try (var fos = Files.newOutputStream(f)) {
-            fos.write(MALFORMED_UTF16);
-        }
-        System.out.println("Returned bytes: " +
-            HexFormat.of()
-                .withPrefix("x")
-                .withUpperCase()
-                .formatHex(Files.readString(f, UTF_16).getBytes(UTF_16)));
-        Files.delete(f);
+    record Component() implements ComponentBase {}
+
+    sealed interface Base {
+        ComponentBase c();
     }
+
+    record R(Component c) implements Base {}
 }

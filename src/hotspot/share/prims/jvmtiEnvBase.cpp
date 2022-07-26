@@ -1320,12 +1320,12 @@ JvmtiEnvBase::get_threadOop_and_JavaThread(ThreadsList* t_list, jthread thread,
       java_thread = get_JavaThread_or_null(thread_oop);
     }
   }
+  *jt_pp = java_thread;
+  *thread_oop_p = thread_oop;
   if (java_lang_VirtualThread::is_instance(thread_oop) &&
       !JvmtiEnvBase::is_vthread_alive(thread_oop)) {
     return JVMTI_ERROR_THREAD_NOT_ALIVE;
   }
-  *jt_pp = java_thread;
-  *thread_oop_p = thread_oop;
   return JVMTI_ERROR_NONE;
 }
 
