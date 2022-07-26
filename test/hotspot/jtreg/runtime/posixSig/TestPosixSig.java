@@ -66,7 +66,7 @@ public class TestPosixSig {
             }
             output.shouldHaveExitValue(0);
 
-	} else {
+        } else {
             System.loadLibrary("TestPsig");
             TestPosixSig.changeSigActionFor(8); // SIGFPE
             TestPosixSig.changeSigActionFor(4); // SIGILL
