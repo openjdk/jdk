@@ -292,7 +292,7 @@ public interface Path
         int length = fileNameString.length();
 
         // A file name string of length unity has a null extension
-        if (length > 2) {
+        if (length > 1) {
             int lastDotIndex = fileNameString.lastIndexOf('.');
             // Indeterminate if no dot or only at first index
             if (lastDotIndex > 0) {
@@ -300,11 +300,6 @@ public interface Path
                     "" : // empty string if last dot at last index
                     fileNameString.substring(lastDotIndex + 1);
             }
-        } else if (length == 2 &&
-                   !(fileNameString.charAt(0) == '.' ||
-                     fileNameString.charAt(1) != '.')) {
-            // fileNameString is of the form "x." where 'x' != '.'
-            return "";
         }
 
         return null;
