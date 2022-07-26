@@ -226,7 +226,7 @@ public class BasicSplitPaneDivider extends Container
      * @param newSize a new size
      */
     public void setDividerSize(int newSize) {
-        if (newSize < 0) {
+        if (newSize <= 0) {
             return;
         }
         dividerSize = newSize;
